@@ -108,8 +108,8 @@ public class TypeCheckingTest {
   public void compareData() {
     typeCheckClass(
         "\\data D {lp : Lvl} {lh : CNat} | con\n" +
-        "\\function f {l : Lvl} (d : D {l} {fin 0}) => d\n" +
-        "\\function g {l : Lvl} (d : D {l} {inf}) => f d");
+        "\\function f {l : Lvl} (d : D [l] [0]) => d\n" +
+        "\\function g {l : Lvl} (d : D [l] [inf]) => f d");
   }
 
   @Test

@@ -190,7 +190,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
     */
 
-    Map<String, Binding> polyParams = new HashMap<>();
+    List<Binding> polyParamsList = new ArrayList<>();
+    Map<String, Binding> polyParamsMap = new HashMap<>();
     // int numberOfArgs = index;
     int index = 0;
     for (Abstract.Argument argument : arguments) {
@@ -198,11 +199,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         Abstract.TypeArgument typeArgument = (Abstract.TypeArgument)argument;
 
         if (Preprelude.isPolyParam(typeArgument)) {
-          Binding levelParam = visitPolyParam(typeArgument, polyParams, def);
+          Binding levelParam = visitPolyParam(typeArgument, polyParamsMap, def);
           if (levelParam == null) {
             return typedDef;
           }
           context.add(levelParam);
+          polyParamsList.add(levelParam);
           //polyParams.put(((Abstract.DefCallExpression)typeArgument.getType()).getName(), levelParam);
           ++index;
           continue;
@@ -309,7 +311,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
     */
 
-    typedDef.setPolyParams(new ArrayList<>(polyParams.values()));
+    typedDef.setPolyParams(polyParamsList);
     typedDef.setParameters(list.getFirst());
     typedDef.setResultType(expectedType);
     typedDef.typeHasErrors(typedDef.getResultType() == null);
@@ -479,7 +481,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     List<Binding> context = new ArrayList<>();
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build(def);
     ClassDefinition thisClass = getThisClass(def);
-    Map<String, Binding> polyParams = new HashMap<>();
+    List<Binding> polyParamsList = new ArrayList<>();
+    Map<String, Binding> polyParamsMap = new HashMap<>();
     LinkList list = new LinkList();
     if (thisClass != null) {
       DependentLink thisParam = param("\\this", ClassCall(thisClass));
@@ -498,11 +501,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
       for (Abstract.TypeArgument parameter : parameters) {
         if (Preprelude.isPolyParam(parameter)) {
-          Binding levelParam = visitPolyParam(parameter, polyParams, def);
+          Binding levelParam = visitPolyParam(parameter, polyParamsMap, def);
           if (levelParam == null) {
             return dataDefinition;
           }
           context.add(levelParam);
+          polyParamsList.add(levelParam);
           continue;
         }
 
@@ -534,7 +538,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       }
     }
 
-    dataDefinition.setPolyParams(new ArrayList<>(polyParams.values()));
+    dataDefinition.setPolyParams(polyParamsList);
     dataDefinition.setParameters(list.getFirst());
     if (userUniverse != null) dataDefinition.setUniverse(userUniverse);
     dataDefinition.hasErrors(false);
