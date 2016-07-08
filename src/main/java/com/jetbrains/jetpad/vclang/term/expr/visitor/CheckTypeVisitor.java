@@ -302,10 +302,28 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   @Override
-  public Result visitAppLevel(Abstract.ApplyLevelExpression expr, Expression expectedType) {
-    Result result = typeCheck(expr.getFunction(), expectedType);
+  public Result visitAppLevel(Abstract.ApplyLevelExpression app_expr, Expression expectedType) {
+    List<LevelExpression> levelsList = new ArrayList<>();
+    Abstract.Expression expr = app_expr;
+
+    while (expr instanceof Abstract.ApplyLevelExpression) {
+      LevelExpression level = typeCheckLevel(((Abstract.ApplyLevelExpression)expr).getLevel(), null);
+      if (level == null) {
+        return null;
+      }
+      levelsList.add(level);
+      expr = ((Abstract.ApplyLevelExpression)expr).getFunction();
+    }
+
+    Collections.reverse(levelsList);
+
+    Result result = typeCheck(expr, expectedType);
     if (result == null) {
       return null;
+    }
+
+    if (result.getEquations() instanceof DummyEquations) {
+      result.setEquations(myArgsInference.newEquations());
     }
 
     DefCallExpression defCall = result.expression.getFunction().toDefCall();
@@ -316,23 +334,18 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return null;
     }
 
-    LevelExpression level = typeCheckLevel(expr.getLevel(), null);
-    if (level == null) {
-      return null;
-    }
-
     List<Binding> polyParams = defCall.getDefinition().getPolyParams();
 
-    for (Binding param : polyParams) {
+    for (int i = 0; i < levelsList.size(); ++i) {
+      Binding param = polyParams.get(i);
       LevelExpression value = defCall.getPolyParamsSubst().get(param);
       if (value == null) {
         assert false;
         return null;
       }
-      if (value.isBinding() && value.getUnitBinding() instanceof LevelInferenceBinding) {
-        result.getEquations().add(new LevelExpression(value.getUnitBinding()), level, Equations.CMP.EQ, expr);
-        return result;
-      }
+      //if (value.isBinding() && value.getUnitBinding() instanceof LevelInferenceBinding) {
+      result.getEquations().add(value, levelsList.get(i), Equations.CMP.EQ, expr);
+      //}
     }
 
     return result;
