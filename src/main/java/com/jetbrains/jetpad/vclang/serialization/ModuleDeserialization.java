@@ -155,7 +155,7 @@ public class ModuleDeserialization {
       }
       if (!createStubs) {
         result.put(i, rn.getName().equals("\\parent") ?
-            ((ClassDefinition) rn.getParent().toDefinition()).getParentField() : rn.toDefinition());
+            ((ClassDefinition) rn.getParent().toDefinition()).getEnclosingThisField() : rn.toDefinition());
       }
     }
 
@@ -277,7 +277,7 @@ public class ModuleDeserialization {
         implementation = readExpression(stream, definitionMap);
       }
       ClassField field = (ClassField) definitionMap.get(stream.readInt());
-      definition.addField(field, name, thisParameter, implementation);
+      //definition.addField(field, name, thisParameter, implementation);  // FIXME[serial]
       field.setThisParameter(readParameters(stream, definitionMap));
       field.hasErrors(stream.readBoolean());
 

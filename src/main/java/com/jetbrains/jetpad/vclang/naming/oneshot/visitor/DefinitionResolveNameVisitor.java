@@ -9,13 +9,9 @@ import com.jetbrains.jetpad.vclang.naming.oneshot.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.scope.*;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<Boolean, Void> {
@@ -186,38 +182,9 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
 
   @Override
   public Void visitClass(Abstract.ClassDefinition def, Boolean isStatic) {
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myParentScope, myContext, myNameResolver, myErrorReporter, myResolveListener);
     for (Abstract.SuperClass superClass : def.getSuperClasses()) {
-      Referable sup = myNameResolver.resolveDefinition(myParentScope, Collections.singletonList(superClass.getName()));
-      if (sup != null) {
-        if (sup instanceof Abstract.ClassDefinition) {
-          myResolveListener.superClassResolved(superClass, sup);
-          Namespace supNamespace = myDynamicNsProvider.forClass((Abstract.ClassDefinition) sup);
-
-          if (superClass.getRenamings() != null) {
-            for (Abstract.IdPair idPair : superClass.getRenamings()) {
-              Referable pair1 = supNamespace.resolveName(idPair.getFirstName());
-              if (pair1 != null) {
-                myResolveListener.idPairFirstResolved(idPair, pair1);
-              } else {
-                myErrorReporter.report(new NotInScopeError(def, idPair, idPair.getFirstName()));
-              }
-            }
-          }
-
-          if (superClass.getHidings() != null) {
-            for (Abstract.Identifier identifier : superClass.getHidings()) {
-              Referable ref = supNamespace.resolveName(identifier.getName());
-              if (ref != null) {
-                myResolveListener.identifierResolved(identifier, ref);
-              } else {
-                myErrorReporter.report(new NotInScopeError(def, identifier, identifier.getName()));
-              }
-            }
-          }
-        } else {
-          myErrorReporter.report(new TypeCheckingError("Expected a class", sup));
-        }
-      }
+      superClass.getSuperClass().accept(exprVisitor, null);
     }
 
     try {
@@ -241,36 +208,6 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       myErrorReporter.report(e.toError());
     }
 
-    return null;
-  }
-
-  @Override
-  public Void visitImplement(Abstract.ImplementDefinition def, Boolean params) {
-    if (myResolveListener == null) {
-      return null;
-    }
-
-    Abstract.Definition parentDef = def.getParentStatement().getParentDefinition();
-    Referable referable = null;
-    if (parentDef instanceof Abstract.ClassDefinition && ((Abstract.ClassDefinition) parentDef).getSuperClasses() != null) {
-      for (Abstract.SuperClass superClass : ((Abstract.ClassDefinition) parentDef).getSuperClasses()) {
-        if (superClass.getReferent() instanceof Abstract.ClassDefinition) {
-          Namespace supNamespace = myDynamicNsProvider.forClass((Abstract.ClassDefinition) superClass.getReferent());
-          referable = supNamespace.resolveName(def.getName());
-          if (referable != null) {
-            break;
-          }
-        }
-      }
-    }
-
-    if (referable == null) {
-      myErrorReporter.report(new NotInScopeError(parentDef, def, def.getName()));
-    } else {
-      myResolveListener.implementResolved(def, referable);
-    }
-
-    def.getExpression().accept(new ExpressionResolveNameVisitor(myParentScope, myContext, myNameResolver, myErrorReporter, myResolveListener), null);
     return null;
   }
 

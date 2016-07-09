@@ -883,35 +883,6 @@ public final class Concrete {
     }
   }
 
-  public static class ImplementDefinition extends Definition implements Abstract.ImplementDefinition {
-    private Referable myImplemented;
-    private final Expression myExpression;
-
-    public ImplementDefinition(Position position, String name, Expression expression) {
-      super(position, name, Abstract.Binding.DEFAULT_PRECEDENCE);
-      myExpression = expression;
-    }
-
-    @Override
-    public Referable getImplemented() {
-      return myImplemented;
-    }
-
-    public void setImplemented(Referable implemented) {
-      myImplemented = implemented;
-    }
-
-    @Override
-    public Expression getExpression() {
-      return myExpression;
-    }
-
-    @Override
-    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitImplement(this, params);
-    }
-  }
-
   public static class FunctionDefinition extends SignatureDefinition implements Abstract.FunctionDefinition {
     private final Abstract.Definition.Arrow myArrow;
     private final boolean myOverridden;
@@ -1039,7 +1010,6 @@ public final class Concrete {
 
   public static class IdPair extends SourceNode implements Abstract.IdPair {
     private final String myFirstName;
-    private Referable myFirstReferent;
     private final String mySecondName;
 
     public IdPair(Position position, String firstName, String secondName) {
@@ -1054,15 +1024,6 @@ public final class Concrete {
     }
 
     @Override
-    public Referable getFirstReferent() {
-      return myFirstReferent;
-    }
-
-    public void setFirstReferent(Referable referent) {
-      myFirstReferent = referent;
-    }
-
-    @Override
     public String getSecondName() {
       return mySecondName;
     }
@@ -1070,7 +1031,6 @@ public final class Concrete {
 
   public static class Identifier extends SourceNode implements Abstract.Identifier {
     private final String myName;
-    private Referable myReferent;
 
     public Identifier(Position position, String name) {
       super(position);
@@ -1081,42 +1041,23 @@ public final class Concrete {
     public String getName() {
       return myName;
     }
-
-    @Override
-    public Referable getReferent() {
-      return myReferent;
-    }
-
-    public void setReferent(Referable referent) {
-      myReferent = referent;
-    }
   }
 
   public static class SuperClass extends SourceNode implements Abstract.SuperClass {
-    private Referable myReferent;
-    private final String myName;
+    private Expression mySuperClass;
     private final List<IdPair> myRenamings;
     private final List<Identifier> myHidings;
 
-    public SuperClass(Position position, String name, List<IdPair> renamings, List<Identifier> hidings) {
+    public SuperClass(Position position, Expression superClass, List<IdPair> renamings, List<Identifier> hidings) {
       super(position);
-      myName = name;
+      mySuperClass = superClass;
       myRenamings = renamings;
       myHidings = hidings;
     }
 
     @Override
-    public String getName() {
-      return myName;
-    }
-
-    @Override
-    public Referable getReferent() {
-      return myReferent;
-    }
-
-    public void setReferent(Referable referent) {
-      myReferent = referent;
+    public Expression getSuperClass() {
+      return mySuperClass;
     }
 
     @Override

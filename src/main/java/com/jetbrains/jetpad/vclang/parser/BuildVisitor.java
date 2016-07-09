@@ -477,7 +477,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         ExtendsSuperClassOptsContext supCtx = (ExtendsSuperClassOptsContext) ctx.extendsOpts().get(i);
         List<Concrete.IdPair> renamings = new ArrayList<>();
         List<Concrete.Identifier> hidings = new ArrayList<>();
-        superClasses.add(new Concrete.SuperClass(tokenPosition(ctx.ID().get(i + 1).getSymbol()), ctx.ID().get(i + 1).getText(), renamings, hidings));
+        Concrete.Expression superExpr = visitAtomFieldsAcc(ctx.atomFieldsAcc(i));
+        superClasses.add(new Concrete.SuperClass(tokenPosition(ctx.atomFieldsAcc(i).getStart()), superExpr, renamings, hidings));
 
         for (SuperClassOptsContext optsCtx : supCtx.superClassOpts()) {
           if (optsCtx instanceof SuperClassRenamingContext) {
@@ -494,15 +495,17 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           }
         }
       } else
-      if (ctx.extendsOpts().get(i) instanceof ExtendsIDsContext) {
-        superClasses.add(new Concrete.SuperClass(tokenPosition(ctx.ID().get(i + 1).getSymbol()), ctx.ID().get(i + 1).getText(), Collections.<Concrete.IdPair>emptyList(), Collections.<Concrete.Identifier>emptyList()));
-        for (TerminalNode node : ((ExtendsIDsContext) ctx.extendsOpts().get(i)).ID()) {
-          superClasses.add(new Concrete.SuperClass(tokenPosition(node.getSymbol()), node.getText(), Collections.<Concrete.IdPair>emptyList(), Collections.<Concrete.Identifier>emptyList()));
+      if (ctx.extendsOpts().get(i) instanceof ExtendsManyContext) {
+        Concrete.Expression superExpr = visitAtomFieldsAcc(ctx.atomFieldsAcc(i));
+        superClasses.add(new Concrete.SuperClass(tokenPosition(ctx.atomFieldsAcc(i).getStart()), superExpr, Collections.<Concrete.IdPair>emptyList(), Collections.<Concrete.Identifier>emptyList()));
+        for (AtomFieldsAccContext atomFieldsCtx : ((ExtendsManyContext) ctx.extendsOpts().get(i)).atomFieldsAcc()) {
+          superExpr = visitAtomFieldsAcc(atomFieldsCtx);
+          superClasses.add(new Concrete.SuperClass(tokenPosition(atomFieldsCtx.getStart()), superExpr, Collections.<Concrete.IdPair>emptyList(), Collections.<Concrete.Identifier>emptyList()));
         }
       }
     }
 
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().get(0).getText(), statements, classKind, superClasses);
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), statements, classKind, superClasses);
     for (Concrete.Statement statement : statements) {
       if (statement instanceof Concrete.DefineStatement) {
         ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);
@@ -511,12 +514,14 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return classDefinition;
   }
 
+  /*
   @Override
   public Concrete.ImplementDefinition visitDefImplement(DefImplementContext ctx) {
     if (ctx == null) return null;
     Concrete.Expression expression = visitExpr(ctx.expr());
     return expression == null ? null : new Concrete.ImplementDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), expression);
   }
+  */ // HACK
 
   @Override
   public Concrete.InferHoleExpression visitUnknown(UnknownContext ctx) {
@@ -840,9 +845,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
     }
 
-    if (ctx.implementStatement() != null && !ctx.implementStatement().isEmpty()) {
-      List<Concrete.ImplementStatement> implementStatements = new ArrayList<>(ctx.implementStatement().size());
-      for (ImplementStatementContext implementStatement : ctx.implementStatement()) {
+    if (ctx.implementStatements() != null) {
+      List<Concrete.ImplementStatement> implementStatements = new ArrayList<>(ctx.implementStatements().implementStatement().size());
+      for (ImplementStatementContext implementStatement : ctx.implementStatements().implementStatement()) {
         String name = visitName(implementStatement.name());
         Concrete.Expression expression1 = visitExpr(implementStatement.expr());
         if (name != null && expression1 != null) {

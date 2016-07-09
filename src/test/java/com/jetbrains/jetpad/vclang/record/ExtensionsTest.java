@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.record;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
@@ -148,6 +149,97 @@ public class ExtensionsTest {
         "}\n" +
         "\\function f (d : D { A => Nat | c => 4 | b => 6 }) : 6 = 4 => d.p\n" +
         "\\function g => \\new D { A => Nat | b => 3 | c => 3 | p => path (\\lam _ => 3)}");
+  }
+
+  @Ignore
+  @Test
+  public void superClassExpression() {
+    typeCheckClass(
+        "\\static \\class A {}\n" +
+        "\\static \\class B \\extends (\\lam x => x) A {}");
+  }
+
+  @Test
+  public void dynamicInheritance() {
+    typeCheckClass(
+        "\\static \\class X {\n" +
+        "  \\class A {}\n" +
+        "}\n" +
+        "\\static \\function x => \\new X\n" +
+        "\\static \\class B \\extends x.A {}");
+  }
+
+  @Ignore
+  @Test
+  public void dynamicInheritanceFieldAccess() {
+    typeCheckClass(
+        "\\static \\class X {\n" +
+        "  \\class A {\n" +
+        "    \\static \\function n : Nat => 0\n" +
+        "  }\n" +
+        "}\n" +
+        "\\static \\function x => \\new X\n" +
+        "\\static \\class B \\extends x.A {\n" +
+        "  \\function my : Nat => n\n" +
+        "}");
+  }
+
+  @Test
+  public void dynamicInheritanceFieldAccessQualified() {
+    typeCheckClass(
+        "\\static \\class X {\n" +
+        "  \\class A {\n" +
+        "    \\static \\function n : Nat => 0\n" +
+        "  }\n" +
+        "}\n" +
+        "\\static \\function x => \\new X\n" +
+        "\\static \\class B \\extends x.A {\n" +
+        "  \\function my : Nat => x.A.n\n" +
+        "}");
+  }
+
+  @Test
+  public void multipleInheritanceSingleImplementation() {
+    typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\abstract a : Nat\n" +
+        "}\n" +
+        "\\static \\class Z \\extends A {a => 0} {}\n" +
+        "\\static \\class B \\extends Z {}\n" +
+        "\\static \\class C \\extends Z {}\n" +
+        "\\static \\class D \\extends B, C {}\n");
+  }
+
+  @Test
+  public void multipleInheritanceDifferentImplementationsError() {
+    typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\abstract a : Nat\n" +
+        "}\n" +
+        "\\static \\class B \\extends A {a => 0} {}\n" +
+        "\\static \\class C \\extends A {a => 0} {}\n" +
+        "\\static \\class D \\extends B, C {}\n", 1);
+  }
+
+  @Test
+  public void multipleDynamicInheritanceSameParent() {
+    typeCheckClass(
+        "\\static \\class X {\n" +
+        "  \\class A {}\n" +
+        "}\n" +
+        "\\static \\function x => \\new X\n" +
+        "\\static \\class B \\extends x.A, x.A {}");
+  }
+
+  @Test
+  public void multipleDynamicInheritanceDifferentParentsError() {
+    typeCheckClass(
+        "\\static \\class X {\n" +
+        "  \\class A {}\n" +
+        "}\n" +
+        "\\static \\function x1 => \\new X\n" +
+        "\\static \\function x2 => \\new X\n" +
+        "\\static \\class B \\extends x1.A, x2.A {}", 1);
   }
 
   @Test

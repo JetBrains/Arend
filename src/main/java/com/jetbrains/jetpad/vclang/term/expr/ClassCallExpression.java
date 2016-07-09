@@ -6,10 +6,10 @@ import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ClassCall;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Lam;
 
 public class ClassCallExpression extends DefCallExpression {
@@ -18,20 +18,23 @@ public class ClassCallExpression extends DefCallExpression {
 
   public ClassCallExpression(ClassDefinition definition) {
     super(definition);
-    myStatements = new HashMap<>();
+    myStatements = new HashMap<>(definition.getImplemented());
     myUniverse = definition.getUniverse();
   }
 
   public ClassCallExpression(ClassDefinition definition, Map<ClassField, ImplementStatement> statements) {
     super(definition);
     myStatements = statements;
+    myStatements.putAll(definition.getImplemented());
   }
 
   @Override
   public Expression applyThis(Expression thisExpr) {
-    ClassField parent = getDefinition().getParentField();
-    myStatements.put(parent, new ImplementStatement(null, thisExpr));
-    return this;
+    ClassField parent = getDefinition().getEnclosingThisField();
+    assert !myStatements.containsKey(parent);
+    Map<ClassField, ImplementStatement> newStatements = new HashMap<>(myStatements);
+    newStatements.put(parent, new ImplementStatement(null, thisExpr));
+    return ClassCall(getDefinition(), newStatements);
   }
 
   @Override
@@ -99,6 +102,10 @@ public class ClassCallExpression extends DefCallExpression {
   @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitClassCall(this, params);
+  }
+
+  public Map<ClassField, ImplementStatement> getImplementedFields() {
+    return myStatements;
   }
 
   public static class ImplementStatement {

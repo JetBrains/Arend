@@ -309,11 +309,9 @@ public class ClassesTest {
         "  \\abstract a : A\n" +
         "  \\abstract y : a.x\n" +
         "}");
-    ClassDefinition aClass = (ClassDefinition) result.getDefinition("A");
-    ClassDefinition bClass = (ClassDefinition) result.getDefinition("B");
-    ClassField xField = aClass.getField("x");
-    ClassField aField = bClass.getField("a");
-    ClassField yField = bClass.getField("y");
+    ClassField xField = (ClassField) result.getDefinition("A.x");
+    ClassField aField = (ClassField) result.getDefinition("B.a");
+    ClassField yField = (ClassField) result.getDefinition("B.y");
     Expression type = yField.getBaseType();
     AppExpression appType = type.toApp();
     assertNotNull(appType);
@@ -364,7 +362,7 @@ public class ClassesTest {
 
     ClassDefinition cClass = (ClassDefinition) result.getDefinition("A.C");
     assertEquals(1, cClass.getFields().size());
-    ClassField cParent = cClass.getParentField();
+    ClassField cParent = cClass.getEnclosingThisField();
     assertNotNull(cParent);
     FunctionDefinition hFun = (FunctionDefinition) result.getDefinition("A.C.h");
     assertEquals(Pi(ClassCall(aClass), Nat()), hFun.getType());

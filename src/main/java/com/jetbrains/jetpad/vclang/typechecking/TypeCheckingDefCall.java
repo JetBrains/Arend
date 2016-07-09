@@ -145,7 +145,7 @@ public class TypeCheckingDefCall {
     ClassCallExpression classCall = result.expression.toClassCall();
     if (classCall != null) {
       leftDefinition = classCall.getDefinition();
-      ClassField parentField = classCall.getDefinition().getParentField();
+      ClassField parentField = classCall.getDefinition().getEnclosingThisField();
       if (parentField != null) {
         ClassCallExpression.ImplementStatement statement = classCall.getImplementStatements().get(parentField);
         if (statement != null) {
@@ -196,7 +196,7 @@ public class TypeCheckingDefCall {
     if (classDefinition.isSubClassOf(definition.getThisClass())) {
       return result;
     }
-    ClassField parentField = classDefinition.getParentField();
+    ClassField parentField = classDefinition.getEnclosingThisField();
     if (parentField == null || parentField.getBaseType().toClassCall() == null) {
       TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Definition '" + definition.getName() + "' is not available in this context", expr);
       expr.setWellTyped(myVisitor.getContext(), Error(null, error));
@@ -207,14 +207,16 @@ public class TypeCheckingDefCall {
   }
 
   private CheckTypeVisitor.Result applyThis(CheckTypeVisitor.Result result, Expression thisExpr, Abstract.Expression expr) {
+    //assert thisExpr != null;  // FIXME
     DefCallExpression defCall = result.expression.toDefCall();
+    //assert defCall.getDefinition().getThisClass() != null;  // FIXME
     if (result.type == null) {
       TypeCheckingError error = new HasErrors(myParentDefinition, defCall.getDefinition().getName(), expr);
       expr.setWellTyped(myVisitor.getContext(), Error(result.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;
     }
-    if (thisExpr != null) {
+    if (thisExpr != null) {  // FIXME
       result.expression = defCall.applyThis(thisExpr);
       result.type = result.type.applyExpressions(Collections.singletonList(thisExpr));
     }

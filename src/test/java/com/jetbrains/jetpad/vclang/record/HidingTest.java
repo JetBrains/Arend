@@ -8,7 +8,7 @@ import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.type
 public class HidingTest {
   @Test
   public void hidingError() {
-    typeCheckClass(
+    resolveNamesClass(
         "\\class A {\n" +
         "  \\abstract A : \\Set0\n" +
         "  \\abstract a : A\n" +
@@ -68,7 +68,7 @@ public class HidingTest {
 
   @Test
   public void hidingRenamingError2() {
-    typeCheckClass(
+    resolveNamesClass(
         "\\static \\class B {\n" +
         "  \\abstract A : \\Set0\n" +
         "  \\abstract a : A\n" +

@@ -848,22 +848,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
               classDefinition.addField(field);
            // }
           }
-        } else
-        if (definition instanceof Abstract.ImplementDefinition) {
-          ClassField field = (ClassField) myState.getTypechecked(((Abstract.ImplementDefinition) definition).getImplemented());
-          if (classDefinition.getFieldImpl(field).implementation != null) {
-            myErrorReporter.report(new TypeCheckingError("Field '" + field.getName() + "' is already implemented", definition));
-          }
-
-          myState.record(definition, field);
-          DependentLink thisParameter = param("\\this", ClassCall(classDefinition));
-          List<Binding> context = new ArrayList<>();
-          context.add(thisParameter);
-          CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).thisClass(classDefinition, Reference(thisParameter)).build(classDef);
-          CheckTypeVisitor.Result result = visitor.checkType(((Abstract.ImplementDefinition) definition).getExpression(), field.getBaseType().subst(field.getThisParameter(), Reference(thisParameter)));
-          if (result != null) {
-            classDefinition.setFieldImpl(field, thisParameter, result.expression);
-          }
         }
       }
     }
@@ -872,74 +856,56 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   @Override
   public ClassDefinition visitClass(Abstract.ClassDefinition def, Void params) {
     try {
-      ClassDefinition typedDef = new ClassDefinition(def.getName(), SimpleStaticNamespaceProvider.INSTANCE.forDefinition(def), SimpleDynamicNamespaceProvider.INSTANCE.forClass(def));
+      boolean classOk = true;
 
-      for (Abstract.SuperClass aSuperClass : def.getSuperClasses()) {
-        if (aSuperClass.getReferent() == null) {
-          myErrorReporter.report(new TypeCheckingError("Could not find class '" + aSuperClass.getName() + "'", def));
-          continue;
-        }
+      Map<ClassField, ClassCallExpression.ImplementStatement> implemented = new HashMap<>();
+      ClassDefinition typedDef = new ClassDefinition(def.getName(), implemented, SimpleStaticNamespaceProvider.INSTANCE.forDefinition(def), SimpleDynamicNamespaceProvider.INSTANCE.forClass(def));
 
-        ClassDefinition superClass = null;
-        if (aSuperClass.getReferent() instanceof ClassDefinition) {
-          superClass = (ClassDefinition) aSuperClass.getReferent();
-        } else {
-          Definition typecheckedSuper = myState.getTypechecked(aSuperClass.getReferent());
-          if (typecheckedSuper instanceof ClassDefinition) {
-            superClass = (ClassDefinition) typecheckedSuper;
-          }
-        }
-
-        if (superClass != null) {
-          boolean ok = true;
-          for (Map.Entry<ClassField, ClassDefinition.FieldImplementation> entry : superClass.getFieldsMap()) {
-            String name = entry.getValue().name;
-            for (Abstract.IdPair idPair : aSuperClass.getRenamings()) {
-              if (name.equals(idPair.getFirstName())) {
-                name = idPair.getSecondName();
-                break;
-              }
-            }
-
-            Map.Entry<ClassField, ClassDefinition.FieldImplementation> oldFieldEntry = typedDef.getFieldEntry(name);
-            if (oldFieldEntry == null) {
-              typedDef.addExistingField(entry.getKey(), new ClassDefinition.FieldImplementation(name, entry.getValue().thisParameter, entry.getValue().implementation));
-            } else
-            if (oldFieldEntry.getKey() != entry.getKey()) {
-              myErrorReporter.report(new TypeCheckingError("Duplicate field '" + name + "'", null));  // FIXME[error] report proper
-              ok = false;
-            } else {
-              ClassDefinition.FieldImplementation impl = oldFieldEntry.getValue();
-              if (impl.implementation == null || entry.getValue().implementation == null || impl.implementation.equals(entry.getValue().implementation.subst(entry.getValue().thisParameter, Reference(impl.thisParameter)))) {
-                typedDef.addExistingField(entry.getKey(), new ClassDefinition.FieldImplementation(name, impl.implementation == null ? entry.getValue().thisParameter : impl.thisParameter, impl.implementation == null ? entry.getValue().implementation : impl.implementation));
-              } else {
-                myErrorReporter.report(new TypeCheckingError("Implementations of '" + name + "' differ", aSuperClass.getReferent()));
-              }
-            }
-          }
-          if (ok) {
-            typedDef.addSuperClass(superClass);
-          }
-        } else {
-          myErrorReporter.report(new TypeCheckingError("Expected a class", aSuperClass.getReferent()));
-        }
-      }
+      final List<Binding> context = new ArrayList<>();
+      CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build(def);
 
       ClassDefinition thisClass = getThisClass(def);
       if (thisClass != null) {
-        typedDef.addParentField(thisClass);
+        typedDef.setThisClass(thisClass);
+        DependentLink thisParameter = param("\\this", ClassCall(thisClass));
+        context.add(thisParameter);
+        visitor.setThisClass(thisClass, Apps(FieldCall(typedDef.getEnclosingThisField()), Reference(thisParameter)));
       }
+
+      for (Abstract.SuperClass aSuperClass : def.getSuperClasses()) {
+        CheckTypeVisitor.Result result = aSuperClass.getSuperClass().accept(visitor, Universe());
+        if (result == null) continue;
+
+        ClassCallExpression typeCheckedSuperClass = result.expression.toClassCall();
+        if (typeCheckedSuperClass == null) {
+          myErrorReporter.report(new TypeCheckingError(def, "Parent must be a class", aSuperClass.getSuperClass()));
+          continue;
+        }
+
+        boolean parentOk = true;
+        for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> entry : typeCheckedSuperClass.getImplementedFields().entrySet()) {
+          ClassCallExpression.ImplementStatement old = implemented.put(entry.getKey(), entry.getValue());
+          if (old != null && !old.equals(entry.getValue())) {
+            parentOk = false;
+            myErrorReporter.report(new TypeCheckingError("Implementations of '" + entry.getKey().getName() + "' differ", aSuperClass.getSuperClass()));  // FIXME[error] report proper, especially in case of \\parent
+          }
+        }
+
+        if (parentOk) {
+          typedDef.addSuperClass(typeCheckedSuperClass);
+        } else {
+          classOk = false;
+        }
+      }
+
       typeCheckStatements(typedDef, def);
+
       myState.record(def, typedDef);
+      typedDef.hasErrors(!classOk);
       return typedDef;
     } catch (Namespace.InvalidNamespaceException e) {
       myErrorReporter.report(e.toError());
     }
     return null;
-  }
-
-  @Override
-  public Definition visitImplement(Abstract.ImplementDefinition def, Void params) {
-    throw new IllegalStateException();
   }
 }

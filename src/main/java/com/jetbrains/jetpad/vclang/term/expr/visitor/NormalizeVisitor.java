@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -89,12 +88,14 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         if (elem != null) {
           impl = elem.term;
         }
+        /*
         if (impl == null) {
           ClassDefinition.FieldImplementation fieldImpl = classCall.getDefinition().getFieldImpl((ClassField) defCallExpr.getDefinition());
           if (fieldImpl.implementation != null) {
             impl = fieldImpl.implementation.subst(fieldImpl.thisParameter, thisExpr);
           }
         }
+        */ // HACK bring back implement statements, they need \\this
         if (impl != null) {
           List<? extends EnumSet<AppExpression.Flag>> flags = expr.toApp().getFlags();
           Expression result = Apps(impl, expr.getArguments().subList(1, expr.getArguments().size()), flags.subList(1, flags.size()));

@@ -39,7 +39,7 @@ public class DefNamesIndices {
       if (moduleID.equals(curModuleID)) {
         ModuleSerialization.serializeResolvedName(stream, rn);
         if (rn.getName().equals("\\parent")) {
-          ModuleSerialization.writeDefinition(stream, ((ClassDefinition) rn.getParent().toDefinition()).getParentField());
+          ModuleSerialization.writeDefinition(stream, ((ClassDefinition) rn.getParent().toDefinition()).getEnclosingThisField());
         } else {
           ModuleSerialization.writeDefinition(stream, rn.toDefinition());
         }

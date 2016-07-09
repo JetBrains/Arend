@@ -833,10 +833,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
           if (superClasses.isEmpty() || !(superClasses.get(superClasses.size() - 1) instanceof ListWrapper)) {
             ListWrapper wrapper = new ListWrapper();
             wrapper.list = new ArrayList<>(3);
-            wrapper.list.add(superClass.getName());
+            wrapper.list.add("<super>" /*superClass.getName()*/);  // HACK
             superClasses.add(wrapper);
           } else {
-            ((ListWrapper) superClasses.get(superClasses.size() - 1)).list.add(superClass.getName());
+            ((ListWrapper) superClasses.get(superClasses.size() - 1)).list.add("<super>" /*superClass.getName()*/);  // HACK
           }
         } else {
           superClasses.add(superClass);
@@ -857,7 +857,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
             ((ListWrapper) superClass).print();
           } else {
             Abstract.SuperClass aSuperClass = (Abstract.SuperClass) superClass;
-            myBuilder.append(aSuperClass.getName());
+            aSuperClass.getSuperClass().accept(this, null);
             if (aSuperClass.getHidings() == null || aSuperClass.getHidings().isEmpty()) {
               myBuilder.append(' ');
               printRenamings(aSuperClass.getRenamings());
@@ -900,13 +900,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
     printIndent();
     myBuilder.append("}");
-    return null;
-  }
-
-  @Override
-  public Void visitImplement(Abstract.ImplementDefinition def, Void params) {
-    myBuilder.append("\\implement ").append(def.getName()).append(" => ");
-    def.getExpression().accept(this, null);
     return null;
   }
 

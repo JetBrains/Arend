@@ -11,10 +11,7 @@ import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.*;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
@@ -745,37 +742,24 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return checkResult(expectedType, result, expr);
     }
 
-    class ImplementStatement {
-      ClassField classField;
-      Abstract.Expression term;
-
-      public ImplementStatement(ClassField classField, Abstract.Expression term) {
-        this.classField = classField;
-        this.term = term;
-      }
-    }
-
-    List<ImplementStatement> fields = new ArrayList<>(statements.size());
+    Map<ClassField, Abstract.Expression> implemented = new LinkedHashMap<>();
     for (Abstract.ImplementStatement statement : statements) {
       String name = statement.getName();
-      Map.Entry<ClassField, ClassDefinition.FieldImplementation> fieldEntry = baseClass.getFieldEntry(name);
-      if (fieldEntry == null) {
-        myErrorReporter.report(new TypeCheckingError(myParentDefinition, "Class '" + baseClass.getName() + "' does not have field '" + name + "'", statement));
-      } else
-      if (fieldEntry.getValue().implementation != null) {
-        myErrorReporter.report(new TypeCheckingError(myParentDefinition, "Field '" + fieldEntry.getValue().name + "' is already implemented", statement));
-      } else {
-        boolean ok = true;
-        for (ImplementStatement implementStatement : fields) {
-          if (implementStatement.classField.getName().equals(name)) {
-            myErrorReporter.report(new TypeCheckingError(myParentDefinition, "Field '" + name + "' is already implemented", statement));
-            ok = false;
-          }
-        }
-        if (ok) {
-          fields.add(new ImplementStatement(fieldEntry.getKey(), statement.getExpression()));
-        }
+      Referable ref = baseClass.getInstanceNamespace().resolveName(name);
+      if (!(ref instanceof Abstract.AbstractDefinition)) {
+        myErrorReporter.report(new TypeCheckingError(myParentDefinition, "Class '" + baseClass.getName() + "' does not have field '" + name + "'", statement));  // FIXME[error] report proper
+        continue;
       }
+      Definition typecheckedField = myState.getTypechecked(ref);
+      if (!(typecheckedField instanceof ClassField)) {
+        throw new IllegalStateException("Internal error");
+      }
+      ClassField field = (ClassField) typecheckedField;
+      if (baseClass.getImplemented().containsKey(field) || implemented.containsKey(field)) {
+        myErrorReporter.report(new TypeCheckingError(myParentDefinition, "Field '" + field.getName() + "' is already implemented", statement));  // FIXME[error] report proper
+        continue;
+      }
+      implemented.put(field, statement.getExpression());
     }
 
     Result classExtResult = new Result(null, null);
@@ -784,21 +768,20 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       typeCheckedStatements = new HashMap<>(classCallExpr.getImplementStatements());
     }
 
-    for (int i = 0; i < fields.size(); i++) {
-      ImplementStatement field = fields.get(i);
+    // Some tricks to keep going as long as possible in case of error
+    boolean ok = true;
+    for (Map.Entry<ClassField, Abstract.Expression> entry : implemented.entrySet()) {
       Expression thisExpr = New(ClassCall(baseClass, typeCheckedStatements));
-      Result result1 = typeCheck(field.term, field.classField.getBaseType().subst(field.classField.getThisParameter(), thisExpr));
+      Result result1 = typeCheck(entry.getValue(), entry.getKey().getBaseType().subst(entry.getKey().getThisParameter(), thisExpr));
       if (result1 == null) {
-        for (i++; i < fields.size(); i++) {
-          typeCheck(fields.get(i).term, fields.get(i).classField.getBaseType().subst(fields.get(i).classField.getThisParameter(), thisExpr));
-        }
-        return null;
+        ok = false;
+      } else {
+        typeCheckedStatements = new HashMap<>(typeCheckedStatements);
+        typeCheckedStatements.put(entry.getKey(), new ClassCallExpression.ImplementStatement(result1.type, result1.expression));
+        classExtResult.add(result1);
       }
-
-      typeCheckedStatements = new HashMap<>(typeCheckedStatements);
-      typeCheckedStatements.put(field.classField, new ClassCallExpression.ImplementStatement(result1.type, result1.expression));
-      classExtResult.add(result1);
     }
+    if (!ok) return null;
 
     ClassCallExpression resultExpr = ClassCall(baseClass, typeCheckedStatements);
     classExtResult.expression = resultExpr;
@@ -820,19 +803,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return null;
     }
 
-    int fieldsNumber = 0;
-    for (Map.Entry<ClassField, ClassDefinition.FieldImplementation> entry : classCallExpr.getDefinition().getFieldsMap()) {
-      if (entry.getValue().implementation == null) {
-        fieldsNumber++;
-      }
-    }
+    int remaining = classCallExpr.getDefinition().getFields().size() - classCallExpr.getImplementedFields().size();
 
-    if (classCallExpr.getImplementStatements().size() == fieldsNumber) {
+    if (remaining == 0) {
       exprResult.expression = New(normExpr);
       exprResult.type = normExpr;
       return checkResult(expectedType, exprResult, expr);
     } else {
-      TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Class '" + classCallExpr.getDefinition().getName() + "' has " + classCallExpr.getDefinition().getNumberOfVisibleFields() + " fields", expr);
+      TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Class '" + classCallExpr.getDefinition().getName() + "' has " + remaining + " not implemented fields", expr);
       expr.setWellTyped(myContext, Error(null, error));
       myErrorReporter.report(error);
       return null;

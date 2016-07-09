@@ -18,7 +18,6 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 public class ModuleSerialization {
   public static final byte[] SIGNATURE = {'v', 'c', (byte) 0xb1, 0x0b};
@@ -185,6 +184,7 @@ public class ModuleSerialization {
     writeUniverse(visitor, definition.getUniverse());
 
     visitor.getDataStream().writeInt(definition.getFields().size());
+    /*
     for (Map.Entry<ClassField, ClassDefinition.FieldImplementation> entry : definition.getFieldsMap()) {
       ClassField field = entry.getKey();
       visitor.getDataStream().writeUTF(entry.getValue().name);
@@ -202,6 +202,7 @@ public class ModuleSerialization {
         field.getType().accept(visitor, null);
       }
     }
+    */ // HACK
 
     return errors;
   }

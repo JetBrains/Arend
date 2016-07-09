@@ -20,26 +20,6 @@ public class ConcreteResolveListener implements ResolveListener {
   }
 
   @Override
-  public void superClassResolved(Abstract.SuperClass superClass, Referable definition) {
-    ((Concrete.SuperClass) superClass).setReferent(definition);
-  }
-
-  @Override
-  public void idPairFirstResolved(Abstract.IdPair idPair, Referable definition) {
-    ((Concrete.IdPair) idPair).setFirstReferent(definition);
-  }
-
-  @Override
-  public void identifierResolved(Abstract.Identifier identifier, Referable definition) {
-    ((Concrete.Identifier) identifier).setReferent(definition);
-  }
-
-  @Override
-  public void implementResolved(Abstract.ImplementDefinition implementDef, Referable definition) {
-    ((Concrete.ImplementDefinition) implementDef).setImplemented(definition);
-  }
-
-  @Override
   public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Referable binOp, Abstract.DefCallExpression var, Abstract.Expression right) {
     return ((Concrete.BinOpSequenceExpression) binOpExpr).makeBinOp(left, binOp, var, right);
   }

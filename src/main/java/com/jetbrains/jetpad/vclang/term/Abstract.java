@@ -290,11 +290,6 @@ public final class Abstract {
     Expression getResultType();
   }
 
-  public interface ImplementDefinition extends Definition {
-    Referable getImplemented();
-    Expression getExpression();
-  }
-
   public interface FunctionDefinition extends Definition, Function {
     boolean isAbstract();
     boolean isOverridden();
@@ -311,18 +306,15 @@ public final class Abstract {
 
   public interface IdPair extends SourceNode {
     String getFirstName();
-    Referable getFirstReferent();
     String getSecondName();
   }
 
   public interface Identifier extends SourceNode {
     String getName();
-    Referable getReferent();
   }
 
   public interface SuperClass extends SourceNode {
-    String getName();
-    Referable getReferent();
+    Expression getSuperClass();
     Collection<? extends IdPair> getRenamings();
     Collection<? extends Identifier> getHidings();
   }

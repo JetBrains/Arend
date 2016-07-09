@@ -104,11 +104,6 @@ public class TypecheckingOrdering {
             }
             return true;
           }
-
-          @Override
-          public Boolean visitImplement(Abstract.ImplementDefinition def, Void params) {
-            return def.getParentStatement().getParentDefinition().equals(definition) || doOrder(def.getParentStatement().getParentDefinition());
-          }
         }, null);
         if (!good)
           return false;

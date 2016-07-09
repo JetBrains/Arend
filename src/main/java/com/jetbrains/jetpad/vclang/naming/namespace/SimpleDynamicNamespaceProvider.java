@@ -1,12 +1,9 @@
 package com.jetbrains.jetpad.vclang.naming.namespace;
 
-import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.Abstract.DefineStatement.StaticMod.STATIC;
 
@@ -20,49 +17,41 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
     SimpleNamespace ns = classCache.get(classDefinition);
     if (ns != null) return ns;
 
-    ns = new SimpleNamespace();
+    ns = forStatements(classDefinition.getStatements());
     for (final Abstract.SuperClass superClass : classDefinition.getSuperClasses()) {
-      if (superClass.getReferent() instanceof Abstract.ClassDefinition) {
-        SimpleNamespace namespace = forClass((Abstract.ClassDefinition) superClass.getReferent());
-        loop:
-        for (Map.Entry<String, Referable> entry : namespace.getEntrySet()) {
-          String name = entry.getKey();
-          Referable referable = entry.getValue();
-          if (superClass.getRenamings() != null) {
-            for (Abstract.IdPair idPair : superClass.getRenamings()) {
-              if (referable.equals(idPair.getFirstReferent())) {
-                name = idPair.getSecondName();
-                break;
-              }
-            }
-          }
-          if (superClass.getHidings() != null) {
-            for (Abstract.Identifier identifier : superClass.getHidings()) {
-              if (referable.equals(identifier.getReferent())) {
-                continue loop;
-              }
-            }
-          }
-          ns.addDefinition(name, referable);
-        }
-      } else {
-        throw new Namespace.InvalidNamespaceException() {  // FIXME[error] report proper
-          @Override
-          public GeneralError toError() {
-            return new GeneralError("Superclass " + superClass.getName() + " must be a class definition", classDefinition);
-          }
-        };
-      }
-    }
+      Abstract.ClassDefinition superDef = getUnderlyingClassDef(superClass.getSuperClass());
+      if (superDef == null) continue;
 
-    for (Map.Entry<String, Referable> entry : forStatements(classDefinition.getStatements()).getEntrySet()) {
-      if (!(entry.getValue() instanceof Abstract.ImplementDefinition)) {
-        ns.addDefinition(entry.getKey(), entry.getValue());
+      SimpleNamespace namespace = forClass(superDef);
+
+      Map<String, String> renamings = new HashMap<>();
+      for (Abstract.IdPair idPair : superClass.getRenamings()) {
+        renamings.put(idPair.getFirstName(), idPair.getSecondName());
+      }
+      Set<String> hiding = new HashSet<>();
+      for (Abstract.Identifier identifier : superClass.getHidings()) {
+        hiding.add(identifier.getName());
+      }
+
+      for (Map.Entry<String, Referable> entry : namespace.getEntrySet()) {
+        if (hiding.contains(entry.getKey())) continue;
+        String newName = renamings.get(entry.getKey());
+        ns.addDefinition(newName != null ? newName : entry.getKey(), entry.getValue());
       }
     }
 
     classCache.put(classDefinition, ns);
     return ns;
+  }
+
+  private Abstract.ClassDefinition getUnderlyingClassDef(Abstract.Expression expr) {
+    if (expr instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr).getReferent() instanceof Abstract.ClassDefinition) {
+      return (Abstract.ClassDefinition) ((Abstract.DefCallExpression) expr).getReferent();
+    } else if (expr instanceof Abstract.ClassExtExpression) {
+      return getUnderlyingClassDef(((Abstract.ClassExtExpression) expr).getBaseClassExpression());
+    } else {
+      return null;
+    }
   }
 
   private static SimpleNamespace forData(Abstract.DataDefinition def) {

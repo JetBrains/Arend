@@ -241,12 +241,6 @@ public class LoadModulesRecursively implements AbstractStatementVisitor<Void, Vo
     return null;
   }
 
-  @Override
-  public Void visitImplement(Abstract.ImplementDefinition def, Void params) {
-    def.getExpression().accept(this, null);
-    return null;
-  }
-
   private void visitArgument(Abstract.Argument argument) {
     if (argument instanceof Abstract.TelescopeArgument) {
       ((Abstract.TelescopeArgument) argument).getType().accept(this, null);

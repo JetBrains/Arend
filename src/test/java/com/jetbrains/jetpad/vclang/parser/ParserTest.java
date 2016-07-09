@@ -32,7 +32,8 @@ public class ParserTest {
   @Test
   public void parserLam() {
     Concrete.Expression expr = parseExpr("\\lam x y z => y");
-    assertTrue(compare(cLam(cargs(cName("x"), cName("y"), cName("z")), cVar("y")), expr));
+    boolean res = compare(cLam(cargs(cName("x"), cName("y"), cName("z")), cVar("y")), expr);
+    assertTrue(res);
   }
 
   @Test

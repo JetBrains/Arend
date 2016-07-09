@@ -14,11 +14,11 @@ definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?  
             // | '\\override' name ('\\as' name)? tele* typeTermOpt where?                   # defOverride
             | '\\implement' ID '=>' expr                                                  # defImplement
             | '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef?    # defData
-            | classKindMod ID ('\\extends' ID extendsOpts)* '{' statement* '}'            # defClass
+            | classKindMod ID ('\\extends' atomFieldsAcc extendsOpts)* '{' statement* '}'            # defClass
             ;
 
 extendsOpts : superClassOpts*   # extendsSuperClassOpts
-            | (',' ID)*         # extendsIDs
+            | (',' atomFieldsAcc)*         # extendsMany
             ;
 
 superClassOpts : '\\renaming' (ID '\\to' ID) (',' ID '\\to' ID)*  # superClassRenaming
@@ -133,7 +133,9 @@ atom  : literal                         # atomLiteral
       ;
 
 
-atomFieldsAcc : atom fieldAcc* ('{' implementStatement* '}')?;
+atomFieldsAcc : atom fieldAcc* implementStatements?;
+
+implementStatements : '{' implementStatement* '}';
 
 implementStatement : '|'? name '=>' expr;
 
