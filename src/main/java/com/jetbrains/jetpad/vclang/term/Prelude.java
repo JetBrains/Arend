@@ -206,30 +206,30 @@ public class Prelude extends SimpleNamespace {
   }
 
   public static boolean isAt(Definition definition) {
-    return AT.getName().equals(definition.getName()); // TODO [def compare]
+    return AT == definition;
   }
 
   public static boolean isPathCon(Definition definition) {
-    return PATH_CON.getName().equals(definition.getName()); // TODO [def compare]
+    return PATH_CON == definition;
   }
 
   public static boolean isPath(Definition definition) {
-    return PATH.getName().equals(definition.getName()); // TODO [def compare]
+    return PATH == definition;
   }
 
   public static boolean isIso(Definition definition) {
-    return ISO.getName().equals(definition.getName()); // TODO [def compare]
+    return ISO == definition;
   }
 
   public static boolean isCoe(Definition definition) {
-    return COERCE.getName().equals(definition.getName()); // TODO [def compare]
+    return COERCE == definition;
   }
 
   public static boolean isTruncP(Definition definition) {
-    return PROP_TRUNC_PATH_CON.getName().equals(definition.getName()); // TODO [def compare]
+    return PROP_TRUNC_PATH_CON == definition;
   }
 
   public static boolean isTruncS(Definition definition) {
-    return SET_TRUNC_PATH_CON.getName().equals(definition.getName()); // TODO [def compare]
+    return SET_TRUNC_PATH_CON == definition;
   }
 }

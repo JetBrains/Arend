@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
@@ -34,7 +33,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
     for (Expression arg : expr.getDataTypeArguments()) {
       args.add(arg.accept(this, null));
     }
-    return (ConCallExpression) (new ConCallExpression(expr.getDefinition(), args).applyLevelSubst(expr.getPolyParamsSubst()));
+    return new ConCallExpression(expr.getDefinition(), args).applyLevelSubst(expr.getPolyParamsSubst());
   }
 
   @Override

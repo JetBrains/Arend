@@ -126,7 +126,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       for (int i = 0; i < take; i++) {
         parameters.add(args.get(i));
       }
-      conCallExpression = (ConCallExpression)ConCall(conCallExpression.getDefinition(), parameters).applyLevelSubst(conCallExpression.getPolyParamsSubst());
+      conCallExpression = ConCall(conCallExpression.getDefinition(), parameters).applyLevelSubst(conCallExpression.getPolyParamsSubst());
       int size = args.size();
       args = args.subList(take, size);
       if (!args.isEmpty()) {

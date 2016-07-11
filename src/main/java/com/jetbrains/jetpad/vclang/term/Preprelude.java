@@ -230,10 +230,6 @@ public class Preprelude extends SimpleNamespace {
     return null;
   }
 
-  public static boolean equalLevelTypes(Definition type1, Definition type2) {
-    return type1.getName().equals(type2.getName()); // TODO [def compare]
-  }
-
   static class DefinitionBuilder {
     static class Data {
       private final SimpleNamespace myParentNs;
