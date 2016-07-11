@@ -682,7 +682,7 @@ public class ListEquations implements Equations {
         for (Iterator<Map.Entry<InferenceBinding, ExactLevelSolution>> it = myExactLevelSolutions.entrySet().iterator(); it.hasNext(); ) {
           Map.Entry<InferenceBinding, ExactLevelSolution> entry = it.next();
 
-          if (bindings.remove(entry.getKey())) {
+          if (bindings.contains(entry.getKey())) {
             was = true;
             it.remove();
             subst = entry.getValue().solve(this, entry.getKey(), result.LevelSubst);
@@ -694,6 +694,7 @@ public class ListEquations implements Equations {
               entry.getKey().reportErrorLevelInfer(myErrorReporter, subst);
             } else {
               binding = entry.getKey();
+              bindings.remove(binding);
             }
             break;
           }
@@ -703,7 +704,7 @@ public class ListEquations implements Equations {
           for (Iterator<Map.Entry<InferenceBinding, EqSetLevelSolution>> it = myEqLevelSolutions.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<InferenceBinding, EqSetLevelSolution> entry = it.next();
 
-            if (bindings.remove(entry.getKey())) {
+            if (bindings.contains(entry.getKey())) {
               was = true;
               it.remove();
               subst = entry.getValue().solve(this, entry.getKey(), result.LevelSubst);
@@ -715,6 +716,7 @@ public class ListEquations implements Equations {
                 entry.getKey().reportErrorLevelInfer(myErrorReporter, subst);
               } else {
                 binding = entry.getKey();
+                bindings.remove(binding);
               }
               break;
             }

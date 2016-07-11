@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.term.expr.LevelExpression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 
 public class LevelInferenceError extends TypeCheckingError {
-  public LevelExpression[] candidates;
+  public LevelExpression[] candidates = new LevelExpression[0];
 
   public LevelInferenceError(LevelInferenceBinding levelVar, Abstract.Definition definition, Abstract.SourceNode sourceNode) {
     super(definition, "Cannot infer level " + levelVar + " of '" + PrettyPrintVisitor.prettyPrint(sourceNode, 0) + "'", sourceNode);
