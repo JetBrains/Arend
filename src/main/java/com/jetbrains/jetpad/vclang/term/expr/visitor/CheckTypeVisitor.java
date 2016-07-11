@@ -590,7 +590,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       result.addUnsolvedVariable(binding);
       return result;
     } else {
-      TypeCheckingError error = new ArgInferenceError(expression(), expr, new Expression[0], new LevelExpression[0]);
+      TypeCheckingError error = new ArgInferenceError(expression(), expr, new Expression[0]);
       expr.setWellTyped(myContext, Error(null, error));
       myErrorReporter.report(error);
       return null;

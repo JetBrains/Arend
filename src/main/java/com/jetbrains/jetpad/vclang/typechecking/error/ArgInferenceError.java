@@ -6,15 +6,13 @@ import com.jetbrains.jetpad.vclang.term.expr.LevelExpression;
 
 public class ArgInferenceError extends TypeCheckingError {
   public final Expression[] candidates;
-  public final LevelExpression[] levelCandidates;
   public final Expression expected;
   public final Expression actual;
 
   @Deprecated
-  public ArgInferenceError(String message, Abstract.SourceNode expression, Expression[] candidates, LevelExpression[] levelCandidates) {
+  public ArgInferenceError(String message, Abstract.SourceNode expression, Expression[] candidates) {
     super(null, message, expression);
     this.candidates = candidates;
-    this.levelCandidates = levelCandidates;
     this.expected = null;
     this.actual = null;
   }
@@ -24,7 +22,6 @@ public class ArgInferenceError extends TypeCheckingError {
     super(null, message, expression);
     this.candidates = new Expression[1];
     this.candidates[0] = candidate;
-    this.levelCandidates = new LevelExpression[0];
     this.expected = expected;
     this.actual = actual;
   }

@@ -51,7 +51,7 @@ public class InferLevelTest {
     // 1 <= ?l, 1 <= c
     // error: cannot solve 1 <= c
     typeCheckClass("\\static \\function f {l : Lvl} (A : \\Type (l, inf)) => A\n" +
-            "\\static \\function g {c : Lvl} : \\Type (c, inf) => f \\Type0", 1);
+            "\\static \\function g {c : Lvl} : \\Type (c, inf) => f \\Type0", -1);
   }
 
   @Test

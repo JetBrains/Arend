@@ -25,12 +25,13 @@ public class LambdaInferenceBinding extends InferenceBinding {
 
   @Override
   public void reportErrorInfer(ErrorReporter errorReporter, Expression... candidates) {
-    errorReporter.report(new ArgInferenceError(myLevel ? ArgInferenceError.levelOfLambdaArg(myIndex) : ArgInferenceError.lambdaArg(myIndex), mySourceNode, candidates, new LevelExpression[0]));
+    errorReporter.report(new ArgInferenceError(myLevel ? ArgInferenceError.levelOfLambdaArg(myIndex) : ArgInferenceError.lambdaArg(myIndex), mySourceNode, candidates));
   }
 
   @Override
   public void reportErrorLevelInfer(ErrorReporter errorReporter, LevelExpression... candidates) {
-    errorReporter.report(new ArgInferenceError(myLevel ? ArgInferenceError.levelOfLambdaArg(myIndex) : ArgInferenceError.lambdaArg(myIndex), mySourceNode, new Expression[0], candidates));
+    throw new IllegalStateException();
+    //errorReporter.report(new ArgInferenceError(myLevel ? ArgInferenceError.levelOfLambdaArg(myIndex) : ArgInferenceError.lambdaArg(myIndex), mySourceNode, new Expression[0]));
   }
 
   @Override

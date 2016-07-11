@@ -26,7 +26,7 @@ public class LevelInferenceBinding extends InferenceBinding {
 
   @Override
   public void reportErrorLevelInfer(ErrorReporter errorReporter, LevelExpression... candidates) {
-    errorReporter.report(new LevelInferenceError(this, mySourceNode));
+    errorReporter.report(new LevelInferenceError(this, mySourceNode, candidates));
   }
 
   @Override

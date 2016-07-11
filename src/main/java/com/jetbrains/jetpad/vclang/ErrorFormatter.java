@@ -137,13 +137,6 @@ public class ErrorFormatter {
           PrettyPrintVisitor.printIndent(builder, 2);
           candidate.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, 2);
         }
-      } else if (((ArgInferenceError) error).levelCandidates.length > 0) {
-        builder.append("\nCandidates are:");
-        for (LevelExpression candidate : ((ArgInferenceError) error).levelCandidates) {
-          builder.append("\n");
-          PrettyPrintVisitor.printIndent(builder, 2);
-          candidate.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, 2);
-        }
       }
 
       if (((ArgInferenceError) error).expected != null || ((ArgInferenceError) error).actual != null) {
@@ -157,6 +150,15 @@ public class ErrorFormatter {
           String text = "  Actual type: ";
           builder.append('\n').append(text);
           ((ArgInferenceError) error).actual.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, text.length());
+        }
+      }
+    } else if (error instanceof LevelInferenceError) {
+      if (((LevelInferenceError) error).candidates.length > 0) {
+        builder.append("\nCandidates are:");
+        for (LevelExpression candidate : ((LevelInferenceError) error).candidates) {
+          builder.append("\n");
+          PrettyPrintVisitor.printIndent(builder, 2);
+          candidate.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, 2);
         }
       }
     } else if (error instanceof MemberNotFoundError) {
