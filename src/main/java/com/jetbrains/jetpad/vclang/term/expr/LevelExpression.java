@@ -231,22 +231,22 @@ public class LevelExpression implements PrettyPrintable {
     boolean leftContainsInferenceBnd = level1.containsInferVar();
     boolean rightContainsInferenceBnd = level2.containsInferVar();
 
-    if (level1.isInfinity()) {
-      if (rightContainsInferenceBnd) {
+    if (level1.isInfinity() && (!rightContainsInferenceBnd || equations instanceof DummyEquations)) {
+      /*if (rightContainsInferenceBnd) {
         equations.add(level2.subtract(level2.extractOuterSucs()), level1, cmp == Equations.CMP.EQ ? Equations.CMP.EQ : Equations.CMP.LE, null);
         return true;
-      }
+      } /**/
       if (cmp != Equations.CMP.EQ || level2.isInfinity()) {
         return true;
       }
       return false;
     }
 
-    if (level2.isInfinity()) {
-      if (leftContainsInferenceBnd && !(equations instanceof DummyEquations)) {
+    if (level2.isInfinity() && (!leftContainsInferenceBnd || equations instanceof DummyEquations)) {
+      /*if (leftContainsInferenceBnd && !(equations instanceof DummyEquations)) {
         equations.add(level1, level2.subtract(level2.extractOuterSucs()), cmp == Equations.CMP.EQ ? Equations.CMP.EQ : Equations.CMP.GE, null);
         return true;
-      }
+      }/**/
       return false;
     }
 
@@ -270,6 +270,10 @@ public class LevelExpression implements PrettyPrintable {
     }
 
     if (cmp == Equations.CMP.EQ) {
+      if (level1.isInfinity() || level2.isInfinity()) {
+        equations.add(level1, level2, Equations.CMP.EQ, null);
+        return true;
+      }
       if (level1.isClosed() && level2.isClosed()) {
         return level1.getConstant() == level2.getConstant();
       }
@@ -308,6 +312,11 @@ public class LevelExpression implements PrettyPrintable {
     for (LevelExpression rightMaxArg : level2.toListOfMaxArgs()) {
       int rightSucs = rightMaxArg.getUnitSucs();
       int sucsToRemove = Math.min(leftSucs, rightSucs);
+
+      if (leftLevel.isInfinity() || rightMaxArg.isInfinity()) {
+        equations.add(level1.subtract(sucsToRemove), rightMaxArg.subtract(sucsToRemove), Equations.CMP.GE, null);
+        continue;
+      }
 
       if (rightMaxArg.isClosed()) {
         if (leftLevel.isClosed() && leftSucs >= rightSucs) {
