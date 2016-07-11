@@ -317,7 +317,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     Collections.reverse(levelsList);
 
-    Result result = typeCheck(expr, expectedType);
+    Result result = myTypeCheckingDefCall.typeCheckDefCall((Abstract.DefCallExpression)expr);
     if (result == null) {
       return null;
     }
@@ -517,6 +517,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     int num_sucs = 0;
     TypeCheckingError error = null;
 
+    if (expr instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression)expr).getName().equals("inf")) {
+      return new LevelExpression();
+    }
+
     while (expr instanceof Abstract.AppExpression) {
       Abstract.AppExpression app = (Abstract.AppExpression) expr;
       Abstract.Expression suc = app.getFunction();
@@ -540,8 +544,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           return new LevelExpression(ref.getBinding(), num_sucs);
         }
       }
+      error = new TypeCheckingError("Invalid level expression", expr);
     }
 
+    myErrorReporter.report(error);
     return null;
   }
 

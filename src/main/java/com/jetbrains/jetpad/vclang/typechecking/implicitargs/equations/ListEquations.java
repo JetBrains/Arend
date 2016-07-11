@@ -233,7 +233,7 @@ public class ListEquations implements Equations {
         LevelExpression result = leSet.get(0).subst(substitution);
         for (int i = 1; i < leSet.size(); i++) {
           LevelExpression expr = leSet.get(i).subst(substitution);
-          if (!LevelExpression.compare(result, expr, CMP.LE, equations)) {
+          if (!result.isZero() && !expr.isInfinity() && !LevelExpression.compare(result, expr, CMP.LE, equations)) {
             binding.reportErrorLevelInfer(equations.getErrorReporter(), result, expr);
             return null;
           }
@@ -250,7 +250,7 @@ public class ListEquations implements Equations {
             } else {
               LevelExpression result1 = result.subst(substitution);
               LevelExpression expr = geSet.get(i).subst(substitution);
-              if (!LevelExpression.compare(result1, expr, CMP.GE, equations)) {
+              if (!result1.isInfinity() && !expr.isZero() && !LevelExpression.compare(result1, expr, CMP.GE, equations)) {
                 binding.reportErrorLevelInfer(equations.getErrorReporter(), result1, expr);
                 return null;
               }
@@ -262,7 +262,7 @@ public class ListEquations implements Equations {
         if (!leSet.isEmpty()) {
           for (LevelExpression expr : leSet) {
             expr = expr.subst(substitution);
-            if (!LevelExpression.compare(result, expr, CMP.LE, equations)) {
+            if (!result.isZero() && !expr.isInfinity() && !LevelExpression.compare(result, expr, CMP.LE, equations)) {
               binding.reportErrorLevelInfer(equations.getErrorReporter(), result, expr);
               return null;
             }
