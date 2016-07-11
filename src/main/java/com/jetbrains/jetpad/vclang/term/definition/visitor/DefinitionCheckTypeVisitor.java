@@ -258,7 +258,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     */
       } else {
         // if (splitArgs == null) {
-        myErrorReporter.report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, new Expression[0], new LevelExpression[0]));
+        myErrorReporter.report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, new Expression[0]));
         return typedDef;
     /*
     } else {
@@ -444,7 +444,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           plevel = plevel.max(argPLevel);
         }
       } else {
-        myErrorReporter.report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, new Expression[0], new LevelExpression[0]));
+        myErrorReporter.report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, new Expression[0]));
         return typedDef;
       }
     }
