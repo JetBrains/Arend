@@ -208,7 +208,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   @Override
   public Boolean visitDefCall(DefCallExpression expr1, Expression expr2) {
     DefCallExpression defCall2 = expr2.toDefCall();
-    return defCall2 != null && expr1.getDefinition().getName().equals(defCall2.getDefinition().getName()) && TypeUniverse.compare(expr1.getUniverse(), defCall2.getUniverse(), myCMP, myEquations); // TODO [def compare]
+    return defCall2 != null && expr1.getDefinition() == defCall2.getDefinition() && TypeUniverse.compare(expr1.getUniverse(), defCall2.getUniverse(), myCMP, myEquations);
   }
 
   @Override

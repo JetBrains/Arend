@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 
 import java.util.HashMap;
@@ -77,7 +76,7 @@ public class LevelSubstitution {
       if (!foundInExprs) {
         boolean exists = false;
         for (Binding myBinding : getDomain()) {
-          if (Preprelude.equalLevelTypes(myBinding.getType().toDataCall().getDefinition(), binding.getType().toDefCall().getDefinition())) {
+          if (myBinding.getType().toDataCall().getDefinition() == binding.getType().toDefCall().getDefinition()) {
             exists = true;
             break;
           }
