@@ -491,8 +491,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       visitor.setThisClass(thisClass, Reference(thisParam));
     }
 
-    LevelExpression inferredHLevel = (def.getConditions() != null && def.getConditions().size() > 0) ? new LevelExpression() :
-            def.getConstructors().size() > 1 ? TypeUniverse.SET.getHLevel() : TypeUniverse.PROP.getHLevel();
+    LevelExpression inferredHLevel = def.getConstructors().size() > 1 ? TypeUniverse.SET.getHLevel() : TypeUniverse.PROP.getHLevel();
     LevelExpression inferredPLevel = TypeUniverse.intToPLevel(0);
     TypeUniverse inferredUniverse = new TypeUniverse(inferredPLevel, inferredHLevel);
     TypeUniverse userUniverse = null;
@@ -553,7 +552,17 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
       myState.record(constructor, typedConstructor);
 
+      if (typedConstructor.containsInterval() && !dataDefinition.containsInterval()) {
+        dataDefinition.setContainsInterval();
+        if (!def.getConditions().isEmpty()) {
+          inferredUniverse = new TypeUniverse(inferredUniverse.getPLevel(), new LevelExpression());
+        }
+      }
       inferredUniverse = inferredUniverse.max(typedConstructor.getUniverse());
+    }
+
+    for (Constructor constructor : dataDefinition.getConstructors()) {
+      constructor.setUniverse(inferredUniverse);
     }
 
     if (userUniverse != null) {
@@ -755,6 +764,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         CheckTypeVisitor.Result result = visitor.checkType(argument.getType(), Universe());
         if (result == null) {
           return constructor;
+        }
+
+        if (!constructor.containsInterval() && result.expression.accept(new FindIntervalVisitor(), null)) {
+          constructor.setContainsInterval();
         }
 
         TypeUniverse argUniverse = result.type.toUniverse().getUniverse();
