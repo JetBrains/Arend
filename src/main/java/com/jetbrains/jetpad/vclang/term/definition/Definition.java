@@ -19,6 +19,7 @@ public abstract class Definition extends NamedBinding implements Referable {
   private TypeUniverse myUniverse;
   private boolean myHasErrors;
   private ClassDefinition myThisClass;
+  private boolean myContainsInterval;
 
   public Definition(String name, Abstract.Definition.Precedence precedence) {
     this(name, precedence, TypeUniverse.PROP);
@@ -29,6 +30,7 @@ public abstract class Definition extends NamedBinding implements Referable {
     myPrecedence = precedence;
     myUniverse = universe;
     myHasErrors = true;
+    myContainsInterval = false;
   }
 
   @Override
@@ -99,6 +101,10 @@ public abstract class Definition extends NamedBinding implements Referable {
   public void hasErrors(boolean has) {
     myHasErrors = has;
   }
+
+  public boolean containsInterval() { return myContainsInterval; }
+
+  public void setContainsInterval() { myContainsInterval = true; }
 
   public boolean isAbstract() {
     return false;

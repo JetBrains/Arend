@@ -95,7 +95,7 @@ public class TypeCheckingTest {
   @Test
   public void testTransport1Error() {
     typeCheckDef("\\function transport {A : \\Type1} (B : A -> \\Type1) {a a' : A} (p : a = a') (b : B a) : B a' =>\n" +
-        "coe (\\lam i => B ((@) {zeroLvl} {inf} {\\lam _ => A} {a} {a'} p i)) b right", 1);
+        "coe (\\lam i => B ((@) [zero] [inf] {\\lam _ => A} {a} {a'} p i)) b right", 1);
   }
 
   @Test
