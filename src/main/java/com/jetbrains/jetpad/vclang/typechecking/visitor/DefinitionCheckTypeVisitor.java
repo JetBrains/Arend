@@ -312,73 +312,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
   @Override
   public ClassField visitAbstract(Abstract.AbstractDefinition def, ClassDefinition enclosingClass) {
-    if (enclosingClass == null) throw new IllegalStateException();
-
-    List<? extends Abstract.Argument> arguments = def.getArguments();
-    Expression typedResultType;
-    DependentLink thisParameter = getThisParam(enclosingClass);
-    List<Binding> context = new ArrayList<>();
-    context.add(thisParameter);
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).thisClass(enclosingClass, Reference(thisParameter)).build(def);
-    LevelExpression plevel = null;
-    ClassField typedDef = new ClassField(def.getName(), def.getPrecedence(), Error(null, null), enclosingClass, thisParameter);
-    myState.record(def, typedDef);
-
-    int index = 0;
-    LinkList list = new LinkList();
-    for (Abstract.Argument argument : arguments) {
-      if (argument instanceof Abstract.TypeArgument) {
-        CheckTypeVisitor.Result result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());
-        if (result == null) {
-          return typedDef;
-        }
-
-        DependentLink param;
-        if (argument instanceof Abstract.TelescopeArgument) {
-          List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
-          param = param(argument.getExplicit(), names, result.expression);
-          index += names.size();
-        } else {
-          param = param(argument.getExplicit(), (String) null, result.expression);
-          index++;
-        }
-        list.append(param);
-        context.addAll(toContext(param));
-
-        LevelExpression argPLevel = result.type.toUniverse().getUniverse().getPLevel();
-        if (plevel == null) {
-          plevel = argPLevel;
-        } else {
-          plevel = plevel.max(argPLevel);
-        }
-      } else {
-        myErrorReporter.report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument));
-        return typedDef;
-      }
-    }
-
-    Abstract.Expression resultType = def.getResultType();
-    if (resultType == null) {
-      return typedDef;
-    }
-    CheckTypeVisitor.Result typeResult = visitor.checkType(resultType, Universe());
-    if (typeResult == null) {
-      return typedDef;
-    }
-    typedResultType = typeResult.expression;
-
-    TypeUniverse resultTypeUniverse = typeResult.type.toUniverse().getUniverse();
-    if (plevel == null) {
-      plevel = resultTypeUniverse.getPLevel();
-    } else {
-      plevel = plevel.max(resultTypeUniverse.getPLevel());
-    }
-
-    typedDef.hasErrors(false);
-    typedDef.setBaseType(list.isEmpty() ? typedResultType : Pi(list.getFirst(), typedResultType));
-    typedDef.setUniverse(new TypeUniverse(plevel, resultTypeUniverse.getHLevel()));
-    typedDef.setThisClass(enclosingClass);
-    return typedDef;
+    throw new IllegalStateException();
   }
 
   @Override
@@ -835,7 +769,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
             Definition memberDefinition = myState.getTypechecked(definition);
 
             if (memberDefinition == null) {
-              memberDefinition = visitAbstract((Abstract.AbstractDefinition) definition, typedDef);
+              memberDefinition = visitClassField((Abstract.AbstractDefinition) definition, typedDef);
             }
 
             if (memberDefinition instanceof ClassField) {
@@ -862,5 +796,75 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       myErrorReporter.report(e.toError());
     }
     return null;
+  }
+
+  private ClassField visitClassField(Abstract.AbstractDefinition def, ClassDefinition enclosingClass) {
+    if (enclosingClass == null) throw new IllegalStateException();
+
+    List<? extends Abstract.Argument> arguments = def.getArguments();
+    Expression typedResultType;
+    DependentLink thisParameter = getThisParam(enclosingClass);
+    List<Binding> context = new ArrayList<>();
+    context.add(thisParameter);
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).thisClass(enclosingClass, Reference(thisParameter)).build(def);
+    LevelExpression plevel = null;
+    ClassField typedDef = new ClassField(def.getName(), def.getPrecedence(), Error(null, null), enclosingClass, thisParameter);
+    myState.record(def, typedDef);
+
+    int index = 0;
+    LinkList list = new LinkList();
+    for (Abstract.Argument argument : arguments) {
+      if (argument instanceof Abstract.TypeArgument) {
+        CheckTypeVisitor.Result result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());
+        if (result == null) {
+          return typedDef;
+        }
+
+        DependentLink param;
+        if (argument instanceof Abstract.TelescopeArgument) {
+          List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
+          param = param(argument.getExplicit(), names, result.expression);
+          index += names.size();
+        } else {
+          param = param(argument.getExplicit(), (String) null, result.expression);
+          index++;
+        }
+        list.append(param);
+        context.addAll(toContext(param));
+
+        LevelExpression argPLevel = result.type.toUniverse().getUniverse().getPLevel();
+        if (plevel == null) {
+          plevel = argPLevel;
+        } else {
+          plevel = plevel.max(argPLevel);
+        }
+      } else {
+        myErrorReporter.report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument));
+        return typedDef;
+      }
+    }
+
+    Abstract.Expression resultType = def.getResultType();
+    if (resultType == null) {
+      return typedDef;
+    }
+    CheckTypeVisitor.Result typeResult = visitor.checkType(resultType, Universe());
+    if (typeResult == null) {
+      return typedDef;
+    }
+    typedResultType = typeResult.expression;
+
+    TypeUniverse resultTypeUniverse = typeResult.type.toUniverse().getUniverse();
+    if (plevel == null) {
+      plevel = resultTypeUniverse.getPLevel();
+    } else {
+      plevel = plevel.max(resultTypeUniverse.getPLevel());
+    }
+
+    typedDef.hasErrors(false);
+    typedDef.setBaseType(list.isEmpty() ? typedResultType : Pi(list.getFirst(), typedResultType));
+    typedDef.setUniverse(new TypeUniverse(plevel, resultTypeUniverse.getHLevel()));
+    typedDef.setThisClass(enclosingClass);
+    return typedDef;
   }
 }
