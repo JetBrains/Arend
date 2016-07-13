@@ -70,6 +70,12 @@ public class TypecheckingOrdering {
     }
 
     myVisiting.add(definition);
+
+    Abstract.ClassDefinition enclosingClass = getEnclosingClass(definition);
+    if (enclosingClass != null && !doOrder(enclosingClass)) {
+      return false;
+    }
+
     for (final Referable def : definition.accept(new DefinitionGetDepsVisitor(myOthers, myClassToNonStatic), false)) {
       if (def instanceof Abstract.Definition) {
         Boolean good = ((Abstract.Definition) def).accept(new AbstractDefinitionVisitor<Void, Boolean>() {
@@ -80,7 +86,10 @@ public class TypecheckingOrdering {
 
           @Override
           public Boolean visitAbstract(Abstract.AbstractDefinition def, Void params) {
-            return def.getParentStatement().getParentDefinition().equals(definition) || doOrder(def.getParentStatement().getParentDefinition());
+            // Calss to abstracts (class fields) can not possibly add any dependencies
+            // as in order to call a field we need to have an instance of the class
+            // which (the class) is the actual dependency.
+            return true;
           }
 
           @Override
@@ -111,15 +120,8 @@ public class TypecheckingOrdering {
       }
     }
 
-    for (Abstract.Definition curThis = definition; curThis != null && curThis.getParentStatement() != null; curThis = curThis.getParentStatement().getParentDefinition()) {
-      if (curThis.getParentStatement().getStaticMod() != Abstract.DefineStatement.StaticMod.STATIC) {
-        if (!doOrder(curThis.getParentStatement().getParentDefinition()))
-          return false;
-      }
-    }
-
     myVisiting.remove(definition);
-    myResult.put(definition, getEnclosingClass(definition));
+    myResult.put(definition, enclosingClass);
 
     myVisited.add(definition);
     return true;
