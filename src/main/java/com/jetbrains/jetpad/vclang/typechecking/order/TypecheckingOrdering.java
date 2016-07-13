@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.DummyTypecheckedReported;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.error.CycleError;
@@ -182,7 +181,7 @@ public class TypecheckingOrdering {
     }
   }
   public static TypecheckerState typecheck(Abstract.Definition definition, ErrorReporter errorReporter) {
-    return typecheck(definition, errorReporter, new DummyTypecheckedReported());
+    return typecheck(definition, errorReporter, new TypecheckedReporter.Dummy());
   }
 
   public static TypecheckerState typecheck(Abstract.Definition definition, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
@@ -190,7 +189,7 @@ public class TypecheckingOrdering {
   }
 
   public static TypecheckerState typecheck(List<Abstract.Definition> definitions, ErrorReporter errorReporter) {
-    return typecheck(definitions, errorReporter, new DummyTypecheckedReported());
+    return typecheck(definitions, errorReporter, new TypecheckedReporter.Dummy());
   }
 
   public static TypecheckerState typecheck(List<Abstract.Definition> definitions, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
