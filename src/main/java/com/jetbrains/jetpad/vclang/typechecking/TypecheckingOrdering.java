@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
@@ -17,9 +18,9 @@ public class TypecheckingOrdering {
   }
 
   public static class OKResult extends Result {
-    public final LinkedHashSet<Abstract.Definition> order;
+    public final LinkedHashMap<Abstract.Definition, Abstract.ClassDefinition> order;
 
-    OKResult(LinkedHashSet<Abstract.Definition> order) {
+    OKResult(LinkedHashMap<Abstract.Definition, Abstract.ClassDefinition> order) {
       this.order = order;
     }
   }
@@ -34,7 +35,7 @@ public class TypecheckingOrdering {
 
   private List<Abstract.Definition> myCycle;
   private final Queue<Abstract.Definition> myOthers;
-  private final LinkedHashSet<Abstract.Definition> myResult;
+  private final LinkedHashMap<Abstract.Definition, Abstract.ClassDefinition> myResult;
   private final Set<Abstract.Definition> myVisited;
   private final LinkedHashSet<Abstract.Definition> myVisiting;
 
@@ -43,7 +44,7 @@ public class TypecheckingOrdering {
   private TypecheckingOrdering(Queue<Abstract.Definition> queue) {
     myCycle = null;
     myOthers = queue;
-    myResult = new LinkedHashSet<>();
+    myResult = new LinkedHashMap<>();
     myVisited = new HashSet<>();
     myVisiting = new LinkedHashSet<>();
     myClassToNonStatic = new HashMap<>();
@@ -118,10 +119,22 @@ public class TypecheckingOrdering {
     }
 
     myVisiting.remove(definition);
-    myResult.add(definition);
+    myResult.put(definition, getEnclosingClass(definition));
 
     myVisited.add(definition);
     return true;
+  }
+
+  private static Abstract.ClassDefinition getEnclosingClass(Abstract.Definition definition) {
+    Abstract.DefineStatement parentStatement = definition.getParentStatement();
+    if (parentStatement == null) return null;
+
+    Abstract.Definition parentDefinition = parentStatement.getParentDefinition();
+    if (!Abstract.DefineStatement.StaticMod.STATIC.equals(parentStatement.getStaticMod()) && parentDefinition instanceof Abstract.ClassDefinition) {
+      return (Abstract.ClassDefinition) parentDefinition;
+    } else {
+      return getEnclosingClass(parentDefinition);
+    }
   }
 
   private Result getResult() {
@@ -146,8 +159,9 @@ public class TypecheckingOrdering {
   private static TypecheckerState typecheck(Result result, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
     if (result instanceof OKResult) {
       TypecheckerState state = new TypecheckerState();
-      for (Abstract.Definition def : ((OKResult) result).order) {
-        DefinitionCheckTypeVisitor.typeCheck(state, def,new LocalErrorReporter(def, errorReporter));
+      for (Map.Entry<Abstract.Definition, Abstract.ClassDefinition> entry : ((OKResult) result).order.entrySet()) {
+        Abstract.Definition def = entry.getKey();
+        DefinitionCheckTypeVisitor.typeCheck(state, (ClassDefinition) state.getTypechecked(entry.getValue()), def, new LocalErrorReporter(def, errorReporter));
         Definition typechecked = state.getTypechecked(def);
         if (typechecked == null || typechecked.hasErrors()) {
           typecheckedReporter.typecheckingFailed(def);

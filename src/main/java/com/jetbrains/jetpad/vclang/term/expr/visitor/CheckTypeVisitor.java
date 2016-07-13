@@ -149,14 +149,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     myTypeCheckingDefCall.setThisClass(thisClass, thisExpr);
   }
 
-  public ClassDefinition getThisClass() {
-    return myTypeCheckingDefCall.getThisClass();
-  }
-
-  public Expression getThisExpression() {
-    return myTypeCheckingDefCall.getThisExpression();
-  }
-
   public List<Binding> getContext() {
     return myContext;
   }

@@ -38,14 +38,6 @@ public class TypeCheckingDefCall {
     myThisExpr = thisExpr;
   }
 
-  public ClassDefinition getThisClass() {
-    return myThisClass;
-  }
-
-  public Expression getThisExpression() {
-    return myThisExpr;
-  }
-
   public CheckTypeVisitor.Result typeCheckDefCall(Abstract.DefCallExpression expr) {
     Referable resolvedDefinition = expr.getReferent();
     if (resolvedDefinition != null) {

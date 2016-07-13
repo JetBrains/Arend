@@ -40,8 +40,8 @@ public abstract class Definition extends NamedBinding implements Referable {
     return getType();
   }
 
-  public void setThisClass(ClassDefinition thisClass) {
-    myThisClass = thisClass;
+  public void setThisClass(ClassDefinition enclosingClass) {
+    myThisClass = enclosingClass;
   }
 
   @Deprecated

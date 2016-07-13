@@ -67,11 +67,13 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
-  public void setThisClass(ClassDefinition parentClass) {
-    super.setThisClass(parentClass);
-    myEnclosingThisField = new ClassField("\\parent", Abstract.Binding.DEFAULT_PRECEDENCE, ClassCall(parentClass), this, param("\\this", ClassCall(this)));
-    myEnclosingThisField.setThisClass(this);
-    addField(myEnclosingThisField);
+  public void setThisClass(ClassDefinition enclosingClass) {
+    super.setThisClass(enclosingClass);
+    if (enclosingClass != null) {
+      myEnclosingThisField = new ClassField("\\parent", Abstract.Binding.DEFAULT_PRECEDENCE, ClassCall(enclosingClass), this, param("\\this", ClassCall(this)));
+      myEnclosingThisField.setThisClass(this);
+      addField(myEnclosingThisField);
+    }
   }
 
   public ClassField getEnclosingThisField() {
