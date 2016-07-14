@@ -17,11 +17,6 @@ public class UniverseExpression extends Expression {
   public void setUniverse(TypeUniverse universe) { myUniverse = universe; }
 
   @Override
-  public UniverseExpression getType() {
-    return new UniverseExpression(myUniverse.succ());
-  }
-
-  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitUniverse(this, params);
   }

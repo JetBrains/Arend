@@ -21,11 +21,6 @@ public class ErrorExpression extends Expression {
   }
 
   @Override
-  public Expression getType() {
-    return new ErrorExpression(myExpr != null ? myExpr.getType() : null, myError);
-  }
-
-  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitError(this, params);
   }

@@ -63,11 +63,6 @@ public class OfTypeExpression extends Expression {
   }
 
   @Override
-  public DependentTypeExpression toDependentType() {
-    return myExpression.toDependentType();
-  }
-
-  @Override
   public ErrorExpression toError() {
     return myExpression.toError();
   }

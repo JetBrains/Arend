@@ -35,12 +35,6 @@ public class LetExpression extends Expression {
   }
 
   @Override
-  public Expression getType() {
-    Expression type = myExpression.getType();
-    return type != null ? Let(myClauses, type) : null;
-  }
-
-  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitLet(this, params);
   }

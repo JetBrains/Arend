@@ -66,11 +66,6 @@ public abstract class DefCallExpression extends Expression {
   } /**/
 
   @Override
-  public Expression getType() {
-    return myDefinition.getType().subst(myPolyParamsSubst);
-  }
-
-  @Override
   public DefCallExpression toDefCall() {
     return this;
   }

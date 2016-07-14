@@ -89,16 +89,6 @@ public class AppExpression extends Expression {
   }
 
   @Override
-  public Expression getType() {
-    Expression functionType = myFunction.getType();
-    if (functionType != null) {
-      return functionType.applyExpressions(myArguments);
-    } else {
-      return null;
-    }
-  }
-
-  @Override
   public AppExpression toApp() {
     return this;
   }

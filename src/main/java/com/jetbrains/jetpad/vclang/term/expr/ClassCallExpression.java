@@ -62,11 +62,6 @@ public class ClassCallExpression extends DefCallExpression {
   }
 
   @Override
-  public UniverseExpression getType() {
-    return new UniverseExpression(getUniverse());
-  }
-
-  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitClassCall(this, params);
   }

@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class ConCallExpression extends DefCallExpression {
@@ -30,11 +29,6 @@ public class ConCallExpression extends DefCallExpression {
   @Override
   public Constructor getDefinition() {
     return (Constructor) super.getDefinition();
-  }
-
-  @Override
-  public Expression getType() {
-    return super.getType().applyExpressions(myDataTypeArguments);
   }
 
   @Override

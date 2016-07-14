@@ -15,8 +15,6 @@ import java.util.*;
 public abstract class Expression implements PrettyPrintable {
   public abstract <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params);
 
-  public abstract Expression getType();
-
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
@@ -36,6 +34,10 @@ public abstract class Expression implements PrettyPrintable {
     ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory(), names);
     visitor.addFlags(ToAbstractVisitor.Flag.SHOW_HIDDEN_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM);
     accept(visitor, null).accept(new PrettyPrintVisitor(builder, indent), prec);
+  }
+
+  public Expression getType() {
+    return accept(new GetTypeVisitor(), null);
   }
 
   public boolean findBinding(Binding binding) {
@@ -201,10 +203,6 @@ public abstract class Expression implements PrettyPrintable {
   }
 
   public DefCallExpression toDefCall() {
-    return null;
-  }
-
-  public DependentTypeExpression toDependentType() {
     return null;
   }
 
