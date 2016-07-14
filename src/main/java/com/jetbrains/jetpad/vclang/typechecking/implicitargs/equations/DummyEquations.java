@@ -1,10 +1,12 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
-import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.LevelExpression;
+import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
 
 import java.util.Set;
 

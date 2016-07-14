@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.term.expr;
+package com.jetbrains.jetpad.vclang.term.expr.subst;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 

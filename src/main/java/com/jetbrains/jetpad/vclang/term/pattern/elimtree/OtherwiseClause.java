@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
-import com.jetbrains.jetpad.vclang.term.expr.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 
 public class OtherwiseClause implements Clause {
   private ElimTreeNode myChild;
