@@ -37,7 +37,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       if (ref != null) {
         Binding binding = ref.getBinding();
         if (binding instanceof Function) {
-          return visitFunctionCall((Function) binding, expr, mode);
+          return visitFunctionCall((Function) binding, new LevelSubstitution(), expr, mode);
         }
       }
     }
@@ -107,7 +107,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return visitConstructorCall(expr, mode);
     }
     if (defCallExpr.getDefinition() instanceof Function) {
-      return visitFunctionCall((Function) defCallExpr.getDefinition(), expr, mode).subst(defCallExpr.getPolyParamsSubst());
+      return visitFunctionCall((Function) defCallExpr.getDefinition(), defCallExpr.getPolyParamsSubst(), expr, mode); //.subst(defCallExpr.getPolyParamsSubst());
     }
 
     return mode == Mode.TOP ? null : applyDefCall(expr, mode);
@@ -136,10 +136,10 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
     }
 
-    return visitFunctionCall(conCallExpression.getDefinition(), expr, mode).subst(conCallExpression.getPolyParamsSubst());
+    return visitFunctionCall(conCallExpression.getDefinition(), conCallExpression.getPolyParamsSubst(), expr, mode);//.subst(conCallExpression.getPolyParamsSubst());
   }
 
-  private Expression visitFunctionCall(Function func, Expression expr, Mode mode) {
+  private Expression visitFunctionCall(Function func, LevelSubstitution polySubst, Expression expr, Mode mode) {
     List<? extends Expression> args = expr.getArguments();
     List<? extends EnumSet<AppExpression.Flag>> flags = Collections.emptyList();
     List<? extends Expression> requiredArgs;
@@ -173,7 +173,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       params = conCall.getDefinition().getDataTypeParameters();
       paramArgs = conCall.getDataTypeArguments();
     }
-    Expression result = myNormalizer.normalize(func, params, paramArgs, requiredArgs, args, flags, mode);
+    Expression result = myNormalizer.normalize(func, polySubst, params, paramArgs, requiredArgs, args, flags, mode);
     if (result == null) {
       return applyDefCall(expr, mode);
     }
@@ -206,7 +206,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
     Binding binding = expr.getBinding();
     if (binding instanceof Function) {
-      return visitFunctionCall((Function) binding, expr, mode);
+      return visitFunctionCall((Function) binding, new LevelSubstitution(), expr, mode);
     } else {
       return expr;
     }

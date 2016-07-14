@@ -40,7 +40,7 @@ public class EvalNormalizer implements Normalizer {
   }
 
   @Override
-  public Expression normalize(Function fun, DependentLink params, List<? extends Expression> paramArgs, List<? extends Expression> arguments, List<? extends Expression> otherArguments, List<? extends EnumSet<AppExpression.Flag>> otherFlags, NormalizeVisitor.Mode mode) {
+  public Expression normalize(Function fun, LevelSubstitution polySubst, DependentLink params, List<? extends Expression> paramArgs, List<? extends Expression> arguments, List<? extends Expression> otherArguments, List<? extends EnumSet<AppExpression.Flag>> otherFlags, NormalizeVisitor.Mode mode) {
     assert fun.getNumberOfRequiredArguments() == arguments.size();
 
     if (fun instanceof FunctionDefinition && Prelude.isCoe((FunctionDefinition) fun)) {
@@ -71,7 +71,7 @@ public class EvalNormalizer implements Normalizer {
       }
 
       if (result != null) {
-        return Apps(result, otherArguments, otherFlags).normalize(mode);
+        return Apps(result.subst(polySubst), otherArguments, otherFlags).normalize(mode);
       }
     }
 
@@ -86,7 +86,7 @@ public class EvalNormalizer implements Normalizer {
       subst.add(params, argument);
       params = params.getNext();
     }
-    return Apps(leaf.getExpression().subst(subst), otherArguments, otherFlags).normalize(mode);
+    return Apps(leaf.getExpression().subst(polySubst).subst(subst), otherArguments, otherFlags).normalize(mode);
   }
 
   @Override
