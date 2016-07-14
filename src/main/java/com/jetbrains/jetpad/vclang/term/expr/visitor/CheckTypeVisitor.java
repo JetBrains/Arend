@@ -557,8 +557,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Abstract.Expression max = Abstract.getFunction(expr, args) ;
 
     if (max instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) max).getName().equals("max")) {
-      for (int i = 0; i < args.size(); ++i) {
-        result = result.max(typeCheckLevelAtom(args.get(i).getExpression(), expectedType));
+      for (Abstract.ArgumentExpression arg : args) {
+        result = result.max(typeCheckLevelAtom(arg.getExpression(), expectedType));
       }
       return result;
     }
