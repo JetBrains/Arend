@@ -4,11 +4,8 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FieldCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.LevelSubstVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FieldCall;
@@ -17,6 +14,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 public class ClassField extends Definition {
   private DependentLink myThisParameter;
   private Expression myType;
+  private SortMaxSet mySorts;
 
   public ClassField(String name, Abstract.Definition.Precedence precedence, Expression type, ClassDefinition thisClass, DependentLink thisParameter) {
     super(name, precedence);
@@ -26,33 +24,18 @@ public class ClassField extends Definition {
     hasErrors(type == null || type.toError() != null);
   }
 
-  public ClassField(String name, Abstract.Definition.Precedence precedence, Expression type, ClassDefinition thisClass, DependentLink thisParameter, Sort universe) {
-    super(name, precedence, universe);
-    myThisParameter = thisParameter;
-    myType = type;
-    setThisClass(thisClass);
-    hasErrors(type == null || type.toError() != null);
-  }
-
-  public Sort updateSort(Sort sort, ExprSubstitution substitution) {
+  public void updateSort(SortMaxSet sorts, ExprSubstitution substitution) {
     Expression expr1 = myType.subst(substitution).normalize(NormalizeVisitor.Mode.WHNF);
-    UniverseExpression expr = null;
+    SortMaxSet sorts1 = null;
     if (expr1.toOfType() != null) {
-      // TODO [sorts]
-      Expression expr2 = (Expression) expr1.toOfType().getExpression().getType();
-      if (expr2 != null) {
-        expr = expr2.normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
-      }
+      sorts1 = expr1.toOfType().getExpression().getType().toSorts();
     }
-    if (expr == null) {
-      // TODO [sorts]
-      expr = ((Expression) expr1.getType()).normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
+    if (sorts1 == null) {
+      sorts1 = expr1.getType().toSorts();
     }
 
-    Sort fieldUniverse = expr != null ? expr.getSort() : getSort();
-    sort = sort.max(fieldUniverse);
-    assert expr != null;
-    return sort;
+    sorts.addAll(sorts1);
+    assert sorts1 != null;
   }
 
   public DependentLink getThisParameter() {
@@ -67,6 +50,14 @@ public class ClassField extends Definition {
     return myType;
   }
 
+  public SortMaxSet getSorts() {
+    return mySorts;
+  }
+
+  public void setSorts(SortMaxSet sorts) {
+    mySorts = sorts;
+  }
+
   @Override
   public Expression getType() {
     return myType == null ? null : Pi(myThisParameter, myType);
@@ -75,15 +66,6 @@ public class ClassField extends Definition {
   @Override
   public FieldCallExpression getDefCall() {
     return FieldCall(this);
-  }
-
-  @Override
-  public ClassField substPolyParams(LevelSubstitution subst) {
-    if (!isPolymorphic()) {
-      return this;
-    }
-    return new ClassField(getName(), getPrecedence(), LevelSubstVisitor.subst(myType, subst), getThisClass(),
-            myThisParameter, getSort().subst(subst));
   }
 
   public void setBaseType(Expression type) {

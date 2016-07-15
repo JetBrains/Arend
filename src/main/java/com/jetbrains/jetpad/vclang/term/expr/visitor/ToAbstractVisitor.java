@@ -247,7 +247,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return result;
   }
 
-  private List<Abstract.TypeArgument> visitTypeArguments(DependentLink arguments) {
+  public List<Abstract.TypeArgument> visitTypeArguments(DependentLink arguments) {
     List<Abstract.TypeArgument> args = new ArrayList<>();
     List<String> names = new ArrayList<>(3);
     for (DependentLink link = arguments; link.hasNext(); link = link.getNext()) {

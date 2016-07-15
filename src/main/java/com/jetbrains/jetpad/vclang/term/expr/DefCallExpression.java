@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 
 import java.util.HashSet;
@@ -48,10 +47,6 @@ public abstract class DefCallExpression extends Expression {
     }
     return null;
   }/**/
-
-  public Sort getSort() {
-    return myDefinition.getSort().subst(myPolyParamsSubst);
-  }
 
   public DefCallExpression applyLevelSubst(LevelSubstitution subst) {
     myPolyParamsSubst = myPolyParamsSubst.compose(subst, new HashSet<>(myDefinition.getPolyParams()));

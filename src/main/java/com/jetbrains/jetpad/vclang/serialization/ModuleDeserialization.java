@@ -24,6 +24,7 @@ import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeDeserialization;
@@ -205,7 +206,7 @@ public class ModuleDeserialization {
 
   private void deserializeDataDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, DataDefinition definition) throws IOException {
     if (!definition.hasErrors()) {
-      definition.setSort(readSort(stream, definitionMap));
+      definition.setSorts(readSorts(stream, definitionMap));
       definition.setParameters(readParameters(stream, definitionMap));
     }
 
@@ -230,7 +231,6 @@ public class ModuleDeserialization {
           }
           constructor.setPatterns(new Patterns(patterns));
         }
-        constructor.setSort(readSort(stream, definitionMap));
         constructor.setParameters(readParameters(stream, definitionMap));
       }
 
@@ -276,7 +276,7 @@ public class ModuleDeserialization {
 
   private void deserializeClassDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, ClassDefinition definition) throws IOException {
     deserializeNamespace(stream, definitionMap, definition);
-    definition.setSort(readSort(stream, definitionMap));
+    definition.setSorts(readSorts(stream, definitionMap));
 
     int numFields = stream.readInt();
     for (int i = 0; i < numFields; i++) {
@@ -293,7 +293,7 @@ public class ModuleDeserialization {
       field.hasErrors(stream.readBoolean());
 
       if (!field.hasErrors()) {
-        field.setSort(readSort(stream, definitionMap));
+        field.setSorts(readSorts(stream, definitionMap));
         field.setBaseType(readExpression(stream, definitionMap));
         field.setThisClass(definition);
       }
@@ -321,9 +321,18 @@ public class ModuleDeserialization {
   }
 
   public Sort readSort(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
-    Level plevel = readLevel(stream, definitionMap);
-    Level hlevel = readLevel(stream, definitionMap);
-    return new Sort(plevel, hlevel);
+    Level pLevel = readLevel(stream, definitionMap);
+    Level hLevel = readLevel(stream, definitionMap);
+    return new Sort(pLevel, hLevel);
+  }
+
+  public SortMaxSet readSorts(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+    int size = stream.readInt();
+    SortMaxSet sorts = new SortMaxSet();
+    for (int i = 0; i < size; i++) {
+      sorts.add(readSort(stream, definitionMap));
+    }
+    return sorts;
   }
 
   public TypedBinding readTypedBinding(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {

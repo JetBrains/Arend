@@ -17,6 +17,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
@@ -371,8 +372,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       myErrorReporter.report(error);
       return null;
     }
-    Definition typechecked = myState.getTypechecked(expr.getModule());
-    if (typechecked == null) {
+    Definition typeChecked = myState.getTypechecked(expr.getModule());
+    if (typeChecked == null) {
       assert false;
       // FIXME[errorformat]
       TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Internal error: module '" + new ModulePath(expr.getPath()) + "' is not available yet", expr);
@@ -380,7 +381,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       myErrorReporter.report(error);
       return null;
     }
-    return new Result(ClassCall((ClassDefinition) typechecked), new UniverseExpression(typechecked.getSort()));
+
+    // TODO [sorts]
+    SortMaxSet sorts = ((ClassDefinition) typeChecked).getSorts();
+    return new Result(ClassCall((ClassDefinition) typeChecked), new UniverseExpression(sorts.getSorts().isEmpty() ? Sort.PROP : sorts.getSorts().iterator().next()));
   }
 
   @Override
@@ -912,7 +916,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     ClassCallExpression resultExpr = ClassCall(baseClass, typeCheckedStatements);
     classExtResult.expression = resultExpr;
-    classExtResult.type = new UniverseExpression(resultExpr.getSort());
+    // TODO [sorts]
+    SortMaxSet sorts = resultExpr.getSorts();
+    classExtResult.type = new UniverseExpression(sorts.getSorts().isEmpty() ? Sort.PROP : sorts.getSorts().iterator().next());
     classExtResult.update(true);
     return checkResult(expectedType, classExtResult, expr);
   }

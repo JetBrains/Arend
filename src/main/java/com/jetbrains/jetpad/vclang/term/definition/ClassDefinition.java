@@ -7,9 +7,8 @@ import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.LevelSubstVisitor;
 
 import java.util.*;
 
@@ -18,6 +17,8 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 public class ClassDefinition extends Definition {
   private final Namespace myOwnNamespace;
   private final Namespace myInstanceNamespace;
+
+  private SortMaxSet mySorts;
 
   private final Map<ClassField, FieldImplementation> myFields = new HashMap<>();
   private Set<ClassDefinition> mySuperClasses = null;
@@ -43,6 +44,7 @@ public class ClassDefinition extends Definition {
     super.hasErrors(false);
     myOwnNamespace = ownNamespace;
     myInstanceNamespace = instanceNamespace;
+    mySorts = new SortMaxSet();
   }
 
   public boolean isSubClassOf(ClassDefinition classDefinition) {
@@ -77,20 +79,28 @@ public class ClassDefinition extends Definition {
     return result;
   }
 
+  public SortMaxSet getSorts() {
+    return mySorts;
+  }
+
+  public void setSorts(SortMaxSet sorts) {
+    mySorts = sorts;
+  }
+
   public void updateSort() {
-    Sort sort = Sort.PROP;
+    mySorts = new SortMaxSet();
     ExprSubstitution substitution = getImplementedFields();
     for (Map.Entry<ClassField, FieldImplementation> entry : myFields.entrySet()) {
       if (!entry.getKey().hasErrors() && !entry.getValue().isImplemented()) {
-        sort = entry.getKey().updateSort(sort, substitution);
+        entry.getKey().updateSort(mySorts, substitution);
       }
     }
-    setSort(sort);
   }
 
   @Override
   public Expression getType() {
-    return new UniverseExpression(getSort());
+    // TODO: [sorts] return type
+    return new UniverseExpression(mySorts.getSorts().isEmpty() ? Sort.PROP : mySorts.getSorts().iterator().next());
   }
 
   @Override
@@ -196,20 +206,5 @@ public class ClassDefinition extends Definition {
   @Override
   public Namespace getInstanceNamespace() {
     return myInstanceNamespace;
-  }
-
-  @Override
-  public Definition substPolyParams(LevelSubstitution subst) {
-    ClassDefinition newClass = new ClassDefinition(getName(), getOwnNamespace(), getInstanceNamespace());
-    Sort newUniverse = getSort() == null ? null : getSort().subst(subst);
-    newClass.setSort(newUniverse);
-
-    for (Map.Entry<ClassField, FieldImplementation> entry : myFields.entrySet()) {
-      newClass.myFields.put(new ClassField(entry.getKey().getName(), entry.getKey().getPrecedence(),
-          LevelSubstVisitor.subst(entry.getKey().getType(), subst), newClass, entry.getKey().getThisParameter(), newUniverse),
-          new FieldImplementation(entry.getValue().name, entry.getValue().thisParameter, entry.getValue().implementation != null ? entry.getValue().implementation.subst(subst) : null));
-    }
-
-    return newClass;
   }
 }

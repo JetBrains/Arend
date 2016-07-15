@@ -8,8 +8,7 @@ import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
 import java.util.*;
@@ -20,18 +19,26 @@ public class DataDefinition extends Definition {
   private List<Constructor> myConstructors;
   private DependentLink myParameters;
   private Map<Constructor, Condition> myConditions;
+  private SortMaxSet mySorts;
 
   public DataDefinition(String name, Abstract.Definition.Precedence precedence) {
-    super(name, precedence);
-    myConstructors = new ArrayList<>();
-    myParameters = EmptyDependentLink.getInstance();
+    this(name, precedence, new SortMaxSet(), EmptyDependentLink.getInstance());
   }
 
-  public DataDefinition(String name, Abstract.Definition.Precedence precedence, Sort universe, DependentLink parameters) {
-    super(name, precedence, universe);
+  public DataDefinition(String name, Abstract.Definition.Precedence precedence, SortMaxSet sorts, DependentLink parameters) {
+    super(name, precedence);
     hasErrors(false);
-    myParameters = parameters;
     myConstructors = new ArrayList<>();
+    myParameters = parameters;
+    mySorts = sorts;
+  }
+
+  public SortMaxSet getSorts() {
+    return mySorts;
+  }
+
+  public void setSorts(SortMaxSet sorts) {
+    mySorts = sorts;
   }
 
   public DependentLink getParameters() {
@@ -108,32 +115,13 @@ public class DataDefinition extends Definition {
       return null;
     }
 
-    Expression resultType = new UniverseExpression(getSort());
+    // TODO [sorts]
+    Expression resultType = new UniverseExpression(mySorts.getSorts().isEmpty() ? Sort.PROP : mySorts.getSorts().iterator().next());
     return myParameters.hasNext() ? Pi(myParameters, resultType) : resultType;
   }
 
   @Override
   public DataCallExpression getDefCall() {
     return DataCall(this);
-  }
-
-  @Override
-  public DataDefinition substPolyParams(LevelSubstitution substitution) {
-    if (!isPolymorphic()) {
-      return this;
-    }
-    Substitution subst = new Substitution(substitution);
-    DataDefinition newDef = new DataDefinition(getName(), getPrecedence(), getSort().subst(subst.LevelSubst), DependentLink.Helper.subst(myParameters, subst));
-    for (Constructor constructor : getConstructors()) {
-      Constructor newConstructor = new Constructor(constructor.getName(), constructor.getPrecedence(),
-              constructor.getSort().subst(subst.LevelSubst), DependentLink.Helper.subst(constructor.getParameters(), subst), newDef, constructor.getPatterns());
-      newDef.addConstructor(newConstructor);
-
-      Condition cond = newDef.getCondition(constructor);
-      if (cond != null) {
-        newDef.addCondition(new Condition(newConstructor, cond.getElimTree() /*.subst(subst) /**/));
-      }
-    }
-    return newDef;
   }
 }

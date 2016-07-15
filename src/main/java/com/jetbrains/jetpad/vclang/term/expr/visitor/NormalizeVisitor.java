@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.typechecking.normalization.Normalizer;
 
 import java.util.*;

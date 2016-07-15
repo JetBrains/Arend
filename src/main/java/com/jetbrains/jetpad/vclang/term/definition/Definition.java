@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.NamedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 
 import java.util.ArrayList;
@@ -17,19 +16,13 @@ import java.util.List;
 public abstract class Definition extends NamedBinding implements Referable {
   protected List<Binding> myPolyParams = new ArrayList<>();
   private Abstract.Definition.Precedence myPrecedence;
-  private Sort mySort;
   private boolean myHasErrors;
   private ClassDefinition myThisClass;
   private boolean myContainsInterval;
 
   public Definition(String name, Abstract.Definition.Precedence precedence) {
-    this(name, precedence, Sort.PROP);
-  }
-
-  public Definition(String name, Abstract.Definition.Precedence precedence, Sort sort) {
     super(name);
     myPrecedence = precedence;
-    mySort = sort;
     myHasErrors = true;
     myContainsInterval = false;
   }
@@ -66,14 +59,6 @@ public abstract class Definition extends NamedBinding implements Referable {
     throw new IllegalStateException();
   }
 
-  public Sort getSort() {
-    return mySort;
-  }
-
-  public void setSort(Sort sort) {
-    mySort = sort;
-  }
-
   public void setPolyParams(List<Binding> params) {
     myPolyParams = params;
   }
@@ -92,8 +77,6 @@ public abstract class Definition extends NamedBinding implements Referable {
   }
 
   public boolean isPolymorphic() { return !myPolyParams.isEmpty(); }
-
-  public abstract Definition substPolyParams(LevelSubstitution subst);
 
   public boolean hasErrors() {
     return myHasErrors;

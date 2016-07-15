@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
@@ -42,14 +43,20 @@ public abstract class Expression implements PrettyPrintable, Type {
   }
 
   @Override
-  public boolean lessOrEqualsThan(Sort sort) {
+  public boolean isLessOrEquals(Sort sort) {
     UniverseExpression expr = normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
     return expr != null && expr.getSort().isLessOrEquals(sort);
   }
 
   @Override
-  public boolean lessOrEqualsThan(Expression expression, Equations equations, Abstract.SourceNode sourceNode) {
+  public boolean isLessOrEquals(Expression expression, Equations equations, Abstract.SourceNode sourceNode) {
     return CompareVisitor.compare(equations, Equations.CMP.LE, normalize(NormalizeVisitor.Mode.NF), expression, sourceNode);
+  }
+
+  @Override
+  public SortMaxSet toSorts() {
+    UniverseExpression universe = normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
+    return universe == null ? null : new SortMaxSet(universe.getSort());
   }
 
   public Type getType() {

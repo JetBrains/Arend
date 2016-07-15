@@ -6,9 +6,6 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FunCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FunCall;
@@ -29,17 +26,6 @@ public class FunctionDefinition extends Definition implements Function {
 
   public FunctionDefinition(String name, Abstract.Definition.Precedence precedence, Namespace ownNamespace, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
     super(name, precedence);
-    assert parameters != null;
-    myOwnNamespace = ownNamespace;
-    hasErrors(false);
-    myParameters = parameters;
-    myResultType = resultType;
-    myTypeHasErrors = false;
-    myElimTree = elimTree;
-  }
-
-  public FunctionDefinition(String name, Abstract.Definition.Precedence precedence, Namespace ownNamespace, DependentLink parameters, Expression resultType, ElimTreeNode elimTree, Sort universe) {
-    super(name, precedence, universe);
     assert parameters != null;
     myOwnNamespace = ownNamespace;
     hasErrors(false);
@@ -111,18 +97,5 @@ public class FunctionDefinition extends Definition implements Function {
   @Override
   public Namespace getOwnNamespace() {
     return myOwnNamespace;
-  }
-
-  @Override
-  public FunctionDefinition substPolyParams(LevelSubstitution substitution) {
-    if (!isPolymorphic() || myTypeHasErrors) {
-      return this;
-    }
-
-    Substitution subst = new Substitution(substitution);
-    DependentLink newParams = DependentLink.Helper.subst(myParameters, subst);
-
-    return new FunctionDefinition(getName(), getPrecedence(), getOwnNamespace(), newParams,
-        myResultType.subst(subst), myElimTree /* .subst(subst) /**/, getSort().subst(subst.LevelSubst));
   }
 }

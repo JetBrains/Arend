@@ -1,7 +1,8 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
@@ -60,11 +61,11 @@ public class Truncations {
 
   @Test
   public void S1Level() {
-    Definition definition = typeCheckDef(
+    DataDefinition definition = (DataDefinition) typeCheckDef(
         "\\data S1 | base | loop I\n" +
         "\\with\n" +
         "  | loop left => base\n" +
         "  | loop right => base");
-    assertEquals(new Sort(0, Sort.NOT_TRUNCATED), definition.getSort());
+    assertEquals(new SortMaxSet(new Sort(0, Sort.NOT_TRUNCATED)), definition.getSorts().getSorts());
   }
 }

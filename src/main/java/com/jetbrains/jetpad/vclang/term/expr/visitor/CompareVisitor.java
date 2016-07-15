@@ -196,7 +196,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     DefCallExpression defCall2 = expr2.toDefCall();
     if (defCall2 == null) return false;
     // TODO: remove this comparison
-    Sort.compare(expr1.getSort(), defCall2.getSort(), myCMP, myEquations);
+    // Sort.compare(expr1.getSort(), defCall2.getSort(), myCMP, myEquations);
     return expr1.getDefinition() == defCall2.getDefinition();
   }
 

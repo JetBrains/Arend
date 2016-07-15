@@ -28,6 +28,11 @@ public class PiUniverseType implements Type {
   }
 
   @Override
+  public SortMaxSet toSorts() {
+    return myParameters.hasNext() ? null : mySorts;
+  }
+
+  @Override
   public Type subst(ExprSubstitution substitution) {
     // TODO [sorts]
     return this;
@@ -47,7 +52,7 @@ public class PiUniverseType implements Type {
   }
 
   @Override
-  public boolean lessOrEqualsThan(Sort sort) {
+  public boolean isLessOrEquals(Sort sort) {
     if (myParameters.hasNext()) {
       return false;
     }
@@ -60,7 +65,7 @@ public class PiUniverseType implements Type {
   }
 
   @Override
-  public boolean lessOrEqualsThan(Expression expression, Equations equations, Abstract.SourceNode sourceNode) {
+  public boolean isLessOrEquals(Expression expression, Equations equations, Abstract.SourceNode sourceNode) {
     // TODO [sorts]
     return false;
   }

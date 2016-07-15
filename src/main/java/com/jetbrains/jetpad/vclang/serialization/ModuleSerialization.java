@@ -14,6 +14,7 @@ import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 
@@ -113,7 +114,7 @@ public class ModuleSerialization {
   private static int serializeDataDefinition(SerializeVisitor visitor, DataDefinition definition) throws IOException {
     int errors = definition.hasErrors() ? 1 : 0;
     if (!definition.hasErrors()) {
-      writeSort(visitor, definition.getSort());
+      writeSorts(visitor, definition.getSorts());
       writeParameters(visitor, definition.getParameters());
     }
 
@@ -130,7 +131,6 @@ public class ModuleSerialization {
             visitor.visitPatternArg(patternArg);
           }
         }
-        writeSort(visitor, constructor.getSort());
         writeParameters(visitor, constructor.getParameters());
       } else {
         errors += 1;
@@ -192,7 +192,7 @@ public class ModuleSerialization {
   private static int serializeClassDefinition(SerializeVisitor visitor, ClassDefinition definition) throws IOException {
     int errors = serializeNamespace(visitor, definition.getResolvedName().toNamespace());
 
-    writeSort(visitor, definition.getSort());
+    writeSorts(visitor, definition.getSorts());
 
     visitor.getDataStream().writeInt(definition.getFields().size());
     for (Map.Entry<ClassField, ClassDefinition.FieldImplementation> entry : definition.getFieldsMap()) {
@@ -208,7 +208,7 @@ public class ModuleSerialization {
       writeParameters(visitor, field.getThisParameter());
       visitor.getDataStream().writeBoolean(field.hasErrors());
       if (!field.hasErrors()) {
-        writeSort(visitor, field.getSort());
+        writeSorts(visitor, field.getSorts());
         field.getType().accept(visitor, null);
       }
     }
@@ -274,6 +274,13 @@ public class ModuleSerialization {
   public static void writeSort(SerializeVisitor visitor, Sort sort) throws IOException {
     writeLevel(visitor, sort.getPLevel());
     writeLevel(visitor, sort.getHLevel());
+  }
+
+  public static void writeSorts(SerializeVisitor visitor, SortMaxSet sorts) throws IOException {
+    visitor.getDataStream().writeInt(sorts.getSorts().size());
+    for (Sort sort : sorts.getSorts()) {
+      writeSort(visitor, sort);
+    }
   }
 
   private static void writeString(SerializeVisitor visitor, String str) throws IOException {

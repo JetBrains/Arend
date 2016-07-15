@@ -16,6 +16,7 @@ import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
@@ -471,7 +472,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     typedDef.hasErrors(false);
     typedDef.setPolyParams(new ArrayList<>(polyParams.values()));
     typedDef.setBaseType(list.isEmpty() ? typedResultType : Pi(list.getFirst(), typedResultType));
-    typedDef.setSort(new Sort(plevel, resultSort.getHLevel()));
+    typedDef.setSorts(new SortMaxSet(new Sort(plevel, resultSort.getHLevel())));
     typedDef.setThisClass(thisClass);
     return typedDef;
   }
@@ -493,11 +494,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       visitor.setThisClass(thisClass, Reference(thisParam));
     }
 
-    Level inferredHLevel = def.getConstructors().size() > 1 ? Sort.SET.getHLevel() : Sort.PROP.getHLevel();
-    Level inferredPLevel = Sort.intToPLevel(0);
-    Sort inferredUniverse = new Sort(inferredPLevel, inferredHLevel);
-    Sort userUniverse = null;
-    DataDefinition dataDefinition = new DataDefinition(def.getName(), def.getPrecedence(), inferredUniverse, null);
+    SortMaxSet inferredSorts = def.getConstructors().size() > 1 ? new SortMaxSet(new Sort(Sort.intToPLevel(0), Sort.SET.getHLevel())) : new SortMaxSet();
+    Sort userSort = null;
+    DataDefinition dataDefinition = new DataDefinition(def.getName(), def.getPrecedence(), inferredSorts, null);
     dataDefinition.hasErrors(true);
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
       for (Abstract.TypeArgument parameter : parameters) {
@@ -534,20 +533,20 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           // FIXME[errorformat]
           myErrorReporter.report(new TypeCheckingError(def, msg, def.getUniverse()));
         } else {
-          userUniverse = result.expression.toUniverse().getSort();
+          userSort = result.expression.toUniverse().getSort();
         }
       }
     }
 
     dataDefinition.setPolyParams(polyParamsList);
     dataDefinition.setParameters(list.getFirst());
-    if (userUniverse != null) dataDefinition.setSort(userUniverse);
+    if (userSort != null) dataDefinition.setSorts(new SortMaxSet(userSort));
     dataDefinition.hasErrors(false);
     dataDefinition.setThisClass(thisClass);
     myState.record(def, dataDefinition);
 
     for (Abstract.Constructor constructor : def.getConstructors()) {
-      Constructor typedConstructor = visitConstructor(constructor, def, dataDefinition, visitor);
+      Constructor typedConstructor = visitConstructor(constructor, def, dataDefinition, visitor, inferredSorts);
       if (typedConstructor == null) {
         continue;
       }
@@ -557,33 +556,30 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       if (typedConstructor.containsInterval() && !dataDefinition.containsInterval()) {
         dataDefinition.setContainsInterval();
         if (!def.getConditions().isEmpty()) {
-          inferredUniverse = new Sort(inferredUniverse.getPLevel(), new Level());
+          SortMaxSet sorts1 = new SortMaxSet();
+          for (Sort sort : inferredSorts.getSorts()) {
+            sorts1.add(new Sort(sort.getPLevel(), new Level()));
+          }
+          inferredSorts = sorts1;
         }
       }
-      inferredUniverse = inferredUniverse.max(typedConstructor.getSort());
     }
 
-    for (Constructor constructor : dataDefinition.getConstructors()) {
-      constructor.setSort(inferredUniverse);
-    }
-
-    if (userUniverse != null) {
-      Level.CMP cmpP = inferredUniverse.getPLevel().compare(userUniverse.getPLevel());
-      Level.CMP cmpH = inferredUniverse.getHLevel().compare(userUniverse.getHLevel());
-      if (cmpP == Level.CMP.NOT_COMPARABLE || cmpP == Level.CMP.GREATER ||
-              cmpH == Level.CMP.NOT_COMPARABLE || cmpH == Level.CMP.GREATER) {
-        String msg = "Actual universe " + new UniverseExpression(inferredUniverse) + " is not compatible with expected universe " + new UniverseExpression(userUniverse);
+    if (userSort != null) {
+      SortMaxSet userSorts = new SortMaxSet(userSort);
+      if (inferredSorts.isLessOrEquals(userSorts)) {
+        dataDefinition.setSorts(userSorts);
+      } else {
+        String msg = "Actual universe " + inferredSorts + " is not compatible with expected universe " + new UniverseExpression(userSort);
         // FIXME[errorformat]
         myErrorReporter.report(new TypeCheckingError(def, msg, def.getUniverse()));
-        dataDefinition.setSort(inferredUniverse);
-      } else {
-        dataDefinition.setSort(userUniverse);
+        dataDefinition.setSorts(inferredSorts);
       }
     } else {
     //  if (def.getConditions() != null && !def.getConditions().isEmpty()) {
-     //   dataDefinition.setSort(new TypeUniverse(inferredUniverse.getPLevel(), TypeUniverse.intToHLevel(TypeUniverse.NOT_TRUNCATED)));
+     //   dataDefinition.setSort(new TypeUniverse(inferredSorts.getPLevel(), TypeUniverse.intToHLevel(TypeUniverse.NOT_TRUNCATED)));
      // } else {
-        dataDefinition.setSort(inferredUniverse);
+        dataDefinition.setSorts(inferredSorts);
      // }
     }
 
@@ -726,14 +722,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     throw new IllegalStateException();
   }
 
-  public Constructor visitConstructor(Abstract.Constructor def, Abstract.DataDefinition abstractData, DataDefinition dataDefinition, CheckTypeVisitor visitor) {
+  public Constructor visitConstructor(Abstract.Constructor def, Abstract.DataDefinition abstractData, DataDefinition dataDefinition, CheckTypeVisitor visitor, SortMaxSet sorts) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(visitor.getContext())) {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
       String name = def.getName();
       int index = 1;
       boolean ok = true;
 
-      Constructor constructor = new Constructor(name, def.getPrecedence(), Sort.PROP, null, dataDefinition, null);
+      Constructor constructor = new Constructor(name, def.getPrecedence(), null, dataDefinition, null);
       constructor.hasErrors(true);
       List<? extends Abstract.PatternArgument> patterns = def.getPatterns();
       Patterns typedPatterns = null;
@@ -851,12 +847,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
       constructor.setParameters(list.getFirst());
       constructor.setPatterns(typedPatterns);
-      if (plevel != null) constructor.setSort(new Sort(plevel, hlevel));
       constructor.hasErrors(false);
       constructor.setThisClass(dataDefinition.getThisClass());
       dataDefinition.addConstructor(constructor);
 
       myState.record(def, constructor);
+      if (plevel != null) {
+        sorts.add(new Sort(plevel, hlevel));
+      }
       return constructor;
     }
   }

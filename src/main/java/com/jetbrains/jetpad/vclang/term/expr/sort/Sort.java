@@ -79,6 +79,7 @@ public class Sort {
   }
 
   public boolean isLessOrEquals(Sort other) {
+    // TODO: use compare directly.
     if (equals(other)) return true;
     UniverseExpression uni1 = new UniverseExpression(this);
     UniverseExpression uni2 = new UniverseExpression(other);

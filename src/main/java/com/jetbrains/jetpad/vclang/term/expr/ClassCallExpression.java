@@ -2,23 +2,23 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Lam;
 
 public class ClassCallExpression extends DefCallExpression {
   private final Map<ClassField, ImplementStatement> myStatements;
-  private Sort mySort;
+  private SortMaxSet mySorts;
 
   public ClassCallExpression(ClassDefinition definition) {
     super(definition);
-    myStatements = new HashMap<>();
-    mySort = definition.getSort();
+    myStatements = Collections.emptyMap();
+    mySorts = definition.getSorts();
   }
 
   public ClassCallExpression(ClassDefinition definition, Map<ClassField, ImplementStatement> statements) {
@@ -42,9 +42,8 @@ public class ClassCallExpression extends DefCallExpression {
     return myStatements;
   }
 
-  @Override
-  public Sort getSort() {
-    if (mySort == null) {
+  public SortMaxSet getSorts() {
+    if (mySorts == null) {
       ExprSubstitution substitution = getDefinition().getImplementedFields();
       for (Map.Entry<ClassField, ImplementStatement> entry : myStatements.entrySet()) {
         if (entry.getValue().term != null) {
@@ -52,15 +51,15 @@ public class ClassCallExpression extends DefCallExpression {
         }
       }
 
-      mySort = Sort.PROP;
+      mySorts = new SortMaxSet();
       for (ClassField field : getDefinition().getFields()) {
         if (!field.hasErrors() && !getDefinition().getFieldImpl(field).isImplemented() && !myStatements.containsKey(field)) {
-          mySort = field.updateSort(mySort, substitution);
+          field.updateSort(mySorts, substitution);
         }
       }
     }
 
-    return mySort;
+    return mySorts;
   }
 
   @Override

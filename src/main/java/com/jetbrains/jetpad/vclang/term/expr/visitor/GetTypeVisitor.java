@@ -36,8 +36,8 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
   }
 
   @Override
-  public Expression visitClassCall(ClassCallExpression expr, Void params) {
-    return new UniverseExpression(expr.getSort());
+  public Type visitClassCall(ClassCallExpression expr, Void params) {
+    return expr.getSorts().toType();
   }
 
   @Override

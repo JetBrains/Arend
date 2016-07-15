@@ -6,9 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
@@ -38,8 +36,8 @@ public class Constructor extends Definition implements Function {
     }
   }
 
-  public Constructor(String name, Abstract.Definition.Precedence precedence, Sort universe, DependentLink parameters, DataDefinition dataType, Patterns patterns) {
-    super(name, precedence, universe);
+  public Constructor(String name, Abstract.Definition.Precedence precedence, DependentLink parameters, DataDefinition dataType, Patterns patterns) {
+    super(name, precedence);
     hasErrors(false);
     myDataType = dataType;
     myParameters = parameters;
@@ -49,8 +47,8 @@ public class Constructor extends Definition implements Function {
     }
   }
 
-  public Constructor(String name, Abstract.Definition.Precedence precedence, Sort universe, DependentLink parameters, DataDefinition dataType) {
-    this(name, precedence, universe, parameters, dataType, null);
+  public Constructor(String name, Abstract.Definition.Precedence precedence, DependentLink parameters, DataDefinition dataType) {
+    this(name, precedence, parameters, dataType, null);
   }
 
   public Patterns getPatterns() {
@@ -187,21 +185,5 @@ public class Constructor extends Definition implements Function {
   @Override
   public ConCallExpression getDefCall() {
     return ConCall(this);
-  }
-
-  @Override
-  public Constructor substPolyParams(LevelSubstitution subst) {
-    if (!myDataType.isPolymorphic()) {
-      return this;
-    }
-    DataDefinition newDataType = myDataType.substPolyParams(subst);
-
-    for (Constructor cons : newDataType.getConstructors()) {
-      if (cons.getName().equals(getName())) {
-        return cons;
-      }
-    }
-
-    return null;
   }
 }
