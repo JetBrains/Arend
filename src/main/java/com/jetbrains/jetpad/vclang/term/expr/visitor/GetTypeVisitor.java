@@ -104,10 +104,11 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
     }
 
     if (codomain != null) {
+      SortMaxSet sorts1 = new SortMaxSet();
       for (Sort sort : sorts.getSorts()) {
-        sort.setHLevel(new Level(0));
+        sorts1.add(new Sort(sort.getPLevel(), new Level(0)));
       }
-      sorts.addAll(codomain);
+      sorts = sorts1;
     }
 
     return sorts.getSorts().isEmpty() ? new UniverseExpression(Sort.PROP) : sorts.getSorts().size() == 1 ? new UniverseExpression(sorts.getSorts().iterator().next()) : new PiUniverseType(EmptyDependentLink.getInstance(), sorts);

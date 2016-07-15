@@ -58,17 +58,17 @@ public class Preprelude extends SimpleNamespace {
     PRE_PRELUDE_CLASS = new ClassDefinition("Preprelude", PRE_PRELUDE, EmptyNamespace.INSTANCE);
 
     /* Nat, zero, suc */
-    DefinitionBuilder.Data nat = new DefinitionBuilder.Data(PRE_PRELUDE, "Nat", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
+    DefinitionBuilder.Data nat = new DefinitionBuilder.Data(PRE_PRELUDE, "Nat", Abstract.Binding.DEFAULT_PRECEDENCE, Sort.SetOfLevel(0), EmptyDependentLink.getInstance());
     NAT = nat.definition();
-    ZERO = nat.addConstructor("zero", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
-    SUC = nat.addConstructor("suc", Abstract.Binding.DEFAULT_PRECEDENCE, null, param(DataCall(NAT)));
+    ZERO = nat.addConstructor("zero", Abstract.Binding.DEFAULT_PRECEDENCE, Sort.SetOfLevel(0), EmptyDependentLink.getInstance());
+    SUC = nat.addConstructor("suc", Abstract.Binding.DEFAULT_PRECEDENCE, Sort.SetOfLevel(0), param(DataCall(NAT)));
 
     /* Lvl, zeroLvl, sucLvl */
-    DefinitionBuilder.Data lvl = new DefinitionBuilder.Data(PRE_PRELUDE, "Lvl", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
+    DefinitionBuilder.Data lvl = new DefinitionBuilder.Data(PRE_PRELUDE, "Lvl", Abstract.Binding.DEFAULT_PRECEDENCE, Sort.SetOfLevel(0), EmptyDependentLink.getInstance());
     LVL = lvl.definition();
     DependentLink sucLvlParameter = param("l", DataCall(LVL));
-    ZERO_LVL = lvl.addConstructor("zeroLvl", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
-    SUC_LVL = lvl.addConstructor("sucLvl", Abstract.Binding.DEFAULT_PRECEDENCE, null, sucLvlParameter);
+    ZERO_LVL = lvl.addConstructor("zeroLvl", Abstract.Binding.DEFAULT_PRECEDENCE, Sort.SetOfLevel(0), EmptyDependentLink.getInstance());
+    SUC_LVL = lvl.addConstructor("sucLvl", Abstract.Binding.DEFAULT_PRECEDENCE, Sort.SetOfLevel(0), sucLvlParameter);
 
     /* maxLvl */
     DependentLink maxLvlParameter1 = param(DataCall(LVL));
@@ -86,10 +86,10 @@ public class Preprelude extends SimpleNamespace {
     MAX_LVL.setElimTree(maxLvlElimTree);
 
     /* CNat, inf, fin */
-    DefinitionBuilder.Data cnat = new DefinitionBuilder.Data(PRE_PRELUDE, "CNat", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
+    DefinitionBuilder.Data cnat = new DefinitionBuilder.Data(PRE_PRELUDE, "CNat", Abstract.Binding.DEFAULT_PRECEDENCE, Sort.SetOfLevel(0), EmptyDependentLink.getInstance());
     CNAT = cnat.definition();
-    INF = cnat.addConstructor("inf", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
-    FIN = cnat.addConstructor("fin", Abstract.Binding.DEFAULT_PRECEDENCE, null, param("n", DataCall(NAT)));
+    INF = cnat.addConstructor("inf", Abstract.Binding.DEFAULT_PRECEDENCE, Sort.SetOfLevel(0), EmptyDependentLink.getInstance());
+    FIN = cnat.addConstructor("fin", Abstract.Binding.DEFAULT_PRECEDENCE, Sort.SetOfLevel(0), param("n", DataCall(NAT)));
 
     /* maxNat */
     DependentLink maxNatParameter1 = param(DataCall(NAT));
@@ -145,27 +145,11 @@ public class Preprelude extends SimpleNamespace {
     PRED_CNAT.setElimTree(predCNatElimTree);
 
     /* I, left, right */
-    DefinitionBuilder.Data interval = new DefinitionBuilder.Data(PRE_PRELUDE, "I", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
+    DefinitionBuilder.Data interval = new DefinitionBuilder.Data(PRE_PRELUDE, "I", Abstract.Binding.DEFAULT_PRECEDENCE, Sort.PROP, EmptyDependentLink.getInstance());
     INTERVAL = interval.definition();
-    LEFT = interval.addConstructor("left", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
-    RIGHT = interval.addConstructor("right", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
-    ABSTRACT = interval.addConstructor("<abstract>", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
-  }
-
-  public static void setUniverses() {
-    NAT.setSort(Sort.SetOfLevel(0));
-    ZERO.setSort(Sort.SetOfLevel(0));
-    SUC.setSort(Sort.SetOfLevel(0));
-    LVL.setSort(Sort.SetOfLevel(0));
-    ZERO_LVL.setSort(Sort.SetOfLevel(0));
-    SUC_LVL.setSort(Sort.SetOfLevel(0));
-    CNAT.setSort(Sort.SetOfLevel(0));
-    FIN.setSort(Sort.SetOfLevel(0));
-    INF.setSort(Sort.SetOfLevel(0));
-    INTERVAL.setSort(Sort.PROP);
-    LEFT.setSort(Sort.PROP);
-    RIGHT.setSort(Sort.PROP);
-    ABSTRACT.setSort(Sort.PROP);
+    LEFT = interval.addConstructor("left", Abstract.Binding.DEFAULT_PRECEDENCE, Sort.PROP, EmptyDependentLink.getInstance());
+    RIGHT = interval.addConstructor("right", Abstract.Binding.DEFAULT_PRECEDENCE, Sort.PROP, EmptyDependentLink.getInstance());
+    ABSTRACT = interval.addConstructor("<abstract>", Abstract.Binding.DEFAULT_PRECEDENCE, Sort.PROP, EmptyDependentLink.getInstance());
   }
 
   public Preprelude() {

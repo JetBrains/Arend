@@ -21,6 +21,13 @@ public class SortMaxSet {
     return mySorts;
   }
 
+  public void add(Sort sort) {
+    if (mySorts.isEmpty()) {
+      mySorts = new ArrayList<>();
+    }
+    mySorts.add(sort);
+  }
+
   public void addAll(SortMaxSet sorts) {
     if (mySorts.isEmpty()) {
       mySorts = new ArrayList<>();

@@ -8,8 +8,8 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 public class Sort {
-  private Level myPLevel;
-  private Level myHLevel;
+  private final Level myPLevel;
+  private final Level myHLevel;
 
   public static final int ANY_LEVEL = -10;
   public static final int NOT_TRUNCATED = -10;
@@ -55,14 +55,6 @@ public class Sort {
 
   public Level getHLevel() {
     return myHLevel;
-  }
-
-  public void setPLevel(Level level) {
-    myPLevel = level;
-  }
-
-  public void setHLevel(Level level) {
-    myHLevel = level;
   }
 
   public Sort max(Sort other) {

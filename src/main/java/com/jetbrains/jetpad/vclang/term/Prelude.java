@@ -53,7 +53,6 @@ public class Prelude extends SimpleNamespace {
 
   static {
     PRELUDE_CLASS = new ClassDefinition("Prelude", PRELUDE, EmptyNamespace.INSTANCE);
-    Preprelude.setUniverses();
 
     /* Path */
     //Binding PathLp = new TypedBinding("lp", Lvl());
