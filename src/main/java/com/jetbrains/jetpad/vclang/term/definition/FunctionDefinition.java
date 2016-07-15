@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FunCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
@@ -37,7 +38,7 @@ public class FunctionDefinition extends Definition implements Function {
     myElimTree = elimTree;
   }
 
-  public FunctionDefinition(String name, Abstract.Definition.Precedence precedence, Namespace ownNamespace, DependentLink parameters, Expression resultType, ElimTreeNode elimTree, TypeUniverse universe) {
+  public FunctionDefinition(String name, Abstract.Definition.Precedence precedence, Namespace ownNamespace, DependentLink parameters, Expression resultType, ElimTreeNode elimTree, Sort universe) {
     super(name, precedence, universe);
     assert parameters != null;
     myOwnNamespace = ownNamespace;
@@ -122,6 +123,6 @@ public class FunctionDefinition extends Definition implements Function {
     DependentLink newParams = DependentLink.Helper.subst(myParameters, subst);
 
     return new FunctionDefinition(getName(), getPrecedence(), getOwnNamespace(), newParams,
-        myResultType.subst(subst), myElimTree /* .subst(subst) /**/, getUniverse().subst(subst.LevelSubst));
+        myResultType.subst(subst), myElimTree /* .subst(subst) /**/, getSort().subst(subst.LevelSubst));
   }
 }

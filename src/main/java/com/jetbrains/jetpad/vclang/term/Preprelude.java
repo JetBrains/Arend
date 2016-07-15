@@ -7,10 +7,14 @@ import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
 import java.util.ArrayList;
@@ -149,19 +153,19 @@ public class Preprelude extends SimpleNamespace {
   }
 
   public static void setUniverses() {
-    NAT.setUniverse(TypeUniverse.SetOfLevel(0));
-    ZERO.setUniverse(TypeUniverse.SetOfLevel(0));
-    SUC.setUniverse(TypeUniverse.SetOfLevel(0));
-    LVL.setUniverse(TypeUniverse.SetOfLevel(0));
-    ZERO_LVL.setUniverse(TypeUniverse.SetOfLevel(0));
-    SUC_LVL.setUniverse(TypeUniverse.SetOfLevel(0));
-    CNAT.setUniverse(TypeUniverse.SetOfLevel(0));
-    FIN.setUniverse(TypeUniverse.SetOfLevel(0));
-    INF.setUniverse(TypeUniverse.SetOfLevel(0));
-    INTERVAL.setUniverse(TypeUniverse.PROP);
-    LEFT.setUniverse(TypeUniverse.PROP);
-    RIGHT.setUniverse(TypeUniverse.PROP);
-    ABSTRACT.setUniverse(TypeUniverse.PROP);
+    NAT.setSort(Sort.SetOfLevel(0));
+    ZERO.setSort(Sort.SetOfLevel(0));
+    SUC.setSort(Sort.SetOfLevel(0));
+    LVL.setSort(Sort.SetOfLevel(0));
+    ZERO_LVL.setSort(Sort.SetOfLevel(0));
+    SUC_LVL.setSort(Sort.SetOfLevel(0));
+    CNAT.setSort(Sort.SetOfLevel(0));
+    FIN.setSort(Sort.SetOfLevel(0));
+    INF.setSort(Sort.SetOfLevel(0));
+    INTERVAL.setSort(Sort.PROP);
+    LEFT.setSort(Sort.PROP);
+    RIGHT.setSort(Sort.PROP);
+    ABSTRACT.setSort(Sort.PROP);
   }
 
   public Preprelude() {
@@ -236,14 +240,14 @@ public class Preprelude extends SimpleNamespace {
       private final DataDefinition myDefinition;
       private final SimpleNamespace myNs = new SimpleNamespace();
 
-      Data(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, TypeUniverse universe, DependentLink parameters, List<Binding> polyParams) {
+      Data(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, Sort universe, DependentLink parameters, List<Binding> polyParams) {
         myParentNs = parentNs;
         myDefinition = new DataDefinition(name, precedence, universe, parameters);
         myDefinition.setPolyParams(polyParams);
         myParentNs.addDefinition(myDefinition);
       }
 
-      Data(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, TypeUniverse universe, DependentLink parameters) {
+      Data(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, Sort universe, DependentLink parameters) {
         this(parentNs, name, precedence, universe, parameters, new ArrayList<Binding>());
       }
 
@@ -251,7 +255,7 @@ public class Preprelude extends SimpleNamespace {
         return myDefinition;
       }
 
-      Constructor addConstructor(String name, Abstract.Binding.Precedence precedence, TypeUniverse universe, DependentLink parameters) {
+      Constructor addConstructor(String name, Abstract.Binding.Precedence precedence, Sort universe, DependentLink parameters) {
         Constructor constructor = new Constructor(name, precedence, universe, parameters, myDefinition);
         myDefinition.addConstructor(constructor);
         myNs.addDefinition(constructor);
@@ -264,7 +268,7 @@ public class Preprelude extends SimpleNamespace {
       private final FunctionDefinition myDefinition;
 
       public Function(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree, List<Binding> polyParams) {
-        myDefinition = new FunctionDefinition(name, precedence, EmptyNamespace.INSTANCE, parameters, resultType, elimTree, resultType.toUniverse() != null ? resultType.toUniverse().getUniverse() : resultType.getType().toUniverse().getUniverse());
+        myDefinition = new FunctionDefinition(name, precedence, EmptyNamespace.INSTANCE, parameters, resultType, elimTree, resultType.toUniverse() != null ? resultType.toUniverse().getSort() : Sort.PROP);
         myDefinition.setPolyParams(polyParams);
         parentNs.addDefinition(myDefinition);
       }

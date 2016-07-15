@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -37,7 +38,7 @@ public class Constructor extends Definition implements Function {
     }
   }
 
-  public Constructor(String name, Abstract.Definition.Precedence precedence, TypeUniverse universe, DependentLink parameters, DataDefinition dataType, Patterns patterns) {
+  public Constructor(String name, Abstract.Definition.Precedence precedence, Sort universe, DependentLink parameters, DataDefinition dataType, Patterns patterns) {
     super(name, precedence, universe);
     hasErrors(false);
     myDataType = dataType;
@@ -48,7 +49,7 @@ public class Constructor extends Definition implements Function {
     }
   }
 
-  public Constructor(String name, Abstract.Definition.Precedence precedence, TypeUniverse universe, DependentLink parameters, DataDefinition dataType) {
+  public Constructor(String name, Abstract.Definition.Precedence precedence, Sort universe, DependentLink parameters, DataDefinition dataType) {
     this(name, precedence, universe, parameters, dataType, null);
   }
 

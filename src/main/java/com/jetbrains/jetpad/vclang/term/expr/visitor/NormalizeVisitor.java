@@ -83,7 +83,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
 
       Expression thisExpr = expr.getArguments().get(0).normalize(Mode.WHNF);
-      ClassCallExpression classCall = thisExpr.getType().normalize(Mode.WHNF).toClassCall();
+      ClassCallExpression classCall = ((Expression) thisExpr.getType()).normalize(Mode.WHNF).toClassCall();
       if (classCall != null) {
         ClassCallExpression.ImplementStatement elem = classCall.getImplementStatements().get(defCallExpr.getDefinition());
         Expression impl = null;
@@ -246,7 +246,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   public Expression visitUniverse(UniverseExpression expr, Mode mode) {
     if (mode == Mode.TOP) return null;
     /*if ((mode == Mode.NF || mode == Mode.HUMAN_NF)) {
-      return ((TypeUniverse) expr.getUniverse()).getLevel() != null ? Universe(((TypeUniverse) expr.getUniverse()).getLevel().getValue().accept(this, mode)) : expr;
+      return ((TypeUniverse) expr.getSort()).getLevel() != null ? Universe(((TypeUniverse) expr.getSort()).getLevel().getValue().accept(this, mode)) : expr;
     } /**/
     return expr;
   }

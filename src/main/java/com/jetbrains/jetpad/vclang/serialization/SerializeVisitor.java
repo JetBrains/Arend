@@ -174,7 +174,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   public Void visitUniverse(UniverseExpression expr, Void params) {
     myStream.write(8);
     try {
-      ModuleSerialization.writeUniverse(this, expr.getUniverse());
+      ModuleSerialization.writeSort(this, expr.getSort());
     } catch (IOException e) {
       throw new IllegalStateException();
     }

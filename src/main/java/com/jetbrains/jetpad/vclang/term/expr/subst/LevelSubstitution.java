@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.subst;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.expr.LevelExpression;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 
 import java.util.HashMap;
 import java.util.List;
@@ -9,33 +9,33 @@ import java.util.Map;
 import java.util.Set;
 
 public class LevelSubstitution {
-  private Map<Binding, LevelExpression> mySubstExprs = new HashMap<>();
+  private Map<Binding, Level> mySubstExprs = new HashMap<>();
 
   public LevelSubstitution() {}
 
-  public LevelSubstitution(Binding l, LevelExpression expr) {
+  public LevelSubstitution(Binding l, Level expr) {
     mySubstExprs.put(l, expr);
   }
 
-  public LevelSubstitution(Binding lp, LevelExpression lp_expr, Binding lh, LevelExpression lh_expr) {
+  public LevelSubstitution(Binding lp, Level lp_expr, Binding lh, Level lh_expr) {
     mySubstExprs.put(lp, lp_expr);
     mySubstExprs.put(lh, lh_expr);
   }
 
   public LevelSubstitution(Binding lp, Binding lp_new, Binding lh, Binding lh_new) {
-    mySubstExprs.put(lp, new LevelExpression(lp_new));
-    mySubstExprs.put(lh, new LevelExpression(lh_new));
+    mySubstExprs.put(lp, new Level(lp_new));
+    mySubstExprs.put(lh, new Level(lh_new));
   }
 
   public Set<Binding> getDomain() {
     return mySubstExprs.keySet();
   }
 
-  public LevelExpression get(Binding binding)  {
+  public Level get(Binding binding)  {
     return mySubstExprs.get(binding);
   }
 
-  public void add(Binding binding, LevelExpression expr) {
+  public void add(Binding binding, Level expr) {
     mySubstExprs.put(binding, expr);
   }
 
@@ -43,8 +43,8 @@ public class LevelSubstitution {
     mySubstExprs.putAll(subst.mySubstExprs);
   }
 
-  public void subst(Binding binding, LevelExpression expr) {
-    for (Map.Entry<Binding, LevelExpression> var : mySubstExprs.entrySet()) {
+  public void subst(Binding binding, Level expr) {
+    for (Map.Entry<Binding, Level> var : mySubstExprs.entrySet()) {
       var.setValue(var.getValue().subst(binding, expr));
     }
   }
@@ -68,7 +68,7 @@ public class LevelSubstitution {
         continue;
       }
       boolean foundInExprs = false;
-      for (Map.Entry<Binding, LevelExpression> substExpr : mySubstExprs.entrySet()) {
+      for (Map.Entry<Binding, Level> substExpr : mySubstExprs.entrySet()) {
         if (substExpr.getValue().findBinding(binding)) {
           result.add(substExpr.getKey(), substExpr.getValue().subst(subst));
           foundInExprs = true;

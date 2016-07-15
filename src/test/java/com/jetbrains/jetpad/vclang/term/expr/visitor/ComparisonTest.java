@@ -10,7 +10,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.LetClause;
-import com.jetbrains.jetpad.vclang.term.expr.LevelExpression;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import org.junit.Test;
@@ -200,7 +200,7 @@ public class ComparisonTest {
 
   @Test
   public void etaLam() {
-    Expression type = Pi(param(Nat()), Apps(Prelude.PATH.getDefCall(new LevelSubstitution(Prelude.LP, new LevelExpression(0), Prelude.LH, new LevelExpression(1))),
+    Expression type = Pi(param(Nat()), Apps(Prelude.PATH.getDefCall(new LevelSubstitution(Prelude.LP, new Level(0), Prelude.LH, new Level(1))),
             Lam(param("i", DataCall(Preprelude.INTERVAL)), Nat()), Zero(), Zero()));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(param(type), type));
     assertNotNull(result1);
@@ -212,7 +212,7 @@ public class ComparisonTest {
   @Test
   public void etaPath() {
     DependentLink x = param("x", Nat());
-    Expression type = Apps(Prelude.PATH.getDefCall(new LevelSubstitution(Prelude.LP, new LevelExpression(0), Prelude.LH, new LevelExpression(1))),
+    Expression type = Apps(Prelude.PATH.getDefCall(new LevelSubstitution(Prelude.LP, new Level(0), Prelude.LH, new Level(1))),
             Lam(param("i", DataCall(Preprelude.INTERVAL)), Pi(param(Nat()), Nat())), Lam(x, Reference(x)), Lam(x, Reference(x)));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a => path (\\lam i x => (a @ i) x)", Pi(param(type), type));
     assertNotNull(result1);

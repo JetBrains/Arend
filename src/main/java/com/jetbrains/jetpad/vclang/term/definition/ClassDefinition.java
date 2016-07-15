@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.LevelSubstVisitor;
@@ -76,20 +77,20 @@ public class ClassDefinition extends Definition {
     return result;
   }
 
-  public void updateUniverse() {
-    TypeUniverse universe = TypeUniverse.PROP;
+  public void updateSort() {
+    Sort sort = Sort.PROP;
     ExprSubstitution substitution = getImplementedFields();
     for (Map.Entry<ClassField, FieldImplementation> entry : myFields.entrySet()) {
       if (!entry.getKey().hasErrors() && !entry.getValue().isImplemented()) {
-        universe = entry.getKey().updateUniverse(universe, substitution);
+        sort = entry.getKey().updateSort(sort, substitution);
       }
     }
-    setUniverse(universe);
+    setSort(sort);
   }
 
   @Override
   public Expression getType() {
-    return new UniverseExpression(getUniverse());
+    return new UniverseExpression(getSort());
   }
 
   @Override
@@ -200,8 +201,8 @@ public class ClassDefinition extends Definition {
   @Override
   public Definition substPolyParams(LevelSubstitution subst) {
     ClassDefinition newClass = new ClassDefinition(getName(), getOwnNamespace(), getInstanceNamespace());
-    TypeUniverse newUniverse = getUniverse() == null ? null : getUniverse().subst(subst);
-    newClass.setUniverse(newUniverse);
+    Sort newUniverse = getSort() == null ? null : getSort().subst(subst);
+    newClass.setSort(newUniverse);
 
     for (Map.Entry<ClassField, FieldImplementation> entry : myFields.entrySet()) {
       newClass.myFields.put(new ClassField(entry.getKey().getName(), entry.getKey().getPrecedence(),

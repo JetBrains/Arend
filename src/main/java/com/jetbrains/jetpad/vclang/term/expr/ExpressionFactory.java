@@ -8,6 +8,8 @@ import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
@@ -242,26 +244,26 @@ public class ExpressionFactory {
   public static Expression SucCNat(Expression expr) { return Apps(FunCall(Preprelude.SUC_CNAT), expr); }
 
   public static UniverseExpression Universe() {
-    return new UniverseExpression(new TypeUniverse(TypeUniverse.ANY_LEVEL, TypeUniverse.ANY_LEVEL));
+    return new UniverseExpression(new Sort(Sort.ANY_LEVEL, Sort.ANY_LEVEL));
   }
 
   public static UniverseExpression Universe(int plevel) {
-    return new UniverseExpression(new TypeUniverse(plevel, TypeUniverse.NOT_TRUNCATED));
+    return new UniverseExpression(new Sort(plevel, Sort.NOT_TRUNCATED));
   }
 
   public static UniverseExpression Universe(int plevel, int hlevel) {
-    return new UniverseExpression(new TypeUniverse(plevel, hlevel));
+    return new UniverseExpression(new Sort(plevel, hlevel));
   }
 
-  public static UniverseExpression Universe(int plevel, LevelExpression hlevel) {
-    return new UniverseExpression(new TypeUniverse(TypeUniverse.intToPLevel(plevel), hlevel));
+  public static UniverseExpression Universe(int plevel, Level hlevel) {
+    return new UniverseExpression(new Sort(Sort.intToPLevel(plevel), hlevel));
   }
 
-  public static UniverseExpression Universe(LevelExpression plevel, LevelExpression hlevel) {
-    return new UniverseExpression(new TypeUniverse(plevel, hlevel));
+  public static UniverseExpression Universe(Level plevel, Level hlevel) {
+    return new UniverseExpression(new Sort(plevel, hlevel));
   }
 
-  public static UniverseExpression Universe(TypeUniverse universe) {
+  public static UniverseExpression Universe(Sort universe) {
     return new UniverseExpression(universe);
   }
 

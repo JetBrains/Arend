@@ -15,7 +15,7 @@ import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.LetClause;
-import com.jetbrains.jetpad.vclang.term.expr.LevelExpression;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
@@ -312,8 +312,8 @@ public class NormalizationTest {
 
   @Test
   public void testIsoleft() {
-    DependentLink A = param("A", Universe(new LevelExpression(Prelude.LP), new LevelExpression(Prelude.LH)));
-    DependentLink B = param("B", Universe(new LevelExpression(Prelude.LP), new LevelExpression(Prelude.LH)));
+    DependentLink A = param("A", Universe(new Level(Prelude.LP), new Level(Prelude.LH)));
+    DependentLink B = param("B", Universe(new Level(Prelude.LP), new Level(Prelude.LH)));
     DependentLink f = param("f", Pi(param(Reference(A)), Reference(B)));
     DependentLink g = param("g", Pi(param(Reference(B)), Reference(A)));
     DependentLink a = param("a", Reference(A));
@@ -338,8 +338,8 @@ public class NormalizationTest {
   public void testIsoRight() {
     Binding lp = Prelude.PATH.getPolyParamByType(Preprelude.LVL); //new TypedBinding("lp", Lvl());
     Binding lh = Prelude.PATH.getPolyParamByType(Preprelude.CNAT);
-    DependentLink A = param("A", Universe(new LevelExpression(lp), new LevelExpression(lh)));
-    DependentLink B = param("B", Universe(new LevelExpression(lp), new LevelExpression(lh)));
+    DependentLink A = param("A", Universe(new Level(lp), new Level(lh)));
+    DependentLink B = param("B", Universe(new Level(lp), new Level(lh)));
     DependentLink f = param("f", Pi(param(Reference(A)), Reference(B)));
     DependentLink g = param("g", Pi(param(Reference(B)), Reference(A)));
     DependentLink a = param("a", Reference(A));
@@ -362,8 +362,8 @@ public class NormalizationTest {
 
   @Test
   public void testCoeIso() {
-    DependentLink A = param("A", Universe(new LevelExpression(Prelude.LP), new LevelExpression(Prelude.LH)));
-    DependentLink B = param("B", Universe(new LevelExpression(Prelude.LP), new LevelExpression(Prelude.LH)));
+    DependentLink A = param("A", Universe(new Level(Prelude.LP), new Level(Prelude.LH)));
+    DependentLink B = param("B", Universe(new Level(Prelude.LP), new Level(Prelude.LH)));
     DependentLink f = param("f", Pi(param(Reference(A)), Reference(B)));
     DependentLink g = param("g", Pi(param(Reference(B)), Reference(A)));
     DependentLink a = param("a", Reference(A));
@@ -392,11 +392,11 @@ public class NormalizationTest {
 
   @Test
   public void testCoeIsoFreeVar() {
-    LevelSubstitution levelSubst = new LevelSubstitution(Prelude.LP, new LevelExpression(0), Prelude.LH, new LevelExpression(0));
+    LevelSubstitution levelSubst = new LevelSubstitution(Prelude.LP, new Level(0), Prelude.LH, new Level(0));
     DependentLink k = param("k", DataCall(Preprelude.INTERVAL));
     DependentLink i = param("i", DataCall(Preprelude.INTERVAL));
     Expression A = Apps(DataCall(Prelude.PATH).applyLevelSubst(levelSubst), Lam(i, DataCall(Preprelude.INTERVAL)), Reference(k), Reference(k));
-    DependentLink B = param("B", Universe(new LevelExpression(0), new LevelExpression(0)));
+    DependentLink B = param("B", Universe(new Level(0), new Level(0)));
     DependentLink f = param("f", Pi(param(A), Reference(B)));
     DependentLink g = param("g", Pi(param(Reference(B)), A));
     DependentLink a = param("a", A);

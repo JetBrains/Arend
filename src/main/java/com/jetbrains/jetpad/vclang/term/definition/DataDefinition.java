@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
@@ -26,7 +27,7 @@ public class DataDefinition extends Definition {
     myParameters = EmptyDependentLink.getInstance();
   }
 
-  public DataDefinition(String name, Abstract.Definition.Precedence precedence, TypeUniverse universe, DependentLink parameters) {
+  public DataDefinition(String name, Abstract.Definition.Precedence precedence, Sort universe, DependentLink parameters) {
     super(name, precedence, universe);
     hasErrors(false);
     myParameters = parameters;
@@ -107,7 +108,7 @@ public class DataDefinition extends Definition {
       return null;
     }
 
-    Expression resultType = new UniverseExpression(getUniverse());
+    Expression resultType = new UniverseExpression(getSort());
     return myParameters.hasNext() ? Pi(myParameters, resultType) : resultType;
   }
 
@@ -122,10 +123,10 @@ public class DataDefinition extends Definition {
       return this;
     }
     Substitution subst = new Substitution(substitution);
-    DataDefinition newDef = new DataDefinition(getName(), getPrecedence(), getUniverse().subst(subst.LevelSubst), DependentLink.Helper.subst(myParameters, subst));
+    DataDefinition newDef = new DataDefinition(getName(), getPrecedence(), getSort().subst(subst.LevelSubst), DependentLink.Helper.subst(myParameters, subst));
     for (Constructor constructor : getConstructors()) {
       Constructor newConstructor = new Constructor(constructor.getName(), constructor.getPrecedence(),
-              constructor.getUniverse().subst(subst.LevelSubst), DependentLink.Helper.subst(constructor.getParameters(), subst), newDef, constructor.getPatterns());
+              constructor.getSort().subst(subst.LevelSubst), DependentLink.Helper.subst(constructor.getParameters(), subst), newDef, constructor.getPatterns());
       newDef.addConstructor(newConstructor);
 
       Condition cond = newDef.getCondition(constructor);

@@ -6,8 +6,8 @@ import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
@@ -26,7 +26,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   private final Map<Binding, Binding> mySubstitution;
   private final Equations myEquations;
   private final Abstract.SourceNode mySourceNode;
- // private final ExpressionOrder order = StandardOrder.getInstance();
   private Equations.CMP myCMP;
 
   private CompareVisitor(Equations equations, Equations.CMP cmp, Abstract.SourceNode sourceNode) {
@@ -103,20 +102,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       myCMP = myCMP.not();
       return new2.accept(this, expr1);
     }
-
-    /*if (order.isComparable(expr1)) {
-      Boolean ordCmpResult = order.compare(expr1, expr2, this, myCMP);
-
-      if (ordCmpResult != null) {
-        return ordCmpResult;
-      }
-
-      if (expr1.toUniverse() != null) return false;
-    } /**/
-
-   // if ((myCMP == Equations.CMP.GE || myCMP == Equations.CMP.LE) && expr1.toReference() == null) {
-   //   if (order.compare(expr1, expr2, this, myCMP)) return true;
-   // }
 
     return expr1.accept(this, expr2);
   }
@@ -211,7 +196,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     DefCallExpression defCall2 = expr2.toDefCall();
     if (defCall2 == null) return false;
     // TODO: remove this comparison
-    TypeUniverse.compare(expr1.getUniverse(), defCall2.getUniverse(), myCMP, myEquations);
+    Sort.compare(expr1.getSort(), defCall2.getSort(), myCMP, myEquations);
     return expr1.getDefinition() == defCall2.getDefinition();
   }
 
@@ -392,22 +377,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   @Override
   public Boolean visitUniverse(UniverseExpression expr1, Expression expr2) {
     UniverseExpression universe2 = expr2.toUniverse();
-    if (universe2 == null || universe2.getUniverse() == null) return false;
-    /*TypeUniverse.TypeLevel level1 = ((TypeUniverse) expr1.getUniverse()).getLevel();
-    TypeUniverse.TypeLevel level2 = ((TypeUniverse) universe2.getUniverse()).getLevel();
-
-    if (level1 == null) {
-      return myCMP == Equations.CMP.GE || (level2 == null && myCMP == Equations.CMP.EQ);
-    }
-
-    if (level2 == null) {
-      return myCMP == Equations.CMP.LE;
-    }
-
-    return level1.getValue().accept(this, level2.getValue());
-    /**/
-    //return order.compare(expr1, expr2, this, myCMP);
-    return TypeUniverse.compare(expr1.getUniverse(), universe2.getUniverse(), myCMP, myEquations);
+    return universe2 != null && universe2.getSort() != null && Sort.compare(expr1.getSort(), universe2.getSort(), myCMP, myEquations);
   }
 
   @Override
@@ -474,7 +444,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return false;
     }
 
-    ClassCallExpression classCall2 = expr2.getType().toClassCall();
+    ClassCallExpression classCall2 = ((Expression) expr2.getType()).normalize(NormalizeVisitor.Mode.WHNF).toClassCall();
 
     for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> entry : classCall.getImplementStatements().entrySet()) {
       if (entry.getValue().term == null) {

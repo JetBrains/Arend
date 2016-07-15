@@ -10,7 +10,7 @@ import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.LevelExpression;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.ListEquations;
@@ -155,7 +155,7 @@ public class ErrorFormatter {
     } else if (error instanceof LevelInferenceError) {
       if (((LevelInferenceError) error).candidates.length > 0) {
         builder.append("\nCandidates are:");
-        for (LevelExpression candidate : ((LevelInferenceError) error).candidates) {
+        for (Level candidate : ((LevelInferenceError) error).candidates) {
           builder.append("\n");
           PrettyPrintVisitor.printIndent(builder, 2);
           candidate.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, 2);

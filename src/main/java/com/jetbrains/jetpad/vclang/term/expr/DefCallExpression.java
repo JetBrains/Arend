@@ -1,10 +1,8 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.HashSet;
 
@@ -51,8 +49,8 @@ public abstract class DefCallExpression extends Expression {
     return null;
   }/**/
 
-  public TypeUniverse getUniverse() {
-    return myDefinition.getUniverse().subst(myPolyParamsSubst);
+  public Sort getSort() {
+    return myDefinition.getSort().subst(myPolyParamsSubst);
   }
 
   public DefCallExpression applyLevelSubst(LevelSubstitution subst) {
@@ -60,11 +58,6 @@ public abstract class DefCallExpression extends Expression {
     //mySubstDefUptodate = false;
     return this;
   }
-
-  public static boolean compare(DefCallExpression defCall1, DefCallExpression defCall2, Equations.CMP cmp, Equations equations) {
-    return defCall1.myDefinition == defCall2.myDefinition &&
-            CompareVisitor.compare(equations, cmp, defCall1.getType(), defCall2.getType(), null);
-  } /**/
 
   @Override
   public DefCallExpression toDefCall() {

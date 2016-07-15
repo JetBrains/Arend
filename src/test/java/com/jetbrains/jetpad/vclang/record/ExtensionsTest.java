@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.record;
 
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -178,7 +178,7 @@ public class ExtensionsTest {
         "  \\abstract a : A\n" +
         "}\n" +
         "\\static \\class B \\extends A {}");
-    assertEquals(new TypeUniverse(1, 1), result.getDefinition("A").getUniverse());
-    assertEquals(new TypeUniverse(1, 1), result.getDefinition("B").getUniverse());
+    assertEquals(new Sort(1, 1), result.getDefinition("A").getSort());
+    assertEquals(new Sort(1, 1), result.getDefinition("B").getSort());
   }
 }

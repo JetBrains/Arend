@@ -1,20 +1,28 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 
-public class GetTypeVisitor extends BaseExpressionVisitor<Void,Expression> {
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.params;
+
+public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
   @Override
-  public Expression visitApp(AppExpression expr, Void params) {
-    Expression functionType = expr.getFunction().accept(this, null);
-    if (functionType != null) {
-      return functionType.applyExpressions(expr.getArguments());
-    } else {
-      return null;
-    }
+  public Type visitApp(AppExpression expr, Void params) {
+    Type functionType = expr.getFunction().accept(this, null);
+    return functionType != null ? functionType.applyExpressions(expr.getArguments()) : null;
   }
 
   @Override
@@ -29,7 +37,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void,Expression> {
 
   @Override
   public Expression visitClassCall(ClassCallExpression expr, Void params) {
-    return new UniverseExpression(expr.getUniverse());
+    return new UniverseExpression(expr.getSort());
   }
 
   @Override
@@ -38,67 +46,98 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void,Expression> {
   }
 
   @Override
-  public Expression visitLam(LamExpression expr, Void params) {
-    Expression bodyType = expr.getBody().accept(this, null);
-    return bodyType != null ? new PiExpression(expr.getParameters(), bodyType) : null;
+  public Type visitLam(LamExpression expr, Void ignored) {
+    Type bodyType = expr.getBody().accept(this, null);
+    if (bodyType instanceof Expression) {
+      return new PiExpression(expr.getParameters(), (Expression) bodyType);
+    } else
+    if (bodyType instanceof PiUniverseType) {
+      return new PiUniverseType(params(DependentLink.Helper.clone(expr.getParameters()), ((PiUniverseType) bodyType).getParameters()), ((PiUniverseType) bodyType).getSorts());
+    } else {
+      return null;
+    }
   }
 
-  private TypeUniverse getDependentTypeUniverse(DependentTypeExpression expr) {
-    DependentLink link = expr.getParameters();
-    TypeUniverse universe = null;
-
-    while (link.hasNext()) {
-      if (!(link instanceof UntypedDependentLink)) {
-        UniverseExpression type = link.getType().accept(this, null).toUniverse();
-        if (type == null) return null;
-        if (universe == null) {
-          universe = type.getUniverse();
-        } else {
-          //Universe.CompareResult cmp = universe.compare(type.getUniverse());
-          //if (cmp == null) return null;
-          universe = universe.max(type.getUniverse());
-        }
+  private SortMaxSet getSorts(Type type) {
+    if (type instanceof Expression) {
+      UniverseExpression universeType = ((Expression) type).normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
+      if (universeType != null) {
+        return new SortMaxSet(universeType.getSort());
       }
-      link = link.getNext();
+    } else
+    if (type instanceof PiUniverseType) {
+      if (!((PiUniverseType) type).getParameters().hasNext()) {
+        return ((PiUniverseType) type).getSorts();
+      }
     }
+    return null;
+  }
 
+  private Type visitDependentType(DependentTypeExpression expr) {
+    SortMaxSet codomain = null;
     if (expr instanceof PiExpression) {
-      Expression type = ((PiExpression) expr).getCodomain().accept(this, null);
-      if (type == null || universe == null) {
+      codomain = getSorts(((PiExpression) expr).getCodomain().accept(this, null));
+      if (codomain == null) {
         return null;
       }
-      type = type.normalize(NormalizeVisitor.Mode.WHNF);
-      TypeUniverse codomainUniverse = type.toUniverse().getUniverse();
-      if (codomainUniverse == null) return null;
-      universe = codomainUniverse.equals(TypeUniverse.PROP) ? TypeUniverse.PROP : new TypeUniverse(universe.getPLevel().max(codomainUniverse.getPLevel()), codomainUniverse.getHLevel());
+
+      boolean isProp = true;
+      for (Sort sort : codomain.getSorts()) {
+        if (!sort.equals(Sort.PROP)) {
+          isProp = false;
+        }
+      }
+      if (isProp) {
+        return new UniverseExpression(Sort.PROP);
+      }
     }
 
-    return universe;
-  }
+    SortMaxSet sorts = new SortMaxSet();
+    for (DependentLink link = expr.getParameters(); link.hasNext(); link = link.getNext()) {
+      if (!(link instanceof UntypedDependentLink)) {
+        SortMaxSet sorts1 = getSorts(link.getType().accept(this, null));
+        if (sorts1 == null) {
+          return null;
+        }
+        sorts.addAll(sorts1);
+      }
+    }
 
-  private UniverseExpression visitDependentType(DependentTypeExpression expr) {
-    TypeUniverse universe = getDependentTypeUniverse(expr);
-    return universe == null ? null : new UniverseExpression(universe);
+    if (codomain != null) {
+      for (Sort sort : sorts.getSorts()) {
+        sort.setHLevel(new Level(0));
+      }
+      sorts.addAll(codomain);
+    }
+
+    return sorts.getSorts().isEmpty() ? new UniverseExpression(Sort.PROP) : sorts.getSorts().size() == 1 ? new UniverseExpression(sorts.getSorts().iterator().next()) : new PiUniverseType(EmptyDependentLink.getInstance(), sorts);
   }
 
   @Override
-  public Expression visitPi(PiExpression expr, Void params) {
+  public Type visitPi(PiExpression expr, Void params) {
     return visitDependentType(expr);
   }
 
   @Override
-  public Expression visitSigma(SigmaExpression expr, Void params) {
+  public Type visitSigma(SigmaExpression expr, Void params) {
     return visitDependentType(expr);
   }
 
   @Override
   public Expression visitUniverse(UniverseExpression expr, Void params) {
-    return new UniverseExpression(expr.getUniverse().succ());
+    return new UniverseExpression(expr.getSort().succ());
   }
 
   @Override
   public Expression visitError(ErrorExpression expr, Void params) {
-    return new ErrorExpression(expr.getExpr() != null ? expr.getExpr().accept(this, null) : null, expr.getError());
+    Expression expr1 = null;
+    if (expr.getExpr() != null) {
+      Type type = expr.getExpr().accept(this, null);
+      if (type instanceof Expression) {
+        expr1 = (Expression) type;
+      }
+    }
+    return new ErrorExpression(expr1, expr.getError());
   }
 
   @Override
@@ -108,12 +147,12 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void,Expression> {
 
   @Override
   public Expression visitProj(ProjExpression expr, Void ignored) {
-    Expression type = expr.getExpression().accept(this, null);
-    if (type == null) {
+    Type type = expr.getExpression().accept(this, null);
+    if (!(type instanceof Expression)) {
       return null;
     }
 
-    SigmaExpression sigma = type.normalize(NormalizeVisitor.Mode.WHNF).toSigma();
+    SigmaExpression sigma = ((Expression) type).normalize(NormalizeVisitor.Mode.WHNF).toSigma();
     if (sigma == null) return null;
     DependentLink params = sigma.getParameters();
     if (expr.getField() == 0) {
@@ -136,10 +175,34 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void,Expression> {
     return expr.getExpression();
   }
 
+  private <T extends Binding> List<T> getBindingsFreeIn(List<T> bindings, Expression expr) {
+    List<T> result = Collections.emptyList();
+    for (T binding : bindings) {
+      if (expr.findBinding(binding)) {
+        if (result.isEmpty()) {
+          result = new ArrayList<>(bindings.size());
+        }
+        result.add(binding);
+      }
+    }
+    return result;
+  }
+
   @Override
-  public Expression visitLet(LetExpression expr, Void params) {
-    Expression type = expr.getExpression().accept(this, null);
-    return type != null ? new LetExpression(expr.getClauses(), type) : null;
+  public Type visitLet(LetExpression expr, Void params) {
+    Type type = expr.getExpression().accept(this, null);
+    if (type instanceof Expression) {
+      return new LetExpression(expr.getClauses(), (Expression) type);
+    } else
+    if (type instanceof PiUniverseType) {
+      for (DependentLink link = ((PiUniverseType) type).getParameters(); link.hasNext(); link = link.getNext()) {
+        List<LetClause> clauses = getBindingsFreeIn(expr.getClauses(), link.getType());
+        link.setType(clauses.isEmpty() ? link.getType() : new LetExpression(clauses, link.getType()));
+      }
+      return type;
+    } else {
+      return null;
+    }
   }
 
   @Override

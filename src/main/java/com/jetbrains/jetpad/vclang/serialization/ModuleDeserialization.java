@@ -22,6 +22,8 @@ import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeDeserialization;
@@ -203,7 +205,7 @@ public class ModuleDeserialization {
 
   private void deserializeDataDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, DataDefinition definition) throws IOException {
     if (!definition.hasErrors()) {
-      definition.setUniverse(readUniverse(stream, definitionMap));
+      definition.setSort(readSort(stream, definitionMap));
       definition.setParameters(readParameters(stream, definitionMap));
     }
 
@@ -228,7 +230,7 @@ public class ModuleDeserialization {
           }
           constructor.setPatterns(new Patterns(patterns));
         }
-        constructor.setUniverse(readUniverse(stream, definitionMap));
+        constructor.setSort(readSort(stream, definitionMap));
         constructor.setParameters(readParameters(stream, definitionMap));
       }
 
@@ -274,7 +276,7 @@ public class ModuleDeserialization {
 
   private void deserializeClassDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, ClassDefinition definition) throws IOException {
     deserializeNamespace(stream, definitionMap, definition);
-    definition.setUniverse(readUniverse(stream, definitionMap));
+    definition.setSort(readSort(stream, definitionMap));
 
     int numFields = stream.readInt();
     for (int i = 0; i < numFields; i++) {
@@ -291,37 +293,37 @@ public class ModuleDeserialization {
       field.hasErrors(stream.readBoolean());
 
       if (!field.hasErrors()) {
-        field.setUniverse(readUniverse(stream, definitionMap));
+        field.setSort(readSort(stream, definitionMap));
         field.setBaseType(readExpression(stream, definitionMap));
         field.setThisClass(definition);
       }
     }
   }
 
-  public LevelExpression readLevel(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+  public Level readLevel(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     boolean isInfinity = stream.readBoolean();
     if (isInfinity) {
-      return new LevelExpression();
+      return new Level();
     } else {
-      LevelExpression result = new LevelExpression(0);
+      Level result = new Level(0);
       int numMaxArgs = stream.readInt();
       for (int i = 0; i < numMaxArgs; ++i) {
         int numSucs = stream.readInt();
         boolean isClosed = stream.readBoolean();
         if (isClosed) {
-          result = result.max(new LevelExpression(numSucs));
+          result = result.max(new Level(numSucs));
         } else {
-          result = result.max(new LevelExpression(readBinding(stream, definitionMap), numSucs));
+          result = result.max(new Level(readBinding(stream, definitionMap), numSucs));
         }
       }
       return result;
     }
   }
 
-  public TypeUniverse readUniverse(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
-    LevelExpression plevel = readLevel(stream, definitionMap);
-    LevelExpression hlevel = readLevel(stream, definitionMap);
-    return new TypeUniverse(plevel, hlevel);
+  public Sort readSort(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+    Level plevel = readLevel(stream, definitionMap);
+    Level hlevel = readLevel(stream, definitionMap);
+    return new Sort(plevel, hlevel);
   }
 
   public TypedBinding readTypedBinding(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
@@ -475,7 +477,7 @@ public class ModuleDeserialization {
         return Pi(parameters, readExpression(stream, definitionMap));
       }
       case 8: {
-        return new UniverseExpression(readUniverse(stream, definitionMap));
+        return new UniverseExpression(readSort(stream, definitionMap));
       }
       case 9: {
         return Error(stream.readBoolean() ? readExpression(stream, definitionMap) : null, new TypeCheckingError(myModuleID + " deserialization error"));  // FIXME[error] bad error

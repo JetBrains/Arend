@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.record;
 
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -232,8 +232,8 @@ public class ImplementTest {
         "\\static \\class B \\extends A {\n" +
         "  \\implement A => Nat\n" +
         "}");
-    assertEquals(new TypeUniverse(2, 1), result.getDefinition("A").getUniverse());
-    assertEquals(new TypeUniverse(0, 0), result.getDefinition("B").getUniverse());
+    assertEquals(new Sort(2, 1), result.getDefinition("A").getSort());
+    assertEquals(new Sort(0, 0), result.getDefinition("B").getSort());
   }
 
   @Test
@@ -255,10 +255,10 @@ public class ImplementTest {
         " \\implement x' => 0\n" +
         "}\n" +
         "\\static \\function f => D { x => 1 }");
-    assertEquals(new TypeUniverse(2, 1), result.getDefinition("A").getUniverse());
-    assertEquals(new TypeUniverse(1, 1), result.getDefinition("B").getUniverse());
-    assertEquals(new TypeUniverse(2, 1), result.getDefinition("C").getUniverse());
-    assertEquals(new TypeUniverse(0, 0), result.getDefinition("D").getUniverse());
-    assertEquals(ExpressionFactory.Universe(TypeUniverse.PROP), result.getDefinition("f").getType());
+    assertEquals(new Sort(2, 1), result.getDefinition("A").getSort());
+    assertEquals(new Sort(1, 1), result.getDefinition("B").getSort());
+    assertEquals(new Sort(2, 1), result.getDefinition("C").getSort());
+    assertEquals(new Sort(0, 0), result.getDefinition("D").getSort());
+    assertEquals(ExpressionFactory.Universe(Sort.PROP), result.getDefinition("f").getType());
   }
 }

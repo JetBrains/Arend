@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.NamedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 
 import java.util.ArrayList;
@@ -16,19 +17,19 @@ import java.util.List;
 public abstract class Definition extends NamedBinding implements Referable {
   protected List<Binding> myPolyParams = new ArrayList<>();
   private Abstract.Definition.Precedence myPrecedence;
-  private TypeUniverse myUniverse;
+  private Sort mySort;
   private boolean myHasErrors;
   private ClassDefinition myThisClass;
   private boolean myContainsInterval;
 
   public Definition(String name, Abstract.Definition.Precedence precedence) {
-    this(name, precedence, TypeUniverse.PROP);
+    this(name, precedence, Sort.PROP);
   }
 
-  public Definition(String name, Abstract.Definition.Precedence precedence, TypeUniverse universe) {
+  public Definition(String name, Abstract.Definition.Precedence precedence, Sort sort) {
     super(name);
     myPrecedence = precedence;
-    myUniverse = universe;
+    mySort = sort;
     myHasErrors = true;
     myContainsInterval = false;
   }
@@ -65,12 +66,12 @@ public abstract class Definition extends NamedBinding implements Referable {
     throw new IllegalStateException();
   }
 
-  public TypeUniverse getUniverse() {
-    return myUniverse;
+  public Sort getSort() {
+    return mySort;
   }
 
-  public void setUniverse(TypeUniverse universe) {
-    myUniverse = universe;
+  public void setSort(Sort sort) {
+    mySort = sort;
   }
 
   public void setPolyParams(List<Binding> params) {

@@ -8,10 +8,12 @@ import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.factory.AbstractExpressionFactory;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
@@ -121,9 +123,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     int index = 0;
     FieldCallExpression fieldCall = expr.getFunction().toFieldCall();
     if (fieldCall != null) {
-      Expression type = expr.getArguments().get(0).getType();
-      if (type != null) {
-        ClassCallExpression classCall = type.normalize(NormalizeVisitor.Mode.WHNF).toClassCall();
+      Type type = expr.getArguments().get(0).getType();
+      if (type instanceof Expression) {
+        ClassCallExpression classCall = ((Expression) type).normalize(NormalizeVisitor.Mode.WHNF).toClassCall();
         if (classCall != null) {
           result = myFactory.makeFieldCall(expr.getArguments().get(0).accept(this, null), classCall.getDefinition(), fieldCall.getDefinition());
           index = 1;
@@ -284,7 +286,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return null;
   }
 
-  private Integer getHNum(LevelExpression expr) {
+  private Integer getHNum(Level expr) {
     if (expr.isClosed()) {
       if (expr.isInfinity()) {
         return Abstract.UniverseExpression.Universe.NOT_TRUNCATED;
@@ -294,14 +296,14 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return null;
   }
 
-  private Integer getPNum(LevelExpression expr) {
+  private Integer getPNum(Level expr) {
     if (expr.isClosed()) { return expr.extractOuterSucs(); }
     return null;
   }
 
   @Override
   public Abstract.Expression visitUniverse(UniverseExpression expr, Void params) {
-    TypeUniverse universe = expr.getUniverse();
+    Sort universe = expr.getSort();
 
     /*
     Expression level = universe.getLevel().getValue();

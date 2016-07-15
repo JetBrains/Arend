@@ -3,6 +3,8 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
@@ -38,8 +40,8 @@ public class GetTypeTest {
   public void classExtTest() {
     TypeCheckClassResult result = typeCheckClass("\\static \\class Test { \\abstract A : \\Type0 \\abstract a : A } \\static \\function test => Test { A => Nat }");
     assertEquals(Universe(1), result.getDefinition("Test").getType());
-    assertEquals(Universe(TypeUniverse.SetOfLevel(0)), result.getDefinition("test").getType());
-    testType(Universe(TypeUniverse.SetOfLevel(0)), result);
+    assertEquals(Universe(Sort.SetOfLevel(0)), result.getDefinition("test").getType());
+    testType(Universe(Sort.SetOfLevel(0)), result);
   }
 
   @Test
@@ -60,7 +62,7 @@ public class GetTypeTest {
   public void fieldAccTest() {
     TypeCheckClassResult result = typeCheckClass("\\static \\class C { \\abstract x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
     DependentLink p = param("p", Pi(Nat(), ClassCall((ClassDefinition) result.getDefinition("C"))));
-    Expression type = FunCall(Prelude.PATH_INFIX).applyLevelSubst(new LevelSubstitution(Prelude.LP, new LevelExpression(0), Prelude.LH, new LevelExpression(1)))
+    Expression type = FunCall(Prelude.PATH_INFIX).applyLevelSubst(new LevelSubstitution(Prelude.LP, new Level(0), Prelude.LH, new Level(1)))
       .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class))
       .addArgument(Zero(), AppExpression.DEFAULT)
       .addArgument(Apps(FieldCall((ClassField) result.getDefinition("C.x")), Apps(Reference(p), Zero())), AppExpression.DEFAULT);
@@ -72,7 +74,7 @@ public class GetTypeTest {
     TypeCheckClassResult result = typeCheckClass("\\function test : \\Sigma (x y : Nat) (x = y) => (0, 0, path (\\lam _ => 0))");
     DependentLink xy = param(true, vars("x", "y"), Nat());
     testType(Sigma(params(xy, param(Apps(FunCall(Prelude.PATH_INFIX)
-        .applyLevelSubst(new LevelSubstitution(Prelude.LP, new LevelExpression(0), Prelude.LH, new LevelExpression(1)))
+        .applyLevelSubst(new LevelSubstitution(Prelude.LP, new Level(0), Prelude.LH, new Level(1)))
         .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class)), Reference(xy), Reference(xy.getNext()))))),
         result);
   }
@@ -83,7 +85,7 @@ public class GetTypeTest {
     DependentLink F = param("F", Pi(Nat(), Universe(0)));
     DependentLink x = param("x", Nat());
     DependentLink f = param("f", Pi(x, Apps(Reference(F), Reference(x))));
-    assertEquals(Pi(params(F, f), Apps(Reference(F), Zero())), ((LeafElimTreeNode) ((FunctionDefinition) def).getElimTree()).getExpression().getType().normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Pi(params(F, f), Apps(Reference(F), Zero())), ((Expression) ((LeafElimTreeNode) ((FunctionDefinition) def).getElimTree()).getExpression().getType()).normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test

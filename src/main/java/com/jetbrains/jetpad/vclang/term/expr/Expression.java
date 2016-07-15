@@ -5,9 +5,11 @@ import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -15,7 +17,7 @@ import com.jetbrains.jetpad.vclang.typechecking.normalization.EvalNormalizer;
 
 import java.util.*;
 
-public abstract class Expression implements PrettyPrintable {
+public abstract class Expression implements PrettyPrintable, Type {
   public abstract <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params);
 
   @Override
@@ -39,7 +41,18 @@ public abstract class Expression implements PrettyPrintable {
     accept(visitor, null).accept(new PrettyPrintVisitor(builder, indent), prec);
   }
 
-  public Expression getType() {
+  @Override
+  public boolean lessOrEqualsThan(Sort sort) {
+    UniverseExpression expr = normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
+    return expr != null && expr.getSort().isLessOrEquals(sort);
+  }
+
+  @Override
+  public boolean lessOrEqualsThan(Expression expression, Equations equations, Abstract.SourceNode sourceNode) {
+    return CompareVisitor.compare(equations, Equations.CMP.LE, normalize(NormalizeVisitor.Mode.NF), expression, sourceNode);
+  }
+
+  public Type getType() {
     return accept(new GetTypeVisitor(), null);
   }
 
@@ -59,6 +72,7 @@ public abstract class Expression implements PrettyPrintable {
     return accept(new SubstVisitor(new ExprSubstitution(binding, substExpr)), null);
   }
 
+  @Override
   public final Expression subst(ExprSubstitution subst) {
      return subst.getDomain().isEmpty() ? this : accept(new SubstVisitor(subst), null);
     //return accept(new SubstVisitor(subst), null);

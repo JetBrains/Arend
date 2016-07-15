@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
@@ -13,12 +13,12 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Lam;
 
 public class ClassCallExpression extends DefCallExpression {
   private final Map<ClassField, ImplementStatement> myStatements;
-  private TypeUniverse myUniverse;
+  private Sort mySort;
 
   public ClassCallExpression(ClassDefinition definition) {
     super(definition);
     myStatements = new HashMap<>();
-    myUniverse = definition.getUniverse();
+    mySort = definition.getSort();
   }
 
   public ClassCallExpression(ClassDefinition definition, Map<ClassField, ImplementStatement> statements) {
@@ -42,8 +42,9 @@ public class ClassCallExpression extends DefCallExpression {
     return myStatements;
   }
 
-  public TypeUniverse getUniverse() {
-    if (myUniverse == null) {
+  @Override
+  public Sort getSort() {
+    if (mySort == null) {
       ExprSubstitution substitution = getDefinition().getImplementedFields();
       for (Map.Entry<ClassField, ImplementStatement> entry : myStatements.entrySet()) {
         if (entry.getValue().term != null) {
@@ -51,15 +52,15 @@ public class ClassCallExpression extends DefCallExpression {
         }
       }
 
-      myUniverse = TypeUniverse.PROP;
+      mySort = Sort.PROP;
       for (ClassField field : getDefinition().getFields()) {
         if (!field.hasErrors() && !getDefinition().getFieldImpl(field).isImplemented() && !myStatements.containsKey(field)) {
-          myUniverse = field.updateUniverse(myUniverse, substitution);
+          mySort = field.updateSort(mySort, substitution);
         }
       }
     }
 
-    return myUniverse;
+    return mySort;
   }
 
   @Override

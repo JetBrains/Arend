@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FieldCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.LevelSubstVisitor;
@@ -25,7 +26,7 @@ public class ClassField extends Definition {
     hasErrors(type == null || type.toError() != null);
   }
 
-  public ClassField(String name, Abstract.Definition.Precedence precedence, Expression type, ClassDefinition thisClass, DependentLink thisParameter, TypeUniverse universe) {
+  public ClassField(String name, Abstract.Definition.Precedence precedence, Expression type, ClassDefinition thisClass, DependentLink thisParameter, Sort universe) {
     super(name, precedence, universe);
     myThisParameter = thisParameter;
     myType = type;
@@ -33,23 +34,25 @@ public class ClassField extends Definition {
     hasErrors(type == null || type.toError() != null);
   }
 
-  public TypeUniverse updateUniverse(TypeUniverse universe, ExprSubstitution substitution) {
+  public Sort updateSort(Sort sort, ExprSubstitution substitution) {
     Expression expr1 = myType.subst(substitution).normalize(NormalizeVisitor.Mode.WHNF);
     UniverseExpression expr = null;
     if (expr1.toOfType() != null) {
-      Expression expr2 = expr1.toOfType().getExpression().getType();
+      // TODO [sorts]
+      Expression expr2 = (Expression) expr1.toOfType().getExpression().getType();
       if (expr2 != null) {
         expr = expr2.normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
       }
     }
     if (expr == null) {
-      expr = expr1.getType().normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
+      // TODO [sorts]
+      expr = ((Expression) expr1.getType()).normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
     }
 
-    TypeUniverse fieldUniverse = expr != null ? expr.getUniverse() : getUniverse();
-    universe = universe.max(fieldUniverse);
+    Sort fieldUniverse = expr != null ? expr.getSort() : getSort();
+    sort = sort.max(fieldUniverse);
     assert expr != null;
-    return universe;
+    return sort;
   }
 
   public DependentLink getThisParameter() {
@@ -80,7 +83,7 @@ public class ClassField extends Definition {
       return this;
     }
     return new ClassField(getName(), getPrecedence(), LevelSubstVisitor.subst(myType, subst), getThisClass(),
-            myThisParameter, getUniverse().subst(subst));
+            myThisParameter, getSort().subst(subst));
   }
 
   public void setBaseType(Expression type) {

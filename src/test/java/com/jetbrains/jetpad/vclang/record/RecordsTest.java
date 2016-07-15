@@ -2,8 +2,12 @@ package com.jetbrains.jetpad.vclang.record;
 
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.Preprelude;
-import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.TypeCheckClassResult;
 import org.junit.Test;
@@ -13,7 +17,8 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class RecordsTest {
   @Test
@@ -158,8 +163,8 @@ public class RecordsTest {
     TypeCheckClassResult result = typeCheckClass(
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { x => 0 }");
-    assertEquals(TypeUniverse.SetOfLevel(0), result.getDefinition("Point").getUniverse());
-    assertEquals(Universe(TypeUniverse.SetOfLevel(0)), result.getDefinition("C").getType());
+    assertEquals(Sort.SetOfLevel(0), result.getDefinition("Point").getSort());
+    assertEquals(Universe(Sort.SetOfLevel(0)), result.getDefinition("C").getType());
   }
 
   @Test
@@ -167,8 +172,8 @@ public class RecordsTest {
     TypeCheckClassResult result = typeCheckClass(
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { x => 0 | y => 1 }");
-    assertEquals(TypeUniverse.SetOfLevel(0), result.getDefinition("Point").getUniverse());
-    assertEquals(Universe(TypeUniverse.PROP), result.getDefinition("C").getType());
+    assertEquals(Sort.SetOfLevel(0), result.getDefinition("Point").getSort());
+    assertEquals(Universe(Sort.PROP), result.getDefinition("C").getType());
   }
 
   @Test
@@ -176,8 +181,8 @@ public class RecordsTest {
     TypeCheckClassResult result = typeCheckClass(
         "\\static \\class Point { \\abstract x : \\Type3 \\abstract y : \\Type1 }\n" +
         "\\static \\function C => Point { x => Nat }");
-    assertEquals(new TypeUniverse(4, TypeUniverse.NOT_TRUNCATED), result.getDefinition("Point").getUniverse());
-    assertEquals(Universe(new TypeUniverse(2, TypeUniverse.NOT_TRUNCATED)), result.getDefinition("C").getType());
+    assertEquals(new Sort(4, Sort.NOT_TRUNCATED), result.getDefinition("Point").getSort());
+    assertEquals(Universe(new Sort(2, Sort.NOT_TRUNCATED)), result.getDefinition("C").getType());
   }
 
   @Test

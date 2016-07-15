@@ -100,7 +100,7 @@ public class LevelSubstVisitor extends BaseExpressionVisitor<Void, Void> impleme
 
   @Override
   public Void visitUniverse(UniverseExpression expr, Void params) {
-    expr.setUniverse(expr.getUniverse().subst(myLevelSubst));
+    expr.setSort(expr.getSort().subst(myLevelSubst));
     return null;
   }
 

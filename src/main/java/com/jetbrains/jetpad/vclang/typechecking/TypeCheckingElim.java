@@ -295,7 +295,7 @@ public class TypeCheckingElim {
           return null;
         }
 
-        if (refExpr.getType().normalize(NormalizeVisitor.Mode.WHNF).getFunction().toDataCall() == null) {
+        if (((Expression) refExpr.getType()).normalize(NormalizeVisitor.Mode.WHNF).getFunction().toDataCall() == null) {
           error = new TypeCheckingError("Elimination is allowed only for a data type variable.", var);
           myVisitor.getErrorReporter().report(error);
           var.setWellTyped(argsBindings, Error(null, error));

@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.term.expr;
+package com.jetbrains.jetpad.vclang.term.expr.sort;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -13,35 +13,35 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 
 import java.util.*;
 
-public class LevelExpression implements PrettyPrintable {
+public class Level implements PrettyPrintable {
   private int myConstant = 0;
   private Map<Binding, Integer> myNumSucsOfVars = new HashMap<>();
   private boolean myIsInfinity = true;
 
-  public LevelExpression() { }
+  public Level() { }
 
-  public LevelExpression(int constant) {
+  public Level(int constant) {
     myConstant = constant;
     myIsInfinity = false;
   }
 
-  public LevelExpression(Binding var, int numSucs) {
+  public Level(Binding var, int numSucs) {
     myNumSucsOfVars.put(var, numSucs);
     myIsInfinity = false;
   }
 
-  public LevelExpression(Binding var) {
+  public Level(Binding var) {
     myNumSucsOfVars.put(var, 0);
     myIsInfinity = false;
   }
 
-  public LevelExpression(Map<Binding, Integer> numSucsOfVars, int constant) {
+  public Level(Map<Binding, Integer> numSucsOfVars, int constant) {
     myNumSucsOfVars = new HashMap<>(numSucsOfVars);
     myConstant = constant;
     myIsInfinity = false;
   }
 
-  public LevelExpression(LevelExpression level) {
+  public Level(Level level) {
     myNumSucsOfVars = new HashMap<>(level.myNumSucsOfVars);
     myConstant = level.myConstant;
     myIsInfinity = level.myIsInfinity;
@@ -49,11 +49,11 @@ public class LevelExpression implements PrettyPrintable {
 
   // TODO: more clever max s.t. max(suc x, 1) => suc x
 
-  public LevelExpression max(LevelExpression other) {
-    if (other.isInfinity()) return new LevelExpression(other);
-    if (isInfinity()) return new LevelExpression(this);
+  public Level max(Level other) {
+    if (other.isInfinity()) return new Level(other);
+    if (isInfinity()) return new Level(this);
 
-    LevelExpression result = new LevelExpression(other.myNumSucsOfVars, Math.max(myConstant, other.myConstant));
+    Level result = new Level(other.myNumSucsOfVars, Math.max(myConstant, other.myConstant));
 
     for (Map.Entry<Binding, Integer> var : myNumSucsOfVars.entrySet()) {
       Integer sucs = result.myNumSucsOfVars.get(var.getKey());
@@ -67,18 +67,18 @@ public class LevelExpression implements PrettyPrintable {
     return result;
   }
 
-  public LevelExpression subst(Binding var, LevelExpression level) {
-    if (isInfinity()) return new LevelExpression();
-    LevelExpression result = new LevelExpression(myNumSucsOfVars, myConstant);
+  public Level subst(Binding var, Level level) {
+    if (isInfinity()) return new Level();
+    Level result = new Level(myNumSucsOfVars, myConstant);
     Integer sucs = myNumSucsOfVars.get(var);
     if (sucs == null) {
       return result;
     }
-    if (level.isInfinity()) return new LevelExpression();
+    if (level.isInfinity()) return new Level();
     result.myNumSucsOfVars.remove(var);
     result.myConstant += level.myConstant;
     for (Map.Entry<Binding, Integer> var_ : level.myNumSucsOfVars.entrySet()) {
-      result = result.max(new LevelExpression(var_.getKey(), var_.getValue() + sucs));
+      result = result.max(new Level(var_.getKey(), var_.getValue() + sucs));
     }
     if (!result.myNumSucsOfVars.isEmpty() && result.extractOuterSucs() == result.myConstant) {
       result.myConstant = 0;
@@ -86,22 +86,22 @@ public class LevelExpression implements PrettyPrintable {
     return result; /**/
   }
 
-  public LevelExpression subst(LevelSubstitution subst) {
-    LevelExpression result = this;
+  public Level subst(LevelSubstitution subst) {
+    Level result = this;
     for (Binding var : subst.getDomain()) {
       result = result.subst(var, subst.get(var));
     }
     return result;
   }
 
-  public List<LevelExpression> toListOfMaxArgs() {
-    if (isInfinity()) return Collections.singletonList(new LevelExpression());
-    ArrayList<LevelExpression> list = new ArrayList<>();
+  public List<Level> toListOfMaxArgs() {
+    if (isInfinity()) return Collections.singletonList(new Level());
+    ArrayList<Level> list = new ArrayList<>();
     if (myConstant != 0 || myNumSucsOfVars.isEmpty()) {
-      list.add(new LevelExpression(myConstant));
+      list.add(new Level(myConstant));
     }
     for (Map.Entry<Binding, Integer> var : myNumSucsOfVars.entrySet()) {
-      list.add(new LevelExpression(var.getKey(), var.getValue()));
+      list.add(new Level(var.getKey(), var.getValue()));
     }
     return list;
   }
@@ -154,8 +154,8 @@ public class LevelExpression implements PrettyPrintable {
     return myNumSucsOfVars.entrySet().iterator().next().getKey();
   }
 
-  public LevelExpression subtract(int val) {
-    LevelExpression result = new LevelExpression(this);
+  public Level subtract(int val) {
+    Level result = new Level(this);
     if (isClosed() || myConstant != 0) {
       result.myConstant = Math.max(myConstant - val, 0);
     }
@@ -185,7 +185,7 @@ public class LevelExpression implements PrettyPrintable {
     Concrete.DefCallExpression suc = ConcreteExpressionFactory.cVar("suc");
     List<Concrete.Expression> maxArgExprList = new ArrayList<>();
 
-    for (LevelExpression maxArg : toListOfMaxArgs()) {
+    for (Level maxArg : toListOfMaxArgs()) {
       if (maxArg.isClosed()) {
         maxArgExprList.add(ConcreteExpressionFactory.cNum(maxArg.myConstant));
       } else {
@@ -213,7 +213,7 @@ public class LevelExpression implements PrettyPrintable {
 
   public enum CMP { LESS, GREATER, EQUAL, NOT_COMPARABLE }
 
-  public static boolean compare(LevelExpression expr1, LevelExpression expr2, Equations.CMP cmp) {
+  public static boolean compare(Level expr1, Level expr2, Equations.CMP cmp) {
     return compare(expr1, expr2, cmp, DummyEquations.getInstance());
   }
 
@@ -226,9 +226,9 @@ public class LevelExpression implements PrettyPrintable {
     return false;
   }
 
-  public static boolean compare(LevelExpression expr1, LevelExpression expr2, Equations.CMP cmp, Equations equations) {
-    LevelExpression level1 = cmp == Equations.CMP.GE ? new LevelExpression(expr1) : new LevelExpression(expr2);
-    LevelExpression level2 = cmp == Equations.CMP.GE ? new LevelExpression(expr2) : new LevelExpression(expr1);
+  public static boolean compare(Level expr1, Level expr2, Equations.CMP cmp, Equations equations) {
+    Level level1 = cmp == Equations.CMP.GE ? new Level(expr1) : new Level(expr2);
+    Level level2 = cmp == Equations.CMP.GE ? new Level(expr2) : new Level(expr1);
     boolean leftContainsInferenceBnd = level1.containsInferVar();
     boolean rightContainsInferenceBnd = level2.containsInferVar();
 
@@ -282,7 +282,7 @@ public class LevelExpression implements PrettyPrintable {
       if (level1.getNumOfMaxArgs() != level2.getNumOfMaxArgs()) {
         equal = false;
       } else {
-        for (LevelExpression rightMaxArg : level2.toListOfMaxArgs()) {
+        for (Level rightMaxArg : level2.toListOfMaxArgs()) {
           if (rightMaxArg.isClosed()) {
             if (level1.getConstant() != rightMaxArg.getUnitSucs()) {
               equal = false;
@@ -308,9 +308,9 @@ public class LevelExpression implements PrettyPrintable {
     }
 
     int leftSucs = level1.extractOuterSucs();
-    LevelExpression leftLevel = level1.subtract(leftSucs);
+    Level leftLevel = level1.subtract(leftSucs);
 
-    for (LevelExpression rightMaxArg : level2.toListOfMaxArgs()) {
+    for (Level rightMaxArg : level2.toListOfMaxArgs()) {
       int rightSucs = rightMaxArg.getUnitSucs();
       int sucsToRemove = Math.min(leftSucs, rightSucs);
 
@@ -343,7 +343,7 @@ public class LevelExpression implements PrettyPrintable {
     return true;
   }
 
-  public CMP compare(LevelExpression other) {
+  public CMP compare(Level other) {
      if (compare(this, other, Equations.CMP.EQ)) {
       return CMP.EQUAL;
     }
@@ -361,10 +361,10 @@ public class LevelExpression implements PrettyPrintable {
 
   @Override
   public boolean equals(Object other) {
-    return other instanceof LevelExpression && compare((LevelExpression)other) == CMP.EQUAL;
+    return other instanceof Level && compare((Level)other) == CMP.EQUAL;
   }
 
-  public LevelExpression succ() {
+  public Level succ() {
     return subtract(-1);
   }
 
