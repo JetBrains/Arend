@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FieldCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
@@ -14,7 +14,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 public class ClassField extends Definition {
   private DependentLink myThisParameter;
   private Expression myType;
-  private SortMaxSet mySorts;
+  private SortMax mySorts;
 
   public ClassField(String name, Abstract.Definition.Precedence precedence, Expression type, ClassDefinition thisClass, DependentLink thisParameter) {
     super(name, precedence);
@@ -24,9 +24,9 @@ public class ClassField extends Definition {
     hasErrors(type == null || type.toError() != null);
   }
 
-  public void updateSort(SortMaxSet sorts, ExprSubstitution substitution) {
+  public void updateSort(SortMax sorts, ExprSubstitution substitution) {
     Expression expr1 = myType.subst(substitution).normalize(NormalizeVisitor.Mode.WHNF);
-    SortMaxSet sorts1 = null;
+    SortMax sorts1 = null;
     if (expr1.toOfType() != null) {
       sorts1 = expr1.toOfType().getExpression().getType().toSorts();
     }
@@ -34,7 +34,7 @@ public class ClassField extends Definition {
       sorts1 = expr1.getType().toSorts();
     }
 
-    sorts.addAll(sorts1);
+    sorts.add(sorts1);
     assert sorts1 != null;
   }
 
@@ -50,11 +50,11 @@ public class ClassField extends Definition {
     return myType;
   }
 
-  public SortMaxSet getSorts() {
+  public SortMax getSorts() {
     return mySorts;
   }
 
-  public void setSorts(SortMaxSet sorts) {
+  public void setSorts(SortMax sorts) {
     mySorts = sorts;
   }
 

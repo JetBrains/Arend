@@ -23,8 +23,9 @@ import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
+import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeDeserialization;
@@ -206,7 +207,7 @@ public class ModuleDeserialization {
 
   private void deserializeDataDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, DataDefinition definition) throws IOException {
     if (!definition.hasErrors()) {
-      definition.setSorts(readSorts(stream, definitionMap));
+      definition.setSorts(readSortMax(stream, definitionMap));
       definition.setParameters(readParameters(stream, definitionMap));
     }
 
@@ -276,7 +277,7 @@ public class ModuleDeserialization {
 
   private void deserializeClassDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, ClassDefinition definition) throws IOException {
     deserializeNamespace(stream, definitionMap, definition);
-    definition.setSorts(readSorts(stream, definitionMap));
+    definition.setSorts(readSortMax(stream, definitionMap));
 
     int numFields = stream.readInt();
     for (int i = 0; i < numFields; i++) {
@@ -293,7 +294,7 @@ public class ModuleDeserialization {
       field.hasErrors(stream.readBoolean());
 
       if (!field.hasErrors()) {
-        field.setSorts(readSorts(stream, definitionMap));
+        field.setSorts(readSortMax(stream, definitionMap));
         field.setBaseType(readExpression(stream, definitionMap));
         field.setThisClass(definition);
       }
@@ -301,23 +302,17 @@ public class ModuleDeserialization {
   }
 
   public Level readLevel(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
-    boolean isInfinity = stream.readBoolean();
-    if (isInfinity) {
-      return new Level();
-    } else {
-      Level result = new Level(0);
-      int numMaxArgs = stream.readInt();
-      for (int i = 0; i < numMaxArgs; ++i) {
-        int numSucs = stream.readInt();
-        boolean isClosed = stream.readBoolean();
-        if (isClosed) {
-          result = result.max(new Level(numSucs));
-        } else {
-          result = result.max(new Level(readBinding(stream, definitionMap), numSucs));
-        }
-      }
-      return result;
+    Binding var = stream.readBoolean() ? readBinding(stream, definitionMap) : null;
+    return new Level(var, stream.readInt());
+  }
+
+  public LevelMax readLevelMax(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+    LevelMax result = new LevelMax();
+    int numLevels = stream.readInt();
+    for (int i = 0; i < numLevels; i++) {
+      result.add(readLevel(stream, definitionMap));
     }
+    return result;
   }
 
   public Sort readSort(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
@@ -326,13 +321,10 @@ public class ModuleDeserialization {
     return new Sort(pLevel, hLevel);
   }
 
-  public SortMaxSet readSorts(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
-    int size = stream.readInt();
-    SortMaxSet sorts = new SortMaxSet();
-    for (int i = 0; i < size; i++) {
-      sorts.add(readSort(stream, definitionMap));
-    }
-    return sorts;
+  public SortMax readSortMax(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+    LevelMax pLevel = readLevelMax(stream, definitionMap);
+    LevelMax hLevel = readLevelMax(stream, definitionMap);
+    return new SortMax(pLevel, hLevel);
   }
 
   public TypedBinding readTypedBinding(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {

@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
@@ -54,9 +54,9 @@ public abstract class Expression implements PrettyPrintable, Type {
   }
 
   @Override
-  public SortMaxSet toSorts() {
+  public SortMax toSorts() {
     UniverseExpression universe = normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
-    return universe == null ? null : new SortMaxSet(universe.getSort());
+    return universe == null ? null : new SortMax(universe.getSort());
   }
 
   public Type getType() {

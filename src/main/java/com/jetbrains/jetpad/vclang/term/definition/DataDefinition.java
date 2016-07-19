@@ -7,8 +7,7 @@ import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
 import java.util.*;
@@ -19,13 +18,13 @@ public class DataDefinition extends Definition {
   private List<Constructor> myConstructors;
   private DependentLink myParameters;
   private Map<Constructor, Condition> myConditions;
-  private SortMaxSet mySorts;
+  private SortMax mySorts;
 
   public DataDefinition(String name, Abstract.Definition.Precedence precedence) {
-    this(name, precedence, new SortMaxSet(), EmptyDependentLink.getInstance());
+    this(name, precedence, new SortMax(), EmptyDependentLink.getInstance());
   }
 
-  public DataDefinition(String name, Abstract.Definition.Precedence precedence, SortMaxSet sorts, DependentLink parameters) {
+  public DataDefinition(String name, Abstract.Definition.Precedence precedence, SortMax sorts, DependentLink parameters) {
     super(name, precedence);
     hasErrors(false);
     myConstructors = new ArrayList<>();
@@ -33,11 +32,11 @@ public class DataDefinition extends Definition {
     mySorts = sorts;
   }
 
-  public SortMaxSet getSorts() {
+  public SortMax getSorts() {
     return mySorts;
   }
 
-  public void setSorts(SortMaxSet sorts) {
+  public void setSorts(SortMax sorts) {
     mySorts = sorts;
   }
 
@@ -116,7 +115,7 @@ public class DataDefinition extends Definition {
     }
 
     // TODO [sorts]
-    Expression resultType = new UniverseExpression(mySorts.getSorts().isEmpty() ? Sort.PROP : mySorts.getSorts().iterator().next());
+    Expression resultType = new UniverseExpression(mySorts.toSort());
     return myParameters.hasNext() ? Pi(myParameters, resultType) : resultType;
   }
 

@@ -2,22 +2,22 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Lam;
 
 public class ClassCallExpression extends DefCallExpression {
   private final Map<ClassField, ImplementStatement> myStatements;
-  private SortMaxSet mySorts;
+  private SortMax mySorts;
 
   public ClassCallExpression(ClassDefinition definition) {
     super(definition);
-    myStatements = Collections.emptyMap();
+    myStatements = new HashMap<>();
     mySorts = definition.getSorts();
   }
 
@@ -42,7 +42,7 @@ public class ClassCallExpression extends DefCallExpression {
     return myStatements;
   }
 
-  public SortMaxSet getSorts() {
+  public SortMax getSorts() {
     if (mySorts == null) {
       ExprSubstitution substitution = getDefinition().getImplementedFields();
       for (Map.Entry<ClassField, ImplementStatement> entry : myStatements.entrySet()) {
@@ -51,7 +51,7 @@ public class ClassCallExpression extends DefCallExpression {
         }
       }
 
-      mySorts = new SortMaxSet();
+      mySorts = new SortMax();
       for (ClassField field : getDefinition().getFields()) {
         if (!field.hasErrors() && !getDefinition().getFieldImpl(field).isImplemented() && !myStatements.containsKey(field)) {
           field.updateSort(mySorts, substitution);

@@ -22,13 +22,17 @@ public class LevelSubstitution {
     mySubstExprs.put(lh, lh_expr);
   }
 
-  public LevelSubstitution(Binding lp, Binding lp_new, Binding lh, Binding lh_new) {
-    mySubstExprs.put(lp, new Level(lp_new));
-    mySubstExprs.put(lh, new Level(lh_new));
+  public LevelSubstitution(Binding lp, Binding lpNew, Binding lh, Binding lhNew) {
+    mySubstExprs.put(lp, new Level(lpNew));
+    mySubstExprs.put(lh, new Level(lhNew));
   }
 
   public Set<Binding> getDomain() {
     return mySubstExprs.keySet();
+  }
+
+  public Set<Map.Entry<Binding, Level>> getEntries() {
+    return mySubstExprs.entrySet();
   }
 
   public Level get(Binding binding)  {

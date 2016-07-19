@@ -11,7 +11,9 @@ import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.factory.AbstractExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
+import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
@@ -291,39 +293,71 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       if (expr.isInfinity()) {
         return Abstract.UniverseExpression.Universe.NOT_TRUNCATED;
       }
-      return expr.extractOuterSucs() - 1;
+      return expr.getConstant() - 1;
     }
     return null;
   }
 
   private Integer getPNum(Level expr) {
-    if (expr.isClosed()) { return expr.extractOuterSucs(); }
+    if (expr.isClosed()) {
+      return expr.getConstant();
+    }
     return null;
   }
 
   @Override
   public Abstract.Expression visitUniverse(UniverseExpression expr, Void params) {
-    Sort universe = expr.getSort();
+    return visitSort(expr.getSort());
+  }
 
-    /*
-    Expression level = universe.getLevel().getValue();
-    if (level.toNew() != null && level.toNew().getExpression().toClassCall() != null) {
-      ClassCallExpression classCall = level.toNew().getExpression().toClassCall();
-      ClassCallExpression.ImplementStatement pStat = classCall.getImplementStatements().get(Preprelude.PLEVEL);
-      ClassCallExpression.ImplementStatement hStat = classCall.getImplementStatements().get(Preprelude.HLEVEL);
-      if (pStat != null && hStat != null && pStat.term != null && hStat.term != null) {
-        Integer pNum = getPNum(pStat.term);
-        Integer hNum = getHNum(hStat.term);
-        if (pNum != null && hNum != null) {
-          return myFactory.makeUniverse(pNum, hNum);
-        }
-      }
+  public Abstract.Expression visitSort(Sort sort) {
+    Integer pNum = getPNum(sort.getPLevel());
+    Integer hNum = getHNum(sort.getHLevel());
+    if (pNum != null && hNum != null) {
+      return myFactory.makeUniverse(pNum, hNum);
+    } else {
+      return myFactory.makeUniverse(visitLevel(sort.getPLevel()), visitLevel(sort.getHLevel()));
     }
-    return myFactory.makeUniverse(level.accept(this, null)); /**/
-    Integer pNum = getPNum(universe.getPLevel());
-    Integer hNum = getHNum(universe.getHLevel());
-    if (pNum != null && hNum != null) return myFactory.makeUniverse(pNum, hNum);
-    return myFactory.makeUniverse(universe.getPLevel().toAbstract(), universe.getHLevel().toAbstract());
+  }
+
+  public Abstract.Expression visitSortMax(SortMax sort) {
+    return myFactory.makeUniverse(visitLevelMax(sort.getPLevel()), visitLevelMax(sort.getHLevel()));
+  }
+
+  public Abstract.Expression visitLevel(Level level) {
+    if (level.isInfinity()) {
+      return myFactory.makeVar("inf");
+    }
+    if (level.isClosed()) {
+      return myFactory.makeNumericalLiteral(level.getConstant());
+    }
+
+    Abstract.Expression result = myFactory.makeVar(level.getVar().getName());
+    for (int i = 0; i < level.getConstant(); i++) {
+      result = myFactory.makeApp(myFactory.makeVar("suc"), true, result);
+    }
+    return result;
+  }
+
+  public Abstract.Expression visitLevelMax(LevelMax levelMax) {
+    if (levelMax.isInfinity()) {
+      return myFactory.makeVar("inf");
+    }
+
+    List<Level> levels = levelMax.toListOfLevels();
+    if (levels.isEmpty()) {
+      return myFactory.makeNumericalLiteral(0);
+    }
+    if (levels.size() == 1) {
+      return visitLevel(levels.get(0));
+    }
+
+    Abstract.Expression result = myFactory.makeVar("max");
+    for (Level level : levels) {
+      result = myFactory.makeApp(result, true, visitLevel(level));
+    }
+
+    return result;
   }
 
   @Override

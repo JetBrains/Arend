@@ -13,7 +13,7 @@ import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
@@ -63,7 +63,7 @@ public class Prelude extends SimpleNamespace {
     DependentLink PathParameter3 = param("a'", Apps(Reference(PathParameter1), Right()));
     PathParameter1.setNext(PathParameter2);
     PathParameter2.setNext(PathParameter3);
-    Preprelude.DefinitionBuilder.Data path = new Preprelude.DefinitionBuilder.Data(PRELUDE, "Path", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMaxSet(new Sort(new Level(LP), new Level(LH))), PathParameter1, Arrays.asList(LP, LH));
+    Preprelude.DefinitionBuilder.Data path = new Preprelude.DefinitionBuilder.Data(PRELUDE, "Path", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMax(new Sort(new Level(LP), new Level(LH))), PathParameter1, Arrays.asList(LP, LH));
     PATH = path.definition();
 
     /* path */
@@ -152,7 +152,7 @@ public class Prelude extends SimpleNamespace {
     //Binding truncLp = new TypedBinding("lp", Lvl());
     //Binding truncLh = new TypedBinding("lh", CNat());
     DependentLink truncParameter = param("A", Universe(new Level(LP), new Level(LH)));
-    Preprelude.DefinitionBuilder.Data propTrunc = new Preprelude.DefinitionBuilder.Data(PRELUDE, "TrP", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMaxSet(Sort.PROP), truncParameter, Arrays.asList(LP, LH));
+    Preprelude.DefinitionBuilder.Data propTrunc = new Preprelude.DefinitionBuilder.Data(PRELUDE, "TrP", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMax(Sort.PROP), truncParameter, Arrays.asList(LP, LH));
     PROP_TRUNC = propTrunc.definition();
     propTrunc.addConstructor("inP", Abstract.Binding.DEFAULT_PRECEDENCE, param("a", Reference(truncParameter)));
 
@@ -171,7 +171,7 @@ public class Prelude extends SimpleNamespace {
     PROP_TRUNC.addCondition(propTruncPathCond);
 
     /* TrS, inS */
-    Preprelude.DefinitionBuilder.Data setTrunc = new Preprelude.DefinitionBuilder.Data(PRELUDE, "TrS", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMaxSet(Sort.SetOfLevel(new Level(LP))), truncParameter);
+    Preprelude.DefinitionBuilder.Data setTrunc = new Preprelude.DefinitionBuilder.Data(PRELUDE, "TrS", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMax(Sort.SetOfLevel(new Level(LP))), truncParameter);
     SET_TRUNC = setTrunc.definition();
     setTrunc.addConstructor("inS", Abstract.Binding.DEFAULT_PRECEDENCE, param("inS", Reference(truncParameter)));
 

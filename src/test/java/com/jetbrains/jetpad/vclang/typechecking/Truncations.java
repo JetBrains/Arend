@@ -1,13 +1,11 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class Truncations {
   @Test
@@ -66,6 +64,7 @@ public class Truncations {
         "\\with\n" +
         "  | loop left => base\n" +
         "  | loop right => base");
-    assertEquals(new SortMaxSet(new Sort(0, Sort.NOT_TRUNCATED)), definition.getSorts().getSorts());
+    assertTrue(definition.getSorts().getPLevel().isMinimum());
+    assertTrue(definition.getSorts().getHLevel().isInfinity());
   }
 }

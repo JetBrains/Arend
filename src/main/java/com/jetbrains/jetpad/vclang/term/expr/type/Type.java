@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
@@ -15,5 +15,5 @@ public interface Type extends PrettyPrintable {
   Type applyExpressions(List<? extends Expression> expressions);
   boolean isLessOrEquals(Sort sort);
   boolean isLessOrEquals(Expression expression, Equations equations, Abstract.SourceNode sourceNode);
-  SortMaxSet toSorts();
+  SortMax toSorts();
 }

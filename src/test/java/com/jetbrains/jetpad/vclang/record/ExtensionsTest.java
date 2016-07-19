@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.record;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -180,7 +180,7 @@ public class ExtensionsTest {
         "  \\abstract a : A\n" +
         "}\n" +
         "\\static \\class B \\extends A {}");
-    assertEquals(new SortMaxSet(new Sort(1,1)), ((ClassDefinition) result.getDefinition("A")).getSorts());
-    assertEquals(new SortMaxSet(new Sort(1,1)), ((ClassDefinition) result.getDefinition("B")).getSorts());
+    assertEquals(new SortMax(new Sort(1,1)), ((ClassDefinition) result.getDefinition("A")).getSorts());
+    assertEquals(new SortMax(new Sort(1,1)), ((ClassDefinition) result.getDefinition("B")).getSorts());
   }
 }

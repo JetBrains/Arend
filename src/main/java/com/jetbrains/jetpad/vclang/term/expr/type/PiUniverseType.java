@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
@@ -12,9 +12,9 @@ import java.util.List;
 
 public class PiUniverseType implements Type {
   private final DependentLink myParameters;
-  private final SortMaxSet mySorts;
+  private final SortMax mySorts;
 
-  public PiUniverseType(DependentLink parameters, SortMaxSet sorts) {
+  public PiUniverseType(DependentLink parameters, SortMax sorts) {
     myParameters = parameters;
     mySorts = sorts;
   }
@@ -23,12 +23,12 @@ public class PiUniverseType implements Type {
     return myParameters;
   }
 
-  public SortMaxSet getSorts() {
+  public SortMax getSorts() {
     return mySorts;
   }
 
   @Override
-  public SortMaxSet toSorts() {
+  public SortMax toSorts() {
     return myParameters.hasNext() ? null : mySorts;
   }
 
@@ -53,15 +53,7 @@ public class PiUniverseType implements Type {
 
   @Override
   public boolean isLessOrEquals(Sort sort) {
-    if (myParameters.hasNext()) {
-      return false;
-    }
-    for (Sort sort1 : mySorts.getSorts()) {
-      if (!sort1.isLessOrEquals(sort)) {
-        return false;
-      }
-    }
-    return true;
+    return !myParameters.hasNext() && mySorts.isLessOrEquals(sort);
   }
 
   @Override

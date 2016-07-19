@@ -17,7 +17,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
@@ -210,7 +210,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       InferenceBinding lh = new LevelInferenceBinding("lh", CNat(), expr);
       result.addUnsolvedVariable(lp);
       result.addUnsolvedVariable(lh);
-      expectedType1 = Universe(new Level(lp, 0), new Level(lh, 0));
+      expectedType1 = Universe(new Level(0, lp), new Level(0, lh));
     }
 
     if (CompareVisitor.compare(result.getEquations(), cmp, expectedType1, actualType, expr)) {
@@ -383,8 +383,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     // TODO [sorts]
-    SortMaxSet sorts = ((ClassDefinition) typeChecked).getSorts();
-    return new Result(ClassCall((ClassDefinition) typeChecked), new UniverseExpression(sorts.getSorts().isEmpty() ? Sort.PROP : sorts.getSorts().iterator().next()));
+    SortMax sorts = ((ClassDefinition) typeChecked).getSorts();
+    return new Result(ClassCall((ClassDefinition) typeChecked), new UniverseExpression(sorts.toSort()));
   }
 
   @Override
@@ -548,7 +548,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (refResult != null) {
         ReferenceExpression ref = refResult.expression.toReference();
         if (ref != null) {
-          return new Level(ref.getBinding(), num_sucs);
+          return new Level(num_sucs, ref.getBinding());
         }
       }
       error = new TypeCheckingError("Invalid level expression", expr);
@@ -917,8 +917,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     ClassCallExpression resultExpr = ClassCall(baseClass, typeCheckedStatements);
     classExtResult.expression = resultExpr;
     // TODO [sorts]
-    SortMaxSet sorts = resultExpr.getSorts();
-    classExtResult.type = new UniverseExpression(sorts.getSorts().isEmpty() ? Sort.PROP : sorts.getSorts().iterator().next());
+    SortMax sorts = resultExpr.getSorts();
+    classExtResult.type = new UniverseExpression(sorts.toSort());
     classExtResult.update(true);
     return checkResult(expectedType, classExtResult, expr);
   }

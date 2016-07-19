@@ -124,7 +124,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     myBindingMap.put(binding, myCounter++);
   }
 
-  private void writeBinding(Binding binding) throws IOException {
+  public void writeBinding(Binding binding) throws IOException {
     Integer index = myBindingMap.get(binding);
     if (index == null) {
       myDataStream.writeInt(-1);

@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.record;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -234,8 +234,8 @@ public class ImplementTest {
         "\\static \\class B \\extends A {\n" +
         "  \\implement A => Nat\n" +
         "}");
-    assertEquals(new SortMaxSet(new Sort(2,1)), ((ClassDefinition) result.getDefinition("A")).getSorts());
-    assertEquals(new SortMaxSet(new Sort(0,0)), ((ClassDefinition) result.getDefinition("B")).getSorts());
+    assertEquals(new SortMax(new Sort(2,1)), ((ClassDefinition) result.getDefinition("A")).getSorts());
+    assertEquals(new SortMax(new Sort(0,0)), ((ClassDefinition) result.getDefinition("B")).getSorts());
   }
 
   @Test
@@ -257,10 +257,10 @@ public class ImplementTest {
         " \\implement x' => 0\n" +
         "}\n" +
         "\\static \\function f => D { x => 1 }");
-    assertEquals(new SortMaxSet(new Sort(2,1)), ((ClassDefinition) result.getDefinition("A")).getSorts());
-    assertEquals(new SortMaxSet(new Sort(1,1)), ((ClassDefinition) result.getDefinition("B")).getSorts());
-    assertEquals(new SortMaxSet(new Sort(2,1)), ((ClassDefinition) result.getDefinition("C")).getSorts());
-    assertEquals(new SortMaxSet(new Sort(0,0)), ((ClassDefinition) result.getDefinition("D")).getSorts());
+    assertEquals(new SortMax(new Sort(2,1)), ((ClassDefinition) result.getDefinition("A")).getSorts());
+    assertEquals(new SortMax(new Sort(1,1)), ((ClassDefinition) result.getDefinition("B")).getSorts());
+    assertEquals(new SortMax(new Sort(2,1)), ((ClassDefinition) result.getDefinition("C")).getSorts());
+    assertEquals(new SortMax(new Sort(0,0)), ((ClassDefinition) result.getDefinition("D")).getSorts());
     assertEquals(ExpressionFactory.Universe(Sort.PROP), result.getDefinition("f").getType());
   }
 }

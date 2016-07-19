@@ -1,11 +1,14 @@
 package com.jetbrains.jetpad.vclang.term.expr.sort;
 
-import com.jetbrains.jetpad.vclang.term.Preprelude;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.ToAbstractVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
+
+import java.util.Collections;
 
 public class Sort {
   private final Level myPLevel;
@@ -19,6 +22,7 @@ public class Sort {
   public static Sort SetOfLevel(int level) {
     return new Sort(level, 0);
   }
+
   public static Sort SetOfLevel(Level level) {
     return new Sort(level, SET.getHLevel());
   }
@@ -30,23 +34,18 @@ public class Sort {
     if (plevel != ANY_LEVEL) {
       myPLevel = new Level(plevel);
     } else {
-      myPLevel = new Level();
+      myPLevel = Level.INFINITY;
     }
     if (hlevel != NOT_TRUNCATED)
       myHLevel = new Level(hlevel + 1);
     else {
-      myHLevel = new Level();
+      myHLevel = Level.INFINITY;
     }
   }
 
   public Sort(Level plevel, Level hlevel) {
     myPLevel = hlevel.isZero() ? new Level(0) : plevel;
     myHLevel = hlevel;
-  }
-
-  public Sort(Sort universe) {
-    myPLevel = new Level(universe.getPLevel());
-    myHLevel = new Level(universe.getHLevel());
   }
 
   public Level getPLevel() {
@@ -57,67 +56,41 @@ public class Sort {
     return myHLevel;
   }
 
-  public Sort max(Sort other) {
-    return new Sort(myPLevel.max(other.getPLevel()), myHLevel.max(other.getHLevel()));
-  }
-
-  public static Level intToPLevel(int plevel) {
-    return new Level(plevel);
-  }
-
-  public static Level intToHLevel(int hlevel) {
-    if (hlevel == NOT_TRUNCATED) return new Level();
-    return new Level(hlevel + 1);
-  }
-
   public Sort succ() {
-    return isProp() ? SetOfLevel(0) : new Sort(getPLevel().succ(), getHLevel().succ());
+    return isProp() ? SetOfLevel(0) : new Sort(getPLevel().add(1), getHLevel().add(1));
   }
 
   public boolean isProp() {
     return myHLevel.equals(PROP.getHLevel());
   }
 
+  public static boolean compare(Sort sort1, Sort sort2, Equations.CMP cmp, Equations equations, Abstract.SourceNode sourceNode) {
+    if (sort1.isProp()) {
+      return cmp == Equations.CMP.LE || sort2.isProp();
+    }
+    if (sort2.isProp()) {
+      return cmp == Equations.CMP.GE;
+    }
+    return Level.compare(sort1.getPLevel(), sort2.getPLevel(), cmp, equations, sourceNode) && Level.compare(sort1.getHLevel(), sort2.getHLevel(), cmp, equations, sourceNode);
+  }
+
   public boolean isLessOrEquals(Sort other) {
-    // TODO: use compare directly.
-    if (equals(other)) return true;
-    UniverseExpression uni1 = new UniverseExpression(this);
-    UniverseExpression uni2 = new UniverseExpression(other);
-    return Expression.compare(uni1, uni2, Equations.CMP.LE);
+    return compare(this, other, Equations.CMP.LE, DummyEquations.getInstance(), null);
   }
 
   public Sort subst(LevelSubstitution subst) {
-    Level plevel = myPLevel;
-    Level hlevel = myHLevel;
-    for (Binding var : subst.getDomain()) {
-      if (var.getType().toDefCall().getDefinition() == Preprelude.LVL) {
-        plevel = plevel.subst(var, subst.get(var));
-      } else if (var.getType().toDefCall().getDefinition() == Preprelude.CNAT) {
-        hlevel = hlevel.subst(var, subst.get(var));
-      }
-    }
-    return new Sort(plevel, hlevel);
-  }
-
-  public static boolean compare(Sort uni1, Sort uni2, Equations.CMP cmp, Equations equations) {
-    if (uni1.getHLevel().isZero() || uni2.getHLevel().isZero()) {
-      Level.compare(uni1.getPLevel(), new Level(0), Equations.CMP.GE, equations);
-      Level.compare(uni2.getPLevel(), new Level(0), Equations.CMP.GE, equations);
-      return Level.compare(uni1.getHLevel(), uni2.getHLevel(), cmp, equations);
-    }
-    return Level.compare(uni1.getPLevel(), uni2.getPLevel(), cmp, equations) && Level.compare(uni1.getHLevel(), uni2.getHLevel(), cmp, equations);
+    return myPLevel.isClosed() && myHLevel.isClosed() ? this : new Sort(myPLevel.subst(subst), myHLevel.subst(subst));
   }
 
   @Override
   public boolean equals(Object other) {
-    if (!(other instanceof Sort)) return false;
-    if (isProp() || ((Sort) other).isProp()) return myHLevel.equals(((Sort) other).getHLevel());
-    if (myPLevel.isInfinity() || ((Sort) other).getPLevel().isInfinity()) return myHLevel.equals(((Sort) other).getHLevel());
-    return myPLevel.equals(((Sort) other).getPLevel()) && myHLevel.equals(((Sort) other).getHLevel());
+    return other instanceof Sort && compare(this, (Sort) other, Equations.CMP.EQ, DummyEquations.getInstance(), null);
   }
 
   @Override
   public String toString() {
-    return "\\Type (" + myPLevel + "," + myHLevel + ")";
+    StringBuilder builder = new StringBuilder();
+    new ToAbstractVisitor(new ConcreteExpressionFactory(), Collections.<String>emptyList()).visitSort(this).accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
+    return builder.toString();
   }
 }

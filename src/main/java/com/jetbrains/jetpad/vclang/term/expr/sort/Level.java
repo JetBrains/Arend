@@ -1,72 +1,99 @@
 package com.jetbrains.jetpad.vclang.term.expr.sort;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
 
 public class Level implements PrettyPrintable {
-  private int myConstant = 0;
-  private Map<Binding, Integer> myNumSucsOfVars = new HashMap<>();
-  private boolean myIsInfinity = true;
+  private final int myConstant;
+  private final Binding myVar;
 
-  public Level() { }
+  public static final Level INFINITY = new Level(null, -1);
+
+  public Level(Binding var, int constant) {
+    myConstant = constant;
+    myVar = var;
+  }
 
   public Level(int constant) {
-    myConstant = constant;
-    myIsInfinity = false;
+    this(null, constant);
   }
 
-  public Level(Binding var, int numSucs) {
-    myNumSucsOfVars.put(var, numSucs);
-    myIsInfinity = false;
+  public Binding getVar() {
+    return myVar;
   }
 
-  public Level(Binding var) {
-    myNumSucsOfVars.put(var, 0);
-    myIsInfinity = false;
+  public int getConstant() {
+    return myConstant;
   }
 
-  public Level(Map<Binding, Integer> numSucsOfVars, int constant) {
-    myNumSucsOfVars = new HashMap<>(numSucsOfVars);
-    myConstant = constant;
-    myIsInfinity = false;
+  public boolean isInfinity() {
+    return myConstant == -1;
   }
 
-  public Level(Level level) {
-    myNumSucsOfVars = new HashMap<>(level.myNumSucsOfVars);
-    myConstant = level.myConstant;
-    myIsInfinity = level.myIsInfinity;
+  public boolean isZero() {
+    return myConstant == 0 && myVar == null;
   }
 
-  // TODO: more clever max s.t. max(suc x, 1) => suc x
+  public boolean isClosed() {
+    return myVar == null;
+  }
 
-  public Level max(Level other) {
-    if (other.isInfinity()) return new Level(other);
-    if (isInfinity()) return new Level(this);
+  public Level add(int constant) {
+    return isInfinity() ? this : new Level(myVar, myConstant + constant);
+  }
 
-    Level result = new Level(other.myNumSucsOfVars, Math.max(myConstant, other.myConstant));
-
-    for (Map.Entry<Binding, Integer> var : myNumSucsOfVars.entrySet()) {
-      Integer sucs = result.myNumSucsOfVars.get(var.getKey());
-      if (sucs != null) {
-        result.myNumSucsOfVars.put(var.getKey(), Math.max(var.getValue(), sucs));
-      } else {
-        result.myNumSucsOfVars.put(var.getKey(), var.getValue());
-      }
+  public Level subst(LevelSubstitution subst) {
+    if (myVar == null) {
+      return this;
     }
-
-    return result;
+    Level level = subst.get(myVar);
+    if (level == null) {
+      return this;
+    }
+    return level.add(myConstant);
   }
 
+  @Override
+  public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent) {
+    new ToAbstractVisitor(new ConcreteExpressionFactory(), names).visitLevel(this).accept(new PrettyPrintVisitor(builder, indent), prec);
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    prettyPrint(builder, Collections.<String>emptyList(), Abstract.Expression.PREC, 0);
+    return builder.toString();
+  }
+
+  public static boolean compare(Level level1, Level level2, Equations.CMP cmp, Equations equations, Abstract.SourceNode sourceNode) {
+    if (level1.isClosed() && level2.isClosed()) {
+      if (cmp == Equations.CMP.LE) {
+        return level1.getConstant() <= level2.getConstant();
+      }
+      if (cmp == Equations.CMP.GE) {
+        return level1.getConstant() >= level2.getConstant();
+      }
+      return level1.getConstant() == level2.getConstant();
+    } else {
+      return equations.add(level1, level2, cmp, sourceNode);
+    }
+  }
+
+  public boolean isLessOrEquals(Level level) {
+    return compare(this, level, Equations.CMP.LE, DummyEquations.getInstance(), null);
+  }
+
+  /*
   public Level subst(Binding var, Level level) {
     if (isInfinity()) return new Level();
     Level result = new Level(myNumSucsOfVars, myConstant);
@@ -83,27 +110,7 @@ public class Level implements PrettyPrintable {
     if (!result.myNumSucsOfVars.isEmpty() && result.extractOuterSucs() == result.myConstant) {
       result.myConstant = 0;
     }
-    return result; /**/
-  }
-
-  public Level subst(LevelSubstitution subst) {
-    Level result = this;
-    for (Binding var : subst.getDomain()) {
-      result = result.subst(var, subst.get(var));
-    }
     return result;
-  }
-
-  public List<Level> toListOfMaxArgs() {
-    if (isInfinity()) return Collections.singletonList(new Level());
-    ArrayList<Level> list = new ArrayList<>();
-    if (myConstant != 0 || myNumSucsOfVars.isEmpty()) {
-      list.add(new Level(myConstant));
-    }
-    for (Map.Entry<Binding, Integer> var : myNumSucsOfVars.entrySet()) {
-      list.add(new Level(var.getKey(), var.getValue()));
-    }
-    return list;
   }
 
   public int getNumOfMaxArgs() {
@@ -118,30 +125,14 @@ public class Level implements PrettyPrintable {
     return null;
   }
 
-  public int getConstant() {
-    return myConstant;
-  }
-
   public Set<Binding> getAllBindings() {
     return myNumSucsOfVars.keySet();
   }
 
-  public boolean isZero() {
-    return !myIsInfinity && myConstant == 0 && myNumSucsOfVars.isEmpty();
-  }
-
-  public boolean isClosed() {
-    return myIsInfinity || myNumSucsOfVars.isEmpty();
-  }
-
-  public boolean isUnit() {
-    return isClosed() || (myNumSucsOfVars.size() == 1 && (myConstant == 0));
-  }
-
-  public boolean isBinding() { return isUnit() && (!isClosed()) && getUnitSucs() == 0; }
+  public boolean isBinding() { return !isClosed() && getUnitSucs() == 0; }
 
   public int getUnitSucs() {
-    if (isClosed() || !isUnit()) {
+    if (isClosed()) {
       return myConstant;
     }
     return myNumSucsOfVars.entrySet().iterator().next().getValue();
@@ -165,58 +156,6 @@ public class Level implements PrettyPrintable {
     return result;
   }
 
-  @Override
-  public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent) {
-    toAbstract().accept(new PrettyPrintVisitor(builder, indent), prec);
-  }
-
-  @Override
-  public String toString() {
-    StringBuilder builder = new StringBuilder();
-    prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, 0);
-    return builder.toString();
-  }
-
-  public Abstract.Expression toAbstract() {
-    if (isInfinity()) {
-      return ConcreteExpressionFactory.cVar("inf");
-    }
-
-    Concrete.DefCallExpression suc = ConcreteExpressionFactory.cVar("suc");
-    List<Concrete.Expression> maxArgExprList = new ArrayList<>();
-
-    for (Level maxArg : toListOfMaxArgs()) {
-      if (maxArg.isClosed()) {
-        maxArgExprList.add(ConcreteExpressionFactory.cNum(maxArg.myConstant));
-      } else {
-        Concrete.Expression argExpr = ConcreteExpressionFactory.cVar(maxArg.getUnitBinding().getName());
-        for (int i = 0; i < maxArg.getUnitSucs(); ++i) {
-          argExpr = ConcreteExpressionFactory.cApps(suc, argExpr);
-        }
-        maxArgExprList.add(argExpr);
-      }
-    }
-
-    if (maxArgExprList.size() == 1) {
-      return maxArgExprList.get(0);
-    }
-
-    Concrete.DefCallExpression max = ConcreteExpressionFactory.cVar("max");
-    Concrete.Expression result = maxArgExprList.get(0);
-
-    for (int i = 1; i < maxArgExprList.size(); ++i) {
-      result = ConcreteExpressionFactory.cApps(max, maxArgExprList.get(i), result);
-    }
-
-    return result;
-  }
-
-  public enum CMP { LESS, GREATER, EQUAL, NOT_COMPARABLE }
-
-  public static boolean compare(Level expr1, Level expr2, Equations.CMP cmp) {
-    return compare(expr1, expr2, cmp, DummyEquations.getInstance());
-  }
-
   private boolean containsInferVar() {
     for (Binding bnd : getAllBindings()) {
       if (bnd instanceof InferenceBinding) {
@@ -226,155 +165,11 @@ public class Level implements PrettyPrintable {
     return false;
   }
 
-  public static boolean compare(Level expr1, Level expr2, Equations.CMP cmp, Equations equations) {
-    Level level1 = cmp == Equations.CMP.GE ? new Level(expr1) : new Level(expr2);
-    Level level2 = cmp == Equations.CMP.GE ? new Level(expr2) : new Level(expr1);
-    boolean leftContainsInferenceBnd = level1.containsInferVar();
-    boolean rightContainsInferenceBnd = level2.containsInferVar();
-
-    if (level1.isInfinity() && (!rightContainsInferenceBnd || equations instanceof DummyEquations)) {
-      /*if (rightContainsInferenceBnd) {
-        equations.add(level2.subtract(level2.extractOuterSucs()), level1, cmp == Equations.CMP.EQ ? Equations.CMP.EQ : Equations.CMP.LE, null);
-        return true;
-      } /**/
-      if (cmp != Equations.CMP.EQ || level2.isInfinity()) {
-        return true;
-      }
-      return false;
-    }
-
-    if (level2.isInfinity() && (!leftContainsInferenceBnd || equations instanceof DummyEquations)) {
-      /*if (leftContainsInferenceBnd && !(equations instanceof DummyEquations)) {
-        equations.add(level1, level2.subtract(level2.extractOuterSucs()), cmp == Equations.CMP.EQ ? Equations.CMP.EQ : Equations.CMP.GE, null);
-        return true;
-      }/**/
-      return false;
-    }
-
-    if (level1.isClosed() == level2.isClosed() && level1.myConstant >= level2.myConstant) {
-      if (cmp != Equations.CMP.EQ || level1.myConstant == level2.myConstant) {
-        level1.myConstant = 0;
-        level2.myConstant = 0;
-      }
-    }
-
-    for (Map.Entry<Binding, Integer> leftVar : level1.myNumSucsOfVars.entrySet()) {
-      if (level2.myNumSucsOfVars.containsKey(leftVar.getKey())) {
-        int rightSucs = level2.myNumSucsOfVars.get(leftVar.getKey());
-        if (leftVar.getValue() >= rightSucs) {
-          if (cmp != Equations.CMP.EQ || leftVar.getValue() == rightSucs) {
-            level1.myNumSucsOfVars.remove(leftVar.getKey());
-            level2.myNumSucsOfVars.remove(leftVar.getKey());
-          }
-        }
-      }
-    }
-
-    if (cmp == Equations.CMP.EQ) {
-      if (level1.isInfinity() || level2.isInfinity()) {
-        equations.add(level1, level2, Equations.CMP.EQ, null);
-        return true;
-      }
-      if (level1.isClosed() && level2.isClosed()) {
-        return level1.getConstant() == level2.getConstant();
-      }
-      boolean equal = true;
-      if (level1.getNumOfMaxArgs() != level2.getNumOfMaxArgs()) {
-        equal = false;
-      } else {
-        for (Level rightMaxArg : level2.toListOfMaxArgs()) {
-          if (rightMaxArg.isClosed()) {
-            if (level1.getConstant() != rightMaxArg.getUnitSucs()) {
-              equal = false;
-              break;
-            }
-          } else if (!level1.findBinding(rightMaxArg.getUnitBinding()) || level1.getNumSucs(rightMaxArg.getUnitBinding()) != rightMaxArg.getUnitSucs()) {
-            equal = false;
-            break;
-          }
-        }
-      }
-      //if (equal) {
-      //  return true;
-     // }
-      if ((!rightContainsInferenceBnd && !leftContainsInferenceBnd) || (equations instanceof DummyEquations)) {
-        return equal;
-      }
-
-      int externalSucs = Math.min(level1.extractOuterSucs(), level2.extractOuterSucs());
-
-      equations.add(level1.subtract(externalSucs), level2.subtract(externalSucs), Equations.CMP.EQ, null);
-      return true;
-    }
-
-    int leftSucs = level1.extractOuterSucs();
-    Level leftLevel = level1.subtract(leftSucs);
-
-    for (Level rightMaxArg : level2.toListOfMaxArgs()) {
-      int rightSucs = rightMaxArg.getUnitSucs();
-      int sucsToRemove = Math.min(leftSucs, rightSucs);
-
-      if (leftLevel.isInfinity() || rightMaxArg.isInfinity()) {
-        equations.add(level1.subtract(sucsToRemove), rightMaxArg.subtract(sucsToRemove), Equations.CMP.GE, null);
-        continue;
-      }
-
-      if (rightMaxArg.isClosed()) {
-        if (leftLevel.isClosed() && leftSucs >= rightSucs) {
-          continue;
-        }
-        if (!leftContainsInferenceBnd || (equations instanceof DummyEquations)) {
-          return false;
-        }
-        equations.add(level1.subtract(sucsToRemove), rightMaxArg.subtract(sucsToRemove), Equations.CMP.GE, null);
-      } else if (leftLevel.findBinding(rightMaxArg.getUnitBinding())) {
-        if (leftLevel.getNumSucs(rightMaxArg.getUnitBinding()) + leftSucs < rightSucs) {
-          return false;
-        }
-      } else {
-        if ((leftContainsInferenceBnd || (rightMaxArg.getUnitBinding() instanceof InferenceBinding)) && !(equations instanceof DummyEquations)) {
-          equations.add(level1.subtract(sucsToRemove), rightMaxArg.subtract(sucsToRemove), Equations.CMP.GE, null);
-          continue;
-        }
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  public CMP compare(Level other) {
-     if (compare(this, other, Equations.CMP.EQ)) {
-      return CMP.EQUAL;
-    }
-
-    if (compare(this, other, Equations.CMP.GE)) {
-      return CMP.GREATER;
-    }
-
-    if (compare(this, other, Equations.CMP.LE)) {
-      return CMP.LESS;
-    }
-
-    return CMP.NOT_COMPARABLE;
-  }
-
-  @Override
-  public boolean equals(Object other) {
-    return other instanceof Level && compare((Level)other) == CMP.EQUAL;
-  }
-
-  public Level succ() {
-    return subtract(-1);
-  }
-
-  public boolean isInfinity() { return myIsInfinity; }
-
   public int extractOuterSucs() {
     if (myNumSucsOfVars.isEmpty()) {
       return myConstant;
     }
     return myConstant > 0 ? Math.min(myConstant, Collections.min(myNumSucsOfVars.values())) : Collections.min(myNumSucsOfVars.values());
   }
-
+  */
 }

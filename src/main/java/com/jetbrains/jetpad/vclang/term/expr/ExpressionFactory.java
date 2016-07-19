@@ -255,10 +255,6 @@ public class ExpressionFactory {
     return new UniverseExpression(new Sort(plevel, hlevel));
   }
 
-  public static UniverseExpression Universe(int plevel, Level hlevel) {
-    return new UniverseExpression(new Sort(Sort.intToPLevel(plevel), hlevel));
-  }
-
   public static UniverseExpression Universe(Level plevel, Level hlevel) {
     return new UniverseExpression(new Sort(plevel, hlevel));
   }

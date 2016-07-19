@@ -826,7 +826,7 @@ public class ListEquations implements Equations {
         if (binding1 instanceof InferenceBinding) {
           it.remove();
           if (binding1 != entry.getKey()) {
-            newEquations.add(new Level(entry.getKey(), 0), solution.expression, CMP.EQ, entry.getKey().getSourceNode());
+            newEquations.add(new Level(0, entry.getKey()), solution.expression, CMP.EQ, entry.getKey().getSourceNode());
           }
         }
       }

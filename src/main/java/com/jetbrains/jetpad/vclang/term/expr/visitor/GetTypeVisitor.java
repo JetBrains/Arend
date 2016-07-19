@@ -5,9 +5,8 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
@@ -58,11 +57,11 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
     }
   }
 
-  private SortMaxSet getSorts(Type type) {
+  private SortMax getSorts(Type type) {
     if (type instanceof Expression) {
       UniverseExpression universeType = ((Expression) type).normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
       if (universeType != null) {
-        return new SortMaxSet(universeType.getSort());
+        return new SortMax(universeType.getSort());
       }
     } else
     if (type instanceof PiUniverseType) {
@@ -74,44 +73,34 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
   }
 
   private Type visitDependentType(DependentTypeExpression expr) {
-    SortMaxSet codomain = null;
+    SortMax codomain = null;
     if (expr instanceof PiExpression) {
       codomain = getSorts(((PiExpression) expr).getCodomain().accept(this, null));
       if (codomain == null) {
         return null;
       }
 
-      boolean isProp = true;
-      for (Sort sort : codomain.getSorts()) {
-        if (!sort.equals(Sort.PROP)) {
-          isProp = false;
-        }
-      }
-      if (isProp) {
+      if (codomain.getHLevel().isMinimum()) {
         return new UniverseExpression(Sort.PROP);
       }
     }
 
-    SortMaxSet sorts = new SortMaxSet();
+    SortMax sorts = new SortMax();
     for (DependentLink link = expr.getParameters(); link.hasNext(); link = link.getNext()) {
       if (!(link instanceof UntypedDependentLink)) {
-        SortMaxSet sorts1 = getSorts(link.getType().accept(this, null));
+        SortMax sorts1 = getSorts(link.getType().accept(this, null));
         if (sorts1 == null) {
           return null;
         }
-        sorts.addAll(sorts1);
+        sorts.add(sorts1);
       }
     }
 
     if (codomain != null) {
-      SortMaxSet sorts1 = new SortMaxSet();
-      for (Sort sort : sorts.getSorts()) {
-        sorts1.add(new Sort(sort.getPLevel(), new Level(0)));
-      }
-      sorts = sorts1;
+      sorts = new SortMax(sorts.getPLevel().max(codomain.getPLevel()), codomain.getHLevel());
     }
 
-    return sorts.getSorts().isEmpty() ? new UniverseExpression(Sort.PROP) : sorts.getSorts().size() == 1 ? new UniverseExpression(sorts.getSorts().iterator().next()) : new PiUniverseType(EmptyDependentLink.getInstance(), sorts);
+    return new PiUniverseType(EmptyDependentLink.getInstance(), sorts);
   }
 
   @Override

@@ -14,7 +14,7 @@ import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
 import java.util.ArrayList;
@@ -58,13 +58,13 @@ public class Preprelude extends SimpleNamespace {
     PRE_PRELUDE_CLASS = new ClassDefinition("Preprelude", PRE_PRELUDE, EmptyNamespace.INSTANCE);
 
     /* Nat, zero, suc */
-    DefinitionBuilder.Data nat = new DefinitionBuilder.Data(PRE_PRELUDE, "Nat", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMaxSet(Sort.SetOfLevel(0)), EmptyDependentLink.getInstance());
+    DefinitionBuilder.Data nat = new DefinitionBuilder.Data(PRE_PRELUDE, "Nat", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMax(Sort.SetOfLevel(0)), EmptyDependentLink.getInstance());
     NAT = nat.definition();
     ZERO = nat.addConstructor("zero", Abstract.Binding.DEFAULT_PRECEDENCE, EmptyDependentLink.getInstance());
     SUC = nat.addConstructor("suc", Abstract.Binding.DEFAULT_PRECEDENCE, param(DataCall(NAT)));
 
     /* Lvl, zeroLvl, sucLvl */
-    DefinitionBuilder.Data lvl = new DefinitionBuilder.Data(PRE_PRELUDE, "Lvl", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMaxSet(Sort.SetOfLevel(0)), EmptyDependentLink.getInstance());
+    DefinitionBuilder.Data lvl = new DefinitionBuilder.Data(PRE_PRELUDE, "Lvl", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMax(Sort.SetOfLevel(0)), EmptyDependentLink.getInstance());
     LVL = lvl.definition();
     DependentLink sucLvlParameter = param("l", DataCall(LVL));
     ZERO_LVL = lvl.addConstructor("zeroLvl", Abstract.Binding.DEFAULT_PRECEDENCE, EmptyDependentLink.getInstance());
@@ -86,7 +86,7 @@ public class Preprelude extends SimpleNamespace {
     MAX_LVL.setElimTree(maxLvlElimTree);
 
     /* CNat, inf, fin */
-    DefinitionBuilder.Data cnat = new DefinitionBuilder.Data(PRE_PRELUDE, "CNat", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMaxSet(Sort.SetOfLevel(0)), EmptyDependentLink.getInstance());
+    DefinitionBuilder.Data cnat = new DefinitionBuilder.Data(PRE_PRELUDE, "CNat", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMax(Sort.SetOfLevel(0)), EmptyDependentLink.getInstance());
     CNAT = cnat.definition();
     INF = cnat.addConstructor("inf", Abstract.Binding.DEFAULT_PRECEDENCE, EmptyDependentLink.getInstance());
     FIN = cnat.addConstructor("fin", Abstract.Binding.DEFAULT_PRECEDENCE, param("n", DataCall(NAT)));
@@ -145,7 +145,7 @@ public class Preprelude extends SimpleNamespace {
     PRED_CNAT.setElimTree(predCNatElimTree);
 
     /* I, left, right */
-    DefinitionBuilder.Data interval = new DefinitionBuilder.Data(PRE_PRELUDE, "I", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMaxSet(Sort.PROP), EmptyDependentLink.getInstance());
+    DefinitionBuilder.Data interval = new DefinitionBuilder.Data(PRE_PRELUDE, "I", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMax(Sort.PROP), EmptyDependentLink.getInstance());
     INTERVAL = interval.definition();
     LEFT = interval.addConstructor("left", Abstract.Binding.DEFAULT_PRECEDENCE, EmptyDependentLink.getInstance());
     RIGHT = interval.addConstructor("right", Abstract.Binding.DEFAULT_PRECEDENCE, EmptyDependentLink.getInstance());
@@ -178,14 +178,14 @@ public class Preprelude extends SimpleNamespace {
       private final DataDefinition myDefinition;
       private final SimpleNamespace myNs = new SimpleNamespace();
 
-      Data(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, SortMaxSet sorts, DependentLink parameters, List<Binding> polyParams) {
+      Data(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, SortMax sorts, DependentLink parameters, List<Binding> polyParams) {
         myParentNs = parentNs;
         myDefinition = new DataDefinition(name, precedence, sorts, parameters);
         myDefinition.setPolyParams(polyParams);
         myParentNs.addDefinition(myDefinition);
       }
 
-      Data(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, SortMaxSet sorts, DependentLink parameters) {
+      Data(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, SortMax sorts, DependentLink parameters) {
         this(parentNs, name, precedence, sorts, parameters, new ArrayList<Binding>());
       }
 

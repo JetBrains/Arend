@@ -6,8 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.expr.sort.SortMaxSet;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 
 import java.util.*;
@@ -18,7 +17,7 @@ public class ClassDefinition extends Definition {
   private final Namespace myOwnNamespace;
   private final Namespace myInstanceNamespace;
 
-  private SortMaxSet mySorts;
+  private SortMax mySorts;
 
   private final Map<ClassField, FieldImplementation> myFields = new HashMap<>();
   private Set<ClassDefinition> mySuperClasses = null;
@@ -44,7 +43,7 @@ public class ClassDefinition extends Definition {
     super.hasErrors(false);
     myOwnNamespace = ownNamespace;
     myInstanceNamespace = instanceNamespace;
-    mySorts = new SortMaxSet();
+    mySorts = new SortMax();
   }
 
   public boolean isSubClassOf(ClassDefinition classDefinition) {
@@ -79,16 +78,16 @@ public class ClassDefinition extends Definition {
     return result;
   }
 
-  public SortMaxSet getSorts() {
+  public SortMax getSorts() {
     return mySorts;
   }
 
-  public void setSorts(SortMaxSet sorts) {
+  public void setSorts(SortMax sorts) {
     mySorts = sorts;
   }
 
   public void updateSort() {
-    mySorts = new SortMaxSet();
+    mySorts = new SortMax();
     ExprSubstitution substitution = getImplementedFields();
     for (Map.Entry<ClassField, FieldImplementation> entry : myFields.entrySet()) {
       if (!entry.getKey().hasErrors() && !entry.getValue().isImplemented()) {
@@ -100,7 +99,7 @@ public class ClassDefinition extends Definition {
   @Override
   public Expression getType() {
     // TODO: [sorts] return type
-    return new UniverseExpression(mySorts.getSorts().isEmpty() ? Sort.PROP : mySorts.getSorts().iterator().next());
+    return new UniverseExpression(mySorts.toSort());
   }
 
   @Override

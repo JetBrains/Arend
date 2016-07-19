@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
@@ -196,7 +197,12 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     DefCallExpression defCall2 = expr2.toDefCall();
     if (defCall2 == null) return false;
     // TODO: remove this comparison
-    // Sort.compare(expr1.getSort(), defCall2.getSort(), myCMP, myEquations);
+    for (Binding binding : expr1.getPolyParamsSubst().getDomain()) {
+      Level level2 = defCall2.getPolyParamsSubst().get(binding);
+      if (level2 != null) {
+        Level.compare(expr1.getPolyParamsSubst().get(binding), level2, Equations.CMP.GE, myEquations, mySourceNode);
+      }
+    }
     return expr1.getDefinition() == defCall2.getDefinition();
   }
 
@@ -377,7 +383,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   @Override
   public Boolean visitUniverse(UniverseExpression expr1, Expression expr2) {
     UniverseExpression universe2 = expr2.toUniverse();
-    return universe2 != null && universe2.getSort() != null && Sort.compare(expr1.getSort(), universe2.getSort(), myCMP, myEquations);
+    return universe2 != null && universe2.getSort() != null && Sort.compare(expr1.getSort(), universe2.getSort(), myCMP, myEquations, mySourceNode);
   }
 
   @Override
