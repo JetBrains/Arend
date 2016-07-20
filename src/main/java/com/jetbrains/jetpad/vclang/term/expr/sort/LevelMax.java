@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ToAbstractVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.*;
 
@@ -104,6 +105,15 @@ public class LevelMax implements PrettyPrintable {
         }
       }
       return false;
+    }
+    return true;
+  }
+
+  public boolean isLessOrEquals(Level level, Equations equations, Abstract.SourceNode sourceNode) {
+    for (Map.Entry<Binding, Integer> entry : myVars.entrySet()) {
+      if (!Level.compare(new Level(entry.getKey(), entry.getValue()), level, Equations.CMP.LE, equations, sourceNode)) {
+        return false;
+      }
     }
     return true;
   }

@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ToAbstractVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.Collections;
 
@@ -70,9 +71,19 @@ public class SortMax {
       return true;
     }
     if (sort.getHLevel().isClosed() && sort.getHLevel().getConstant() == 0) {
-      return myHLevel.isMinimum();
+      return false;
     }
     return myPLevel.isLessOrEquals(sort.getPLevel()) && myHLevel.isLessOrEquals(sort.getHLevel());
+  }
+
+  public boolean isLessOrEquals(Sort sort, Equations equations, Abstract.SourceNode sourceNode) {
+    if (myHLevel.isMinimum()) {
+      return true;
+    }
+    if (sort.getHLevel().isClosed() && sort.getHLevel().getConstant() == 0) {
+      return false;
+    }
+    return myPLevel.isLessOrEquals(sort.getPLevel(), equations, sourceNode) && myHLevel.isLessOrEquals(sort.getHLevel(), equations, sourceNode);
   }
 
   @Override
