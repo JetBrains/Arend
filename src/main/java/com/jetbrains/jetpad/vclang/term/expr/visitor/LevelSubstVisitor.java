@@ -40,15 +40,6 @@ public class LevelSubstVisitor extends BaseExpressionVisitor<Void, Void> impleme
     return null;
   }
 
-  /*@Override
-  public Void visitConCall(ConCallExpression expr, Void params) {
-    if (expr.getDataTypeArguments().isEmpty()) return null;
-    for (Expression parameter : expr.getDataTypeArguments()) {
-      parameter.accept(this, null);
-    }
-    return null;
-  } /**/
-
   @Override
   public Void visitClassCall(ClassCallExpression expr, Void params) {
     return null;
@@ -66,7 +57,8 @@ public class LevelSubstVisitor extends BaseExpressionVisitor<Void, Void> impleme
   @Override
   public Void visitReference(ReferenceExpression expr, Void params) {
     if (expr.getBinding() instanceof InferenceBinding) {
-      //((InferenceBinding) expr.getBinding()).setType(subst(expr.getBinding().getType(), myLevelSubst));
+      // TODO: do we need this?
+      // ((InferenceBinding) expr.getBinding()).setType(subst(expr.getBinding().getType(), myLevelSubst));
       expr.getBinding().getType().accept(this, null);
     }
     return null;

@@ -210,7 +210,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       InferenceBinding lh = new LevelInferenceBinding("lh", CNat(), expr);
       result.addUnsolvedVariable(lp);
       result.addUnsolvedVariable(lh);
-      expectedType1 = Universe(new Level(0, lp), new Level(0, lh));
+      expectedType1 = Universe(new Level(lp), new Level(lh));
     }
 
     if (CompareVisitor.compare(result.getEquations(), cmp, expectedType1, actualType, expr)) {
@@ -487,8 +487,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         result.getEquations().abstractBinding(myContext.get(i));
         InferenceBinding bindingType = bindingTypes.get(myContext.get(i));
         if (bindingType != null) {
-          result.addUnsolvedVariable((InferenceBinding) bindingType.getType().toUniverse().getSort().getPLevel().getUnitBinding());
-          result.addUnsolvedVariable((InferenceBinding) bindingType.getType().toUniverse().getSort().getHLevel().getUnitBinding());
+          result.addUnsolvedVariable((InferenceBinding) bindingType.getType().toUniverse().getSort().getPLevel().getVar());
+          result.addUnsolvedVariable((InferenceBinding) bindingType.getType().toUniverse().getSort().getHLevel().getVar());
           result.addUnsolvedVariable(bindingType);
           Substitution substitution = result.getSubstitution(false);
           if (!substitution.getDomain().isEmpty()) {
@@ -520,12 +520,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getSort().succ())), expr);
   }
 
-  private Level typeCheckLevelAtom(Abstract.Expression expr, Expression expectedType) {
-    int num_sucs = 0;
+  private Level typeCheckLevel(Abstract.Expression expr, Expression expectedType) {
+    int numSucs = 0;
     TypeCheckingError error = null;
 
-    if (expr instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression)expr).getName().equals("inf")) {
-      return new Level();
+    if (expr instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr).getName().equals("inf")) {
+      return Level.INFINITY;
     }
 
     while (expr instanceof Abstract.AppExpression) {
@@ -536,19 +536,19 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         break;
       }
       expr = app.getArgument().getExpression();
-      ++num_sucs;
+      ++numSucs;
     }
 
     if (error == null) {
       if (expr instanceof Abstract.NumericLiteral) {
         int val = ((Abstract.NumericLiteral) expr).getNumber();
-        return new Level(val + num_sucs);
+        return new Level(val + numSucs);
       }
       Result refResult = typeCheck(expr, expectedType);
       if (refResult != null) {
         ReferenceExpression ref = refResult.expression.toReference();
         if (ref != null) {
-          return new Level(num_sucs, ref.getBinding());
+          return new Level(ref.getBinding(), numSucs);
         }
       }
       error = new TypeCheckingError("Invalid level expression", expr);
@@ -556,20 +556,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     myErrorReporter.report(error);
     return null;
-  }
-
-  private Level typeCheckLevel(Abstract.Expression expr, Expression expectedType) {
-    Level result = new Level(0);
-    List<Abstract.ArgumentExpression> args = new ArrayList<>();
-    Abstract.Expression max = Abstract.getFunction(expr, args) ;
-
-    if (max instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) max).getName().equals("max")) {
-      for (Abstract.ArgumentExpression arg : args) {
-        result = result.max(typeCheckLevelAtom(arg.getExpression(), expectedType));
-      }
-      return result;
-    }
-    return typeCheckLevelAtom(expr, expectedType);
   }
 
   @Override
@@ -702,7 +688,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         maxDomainUni = argUniverse;
         continue;
       }
-      maxDomainUni = maxDomainUni.max(argUniverse);
+      // TODO [sorts]
+      // maxDomainUni = maxDomainUni.max(argUniverse);
     }
     Sort codomainUniverse = null;
     if (codomainResult != null) {
@@ -712,8 +699,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Sort finalUniverse = null;
 
     if (codomainUniverse != null) {
-      finalUniverse = new Sort(maxDomainUni != null ? maxDomainUni.getPLevel().max(codomainUniverse.getPLevel()) : codomainUniverse.getPLevel(),
-                          codomainUniverse.getHLevel());
+      // TODO [sorts]
+      finalUniverse = new Sort(maxDomainUni != null ? maxDomainUni.getPLevel() : codomainUniverse.getPLevel(), codomainUniverse.getHLevel());
+      // finalUniverse = new Sort(maxDomainUni != null ? maxDomainUni.getPLevel().max(codomainUniverse.getPLevel()) : codomainUniverse.getPLevel(),
+      //                     codomainUniverse.getHLevel());
     } else if (maxDomainUni != null){
       finalUniverse = new Sort(maxDomainUni.getPLevel(),
                          maxDomainUni.getHLevel());

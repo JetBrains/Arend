@@ -92,7 +92,7 @@ public class ListEquations implements Equations {
 
     @Override
     public void solveIn(ListEquations equations) {
-      if (!Level.compare(expr1, expr2, cmp, equations)) {
+      if (!Level.compare(expr1, expr2, cmp, equations, sourceNode)) {
         equations.myErrorReporter.report(new SolveEquationsError<>(expr1, expr2, null, sourceNode));
       }
     }
@@ -237,7 +237,7 @@ public class ListEquations implements Equations {
         Level result = leSet.get(0).subst(substitution);
         for (int i = 1; i < leSet.size(); i++) {
           Level expr = leSet.get(i).subst(substitution);
-          if (!result.isZero() && !expr.isInfinity() && !Level.compare(result, expr, CMP.LE, equations)) {
+          if (!result.isZero() && !expr.isInfinity() && !Level.compare(result, expr, CMP.LE, equations, binding.getSourceNode())) {
             binding.reportErrorLevelInfer(equations.getErrorReporter(), result, expr);
             return null;
           }
@@ -248,17 +248,17 @@ public class ListEquations implements Equations {
         Level result = geSet.get(0);
         if (geSet.size() > 1) {
           for (int i = 1; i < geSet.size(); i++) {
-            Level max = result.max(geSet.get(i));
-            if (max != null) {
-              result = max;
-            } else {
+            // Level max = result.max(geSet.get(i));
+            // if (max != null) {
+            //   result = max;
+            // } else {
               Level result1 = result.subst(substitution);
               Level expr = geSet.get(i).subst(substitution);
-              if (!result1.isInfinity() && !expr.isZero() && !Level.compare(result1, expr, CMP.GE, equations)) {
+              if (!result1.isInfinity() && !expr.isZero() && !Level.compare(result1, expr, CMP.GE, equations, binding.getSourceNode())) {
                 binding.reportErrorLevelInfer(equations.getErrorReporter(), result1, expr);
                 return null;
               }
-            }
+            // }
           }
         }
 
@@ -266,7 +266,7 @@ public class ListEquations implements Equations {
         if (!leSet.isEmpty()) {
           for (Level expr : leSet) {
             expr = expr.subst(substitution);
-            if (!result.isZero() && !expr.isInfinity() && !Level.compare(result, expr, CMP.LE, equations)) {
+            if (!result.isZero() && !expr.isInfinity() && !Level.compare(result, expr, CMP.LE, equations, binding.getSourceNode())) {
               binding.reportErrorLevelInfer(equations.getErrorReporter(), result, expr);
               return null;
             }
@@ -343,10 +343,10 @@ public class ListEquations implements Equations {
 
   @Override
   public boolean add(Level expr1, Level expr2, CMP cmp, Abstract.SourceNode sourceNode) {
-    Binding var1 = expr1.getUnitBinding();
-    Binding var2 = expr2.getUnitBinding();
-    boolean isInf1 = expr1.isBinding() && var1 instanceof InferenceBinding;
-    boolean isInf2 = expr2.isBinding() && var2 instanceof InferenceBinding;
+    Binding var1 = expr1.getVar();
+    Binding var2 = expr2.getVar();
+    boolean isInf1 = expr1.getConstant() == 0 && var1 instanceof InferenceBinding;
+    boolean isInf2 = expr2.getConstant() == 0 && var2 instanceof InferenceBinding;
     if (isInf1 && isInf2 && var1 == var2) {
       return true;
     }
@@ -451,7 +451,7 @@ public class ListEquations implements Equations {
     if (sol1 != null) {
       Level expr1 = sol1.expression;
       Level expr2 = sol2.expression;
-      if (!Level.compare(expr2, expr1, CMP.EQ, this)) {
+      if (!Level.compare(expr2, expr1, CMP.EQ, this, binding.getSourceNode())) {
         binding.reportErrorLevelInfer(myErrorReporter, expr2, expr1);
       }
       return;
@@ -541,12 +541,12 @@ public class ListEquations implements Equations {
   private void mergeSolutions(ExactLevelSolution sol1, EqSetLevelSolution sol2, InferenceBinding binding) {
     Level expr1 = sol1.expression;
     for (Level expr : sol2.geSet) {
-      if (!Level.compare(expr1, expr, CMP.GE, this)) {
+      if (!Level.compare(expr1, expr, CMP.GE, this, binding.getSourceNode())) {
         binding.reportErrorLevelInfer(myErrorReporter, expr1, expr);
       }
     }
     for (Level expr : sol2.leSet) {
-      if (!Level.compare(expr1, expr, CMP.LE, this)) {
+      if (!Level.compare(expr1, expr, CMP.LE, this, binding.getSourceNode())) {
         binding.reportErrorLevelInfer(myErrorReporter, expr1, expr);
       }
     }
@@ -694,7 +694,7 @@ public class ListEquations implements Equations {
               entry.getKey().reportErrorLevelInfer(myErrorReporter);
               break;
             }
-            if (subst.findBinding(entry.getKey())) {
+            if (subst.getVar() == entry.getKey()) {
               entry.getKey().reportErrorLevelInfer(myErrorReporter, subst);
             } else {
               binding = entry.getKey();
@@ -716,7 +716,7 @@ public class ListEquations implements Equations {
                 entry.getKey().reportErrorLevelInfer(myErrorReporter);
                 break;
               }
-              if (subst.findBinding(entry.getKey())) {
+              if (subst.getVar() == entry.getKey()) {
                 entry.getKey().reportErrorLevelInfer(myErrorReporter, subst);
               } else {
                 binding = entry.getKey();
@@ -821,12 +821,12 @@ public class ListEquations implements Equations {
       Map.Entry<InferenceBinding, ExactLevelSolution> entry = it.next();
       ExactLevelSolution solution = entry.getValue();
       solution.subst(binding, subst);
-      Binding binding1 = solution.expression.getUnitBinding();
+      Binding binding1 = solution.expression.getVar();
       if (binding1 != null) {
         if (binding1 instanceof InferenceBinding) {
           it.remove();
           if (binding1 != entry.getKey()) {
-            newEquations.add(new Level(0, entry.getKey()), solution.expression, CMP.EQ, entry.getKey().getSourceNode());
+            newEquations.add(new Level(entry.getKey()), solution.expression, CMP.EQ, entry.getKey().getSourceNode());
           }
         }
       }

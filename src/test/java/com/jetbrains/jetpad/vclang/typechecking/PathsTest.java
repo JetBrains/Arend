@@ -34,7 +34,7 @@ public class PathsTest {
     pathArgs.add(Lam(C, Reference(A)));
     pathArgs.add(Reference(A.getNext()));
     pathArgs.add(Reference(A.getNext()));
-    LevelSubstitution levelSubst = new LevelSubstitution(Prelude.LP, new Level(0), Prelude.LH, new Level());
+    LevelSubstitution levelSubst = new LevelSubstitution(Prelude.LP, new Level(0), Prelude.LH, new Level(0));
     Expression pathCall = ConCall(Prelude.PATH_CON, pathArgs).applyLevelSubst(levelSubst).addArgument(Lam(C, Reference(A.getNext())), AppExpression.DEFAULT);
     assertEquals(Lam(A, pathCall).normalize(NormalizeVisitor.Mode.NF), idp.expression);
     assertEquals(Pi(A, Apps(FunCall(Prelude.PATH_INFIX).applyLevelSubst(levelSubst), Reference(A), Reference(A.getNext()), Reference(A.getNext()))).normalize(NormalizeVisitor.Mode.NF), idp.type.normalize(NormalizeVisitor.Mode.NF));

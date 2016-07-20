@@ -3,8 +3,8 @@ package com.jetbrains.jetpad.vclang.term.expr.subst;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,10 +31,6 @@ public class LevelSubstitution {
     return mySubstExprs.keySet();
   }
 
-  public Set<Map.Entry<Binding, Level>> getEntries() {
-    return mySubstExprs.entrySet();
-  }
-
   public Level get(Binding binding)  {
     return mySubstExprs.get(binding);
   }
@@ -48,22 +44,13 @@ public class LevelSubstitution {
   }
 
   public void subst(Binding binding, Level expr) {
-    for (Map.Entry<Binding, Level> var : mySubstExprs.entrySet()) {
-      var.setValue(var.getValue().subst(binding, expr));
-    }
+    // TODO [sorts]
+    // for (Map.Entry<Binding, Level> entry : mySubstExprs.entrySet()) {
+    //   entry.setValue(entry.getValue().subst(binding, expr));
+    // }
   }
 
-  public LevelSubstitution filter(List<Binding> params) {
-    LevelSubstitution result = new LevelSubstitution();
-    for (Binding param : params) {
-      if (mySubstExprs.containsKey(param)) {
-        result.add(param, mySubstExprs.get(param));
-      }
-    }
-    return result;
-  }
-
-  public LevelSubstitution compose(LevelSubstitution subst, Set<Binding> params) {
+  public LevelSubstitution compose(LevelSubstitution subst, Collection<? extends Binding> params) {
     LevelSubstitution result = new LevelSubstitution();
     result.add(this);
     for (Binding binding : subst.getDomain()) {
@@ -71,14 +58,10 @@ public class LevelSubstitution {
         result.add(binding, subst.get(binding));
         continue;
       }
-      boolean foundInExprs = false;
-      for (Map.Entry<Binding, Level> substExpr : mySubstExprs.entrySet()) {
-        if (substExpr.getValue().findBinding(binding)) {
-          result.add(substExpr.getKey(), substExpr.getValue().subst(subst));
-          foundInExprs = true;
-        }
-      }
-      if (!foundInExprs) {
+
+      Level level = mySubstExprs.get(binding);
+      if (level != null) {
+        result.add(binding, level.subst(subst));
         boolean exists = false;
         for (Binding myBinding : getDomain()) {
           if (myBinding.getType().toDataCall().getDefinition() == binding.getType().toDefCall().getDefinition()) {

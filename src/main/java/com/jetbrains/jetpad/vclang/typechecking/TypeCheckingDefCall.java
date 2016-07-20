@@ -200,18 +200,16 @@ public class TypeCheckingDefCall {
     if (definition.isPolymorphic()) {
       LevelSubstitution subst = new LevelSubstitution();
 
+      CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(null, null);
       for (Binding polyVar : definition.getPolyParams()) {
         InferenceBinding l = new LevelInferenceBinding(polyVar.getName(), polyVar.getType(), sourceNode);
         subst.add(polyVar, new Level(l));
+        result.addUnsolvedVariable(l);
       }
 
       DefCallExpression defCall = definition.getDefCall(subst);
-      CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(defCall, defCall.getDefinition().getTypeWithThis().subst(subst));
-
-      for (Binding l : subst.getDomain()) {
-        result.addUnsolvedVariable((InferenceBinding)subst.get(l).getUnitBinding());
-      }
-
+      result.expression = defCall;
+      result.type = defCall.getDefinition().getTypeWithThis().subst(subst);
       return result;
     }
 

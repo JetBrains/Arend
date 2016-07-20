@@ -24,8 +24,14 @@ public class Level implements PrettyPrintable {
     myVar = var;
   }
 
+  public Level(Binding var) {
+    myConstant = 0;
+    myVar = var;
+  }
+
   public Level(int constant) {
-    this(null, constant);
+    myConstant = constant;
+    myVar = null;
   }
 
   public Binding getVar() {
@@ -63,6 +69,10 @@ public class Level implements PrettyPrintable {
     return level.add(myConstant);
   }
 
+  public Level subst(Binding binding, Level subst) {
+    return myVar != binding ? this : subst.add(myConstant);
+  }
+
   @Override
   public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent) {
     new ToAbstractVisitor(new ConcreteExpressionFactory(), names).visitLevel(this).accept(new PrettyPrintVisitor(builder, indent), prec);
@@ -92,84 +102,4 @@ public class Level implements PrettyPrintable {
   public boolean isLessOrEquals(Level level) {
     return compare(this, level, Equations.CMP.LE, DummyEquations.getInstance(), null);
   }
-
-  /*
-  public Level subst(Binding var, Level level) {
-    if (isInfinity()) return new Level();
-    Level result = new Level(myNumSucsOfVars, myConstant);
-    Integer sucs = myNumSucsOfVars.get(var);
-    if (sucs == null) {
-      return result;
-    }
-    if (level.isInfinity()) return new Level();
-    result.myNumSucsOfVars.remove(var);
-    result.myConstant += level.myConstant;
-    for (Map.Entry<Binding, Integer> var_ : level.myNumSucsOfVars.entrySet()) {
-      result = result.max(new Level(var_.getKey(), var_.getValue() + sucs));
-    }
-    if (!result.myNumSucsOfVars.isEmpty() && result.extractOuterSucs() == result.myConstant) {
-      result.myConstant = 0;
-    }
-    return result;
-  }
-
-  public int getNumOfMaxArgs() {
-    if (myConstant == 0) return Math.max(myNumSucsOfVars.size(), 1);
-    return myNumSucsOfVars.size() + 1;
-  }
-
-  public Integer getNumSucs(Binding binding) {
-    if (myNumSucsOfVars.containsKey(binding)) {
-      return myNumSucsOfVars.get(binding);
-    }
-    return null;
-  }
-
-  public Set<Binding> getAllBindings() {
-    return myNumSucsOfVars.keySet();
-  }
-
-  public boolean isBinding() { return !isClosed() && getUnitSucs() == 0; }
-
-  public int getUnitSucs() {
-    if (isClosed()) {
-      return myConstant;
-    }
-    return myNumSucsOfVars.entrySet().iterator().next().getValue();
-  }
-
-  public boolean findBinding(Binding binding) { return myNumSucsOfVars.containsKey(binding); }
-
-  public Binding getUnitBinding() {
-    if (myNumSucsOfVars.size() != 1) return null;
-    return myNumSucsOfVars.entrySet().iterator().next().getKey();
-  }
-
-  public Level subtract(int val) {
-    Level result = new Level(this);
-    if (isClosed() || myConstant != 0) {
-      result.myConstant = Math.max(myConstant - val, 0);
-    }
-    for (Map.Entry<Binding, Integer> var : result.myNumSucsOfVars.entrySet()) {
-      var.setValue(Math.max(var.getValue() - val, 0));
-    }
-    return result;
-  }
-
-  private boolean containsInferVar() {
-    for (Binding bnd : getAllBindings()) {
-      if (bnd instanceof InferenceBinding) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  public int extractOuterSucs() {
-    if (myNumSucsOfVars.isEmpty()) {
-      return myConstant;
-    }
-    return myConstant > 0 ? Math.min(myConstant, Collections.min(myNumSucsOfVars.values())) : Collections.min(myNumSucsOfVars.values());
-  }
-  */
 }

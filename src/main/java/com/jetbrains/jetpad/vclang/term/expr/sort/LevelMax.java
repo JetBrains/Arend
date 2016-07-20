@@ -39,21 +39,42 @@ public class LevelMax implements PrettyPrintable {
     return myVars == null;
   }
 
-  public LevelMax max(LevelMax other) {
-    if (other.isInfinity() || isInfinity()) {
+  public LevelMax max(LevelMax level) {
+    if (level.isInfinity() || isInfinity()) {
       return INFINITY;
     }
 
-    Map<Binding, Integer> result = new HashMap<>(myVars);
-    for (Map.Entry<Binding, Integer> entry : other.myVars.entrySet()) {
-      add(result, entry.getKey(), entry.getValue());
+    LevelMax result = new LevelMax(myVars);
+    result.add(level);
+    return result;
+  }
+
+  public LevelMax max(Level level) {
+    if (level.isInfinity() || isInfinity()) {
+      return INFINITY;
     }
 
-    return new LevelMax(result);
+    LevelMax result = new LevelMax(myVars);
+    add(result.myVars, level.getVar(), level.getConstant());
+    return result;
+  }
+
+  public void add(LevelMax level) {
+    if (level.isInfinity()) {
+      myVars = null;
+    } else {
+      for (Map.Entry<Binding, Integer> entry : level.myVars.entrySet()) {
+        add(myVars, entry.getKey(), entry.getValue());
+      }
+    }
   }
 
   public void add(Level level) {
-    add(myVars, level.getVar(), level.getConstant());
+    if (level.isInfinity()) {
+      myVars = null;
+    } else {
+      add(myVars, level.getVar(), level.getConstant());
+    }
   }
 
   private void add(Map<Binding, Integer> result, Binding var, int constant) {
@@ -138,129 +159,4 @@ public class LevelMax implements PrettyPrintable {
   public int hashCode() {
     return myVars != null ? myVars.hashCode() : 0;
   }
-
-/*
-  public LevelMax() { }
-
-  public LevelMax(int constant) {
-    myConstant = constant;
-    myIsInfinity = false;
-  }
-
-  public LevelMax(Binding var, int numSucs) {
-    myVars.put(var, numSucs);
-    myIsInfinity = false;
-  }
-
-  public LevelMax(Binding var) {
-    myVars.put(var, 0);
-    myIsInfinity = false;
-  }
-
-  public LevelMax(Map<Binding, Integer> numSucsOfVars, int constant) {
-    myVars = new HashMap<>(numSucsOfVars);
-    myConstant = constant;
-    myIsInfinity = false;
-  }
-
-  public LevelMax(LevelMax level) {
-    myVars = new HashMap<>(level.myVars);
-    myConstant = level.myConstant;
-    myIsInfinity = level.myIsInfinity;
-  }
-
-  public LevelMax subst(Binding var, LevelMax level) {
-    if (isInfinity()) return new LevelMax();
-    LevelMax result = new LevelMax(myVars, myConstant);
-    Integer sucs = myVars.get(var);
-    if (sucs == null) {
-      return result;
-    }
-    if (level.isInfinity()) return new LevelMax();
-    result.myVars.remove(var);
-    result.myConstant += level.myConstant;
-    for (Map.Entry<Binding, Integer> var_ : level.myVars.entrySet()) {
-      result = result.max(new LevelMax(var_.getKey(), var_.getValue() + sucs));
-    }
-    if (!result.myVars.isEmpty() && result.extractOuterSucs() == result.myConstant) {
-      result.myConstant = 0;
-    }
-    return result;
-  }
-
-  public LevelMax subst(LevelSubstitution subst) {
-    LevelMax result = this;
-    for (Binding var : subst.getDomain()) {
-      result = result.subst(var, subst.get(var));
-    }
-    return result;
-  }
-
-  public int getNumOfMaxArgs() {
-    if (myConstant == 0) return Math.max(myVars.size(), 1);
-    return myVars.size() + 1;
-  }
-
-  public Integer getNumSucs(Binding binding) {
-    if (myVars.containsKey(binding)) {
-      return myVars.get(binding);
-    }
-    return null;
-  }
-
-  public Set<Binding> getAllBindings() {
-    return myVars.keySet();
-  }
-
-  public boolean isZero() {
-    return !myIsInfinity && myConstant == 0 && myVars.isEmpty();
-  }
-
-  public boolean isUnit() {
-    return isClosed() || (myVars.size() == 1 && (myConstant == 0));
-  }
-
-  public boolean isBinding() { return isUnit() && (!isClosed()) && getUnitSucs() == 0; }
-
-  public int getUnitSucs() {
-    if (isClosed() || !isUnit()) {
-      return myConstant;
-    }
-    return myVars.entrySet().iterator().next().getValue();
-  }
-
-  public boolean findBinding(Binding binding) { return myVars.containsKey(binding); }
-
-  public Binding getUnitBinding() {
-    if (myVars.size() != 1) return null;
-    return myVars.entrySet().iterator().next().getKey();
-  }
-
-  public LevelMax subtract(int val) {
-    LevelMax result = new LevelMax(this);
-    if (isClosed() || myConstant != 0) {
-      result.myConstant = Math.max(myConstant - val, 0);
-    }
-    for (Map.Entry<Binding, Integer> var : result.myVars.entrySet()) {
-      var.setValue(Math.max(var.getValue() - val, 0));
-    }
-    return result;
-  }
-
-  private boolean containsInferVar() {
-    for (Binding bnd : getAllBindings()) {
-      if (bnd instanceof InferenceBinding) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  public int extractOuterSucs() {
-    if (myVars.isEmpty()) {
-      return myConstant;
-    }
-    return myConstant > 0 ? Math.min(myConstant, Collections.min(myVars.values())) : Collections.min(myVars.values());
-  }
-  */
 }
