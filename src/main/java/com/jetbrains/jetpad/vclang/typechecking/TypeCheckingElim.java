@@ -16,7 +16,6 @@ import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.LevelSubstVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
@@ -131,7 +130,7 @@ public class TypeCheckingElim {
 
     @Override
     public void subst(Substitution substitution) {
-      elimTree = LevelSubstVisitor.subst(elimTree.subst(substitution.ExprSubst), substitution.LevelSubst);
+      elimTree = elimTree.subst(substitution.ExprSubst, substitution.LevelSubst);
     }
   }
 

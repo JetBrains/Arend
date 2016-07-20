@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 
@@ -41,7 +42,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
 
   @Override
   public Expression visitReference(ReferenceExpression expr, Void params) {
-    return expr.getBinding().getType().accept(new SubstVisitor(new ExprSubstitution()), null);
+    return expr.getBinding().getType().accept(new SubstVisitor(new ExprSubstitution(), new LevelSubstitution()), null);
   }
 
   @Override

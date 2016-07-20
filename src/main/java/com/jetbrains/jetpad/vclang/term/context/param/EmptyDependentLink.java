@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.context.param;
 
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 
 import java.util.List;
 
@@ -45,7 +46,7 @@ public class EmptyDependentLink implements DependentLink {
   }
 
   @Override
-  public DependentLink subst(ExprSubstitution subst, int size) {
+  public DependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size) {
     return this;
   }
 

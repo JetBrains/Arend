@@ -3,9 +3,8 @@ package com.jetbrains.jetpad.vclang.term.context.param;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.LevelSubstVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.SubstVisitor;
 
 import java.util.ArrayList;
@@ -18,7 +17,7 @@ public interface DependentLink extends Binding {
   DependentLink getNext();
   void setNext(DependentLink next);
   void setName(String name);
-  DependentLink subst(ExprSubstitution subst, int size);
+  DependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size);
   DependentLink getNextTyped(List<String> names);
   boolean hasNext();
 
@@ -97,16 +96,12 @@ public interface DependentLink extends Binding {
       return result;
     }
 
-    public static DependentLink subst(DependentLink link, ExprSubstitution substitution) {
-      return link.subst(substitution, Integer.MAX_VALUE);
+    public static DependentLink subst(DependentLink link, ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
+      return link.subst(exprSubst, levelSubst, Integer.MAX_VALUE);
     }
 
-    public static DependentLink subst(DependentLink link, Substitution substitution) {
-      DependentLink newParams = subst(link, substitution.ExprSubst);
-      for (DependentLink param = newParams; param.hasNext(); param = param.getNext()) {
-        param.getType().accept(new LevelSubstVisitor(substitution.LevelSubst), null);
-      }
-      return newParams;
+    public static DependentLink subst(DependentLink link, ExprSubstitution substitution) {
+      return subst(link, substitution, new LevelSubstitution());
     }
 
     public static <P> DependentLink accept(DependentLink link, ExprSubstitution substitution, ExpressionVisitor<? super P, ? extends Expression> visitor, P params) {
@@ -123,7 +118,7 @@ public interface DependentLink extends Binding {
     }
 
     public static DependentLink clone(DependentLink link) {
-      return accept(link, new SubstVisitor(new ExprSubstitution()), null);
+      return accept(link, new SubstVisitor(new ExprSubstitution(), new LevelSubstitution()), null);
     }
   }
 }

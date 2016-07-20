@@ -76,18 +76,20 @@ public abstract class Expression implements PrettyPrintable, Type {
   }
 
   public final Expression subst(Binding binding, Expression substExpr) {
-    return accept(new SubstVisitor(new ExprSubstitution(binding, substExpr)), null);
+    return accept(new SubstVisitor(new ExprSubstitution(binding, substExpr), new LevelSubstitution()), null);
   }
 
   @Override
   public final Expression subst(ExprSubstitution subst) {
-     return subst.getDomain().isEmpty() ? this : accept(new SubstVisitor(subst), null);
-    //return accept(new SubstVisitor(subst), null);
+     return subst(subst, new LevelSubstitution());
   }
 
   public final Expression subst(LevelSubstitution subst) {
-    return subst.getDomain().isEmpty() ? this : LevelSubstVisitor.subst(this, subst);
-    //return LevelSubstVisitor.subst(this, subst);
+    return subst(new ExprSubstitution(), subst);
+  }
+
+  public final Expression subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
+    return exprSubst.getDomain().isEmpty() && levelSubst.getDomain().isEmpty() ? this : accept(new SubstVisitor(exprSubst, levelSubst), null);
   }
 
   public final Expression subst(Substitution subst) {

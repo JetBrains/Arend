@@ -3,26 +3,28 @@ package com.jetbrains.jetpad.vclang.term.expr.subst;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class LevelSubstitution {
-  private Map<Binding, Level> mySubstExprs = new HashMap<>();
+  private Map<Binding, Level> mySubstExprs;
 
-  public LevelSubstitution() {}
+  public LevelSubstitution() {
+    mySubstExprs = Collections.emptyMap();
+  }
 
   public LevelSubstitution(Binding l, Level expr) {
+    mySubstExprs = new HashMap<>();
     mySubstExprs.put(l, expr);
   }
 
   public LevelSubstitution(Binding lp, Level lpExpr, Binding lh, Level lhExpr) {
+    mySubstExprs = new HashMap<>();
     mySubstExprs.put(lp, lpExpr);
     mySubstExprs.put(lh, lhExpr);
   }
 
   public LevelSubstitution(Binding lp, Binding lpNew, Binding lh, Binding lhNew) {
+    mySubstExprs = new HashMap<>();
     mySubstExprs.put(lp, new Level(lpNew));
     mySubstExprs.put(lh, new Level(lhNew));
   }
@@ -36,18 +38,23 @@ public class LevelSubstitution {
   }
 
   public void add(Binding binding, Level expr) {
+    if (mySubstExprs.isEmpty()) {
+      mySubstExprs = new HashMap<>();
+    }
     mySubstExprs.put(binding, expr);
   }
 
   public void add(LevelSubstitution subst) {
+    if (mySubstExprs.isEmpty()) {
+      mySubstExprs = new HashMap<>();
+    }
     mySubstExprs.putAll(subst.mySubstExprs);
   }
 
   public void subst(Binding binding, Level expr) {
-    // TODO [sorts]
-    // for (Map.Entry<Binding, Level> entry : mySubstExprs.entrySet()) {
-    //   entry.setValue(entry.getValue().subst(binding, expr));
-    // }
+    for (Map.Entry<Binding, Level> entry : mySubstExprs.entrySet()) {
+      entry.setValue(entry.getValue().subst(binding, expr));
+    }
   }
 
   public LevelSubstitution compose(LevelSubstitution subst, Collection<? extends Binding> params) {

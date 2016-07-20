@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 public class UniverseExpression extends Expression {
-  private Sort mySort;
+  private final Sort mySort;
 
   public UniverseExpression(Sort sort) {
     mySort = sort;
@@ -12,10 +12,6 @@ public class UniverseExpression extends Expression {
 
   public Sort getSort() {
     return mySort;
-  }
-
-  public void setSort(Sort sort) {
-    mySort = sort;
   }
 
   @Override
