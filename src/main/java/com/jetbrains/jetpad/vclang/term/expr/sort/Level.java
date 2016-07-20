@@ -86,6 +86,21 @@ public class Level implements PrettyPrintable {
   }
 
   public static boolean compare(Level level1, Level level2, Equations.CMP cmp, Equations equations, Abstract.SourceNode sourceNode) {
+    if (level1.isInfinity()) {
+      if (level2.isInfinity() || cmp == Equations.CMP.GE) {
+        return true;
+      } else {
+        return !level2.isClosed() && equations.add(level2, INFINITY, Equations.CMP.EQ, sourceNode);
+      }
+    }
+    if (level2.isInfinity()) {
+      if (cmp == Equations.CMP.LE) {
+        return true;
+      } else {
+        return !level1.isClosed() && equations.add(level1, INFINITY, Equations.CMP.EQ, sourceNode);
+      }
+    }
+
     if (level1.isClosed() && level2.isClosed()) {
       if (cmp == Equations.CMP.LE) {
         return level1.getConstant() <= level2.getConstant();

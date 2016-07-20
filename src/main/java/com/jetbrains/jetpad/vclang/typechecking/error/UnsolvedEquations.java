@@ -10,7 +10,7 @@ public class UnsolvedEquations extends TypeCheckingError {
   public final List<ListEquations.LevelCmpEquation> levelEquations;
 
   public UnsolvedEquations(Abstract.Definition definition, List<ListEquations.CmpEquation> equations, List<ListEquations.LevelCmpEquation> levelEquations) {
-    super(definition, "Internal error: some equations were not solved", equations.get(0).sourceNode);
+    super(definition, "Internal error: some equations were not solved", !equations.isEmpty() ? equations.get(0).sourceNode : levelEquations.get(0).sourceNode);
     this.equations = equations;
     this.levelEquations = levelEquations;
   }

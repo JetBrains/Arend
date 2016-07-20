@@ -61,7 +61,7 @@ public class LevelMax implements PrettyPrintable {
   }
 
   public void add(LevelMax level) {
-    if (level.isInfinity()) {
+    if (level.isInfinity() || isInfinity()) {
       myVars = null;
     } else {
       for (Map.Entry<Binding, Integer> entry : level.myVars.entrySet()) {
@@ -71,7 +71,7 @@ public class LevelMax implements PrettyPrintable {
   }
 
   public void add(Level level) {
-    if (level.isInfinity()) {
+    if (level.isInfinity() || isInfinity()) {
       myVars = null;
     } else {
       add(myVars, level.getVar(), level.getConstant());
@@ -88,6 +88,13 @@ public class LevelMax implements PrettyPrintable {
   }
 
   public boolean isLessOrEquals(Level level) {
+    if (level.isInfinity()) {
+      return true;
+    }
+    if (isInfinity()) {
+      return false;
+    }
+
     for (Map.Entry<Binding, Integer> entry : myVars.entrySet()) {
       if (!new Level(entry.getKey(), entry.getValue()).isLessOrEquals(level)) {
         return false;
@@ -97,6 +104,13 @@ public class LevelMax implements PrettyPrintable {
   }
 
   public boolean isLessOrEquals(LevelMax levels) {
+    if (levels.isInfinity()) {
+      return true;
+    }
+    if (isInfinity()) {
+      return false;
+    }
+
     loop:
     for (Map.Entry<Binding, Integer> entry : myVars.entrySet()) {
       for (Map.Entry<Binding, Integer> entry1 : levels.myVars.entrySet()) {
@@ -110,6 +124,13 @@ public class LevelMax implements PrettyPrintable {
   }
 
   public boolean isLessOrEquals(Level level, Equations equations, Abstract.SourceNode sourceNode) {
+    if (level.isInfinity()) {
+      return true;
+    }
+    if (isInfinity()) {
+      return !level.isClosed() && equations.add(level, Level.INFINITY, Equations.CMP.EQ, sourceNode);
+    }
+
     for (Map.Entry<Binding, Integer> entry : myVars.entrySet()) {
       if (!Level.compare(new Level(entry.getKey(), entry.getValue()), level, Equations.CMP.LE, equations, sourceNode)) {
         return false;

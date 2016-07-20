@@ -231,6 +231,16 @@ public class ListEquations implements Equations {
     public List<Level> geSet;
     public List<Level> leSet;
 
+    private static Level maxLevel(Level level1, Level level2) {
+      if (level1.isInfinity() || level2.isInfinity()) {
+        return Level.INFINITY;
+      }
+      if (level1.getConstant() == level2.getConstant()) {
+        return level2.isClosed() ? level1 : level2;
+      }
+      return level1.getConstant() > level2.getConstant() ? level1 : level2;
+    }
+
     @Override
     public Level solve(ListEquations equations, InferenceBinding binding, LevelSubstitution substitution) {
       if (geSet.isEmpty()) {
@@ -248,17 +258,17 @@ public class ListEquations implements Equations {
         Level result = geSet.get(0);
         if (geSet.size() > 1) {
           for (int i = 1; i < geSet.size(); i++) {
-            // Level max = result.max(geSet.get(i));
-            // if (max != null) {
-            //   result = max;
-            // } else {
+            Level max = maxLevel(result, geSet.get(i));
+            if (max != null) {
+              result = max;
+            } else {
               Level result1 = result.subst(substitution);
               Level expr = geSet.get(i).subst(substitution);
               if (!result1.isInfinity() && !expr.isZero() && !Level.compare(result1, expr, CMP.GE, equations, binding.getSourceNode())) {
                 binding.reportErrorLevelInfer(equations.getErrorReporter(), result1, expr);
                 return null;
               }
-            // }
+            }
           }
         }
 
@@ -855,11 +865,11 @@ public class ListEquations implements Equations {
           equations.add((CmpEquation) equation);
         }
 
-        List<LevelCmpEquation> lev_equations = new ArrayList<>(myLevelEquations.size());
+        List<LevelCmpEquation> levEquations = new ArrayList<>(myLevelEquations.size());
         for (LevelEquation equation : myLevelEquations) {
-          lev_equations.add((LevelCmpEquation) equation);
+          levEquations.add((LevelCmpEquation) equation);
         }
-        errorReporter.report(new UnsolvedEquations(equations, lev_equations));
+        errorReporter.report(new UnsolvedEquations(equations, levEquations));
       }
 
       if (!myExactSolutions.isEmpty() || !myEqSolutions.isEmpty() || !myExactLevelSolutions.isEmpty() || !myEqLevelSolutions.isEmpty()) {

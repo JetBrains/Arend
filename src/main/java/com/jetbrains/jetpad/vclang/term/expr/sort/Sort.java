@@ -66,10 +66,16 @@ public class Sort {
 
   public static boolean compare(Sort sort1, Sort sort2, Equations.CMP cmp, Equations equations, Abstract.SourceNode sourceNode) {
     if (sort1.isProp()) {
-      return cmp == Equations.CMP.LE || sort2.isProp();
+      if (cmp == Equations.CMP.LE || sort2.isProp()) {
+        return true;
+      }
+      return !sort2.getHLevel().isClosed() && equations.add(sort2.getHLevel(), new Level(0), Equations.CMP.EQ, sourceNode);
     }
     if (sort2.isProp()) {
-      return cmp == Equations.CMP.GE;
+      if (cmp == Equations.CMP.GE) {
+        return true;
+      }
+      return !sort1.getHLevel().isClosed() && equations.add(sort1.getHLevel(), new Level(0), Equations.CMP.EQ, sourceNode);
     }
     return Level.compare(sort1.getPLevel(), sort2.getPLevel(), cmp, equations, sourceNode) && Level.compare(sort1.getHLevel(), sort2.getHLevel(), cmp, equations, sourceNode);
   }
