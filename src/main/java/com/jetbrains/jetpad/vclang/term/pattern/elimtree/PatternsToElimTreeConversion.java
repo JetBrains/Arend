@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
@@ -58,7 +58,7 @@ public class PatternsToElimTreeConversion {
       for (int i = 0; i < curPatterns.size(); i++) {
         ExprSubstitution curSubst = toSubstitution(curPatterns.get(i).getParameters(),
             ((Pattern.MatchOKResult)curPatterns.get(i).match(branch.expressions.get(i), false)).expressions);
-        for (Binding binding : curSubst.getDomain()) {
+        for (Callable binding : curSubst.getDomain()) {
           subst.add(binding, curSubst.get(binding));
         }
       }

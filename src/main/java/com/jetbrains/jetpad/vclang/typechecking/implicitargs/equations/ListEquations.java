@@ -645,12 +645,12 @@ public class ListEquations implements Equations {
           if (bindings.contains(entry.getKey())) {
             was = true;
             it.remove();
-            subst = entry.getValue().solve(this, entry.getKey(), result.ExprSubst);
+            subst = entry.getValue().solve(this, entry.getKey(), result.exprSubst);
             if (subst == null) {
               entry.getKey().reportErrorLevelInfer(myErrorReporter);
               break;
             }
-            if (update(entry.getKey(), subst, result.ExprSubst)) {
+            if (update(entry.getKey(), subst, result.exprSubst)) {
               binding = entry.getKey();
               bindings.remove(binding);
             }
@@ -665,12 +665,12 @@ public class ListEquations implements Equations {
             if (bindings.contains(entry.getKey())) {
               was = true;
               it.remove();
-              subst = entry.getValue().solve(this, entry.getKey(), result.ExprSubst);
+              subst = entry.getValue().solve(this, entry.getKey(), result.exprSubst);
               if (subst == null) {
                 entry.getKey().reportErrorLevelInfer(myErrorReporter);
                 break;
               }
-              if (update(entry.getKey(), subst, result.ExprSubst)) {
+              if (update(entry.getKey(), subst, result.exprSubst)) {
                 binding = entry.getKey();
                 bindings.remove(binding);
               }
@@ -680,8 +680,8 @@ public class ListEquations implements Equations {
         }
 
         if (binding != null) {
-          result.ExprSubst.subst(new Substitution(new ExprSubstitution(binding, subst)));
-          result.ExprSubst.add(binding, subst);
+          result.exprSubst.subst(new Substitution(new ExprSubstitution(binding, subst)));
+          result.exprSubst.add(binding, subst);
           subst(new Substitution(new ExprSubstitution(binding, subst)));
         }
       } while (was);
@@ -699,7 +699,7 @@ public class ListEquations implements Equations {
           if (bindings.contains(entry.getKey())) {
             was = true;
             it.remove();
-            subst = entry.getValue().solve(this, entry.getKey(), result.LevelSubst);
+            subst = entry.getValue().solve(this, entry.getKey(), result.levelSubst);
             if (subst == null) {
               entry.getKey().reportErrorLevelInfer(myErrorReporter);
               break;
@@ -721,7 +721,7 @@ public class ListEquations implements Equations {
             if (bindings.contains(entry.getKey())) {
               was = true;
               it.remove();
-              subst = entry.getValue().solve(this, entry.getKey(), result.LevelSubst);
+              subst = entry.getValue().solve(this, entry.getKey(), result.levelSubst);
               if (subst == null) {
                 entry.getKey().reportErrorLevelInfer(myErrorReporter);
                 break;
@@ -751,9 +751,9 @@ public class ListEquations implements Equations {
         } /**/
 
         if (binding != null) {
-          result.LevelSubst.subst(binding, subst);
-          result.ExprSubst.subst(new Substitution(new LevelSubstitution(binding, subst)));
-          result.LevelSubst.add(binding, subst);
+          result.levelSubst.subst(binding, subst);
+          result.exprSubst.subst(new Substitution(new LevelSubstitution(binding, subst)));
+          result.levelSubst.add(binding, subst);
           subst(binding, subst);
           subst(new Substitution(new LevelSubstitution(binding, subst)));
         }
@@ -764,8 +764,8 @@ public class ListEquations implements Equations {
         for (Iterator<InferenceBinding> binding_iter = bindings.iterator(); binding_iter.hasNext(); ) {
           Binding binding = binding_iter.next();
           if (binding instanceof LevelInferenceBinding && !myEqLevelSolutions.containsKey(binding)) {
-            result.LevelSubst.subst(binding, new LevelExpression(0));
-            result.LevelSubst.add(binding, new LevelExpression(0));
+            result.levelSubst.subst(binding, new LevelExpression(0));
+            result.levelSubst.add(binding, new LevelExpression(0));
             subst(binding, new LevelExpression(0));
             binding_iter.remove();
           }

@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -66,7 +67,7 @@ public class CoverageChecker implements ElimTreeNodeVisitor<ExprSubstitution, Bo
   @Override
   public Boolean visitEmpty(EmptyElimTreeNode emptyNode, ExprSubstitution argsSubst) {
     List<Binding> tailContext = new ArrayList<>();
-    for (Binding binding : argsSubst.getDomain()) {
+    for (Callable binding : argsSubst.getDomain()) {
       ReferenceExpression ref = argsSubst.get(binding).toReference();
       if (ref != null) {
         tailContext.add(ref.getBinding());

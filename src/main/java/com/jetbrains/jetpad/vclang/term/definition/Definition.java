@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.naming.namespace.EmptyNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.NamedBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
@@ -13,7 +13,8 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class Definition extends NamedBinding implements Referable {
+public abstract class Definition implements Referable, Callable {
+  private final String myName;
   protected List<Binding> myPolyParams = new ArrayList<>();
   private Abstract.Definition.Precedence myPrecedence;
   private boolean myHasErrors;
@@ -21,11 +22,18 @@ public abstract class Definition extends NamedBinding implements Referable {
   private boolean myContainsInterval;
 
   public Definition(String name, Abstract.Definition.Precedence precedence) {
-    super(name);
+    myName = name;
     myPrecedence = precedence;
     myHasErrors = true;
     myContainsInterval = false;
   }
+
+  @Override
+  public String getName() {
+    return myName;
+  }
+
+  public abstract Expression getType();
 
   @Override
   public Abstract.Definition.Precedence getPrecedence() {

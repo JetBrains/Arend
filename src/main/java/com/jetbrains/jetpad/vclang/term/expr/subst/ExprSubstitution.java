@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.subst;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
@@ -10,7 +11,7 @@ import java.util.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 
 public class ExprSubstitution {
-  private Map<Binding, Expression> mySubstExprs;
+  private Map<Callable, Expression> mySubstExprs;
 
   public ExprSubstitution() {
     mySubstExprs = Collections.emptyMap();
@@ -21,15 +22,15 @@ public class ExprSubstitution {
     add(from, to);
   }
 
-  public Set<Binding> getDomain() {
+  public Set<Callable> getDomain() {
     return mySubstExprs.keySet();
   }
 
-  public Expression get(Binding binding)  {
+  public Expression get(Callable binding)  {
     return mySubstExprs.get(binding);
   }
 
-  public void add(Binding binding, Expression expression) {
+  public void add(Callable binding, Expression expression) {
     if (mySubstExprs.isEmpty()) {
       mySubstExprs = new HashMap<>();
     }
@@ -46,7 +47,7 @@ public class ExprSubstitution {
   }
 
   public void subst(Substitution subst) {
-    for (Map.Entry<Binding, Expression> entry : mySubstExprs.entrySet()) {
+    for (Map.Entry<Callable, Expression> entry : mySubstExprs.entrySet()) {
       entry.setValue(entry.getValue().subst(subst));
     }
   }
@@ -61,7 +62,7 @@ public class ExprSubstitution {
 
   public ExprSubstitution compose(ExprSubstitution subst) {
     ExprSubstitution result = new ExprSubstitution();
-    for (Binding binding : subst.getDomain()) {
+    for (Callable binding : subst.getDomain()) {
       result.add(binding, subst.get(binding).subst(this));
     }
     return result;

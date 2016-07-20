@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
@@ -63,11 +64,11 @@ public abstract class Expression implements PrettyPrintable, Type {
     return accept(new GetTypeVisitor(), null);
   }
 
-  public boolean findBinding(Binding binding) {
+  public boolean findBinding(Callable binding) {
     return accept(new FindBindingVisitor(Collections.singleton(binding)), null);
   }
 
-  public boolean findBinding(Set<Binding> bindings) {
+  public boolean findBinding(Set<? extends Callable> bindings) {
     return accept(new FindBindingVisitor(bindings), null);
   }
 
@@ -93,7 +94,7 @@ public abstract class Expression implements PrettyPrintable, Type {
   }
 
   public final Expression subst(Substitution subst) {
-    return subst(subst.ExprSubst).subst(subst.LevelSubst);
+    return subst(subst.exprSubst).subst(subst.levelSubst);
   }
 
   public final Expression normalize(NormalizeVisitor.Mode mode) {

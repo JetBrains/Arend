@@ -68,6 +68,12 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   }
 
   @Override
+  public Expression visitFieldCall(FieldCallExpression expr, Void params) {
+    Expression result = myExprSubstitution.get(expr.getDefinition());
+    return result != null ? result : visitDefCall(expr, null);
+  }
+
+  @Override
   public Expression visitReference(ReferenceExpression expr, Void params) {
     Expression result = myExprSubstitution.get(expr.getBinding());
     if (result != null) {

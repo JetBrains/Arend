@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.pattern;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
@@ -62,7 +62,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
         type = type.getFunction();
         assert type.toDataCall() != null && type.toDataCall().getDefinition() == ((ConstructorPattern) patternArgument.getPattern()).getConstructor().getDataType();
         ExprSubstitution subSubst = ((ConstructorPattern) patternArgument.getPattern()).getMatchedArguments(new ArrayList<>(args));
-        for (Binding binding : subSubst.getDomain()) {
+        for (Callable binding : subSubst.getDomain()) {
           subst.add(binding, subSubst.get(binding));
         }
       }
