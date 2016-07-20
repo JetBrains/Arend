@@ -131,7 +131,7 @@ public class TypeCheckingDefCall {
       Constructor constructor = dataDefinition.getConstructor(name);
       if (constructor != null) {
         result.expression = ConCall(constructor, new ArrayList<>(arguments)).applyLevelSubst(dataCall.getPolyParamsSubst());
-        result.type = result.expression.getType().applyExpressions(arguments);
+        result.type = ((Expression) result.expression.getType()).applyExpressions(arguments);
         return result;
       }
 

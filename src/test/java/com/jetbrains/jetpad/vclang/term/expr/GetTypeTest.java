@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.TypeCheckClassResult;
@@ -62,7 +61,7 @@ public class GetTypeTest {
   public void fieldAccTest() {
     TypeCheckClassResult result = typeCheckClass("\\static \\class C { \\abstract x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
     DependentLink p = param("p", Pi(Nat(), ClassCall((ClassDefinition) result.getDefinition("C"))));
-    Expression type = FunCall(Prelude.PATH_INFIX).applyLevelSubst(new LevelSubstitution(Prelude.LP, new Level(0), Prelude.LH, new Level(1)))
+    Expression type = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(1))
       .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class))
       .addArgument(Zero(), AppExpression.DEFAULT)
       .addArgument(Apps(FieldCall((ClassField) result.getDefinition("C.x")), Apps(Reference(p), Zero())), AppExpression.DEFAULT);
@@ -73,8 +72,7 @@ public class GetTypeTest {
   public void tupleTest() {
     TypeCheckClassResult result = typeCheckClass("\\function test : \\Sigma (x y : Nat) (x = y) => (0, 0, path (\\lam _ => 0))");
     DependentLink xy = param(true, vars("x", "y"), Nat());
-    testType(Sigma(params(xy, param(Apps(FunCall(Prelude.PATH_INFIX)
-        .applyLevelSubst(new LevelSubstitution(Prelude.LP, new Level(0), Prelude.LH, new Level(1)))
+    testType(Sigma(params(xy, param(Apps(FunCall(Prelude.PATH_INFIX, new Level(0), new Level(1))
         .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class)), Reference(xy), Reference(xy.getNext()))))),
         result);
   }

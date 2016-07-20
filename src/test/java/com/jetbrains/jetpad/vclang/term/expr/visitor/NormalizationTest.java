@@ -16,7 +16,6 @@ import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.LetClause;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
@@ -312,8 +311,11 @@ public class NormalizationTest {
 
   @Test
   public void testIsoleft() {
-    DependentLink A = param("A", Universe(new Level(Prelude.LP), new Level(Prelude.LH)));
-    DependentLink B = param("B", Universe(new Level(Prelude.LP), new Level(Prelude.LH)));
+    // TODO
+    DependentLink A = param("A", Universe(new Level(0), new Level(0)));
+    DependentLink B = param("B", Universe(new Level(0), new Level(0)));
+    // DependentLink A = param("A", Universe(new Level(Prelude.LP), new Level(Prelude.LH)));
+    // DependentLink B = param("B", Universe(new Level(Prelude.LP), new Level(Prelude.LH)));
     DependentLink f = param("f", Pi(param(Reference(A)), Reference(B)));
     DependentLink g = param("g", Pi(param(Reference(B)), Reference(A)));
     DependentLink a = param("a", Reference(A));
@@ -362,8 +364,11 @@ public class NormalizationTest {
 
   @Test
   public void testCoeIso() {
-    DependentLink A = param("A", Universe(new Level(Prelude.LP), new Level(Prelude.LH)));
-    DependentLink B = param("B", Universe(new Level(Prelude.LP), new Level(Prelude.LH)));
+    // TODO
+    DependentLink A = param("A", Universe(new Level(0), new Level(0)));
+    DependentLink B = param("B", Universe(new Level(0), new Level(0)));
+    // DependentLink A = param("A", Universe(new Level(Prelude.LP), new Level(Prelude.LH)));
+    // DependentLink B = param("B", Universe(new Level(Prelude.LP), new Level(Prelude.LH)));
     DependentLink f = param("f", Pi(param(Reference(A)), Reference(B)));
     DependentLink g = param("g", Pi(param(Reference(B)), Reference(A)));
     DependentLink a = param("a", Reference(A));
@@ -392,25 +397,24 @@ public class NormalizationTest {
 
   @Test
   public void testCoeIsoFreeVar() {
-    LevelSubstitution levelSubst = new LevelSubstitution(Prelude.LP, new Level(0), Prelude.LH, new Level(0));
     DependentLink k = param("k", DataCall(Preprelude.INTERVAL));
     DependentLink i = param("i", DataCall(Preprelude.INTERVAL));
-    Expression A = Apps(DataCall(Prelude.PATH).applyLevelSubst(levelSubst), Lam(i, DataCall(Preprelude.INTERVAL)), Reference(k), Reference(k));
+    Expression A = Apps(DataCall(Prelude.PATH, new Level(0), new Level(0)), Lam(i, DataCall(Preprelude.INTERVAL)), Reference(k), Reference(k));
     DependentLink B = param("B", Universe(new Level(0), new Level(0)));
     DependentLink f = param("f", Pi(param(A), Reference(B)));
     DependentLink g = param("g", Pi(param(Reference(B)), A));
     DependentLink a = param("a", A);
     DependentLink b = param("b", Reference(B));
-    Expression linvType = FunCall(Prelude.PATH_INFIX).applyLevelSubst(levelSubst)
+    Expression linvType = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0))
       .addArgument(A, EnumSet.noneOf(AppExpression.Flag.class))
       .addArgument(Apps(Reference(g), Apps(Reference(f), Reference(a)), Reference(a)), AppExpression.DEFAULT);
     DependentLink linv = param("linv", Pi(a, linvType));
-    Expression rinvType = FunCall(Prelude.PATH_INFIX).applyLevelSubst(levelSubst)
+    Expression rinvType = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0))
       .addArgument(Reference(B), EnumSet.noneOf(AppExpression.Flag.class))
       .addArgument(Apps(Reference(f), Apps(Reference(g), Reference(b)), Reference(b)), AppExpression.DEFAULT);
     DependentLink rinv = param("rinv", Pi(b, rinvType));
     DependentLink aleft = param("aleft", A.subst(k, Right()));
-    Expression expr = Apps(FunCall(Prelude.COERCE).applyLevelSubst(levelSubst), Lam(k, Apps(FunCall(Prelude.ISO).applyLevelSubst(levelSubst), Apps(DataCall(Prelude.PATH).applyLevelSubst(levelSubst), Lam(i, DataCall(Preprelude.INTERVAL)), Reference(k), Reference(k)), Reference(B), Reference(f), Reference(g), Reference(linv), Reference(rinv), Reference(k))), Reference(aleft), Right());
+    Expression expr = Apps(FunCall(Prelude.COERCE, new Level(0), new Level(0)), Lam(k, Apps(FunCall(Prelude.ISO, new Level(0), new Level(0)), Apps(DataCall(Prelude.PATH, new Level(0), new Level(0)), Lam(i, DataCall(Preprelude.INTERVAL)), Reference(k), Reference(k)), Reference(B), Reference(f), Reference(g), Reference(linv), Reference(rinv), Reference(k))), Reference(aleft), Right());
     assertEquals(expr, expr.normalize(NormalizeVisitor.Mode.NF));
   }
 

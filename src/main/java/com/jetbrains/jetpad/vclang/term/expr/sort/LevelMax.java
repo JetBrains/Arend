@@ -44,7 +44,7 @@ public class LevelMax implements PrettyPrintable {
       return INFINITY;
     }
 
-    LevelMax result = new LevelMax(myVars);
+    LevelMax result = new LevelMax(new HashMap<>(myVars));
     result.add(level);
     return result;
   }
@@ -54,7 +54,7 @@ public class LevelMax implements PrettyPrintable {
       return INFINITY;
     }
 
-    LevelMax result = new LevelMax(myVars);
+    LevelMax result = new LevelMax(new HashMap<>(myVars));
     add(result.myVars, level.getVar(), level.getConstant());
     return result;
   }

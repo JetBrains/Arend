@@ -47,8 +47,8 @@ public class SortMax {
   }
 
   public void add(SortMax sorts) {
-    myPLevel = myPLevel.max(sorts.myPLevel);
-    myHLevel = myHLevel.max(sorts.myHLevel);
+    myPLevel.add(sorts.myPLevel);
+    myHLevel.add(sorts.myHLevel);
   }
 
   public Type toType() {

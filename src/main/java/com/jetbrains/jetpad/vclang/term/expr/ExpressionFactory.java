@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
@@ -39,23 +40,17 @@ public class ExpressionFactory {
     return new FunCallExpression(definition);
   }
 
-  /*
-  public static FunCallExpression FunCall(FunctionDefinition definition, LevelSubstitution polySubst) {
-    FunCallExpression funCall = new FunCallExpression(definition);
-    funCall.applyLevelSubst(polySubst);
-    return funCall;
-  } /**/
+  public static FunCallExpression FunCall(FunctionDefinition definition, Level lp, Level lh) {
+    return (FunCallExpression) new FunCallExpression(definition).applyLevelSubst(new LevelSubstitution(definition.getPolyParams().get(0), lp, definition.getPolyParams().get(1), lh));
+  }
 
   public static DataCallExpression DataCall(DataDefinition definition) {
     return new DataCallExpression(definition);
   }
 
-  /*
-  public static DataCallExpression DataCall(DataDefinition definition, LevelSubstitution polySubst) {
-    DataCallExpression dataCall = new DataCallExpression(definition);
-    dataCall.applyLevelSubst(polySubst);
-    return dataCall;
-  } /**/
+  public static DataCallExpression DataCall(DataDefinition definition, Level lp, Level lh) {
+    return (DataCallExpression) new DataCallExpression(definition).applyLevelSubst(new LevelSubstitution(definition.getPolyParams().get(0), lp, definition.getPolyParams().get(1), lh));
+  }
 
   public static FieldCallExpression FieldCall(ClassField definition) {
     return new FieldCallExpression(definition);
@@ -69,15 +64,12 @@ public class ExpressionFactory {
     return new ClassCallExpression(definition, statements);
   }
 
-  /*
-  public static ConCallExpression ConCall(Constructor definition, List<Expression> parameters, LevelSubstitution subst) {
-    ConCallExpression conCall = new ConCallExpression(definition, parameters);
-    conCall.applyLevelSubst(subst);
-    return conCall;
-  } /**/
-
   public static ConCallExpression ConCall(Constructor definition, List<Expression> parameters) {
     return new ConCallExpression(definition, parameters);
+  }
+
+  public static ConCallExpression ConCall(Constructor definition, Level lp, Level lh, List<Expression> parameters) {
+    return new ConCallExpression(definition, parameters).applyLevelSubst(new LevelSubstitution(definition.getPolyParams().get(0), lp, definition.getPolyParams().get(1), lh));
   }
 
   public static ConCallExpression ConCall(Constructor definition) {

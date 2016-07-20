@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import org.junit.Test;
@@ -34,10 +33,9 @@ public class PathsTest {
     pathArgs.add(Lam(C, Reference(A)));
     pathArgs.add(Reference(A.getNext()));
     pathArgs.add(Reference(A.getNext()));
-    LevelSubstitution levelSubst = new LevelSubstitution(Prelude.LP, new Level(0), Prelude.LH, new Level(0));
-    Expression pathCall = ConCall(Prelude.PATH_CON, pathArgs).applyLevelSubst(levelSubst).addArgument(Lam(C, Reference(A.getNext())), AppExpression.DEFAULT);
+    Expression pathCall = ConCall(Prelude.PATH_CON, new Level(0), new Level(0), pathArgs).addArgument(Lam(C, Reference(A.getNext())), AppExpression.DEFAULT);
     assertEquals(Lam(A, pathCall).normalize(NormalizeVisitor.Mode.NF), idp.expression);
-    assertEquals(Pi(A, Apps(FunCall(Prelude.PATH_INFIX).applyLevelSubst(levelSubst), Reference(A), Reference(A.getNext()), Reference(A.getNext()))).normalize(NormalizeVisitor.Mode.NF), idp.type.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Pi(A, Apps(FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0)), Reference(A), Reference(A.getNext()), Reference(A.getNext()))).normalize(NormalizeVisitor.Mode.NF), idp.type.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test

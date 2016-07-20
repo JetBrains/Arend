@@ -17,9 +17,9 @@ public class LevelSubstitution {
     mySubstExprs.put(l, expr);
   }
 
-  public LevelSubstitution(Binding lp, Level lp_expr, Binding lh, Level lh_expr) {
-    mySubstExprs.put(lp, lp_expr);
-    mySubstExprs.put(lh, lh_expr);
+  public LevelSubstitution(Binding lp, Level lpExpr, Binding lh, Level lhExpr) {
+    mySubstExprs.put(lp, lpExpr);
+    mySubstExprs.put(lh, lhExpr);
   }
 
   public LevelSubstitution(Binding lp, Binding lpNew, Binding lh, Binding lhNew) {
@@ -53,25 +53,29 @@ public class LevelSubstitution {
   public LevelSubstitution compose(LevelSubstitution subst, Collection<? extends Binding> params) {
     LevelSubstitution result = new LevelSubstitution();
     result.add(this);
+
+    loop:
     for (Binding binding : subst.getDomain()) {
       if (mySubstExprs.containsKey(binding)) {
         result.add(binding, subst.get(binding));
         continue;
       }
 
-      Level level = mySubstExprs.get(binding);
-      if (level != null) {
-        result.add(binding, level.subst(subst));
-        boolean exists = false;
-        for (Binding myBinding : getDomain()) {
-          if (myBinding.getType().toDataCall().getDefinition() == binding.getType().toDefCall().getDefinition()) {
-            exists = true;
-            break;
-          }
+      for (Map.Entry<Binding, Level> substExpr : mySubstExprs.entrySet()) {
+        if (substExpr.getValue().getVar() == binding) {
+          result.add(substExpr.getKey(), substExpr.getValue().subst(subst));
+          continue loop;
         }
-        if (!exists && params.contains(binding)) {
-          result.add(binding, subst.get(binding));
+      }
+
+      for (Binding myBinding : getDomain()) {
+        if (myBinding.getType().toDataCall().getDefinition() == binding.getType().toDefCall().getDefinition()) {
+          continue loop;
         }
+      }
+
+      if (params.contains(binding)) {
+        result.add(binding, subst.get(binding));
       }
     }
     return result;
