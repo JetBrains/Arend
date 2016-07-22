@@ -335,7 +335,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         if (termResult != null) {
           typedDef.setElimTree(top(list.getFirst(), leaf(def.getArrow(), termResult.expression)));
           if (expectedType == null)
-            typedDef.setResultType(termResult.type);
+            // TODO [sorts]
+            typedDef.setResultType((Expression) termResult.type);
         }
       }
 
@@ -403,7 +404,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     List<Binding> context = new ArrayList<>();
     context.add(thisParameter);
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).thisClass(thisClass, Reference(thisParameter)).build(def);
-    LevelMax pLevel = null;
+    LevelMax pLevel = new LevelMax();
     ClassField typedDef = new ClassField(def.getName(), def.getPrecedence(), Error(null, null), thisClass, thisParameter);
     myState.record(def, typedDef);
 
@@ -440,13 +441,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         }
         list.append(param);
         context.addAll(toContext(param));
-
-        Level argPLevel = result.type.toUniverse().getSort().getPLevel();
-        if (pLevel == null) {
-          pLevel = new LevelMax(argPLevel);
-        } else {
-          pLevel = pLevel.max(argPLevel);
-        }
+        pLevel.add(result.type.toSorts().getPLevel());
       } else {
         myErrorReporter.report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, new Expression[0]));
         return typedDef;
@@ -463,17 +458,13 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
     typedResultType = typeResult.expression;
 
-    Sort resultSort = typeResult.type.toUniverse().getSort();
-    if (pLevel == null) {
-      pLevel = new LevelMax(resultSort.getPLevel());
-    } else {
-      pLevel = pLevel.max(resultSort.getPLevel());
-    }
+    SortMax resultSort = typeResult.type.toSorts();
+    pLevel.add(resultSort.getPLevel());
 
     typedDef.hasErrors(false);
     typedDef.setPolyParams(new ArrayList<>(polyParams.values()));
     typedDef.setBaseType(list.isEmpty() ? typedResultType : Pi(list.getFirst(), typedResultType));
-    typedDef.setSorts(new SortMax(pLevel, new LevelMax(resultSort.getHLevel())));
+    typedDef.setSorts(new SortMax(pLevel, resultSort.getHLevel()));
     typedDef.setThisClass(thisClass);
     return typedDef;
   }
@@ -723,8 +714,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(visitor.getContext())) {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
       String name = def.getName();
-      int index = 1;
-      boolean ok = true;
 
       Constructor constructor = new Constructor(name, def.getPrecedence(), null, dataDefinition, null);
       constructor.hasErrors(true);
@@ -763,24 +752,16 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           constructor.setContainsInterval();
         }
 
-        Sort argUniverse = result.type.toUniverse().getSort();
-        sorts.getPLevel().add(argUniverse.getPLevel());
-        sorts.getHLevel().add(argUniverse.getHLevel());
+        sorts.add(result.type.toSorts());
 
         DependentLink param;
         if (argument instanceof Abstract.TelescopeArgument) {
           param = param(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), result.expression);
-          index += ((Abstract.TelescopeArgument) argument).getNames().size();
         } else {
           param = param(argument.getExplicit(), (String) null, result.expression);
-          index++;
         }
         list.append(param);
         visitor.getContext().addAll(toContext(param));
-      }
-
-      if (!ok) {
-        return constructor;
       }
 
       for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext()) {

@@ -26,8 +26,8 @@ import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckExpr;
-import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
 import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListIsEmpty;
+import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
 import static org.junit.Assert.*;
 
 public class ExpressionTest {
@@ -230,7 +230,7 @@ public class ExpressionTest {
         cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cNat(), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar("f"), cVar("x"))));
     ListErrorReporter errorReporter = new ListErrorReporter();
     CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build(), null);
-    Expression typeCodom = result.type.getPiParameters(new ArrayList<DependentLink>(), true, false);
+    Expression typeCodom = ((Expression) result.type).getPiParameters(new ArrayList<DependentLink>(), true, false);
     assertNotNull(typeCodom.toLet());
   }
 

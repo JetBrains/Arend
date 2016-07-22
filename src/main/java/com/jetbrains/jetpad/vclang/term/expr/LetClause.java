@@ -54,21 +54,12 @@ public class LetClause extends NamedBinding implements Function {
     return Function.Helper.getFunctionType(this);
   }
 
-  public LetClause subst(ExprSubstitution substitution) {
-    if (substitution.getDomain().isEmpty()) {
+  public LetClause subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
+    if (exprSubst.getDomain().isEmpty() && levelSubst.getDomain().isEmpty()) {
       return this;
     }
 
-    DependentLink parameters = DependentLink.Helper.subst(myParameters, substitution);
-    return new LetClause(getName(), parameters, myResultType.subst(substitution), myElimTree.subst(substitution));
-  }
-
-  public LetClause subst(LevelSubstitution substitution) {
-    if (substitution.getDomain().isEmpty()) {
-      return this;
-    }
-
-    DependentLink parameters = DependentLink.Helper.subst(myParameters, new ExprSubstitution(), substitution);
-    return new LetClause(getName(), parameters, myResultType.subst(substitution), myElimTree.subst(new ExprSubstitution(), substitution));
+    DependentLink parameters = DependentLink.Helper.subst(myParameters, exprSubst, levelSubst);
+    return new LetClause(getName(), parameters, myResultType.subst(exprSubst, levelSubst), myElimTree.subst(exprSubst, levelSubst));
   }
 }

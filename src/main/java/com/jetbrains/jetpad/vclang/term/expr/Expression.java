@@ -72,6 +72,7 @@ public abstract class Expression implements PrettyPrintable, Type {
     return accept(new FindBindingVisitor(bindings), null);
   }
 
+  @Override
   public Expression strip() {
     return accept(new StripVisitor(), null);
   }
@@ -80,7 +81,6 @@ public abstract class Expression implements PrettyPrintable, Type {
     return accept(new SubstVisitor(new ExprSubstitution(binding, substExpr), new LevelSubstitution()), null);
   }
 
-  @Override
   public final Expression subst(ExprSubstitution subst) {
      return subst(subst, new LevelSubstitution());
   }
@@ -89,6 +89,7 @@ public abstract class Expression implements PrettyPrintable, Type {
     return subst(new ExprSubstitution(), subst);
   }
 
+  @Override
   public final Expression subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
     return exprSubst.getDomain().isEmpty() && levelSubst.getDomain().isEmpty() ? this : accept(new SubstVisitor(exprSubst, levelSubst), null);
   }
@@ -97,6 +98,7 @@ public abstract class Expression implements PrettyPrintable, Type {
     return subst(subst.exprSubst).subst(subst.levelSubst);
   }
 
+  @Override
   public final Expression normalize(NormalizeVisitor.Mode mode) {
     return accept(new NormalizeVisitor(new EvalNormalizer()), mode);
   }
@@ -107,6 +109,11 @@ public abstract class Expression implements PrettyPrintable, Type {
 
   public static boolean compare(Expression expr1, Expression expr2) {
     return compare(expr1, expr2, Equations.CMP.EQ);
+  }
+
+  @Override
+  public Type getImplicitParameters(List<DependentLink> params) {
+    return getPiParameters(params, true, true);
   }
 
   public Expression getPiParameters(List<DependentLink> params, boolean normalize, boolean implicitOnly) {
@@ -142,21 +149,30 @@ public abstract class Expression implements PrettyPrintable, Type {
     return cod;
   }
 
+  @Override
   public Expression fromPiParameters(List<DependentLink> params) {
-    if (!params.isEmpty() && !params.get(0).hasNext()) {
-      params = params.subList(1, params.size());
-    }
-    if (params.isEmpty()) {
-      return this;
-    }
-
+    params = DependentLink.Helper.fromList(params);
     Expression result = this;
     for (int i = params.size() - 1; i >= 0; i--) {
-      if (i == 0 || !params.get(i - 1).getNext().hasNext()) {
-        result = new PiExpression(params.get(i), result);
-      }
+      result = new PiExpression(params.get(i), result);
     }
     return result;
+  }
+
+  @Override
+  public Expression addParameters(DependentLink params) {
+    return params.hasNext() ? new PiExpression(params, this) : this;
+  }
+
+  @Override
+  public DependentLink getParameters() {
+    PiExpression pi = normalize(NormalizeVisitor.Mode.WHNF).toPi();
+    return pi == null ? null : pi.getParameters();
+  }
+
+  @Override
+  public Expression toExpression() {
+    return this;
   }
 
   public Expression getLamParameters(List<DependentLink> params) {

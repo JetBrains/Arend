@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
@@ -12,10 +11,6 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.params;
 
 public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
@@ -26,12 +21,12 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
   }
 
   @Override
-  public Expression visitDefCall(DefCallExpression expr, Void params) {
-    return expr.getDefinition().getType().subst(expr.getPolyParamsSubst());
+  public Type visitDefCall(DefCallExpression expr, Void params) {
+    return expr.getDefinition().getType().subst(new ExprSubstitution(), expr.getPolyParamsSubst());
   }
 
   @Override
-  public Expression visitConCall(ConCallExpression expr, Void params) {
+  public Type visitConCall(ConCallExpression expr, Void params) {
     return visitDefCall(expr, null).applyExpressions(expr.getDataTypeArguments());
   }
 
@@ -166,34 +161,9 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
     return expr.getExpression();
   }
 
-  private <T extends Binding> List<T> getBindingsFreeIn(List<T> bindings, Expression expr) {
-    List<T> result = Collections.emptyList();
-    for (T binding : bindings) {
-      if (expr.findBinding(binding)) {
-        if (result.isEmpty()) {
-          result = new ArrayList<>(bindings.size());
-        }
-        result.add(binding);
-      }
-    }
-    return result;
-  }
-
   @Override
   public Type visitLet(LetExpression expr, Void params) {
-    Type type = expr.getExpression().accept(this, null);
-    if (type instanceof Expression) {
-      return new LetExpression(expr.getClauses(), (Expression) type);
-    } else
-    if (type instanceof PiUniverseType) {
-      for (DependentLink link = ((PiUniverseType) type).getParameters(); link.hasNext(); link = link.getNext()) {
-        List<LetClause> clauses = getBindingsFreeIn(expr.getClauses(), link.getType());
-        link.setType(clauses.isEmpty() ? link.getType() : new LetExpression(clauses, link.getType()));
-      }
-      return type;
-    } else {
-      return null;
-    }
+    return expr.getType(expr.getExpression().accept(this, null));
   }
 
   @Override

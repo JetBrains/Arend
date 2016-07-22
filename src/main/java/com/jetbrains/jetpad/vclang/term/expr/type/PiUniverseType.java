@@ -2,13 +2,19 @@ package com.jetbrains.jetpad.vclang.term.expr.type;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
+import com.jetbrains.jetpad.vclang.term.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -26,8 +32,56 @@ public class PiUniverseType implements Type {
     mySorts = sorts;
   }
 
+  @Override
   public DependentLink getParameters() {
     return myParameters;
+  }
+
+  @Override
+  public PiUniverseType normalize(NormalizeVisitor.Mode mode) {
+    if (myParameters.hasNext() && mode == NormalizeVisitor.Mode.NF) {
+      DependentLink params = DependentLink.Helper.clone(myParameters);
+      for (DependentLink link = params; link.hasNext(); link = link.getNext()) {
+        params.setType(params.getType().normalize(NormalizeVisitor.Mode.NF));
+      }
+      return new PiUniverseType(params, mySorts);
+    } else {
+      return this;
+    }
+  }
+
+  @Override
+  public PiUniverseType strip() {
+    if (!myParameters.hasNext()) {
+      return this;
+    }
+
+    DependentLink params = DependentLink.Helper.clone(myParameters);
+    for (DependentLink link = params; link.hasNext(); link = link.getNext()) {
+      params.setType(params.getType().strip());
+    }
+    return new PiUniverseType(params, mySorts);
+  }
+
+  @Override
+  public Expression toExpression() {
+    // TODO [sorts]: use mySorts.toSort()
+    Sort sort;
+    if (mySorts.getHLevel().isMinimum()) {
+      sort = Sort.PROP;
+    } else {
+      List<Level> pLevels = mySorts.getPLevel().toListOfLevels();
+      if (pLevels.size() > 1) {
+        return null;
+      }
+      List<Level> hLevels = mySorts.getHLevel().toListOfLevels();
+      if (hLevels.size() > 1) {
+        return null;
+      }
+      sort = new Sort(pLevels.isEmpty() ? new Level(0) : pLevels.get(0), hLevels.isEmpty() ? new Level(0) : hLevels.get(0));
+    }
+
+    return new PiExpression(myParameters, new UniverseExpression(sort));
   }
 
   public SortMax getSorts() {
@@ -40,8 +94,27 @@ public class PiUniverseType implements Type {
   }
 
   @Override
-  public PiUniverseType subst(ExprSubstitution substitution) {
-    return new PiUniverseType(DependentLink.Helper.subst(myParameters, substitution), mySorts);
+  public Type getImplicitParameters(List<DependentLink> params) {
+    DependentLink link = myParameters;
+    for (; link.hasNext() && !link.isExplicit(); link = link.getNext()) {
+      params.add(link);
+    }
+    return new PiUniverseType(link, mySorts);
+  }
+
+  @Override
+  public Type fromPiParameters(List<DependentLink> params) {
+    return new PiUniverseType(params.isEmpty() ? EmptyDependentLink.getInstance() : params.get(0), mySorts);
+  }
+
+  @Override
+  public PiUniverseType addParameters(DependentLink params) {
+    return params.hasNext() ? new PiUniverseType(ExpressionFactory.params(params, myParameters), mySorts) : this;
+  }
+
+  @Override
+  public PiUniverseType subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
+    return new PiUniverseType(DependentLink.Helper.subst(myParameters, exprSubst, levelSubst), mySorts);
   }
 
   @Override

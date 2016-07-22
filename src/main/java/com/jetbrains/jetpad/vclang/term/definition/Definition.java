@@ -7,8 +7,8 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +33,7 @@ public abstract class Definition implements Referable, Callable {
     return myName;
   }
 
-  public abstract Expression getType();
+  public abstract Type getType();
 
   @Override
   public Abstract.Definition.Precedence getPrecedence() {
@@ -54,7 +54,7 @@ public abstract class Definition implements Referable, Callable {
     return myThisClass;
   }
 
-  public Expression getTypeWithThis() {
+  public Type getTypeWithThis() {
     return getType();
   }
 

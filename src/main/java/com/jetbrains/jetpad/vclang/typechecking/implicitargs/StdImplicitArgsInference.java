@@ -6,6 +6,8 @@ import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
@@ -43,7 +45,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       substitution.add(parameter, binding);
     }
     result.expression = Apps(result.expression, arguments, flags);
-    result.type = result.type.subst(substitution);
+    result.type = result.type.subst(substitution, new LevelSubstitution());
     return true;
   }
 
@@ -104,16 +106,14 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       }
 
       List<DependentLink> params = new ArrayList<>();
-      result.type = result.type.getPiParameters(params, true, true);
+      result.type = result.type.getImplicitParameters(params);
       if (!fixImplicitArgs(result, params, fun)) {
         return null;
       }
-    } else {
-      result.type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
     }
 
-    PiExpression actualType = result.type.toPi();
-    if (actualType == null) {
+    DependentLink param = result.type.getParameters();
+    if (param == null) {
       TypeCheckingError error = new TypeMismatchError(myParentDefinition, new StringPrettyPrintable("A pi type"), result.type, fun);
       fun.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
       myVisitor.getErrorReporter().report(error);
@@ -121,20 +121,20 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
 
-    CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, actualType.getParameters().getType());
+    CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, param.getType());
     if (argResult == null) {
       return null;
     }
 
-    if (actualType.getParameters().isExplicit() != isExplicit) {
-      TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Expected an " + (actualType.getParameters().isExplicit() ? "explicit" : "implicit") + " argument", arg);
+    if (param.isExplicit() != isExplicit) {
+      TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Expected an " + (param.isExplicit() ? "explicit" : "implicit") + " argument", arg);
       arg.setWellTyped(myVisitor.getContext(), new ErrorExpression(argResult.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;
     }
 
     result.expression = result.expression.addArgument(argResult.expression, isExplicit ? EnumSet.of(AppExpression.Flag.EXPLICIT, AppExpression.Flag.VISIBLE) : EnumSet.of(AppExpression.Flag.VISIBLE));
-    result.type = actualType.applyExpressions(Collections.singletonList(argResult.expression));
+    result.type = result.type.applyExpressions(Collections.singletonList(argResult.expression));
     result.add(argResult);
     result.update(true);
     return result;
@@ -223,11 +223,11 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
   @Override
   public CheckTypeVisitor.Result inferTail(CheckTypeVisitor.Result result, Expression expectedType, Abstract.Expression expr) {
     List<DependentLink> actualParams = new ArrayList<>();
-    Expression actualType = result.type.getPiParameters(actualParams, true, true);
+    Type actualType = result.type.getImplicitParameters(actualParams);
     List<DependentLink> expectedParams = new ArrayList<>(actualParams.size());
     Expression expectedType1 = expectedType.getPiParameters(expectedParams, true, true);
     if (expectedParams.size() > actualParams.size()) {
-      TypeCheckingError error = new TypeMismatchError(myParentDefinition, expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
+      TypeCheckingError error = new TypeMismatchError(myParentDefinition, expectedType1.fromPiParameters(expectedParams), actualType.fromPiParameters(actualParams), expr);
       expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;
@@ -239,7 +239,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       if (!fixImplicitArgs(result, actualParams.subList(0, argsNumber), expr)) {
         return null;
       }
-      expectedType = expectedType1.fromPiParameters(expectedParams);
+      expectedType = expectedType1.fromPiParameters(expectedParams); // TODO: do we need this line?
     }
 
     result = myVisitor.checkResult(expectedType, result, expr);

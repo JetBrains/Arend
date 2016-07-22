@@ -782,7 +782,7 @@ public class ListEquations implements Equations {
         binding.reportErrorInfer(myErrorReporter, subst);
       } else {
         Expression expectedType = binding.getType().subst(result);
-        Type actualType = subst.getType().subst(result);
+        Type actualType = subst.getType().subst(result, new LevelSubstitution());
         if (actualType.isLessOrEquals(expectedType.normalize(NormalizeVisitor.Mode.NF), this, binding.getSourceNode())) {
           return true;
         } else {
