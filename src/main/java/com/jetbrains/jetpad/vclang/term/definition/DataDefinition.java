@@ -6,13 +6,15 @@ import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
+import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
 import java.util.*;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ConCall;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.DataCall;
 
 public class DataDefinition extends Definition {
   private List<Constructor> myConstructors;
@@ -109,14 +111,12 @@ public class DataDefinition extends Definition {
   }
 
   @Override
-  public Expression getType() {
+  public Type getType() {
     if (hasErrors()) {
       return null;
     }
 
-    // TODO [sorts]
-    Expression resultType = new UniverseExpression(mySorts.toSort());
-    return myParameters.hasNext() ? Pi(myParameters, resultType) : resultType;
+    return new PiUniverseType(myParameters, mySorts);
   }
 
   @Override

@@ -95,7 +95,7 @@ public abstract class Expression implements PrettyPrintable, Type {
   }
 
   public final Expression subst(Substitution subst) {
-    return subst(subst.exprSubst).subst(subst.levelSubst);
+    return subst(subst.exprSubst, subst.levelSubst);
   }
 
   @Override

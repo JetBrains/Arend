@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 
 import java.util.Set;
 
@@ -31,6 +32,11 @@ public class DummyEquations implements Equations {
 
   @Override
   public boolean add(Level expr1, Level expr2, CMP cmp, Abstract.SourceNode sourceNode) {
+    return false;
+  }
+
+  @Override
+  public boolean add(Type type, Binding binding, Abstract.SourceNode sourceNode) {
     return false;
   }
 

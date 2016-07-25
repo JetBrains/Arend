@@ -195,36 +195,25 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     Expression expectedType1 = expectedType.normalize(NormalizeVisitor.Mode.NF);
-
     if (expectedType1.isAnyUniverse()) {
-      // TODO [sorts]: what is this?
-      if (result.type instanceof Expression && result.type.toSorts() != null) {
+      if (result.type.toSorts() != null) {
         return true;
       }
-
-      /*InferenceBinding lvl = new LevelInferenceBinding("lvl", Level(), expr);
-      result.addUnsolvedVariable(lvl);
-      expectedType1 = Universe(Reference(lvl)); /**/
-      InferenceBinding lp = new LevelInferenceBinding("lp", Lvl(), expr);
-      InferenceBinding lh = new LevelInferenceBinding("lh", CNat(), expr);
-      result.addUnsolvedVariable(lp);
-      result.addUnsolvedVariable(lh);
-      expectedType1 = Universe(new Level(lp), new Level(lh));
-    }
-
-    if (result.type.isLessOrEquals(expectedType1, result.getEquations(), expr)) {
-      result.expression = new OfTypeExpression(result.expression, expectedType1);
-      // TODO [sorts]: what is this???
-      if (expectedType1.toUniverse() != null && result.type.toSorts() == null) {
-        result.type = expectedType1;
-      }
-      return true;
     } else {
-      TypeCheckingError error = new TypeMismatchError(myParentDefinition, expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
-      expr.setWellTyped(myContext, Error(result.expression, error));
-      myErrorReporter.report(error);
-      return false;
+      if (result.type.isLessOrEquals(expectedType1, result.getEquations(), expr)) {
+        result.expression = new OfTypeExpression(result.expression, expectedType1);
+        // TODO [sorts]: what is this???
+        // if (expectedType1.toUniverse() != null && result.type.toSorts() == null) {
+          result.type = expectedType1;
+        // }
+        return true;
+      }
     }
+
+    TypeCheckingError error = new TypeMismatchError(myParentDefinition, expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
+    expr.setWellTyped(myContext, Error(result.expression, error));
+    myErrorReporter.report(error);
+    return false;
   }
 
   public Result checkResultImplicit(Expression expectedType, Result result, Abstract.Expression expression) {

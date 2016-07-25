@@ -121,7 +121,7 @@ public class ExpressionTest {
     // (X : Type1) -> X -> X : Type2
     Concrete.Expression expr = cPi("X", cUniverse(1), cPi(cVar("X"), cVar("X")));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    assertEquals(Universe(2), expr.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build(), null).type);
+    assertEquals(Universe(2), expr.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build(), null).type.toExpression());
     assertErrorListIsEmpty(errorReporter.getErrorList());
   }
 

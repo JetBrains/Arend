@@ -3,11 +3,13 @@ package com.jetbrains.jetpad.vclang.term.definition;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 
 import java.util.*;
 
@@ -97,9 +99,8 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
-  public Expression getType() {
-    // TODO: [sorts] return type
-    return new UniverseExpression(mySorts.toSort());
+  public Type getType() {
+    return new PiUniverseType(EmptyDependentLink.getInstance(), mySorts);
   }
 
   @Override
@@ -189,12 +190,12 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
-  public Expression getTypeWithThis() {
-    Expression type = getType();
+  public Type getTypeWithThis() {
+    DependentLink link = EmptyDependentLink.getInstance();
     if (getThisClass() != null) {
-      type = Pi(ClassCall(getThisClass()), type);
+      link = param(ClassCall(getThisClass()));
     }
-    return type;
+    return new PiUniverseType(link, mySorts);
   }
 
   @Override

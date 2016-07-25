@@ -61,7 +61,7 @@ public class Sort {
   }
 
   public boolean isProp() {
-    return myHLevel.equals(PROP.getHLevel());
+    return myHLevel.isMinimum();
   }
 
   public static boolean compare(Sort sort1, Sort sort2, Equations.CMP cmp, Equations equations, Abstract.SourceNode sourceNode) {

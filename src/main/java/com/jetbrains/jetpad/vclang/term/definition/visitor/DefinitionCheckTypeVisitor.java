@@ -334,9 +334,11 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         CheckTypeVisitor.Result termResult = visitor.checkType(term, expectedType);
         if (termResult != null) {
           typedDef.setElimTree(top(list.getFirst(), leaf(def.getArrow(), termResult.expression)));
-          if (expectedType == null)
+          if (expectedType == null) {
             // TODO [sorts]
-            typedDef.setResultType((Expression) termResult.type);
+            typedDef.setResultType(termResult.type.toExpression());
+            assert typedDef.getResultType() != null;
+          }
         }
       }
 

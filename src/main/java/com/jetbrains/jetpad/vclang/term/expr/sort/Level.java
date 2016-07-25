@@ -54,6 +54,10 @@ public class Level implements PrettyPrintable {
     return myVar == null;
   }
 
+  public boolean isMinimum() {
+    return isClosed() && myConstant == 0;
+  }
+
   public Level add(int constant) {
     return isInfinity() ? this : new Level(myVar, myConstant + constant);
   }
@@ -75,7 +79,7 @@ public class Level implements PrettyPrintable {
 
   @Override
   public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent) {
-    new ToAbstractVisitor(new ConcreteExpressionFactory(), names).visitLevel(this).accept(new PrettyPrintVisitor(builder, indent), prec);
+    new ToAbstractVisitor(new ConcreteExpressionFactory(), names).visitLevel(this, 0).accept(new PrettyPrintVisitor(builder, indent), prec);
   }
 
   @Override

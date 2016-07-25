@@ -107,9 +107,18 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     return expr1.accept(this, expr2);
   }
 
-  private boolean checkIsInferVar(Expression fun, Expression expr1, Expression expr2) {
-    ReferenceExpression ref = fun.toReference();
+  public static InferenceBinding checkIsInferVar(Expression expr) {
+    ReferenceExpression ref = expr.getFunction().toReference();
     if (ref == null || !(ref.getBinding() instanceof InferenceBinding)) {
+      return null;
+    } else {
+      return (InferenceBinding) ref.getBinding();
+    }
+  }
+
+  private boolean checkIsInferVar(Expression fun, Expression expr1, Expression expr2) {
+    InferenceBinding binding = checkIsInferVar(fun);
+    if (binding == null) {
       return false;
     }
 
@@ -117,7 +126,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     for (Map.Entry<Binding, Binding> entry : mySubstitution.entrySet()) {
       substitution.add(entry.getKey(), Reference(entry.getValue()));
     }
-    return myEquations.add(expr1.subst(substitution), expr2, myCMP, ((InferenceBinding) ref.getBinding()).getSourceNode());
+    return myEquations.add(expr1.subst(substitution), expr2, myCMP, binding.getSourceNode());
   }
 
   @Override

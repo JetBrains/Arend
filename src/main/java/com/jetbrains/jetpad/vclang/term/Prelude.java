@@ -73,7 +73,7 @@ public class Prelude extends SimpleNamespace {
     DependentLink pathInfixParameter1 = param(false, "A", Universe(pathInfixLp, pathInfixLh));
     DependentLink pathInfixParameter2 = param(true, vars("a", "a'"), Reference(pathInfixParameter1));
     pathInfixParameter1.setNext(pathInfixParameter2);
-    Expression pathInfixTerm = DataCall(PATH) // .applyLevelSubst(new LevelSubstitution(PathLp, PathLp, PathLh, PathLh))
+    Expression pathInfixTerm = DataCall(PATH, pathInfixLp, pathInfixLh)
         .addArgument(Lam(param("_", Interval()), Reference(pathInfixParameter1)), AppExpression.DEFAULT)
         .addArgument(Reference(pathInfixParameter2), AppExpression.DEFAULT)
         .addArgument(Reference(pathInfixParameter2.getNext()), AppExpression.DEFAULT);

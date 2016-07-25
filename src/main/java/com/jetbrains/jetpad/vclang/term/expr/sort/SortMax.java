@@ -38,13 +38,19 @@ public class SortMax {
     return myHLevel;
   }
 
-  // TODO [sorts]
-  @Deprecated
   public Sort toSort() {
     if (myHLevel.isMinimum()) {
       return Sort.PROP;
     }
-    return new Sort(myPLevel.toLevel(), myHLevel.toLevel());
+    Level pLevel = myPLevel.toLevel();
+    if (pLevel == null) {
+      return null;
+    }
+    Level hLevel = myHLevel.toLevel();
+    if (hLevel == null) {
+      return null;
+    }
+    return new Sort(pLevel, hLevel);
   }
 
   public void add(SortMax sorts) {
@@ -70,7 +76,7 @@ public class SortMax {
     if (myHLevel.isMinimum()) {
       return true;
     }
-    if (sort.getHLevel().isClosed() && sort.getHLevel().getConstant() == 0) {
+    if (sort.getHLevel().isMinimum()) {
       return false;
     }
     return myPLevel.isLessOrEquals(sort.getPLevel()) && myHLevel.isLessOrEquals(sort.getHLevel());
@@ -80,7 +86,7 @@ public class SortMax {
     if (myHLevel.isMinimum()) {
       return true;
     }
-    if (sort.getHLevel().isClosed() && sort.getHLevel().getConstant() == 0) {
+    if (sort.getHLevel().isMinimum()) {
       return false;
     }
     return myPLevel.isLessOrEquals(sort.getPLevel(), equations, sourceNode) && myHLevel.isLessOrEquals(sort.getHLevel(), equations, sourceNode);

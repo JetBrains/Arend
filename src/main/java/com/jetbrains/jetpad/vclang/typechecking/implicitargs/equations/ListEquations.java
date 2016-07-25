@@ -373,6 +373,15 @@ public class ListEquations implements Equations {
     return true;
   }
 
+  @Override
+  public boolean add(Type type, Binding binding, Abstract.SourceNode sourceNode) {
+    // TODO
+    if (type.getParameters().hasNext()) {
+      return false;
+    }
+    return true;
+  }
+
   private void addSolution(InferenceBinding binding, CMP cmp, Expression expr) {
     if (expr.toUniverse() == null) {
       cmp = CMP.EQ;

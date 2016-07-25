@@ -88,7 +88,7 @@ public class EvalNormalizer implements Normalizer {
       subst.add(params, argument);
       params = params.getNext();
     }
-    return Apps(leaf.getExpression().subst(polySubst).subst(subst), otherArguments, otherFlags).normalize(mode);
+    return Apps(leaf.getExpression().subst(subst, polySubst), otherArguments, otherFlags).normalize(mode);
   }
 
   @Override

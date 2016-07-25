@@ -317,45 +317,45 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     if (pNum != null && hNum != null) {
       return myFactory.makeUniverse(pNum, hNum);
     } else {
-      return myFactory.makeUniverse(visitLevel(sort.getPLevel()), visitLevel(sort.getHLevel()));
+      return myFactory.makeUniverse(visitLevel(sort.getPLevel(), 0), visitLevel(sort.getHLevel(), -1));
     }
   }
 
   public Abstract.Expression visitSortMax(SortMax sort) {
-    return myFactory.makeUniverse(visitLevelMax(sort.getPLevel()), visitLevelMax(sort.getHLevel()));
+    return myFactory.makeUniverse(visitLevelMax(sort.getPLevel(), 0), visitLevelMax(sort.getHLevel(), -1));
   }
 
-  public Abstract.Expression visitLevel(Level level) {
+  public Abstract.Expression visitLevel(Level level, int add) {
     if (level.isInfinity()) {
       return myFactory.makeVar("inf");
     }
     if (level.isClosed()) {
-      return myFactory.makeNumericalLiteral(level.getConstant());
+      return myFactory.makeNumericalLiteral(level.getConstant() + add);
     }
 
     Abstract.Expression result = myFactory.makeVar(level.getVar().getName());
-    for (int i = 0; i < level.getConstant(); i++) {
+    for (int i = 0; i < level.getConstant() + add; i++) {
       result = myFactory.makeApp(myFactory.makeVar("suc"), true, result);
     }
     return result;
   }
 
-  public Abstract.Expression visitLevelMax(LevelMax levelMax) {
+  public Abstract.Expression visitLevelMax(LevelMax levelMax, int add) {
     if (levelMax.isInfinity()) {
       return myFactory.makeVar("inf");
     }
 
     List<Level> levels = levelMax.toListOfLevels();
     if (levels.isEmpty()) {
-      return myFactory.makeNumericalLiteral(0);
+      return myFactory.makeNumericalLiteral(add);
     }
     if (levels.size() == 1) {
-      return visitLevel(levels.get(0));
+      return visitLevel(levels.get(0), add);
     }
 
     Abstract.Expression result = myFactory.makeVar("max");
     for (Level level : levels) {
-      result = myFactory.makeApp(result, true, visitLevel(level));
+      result = myFactory.makeApp(result, true, visitLevel(level, add));
     }
 
     return result;

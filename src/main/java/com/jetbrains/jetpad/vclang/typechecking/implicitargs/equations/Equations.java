@@ -7,13 +7,15 @@ import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 
 import java.util.Set;
 
 public interface Equations {
   boolean add(Equations equations);
   boolean add(Expression expr1, Expression expr2, CMP cmp, Abstract.SourceNode sourceNode);
-  boolean add(Level expr1, Level expr2, CMP cmp, Abstract.SourceNode sourceNode);
+  boolean add(Level level1, Level level2, CMP cmp, Abstract.SourceNode sourceNode);
+  boolean add(Type type, Binding binding, Abstract.SourceNode sourceNode);
   void clear();
   boolean isEmpty();
   void abstractBinding(Binding binding);

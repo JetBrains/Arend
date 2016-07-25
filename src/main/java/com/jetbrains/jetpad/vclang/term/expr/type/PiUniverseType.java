@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.type;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -8,7 +9,6 @@ import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
@@ -65,23 +65,8 @@ public class PiUniverseType implements Type {
 
   @Override
   public Expression toExpression() {
-    // TODO [sorts]: use mySorts.toSort()
-    Sort sort;
-    if (mySorts.getHLevel().isMinimum()) {
-      sort = Sort.PROP;
-    } else {
-      List<Level> pLevels = mySorts.getPLevel().toListOfLevels();
-      if (pLevels.size() > 1) {
-        return null;
-      }
-      List<Level> hLevels = mySorts.getHLevel().toListOfLevels();
-      if (hLevels.size() > 1) {
-        return null;
-      }
-      sort = new Sort(pLevels.isEmpty() ? new Level(0) : pLevels.get(0), hLevels.isEmpty() ? new Level(0) : hLevels.get(0));
-    }
-
-    return new PiExpression(myParameters, new UniverseExpression(sort));
+    Sort sort = mySorts.toSort();
+    return sort == null ? null : myParameters.hasNext() ? new PiExpression(myParameters, new UniverseExpression(sort)) : new UniverseExpression(sort);
   }
 
   public SortMax getSorts() {
@@ -120,14 +105,16 @@ public class PiUniverseType implements Type {
   @Override
   public Type applyExpressions(List<? extends Expression> expressions) {
     DependentLink link = myParameters;
-    for (Expression ignored : expressions) {
+    ExprSubstitution subst = new ExprSubstitution();
+    for (Expression expr : expressions) {
       if (link.hasNext()) {
+        subst.add(link, expr);
         link = link.getNext();
       } else {
         return null;
       }
     }
-    return new PiUniverseType(link, mySorts);
+    return new PiUniverseType(DependentLink.Helper.subst(link, subst), mySorts);
   }
 
   @Override
@@ -137,6 +124,11 @@ public class PiUniverseType implements Type {
 
   @Override
   public boolean isLessOrEquals(Expression expression, Equations equations, Abstract.SourceNode sourceNode) {
+    InferenceBinding binding = CompareVisitor.checkIsInferVar(expression);
+    if (binding != null) {
+      return equations.add(this, binding, sourceNode);
+    }
+
     List<DependentLink> params = new ArrayList<>();
     Expression cod = expression.getPiParameters(params, false, false);
     UniverseExpression uniCod = cod.toUniverse();

@@ -24,7 +24,7 @@ public class LevelMax implements PrettyPrintable {
       myVars = null;
     } else {
       myVars = new HashMap<>();
-      myVars.put(level.getVar(), level.getConstant());
+      add(level);
     }
   }
 
@@ -51,6 +51,9 @@ public class LevelMax implements PrettyPrintable {
   }
 
   public LevelMax max(Level level) {
+    if (level.isMinimum()) {
+      return this;
+    }
     if (level.isInfinity() || isInfinity()) {
       return INFINITY;
     }
@@ -71,6 +74,9 @@ public class LevelMax implements PrettyPrintable {
   }
 
   public void add(Level level) {
+    if (level.isMinimum()) {
+      return;
+    }
     if (level.isInfinity() || isInfinity()) {
       myVars = null;
     } else {
@@ -139,17 +145,18 @@ public class LevelMax implements PrettyPrintable {
     return true;
   }
 
-  // TODO [sorts]
-  @Deprecated
   public Level toLevel() {
     if (isInfinity()) {
       return Level.INFINITY;
     }
-    if (myVars.isEmpty()) {
+    if (isMinimum()) {
       return new Level(0);
     }
-    Map.Entry<Binding, Integer> entry = myVars.entrySet().iterator().next();
-    return new Level(entry.getKey(), entry.getValue());
+    if (myVars.size() == 1) {
+      Map.Entry<Binding, Integer> entry = myVars.entrySet().iterator().next();
+      return new Level(entry.getKey(), entry.getValue());
+    }
+    return null;
   }
 
   public List<Level> toListOfLevels() {
@@ -166,7 +173,7 @@ public class LevelMax implements PrettyPrintable {
 
   @Override
   public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent) {
-    new ToAbstractVisitor(new ConcreteExpressionFactory(), names).visitLevelMax(this).accept(new PrettyPrintVisitor(builder, indent), prec);
+    new ToAbstractVisitor(new ConcreteExpressionFactory(), names).visitLevelMax(this, 0).accept(new PrettyPrintVisitor(builder, indent), prec);
   }
 
   @Override
