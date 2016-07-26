@@ -160,7 +160,7 @@ public abstract class Expression implements PrettyPrintable, Type {
   }
 
   @Override
-  public Expression addParameters(DependentLink params) {
+  public Expression addParameters(DependentLink params, boolean modify) {
     return params.hasNext() ? new PiExpression(params, this) : this;
   }
 

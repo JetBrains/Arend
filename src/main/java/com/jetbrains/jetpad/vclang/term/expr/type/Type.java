@@ -21,7 +21,7 @@ public interface Type extends PrettyPrintable {
   SortMax toSorts();
   Type getImplicitParameters(List<DependentLink> params);
   Type fromPiParameters(List<DependentLink> params);
-  Type addParameters(DependentLink params);
+  Type addParameters(DependentLink params, boolean modify);
   DependentLink getParameters();
   Type normalize(NormalizeVisitor.Mode mode);
   Type strip();

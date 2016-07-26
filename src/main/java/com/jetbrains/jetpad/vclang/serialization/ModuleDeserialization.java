@@ -27,6 +27,8 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeDeserialization;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
@@ -250,13 +252,22 @@ public class ModuleDeserialization {
     }
   }
 
+  private Type readType(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+    if (stream.readBoolean()) {
+      DependentLink params = readParameters(stream, definitionMap);
+      return new PiUniverseType(params, readSortMax(stream, definitionMap));
+    } else {
+      return readExpression(stream, definitionMap);
+    }
+  }
+
   private void deserializeFunctionDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, FunctionDefinition definition) throws IOException {
     deserializeNamespace(stream, definitionMap, definition);
 
     definition.typeHasErrors(stream.readBoolean());
     if (!definition.typeHasErrors()) {
       definition.setParameters(readParameters(stream, definitionMap));
-      definition.setResultType(readExpression(stream, definitionMap));
+      definition.setResultType(readType(stream, definitionMap));
       if (stream.readBoolean()) {
         definition.setElimTree(myElimTreeDeserialization.readElimTree(stream, definitionMap));
       }

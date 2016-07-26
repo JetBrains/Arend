@@ -162,7 +162,7 @@ public class RecordsTest {
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { x => 0 }");
     assertEquals(new SortMax(Sort.SetOfLevel(0)), ((ClassDefinition) result.getDefinition("Point")).getSorts());
-    assertEquals(Universe(Sort.SetOfLevel(0)), result.getDefinition("C").getType());
+    assertEquals(Universe(Sort.SetOfLevel(0)), result.getDefinition("C").getType().toExpression());
   }
 
   @Test
@@ -171,7 +171,7 @@ public class RecordsTest {
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { x => 0 | y => 1 }");
     assertEquals(new SortMax(Sort.SetOfLevel(0)), ((ClassDefinition) result.getDefinition("Point")).getSorts());
-    assertEquals(Universe(Sort.PROP), result.getDefinition("C").getType());
+    assertEquals(Universe(Sort.PROP), result.getDefinition("C").getType().toExpression());
   }
 
   @Test
@@ -180,7 +180,7 @@ public class RecordsTest {
         "\\static \\class Point { \\abstract x : \\Type3 \\abstract y : \\Type1 }\n" +
         "\\static \\function C => Point { x => Nat }");
     assertEquals(new SortMax(new Sort(4, Sort.NOT_TRUNCATED)), ((ClassDefinition) result.getDefinition("Point")).getSorts());
-    assertEquals(Universe(new Sort(2, Sort.NOT_TRUNCATED)), result.getDefinition("C").getType());
+    assertEquals(Universe(new Sort(2, Sort.NOT_TRUNCATED)), result.getDefinition("C").getType().toExpression());
   }
 
   @Test
@@ -193,7 +193,7 @@ public class RecordsTest {
         "}\n" +
         "\\static \\function test (p : A) => p.y");
     FunctionDefinition testFun = (FunctionDefinition) result.getDefinition("test");
-    Expression resultType = testFun.getResultType();
+    Expression resultType = (Expression) testFun.getResultType();
     Expression function = resultType.normalize(NormalizeVisitor.Mode.WHNF);
     List<? extends Expression> arguments = function.getArguments();
     function = function.getFunction();
@@ -250,7 +250,7 @@ public class RecordsTest {
       "}\n" +
       "\\static \\function test (q : A) => q.y");
     FunctionDefinition testFun = (FunctionDefinition) result.getDefinition("test");
-    Expression resultType = testFun.getResultType();
+    Expression resultType = (Expression) testFun.getResultType();
     Expression xCall = FieldCall((ClassField) result.getDefinition("A.x"));
     PiExpression resultTypePi = resultType.toPi();
     assertNotNull(resultTypePi);

@@ -11,12 +11,15 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 
 import java.io.*;
@@ -217,6 +220,20 @@ public class ModuleSerialization {
     return errors;
   }
 
+  private static void writeType(SerializeVisitor visitor, Type type) throws IOException {
+    if (type instanceof PiUniverseType) {
+      visitor.getDataStream().writeBoolean(true);
+      writeParameters(visitor, type.getParameters());
+      writeSortMax(visitor, ((PiUniverseType) type).getSorts());
+    } else
+    if (type instanceof Expression) {
+      visitor.getDataStream().writeBoolean(false);
+      ((Expression) type).accept(visitor, null);
+    } else {
+      throw new IllegalStateException();
+    }
+  }
+
   private static int serializeFunctionDefinition(SerializeVisitor visitor, FunctionDefinition definition) throws IOException {
     int errors = definition.hasErrors() ? 1 : 0;
 
@@ -225,7 +242,7 @@ public class ModuleSerialization {
     visitor.getDataStream().writeBoolean(definition.typeHasErrors());
     if (!definition.typeHasErrors()) {
       writeParameters(visitor, definition.getParameters());
-      definition.getResultType().accept(visitor, null);
+      writeType(visitor, definition.getResultType());
       visitor.getDataStream().writeBoolean(!definition.hasErrors() && definition.getElimTree() != null);
       if (definition.getElimTree() != null) {
         definition.getElimTree().accept(visitor, null);

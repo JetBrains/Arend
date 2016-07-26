@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 
 public class GetTypeTest {
   private static void testType(Expression expected, TypeCheckClassResult result) {
-    assertEquals(expected, ((FunctionDefinition) result.getDefinition("test")).getResultType());
+    assertEquals(expected, ((FunctionDefinition) result.getDefinition("test")).getResultType().toExpression());
     assertEquals(expected, ((LeafElimTreeNode) ((FunctionDefinition) result.getDefinition("test")).getElimTree()).getExpression().getType().toExpression());
   }
 
@@ -39,7 +39,7 @@ public class GetTypeTest {
   public void classExtTest() {
     TypeCheckClassResult result = typeCheckClass("\\static \\class Test { \\abstract A : \\Type0 \\abstract a : A } \\static \\function test => Test { A => Nat }");
     assertEquals(Universe(1), result.getDefinition("Test").getType().toExpression());
-    assertEquals(Universe(Sort.SetOfLevel(0)), result.getDefinition("test").getType());
+    assertEquals(Universe(Sort.SetOfLevel(0)), result.getDefinition("test").getType().toExpression());
     testType(Universe(Sort.SetOfLevel(0)), result);
   }
 

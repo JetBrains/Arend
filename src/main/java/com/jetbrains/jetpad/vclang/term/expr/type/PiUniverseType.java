@@ -93,8 +93,20 @@ public class PiUniverseType implements Type {
   }
 
   @Override
-  public PiUniverseType addParameters(DependentLink params) {
-    return params.hasNext() ? new PiUniverseType(ExpressionFactory.params(params, myParameters), mySorts) : this;
+  public PiUniverseType addParameters(DependentLink params, boolean modify) {
+    if (!params.hasNext()) {
+      return this;
+    }
+    if (!myParameters.hasNext()) {
+      return new PiUniverseType(params, mySorts);
+    }
+    if (modify) {
+      return new PiUniverseType(ExpressionFactory.params(params, myParameters), mySorts);
+    }
+
+    ExprSubstitution subst = new ExprSubstitution();
+    params = DependentLink.Helper.subst(params, subst);
+    return new PiUniverseType(ExpressionFactory.params(params, DependentLink.Helper.subst(myParameters, subst)), mySorts);
   }
 
   @Override

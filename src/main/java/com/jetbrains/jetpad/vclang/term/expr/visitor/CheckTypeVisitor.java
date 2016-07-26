@@ -464,7 +464,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       result.add(bodyResult);
       if (actualPiLink != null && expectedCodomain != null) {
         result.expression = bodyResult.expression;
-        result.type = bodyResult.type.addParameters(actualPiLink);
+        result.type = bodyResult.type.addParameters(actualPiLink, true);
         if (!compare(result, expectedCodomain, body)) {
           return null;
         }
@@ -488,7 +488,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     result.expression = Lam(list.getFirst(), bodyResult.expression);
-    result.type = bodyResult.type.addParameters(list.getFirst());
+    result.type = bodyResult.type.addParameters(list.getFirst(), true);
     return result;
   }
 

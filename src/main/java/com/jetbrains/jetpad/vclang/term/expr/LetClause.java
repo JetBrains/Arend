@@ -51,7 +51,7 @@ public class LetClause extends NamedBinding implements Function {
 
   @Override
   public Expression getType() {
-    return Function.Helper.getFunctionType(this);
+    return myResultType.addParameters(myParameters, false);
   }
 
   public LetClause subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {

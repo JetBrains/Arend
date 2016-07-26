@@ -261,6 +261,6 @@ public class ImplementTest {
     assertEquals(new SortMax(new Sort(1,1)), ((ClassDefinition) result.getDefinition("B")).getSorts());
     assertEquals(new SortMax(new Sort(2,1)), ((ClassDefinition) result.getDefinition("C")).getSorts());
     assertEquals(new SortMax(new Sort(0,0)), ((ClassDefinition) result.getDefinition("D")).getSorts());
-    assertEquals(ExpressionFactory.Universe(Sort.PROP), result.getDefinition("f").getType());
+    assertEquals(ExpressionFactory.Universe(Sort.PROP), result.getDefinition("f").getType().toExpression());
   }
 }
