@@ -24,7 +24,6 @@ public class Universe {
     CheckTypeVisitor.Result result = typeCheckExpr("\\Type5", ExpressionFactory.Universe(8));
     assertNotNull(result);
     assertEquals(ExpressionFactory.Universe(5), result.expression);
-    assertEquals(ExpressionFactory.Universe(6), result.type);
     assertEquals(ExpressionFactory.Universe(6), result.expression.getType());
   }
 
@@ -52,7 +51,6 @@ public class Universe {
     CheckTypeVisitor.Result result = typeCheckExpr("\\3-Type5", ExpressionFactory.Universe(8, 9));
     assertNotNull(result);
     assertEquals(ExpressionFactory.Universe(5, 3), result.expression);
-    assertEquals(ExpressionFactory.Universe(6, 4), result.type);
     assertEquals(ExpressionFactory.Universe(6, 4), result.expression.getType());
   }
 
@@ -80,7 +78,6 @@ public class Universe {
     CheckTypeVisitor.Result result = typeCheckExpr("\\Prop", ExpressionFactory.Universe(8, 9));
     assertNotNull(result);
     assertEquals(ExpressionFactory.Universe(3, -1), result.expression);
-    assertEquals(ExpressionFactory.Universe(Sort.SetOfLevel(0)), result.type);
     assertEquals(ExpressionFactory.Universe(Sort.SetOfLevel(0)), result.expression.getType());
   }
 
@@ -103,7 +100,6 @@ public class Universe {
     CheckTypeVisitor.Result result = typeCheckExpr("\\Set7", ExpressionFactory.Universe(11, 4));
     assertNotNull(result);
     assertEquals(ExpressionFactory.Universe(Sort.SetOfLevel(7)), result.expression);
-    assertEquals(ExpressionFactory.Universe(8, 1), result.type);
     assertEquals(ExpressionFactory.Universe(8, 1), result.expression.getType());
   }
 

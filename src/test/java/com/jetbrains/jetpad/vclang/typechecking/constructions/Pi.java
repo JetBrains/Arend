@@ -10,6 +10,7 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Universe;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckExpr;
 import static org.junit.Assert.assertEquals;
 
@@ -20,7 +21,7 @@ public class Pi {
     context.add(new TypedBinding("A", Universe(3, 7)));
     context.add(new TypedBinding("B", Universe(4, 6)));
     CheckTypeVisitor.Result result = typeCheckExpr(context, "A -> B", null);
-    assertEquals(Universe(4, 6), result.type);
+    assertEquals(Universe(4, 6), result.type.toExpression());
   }
 
   @Test
@@ -29,13 +30,13 @@ public class Pi {
     context.add(new TypedBinding("A", Universe(4, 6)));
     context.add(new TypedBinding("B", Pi(Reference(context.get(0)), Universe(2, 8))));
     CheckTypeVisitor.Result result = typeCheckExpr(context, "\\Pi {x : A} -> B x", null);
-    assertEquals(Universe(4, 8), result.type);
+    assertEquals(Universe(4, 8), result.type.toExpression());
   }
 
   @Test
   public void piTest() {
     CheckTypeVisitor.Result result = typeCheckExpr("\\Pi (x y : Nat) {z : \\4-Type3} -> \\Pi (w : \\5-Type2) -> Nat", null);
-    assertEquals(Universe(4, 0), result.type);
+    assertEquals(Universe(4, 0), result.type.toExpression());
   }
 
   @Test
@@ -44,7 +45,7 @@ public class Pi {
     context.add(new TypedBinding("A", Universe(3, 7)));
     context.add(new TypedBinding("B", Pi(Reference(context.get(0)), Universe(4, -1))));
     CheckTypeVisitor.Result result = typeCheckExpr(context, "\\Pi (x : A) -> B x", null);
-    assertEquals(Universe(0, -1), result.type);
+    assertEquals(Universe(0, -1), result.type.toExpression());
   }
 
   @Test
@@ -53,6 +54,6 @@ public class Pi {
     context.add(new TypedBinding("A", Universe(4, -1)));
     context.add(new TypedBinding("B", Universe(2, 6)));
     CheckTypeVisitor.Result result = typeCheckExpr(context, "A -> B", null);
-    assertEquals(Universe(2, 6), result.type);
+    assertEquals(Universe(2, 6), result.type.toExpression());
   }
 }
