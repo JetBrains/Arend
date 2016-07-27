@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.factory.AbstractExpressionFactory;
+import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
@@ -175,14 +176,21 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitClassCall(ClassCallExpression expr, Void params) {
-    Abstract.Expression defCallExpr = myFactory.makeDefCall(null, expr.getDefinition());
-    if (expr.getImplementStatements().isEmpty()) {
+    Collection<Map.Entry<ClassField, FieldSet.Implementation>> implHere = expr.getImplementedHere();
+    Abstract.Expression enclExpr = null;
+    List<Abstract.ImplementStatement> statements = new ArrayList<>(implHere.size());
+    for (Map.Entry<ClassField, FieldSet.Implementation> entry : implHere) {
+      if (entry.getKey().equals(expr.getDefinition().getEnclosingThisField())) {
+        enclExpr = entry.getValue().term.accept(this, params);
+      } else {
+        statements.add(myFactory.makeImplementStatement(entry.getKey(), null, entry.getValue().term.accept(this, params)));
+      }
+    }
+
+    Abstract.Expression defCallExpr = myFactory.makeDefCall(enclExpr, expr.getDefinition());
+    if (statements.isEmpty()) {
       return defCallExpr;
     } else {
-      List<Abstract.ImplementStatement> statements = new ArrayList<>(expr.getImplementStatements().size());
-      for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> entry : expr.getImplementStatements().entrySet()) {
-        statements.add(myFactory.makeImplementStatement(entry.getKey(), entry.getValue().type == null ? null : entry.getValue().type.accept(this, null), entry.getValue().term == null ? null : entry.getValue().term.accept(this, null)));
-      }
       return myFactory.makeClassExt(defCallExpr, statements);
     }
   }
@@ -437,6 +445,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return elimTree.accept(this, null);
   }
 
+  @SuppressWarnings("SuspiciousNameCombination")
   private Abstract.Definition.Arrow getTopLevelArrow(ElimTreeNode elimTreeNode) {
     if (elimTreeNode == EmptyElimTreeNode.getInstance()) {
       return Abstract.Definition.Arrow.RIGHT;

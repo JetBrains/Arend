@@ -122,6 +122,9 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
         } else {
           if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.AbstractDefinition) {
             result.addAll(visitAbstract((Abstract.AbstractDefinition) ((Abstract.DefineStatement) statement).getDefinition()));
+          } else
+          if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ImplementDefinition) {
+            result.addAll(visitImplement((Abstract.ImplementDefinition) ((Abstract.DefineStatement) statement).getDefinition()));
           } else {
             myOthers.add(defineStatement.getDefinition());
             if (parent instanceof Abstract.ClassDefinition && ((Abstract.DefineStatement) statement).getStaticMod() != Abstract.DefineStatement.StaticMod.STATIC) {
@@ -148,5 +151,14 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
     }
     result.addAll(visitStatements(def, def.getStatements(), isStatic));
     return result;
+  }
+
+  @Override
+  public Set<Referable> visitImplement(Abstract.ImplementDefinition def, Boolean isStatic) {
+    throw new IllegalStateException();
+  }
+
+  private Set<Referable> visitImplement(Abstract.ImplementDefinition def) {
+    return def.getExpression().accept(new CollectDefCallsVisitor(), null);
   }
 }

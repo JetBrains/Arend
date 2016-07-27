@@ -343,7 +343,7 @@ public class ClassesTest {
     FunctionDefinition plus = (FunctionDefinition) result.getDefinition("+");
 
     ClassDefinition aClass = (ClassDefinition) result.getDefinition("A");
-    assertTrue(aClass.getFields().isEmpty());
+    assertTrue(aClass.getFieldSet().getFields().isEmpty());
     FunctionDefinition pFun = (FunctionDefinition) result.getDefinition("A.p");
     assertEquals(Nat(), pFun.getType());
     assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Zero()), pFun.getElimTree());
@@ -352,7 +352,7 @@ public class ClassesTest {
     assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(pFun)), qFun.getElimTree());
 
     ClassDefinition bClass = (ClassDefinition) result.getDefinition("A.B");
-    assertTrue(bClass.getFields().isEmpty());
+    assertTrue(bClass.getFieldSet().getFields().isEmpty());
     FunctionDefinition fFun = (FunctionDefinition) result.getDefinition("A.B.f");
     assertEquals(Nat(), fFun.getType());
     assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(pFun)), fFun.getElimTree());
@@ -361,7 +361,7 @@ public class ClassesTest {
     assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(FunCall(plus), FunCall(fFun), FunCall(pFun))), gFun.getElimTree());
 
     ClassDefinition cClass = (ClassDefinition) result.getDefinition("A.C");
-    assertEquals(1, cClass.getFields().size());
+    assertEquals(1, cClass.getFieldSet().getFields().size());
     ClassField cParent = cClass.getEnclosingThisField();
     assertNotNull(cParent);
     FunctionDefinition hFun = (FunctionDefinition) result.getDefinition("A.C.h");
@@ -494,6 +494,19 @@ public class ClassesTest {
         "  }\n" +
         "  \\abstract x : Nat\n" +
         "}\n" +
+        "\\static \\function y (a : A) : \\Set0 => a.B.C");
+  }
+
+  @Test
+  public void staticDynamicCall31() {
+    typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\class B {\n" +
+        "    \\static \\class C {\n" +
+        "      \\static \\function f => 0\n" +
+        "    }\n" +
+        "  }\n" +
+        "}\n" +
         "\\static \\function y (a : A) : \\Prop => a.B.C");
   }
 
@@ -508,7 +521,7 @@ public class ClassesTest {
         "  }\n" +
         "  \\abstract x : Nat\n" +
         "}\n" +
-        "\\static \\function y (a : A) : \\Prop => a.B");
+        "\\static \\function y (a : A) : \\Set1 => a.B");
   }
 
   @Test

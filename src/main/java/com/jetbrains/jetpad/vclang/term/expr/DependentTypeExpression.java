@@ -40,7 +40,11 @@ public abstract class DependentTypeExpression extends Expression {
   @Override
   public Expression getType() {
     TypeUniverse universe = getUniverse();
-    return universe == null ? null : new UniverseExpression(universe);
+    if (universe == null) {
+      return null;
+    } else {
+      return new UniverseExpression(universe);
+    }
   }
 
   @Override

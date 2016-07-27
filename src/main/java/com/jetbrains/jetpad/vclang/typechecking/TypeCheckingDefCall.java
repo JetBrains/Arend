@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
 
 import java.util.ArrayList;
@@ -139,9 +140,9 @@ public class TypeCheckingDefCall {
       leftDefinition = classCall.getDefinition();
       ClassField parentField = classCall.getDefinition().getEnclosingThisField();
       if (parentField != null) {
-        ClassCallExpression.ImplementStatement statement = classCall.getImplementStatements().get(parentField);
-        if (statement != null) {
-          thisExpr = statement.term;
+        FieldSet.Implementation impl = classCall.getFieldSet().getImplementation(parentField);
+        if (impl != null) {
+          thisExpr = impl.term;
         }
       }
       member = leftDefinition.getOwnNamespace().resolveName(expr.getName());

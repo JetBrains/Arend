@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
@@ -48,8 +49,8 @@ public class ExpressionFactory {
     return new ClassCallExpression(definition);
   }
 
-  public static ClassCallExpression ClassCall(ClassDefinition definition, Map<ClassField, ClassCallExpression.ImplementStatement> statements) {
-    return new ClassCallExpression(definition, statements);
+  public static ClassCallExpression ClassCall(ClassDefinition definition, FieldSet fieldSet) {
+    return new ClassCallExpression(definition, fieldSet);
   }
 
   public static ConCallExpression ConCall(Constructor definition, List<Expression> parameters) {

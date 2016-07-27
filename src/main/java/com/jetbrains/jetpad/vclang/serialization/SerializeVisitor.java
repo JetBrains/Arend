@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.serialization;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -93,6 +92,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
 
   @Override
   public Void visitClassCall(ClassCallExpression expr, Void params) {
+    /* FIXME[serial]
     myStream.write(4);
     int index = myDefNamesIndices.getDefNameIndex(expr.getDefinition().getResolvedName());
     try {
@@ -116,6 +116,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     } catch (IOException e) {
       throw new IllegalStateException();
     }
+    */
     return null;
   }
 

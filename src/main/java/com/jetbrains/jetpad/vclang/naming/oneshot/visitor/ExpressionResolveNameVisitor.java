@@ -2,6 +2,8 @@ package com.jetbrains.jetpad.vclang.naming.oneshot.visitor;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
+import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
+import com.jetbrains.jetpad.vclang.naming.oneshot.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.parser.BinOpParser;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -9,8 +11,6 @@ import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
-import com.jetbrains.jetpad.vclang.naming.oneshot.ResolveListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -261,9 +261,19 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   @Override
   public Void visitClassExt(Abstract.ClassExtExpression expr, Void params) {
     expr.getBaseClassExpression().accept(this, null);
+
+    Abstract.ClassDefinition classDef = Abstract.getUnderlyingClassDef(expr);
     for (Abstract.ImplementStatement statement : expr.getStatements()) {
+      Referable resolvedRef = classDef != null ? myNameResolver.resolveClassField(classDef, statement.getName()) : null;
+      if (resolvedRef instanceof Abstract.AbstractDefinition) {
+        myResolveListener.implementResolved(statement, resolvedRef);
+      } else {
+        myErrorReporter.report(new NotInScopeError(statement, statement.getName()));
+      }
+
       statement.getExpression().accept(this, null);
     }
+
     return null;
   }
 

@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.typechecking.normalization.Normalizer;
 
 import java.util.*;
@@ -51,7 +52,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     return applyDefCall(expr, mode);
   }
 
-  public Expression applyDefCall(Expression expr, Mode mode) {
+  private Expression applyDefCall(Expression expr, Mode mode) {
     if (mode == Mode.TOP) return null;
     AppExpression appExpr = expr.toApp();
     if (appExpr != null && (mode == Mode.NF || mode == Mode.HUMAN_NF)) {
@@ -65,7 +66,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
   }
 
-  public Expression visitDefCallExpr(Expression expr, Mode mode) {
+  private Expression visitDefCallExpr(Expression expr, Mode mode) {
     DefCallExpression defCallExpr = expr.getFunction().toDefCall();
     if (defCallExpr.getDefinition().hasErrors()) {
       return mode == Mode.TOP ? null : applyDefCall(expr, mode);
@@ -77,28 +78,18 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         if (mode == Mode.TOP) {
           return null;
         }
-        return FieldCall((ClassField) defCallExpr.getDefinition());
+        return expr;
       }
 
       Expression thisExpr = expr.getArguments().get(0).normalize(Mode.WHNF);
       ClassCallExpression classCall = thisExpr.getType().normalize(Mode.WHNF).toClassCall();
       if (classCall != null) {
-        ClassCallExpression.ImplementStatement elem = classCall.getImplementStatements().get(defCallExpr.getDefinition());
-        Expression impl = null;
-        if (elem != null) {
-          impl = elem.term;
-        }
-        /*
-        if (impl == null) {
-          ClassDefinition.FieldImplementation fieldImpl = classCall.getDefinition().getFieldImpl((ClassField) defCallExpr.getDefinition());
-          if (fieldImpl.implementation != null) {
-            impl = fieldImpl.implementation.subst(fieldImpl.thisParameter, thisExpr);
-          }
-        }
-        */ // HACK bring back implement statements, they need \\this
+        FieldSet.Implementation impl = classCall.getFieldSet().getImplementation((ClassField) defCallExpr.getDefinition());
         if (impl != null) {
+          final Expression term;
+          term = impl.substThisParam(thisExpr);
           List<? extends EnumSet<AppExpression.Flag>> flags = expr.toApp().getFlags();
-          Expression result = Apps(impl, expr.getArguments().subList(1, expr.getArguments().size()), flags.subList(1, flags.size()));
+          Expression result = Apps(term, expr.getArguments().subList(1, expr.getArguments().size()), flags.subList(1, flags.size()));
           return mode == Mode.TOP ? result : result.accept(this, mode);
         }
       }
@@ -191,13 +182,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   public Expression visitClassCall(ClassCallExpression expr, Mode mode) {
     if (mode == Mode.TOP) return null;
     if (mode == Mode.WHNF) return expr;
-
-    Map<ClassField, ClassCallExpression.ImplementStatement> statements = new HashMap<>();
-    for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> elem : expr.getImplementStatements().entrySet()) {
-      statements.put(elem.getKey(), new ClassCallExpression.ImplementStatement(elem.getValue().type == null ? null : elem.getValue().type.accept(this, mode), elem.getValue().term == null ? null : elem.getValue().term.accept(this, mode)));
-    }
-
-    return ClassCall(expr.getDefinition(), statements);
+    return expr.applyVisitorToImplementedHere(this, mode);
   }
 
   @Override

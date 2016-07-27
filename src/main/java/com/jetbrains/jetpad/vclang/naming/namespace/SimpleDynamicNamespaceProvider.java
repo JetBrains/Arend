@@ -19,7 +19,7 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
 
     ns = forStatements(classDefinition.getStatements());
     for (final Abstract.SuperClass superClass : classDefinition.getSuperClasses()) {
-      Abstract.ClassDefinition superDef = getUnderlyingClassDef(superClass.getSuperClass());
+      Abstract.ClassDefinition superDef = Abstract.getUnderlyingClassDef(superClass.getSuperClass());
       if (superDef == null) continue;
 
       SimpleNamespace namespace = forClass(superDef);
@@ -44,16 +44,6 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
     return ns;
   }
 
-  private Abstract.ClassDefinition getUnderlyingClassDef(Abstract.Expression expr) {
-    if (expr instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr).getReferent() instanceof Abstract.ClassDefinition) {
-      return (Abstract.ClassDefinition) ((Abstract.DefCallExpression) expr).getReferent();
-    } else if (expr instanceof Abstract.ClassExtExpression) {
-      return getUnderlyingClassDef(((Abstract.ClassExtExpression) expr).getBaseClassExpression());
-    } else {
-      return null;
-    }
-  }
-
   private static SimpleNamespace forData(Abstract.DataDefinition def) {
     SimpleNamespace ns = new SimpleNamespace();
     for (Abstract.Constructor constructor : def.getConstructors()) {
@@ -67,6 +57,7 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
     for (Abstract.Statement statement : statements) {
       if (!(statement instanceof Abstract.DefineStatement)) continue;
       Abstract.DefineStatement defst = (Abstract.DefineStatement) statement;
+      if (defst.getDefinition() instanceof Abstract.ImplementDefinition) continue;  // HACK[impldef]
       if (!STATIC.equals(defst.getStaticMod())) {
         ns.addDefinition(defst.getDefinition());
         if (defst.getDefinition() instanceof Abstract.DataDefinition) {

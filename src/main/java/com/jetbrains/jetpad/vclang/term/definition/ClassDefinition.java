@@ -5,47 +5,54 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
+import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class ClassDefinition extends Definition {
   private final Namespace myOwnNamespace;
   private final Namespace myInstanceNamespace;
+  private final FieldSet myFieldSet;
+  private final Set<ClassDefinition> mySuperClasses;
 
-  private final List<ClassCallExpression> mySuperClasses = new ArrayList<>();
   private ClassField myEnclosingThisField = null;
-  private final Set<ClassField> myFields = new HashSet<>();
-  private final Map<ClassField, ClassCallExpression.ImplementStatement> myImplemented;
 
   public ClassDefinition(String name, Namespace ownNamespace, Namespace instanceNamespace) {
-    this(name, Collections.<ClassField, ClassCallExpression.ImplementStatement>emptyMap(), ownNamespace, instanceNamespace);
+    this(name, new FieldSet(), new HashSet<ClassDefinition>(), ownNamespace, instanceNamespace);
   }
 
-  public ClassDefinition(String name, Map<ClassField, ClassCallExpression.ImplementStatement> implemented, Namespace ownNamespace, Namespace instanceNamespace) {
+  public ClassDefinition(String name, FieldSet fieldSet, Set<ClassDefinition> superClasses, Namespace ownNamespace, Namespace instanceNamespace) {
     super(name, Abstract.Binding.DEFAULT_PRECEDENCE);
     super.hasErrors(false);
-    myImplemented = implemented;  /* this map will be updated outside by DefinitionCheckTypeVisitor during creation */
+    myFieldSet = fieldSet;
+    mySuperClasses = superClasses;
     myOwnNamespace = ownNamespace;
     myInstanceNamespace = instanceNamespace;
   }
 
-  public boolean isSubClassOf(ClassDefinition classDefinition) {
-    if (this == classDefinition) {
-      return true;
-    }
-    for (ClassCallExpression superClass : mySuperClasses) {
-      if (superClass.getDefinition().isSubClassOf(classDefinition)) {
-        return true;
-      }
-    }
-    return false;
+  public FieldSet getFieldSet() {
+    return myFieldSet;
   }
 
-  public void addSuperClass(ClassCallExpression superClass) {
-    mySuperClasses.add(superClass);
-    myFields.addAll(superClass.getDefinition().getFields());
+  @Override
+  public TypeUniverse getUniverse() {
+    return myFieldSet.getUniverse(getDefCall());
+  }
+
+  @Override
+  public void setUniverse(TypeUniverse universe) {
+    throw new UnsupportedOperationException();
+  }
+
+  public boolean isSubClassOf(ClassDefinition classDefinition) {
+    if (this.equals(classDefinition)) return true;
+    for (ClassDefinition superClass : mySuperClasses) {
+      if (superClass.isSubClassOf(classDefinition)) return true;
+    }
+    return false;
   }
 
   @Override
@@ -55,24 +62,17 @@ public class ClassDefinition extends Definition {
 
   @Override
   public ClassCallExpression getDefCall() {
-    return ClassCall(this, new HashMap<ClassField, ClassCallExpression.ImplementStatement>());
-  }
-
-  public Set<ClassField> getFields() {
-    return myFields;
-  }
-
-  public void addField(ClassField field) {
-    myFields.add(field);
+    return ClassCall(this, myFieldSet);
   }
 
   @Override
   public void setThisClass(ClassDefinition enclosingClass) {
+    assert myEnclosingThisField == null;
     super.setThisClass(enclosingClass);
     if (enclosingClass != null) {
-      myEnclosingThisField = new ClassField("\\parent", Abstract.Binding.DEFAULT_PRECEDENCE, ClassCall(enclosingClass), this, param("\\this", ClassCall(this)));
+      myEnclosingThisField = new ClassField(getName() + "::\\parent", Abstract.Binding.DEFAULT_PRECEDENCE, ClassCall(enclosingClass), this, param("\\this", ClassCall(this)));
       myEnclosingThisField.setThisClass(this);
-      addField(myEnclosingThisField);
+      myFieldSet.addField(myEnclosingThisField, getDefCall());
     }
   }
 
@@ -87,10 +87,6 @@ public class ClassDefinition extends Definition {
       type = Pi(ClassCall(getThisClass()), type);
     }
     return type;
-  }
-
-  public Map<ClassField, ClassCallExpression.ImplementStatement> getImplemented() {
-    return myImplemented;
   }
 
   @Override

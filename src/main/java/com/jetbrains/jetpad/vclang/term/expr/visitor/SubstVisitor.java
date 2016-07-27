@@ -3,16 +3,13 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toNames;
@@ -53,11 +50,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
-    Map<ClassField, ClassCallExpression.ImplementStatement> statements = new HashMap<>();
-    for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> elem : expr.getImplementStatements().entrySet()) {
-      statements.put(elem.getKey(), new ClassCallExpression.ImplementStatement(elem.getValue().type == null ? null : elem.getValue().type.accept(this, null), elem.getValue().term == null ? null : elem.getValue().term.accept(this, null)));
-    }
-    return ClassCall(expr.getDefinition(), statements);
+    return expr.applyVisitorToImplementedHere(this, params);
   }
 
   @Override

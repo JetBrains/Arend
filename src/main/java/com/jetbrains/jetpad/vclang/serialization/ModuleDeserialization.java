@@ -110,12 +110,15 @@ public class ModuleDeserialization {
     if (dryRun)
       return null;
 
-    Definition definition = null; // code.toDefinition(rn, precedence);  // FIXME[serial]
+    /* FIXME[serial]
+    Definition definition = code.toDefinition(rn, precedence);
     if (rn.getName().equals("\\parent"))
       ((ClassDefinition) rn.getParent().toDefinition()).addField((ClassField) definition);
     else {
       rn.toNamespaceMember().definition = definition;
     }
+    */
+    Definition definition = null;
     return definition;
   }
 
@@ -278,7 +281,7 @@ public class ModuleDeserialization {
       }
       ClassField field = (ClassField) definitionMap.get(stream.readInt());
       //definition.addField(field, name, thisParameter, implementation);  // FIXME[serial]
-      field.setThisParameter(readParameters(stream, definitionMap));
+      //field.setThisParameter(readParameters(stream, definitionMap));
       field.hasErrors(stream.readBoolean());
 
       if (!field.hasErrors()) {
@@ -428,6 +431,7 @@ public class ModuleDeserialization {
         if (!(definition instanceof ClassDefinition)) {
           throw new IncorrectFormat();
         }
+        /* FIXME[serial]
         int size = stream.readInt();
         Map<ClassField, ClassCallExpression.ImplementStatement> statements = new HashMap<>();
         for (int i = 0; i < size; ++i) {
@@ -440,6 +444,8 @@ public class ModuleDeserialization {
           statements.put((ClassField) field, new ClassCallExpression.ImplementStatement(type, term));
         }
         return ClassCall((ClassDefinition) definition, statements);
+        */
+        return null;
       }
       case 5: {
         return Reference(readBinding(stream, definitionMap));

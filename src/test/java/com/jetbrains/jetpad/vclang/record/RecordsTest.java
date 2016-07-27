@@ -18,7 +18,7 @@ import static org.junit.Assert.*;
 public class RecordsTest {
   @Test
   public void unknownExtTestError() {
-    typeCheckClass(
+    resolveNamesClass(
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { x => 0 | z => 0 | y => 0 }", 1);
   }

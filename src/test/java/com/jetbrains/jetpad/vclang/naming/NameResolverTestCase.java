@@ -21,7 +21,7 @@ public class NameResolverTestCase {
   public static final ModuleNamespaceProvider DEFAULT_MODULE_NS_PROVIDER = new SimpleModuleNamespaceProvider();
   public static final StaticNamespaceProvider DEFAULT_STATIC_NS_PROVIDER = new SimpleStaticNamespaceProvider();
   public static final DynamicNamespaceProvider DEFAULT_DYNAMIC_NS_PROVIDER = new SimpleDynamicNamespaceProvider();
-  public static final NameResolver DEFAULT_NAME_RESOLVER = new NameResolver(DEFAULT_MODULE_NS_PROVIDER, DEFAULT_STATIC_NS_PROVIDER);
+  public static final NameResolver DEFAULT_NAME_RESOLVER = new NameResolver(DEFAULT_MODULE_NS_PROVIDER, DEFAULT_STATIC_NS_PROVIDER, DEFAULT_DYNAMIC_NS_PROVIDER);
   public static final Scope INITIAL_SCOPE = new SubScope(Preprelude.PRE_PRELUDE, Prelude.PRELUDE);
 
   public static Collection<? extends GeneralError> resolveNamesExpr(Scope parentScope, List<String> context, Concrete.Expression expression) {

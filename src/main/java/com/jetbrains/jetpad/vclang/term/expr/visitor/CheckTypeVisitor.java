@@ -11,8 +11,12 @@ import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.*;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingElim;
@@ -35,11 +39,13 @@ import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.o
 public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, CheckTypeVisitor.Result> {
   private final TypecheckerState myState;
   private final Abstract.Definition myParentDefinition;
+  private ClassDefinition myThisClass;
+  private Expression myThisExpr;
   private final List<Binding> myContext;
   private final ErrorReporter myErrorReporter;
-  private TypeCheckingDefCall myTypeCheckingDefCall;
-  private TypeCheckingElim myTypeCheckingElim;
-  private ImplicitArgsInference myArgsInference;
+  private final TypeCheckingDefCall myTypeCheckingDefCall;
+  private final TypeCheckingElim myTypeCheckingElim;
+  private final ImplicitArgsInference myArgsInference;
 
   public static class Result extends TypeCheckingResult {
     public Expression expression;
@@ -70,21 +76,27 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  private CheckTypeVisitor(TypecheckerState state, Abstract.Definition definition, List<Binding> localContext, ErrorReporter errorReporter, TypeCheckingDefCall typeCheckingDefCall, ImplicitArgsInference argsInference) {
+  private CheckTypeVisitor(TypecheckerState state, Abstract.Definition definition, ClassDefinition thisClass, Expression thisExpr, List<Binding> localContext, ErrorReporter errorReporter) {
     myState = state;
     myParentDefinition = definition;
     myContext = localContext;
     myErrorReporter = errorReporter;
-    myTypeCheckingDefCall = typeCheckingDefCall;
-    myArgsInference = argsInference;
+    myTypeCheckingDefCall = new TypeCheckingDefCall(state, definition, this);
+    myTypeCheckingElim = new TypeCheckingElim(definition, this);
+    myArgsInference = new StdImplicitArgsInference(definition, this);
+    setThisClass(thisClass, thisExpr);
+  }
+
+  public void setThisClass(ClassDefinition thisClass, Expression thisExpr) {
+    myThisClass = thisClass;
+    myThisExpr = thisExpr;
+    myTypeCheckingDefCall.setThisClass(thisClass, thisExpr);
   }
 
   public static class Builder {
     private final TypecheckerState myTypecheckerState;
     private final List<Binding> myLocalContext;
     private final ErrorReporter myErrorReporter;
-    private TypeCheckingDefCall myTypeCheckingDefCall;
-    private ImplicitArgsInference myArgsInference;
     private ClassDefinition myThisClass;
     private Expression myThisExpr;
 
@@ -98,16 +110,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       this(new TypecheckerState(), localContext, errorReporter);
     }
 
-    public Builder typeCheckingDefCall(TypeCheckingDefCall typeCheckingDefCall) {
-      myTypeCheckingDefCall = typeCheckingDefCall;
-      return this;
-    }
-
-    public Builder argsInference(ImplicitArgsInference argsInference) {
-      myArgsInference = argsInference;
-      return this;
-    }
-
     public Builder thisClass(ClassDefinition thisClass, Expression thisExpr) {
       myThisClass = thisClass;
       myThisExpr = thisExpr;
@@ -115,15 +117,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     public CheckTypeVisitor build(Abstract.Definition definition) {
-      CheckTypeVisitor visitor = new CheckTypeVisitor(myTypecheckerState, definition, myLocalContext, myErrorReporter, myTypeCheckingDefCall, myArgsInference);
-      if (myTypeCheckingDefCall == null) {
-        visitor.myTypeCheckingDefCall = new TypeCheckingDefCall(myTypecheckerState, definition, visitor);
-        visitor.myTypeCheckingDefCall.setThisClass(myThisClass, myThisExpr);
-      }
-      visitor.myTypeCheckingElim = new TypeCheckingElim(definition, visitor);
-      if (myArgsInference == null) {
-        visitor.myArgsInference = new StdImplicitArgsInference(definition, visitor);
-      }
+      CheckTypeVisitor visitor = new CheckTypeVisitor(myTypecheckerState, definition, myThisClass, myThisExpr, myLocalContext, myErrorReporter);
       return visitor;
     }
 
@@ -143,10 +137,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   public TypeCheckingElim getTypeCheckingElim() {
     return myTypeCheckingElim;
-  }
-
-  public void setThisClass(ClassDefinition thisClass, Expression thisExpr) {
-    myTypeCheckingDefCall.setThisClass(thisClass, thisExpr);
   }
 
   public List<Binding> getContext() {
@@ -706,11 +696,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   @Override
   public Result visitClassExt(Abstract.ClassExtExpression expr, Expression expectedType) {
     Abstract.Expression baseClassExpr = expr.getBaseClassExpression();
-    Result result = typeCheck(baseClassExpr, null);
-    if (result == null) {
+    Result typeCheckedBaseClass = typeCheck(baseClassExpr, null);
+    if (typeCheckedBaseClass == null) {
       return null;
     }
-    Expression normalizedBaseClassExpr = result.expression.normalize(NormalizeVisitor.Mode.WHNF);
+    Expression normalizedBaseClassExpr = typeCheckedBaseClass.expression.normalize(NormalizeVisitor.Mode.WHNF);
     ClassCallExpression classCallExpr = normalizedBaseClassExpr.toClassCall();
     if (classCallExpr == null) {
       TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Expected a class", baseClassExpr);
@@ -727,57 +717,43 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return null;
     }
 
-    Collection<? extends Abstract.ImplementStatement> statements = expr.getStatements();
-    if (statements.isEmpty()) {
-      result.expression = classCallExpr;
-      result.type = baseClass.getType();
-      return checkResult(expectedType, result, expr);
-    }
-
-    Map<ClassField, Abstract.Expression> implemented = new LinkedHashMap<>();
-    for (Abstract.ImplementStatement statement : statements) {
-      String name = statement.getName();
-      Referable ref = baseClass.getInstanceNamespace().resolveName(name);
-      if (!(ref instanceof Abstract.AbstractDefinition)) {
-        myErrorReporter.report(new TypeCheckingError(myParentDefinition, "Class '" + baseClass.getName() + "' does not have field '" + name + "'", statement));  // FIXME[error] report proper
-        continue;
-      }
-      Definition typecheckedField = myState.getTypechecked(ref);
-      if (!(typecheckedField instanceof ClassField)) {
-        throw new IllegalStateException("Internal error");
-      }
-      ClassField field = (ClassField) typecheckedField;
-      if (baseClass.getImplemented().containsKey(field) || implemented.containsKey(field)) {
-        myErrorReporter.report(new TypeCheckingError(myParentDefinition, "Field '" + field.getName() + "' is already implemented", statement));  // FIXME[error] report proper
-        continue;
-      }
-      implemented.put(field, statement.getExpression());
-    }
-
+    FieldSet fieldSet = new FieldSet();
     Result classExtResult = new Result(null, null);
-    Map<ClassField, ClassCallExpression.ImplementStatement> typeCheckedStatements = Collections.emptyMap();
-    if (!classCallExpr.getImplementStatements().isEmpty()) {
-      typeCheckedStatements = new HashMap<>(classCallExpr.getImplementStatements());
+    ClassCallExpression resultExpr = ClassCall(baseClass, fieldSet);
+
+    fieldSet.addFieldsFrom(classCallExpr.getFieldSet(), resultExpr);
+    for (Map.Entry<ClassField, FieldSet.Implementation> entry : classCallExpr.getFieldSet().getImplemented()) {
+      boolean ok = fieldSet.implementField(entry.getKey(), entry.getValue(), resultExpr);
+      assert ok;
     }
 
     // Some tricks to keep going as long as possible in case of error
     boolean ok = true;
-    for (Map.Entry<ClassField, Abstract.Expression> entry : implemented.entrySet()) {
-      Expression thisExpr = New(ClassCall(baseClass, typeCheckedStatements));
-      Result result1 = typeCheck(entry.getValue(), entry.getKey().getBaseType().subst(entry.getKey().getThisParameter(), thisExpr));
-      if (result1 == null) {
+    Collection<? extends Abstract.ImplementStatement> statements = expr.getStatements();
+    for (Abstract.ImplementStatement statement : statements) {
+      Definition implementedDef = myState.getTypechecked(statement.getImplementedField());
+      if (!(implementedDef instanceof ClassField)) {
+        myErrorReporter.report(new TypeCheckingError(myParentDefinition, "'" + implementedDef.getName() + "' is not a field", statement));
+        continue;
+      }
+      ClassField field = (ClassField) implementedDef;
+      if (fieldSet.isImplemented(field)) {
+        myErrorReporter.report(new TypeCheckingError(myParentDefinition, "Field '" + field.getName() + "' is already implemented", statement));
+        continue;
+      }
+
+      Result result = fieldSet.implementField(field, statement.getExpression(), this, resultExpr, null);
+      if (result != null) {
+        classExtResult.add(result);
+      }
+      if (result == null || result.expression.toError() != null) {
         ok = false;
-      } else {
-        typeCheckedStatements = new HashMap<>(typeCheckedStatements);
-        typeCheckedStatements.put(entry.getKey(), new ClassCallExpression.ImplementStatement(result1.type, result1.expression));
-        classExtResult.add(result1);
       }
     }
     if (!ok) return null;
 
-    ClassCallExpression resultExpr = ClassCall(baseClass, typeCheckedStatements);
     classExtResult.expression = resultExpr;
-    classExtResult.type = new UniverseExpression(resultExpr.getUniverse());
+    classExtResult.type = resultExpr.getType();
     classExtResult.update(true);
     return checkResult(expectedType, classExtResult, expr);
   }
@@ -795,7 +771,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return null;
     }
 
-    int remaining = classCallExpr.getDefinition().getFields().size() - classCallExpr.getImplementedFields().size();
+    int remaining = classCallExpr.getFieldSet().getFields().size() - classCallExpr.getFieldSet().getImplemented().size();
 
     if (remaining == 0) {
       exprResult.expression = New(normExpr);

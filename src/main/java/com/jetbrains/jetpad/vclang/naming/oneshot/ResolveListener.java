@@ -7,6 +7,8 @@ public interface ResolveListener {
   void nameResolved(Abstract.DefCallExpression defCallExpression, Referable definition);
   void moduleResolved(Abstract.ModuleCallExpression moduleCallExpression, Referable definition);
   void nsCmdResolved(Abstract.NamespaceCommandStatement nsCmdStatement, Referable definition);
+  void implementResolved(Abstract.ImplementDefinition identifier, Referable definition);
+  void implementResolved(Abstract.ImplementStatement identifier, Referable definition);
 
   Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Referable binOp, Abstract.DefCallExpression var, Abstract.Expression right);
   Abstract.Expression makeError(Abstract.BinOpSequenceExpression binOpExpr, Abstract.SourceNode node);

@@ -77,8 +77,19 @@ public final class Abstract {
     Collection<? extends ImplementStatement> getStatements();
   }
 
+  public static ClassDefinition getUnderlyingClassDef(Expression expr) {
+    if (expr instanceof DefCallExpression && ((DefCallExpression) expr).getReferent() instanceof ClassDefinition) {
+      return (ClassDefinition) ((DefCallExpression) expr).getReferent();
+    } else if (expr instanceof ClassExtExpression) {
+      return getUnderlyingClassDef(((ClassExtExpression) expr).getBaseClassExpression());
+    } else {
+      return null;
+    }
+  }
+
   public interface ImplementStatement extends SourceNode {
     String getName();
+    Referable getImplementedField();
     Expression getExpression();
   }
 
@@ -288,6 +299,11 @@ public final class Abstract {
   public interface AbstractDefinition extends Definition {
     List<? extends Argument> getArguments();
     Expression getResultType();
+  }
+
+  public interface ImplementDefinition extends Definition {
+    Referable getImplemented();
+    Expression getExpression();
   }
 
   public interface FunctionDefinition extends Definition, Function {

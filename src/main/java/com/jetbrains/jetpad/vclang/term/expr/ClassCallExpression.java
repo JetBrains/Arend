@@ -2,39 +2,41 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 
-import java.util.HashMap;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ClassCall;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Lam;
 
 public class ClassCallExpression extends DefCallExpression {
-  private final Map<ClassField, ImplementStatement> myStatements;
-  private TypeUniverse myUniverse;
+  private final FieldSet myFieldSet;
 
   public ClassCallExpression(ClassDefinition definition) {
     super(definition);
-    myStatements = new HashMap<>(definition.getImplemented());
-    myUniverse = definition.getUniverse();
+    myFieldSet = new FieldSet(definition.getFieldSet());
   }
 
-  public ClassCallExpression(ClassDefinition definition, Map<ClassField, ImplementStatement> statements) {
+  public ClassCallExpression(ClassDefinition definition, FieldSet fieldSet) {
     super(definition);
-    myStatements = statements;
-    myStatements.putAll(definition.getImplemented());
+    myFieldSet = fieldSet;
   }
 
-  @Override
-  public Expression applyThis(Expression thisExpr) {
-    ClassField parent = getDefinition().getEnclosingThisField();
-    assert !myStatements.containsKey(parent);
-    Map<ClassField, ImplementStatement> newStatements = new HashMap<>(myStatements);
-    newStatements.put(parent, new ImplementStatement(null, thisExpr));
-    return ClassCall(getDefinition(), newStatements);
+  public FieldSet getFieldSet() {
+    return myFieldSet;
+  }
+
+  public Collection<Map.Entry<ClassField, FieldSet.Implementation>> getImplementedHere() {
+    // TODO[java8]: turn into a stream
+    Set<Map.Entry<ClassField, FieldSet.Implementation>> result = new HashSet<>();
+    for (Map.Entry<ClassField, FieldSet.Implementation> entry : myFieldSet.getImplemented()) {
+      if (getDefinition().getFieldSet().isImplemented(entry.getKey())) continue;
+      result.add(entry);
+    }
+    return result;
   }
 
   @Override
@@ -42,61 +44,18 @@ public class ClassCallExpression extends DefCallExpression {
     return (ClassDefinition) super.getDefinition();
   }
 
-  public Map<ClassField, ImplementStatement> getImplementStatements() {
-    return myStatements;
-  }
-
-  public TypeUniverse getUniverse() {
-    if (myUniverse == null) {
-      Substitution substitution = null;
-      for (ClassField field : getDefinition().getFields()) {
-        if (field.hasErrors()) {
-          continue;
-        }
-
-        if (!myStatements.containsKey(field)) {
-          if (substitution == null) {
-            substitution = new Substitution();
-            for (Map.Entry<ClassField, ImplementStatement> entry : myStatements.entrySet()) {
-              if (entry.getValue().term != null) {
-                substitution.add(entry.getKey(), Lam(entry.getKey().getThisParameter(), entry.getValue().term));
-              }
-            }
-          }
-
-          Expression expr1 = field.getBaseType().subst(substitution).normalize(NormalizeVisitor.Mode.WHNF);
-          UniverseExpression expr = null;
-          if (expr1.toOfType() != null) {
-            Expression expr2 = expr1.toOfType().getExpression().getType();
-            if (expr2 != null) {
-              expr = expr2.normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
-            }
-          }
-          if (expr == null) {
-            expr = expr1.getType().normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
-          }
-
-          TypeUniverse fieldUniverse = expr != null ? expr.getUniverse() : field.getUniverse();
-          if (myUniverse == null) {
-            myUniverse = fieldUniverse;
-            continue;
-          }
-          myUniverse = myUniverse.max(fieldUniverse);
-          assert expr != null;
-        }
-      }
-    }
-
-    if (myUniverse == null) {
-      myUniverse = TypeUniverse.PROP;
-    }
-
-    return myUniverse;
+  @Override
+  public UniverseExpression getType() {
+    return new UniverseExpression(myFieldSet.getUniverse(this));
   }
 
   @Override
-  public UniverseExpression getType() {
-    return new UniverseExpression(getUniverse());
+  public Expression applyThis(Expression thisExpr) {
+    FieldSet newFieldSet = new FieldSet(myFieldSet);
+    ClassField parent = getDefinition().getEnclosingThisField();
+    boolean success = newFieldSet.implementField(parent, new FieldSet.Implementation(null, thisExpr), this);
+    assert success;
+    return ClassCall(getDefinition(), newFieldSet);
   }
 
   @Override
@@ -104,22 +63,21 @@ public class ClassCallExpression extends DefCallExpression {
     return visitor.visitClassCall(this, params);
   }
 
-  public Map<ClassField, ImplementStatement> getImplementedFields() {
-    return myStatements;
-  }
-
-  public static class ImplementStatement {
-    public Expression type;
-    public Expression term;
-
-    public ImplementStatement(Expression type, Expression term) {
-      this.type = type;
-      this.term = term;
-    }
-  }
-
   @Override
   public ClassCallExpression toClassCall() {
     return this;
+  }
+
+  public <P> ClassCallExpression applyVisitorToImplementedHere(ExpressionVisitor<P, Expression> visitor, P arg) {
+    FieldSet newFieldSet = new FieldSet();
+    newFieldSet.addFieldsFrom(getFieldSet(), this);
+    for (Map.Entry<ClassField, FieldSet.Implementation> entry : getFieldSet().getImplemented()) {
+      if (getDefinition().getFieldSet().isImplemented(entry.getKey())) {
+        newFieldSet.implementField(entry.getKey(), entry.getValue(), this);
+      } else {
+        newFieldSet.implementField(entry.getKey(), new FieldSet.Implementation(entry.getValue().thisParam, entry.getValue().term.accept(visitor, arg)), this);
+      }
+    }
+    return ClassCall(getDefinition(), newFieldSet);
   }
 }

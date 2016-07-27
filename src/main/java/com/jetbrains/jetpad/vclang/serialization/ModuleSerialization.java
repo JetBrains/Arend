@@ -183,8 +183,8 @@ public class ModuleSerialization {
 
     writeUniverse(visitor, definition.getUniverse());
 
+    /* FIXME[serial]
     visitor.getDataStream().writeInt(definition.getFields().size());
-    /*
     for (Map.Entry<ClassField, ClassDefinition.FieldImplementation> entry : definition.getFieldsMap()) {
       ClassField field = entry.getKey();
       visitor.getDataStream().writeUTF(entry.getValue().name);
@@ -202,7 +202,7 @@ public class ModuleSerialization {
         field.getType().accept(visitor, null);
       }
     }
-    */ // HACK
+    */
 
     return errors;
   }

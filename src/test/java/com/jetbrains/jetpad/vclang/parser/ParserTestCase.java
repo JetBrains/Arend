@@ -23,7 +23,7 @@ public class ParserTestCase {
     }
     @Override
     public String toString() {
-      return "$ParserTestCase$";
+      return "$TestCase$";
     }
   };
 

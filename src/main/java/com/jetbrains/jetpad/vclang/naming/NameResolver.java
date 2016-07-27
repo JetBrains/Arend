@@ -1,26 +1,24 @@
 package com.jetbrains.jetpad.vclang.naming;
 
-import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
-import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.namespace.*;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
-import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class NameResolver {
   private final ModuleNamespaceProvider myModuleNamespaceProvider;
   private final StaticNamespaceProvider myStaticNamespaceProvider;
+  private final DynamicNamespaceProvider myDynamicNamespaceProvider;
 
-  public NameResolver(ModuleNamespaceProvider myModuleNamespaceProvider, StaticNamespaceProvider myStaticNamespaceProvider) {
+  public NameResolver(ModuleNamespaceProvider myModuleNamespaceProvider, StaticNamespaceProvider myStaticNamespaceProvider, DynamicNamespaceProvider myDynamicNamespaceProvider) {
     this.myModuleNamespaceProvider = myModuleNamespaceProvider;
     this.myStaticNamespaceProvider = myStaticNamespaceProvider;
+    this.myDynamicNamespaceProvider = myDynamicNamespaceProvider;
   }
 
   public ModuleNamespace resolveModuleNamespace(final List<String> path) {
@@ -108,11 +106,25 @@ public class NameResolver {
     return ns.getRegisteredClass();
   }
 
+  public Referable resolveClassField(Referable classDefiniton, String name) {
+    return dynamicNamespaceFor(classDefiniton).resolveName(name);
+  }
+
   public Namespace staticNamespaceFor(Referable ref) {
     if (ref instanceof Definition) {
       return ((Definition) ref).getOwnNamespace();
     } else if (ref instanceof Abstract.Definition) {
       return myStaticNamespaceProvider.forDefinition((Abstract.Definition) ref);
+    } else {
+      throw new IllegalStateException();
+    }
+  }
+
+  public Namespace dynamicNamespaceFor(Referable ref) {
+    if (ref instanceof ClassDefinition) {
+      return ((ClassDefinition) ref).getInstanceNamespace();
+    } else if (ref instanceof Abstract.ClassDefinition) {
+      return myDynamicNamespaceProvider.forClass((Abstract.ClassDefinition) ref);
     } else {
       throw new IllegalStateException();
     }

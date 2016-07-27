@@ -104,7 +104,7 @@ public class TypeCheckingTestCase {
   }
 
   public static TypeCheckClassResult typeCheckClass(String text, int nameErrors, int tcErrors) {
-    Concrete.ClassDefinition classDefinition = parseClass("text", text);
+    Concrete.ClassDefinition classDefinition = parseClass("test", text);
     resolveNamesClass(classDefinition, nameErrors);
     TypecheckerState state = typeCheckClass(classDefinition, tcErrors);
     return new TypeCheckClassResult(state, classDefinition);

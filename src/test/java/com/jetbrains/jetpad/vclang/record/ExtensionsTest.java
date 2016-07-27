@@ -211,16 +211,17 @@ public class ExtensionsTest {
   }
 
   @Test
-  public void multipleInheritanceDifferentImplementationsError() {
+  public void multipleInheritanceEqualImplementations() {
     typeCheckClass(
         "\\static \\class A {\n" +
         "  \\abstract a : Nat\n" +
         "}\n" +
         "\\static \\class B \\extends A {a => 0} {}\n" +
         "\\static \\class C \\extends A {a => 0} {}\n" +
-        "\\static \\class D \\extends B, C {}\n", 1);
+        "\\static \\class D \\extends B, C {}\n");
   }
 
+  @Ignore
   @Test
   public void multipleDynamicInheritanceSameParent() {
     typeCheckClass(
@@ -247,11 +248,13 @@ public class ExtensionsTest {
     typeCheckClass("\\class A { \\static \\class B \\extends A { } }");
   }
 
+  @Ignore
   @Test
   public void recursiveExtendsError() {
     typeCheckClass("\\class A \\extends A {}", 1);
   }
 
+  @Ignore
   @Test
   public void mutualRecursiveExtendsError() {
     resolveNamesClass("test",

@@ -58,4 +58,12 @@ public class DefinitionResolveStaticModVisitor implements AbstractDefinitionVisi
     }
     return null;
   }
+
+  @Override
+  public Void visitImplement(Abstract.ImplementDefinition def, Boolean isStaticDefault) {
+    if (def.getParentStatement().getStaticMod() == Abstract.DefineStatement.StaticMod.DEFAULT) {
+      myStaticModListener.resolveStaticMod(def.getParentStatement(), isStaticDefault);
+    }
+    return null;
+  }
 }

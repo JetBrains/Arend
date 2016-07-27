@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.EtaNormalization;
@@ -212,68 +213,32 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     return defCall2 != null && expr1.getDefinition() == defCall2.getDefinition();
   }
 
+  private boolean checkSubclassImpl(FieldSet fieldSet1, ClassCallExpression classCall2) {
+    for (Map.Entry<ClassField, FieldSet.Implementation> entry : classCall2.getImplementedHere()) {
+      FieldSet.Implementation impl1 = fieldSet1.getImplementation(entry.getKey());
+      if (impl1 == null) return false;
+      Equations.CMP oldCMP = myCMP;
+      myCMP = Equations.CMP.EQ;
+      if (!compare(impl1.term, entry.getValue().term)) return false;
+      myCMP = oldCMP;
+    }
+    return true;
+  }
+
   @Override
   public Boolean visitClassCall(ClassCallExpression expr1, Expression expr2) {
     ClassCallExpression classCall2 = expr2.toClassCall();
-    if (classCall2 == null
-        || myCMP == Equations.CMP.EQ && expr1.getDefinition() != classCall2.getDefinition()
-        || myCMP == Equations.CMP.LE && !expr1.getDefinition().isSubClassOf(classCall2.getDefinition())
-        || myCMP == Equations.CMP.GE && !classCall2.getDefinition().isSubClassOf(expr1.getDefinition())) {
-      return false;
-    }
+    if (classCall2 == null) return false;
 
-    Map<ClassField, ClassCallExpression.ImplementStatement> implStats1 = expr1.getImplementStatements();
-    Map<ClassField, ClassCallExpression.ImplementStatement> implStats2 = classCall2.getImplementStatements();
-    if (myCMP == Equations.CMP.EQ && implStats1.size() != implStats2.size() ||
-        myCMP == Equations.CMP.LE && implStats1.size() <  implStats2.size() ||
-        myCMP == Equations.CMP.GE && implStats1.size() >  implStats2.size()) {
-      return false;
-    }
-    Map<ClassField, ClassCallExpression.ImplementStatement> minImplStats = implStats1.size() <= implStats2.size() ? implStats1 : implStats2;
-    Map<ClassField, ClassCallExpression.ImplementStatement> maxImplStats = implStats1.size() <= implStats2.size() ? implStats2 : implStats1;
+    boolean subclass2of1Test = myCMP.equals(Equations.CMP.LE) || classCall2.getDefinition().isSubClassOf(expr1.getDefinition());
+    boolean subclass1of2Test = myCMP.equals(Equations.CMP.GE) || expr1.getDefinition().isSubClassOf(classCall2.getDefinition());
+    if (!(subclass1of2Test && subclass2of1Test)) return false;
 
-    Equations.CMP oldCMP = myCMP;
-    for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> entry : minImplStats.entrySet()) {
-      ClassCallExpression.ImplementStatement maxStat = maxImplStats.get(entry.getKey());
-      if (maxStat == null) {
-        return false;
-      }
-      ClassCallExpression.ImplementStatement implStat1 = implStats1.size() <= implStats2.size() ? entry.getValue() : maxStat;
-      ClassCallExpression.ImplementStatement implStat2 = implStats1.size() <= implStats2.size() ? maxStat : entry.getValue();
-
-      if (implStat1.term != null && implStat2.term != null) {
-        myCMP = Equations.CMP.EQ;
-        if (!compare(implStat1.term, implStat2.term)) {
-          return false;
-        }
-      } else
-      if (implStat1.term != null || implStat2.term != null) {
-        return false;
-      }
-      myCMP = oldCMP;
-
-      if (implStat1.type == null && implStat2.type == null) {
-        continue;
-      }
-      Expression type1 = implStat1.type;
-      Expression type2 = implStat2.type;
-      if (type1 == null) {
-        if (myCMP == Equations.CMP.GE) {
-          continue;
-        }
-        type1 = entry.getKey().getBaseType();
-      }
-      if (type2 == null) {
-        if (myCMP == Equations.CMP.LE) {
-          continue;
-        }
-        type2 = entry.getKey().getBaseType();
-      }
-      if (!compare(type1, type2)) {
-        return false;
-      }
-    }
-    return true;
+    FieldSet fieldSet1 = expr1.getFieldSet();
+    FieldSet fieldSet2 = classCall2.getFieldSet();
+    boolean implAllOf1Test = myCMP.equals(Equations.CMP.LE) || checkSubclassImpl(fieldSet2, expr1);
+    boolean implAllOf2Test = myCMP.equals(Equations.CMP.GE) || checkSubclassImpl(fieldSet1, classCall2);
+    return implAllOf1Test && implAllOf2Test;
   }
 
   private boolean compareReference(ReferenceExpression expr1, Expression expr2, boolean first) {
@@ -473,13 +438,9 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
     ClassCallExpression classCall2 = expr2.getType().toClassCall();
 
-    for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> entry : classCall.getImplementStatements().entrySet()) {
-      if (entry.getValue().term == null) {
-        return false;
-      }
-
-      ClassCallExpression.ImplementStatement stat2 = classCall2.getImplementStatements().get(entry.getKey());
-      if (!compare(entry.getValue().term, stat2 != null && stat2.term != null ? stat2.term : FieldCall(entry.getKey()).applyThis(expr2))) {
+    for (Map.Entry<ClassField, FieldSet.Implementation> entry : classCall.getFieldSet().getImplemented()) {
+      FieldSet.Implementation impl2 = classCall2.getFieldSet().getImplementation(entry.getKey());
+      if (!compare(entry.getValue().term, impl2 != null ? impl2.term : FieldCall(entry.getKey()).applyThis(expr2))) {
         return false;
       }
     }

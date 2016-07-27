@@ -367,6 +367,7 @@ public final class Concrete {
 
   public static class ImplementStatement extends SourceNode implements Abstract.ImplementStatement {
     private final String myName;
+    private Referable myImplementedField;
     private final Expression myExpression;
 
     public ImplementStatement(Position position, String identifier, Expression expression) {
@@ -378,6 +379,15 @@ public final class Concrete {
     @Override
     public String getName() {
       return myName;
+    }
+
+    @Override
+    public Referable getImplementedField() {
+      return myImplementedField;
+    }
+
+    public void setImplementedField(Referable newImplementedField) {
+      myImplementedField = newImplementedField;
     }
 
     @Override
@@ -880,6 +890,35 @@ public final class Concrete {
     @Override
     public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitAbstract(this, params);
+    }
+  }
+
+  public static class ImplementDefinition extends Definition implements Abstract.ImplementDefinition {
+    private Referable myImplemented;
+    private final Expression myExpression;
+
+    public ImplementDefinition(Position position, String name, Expression expression) {
+      super(position, name, Abstract.Binding.DEFAULT_PRECEDENCE);
+      myExpression = expression;
+    }
+
+    @Override
+    public Referable getImplemented() {
+      return myImplemented;
+    }
+
+    public void setImplemented(Referable implemented) {
+      myImplemented = implemented;
+    }
+
+    @Override
+    public Expression getExpression() {
+      return myExpression;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitImplement(this, params);
     }
   }
 

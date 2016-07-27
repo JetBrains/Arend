@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ConstructorClause;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
@@ -56,10 +57,8 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
     if (myBindings.contains(expr.getDefinition())) {
       return true;
     }
-    for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> elem : expr.getImplementStatements().entrySet()) {
-      if (elem.getValue().type != null && elem.getValue().type.accept(this, null) || elem.getValue().term != null && elem.getValue().term.accept(this, null)) {
-        return true;
-      }
+    for (Map.Entry<ClassField, FieldSet.Implementation> entry : expr.getImplementedHere()) {
+      if (entry.getValue().term.accept(this, null)) return true;
     }
     return false;
   }

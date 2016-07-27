@@ -83,7 +83,7 @@ public class ConsoleMain {
 
     final SimpleModuleNamespaceProvider moduleNsProvider = new SimpleModuleNamespaceProvider();
     final ListErrorReporter errorReporter = new ListErrorReporter();
-    final NameResolver nameResolver = new NameResolver(moduleNsProvider, new SimpleStaticNamespaceProvider());
+    final NameResolver nameResolver = new NameResolver(moduleNsProvider, new SimpleStaticNamespaceProvider(), new SimpleDynamicNamespaceProvider());
     final OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(errorReporter, nameResolver, new ConcreteResolveListener(), new SimpleStaticNamespaceProvider(), new SimpleDynamicNamespaceProvider());
     final OneshotSourceInfoCollector srcInfoCollector = new OneshotSourceInfoCollector();
     final ErrorFormatter errf = new ErrorFormatter(srcInfoCollector.sourceInfoProvider);

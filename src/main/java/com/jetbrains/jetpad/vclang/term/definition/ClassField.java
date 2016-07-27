@@ -32,10 +32,6 @@ public class ClassField extends Definition {
     return myThisParameter;
   }
 
-  public void setThisParameter(DependentLink thisParameter) {
-    myThisParameter = thisParameter;
-  }
-
   public Expression getBaseType() {
     return myType;
   }

@@ -14,6 +14,7 @@ import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
+import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
@@ -51,7 +52,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     }
   }
 
-  private DependentLink getThisParam(ClassDefinition enclosingClass) {
+  private DependentLink createThisParam(ClassDefinition enclosingClass) {
     assert enclosingClass != null;
     return param("\\this", ClassCall(enclosingClass));
   }
@@ -77,7 +78,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build(def);
     LinkList list = new LinkList();
     if (enclosingClass != null) {
-      DependentLink thisParam = getThisParam(enclosingClass);
+      DependentLink thisParam = createThisParam(enclosingClass);
       context.add(thisParam);
       list.append(thisParam);
       visitor.setThisClass(enclosingClass, Reference(thisParam));
@@ -323,7 +324,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build(def);
     LinkList list = new LinkList();
     if (enclosingClass != null) {
-      DependentLink thisParam = getThisParam(enclosingClass);
+      DependentLink thisParam = createThisParam(enclosingClass);
       context.add(thisParam);
       list.append(thisParam);
       visitor.setThisClass(enclosingClass, Reference(thisParam));
@@ -541,7 +542,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     throw new IllegalStateException();
   }
 
-  public Constructor visitConstructor(Abstract.Constructor def, Abstract.DataDefinition abstractData, DataDefinition dataDefinition, ClassDefinition enclosingClass, CheckTypeVisitor visitor) {
+  private Constructor visitConstructor(Abstract.Constructor def, Abstract.DataDefinition abstractData, DataDefinition dataDefinition, ClassDefinition enclosingClass, CheckTypeVisitor visitor) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(visitor.getContext())) {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
       String name = def.getName();
@@ -720,21 +721,22 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
   @Override
   public ClassDefinition visitClass(Abstract.ClassDefinition def, ClassDefinition enclosingClass) {
+    boolean classOk = true;
+    List<Binding> context = new ArrayList<>();
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build(def);
+
+    if (enclosingClass != null) {
+      DependentLink thisParam = createThisParam(enclosingClass);
+      context.add(thisParam);
+      visitor.setThisClass(enclosingClass, Reference(thisParam));
+    }
+
+    FieldSet fieldSet = new FieldSet();
+    Set<ClassDefinition> superClasses = new HashSet<>();
     try {
-      boolean classOk = true;
-
-      Map<ClassField, ClassCallExpression.ImplementStatement> implemented = new HashMap<>();
-      ClassDefinition typedDef = new ClassDefinition(def.getName(), implemented, SimpleStaticNamespaceProvider.INSTANCE.forDefinition(def), SimpleDynamicNamespaceProvider.INSTANCE.forClass(def));
+      ClassDefinition typedDef = new ClassDefinition(def.getName(), fieldSet, superClasses, SimpleStaticNamespaceProvider.INSTANCE.forDefinition(def), SimpleDynamicNamespaceProvider.INSTANCE.forClass(def));
       typedDef.setThisClass(enclosingClass);
-
-      final List<Binding> context = new ArrayList<>();
-      CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build(def);
-
-      if (enclosingClass != null) {
-        DependentLink thisParameter = getThisParam(enclosingClass);
-        context.add(thisParameter);
-        visitor.setThisClass(enclosingClass, Apps(FieldCall(typedDef.getEnclosingThisField()), Reference(thisParameter)));
-      }
+      ClassCallExpression thisClassCall = typedDef.getDefCall();
 
       for (Abstract.SuperClass aSuperClass : def.getSuperClasses()) {
         CheckTypeVisitor.Result result = aSuperClass.getSuperClass().accept(visitor, Universe());
@@ -746,48 +748,54 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
           continue;
         }
 
-        boolean parentOk = true;
-        for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> entry : typeCheckedSuperClass.getImplementedFields().entrySet()) {
-          ClassCallExpression.ImplementStatement old = implemented.put(entry.getKey(), entry.getValue());
-          if (old != null && !old.equals(entry.getValue())) {
-            parentOk = false;
+        fieldSet.addFieldsFrom(typeCheckedSuperClass.getFieldSet(), thisClassCall);
+        superClasses.add(typeCheckedSuperClass.getDefinition());
+
+        for (Map.Entry<ClassField, FieldSet.Implementation> entry : typeCheckedSuperClass.getFieldSet().getImplemented()) {
+          if (!fieldSet.implementField(entry.getKey(), entry.getValue(), thisClassCall)) {
+            classOk = false;
             myErrorReporter.report(new TypeCheckingError("Implementations of '" + entry.getKey().getName() + "' differ", aSuperClass.getSuperClass()));  // FIXME[error] report proper, especially in case of \\parent
           }
         }
+      }
 
-        if (parentOk) {
-          typedDef.addSuperClass(typeCheckedSuperClass);
-        } else {
-          classOk = false;
-        }
+      if (enclosingClass != null) {
+        assert context.size() == 1;
+        context.remove(0);
+      } else {
+        assert context.size() == 0;
       }
 
       for (Abstract.Statement statement : def.getStatements()) {
         if (statement instanceof Abstract.DefineStatement) {
           Abstract.Definition definition = ((Abstract.DefineStatement) statement).getDefinition();
           if (definition instanceof Abstract.AbstractDefinition) {
-            Definition memberDefinition = myState.getTypechecked(definition);
-
-            if (memberDefinition == null) {
-              memberDefinition = visitClassField((Abstract.AbstractDefinition) definition, typedDef);
+            ClassField field = visitClassField((Abstract.AbstractDefinition) definition, typedDef);
+            fieldSet.addField(field, thisClassCall);
+          } else if (definition instanceof Abstract.ImplementDefinition) {
+            Definition implementedDef = myState.getTypechecked(((Abstract.ImplementDefinition) definition).getImplemented());
+            if (!(implementedDef instanceof ClassField)) {
+              myErrorReporter.report(new TypeCheckingError(def, "'" + implementedDef.getName() + "' is not a field", definition));
+              continue;
+            }
+            ClassField field = (ClassField) implementedDef;
+            if (fieldSet.isImplemented(field)) {
+              myErrorReporter.report(new TypeCheckingError(def, "Field '" + field.getName() + "' is already implemented", definition));
+              continue;
             }
 
-            if (memberDefinition instanceof ClassField) {
-              ClassField field = (ClassField) memberDefinition;
-              TypeUniverse oldUniverse = typedDef.getUniverse();
-              TypeUniverse newUniverse = field.getUniverse();
-              //Universe.CompareResult cmp = oldUniverse.compare(newUniverse);
-             // if (cmp == null) {
-             //   String error = "UniverseOld " + newUniverse + " of abstract definition '" + field.getName() + "' is not compatible with universe " + oldUniverse + " of previous abstract definitions";
-             //   myErrorReporter.report(new TypeCheckingError(myNamespaceMember.getResolvedName(), error, definition));
-             // } else {
-                typedDef.setUniverse(new TypeUniverse(oldUniverse.getPLevel().max(newUniverse.getPLevel()), oldUniverse.getHLevel().max(newUniverse.getHLevel())));
-                typedDef.addField(field);
-             // }
+            DependentLink thisParameter = createThisParam(typedDef);
+            visitor.setThisClass(typedDef, Reference(thisParameter));
+            CheckTypeVisitor.Result result = fieldSet.implementField(field, ((Abstract.ImplementDefinition) definition).getExpression(), visitor, thisClassCall, thisParameter);
+            if (result == null || result.expression.toError() != null) {
+              classOk = false;
             }
           }
+        } else {
+          throw new IllegalStateException();
         }
       }
+      //typedDef.setUniverse(fieldSet.getUniverse());
 
       myState.record(def, typedDef);
       typedDef.hasErrors(!classOk);
@@ -803,7 +811,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
     List<? extends Abstract.Argument> arguments = def.getArguments();
     Expression typedResultType;
-    DependentLink thisParameter = getThisParam(enclosingClass);
+    DependentLink thisParameter = createThisParam(enclosingClass);
     List<Binding> context = new ArrayList<>();
     context.add(thisParameter);
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).thisClass(enclosingClass, Reference(thisParameter)).build(def);
@@ -866,5 +874,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     typedDef.setUniverse(new TypeUniverse(plevel, resultTypeUniverse.getHLevel()));
     typedDef.setThisClass(enclosingClass);
     return typedDef;
+  }
+
+  @Override
+  public Definition visitImplement(Abstract.ImplementDefinition def, ClassDefinition params) {
+    throw new IllegalStateException();
   }
 }

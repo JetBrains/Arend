@@ -1,15 +1,12 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTreeNodeVisitor<Void, ElimTreeNode> {
   @Override
@@ -47,11 +44,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
 
   @Override
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
-    Map<ClassField, ClassCallExpression.ImplementStatement> statements = new HashMap<>();
-    for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> entry : expr.getImplementStatements().entrySet()) {
-      statements.put(entry.getKey(), new ClassCallExpression.ImplementStatement(entry.getValue().type == null ? null : entry.getValue().type.accept(this, null), entry.getValue().term == null ? null : entry.getValue().term.accept(this, null)));
-    }
-    return new ClassCallExpression(expr.getDefinition(), statements);
+    return expr.applyVisitorToImplementedHere(this, params);
   }
 
   @Override

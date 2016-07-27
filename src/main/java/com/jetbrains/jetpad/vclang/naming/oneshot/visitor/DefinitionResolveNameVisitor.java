@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.naming.oneshot.visitor;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
+import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
@@ -9,6 +10,7 @@ import com.jetbrains.jetpad.vclang.naming.oneshot.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.scope.*;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
+import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 
 import java.util.ArrayList;
@@ -208,6 +210,28 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       myErrorReporter.report(e.toError());
     }
 
+    return null;
+  }
+
+  @Override
+  public Void visitImplement(Abstract.ImplementDefinition def, Boolean params) {
+    if (myResolveListener == null) {
+      return null;
+    }
+
+    Abstract.Definition parentDef = def.getParentStatement().getParentDefinition();
+
+    Referable referable = null;
+    if (parentDef instanceof Abstract.ClassDefinition) {
+      referable = myNameResolver.resolveClassField(parentDef, def.getName());
+    }
+    if (referable instanceof Abstract.AbstractDefinition) {
+      myResolveListener.implementResolved(def, referable);
+    } else {
+      myErrorReporter.report(new NotInScopeError(def, def.getName()));
+    }
+
+    def.getExpression().accept(new ExpressionResolveNameVisitor(myParentScope, myContext, myNameResolver, myErrorReporter, myResolveListener), null);
     return null;
   }
 
