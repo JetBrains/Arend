@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
@@ -374,9 +374,9 @@ public class ListEquations implements Equations {
   }
 
   @Override
-  public boolean add(Type type, Binding binding, Abstract.SourceNode sourceNode) {
+  public boolean add(Type type, Expression expr, Abstract.SourceNode sourceNode) {
     // TODO
-    if (type.getParameters().hasNext()) {
+    if (type.getPiParameters().hasNext()) {
       return false;
     }
     return true;
@@ -639,10 +639,10 @@ public class ListEquations implements Equations {
   }
 
   @Override
-  public Substitution getInferenceVariables(Set<InferenceBinding> bindings, boolean onlyPreciseSolutions) {
+  public Substitution getInferenceVariables(Set<InferenceBinding> bindings, boolean isFinal) {
     Substitution result = new Substitution();
     boolean was;
-    if (!bindings.isEmpty() && (!myExactSolutions.isEmpty() || (!myEqSolutions.isEmpty() && !onlyPreciseSolutions))) {
+    if (!bindings.isEmpty() && (!myExactSolutions.isEmpty() || (!myEqSolutions.isEmpty() && isFinal))) {
       do {
         was = false;
         InferenceBinding binding = null;
@@ -667,7 +667,7 @@ public class ListEquations implements Equations {
           }
         }
 
-        if (!was && !onlyPreciseSolutions) {
+        if (!was && isFinal) {
           for (Iterator<Map.Entry<InferenceBinding, EqSetSolution>> it = myEqSolutions.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<InferenceBinding, EqSetSolution> entry = it.next();
 
@@ -696,7 +696,7 @@ public class ListEquations implements Equations {
       } while (was);
     }
 
-    if (!bindings.isEmpty() && (!myExactLevelSolutions.isEmpty() || (!onlyPreciseSolutions))) {
+    if (!bindings.isEmpty() && (!myExactLevelSolutions.isEmpty() || isFinal)) {
       do {
         was = false;
         InferenceBinding binding = null;
@@ -723,7 +723,7 @@ public class ListEquations implements Equations {
           }
         }
 
-        if (!was && !onlyPreciseSolutions) {
+        if (!was && isFinal) {
           for (Iterator<Map.Entry<InferenceBinding, EqSetLevelSolution>> it = myEqLevelSolutions.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<InferenceBinding, EqSetLevelSolution> entry = it.next();
 
@@ -868,17 +868,13 @@ public class ListEquations implements Equations {
   public void reportErrors(ErrorReporter errorReporter) {
     myErrorReporter.reportTo(errorReporter);
     if (myErrorReporter.getErrorList().isEmpty()) {
-      if (!myEquations.isEmpty() || !myLevelEquations.isEmpty()) {
-        List<CmpEquation> equations = new ArrayList<>(myEquations.size());
+      if (!myEquations.isEmpty()) {
+        List<com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equation> equations = new ArrayList<>(myEquations.size());
         for (Equation equation : myEquations) {
-          equations.add((CmpEquation) equation);
+          CmpEquation cmpEq = (CmpEquation) equation;
+          equations.add(new com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equation(cmpEq.expr1, cmpEq.expr2, cmpEq.cmp, cmpEq.sourceNode));
         }
-
-        List<LevelCmpEquation> levEquations = new ArrayList<>(myLevelEquations.size());
-        for (LevelEquation equation : myLevelEquations) {
-          levEquations.add((LevelCmpEquation) equation);
-        }
-        errorReporter.report(new UnsolvedEquations(equations, levEquations));
+        errorReporter.report(new UnsolvedEquations(equations));
       }
 
       if (!myExactSolutions.isEmpty() || !myEqSolutions.isEmpty() || !myExactLevelSolutions.isEmpty() || !myEqLevelSolutions.isEmpty()) {
@@ -897,12 +893,11 @@ public class ListEquations implements Equations {
         }
         errorReporter.report(new UnsolvedBindings(bindings));
       }
-
-
     } else {
       myErrorReporter.getErrorList().clear();
     }
 
     clear();
   }
+
 }

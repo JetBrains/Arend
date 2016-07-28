@@ -236,7 +236,7 @@ public class TypeCheckingElim {
 
     if (elimTreeResult instanceof PatternsToElimTreeConversion.OKResult) {
       result.elimTree = ((PatternsToElimTreeConversion.OKResult) elimTreeResult).elimTree;
-      result.update(false);
+      result.update(true);
       return result;
     } else if (elimTreeResult instanceof PatternsToElimTreeConversion.EmptyReachableResult) {
       for (int i : ((PatternsToElimTreeConversion.EmptyReachableResult) elimTreeResult).reachable) {

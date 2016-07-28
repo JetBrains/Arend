@@ -30,6 +30,10 @@ public class ExprSubstitution {
     return mySubstExprs.get(binding);
   }
 
+  public void clear() {
+    mySubstExprs.clear();
+  }
+
   public void add(Callable binding, Expression expression) {
     if (mySubstExprs.isEmpty()) {
       mySubstExprs = new HashMap<>();

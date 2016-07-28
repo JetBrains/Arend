@@ -223,7 +223,7 @@ public class ModuleSerialization {
   private static void writeType(SerializeVisitor visitor, Type type) throws IOException {
     if (type instanceof PiUniverseType) {
       visitor.getDataStream().writeBoolean(true);
-      writeParameters(visitor, type.getParameters());
+      writeParameters(visitor, type.getPiParameters());
       writeSortMax(visitor, ((PiUniverseType) type).getSorts());
     } else
     if (type instanceof Expression) {

@@ -8,7 +8,11 @@ import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.StringPrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
-import com.jetbrains.jetpad.vclang.term.context.binding.*;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.ExpressionInferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.LambdaInferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
@@ -220,7 +224,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (result == null) return null;
     if (expectedType == null) {
       expression.setWellTyped(myContext, result.expression);
-      result.update(true);
+      result.update(false);
       return result;
     }
     return myArgsInference.inferTail(result, expectedType, expression);
@@ -238,7 +242,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   public Result checkType(Abstract.Expression expr, Expression expectedType) {
     Result result = typeCheck(expr, expectedType);
     if (result == null) return null;
-    result.update(false);
+    result.update(true);
     result.reportErrors(myErrorReporter);
     if (result.hasUnsolvedVariables()) {
       return null;
@@ -477,7 +481,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           result.addUnsolvedVariable((InferenceBinding) bindingType.getType().toUniverse().getSort().getPLevel().getVar());
           result.addUnsolvedVariable((InferenceBinding) bindingType.getType().toUniverse().getSort().getHLevel().getVar());
           result.addUnsolvedVariable(bindingType);
-          Substitution substitution = result.getSubstitution(false);
+          Substitution substitution = result.getSubstitution();
           if (!substitution.isEmpty()) {
             bodyResult.expression = bodyResult.expression.subst(substitution.exprSubst, substitution.levelSubst);
             bodyResult.type = bodyResult.type.subst(substitution.exprSubst, substitution.levelSubst);
@@ -633,7 +637,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     tupleResult.expression = Tuple(fields, type);
     tupleResult.type = type;
     tupleResult = checkResult(expectedTypeNorm, tupleResult, expr);
-    tupleResult.update(true);
+    tupleResult.update(false);
     return tupleResult;
   }
 
@@ -899,7 +903,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     ClassCallExpression resultExpr = ClassCall(baseClass, typeCheckedStatements);
     classExtResult.expression = resultExpr;
     classExtResult.type = new PiUniverseType(EmptyDependentLink.getInstance(), resultExpr.getSorts());
-    classExtResult.update(true);
+    classExtResult.update(false);
     return checkResult(expectedType, classExtResult, expr);
   }
 

@@ -8,12 +8,12 @@ import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.ListEquations;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equation;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -62,16 +62,9 @@ public class ErrorFormatter {
 
     if (error instanceof UnsolvedEquations) {
       boolean first = true;
-      for (ListEquations.CmpEquation equation : ((UnsolvedEquations) error).equations) {
+      for (Equation equation : ((UnsolvedEquations) error).equations) {
         if (!first) builder.append('\n');
-        printEquation(builder, equation.expr1, equation.expr2);
-        first = false;
-      }
-
-      first = true;
-      for (ListEquations.LevelCmpEquation equation : ((UnsolvedEquations) error).levelEquations) {
-        if (!first) builder.append('\n');
-        printEquation(builder, equation.expr1, equation.expr2);
+        printEquation(builder, equation.type, equation.expr);
         first = false;
       }
     } else if (error instanceof GoalError) {

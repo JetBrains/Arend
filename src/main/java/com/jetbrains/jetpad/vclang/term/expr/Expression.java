@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
@@ -64,6 +65,7 @@ public abstract class Expression implements PrettyPrintable, Type {
     return accept(new GetTypeVisitor(), null);
   }
 
+  @Override
   public boolean findBinding(Callable binding) {
     return accept(new FindBindingVisitor(Collections.singleton(binding)), null);
   }
@@ -165,9 +167,15 @@ public abstract class Expression implements PrettyPrintable, Type {
   }
 
   @Override
-  public DependentLink getParameters() {
+  public DependentLink getPiParameters() {
     PiExpression pi = normalize(NormalizeVisitor.Mode.WHNF).toPi();
-    return pi == null ? null : pi.getParameters();
+    return pi == null ? EmptyDependentLink.getInstance() : pi.getParameters();
+  }
+
+  @Override
+  public Type getPiCodomain() {
+    PiExpression pi = normalize(NormalizeVisitor.Mode.WHNF).toPi();
+    return pi == null ? this : pi.getCodomain();
   }
 
   @Override

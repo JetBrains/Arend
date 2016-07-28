@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
 import com.jetbrains.jetpad.vclang.term.*;
-import com.jetbrains.jetpad.vclang.term.context.binding.FunctionInferenceBinding;
-import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.FunctionInferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
@@ -101,7 +101,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
             .addArgument(argResult.expression, AppExpression.DEFAULT);
         result.type = result.type.applyExpressions(Arrays.asList(expr1, expr2, argResult.expression));
         result.add(argResult);
-        result.update(true);
+        result.update(false);
         return result;
       }
 
@@ -112,7 +112,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       }
     }
 
-    DependentLink param = result.type.getParameters();
+    DependentLink param = result.type.getPiParameters();
     if (param == null) {
       TypeCheckingError error = new TypeMismatchError(myParentDefinition, new StringPrettyPrintable("A pi type"), result.type, fun);
       fun.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
@@ -136,7 +136,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     result.expression = result.expression.addArgument(argResult.expression, isExplicit ? EnumSet.of(AppExpression.Flag.EXPLICIT, AppExpression.Flag.VISIBLE) : EnumSet.of(AppExpression.Flag.VISIBLE));
     result.type = result.type.applyExpressions(Collections.singletonList(argResult.expression));
     result.add(argResult);
-    result.update(true);
+    result.update(false);
     return result;
   }
 
@@ -244,7 +244,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
     result = myVisitor.checkResult(expectedType, result, expr);
     if (result != null) {
-      result.update(true);
+      result.update(false);
     }
     return result;
   }

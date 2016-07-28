@@ -9,7 +9,6 @@ public abstract class DependentTypeExpression extends Expression {
     myLink = link;
   }
 
-  @Override
   public DependentLink getParameters() {
     return myLink;
   }

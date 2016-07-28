@@ -47,7 +47,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
       return new PiExpression(expr.getParameters(), (Expression) bodyType);
     } else
     if (bodyType instanceof PiUniverseType) {
-      return new PiUniverseType(params(DependentLink.Helper.clone(expr.getParameters()), ((PiUniverseType) bodyType).getParameters()), ((PiUniverseType) bodyType).getSorts());
+      return new PiUniverseType(params(DependentLink.Helper.clone(expr.getParameters()), ((PiUniverseType) bodyType).getPiParameters()), ((PiUniverseType) bodyType).getSorts());
     } else {
       return null;
     }
@@ -61,7 +61,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
       }
     } else
     if (type instanceof PiUniverseType) {
-      if (!((PiUniverseType) type).getParameters().hasNext()) {
+      if (!((PiUniverseType) type).getPiParameters().hasNext()) {
         return ((PiUniverseType) type).getSorts();
       }
     }

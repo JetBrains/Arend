@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
@@ -362,7 +362,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   }
 
   public Abstract.Expression visitPiUniverseType(PiUniverseType type) {
-    return myFactory.makePi(visitTypeArguments(type.getParameters()), visitSortMax(type.getSorts()));
+    return myFactory.makePi(visitTypeArguments(type.getPiParameters()), visitSortMax(type.getSorts()));
   }
 
   @Override

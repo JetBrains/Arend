@@ -1,7 +1,8 @@
 package com.jetbrains.jetpad.vclang.term.expr.type;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -33,8 +34,13 @@ public class PiUniverseType implements Type {
   }
 
   @Override
-  public DependentLink getParameters() {
+  public DependentLink getPiParameters() {
     return myParameters;
+  }
+
+  @Override
+  public PiUniverseType getPiCodomain() {
+    return new PiUniverseType(EmptyDependentLink.getInstance(), mySorts);
   }
 
   @Override
@@ -67,6 +73,11 @@ public class PiUniverseType implements Type {
   public Expression toExpression() {
     Sort sort = mySorts.toSort();
     return sort == null ? null : myParameters.hasNext() ? new PiExpression(myParameters, new UniverseExpression(sort)) : new UniverseExpression(sort);
+  }
+
+  @Override
+  public boolean findBinding(Callable binding) {
+    return DependentLink.Helper.findBinding(myParameters, binding);
   }
 
   public SortMax getSorts() {
@@ -138,7 +149,7 @@ public class PiUniverseType implements Type {
   public boolean isLessOrEquals(Expression expression, Equations equations, Abstract.SourceNode sourceNode) {
     InferenceBinding binding = CompareVisitor.checkIsInferVar(expression);
     if (binding != null) {
-      return equations.add(this, binding, sourceNode);
+      return equations.add(this, expression, sourceNode);
     }
 
     List<DependentLink> params = new ArrayList<>();

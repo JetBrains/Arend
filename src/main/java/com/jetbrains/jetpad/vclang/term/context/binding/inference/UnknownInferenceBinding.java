@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.term.context.binding;
+package com.jetbrains.jetpad.vclang.term.context.binding.inference;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;

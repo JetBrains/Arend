@@ -1,7 +1,8 @@
-package com.jetbrains.jetpad.vclang.term.context.binding;
+package com.jetbrains.jetpad.vclang.term.context.binding.inference;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;

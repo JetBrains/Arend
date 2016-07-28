@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr.type;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
+import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
@@ -22,8 +23,10 @@ public interface Type extends PrettyPrintable {
   Type getImplicitParameters(List<DependentLink> params);
   Type fromPiParameters(List<DependentLink> params);
   Type addParameters(DependentLink params, boolean modify);
-  DependentLink getParameters();
+  DependentLink getPiParameters();
+  Type getPiCodomain();
   Type normalize(NormalizeVisitor.Mode mode);
   Type strip();
   Expression toExpression();
+  boolean findBinding(Callable binding);
 }

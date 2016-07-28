@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 public class PiExpression extends DependentTypeExpression {
@@ -13,6 +14,16 @@ public class PiExpression extends DependentTypeExpression {
   }
 
   public Expression getCodomain() {
+    return myCodomain;
+  }
+
+  @Override
+  public DependentLink getPiParameters() {
+    return getParameters();
+  }
+
+  @Override
+  public Type getPiCodomain() {
     return myCodomain;
   }
 
