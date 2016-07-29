@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class ModuleSerialization {
   public static final byte[] SIGNATURE = {'v', 'c', (byte) 0xb1, 0x0b};
@@ -146,36 +147,36 @@ public class ModuleSerialization {
   public enum DefinitionCodes {
     FUNCTION_CODE {
       @Override
-      FunctionDefinition toDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence) {
-        return new FunctionDefinition(rn, precedence);
+      FunctionDefinition toDefinition(String name, Abstract.Definition.Precedence precedence) {
+        return new FunctionDefinition(name, precedence, null);  // FIXME[serial]
       }
     },
     DATA_CODE {
       @Override
-      DataDefinition toDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence) {
-        return new DataDefinition(rn, precedence);
+      DataDefinition toDefinition(String name, Abstract.Definition.Precedence precedence) {
+        return new DataDefinition(name, precedence);
       }
     },
     CLASS_CODE {
       @Override
-      ClassDefinition toDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence) {
-        return new ClassDefinition(rn);
+      ClassDefinition toDefinition(String name, Abstract.Definition.Precedence precedence) {
+        return new ClassDefinition(name, null, null);  // FIXME[serial]
       }
     },
     CONSTRUCTOR_CODE {
       @Override
-      Constructor toDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence) {
-        return new Constructor(rn, precedence, null);
+      Constructor toDefinition(String name, Abstract.Definition.Precedence precedence) {
+        return new Constructor(name, precedence, null);
       }
     },
     CLASS_FIELD_CODE {
       @Override
-      ClassField toDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence) {
-        return new ClassField(rn, precedence, null, null, null);
+      ClassField toDefinition(String name, Abstract.Definition.Precedence precedence) {
+        return new ClassField(name, precedence, null, null, null);
       }
     };
 
-    abstract Definition toDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence);
+    abstract Definition toDefinition(String name, Abstract.Definition.Precedence precedence);
 
     public static DefinitionCodes getDefinitionCode(Definition definition) {
       if (definition instanceof FunctionDefinition) return FUNCTION_CODE;
@@ -193,7 +194,15 @@ public class ModuleSerialization {
     writeUniverse(visitor, definition.getUniverse());
 
     visitor.getDataStream().writeInt(definition.getFields().size());
-    for (ClassField field : definition.getFields()) {
+    for (Map.Entry<ClassField, ClassDefinition.FieldImplementation> entry : definition.getFieldsMap()) {
+      ClassField field = entry.getKey();
+      visitor.getDataStream().writeUTF(entry.getValue().name);
+      visitor.getDataStream().writeBoolean(entry.getValue().isImplemented());
+      if (entry.getValue().isImplemented()) {
+        writeParameters(visitor, entry.getValue().thisParameter);
+        entry.getValue().implementation.accept(visitor, null);
+      }
+
       visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(field.getResolvedName()));
       writeParameters(visitor, field.getThisParameter());
       visitor.getDataStream().writeBoolean(field.hasErrors());
@@ -209,7 +218,7 @@ public class ModuleSerialization {
   private static int serializeFunctionDefinition(SerializeVisitor visitor, FunctionDefinition definition) throws IOException {
     int errors = definition.hasErrors() ? 1 : 0;
 
-    serializeNamespace(visitor, definition.getStaticNamespace());
+    //serializeNamespace(visitor, definition.getNamespace());
 
     visitor.getDataStream().writeBoolean(definition.typeHasErrors());
     if (!definition.typeHasErrors()) {

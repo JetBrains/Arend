@@ -2,9 +2,8 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.naming.ModuleResolvedName;
-import com.jetbrains.jetpad.vclang.naming.Namespace;
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
+import com.jetbrains.jetpad.vclang.naming.namespace.EmptyNamespace;
+import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -13,11 +12,12 @@ import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.EnumSet;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
-public class Prelude extends Namespace {
+public class Prelude extends SimpleNamespace {
   public static ModuleID moduleID = new ModuleID() {
     @Override
     public ModulePath getModulePath() {
@@ -27,7 +27,7 @@ public class Prelude extends Namespace {
 
   public static ClassDefinition PRELUDE_CLASS;
 
-  public static Namespace PRELUDE = new Prelude();
+  public static SimpleNamespace PRELUDE = new Prelude();
 
   public static FunctionDefinition COERCE;
 
@@ -48,7 +48,7 @@ public class Prelude extends Namespace {
   public static Binding LH = new TypedBinding("lh", CNat());
 
   static {
-    PRELUDE_CLASS = new ClassDefinition(new ModuleResolvedName(moduleID), null);
+    PRELUDE_CLASS = new ClassDefinition("Prelude", PRELUDE, EmptyNamespace.INSTANCE);
     Preprelude.setUniverses();
 
     /* Path */
@@ -200,7 +200,6 @@ public class Prelude extends Namespace {
   }
 
   private Prelude() {
-    super(moduleID);
   }
 
   public static boolean isAt(Definition definition) {
@@ -229,10 +228,5 @@ public class Prelude extends Namespace {
 
   public static boolean isTruncS(Definition definition) {
     return SET_TRUNC_PATH_CON.getResolvedName().getFullName().equals(definition.getResolvedName().getFullName());
-  }
-
-  @Override
-  public Collection<NamespaceMember> getMembers() {
-    throw new IllegalStateException();
   }
 }

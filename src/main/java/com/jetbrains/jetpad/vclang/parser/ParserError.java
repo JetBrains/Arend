@@ -1,27 +1,18 @@
 package com.jetbrains.jetpad.vclang.parser;
 
+import com.jetbrains.jetpad.vclang.module.ModuleID;
+import com.jetbrains.jetpad.vclang.module.error.ModuleLoadingError;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
-import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 
-public class ParserError extends GeneralError {
-  private final Concrete.Position myPosition;
+public class ParserError extends ModuleLoadingError {
+  public final Concrete.Position position;
 
-  public ParserError(ResolvedName module, Concrete.Position position, String message) {
+  public ParserError(ModuleID module, Concrete.Position position, String message) {
     super(module, message);
-    myPosition = position;
+    this.position = position;
   }
 
   public ParserError(Concrete.Position position, String message) {
     this(null, position, message);
-  }
-
-  @Override
-  public String toString() {
-    String msg = printHeader() + myPosition.line + ":" + myPosition.column + ": Parser error";
-    if (getMessage() != null) {
-      msg += ": " + getMessage();
-    }
-    return msg;
   }
 }

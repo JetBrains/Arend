@@ -1,12 +1,9 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.LevelSubstVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
 import java.util.*;
@@ -18,14 +15,14 @@ public class DataDefinition extends Definition {
   private DependentLink myParameters;
   private Map<Constructor, Condition> myConditions;
 
-  public DataDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence) {
-    super(rn, precedence);
+  public DataDefinition(String name, Abstract.Definition.Precedence precedence) {
+    super(name, precedence);
     myConstructors = new ArrayList<>();
     myParameters = EmptyDependentLink.getInstance();
   }
 
-  public DataDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence, TypeUniverse universe, DependentLink parameters) {
-    super(rn, precedence, universe);
+  public DataDefinition(String name, Abstract.Definition.Precedence precedence, TypeUniverse universe, DependentLink parameters) {
+    super(name, precedence, universe);
     hasErrors(false);
     myParameters = parameters;
     myConstructors = new ArrayList<>();
@@ -95,9 +92,8 @@ public class DataDefinition extends Definition {
     return null;
   }
 
-  public NamespaceMember addConstructor(Constructor constructor) {
+  public void addConstructor(Constructor constructor) {
     myConstructors.add(constructor);
-    return constructor.getParentNamespace().addDefinition(constructor);
   }
 
   @Override
@@ -121,9 +117,9 @@ public class DataDefinition extends Definition {
       return this;
     }
     Substitution subst = new Substitution(substitution);
-    DataDefinition newDef = new DataDefinition(getResolvedName(), getPrecedence(), getUniverse().subst(subst.LevelSubst), DependentLink.Helper.subst(myParameters, subst));
+    DataDefinition newDef = new DataDefinition(getName(), getPrecedence(), getUniverse().subst(subst.LevelSubst), DependentLink.Helper.subst(myParameters, subst));
     for (Constructor constructor : getConstructors()) {
-      Constructor newConstructor = new Constructor(constructor.getResolvedName(), constructor.getPrecedence(),
+      Constructor newConstructor = new Constructor(constructor.getName(), constructor.getPrecedence(),
               constructor.getUniverse().subst(subst.LevelSubst), DependentLink.Helper.subst(constructor.getParameters(), subst), newDef, constructor.getPatterns());
       newDef.addConstructor(newConstructor);
 

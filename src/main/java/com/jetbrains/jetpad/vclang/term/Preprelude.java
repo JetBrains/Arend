@@ -2,10 +2,8 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.naming.DefinitionResolvedName;
-import com.jetbrains.jetpad.vclang.naming.ModuleResolvedName;
-import com.jetbrains.jetpad.vclang.naming.Namespace;
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
+import com.jetbrains.jetpad.vclang.naming.namespace.EmptyNamespace;
+import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
@@ -16,13 +14,11 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
-public class Preprelude extends Namespace {
+public class Preprelude extends SimpleNamespace {
   public static ModuleID moduleID = new ModuleID() {
     @Override
     public ModulePath getModulePath() {
@@ -32,7 +28,7 @@ public class Preprelude extends Namespace {
 
   public static ClassDefinition PRE_PRELUDE_CLASS;
 
-  public static Namespace PRE_PRELUDE = new Preprelude();
+  public static SimpleNamespace PRE_PRELUDE = new Preprelude();
 
   public static DataDefinition INTERVAL;
   public static Constructor LEFT, RIGHT, ABSTRACT;
@@ -55,7 +51,7 @@ public class Preprelude extends Namespace {
   public static FunctionDefinition PRED_CNAT;
 
   static {
-    PRE_PRELUDE_CLASS = new ClassDefinition(new ModuleResolvedName(moduleID), null);
+    PRE_PRELUDE_CLASS = new ClassDefinition("Preprelude", PRE_PRELUDE, EmptyNamespace.INSTANCE);
 
     /* Nat, zero, suc */
     DefinitionBuilder.Data nat = new DefinitionBuilder.Data(PRE_PRELUDE, "Nat", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
@@ -169,12 +165,6 @@ public class Preprelude extends Namespace {
   }
 
   public Preprelude() {
-    super(moduleID);
-  }
-
-  @Override
-  public Collection<NamespaceMember> getMembers() {
-    throw new IllegalStateException();
   }
 
   public static class SucExtrResult {
@@ -246,20 +236,17 @@ public class Preprelude extends Namespace {
 
   static class DefinitionBuilder {
     static class Data {
-      private final Namespace myParentNs;
-      private final DefinitionResolvedName myResolvedName;
+      private final SimpleNamespace myParentNs;
       private final DataDefinition myDefinition;
-      private final Namespace myNs;
+      private final SimpleNamespace myNs = new SimpleNamespace();
 
-      Data(Namespace parentNs, String name, Abstract.Binding.Precedence precedence, TypeUniverse universe, DependentLink parameters, List<Binding> polyParams) {
+      Data(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, TypeUniverse universe, DependentLink parameters, List<Binding> polyParams) {
         myParentNs = parentNs;
-        myResolvedName = new DefinitionResolvedName(parentNs, name);
-        myDefinition = new DataDefinition(myResolvedName, precedence, universe, parameters);
+        myDefinition = new DataDefinition(name, precedence, universe, parameters);
         myDefinition.setPolyParams(polyParams);
-        myNs = myParentNs.addDefinition(myDefinition).namespace;
       }
 
-      Data(Namespace parentNs, String name, Abstract.Binding.Precedence precedence, TypeUniverse universe, DependentLink parameters) {
+      Data(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, TypeUniverse universe, DependentLink parameters) {
         this(parentNs, name, precedence, universe, parameters, new ArrayList<Binding>());
       }
 
@@ -268,7 +255,7 @@ public class Preprelude extends Namespace {
       }
 
       Constructor addConstructor(String name, Abstract.Binding.Precedence precedence, TypeUniverse universe, DependentLink parameters) {
-        Constructor constructor = new Constructor(new DefinitionResolvedName(myNs, name), precedence, universe, parameters, myDefinition);
+        Constructor constructor = new Constructor(name, precedence, universe, parameters, myDefinition);
         myDefinition.addConstructor(constructor);
         myNs.addDefinition(constructor);
         myParentNs.addDefinition(constructor);
@@ -277,18 +264,16 @@ public class Preprelude extends Namespace {
     }
 
     static class Function {
-      private final DefinitionResolvedName myResolvedName;
       private final FunctionDefinition myDefinition;
 
-      public Function(Namespace parentNs, String name, Abstract.Binding.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree, List<Binding> polyParams) {
-        myResolvedName = new DefinitionResolvedName(parentNs, name);
-        TypeUniverse universe = resultType.toUniverse() != null ? resultType.toUniverse().getUniverse() : resultType.getType().toUniverse().getUniverse();
-        myDefinition = new FunctionDefinition(myResolvedName, precedence, parameters, resultType, elimTree, universe);
+      public Function(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree, List<Binding> polyParams) {
+        myDefinition = new FunctionDefinition(name, precedence, EmptyNamespace.INSTANCE, parameters, resultType, elimTree);
+        myDefinition.setUniverse(resultType.toUniverse() != null ? resultType.toUniverse().getUniverse() : resultType.getType().toUniverse().getUniverse());
         myDefinition.setPolyParams(polyParams);
         parentNs.addDefinition(myDefinition);
       }
 
-      public Function(Namespace parentNs, String name, Abstract.Binding.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
+      public Function(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
         this(parentNs, name, precedence, parameters, resultType, elimTree, new ArrayList<Binding>());
       }
 

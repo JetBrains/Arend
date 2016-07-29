@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
-import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CollectDefCallsVisitor;
@@ -8,12 +7,10 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CollectDefCallsVisitor;
 import java.util.*;
 
 public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boolean, Set<Referable>> {
-  private final Namespace myNamespace;
   private final Queue<Abstract.Definition> myOthers;
   private final Map<Abstract.Definition, List<Abstract.Definition>> myClassToNonStatics;
 
-  public DefinitionGetDepsVisitor(Namespace namespace, Queue<Abstract.Definition> myOthers, Map<Abstract.Definition, List<Abstract.Definition>> classToNonStatics) {
-    myNamespace = namespace;
+  public DefinitionGetDepsVisitor(Queue<Abstract.Definition> myOthers, Map<Abstract.Definition, List<Abstract.Definition>> classToNonStatics) {
     this.myOthers = myOthers;
     myClassToNonStatics = classToNonStatics;
   }
@@ -118,17 +115,20 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
           if (defineStatement.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC || parent instanceof Abstract.FunctionDefinition) {
             result.add(defineStatement.getDefinition());
             result.addAll(defineStatement.getDefinition().accept(
-                new DefinitionGetDepsVisitor(myNamespace.getChild(defineStatement.getDefinition().getName()), myOthers, null), true
+                new DefinitionGetDepsVisitor(myOthers, null), true
             ));
           }
         } else {
           if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.AbstractDefinition) {
             result.addAll(visitAbstract((Abstract.AbstractDefinition) ((Abstract.DefineStatement) statement).getDefinition()));
+          } else
+          if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ImplementDefinition) {
+            result.addAll(visitImplement((Abstract.ImplementDefinition) ((Abstract.DefineStatement) statement).getDefinition()));
           } else {
             myOthers.add(defineStatement.getDefinition());
             if (parent instanceof Abstract.ClassDefinition && ((Abstract.DefineStatement) statement).getStaticMod() != Abstract.DefineStatement.StaticMod.STATIC) {
               nonStatic.add(defineStatement.getDefinition());
-              for (Referable def : ((Abstract.DefineStatement) statement).getDefinition().accept(new DefinitionGetDepsVisitor(myNamespace.getChild(defineStatement.getDefinition().getName()), myOthers, null), true)) {
+              for (Referable def : ((Abstract.DefineStatement) statement).getDefinition().accept(new DefinitionGetDepsVisitor(myOthers, null), true)) {
                 nonStatic.add((Abstract.Definition) def);
               }
             }
@@ -144,6 +144,37 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
 
   @Override
   public Set<Referable> visitClass(Abstract.ClassDefinition def, Boolean isStatic) {
-    return visitStatements(def, def.getStatements(), isStatic);
+    Set<Referable> result = new HashSet<>();
+    for (Abstract.SuperClass superClass : def.getSuperClasses()) {
+      if (superClass.getReferent() != null) {
+        result.add(superClass.getReferent());
+      }
+      if (superClass.getRenamings() != null) {
+        for (Abstract.IdPair idPair : superClass.getRenamings()) {
+          if (idPair.getFirstReferent() != null) {
+            result.add(idPair.getFirstReferent());
+          }
+        }
+      }
+      if (superClass.getHidings() != null) {
+        for (Abstract.Identifier identifier : superClass.getHidings()) {
+          if (identifier.getReferent() != null) {
+            result.add(identifier.getReferent());
+          }
+        }
+      }
+    }
+
+    result.addAll(visitStatements(def, def.getStatements(), isStatic));
+    return result;
+  }
+
+  @Override
+  public Set<Referable> visitImplement(Abstract.ImplementDefinition def, Boolean isStatic) {
+    throw new IllegalStateException();
+  }
+
+  private Set<Referable> visitImplement(Abstract.ImplementDefinition def) {
+    return def.getExpression().accept(new CollectDefCallsVisitor(), null);
   }
 }

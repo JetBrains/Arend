@@ -1,11 +1,9 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.FieldCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.LevelSubstVisitor;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FieldCall;
@@ -15,20 +13,39 @@ public class ClassField extends Definition {
   private DependentLink myThisParameter;
   private Expression myType;
 
-  public ClassField(ResolvedName rn, Abstract.Definition.Precedence precedence, Expression type, ClassDefinition thisClass, DependentLink thisParameter) {
-    super(rn, precedence);
+  public ClassField(String name, Abstract.Definition.Precedence precedence, Expression type, ClassDefinition thisClass, DependentLink thisParameter) {
+    super(name, precedence);
     myThisParameter = thisParameter;
     myType = type;
     setThisClass(thisClass);
-    hasErrors(type == null);
+    hasErrors(type == null || type.toError() != null);
   }
 
-  public ClassField(ResolvedName rn, Abstract.Definition.Precedence precedence, Expression type, ClassDefinition thisClass, DependentLink thisParameter, TypeUniverse universe) {
-    super(rn, precedence, universe);
+  public ClassField(String name, Abstract.Definition.Precedence precedence, Expression type, ClassDefinition thisClass, DependentLink thisParameter, TypeUniverse universe) {
+    super(name, precedence, universe);
     myThisParameter = thisParameter;
     myType = type;
     setThisClass(thisClass);
-    hasErrors(type == null);
+    hasErrors(type == null || type.toError() != null);
+  }
+
+  public TypeUniverse updateUniverse(TypeUniverse universe, ExprSubstitution substitution) {
+    Expression expr1 = myType.subst(substitution).normalize(NormalizeVisitor.Mode.WHNF);
+    UniverseExpression expr = null;
+    if (expr1.toOfType() != null) {
+      Expression expr2 = expr1.toOfType().getExpression().getType();
+      if (expr2 != null) {
+        expr = expr2.normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
+      }
+    }
+    if (expr == null) {
+      expr = expr1.getType().normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
+    }
+
+    TypeUniverse fieldUniverse = expr != null ? expr.getUniverse() : getUniverse();
+    universe = universe.max(fieldUniverse);
+    assert expr != null;
+    return universe;
   }
 
   public DependentLink getThisParameter() {
@@ -58,7 +75,7 @@ public class ClassField extends Definition {
     if (!isPolymorphic()) {
       return this;
     }
-    return new ClassField(getResolvedName(), getPrecedence(), LevelSubstVisitor.subst(myType, subst), getThisClass(),
+    return new ClassField(getName(), getPrecedence(), LevelSubstVisitor.subst(myType, subst), getThisClass(),
             myThisParameter, getUniverse().subst(subst));
   }
 

@@ -1,32 +1,31 @@
 package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.module.ModuleID;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
 
 public class DefinitionResolvedName extends ResolvedName {
   private final String myName;
-  private final Namespace myParent;
+  private final ResolvedName myParent;
 
 
-  public DefinitionResolvedName(Namespace parent, String name) {
+  public DefinitionResolvedName(ResolvedName parent, String name) {
     this.myName = name;
     this.myParent = parent;
   }
 
-
   @Override
   public NamespaceMember toNamespaceMember() {
-    return myParent.getMember(myName);
+    // FIXME[serial]
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public ModuleID getModuleID() {
-    return myParent.getResolvedName().getModuleID();
+    return myParent.getModuleID();
   }
 
   @Override
   public String getFullName() {
-    return myParent.getResolvedName().getFullName() + "." + myName;
+    return myParent.getFullName() + "." + myName;
   }
 
   @Override
@@ -36,17 +35,13 @@ public class DefinitionResolvedName extends ResolvedName {
 
   @Override
   public ResolvedName getParent() {
-    return myParent.getResolvedName();
+    return myParent;
   }
 
   @Override
   public boolean equals(Object other) {
     return other == this || other instanceof DefinitionResolvedName
         && myName.equals(((ResolvedName) other).getName())
-        && myParent == ((DefinitionResolvedName) other).getParentNamespace();
-  }
-
-  public Namespace getParentNamespace() {
-    return myParent;
+        && myParent == ((DefinitionResolvedName) other).getParent();
   }
 }

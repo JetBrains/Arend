@@ -1,9 +1,8 @@
 package com.jetbrains.jetpad.vclang.module;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.source.Source;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
 import java.util.*;
 
@@ -18,12 +17,10 @@ public class MemorySourceSupplier implements SourceSupplier {
     }
   }
 
-  private final ModuleLoader myModuleLoader;
   private final ErrorReporter myErrorReporter;
   private final Map<ModulePath, MemorySourceEntry> myMap = new HashMap<>();
 
-  public MemorySourceSupplier(ModuleLoader moduleLoader, ErrorReporter errorReporter) {
-    myModuleLoader = moduleLoader;
+  public MemorySourceSupplier(ErrorReporter errorReporter) {
     myErrorReporter = errorReporter;
   }
 
@@ -47,7 +44,7 @@ public class MemorySourceSupplier implements SourceSupplier {
     if (!myMap.containsKey(module.getModulePath()))
       return null;
 
-    return new MemorySource(myModuleLoader, myErrorReporter, (PathModuleID) module, myMap.get(module.getModulePath()));
+    return new MemorySource(myErrorReporter, (PathModuleID) module, myMap.get(module.getModulePath()));
   }
 
   @Override

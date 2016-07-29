@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
@@ -13,7 +13,6 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeMismatchError;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import org.junit.Test;
@@ -27,6 +26,8 @@ import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckExpr;
+import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
+import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListIsEmpty;
 import static org.junit.Assert.*;
 
 public class ExpressionTest {
@@ -62,7 +63,7 @@ public class ExpressionTest {
     ListErrorReporter errorReporter = new ListErrorReporter();
     DependentLink param = param("X", Universe(0));
     typeCheckExpr("\\lam X x => X", Pi(param, Pi(Reference(param), Reference(param))), errorReporter);
-    assertEquals(1, errorReporter.getErrorList().size());
+    assertErrorListSize(errorReporter.getErrorList(), 1);
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof TypeMismatchError);
   }
 
@@ -78,7 +79,7 @@ public class ExpressionTest {
     Concrete.Expression expr = cLam("x", cLam("y", cApps(cVar("y"), cApps(cVar("y"), cVar("x")))));
     ListErrorReporter errorReporter = new ListErrorReporter();
     new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Nat(), Pi(Pi(Nat(), Nat()), Nat())));
-    assertEquals(0, errorReporter.getErrorList().size());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
   }
 
   @Test
@@ -97,7 +98,7 @@ public class ExpressionTest {
 
     ListErrorReporter errorReporter = new ListErrorReporter();
     new CheckTypeVisitor.Builder(context, errorReporter).build().checkType(expr, type);
-    assertEquals(0, errorReporter.getErrorList().size());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
   }
 
   @Test
@@ -121,7 +122,7 @@ public class ExpressionTest {
     Concrete.Expression expr = cPi("X", cUniverse(1), cPi(cVar("X"), cVar("X")));
     ListErrorReporter errorReporter = new ListErrorReporter();
     assertEquals(Universe(2), expr.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build(), null).type);
-    assertEquals(0, errorReporter.getErrorList().size());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
   }
 
   @Test
@@ -130,7 +131,7 @@ public class ExpressionTest {
     Concrete.Expression expr = cPi("f", cPi(cUniverse(1), cUniverse(1)), cApps(cVar("f"), cUniverse(1)));
     ListErrorReporter errorReporter = new ListErrorReporter();
     assertEquals(null, expr.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build(), null));
-    assertEquals(1, errorReporter.getErrorList().size());
+    assertErrorListSize(errorReporter.getErrorList(), 1);
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof TypeMismatchError);
   }
 
@@ -143,7 +144,7 @@ public class ExpressionTest {
 
     ListErrorReporter errorReporter = new ListErrorReporter();
     assertNull(expr.accept(new CheckTypeVisitor.Builder(defs, errorReporter).build(), null));
-    assertEquals(errorReporter.getErrorList().toString(), 2, errorReporter.getErrorList().size());
+    assertErrorListSize(errorReporter.getErrorList(), 2);
   }
 
   @Test
@@ -153,7 +154,7 @@ public class ExpressionTest {
     ListErrorReporter errorReporter = new ListErrorReporter();
     CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build(), null);
     assertEquals(Pi(Nat(), Nat()), result.type);
-    assertEquals(0, errorReporter.getErrorList().size());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
   }
 
   @Test
@@ -162,7 +163,7 @@ public class ExpressionTest {
     Concrete.Expression expr = cLam(cargs(cName("x"), cName("y")), cVar("x"));
     ListErrorReporter errorReporter = new ListErrorReporter();
     assertNull(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Nat(), Nat())));
-    assertEquals(1, errorReporter.getErrorList().size());
+    assertErrorListSize(errorReporter.getErrorList(), 1);
   }
 
   @Test
@@ -179,7 +180,7 @@ public class ExpressionTest {
     ListErrorReporter errorReporter = new ListErrorReporter();
     CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Pi(Nat(), Nat()), Nat()));
     assertEquals(null, result);
-    assertEquals(1, errorReporter.getErrorList().size());
+    assertErrorListSize(errorReporter.getErrorList(), 1);
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof TypeMismatchError);
   }
 
@@ -190,7 +191,7 @@ public class ExpressionTest {
     ListErrorReporter errorReporter = new ListErrorReporter();
     CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Pi(Nat(), Nat()), Nat()));
     assertEquals(null, result);
-    assertEquals(1, errorReporter.getErrorList().size());
+    assertErrorListSize(errorReporter.getErrorList(), 1);
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof TypeMismatchError);
   }
 
@@ -201,7 +202,7 @@ public class ExpressionTest {
     ListErrorReporter errorReporter = new ListErrorReporter();
     CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat())));
     assertEquals(null, result);
-    assertEquals(1, errorReporter.getErrorList().size());
+    assertErrorListSize(errorReporter.getErrorList(), 1);
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof TypeMismatchError);
   }
 
@@ -212,7 +213,7 @@ public class ExpressionTest {
             cLet(clets(clet("x", cZero())), cApps(cVar("f"), cVar("x"))));
     ListErrorReporter errorReporter = new ListErrorReporter();
     new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, null);
-    assertEquals(0, errorReporter.getErrorList().size());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
   }
 
   @Test
@@ -239,7 +240,7 @@ public class ExpressionTest {
     Concrete.Expression expr = cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cZero())), cVar("x"));
     ListErrorReporter errorReporter = new ListErrorReporter();
     CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build(), null);
-    assertEquals(0, errorReporter.getErrorList().size());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
     assertEquals(Pi(Nat(), Nat()), result.type.normalize(NormalizeVisitor.Mode.WHNF));
   }
 

@@ -1,27 +1,25 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionGetDepsVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.LocalErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.CycleError;
+import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 
 import java.util.*;
-
-import static com.jetbrains.jetpad.vclang.naming.NamespaceMember.toNamespaceMember;
 
 public class TypecheckingOrdering {
   public static abstract class Result {
   }
 
   public static class OKResult extends Result {
-    public final Map<Abstract.Definition, NamespaceMember> order;
+    public final LinkedHashSet<Abstract.Definition> order;
 
-    OKResult(Map<Abstract.Definition, NamespaceMember> order) {
+    OKResult(LinkedHashSet<Abstract.Definition> order) {
       this.order = order;
     }
   }
@@ -36,16 +34,16 @@ public class TypecheckingOrdering {
 
   private List<Abstract.Definition> myCycle;
   private final Queue<Abstract.Definition> myOthers;
-  private final Map<Abstract.Definition, NamespaceMember> myResult;
+  private final LinkedHashSet<Abstract.Definition> myResult;
   private final Set<Abstract.Definition> myVisited;
-  private final Set<Abstract.Definition> myVisiting;
+  private final LinkedHashSet<Abstract.Definition> myVisiting;
 
   private final HashMap<Abstract.Definition, List<Abstract.Definition>> myClassToNonStatic;
 
   private TypecheckingOrdering(Queue<Abstract.Definition> queue) {
     myCycle = null;
     myOthers = queue;
-    myResult = new LinkedHashMap<>();
+    myResult = new LinkedHashSet<>();
     myVisited = new HashSet<>();
     myVisiting = new LinkedHashSet<>();
     myClassToNonStatic = new HashMap<>();
@@ -58,11 +56,11 @@ public class TypecheckingOrdering {
       return true;
     }
 
-    NamespaceMember member = toNamespaceMember(definition);
-    if (toNamespaceMember(definition).isTypeChecked()) {
-      myVisited.add(definition);
-      return true;
-    }
+    // TODO
+    //if (toNamespaceMember(definition).isTypeChecked()) {
+    //  myVisited.add(definition);
+    //  return true;
+    //}
 
     if (myVisiting.contains(definition)) {
       myCycle = new ArrayList<>(myVisiting);
@@ -71,7 +69,7 @@ public class TypecheckingOrdering {
     }
 
     myVisiting.add(definition);
-    for (final Referable def : member.abstractDefinition.accept(new DefinitionGetDepsVisitor(member.namespace, myOthers, myClassToNonStatic), false)) {
+    for (final Referable def : definition.accept(new DefinitionGetDepsVisitor(myOthers, myClassToNonStatic), false)) {
       if (def instanceof Abstract.Definition) {
         Boolean good = ((Abstract.Definition) def).accept(new AbstractDefinitionVisitor<Void, Boolean>() {
           @Override
@@ -106,6 +104,11 @@ public class TypecheckingOrdering {
             }
             return true;
           }
+
+          @Override
+          public Boolean visitImplement(Abstract.ImplementDefinition def, Void params) {
+            return def.getParentStatement().getParentDefinition().equals(definition) || doOrder(def.getParentStatement().getParentDefinition());
+          }
         }, null);
         if (!good)
           return false;
@@ -120,7 +123,7 @@ public class TypecheckingOrdering {
     }
 
     myVisiting.remove(definition);
-    myResult.put(definition, member);
+    myResult.add(definition);
 
     myVisited.add(definition);
     return true;
@@ -145,39 +148,39 @@ public class TypecheckingOrdering {
     return orderer.getResult();
   }
 
-  private static void typecheck(Result result, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
+  private static TypecheckerState typecheck(Result result, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
     if (result instanceof OKResult) {
-      for (Abstract.Definition def : ((OKResult) result).order.keySet()) {
-        NamespaceMember member = ((OKResult) result).order.get(def);
-        DefinitionCheckTypeVisitor.typeCheck(member, new LocalErrorReporter(member.getResolvedName(), errorReporter));
-        if (member.definition == null || member.definition.hasErrors()) {
+      TypecheckerState state = new TypecheckerState();
+      for (Abstract.Definition def : ((OKResult) result).order) {
+        DefinitionCheckTypeVisitor.typeCheck(state, def,new LocalErrorReporter(def, errorReporter));
+        Definition typechecked = state.getTypechecked(def);
+        if (typechecked == null || typechecked.hasErrors()) {
           typecheckedReporter.typecheckingFailed(def);
         } else {
           typecheckedReporter.typecheckingSucceeded(def);
         }
       }
+      return state;
     } else if (result instanceof CycleResult) {
-      StringBuilder errorMessage = new StringBuilder();
-      errorMessage.append("Definition dependencies form a cycle: ");
-      for (Abstract.Definition def : ((CycleResult) result).cycle)
-        errorMessage.append(toNamespaceMember(def).getResolvedName().getFullName()).append(" - ");
-      errorMessage.append(toNamespaceMember(((CycleResult) result).cycle.get(0)).getResolvedName().getFullName());
-      errorReporter.report(new GeneralError(errorMessage.toString()));
+      errorReporter.report(new CycleError(((CycleResult) result).cycle));
+      return null;
+    } else {
+      throw new IllegalStateException();
     }
   }
-  public static void typecheck(Abstract.Definition definition, ErrorReporter errorReporter) {
-    typecheck(definition, errorReporter, new DummyTypecheckedReported());
+  public static TypecheckerState typecheck(Abstract.Definition definition, ErrorReporter errorReporter) {
+    return typecheck(definition, errorReporter, new DummyTypecheckedReported());
   }
 
-  public static void typecheck(Abstract.Definition definition, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
-    typecheck(order(definition), errorReporter, typecheckedReporter);
+  public static TypecheckerState typecheck(Abstract.Definition definition, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
+    return typecheck(order(definition), errorReporter, typecheckedReporter);
   }
 
-  public static void typecheck(List<Abstract.Definition> definitions, ErrorReporter errorReporter) {
-    typecheck(definitions, errorReporter, new DummyTypecheckedReported());
+  public static TypecheckerState typecheck(List<Abstract.Definition> definitions, ErrorReporter errorReporter) {
+    return typecheck(definitions, errorReporter, new DummyTypecheckedReported());
   }
 
-  public static void typecheck(List<Abstract.Definition> definitions, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
-    typecheck(order(definitions), errorReporter, typecheckedReporter);
+  public static TypecheckerState typecheck(List<Abstract.Definition> definitions, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
+    return typecheck(order(definitions), errorReporter, typecheckedReporter);
   }
 }

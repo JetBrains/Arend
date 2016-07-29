@@ -17,34 +17,34 @@ import static org.junit.Assert.assertTrue;
 public class EtaEquivalence {
   @Test
   public void classesEq() {
-    NamespaceMember member = typeCheckClass(
+    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
         "\\class Foo { \\abstract foo : Nat \\abstract bar : Nat }\n" +
         "\\function f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
-    assertNotNull(member);
-    assertTrue(member.namespace.getDefinition("f") instanceof FunctionDefinition);
-    FunctionDefinition f = (FunctionDefinition) member.namespace.getDefinition("f");
+    assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));
+    assertTrue(result.getDefinition("f") instanceof FunctionDefinition);
+    FunctionDefinition f = (FunctionDefinition) result.getDefinition("f");
     assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Reference(f.getParameters().getNext()), null));
   }
 
   @Test
   public void classesGe() {
-    NamespaceMember member = typeCheckClass(
+    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
         "\\class Foo { \\abstract foo : Nat \\abstract bar : Nat }\n" +
         "\\function f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
-    assertNotNull(member);
-    assertTrue(member.namespace.getDefinition("f") instanceof FunctionDefinition);
-    FunctionDefinition f = (FunctionDefinition) member.namespace.getDefinition("f");
+    assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));
+    assertTrue(result.getDefinition("f") instanceof FunctionDefinition);
+    FunctionDefinition f = (FunctionDefinition) result.getDefinition("f");
     assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.GE, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Reference(f.getParameters().getNext()), null));
   }
 
   @Test
   public void classesLe() {
-    NamespaceMember member = typeCheckClass(
+    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
         "\\class Foo { \\abstract foo : Nat \\abstract bar : Nat }\n" +
         "\\function f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
-    assertNotNull(member);
-    assertTrue(member.namespace.getDefinition("f") instanceof FunctionDefinition);
-    FunctionDefinition f = (FunctionDefinition) member.namespace.getDefinition("f");
+    assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));
+    assertTrue(result.getDefinition("f") instanceof FunctionDefinition);
+    FunctionDefinition f = (FunctionDefinition) result.getDefinition("f");
     assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Reference(f.getParameters().getNext()), null));
   }
   @Test

@@ -5,8 +5,6 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.FunctionInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -19,8 +17,11 @@ import java.util.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class StdImplicitArgsInference extends BaseImplicitArgsInference {
-  public StdImplicitArgsInference(CheckTypeVisitor visitor) {
+  private Abstract.Definition myParentDefinition;
+
+  public StdImplicitArgsInference(Abstract.Definition definition, CheckTypeVisitor visitor) {
     super(visitor);
+    myParentDefinition = definition;
   }
 
   protected boolean fixImplicitArgs(CheckTypeVisitor.Result result, List<DependentLink> parameters, Abstract.Expression expr) {
@@ -91,8 +92,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           return null;
         }
 
-        Expression expr1 = Apps(argResult.expression, ConCall(Preprelude.LEFT));
-        Expression expr2 = Apps(argResult.expression, ConCall(Preprelude.RIGHT));
+        Expression expr1 = Apps(argResult.expression, Left());
+        Expression expr2 = Apps(argResult.expression, Right());
         result.expression
             .addArgument(expr1, EnumSet.noneOf(AppExpression.Flag.class))
             .addArgument(expr2, EnumSet.noneOf(AppExpression.Flag.class))
@@ -114,7 +115,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
     PiExpression actualType = result.type.toPi();
     if (actualType == null) {
-      TypeCheckingError error = new TypeMismatchError(new StringPrettyPrintable("A pi type"), result.type, fun);
+      TypeCheckingError error = new TypeMismatchError(myParentDefinition, new StringPrettyPrintable("A pi type"), result.type, fun);
       fun.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;
@@ -127,7 +128,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     if (actualType.getParameters().isExplicit() != isExplicit) {
-      TypeCheckingError error = new TypeCheckingError("Expected an " + (actualType.getParameters().isExplicit() ? "explicit" : "implicit") + " argument", arg);
+      TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Expected an " + (actualType.getParameters().isExplicit() ? "explicit" : "implicit") + " argument", arg);
       arg.setWellTyped(myVisitor.getContext(), new ErrorExpression(argResult.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;
@@ -169,25 +170,27 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
             args1.addAll(result.expression.getArguments());
             args1.addAll(args.subList(result.expression.getArguments().size(), args.size()));
             args = conCall.getDefinition().matchDataTypeArguments(args1);
-            if (!conCall.getDataTypeArguments().isEmpty()) {
-              args = args.subList(conCall.getDataTypeArguments().size(), args.size());
-            }
-            if (!args.isEmpty()) {
-              result.expression = Apps(result.expression, args, Collections.nCopies(args.size(), EnumSet.noneOf(AppExpression.Flag.class)));
-              result.type = result.type.applyExpressions(args);
-            }
-            if (dataCall.isPolymorphic()) {
-              //conCall.applyLevelSubst(dataCall.getPolyParamsSubst());
-              //result.type.toDataCall().applyLevelSubst(dataCall.getPolyParamsSubst());
-              LevelSubstitution levels = conCall.getPolyParamsSubst();
-              for (Binding binding : levels.getDomain()) {
-                LevelExpression expectedLevel = dataCall.getPolyParamsSubst().get(binding);
-                if (expectedLevel != null) {
-                  result.getEquations().add(levels.get(binding), expectedLevel, Equations.CMP.EQ, fun);
-                }
+            if (args != null) {
+              if (!conCall.getDataTypeArguments().isEmpty()) {
+                args = args.subList(conCall.getDataTypeArguments().size(), args.size());
               }
-            }/**/
-            return inferArg(result, arg, true, fun);
+              if (!args.isEmpty()) {
+                result.expression = Apps(result.expression, args, Collections.nCopies(args.size(), EnumSet.noneOf(AppExpression.Flag.class)));
+                result.type = result.type.applyExpressions(args);
+              }
+              if (dataCall.isPolymorphic()) {
+                //conCall.applyLevelSubst(dataCall.getPolyParamsSubst());
+                //result.type.toDataCall().applyLevelSubst(dataCall.getPolyParamsSubst());
+                LevelSubstitution levels = conCall.getPolyParamsSubst();
+                for (Binding binding : levels.getDomain()) {
+                  LevelExpression expectedLevel = dataCall.getPolyParamsSubst().get(binding);
+                  if (expectedLevel != null) {
+                    result.getEquations().add(levels.get(binding), expectedLevel, Equations.CMP.EQ, fun);
+                  }
+                }
+              }/**/
+              return inferArg(result, arg, true, fun);
+            }
           }
         }
       }
@@ -219,7 +222,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     List<DependentLink> expectedParams = new ArrayList<>(actualParams.size());
     Expression expectedType1 = expectedType.getPiParameters(expectedParams, true, true);
     if (expectedParams.size() > actualParams.size()) {
-      TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
+      TypeCheckingError error = new TypeMismatchError(myParentDefinition, expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
       expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;

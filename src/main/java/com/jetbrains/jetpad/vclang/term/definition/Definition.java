@@ -1,7 +1,8 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
+import com.jetbrains.jetpad.vclang.naming.namespace.EmptyNamespace;
+import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.NamedBinding;
@@ -17,20 +18,14 @@ public abstract class Definition extends NamedBinding implements Referable {
   private Abstract.Definition.Precedence myPrecedence;
   private TypeUniverse myUniverse;
   private boolean myHasErrors;
-  private final ResolvedName myResolvedName;
   private ClassDefinition myThisClass;
 
-  public Definition(ResolvedName resolvedName, Abstract.Definition.Precedence precedence) {
-    super(resolvedName.getName());
-    myResolvedName = resolvedName;
-    myPrecedence = precedence;
-    myUniverse = TypeUniverse.PROP;
-    myHasErrors = true;
+  public Definition(String name, Abstract.Definition.Precedence precedence) {
+    this(name, precedence, TypeUniverse.PROP);
   }
 
-  public Definition(ResolvedName resolvedName, Abstract.Definition.Precedence precedence, TypeUniverse universe) {
-    super(resolvedName.getName());
-    myResolvedName = resolvedName;
+  public Definition(String name, Abstract.Definition.Precedence precedence, TypeUniverse universe) {
+    super(name);
     myPrecedence = precedence;
     myUniverse = universe;
     myHasErrors = true;
@@ -39,10 +34,6 @@ public abstract class Definition extends NamedBinding implements Referable {
   @Override
   public Abstract.Definition.Precedence getPrecedence() {
     return myPrecedence;
-  }
-
-  public Namespace getParentNamespace() {
-    return myResolvedName.getParent() == null ? null : myResolvedName.getParent().toNamespace();
   }
 
   public abstract DefCallExpression getDefCall();
@@ -67,8 +58,9 @@ public abstract class Definition extends NamedBinding implements Referable {
     myThisClass = thisClass;
   }
 
+  @Deprecated
   public ResolvedName getResolvedName() {
-    return myResolvedName;
+    throw new IllegalStateException();
   }
 
   public TypeUniverse getUniverse() {
@@ -110,5 +102,13 @@ public abstract class Definition extends NamedBinding implements Referable {
 
   public boolean isAbstract() {
     return false;
+  }
+
+  public Namespace getOwnNamespace() {
+    return EmptyNamespace.INSTANCE;
+  }
+
+  public Namespace getInstanceNamespace() {
+    return EmptyNamespace.INSTANCE;
   }
 }

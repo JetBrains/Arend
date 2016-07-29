@@ -1,40 +1,22 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.ListEquations;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class UnsolvedEquations extends TypeCheckingError {
-  private final List<ListEquations.CmpEquation> myEquations;
-  private final List<ListEquations.LevelCmpEquation> myLevelEquations;
+  public final List<ListEquations.CmpEquation> equations;
+  public final List<ListEquations.LevelCmpEquation> levelEquations;
 
-  public UnsolvedEquations(List<ListEquations.CmpEquation> equations, List<ListEquations.LevelCmpEquation> lev_equations) {
-    super("Internal error: some equations were not solved", lev_equations.isEmpty() ? equations.get(0).sourceNode : lev_equations.get(0).sourceNode);
-    myEquations = equations;
-    myLevelEquations = lev_equations;
+  public UnsolvedEquations(Abstract.Definition definition, List<ListEquations.CmpEquation> equations, List<ListEquations.LevelCmpEquation> levelEquations) {
+    super(definition, "Internal error: some equations were not solved", equations.get(0).sourceNode);
+    this.equations = equations;
+    this.levelEquations = levelEquations;
   }
 
-  @Override
-  public String toString() {
-    StringBuilder builder = new StringBuilder();
-    builder.append(printHeader()).append(getMessage());
-    for (ListEquations.CmpEquation equation : myEquations) {
-      builder.append('\n');
-      PrettyPrintVisitor.printIndent(builder, PrettyPrintVisitor.INDENT / 2);
-      equation.expr1.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, PrettyPrintVisitor.INDENT / 2);
-      builder.append(" = ");
-      equation.expr2.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, PrettyPrintVisitor.INDENT / 2);
-    }
-    for (ListEquations.LevelCmpEquation equation : myLevelEquations) {
-      builder.append('\n');
-      PrettyPrintVisitor.printIndent(builder, PrettyPrintVisitor.INDENT / 2);
-      equation.expr1.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, PrettyPrintVisitor.INDENT / 2);
-      builder.append(" = ");
-      equation.expr2.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, PrettyPrintVisitor.INDENT / 2);
-    }
-    return builder.toString();
+  @Deprecated
+  public UnsolvedEquations(List<ListEquations.CmpEquation> equations, List<ListEquations.LevelCmpEquation> levelEquations) {
+    this(null, equations, levelEquations);
   }
 }
