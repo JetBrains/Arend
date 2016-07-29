@@ -17,6 +17,7 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.SolveEquationError;
 import com.jetbrains.jetpad.vclang.typechecking.error.SolveEquationsError;
 import com.jetbrains.jetpad.vclang.typechecking.error.UnsolvedBindings;
@@ -121,6 +122,8 @@ public class TwoStageEquations implements Equations {
       if (sorts != null) {
         LevelInferenceBinding lpInf = new LevelInferenceBinding(cInf.getName() + "-lp", new DataCallExpression(Preprelude.LVL), cInf.getSourceNode());
         LevelInferenceBinding lhInf = new LevelInferenceBinding(cInf.getName() + "-lh", new DataCallExpression(Preprelude.CNAT), cInf.getSourceNode());
+        myLevelEquations.addVariable(lpInf);
+        myLevelEquations.addVariable(lhInf);
         Level lp = new Level(lpInf);
         Level lh = new Level(lhInf);
         addSolution(cInf, new UniverseExpression(new Sort(lp, lh)));
@@ -129,8 +132,12 @@ public class TwoStageEquations implements Equations {
           sorts.getHLevel().isLessOrEquals(lh, this, sourceNode);
         } else {
           Sort sort = sorts.toSort();
-          addLevelEquation(lpInf, sort.getPLevel().getVar(), sort.getPLevel().getConstant(), sourceNode);
-          addLevelEquation(lhInf, sort.getHLevel().getVar(), sort.getHLevel().getConstant(), sourceNode);
+          if (!sort.getPLevel().isInfinity()) {
+            addLevelEquation(lpInf, sort.getPLevel().getVar(), sort.getPLevel().getConstant(), sourceNode);
+          }
+          if (!sort.getHLevel().isInfinity()) {
+            addLevelEquation(lhInf, sort.getHLevel().getVar(), sort.getHLevel().getConstant(), sourceNode);
+          }
         }
         return;
       }
@@ -151,7 +158,7 @@ public class TwoStageEquations implements Equations {
     }
   }
 
-  private void addLevelEquation(Binding var1, Binding var2, int constant, Abstract.SourceNode sourceNode) {
+  private void addLevelEquation(Binding var1, Binding var2, Integer constant, Abstract.SourceNode sourceNode) {
     if (!(var1 instanceof LevelInferenceBinding) && !(var2 instanceof LevelInferenceBinding)) {
       if (var1 != var2 || constant < 0) {
         myErrorReporter.report(new SolveEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant)), sourceNode));
@@ -159,7 +166,7 @@ public class TwoStageEquations implements Equations {
       return;
     }
 
-    if (var2 instanceof LevelInferenceBinding) {
+    if (var1 != null && var2 instanceof LevelInferenceBinding) {
       Binding base = var1 instanceof LevelInferenceBinding ? myBases.get(var1) : var1;
       if (base != null) {
         addBase((LevelInferenceBinding) var2, base, sourceNode);
@@ -177,6 +184,18 @@ public class TwoStageEquations implements Equations {
 
   @Override
   public boolean add(Level level1, Level level2, CMP cmp, Abstract.SourceNode sourceNode) {
+    if (level1.isInfinity() && level2.isInfinity() || level1.isInfinity() && cmp == CMP.GE || level2.isInfinity() && cmp == CMP.LE) {
+      return true;
+    }
+    if (level1.isInfinity()) {
+      addLevelEquation(null, level2.getVar(), null, sourceNode);
+      return true;
+    }
+    if (level2.isInfinity()) {
+      addLevelEquation(null, level1.getVar(), null, sourceNode);
+      return true;
+    }
+
     if (cmp == CMP.LE || cmp == CMP.EQ) {
       addLevelEquation(level1.getVar(), level2.getVar(), level2.getConstant() - level1.getConstant(), sourceNode);
     }
@@ -249,6 +268,7 @@ public class TwoStageEquations implements Equations {
         InferenceBinding binding = iterator.next();
         Expression solution = mySolutions.get(binding);
         if (solution != null) {
+          update(binding, solution, substitution);
           substitution.add(binding, solution);
           mySolutions.remove(binding);
           iterator.remove();
@@ -262,14 +282,31 @@ public class TwoStageEquations implements Equations {
       Map<LevelInferenceBinding, Integer> solution = new HashMap<>();
       LevelInferenceBinding var = myLevelEquations.solve(solution);
       if (var != null) {
-        myErrorReporter.report(new SolveEquationsError(myLevelEquations.getEquations(), var.getSourceNode()));
+        myErrorReporter.report(new SolveEquationsError(new ArrayList<LevelEquation<? extends Binding>>(myLevelEquations.getEquations()), var.getSourceNode()));
       }
       for (Map.Entry<LevelInferenceBinding, Integer> entry : solution.entrySet()) {
-        result.levelSubst.add(entry.getKey(), new Level(myBases.get(entry.getKey()), -entry.getValue()));
+        Integer constant = entry.getValue();
+        result.levelSubst.add(entry.getKey(), constant == null ? Level.INFINITY : new Level(myBases.get(entry.getKey()), -constant));
       }
     }
 
     return result;
+  }
+
+  private void update(InferenceBinding binding, Expression expr, ExprSubstitution subst) {
+    if (expr.findBinding(binding)) {
+      binding.reportErrorInfer(myErrorReporter, expr);
+      return;
+    }
+
+    Expression expectedType = binding.getType().subst(subst);
+    Type actualType = expr.getType().subst(subst, new LevelSubstitution());
+    if (!actualType.isLessOrEquals(expectedType.normalize(NormalizeVisitor.Mode.NF), this, binding.getSourceNode())) {
+      if (actualType instanceof Expression) {
+        actualType = ((Expression) actualType).normalize(NormalizeVisitor.Mode.HUMAN_NF);
+      }
+      binding.reportErrorMismatch(myErrorReporter, expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), actualType, expr);
+    }
   }
 
   private void subst(ExprSubstitution substitution) {

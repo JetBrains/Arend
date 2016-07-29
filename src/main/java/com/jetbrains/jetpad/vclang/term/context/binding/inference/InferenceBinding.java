@@ -22,4 +22,9 @@ public abstract class InferenceBinding extends TypedBinding {
   public abstract void reportErrorInfer(ErrorReporter errorReporter, Expression... candidates);
   public abstract void reportErrorLevelInfer(ErrorReporter errorReporter, Level... candidates);
   public abstract void reportErrorMismatch(ErrorReporter errorReporter, Expression expectedType, Type actualType, Expression candidate);
+
+  @Override
+  public String toString() {
+    return "?" + getName();
+  }
 }

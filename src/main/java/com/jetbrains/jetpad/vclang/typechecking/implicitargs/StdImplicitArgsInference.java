@@ -113,13 +113,12 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     DependentLink param = result.type.getPiParameters();
-    if (param == null) {
+    if (!param.hasNext()) {
       TypeCheckingError error = new TypeMismatchError(myParentDefinition, new StringPrettyPrintable("A pi type"), result.type, fun);
       fun.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;
     }
-
 
     CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, param.getType());
     if (argResult == null) {

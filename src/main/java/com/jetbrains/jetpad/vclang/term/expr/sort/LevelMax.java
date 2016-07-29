@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -143,6 +144,23 @@ public class LevelMax implements PrettyPrintable {
       }
     }
     return true;
+  }
+
+  public LevelMax subst(LevelSubstitution subst) {
+    if (myVars == null || myVars.isEmpty() || subst.getDomain().isEmpty()) {
+      return this;
+    }
+
+    Map<Binding, Integer> vars = new HashMap<>();
+    for (Map.Entry<Binding, Integer> entry : myVars.entrySet()) {
+      Level level = subst.get(entry.getKey());
+      if (level == null) {
+        vars.put(entry.getKey(), entry.getValue());
+      } else {
+        add(vars, level.getVar(), level.getConstant());
+      }
+    }
+    return new LevelMax(vars);
   }
 
   public Level toLevel() {

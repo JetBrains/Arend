@@ -37,22 +37,26 @@ public class LevelEquations<Var> {
   public Var solve(Map<Var, Integer> solution) {
     solution.put(null, 0);
     for (Var var : myVariables) {
-      solution.put(var, Integer.MAX_VALUE);
+      solution.put(var, 0);
     }
 
     for (int i = myVariables.size() - 1; i >= 0; i--) {
       boolean updated = false;
       for (LevelEquation<Var> equation : myEquations) {
-        int a = solution.get(equation.var1);
-        int b = solution.get(equation.var2);
-        if (b > a + equation.constant) {
-          if (i == 0) {
-            solution.remove(null);
-            return equation.var1 != null ? equation.var1 : equation.var2;
-          }
+        if (equation.constant == null) {
+          solution.put(equation.var2, null);
+        } else {
+          Integer a = solution.get(equation.var1);
+          Integer b = solution.get(equation.var2);
+          if (b != null && (a == null || b > a + equation.constant)) {
+            if (i == 0) {
+              solution.remove(null);
+              return equation.var1 != null ? equation.var1 : equation.var2;
+            }
 
-          solution.put(equation.var2, a + equation.constant);
-          updated = true;
+            solution.put(equation.var2, a == null ? null : a + equation.constant);
+            updated = true;
+          }
         }
       }
       if (!updated) {

@@ -17,6 +17,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -200,6 +201,9 @@ public class TypeCheckingDefCall {
       for (Binding polyVar : definition.getPolyParams()) {
         InferenceBinding l = new LevelInferenceBinding(polyVar.getName(), polyVar.getType(), sourceNode);
         subst.add(polyVar, new Level(l));
+        if (result.getEquations() == DummyEquations.getInstance()) {
+          result.setEquations(myVisitor.getImplicitArgsInference().newEquations());
+        }
         result.addUnsolvedVariable(l);
       }
 

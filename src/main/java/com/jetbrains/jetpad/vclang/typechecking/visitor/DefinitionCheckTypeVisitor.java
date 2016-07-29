@@ -828,8 +828,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
               classOk = false;
             }
           }
-        } else {
-          throw new IllegalStateException();
         }
       }
 

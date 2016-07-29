@@ -85,7 +85,7 @@ public class Prelude extends SimpleNamespace {
     DependentLink atParameter1 = param(false, "A", Pi(param(Interval()), Universe(atLp, atLh)));
     DependentLink atParameter2 = param(false, "a", Apps(Reference(atParameter1), Left()));
     DependentLink atParameter3 = param(false, "a'", Apps(Reference(atParameter1), Right()));
-    DependentLink atParameter4 = param("p", Apps(DataCall(PATH) /*.applyLevelSubst(new LevelSubstitution(PathLp, atLp, PathLh, atLh))/**/, Reference(atParameter1), Reference(atParameter2), Reference(atParameter3)));
+    DependentLink atParameter4 = param("p", Apps(DataCall(PATH, atLp, atLh), Reference(atParameter1), Reference(atParameter2), Reference(atParameter3)));
     DependentLink atParameter5 = param("i", Interval());
     atParameter1.setNext(atParameter2);
     atParameter2.setNext(atParameter3);
@@ -121,12 +121,12 @@ public class Prelude extends SimpleNamespace {
     DependentLink isoParameter3 = param("g", Pi(param(Reference(isoParameter1.getNext())), Reference(isoParameter1)));
     DependentLink piParamA = param("a", Reference(isoParameter1));
     DependentLink piParamB = param("b", Reference(isoParameter1.getNext()));
-    Expression isoParameters4type = FunCall(PATH_INFIX) //.applyLevelSubst(new LevelSubstitution(PathLp, isoLp, PathLh, isoLh))
+    Expression isoParameters4type = FunCall(PATH_INFIX, isoLp, isoLh)
         .addArgument(Reference(isoParameter1), EnumSet.of(AppExpression.Flag.VISIBLE))
         .addArgument(Apps(Reference(isoParameter3), Apps(Reference(isoParameter2), Reference(piParamA))), AppExpression.DEFAULT)
         .addArgument(Reference(piParamA), AppExpression.DEFAULT);
     DependentLink isoParameter4 = param("linv", Pi(piParamA, isoParameters4type));
-    Expression isoParameters5type = FunCall(PATH_INFIX) //.applyLevelSubst(new LevelSubstitution(PathLp, isoLp, PathLh, isoLh))
+    Expression isoParameters5type = FunCall(PATH_INFIX, isoLp, isoLh)
         .addArgument(Reference(isoParameter1.getNext()), EnumSet.of(AppExpression.Flag.VISIBLE))
         .addArgument(Apps(Reference(isoParameter2), Apps(Reference(isoParameter3), Reference(piParamB))), AppExpression.DEFAULT)
         .addArgument(Reference(piParamB), AppExpression.DEFAULT);
@@ -153,7 +153,7 @@ public class Prelude extends SimpleNamespace {
     propTrunc.addConstructor("inP", Abstract.Binding.DEFAULT_PRECEDENCE, param("a", Reference(truncPParameter)));
 
     /* truncP */
-    Expression propTruncConParameterType = DataCall(PROP_TRUNC) // .applyLevelSubst(new LevelSubstitution(truncPLp, truncPLp, truncPLh, truncPLh))
+    Expression propTruncConParameterType = DataCall(PROP_TRUNC, truncPLp, truncPLh)
         .addArgument(Reference(truncPParameter), AppExpression.DEFAULT);
     DependentLink propTruncConParameter1 = param("a", propTruncConParameterType);
     DependentLink propTruncConParameter2 = param("a'", propTruncConParameterType);
@@ -170,14 +170,14 @@ public class Prelude extends SimpleNamespace {
     Level truncSLp = new Level(new TypedBinding("lp", Lvl()));
     Level truncSLh = new Level(new TypedBinding("lh", CNat()));
     DependentLink truncSParameter = param("A", Universe(truncSLp, truncSLh));
-    Preprelude.DefinitionBuilder.Data setTrunc = new Preprelude.DefinitionBuilder.Data(PRELUDE, "TrS", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMax(Sort.SetOfLevel(truncSLp)), truncSParameter);
+    Preprelude.DefinitionBuilder.Data setTrunc = new Preprelude.DefinitionBuilder.Data(PRELUDE, "TrS", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMax(Sort.SetOfLevel(truncSLp)), truncSParameter, Arrays.asList(truncSLp.getVar(), truncSLh.getVar()));
     SET_TRUNC = setTrunc.definition();
     setTrunc.addConstructor("inS", Abstract.Binding.DEFAULT_PRECEDENCE, param("inS", Reference(truncSParameter)));
 
     /* truncS */
-    Expression setTruncConParameterType = DataCall(SET_TRUNC); // .applyLevelSubst(new LevelSubstitution(truncPLp, truncPLp, truncPLh, truncPLh));
-    DependentLink setTruncConParameter1 = param("a", Apps(DataCall(SET_TRUNC), setTruncConParameterType));
-    DependentLink setTruncConParameter2 = param("a'", Apps(DataCall(SET_TRUNC), setTruncConParameterType));
+    Expression setTruncConParameterType = DataCall(SET_TRUNC, truncSLp, truncSLh);
+    DependentLink setTruncConParameter1 = param("a", Apps(DataCall(SET_TRUNC, truncSLp, truncSLh), setTruncConParameterType));
+    DependentLink setTruncConParameter2 = param("a'", Apps(DataCall(SET_TRUNC, truncSLp, truncSLh), setTruncConParameterType));
     Expression setTruncConParameter3type = FunCall(PATH_INFIX).applyLevelSubst(new LevelSubstitution(truncSLh.getVar(), new Level(0)))
         .addArgument(setTruncConParameterType, EnumSet.noneOf(AppExpression.Flag.class))
         .addArgument(Reference(setTruncConParameter1), AppExpression.DEFAULT)
@@ -193,8 +193,8 @@ public class Prelude extends SimpleNamespace {
     setTruncConParameter5.setNext(setTruncConParameter6);
     SET_TRUNC_PATH_CON = setTrunc.addConstructor("truncS", Abstract.Binding.DEFAULT_PRECEDENCE, setTruncConParameter1);
     Condition setTruncPathCond = new Condition(SET_TRUNC_PATH_CON, top(setTruncConParameter1, branch(setTruncConParameter6, tail(),
-        clause(Preprelude.LEFT, EmptyDependentLink.getInstance(), FunCall(AT)/*.applyLevelSubst(new LevelSubstitution(atLp, truncPLp, atLh, truncPLh))/**/.addArgument(Reference(setTruncConParameter3), AppExpression.DEFAULT).addArgument(Reference(setTruncConParameter5), AppExpression.DEFAULT)),
-        clause(Preprelude.RIGHT, EmptyDependentLink.getInstance(), FunCall(AT)/*.applyLevelSubst(new LevelSubstitution(atLp, truncPLp, atLh, truncPLh))/**/.addArgument(Reference(setTruncConParameter4), AppExpression.DEFAULT).addArgument(Reference(setTruncConParameter5), AppExpression.DEFAULT)),
+        clause(Preprelude.LEFT, EmptyDependentLink.getInstance(), FunCall(AT, truncSLp, truncSLh).addArgument(Reference(setTruncConParameter3), AppExpression.DEFAULT).addArgument(Reference(setTruncConParameter5), AppExpression.DEFAULT)),
+        clause(Preprelude.RIGHT, EmptyDependentLink.getInstance(), FunCall(AT, truncSLp, truncSLh).addArgument(Reference(setTruncConParameter4), AppExpression.DEFAULT).addArgument(Reference(setTruncConParameter5), AppExpression.DEFAULT)),
         clause(branch(setTruncConParameter5, tail(setTruncConParameter6),
             clause(Preprelude.LEFT, EmptyDependentLink.getInstance(), Reference(setTruncConParameter1)),
             clause(Preprelude.RIGHT, EmptyDependentLink.getInstance(), Reference(setTruncConParameter2))))

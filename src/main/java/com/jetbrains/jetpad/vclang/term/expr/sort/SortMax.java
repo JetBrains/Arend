@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr.sort;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
@@ -60,6 +61,13 @@ public class SortMax {
 
   public Type toType() {
     return new PiUniverseType(EmptyDependentLink.getInstance(), this);
+  }
+
+  public SortMax subst(LevelSubstitution subst) {
+    if (subst.getDomain().isEmpty()) {
+      return this;
+    }
+    return new SortMax(myPLevel.subst(subst), myHLevel.subst(subst));
   }
 
   public boolean isLessOrEquals(SortMax sorts) {

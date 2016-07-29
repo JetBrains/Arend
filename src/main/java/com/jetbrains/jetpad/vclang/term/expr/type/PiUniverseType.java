@@ -122,7 +122,7 @@ public class PiUniverseType implements Type {
 
   @Override
   public PiUniverseType subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
-    return new PiUniverseType(DependentLink.Helper.subst(myParameters, exprSubst, levelSubst), mySorts);
+    return new PiUniverseType(DependentLink.Helper.subst(myParameters, exprSubst, levelSubst), mySorts.subst(levelSubst));
   }
 
   @Override

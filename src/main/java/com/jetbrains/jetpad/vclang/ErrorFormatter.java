@@ -119,9 +119,13 @@ public class ErrorFormatter {
       boolean first = true;
       for (LevelEquation<? extends Binding> equation : ((SolveEquationsError) error).equations) {
         if (!first) builder.append('\n');
-        printEqExpr(builder, equation.var1, -equation.constant);
-        builder.append(" <= ");
-        printEqExpr(builder, equation.var2, equation.constant);
+        if (equation.constant == null) {
+          builder.append(equation.var2).append(" = inf");
+        } else {
+          printEqExpr(builder, equation.var1, -equation.constant);
+          builder.append(" <= ");
+          printEqExpr(builder, equation.var2, equation.constant);
+        }
         first = false;
       }
     } else if (error instanceof UnsolvedBindings) {
@@ -179,7 +183,7 @@ public class ErrorFormatter {
     return builder.toString();
   }
 
-  private void printEqExpr(StringBuilder builder, Binding var, int constant) {
+  private void printEqExpr(StringBuilder builder, Binding var, Integer constant) {
     if (var != null) {
       builder.append(var);
       if (constant > 0) {
