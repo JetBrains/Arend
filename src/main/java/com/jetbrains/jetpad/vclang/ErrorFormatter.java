@@ -14,6 +14,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equation;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.LevelEquation;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -101,16 +102,25 @@ public class ErrorFormatter {
       builder.append('\n');
       builder.append("  Actual type: ");
       ((TypeMismatchError) error).actual.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, text.length());
-    } else if (error instanceof SolveEquationsError) {
+    } else if (error instanceof SolveEquationError) {
       String text = "1st expression: ";
       builder.append(text);
-      ((SolveEquationsError) error).expr1.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, text.length());
+      ((SolveEquationError) error).expr1.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, text.length());
       builder.append('\n')
           .append("2nd expression: ");
-      ((SolveEquationsError) error).expr2.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, text.length());
-      if (((SolveEquationsError) error).binding != null) {
+      ((SolveEquationError) error).expr2.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, text.length());
+      if (((SolveEquationError) error).binding != null) {
         builder.append('\n')
-            .append("Since '").append(((SolveEquationsError) error).binding).append("' is free in these expressions");
+            .append("Since '").append(((SolveEquationError) error).binding).append("' is free in these expressions");
+      }
+    } else if (error instanceof SolveEquationsError) {
+      boolean first = true;
+      for (LevelEquation<? extends Binding> equation : ((SolveEquationsError) error).equations) {
+        if (!first) builder.append('\n');
+        printEqExpr(builder, equation.var1, -equation.constant);
+        builder.append(" <= ");
+        printEqExpr(builder, equation.var2, equation.constant);
+        first = false;
       }
     } else if (error instanceof UnsolvedBindings) {
       boolean first = true;
@@ -165,6 +175,17 @@ public class ErrorFormatter {
     }
 
     return builder.toString();
+  }
+
+  private void printEqExpr(StringBuilder builder, Binding var, int constant) {
+    if (var != null) {
+      builder.append(var);
+      if (constant > 0) {
+        builder.append(" + ").append(constant);
+      }
+    } else {
+      builder.append(constant > 0 ? constant : 0);
+    }
   }
 
   private String printBody(GeneralError error) {

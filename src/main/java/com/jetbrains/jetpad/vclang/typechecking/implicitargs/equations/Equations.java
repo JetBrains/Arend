@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
@@ -16,11 +17,12 @@ public interface Equations {
   boolean add(Expression expr1, Expression expr2, CMP cmp, Abstract.SourceNode sourceNode);
   boolean add(Level level1, Level level2, CMP cmp, Abstract.SourceNode sourceNode);
   boolean add(Type type, Expression expr, Abstract.SourceNode sourceNode);
+  boolean addVariable(LevelInferenceBinding var);
   void clear();
   boolean isEmpty();
   void abstractBinding(Binding binding);
   Equations newInstance();
-  Substitution getInferenceVariables(Set<InferenceBinding> bindings, boolean isFinal);
+  Substitution solve(Set<InferenceBinding> bindings, boolean isFinal);
   void reportErrors(ErrorReporter errorReporter);
 
   enum CMP {

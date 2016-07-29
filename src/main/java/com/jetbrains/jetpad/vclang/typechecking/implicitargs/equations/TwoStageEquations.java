@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.DerivedInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
@@ -16,6 +17,7 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.typechecking.error.SolveEquationError;
 import com.jetbrains.jetpad.vclang.typechecking.error.SolveEquationsError;
 import com.jetbrains.jetpad.vclang.typechecking.error.UnsolvedBindings;
 import com.jetbrains.jetpad.vclang.typechecking.error.UnsolvedEquations;
@@ -25,15 +27,17 @@ import java.util.*;
 public class TwoStageEquations implements Equations {
   private List<Equation> myEquations;
   private Map<InferenceBinding, Expression> mySolutions;
-  private final LevelEquations myLevelEquations;
+  private final Map<LevelInferenceBinding, Binding> myBases;
+  private final LevelEquations<LevelInferenceBinding> myLevelEquations;
   private final List<InferenceBinding> myUnsolvedVariables;
   private final ListErrorReporter myErrorReporter = new ListErrorReporter();
 
   public TwoStageEquations() {
     myEquations = new ArrayList<>();
     mySolutions = new HashMap<>();
-    myLevelEquations = new LevelEquations();
-    myUnsolvedVariables = Collections.emptyList();
+    myBases = new HashMap<>();
+    myLevelEquations = new LevelEquations<>();
+    myUnsolvedVariables = new ArrayList<>(2);
   }
 
   @Override
@@ -51,6 +55,9 @@ public class TwoStageEquations implements Equations {
     }
     myEquations.addAll(eq.myEquations);
     myLevelEquations.add(eq.myLevelEquations);
+    for (Map.Entry<LevelInferenceBinding, Binding> entry : eq.myBases.entrySet()) {
+      addBase(entry.getKey(), entry.getValue(), entry.getKey().getSourceNode());
+    }
     return true;
   }
 
@@ -112,10 +119,8 @@ public class TwoStageEquations implements Equations {
 
       SortMax sorts = cType.toSorts();
       if (sorts != null) {
-        DerivedInferenceBinding lpInf = new DerivedInferenceBinding(cInf.getName() + "-lp", new DataCallExpression(Preprelude.LVL), cInf);
-        DerivedInferenceBinding lhInf = new DerivedInferenceBinding(cInf.getName() + "-lh", new DataCallExpression(Preprelude.CNAT), cInf);
-        myUnsolvedVariables.add(lpInf);
-        myUnsolvedVariables.add(lhInf);
+        LevelInferenceBinding lpInf = new LevelInferenceBinding(cInf.getName() + "-lp", new DataCallExpression(Preprelude.LVL), cInf.getSourceNode());
+        LevelInferenceBinding lhInf = new LevelInferenceBinding(cInf.getName() + "-lh", new DataCallExpression(Preprelude.CNAT), cInf.getSourceNode());
         Level lp = new Level(lpInf);
         Level lh = new Level(lhInf);
         addSolution(cInf, new UniverseExpression(new Sort(lp, lh)));
@@ -124,14 +129,44 @@ public class TwoStageEquations implements Equations {
           sorts.getHLevel().isLessOrEquals(lh, this, sourceNode);
         } else {
           Sort sort = sorts.toSort();
-          myLevelEquations.add(lp, sort.getPLevel(), CMP.LE, sourceNode);
-          myLevelEquations.add(lh, sort.getHLevel(), CMP.LE, sourceNode);
+          addLevelEquation(lpInf, sort.getPLevel().getVar(), sort.getPLevel().getConstant(), sourceNode);
+          addLevelEquation(lhInf, sort.getHLevel().getVar(), sort.getHLevel().getConstant(), sourceNode);
         }
         return;
       }
     }
 
     myEquations.add(new Equation(type, expr, cmp, sourceNode));
+  }
+
+  private void addBase(LevelInferenceBinding var, Binding base, Abstract.SourceNode sourceNode) {
+    Binding base1 = myBases.get(var);
+    if (base1 == null) {
+      myBases.put(var, base);
+    } else {
+      List<LevelEquation<Binding>> equations = new ArrayList<>(2);
+      equations.add(new LevelEquation<>(base, var, 0));
+      equations.add(new LevelEquation<>(base1, var, 0));
+      myErrorReporter.report(new SolveEquationsError(equations, sourceNode));
+    }
+  }
+
+  private void addLevelEquation(Binding var1, Binding var2, int constant, Abstract.SourceNode sourceNode) {
+    if (!(var1 instanceof LevelInferenceBinding) && !(var2 instanceof LevelInferenceBinding)) {
+      if (var1 != var2 || constant < 0) {
+        myErrorReporter.report(new SolveEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant)), sourceNode));
+      }
+      return;
+    }
+
+    if (var2 instanceof LevelInferenceBinding) {
+      Binding base = var1 instanceof LevelInferenceBinding ? myBases.get(var1) : var1;
+      if (base != null) {
+        addBase((LevelInferenceBinding) var2, base, sourceNode);
+      }
+    }
+
+    myLevelEquations.addEquation(new LevelEquation<>(var1 instanceof LevelInferenceBinding ? (LevelInferenceBinding) var1 : null, var2 instanceof LevelInferenceBinding ? (LevelInferenceBinding) var2 : null, constant));
   }
 
   @Override
@@ -142,7 +177,12 @@ public class TwoStageEquations implements Equations {
 
   @Override
   public boolean add(Level level1, Level level2, CMP cmp, Abstract.SourceNode sourceNode) {
-    myLevelEquations.add(level1, level2, cmp, sourceNode);
+    if (cmp == CMP.LE || cmp == CMP.EQ) {
+      addLevelEquation(level1.getVar(), level2.getVar(), level2.getConstant() - level1.getConstant(), sourceNode);
+    }
+    if (cmp == CMP.GE || cmp == CMP.EQ) {
+      addLevelEquation(level2.getVar(), level1.getVar(), level1.getConstant() - level2.getConstant(), sourceNode);
+    }
     return true;
   }
 
@@ -153,16 +193,23 @@ public class TwoStageEquations implements Equations {
   }
 
   @Override
+  public boolean addVariable(LevelInferenceBinding var) {
+    myLevelEquations.addVariable(var);
+    return true;
+  }
+
+  @Override
   public void clear() {
     myEquations.clear();
     mySolutions.clear();
+    myBases.clear();
     myLevelEquations.clear();
     myUnsolvedVariables.clear();
   }
 
   @Override
   public boolean isEmpty() {
-    return myEquations.isEmpty() && mySolutions.isEmpty() && myLevelEquations.isEmpty();
+    return myEquations.isEmpty() && mySolutions.isEmpty() && myLevelEquations.isEmpty() && myUnsolvedVariables.isEmpty() && myBases.isEmpty();
   }
 
   @Override
@@ -170,7 +217,7 @@ public class TwoStageEquations implements Equations {
     for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
       Equation equation = iterator.next();
       if (equation.type.findBinding(binding) || equation.expr.findBinding(binding)) {
-        myErrorReporter.report(new SolveEquationsError<>(equation.type, equation.expr, binding, equation.sourceNode));
+        myErrorReporter.report(new SolveEquationError<>(equation.type, equation.expr, binding, equation.sourceNode));
         iterator.remove();
       }
     }
@@ -178,7 +225,7 @@ public class TwoStageEquations implements Equations {
     for (Iterator<Map.Entry<InferenceBinding, Expression>> iterator = mySolutions.entrySet().iterator(); iterator.hasNext(); ) {
       Map.Entry<InferenceBinding, Expression> entry = iterator.next();
       if (entry.getValue().findBinding(binding)) {
-        myErrorReporter.report(new SolveEquationsError<>(new ReferenceExpression(entry.getKey()), entry.getValue(), binding, entry.getKey().getSourceNode()));
+        myErrorReporter.report(new SolveEquationError<>(new ReferenceExpression(entry.getKey()), entry.getValue(), binding, entry.getKey().getSourceNode()));
         iterator.remove();
       }
     }
@@ -190,7 +237,7 @@ public class TwoStageEquations implements Equations {
   }
 
   @Override
-  public Substitution getInferenceVariables(Set<InferenceBinding> bindings, boolean isFinal) {
+  public Substitution solve(Set<InferenceBinding> bindings, boolean isFinal) {
     bindings.addAll(myUnsolvedVariables);
     myUnsolvedVariables.clear();
 
@@ -203,12 +250,24 @@ public class TwoStageEquations implements Equations {
         Expression solution = mySolutions.get(binding);
         if (solution != null) {
           substitution.add(binding, solution);
+          mySolutions.remove(binding);
           iterator.remove();
         }
       }
       subst(substitution);
       result.exprSubst.add(substitution);
     } while (!substitution.getDomain().isEmpty());
+
+    if (isFinal) {
+      Map<LevelInferenceBinding, Integer> solution = new HashMap<>();
+      LevelInferenceBinding var = myLevelEquations.solve(solution);
+      if (var != null) {
+        myErrorReporter.report(new SolveEquationsError(myLevelEquations.getEquations(), var.getSourceNode()));
+      }
+      for (Map.Entry<LevelInferenceBinding, Integer> entry : solution.entrySet()) {
+        result.levelSubst.add(entry.getKey(), new Level(myBases.get(entry.getKey()), -entry.getValue()));
+      }
+    }
 
     return result;
   }

@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceBinding;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -30,7 +29,7 @@ public abstract class TypeCheckingResult {
 
   public void addUnsolvedVariable(InferenceBinding binding) {
     if (binding instanceof LevelInferenceBinding) {
-      myEquations.add(new Level(0), new Level(binding), Equations.CMP.LE, binding.getSourceNode());
+      myEquations.addVariable((LevelInferenceBinding) binding);
     } else {
       myUnsolvedVariables.add(binding);
     }
@@ -65,7 +64,7 @@ public abstract class TypeCheckingResult {
 
   public Substitution getSubstitution() {
     if (!myEquations.isEmpty()) {
-      return myEquations.getInferenceVariables(myUnsolvedVariables, false);
+      return myEquations.solve(myUnsolvedVariables, false);
     } else {
       return new Substitution();
     }
@@ -73,7 +72,7 @@ public abstract class TypeCheckingResult {
 
   public void update(boolean isFinal) {
     if (!myEquations.isEmpty()) {
-      subst(myEquations.getInferenceVariables(myUnsolvedVariables, !isFinal));
+      subst(myEquations.solve(myUnsolvedVariables, isFinal));
     }
   }
 

@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
@@ -41,6 +42,11 @@ public class DummyEquations implements Equations {
   }
 
   @Override
+  public boolean addVariable(LevelInferenceBinding var) {
+    return false;
+  }
+
+  @Override
   public void clear() {
 
   }
@@ -61,7 +67,7 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public Substitution getInferenceVariables(Set<InferenceBinding> binding, boolean isFinal) {
+  public Substitution solve(Set<InferenceBinding> binding, boolean isFinal) {
     throw new Exception();
   }
 

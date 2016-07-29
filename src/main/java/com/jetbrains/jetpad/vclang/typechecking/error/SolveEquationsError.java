@@ -1,23 +1,20 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.LevelEquation;
 
-public class SolveEquationsError<E extends PrettyPrintable> extends TypeCheckingError {
-  public final E expr1;
-  public final E expr2;
-  public final Binding binding;
+import java.util.List;
 
-  public SolveEquationsError(Abstract.Definition definition, E expr1, E expr2, Binding binding, Abstract.SourceNode expression) {
-    super(definition, "Cannot solve equation", expression);
-    this.expr1 = expr1;
-    this.expr2 = expr2;
-    this.binding = binding;
+public class SolveEquationsError extends TypeCheckingError {
+  public final List<? extends LevelEquation<? extends Binding>> equations;
+
+  public SolveEquationsError(Abstract.Definition definition, List<? extends LevelEquation<? extends Binding>> equations, Abstract.SourceNode cause) {
+    super(definition, "Cannot solve equations", cause);
+    this.equations = equations;
   }
 
-  @Deprecated
-  public SolveEquationsError(E expr1, E expr2, Binding binding, Abstract.SourceNode expression) {
-    this(null, expr1, expr2, binding, expression);
+  public SolveEquationsError(List<? extends LevelEquation<? extends Binding>> equations, Abstract.SourceNode cause) {
+    this(null, equations, cause);
   }
 }

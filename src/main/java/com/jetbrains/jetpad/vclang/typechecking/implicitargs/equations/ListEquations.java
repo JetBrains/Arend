@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
@@ -14,7 +15,7 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.SolveEquationsError;
+import com.jetbrains.jetpad.vclang.typechecking.error.SolveEquationError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.UnsolvedBindings;
 import com.jetbrains.jetpad.vclang.typechecking.error.UnsolvedEquations;
@@ -51,7 +52,7 @@ public class ListEquations implements Equations {
     @Override
     public TypeCheckingError abstractBinding(Binding binding) {
       if (expr1.findBinding(binding) || expr2.findBinding(binding)) {
-        return new SolveEquationsError<>(expr1, expr2, binding, sourceNode);
+        return new SolveEquationError<>(expr1, expr2, binding, sourceNode);
       } else {
         return null;
       }
@@ -66,7 +67,7 @@ public class ListEquations implements Equations {
     @Override
     public void solveIn(ListEquations equations) {
       if (!CompareVisitor.compare(equations, cmp, expr1.normalize(NormalizeVisitor.Mode.NF), expr2.normalize(NormalizeVisitor.Mode.NF), sourceNode)) {
-        equations.myErrorReporter.report(new SolveEquationsError<>(expr1.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr2.normalize(NormalizeVisitor.Mode.HUMAN_NF), null, sourceNode));
+        equations.myErrorReporter.report(new SolveEquationError<>(expr1.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr2.normalize(NormalizeVisitor.Mode.HUMAN_NF), null, sourceNode));
       }
     }
   }
@@ -93,7 +94,7 @@ public class ListEquations implements Equations {
     @Override
     public void solveIn(ListEquations equations) {
       if (!Level.compare(expr1, expr2, cmp, equations, sourceNode)) {
-        equations.myErrorReporter.report(new SolveEquationsError<>(expr1, expr2, null, sourceNode));
+        equations.myErrorReporter.report(new SolveEquationError<>(expr1, expr2, null, sourceNode));
       }
     }
   }
@@ -119,7 +120,7 @@ public class ListEquations implements Equations {
     @Override
     public TypeCheckingError abstractBinding(InferenceBinding infBinding, Binding binding) {
       if (expression.findBinding(binding)) {
-        return new SolveEquationsError<>(Reference(infBinding), expression, binding, infBinding.getSourceNode());
+        return new SolveEquationError<>(Reference(infBinding), expression, binding, infBinding.getSourceNode());
       }
       return null;
     }
@@ -143,12 +144,12 @@ public class ListEquations implements Equations {
     public TypeCheckingError abstractBinding(InferenceBinding infBinding, Binding binding) {
       for (Expression expr : geSet) {
         if (expr.findBinding(binding)) {
-          return new SolveEquationsError<>(Reference(infBinding), expr, binding, infBinding.getSourceNode());
+          return new SolveEquationError<>(Reference(infBinding), expr, binding, infBinding.getSourceNode());
         }
       }
       for (Expression expr : leSet) {
         if (expr.findBinding(binding)) {
-          return new SolveEquationsError<>(Reference(infBinding), expr, binding, infBinding.getSourceNode());
+          return new SolveEquationError<>(Reference(infBinding), expr, binding, infBinding.getSourceNode());
         }
       }
       return null;
@@ -379,6 +380,11 @@ public class ListEquations implements Equations {
     if (type.getPiParameters().hasNext()) {
       return false;
     }
+    return true;
+  }
+
+  @Override
+  public boolean addVariable(LevelInferenceBinding var) {
     return true;
   }
 
@@ -639,7 +645,7 @@ public class ListEquations implements Equations {
   }
 
   @Override
-  public Substitution getInferenceVariables(Set<InferenceBinding> bindings, boolean isFinal) {
+  public Substitution solve(Set<InferenceBinding> bindings, boolean isFinal) {
     Substitution result = new Substitution();
     boolean was;
     if (!bindings.isEmpty() && (!myExactSolutions.isEmpty() || (!myEqSolutions.isEmpty() && isFinal))) {

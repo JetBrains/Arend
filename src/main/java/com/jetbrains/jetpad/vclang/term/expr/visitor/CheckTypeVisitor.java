@@ -258,7 +258,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       result.setEquations(myArgsInference.newEquations());
     }
     if (!CompareVisitor.compare(result.getEquations(), Equations.CMP.EQ, expected.normalize(NormalizeVisitor.Mode.NF), actual.normalize(NormalizeVisitor.Mode.NF), expr)) {
-      TypeCheckingError error = new SolveEquationsError<>(myParentDefinition, expected.normalize(NormalizeVisitor.Mode.HUMAN_NF), actual.normalize(NormalizeVisitor.Mode.HUMAN_NF), null, expr);
+      TypeCheckingError error = new SolveEquationError<>(myParentDefinition, expected.normalize(NormalizeVisitor.Mode.HUMAN_NF), actual.normalize(NormalizeVisitor.Mode.HUMAN_NF), null, expr);
       expr.setWellTyped(myContext, Error(result.expression, error));
       myErrorReporter.report(error);
       return false;
