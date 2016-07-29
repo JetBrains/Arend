@@ -2,17 +2,22 @@ package com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
-import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
+import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class CoverageChecker implements ElimTreeNodeVisitor<Substitution, Boolean> {
+public class CoverageChecker implements ElimTreeNodeVisitor<ExprSubstitution, Boolean> {
   public interface CoverageCheckerMissingProcessor {
-    void process(Substitution argsSubst);
+    void process(ExprSubstitution argsSubst);
   }
 
   private final CoverageCheckerMissingProcessor myProcessor;
@@ -23,23 +28,23 @@ public class CoverageChecker implements ElimTreeNodeVisitor<Substitution, Boolea
     myResultType = resultType;
   }
 
-  public static boolean check(ElimTreeNode tree, Substitution argsSubst, CoverageCheckerMissingProcessor processor, Expression resultType) {
+  public static boolean check(ElimTreeNode tree, ExprSubstitution argsSubst, CoverageCheckerMissingProcessor processor, Expression resultType) {
     return tree.accept(new CoverageChecker(processor, resultType), argsSubst);
   }
 
   @Override
-  public Boolean visitBranch(BranchElimTreeNode branchNode, Substitution argsSubst) {
+  public Boolean visitBranch(BranchElimTreeNode branchNode, ExprSubstitution argsSubst) {
     Expression type = branchNode.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF);
     List<? extends Expression> parameters = type.getArguments();
     DataCallExpression ftype = type.getFunction().toDataCall();
 
     boolean result = true;
     for (ConCallExpression conCall : ftype.getDefinition().getMatchedConstructors(parameters)) {
-      if (myResultType.getType().toUniverse().getUniverse().equals(TypeUniverse.PROP)) {
+      if (myResultType.getType().isLessOrEquals(Sort.PROP)) {
         if (Prelude.isTruncP(conCall.getDefinition())) {
           continue;
         }
-      } else if (myResultType.getType().toUniverse().getUniverse().isLessOrEquals(TypeUniverse.SET)) {
+      } else if (myResultType.getType().isLessOrEquals(Sort.SET)) {
         if (Prelude.isTruncS(conCall.getDefinition())) {
           continue;
         }
@@ -55,14 +60,14 @@ public class CoverageChecker implements ElimTreeNodeVisitor<Substitution, Boolea
   }
 
   @Override
-  public Boolean visitLeaf(LeafElimTreeNode leafNode, Substitution argsSubst) {
+  public Boolean visitLeaf(LeafElimTreeNode leafNode, ExprSubstitution argsSubst) {
     return true;
   }
 
   @Override
-  public Boolean visitEmpty(EmptyElimTreeNode emptyNode, Substitution argsSubst) {
+  public Boolean visitEmpty(EmptyElimTreeNode emptyNode, ExprSubstitution argsSubst) {
     List<Binding> tailContext = new ArrayList<>();
-    for (Binding binding : argsSubst.getDomain()) {
+    for (Callable binding : argsSubst.getDomain()) {
       ReferenceExpression ref = argsSubst.get(binding).toReference();
       if (ref != null) {
         tailContext.add(ref.getBinding());
@@ -71,7 +76,7 @@ public class CoverageChecker implements ElimTreeNodeVisitor<Substitution, Boolea
     return checkEmptyContext(tailContext, argsSubst);
   }
 
-  public boolean checkEmptyContext(List<Binding> tailContext, Substitution argsSubst) {
+  public boolean checkEmptyContext(List<Binding> tailContext, ExprSubstitution argsSubst) {
     if (tailContext.isEmpty()) {
       myProcessor.process(argsSubst);
       return false;

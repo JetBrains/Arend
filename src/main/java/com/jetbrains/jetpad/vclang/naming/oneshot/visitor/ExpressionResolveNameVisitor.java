@@ -38,6 +38,13 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   }
 
   @Override
+  public Void visitAppLevel(Abstract.ApplyLevelExpression expr, Void params) {
+    expr.getFunction().accept(this, null);
+    expr.getLevel().accept(this, null);
+    return null;
+  }
+
+  @Override
   public Void visitDefCall(Abstract.DefCallExpression expr, Void params) {
     Abstract.Expression expression = expr.getExpression();
     if (expression != null) {

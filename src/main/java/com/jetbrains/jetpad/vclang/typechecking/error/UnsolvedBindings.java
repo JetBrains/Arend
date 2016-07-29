@@ -1,8 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
 
 import java.util.List;
 

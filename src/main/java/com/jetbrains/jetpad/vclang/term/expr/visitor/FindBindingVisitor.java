@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -15,9 +15,9 @@ import java.util.Map;
 import java.util.Set;
 
 public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> implements ElimTreeNodeVisitor<Void, Boolean> {
-  private final Set<Binding> myBindings;
+  private final Set<? extends Callable> myBindings;
 
-  public FindBindingVisitor(Set<Binding> binding) {
+  public FindBindingVisitor(Set<? extends Callable> binding) {
     myBindings = binding;
   }
 
@@ -132,11 +132,6 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
   @Override
   public Boolean visitOfType(OfTypeExpression expr, Void params) {
     return expr.getExpression().accept(this, null) || expr.getType().accept(this, null);
-  }
-
-  @Override
-  public Boolean visitLevel(LevelExpression expr, Void params) {
-    return false;
   }
 
   public boolean visitLetClause(LetClause clause) {

@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
@@ -31,18 +31,24 @@ public class Constructor extends Definition implements Function {
     super(name, precedence);
     myDataType = dataType;
     myParameters = EmptyDependentLink.getInstance();
+    if (dataType != null) {
+      setPolyParams(dataType.getPolyParams());
+    }
   }
 
-  public Constructor(String name, Abstract.Definition.Precedence precedence, TypeUniverse universe, DependentLink parameters, DataDefinition dataType, Patterns patterns) {
-    super(name, precedence, universe);
+  public Constructor(String name, Abstract.Definition.Precedence precedence, DependentLink parameters, DataDefinition dataType, Patterns patterns) {
+    super(name, precedence);
     hasErrors(false);
     myDataType = dataType;
     myParameters = parameters;
     myPatterns = patterns;
+    if (dataType != null) {
+      setPolyParams(dataType.getPolyParams());
+    }
   }
 
-  public Constructor(String name, Abstract.Definition.Precedence precedence, TypeUniverse universe, DependentLink parameters, DataDefinition dataType) {
-    this(name, precedence, universe, parameters, dataType, null);
+  public Constructor(String name, Abstract.Definition.Precedence precedence, DependentLink parameters, DataDefinition dataType) {
+    this(name, precedence, parameters, dataType, null);
   }
 
   public Patterns getPatterns() {
@@ -86,6 +92,7 @@ public class Constructor extends Definition implements Function {
 
   public void setDataType(DataDefinition dataType) {
     myDataType = dataType;
+    setPolyParams(dataType.getPolyParams());
   }
 
   public DependentLink getDataTypeParameters() {
@@ -111,7 +118,7 @@ public class Constructor extends Definition implements Function {
     return getDataTypeExpression(null);
   }
 
-  public Expression getDataTypeExpression(Substitution substitution) {
+  public Expression getDataTypeExpression(ExprSubstitution substitution) {
     assert !hasErrors() && !myDataType.hasErrors();
 
     Expression resultType = DataCall(myDataType);
@@ -124,12 +131,12 @@ public class Constructor extends Definition implements Function {
       }
       resultType = Apps(resultType, arguments, flags);
     } else {
-      Substitution subst = new Substitution();
+      ExprSubstitution subst = new ExprSubstitution();
 
       DependentLink dataTypeParams = myDataType.getParameters();
       List<Expression> arguments = new ArrayList<>(myPatterns.getPatterns().size());
       for (PatternArgument patternArg : myPatterns.getPatterns()) {
-        Substitution innerSubst = new Substitution();
+        ExprSubstitution innerSubst = new ExprSubstitution();
 
         if (patternArg.getPattern() instanceof ConstructorPattern) {
           List<? extends Expression> argDataTypeParams = dataTypeParams.getType().subst(subst).normalize(NormalizeVisitor.Mode.WHNF).getArguments();
@@ -165,7 +172,7 @@ public class Constructor extends Definition implements Function {
 
     DependentLink parameters = getDataTypeParameters();
     if (parameters.hasNext()) {
-      Substitution substitution = new Substitution();
+      ExprSubstitution substitution = new ExprSubstitution();
       parameters = DependentLink.Helper.subst(parameters, substitution);
       for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
         link.setExplicit(false);

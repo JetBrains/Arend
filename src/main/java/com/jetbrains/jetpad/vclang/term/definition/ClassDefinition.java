@@ -2,15 +2,19 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
+import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ClassCall;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.param;
 
 public class ClassDefinition extends Definition {
   private final Namespace myOwnNamespace;
@@ -37,14 +41,8 @@ public class ClassDefinition extends Definition {
     return myFieldSet;
   }
 
-  @Override
-  public TypeUniverse getUniverse() {
-    return myFieldSet.getUniverse(getDefCall());
-  }
-
-  @Override
-  public void setUniverse(TypeUniverse universe) {
-    throw new UnsupportedOperationException();
+  public SortMax getSorts() {
+    return myFieldSet.getSorts(getDefCall());
   }
 
   public boolean isSubClassOf(ClassDefinition classDefinition) {
@@ -56,8 +54,8 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
-  public Expression getType() {
-    return new UniverseExpression(getUniverse());
+  public Type getType() {
+    return new PiUniverseType(EmptyDependentLink.getInstance(), getSorts());
   }
 
   @Override
@@ -81,12 +79,12 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
-  public Expression getTypeWithThis() {
-    Expression type = getType();
+  public Type getTypeWithThis() {
+    DependentLink link = EmptyDependentLink.getInstance();
     if (getThisClass() != null) {
-      type = Pi(ClassCall(getThisClass()), type);
+      link = param(ClassCall(getThisClass()));
     }
-    return type;
+    return new PiUniverseType(link, getSorts());
   }
 
   @Override

@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.term.pattern;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 
 import java.util.List;
@@ -52,11 +52,11 @@ public abstract class Pattern implements Abstract.Pattern {
   }
 
   public Expression toExpression() {
-    return toExpression(new Substitution());
+    return toExpression(new ExprSubstitution());
   }
 
   public abstract DependentLink getParameters();
-  public abstract Expression toExpression(Substitution subst);
+  public abstract Expression toExpression(ExprSubstitution subst);
   public MatchResult match(Expression expr) {
     return match(expr, true);
   }

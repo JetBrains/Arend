@@ -3,6 +3,8 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.context.binding.NamedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
 public class LetClause extends NamedBinding implements Function {
@@ -49,15 +51,15 @@ public class LetClause extends NamedBinding implements Function {
 
   @Override
   public Expression getType() {
-    return Function.Helper.getFunctionType(this);
+    return myResultType.addParameters(myParameters, false);
   }
 
-  public LetClause subst(Substitution substitution) {
-    if (substitution.getDomain().isEmpty()) {
+  public LetClause subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
+    if (exprSubst.getDomain().isEmpty() && levelSubst.getDomain().isEmpty()) {
       return this;
     }
 
-    DependentLink parameters = DependentLink.Helper.subst(myParameters, substitution);
-    return new LetClause(getName(), parameters, myResultType.subst(substitution), myElimTree.subst(substitution));
+    DependentLink parameters = DependentLink.Helper.subst(myParameters, exprSubst, levelSubst);
+    return new LetClause(getName(), parameters, myResultType.subst(exprSubst, levelSubst), myElimTree.subst(exprSubst, levelSubst));
   }
 }

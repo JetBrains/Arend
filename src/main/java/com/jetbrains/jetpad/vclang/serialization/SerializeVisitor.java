@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.serialization;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.BaseExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
@@ -17,7 +16,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implements ElimTreeNodeVisitor<Void, Void> {
@@ -68,6 +66,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     myStream.write(2);
     try {
       myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(expr.getDefinition().getResolvedName()));
+      ModuleSerialization.serializeSubstitution(this, expr.getPolyParamsSubst());
     } catch (IOException e) {
       throw new IllegalStateException();
     }
@@ -80,6 +79,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     int index = myDefNamesIndices.getDefNameIndex(expr.getDefinition().getResolvedName());
     try {
       myDataStream.writeInt(index);
+      ModuleSerialization.serializeSubstitution(this, expr.getPolyParamsSubst());
       myDataStream.writeInt(expr.getDataTypeArguments().size());
     } catch (IOException e) {
       throw new IllegalStateException();
@@ -97,6 +97,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     int index = myDefNamesIndices.getDefNameIndex(expr.getDefinition().getResolvedName());
     try {
       myDataStream.writeInt(index);
+      ModuleSerialization.serializeSubstitution(this, expr.getPolyParamsSubst());
       myDataStream.writeInt(expr.getImplementStatements().size());
       for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> elem : expr.getImplementStatements().entrySet()) {
         myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(elem.getKey().getResolvedName()));
@@ -124,7 +125,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     myBindingMap.put(binding, myCounter++);
   }
 
-  private void writeBinding(Binding binding) throws IOException {
+  public void writeBinding(Binding binding) throws IOException {
     Integer index = myBindingMap.get(binding);
     if (index == null) {
       myDataStream.writeInt(-1);
@@ -174,7 +175,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   public Void visitUniverse(UniverseExpression expr, Void params) {
     myStream.write(8);
     try {
-      ModuleSerialization.writeUniverse(this, expr.getUniverse());
+      ModuleSerialization.writeSort(this, expr.getSort());
     } catch (IOException e) {
       throw new IllegalStateException();
     }
@@ -294,39 +295,6 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     myStream.write(16);
     expr.getExpression().accept(this, null);
     expr.getType().accept(this, null);
-    return null;
-  }
-
-  @Override
-  public Void visitLevel(LevelExpression expr, Void params) {
-    myStream.write(17);
-    try {
-      if (expr.getConverter() instanceof TypeUniverse.LvlConverter) {
-        myDataStream.writeInt(0);
-      } else if (expr.getConverter() instanceof TypeUniverse.CNatConverter) {
-        myDataStream.writeInt(1);
-      } else {
-        throw new IllegalStateException();
-      }
-      if (expr.isInfinity()) {
-        myDataStream.writeBoolean(true);
-      } else {
-        myDataStream.writeBoolean(false);
-        List<LevelExpression> maxArgs = expr.toListOfMaxArgs();
-        myDataStream.writeInt(maxArgs.size());
-        for (LevelExpression arg : maxArgs) {
-          myDataStream.writeInt(arg.getUnitSucs());
-          if (arg.isClosed()) {
-            myDataStream.writeBoolean(true);
-          } else {
-            myDataStream.writeBoolean(false);
-            writeBinding(arg.getUnitBinding());
-          }
-        }
-      }
-    } catch (IOException e) {
-      throw new IllegalStateException();
-    }
     return null;
   }
 

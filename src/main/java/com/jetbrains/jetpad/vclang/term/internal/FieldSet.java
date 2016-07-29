@@ -3,11 +3,10 @@ package com.jetbrains.jetpad.vclang.term.internal;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
-import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
@@ -36,20 +35,20 @@ public class FieldSet {
 
   private final Set<ClassField> myFields;
   private final Map<ClassField, Implementation> myImplemented;
-  private TypeUniverse myUniverse;
+  private SortMax mySorts;
 
   public FieldSet() {
-    this(new HashSet<ClassField>(), new HashMap<ClassField, Implementation>(), TypeUniverse.PROP);
+    this(new HashSet<ClassField>(), new HashMap<ClassField, Implementation>(), new SortMax());
   }
 
   public FieldSet(FieldSet other) {
-    this(new HashSet<>(other.myFields), new HashMap<>(other.myImplemented), other.myUniverse);
+    this(new HashSet<>(other.myFields), new HashMap<>(other.myImplemented), other.mySorts);
   }
 
-  private FieldSet(Set<ClassField> fields, Map<ClassField, Implementation> implemented, TypeUniverse universe) {
+  private FieldSet(Set<ClassField> fields, Map<ClassField, Implementation> implemented, SortMax sorts) {
     myFields = fields;
     myImplemented = implemented;
-    myUniverse = universe;
+    mySorts = sorts;
   }
 
   public void addField(ClassField field, ClassCallExpression thisClass) {
@@ -95,23 +94,23 @@ public class FieldSet {
     return myImplemented.get(field);
   }
 
-  public TypeUniverse getUniverse(ClassCallExpression thisClass) {
-    if (myUniverse == null) {
+  public SortMax getSorts(ClassCallExpression thisClass) {
+    if (mySorts == null) {
       updateUniverse(thisClass);
     }
-    return myUniverse;
+    return mySorts;
   }
 
   private void updateUniverseFieldAdded(ClassField field, ClassCallExpression thisClass) {
-    myUniverse = null;  // just invalidate
+    mySorts = null;  // just invalidate
   }
 
   private void updateUniverseFieldImplemented(ClassField ignored, ClassCallExpression thisClass) {
-    myUniverse = null;  // just invalidate
+    mySorts = null;  // just invalidate
   }
 
   private void updateUniverse(ClassCallExpression thisClass) {
-    myUniverse = TypeUniverse.PROP;
+    mySorts = new SortMax();
     for (ClassField field : myFields) {
       updateUniverseSingleField(field, thisClass);
     }
@@ -125,20 +124,16 @@ public class FieldSet {
 
     DependentLink thisParam = param("\\this", thisClass);
     Expression expr1 = baseType.subst(field.getThisParameter(), Reference(thisParam)).normalize(NormalizeVisitor.Mode.WHNF);
-    UniverseExpression expr = null;
+    SortMax sorts = null;
     if (expr1.toOfType() != null) {
-      Expression expr2 = expr1.toOfType().getExpression().getType();
-      if (expr2 != null) {
-        expr = expr2.normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
-      }
+      sorts = expr1.toOfType().getExpression().getType().toSorts();
     }
-    if (expr == null) {
-      expr = expr1.getType().normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
+    if (sorts == null) {
+      sorts = expr1.getType().toSorts();
     }
 
-    assert expr != null;
-    TypeUniverse fieldUniverse = expr.getUniverse();
-    myUniverse = myUniverse.max(fieldUniverse);
+    assert sorts != null;
+    mySorts.add(sorts);
   }
 
   @Override

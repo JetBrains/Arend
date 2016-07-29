@@ -1,10 +1,10 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
 import java.util.Collection;
@@ -54,11 +54,11 @@ public class PatternsToElimTreeConversion {
 
       branch.leaf.setArrow(arrows.get(branch.indices.get(0)));
       List<Pattern> curPatterns = patterns.get(branch.indices.get(0));
-      Substitution subst = new Substitution();
+      ExprSubstitution subst = new ExprSubstitution();
       for (int i = 0; i < curPatterns.size(); i++) {
-        Substitution curSubst = toSubstitution(curPatterns.get(i).getParameters(),
+        ExprSubstitution curSubst = toSubstitution(curPatterns.get(i).getParameters(),
             ((Pattern.MatchOKResult)curPatterns.get(i).match(branch.expressions.get(i), false)).expressions);
-        for (Binding binding : curSubst.getDomain()) {
+        for (Callable binding : curSubst.getDomain()) {
           subst.add(binding, curSubst.get(binding));
         }
       }

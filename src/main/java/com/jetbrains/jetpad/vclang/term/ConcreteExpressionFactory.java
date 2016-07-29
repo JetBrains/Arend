@@ -195,8 +195,8 @@ public class ConcreteExpressionFactory {
     return new Concrete.UniverseExpression(POSITION, new Abstract.UniverseExpression.Universe(level, truncated));
   }
 
-  public static Concrete.PolyUniverseExpression cPolyUniverse(Concrete.Expression plevel, Concrete.Expression hlevel) {
-    return new Concrete.PolyUniverseExpression(POSITION, plevel, hlevel);
+  public static Concrete.PolyUniverseExpression cPolyUniverse(Concrete.Expression pLevel, Concrete.Expression hLevel) {
+    return new Concrete.PolyUniverseExpression(POSITION, pLevel, hLevel);
   }
 
   /*

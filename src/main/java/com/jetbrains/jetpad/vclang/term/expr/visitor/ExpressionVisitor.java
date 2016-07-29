@@ -20,5 +20,4 @@ public interface ExpressionVisitor<P, R> {
   R visitNew(NewExpression expr, P params);
   R visitLet(LetExpression expr, P params);
   R visitOfType(OfTypeExpression expr, P params);
-  R visitLevel(LevelExpression expr, P params);
 }

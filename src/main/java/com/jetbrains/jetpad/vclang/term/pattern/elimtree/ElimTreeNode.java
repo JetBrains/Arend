@@ -3,7 +3,8 @@ package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.SubstVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
@@ -26,16 +27,20 @@ public abstract class ElimTreeNode {
     return this == obj || obj instanceof ElimTreeNode && CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, this, (ElimTreeNode) obj);
   }
 
-  public ElimTreeNode subst(Substitution subst) {
-    if (subst.getDomain().isEmpty()) {
+  public ElimTreeNode subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
+    if (exprSubst.getDomain().isEmpty() && levelSubst.getDomain().isEmpty()) {
       return this;
     }
-    return accept(new SubstVisitor(subst), null);
+    return accept(new SubstVisitor(exprSubst, levelSubst), null);
   }
 
-  public abstract ElimTreeNode matchUntilStuck(Substitution subst, boolean normalize);
+  public ElimTreeNode subst(ExprSubstitution subst) {
+    return subst(subst, new LevelSubstitution());
+  }
 
-  public ElimTreeNode matchUntilStuck(Substitution subst) {
+  public abstract ElimTreeNode matchUntilStuck(ExprSubstitution subst, boolean normalize);
+
+  public ElimTreeNode matchUntilStuck(ExprSubstitution subst) {
     return matchUntilStuck(subst, true);
   }
 

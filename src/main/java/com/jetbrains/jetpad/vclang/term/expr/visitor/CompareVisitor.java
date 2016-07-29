@@ -1,19 +1,19 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.EtaNormalization;
-import com.jetbrains.jetpad.vclang.typechecking.exprorder.ExpressionOrder;
-import com.jetbrains.jetpad.vclang.typechecking.exprorder.StandardOrder;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.ArrayList;
@@ -28,7 +28,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   private final Map<Binding, Binding> mySubstitution;
   private final Equations myEquations;
   private final Abstract.SourceNode mySourceNode;
-  private final ExpressionOrder order = StandardOrder.getInstance();
   private Equations.CMP myCMP;
 
   private CompareVisitor(Equations equations, Equations.CMP cmp, Abstract.SourceNode sourceNode) {
@@ -106,34 +105,29 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return new2.accept(this, expr1);
     }
 
-    if (order.isComparable(expr1)) {
-      Boolean ordCmpResult = order.compare(expr1, expr2, this, myCMP);
-
-      if (ordCmpResult != null) {
-        return ordCmpResult;
-      }
-
-      if (expr1.toUniverse() != null) return false;
-    }
-
-   // if ((myCMP == Equations.CMP.GE || myCMP == Equations.CMP.LE) && expr1.toReference() == null) {
-   //   if (order.compare(expr1, expr2, this, myCMP)) return true;
-   // }
-
     return expr1.accept(this, expr2);
   }
 
-  private boolean checkIsInferVar(Expression fun, Expression expr1, Expression expr2) {
-    ReferenceExpression ref = fun.toReference();
+  public static InferenceBinding checkIsInferVar(Expression expr) {
+    ReferenceExpression ref = expr.getFunction().toReference();
     if (ref == null || !(ref.getBinding() instanceof InferenceBinding)) {
+      return null;
+    } else {
+      return (InferenceBinding) ref.getBinding();
+    }
+  }
+
+  private boolean checkIsInferVar(Expression fun, Expression expr1, Expression expr2) {
+    InferenceBinding binding = checkIsInferVar(fun);
+    if (binding == null) {
       return false;
     }
 
-    Substitution substitution = new Substitution();
+    ExprSubstitution substitution = new ExprSubstitution();
     for (Map.Entry<Binding, Binding> entry : mySubstitution.entrySet()) {
       substitution.add(entry.getKey(), Reference(entry.getValue()));
     }
-    return myEquations.add(expr1.subst(substitution), expr2, myCMP, ((InferenceBinding) ref.getBinding()).getSourceNode());
+    return myEquations.add(expr1.subst(substitution), expr2, myCMP, binding.getSourceNode());
   }
 
   @Override
@@ -154,8 +148,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return false;
     }
 
-    Equations.CMP cmp = myCMP;
-    myCMP = Equations.CMP.EQ;
+    //Equations.CMP cmp = myCMP;
+    //myCMP = Equations.CMP.EQ;
     if (!compare(fun1, fun2)) {
       return false;
     }
@@ -163,7 +157,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     int i = 0;
     if (fun1.toDataCall() != null && fun2.toDataCall() != null) {
       if (args1.isEmpty()) {
-        myCMP = cmp;
+      //  myCMP = cmp;
         return true;
       }
       if (fun1.toDataCall().getDefinition().getThisClass() != null) {
@@ -171,11 +165,12 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
           return false;
         }
         if (++i >= args1.size()) {
-          myCMP = cmp;
+        //  myCMP = cmp;
           return true;
         }
       }
 
+      /*
       Expression type1 = args1.get(i).getType().normalize(NormalizeVisitor.Mode.NF);
       if (type1.toDataCall() != null && type1.toDataCall().getDefinition() == Preprelude.LVL) {
         Expression type2 = args2.get(i).getType().normalize(NormalizeVisitor.Mode.NF);
@@ -194,7 +189,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
             }
           }
         }
-      }
+      }/**/
     }
 
     for (; i < args1.size(); i++) {
@@ -203,14 +198,22 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       }
     }
 
-    myCMP = cmp;
+    //myCMP = cmp;
     return true;
   }
 
   @Override
   public Boolean visitDefCall(DefCallExpression expr1, Expression expr2) {
     DefCallExpression defCall2 = expr2.toDefCall();
-    return defCall2 != null && expr1.getDefinition() == defCall2.getDefinition();
+    if (defCall2 == null) return false;
+    // TODO: remove this comparison
+    for (Binding binding : expr1.getPolyParamsSubst().getDomain()) {
+      Level level2 = defCall2.getPolyParamsSubst().get(binding);
+      if (level2 != null) {
+        Level.compare(expr1.getPolyParamsSubst().get(binding), level2, Equations.CMP.GE, myEquations, mySourceNode);
+      }
+    }
+    return expr1.getDefinition() == defCall2.getDefinition();
   }
 
   private boolean checkSubclassImpl(FieldSet fieldSet1, ClassCallExpression classCall2) {
@@ -353,23 +356,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
   @Override
   public Boolean visitUniverse(UniverseExpression expr1, Expression expr2) {
-    /*UniverseExpression universe2 = expr2.toUniverse();
-    if (universe2 == null || universe2.getUniverse() == null) return false;
-    TypeUniverse.TypeLevel level1 = ((TypeUniverse) expr1.getUniverse()).getLevel();
-    TypeUniverse.TypeLevel level2 = ((TypeUniverse) universe2.getUniverse()).getLevel();
-
-    if (level1 == null) {
-      return myCMP == Equations.CMP.GE || (level2 == null && myCMP == Equations.CMP.EQ);
-    }
-
-    if (level2 == null) {
-      return myCMP == Equations.CMP.LE;
-    }
-
-    return level1.getValue().accept(this, level2.getValue());
-    /**/
-    //return order.compare(expr1, expr2, this, myCMP);
-    return compare(expr1, expr2);
+    UniverseExpression universe2 = expr2.toUniverse();
+    return universe2 != null && universe2.getSort() != null && Sort.compare(expr1.getSort(), universe2.getSort(), myCMP, myEquations, mySourceNode);
   }
 
   @Override
@@ -436,7 +424,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return false;
     }
 
-    ClassCallExpression classCall2 = expr2.getType().toClassCall();
+    ClassCallExpression classCall2 = ((Expression) expr2.getType()).normalize(NormalizeVisitor.Mode.WHNF).toClassCall();
 
     for (Map.Entry<ClassField, FieldSet.Implementation> entry : classCall.getFieldSet().getImplemented()) {
       FieldSet.Implementation impl2 = classCall2.getFieldSet().getImplementation(entry.getKey());
@@ -507,15 +495,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   @Override
   public Boolean visitOfType(OfTypeExpression expr, Expression params) {
     return expr.getExpression().accept(this, params);
-  }
-
-  @Override
-  public Boolean visitLevel(LevelExpression expr, Expression params) {
-    ReferenceExpression ref1 = expr.toReference();
-    ReferenceExpression ref2 = expr.toReference();
-    if (ref1 == null && ref2 == null) return false;
-    if (!(ref1 != null && ref1.getBinding() instanceof InferenceBinding) && !(ref2 != null && ref2.getBinding() instanceof InferenceBinding)) return false;
-    return compare(ref1, ref2);
   }
 
   @Override

@@ -3,6 +3,8 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -56,8 +58,8 @@ public class EtaNormalization {
       return body;
     }
 
-    Substitution substitution = new Substitution();
-    DependentLink newParams = expression.getParameters().subst(substitution, params.size() - index);
+    ExprSubstitution substitution = new ExprSubstitution();
+    DependentLink newParams = expression.getParameters().subst(substitution, new LevelSubstitution(), params.size() - index);
     return new LamExpression(newParams, body.subst(substitution));
   }
 

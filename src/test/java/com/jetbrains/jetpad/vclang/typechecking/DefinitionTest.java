@@ -11,7 +11,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Before;
 import org.junit.Test;
@@ -89,10 +89,10 @@ public class DefinitionTest {
     assertNotNull(typedDef);
     assertErrorListIsEmpty(errorReporter.getErrorList());
     assertFalse(typedDef.hasErrors());
-    assertEquals(Pi(parameters.getFirst(), Universe(0)), typedDef.getType());
+    assertEquals(Pi(parameters.getFirst(), Universe(0)), typedDef.getType().toExpression());
     assertEquals(2, typedDef.getConstructors().size());
 
-    Substitution substitution = new Substitution();
+    ExprSubstitution substitution = new ExprSubstitution();
     DependentLink link = typedDef.getParameters();
     substitution.add(link, Reference(A));
     link = link.getNext();
@@ -134,7 +134,7 @@ public class DefinitionTest {
     assertNotNull(typedDef);
     assertErrorListIsEmpty(errorReporter.getErrorList());
     assertFalse(typedDef.hasErrors());
-    assertEquals(Pi(A, Universe(6, 7)), typedDef.getType());
+    assertEquals(Pi(A, Universe(6, 7)), typedDef.getType().toExpression());
     assertEquals(2, typedDef.getConstructors().size());
 
     assertEquals(Pi(A, Pi(parameters1.getFirst(), Apps(DataCall(typedDef), Reference(A)))), typedDef.getConstructors().get(0).getType());
@@ -182,6 +182,22 @@ public class DefinitionTest {
     assertErrorListSize(errorReporter.getErrorList(), 0);
     assertNotNull(result);
     assertEquals(Pi(Nat(), Nat()), result.type);
+  }
+
+  @Test
+  public void errorInParameters() {
+    typeCheckClass(
+        "\\static \\data E (n : Nat) | e\n" +
+        "\\static \\data D (n : Nat -> Nat) (E n) | d\n" +
+        "\\static \\function test => D", 2);
+  }
+
+  @Test
+  public void errorInParametersCon() {
+    typeCheckClass(
+        "\\static \\data E (n : Nat) | e\n" +
+        "\\static \\data D (n : Nat -> Nat) (E n) | d\n" +
+        "\\static \\function test => d", 2);
   }
 
   @Test

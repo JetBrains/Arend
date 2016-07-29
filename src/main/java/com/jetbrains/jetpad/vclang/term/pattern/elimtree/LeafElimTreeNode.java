@@ -3,8 +3,8 @@ package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
@@ -61,7 +61,7 @@ public class LeafElimTreeNode extends ElimTreeNode {
   }
 
   @Override
-  public ElimTreeNode matchUntilStuck(Substitution subst, boolean normalize) {
+  public ElimTreeNode matchUntilStuck(ExprSubstitution subst, boolean normalize) {
     return this;
   }
 
@@ -78,8 +78,8 @@ public class LeafElimTreeNode extends ElimTreeNode {
     return myMatched;
   }
 
-  public Substitution matchedToSubst(List<Expression> expressions) {
-    Substitution result = new Substitution();
+  public ExprSubstitution matchedToSubst(List<Expression> expressions) {
+    ExprSubstitution result = new ExprSubstitution();
     for (int i = 0; i < myMatched.size(); i++) {
       result.add(myMatched.get(i), expressions.get(i));
     }

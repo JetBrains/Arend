@@ -11,6 +11,15 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
+import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 
 import java.io.*;
@@ -86,6 +95,12 @@ public class ModuleSerialization {
       visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(definition.getThisClass().getResolvedName()));
     visitor.getDataStream().writeBoolean(definition.hasErrors());
 
+    visitor.getDataStream().writeInt(definition.getPolyParams().size());
+    for (Binding polyVar : definition.getPolyParams()) {
+      visitor.addBinding(polyVar);
+      visitor.visitReference(ExpressionFactory.Reference(polyVar), null);
+    }
+
     if (definition instanceof FunctionDefinition) {
       return serializeFunctionDefinition(visitor, (FunctionDefinition) definition);
     } else
@@ -102,7 +117,7 @@ public class ModuleSerialization {
   private static int serializeDataDefinition(SerializeVisitor visitor, DataDefinition definition) throws IOException {
     int errors = definition.hasErrors() ? 1 : 0;
     if (!definition.hasErrors()) {
-      writeUniverse(visitor, definition.getUniverse());
+      writeSortMax(visitor, definition.getSorts());
       writeParameters(visitor, definition.getParameters());
     }
 
@@ -119,7 +134,6 @@ public class ModuleSerialization {
             visitor.visitPatternArg(patternArg);
           }
         }
-        writeUniverse(visitor, constructor.getUniverse());
         writeParameters(visitor, constructor.getParameters());
       } else {
         errors += 1;
@@ -181,15 +195,15 @@ public class ModuleSerialization {
   private static int serializeClassDefinition(SerializeVisitor visitor, ClassDefinition definition) throws IOException {
     int errors = serializeNamespace(visitor, definition.getResolvedName().toNamespace());
 
-    writeUniverse(visitor, definition.getUniverse());
+    writeSortMax(visitor, definition.getSorts());
 
     /* FIXME[serial]
     visitor.getDataStream().writeInt(definition.getFields().size());
     for (Map.Entry<ClassField, ClassDefinition.FieldImplementation> entry : definition.getFieldsMap()) {
       ClassField field = entry.getKey();
       visitor.getDataStream().writeUTF(entry.getValue().name);
-      visitor.getDataStream().writeBoolean(entry.getValue().implementation != null);
-      if (entry.getValue().implementation != null) {
+      visitor.getDataStream().writeBoolean(entry.getValue().isImplemented());
+      if (entry.getValue().isImplemented()) {
         writeParameters(visitor, entry.getValue().thisParameter);
         entry.getValue().implementation.accept(visitor, null);
       }
@@ -198,13 +212,27 @@ public class ModuleSerialization {
       writeParameters(visitor, field.getThisParameter());
       visitor.getDataStream().writeBoolean(field.hasErrors());
       if (!field.hasErrors()) {
-        writeUniverse(visitor, field.getUniverse());
+        writeSortMax(visitor, field.getSorts());
         field.getType().accept(visitor, null);
       }
     }
     */
 
     return errors;
+  }
+
+  private static void writeType(SerializeVisitor visitor, Type type) throws IOException {
+    if (type instanceof PiUniverseType) {
+      visitor.getDataStream().writeBoolean(true);
+      writeParameters(visitor, type.getPiParameters());
+      writeSortMax(visitor, ((PiUniverseType) type).getSorts());
+    } else
+    if (type instanceof Expression) {
+      visitor.getDataStream().writeBoolean(false);
+      ((Expression) type).accept(visitor, null);
+    } else {
+      throw new IllegalStateException();
+    }
   }
 
   private static int serializeFunctionDefinition(SerializeVisitor visitor, FunctionDefinition definition) throws IOException {
@@ -215,7 +243,7 @@ public class ModuleSerialization {
     visitor.getDataStream().writeBoolean(definition.typeHasErrors());
     if (!definition.typeHasErrors()) {
       writeParameters(visitor, definition.getParameters());
-      definition.getResultType().accept(visitor, null);
+      writeType(visitor, definition.getResultType());
       visitor.getDataStream().writeBoolean(!definition.hasErrors() && definition.getElimTree() != null);
       if (definition.getElimTree() != null) {
         definition.getElimTree().accept(visitor, null);
@@ -223,6 +251,15 @@ public class ModuleSerialization {
     }
 
     return errors;
+  }
+
+  public static void serializeSubstitution(SerializeVisitor visitor, LevelSubstitution subst) throws IOException {
+    visitor.getDataStream().writeInt(subst.getDomain().size());
+
+    for (Binding binding : subst.getDomain()) {
+      visitor.visitReference(ExpressionFactory.Reference(binding), null);
+      writeLevel(visitor, subst.get(binding));
+    }
   }
 
   public static void writeDefinition(DataOutputStream stream, Definition definition) throws IOException {
@@ -233,9 +270,30 @@ public class ModuleSerialization {
     }
   }
 
-  public static void writeUniverse(SerializeVisitor visitor, TypeUniverse universe) throws IOException {
-    universe.getPLevel().accept(visitor, null);
-    universe.getHLevel().accept(visitor, null);
+  public static void writeLevel(SerializeVisitor visitor, Level level) throws IOException {
+    visitor.getDataStream().writeBoolean(level.getVar() != null);
+    if (level.getVar() != null) {
+      visitor.writeBinding(level.getVar());
+    }
+    visitor.getDataStream().writeInt(level.getConstant());
+  }
+
+  public static void writeLevelMax(SerializeVisitor visitor, LevelMax levelMax) throws IOException {
+    List<Level> levels = levelMax.toListOfLevels();
+    visitor.getDataStream().writeInt(levels.size());
+    for (Level level : levels) {
+      writeLevel(visitor, level);
+    }
+  }
+
+  public static void writeSort(SerializeVisitor visitor, Sort sort) throws IOException {
+    writeLevel(visitor, sort.getPLevel());
+    writeLevel(visitor, sort.getHLevel());
+  }
+
+  public static void writeSortMax(SerializeVisitor visitor, SortMax sort) throws IOException {
+    writeLevelMax(visitor, sort.getPLevel());
+    writeLevelMax(visitor, sort.getHLevel());
   }
 
   private static void writeString(SerializeVisitor visitor, String str) throws IOException {

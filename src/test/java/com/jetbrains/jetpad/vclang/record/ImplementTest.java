@@ -1,9 +1,15 @@
 package com.jetbrains.jetpad.vclang.record;
 
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
+import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
+import static org.junit.Assert.assertEquals;
 
 public class ImplementTest {
   @Test
@@ -218,5 +224,43 @@ public class ImplementTest {
         "\\function f => \\new C { a => 0 }", 1);
   }
 
-  // TODO: Add tests on the universe of a class
+  @Test
+  public void universe() {
+    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\abstract A : \\Set1\n" +
+        "  \\abstract a : A\n" +
+        "}\n" +
+        "\\static \\class B \\extends A {\n" +
+        "  \\implement A => Nat\n" +
+        "}");
+    assertEquals(new SortMax(new Sort(2,1)), ((ClassDefinition) result.getDefinition("A")).getSorts());
+    assertEquals(new SortMax(new Sort(0,0)), ((ClassDefinition) result.getDefinition("B")).getSorts());
+  }
+
+  @Test
+  public void universeMultiple() {
+    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\abstract X : \\Set1\n" +
+        "  \\abstract Y : \\Set0\n" +
+        "  \\abstract x : X\n" +
+        "}\n" +
+        "\\static \\class B \\extends A {\n" +
+        "  \\implement X => Nat\n" +
+        "}\n" +
+        "\\static \\class C \\extends A {\n" +
+        " \\implement Y => Nat\n" +
+        " \\abstract x' : X\n" +
+        "}\n" +
+        "\\static \\class D \\extends B, C {\n" +
+        " \\implement x' => 0\n" +
+        "}\n" +
+        "\\static \\function f => D { x => 1 }");
+    assertEquals(new SortMax(new Sort(2,1)), ((ClassDefinition) result.getDefinition("A")).getSorts());
+    assertEquals(new SortMax(new Sort(1,1)), ((ClassDefinition) result.getDefinition("B")).getSorts());
+    assertEquals(new SortMax(new Sort(2,1)), ((ClassDefinition) result.getDefinition("C")).getSorts());
+    assertEquals(new SortMax(new Sort(0,0)), ((ClassDefinition) result.getDefinition("D")).getSorts());
+    assertEquals(ExpressionFactory.Universe(Sort.PROP), result.getDefinition("f").getType().toExpression());
+  }
 }

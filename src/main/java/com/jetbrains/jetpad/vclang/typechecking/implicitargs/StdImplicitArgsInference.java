@@ -1,10 +1,13 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
 import com.jetbrains.jetpad.vclang.term.*;
-import com.jetbrains.jetpad.vclang.term.context.binding.FunctionInferenceBinding;
-import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.FunctionInferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
@@ -27,7 +30,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       return true;
     }
 
-    Substitution substitution = new Substitution();
+    ExprSubstitution substitution = new ExprSubstitution();
     List<Expression> arguments = new ArrayList<>();
     List<EnumSet<AppExpression.Flag>> flags = new ArrayList<>();
     for (int i = 0; i < parameters.size(); i++) {
@@ -42,7 +45,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       substitution.add(parameter, binding);
     }
     result.expression = Apps(result.expression, arguments, flags);
-    result.type = result.type.subst(substitution);
+    result.type = result.type.subst(substitution, new LevelSubstitution());
     return true;
   }
 
@@ -53,9 +56,15 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
     if (isExplicit) {
       ConCallExpression conCall = result.expression.getFunction().toConCall();
-      if (conCall != null && Prelude.isPathCon(conCall.getDefinition()) && result.expression.getArguments().size() <= 1) {
+      if (conCall != null && Prelude.isPathCon(conCall.getDefinition()) && result.expression.getArguments().isEmpty()) {
         Expression interval = DataCall(Preprelude.INTERVAL);
-        Expression lp, lh;
+        List<DependentLink> pathParams = new ArrayList<>();
+
+        ((Expression) conCall.getType()).getPiParameters(pathParams, false, false);
+        //lp = conCall.getPolyParamValueByType(Preprelude.LVL.getResolvedName().getFullName());
+        //lh = conCall.getPolyParamValueByType(Preprelude.CNAT.getResolvedName().getFullName());
+
+        /*
         if (result.expression.getArguments().isEmpty()) {
           InferenceBinding inferenceBinding1 = new FunctionInferenceBinding("lp", Lvl(), 1, fun);
           InferenceBinding inferenceBinding2 = new FunctionInferenceBinding("lh", CNat(), 2, fun);
@@ -68,9 +77,10 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         } else {
           lp = result.expression.getArguments().get(0);
           lh = result.expression.getArguments().get(1);
-        }
+        } /**/
 
-        InferenceBinding inferenceBinding = new FunctionInferenceBinding("A", Universe(lp, lh), 3, fun);
+        // TODO: fix levels
+        InferenceBinding inferenceBinding = new FunctionInferenceBinding("A", pathParams.get(0).getType().toPi().getCodomain(), 1, fun);
         result.addUnsolvedVariable(inferenceBinding);
         DependentLink lamParam = param("i", interval);
         Expression binding = Reference(inferenceBinding);
@@ -91,43 +101,42 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
             .addArgument(argResult.expression, AppExpression.DEFAULT);
         result.type = result.type.applyExpressions(Arrays.asList(expr1, expr2, argResult.expression));
         result.add(argResult);
-        result.update(true);
+        result.update(false);
         return result;
       }
 
       List<DependentLink> params = new ArrayList<>();
-      result.type = result.type.getPiParameters(params, true, true);
+      result.type = result.type.getImplicitParameters(params);
       if (!fixImplicitArgs(result, params, fun)) {
         return null;
       }
-    } else {
-      result.type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
     }
 
-    PiExpression actualType = result.type.toPi();
-    if (actualType == null) {
+    DependentLink param = result.type.getPiParameters();
+    if (param == null) {
       TypeCheckingError error = new TypeMismatchError(myParentDefinition, new StringPrettyPrintable("A pi type"), result.type, fun);
       fun.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;
     }
 
-    CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, actualType.getParameters().getType());
+
+    CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, param.getType());
     if (argResult == null) {
       return null;
     }
 
-    if (actualType.getParameters().isExplicit() != isExplicit) {
-      TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Expected an " + (actualType.getParameters().isExplicit() ? "explicit" : "implicit") + " argument", arg);
+    if (param.isExplicit() != isExplicit) {
+      TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Expected an " + (param.isExplicit() ? "explicit" : "implicit") + " argument", arg);
       arg.setWellTyped(myVisitor.getContext(), new ErrorExpression(argResult.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;
     }
 
     result.expression = result.expression.addArgument(argResult.expression, isExplicit ? EnumSet.of(AppExpression.Flag.EXPLICIT, AppExpression.Flag.VISIBLE) : EnumSet.of(AppExpression.Flag.VISIBLE));
-    result.type = actualType.applyExpressions(Collections.singletonList(argResult.expression));
+    result.type = result.type.applyExpressions(Collections.singletonList(argResult.expression));
     result.add(argResult);
-    result.update(true);
+    result.update(false);
     return result;
   }
 
@@ -155,6 +164,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           Expression expectedTypeNorm = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
           List<? extends Expression> args = expectedTypeNorm.getArguments();
           if (expectedTypeNorm.getFunction().toDataCall() != null) {
+            DataCallExpression dataCall = expectedTypeNorm.getFunction().toDataCall();
             List<Expression> args1 = new ArrayList<>(args.size());
             args1.addAll(result.expression.getArguments());
             args1.addAll(args.subList(result.expression.getArguments().size(), args.size()));
@@ -167,8 +177,25 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
                 result.expression = Apps(result.expression, args, Collections.nCopies(args.size(), EnumSet.noneOf(AppExpression.Flag.class)));
                 result.type = result.type.applyExpressions(args);
               }
-              return inferArg(result, arg, true, fun);
+          /*  if (dataCall.isPolymorphic()) {
+              if (result.getEquations() instanceof DummyEquations) {
+                result.setEquations(newEquations());
+              }
+              //conCall.applyLevelSubst(dataCall.getPolyParamsSubst());
+              //result.type.toDataCall().applyLevelSubst(dataCall.getPolyParamsSubst());
+              LevelSubstitution levels = conCall.getPolyParamsSubst();
+              for (Binding binding : levels.getDomain()) {
+                LevelExpression expectedLevel = dataCall.getPolyParamsSubst().get(binding);
+                if (expectedLevel != null) {
+                  result.getEquations().add(levels.get(binding), expectedLevel, Equations.CMP.EQ, fun);
+               //   if (expectedLevel.isBinding() && expectedLevel.getUnitBinding() instanceof InferenceBinding) {
+               //     result.addUnsolvedVariable((InferenceBinding) expectedLevel.getUnitBinding());
+               //   }
+                }
+              }
+            }/**/
             }
+            return inferArg(result, arg, true, fun);
           }
         }
       }
@@ -196,11 +223,11 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
   @Override
   public CheckTypeVisitor.Result inferTail(CheckTypeVisitor.Result result, Expression expectedType, Abstract.Expression expr) {
     List<DependentLink> actualParams = new ArrayList<>();
-    Expression actualType = result.type.getPiParameters(actualParams, true, true);
+    Type actualType = result.type.getImplicitParameters(actualParams);
     List<DependentLink> expectedParams = new ArrayList<>(actualParams.size());
     Expression expectedType1 = expectedType.getPiParameters(expectedParams, true, true);
     if (expectedParams.size() > actualParams.size()) {
-      TypeCheckingError error = new TypeMismatchError(myParentDefinition, expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
+      TypeCheckingError error = new TypeMismatchError(myParentDefinition, expectedType1.fromPiParameters(expectedParams), actualType.fromPiParameters(actualParams), expr);
       expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;
@@ -212,12 +239,12 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       if (!fixImplicitArgs(result, actualParams.subList(0, argsNumber), expr)) {
         return null;
       }
-      expectedType = expectedType1.fromPiParameters(expectedParams);
+      expectedType = expectedType1.fromPiParameters(expectedParams); // TODO: do we need this line?
     }
 
     result = myVisitor.checkResult(expectedType, result, expr);
     if (result != null) {
-      result.update(true);
+      result.update(false);
     }
     return result;
   }

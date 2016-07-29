@@ -17,5 +17,5 @@ public interface SourceInfoProvider {
       return null;
     }
   }
-  public static final SourceInfoProvider TRIVIAL = new Trivial();
+  SourceInfoProvider TRIVIAL = new Trivial();
 }

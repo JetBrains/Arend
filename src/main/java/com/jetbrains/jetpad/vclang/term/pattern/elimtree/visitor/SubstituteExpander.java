@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
@@ -24,7 +24,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 
 public class SubstituteExpander {
   public interface SubstituteExpansionProcessor {
-    void process(Substitution subst, Substitution toCtx, List<Binding> ctx, LeafElimTreeNode leaf);
+    void process(ExprSubstitution subst, ExprSubstitution toCtx, List<Binding> ctx, LeafElimTreeNode leaf);
   }
 
   private final SubstituteExpansionProcessor myProcessor;
@@ -35,16 +35,16 @@ public class SubstituteExpander {
     myContext = context;
   }
 
-  public static void substituteExpand(ElimTreeNode tree, final Substitution subst, List<Binding> context, SubstituteExpansionProcessor processor) {
-    Substitution toCtx = new Substitution();
+  public static void substituteExpand(ElimTreeNode tree, final ExprSubstitution subst, List<Binding> context, SubstituteExpansionProcessor processor) {
+    ExprSubstitution toCtx = new ExprSubstitution();
     for (Binding binding : context) {
       toCtx.add(binding, Reference(binding));
     }
     new SubstituteExpander(processor, context).substituteExpand(tree, subst, toCtx);
   }
 
-  private void substituteExpand(ElimTreeNode tree, Substitution subst, final Substitution toCtx) {
-    final Substitution nestedSubstitution = new Substitution().compose(subst);
+  private void substituteExpand(ElimTreeNode tree, ExprSubstitution subst, final ExprSubstitution toCtx) {
+    final ExprSubstitution nestedSubstitution = new ExprSubstitution().compose(subst);
     tree.matchUntilStuck(nestedSubstitution, false).accept(new ElimTreeNodeVisitor<Void, Void>() {
       @Override
       public Void visitBranch(BranchElimTreeNode branchNode, Void params) {
@@ -67,7 +67,7 @@ public class SubstituteExpander {
           List<Binding> tail = new ArrayList<>(myContext.subList(myContext.lastIndexOf(binding) + 1, myContext.size()));
           myContext.subList(myContext.lastIndexOf(binding), myContext.size()).clear();
           try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
-            Substitution currentSubst = new Substitution(binding, Apps(conCall, args));
+            ExprSubstitution currentSubst = new ExprSubstitution(binding, Apps(conCall, args));
             myContext.addAll(toContext(constructorArgs));
             myContext.addAll(currentSubst.extendBy(tail));
             substituteExpand(branchNode, currentSubst.compose(nestedSubstitution), currentSubst.compose(toCtx));

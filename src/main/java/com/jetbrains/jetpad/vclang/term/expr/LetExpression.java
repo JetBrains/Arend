@@ -1,8 +1,12 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Let;
@@ -35,12 +39,6 @@ public class LetExpression extends Expression {
   }
 
   @Override
-  public Expression getType() {
-    Expression type = myExpression.getType();
-    return type != null ? Let(myClauses, type) : null;
-  }
-
-  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitLet(this, params);
   }
@@ -48,5 +46,30 @@ public class LetExpression extends Expression {
   @Override
   public LetExpression toLet() {
     return this;
+  }
+
+  private <T extends Binding> List<T> getBindingsFreeIn(List<T> bindings, Expression expr) {
+    List<T> result = Collections.emptyList();
+    for (T binding : bindings) {
+      if (expr.findBinding(binding)) {
+        if (result.isEmpty()) {
+          result = new ArrayList<>(bindings.size());
+        }
+        result.add(binding);
+      }
+    }
+    return result;
+  }
+
+  public Type getType(Type type) {
+    if (type instanceof Expression) {
+      return new LetExpression(myClauses, (Expression) type);
+    } else {
+      for (DependentLink link = type.getPiParameters(); link.hasNext(); link = link.getNext()) {
+        List<LetClause> clauses = getBindingsFreeIn(myClauses, link.getType());
+        link.setType(clauses.isEmpty() ? link.getType() : new LetExpression(clauses, link.getType()));
+      }
+      return type;
+    }
   }
 }

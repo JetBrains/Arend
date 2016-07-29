@@ -2,6 +2,8 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 
@@ -44,9 +46,8 @@ public class ClassCallExpression extends DefCallExpression {
     return (ClassDefinition) super.getDefinition();
   }
 
-  @Override
-  public UniverseExpression getType() {
-    return new UniverseExpression(myFieldSet.getUniverse(this));
+  public SortMax getSorts() {
+    return myFieldSet.getSorts(this);
   }
 
   @Override

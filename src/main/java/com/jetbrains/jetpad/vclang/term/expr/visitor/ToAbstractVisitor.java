@@ -4,13 +4,19 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.factory.AbstractExpressionFactory;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
+import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
@@ -58,7 +64,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     List<? extends Expression> args = expr.getArguments();
 
     DataCallExpression dataCall = fun.toDataCall();
-    if (!(args.size() == 5 && dataCall != null && Prelude.isPath(dataCall.getDefinition()))) {
+    if (!(args.size() == 3 && dataCall != null && Prelude.isPath(dataCall.getDefinition()))) {
       return null;
     }
     for (EnumSet<AppExpression.Flag> flag : expr.getFlags()) {
@@ -66,10 +72,10 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
         return null;
       }
     }
-    LamExpression expr1 = args.get(2).toLam();
+    LamExpression expr1 = args.get(0).toLam();
     if (expr1 != null) {
       if (!expr1.getBody().findBinding(expr1.getParameters())) {
-        return myFactory.makeBinOp(args.get(3).accept(this, null), Prelude.PATH_INFIX, args.get(4).accept(this, null));
+        return myFactory.makeBinOp(args.get(1).accept(this, null), Prelude.PATH_INFIX, args.get(2).accept(this, null));
       }
     }
     return null;
@@ -121,9 +127,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     int index = 0;
     FieldCallExpression fieldCall = expr.getFunction().toFieldCall();
     if (fieldCall != null) {
-      Expression type = expr.getArguments().get(0).getType();
-      if (type != null) {
-        ClassCallExpression classCall = type.normalize(NormalizeVisitor.Mode.WHNF).toClassCall();
+      Type type = expr.getArguments().get(0).getType();
+      if (type instanceof Expression) {
+        ClassCallExpression classCall = ((Expression) type).normalize(NormalizeVisitor.Mode.WHNF).toClassCall();
         if (classCall != null) {
           result = myFactory.makeFieldCall(expr.getArguments().get(0).accept(this, null), classCall.getDefinition(), fieldCall.getDefinition());
           index = 1;
@@ -164,7 +170,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
     Abstract.Expression conParams = null;
     if (!expr.getDefinition().hasErrors() && myFlags.contains(Flag.SHOW_CON_PARAMS) && (!expr.getDataTypeArguments().isEmpty() || myFlags.contains(Flag.SHOW_CON_DATA_TYPE))) {
-      Substitution substitution = new Substitution();
+      ExprSubstitution substitution = new ExprSubstitution();
       DependentLink link = expr.getDefinition().getDataTypeParameters();
       for (int i = 0; i < expr.getDataTypeArguments().size() && link.hasNext(); i++, link = link.getNext()) {
         substitution.add(link, expr.getDataTypeArguments().get(i));
@@ -252,7 +258,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return result;
   }
 
-  private List<Abstract.TypeArgument> visitTypeArguments(DependentLink arguments) {
+  public List<Abstract.TypeArgument> visitTypeArguments(DependentLink arguments) {
     List<Abstract.TypeArgument> args = new ArrayList<>();
     List<String> names = new ArrayList<>(3);
     for (DependentLink link = arguments; link.hasNext(); link = link.getNext()) {
@@ -291,44 +297,80 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return null;
   }
 
-  private Integer getHNum(LevelExpression expr) {
+  private Integer getHNum(Level expr) {
     if (expr.isClosed()) {
       if (expr.isInfinity()) {
         return Abstract.UniverseExpression.Universe.NOT_TRUNCATED;
       }
-      return expr.extractOuterSucs() - 1;
+      return expr.getConstant() - 1;
     }
     return null;
   }
 
-  private Integer getPNum(LevelExpression expr) {
-    if (expr.isClosed()) { return expr.extractOuterSucs(); }
+  private Integer getPNum(Level expr) {
+    if (expr.isClosed()) {
+      return expr.getConstant();
+    }
     return null;
   }
 
   @Override
   public Abstract.Expression visitUniverse(UniverseExpression expr, Void params) {
-    TypeUniverse universe = expr.getUniverse();
+    return visitSort(expr.getSort());
+  }
 
-    /*
-    Expression level = universe.getLevel().getValue();
-    if (level.toNew() != null && level.toNew().getExpression().toClassCall() != null) {
-      ClassCallExpression classCall = level.toNew().getExpression().toClassCall();
-      ClassCallExpression.ImplementStatement pStat = classCall.getImplementStatements().get(Preprelude.PLEVEL);
-      ClassCallExpression.ImplementStatement hStat = classCall.getImplementStatements().get(Preprelude.HLEVEL);
-      if (pStat != null && hStat != null && pStat.term != null && hStat.term != null) {
-        Integer pNum = getPNum(pStat.term);
-        Integer hNum = getHNum(hStat.term);
-        if (pNum != null && hNum != null) {
-          return myFactory.makeUniverse(pNum, hNum);
-        }
-      }
+  public Abstract.Expression visitSort(Sort sort) {
+    Integer pNum = getPNum(sort.getPLevel());
+    Integer hNum = getHNum(sort.getHLevel());
+    if (pNum != null && hNum != null) {
+      return myFactory.makeUniverse(pNum, hNum);
+    } else {
+      return myFactory.makeUniverse(visitLevel(sort.getPLevel(), 0), visitLevel(sort.getHLevel(), -1));
     }
-    return myFactory.makeUniverse(level.accept(this, null)); /**/
-    Integer pNum = getPNum(universe.getPLevel());
-    Integer hNum = getHNum(universe.getHLevel());
-    if (pNum != null && hNum != null) return myFactory.makeUniverse(pNum, hNum);
-    return myFactory.makeUniverse(universe.getPLevel().accept(this, null), universe.getHLevel().accept(this, null));
+  }
+
+  public Abstract.Expression visitSortMax(SortMax sort) {
+    return myFactory.makeUniverse(visitLevelMax(sort.getPLevel(), 0), visitLevelMax(sort.getHLevel(), -1));
+  }
+
+  public Abstract.Expression visitLevel(Level level, int add) {
+    if (level.isInfinity()) {
+      return myFactory.makeVar("inf");
+    }
+    if (level.isClosed()) {
+      return myFactory.makeNumericalLiteral(level.getConstant() + add);
+    }
+
+    Abstract.Expression result = myFactory.makeVar(level.getVar().getName());
+    for (int i = 0; i < level.getConstant() + add; i++) {
+      result = myFactory.makeApp(myFactory.makeVar("suc"), true, result);
+    }
+    return result;
+  }
+
+  public Abstract.Expression visitLevelMax(LevelMax levelMax, int add) {
+    if (levelMax.isInfinity()) {
+      return myFactory.makeVar("inf");
+    }
+
+    List<Level> levels = levelMax.toListOfLevels();
+    if (levels.isEmpty()) {
+      return myFactory.makeNumericalLiteral(add);
+    }
+    if (levels.size() == 1) {
+      return visitLevel(levels.get(0), add);
+    }
+
+    Abstract.Expression result = myFactory.makeVar("max");
+    for (Level level : levels) {
+      result = myFactory.makeApp(result, true, visitLevel(level, add));
+    }
+
+    return result;
+  }
+
+  public Abstract.Expression visitPiUniverseType(PiUniverseType type) {
+    return myFactory.makePi(visitTypeArguments(type.getPiParameters()), visitSortMax(type.getSorts()));
   }
 
   @Override
@@ -408,11 +450,6 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   @Override
   public Abstract.Expression visitOfType(OfTypeExpression expr, Void params) {
     return expr.getExpression().accept(this, null);
-  }
-
-  @Override
-  public Abstract.Expression visitLevel(LevelExpression expr, Void params) {
-    return expr.getExpr().accept(this, null);
   }
 
   private List<Abstract.Clause> visitBranch(BranchElimTreeNode branchNode) {

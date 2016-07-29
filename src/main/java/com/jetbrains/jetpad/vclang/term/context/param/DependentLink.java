@@ -1,9 +1,12 @@
 package com.jetbrains.jetpad.vclang.term.context.param;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.SubstVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,19 +18,19 @@ public interface DependentLink extends Binding {
   DependentLink getNext();
   void setNext(DependentLink next);
   void setName(String name);
-  DependentLink subst(Substitution subst, int size);
+  DependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size);
   DependentLink getNextTyped(List<String> names);
   boolean hasNext();
 
   class Helper {
-    public static void freeSubsts(DependentLink link, Substitution substitution) {
+    public static void freeSubsts(DependentLink link, ExprSubstitution substitution) {
       for (; link.hasNext(); link = link.getNext()) {
         substitution.getDomain().remove(link);
       }
     }
 
-    public static Substitution toSubstitution(DependentLink link, List<? extends Expression> expressions) {
-      Substitution result = new Substitution();
+    public static ExprSubstitution toSubstitution(DependentLink link, List<? extends Expression> expressions) {
+      ExprSubstitution result = new ExprSubstitution();
       for (Expression expression : expressions) {
         result.add(link, expression);
         link = link.getNext();
@@ -94,11 +97,28 @@ public interface DependentLink extends Binding {
       return result;
     }
 
-    public static DependentLink subst(DependentLink link, Substitution substitution) {
-      return link.subst(substitution, Integer.MAX_VALUE);
+    public static List<DependentLink> fromList(List<DependentLink> list) {
+      List<DependentLink> result = new ArrayList<>(list.size());
+      for (int i = 0; i < list.size(); i++) {
+        if (list.get(i).hasNext()) {
+          result.add(list.get(i));
+          while (list.get(i).getNext().hasNext()) {
+            i++;
+          }
+        }
+      }
+      return result;
     }
 
-    public static <P> DependentLink accept(DependentLink link, Substitution substitution, ExpressionVisitor<? super P, ? extends Expression> visitor, P params) {
+    public static DependentLink subst(DependentLink link, ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
+      return link.subst(exprSubst, levelSubst, Integer.MAX_VALUE);
+    }
+
+    public static DependentLink subst(DependentLink link, ExprSubstitution substitution) {
+      return subst(link, substitution, new LevelSubstitution());
+    }
+
+    public static <P> DependentLink accept(DependentLink link, ExprSubstitution substitution, ExpressionVisitor<? super P, ? extends Expression> visitor, P params) {
       link = DependentLink.Helper.subst(link, substitution);
       for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
         link1 = link1.getNextTyped(null);
@@ -108,7 +128,21 @@ public interface DependentLink extends Binding {
     }
 
     public static <P> DependentLink accept(DependentLink link, ExpressionVisitor<? super P, ? extends Expression> visitor, P params) {
-      return accept(link, new Substitution(), visitor, params);
+      return accept(link, new ExprSubstitution(), visitor, params);
+    }
+
+    public static DependentLink clone(DependentLink link) {
+      return accept(link, new SubstVisitor(new ExprSubstitution(), new LevelSubstitution()), null);
+    }
+
+    public static boolean findBinding(DependentLink link, Callable callable) {
+      for (; link.hasNext(); link = link.getNext()) {
+        link = link.getNextTyped(null);
+        if (link.getType().findBinding(callable)) {
+          return true;
+        }
+      }
+      return false;
     }
   }
 }

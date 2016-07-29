@@ -1,22 +1,17 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 public class UniverseExpression extends Expression {
-  private final TypeUniverse myUniverse;
+  private final Sort mySort;
 
-  public UniverseExpression(TypeUniverse universe) {
-    myUniverse = universe;
+  public UniverseExpression(Sort sort) {
+    mySort = sort;
   }
 
-  public TypeUniverse getUniverse() {
-    return myUniverse;
-  }
-
-  @Override
-  public UniverseExpression getType() {
-    return new UniverseExpression(myUniverse.succ());
+  public Sort getSort() {
+    return mySort;
   }
 
   @Override
@@ -31,7 +26,7 @@ public class UniverseExpression extends Expression {
 
   @Override
   public boolean isAnyUniverse() {
-    return myUniverse.getPLevel().isInfinity();
+    return mySort.getPLevel().isInfinity();
   }
 
   @Override
@@ -40,6 +35,6 @@ public class UniverseExpression extends Expression {
       return false;
     }
     UniverseExpression expr = (UniverseExpression)obj;
-    return myUniverse.equals(expr.getUniverse());
+    return mySort.equals(expr.getSort());
   }
 }

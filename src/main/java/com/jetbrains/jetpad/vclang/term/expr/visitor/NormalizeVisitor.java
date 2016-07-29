@@ -6,6 +6,8 @@ import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.typechecking.normalization.Normalizer;
 
@@ -37,7 +39,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       if (ref != null) {
         Binding binding = ref.getBinding();
         if (binding instanceof Function) {
-          return visitFunctionCall((Function) binding, expr, mode);
+          return visitFunctionCall((Function) binding, new LevelSubstitution(), expr, mode);
         }
       }
     }
@@ -82,7 +84,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
 
       Expression thisExpr = expr.getArguments().get(0).normalize(Mode.WHNF);
-      ClassCallExpression classCall = thisExpr.getType().normalize(Mode.WHNF).toClassCall();
+      ClassCallExpression classCall = ((Expression) thisExpr.getType()).normalize(Mode.WHNF).toClassCall();
       if (classCall != null) {
         FieldSet.Implementation impl = classCall.getFieldSet().getImplementation((ClassField) defCallExpr.getDefinition());
         if (impl != null) {
@@ -99,7 +101,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return visitConstructorCall(expr, mode);
     }
     if (defCallExpr.getDefinition() instanceof Function) {
-      return visitFunctionCall((Function) defCallExpr.getDefinition(), expr, mode);
+      return visitFunctionCall((Function) defCallExpr.getDefinition(), defCallExpr.getPolyParamsSubst(), expr, mode); //.subst(defCallExpr.getPolyParamsSubst());
     }
 
     return mode == Mode.TOP ? null : applyDefCall(expr, mode);
@@ -118,7 +120,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       for (int i = 0; i < take; i++) {
         parameters.add(args.get(i));
       }
-      conCallExpression = ConCall(conCallExpression.getDefinition(), parameters);
+      conCallExpression = ConCall(conCallExpression.getDefinition(), parameters).applyLevelSubst(conCallExpression.getPolyParamsSubst());
       int size = args.size();
       args = args.subList(take, size);
       if (!args.isEmpty()) {
@@ -128,17 +130,17 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
     }
 
-    return visitFunctionCall(conCallExpression.getDefinition(), expr, mode);
+    return visitFunctionCall(conCallExpression.getDefinition(), conCallExpression.getPolyParamsSubst(), expr, mode);//.subst(conCallExpression.getPolyParamsSubst());
   }
 
-  private Expression visitFunctionCall(Function func, Expression expr, Mode mode) {
+  private Expression visitFunctionCall(Function func, LevelSubstitution polySubst, Expression expr, Mode mode) {
     List<? extends Expression> args = expr.getArguments();
     List<? extends EnumSet<AppExpression.Flag>> flags = Collections.emptyList();
     List<? extends Expression> requiredArgs;
     DependentLink excessiveParams;
     int numberOfRequiredArgs = func.getNumberOfRequiredArguments();
     if (numberOfRequiredArgs > args.size()) {
-      excessiveParams = DependentLink.Helper.subst(DependentLink.Helper.get(func.getParameters(), args.size()), new Substitution());
+      excessiveParams = DependentLink.Helper.subst(DependentLink.Helper.get(func.getParameters(), args.size()), new ExprSubstitution());
       List<Expression> requiredArgs1 = new ArrayList<>();
       for (DependentLink link = excessiveParams; link.hasNext(); link = link.getNext()) {
         requiredArgs1.add(Reference(link));
@@ -165,7 +167,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       params = conCall.getDefinition().getDataTypeParameters();
       paramArgs = conCall.getDataTypeArguments();
     }
-    Expression result = myNormalizer.normalize(func, params, paramArgs, requiredArgs, args, flags, mode);
+    Expression result = myNormalizer.normalize(func, polySubst, params, paramArgs, requiredArgs, args, flags, mode);
     if (result == null) {
       return applyDefCall(expr, mode);
     }
@@ -192,7 +194,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
     Binding binding = expr.getBinding();
     if (binding instanceof Function) {
-      return visitFunctionCall((Function) binding, expr, mode);
+      return visitFunctionCall((Function) binding, new LevelSubstitution(), expr, mode);
     } else {
       return expr;
     }
@@ -204,7 +206,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return null;
     }
     if (mode == Mode.HUMAN_NF) {
-      Substitution substitution = new Substitution();
+      ExprSubstitution substitution = new ExprSubstitution();
       return Lam(DependentLink.Helper.accept(expr.getParameters(), substitution, this, mode), expr.getBody().subst(substitution).accept(this, mode));
     }
     if (mode == Mode.NF) {
@@ -220,7 +222,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return null;
     }
     if (mode == Mode.HUMAN_NF || mode == Mode.NF) {
-      Substitution substitution = new Substitution();
+      ExprSubstitution substitution = new ExprSubstitution();
       return Pi(DependentLink.Helper.accept(expr.getParameters(), substitution, this, mode), expr.getCodomain().subst(substitution).accept(this, mode));
     } else {
       return expr;
@@ -231,7 +233,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   public Expression visitUniverse(UniverseExpression expr, Mode mode) {
     if (mode == Mode.TOP) return null;
     /*if ((mode == Mode.NF || mode == Mode.HUMAN_NF)) {
-      return ((TypeUniverse) expr.getUniverse()).getLevel() != null ? Universe(((TypeUniverse) expr.getUniverse()).getLevel().getValue().accept(this, mode)) : expr;
+      return ((TypeUniverse) expr.getSort()).getLevel() != null ? Universe(((TypeUniverse) expr.getSort()).getLevel().getValue().accept(this, mode)) : expr;
     } /**/
     return expr;
   }
@@ -283,8 +285,4 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     return mode == Mode.NF ? new OfTypeExpression(expr.getExpression().accept(this, mode), expr.getType()) : expr.getExpression().accept(this, mode);
   }
 
-  @Override
-  public Expression visitLevel(LevelExpression expr, Mode mode) {
-    return mode == Mode.TOP ? null : expr;
-  }
 }

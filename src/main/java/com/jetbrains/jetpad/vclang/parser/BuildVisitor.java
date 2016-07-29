@@ -766,6 +766,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return null;
     }
     for (ArgumentContext argument : arguments) {
+      if (argument instanceof ArgumentLevelContext) {
+        expr = new Concrete.ApplyLevelExpression(expr.getPosition(), expr, visitExpr(((ArgumentLevelContext) argument).expr()));
+        continue;
+      }
+
       boolean explicit = argument instanceof ArgumentExplicitContext;
       Concrete.Expression expr1;
       if (explicit) {

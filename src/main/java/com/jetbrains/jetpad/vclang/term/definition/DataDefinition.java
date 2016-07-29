@@ -6,29 +6,40 @@ import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
+import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
 import java.util.*;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ConCall;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.DataCall;
 
 public class DataDefinition extends Definition {
   private List<Constructor> myConstructors;
   private DependentLink myParameters;
   private Map<Constructor, Condition> myConditions;
+  private SortMax mySorts;
 
   public DataDefinition(String name, Abstract.Definition.Precedence precedence) {
-    super(name, precedence);
-    myConstructors = new ArrayList<>();
-    myParameters = EmptyDependentLink.getInstance();
+    this(name, precedence, new SortMax(), EmptyDependentLink.getInstance());
   }
 
-  public DataDefinition(String name, Abstract.Definition.Precedence precedence, TypeUniverse universe, DependentLink parameters) {
-    super(name, precedence, universe);
+  public DataDefinition(String name, Abstract.Definition.Precedence precedence, SortMax sorts, DependentLink parameters) {
+    super(name, precedence);
     hasErrors(false);
-    myParameters = parameters;
     myConstructors = new ArrayList<>();
+    myParameters = parameters;
+    mySorts = sorts;
+  }
+
+  public SortMax getSorts() {
+    return mySorts;
+  }
+
+  public void setSorts(SortMax sorts) {
+    mySorts = sorts;
   }
 
   public DependentLink getParameters() {
@@ -100,13 +111,12 @@ public class DataDefinition extends Definition {
   }
 
   @Override
-  public Expression getType() {
+  public Type getType() {
     if (hasErrors()) {
       return null;
     }
 
-    Expression resultType = new UniverseExpression(getUniverse());
-    return myParameters.hasNext() ? Pi(myParameters, resultType) : resultType;
+    return new PiUniverseType(myParameters, mySorts);
   }
 
   @Override

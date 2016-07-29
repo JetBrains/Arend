@@ -1,7 +1,9 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
@@ -29,7 +31,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
     for (Expression arg : expr.getDataTypeArguments()) {
       args.add(arg.accept(this, null));
     }
-    return new ConCallExpression(expr.getDefinition(), args);
+    return new ConCallExpression(expr.getDefinition(), args).applyLevelSubst(expr.getPolyParamsSubst());
   }
 
   @Override
@@ -49,19 +51,20 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
 
   @Override
   public ReferenceExpression visitReference(ReferenceExpression expr, Void params) {
+    assert !(expr.getBinding() instanceof InferenceBinding);
     return expr;
   }
 
   @Override
   public LamExpression visitLam(LamExpression expr, Void params) {
-    Substitution substitution = new Substitution();
+    ExprSubstitution substitution = new ExprSubstitution();
     DependentLink link = DependentLink.Helper.accept(expr.getParameters(), substitution, this, null);
     return new LamExpression(link, expr.getBody().accept(this, null).subst(substitution));
   }
 
   @Override
   public PiExpression visitPi(PiExpression expr, Void params) {
-    Substitution substitution = new Substitution();
+    ExprSubstitution substitution = new ExprSubstitution();
     DependentLink link = DependentLink.Helper.accept(expr.getParameters(), substitution, this, null);
     return new PiExpression(link, expr.getCodomain().accept(this, null).subst(substitution));
   }
@@ -102,7 +105,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
 
   @Override
   public LetExpression visitLet(LetExpression expr, Void params) {
-    Substitution substitution = new Substitution();
+    ExprSubstitution substitution = new ExprSubstitution();
     List<LetClause> clauses = new ArrayList<>(expr.getClauses().size());
     for (LetClause clause : expr.getClauses()) {
       DependentLink link = DependentLink.Helper.accept(clause.getParameters(), substitution, this, null);
@@ -119,16 +122,11 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
   }
 
   @Override
-  public Expression visitLevel(LevelExpression expr, Void params) {
-    return expr;
-  }
-
-  @Override
   public BranchElimTreeNode visitBranch(BranchElimTreeNode branchNode, Void params) {
     BranchElimTreeNode result = new BranchElimTreeNode(branchNode.getReference(), branchNode.getContextTail());
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
       ConstructorClause clause1 = result.addClause(clause.getConstructor(), DependentLink.Helper.toNames(clause.getParameters()));
-      Substitution substitution = new Substitution();
+      ExprSubstitution substitution = new ExprSubstitution();
       for (DependentLink linkOld = clause.getParameters(), linkNew = clause1.getParameters(); linkOld.hasNext(); linkOld = linkOld.getNext(), linkNew = linkNew.getNext()) {
         substitution.add(linkOld, new ReferenceExpression(linkNew));
       }

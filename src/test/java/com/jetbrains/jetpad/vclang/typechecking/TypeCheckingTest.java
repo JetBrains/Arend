@@ -80,22 +80,22 @@ public class TypeCheckingTest {
     typeCheckDef("\\function pmap {A : \\Type1} {B : \\Type0} {a a' : A} (f : A -> B) (p : a = a') : (f a = f a') => path (\\lam i => f (p @ i))");
   }
 
-   @Test
+  @Test
   public void testPMap1Error() {
-    typeCheckDef("\\function pmap {A B : \\Type0} {a a' : A} (f : A -> B) (p : a = a') : ((=) {sucLvl zeroLvl} {inf} {B} (f a) (f a'))" +
-            " => path {zeroLvl} {inf} (\\lam i => f (p @ i))", 1);
+    typeCheckDef("\\function pmap {A B : \\Type0} {a a' : A} (f : A -> B) (p : a = a') : ((=) [1] [inf] {B} (f a) (f a'))" +
+            " => path [2] [inf] (\\lam i => f (p @ i))");
   }
 
   @Test
   public void testTransport1() {
     typeCheckDef("\\function transport {A : \\Type1} (B : A -> \\Type1) {a a' : A} (p : a = a') (b : B a) : B a' =>\n" +
-        "coe (\\lam i => B ((@) {sucLvl zeroLvl} {inf} {\\lam _ => A} {a} {a'} p i)) b right");
+        "coe (\\lam i => B ((@) {\\lam _ => A} {a} {a'} p i)) b right");
   }
 
   @Test
   public void testTransport1Error() {
     typeCheckDef("\\function transport {A : \\Type1} (B : A -> \\Type1) {a a' : A} (p : a = a') (b : B a) : B a' =>\n" +
-        "coe (\\lam i => B ((@) {zeroLvl} {inf} {\\lam _ => A} {a} {a'} p i)) b right", 1);
+        "coe (\\lam i => B ((@) [zero] [inf] {\\lam _ => A} {a} {a'} p i)) b right", 1);
   }
 
   @Test
@@ -108,8 +108,8 @@ public class TypeCheckingTest {
   public void compareData() {
     typeCheckClass(
         "\\data D {lp : Lvl} {lh : CNat} | con\n" +
-        "\\function f {l : Lvl} (d : D {l} {fin 0}) => d\n" +
-        "\\function g {l : Lvl} (d : D {l} {inf}) => f d");
+        "\\function f {l : Lvl} (d : D [l] [0]) => d\n" +
+        "\\function g {l : Lvl} (d : D [l] [inf]) => f d");
   }
 
   @Test

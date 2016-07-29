@@ -5,12 +5,12 @@ import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -30,14 +30,12 @@ public class PathsTest {
     A.setNext(param("a", Reference(A)));
     DependentLink C = param((String) null, DataCall(Preprelude.INTERVAL));
     List<Expression> pathArgs = new ArrayList<>();
-    pathArgs.add(ZeroLvl());
-    pathArgs.add(Inf());
     pathArgs.add(Lam(C, Reference(A)));
     pathArgs.add(Reference(A.getNext()));
     pathArgs.add(Reference(A.getNext()));
-    Expression pathCall = ConCall(Prelude.PATH_CON, pathArgs).addArgument(Lam(C, Reference(A.getNext())), AppExpression.DEFAULT);
+    Expression pathCall = ConCall(Prelude.PATH_CON, new Level(0), new Level(0), pathArgs).addArgument(Lam(C, Reference(A.getNext())), AppExpression.DEFAULT);
     assertEquals(Lam(A, pathCall).normalize(NormalizeVisitor.Mode.NF), idp.expression);
-    assertEquals(Pi(A, Apps(FunCall(Prelude.PATH_INFIX).addArgument(ZeroLvl(), EnumSet.noneOf(AppExpression.Flag.class)).addArgument(Inf(), EnumSet.noneOf(AppExpression.Flag.class)), Reference(A), Reference(A.getNext()), Reference(A.getNext()))).normalize(NormalizeVisitor.Mode.NF), idp.type.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Pi(A, Apps(FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0)), Reference(A), Reference(A.getNext()), Reference(A.getNext()))).normalize(NormalizeVisitor.Mode.NF), idp.type.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test

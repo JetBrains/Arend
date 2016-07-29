@@ -1,13 +1,13 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceBinding;
+import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 public abstract class TypeCheckingResult {
@@ -16,7 +16,7 @@ public abstract class TypeCheckingResult {
 
   public TypeCheckingResult() {
     myEquations = DummyEquations.getInstance();
-    myUnsolvedVariables = Collections.emptySet();
+    myUnsolvedVariables = new LinkedHashSet<>();
   }
 
   public Equations getEquations() {
@@ -28,10 +28,11 @@ public abstract class TypeCheckingResult {
   }
 
   public void addUnsolvedVariable(InferenceBinding binding) {
-    if (myUnsolvedVariables.isEmpty()) {
-      myUnsolvedVariables = new HashSet<>();
+    if (binding instanceof LevelInferenceBinding) {
+      myEquations.addVariable((LevelInferenceBinding) binding);
+    } else {
+      myUnsolvedVariables.add(binding);
     }
-    myUnsolvedVariables.add(binding);
   }
 
   public boolean hasUnsolvedVariables() {
@@ -61,17 +62,17 @@ public abstract class TypeCheckingResult {
     }
   }
 
-  public Substitution getSubstitution(boolean onlyPreciseSolutions) {
+  public Substitution getSubstitution() {
     if (!myEquations.isEmpty()) {
-      return myEquations.getInferenceVariables(myUnsolvedVariables, onlyPreciseSolutions);
+      return myEquations.solve(myUnsolvedVariables, false);
     } else {
       return new Substitution();
     }
   }
 
-  public void update(boolean onlyPreciseSolutions) {
+  public void update(boolean isFinal) {
     if (!myEquations.isEmpty()) {
-      subst(myEquations.getInferenceVariables(myUnsolvedVariables, onlyPreciseSolutions));
+      subst(myEquations.solve(myUnsolvedVariables, isFinal));
     }
   }
 

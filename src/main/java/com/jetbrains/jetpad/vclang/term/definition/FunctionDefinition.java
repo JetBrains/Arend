@@ -4,15 +4,15 @@ import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FunCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FunCall;
 
 public class FunctionDefinition extends Definition implements Function {
   private DependentLink myParameters;
-  private Expression myResultType;
+  private Type myResultType;
   private ElimTreeNode myElimTree;
   private boolean myTypeHasErrors;
   private final Namespace myOwnNamespace;
@@ -24,19 +24,8 @@ public class FunctionDefinition extends Definition implements Function {
     myParameters = EmptyDependentLink.getInstance();
   }
 
-  public FunctionDefinition(String name, Abstract.Definition.Precedence precedence, Namespace ownNamespace, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
+  public FunctionDefinition(String name, Abstract.Definition.Precedence precedence, Namespace ownNamespace, DependentLink parameters, Type resultType, ElimTreeNode elimTree) {
     super(name, precedence);
-    assert parameters != null;
-    myOwnNamespace = ownNamespace;
-    hasErrors(false);
-    myParameters = parameters;
-    myResultType = resultType;
-    myTypeHasErrors = false;
-    myElimTree = elimTree;
-  }
-
-  public FunctionDefinition(String name, Abstract.Definition.Precedence precedence, Namespace ownNamespace, DependentLink parameters, Expression resultType, ElimTreeNode elimTree, TypeUniverse universe) {
-    super(name, precedence, universe);
     assert parameters != null;
     myOwnNamespace = ownNamespace;
     hasErrors(false);
@@ -71,7 +60,7 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   @Override
-  public Expression getResultType() {
+  public Type getResultType() {
     return myResultType;
   }
 
@@ -80,7 +69,7 @@ public class FunctionDefinition extends Definition implements Function {
     return DependentLink.Helper.size(myParameters);
   }
 
-  public void setResultType(Expression resultType) {
+  public void setResultType(Type resultType) {
     myResultType = resultType;
   }
 
@@ -93,11 +82,11 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   @Override
-  public Expression getType() {
+  public Type getType() {
     if (myTypeHasErrors) {
       return null;
     }
-    return Function.Helper.getFunctionType(this);
+    return myResultType.addParameters(myParameters, false);
   }
 
   @Override

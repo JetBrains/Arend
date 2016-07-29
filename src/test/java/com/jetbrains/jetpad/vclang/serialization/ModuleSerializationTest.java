@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
+import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.module.NameModuleID;
 import com.jetbrains.jetpad.vclang.module.ReportingModuleLoader;
@@ -13,7 +14,6 @@ import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import org.junit.Before;

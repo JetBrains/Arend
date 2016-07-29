@@ -8,6 +8,10 @@ import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
@@ -37,8 +41,16 @@ public class ExpressionFactory {
     return new FunCallExpression(definition);
   }
 
+  public static FunCallExpression FunCall(FunctionDefinition definition, Level lp, Level lh) {
+    return (FunCallExpression) new FunCallExpression(definition).applyLevelSubst(new LevelSubstitution(definition.getPolyParams().get(0), lp, definition.getPolyParams().get(1), lh));
+  }
+
   public static DataCallExpression DataCall(DataDefinition definition) {
     return new DataCallExpression(definition);
+  }
+
+  public static DataCallExpression DataCall(DataDefinition definition, Level lp, Level lh) {
+    return (DataCallExpression) new DataCallExpression(definition).applyLevelSubst(new LevelSubstitution(definition.getPolyParams().get(0), lp, definition.getPolyParams().get(1), lh));
   }
 
   public static FieldCallExpression FieldCall(ClassField definition) {
@@ -55,6 +67,10 @@ public class ExpressionFactory {
 
   public static ConCallExpression ConCall(Constructor definition, List<Expression> parameters) {
     return new ConCallExpression(definition, parameters);
+  }
+
+  public static ConCallExpression ConCall(Constructor definition, Level lp, Level lh, List<Expression> parameters) {
+    return new ConCallExpression(definition, parameters).applyLevelSubst(new LevelSubstitution(definition.getPolyParams().get(0), lp, definition.getPolyParams().get(1), lh));
   }
 
   public static ConCallExpression ConCall(Constructor definition) {
@@ -210,14 +226,6 @@ public class ExpressionFactory {
 
   public static ConCallExpression ZeroLvl() { return ConCall(Preprelude.ZERO_LVL); }
 
-  public static ConCallExpression SucLvl() { return ConCall(Preprelude.SUC_LVL); }
-
-  public static Expression SucLvl(Expression expr) { return Apps(SucLvl(), expr); }
-
-  public static FunCallExpression MaxLvl() { return FunCall(Preprelude.MAX_LVL); }
-
-  public static Expression MaxLvl(Expression expr1, Expression expr2) { return Apps(MaxLvl(), expr1, expr2); }
-
   public static Expression MaxNat(Expression expr1, Expression expr2) { return Apps(FunCall(Preprelude.MAX_NAT), expr1, expr2); }
 
   public static DataCallExpression CNat() {
@@ -226,37 +234,25 @@ public class ExpressionFactory {
 
   public static Expression Fin(Expression expr) { return Apps(ConCall(Preprelude.FIN), expr); }
 
-  public static ConCallExpression Inf() {
-    return ConCall(Preprelude.INF);
-  }
-
   public static Expression SucCNat(Expression expr) { return Apps(FunCall(Preprelude.SUC_CNAT), expr); }
 
-  public static Expression MaxCNat(Expression expr1, Expression expr2) { return Apps(FunCall(Preprelude.MAX_CNAT), expr1, expr2); }
-
   public static UniverseExpression Universe() {
-    return new UniverseExpression(new TypeUniverse(TypeUniverse.ANY_LEVEL, TypeUniverse.ANY_LEVEL));
+    return new UniverseExpression(new Sort(Sort.ANY_LEVEL, Sort.ANY_LEVEL));
   }
 
   public static UniverseExpression Universe(int plevel) {
-    return new UniverseExpression(new TypeUniverse(plevel, TypeUniverse.NOT_TRUNCATED));
+    return new UniverseExpression(new Sort(plevel, Sort.NOT_TRUNCATED));
   }
 
   public static UniverseExpression Universe(int plevel, int hlevel) {
-    return new UniverseExpression(new TypeUniverse(plevel, hlevel));
+    return new UniverseExpression(new Sort(plevel, hlevel));
   }
 
-  public static UniverseExpression Universe(int plevel, LevelExpression hlevel) {
-    return new UniverseExpression(new TypeUniverse(TypeUniverse.intToPLevel(plevel), hlevel));
+  public static UniverseExpression Universe(Level plevel, Level hlevel) {
+    return new UniverseExpression(new Sort(plevel, hlevel));
   }
 
-
-
-  public static UniverseExpression Universe(Expression plevel, Expression hlevel) {
-    return new UniverseExpression(new TypeUniverse(TypeUniverse.exprToPLevel(plevel), TypeUniverse.exprToHLevel(hlevel)));
-  }
-
-  public static UniverseExpression Universe(TypeUniverse universe) {
+  public static UniverseExpression Universe(Sort universe) {
     return new UniverseExpression(universe);
   }
 
@@ -298,7 +294,7 @@ public class ExpressionFactory {
     for (ConstructorClausePair pair : clauses) {
       if (pair.constructor != null) {
         ConstructorClause clause = result.addClause(pair.constructor, toNames(pair.parameters));
-        Substitution subst = clause.getSubst();
+        ExprSubstitution subst = clause.getSubst();
         assert size(pair.constructor.getParameters()) == size(pair.parameters);
         for (DependentLink linkFake = pair.parameters, linkTrue = clause.getParameters();
              linkFake.hasNext(); linkFake = linkFake.getNext(), linkTrue = linkTrue.getNext()) {

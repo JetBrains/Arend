@@ -14,11 +14,6 @@ public class NewExpression extends Expression {
   }
 
   @Override
-  public Expression getType() {
-    return myExpression;
-  }
-
-  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitNew(this, params);
   }

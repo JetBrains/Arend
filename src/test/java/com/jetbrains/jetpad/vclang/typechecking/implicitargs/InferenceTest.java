@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.typechecking;
+package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;

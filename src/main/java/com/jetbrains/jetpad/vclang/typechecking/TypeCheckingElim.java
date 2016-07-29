@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
@@ -13,7 +14,8 @@ import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
@@ -55,9 +57,9 @@ public class TypeCheckingElim {
   public static TypeCheckingError checkConditions(final String name, final Abstract.SourceNode source, final DependentLink eliminatingArgs, ElimTreeNode elimTree) {
     final StringBuilder errorMsg = new StringBuilder();
 
-    ConditionViolationsCollector.check(elimTree, Substitution.getIdentity(toContext(eliminatingArgs)), new ConditionViolationsCollector.ConditionViolationChecker() {
+    ConditionViolationsCollector.check(elimTree, ExprSubstitution.getIdentity(toContext(eliminatingArgs)), new ConditionViolationsCollector.ConditionViolationChecker() {
       @Override
-      public void check(Expression expr1, Substitution argsSubst1, Expression expr2, Substitution argsSubst2) {
+      public void check(Expression expr1, ExprSubstitution argsSubst1, Expression expr2, ExprSubstitution argsSubst2) {
         expr1 = expr1.normalize(NormalizeVisitor.Mode.NF);
         expr2 = expr2.normalize(NormalizeVisitor.Mode.NF);
 
@@ -79,10 +81,10 @@ public class TypeCheckingElim {
   public static TypeCheckingError checkCoverage(final Abstract.Function def, final DependentLink eliminatingArgs, ElimTreeNode elimTree, Expression resultType) {
     final StringBuilder incompleteCoverageMessage = new StringBuilder();
 
-    CoverageChecker.check(elimTree, Substitution.getIdentity(toContext(eliminatingArgs)), new CoverageChecker.CoverageCheckerMissingProcessor() {
+    CoverageChecker.check(elimTree, ExprSubstitution.getIdentity(toContext(eliminatingArgs)), new CoverageChecker.CoverageCheckerMissingProcessor() {
       @Override
-      public void process(Substitution argsSubst) {
-        for (Binding binding : argsSubst.getDomain()) {
+      public void process(ExprSubstitution argsSubst) {
+        for (Callable binding : argsSubst.getDomain()) {
           Expression expr = argsSubst.get(binding);
           if (!expr.normalize(NormalizeVisitor.Mode.NF).equals(expr)) {
             return;
@@ -115,7 +117,7 @@ public class TypeCheckingElim {
         substIn.set(j, substIn.get(j).subst(eliminatingArgs, ((ExpandPatternOKResult) result).expression));
       }
 
-      eliminatingArgs = DependentLink.Helper.subst(eliminatingArgs.getNext(), new Substitution(eliminatingArgs, ((ExpandPatternOKResult) result).expression));
+      eliminatingArgs = DependentLink.Helper.subst(eliminatingArgs.getNext(), new ExprSubstitution(eliminatingArgs, ((ExpandPatternOKResult) result).expression));
     }
     return new Patterns(typedPatterns);
   }
@@ -129,7 +131,7 @@ public class TypeCheckingElim {
 
     @Override
     public void subst(Substitution substitution) {
-      elimTree = elimTree.subst(substitution);
+      elimTree = elimTree.subst(substitution.exprSubst, substitution.levelSubst);
     }
   }
 
@@ -200,7 +202,7 @@ public class TypeCheckingElim {
 
           ExpandPatternOKResult okResult = (ExpandPatternOKResult) patternResult;
           clausePatterns.add(okResult.pattern);
-          Substitution subst = new Substitution(tailArgs, okResult.expression);
+          ExprSubstitution subst = new ExprSubstitution(tailArgs, okResult.expression);
           tailArgs = DependentLink.Helper.subst(tailArgs.getNext(), subst);
           clauseExpectedType = clauseExpectedType.subst(subst);
         }
@@ -234,7 +236,7 @@ public class TypeCheckingElim {
 
     if (elimTreeResult instanceof PatternsToElimTreeConversion.OKResult) {
       result.elimTree = ((PatternsToElimTreeConversion.OKResult) elimTreeResult).elimTree;
-      result.update(false);
+      result.update(true);
       return result;
     } else if (elimTreeResult instanceof PatternsToElimTreeConversion.EmptyReachableResult) {
       for (int i : ((PatternsToElimTreeConversion.EmptyReachableResult) elimTreeResult).reachable) {
@@ -293,7 +295,7 @@ public class TypeCheckingElim {
           return null;
         }
 
-        if (refExpr.getType().normalize(NormalizeVisitor.Mode.WHNF).getFunction().toDataCall() == null) {
+        if (((Expression) refExpr.getType()).normalize(NormalizeVisitor.Mode.WHNF).getFunction().toDataCall() == null) {
           error = new TypeCheckingError("Elimination is allowed only for a data type variable.", var);
           myVisitor.getErrorReporter().report(error);
           var.setWellTyped(argsBindings, Error(null, error));
@@ -305,7 +307,7 @@ public class TypeCheckingElim {
     }
   }
 
-  private static void printArgs(DependentLink eliminatingArgs, Substitution argsSubst, StringBuilder errorMsg) {
+  private static void printArgs(DependentLink eliminatingArgs, ExprSubstitution argsSubst, StringBuilder errorMsg) {
     for (DependentLink link = eliminatingArgs; link.hasNext(); link = link.getNext()) {
       errorMsg.append(" ").append(link.isExplicit() ? "(" : "{");
       errorMsg.append(argsSubst.get(link));
@@ -455,7 +457,7 @@ public class TypeCheckingElim {
           return result;
         ExpandPatternOKResult okResult = (ExpandPatternOKResult) result;
         resultPatterns.add(new PatternArgument(okResult.pattern, subPattern.isExplicit(), subPattern.isHidden()));
-        tailArgs = DependentLink.Helper.subst(tailArgs.getNext(), new Substitution(tailArgs, okResult.expression));
+        tailArgs = DependentLink.Helper.subst(tailArgs.getNext(), new ExprSubstitution(tailArgs, okResult.expression));
         arguments.add(okResult.expression);
       }
 

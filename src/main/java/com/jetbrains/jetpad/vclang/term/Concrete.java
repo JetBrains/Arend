@@ -132,6 +132,32 @@ public final class Concrete {
     }
   }
 
+  public static class ApplyLevelExpression extends Expression implements Abstract.ApplyLevelExpression {
+    private final Expression myFunction;
+    private final Expression myLevel;
+
+    public ApplyLevelExpression(Position position, Expression function, Expression level) {
+      super(position);
+      myFunction = function;
+      myLevel = level;
+    }
+
+    @Override
+    public Expression getFunction() {
+      return myFunction;
+    }
+
+    @Override
+    public Expression getLevel() {
+      return myLevel;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitAppLevel(this, params);
+    }
+  }
+
   public static class ArgumentExpression implements Abstract.ArgumentExpression {
     private final Expression myExpression;
     private final boolean myExplicit;

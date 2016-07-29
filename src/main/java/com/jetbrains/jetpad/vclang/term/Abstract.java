@@ -37,6 +37,12 @@ public final class Abstract {
     List<String> getNames();
   }
 
+  public interface ApplyLevelExpression extends Expression {
+    byte PREC = 12;
+    Expression getFunction();
+    Expression getLevel();
+  }
+
   public interface ArgumentExpression extends SourceNode {
     Expression getExpression();
     boolean isExplicit();

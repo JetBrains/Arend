@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.ListEquations;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.TwoStageEquations;
 
 public class BaseImplicitArgsInference implements ImplicitArgsInference {
   protected final CheckTypeVisitor myVisitor;
@@ -15,7 +15,7 @@ public class BaseImplicitArgsInference implements ImplicitArgsInference {
 
   @Override
   public Equations newEquations() {
-    return new ListEquations();
+    return new TwoStageEquations();
   }
 
   @Override

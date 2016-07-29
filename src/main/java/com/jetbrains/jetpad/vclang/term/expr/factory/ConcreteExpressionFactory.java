@@ -72,11 +72,8 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.Expression makeUniverse(Abstract.Expression plevel, Abstract.Expression hlevel) {
-    if (plevel != null)
-      return cPolyUniverse((Concrete.Expression)plevel, (Concrete.Expression)hlevel);
-    else
-      return cPolyUniverse(null, (Concrete.Expression)hlevel);
+  public Abstract.Expression makeUniverse(Abstract.Expression pLevel, Abstract.Expression hLevel) {
+    return cPolyUniverse((Concrete.Expression) pLevel, (Concrete.Expression) hLevel);
   }
 
   @Override

@@ -521,7 +521,7 @@ public class ClassesTest {
         "  }\n" +
         "  \\abstract x : Nat\n" +
         "}\n" +
-        "\\static \\function y (a : A) : \\Set1 => a.B");
+        "\\static \\function y (a : A) : \\Set0 => a.B");
   }
 
   @Test

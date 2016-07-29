@@ -4,13 +4,21 @@ import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.namespace.EmptyNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
@@ -41,24 +49,26 @@ public class Preprelude extends SimpleNamespace {
   public static Constructor FIN, INF;
 
   public static FunctionDefinition MAX_NAT;
+  public static FunctionDefinition PRED_NAT;
   public static FunctionDefinition MAX_CNAT;
   public static FunctionDefinition SUC_CNAT;
+  public static FunctionDefinition PRED_CNAT;
 
   static {
     PRE_PRELUDE_CLASS = new ClassDefinition("Preprelude", PRE_PRELUDE, EmptyNamespace.INSTANCE);
 
     /* Nat, zero, suc */
-    DefinitionBuilder.Data nat = new DefinitionBuilder.Data(PRE_PRELUDE, "Nat", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
+    DefinitionBuilder.Data nat = new DefinitionBuilder.Data(PRE_PRELUDE, "Nat", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMax(Sort.SetOfLevel(0)), EmptyDependentLink.getInstance());
     NAT = nat.definition();
-    ZERO = nat.addConstructor("zero", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
-    SUC = nat.addConstructor("suc", Abstract.Binding.DEFAULT_PRECEDENCE, null, param(DataCall(NAT)));
+    ZERO = nat.addConstructor("zero", Abstract.Binding.DEFAULT_PRECEDENCE, EmptyDependentLink.getInstance());
+    SUC = nat.addConstructor("suc", Abstract.Binding.DEFAULT_PRECEDENCE, param(DataCall(NAT)));
 
     /* Lvl, zeroLvl, sucLvl */
-    DefinitionBuilder.Data lvl = new DefinitionBuilder.Data(PRE_PRELUDE, "Lvl", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
+    DefinitionBuilder.Data lvl = new DefinitionBuilder.Data(PRE_PRELUDE, "Lvl", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMax(Sort.SetOfLevel(0)), EmptyDependentLink.getInstance());
     LVL = lvl.definition();
     DependentLink sucLvlParameter = param("l", DataCall(LVL));
-    ZERO_LVL = lvl.addConstructor("zeroLvl", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
-    SUC_LVL = lvl.addConstructor("sucLvl", Abstract.Binding.DEFAULT_PRECEDENCE, null, sucLvlParameter);
+    ZERO_LVL = lvl.addConstructor("zeroLvl", Abstract.Binding.DEFAULT_PRECEDENCE, EmptyDependentLink.getInstance());
+    SUC_LVL = lvl.addConstructor("sucLvl", Abstract.Binding.DEFAULT_PRECEDENCE, sucLvlParameter);
 
     /* maxLvl */
     DependentLink maxLvlParameter1 = param(DataCall(LVL));
@@ -76,10 +86,10 @@ public class Preprelude extends SimpleNamespace {
     MAX_LVL.setElimTree(maxLvlElimTree);
 
     /* CNat, inf, fin */
-    DefinitionBuilder.Data cnat = new DefinitionBuilder.Data(PRE_PRELUDE, "CNat", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
+    DefinitionBuilder.Data cnat = new DefinitionBuilder.Data(PRE_PRELUDE, "CNat", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMax(Sort.SetOfLevel(0)), EmptyDependentLink.getInstance());
     CNAT = cnat.definition();
-    INF = cnat.addConstructor("inf", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
-    FIN = cnat.addConstructor("fin", Abstract.Binding.DEFAULT_PRECEDENCE, null, param("n", DataCall(NAT)));
+    INF = cnat.addConstructor("inf", Abstract.Binding.DEFAULT_PRECEDENCE, EmptyDependentLink.getInstance());
+    FIN = cnat.addConstructor("fin", Abstract.Binding.DEFAULT_PRECEDENCE, param("n", DataCall(NAT)));
 
     /* maxNat */
     DependentLink maxNatParameter1 = param(DataCall(NAT));
@@ -97,6 +107,14 @@ public class Preprelude extends SimpleNamespace {
                     clause(SUC, sucNatParameterPrime, Apps(ConCall(SUC), Apps(FunCall(MAX_NAT), Reference(sucNatParameter), Reference(sucNatParameterPrime))))))));
     MAX_NAT.setElimTree(maxNatElimTree);
 
+    /* predNat */
+    DependentLink predNatParameter = param("n", DataCall(NAT));
+    PRED_NAT = new DefinitionBuilder.Function(PRE_PRELUDE, "predNat", Abstract.Binding.DEFAULT_PRECEDENCE, predNatParameter, DataCall(NAT), null).definition();
+    ElimTreeNode predNatElimTree = top(predNatParameter, branch(predNatParameter, tail(),
+            clause(ZERO, EmptyDependentLink.getInstance(), Zero()),
+            clause(SUC, sucNatParameter, Reference(sucNatParameter))));
+    PRED_NAT.setElimTree(predNatElimTree);
+
     /* maxCNat */
     DependentLink maxCNatParameter1 = param(DataCall(CNAT));
     DependentLink maxCNatParameter2 = param(DataCall(CNAT));
@@ -111,83 +129,47 @@ public class Preprelude extends SimpleNamespace {
                     clause(FIN, finCNatParameterPrime, Apps(ConCall(FIN), Apps(FunCall(MAX_NAT), Reference(finCNatParameter), Reference(finCNatParameterPrime))))))));
     MAX_CNAT = new DefinitionBuilder.Function(PRE_PRELUDE, "maxCNat", Abstract.Binding.DEFAULT_PRECEDENCE, maxCNatParameter1, DataCall(CNAT), maxCNatElimTree).definition();
 
+    /* sucCNat */
     DependentLink sucCNatParameter = param(DataCall(CNAT));
     ElimTreeNode sucCNatElimTree = top(sucCNatParameter, branch(sucCNatParameter, tail(),
             clause(INF, EmptyDependentLink.getInstance(), ConCall(INF)),
             clause(FIN, finCNatParameter, Apps(ConCall(FIN), Apps(ConCall(SUC), Reference(finCNatParameter))))));
     SUC_CNAT = new DefinitionBuilder.Function(PRE_PRELUDE, "sucCNat", Abstract.Binding.DEFAULT_PRECEDENCE, sucCNatParameter, DataCall(CNAT), sucCNatElimTree).definition();
 
-    /* I, left, right */
-    DefinitionBuilder.Data interval = new DefinitionBuilder.Data(PRE_PRELUDE, "I", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
-    INTERVAL = interval.definition();
-    LEFT = interval.addConstructor("left", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
-    RIGHT = interval.addConstructor("right", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
-    ABSTRACT = interval.addConstructor("<abstract>", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
-  }
+    /* predCNat */
+    DependentLink predCNatParameter = param("n", DataCall(CNAT));
+    PRED_CNAT = new DefinitionBuilder.Function(PRE_PRELUDE, "predCNat", Abstract.Binding.DEFAULT_PRECEDENCE, predNatParameter, DataCall(CNAT), null).definition();
+    ElimTreeNode predCNatElimTree = top(predCNatParameter, branch(predCNatParameter, tail(),
+            clause(INF, EmptyDependentLink.getInstance(), ConCall(INF)),
+            clause(FIN, finCNatParameter, Apps(ConCall(FIN), Apps(FunCall(PRED_NAT), Reference(finCNatParameter))))));
+    PRED_CNAT.setElimTree(predCNatElimTree);
 
-  public static void setUniverses() {
-    NAT.setUniverse(TypeUniverse.SetOfLevel(0));
-    ZERO.setUniverse(TypeUniverse.SetOfLevel(0));
-    SUC.setUniverse(TypeUniverse.SetOfLevel(0));
-    LVL.setUniverse(TypeUniverse.SetOfLevel(0));
-    ZERO_LVL.setUniverse(TypeUniverse.SetOfLevel(0));
-    SUC_LVL.setUniverse(TypeUniverse.SetOfLevel(0));
-    CNAT.setUniverse(TypeUniverse.SetOfLevel(0));
-    FIN.setUniverse(TypeUniverse.SetOfLevel(0));
-    INF.setUniverse(TypeUniverse.SetOfLevel(0));
-    INTERVAL.setUniverse(TypeUniverse.PROP);
-    LEFT.setUniverse(TypeUniverse.PROP);
-    RIGHT.setUniverse(TypeUniverse.PROP);
-    ABSTRACT.setUniverse(TypeUniverse.PROP);
+    /* I, left, right */
+    DefinitionBuilder.Data interval = new DefinitionBuilder.Data(PRE_PRELUDE, "I", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMax(Sort.PROP), EmptyDependentLink.getInstance());
+    INTERVAL = interval.definition();
+    LEFT = interval.addConstructor("left", Abstract.Binding.DEFAULT_PRECEDENCE, EmptyDependentLink.getInstance());
+    RIGHT = interval.addConstructor("right", Abstract.Binding.DEFAULT_PRECEDENCE, EmptyDependentLink.getInstance());
+    ABSTRACT = interval.addConstructor("<abstract>", Abstract.Binding.DEFAULT_PRECEDENCE, EmptyDependentLink.getInstance());
   }
 
   public Preprelude() {
   }
 
-  public static class SucExtrResult {
-    public int NumSuc;
-    public Expression Arg;
-
-    public SucExtrResult(int numSuc, Expression arg) {
-      NumSuc = numSuc;
-      Arg = arg;
+  public static boolean isPolyParam(Abstract.TypeArgument arg) {
+    if (arg.getType() instanceof Abstract.DefCallExpression) {
+      String typeName = ((Abstract.DefCallExpression) arg.getType()).getName();
+      return typeName.equals(LVL.getName()) || typeName.equals(CNAT.getName());
     }
-
-    public SucExtrResult incr() {
-      return new SucExtrResult(NumSuc + 1, Arg);
-    }
+    return false;
   }
 
-  public static SucExtrResult extractSuc(Expression expr, Constructor suc) {
-    Expression fun = expr.getFunction();
-    if (fun.toConCall() != null && fun.toConCall().getDefinition() == suc &&
-            expr.getArguments().size() == 1) {
-      return extractSuc(expr.getArguments().get(0), suc).incr();
+  public static DefCallExpression levelTypeByName(String typeName) {
+    if (typeName.equals("Lvl")) {
+      return Lvl();
+    } else if (typeName.equals("CNat")) {
+      return CNat();
     }
-    return new SucExtrResult(0, expr);
-  }
-
-  public static SucExtrResult extractSuc(Expression expr, FunctionDefinition suc) {
-    Expression fun = expr.getFunction();
-    if (fun.toFunCall() != null && fun.toFunCall().getDefinition() == suc &&
-            expr.getArguments().size() == 1) {
-      return extractSuc(expr.getArguments().get(0), suc).incr();
-    }
-    return new SucExtrResult(0, expr);
-  }
-
-  public static Expression applyNumberOfSuc(Expression expr, FunctionDefinition suc, int num) {
-    if (num <= 0) {
-      return expr;
-    }
-    return FunCall(suc).addArgument(applyNumberOfSuc(expr, suc, num - 1), AppExpression.DEFAULT);
-  }
-
-  public static Expression applyNumberOfSuc(Expression expr, Constructor suc, int num) {
-    if (num <= 0) {
-      return expr;
-    }
-    return ConCall(suc).addArgument(applyNumberOfSuc(expr, suc, num - 1), AppExpression.DEFAULT);
+    return null;
   }
 
   static class DefinitionBuilder {
@@ -196,18 +178,23 @@ public class Preprelude extends SimpleNamespace {
       private final DataDefinition myDefinition;
       private final SimpleNamespace myNs = new SimpleNamespace();
 
-      Data(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, TypeUniverse universe, DependentLink parameters) {
+      Data(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, SortMax sorts, DependentLink parameters, List<Binding> polyParams) {
         myParentNs = parentNs;
-        myDefinition = new DataDefinition(name, precedence, universe, parameters);
+        myDefinition = new DataDefinition(name, precedence, sorts, parameters);
+        myDefinition.setPolyParams(polyParams);
         myParentNs.addDefinition(myDefinition);
+      }
+
+      Data(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, SortMax sorts, DependentLink parameters) {
+        this(parentNs, name, precedence, sorts, parameters, new ArrayList<Binding>());
       }
 
       DataDefinition definition() {
         return myDefinition;
       }
 
-      Constructor addConstructor(String name, Abstract.Binding.Precedence precedence, TypeUniverse universe, DependentLink parameters) {
-        Constructor constructor = new Constructor(name, precedence, universe, parameters, myDefinition);
+      Constructor addConstructor(String name, Abstract.Binding.Precedence precedence, DependentLink parameters) {
+        Constructor constructor = new Constructor(name, precedence, parameters, myDefinition);
         myDefinition.addConstructor(constructor);
         myNs.addDefinition(constructor);
         myParentNs.addDefinition(constructor);
@@ -218,9 +205,14 @@ public class Preprelude extends SimpleNamespace {
     static class Function {
       private final FunctionDefinition myDefinition;
 
-      public Function(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
+      public Function(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree, List<Binding> polyParams) {
         myDefinition = new FunctionDefinition(name, precedence, EmptyNamespace.INSTANCE, parameters, resultType, elimTree);
+        myDefinition.setPolyParams(polyParams);
         parentNs.addDefinition(myDefinition);
+      }
+
+      public Function(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
+        this(parentNs, name, precedence, parameters, resultType, elimTree, new ArrayList<Binding>());
       }
 
       FunctionDefinition definition() {

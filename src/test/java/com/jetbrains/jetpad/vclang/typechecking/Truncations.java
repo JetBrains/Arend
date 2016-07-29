@@ -1,17 +1,22 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
+import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class Truncations {
   @Test
   public void elimInProp() {
     typeCheckDef("\\function inP-inv (P : \\Prop) (p : TrP P) : P <= \\elim p | inP p => p");
+  }
+
+  @Test
+  public void truncPEval() {
+    typeCheckClass("\\static \\function inP-inv (P : \\Prop) (p : TrP P) : P <= \\elim p | inP p => p\n" +
+            "\\static \\function trunc-eval (P : \\Prop) (p : TrP P) : (Path (\\lam _ => TrP P) ((TrP P).inP (inP-inv P p)) p) => path ((TrP P).truncP ((TrP P).inP (inP-inv P p)) p)");
   }
 
   @Test
@@ -54,11 +59,12 @@ public class Truncations {
 
   @Test
   public void S1Level() {
-    Definition definition = typeCheckDef(
+    DataDefinition definition = (DataDefinition) typeCheckDef(
         "\\data S1 | base | loop I\n" +
         "\\with\n" +
         "  | loop left => base\n" +
         "  | loop right => base");
-    assertEquals(new TypeUniverse(0, TypeUniverse.NOT_TRUNCATED), definition.getUniverse());
+    assertTrue(definition.getSorts().getPLevel().isMinimum());
+    assertTrue(definition.getSorts().getHLevel().isInfinity());
   }
 }
