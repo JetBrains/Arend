@@ -11,7 +11,7 @@ public class InferLevelTest {
     // error: cannot infer ?l
     typeCheckClass(
         "\\static \\function A {l : Lvl} => \\Type (l, inf)\n" +
-        "\\static \\function f => A", 1);
+        "\\static \\function f => A");
   }
 
   @Test
@@ -21,7 +21,7 @@ public class InferLevelTest {
     typeCheckClass(
         "\\static \\function A {l : Lvl} => \\Type (l, inf)\n" +
         "\\static \\function f {l' : Lvl} (A : \\Type (l', inf)) => A\n" +
-        "\\static \\function g => f A", 1);
+        "\\static \\function g => f A");
   }
 
   @Test
@@ -30,12 +30,21 @@ public class InferLevelTest {
     // error: cannot infer ?l
     typeCheckClass(
         "\\static \\function A {l : Lvl} => \\Type (l, inf)\n" +
-        "\\static \\function f : \\Type10 => A", 1);
+        "\\static \\function f : \\Type10 => A");
   }
 
   @Test
   public void belowParam() {
     // ?l <= c
+    // error: cannot infer ?l
+    typeCheckClass(
+        "\\static \\function A {l : Lvl} => \\Type (l, inf)\n" +
+        "\\static \\function f {c : Lvl} : \\Type (suc c, inf) => A");
+  }
+
+  @Test
+  public void belowParamError() {
+    // ?l + 1 <= c
     // error: cannot infer ?l
     typeCheckClass(
         "\\static \\function A {l : Lvl} => \\Type (l, inf)\n" +
@@ -57,7 +66,7 @@ public class InferLevelTest {
     // error: cannot solve 1 <= c
     typeCheckClass(
         "\\static \\function f {l : Lvl} (A : \\Type (l, inf)) => A\n" +
-        "\\static \\function g {c : Lvl} : \\Type (c, inf) => f \\Type0", -1);
+        "\\static \\function g {c : Lvl} : \\Type (c, inf) => f \\Type0", 1);
   }
 
   @Test

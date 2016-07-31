@@ -119,12 +119,12 @@ public class ErrorFormatter {
       boolean first = true;
       for (LevelEquation<? extends Binding> equation : ((SolveEquationsError) error).equations) {
         if (!first) builder.append('\n');
-        if (equation.constant == null) {
-          builder.append(equation.var2).append(" = inf");
+        if (equation.isInfinity()) {
+          builder.append(equation.getVariable()).append(" = inf");
         } else {
-          printEqExpr(builder, equation.var1, -equation.constant);
+          printEqExpr(builder, equation.getVariable1(), -equation.getConstant());
           builder.append(" <= ");
-          printEqExpr(builder, equation.var2, equation.constant);
+          printEqExpr(builder, equation.getVariable2(), equation.getConstant());
         }
         first = false;
       }

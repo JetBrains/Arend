@@ -50,7 +50,7 @@ public class ExprSubstitution {
     }
   }
 
-  public void subst(Substitution subst) {
+  public void subst(ExprSubstitution subst) {
     for (Map.Entry<Callable, Expression> entry : mySubstExprs.entrySet()) {
       entry.setValue(entry.getValue().subst(subst));
     }

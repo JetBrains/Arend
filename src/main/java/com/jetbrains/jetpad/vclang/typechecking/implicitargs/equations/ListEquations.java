@@ -695,7 +695,7 @@ public class ListEquations implements Equations {
         }
 
         if (binding != null) {
-          result.exprSubst.subst(new Substitution(new ExprSubstitution(binding, subst)));
+          result.exprSubst.subst(new ExprSubstitution(binding, subst));
           result.exprSubst.add(binding, subst);
           subst(new Substitution(new ExprSubstitution(binding, subst)));
         }
@@ -767,7 +767,7 @@ public class ListEquations implements Equations {
 
         if (binding != null) {
           result.levelSubst.subst(binding, subst);
-          result.exprSubst.subst(new Substitution(new LevelSubstitution(binding, subst)));
+          // result.exprSubst.subst(new Substitution(new LevelSubstitution(binding, subst)));
           result.levelSubst.add(binding, subst);
           subst(binding, subst);
           subst(new Substitution(new LevelSubstitution(binding, subst)));

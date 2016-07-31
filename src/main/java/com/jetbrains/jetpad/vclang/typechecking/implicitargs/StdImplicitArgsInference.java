@@ -61,25 +61,6 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         List<DependentLink> pathParams = new ArrayList<>();
 
         ((Expression) conCall.getType()).getPiParameters(pathParams, false, false);
-        //lp = conCall.getPolyParamValueByType(Preprelude.LVL.getResolvedName().getFullName());
-        //lh = conCall.getPolyParamValueByType(Preprelude.CNAT.getResolvedName().getFullName());
-
-        /*
-        if (result.expression.getArguments().isEmpty()) {
-          InferenceBinding inferenceBinding1 = new FunctionInferenceBinding("lp", Lvl(), 1, fun);
-          InferenceBinding inferenceBinding2 = new FunctionInferenceBinding("lh", CNat(), 2, fun);
-          result.addUnsolvedVariable(inferenceBinding1);
-          result.addUnsolvedVariable(inferenceBinding2);
-          lp = Reference(inferenceBinding1);
-          lh = Reference(inferenceBinding2);
-          result.expression = result.expression.addArgument(lp, EnumSet.noneOf(AppExpression.Flag.class)).addArgument(lh, EnumSet.noneOf(AppExpression.Flag.class));
-          result.type = result.type.applyExpressions(Arrays.asList(lp, lh));
-        } else {
-          lp = result.expression.getArguments().get(0);
-          lh = result.expression.getArguments().get(1);
-        } /**/
-
-        // TODO: fix levels
         InferenceBinding inferenceBinding = new FunctionInferenceBinding("A", pathParams.get(0).getType().toPi().getCodomain(), 1, fun);
         result.addUnsolvedVariable(inferenceBinding);
         DependentLink lamParam = param("i", interval);

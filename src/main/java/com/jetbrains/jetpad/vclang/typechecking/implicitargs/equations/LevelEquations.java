@@ -40,21 +40,21 @@ public class LevelEquations<Var> {
       solution.put(var, 0);
     }
 
-    for (int i = myVariables.size() - 1; i >= 0; i--) {
+    for (int i = myVariables.size(); i >= 0; i--) {
       boolean updated = false;
       for (LevelEquation<Var> equation : myEquations) {
-        if (equation.constant == null) {
-          solution.put(equation.var2, null);
+        if (equation.isInfinity()) {
+          solution.put(equation.getVariable(), null);
         } else {
-          Integer a = solution.get(equation.var1);
-          Integer b = solution.get(equation.var2);
-          if (b != null && (a == null || b > a + equation.constant)) {
-            if (i == 0) {
+          Integer a = solution.get(equation.getVariable1());
+          Integer b = solution.get(equation.getVariable2());
+          if (b != null && (a == null || b > a + equation.getConstant())) {
+            if (i == 0 || equation.getVariable2() == null && a != null) {
               solution.remove(null);
-              return equation.var1 != null ? equation.var1 : equation.var2;
+              return equation.getVariable1() != null ? equation.getVariable1() : equation.getVariable2();
             }
 
-            solution.put(equation.var2, a == null ? null : a + equation.constant);
+            solution.put(equation.getVariable2(), a == null ? null : a + equation.getConstant());
             updated = true;
           }
         }

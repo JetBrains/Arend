@@ -159,8 +159,10 @@ public class PiUniverseType implements Type {
       return false;
     }
 
+    PiUniverseType normalized = normalize(NormalizeVisitor.Mode.NF);
+
     int i = 0;
-    for (DependentLink link = myParameters; link.hasNext(); link = link.getNext(), i++) {
+    for (DependentLink link = normalized.myParameters; link.hasNext(); link = link.getNext(), i++) {
       if (i == params.size() || !CompareVisitor.compare(equations, Equations.CMP.EQ, params.get(i).getType(), link.getType(), sourceNode)) {
         return false;
       }

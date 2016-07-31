@@ -189,7 +189,6 @@ public class ImplicitArgumentsTest {
     ListErrorReporter errorReporter = new ListErrorReporter();
     typeCheckExpr(context, "f 0", Pi(Nat(), Pi(Nat(), Nat())), errorReporter);
     assertErrorListSize(errorReporter.getErrorList(), 1);
-    assertTrue(errorReporter.getErrorList().iterator().next() instanceof ArgInferenceError);
   }
 
   @Test
@@ -330,7 +329,7 @@ public class ImplicitArgumentsTest {
   public void inferUnderPiExpected() {
     typeCheckClass(
         "\\static \\function ($) {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
-        "\\static \\function foo (A : \\Type0) (B : A -> \\Type0) (f : \\Pi (a : A) -> B a) (a' : A) : B a' => f $ a'", -1);
+        "\\static \\function foo (A : \\Type0) (B : A -> \\Type0) (f : \\Pi (a : A) -> B a) (a' : A) : B a' => f $ a'", 1);
   }
 
   @Test

@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
@@ -119,15 +118,15 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
   private boolean checkIsInferVar(Expression fun, Expression expr1, Expression expr2) {
     InferenceBinding binding = checkIsInferVar(fun);
-    if (binding == null) {
-      return false;
-    }
+    return binding != null && myEquations.add(expr1.subst(getSubstition()), expr2, myCMP, binding.getSourceNode());
+  }
 
+  private ExprSubstitution getSubstition() {
     ExprSubstitution substitution = new ExprSubstitution();
     for (Map.Entry<Binding, Binding> entry : mySubstitution.entrySet()) {
       substitution.add(entry.getKey(), Reference(entry.getValue()));
     }
-    return myEquations.add(expr1.subst(substitution), expr2, myCMP, binding.getSourceNode());
+    return substitution;
   }
 
   @Override
@@ -205,15 +204,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   @Override
   public Boolean visitDefCall(DefCallExpression expr1, Expression expr2) {
     DefCallExpression defCall2 = expr2.toDefCall();
-    if (defCall2 == null) return false;
-    // TODO: remove this comparison
-    for (Binding binding : expr1.getPolyParamsSubst().getDomain()) {
-      Level level2 = defCall2.getPolyParamsSubst().get(binding);
-      if (level2 != null) {
-        Level.compare(expr1.getPolyParamsSubst().get(binding), level2, Equations.CMP.GE, myEquations, mySourceNode);
-      }
-    }
-    return expr1.getDefinition() == defCall2.getDefinition();
+    return defCall2 != null && expr1.getDefinition() == defCall2.getDefinition();
   }
 
   private boolean checkSubclassImpl(FieldSet fieldSet1, ClassCallExpression classCall2) {
@@ -271,7 +262,9 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       }
       sourceNode = ((InferenceBinding) expr1.getBinding()).getSourceNode();
     }
-    return myEquations.add(expr1, expr2, first ? myCMP : myCMP.not(), sourceNode);
+
+    ExprSubstitution substitution = getSubstition();
+    return myEquations.add(expr1.subst(substitution), expr2.subst(substitution), first ? myCMP : myCMP.not(), sourceNode);
   }
 
   @Override

@@ -9,8 +9,8 @@ import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 public class DerivedInferenceBinding extends InferenceBinding {
   private final InferenceBinding myBinding;
 
-  public DerivedInferenceBinding(String name, Expression type, InferenceBinding binding) {
-    super(name, type);
+  public DerivedInferenceBinding(String name, InferenceBinding binding) {
+    super(name, binding.getType());
     myBinding = binding;
   }
 
