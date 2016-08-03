@@ -66,14 +66,13 @@ public class TwoStageEquations implements Equations {
   }
 
   private void addSolution(InferenceBinding binding, Expression expression) {
-    expression = expression.normalize(NormalizeVisitor.Mode.WHNF);
-    if (expression.toReference() != null && expression.toReference().getBinding() == binding) {
-      return;
-    }
+    assert expression.toReference() == null || !(expression.toReference().getBinding() instanceof InferenceBinding);
 
     Expression expr = mySolutions.get(binding);
     if (expr != null) {
-      myEquations.add(new Equation(expr, expression, CMP.EQ, binding.getSourceNode()));
+      if (!CompareVisitor.compare(this, CMP.EQ, expr, expression, binding.getSourceNode())) {
+        myErrorReporter.report(new SolveEquationError<>(expr, expression, null, binding.getSourceNode()));
+      }
     } else {
       mySolutions.put(binding, expression);
     }
@@ -86,12 +85,6 @@ public class TwoStageEquations implements Equations {
     InferenceBinding inf2 = ref2 != null && ref2.getBinding() instanceof InferenceBinding ? (InferenceBinding) ref2.getBinding() : null;
 
     if (inf1 == inf2 && inf1 != null) {
-      return;
-    }
-
-    if (inf1 != null && inf2 != null && cmp == CMP.EQ) {
-      addSolution(inf1, ref2);
-      addSolution(inf2, ref1);
       return;
     }
 
@@ -367,7 +360,7 @@ public class TwoStageEquations implements Equations {
     Map<InferenceBinding, Expression> solutions = mySolutions;
     mySolutions = new HashMap<>();
     for (Map.Entry<InferenceBinding, Expression> entry : solutions.entrySet()) {
-      addSolution(entry.getKey(), entry.getValue().subst(substitution));
+      addEquation(new ReferenceExpression(entry.getKey()), entry.getValue().subst(substitution), CMP.EQ, entry.getKey().getSourceNode(), false);
     }
   }
 

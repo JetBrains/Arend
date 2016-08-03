@@ -404,4 +404,9 @@ public class ImplicitArgumentsTest {
         "\\static \\function F {lp : Lvl} (X : \\Type (lp,inf)) (B : X -> \\Type (lp,inf)) => zero\n" +
         "\\static \\function g {lp : Lvl} (X : \\Type (lp,inf)) => F X (\\lam _ => (=) X X)");
   }
+
+  @Test
+  public void piTest() {
+    typeCheckDef("\\function f {lp : Lvl} {lh : CNat} (A : \\Type (lp,lh)) (B : A -> \\Type (lp,lh)) (f g : \\Pi (x : A) -> B x) => f = g");
+  }
 }

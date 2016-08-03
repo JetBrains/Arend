@@ -91,15 +91,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     myState.record(def, typedDef);
     // TODO[scopes] Fill namespace
 
-    /*
-    if (overriddenFunction == null && def.isOverridden()) {
-      // TODO
-      // myModuleLoader.getTypeCheckingErrors().add(new TypeCheckingError("Cannot find function " + name + " in the parent class", def, getNames(context)));
-      myErrorReporter.report(new TypeCheckingError("Overridden function " + name + " cannot be defined in a base class", def, getNames(context)));
-      return null;
-    }
-    */
-
     List<? extends Abstract.Argument> arguments = def.getArguments();
     final List<Binding> context = new ArrayList<>();
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build(def);
@@ -111,52 +102,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       visitor.setThisClass(enclosingClass, Reference(thisParam));
       typedDef.setThisClass(enclosingClass);
     }
-
-    /*
-    List<TypeArgument> splitArgs = null;
-    Expression splitResult = null;
-    if (overriddenFunction != null) {
-      splitArgs = new ArrayList<>();
-      splitResult = splitArguments(overriddenFunction.getType(), splitArgs);
-    }
-
-    int index = 0;
-    if (splitArgs != null) {
-      for (Abstract.Argument argument : arguments) {
-        if (index >= splitArgs.size()) {
-          index = -1;
-          break;
-        }
-
-        boolean ok = true;
-        if (argument instanceof Abstract.TelescopeArgument) {
-          for (String ignored : ((Abstract.TelescopeArgument) argument).getNames()) {
-            if (splitArgs.get(index).getExplicit() != argument.getExplicit()) {
-              ok = false;
-              break;
-            }
-            index++;
-          }
-        } else {
-          if (splitArgs.get(index).getExplicit() != argument.getExplicit()) {
-            ok = false;
-          } else {
-            index++;
-          }
-        }
-
-        if (!ok) {
-          myErrorReporter.report(new TypeCheckingError("Type of the argument does not match the type in the overridden function", argument, null));
-          return null;
-        }
-      }
-
-      if (index == -1) {
-        myErrorReporter.report(new TypeCheckingError("Function has more arguments than overridden function", def, null));
-        return null;
-      }
-    }
-    */
 
     List<Binding> polyParamsList = new ArrayList<>();
     Map<String, Binding> polyParamsMap = new HashMap<>();
@@ -182,77 +127,21 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         if (result == null) return typedDef;
 
         DependentLink param;
-        // boolean ok = true;
         if (argument instanceof Abstract.TelescopeArgument) {
           List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
           param = param(argument.getExplicit(), names, result.expression);
           index += names.size();
-        /*
-        if (splitArgs != null) {
-          List<CompareVisitor.Equation> equations = new ArrayList<>(0);
-          CompareVisitor.Result cmpResult = compare(splitArgs.get(index).getType(), result.expression, equations);
-          if (!(cmpResult instanceof CompareVisitor.JustResult && equations.isEmpty() && (cmpResult.isOK() == CompareVisitor.CMP.EQUIV || cmpResult.isOK() == CompareVisitor.CMP.EQUALS || cmpResult.isOK() == CompareVisitor.CMP.LESS))) {
-            ok = false;
-            break;
-          }
-        }
-        */
-
         } else {
-      /*
-      if (splitArgs != null) {
-        List<CompareVisitor.Equation> equations = new ArrayList<>(0);
-        CompareVisitor.Result cmpResult = compare(splitArgs.get(index).getType(), result.expression, equations);
-        if (!(cmpResult instanceof CompareVisitor.JustResult && equations.isEmpty() && (cmpResult.isOK() == CompareVisitor.CMP.EQUIV || cmpResult.isOK() == CompareVisitor.CMP.EQUALS || cmpResult.isOK() == CompareVisitor.CMP.LESS))) {
-          ok = false;
-        }
-      }
-      */
-
-          // if (ok) {
           param = param(argument.getExplicit(), (String) null, result.expression);
           index++;
-          // }
         }
         list.append(param);
         context.addAll(toContext(param));
-
-
-    /*
-    if (!ok) {
-      myErrorReporter.report(new ArgInferenceError(typedDef.getNamespace().getParent(), typeOfFunctionArg(index + 1), argument, null, new ArgInferenceError.StringPrettyPrintable(name)));
-      return null;
-    }
-    */
       } else {
-        // if (splitArgs == null) {
         myErrorReporter.report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, new Expression[0]));
         return typedDef;
-    /*
-    } else {
-      List<String> names = new ArrayList<>(1);
-      names.add(((Abstract.NameArgument) argument).getName());
-      typedParameters.add(Tele(argument.getExplicit(), names, splitArgs.get(index).getType()));
-      context.add(new TypedBinding(names.get(0), splitArgs.get(index).getType()));
-    }
-    */
       }
     }
-
-  /*
-  Expression overriddenResultType = null;
-  if (overriddenFunction != null) {
-    if (numberOfArgs == splitArgs.size()) {
-      overriddenResultType = splitResult;
-    } else {
-      List<TypeArgument> args = new ArrayList<>(splitArgs.size() - numberOfArgs);
-      for (; numberOfArgs < splitArgs.size(); numberOfArgs++) {
-        args.add(splitArgs.get(numberOfArgs));
-      }
-      overriddenResultType = Pi(args, splitResult);
-    }
-  }
-  */
 
     Expression expectedType = null;
     Abstract.Expression resultType = def.getResultType();
@@ -260,24 +149,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       CheckTypeVisitor.Result typeResult = visitor.checkType(resultType, Universe());
       if (typeResult != null) {
         expectedType = typeResult.expression;
-      /*
-      if (overriddenResultType != null) {
-        List<CompareVisitor.Equation> equations = new ArrayList<>(0);
-        CompareVisitor.Result cmpResult = compare(expectedType, overriddenResultType, equations);
-        if (!(cmpResult instanceof CompareVisitor.JustResult && equations.isEmpty() && (cmpResult.isOK() == CompareVisitor.CMP.EQUIV || cmpResult.isOK() == CompareVisitor.CMP.EQUALS || cmpResult.isOK() == CompareVisitor.CMP.LESS))) {
-          myErrorReporter.report(new TypeCheckingError("Result type of the function does not match the result type in the overridden function", resultType, null));
-          return null;
-        }
-      }
-      */
       }
     }
-
-    /*
-    if (expectedType == null) {
-      expectedType = overriddenResultType;
-    }
-    */
 
     typedDef.setPolyParams(polyParamsList);
     typedDef.setParameters(list.getFirst());
@@ -338,20 +211,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     if (typedDef.typeHasErrors()) {
       typedDef.hasErrors(true);
     }
-    /*
-    Expression type = typedDef.getType();
-    if (type != null) {
-      UniverseExpression universeType = type.getType().normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
-      if (universeType != null) {
-        typedDef.setSort(universeType.getSort());
-      } else {
-        throw new IllegalStateException();
-      }
-    }
-    if (typedDef instanceof OverriddenDefinition) {
-      ((OverriddenDefinition) typedDef).setOverriddenFunction(overriddenFunction);
-    }
-    */
 
     return typedDef;
   }
