@@ -303,7 +303,7 @@ public class TwoStageEquations implements Equations {
       if (circle != null) {
         LevelEquation<LevelInferenceBinding> lastEquation = circle.get(circle.size() - 1);
         LevelInferenceBinding var = lastEquation.getVariable1() != null ? lastEquation.getVariable1() : lastEquation.getVariable2();
-        myErrorReporter.report(new SolveEquationsError(new ArrayList<LevelEquation<? extends Binding>>(circle), var.getSourceNode()));
+        myErrorReporter.report(new SolveLevelEquationsError(new ArrayList<LevelEquation<? extends Binding>>(circle), var.getSourceNode()));
       }
       for (Map.Entry<LevelInferenceBinding, Integer> entry : solution.entrySet()) {
         Integer constant = entry.getValue();
