@@ -15,6 +15,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equation;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.LevelEquation;
 
 import java.util.ArrayList;
@@ -117,7 +118,16 @@ public class ErrorFormatter {
       }
     } else if (error instanceof SolveEquationsError) {
       boolean first = true;
-      for (LevelEquation<? extends Binding> equation : ((SolveEquationsError) error).equations) {
+      for (Equation equation : ((SolveEquationsError) error).equations) {
+        if (!first) builder.append('\n');
+        equation.type.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, 0);
+        builder.append(equation.cmp == Equations.CMP.LE ? " <= " : equation.cmp == Equations.CMP.EQ ? " = " : " >= ");
+        equation.expr.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, 0);
+        first = false;
+      }
+    } else if (error instanceof SolveLevelEquationsError) {
+      boolean first = true;
+      for (LevelEquation<? extends Binding> equation : ((SolveLevelEquationsError) error).equations) {
         if (!first) builder.append('\n');
         if (equation.isInfinity()) {
           builder.append(equation.getVariable()).append(" = inf");
