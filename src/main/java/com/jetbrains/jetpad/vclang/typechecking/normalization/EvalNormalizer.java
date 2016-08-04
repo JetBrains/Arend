@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.normalization;
 
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -48,7 +47,7 @@ public class EvalNormalizer implements Normalizer {
     if (fun instanceof FunctionDefinition && Prelude.isCoe((FunctionDefinition) fun)) {
       Expression result = null;
 
-      Binding binding = new TypedBinding("i", DataCall(Preprelude.INTERVAL));
+      Binding binding = new TypedBinding("i", DataCall(Prelude.INTERVAL));
       Expression normExpr = Apps(arguments.get(0), Reference(binding)).normalize(NormalizeVisitor.Mode.NF);
       if (!normExpr.findBinding(binding)) {
         result = arguments.get(1);
@@ -65,7 +64,7 @@ public class EvalNormalizer implements Normalizer {
           }
           if (noFreeVar) {
             ConCallExpression normedPtCon = arguments.get(2).normalize(NormalizeVisitor.Mode.NF).toConCall();
-            if (normedPtCon != null && normedPtCon.getDefinition() == Preprelude.RIGHT) {
+            if (normedPtCon != null && normedPtCon.getDefinition() == Prelude.RIGHT) {
               result = Apps(mbIsoArgs.get(2), arguments.get(1));
             }
           }

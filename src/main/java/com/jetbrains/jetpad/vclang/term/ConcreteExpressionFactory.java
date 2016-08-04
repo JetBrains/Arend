@@ -56,15 +56,15 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.DefCallExpression cNat() {
-    return new Concrete.DefCallExpression(POSITION, Preprelude.NAT);
+    return new Concrete.DefCallExpression(POSITION, Prelude.NAT);
   }
 
   public static Concrete.DefCallExpression cZero() {
-    return new Concrete.DefCallExpression(POSITION, Preprelude.ZERO);
+    return new Concrete.DefCallExpression(POSITION, Prelude.ZERO);
   }
 
   public static Concrete.DefCallExpression cSuc() {
-    return new Concrete.DefCallExpression(POSITION, Preprelude.SUC);
+    return new Concrete.DefCallExpression(POSITION, Prelude.SUC);
   }
 
   public static Concrete.Expression cSuc(Concrete.Expression expr) {

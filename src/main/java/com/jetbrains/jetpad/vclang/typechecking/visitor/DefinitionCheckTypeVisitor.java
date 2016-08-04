@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvid
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
@@ -79,7 +78,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       myErrorReporter.report(new TypeCheckingError("Polymorphic variables must be implicit", node));
       return null;
     }
-    Binding levelParam = new TypedBinding(((Abstract.TelescopeArgument) typeArgument).getNames().get(0), Preprelude.levelTypeByName(typeName));
+    Binding levelParam = new TypedBinding(((Abstract.TelescopeArgument) typeArgument).getNames().get(0), Prelude.levelTypeByName(typeName));
     polyParams.put(typeName, levelParam);
     return levelParam;
   }
@@ -111,7 +110,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       if (argument instanceof Abstract.TypeArgument) {
         Abstract.TypeArgument typeArgument = (Abstract.TypeArgument)argument;
 
-        if (Preprelude.isPolyParam(typeArgument)) {
+        if (Prelude.isPolyParam(typeArgument)) {
           Binding levelParam = visitPolyParam(typeArgument, polyParamsMap, def);
           if (levelParam == null) {
             return typedDef;
@@ -243,7 +242,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     dataDefinition.hasErrors(true);
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
       for (Abstract.TypeArgument parameter : parameters) {
-        if (Preprelude.isPolyParam(parameter)) {
+        if (Prelude.isPolyParam(parameter)) {
           Binding levelParam = visitPolyParam(parameter, polyParamsMap, def);
           if (levelParam == null) {
             return dataDefinition;
@@ -719,7 +718,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       if (argument instanceof Abstract.TypeArgument) {
         Abstract.TypeArgument typeArgument = (Abstract.TypeArgument) argument;
 
-        if (Preprelude.isPolyParam(typeArgument)) {
+        if (Prelude.isPolyParam(typeArgument)) {
           Binding levelParam = visitPolyParam(typeArgument, polyParams, def);
           if (levelParam == null) {
             return typedDef;

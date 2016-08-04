@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.StringPrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
@@ -419,8 +418,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             piLamSubst.add(piLink, Reference(link));
           } else {
             if (argResult == null) {
-              InferenceBinding pLvlInferenceBinding = new LevelInferenceBinding("plvl-of-" + name, DataCall(Preprelude.LVL), expr); // new LambdaInferenceBinding("plvl-of-" + name, DataCall(Preprelude.LVL), argIndex, expr, true);
-              InferenceBinding hLvlInferenceBinding = new LevelInferenceBinding("hlvl-of-" + name, DataCall(Preprelude.CNAT), expr); // new LambdaInferenceBinding("hlvl-of-" + name, DataCall(Preprelude.CNAT), argIndex, expr, true);
+              InferenceBinding pLvlInferenceBinding = new LevelInferenceBinding("plvl-of-" + name, DataCall(Prelude.LVL), expr); // new LambdaInferenceBinding("plvl-of-" + name, DataCall(Preprelude.LVL), argIndex, expr, true);
+              InferenceBinding hLvlInferenceBinding = new LevelInferenceBinding("hlvl-of-" + name, DataCall(Prelude.CNAT), expr); // new LambdaInferenceBinding("hlvl-of-" + name, DataCall(Preprelude.CNAT), argIndex, expr, true);
               InferenceBinding inferenceBinding = new LambdaInferenceBinding("type-of-" + name, Universe(new Level(pLvlInferenceBinding), new Level(hLvlInferenceBinding)), argIndex, expr, false);
               link.setType(Reference(inferenceBinding));
               bindingTypes.put(link, inferenceBinding);

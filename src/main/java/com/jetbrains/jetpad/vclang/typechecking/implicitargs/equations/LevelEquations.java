@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -34,10 +35,14 @@ public class LevelEquations<Var> {
     return myVariables.isEmpty() && myEquations.isEmpty();
   }
 
-  public Var solve(Map<Var, Integer> solution) {
+  public List<LevelEquation<Var>> solve(Map<Var, Integer> solution) {
+    Map<Var, List<LevelEquation<Var>>> paths = new HashMap<>();
+
     solution.put(null, 0);
+    paths.put(null, new ArrayList<LevelEquation<Var>>());
     for (Var var : myVariables) {
       solution.put(var, 0);
+      paths.put(var, new ArrayList<LevelEquation<Var>>());
     }
 
     for (int i = myVariables.size(); i >= 0; i--) {
@@ -49,9 +54,15 @@ public class LevelEquations<Var> {
           Integer a = solution.get(equation.getVariable1());
           Integer b = solution.get(equation.getVariable2());
           if (b != null && (a == null || b > a + equation.getConstant())) {
+            if (a != null) {
+              List<LevelEquation<Var>> newPath = new ArrayList<>(paths.get(equation.getVariable1()));
+              newPath.add(equation);
+              paths.put(equation.getVariable2(), newPath);
+            }
             if (i == 0 || equation.getVariable2() == null && a != null) {
               solution.remove(null);
-              return equation.getVariable1() != null ? equation.getVariable1() : equation.getVariable2();
+             // Var var = equation.getVariable1() != null ? equation.getVariable1() : equation.getVariable2();
+              return paths.get(equation.getVariable2());
             }
 
             solution.put(equation.getVariable2(), a == null ? null : a + equation.getConstant());

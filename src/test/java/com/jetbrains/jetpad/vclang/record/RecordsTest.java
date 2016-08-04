@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.record;
 
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
@@ -229,7 +228,7 @@ public class RecordsTest {
     assertNotNull(domArg0);
     DefCallExpression domArg0Body = domArg0.getBody().toDefCall();
     assertNotNull(domArg0Body);
-    assertEquals(Preprelude.NAT, domArg0Body.getDefinition());
+    assertEquals(Prelude.NAT, domArg0Body.getDefinition());
 
     assertEquals(1, domArguments.get(1).getArguments().size());
     assertEquals(Reference(testFun.getParameters()), domArguments.get(1).getArguments().get(0));
@@ -237,7 +236,7 @@ public class RecordsTest {
 
     ConCallExpression domArg2 = domArguments.get(2).toConCall();
     assertNotNull(domArg2);
-    assertEquals(Preprelude.ZERO, domArg2.getDefinition());
+    assertEquals(Prelude.ZERO, domArg2.getDefinition());
   }
 
   @Test

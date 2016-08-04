@@ -11,7 +11,6 @@ import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
@@ -160,7 +159,7 @@ public class ModuleDeserialization {
         readDefinition(stream, rn, !createStubs);
       } else {
         int is_prelude = stream.readInt();
-        ModuleID depModuleID = is_prelude == 2 ? moduleID.deserialize(stream) : is_prelude == 1 ? Preprelude.moduleID : Prelude.moduleID;
+        ModuleID depModuleID = is_prelude == 1 ? moduleID.deserialize(stream) : Prelude.moduleID;
         rn = fullPathToResolvedName(readFullPath(stream), depModuleID);
       }
       if (!createStubs) {

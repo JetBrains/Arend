@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Preprelude;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
@@ -83,15 +83,15 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Interval() {
-    return DataCall(Preprelude.INTERVAL);
+    return DataCall(Prelude.INTERVAL);
   }
 
   public static ConCallExpression Left() {
-    return ConCall(Preprelude.LEFT);
+    return ConCall(Prelude.LEFT);
   }
 
   public static ConCallExpression Right() {
-    return ConCall(Preprelude.RIGHT);
+    return ConCall(Prelude.RIGHT);
   }
 
   public static NewExpression New(Expression expression) {
@@ -207,34 +207,32 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Nat() {
-    return DataCall(Preprelude.NAT);
+    return DataCall(Prelude.NAT);
   }
 
   public static ConCallExpression Zero() {
-    return ConCall(Preprelude.ZERO);
+    return ConCall(Prelude.ZERO);
   }
 
   public static ConCallExpression Suc() {
-    return ConCall(Preprelude.SUC);
+    return ConCall(Prelude.SUC);
   }
 
   public static Expression Suc(Expression expr) {
     return Apps(Suc(), expr);
   }
 
-  public static DataCallExpression Lvl() {return DataCall(Preprelude.LVL); }
+  public static DataCallExpression Lvl() {return DataCall(Prelude.LVL); }
 
-  public static ConCallExpression ZeroLvl() { return ConCall(Preprelude.ZERO_LVL); }
-
-  public static Expression MaxNat(Expression expr1, Expression expr2) { return Apps(FunCall(Preprelude.MAX_NAT), expr1, expr2); }
+  public static Expression MaxNat(Expression expr1, Expression expr2) { return Apps(FunCall(Prelude.MAX_NAT), expr1, expr2); }
 
   public static DataCallExpression CNat() {
-    return DataCall(Preprelude.CNAT);
+    return DataCall(Prelude.CNAT);
   }
 
-  public static Expression Fin(Expression expr) { return Apps(ConCall(Preprelude.FIN), expr); }
+  public static Expression Fin(Expression expr) { return Apps(ConCall(Prelude.FIN), expr); }
 
-  public static Expression SucCNat(Expression expr) { return Apps(FunCall(Preprelude.SUC_CNAT), expr); }
+  public static Expression SucCNat(Expression expr) { return Apps(FunCall(Prelude.SUC_CNAT), expr); }
 
   public static UniverseExpression Universe() {
     return new UniverseExpression(new Sort(Sort.ANY_LEVEL, Sort.ANY_LEVEL));

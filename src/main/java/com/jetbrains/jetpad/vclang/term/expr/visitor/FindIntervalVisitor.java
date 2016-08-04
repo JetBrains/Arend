@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.term.Preprelude;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 
@@ -8,7 +8,7 @@ public class FindIntervalVisitor extends BaseExpressionVisitor<Void, Boolean> {
 
   @Override
   public Boolean visitDefCall(DefCallExpression expr, Void params) {
-    return expr.getDefinition() == Preprelude.INTERVAL || expr.getDefinition().containsInterval();
+    return expr.getDefinition() == Prelude.INTERVAL || expr.getDefinition().containsInterval();
   }
 
   @Override

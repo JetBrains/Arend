@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.naming.namespace.EmptyNamespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -16,6 +15,7 @@ import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.LetClause;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
@@ -53,8 +53,8 @@ public class NormalizationTest {
 
     DependentLink xPlusMinusOne = param("x'", Nat());
     ElimTreeNode plusElimTree = top(xPlus, branch(xPlus, tail(yPlus),
-        clause(Preprelude.ZERO, EmptyDependentLink.getInstance(), Reference(yPlus)),
-        clause(Preprelude.SUC, xPlusMinusOne, Suc(Apps(FunCall(plus), Reference(xPlusMinusOne), Reference(yPlus))))));
+        clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Reference(yPlus)),
+        clause(Prelude.SUC, xPlusMinusOne, Suc(Apps(FunCall(plus), Reference(xPlusMinusOne), Reference(yPlus))))));
     plus.setElimTree(plusElimTree);
 
     DependentLink xMul = param("x", Nat());
@@ -62,8 +62,8 @@ public class NormalizationTest {
     mul = new FunctionDefinition("*", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 7), EmptyNamespace.INSTANCE, params(xMul, yMul), Nat(), null);
     DependentLink xMulMinusOne = param("x'", Nat());
     ElimTreeNode mulElimTree = top(xMul, branch(xMul, tail(yMul),
-        clause(Preprelude.ZERO, EmptyDependentLink.getInstance(), Zero()),
-        clause(Preprelude.SUC, xMulMinusOne, Apps(FunCall(plus), Reference(yMul), Apps(FunCall(mul), Reference(xMulMinusOne), Reference(yMul))))
+        clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Zero()),
+        clause(Prelude.SUC, xMulMinusOne, Apps(FunCall(plus), Reference(yMul), Apps(FunCall(mul), Reference(xMulMinusOne), Reference(yMul))))
     ));
     mul.setElimTree(mulElimTree);
 
@@ -71,8 +71,8 @@ public class NormalizationTest {
     fac = new FunctionDefinition("fac", Abstract.Binding.DEFAULT_PRECEDENCE, EmptyNamespace.INSTANCE, xFac, Nat(), null);
     DependentLink xFacMinusOne = param("x'", Nat());
     ElimTreeNode facElimTree = top(xFac, branch(xFac, tail(),
-        clause(Preprelude.ZERO, EmptyDependentLink.getInstance(), Suc(Zero())),
-        clause(Preprelude.SUC, xFacMinusOne, Apps(FunCall(mul), Suc(Reference(xFacMinusOne)), Apps(FunCall(fac), Reference(xFacMinusOne))))
+        clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Suc(Zero())),
+        clause(Prelude.SUC, xFacMinusOne, Apps(FunCall(mul), Suc(Reference(xFacMinusOne)), Apps(FunCall(fac), Reference(xFacMinusOne))))
     ));
     fac.setElimTree(facElimTree);
 
@@ -82,8 +82,8 @@ public class NormalizationTest {
     nelim = new FunctionDefinition("nelim", Abstract.Binding.DEFAULT_PRECEDENCE, EmptyNamespace.INSTANCE, params(zNElim, sNElim, xNElim), Nat(), null);
     DependentLink xNElimMinusOne = param("x'", Nat());
     ElimTreeNode nelimElimTree = top(zNElim, branch(xNElim, tail(),
-        clause(Preprelude.ZERO, EmptyDependentLink.getInstance(), Reference(zNElim)),
-        clause(Preprelude.SUC, xNElimMinusOne, Apps(Reference(sNElim), Reference(xNElimMinusOne), Apps(FunCall(nelim), Reference(zNElim), Reference(sNElim), Reference(xNElimMinusOne))))
+        clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Reference(zNElim)),
+        clause(Prelude.SUC, xNElimMinusOne, Apps(Reference(sNElim), Reference(xNElimMinusOne), Apps(FunCall(nelim), Reference(zNElim), Reference(sNElim), Reference(xNElimMinusOne))))
     ));
     nelim.setElimTree(nelimElimTree);
   }
@@ -250,8 +250,8 @@ public class NormalizationTest {
   public void normalizeLetElimNoStuck() {
     // normalize (\let | x (y : N) : \Type2 <= \elim y | \Type0 => \Type1 | succ _ => \Type1 \in x zero) = \Type0
     Concrete.Expression elimTree = cElim(Collections.<Concrete.Expression>singletonList(cVar("y")),
-        cClause(cPatterns(cConPattern(Preprelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cUniverse(0)),
-        cClause(cPatterns(cConPattern(Preprelude.SUC.getName(), cPatternArg(cNamePattern(null), true, false))), Abstract.Definition.Arrow.RIGHT, cUniverse(1))
+        cClause(cPatterns(cConPattern(Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cUniverse(0)),
+        cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern(null), true, false))), Abstract.Definition.Arrow.RIGHT, cUniverse(1))
     );
     CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cUniverse(2), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar("x"), cZero())), null, 0);
     assertEquals(Universe(0), result.expression.normalize(NormalizeVisitor.Mode.NF));
@@ -298,13 +298,10 @@ public class NormalizationTest {
 
   @Test
   public void testFuncNorm() {
-    Expression expr1 = Apps(FunCall(Prelude.PATH_INFIX).addArgument(ZeroLvl(), EnumSet.noneOf(AppExpression.Flag.class))
-            .addArgument(SucCNat(Fin(Zero())), EnumSet.noneOf(AppExpression.Flag.class))
-            , Nat(), Zero());
+    Expression expr1 = Apps(FunCall(Prelude.PATH_INFIX, new Level(0), new Level(1)), Nat(), Zero());
     DependentLink a_ = param("a'", Nat());
     assertEquals(
-        Lam(a_, Apps(FunCall(Prelude.PATH_INFIX).addArgument(ZeroLvl(), EnumSet.noneOf(AppExpression.Flag.class))
-                .addArgument(SucCNat(Fin(Zero())), EnumSet.noneOf(AppExpression.Flag.class)), Nat(), Zero(), Reference(a_))).normalize(NormalizeVisitor.Mode.NF),
+        Lam(a_, Apps(FunCall(Prelude.PATH_INFIX, new Level(0), new Level(1)), Nat(), Zero(), Reference(a_))).normalize(NormalizeVisitor.Mode.NF),
         expr1.normalize(NormalizeVisitor.Mode.NF)
     );
   }
@@ -338,8 +335,8 @@ public class NormalizationTest {
 
   @Test
   public void testIsoRight() {
-    Binding lp = Prelude.PATH.getPolyParamByType(Preprelude.LVL); //new TypedBinding("lp", Lvl());
-    Binding lh = Prelude.PATH.getPolyParamByType(Preprelude.CNAT);
+    Binding lp = Prelude.PATH.getPolyParamByType(Prelude.LVL); //new TypedBinding("lp", Lvl());
+    Binding lh = Prelude.PATH.getPolyParamByType(Prelude.CNAT);
     DependentLink A = param("A", Universe(new Level(lp), new Level(lh)));
     DependentLink B = param("B", Universe(new Level(lp), new Level(lh)));
     DependentLink f = param("f", Pi(param(Reference(A)), Reference(B)));
@@ -373,7 +370,7 @@ public class NormalizationTest {
     DependentLink g = param("g", Pi(param(Reference(B)), Reference(A)));
     DependentLink a = param("a", Reference(A));
     DependentLink b = param("b", Reference(B));
-    DependentLink k = param("k", DataCall(Preprelude.INTERVAL));
+    DependentLink k = param("k", DataCall(Prelude.INTERVAL));
     Expression linvType = FunCall(Prelude.PATH_INFIX)
             .addArgument(Reference(A), EnumSet.noneOf(AppExpression.Flag.class))
             .addArgument(Apps(Reference(g), Apps(Reference(f), Reference(a)), Reference(a)), AppExpression.DEFAULT);
@@ -397,9 +394,9 @@ public class NormalizationTest {
 
   @Test
   public void testCoeIsoFreeVar() {
-    DependentLink k = param("k", DataCall(Preprelude.INTERVAL));
-    DependentLink i = param("i", DataCall(Preprelude.INTERVAL));
-    Expression A = Apps(DataCall(Prelude.PATH, new Level(0), new Level(0)), Lam(i, DataCall(Preprelude.INTERVAL)), Reference(k), Reference(k));
+    DependentLink k = param("k", DataCall(Prelude.INTERVAL));
+    DependentLink i = param("i", DataCall(Prelude.INTERVAL));
+    Expression A = Apps(DataCall(Prelude.PATH, new Level(0), new Level(0)), Lam(i, DataCall(Prelude.INTERVAL)), Reference(k), Reference(k));
     DependentLink B = param("B", Universe(new Level(0), new Level(0)));
     DependentLink f = param("f", Pi(param(A), Reference(B)));
     DependentLink g = param("g", Pi(param(Reference(B)), A));
@@ -414,7 +411,7 @@ public class NormalizationTest {
       .addArgument(Apps(Reference(f), Apps(Reference(g), Reference(b)), Reference(b)), AppExpression.DEFAULT);
     DependentLink rinv = param("rinv", Pi(b, rinvType));
     DependentLink aleft = param("aleft", A.subst(k, Right()));
-    Expression expr = Apps(FunCall(Prelude.COERCE, new Level(0), new Level(0)), Lam(k, Apps(FunCall(Prelude.ISO, new Level(0), new Level(0)), Apps(DataCall(Prelude.PATH, new Level(0), new Level(0)), Lam(i, DataCall(Preprelude.INTERVAL)), Reference(k), Reference(k)), Reference(B), Reference(f), Reference(g), Reference(linv), Reference(rinv), Reference(k))), Reference(aleft), Right());
+    Expression expr = Apps(FunCall(Prelude.COERCE, new Level(0), new Level(0)), Lam(k, Apps(FunCall(Prelude.ISO, new Level(0), new Level(0)), Apps(DataCall(Prelude.PATH, new Level(0), new Level(0)), Lam(i, DataCall(Prelude.INTERVAL)), Reference(k), Reference(k)), Reference(B), Reference(f), Reference(g), Reference(linv), Reference(rinv), Reference(k))), Reference(aleft), Right());
     assertEquals(expr, expr.normalize(NormalizeVisitor.Mode.NF));
   }
 

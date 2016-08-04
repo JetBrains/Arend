@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.naming.oneshot.visitor.DefinitionResolveNameV
 import com.jetbrains.jetpad.vclang.naming.scope.SubScope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.Preprelude;
 
 public class OneshotNameResolver {
   private final ErrorReporter myErrorReporter;
@@ -26,7 +25,8 @@ public class OneshotNameResolver {
   }
 
   public void visitModule(Abstract.ClassDefinition module) {
-    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, new SubScope(Preprelude.PRE_PRELUDE, Prelude.PRELUDE), myNameResolver, myErrorReporter, myResolveListener);
+    /* TODO: remove the comment below */
+    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, /* new SubScope(Preprelude.PRE_PRELUDE, Prelude.PRELUDE) /**/ Prelude.PRELUDE, myNameResolver, myErrorReporter, myResolveListener);
     visitor.visitClass(module, null);
   }
 }

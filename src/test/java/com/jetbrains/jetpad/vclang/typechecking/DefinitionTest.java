@@ -142,6 +142,13 @@ public class DefinitionTest {
   }
 
   @Test
+  public void dataExplicitUniverse() {
+    typeCheckDef("\\data Either {lp : Lvl} {lh : CNat} (A B : \\Type (lp,lh)) : \\Type (lp, max lh 1)\n" +
+            "    | inl A\n" +
+            "    | inr B");
+  }
+
+  @Test
   public void constructor() {
     DataDefinition def = (DataDefinition) typeCheckDef("\\data D (A : \\Type0) | con (B : \\Type1) A B");
 

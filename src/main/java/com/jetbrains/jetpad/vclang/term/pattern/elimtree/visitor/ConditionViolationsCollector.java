@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor;
 
-import com.jetbrains.jetpad.vclang.term.Preprelude;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -80,11 +80,11 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<ExprSub
             }
           });
         }
-        if (conCall.getDefinition() == Preprelude.ABSTRACT) {
-          if (branchNode.getClause(Preprelude.LEFT) != branchNode.getOtherwiseClause()) {
+        if (conCall.getDefinition() == Prelude.ABSTRACT) {
+          if (branchNode.getClause(Prelude.LEFT) != branchNode.getOtherwiseClause()) {
             checkInterval(branchNode, argSubst, Left());
           }
-          if (branchNode.getClause(Preprelude.RIGHT) != branchNode.getOtherwiseClause()) {
+          if (branchNode.getClause(Prelude.RIGHT) != branchNode.getOtherwiseClause()) {
             checkInterval(branchNode, argSubst, Right());
           }
         }

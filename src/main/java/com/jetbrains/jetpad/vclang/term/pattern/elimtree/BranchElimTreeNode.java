@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Preprelude;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -34,7 +34,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
     myContextTail = contextTail;
 
     DataCallExpression ftype = reference.getType().normalize(NormalizeVisitor.Mode.WHNF).getFunction().toDataCall();
-    myIsInterval = ftype != null && ftype.getDefinition() == Preprelude.INTERVAL;
+    myIsInterval = ftype != null && ftype.getDefinition() == Prelude.INTERVAL;
   }
 
   @Override

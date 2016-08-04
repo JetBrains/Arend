@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -285,10 +284,10 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   }
 
   private Integer getNum(Expression expr) {
-    if (expr.toConCall() != null && expr.toConCall().getDefinition() == Preprelude.ZERO) {
+    if (expr.toConCall() != null && expr.toConCall().getDefinition() == Prelude.ZERO) {
       return 0;
     }
-    if (expr.toApp() != null && expr.toApp().getArguments().size() == 1 && expr.toApp().getFunction().toConCall() != null && expr.toApp().getFunction().toConCall().getDefinition() == Preprelude.SUC) {
+    if (expr.toApp() != null && expr.toApp().getArguments().size() == 1 && expr.toApp().getFunction().toConCall() != null && expr.toApp().getFunction().toConCall().getDefinition() == Prelude.SUC) {
       Integer result = getNum(expr.toApp().getArguments().get(0));
       if (result != null) {
         return result + 1;

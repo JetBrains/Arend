@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Preprelude;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
@@ -368,7 +368,7 @@ public class TypeCheckingElim {
         return new ExpandPatternErrorResult(error);
       }
 
-      if ((mode == PatternExpansionMode.FUNCTION || mode == PatternExpansionMode.DATATYPE) && dataType == Preprelude.INTERVAL) {
+      if ((mode == PatternExpansionMode.FUNCTION || mode == PatternExpansionMode.DATATYPE) && dataType == Prelude.INTERVAL) {
         error = new TypeCheckingError("Pattern matching on an interval is not allowed here", pattern);
         myVisitor.getErrorReporter().report(error);
         return new ExpandPatternErrorResult(error);

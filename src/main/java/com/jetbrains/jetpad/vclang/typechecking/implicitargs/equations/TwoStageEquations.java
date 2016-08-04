@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Preprelude;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.DerivedInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
@@ -121,8 +121,8 @@ public class TwoStageEquations implements Equations {
 
       SortMax sorts = cType.toSorts();
       if (sorts != null) {
-        LevelInferenceBinding lpInf = new LevelInferenceBinding(cInf.getName() + "-lp", new DataCallExpression(Preprelude.LVL), cInf.getSourceNode());
-        LevelInferenceBinding lhInf = new LevelInferenceBinding(cInf.getName() + "-lh", new DataCallExpression(Preprelude.CNAT), cInf.getSourceNode());
+        LevelInferenceBinding lpInf = new LevelInferenceBinding(cInf.getName() + "-lp", new DataCallExpression(Prelude.LVL), cInf.getSourceNode());
+        LevelInferenceBinding lhInf = new LevelInferenceBinding(cInf.getName() + "-lh", new DataCallExpression(Prelude.CNAT), cInf.getSourceNode());
         myLevelEquations.addVariable(lpInf);
         myLevelEquations.addVariable(lhInf);
         Level lp = new Level(lpInf);
@@ -306,9 +306,12 @@ public class TwoStageEquations implements Equations {
 
     if (isFinal) {
       Map<LevelInferenceBinding, Integer> solution = new HashMap<>();
-      LevelInferenceBinding var = myLevelEquations.solve(solution);
-      if (var != null) {
-        myErrorReporter.report(new SolveEquationsError(new ArrayList<LevelEquation<? extends Binding>>(myLevelEquations.getEquations()), var.getSourceNode()));
+      //LevelInferenceBinding var = myLevelEquations.solve(solution);
+      List<LevelEquation<LevelInferenceBinding>> circle = myLevelEquations.solve(solution);
+      if (circle != null) {
+        LevelEquation<LevelInferenceBinding> lastEquation = circle.get(circle.size() - 1);
+        LevelInferenceBinding var = lastEquation.getVariable1() != null ? lastEquation.getVariable1() : lastEquation.getVariable2();
+        myErrorReporter.report(new SolveEquationsError(new ArrayList<LevelEquation<? extends Binding>>(circle), var.getSourceNode()));
       }
       for (Map.Entry<LevelInferenceBinding, Integer> entry : solution.entrySet()) {
         Integer constant = entry.getValue();
