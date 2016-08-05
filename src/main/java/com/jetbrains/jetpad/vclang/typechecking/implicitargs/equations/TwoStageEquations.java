@@ -230,11 +230,11 @@ public class TwoStageEquations implements Equations {
     }
 
     Map<LevelInferenceVariable, Integer> solution = new HashMap<>();
-    List<LevelEquation<LevelInferenceBinding>> circle = myLevelEquations.solve(solution);
+    List<LevelEquation<LevelInferenceVariable>> circle = myLevelEquations.solve(solution);
     if (circle != null) {
-      LevelEquation<LevelInferenceBinding> lastEquation = circle.get(circle.size() - 1);
-      LevelInferenceBinding var = lastEquation.getVariable1() != null ? lastEquation.getVariable1() : lastEquation.getVariable2();
-      myErrorReporter.report(new SolveLevelEquationsError(new ArrayList<LevelEquation<? extends Binding>>(circle), var.getSourceNode()));
+      LevelEquation<LevelInferenceVariable> lastEquation = circle.get(circle.size() - 1);
+      LevelInferenceVariable var = lastEquation.getVariable1() != null ? lastEquation.getVariable1() : lastEquation.getVariable2();
+      myErrorReporter.report(new SolveLevelEquationsError(new ArrayList<LevelEquation<? extends Variable>>(circle), var.getSourceNode()));
     }
 
     LevelSubstitution result = new LevelSubstitution();
