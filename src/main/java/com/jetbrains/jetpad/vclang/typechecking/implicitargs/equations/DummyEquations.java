@@ -3,8 +3,8 @@ package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
@@ -42,7 +42,7 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public boolean addVariable(LevelInferenceBinding var) {
+  public boolean addVariable(LevelInferenceVariable var) {
     return false;
   }
 
@@ -67,7 +67,7 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public Substitution solve(Set<InferenceBinding> binding, boolean isFinal) {
+  public Substitution solve(Set<InferenceVariable> binding, boolean isFinal) {
     throw new Exception();
   }
 

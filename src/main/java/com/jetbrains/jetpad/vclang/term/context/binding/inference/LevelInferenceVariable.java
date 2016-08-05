@@ -7,10 +7,10 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.typechecking.error.LevelInferenceError;
 
-public class LevelInferenceBinding extends InferenceBinding {
+public class LevelInferenceVariable extends InferenceVariable {
   private final Abstract.SourceNode mySourceNode;
 
-  public LevelInferenceBinding(String name, Expression type, Abstract.SourceNode sourceNode) {
+  public LevelInferenceVariable(String name, Expression type, Abstract.SourceNode sourceNode) {
     super(name, type);
     mySourceNode = sourceNode;
   }

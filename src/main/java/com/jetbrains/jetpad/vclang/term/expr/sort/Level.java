@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr.sort;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
@@ -15,16 +15,16 @@ import java.util.List;
 
 public class Level implements PrettyPrintable {
   private final int myConstant;
-  private final Binding myVar;
+  private final Variable myVar;
 
   public static final Level INFINITY = new Level(null, -1);
 
-  public Level(Binding var, int constant) {
+  public Level(Variable var, int constant) {
     myConstant = constant;
     myVar = var;
   }
 
-  public Level(Binding var) {
+  public Level(Variable var) {
     myConstant = 0;
     myVar = var;
   }
@@ -34,7 +34,7 @@ public class Level implements PrettyPrintable {
     myVar = null;
   }
 
-  public Binding getVar() {
+  public Variable getVar() {
     return myVar;
   }
 
@@ -73,7 +73,7 @@ public class Level implements PrettyPrintable {
     return level.add(myConstant);
   }
 
-  public Level subst(Binding binding, Level subst) {
+  public Level subst(Variable binding, Level subst) {
     return myVar != binding ? this : subst.add(myConstant);
   }
 

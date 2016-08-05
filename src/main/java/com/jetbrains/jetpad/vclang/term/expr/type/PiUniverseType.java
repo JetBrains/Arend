@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr.type;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -147,7 +147,7 @@ public class PiUniverseType implements Type {
 
   @Override
   public boolean isLessOrEquals(Expression expression, Equations equations, Abstract.SourceNode sourceNode) {
-    InferenceBinding binding = CompareVisitor.checkIsInferVar(expression);
+    InferenceVariable binding = CompareVisitor.checkIsInferVar(expression);
     if (binding != null) {
       return equations.add(this, expression, sourceNode);
     }

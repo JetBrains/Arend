@@ -3,8 +3,8 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
@@ -199,7 +199,7 @@ public class TypeCheckingDefCall {
 
       CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(null, null);
       for (Binding polyVar : definition.getPolyParams()) {
-        InferenceBinding l = new LevelInferenceBinding(polyVar.getName(), polyVar.getType(), sourceNode);
+        InferenceVariable l = new LevelInferenceVariable(polyVar.getName(), polyVar.getType(), sourceNode);
         subst.add(polyVar, new Level(l));
         if (result.getEquations() == DummyEquations.getInstance()) {
           result.setEquations(myVisitor.getImplicitArgsInference().newEquations());

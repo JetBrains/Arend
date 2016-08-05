@@ -1,13 +1,13 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 public class InferenceReferenceExpression extends Expression {
-  private InferenceBinding myBinding;
+  private InferenceVariable myBinding;
   private Expression mySubstExpression;
 
-  public InferenceReferenceExpression(InferenceBinding binding) {
+  public InferenceReferenceExpression(InferenceVariable binding) {
     myBinding = binding;
     if (myBinding.getReference() == null) {
       myBinding.setReference(this);
@@ -16,7 +16,7 @@ public class InferenceReferenceExpression extends Expression {
     }
   }
 
-  public InferenceBinding getBinding() {
+  public InferenceVariable getBinding() {
     return myBinding;
   }
 

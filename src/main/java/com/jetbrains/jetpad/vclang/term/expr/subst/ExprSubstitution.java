@@ -17,7 +17,7 @@ public class ExprSubstitution {
     mySubstExprs = Collections.emptyMap();
   }
 
-  public ExprSubstitution(Binding from, Expression to) {
+  public ExprSubstitution(Callable from, Expression to) {
     mySubstExprs = new HashMap<>();
     add(from, to);
   }

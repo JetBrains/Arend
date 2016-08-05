@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
@@ -11,7 +11,7 @@ public class ReferenceExpression extends Expression {
 
   public ReferenceExpression(Binding binding) {
     assert !(binding instanceof Definition);
-    assert !(binding instanceof InferenceBinding);
+    assert !(binding instanceof InferenceVariable);
     assert binding != EmptyDependentLink.getInstance();
     myBinding = binding;
   }

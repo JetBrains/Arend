@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
@@ -108,13 +108,13 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   }
 
   // TODO: should we check other stuck terms?
-  public static InferenceBinding checkIsInferVar(Expression expr) {
+  public static InferenceVariable checkIsInferVar(Expression expr) {
     InferenceReferenceExpression ref = expr.getFunction().toInferenceReference();
     return ref != null ? ref.getBinding() : null;
   }
 
   private boolean checkIsInferVar(Expression fun, Expression expr1, Expression expr2) {
-    InferenceBinding binding = checkIsInferVar(fun);
+    InferenceVariable binding = checkIsInferVar(fun);
     return binding != null && myEquations.add(expr1.subst(getSubstition()), expr2, myCMP, binding.getSourceNode());
   }
 

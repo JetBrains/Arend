@@ -9,10 +9,10 @@ import com.jetbrains.jetpad.vclang.term.StringPrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.ExpressionInferenceBinding;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.LambdaInferenceBinding;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.ExpressionInferenceVariable;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.LambdaInferenceVariable;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
@@ -370,7 +370,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     Result bodyResult;
     try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
-      Map<Binding, InferenceBinding> bindingTypes = new HashMap<>();
+      Map<Binding, InferenceVariable> bindingTypes = new HashMap<>();
 
       for (Abstract.Argument argument : expr.getArguments()) {
         List<String> names;
@@ -419,11 +419,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             piLamSubst.add(piLink, Reference(link));
           } else {
             if (argResult == null) {
-              InferenceBinding pLvlInferenceBinding = new LevelInferenceBinding("plvl-of-" + name, DataCall(Preprelude.LVL), expr); // new LambdaInferenceBinding("plvl-of-" + name, DataCall(Preprelude.LVL), argIndex, expr, true);
-              InferenceBinding hLvlInferenceBinding = new LevelInferenceBinding("hlvl-of-" + name, DataCall(Preprelude.CNAT), expr); // new LambdaInferenceBinding("hlvl-of-" + name, DataCall(Preprelude.CNAT), argIndex, expr, true);
-              InferenceBinding inferenceBinding = new LambdaInferenceBinding("type-of-" + name, Universe(new Level(pLvlInferenceBinding), new Level(hLvlInferenceBinding)), argIndex, expr, false);
-              link.setType(new InferenceReferenceExpression(inferenceBinding));
-              bindingTypes.put(link, inferenceBinding);
+              InferenceVariable pLvlInferenceVariable = new LevelInferenceVariable("plvl-of-" + name, DataCall(Preprelude.LVL), expr); // new LambdaInferenceBinding("plvl-of-" + name, DataCall(Preprelude.LVL), argIndex, expr, true);
+              InferenceVariable hLvlInferenceVariable = new LevelInferenceVariable("hlvl-of-" + name, DataCall(Preprelude.CNAT), expr); // new LambdaInferenceBinding("hlvl-of-" + name, DataCall(Preprelude.CNAT), argIndex, expr, true);
+              InferenceVariable inferenceVariable = new LambdaInferenceVariable("type-of-" + name, Universe(new Level(pLvlInferenceVariable), new Level(hLvlInferenceVariable)), argIndex, expr, false);
+              link.setType(new InferenceReferenceExpression(inferenceVariable));
+              bindingTypes.put(link, inferenceVariable);
             }
             if (actualPiLink == null) {
               actualPiLink = link;
@@ -455,10 +455,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
       for (int i = myContext.size() - 1; i >= saver.getOriginalSize(); i--) {
         result.getEquations().abstractBinding(myContext.get(i));
-        InferenceBinding bindingType = bindingTypes.get(myContext.get(i));
+        InferenceVariable bindingType = bindingTypes.get(myContext.get(i));
         if (bindingType != null) {
-          result.addUnsolvedVariable((InferenceBinding) bindingType.getType().toUniverse().getSort().getPLevel().getVar());
-          result.addUnsolvedVariable((InferenceBinding) bindingType.getType().toUniverse().getSort().getHLevel().getVar());
+          result.addUnsolvedVariable((InferenceVariable) bindingType.getType().toUniverse().getSort().getPLevel().getVar());
+          result.addUnsolvedVariable((InferenceVariable) bindingType.getType().toUniverse().getSort().getHLevel().getVar());
           result.addUnsolvedVariable(bindingType);
           Substitution substitution = result.getSubstitution();
           if (!substitution.isEmpty()) {
@@ -545,7 +545,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   @Override
   public Result visitInferHole(Abstract.InferHoleExpression expr, Expression expectedType) {
     if (expectedType != null) {
-      InferenceBinding binding = new ExpressionInferenceBinding(expectedType, expr);
+      InferenceVariable binding = new ExpressionInferenceVariable(expectedType, expr);
       Result result = new Result(new InferenceReferenceExpression(binding), expectedType);
       result.addUnsolvedVariable(binding);
       return result;

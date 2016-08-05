@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.namespace.EmptyNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
@@ -59,7 +60,7 @@ public class Prelude extends SimpleNamespace {
     DependentLink PathParameter3 = param("a'", Apps(Reference(PathParameter1), Right()));
     PathParameter1.setNext(PathParameter2);
     PathParameter2.setNext(PathParameter3);
-    Preprelude.DefinitionBuilder.Data path = new Preprelude.DefinitionBuilder.Data(PRELUDE, "Path", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMax(new Sort(PathLp, PathLh)), PathParameter1, Arrays.asList(PathLp.getVar(), PathLh.getVar()));
+    Preprelude.DefinitionBuilder.Data path = new Preprelude.DefinitionBuilder.Data(PRELUDE, "Path", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMax(new Sort(PathLp, PathLh)), PathParameter1, Arrays.asList((Binding) PathLp.getVar(), (Binding) PathLh.getVar()));
     PATH = path.definition();
 
     /* path */
@@ -77,7 +78,7 @@ public class Prelude extends SimpleNamespace {
         .addArgument(Lam(param("_", Interval()), Reference(pathInfixParameter1)), AppExpression.DEFAULT)
         .addArgument(Reference(pathInfixParameter2), AppExpression.DEFAULT)
         .addArgument(Reference(pathInfixParameter2.getNext()), AppExpression.DEFAULT);
-    PATH_INFIX = new Preprelude.DefinitionBuilder.Function(PRELUDE, "=", new Abstract.Binding.Precedence(Abstract.Binding.Associativity.NON_ASSOC, (byte) 0), pathInfixParameter1, Universe(pathInfixLp, pathInfixLh), top(pathInfixParameter1, leaf(pathInfixTerm)), Arrays.asList(pathInfixLp.getVar(), pathInfixLh.getVar())).definition();
+    PATH_INFIX = new Preprelude.DefinitionBuilder.Function(PRELUDE, "=", new Abstract.Binding.Precedence(Abstract.Binding.Associativity.NON_ASSOC, (byte) 0), pathInfixParameter1, Universe(pathInfixLp, pathInfixLh), top(pathInfixParameter1, leaf(pathInfixTerm)), Arrays.asList((Binding) pathInfixLp.getVar(), (Binding) pathInfixLh.getVar())).definition();
 
     /* @ */
     Level atLp = new Level(new TypedBinding("lp", Lvl()));
@@ -99,7 +100,7 @@ public class Prelude extends SimpleNamespace {
         clause(branch(atParameter4, tail(atParameter5),
             clause(PATH_CON, atPath, Apps(Reference(atPath), Reference(atParameter5)))))
     ));
-    AT = new Preprelude.DefinitionBuilder.Function(PRELUDE, "@", new Abstract.Binding.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 9), atParameter1, atResultType, atElimTree, Arrays.asList(atLp.getVar(), atLh.getVar())).definition();
+    AT = new Preprelude.DefinitionBuilder.Function(PRELUDE, "@", new Abstract.Binding.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 9), atParameter1, atResultType, atElimTree, Arrays.asList((Binding) atLp.getVar(), (Binding) atLh.getVar())).definition();
 
     /* coe */
     Level coerceLp = new Level(new TypedBinding("lp", Lvl()));
@@ -111,7 +112,7 @@ public class Prelude extends SimpleNamespace {
     coerceParameter2.setNext(coerceParameter3);
     ElimTreeNode coerceElimTreeNode = top(coerceParameter1, branch(coerceParameter3, tail(),
         clause(Preprelude.LEFT, EmptyDependentLink.getInstance(), Abstract.Definition.Arrow.RIGHT, Reference(coerceParameter2))));
-    COERCE = new Preprelude.DefinitionBuilder.Function(PRELUDE, "coe", Abstract.Binding.DEFAULT_PRECEDENCE, coerceParameter1, Apps(Reference(coerceParameter1), Reference(coerceParameter3)), coerceElimTreeNode, Arrays.asList(coerceLp.getVar(), coerceLh.getVar())).definition();
+    COERCE = new Preprelude.DefinitionBuilder.Function(PRELUDE, "coe", Abstract.Binding.DEFAULT_PRECEDENCE, coerceParameter1, Apps(Reference(coerceParameter1), Reference(coerceParameter3)), coerceElimTreeNode, Arrays.asList((Binding) coerceLp.getVar(), (Binding) coerceLh.getVar())).definition();
 
     /* iso */
     Level isoLp = new Level(new TypedBinding("lp", Lvl()));
@@ -142,13 +143,13 @@ public class Prelude extends SimpleNamespace {
         clause(Preprelude.LEFT, EmptyDependentLink.getInstance(), Reference(isoParameter1)),
         clause(Preprelude.RIGHT, EmptyDependentLink.getInstance(), Reference(isoParameter1.getNext()))
     ));
-    ISO = new Preprelude.DefinitionBuilder.Function(PRELUDE, "iso", Abstract.Binding.DEFAULT_PRECEDENCE, isoParameter1, isoResultType, isoElimTree, Arrays.asList(isoLp.getVar(), isoLh.getVar())).definition();
+    ISO = new Preprelude.DefinitionBuilder.Function(PRELUDE, "iso", Abstract.Binding.DEFAULT_PRECEDENCE, isoParameter1, isoResultType, isoElimTree, Arrays.asList((Binding) isoLp.getVar(), (Binding) isoLh.getVar())).definition();
 
     /* TrP, inP */
     Level truncPLp = new Level(new TypedBinding("lp", Lvl()));
     Level truncPLh = new Level(new TypedBinding("lh", CNat()));
     DependentLink truncPParameter = param("A", Universe(truncPLp, truncPLh));
-    Preprelude.DefinitionBuilder.Data propTrunc = new Preprelude.DefinitionBuilder.Data(PRELUDE, "TrP", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMax(Sort.PROP), truncPParameter, Arrays.asList(truncPLp.getVar(), truncPLh.getVar()));
+    Preprelude.DefinitionBuilder.Data propTrunc = new Preprelude.DefinitionBuilder.Data(PRELUDE, "TrP", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMax(Sort.PROP), truncPParameter, Arrays.asList((Binding) truncPLp.getVar(), (Binding) truncPLh.getVar()));
     PROP_TRUNC = propTrunc.definition();
     propTrunc.addConstructor("inP", Abstract.Binding.DEFAULT_PRECEDENCE, param("a", Reference(truncPParameter)));
 
@@ -170,7 +171,7 @@ public class Prelude extends SimpleNamespace {
     Level truncSLp = new Level(new TypedBinding("lp", Lvl()));
     Level truncSLh = new Level(new TypedBinding("lh", CNat()));
     DependentLink truncSParameter = param("A", Universe(truncSLp, truncSLh));
-    Preprelude.DefinitionBuilder.Data setTrunc = new Preprelude.DefinitionBuilder.Data(PRELUDE, "TrS", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMax(Sort.SetOfLevel(truncSLp)), truncSParameter, Arrays.asList(truncSLp.getVar(), truncSLh.getVar()));
+    Preprelude.DefinitionBuilder.Data setTrunc = new Preprelude.DefinitionBuilder.Data(PRELUDE, "TrS", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMax(Sort.SetOfLevel(truncSLp)), truncSParameter, Arrays.asList((Binding) truncSLp.getVar(), (Binding) truncSLh.getVar()));
     SET_TRUNC = setTrunc.definition();
     setTrunc.addConstructor("inS", Abstract.Binding.DEFAULT_PRECEDENCE, param("inS", Reference(truncSParameter)));
 

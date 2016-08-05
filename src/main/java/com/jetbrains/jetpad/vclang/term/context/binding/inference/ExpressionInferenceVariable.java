@@ -5,32 +5,34 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
 
-public class DerivedInferenceBinding extends InferenceBinding {
-  private final InferenceBinding myBinding;
+public class ExpressionInferenceVariable extends InferenceVariable {
+  private final Abstract.SourceNode mySourceNode;
 
-  public DerivedInferenceBinding(String name, InferenceBinding binding) {
-    super(name, binding.getType());
-    myBinding = binding;
+  public ExpressionInferenceVariable(Expression type, Abstract.SourceNode sourceNode) {
+    super(null, type);
+    mySourceNode = sourceNode;
   }
 
   @Override
   public Abstract.SourceNode getSourceNode() {
-    return myBinding.getSourceNode();
+    return mySourceNode;
   }
 
   @Override
   public void reportErrorInfer(ErrorReporter errorReporter, Expression... candidates) {
-    myBinding.reportErrorInfer(errorReporter, candidates);
+    errorReporter.report(new ArgInferenceError(ArgInferenceError.expression(), mySourceNode, candidates));
   }
 
   @Override
   public void reportErrorLevelInfer(ErrorReporter errorReporter, Level... candidates) {
-    myBinding.reportErrorLevelInfer(errorReporter, candidates);
+    throw new IllegalStateException();
+    //errorReporter.report(new ArgInferenceError(ArgInferenceError.expression(), mySourceNode, new Expression[0], candidates));
   }
 
   @Override
   public void reportErrorMismatch(ErrorReporter errorReporter, Expression expectedType, Type actualType, Expression candidate) {
-    myBinding.reportErrorMismatch(errorReporter, expectedType, actualType, candidate);
+    errorReporter.report(new ArgInferenceError(ArgInferenceError.expression(), expectedType, actualType, mySourceNode, candidate));
   }
 }

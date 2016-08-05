@@ -3,8 +3,8 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.Preprelude;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
@@ -201,20 +201,20 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     }
   }
 
-  private Abstract.Expression visitBinding(Binding binding) {
-    String name = binding.getName() == null ? "_" : binding.getName();
+  private Abstract.Expression visitVariable(Variable var) {
+    String name = var.getName() == null ? "_" : var.getName();
     String name1 = myNames.get(name);
-    return myFactory.makeVar((binding instanceof InferenceBinding ? "?" : "") + (name1 != null ? name1 : name));
+    return myFactory.makeVar((var instanceof InferenceVariable ? "?" : "") + (name1 != null ? name1 : name));
   }
 
   @Override
   public Abstract.Expression visitReference(ReferenceExpression expr, Void params) {
-    return visitBinding(expr.getBinding());
+    return visitVariable(expr.getBinding());
   }
 
   @Override
   public Abstract.Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
-    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : visitBinding(expr.getBinding());
+    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : visitVariable(expr.getBinding());
   }
 
   private String renameVar(String name) {
@@ -498,7 +498,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitBranch(BranchElimTreeNode branchNode, Void params) {
-    return myFactory.makeElim(Collections.singletonList(visitBinding(branchNode.getReference())), visitBranch(branchNode));
+    return myFactory.makeElim(Collections.singletonList(visitVariable(branchNode.getReference())), visitBranch(branchNode));
   }
 
   @Override

@@ -2,17 +2,29 @@ package com.jetbrains.jetpad.vclang.term.context.binding.inference;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.InferenceReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 
-public abstract class InferenceBinding extends TypedBinding {
+public abstract class InferenceVariable implements Variable {
+  private final String myName;
+  private Expression myType;
   private InferenceReferenceExpression myReference;
 
-  public InferenceBinding(String name, Expression type) {
-    super(name, type);
+  public InferenceVariable(String name, Expression type) {
+    myName = name;
+    myType = type;
+  }
+
+  @Override
+  public String getName() {
+    return myName;
+  }
+
+  public Expression getType() {
+    return myType;
   }
 
   public void setType(Expression type) {
@@ -35,6 +47,6 @@ public abstract class InferenceBinding extends TypedBinding {
 
   @Override
   public String toString() {
-    return "?" + getName();
+    return "?" + myName;
   }
 }

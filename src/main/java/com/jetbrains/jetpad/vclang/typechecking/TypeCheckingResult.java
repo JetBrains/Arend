@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -12,7 +12,7 @@ import java.util.Set;
 
 public abstract class TypeCheckingResult {
   private Equations myEquations;
-  private Set<InferenceBinding> myUnsolvedVariables;
+  private Set<InferenceVariable> myUnsolvedVariables;
 
   public TypeCheckingResult() {
     myEquations = DummyEquations.getInstance();
@@ -27,9 +27,9 @@ public abstract class TypeCheckingResult {
     myEquations = equations;
   }
 
-  public void addUnsolvedVariable(InferenceBinding binding) {
-    if (binding instanceof LevelInferenceBinding) {
-      myEquations.addVariable((LevelInferenceBinding) binding);
+  public void addUnsolvedVariable(InferenceVariable binding) {
+    if (binding instanceof LevelInferenceVariable) {
+      myEquations.addVariable((LevelInferenceVariable) binding);
     } else {
       myUnsolvedVariables.add(binding);
     }
@@ -43,7 +43,7 @@ public abstract class TypeCheckingResult {
     if (myUnsolvedVariables.isEmpty()) {
       myEquations.reportErrors(errorReporter);
     }
-    for (InferenceBinding unsolvedVariable : myUnsolvedVariables) {
+    for (InferenceVariable unsolvedVariable : myUnsolvedVariables) {
       unsolvedVariable.reportErrorInfer(errorReporter);
     }
   }

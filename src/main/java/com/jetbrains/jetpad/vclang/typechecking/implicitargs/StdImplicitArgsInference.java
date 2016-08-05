@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
 import com.jetbrains.jetpad.vclang.term.*;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.FunctionInferenceBinding;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.FunctionInferenceVariable;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
@@ -36,9 +36,9 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     for (int i = 0; i < parameters.size(); i++) {
       DependentLink parameter = parameters.get(i);
       Expression binding;
-      InferenceBinding inferenceBinding = new FunctionInferenceBinding(parameter.getName(), parameter.getType().subst(substitution), i + 1, expr);
-      result.addUnsolvedVariable(inferenceBinding);
-      binding = new InferenceReferenceExpression(inferenceBinding);
+      InferenceVariable inferenceVariable = new FunctionInferenceVariable(parameter.getName(), parameter.getType().subst(substitution), i + 1, expr);
+      result.addUnsolvedVariable(inferenceVariable);
+      binding = new InferenceReferenceExpression(inferenceVariable);
 
       arguments.add(binding);
       flags.add(EnumSet.noneOf(AppExpression.Flag.class));
@@ -61,10 +61,10 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         List<DependentLink> pathParams = new ArrayList<>();
 
         ((Expression) conCall.getType()).getPiParameters(pathParams, false, false);
-        InferenceBinding inferenceBinding = new FunctionInferenceBinding("A", pathParams.get(0).getType().toPi().getCodomain(), 1, fun);
-        result.addUnsolvedVariable(inferenceBinding);
+        InferenceVariable inferenceVariable = new FunctionInferenceVariable("A", pathParams.get(0).getType().toPi().getCodomain(), 1, fun);
+        result.addUnsolvedVariable(inferenceVariable);
         DependentLink lamParam = param("i", interval);
-        Expression binding = new InferenceReferenceExpression(inferenceBinding);
+        Expression binding = new InferenceReferenceExpression(inferenceVariable);
         Expression lamExpr = Lam(lamParam, binding);
         result.expression = result.expression.addArgument(lamExpr, EnumSet.noneOf(AppExpression.Flag.class));
         result.type = result.type.applyExpressions(Collections.singletonList(lamExpr));
