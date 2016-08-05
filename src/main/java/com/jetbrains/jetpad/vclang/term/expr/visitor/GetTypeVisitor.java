@@ -42,7 +42,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
 
   @Override
   public Type visitInferenceReference(InferenceReferenceExpression expr, Void params) {
-    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : expr.getBinding().getType().accept(new SubstVisitor(new ExprSubstitution(), new LevelSubstitution()), null);
+    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : expr.getVariable().getType().accept(new SubstVisitor(new ExprSubstitution(), new LevelSubstitution()), null);
   }
 
   @Override

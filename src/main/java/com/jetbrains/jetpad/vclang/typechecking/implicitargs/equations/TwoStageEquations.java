@@ -63,22 +63,30 @@ public class TwoStageEquations implements Equations {
     return true;
   }
 
-  private void addSolution(InferenceVariable binding, Expression expression) {
+  private void addSolution(InferenceVariable variable, Expression expression) {
     assert expression.toInferenceReference() == null;
 
-    Expression expr = mySolutions.get(binding);
+    Expression expr = mySolutions.get(variable);
     if (expr != null) {
-      if (!CompareVisitor.compare(this, CMP.EQ, expr, expression, binding.getSourceNode())) {
-        myErrorReporter.report(new SolveEquationError<>(expr, expression, null, binding.getSourceNode()));
+      if (!CompareVisitor.compare(this, CMP.EQ, expr, expression, variable.getSourceNode())) {
+        myErrorReporter.report(new SolveEquationError<>(expr, expression, null, variable.getSourceNode()));
       }
     } else {
-      mySolutions.put(binding, expression);
+      // TODO[inf_vars]
+      // mySolutions.put(variable, expression);
+      variable.getReference().setSubstExpression(expression);
+      Expression expectedType = variable.getType();
+      Type actualType = expression.getType();
+      if (!actualType.isLessOrEquals(expectedType.normalize(NormalizeVisitor.Mode.NF), this, variable.getSourceNode())) {
+        actualType = actualType.normalize(NormalizeVisitor.Mode.HUMAN_NF);
+        myErrorReporter.report(variable.getErrorMismatch(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), actualType, expression));
+      }
     }
   }
 
   private void addEquation(Type type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode) {
-    InferenceVariable inf1 = type instanceof Expression && ((Expression) type).toInferenceReference() != null ? ((Expression) type).toInferenceReference().getBinding() : null;
-    InferenceVariable inf2 = expr.toInferenceReference() != null ? expr.toInferenceReference().getBinding() : null;
+    InferenceVariable inf1 = type instanceof Expression && ((Expression) type).toInferenceReference() != null ? ((Expression) type).toInferenceReference().getVariable() : null;
+    InferenceVariable inf2 = expr.toInferenceReference() != null ? expr.toInferenceReference().getVariable() : null;
 
     if (inf1 == inf2 && inf1 != null) {
       return;
@@ -350,7 +358,7 @@ public class TwoStageEquations implements Equations {
         Expression newResult = (Expression) equation.type;
         if (newResult.toInferenceReference() != null || newResult.toClassCall() != null) {
           if (equation.cmp == CMP.GE && newResult.toClassCall() != null) {
-            InferenceVariable var = equation.expr.toInferenceReference().getBinding();
+            InferenceVariable var = equation.expr.toInferenceReference().getVariable();
             Expression oldResult = result.get(var);
             if (newResult.isLessOrEquals(oldResult, DummyEquations.getInstance(), var.getSourceNode())) {
               result.put(var, newResult);
@@ -385,10 +393,10 @@ public class TwoStageEquations implements Equations {
       for (Equation equation : lowerBounds) {
         Expression newSolution = (Expression) equation.type;
         if (newSolution.toInferenceReference() != null) {
-          newSolution = solutions.get(newSolution.toInferenceReference().getBinding());
+          newSolution = solutions.get(newSolution.toInferenceReference().getVariable());
         }
         if (newSolution != null) {
-          InferenceVariable var = equation.expr.toInferenceReference().getBinding();
+          InferenceVariable var = equation.expr.toInferenceReference().getVariable();
           Expression oldSolution = solutions.get(var);
           if (oldSolution == null) {
             solutions.put(var, newSolution);
@@ -417,7 +425,7 @@ public class TwoStageEquations implements Equations {
 
   private boolean update(InferenceVariable var, Expression expr, ExprSubstitution subst) {
     if (expr.findBinding(var)) {
-      var.reportErrorInfer(myErrorReporter, expr);
+      myErrorReporter.report(var.getErrorInfer(expr));
       return false;
     }
 
@@ -425,7 +433,7 @@ public class TwoStageEquations implements Equations {
     Type actualType = expr.getType().subst(subst, new LevelSubstitution());
     if (!actualType.isLessOrEquals(expectedType.normalize(NormalizeVisitor.Mode.NF), this, var.getSourceNode())) {
       actualType = actualType.normalize(NormalizeVisitor.Mode.HUMAN_NF);
-      var.reportErrorMismatch(myErrorReporter, expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), actualType, expr);
+      myErrorReporter.report(var.getErrorMismatch(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), actualType, expr));
       return false;
     }
 

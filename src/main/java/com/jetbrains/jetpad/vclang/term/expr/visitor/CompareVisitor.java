@@ -80,6 +80,12 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     while (expr2.toOfType() != null) {
       expr2 = expr2.toOfType().getExpression();
     }
+    while (expr1.toInferenceReference() != null && expr1.toInferenceReference().getSubstExpression() != null) {
+      expr1 = expr1.toInferenceReference().getSubstExpression();
+    }
+    while (expr2.toInferenceReference() != null && expr2.toInferenceReference().getSubstExpression() != null) {
+      expr2 = expr2.toInferenceReference().getSubstExpression();
+    }
 
     if (!expr2.getArguments().isEmpty() && checkIsInferVar(expr2.getFunction(), expr1, expr2)) {
       return true;
@@ -110,7 +116,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   // TODO: should we check other stuck terms?
   public static InferenceVariable checkIsInferVar(Expression expr) {
     InferenceReferenceExpression ref = expr.getFunction().toInferenceReference();
-    return ref != null ? ref.getBinding() : null;
+    return ref != null ? ref.getVariable() : null;
   }
 
   private boolean checkIsInferVar(Expression fun, Expression expr1, Expression expr2) {
@@ -233,11 +239,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   }
 
   private boolean compareInferenceReference(InferenceReferenceExpression expr1, Expression expr2, boolean first) {
-    if (expr2.toInferenceReference() != null && expr1.getBinding() == expr2.toInferenceReference().getBinding()) {
+    if (expr2.toInferenceReference() != null && expr1.getVariable() == expr2.toInferenceReference().getVariable()) {
       return true;
     }
 
-    return myEquations.add(expr1, expr2.subst(getSubstition()), first ? myCMP : myCMP.not(), expr1.getBinding().getSourceNode());
+    return myEquations.add(expr1, expr2.subst(getSubstition()), first ? myCMP : myCMP.not(), expr1.getVariable().getSourceNode());
   }
 
   @Override
@@ -257,7 +263,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
   @Override
   public Boolean visitInferenceReference(InferenceReferenceExpression expr1, Expression expr2) {
-    return compareInferenceReference(expr1, expr2, true);
+    if (expr1.getSubstExpression() != null) {
+      return compare(expr1.getSubstExpression(), expr2);
+    } else {
+      return compareInferenceReference(expr1, expr2, true);
+    }
   }
 
   @Override

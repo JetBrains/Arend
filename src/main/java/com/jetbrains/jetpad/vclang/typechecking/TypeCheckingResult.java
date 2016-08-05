@@ -40,12 +40,13 @@ public abstract class TypeCheckingResult {
   }
 
   public void reportErrors(ErrorReporter errorReporter) {
-    if (myUnsolvedVariables.isEmpty()) {
+    // TODO[inf_vars]
+    // if (myUnsolvedVariables.isEmpty()) {
       myEquations.reportErrors(errorReporter);
-    }
-    for (InferenceVariable unsolvedVariable : myUnsolvedVariables) {
-      unsolvedVariable.reportErrorInfer(errorReporter);
-    }
+    // }
+    // for (InferenceVariable unsolvedVariable : myUnsolvedVariables) {
+    //   unsolvedVariable.reportErrorInfer(errorReporter);
+    // }
   }
 
   public void add(TypeCheckingResult result) {

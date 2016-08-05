@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.type;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
@@ -57,14 +58,14 @@ public class PiUniverseType implements Type {
   }
 
   @Override
-  public PiUniverseType strip() {
+  public PiUniverseType strip(ErrorReporter errorReporter) {
     if (!myParameters.hasNext()) {
       return this;
     }
 
     DependentLink params = DependentLink.Helper.clone(myParameters);
     for (DependentLink link = params; link.hasNext(); link = link.getNext()) {
-      params.setType(params.getType().strip());
+      params.setType(params.getType().strip(errorReporter));
     }
     return new PiUniverseType(params, mySorts);
   }

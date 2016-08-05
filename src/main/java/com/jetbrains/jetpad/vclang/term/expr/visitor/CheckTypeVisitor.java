@@ -223,12 +223,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (result == null) return null;
     result.update(true);
     result.reportErrors(myErrorReporter);
-    if (result.hasUnsolvedVariables()) {
-      return null;
-    }
+    // TODO[inf_vars]
+    // if (result.hasUnsolvedVariables()) {
+    //   return null;
+    // }
 
-    result.expression = result.expression.strip();
-    result.type = result.type.strip();
+    result.expression = result.expression.strip(myErrorReporter);
+    result.type = result.type.strip(myErrorReporter);
     return result;
   }
 

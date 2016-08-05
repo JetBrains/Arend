@@ -3,21 +3,23 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
+import java.util.List;
+
 public class InferenceReferenceExpression extends Expression {
-  private InferenceVariable myBinding;
+  private InferenceVariable myVar;
   private Expression mySubstExpression;
 
   public InferenceReferenceExpression(InferenceVariable binding) {
-    myBinding = binding;
-    if (myBinding.getReference() == null) {
-      myBinding.setReference(this);
+    myVar = binding;
+    if (myVar.getReference() == null) {
+      myVar.setReference(this);
     } else {
       throw new IllegalStateException();
     }
   }
 
-  public InferenceVariable getBinding() {
-    return myBinding;
+  public InferenceVariable getVariable() {
+    return myVar;
   }
 
   public Expression getSubstExpression() {
@@ -26,12 +28,22 @@ public class InferenceReferenceExpression extends Expression {
 
   public void setSubstExpression(Expression substExpression) {
     mySubstExpression = substExpression;
-    myBinding = null;
+    myVar = null;
   }
 
   @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitInferenceReference(this, params);
+  }
+
+  @Override
+  public Expression getFunction() {
+    return mySubstExpression != null ? mySubstExpression.getFunction() : super.getFunction();
+  }
+
+  @Override
+  public List<? extends Expression> getArguments() {
+    return mySubstExpression != null ? mySubstExpression.getArguments() : super.getArguments();
   }
 
   @Override

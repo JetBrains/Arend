@@ -322,7 +322,7 @@ public class ImplicitArgumentsTest {
   public void inferUnderPi() {
     typeCheckClass(
         "\\static \\function ($) {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
-        "\\static \\function foo (A : \\Type0) (B : A -> \\Type0) (f : \\Pi (a : A) -> B a) (a' : A) => f $ a'", -1);
+        "\\static \\function foo (A : \\Type0) (B : A -> \\Type0) (f : \\Pi (a : A) -> B a) (a' : A) => f $ a'", 1);
   }
 
   @Test

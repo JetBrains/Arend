@@ -1,12 +1,11 @@
 package com.jetbrains.jetpad.vclang.term.context.binding.inference;
 
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.InferenceReferenceExpression;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 public abstract class InferenceVariable implements Variable {
   private final String myName;
@@ -41,9 +40,9 @@ public abstract class InferenceVariable implements Variable {
 
   public abstract Abstract.SourceNode getSourceNode();
 
-  public abstract void reportErrorInfer(ErrorReporter errorReporter, Expression... candidates);
-  public abstract void reportErrorLevelInfer(ErrorReporter errorReporter, Level... candidates);
-  public abstract void reportErrorMismatch(ErrorReporter errorReporter, Expression expectedType, Type actualType, Expression candidate);
+  public abstract TypeCheckingError getErrorInfer(Expression... candidates);
+
+  public abstract TypeCheckingError getErrorMismatch(Expression expectedType, Type actualType, Expression candidate);
 
   @Override
   public String toString() {

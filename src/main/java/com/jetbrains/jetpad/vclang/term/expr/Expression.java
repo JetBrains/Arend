@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
@@ -75,8 +76,8 @@ public abstract class Expression implements PrettyPrintable, Type {
   }
 
   @Override
-  public Expression strip() {
-    return accept(new StripVisitor(), null);
+  public Expression strip(ErrorReporter errorReporter) {
+    return accept(new StripVisitor(errorReporter), null);
   }
 
   public final Expression subst(Binding binding, Expression substExpr) {

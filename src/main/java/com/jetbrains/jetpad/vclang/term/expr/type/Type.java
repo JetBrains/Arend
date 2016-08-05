@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.type;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
@@ -26,7 +27,7 @@ public interface Type extends PrettyPrintable {
   DependentLink getPiParameters();
   Type getPiCodomain();
   Type normalize(NormalizeVisitor.Mode mode);
-  Type strip();
+  Type strip(ErrorReporter errorReporter);
   Expression toExpression();
   boolean findBinding(Callable binding);
 }

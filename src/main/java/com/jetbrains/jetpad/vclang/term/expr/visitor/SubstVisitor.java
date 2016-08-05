@@ -79,12 +79,12 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     if (expr.getSubstExpression() != null) {
       return expr.getSubstExpression().accept(this, null);
     }
-    Expression result = myExprSubstitution.get(expr.getBinding());
+    Expression result = myExprSubstitution.get(expr.getVariable());
     if (result != null) {
       return result;
     }
-    // TODO[inference]
-    expr.getBinding().setType(expr.getBinding().getType().accept(this, null));
+    // TODO[inf_vars]
+    expr.getVariable().setType(expr.getVariable().getType().accept(this, null));
     return expr;
   }
 
