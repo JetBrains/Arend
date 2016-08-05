@@ -85,13 +85,13 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return true;
     }
 
-    ReferenceExpression ref2 = expr2.toReference();
-    if (ref2 != null && ref2.getBinding() instanceof InferenceBinding) {
-      return compareReference(ref2, expr1, false);
+    InferenceReferenceExpression ref2 = expr2.toInferenceReference();
+    if (ref2 != null) {
+      return compareInferenceReference(ref2, expr1, false);
     }
-    ReferenceExpression ref1 = expr1.toReference();
-    if (ref1 != null && ref1.getBinding() instanceof InferenceBinding) {
-      return compareReference(ref1, expr2, true);
+    InferenceReferenceExpression ref1 = expr1.toInferenceReference();
+    if (ref1 != null) {
+      return compareInferenceReference(ref1, expr2, true);
     }
 
     NewExpression new1 = expr1.toNew();
@@ -107,13 +107,10 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     return expr1.accept(this, expr2);
   }
 
+  // TODO: should we check other stuck terms?
   public static InferenceBinding checkIsInferVar(Expression expr) {
-    ReferenceExpression ref = expr.getFunction().toReference();
-    if (ref == null || !(ref.getBinding() instanceof InferenceBinding)) {
-      return null;
-    } else {
-      return (InferenceBinding) ref.getBinding();
-    }
+    InferenceReferenceExpression ref = expr.getFunction().toInferenceReference();
+    return ref != null ? ref.getBinding() : null;
   }
 
   private boolean checkIsInferVar(Expression fun, Expression expr1, Expression expr2) {
@@ -235,41 +232,32 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     return implAllOf1Test && implAllOf2Test;
   }
 
-  private boolean compareReference(ReferenceExpression expr1, Expression expr2, boolean first) {
-    Abstract.SourceNode sourceNode;
-    ReferenceExpression ref2 = expr2.toReference();
-    if (ref2 != null) {
-      Binding binding1 = first ? expr1.getBinding() : ref2.getBinding();
-      Binding subst1 = mySubstitution.get(binding1);
-      if (subst1 != null) {
-        binding1 = subst1;
-      }
-      Binding binding2 = first ? ref2.getBinding() : expr1.getBinding();
-      if (binding1 == binding2) {
-        return true;
-      }
-      if (expr1.getBinding() instanceof InferenceBinding) {
-        sourceNode = ((InferenceBinding) expr1.getBinding()).getSourceNode();
-      } else
-      if (ref2.getBinding() instanceof InferenceBinding) {
-        sourceNode = ((InferenceBinding) ref2.getBinding()).getSourceNode();
-      } else {
-        return false;
-      }
-    } else {
-      if (!(expr1.getBinding() instanceof InferenceBinding)) {
-        return false;
-      }
-      sourceNode = ((InferenceBinding) expr1.getBinding()).getSourceNode();
+  private boolean compareInferenceReference(InferenceReferenceExpression expr1, Expression expr2, boolean first) {
+    if (expr2.toInferenceReference() != null && expr1.getBinding() == expr2.toInferenceReference().getBinding()) {
+      return true;
     }
 
-    ExprSubstitution substitution = getSubstition();
-    return myEquations.add(expr1.subst(substitution), expr2.subst(substitution), first ? myCMP : myCMP.not(), sourceNode);
+    return myEquations.add(expr1, expr2.subst(getSubstition()), first ? myCMP : myCMP.not(), expr1.getBinding().getSourceNode());
   }
 
   @Override
   public Boolean visitReference(ReferenceExpression expr1, Expression expr2) {
-    return compareReference(expr1, expr2, true);
+    ReferenceExpression ref2 = expr2.toReference();
+    if (ref2 == null) {
+      return false;
+    }
+
+    Binding binding1 = expr1.getBinding();
+    Binding subst1 = mySubstitution.get(binding1);
+    if (subst1 != null) {
+      binding1 = subst1;
+    }
+    return binding1 == ref2.getBinding();
+  }
+
+  @Override
+  public Boolean visitInferenceReference(InferenceReferenceExpression expr1, Expression expr2) {
+    return compareInferenceReference(expr1, expr2, true);
   }
 
   @Override

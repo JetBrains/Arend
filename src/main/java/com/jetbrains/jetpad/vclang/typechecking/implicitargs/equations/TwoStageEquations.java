@@ -63,7 +63,7 @@ public class TwoStageEquations implements Equations {
   }
 
   private void addSolution(InferenceBinding binding, Expression expression) {
-    assert expression.toReference() == null || !(expression.toReference().getBinding() instanceof InferenceBinding);
+    assert expression.toInferenceReference() == null;
 
     Expression expr = mySolutions.get(binding);
     if (expr != null) {
@@ -76,10 +76,8 @@ public class TwoStageEquations implements Equations {
   }
 
   private void addEquation(Type type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode) {
-    ReferenceExpression ref1 = type instanceof Expression ? ((Expression) type).toReference() : null;
-    ReferenceExpression ref2 = expr.toReference();
-    InferenceBinding inf1 = ref1 != null && ref1.getBinding() instanceof InferenceBinding ? (InferenceBinding) ref1.getBinding() : null;
-    InferenceBinding inf2 = ref2 != null && ref2.getBinding() instanceof InferenceBinding ? (InferenceBinding) ref2.getBinding() : null;
+    InferenceBinding inf1 = type instanceof Expression && ((Expression) type).toInferenceReference() != null ? ((Expression) type).toInferenceReference().getBinding() : null;
+    InferenceBinding inf2 = expr.toInferenceReference() != null ? expr.toInferenceReference().getBinding() : null;
 
     if (inf1 == inf2 && inf1 != null) {
       return;
@@ -111,7 +109,7 @@ public class TwoStageEquations implements Equations {
       if (piParams.hasNext()) {
         DerivedInferenceBinding newInf = new DerivedInferenceBinding(cInf.getName() + "-cod", cInf);
         myUnsolvedVariables.add(newInf);
-        Expression newRef = new ReferenceExpression(newInf);
+        Expression newRef = new InferenceReferenceExpression(newInf);
         addSolution(cInf, new PiExpression(piParams, newRef));
         addEquation(cType.getPiCodomain(), newRef, cmp, sourceNode);
         return;
@@ -142,7 +140,7 @@ public class TwoStageEquations implements Equations {
       }
     }
 
-    if (!(expr.toReference() != null && expr.toReference().getBinding() instanceof InferenceBinding) && type instanceof Expression && ((Expression) type).toReference() != null && ((Expression) type).toReference().getBinding() instanceof InferenceBinding) {
+    if (expr.toInferenceReference() == null && type instanceof Expression && ((Expression) type).toInferenceReference() != null) {
       myEquations.add(new Equation(expr, (Expression) type, cmp.not(), sourceNode));
     } else {
       myEquations.add(new Equation(type, expr, cmp, sourceNode));
@@ -257,7 +255,7 @@ public class TwoStageEquations implements Equations {
     for (Iterator<Map.Entry<InferenceBinding, Expression>> iterator = mySolutions.entrySet().iterator(); iterator.hasNext(); ) {
       Map.Entry<InferenceBinding, Expression> entry = iterator.next();
       if (entry.getValue().findBinding(binding)) {
-        myErrorReporter.report(new SolveEquationError<>(new ReferenceExpression(entry.getKey()), entry.getValue(), binding, entry.getKey().getSourceNode()));
+        myErrorReporter.report(new SolveEquationError<>(entry.getKey().getReference(), entry.getValue(), binding, entry.getKey().getSourceNode()));
         iterator.remove();
       }
     }
@@ -315,9 +313,9 @@ public class TwoStageEquations implements Equations {
     List<Equation> lowerBounds = new ArrayList<>(myEquations.size());
     for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
       Equation equation = iterator.next();
-      if (equation.expr.toReference() != null && equation.expr.toReference().getBinding() instanceof InferenceBinding && equation.type instanceof Expression) {
+      if (equation.expr.toInferenceReference() != null && equation.type instanceof Expression) {
         Expression expr = (Expression) equation.type;
-        if (expr.toReference() != null && expr.toReference().getBinding() instanceof InferenceBinding || expr.toClassCall() != null) {
+        if (expr.toInferenceReference() != null || expr.toClassCall() != null) {
           if (!(equation.cmp == CMP.GE && expr.toClassCall() != null)) {
             if (equation.cmp == CMP.LE) {
               lowerBounds.add(equation);
@@ -347,11 +345,11 @@ public class TwoStageEquations implements Equations {
     ExprSubstitution substitution1 = new ExprSubstitution();
     for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
       Equation equation = iterator.next();
-      if (equation.expr.toReference() != null && equation.expr.toReference().getBinding() instanceof InferenceBinding && equation.type instanceof Expression) {
+      if (equation.expr.toInferenceReference() != null && equation.type instanceof Expression) {
         Expression newResult = (Expression) equation.type;
-        if (newResult.toReference() != null && newResult.toReference().getBinding() instanceof InferenceBinding || newResult.toClassCall() != null) {
+        if (newResult.toInferenceReference() != null || newResult.toClassCall() != null) {
           if (equation.cmp == CMP.GE && newResult.toClassCall() != null) {
-            InferenceBinding var = (InferenceBinding) equation.expr.toReference().getBinding();
+            InferenceBinding var = equation.expr.toInferenceReference().getBinding();
             Expression oldResult = result.get(var);
             if (newResult.isLessOrEquals(oldResult, DummyEquations.getInstance(), var.getSourceNode())) {
               result.put(var, newResult);
@@ -385,11 +383,11 @@ public class TwoStageEquations implements Equations {
       boolean updated = false;
       for (Equation equation : lowerBounds) {
         Expression newSolution = (Expression) equation.type;
-        if (newSolution.toReference() != null && newSolution.toReference().getBinding() instanceof InferenceBinding) {
-          newSolution = solutions.get(newSolution.toReference().getBinding());
+        if (newSolution.toInferenceReference() != null) {
+          newSolution = solutions.get(newSolution.toInferenceReference().getBinding());
         }
         if (newSolution != null) {
-          InferenceBinding var = (InferenceBinding) equation.expr.toReference().getBinding();
+          InferenceBinding var = equation.expr.toInferenceReference().getBinding();
           Expression oldSolution = solutions.get(var);
           if (oldSolution == null) {
             solutions.put(var, newSolution);
@@ -457,7 +455,7 @@ public class TwoStageEquations implements Equations {
     Map<InferenceBinding, Expression> solutions = mySolutions;
     mySolutions = new HashMap<>();
     for (Map.Entry<InferenceBinding, Expression> entry : solutions.entrySet()) {
-      addEquation(new ReferenceExpression(entry.getKey()), entry.getValue().subst(substitution), CMP.EQ, entry.getKey().getSourceNode());
+      addEquation(entry.getKey().getReference(), entry.getValue().subst(substitution), CMP.EQ, entry.getKey().getSourceNode());
     }
   }
 

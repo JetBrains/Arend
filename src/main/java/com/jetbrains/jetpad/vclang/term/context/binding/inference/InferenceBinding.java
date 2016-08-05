@@ -4,17 +4,27 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.InferenceReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 
-
 public abstract class InferenceBinding extends TypedBinding {
+  private InferenceReferenceExpression myReference;
+
   public InferenceBinding(String name, Expression type) {
     super(name, type);
   }
 
   public void setType(Expression type) {
     myType = type;
+  }
+
+  public InferenceReferenceExpression getReference() {
+    return myReference;
+  }
+
+  public void setReference(InferenceReferenceExpression reference) {
+    myReference = reference;
   }
 
   public abstract Abstract.SourceNode getSourceNode();

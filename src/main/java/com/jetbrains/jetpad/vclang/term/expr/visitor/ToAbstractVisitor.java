@@ -212,6 +212,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return visitBinding(expr.getBinding());
   }
 
+  @Override
+  public Abstract.Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
+    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : visitBinding(expr.getBinding());
+  }
+
   private String renameVar(String name) {
     if (!myNames.containsKey(name)) {
       return name;

@@ -297,6 +297,10 @@ public abstract class Expression implements PrettyPrintable, Type {
     return null;
   }
 
+  public InferenceReferenceExpression toInferenceReference() {
+    return null;
+  }
+
   public SigmaExpression toSigma() {
     return null;
   }

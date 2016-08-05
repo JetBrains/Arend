@@ -38,7 +38,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       Expression binding;
       InferenceBinding inferenceBinding = new FunctionInferenceBinding(parameter.getName(), parameter.getType().subst(substitution), i + 1, expr);
       result.addUnsolvedVariable(inferenceBinding);
-      binding = Reference(inferenceBinding);
+      binding = new InferenceReferenceExpression(inferenceBinding);
 
       arguments.add(binding);
       flags.add(EnumSet.noneOf(AppExpression.Flag.class));
@@ -64,7 +64,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         InferenceBinding inferenceBinding = new FunctionInferenceBinding("A", pathParams.get(0).getType().toPi().getCodomain(), 1, fun);
         result.addUnsolvedVariable(inferenceBinding);
         DependentLink lamParam = param("i", interval);
-        Expression binding = Reference(inferenceBinding);
+        Expression binding = new InferenceReferenceExpression(inferenceBinding);
         Expression lamExpr = Lam(lamParam, binding);
         result.expression = result.expression.addArgument(lamExpr, EnumSet.noneOf(AppExpression.Flag.class));
         result.type = result.type.applyExpressions(Collections.singletonList(lamExpr));

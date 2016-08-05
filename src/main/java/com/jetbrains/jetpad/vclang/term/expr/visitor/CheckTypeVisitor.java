@@ -422,7 +422,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
               InferenceBinding pLvlInferenceBinding = new LevelInferenceBinding("plvl-of-" + name, DataCall(Preprelude.LVL), expr); // new LambdaInferenceBinding("plvl-of-" + name, DataCall(Preprelude.LVL), argIndex, expr, true);
               InferenceBinding hLvlInferenceBinding = new LevelInferenceBinding("hlvl-of-" + name, DataCall(Preprelude.CNAT), expr); // new LambdaInferenceBinding("hlvl-of-" + name, DataCall(Preprelude.CNAT), argIndex, expr, true);
               InferenceBinding inferenceBinding = new LambdaInferenceBinding("type-of-" + name, Universe(new Level(pLvlInferenceBinding), new Level(hLvlInferenceBinding)), argIndex, expr, false);
-              link.setType(Reference(inferenceBinding));
+              link.setType(new InferenceReferenceExpression(inferenceBinding));
               bindingTypes.put(link, inferenceBinding);
             }
             if (actualPiLink == null) {
@@ -546,7 +546,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   public Result visitInferHole(Abstract.InferHoleExpression expr, Expression expectedType) {
     if (expectedType != null) {
       InferenceBinding binding = new ExpressionInferenceBinding(expectedType, expr);
-      Result result = new Result(Reference(binding), expectedType);
+      Result result = new Result(new InferenceReferenceExpression(binding), expectedType);
       result.addUnsolvedVariable(binding);
       return result;
     } else {

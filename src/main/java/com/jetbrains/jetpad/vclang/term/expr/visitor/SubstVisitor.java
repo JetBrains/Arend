@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
@@ -72,9 +71,20 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     if (result != null) {
       return result;
     }
-    if (expr.getBinding() instanceof InferenceBinding) {
-      ((InferenceBinding) expr.getBinding()).setType(expr.getBinding().getType().accept(this, null));
+    return expr;
+  }
+
+  @Override
+  public Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
+    if (expr.getSubstExpression() != null) {
+      return expr.getSubstExpression().accept(this, null);
     }
+    Expression result = myExprSubstitution.get(expr.getBinding());
+    if (result != null) {
+      return result;
+    }
+    // TODO[inference]
+    expr.getBinding().setType(expr.getBinding().getType().accept(this, null));
     return expr;
   }
 
