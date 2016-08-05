@@ -74,12 +74,15 @@ public class TwoStageEquations implements Equations {
     } else {
       // TODO[inf_vars]
       // mySolutions.put(variable, expression);
-      variable.getReference().setSubstExpression(expression);
       Expression expectedType = variable.getType();
       Type actualType = expression.getType();
       if (!actualType.isLessOrEquals(expectedType.normalize(NormalizeVisitor.Mode.NF), this, variable.getSourceNode())) {
         actualType = actualType.normalize(NormalizeVisitor.Mode.HUMAN_NF);
-        myErrorReporter.report(variable.getErrorMismatch(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), actualType, expression));
+        TypeCheckingError error = variable.getErrorMismatch(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), actualType, expression);
+        myErrorReporter.report(error);
+        variable.getReference().setSubstExpression(new ErrorExpression(expression, error));
+      } else {
+        variable.getReference().setSubstExpression(new OfTypeExpression(expression, expectedType));
       }
     }
   }

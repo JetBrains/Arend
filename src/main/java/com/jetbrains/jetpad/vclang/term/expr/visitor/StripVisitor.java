@@ -66,7 +66,9 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
     if (expr.getVariable() != null) {
       TypeCheckingError error = expr.getVariable().getErrorInfer();
       myErrorReporter.report(error);
-      return new ErrorExpression(null, error);
+      Expression result = new ErrorExpression(null, error);
+      expr.setSubstExpression(result);
+      return result;
     } else {
       return expr.getSubstExpression().accept(this, null);
     }
