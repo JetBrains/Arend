@@ -12,7 +12,6 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
@@ -95,10 +94,6 @@ public abstract class Expression implements PrettyPrintable, Type {
   @Override
   public final Expression subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
     return exprSubst.getDomain().isEmpty() && levelSubst.getDomain().isEmpty() ? this : accept(new SubstVisitor(exprSubst, levelSubst), null);
-  }
-
-  public final Expression subst(Substitution subst) {
-    return subst(subst.exprSubst, subst.levelSubst);
   }
 
   @Override

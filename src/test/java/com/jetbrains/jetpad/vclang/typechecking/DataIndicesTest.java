@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;

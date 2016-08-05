@@ -80,12 +80,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
       return expr.getSubstExpression().accept(this, null);
     }
     Expression result = myExprSubstitution.get(expr.getVariable());
-    if (result != null) {
-      return result;
-    }
-    // TODO[inf_vars]
-    expr.getVariable().setType(expr.getVariable().getType().accept(this, null));
-    return expr;
+    return result != null ? result : expr;
   }
 
   @Override
