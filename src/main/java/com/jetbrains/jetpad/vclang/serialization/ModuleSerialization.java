@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
@@ -256,9 +257,12 @@ public class ModuleSerialization {
   public static void serializeSubstitution(SerializeVisitor visitor, LevelSubstitution subst) throws IOException {
     visitor.getDataStream().writeInt(subst.getDomain().size());
 
-    for (Binding binding : subst.getDomain()) {
-      visitor.visitReference(ExpressionFactory.Reference(binding), null);
-      writeLevel(visitor, subst.get(binding));
+    for (Variable variable : subst.getDomain()) {
+      if (!(variable instanceof Binding)) {
+        throw new IllegalStateException();
+      }
+      visitor.visitReference(ExpressionFactory.Reference((Binding) variable), null);
+      writeLevel(visitor, subst.get(variable));
     }
   }
 
@@ -273,7 +277,11 @@ public class ModuleSerialization {
   public static void writeLevel(SerializeVisitor visitor, Level level) throws IOException {
     visitor.getDataStream().writeBoolean(level.getVar() != null);
     if (level.getVar() != null) {
-      visitor.writeBinding(level.getVar());
+      if (level.getVar() instanceof Binding) {
+        visitor.writeBinding((Binding) level.getVar());
+      } else {
+        throw new IllegalStateException();
+      }
     }
     visitor.getDataStream().writeInt(level.getConstant());
   }

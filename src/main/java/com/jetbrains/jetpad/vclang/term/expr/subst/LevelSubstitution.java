@@ -1,47 +1,47 @@
 package com.jetbrains.jetpad.vclang.term.expr.subst;
 
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 
 import java.util.*;
 
 public class LevelSubstitution {
-  private Map<Binding, Level> mySubstExprs;
+  private Map<Variable, Level> mySubstExprs;
 
   public LevelSubstitution() {
     mySubstExprs = Collections.emptyMap();
   }
 
-  public LevelSubstitution(Binding l, Level expr) {
+  public LevelSubstitution(Variable l, Level expr) {
     mySubstExprs = new HashMap<>();
     mySubstExprs.put(l, expr);
   }
 
-  public LevelSubstitution(Binding lp, Level lpExpr, Binding lh, Level lhExpr) {
+  public LevelSubstitution(Variable lp, Level lpExpr, Variable lh, Level lhExpr) {
     mySubstExprs = new HashMap<>();
     mySubstExprs.put(lp, lpExpr);
     mySubstExprs.put(lh, lhExpr);
   }
 
-  public LevelSubstitution(Binding lp, Binding lpNew, Binding lh, Binding lhNew) {
+  public LevelSubstitution(Variable lp, Variable lpNew, Variable lh, Variable lhNew) {
     mySubstExprs = new HashMap<>();
     mySubstExprs.put(lp, new Level(lpNew));
     mySubstExprs.put(lh, new Level(lhNew));
   }
 
-  public Set<Binding> getDomain() {
+  public Set<Variable> getDomain() {
     return mySubstExprs.keySet();
   }
 
-  public Level get(Binding binding)  {
-    return mySubstExprs.get(binding);
+  public Level get(Variable var)  {
+    return mySubstExprs.get(var);
   }
 
-  public void add(Binding binding, Level expr) {
+  public void add(Variable var, Level expr) {
     if (mySubstExprs.isEmpty()) {
       mySubstExprs = new HashMap<>();
     }
-    mySubstExprs.put(binding, expr);
+    mySubstExprs.put(var, expr);
   }
 
   public void add(LevelSubstitution subst) {
@@ -51,38 +51,38 @@ public class LevelSubstitution {
     mySubstExprs.putAll(subst.mySubstExprs);
   }
 
-  public void subst(Binding binding, Level expr) {
-    for (Map.Entry<Binding, Level> entry : mySubstExprs.entrySet()) {
-      entry.setValue(entry.getValue().subst(binding, expr));
+  public void subst(Variable var, Level expr) {
+    for (Map.Entry<Variable, Level> entry : mySubstExprs.entrySet()) {
+      entry.setValue(entry.getValue().subst(var, expr));
     }
   }
 
-  public LevelSubstitution compose(LevelSubstitution subst, Collection<? extends Binding> params) {
+  public LevelSubstitution compose(LevelSubstitution subst, Collection<? extends Variable> params) {
     LevelSubstitution result = new LevelSubstitution();
     result.add(this);
 
     loop:
-    for (Binding binding : subst.getDomain()) {
-      if (mySubstExprs.containsKey(binding)) {
-        result.add(binding, subst.get(binding));
+    for (Variable var : subst.getDomain()) {
+      if (mySubstExprs.containsKey(var)) {
+        result.add(var, subst.get(var));
         continue;
       }
 
-      for (Map.Entry<Binding, Level> substExpr : mySubstExprs.entrySet()) {
-        if (substExpr.getValue().getVar() == binding) {
+      for (Map.Entry<Variable, Level> substExpr : mySubstExprs.entrySet()) {
+        if (substExpr.getValue().getVar() == var) {
           result.add(substExpr.getKey(), substExpr.getValue().subst(subst));
           continue loop;
         }
       }
 
-      for (Binding myBinding : getDomain()) {
-        if (myBinding.getType().toDataCall().getDefinition() == binding.getType().toDefCall().getDefinition()) {
+      for (Variable var1 : getDomain()) {
+        if (var1.getType().toDataCall().getDefinition() == var.getType().toDefCall().getDefinition()) {
           continue loop;
         }
       }
 
-      if (params.contains(binding)) {
-        result.add(binding, subst.get(binding));
+      if (params.contains(var)) {
+        result.add(var, subst.get(var));
       }
     }
     return result;

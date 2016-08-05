@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
@@ -11,7 +12,6 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
@@ -75,8 +75,8 @@ public abstract class Expression implements PrettyPrintable, Type {
   }
 
   @Override
-  public Expression strip() {
-    return accept(new StripVisitor(), null);
+  public Expression strip(ErrorReporter errorReporter) {
+    return accept(new StripVisitor(errorReporter), null);
   }
 
   public final Expression subst(Binding binding, Expression substExpr) {
@@ -94,10 +94,6 @@ public abstract class Expression implements PrettyPrintable, Type {
   @Override
   public final Expression subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
     return exprSubst.getDomain().isEmpty() && levelSubst.getDomain().isEmpty() ? this : accept(new SubstVisitor(exprSubst, levelSubst), null);
-  }
-
-  public final Expression subst(Substitution subst) {
-    return subst(subst.exprSubst, subst.levelSubst);
   }
 
   @Override
@@ -294,6 +290,10 @@ public abstract class Expression implements PrettyPrintable, Type {
   }
 
   public ReferenceExpression toReference() {
+    return null;
+  }
+
+  public InferenceReferenceExpression toInferenceReference() {
     return null;
   }
 

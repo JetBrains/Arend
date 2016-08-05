@@ -3,8 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
@@ -17,7 +16,6 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -197,14 +195,11 @@ public class TypeCheckingDefCall {
     if (definition.isPolymorphic()) {
       LevelSubstitution subst = new LevelSubstitution();
 
-      CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(null, null);
+      CheckTypeVisitor.Result result = myVisitor.new Result(null, null);
       for (Binding polyVar : definition.getPolyParams()) {
-        InferenceBinding l = new LevelInferenceBinding(polyVar.getName(), polyVar.getType(), sourceNode);
+        LevelInferenceVariable l = new LevelInferenceVariable(polyVar.getName(), polyVar.getType(), sourceNode);
         subst.add(polyVar, new Level(l));
-        if (result.getEquations() == DummyEquations.getInstance()) {
-          result.setEquations(myVisitor.getImplicitArgsInference().newEquations());
-        }
-        result.addUnsolvedVariable(l);
+        result.addLevelVariable(l);
       }
 
       DefCallExpression defCall = definition.getDefCall(subst);
@@ -213,7 +208,7 @@ public class TypeCheckingDefCall {
       return result;
     }
 
-    return new CheckTypeVisitor.Result(definition.getDefCall(), definition.getTypeWithThis());
+    return myVisitor.new Result(definition.getDefCall(), definition.getTypeWithThis());
   }
 
   private Expression findParent(ClassDefinition classDefinition, Definition definition, Expression result, Abstract.Expression expr) {
@@ -253,7 +248,7 @@ public class TypeCheckingDefCall {
     while (it.hasPrevious()) {
       Binding def = it.previous();
       if (name.equals(def.getName())) {
-        return new CheckTypeVisitor.Result(Reference(def), def.getType());
+        return myVisitor.new Result(Reference(def), def.getType());
       }
     }
 

@@ -1,16 +1,23 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTreeNodeVisitor<Void, ElimTreeNode> {
+  private final ErrorReporter myErrorReporter;
+
+  public StripVisitor(ErrorReporter errorReporter) {
+    myErrorReporter = errorReporter;
+  }
+
   @Override
   public AppExpression visitApp(AppExpression expr, Void params) {
     List<Expression> args = new ArrayList<>(expr.getArguments().size());
@@ -50,9 +57,21 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
   }
 
   @Override
-  public ReferenceExpression visitReference(ReferenceExpression expr, Void params) {
-    assert !(expr.getBinding() instanceof InferenceBinding);
+  public Expression visitReference(ReferenceExpression expr, Void params) {
     return expr;
+  }
+
+  @Override
+  public Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
+    if (expr.getVariable() != null) {
+      TypeCheckingError error = expr.getVariable().getErrorInfer();
+      myErrorReporter.report(error);
+      Expression result = new ErrorExpression(null, error);
+      expr.setSubstExpression(result);
+      return result;
+    } else {
+      return expr.getSubstExpression().accept(this, null);
+    }
   }
 
   @Override

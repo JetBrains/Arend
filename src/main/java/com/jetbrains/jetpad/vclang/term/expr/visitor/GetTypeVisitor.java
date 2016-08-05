@@ -41,13 +41,18 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
   }
 
   @Override
+  public Type visitInferenceReference(InferenceReferenceExpression expr, Void params) {
+    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : expr.getVariable().getType().accept(new SubstVisitor(new ExprSubstitution(), new LevelSubstitution()), null);
+  }
+
+  @Override
   public Type visitLam(LamExpression expr, Void ignored) {
     Type bodyType = expr.getBody().accept(this, null);
     if (bodyType instanceof Expression) {
       return new PiExpression(expr.getParameters(), (Expression) bodyType);
     } else
     if (bodyType instanceof PiUniverseType) {
-      return new PiUniverseType(params(DependentLink.Helper.clone(expr.getParameters()), ((PiUniverseType) bodyType).getPiParameters()), ((PiUniverseType) bodyType).getSorts());
+      return new PiUniverseType(params(DependentLink.Helper.clone(expr.getParameters()), bodyType.getPiParameters()), ((PiUniverseType) bodyType).getSorts());
     } else {
       return null;
     }
@@ -61,7 +66,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
       }
     } else
     if (type instanceof PiUniverseType) {
-      if (!((PiUniverseType) type).getPiParameters().hasNext()) {
+      if (!type.getPiParameters().hasNext()) {
         return ((PiUniverseType) type).getSorts();
       }
     }

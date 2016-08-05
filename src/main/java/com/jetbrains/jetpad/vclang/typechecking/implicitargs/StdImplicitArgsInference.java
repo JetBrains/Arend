@@ -1,8 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
 import com.jetbrains.jetpad.vclang.term.*;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.FunctionInferenceBinding;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.FunctionInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
@@ -36,9 +35,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     for (int i = 0; i < parameters.size(); i++) {
       DependentLink parameter = parameters.get(i);
       Expression binding;
-      InferenceBinding inferenceBinding = new FunctionInferenceBinding(parameter.getName(), parameter.getType().subst(substitution), i + 1, expr);
-      result.addUnsolvedVariable(inferenceBinding);
-      binding = Reference(inferenceBinding);
+      binding = new InferenceReferenceExpression(new FunctionInferenceVariable(parameter.getName(), parameter.getType().subst(substitution), i + 1, expr));
 
       arguments.add(binding);
       flags.add(EnumSet.noneOf(AppExpression.Flag.class));
@@ -61,10 +58,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         List<DependentLink> pathParams = new ArrayList<>();
 
         ((Expression) conCall.getType()).getPiParameters(pathParams, false, false);
-        InferenceBinding inferenceBinding = new FunctionInferenceBinding("A", pathParams.get(0).getType().toPi().getCodomain(), 1, fun);
-        result.addUnsolvedVariable(inferenceBinding);
         DependentLink lamParam = param("i", interval);
-        Expression binding = Reference(inferenceBinding);
+        Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", pathParams.get(0).getType().toPi().getCodomain(), 1, fun));
         Expression lamExpr = Lam(lamParam, binding);
         result.expression = result.expression.addArgument(lamExpr, EnumSet.noneOf(AppExpression.Flag.class));
         result.type = result.type.applyExpressions(Collections.singletonList(lamExpr));
@@ -82,7 +77,6 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
             .addArgument(argResult.expression, AppExpression.DEFAULT);
         result.type = result.type.applyExpressions(Arrays.asList(expr1, expr2, argResult.expression));
         result.add(argResult);
-        result.update(false);
         return result;
       }
 
@@ -116,7 +110,6 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     result.expression = result.expression.addArgument(argResult.expression, isExplicit ? EnumSet.of(AppExpression.Flag.EXPLICIT, AppExpression.Flag.VISIBLE) : EnumSet.of(AppExpression.Flag.VISIBLE));
     result.type = result.type.applyExpressions(Collections.singletonList(argResult.expression));
     result.add(argResult);
-    result.update(false);
     return result;
   }
 
@@ -222,10 +215,6 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       expectedType = expectedType1.fromPiParameters(expectedParams); // TODO: do we need this line?
     }
 
-    result = myVisitor.checkResult(expectedType, result, expr);
-    if (result != null) {
-      result.update(false);
-    }
-    return result;
+    return myVisitor.checkResult(expectedType, result, expr);
   }
 }

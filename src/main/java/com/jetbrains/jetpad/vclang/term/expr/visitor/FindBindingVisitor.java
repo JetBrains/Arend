@@ -69,6 +69,11 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
   }
 
   @Override
+  public Boolean visitInferenceReference(InferenceReferenceExpression expr, Void params) {
+    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : myBindings.contains(expr.getVariable());
+  }
+
+  @Override
   public Boolean visitLam(LamExpression expr, Void params) {
     return visitDependentLink(expr.getParameters()) || expr.getBody().accept(this, null);
   }

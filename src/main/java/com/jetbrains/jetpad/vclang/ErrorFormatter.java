@@ -6,10 +6,9 @@ import com.jetbrains.jetpad.vclang.module.error.ModuleCycleError;
 import com.jetbrains.jetpad.vclang.parser.ParserError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
@@ -55,23 +54,10 @@ public class ErrorFormatter {
     return builder.toString();
   }
 
-  private void printEquation(StringBuilder builder, PrettyPrintable expr1, PrettyPrintable expr2) {
-    expr1.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, 0);
-    builder.append(" = ");
-    expr2.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, 0);
-  }
-
   private String printData(GeneralError error) {
     StringBuilder builder = new StringBuilder();
 
-    if (error instanceof UnsolvedEquations) {
-      boolean first = true;
-      for (Equation equation : ((UnsolvedEquations) error).equations) {
-        if (!first) builder.append('\n');
-        printEquation(builder, equation.type, equation.expr);
-        first = false;
-      }
-    } else if (error instanceof GoalError) {
+    if (error instanceof GoalError) {
       boolean printContext = !((GoalError) error).context.isEmpty();
       boolean printType = ((GoalError) error).type != null;
       if (printType) {
@@ -127,7 +113,7 @@ public class ErrorFormatter {
       }
     } else if (error instanceof SolveLevelEquationsError) {
       boolean first = true;
-      for (LevelEquation<? extends Binding> equation : ((SolveLevelEquationsError) error).equations) {
+      for (LevelEquation<? extends Variable> equation : ((SolveLevelEquationsError) error).equations) {
         if (!first) builder.append('\n');
         if (equation.isInfinity()) {
           builder.append(equation.getVariable()).append(" = inf");
@@ -135,16 +121,6 @@ public class ErrorFormatter {
           printEqExpr(builder, equation.getVariable1(), -equation.getConstant());
           builder.append(" <= ");
           printEqExpr(builder, equation.getVariable2(), equation.getConstant());
-        }
-        first = false;
-      }
-    } else if (error instanceof UnsolvedBindings) {
-      boolean first = true;
-      for (InferenceBinding binding : ((UnsolvedBindings) error).bindings) {
-        if (!first) builder.append('\n');
-        builder.append(binding);
-        if (binding.getSourceNode() instanceof Concrete.SourceNode) {
-          builder.append(" at ").append(((Concrete.SourceNode) binding.getSourceNode()).getPosition());
         }
         first = false;
       }
@@ -193,7 +169,7 @@ public class ErrorFormatter {
     return builder.toString();
   }
 
-  private void printEqExpr(StringBuilder builder, Binding var, Integer constant) {
+  private void printEqExpr(StringBuilder builder, Variable var, Integer constant) {
     if (var != null) {
       builder.append(var);
       if (constant > 0) {

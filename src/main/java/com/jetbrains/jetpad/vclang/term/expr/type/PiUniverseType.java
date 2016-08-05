@@ -1,8 +1,9 @@
 package com.jetbrains.jetpad.vclang.term.expr.type;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -57,14 +58,14 @@ public class PiUniverseType implements Type {
   }
 
   @Override
-  public PiUniverseType strip() {
+  public PiUniverseType strip(ErrorReporter errorReporter) {
     if (!myParameters.hasNext()) {
       return this;
     }
 
     DependentLink params = DependentLink.Helper.clone(myParameters);
     for (DependentLink link = params; link.hasNext(); link = link.getNext()) {
-      params.setType(params.getType().strip());
+      params.setType(params.getType().strip(errorReporter));
     }
     return new PiUniverseType(params, mySorts);
   }
@@ -147,7 +148,7 @@ public class PiUniverseType implements Type {
 
   @Override
   public boolean isLessOrEquals(Expression expression, Equations equations, Abstract.SourceNode sourceNode) {
-    InferenceBinding binding = CompareVisitor.checkIsInferVar(expression);
+    InferenceVariable binding = CompareVisitor.checkIsInferVar(expression);
     if (binding != null) {
       return equations.add(this, expression, sourceNode);
     }

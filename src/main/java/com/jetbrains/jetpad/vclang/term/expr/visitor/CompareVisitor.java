@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
@@ -74,24 +74,32 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     expr1 = EtaNormalization.normalize(expr1);
     expr2 = EtaNormalization.normalize(expr2);
 
-    while (expr1.toOfType() != null) {
-      expr1 = expr1.toOfType().getExpression();
+    while (expr1.toInferenceReference() != null && expr1.toInferenceReference().getSubstExpression() != null || expr1.toOfType() != null) {
+      if (expr1.toOfType() != null) {
+        expr1 = expr1.toOfType().getExpression();
+      } else {
+        expr1 = expr1.toInferenceReference().getSubstExpression();
+      }
     }
-    while (expr2.toOfType() != null) {
-      expr2 = expr2.toOfType().getExpression();
+    while (expr2.toInferenceReference() != null && expr2.toInferenceReference().getSubstExpression() != null || expr2.toOfType() != null) {
+      if (expr2.toOfType() != null) {
+        expr2 = expr2.toOfType().getExpression();
+      } else {
+        expr2 = expr2.toInferenceReference().getSubstExpression();
+      }
     }
 
     if (!expr2.getArguments().isEmpty() && checkIsInferVar(expr2.getFunction(), expr1, expr2)) {
       return true;
     }
 
-    ReferenceExpression ref2 = expr2.toReference();
-    if (ref2 != null && ref2.getBinding() instanceof InferenceBinding) {
-      return compareReference(ref2, expr1, false);
+    InferenceReferenceExpression ref2 = expr2.toInferenceReference();
+    if (ref2 != null) {
+      return compareInferenceReference(ref2, expr1, false);
     }
-    ReferenceExpression ref1 = expr1.toReference();
-    if (ref1 != null && ref1.getBinding() instanceof InferenceBinding) {
-      return compareReference(ref1, expr2, true);
+    InferenceReferenceExpression ref1 = expr1.toInferenceReference();
+    if (ref1 != null) {
+      return compareInferenceReference(ref1, expr2, true);
     }
 
     NewExpression new1 = expr1.toNew();
@@ -107,17 +115,14 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     return expr1.accept(this, expr2);
   }
 
-  public static InferenceBinding checkIsInferVar(Expression expr) {
-    ReferenceExpression ref = expr.getFunction().toReference();
-    if (ref == null || !(ref.getBinding() instanceof InferenceBinding)) {
-      return null;
-    } else {
-      return (InferenceBinding) ref.getBinding();
-    }
+  // TODO: should we check other stuck terms?
+  public static InferenceVariable checkIsInferVar(Expression expr) {
+    InferenceReferenceExpression ref = expr.getFunction().toInferenceReference();
+    return ref != null && ref.getSubstExpression() == null ? ref.getVariable() : null;
   }
 
   private boolean checkIsInferVar(Expression fun, Expression expr1, Expression expr2) {
-    InferenceBinding binding = checkIsInferVar(fun);
+    InferenceVariable binding = checkIsInferVar(fun);
     return binding != null && myEquations.add(expr1.subst(getSubstition()), expr2, myCMP, binding.getSourceNode());
   }
 
@@ -235,41 +240,36 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     return implAllOf1Test && implAllOf2Test;
   }
 
-  private boolean compareReference(ReferenceExpression expr1, Expression expr2, boolean first) {
-    Abstract.SourceNode sourceNode;
-    ReferenceExpression ref2 = expr2.toReference();
-    if (ref2 != null) {
-      Binding binding1 = first ? expr1.getBinding() : ref2.getBinding();
-      Binding subst1 = mySubstitution.get(binding1);
-      if (subst1 != null) {
-        binding1 = subst1;
-      }
-      Binding binding2 = first ? ref2.getBinding() : expr1.getBinding();
-      if (binding1 == binding2) {
-        return true;
-      }
-      if (expr1.getBinding() instanceof InferenceBinding) {
-        sourceNode = ((InferenceBinding) expr1.getBinding()).getSourceNode();
-      } else
-      if (ref2.getBinding() instanceof InferenceBinding) {
-        sourceNode = ((InferenceBinding) ref2.getBinding()).getSourceNode();
-      } else {
-        return false;
-      }
-    } else {
-      if (!(expr1.getBinding() instanceof InferenceBinding)) {
-        return false;
-      }
-      sourceNode = ((InferenceBinding) expr1.getBinding()).getSourceNode();
+  private boolean compareInferenceReference(InferenceReferenceExpression expr1, Expression expr2, boolean first) {
+    if (expr2.toInferenceReference() != null && expr1.getVariable() == expr2.toInferenceReference().getVariable()) {
+      return true;
     }
 
-    ExprSubstitution substitution = getSubstition();
-    return myEquations.add(expr1.subst(substitution), expr2.subst(substitution), first ? myCMP : myCMP.not(), sourceNode);
+    return myEquations.add(expr1, expr2.subst(getSubstition()), first ? myCMP : myCMP.not(), expr1.getVariable().getSourceNode());
   }
 
   @Override
   public Boolean visitReference(ReferenceExpression expr1, Expression expr2) {
-    return compareReference(expr1, expr2, true);
+    ReferenceExpression ref2 = expr2.toReference();
+    if (ref2 == null) {
+      return false;
+    }
+
+    Binding binding1 = expr1.getBinding();
+    Binding subst1 = mySubstitution.get(binding1);
+    if (subst1 != null) {
+      binding1 = subst1;
+    }
+    return binding1 == ref2.getBinding();
+  }
+
+  @Override
+  public Boolean visitInferenceReference(InferenceReferenceExpression expr1, Expression expr2) {
+    if (expr1.getSubstExpression() != null) {
+      return compare(expr1.getSubstExpression(), expr2);
+    } else {
+      return compareInferenceReference(expr1, expr2, true);
+    }
   }
 
   @Override
@@ -289,9 +289,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     Equations equations = myEquations.newInstance();
     if (!new CompareVisitor(substitution, equations, Equations.CMP.EQ).compare(body1, body2)) {
       return false;
-    }
-    for (int i = 0; i < params1.size(); i++) {
-      equations.abstractBinding(params2.get(i));
     }
     myEquations.add(equations);
     return true;
@@ -328,9 +325,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     if (!visitor.compare(cod1, cod2)) {
       return false;
     }
-    for (int i = 0; i < params1.size(); i++) {
-      mySubstitution.remove(params1.get(i));
-      equations.abstractBinding(params2.get(i));
+    for (DependentLink param : params1) {
+      mySubstitution.remove(param);
     }
     myEquations.add(equations);
     return true;
@@ -388,9 +384,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     }
     for (DependentLink link = expr1.getParameters(); link.hasNext(); link = link.getNext()) {
       mySubstitution.remove(link);
-    }
-    for (DependentLink link = sigma2.getParameters(); link.hasNext(); link = link.getNext()) {
-      equations.abstractBinding(link);
     }
     myEquations.add(equations);
     return true;
@@ -475,11 +468,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       for (DependentLink link = letExpr1.getClauses().get(i).getParameters(); link.hasNext(); link = link.getNext()) {
         mySubstitution.remove(link);
       }
-      for (DependentLink link = letExpr2.getClauses().get(i).getParameters(); link.hasNext(); link = link.getNext()) {
-        equations.abstractBinding(link);
-      }
       mySubstitution.remove(letExpr1.getClauses().get(i));
-      equations.abstractBinding(letExpr2.getClauses().get(i));
     }
     myEquations.add(equations);
     return true;
@@ -538,12 +527,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       for (DependentLink link = clause.getParameters(); link.hasNext(); link = link.getNext()) {
         mySubstitution.remove(link);
       }
-      for (DependentLink link = otherClause.getParameters(); link.hasNext(); link = link.getNext()) {
-        equations.abstractBinding(link);
-      }
       for (int i = 0; i < clause.getTailBindings().size() && i < otherClause.getTailBindings().size(); i++) {
         mySubstitution.remove(clause.getTailBindings().get(i));
-        equations.abstractBinding(otherClause.getTailBindings().get(i));
       }
       myEquations.add(equations);
     }

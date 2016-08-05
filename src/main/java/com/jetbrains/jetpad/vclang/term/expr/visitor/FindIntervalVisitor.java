@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 
 public class FindIntervalVisitor extends BaseExpressionVisitor<Void, Boolean> {
-
   @Override
   public Boolean visitDefCall(DefCallExpression expr, Void params) {
     return expr.getDefinition() == Prelude.INTERVAL || expr.getDefinition().containsInterval();
@@ -22,6 +21,11 @@ public class FindIntervalVisitor extends BaseExpressionVisitor<Void, Boolean> {
 
   @Override
   public Boolean visitReference(ReferenceExpression expr, Void params) {
+    return false;
+  }
+
+  @Override
+  public Boolean visitInferenceReference(InferenceReferenceExpression expr, Void params) {
     return false;
   }
 

@@ -148,6 +148,11 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   }
 
   @Override
+  public Void visitInferenceReference(InferenceReferenceExpression expr, Void params) {
+    throw new IllegalStateException();
+  }
+
+  @Override
   public Void visitLam(LamExpression expr, Void params) {
     myStream.write(6);
     try {

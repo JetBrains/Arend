@@ -10,6 +10,7 @@ public interface ExpressionVisitor<P, R> {
   R visitFieldCall(FieldCallExpression expr, P params);
   R visitClassCall(ClassCallExpression expr, P params);
   R visitReference(ReferenceExpression expr, P params);
+  R visitInferenceReference(InferenceReferenceExpression expr, P params);
   R visitLam(LamExpression expr, P params);
   R visitPi(PiExpression expr, P params);
   R visitSigma(SigmaExpression expr, P params);

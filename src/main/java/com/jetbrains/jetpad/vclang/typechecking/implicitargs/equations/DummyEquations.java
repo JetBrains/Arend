@@ -2,15 +2,11 @@ package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceBinding;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
-import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
-
-import java.util.Set;
 
 public class DummyEquations implements Equations {
   private static final DummyEquations INSTANCE = new DummyEquations();
@@ -42,7 +38,7 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public boolean addVariable(LevelInferenceBinding var) {
+  public boolean addVariable(LevelInferenceVariable var) {
     return false;
   }
 
@@ -57,26 +53,17 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public void abstractBinding(Binding binding) {
-
-  }
-
-  @Override
   public DummyEquations newInstance() {
     return this;
   }
 
   @Override
-  public Substitution solve(Set<InferenceBinding> binding, boolean isFinal) {
-    throw new Exception();
+  public LevelSubstitution solve() {
+    return new LevelSubstitution();
   }
 
   @Override
-  public void reportErrors(ErrorReporter errorReporter) {
-
-  }
-
-  public static class Exception extends RuntimeException {
+  public void reportErrors(ErrorReporter errorReporter, Abstract.SourceNode sourceNode) {
 
   }
 }

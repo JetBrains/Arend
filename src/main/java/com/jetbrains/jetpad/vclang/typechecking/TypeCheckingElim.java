@@ -15,7 +15,7 @@ import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.subst.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
@@ -122,16 +122,17 @@ public class TypeCheckingElim {
     return new Patterns(typedPatterns);
   }
 
-  public static class Result extends TypeCheckingResult {
+  public class Result extends TypeCheckingResult {
     public ElimTreeNode elimTree;
 
     public Result(ElimTreeNode elimTree) {
+      super(myVisitor.getImplicitArgsInference().newEquations());
       this.elimTree = elimTree;
     }
 
     @Override
-    public void subst(Substitution substitution) {
-      elimTree = elimTree.subst(substitution.exprSubst, substitution.levelSubst);
+    public void subst(LevelSubstitution substitution) {
+      elimTree = elimTree.subst(new ExprSubstitution(), substitution);
     }
   }
 
@@ -213,11 +214,6 @@ public class TypeCheckingElim {
             wasError = true;
             continue;
           }
-          if (!clauseResult.getEquations().isEmpty()) {
-            for (DependentLink link = links.getFirst(); link != EmptyDependentLink.getInstance(); link = link.getNext()) {
-              clauseResult.getEquations().abstractBinding(link);
-            }
-          }
           result.add(clauseResult);
           expressions.add(clauseResult.expression);
         } else {
@@ -236,7 +232,7 @@ public class TypeCheckingElim {
 
     if (elimTreeResult instanceof PatternsToElimTreeConversion.OKResult) {
       result.elimTree = ((PatternsToElimTreeConversion.OKResult) elimTreeResult).elimTree;
-      result.update(true);
+      result.solve();
       return result;
     } else if (elimTreeResult instanceof PatternsToElimTreeConversion.EmptyReachableResult) {
       for (int i : ((PatternsToElimTreeConversion.EmptyReachableResult) elimTreeResult).reachable) {

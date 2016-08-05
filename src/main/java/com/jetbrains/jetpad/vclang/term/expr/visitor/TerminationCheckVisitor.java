@@ -152,6 +152,11 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
   }
 
   @Override
+  public Boolean visitInferenceReference(InferenceReferenceExpression expr, Void params) {
+    throw new IllegalStateException();
+  }
+
+  @Override
   public Boolean visitLam(LamExpression expr, Void params) {
     return visitArguments(expr.getParameters()) && expr.getBody().accept(this, null);
   }
