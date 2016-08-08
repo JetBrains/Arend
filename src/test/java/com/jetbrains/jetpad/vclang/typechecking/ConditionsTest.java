@@ -185,6 +185,17 @@ public class ConditionsTest {
   }
 
   @Test
+  public void constructorArgumentWithCondition() {
+    typeCheckClass(
+        "\\static \\data S | base | loop I \n" +
+            "  \\with | loop left => base\n" +
+            "         | loop right => base\n" +
+        "\\static \\data D | cons S | cons'\n" +
+            "  \\with cons (loop left) => cons'" +
+        "\\static \\function condTest : (cons' = cons') => path (\\lam _ => cons (loop left))");
+  }
+
+  @Test
   public void cc() {
     typeCheckClass(
       "\\static \\data Z | pos Nat | neg Nat \\with neg zero => pos zero\n" +

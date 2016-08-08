@@ -292,9 +292,9 @@ public class NameResolverTest {
   }
 
   @Test
-  public void testPrepreludeSuc() {
+  public void testPreludeSuc() {
     resolveNamesDef(
-        "\\static \\function test' => ::Preprelude.suc\n"
+        "\\static \\function test' => ::Prelude.suc\n"
     );
   }
 }

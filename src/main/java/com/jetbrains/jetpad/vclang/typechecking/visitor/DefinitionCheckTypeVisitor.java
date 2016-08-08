@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.FindMatchOnIntervalVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
@@ -293,31 +294,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       }
 
       myState.record(constructor, typedConstructor);
-
-      if (typedConstructor.containsInterval() && !dataDefinition.containsInterval()) {
-        dataDefinition.setContainsInterval();
-        if (!def.getConditions().isEmpty()) {
-          inferredSorts = new SortMax(inferredSorts.getPLevel(), LevelMax.INFINITY);
-        }
-      }
-    }
-
-    if (userSort != null) {
-      SortMax userSorts = new SortMax(userSort);
-      if (inferredSorts.isLessOrEquals(userSorts)) {
-        dataDefinition.setSorts(userSorts);
-      } else {
-        String msg = "Actual universe " + inferredSorts + " is not compatible with expected universe " + new UniverseExpression(userSort);
-        // FIXME[errorformat]
-        myErrorReporter.report(new TypeCheckingError(def, msg, def.getUniverse()));
-        dataDefinition.setSorts(inferredSorts);
-      }
-    } else {
-    //  if (def.getConditions() != null && !def.getConditions().isEmpty()) {
-     //   dataDefinition.setSort(new TypeUniverse(inferredSorts.getPLevel(), TypeUniverse.intToHLevel(TypeUniverse.NOT_TRUNCATED)));
-     // } else {
-        dataDefinition.setSorts(inferredSorts);
-     // }
     }
 
     context.clear();
@@ -346,6 +322,26 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         }
       }
       dataDefinition.getConditions().removeAll(failedConditions);
+      for (Condition condition : dataDefinition.getConditions()) {
+        if (condition.getElimTree().accept(new FindMatchOnIntervalVisitor(), null)) {
+          dataDefinition.setMatchesOnInterval();
+          inferredSorts = new SortMax(inferredSorts.getPLevel(), LevelMax.INFINITY);
+        }
+      }
+    }
+
+    if (userSort != null) {
+      SortMax userSorts = new SortMax(userSort);
+      if (inferredSorts.isLessOrEquals(userSorts)) {
+        dataDefinition.setSorts(userSorts);
+      } else {
+        String msg = "Actual universe " + inferredSorts + " is not compatible with expected universe " + new UniverseExpression(userSort);
+        // FIXME[errorformat]
+        myErrorReporter.report(new TypeCheckingError(def, msg, def.getUniverse()));
+        dataDefinition.setSorts(inferredSorts);
+      }
+    } else {
+      dataDefinition.setSorts(inferredSorts);
     }
 
     return dataDefinition;
@@ -497,9 +493,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
           return constructor;
         }
 
-        if (!constructor.containsInterval() && result.expression.accept(new FindIntervalVisitor(), null)) {
-          constructor.setContainsInterval();
-        }
+        //if (!constructor.containsInterval() && result.expression.accept(new FindIntervalVisitor(), null)) {
+        //  constructor.setContainsInterval();
+       // }
 
         sorts.add(result.type.toSorts());
 

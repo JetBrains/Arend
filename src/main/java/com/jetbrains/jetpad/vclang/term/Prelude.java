@@ -144,6 +144,7 @@ public class Prelude extends SimpleNamespace {
     /* I, left, right */
     DefinitionBuilder.Data interval = new DefinitionBuilder.Data(PRELUDE, "I", Abstract.Binding.DEFAULT_PRECEDENCE, new SortMax(Sort.PROP), EmptyDependentLink.getInstance());
     INTERVAL = interval.definition();
+    INTERVAL.setMatchesOnInterval();
     LEFT = interval.addConstructor("left", Abstract.Binding.DEFAULT_PRECEDENCE, EmptyDependentLink.getInstance());
     RIGHT = interval.addConstructor("right", Abstract.Binding.DEFAULT_PRECEDENCE, EmptyDependentLink.getInstance());
     ABSTRACT = interval.addConstructor("<abstract>", Abstract.Binding.DEFAULT_PRECEDENCE, EmptyDependentLink.getInstance());

@@ -19,13 +19,11 @@ public abstract class Definition implements Referable, Callable {
   private Abstract.Definition.Precedence myPrecedence;
   private boolean myHasErrors;
   private ClassDefinition myThisClass;
-  private boolean myContainsInterval;
 
   public Definition(String name, Abstract.Definition.Precedence precedence) {
     myName = name;
     myPrecedence = precedence;
     myHasErrors = true;
-    myContainsInterval = false;
   }
 
   @Override
@@ -93,10 +91,6 @@ public abstract class Definition implements Referable, Callable {
   public void hasErrors(boolean has) {
     myHasErrors = has;
   }
-
-  public boolean containsInterval() { return myContainsInterval; }
-
-  public void setContainsInterval() { myContainsInterval = true; }
 
   public boolean isAbstract() {
     return false;

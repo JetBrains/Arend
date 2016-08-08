@@ -21,6 +21,7 @@ public class DataDefinition extends Definition {
   private DependentLink myParameters;
   private Map<Constructor, Condition> myConditions;
   private SortMax mySorts;
+  private boolean myMatchesOnInterval;
 
   public DataDefinition(String name, Abstract.Definition.Precedence precedence) {
     this(name, precedence, new SortMax(), EmptyDependentLink.getInstance());
@@ -32,6 +33,7 @@ public class DataDefinition extends Definition {
     myConstructors = new ArrayList<>();
     myParameters = parameters;
     mySorts = sorts;
+    myMatchesOnInterval = false;
   }
 
   public SortMax getSorts() {
@@ -109,6 +111,10 @@ public class DataDefinition extends Definition {
   public void addConstructor(Constructor constructor) {
     myConstructors.add(constructor);
   }
+
+  public boolean matchesOnInterval() { return myMatchesOnInterval; }
+
+  public void setMatchesOnInterval() { myMatchesOnInterval = true; }
 
   @Override
   public Type getType() {

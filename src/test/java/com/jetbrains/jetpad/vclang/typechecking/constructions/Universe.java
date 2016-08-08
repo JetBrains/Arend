@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
+import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckExpr;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -111,5 +112,24 @@ public class Universe {
   @Test
   public void setError2() {
     typeCheckExpr("\\Set7", ExpressionFactory.Universe(9, 0), 1);
+  }
+
+  @Test
+  public void guessDataUniverseAsSet() {
+    typeCheckClass(
+      "\\static \\data D : \\Prop | d1 | d2 I \n" +
+        "  \\with | d2 _ => d1", 1);
+    typeCheckClass(
+      "\\static \\data D : \\Set0 | d1 | d2 I \n" +
+        "  \\with | d2 _ => d1");
+  }
+
+  @Test
+  public void dataUniverseIsNotSet() {
+    typeCheckClass(
+      "\\static \\data C | c1 | c2 | c3 I \n" +
+      " \\with c3 left => c1 | c3 right => c2 \n" +
+      "\\static \\data D : \\Set0 | d1 | d2 C \n" +
+      "  \\with | d2 c1 => d1", 1);
   }
 }
