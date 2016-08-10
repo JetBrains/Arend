@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.module.utils.FileOperations;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleModuleNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotNameResolver;
 import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotSourceInfoCollector;
@@ -83,9 +84,10 @@ public class ConsoleMain {
       libDirs.add(new File(workingPath, "lib"));
     }
 
+    SimpleStaticNamespaceProvider staticNsProvider = new SimpleStaticNamespaceProvider();
     final SimpleModuleNamespaceProvider moduleNsProvider = new SimpleModuleNamespaceProvider();
     final ListErrorReporter errorReporter = new ListErrorReporter();
-    final NameResolver nameResolver = new NameResolver(moduleNsProvider, new SimpleStaticNamespaceProvider(), new SimpleDynamicNamespaceProvider());
+    final NameResolver nameResolver = new NameResolver(moduleNsProvider, staticNsProvider, new SimpleDynamicNamespaceProvider());
     final OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(errorReporter, nameResolver, new ConcreteResolveListener(), new SimpleStaticNamespaceProvider(), new SimpleDynamicNamespaceProvider());
     final OneshotSourceInfoCollector srcInfoCollector = new OneshotSourceInfoCollector();
     final ErrorFormatter errf = new ErrorFormatter(srcInfoCollector.sourceInfoProvider);
@@ -136,7 +138,7 @@ public class ConsoleMain {
         return new FileModuleID(modulePath);
       }
     });
-    moduleLoader.load(Prelude.moduleID);
+    Prelude.PRELUDE = (SimpleNamespace) staticNsProvider.forDefinition(moduleLoader.load(Prelude.moduleID).abstractDefinition);
 
     if (!errorReporter.getErrorList().isEmpty()) {
       for (GeneralError error : errorReporter.getErrorList()) {
