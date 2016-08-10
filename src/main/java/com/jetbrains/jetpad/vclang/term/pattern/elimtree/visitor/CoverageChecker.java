@@ -41,11 +41,11 @@ public class CoverageChecker implements ElimTreeNodeVisitor<ExprSubstitution, Bo
     boolean result = true;
     for (ConCallExpression conCall : ftype.getDefinition().getMatchedConstructors(parameters)) {
       if (myResultType.getType().isLessOrEquals(Sort.PROP)) {
-        if (Prelude.isTruncP(conCall.getDefinition())) {
+        if (conCall.getDefinition() == Prelude.PROP_TRUNC_PATH_CON) {
           continue;
         }
       } else if (myResultType.getType().isLessOrEquals(Sort.SET)) {
-        if (Prelude.isTruncS(conCall.getDefinition())) {
+        if (conCall.getDefinition() == Prelude.SET_TRUNC_PATH_CON) {
           continue;
         }
       }

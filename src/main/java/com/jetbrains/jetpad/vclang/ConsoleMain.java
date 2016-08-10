@@ -2,12 +2,12 @@ package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
-import com.jetbrains.jetpad.vclang.module.BaseModuleLoader;
-import com.jetbrains.jetpad.vclang.module.ModuleID;
-import com.jetbrains.jetpad.vclang.module.ModuleLoader;
-import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.module.*;
 import com.jetbrains.jetpad.vclang.module.output.FileOutputSupplier;
+import com.jetbrains.jetpad.vclang.module.source.FileSource;
 import com.jetbrains.jetpad.vclang.module.source.FileSourceSupplier;
+import com.jetbrains.jetpad.vclang.module.source.Source;
+import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.utils.FileOperations;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
@@ -17,11 +17,13 @@ import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotNameResolver;
 import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotSourceInfoCollector;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.ConcreteResolveListener;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveStaticModVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
+import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.order.TypecheckingOrdering;
-import com.jetbrains.jetpad.vclang.term.ConcreteResolveListener;
 import com.jetbrains.jetpad.vclang.typechecking.staticmodresolver.ConcreteStaticModListener;
 import org.apache.commons.cli.*;
 
@@ -122,6 +124,34 @@ public class ConsoleMain {
       }
     };
 
+    Prelude.moduleID = new FileModuleID(new ModulePath("Prelude"));
+    moduleLoader.setSourceSupplier(new SourceSupplier() {
+      @Override
+      public Source getSource(ModuleID module) {
+        return new FileSource(errorReporter, Prelude.moduleID, FileOperations.getFile(new File(Paths.get("").toAbsolutePath().toFile(), "lib"), module.getModulePath(), FileOperations.EXTENSION));
+      }
+
+      @Override
+      public ModuleID locateModule(ModulePath modulePath) {
+        return new FileModuleID(modulePath);
+      }
+    });
+    moduleLoader.load(Prelude.moduleID);
+
+    if (!errorReporter.getErrorList().isEmpty()) {
+      for (GeneralError error : errorReporter.getErrorList()) {
+        System.err.println(errf.printError(error));
+      }
+      return;
+    }
+
+    TypecheckerState state = new TypecheckerState();
+    if (!TypecheckingOrdering.typecheck(state, modulesToTypeCheck, errorReporter, true)) {
+      return;
+    }
+    modulesToTypeCheck.clear();
+    errorReporter.getErrorList().clear();
+
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization();
     moduleLoader.setSourceSupplier(new FileSourceSupplier(errorReporter, sourceDir));
     moduleLoader.setOutputSupplier(new FileOutputSupplier(moduleDeserialization, outputDir, libDirs));
@@ -155,7 +185,7 @@ public class ConsoleMain {
 
     final Set<ModuleID> failedModules = new HashSet<>();
 
-    TypecheckingOrdering.typecheck(modulesToTypeCheck, errorReporter, new TypecheckedReporter() {
+    TypecheckingOrdering.typecheck(state, modulesToTypeCheck, errorReporter, new TypecheckedReporter() {
       @Override
       public void typecheckingSucceeded(Abstract.Definition definition) {
       }
@@ -168,7 +198,7 @@ public class ConsoleMain {
         }
         errorReporter.getErrorList().clear();
       }
-    });
+    }, false);
 
     for (ModuleID moduleID : loadedModules) {
       StringBuilder builder = new StringBuilder();

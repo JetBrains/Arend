@@ -63,7 +63,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     List<? extends Expression> args = expr.getArguments();
 
     DataCallExpression dataCall = fun.toDataCall();
-    if (!(args.size() == 3 && dataCall != null && Prelude.isPath(dataCall.getDefinition()))) {
+    if (!(args.size() == 3 && dataCall != null && dataCall.getDefinition() == Prelude.PATH)) {
       return null;
     }
     for (EnumSet<AppExpression.Flag> flag : expr.getFlags()) {

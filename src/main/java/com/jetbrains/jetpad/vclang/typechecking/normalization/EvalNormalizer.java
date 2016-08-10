@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
@@ -44,7 +43,7 @@ public class EvalNormalizer implements Normalizer {
   public Expression normalize(Function fun, LevelSubstitution polySubst, DependentLink params, List<? extends Expression> paramArgs, List<? extends Expression> arguments, List<? extends Expression> otherArguments, List<? extends EnumSet<AppExpression.Flag>> otherFlags, NormalizeVisitor.Mode mode) {
     assert fun.getNumberOfRequiredArguments() == arguments.size();
 
-    if (fun instanceof FunctionDefinition && Prelude.isCoe((FunctionDefinition) fun)) {
+    if (fun == Prelude.COERCE) {
       Expression result = null;
 
       Binding binding = new TypedBinding("i", DataCall(Prelude.INTERVAL));
@@ -54,7 +53,7 @@ public class EvalNormalizer implements Normalizer {
       } else {
         FunCallExpression mbIsoFun = normExpr.getFunction().toFunCall();
         List<? extends Expression> mbIsoArgs = normExpr.getArguments();
-        if (mbIsoFun != null && Prelude.isIso(mbIsoFun.getDefinition()) && mbIsoArgs.size() == 7) {
+        if (mbIsoFun != null && mbIsoFun.getDefinition() == Prelude.ISO && mbIsoArgs.size() == 7) {
           boolean noFreeVar = true;
           for (int i = 0; i < mbIsoArgs.size() - 1; i++) {
             if (mbIsoArgs.get(i).findBinding(binding)) {

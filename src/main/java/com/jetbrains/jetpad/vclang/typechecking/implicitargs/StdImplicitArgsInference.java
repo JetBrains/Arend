@@ -53,7 +53,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
     if (isExplicit) {
       ConCallExpression conCall = result.expression.getFunction().toConCall();
-      if (conCall != null && Prelude.isPathCon(conCall.getDefinition()) && result.expression.getArguments().isEmpty()) {
+      if (conCall != null && conCall.getDefinition() == Prelude.PATH_CON && result.expression.getArguments().isEmpty()) {
         Expression interval = DataCall(Prelude.INTERVAL);
         List<DependentLink> pathParams = new ArrayList<>();
 

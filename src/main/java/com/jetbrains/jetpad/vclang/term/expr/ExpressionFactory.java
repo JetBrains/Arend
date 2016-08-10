@@ -224,15 +224,11 @@ public class ExpressionFactory {
 
   public static DataCallExpression Lvl() {return DataCall(Prelude.LVL); }
 
-  public static Expression MaxNat(Expression expr1, Expression expr2) { return Apps(FunCall(Prelude.MAX_NAT), expr1, expr2); }
-
   public static DataCallExpression CNat() {
     return DataCall(Prelude.CNAT);
   }
 
   public static Expression Fin(Expression expr) { return Apps(ConCall(Prelude.FIN), expr); }
-
-  public static Expression SucCNat(Expression expr) { return Apps(FunCall(Prelude.SUC_CNAT), expr); }
 
   public static UniverseExpression Universe() {
     return new UniverseExpression(new Sort(Sort.ANY_LEVEL, Sort.ANY_LEVEL));

@@ -66,11 +66,11 @@ public class EtaNormalization {
   public static Expression normalizePath(AppExpression expr) {
     List<? extends Expression> args = expr.getArguments();
     ConCallExpression fun = expr.getFunction().toConCall();
-    if (fun != null && Prelude.isPathCon(fun.getDefinition())) {
+    if (fun != null && fun.getDefinition() == Prelude.PATH_CON) {
       Expression arg = normalize(args.get(args.size() - 1));
       List<? extends Expression> argArgs = arg.getArguments();
       FunCallExpression argFun = arg.getFunction().toFunCall();
-      if (argArgs.size() > 0 && argFun != null && Prelude.isAt(argFun.getDefinition())) {
+      if (argArgs.size() > 0 && argFun != null && argFun.getDefinition() == Prelude.AT) {
         return normalize(argArgs.get(argArgs.size() - 1));
       }
     }

@@ -82,7 +82,8 @@ public class TypeCheckingTestCase {
 
   public static TypecheckerState typeCheckClass(Concrete.ClassDefinition classDefinition, int errors) {
     ListErrorReporter errorReporter = new ListErrorReporter();
-    TypecheckerState state = TypecheckingOrdering.typecheck(classDefinition, errorReporter);
+    TypecheckerState state = new TypecheckerState();
+    TypecheckingOrdering.typecheck(state, classDefinition, errorReporter);
     assertErrorListSize(errorReporter.getErrorList(), errors);
     return state;
   }

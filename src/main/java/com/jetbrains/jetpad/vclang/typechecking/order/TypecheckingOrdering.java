@@ -164,12 +164,11 @@ public class TypecheckingOrdering {
     return orderer.getResult();
   }
 
-  private static TypecheckerState typecheck(Result result, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
+  private static void typecheck(TypecheckerState state, Result result, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, boolean isPrelude) {
     if (result instanceof OKResult) {
-      TypecheckerState state = new TypecheckerState();
       for (Map.Entry<Abstract.Definition, Abstract.ClassDefinition> entry : ((OKResult) result).order.entrySet()) {
         Abstract.Definition def = entry.getKey();
-        DefinitionCheckTypeVisitor.typeCheck(state, (ClassDefinition) state.getTypechecked(entry.getValue()), def, new LocalErrorReporter(def, errorReporter));
+        DefinitionCheckTypeVisitor.typeCheck(state, (ClassDefinition) state.getTypechecked(entry.getValue()), def, new LocalErrorReporter(def, errorReporter), isPrelude);
         Definition typechecked = state.getTypechecked(def);
         if (typechecked == null || typechecked.hasErrors()) {
           typecheckedReporter.typecheckingFailed(def);
@@ -177,27 +176,30 @@ public class TypecheckingOrdering {
           typecheckedReporter.typecheckingSucceeded(def);
         }
       }
-      return state;
     } else if (result instanceof CycleResult) {
       errorReporter.report(new CycleError(((CycleResult) result).cycle));
-      return null;
     } else {
       throw new IllegalStateException();
     }
   }
-  public static TypecheckerState typecheck(Abstract.Definition definition, ErrorReporter errorReporter) {
-    return typecheck(definition, errorReporter, new TypecheckedReporter.Dummy());
+
+  public static boolean typecheck(TypecheckerState state, Abstract.Definition definition, ErrorReporter errorReporter) {
+    return typecheck(state, definition, errorReporter, new TypecheckedReporter.Dummy());
   }
 
-  public static TypecheckerState typecheck(Abstract.Definition definition, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
-    return typecheck(order(definition), errorReporter, typecheckedReporter);
+  public static boolean typecheck(TypecheckerState state, Abstract.Definition definition, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
+    Result result = order(definition);
+    typecheck(state, result, errorReporter, typecheckedReporter, false);
+    return result instanceof OKResult;
   }
 
-  public static TypecheckerState typecheck(List<Abstract.Definition> definitions, ErrorReporter errorReporter) {
-    return typecheck(definitions, errorReporter, new TypecheckedReporter.Dummy());
+  public static boolean typecheck(TypecheckerState state, List<Abstract.Definition> definitions, ErrorReporter errorReporter, boolean isPrelude) {
+    return typecheck(state, definitions, errorReporter, new TypecheckedReporter.Dummy(), isPrelude);
   }
 
-  public static TypecheckerState typecheck(List<Abstract.Definition> definitions, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
-    return typecheck(order(definitions), errorReporter, typecheckedReporter);
+  public static boolean typecheck(TypecheckerState state, List<Abstract.Definition> definitions, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, boolean isPrelude) {
+    Result result = order(definitions);
+    typecheck(state, result, errorReporter, typecheckedReporter, isPrelude);
+    return result instanceof OKResult;
   }
 }

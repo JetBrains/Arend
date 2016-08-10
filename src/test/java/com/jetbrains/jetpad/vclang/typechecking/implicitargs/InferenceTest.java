@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.error.GoalError;
 import com.jetbrains.jetpad.vclang.typechecking.order.TypecheckingOrdering;
 import org.junit.Test;
@@ -26,7 +27,7 @@ public class InferenceTest {
     Concrete.ClassDefinition classDefinition = parseClass("test", text);
     resolveNamesClass(classDefinition, 0);
     ListErrorReporter errorReporter = new ListErrorReporter();
-    TypecheckingOrdering.typecheck(classDefinition, errorReporter);
+    TypecheckingOrdering.typecheck(new TypecheckerState(), classDefinition, errorReporter);
 
     assertErrorListSize(errorReporter.getErrorList(), 2);
     for (GeneralError error : errorReporter.getErrorList()) {

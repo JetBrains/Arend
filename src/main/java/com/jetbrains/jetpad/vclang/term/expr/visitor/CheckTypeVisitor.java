@@ -235,7 +235,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   private boolean checkPath(Result result, Abstract.Expression expr) {
     if (result != null) {
       ConCallExpression conExpr = result.expression.getFunction().toConCall();
-      if (conExpr != null && Prelude.isPathCon(conExpr.getDefinition())) {
+      if (conExpr != null && conExpr.getDefinition() == Prelude.PATH_CON) {
         result.expression = result.expression.normalize(NormalizeVisitor.Mode.WHNF);
         if (result.expression.getArguments().isEmpty()) {
           // FIXME[errorformat]

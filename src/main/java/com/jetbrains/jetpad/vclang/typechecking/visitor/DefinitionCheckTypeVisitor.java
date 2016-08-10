@@ -52,15 +52,39 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     myErrorReporter = errorReporter;
   }
 
-  public static void typeCheck(TypecheckerState state, ClassDefinition enclosingClass, Abstract.Definition definition, ErrorReporter errorReporter) {
+  public static void typeCheck(TypecheckerState state, ClassDefinition enclosingClass, Abstract.Definition definition, ErrorReporter errorReporter, boolean isPrelude) {
     if (state.getTypechecked(definition) == null) {
       definition.accept(new DefinitionCheckTypeVisitor(state, errorReporter), enclosingClass);
+      if (isPrelude) {
+        Prelude.update(definition, state.getTypechecked(definition));
+      }
     }
+  }
+
+  public static void typeCheck(TypecheckerState state, ClassDefinition enclosingClass, Abstract.Definition definition, ErrorReporter errorReporter) {
+    typeCheck(state, enclosingClass, definition, errorReporter, false);
   }
 
   private DependentLink createThisParam(ClassDefinition enclosingClass) {
     assert enclosingClass != null;
     return param("\\this", ClassCall(enclosingClass));
+  }
+
+  private static boolean isPolyParam(Abstract.TypeArgument arg) {
+    if (arg.getType() instanceof Abstract.DefCallExpression) {
+      String typeName = ((Abstract.DefCallExpression) arg.getType()).getName();
+      return typeName.equals(Prelude.LVL.getName()) || typeName.equals(Prelude.CNAT.getName());
+    }
+    return false;
+  }
+
+  private static DefCallExpression levelTypeByName(String typeName) {
+    if (typeName.equals("Lvl")) {
+      return Lvl();
+    } else if (typeName.equals("CNat")) {
+      return CNat();
+    }
+    return null;
   }
 
   private Binding visitPolyParam(Abstract.TypeArgument typeArgument, Map<String, Binding> polyParams, Abstract.SourceNode node) {
@@ -79,7 +103,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       myErrorReporter.report(new TypeCheckingError("Polymorphic variables must be implicit", node));
       return null;
     }
-    Binding levelParam = new TypedBinding(((Abstract.TelescopeArgument) typeArgument).getNames().get(0), Prelude.levelTypeByName(typeName));
+    Binding levelParam = new TypedBinding(((Abstract.TelescopeArgument) typeArgument).getNames().get(0), levelTypeByName(typeName));
     polyParams.put(typeName, levelParam);
     return levelParam;
   }
@@ -111,7 +135,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       if (argument instanceof Abstract.TypeArgument) {
         Abstract.TypeArgument typeArgument = (Abstract.TypeArgument)argument;
 
-        if (Prelude.isPolyParam(typeArgument)) {
+        if (isPolyParam(typeArgument)) {
           Binding levelParam = visitPolyParam(typeArgument, polyParamsMap, def);
           if (levelParam == null) {
             return typedDef;
@@ -189,7 +213,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         TypeCheckingError error = TypeCheckingElim.checkCoverage(def, list.getFirst(), typedDef.getElimTree(), expectedType);
         if (error != null) {
           myErrorReporter.report(error);
-          typedDef.setElimTree(null);
         }
       }
 
@@ -243,7 +266,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     dataDefinition.hasErrors(true);
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
       for (Abstract.TypeArgument parameter : parameters) {
-        if (Prelude.isPolyParam(parameter)) {
+        if (isPolyParam(parameter)) {
           Binding levelParam = visitPolyParam(parameter, polyParamsMap, def);
           if (levelParam == null) {
             return dataDefinition;
@@ -531,7 +554,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
           DataCallExpression dataCall = type.toDataCall();
           if (dataCall != null) {
             DataDefinition typeDef = dataCall.getDefinition();
-            if (Prelude.isPath(typeDef) && exprs.size() >= 1) {
+            if (typeDef == Prelude.PATH && exprs.size() >= 1) {
               LamExpression lam = exprs.get(0).normalize(NormalizeVisitor.Mode.WHNF).toLam();
               if (lam != null) {
                 check = true;
@@ -714,7 +737,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       if (argument instanceof Abstract.TypeArgument) {
         Abstract.TypeArgument typeArgument = (Abstract.TypeArgument) argument;
 
-        if (Prelude.isPolyParam(typeArgument)) {
+        if (isPolyParam(typeArgument)) {
           Binding levelParam = visitPolyParam(typeArgument, polyParams, def);
           if (levelParam == null) {
             return typedDef;
