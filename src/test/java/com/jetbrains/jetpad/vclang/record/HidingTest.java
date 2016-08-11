@@ -1,11 +1,11 @@
 package com.jetbrains.jetpad.vclang.record;
 
+import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 
-public class HidingTest {
+public class HidingTest extends TypeCheckingTestCase {
   @Test
   public void hidingError() {
     resolveNamesClass(

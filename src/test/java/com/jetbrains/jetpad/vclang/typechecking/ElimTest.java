@@ -11,11 +11,9 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
 import static org.junit.Assert.assertEquals;
 
-public class ElimTest {
+public class ElimTest extends TypeCheckingTestCase {
   @Test
   public void elim2() {
     typeCheckClass(

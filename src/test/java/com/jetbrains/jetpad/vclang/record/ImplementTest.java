@@ -8,10 +8,9 @@ import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static org.junit.Assert.assertEquals;
 
-public class ImplementTest {
+public class ImplementTest extends TypeCheckingTestCase {
   @Test
   public void implement() {
     typeCheckClass(

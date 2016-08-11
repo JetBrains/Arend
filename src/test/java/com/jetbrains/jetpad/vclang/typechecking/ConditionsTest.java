@@ -2,10 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
-
-public class ConditionsTest {
+public class ConditionsTest extends TypeCheckingTestCase {
   @Test
   public void dataTypeWithConditions() {
     typeCheckClass(

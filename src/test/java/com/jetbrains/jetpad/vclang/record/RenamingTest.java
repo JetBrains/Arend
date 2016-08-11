@@ -1,11 +1,11 @@
 package com.jetbrains.jetpad.vclang.record;
 
+import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 
-public class RenamingTest {
+public class RenamingTest extends TypeCheckingTestCase {
   @Test
   public void renaming() {
     typeCheckClass(

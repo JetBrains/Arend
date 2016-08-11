@@ -13,10 +13,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.*;
 import static org.junit.Assert.assertEquals;
 
-public class PathsTest {
+public class PathsTest extends TypeCheckingTestCase {
   @Test
   public void idpTest() {
     typeCheckDef("\\function idp {A : \\Type0} (a : A) : a = a => path (\\lam _ => a)");

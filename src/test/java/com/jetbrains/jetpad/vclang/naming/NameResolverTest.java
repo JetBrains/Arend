@@ -12,9 +12,7 @@ import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
-import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesDef;
-import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesExpr;
+import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.*;
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.compare;
 import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.cBinOp;
 import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.cNum;
@@ -53,17 +51,17 @@ public class NameResolverTest {
   @Test
   public void whereTest() {
     resolveNamesClass("test",
-        "\\static \\function f (x : Nat) => B.b (a x) \\where {\n" +
-            "  \\static \\function a (x : Nat) => x\n" +
+        "\\static \\function f (x : \\Type0) => B.b (a x) \\where {\n" +
+            "  \\static \\function a (x : \\Type0) => x\n" +
             "  \\static \\data D | D1 | D2\n" +
-            "  \\static \\class B { \\static \\data C | cr \\static \\function b (x : Nat) => D1 }\n" +
+            "  \\static \\class B { \\static \\data C | cr \\static \\function b (x : \\Type0) => D1 }\n" +
             "}");
   }
 
   @Test
   public void whereTestDefCmd() {
     resolveNamesClass("test",
-        "\\static \\function f (x : Nat) => a \\where {\n" +
+        "\\static \\function f (x : \\Type0) => a \\where {\n" +
         "  \\static \\class A { \\static \\function a => 0 }\n" +
         "  \\open A\n" +
         "}");
@@ -126,12 +124,12 @@ public class NameResolverTest {
 
   @Test
   public void whereAbstractError() {
-    resolveNamesClass("test", "\\static \\function f => 0 \\where \\abstract x : Nat", 1);
+    resolveNamesClass("test", "\\static \\function f => 0 \\where \\abstract x : \\Type0", 1);
   }
 
   @Test
   public void numberOfFieldsTest() {
-    resolveNamesClass("test", "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat } \\static \\function C => Point { x => 0 }");
+    resolveNamesClass("test", "\\static \\class Point { \\abstract x : \\Type0 \\abstract y : \\Type0 } \\static \\function C => Point { x => 0 }");
     assertNotNull(Root.getModule(new NameModuleID("test")));
     Namespace namespace = Root.getModule(new NameModuleID("test")).namespace;
 
@@ -143,7 +141,7 @@ public class NameResolverTest {
   @Test
   public void numberOfFieldsTest2() {
     resolveNamesClass("test",
-        "\\abstract f : Nat\n" +
+        "\\abstract f : \\Type0\n" +
         "\\static \\function g => 0\n" +
         "\\class B { \\function h => 0 \\static \\function k => 0 }\n" +
         "\\static \\class C { \\function h => 0 \\static \\function k => 0 }");
@@ -173,7 +171,7 @@ public class NameResolverTest {
 
   @Test
   public void staticFieldAccCallTest() {
-    resolveNamesClass("test", "\\static \\class A { \\abstract x : Nat \\class B { \\static \\function y => x } } \\static \\function f (a : A) => a.B.y");
+    resolveNamesClass("test", "\\static \\class A { \\abstract x : \\Type0 \\class B { \\static \\function y => x } } \\static \\function f (a : A) => a.B.y");
   }
 
   @Test
@@ -191,11 +189,11 @@ public class NameResolverTest {
   @Test
   public void exportTest2() {
     resolveNamesClass("test",
-        "\\abstract (+) (x y : Nat) : Nat\n" +
+        "\\abstract (+) (x y : \\Type0) : \\Type0\n" +
         "\\class A {\n" +
-        "  \\abstract x : Nat\n" +
+        "  \\abstract x : \\Type0\n" +
         "  \\class B {\n" +
-        "    \\abstract y : Nat\n" +
+        "    \\abstract y : \\Type0\n" +
         "    \\class C {\n" +
         "      \\static \\function z => x + y\n" +
         "      \\static \\function w => x\n" +
@@ -294,7 +292,7 @@ public class NameResolverTest {
   @Test
   public void testPreludeSuc() {
     resolveNamesDef(
-        "\\static \\function test' => ::Prelude.suc\n"
+        "\\function test' => ::Prelude.suc\n"
     );
   }
 }

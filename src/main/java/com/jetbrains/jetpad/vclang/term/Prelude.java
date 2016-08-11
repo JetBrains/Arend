@@ -65,6 +65,7 @@ public class Prelude extends SimpleNamespace {
     if (abstractDef.getName().equals("I")) {
       INTERVAL = (DataDefinition) definition;
       INTERVAL.setSorts(new SortMax(Sort.PROP));
+      INTERVAL.setMatchesOnInterval();
       LEFT = INTERVAL.getConstructor("left");
       RIGHT = INTERVAL.getConstructor("right");
     } else

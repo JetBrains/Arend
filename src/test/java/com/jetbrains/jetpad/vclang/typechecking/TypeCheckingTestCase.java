@@ -11,17 +11,31 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.order.TypecheckingOrdering;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.DefinitionCheckTypeVisitor;
+import org.junit.BeforeClass;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.*;
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseClass;
 import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
+import static junit.framework.TestCase.assertTrue;
 
-public class TypeCheckingTestCase {
+public class TypeCheckingTestCase extends PreludeTest {
+  public static TypecheckerState state;
+  public static ListErrorReporter errorReporter;
+
+  @BeforeClass
+  public static void typeCheckPrelude() {
+    state = new TypecheckerState();
+    errorReporter = new ListErrorReporter();
+    assertTrue(TypecheckingOrdering.typecheck(state, Collections.singletonList(PRELUDE_DEFINITION), errorReporter, true));
+    errorReporter.getErrorList().clear();
+  }
+
   public static CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, Concrete.Expression expression, Expression expectedType, ErrorReporter errorReporter) {
-    return new CheckTypeVisitor.Builder(context, errorReporter).build().checkType(expression, expectedType);
+    return new CheckTypeVisitor.Builder(state, context, errorReporter).build().checkType(expression, expectedType);
   }
 
   public static CheckTypeVisitor.Result typeCheckExpr(Concrete.Expression expression, Expression expectedType, ErrorReporter errorReporter) {
@@ -64,7 +78,6 @@ public class TypeCheckingTestCase {
   }
 
   public static Definition typeCheckDef(Concrete.Definition definition, int errors) {
-    TypecheckerState state = new TypecheckerState();
     ListErrorReporter errorReporter = new ListErrorReporter();
     DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(state, errorReporter);
     Definition result = definition.accept(visitor, null);
@@ -82,12 +95,10 @@ public class TypeCheckingTestCase {
 
   public static TypecheckerState typeCheckClass(Concrete.ClassDefinition classDefinition, int errors) {
     ListErrorReporter errorReporter = new ListErrorReporter();
-    TypecheckerState state = new TypecheckerState();
     TypecheckingOrdering.typecheck(state, classDefinition, errorReporter);
     assertErrorListSize(errorReporter.getErrorList(), errors);
     return state;
   }
-
 
   public static class TypeCheckClassResult {
     public final TypecheckerState typecheckerState;

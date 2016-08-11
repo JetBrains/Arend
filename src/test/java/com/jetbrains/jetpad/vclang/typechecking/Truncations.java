@@ -3,11 +3,9 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
 import static org.junit.Assert.assertTrue;
 
-public class Truncations {
+public class Truncations extends TypeCheckingTestCase {
   @Test
   public void elimInProp() {
     typeCheckDef("\\function inP-inv (P : \\Prop) (p : TrP P) : P <= \\elim p | inP p => p");

@@ -8,12 +8,10 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class EtaEquivalence {
+public class EtaEquivalence extends TypeCheckingTestCase {
   @Test
   public void classesEq() {
     TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(

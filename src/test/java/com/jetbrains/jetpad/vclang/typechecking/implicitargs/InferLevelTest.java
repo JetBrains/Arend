@@ -1,10 +1,9 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
+import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
-
-public class InferLevelTest {
+public class InferLevelTest extends TypeCheckingTestCase {
   @Test
   public void noEquations() {
     // no equations

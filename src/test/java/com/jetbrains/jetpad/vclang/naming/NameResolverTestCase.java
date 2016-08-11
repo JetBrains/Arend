@@ -2,13 +2,16 @@ package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
-import com.jetbrains.jetpad.vclang.naming.namespace.*;
+import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.naming.oneshot.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.oneshot.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.naming.scope.SubScope;
-import com.jetbrains.jetpad.vclang.term.*;
+import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.ConcreteResolveListener;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.typechecking.PreludeTest;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,14 +20,7 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.*;
 import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
 
-public class NameResolverTestCase {
-  public static final ModuleNamespaceProvider DEFAULT_MODULE_NS_PROVIDER = new SimpleModuleNamespaceProvider();
-  public static final StaticNamespaceProvider DEFAULT_STATIC_NS_PROVIDER = new SimpleStaticNamespaceProvider();
-  public static final DynamicNamespaceProvider DEFAULT_DYNAMIC_NS_PROVIDER = new SimpleDynamicNamespaceProvider();
-  public static final NameResolver DEFAULT_NAME_RESOLVER = new NameResolver(DEFAULT_MODULE_NS_PROVIDER, DEFAULT_STATIC_NS_PROVIDER, DEFAULT_DYNAMIC_NS_PROVIDER);
-  // TODO: remove comment below
-  public static final Scope INITIAL_SCOPE = Prelude.PRELUDE; // new SubScope(Preprelude.PRE_PRELUDE, Prelude.PRELUDE);
-
+public class NameResolverTestCase extends PreludeTest {
   public static Collection<? extends GeneralError> resolveNamesExpr(Scope parentScope, List<String> context, Concrete.Expression expression) {
     ListErrorReporter errorReporter = new ListErrorReporter();
     expression.accept(new ExpressionResolveNameVisitor(parentScope, context, DEFAULT_NAME_RESOLVER, errorReporter, new ConcreteResolveListener()), null);
@@ -32,7 +28,7 @@ public class NameResolverTestCase {
   }
 
   public static Collection<? extends GeneralError> resolveNamesExpr(Concrete.Expression expression) {
-    return resolveNamesExpr(INITIAL_SCOPE, new ArrayList<String>(), expression);
+    return resolveNamesExpr(Prelude.PRELUDE, new ArrayList<String>(), expression);
   }
 
   public static Concrete.Expression resolveNamesExpr(Scope parentScope, List<String> context, String text, int errors) {
@@ -62,7 +58,7 @@ public class NameResolverTestCase {
     for (Binding binding : context) {
       names.add(binding.getName());
     }
-    return resolveNamesExpr(INITIAL_SCOPE, names, text, 0);
+    return resolveNamesExpr(Prelude.PRELUDE, names, text, 0);
   }
 
   public static Concrete.Expression resolveNamesExpr(String text) {
@@ -72,7 +68,7 @@ public class NameResolverTestCase {
   public static Collection<? extends GeneralError> resolveNamesDef(Concrete.Definition definition) {
     ListErrorReporter errorReporter = new ListErrorReporter();
     DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(DEFAULT_STATIC_NS_PROVIDER, DEFAULT_DYNAMIC_NS_PROVIDER,
-        new SubScope(INITIAL_SCOPE, new SimpleNamespace(definition)), DEFAULT_NAME_RESOLVER, errorReporter, new ConcreteResolveListener());
+        new SubScope(Prelude.PRELUDE, new SimpleNamespace(definition)), DEFAULT_NAME_RESOLVER, errorReporter, new ConcreteResolveListener());
     definition.accept(visitor, null);
     return errorReporter.getErrorList();
   }

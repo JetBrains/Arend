@@ -3,10 +3,9 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.*;
 import static org.junit.Assert.assertNotNull;
 
-public class TypeCheckingTest {
+public class TypeCheckingTest extends TypeCheckingTestCase {
   @Test
   public void typeCheckDefinition() {
     typeCheckClass(

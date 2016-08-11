@@ -2,11 +2,10 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class RecursiveTest {
+public class RecursiveTest extends TypeCheckingTestCase {
   @Test
   public void list() {
     assertFalse(typeCheckDef("\\data List (A : \\Type0) | nil | cons A (List A)").hasErrors());

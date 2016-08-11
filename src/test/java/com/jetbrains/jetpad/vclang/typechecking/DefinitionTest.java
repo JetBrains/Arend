@@ -22,13 +22,11 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
 import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListIsEmpty;
 import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
 import static org.junit.Assert.*;
 
-public class DefinitionTest {
+public class DefinitionTest extends TypeCheckingTestCase {
   ListErrorReporter errorReporter;
 
   @Before

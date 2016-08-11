@@ -48,38 +48,38 @@ public class PrettyPrintingParserTest {
   @Test
   public void prettyPrintingParserLamApp() throws UnsupportedEncodingException {
     // (\x y. x (x y)) (\x y. x) ((\x. x) (\x. x))
-    Concrete.Expression expected = cApps(cLam(cargs(cTele(cvars("x", "y"), cNat())), cApps(cVar("x"), cApps(cVar("x"), cVar("y")))), cLam(cargs(cTele(cvars("x", "y"), cNat())), cVar("x")), cApps(cLam(cargs(cTele(cvars("x"), cNat())), cVar("x")), cLam(cargs(cTele(cvars("x"), cNat())), cVar("x"))));
-    DependentLink x = param("x", Nat());
-    DependentLink xy = param(true, vars("x", "y"), Nat());
+    Concrete.Expression expected = cApps(cLam(cargs(cTele(cvars("x", "y"), cUniverse(1))), cApps(cVar("x"), cApps(cVar("x"), cVar("y")))), cLam(cargs(cTele(cvars("x", "y"), cUniverse(1))), cVar("x")), cApps(cLam(cargs(cTele(cvars("x"), cUniverse(1))), cVar("x")), cLam(cargs(cTele(cvars("x"), cUniverse(1))), cVar("x"))));
+    DependentLink x = param("x", Universe(1));
+    DependentLink xy = param(true, vars("x", "y"), Universe(1));
     Expression expr = Apps(Lam(xy, Apps(Reference(xy), Apps(Reference(xy), Reference(xy.getNext())))), Lam(xy, Reference(xy)), Apps(Lam(x, Reference(x)), Lam(x, Reference(x))));
     testExpr(expected, expr);
   }
 
   @Test
   public void prettyPrintingParserPi() throws UnsupportedEncodingException {
-    // (x y : Nat) -> Nat -> Nat -> (x y -> y x) -> Nat x y
-    Concrete.Expression expected = cPi(ctypeArgs(cTele(cvars("x", "y"), cNat())), cPi(cNat(), cPi(cNat(), cPi(cPi(cApps(cVar("x"), cVar("y")), cApps(cVar("y"), cVar("x"))), cApps(cNat(), cVar("x"), cVar("y"))))));
-    DependentLink xy = param(true, vars("x", "y"), Nat());
-    Expression expr = Pi(xy, Pi(Nat(), Pi(Nat(), Pi(Pi(Apps(Reference(xy), Reference(xy.getNext())), Apps(Reference(xy.getNext()), Reference(xy))), Apps(Nat(), Reference(xy), Reference(xy.getNext()))))));
+    // (x y : \Type1) -> \Type1 -> \Type1 -> (x y -> y x) -> \Type1 x y
+    Concrete.Expression expected = cPi(ctypeArgs(cTele(cvars("x", "y"), cUniverse(1))), cPi(cUniverse(1), cPi(cUniverse(1), cPi(cPi(cApps(cVar("x"), cVar("y")), cApps(cVar("y"), cVar("x"))), cApps(cUniverse(1), cVar("x"), cVar("y"))))));
+    DependentLink xy = param(true, vars("x", "y"), Universe(1));
+    Expression expr = Pi(xy, Pi(Universe(1), Pi(Universe(1), Pi(Pi(Apps(Reference(xy), Reference(xy.getNext())), Apps(Reference(xy.getNext()), Reference(xy))), Apps(Universe(1), Reference(xy), Reference(xy.getNext()))))));
     testExpr(expected, expr);
   }
 
   @Test
   public void prettyPrintingParserPiImplicit() throws UnsupportedEncodingException {
-    // (x : Nat) {y z : Nat} -> Nat -> (t z' : Nat) {x' : Nat -> Nat} -> Nat x' y z' t
-    Concrete.Expression expected = cPi("x", cNat(), cPi(ctypeArgs(cTele(false, cvars("y", "z"), cNat())), cPi(cNat(), cPi(ctypeArgs(cTele(cvars("t", "z'"), cNat())), cPi(false, "x'", cPi(cNat(), cNat()), cApps(cNat(), cVar("x'"), cVar("y"), cVar("z'"), cVar("t")))))));
-    DependentLink x = param("x", Nat());
-    DependentLink yz = param(false, vars("y", "z"), Nat());
-    DependentLink tz_ = param(true, vars("t", "z'"), Nat());
-    DependentLink x_ = param(false, "x'", Pi(param(Nat()), Nat()));
-    Expression expr = Pi(x, Pi(yz, Pi(Nat(), Pi(tz_, Pi(x_, Apps(Nat(), Reference(x_), Reference(yz), Reference(tz_.getNext()), Reference(tz_)))))));
+    // (x : \Type1) {y z : \Type1} -> \Type1 -> (t z' : \Type1) {x' : \Type1 -> \Type1} -> \Type1 x' y z' t
+    Concrete.Expression expected = cPi("x", cUniverse(1), cPi(ctypeArgs(cTele(false, cvars("y", "z"), cUniverse(1))), cPi(cUniverse(1), cPi(ctypeArgs(cTele(cvars("t", "z'"), cUniverse(1))), cPi(false, "x'", cPi(cUniverse(1), cUniverse(1)), cApps(cUniverse(1), cVar("x'"), cVar("y"), cVar("z'"), cVar("t")))))));
+    DependentLink x = param("x", Universe(1));
+    DependentLink yz = param(false, vars("y", "z"), Universe(1));
+    DependentLink tz_ = param(true, vars("t", "z'"), Universe(1));
+    DependentLink x_ = param(false, "x'", Pi(param(Universe(1)), Universe(1)));
+    Expression expr = Pi(x, Pi(yz, Pi(Universe(1), Pi(tz_, Pi(x_, Apps(Universe(1), Reference(x_), Reference(yz), Reference(tz_.getNext()), Reference(tz_)))))));
     testExpr(expected, expr);
   }
 
   @Test
   public void prettyPrintingParserFunDef() throws UnsupportedEncodingException {
-    // f {x : Nat} (A : Nat -> \Type0) : A x -> (Nat -> Nat) -> Nat -> Nat => \t y z. y z;
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(POSITION, "f", Abstract.Binding.DEFAULT_PRECEDENCE, cargs(cTele(false, cvars("x"), cNat()), cTele(cvars("A"), cPi(cNat(), cUniverse(0)))), cPi(cApps(cVar("A"), cVar("x")), cPi(cPi(cNat(), cNat()), cPi(cNat(), cNat()))), Abstract.Definition.Arrow.RIGHT, cLam(cargs(cName("t"), cName("y"), cName("z")), cApps(cVar("y"), cVar("z"))), false, null, new ArrayList<Concrete.Statement>());
+    // f {x : \Type1} (A : \Type1 -> \Type0) : A x -> (\Type1 -> \Type1) -> \Type1 -> \Type1 => \t y z. y z;
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(POSITION, "f", Abstract.Binding.DEFAULT_PRECEDENCE, cargs(cTele(false, cvars("x"), cUniverse(1)), cTele(cvars("A"), cPi(cUniverse(1), cUniverse(0)))), cPi(cApps(cVar("A"), cVar("x")), cPi(cPi(cUniverse(1), cUniverse(1)), cPi(cUniverse(1), cUniverse(1)))), Abstract.Definition.Arrow.RIGHT, cLam(cargs(cName("t"), cName("y"), cName("z")), cApps(cVar("y"), cVar("z"))), false, null, new ArrayList<Concrete.Statement>());
     testDef(def, def);
   }
 }

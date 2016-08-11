@@ -7,15 +7,13 @@ import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
-import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.TypeCheckClassResult;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static org.junit.Assert.*;
 
-public class ClassesTest {
+public class ClassesTest extends TypeCheckingTestCase {
   @Test
   public void dynamicStaticCallError() {
     typeCheckClass(
@@ -301,7 +299,7 @@ public class ClassesTest {
 
   @Test
   public void fieldCallTest() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+    TypeCheckClassResult result = typeCheckClass(
         "\\static \\class A {\n" +
         "  \\abstract x : \\Type0\n" +
         "}\n" +

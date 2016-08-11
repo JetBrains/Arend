@@ -3,19 +3,18 @@ package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
+import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.error.GoalError;
 import com.jetbrains.jetpad.vclang.typechecking.order.TypecheckingOrdering;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseClass;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class InferenceTest {
+public class InferenceTest extends TypeCheckingTestCase {
   @Test
   public void doubleGoalTest() {
     String text =
@@ -27,7 +26,7 @@ public class InferenceTest {
     Concrete.ClassDefinition classDefinition = parseClass("test", text);
     resolveNamesClass(classDefinition, 0);
     ListErrorReporter errorReporter = new ListErrorReporter();
-    TypecheckingOrdering.typecheck(new TypecheckerState(), classDefinition, errorReporter);
+    TypecheckingOrdering.typecheck(state, classDefinition, errorReporter);
 
     assertErrorListSize(errorReporter.getErrorList(), 2);
     for (GeneralError error : errorReporter.getErrorList()) {
