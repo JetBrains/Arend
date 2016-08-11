@@ -2,10 +2,10 @@ package com.jetbrains.jetpad.vclang.term.expr.type;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.PiExpression;
@@ -77,7 +77,7 @@ public class PiUniverseType implements Type {
   }
 
   @Override
-  public boolean findBinding(Callable binding) {
+  public boolean findBinding(Referable binding) {
     return DependentLink.Helper.findBinding(myParameters, binding);
   }
 

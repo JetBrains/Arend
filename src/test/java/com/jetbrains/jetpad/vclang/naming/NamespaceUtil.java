@@ -3,14 +3,13 @@ package com.jetbrains.jetpad.vclang.naming;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
 
 import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.DEFAULT_NAME_RESOLVER;
 
 public class NamespaceUtil {
-  public static Referable get(Referable ref, String path) {
+  public static Abstract.Definition get(Abstract.Definition ref, String path) {
     for (String n : path.split("\\.")) {
-      Referable oldref = ref;
+      Abstract.Definition oldref = ref;
 
       ref = DEFAULT_NAME_RESOLVER.staticNamespaceFor(oldref).resolveName(n);
       if (ref != null) continue;

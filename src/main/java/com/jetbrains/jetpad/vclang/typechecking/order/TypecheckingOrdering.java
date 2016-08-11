@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
@@ -77,53 +76,51 @@ public class TypecheckingOrdering {
       return false;
     }
 
-    for (final Referable def : definition.accept(new DefinitionGetDepsVisitor(myOthers, myClassToNonStatic), false)) {
-      if (def instanceof Abstract.Definition) {
-        Boolean good = ((Abstract.Definition) def).accept(new AbstractDefinitionVisitor<Void, Boolean>() {
-          @Override
-          public Boolean visitFunction(Abstract.FunctionDefinition def, Void params) {
-            return def.equals(definition) || doOrder(def);
-          }
+    for (final Abstract.Definition def : definition.accept(new DefinitionGetDepsVisitor(myOthers, myClassToNonStatic), false)) {
+      Boolean good = def.accept(new AbstractDefinitionVisitor<Void, Boolean>() {
+        @Override
+        public Boolean visitFunction(Abstract.FunctionDefinition def, Void params) {
+          return def.equals(definition) || doOrder(def);
+        }
 
-          @Override
-          public Boolean visitAbstract(Abstract.AbstractDefinition def, Void params) {
-            // Calss to abstracts (class fields) can not possibly add any dependencies
-            // as in order to call a field we need to have an instance of the class
-            // which (the class) is the actual dependency.
-            return true;
-          }
+        @Override
+        public Boolean visitAbstract(Abstract.AbstractDefinition def, Void params) {
+          // Calss to abstracts (class fields) can not possibly add any dependencies
+          // as in order to call a field we need to have an instance of the class
+          // which (the class) is the actual dependency.
+          return true;
+        }
 
-          @Override
-          public Boolean visitData(Abstract.DataDefinition def, Void params) {
-            return def.equals(definition) || doOrder(def);
-          }
+        @Override
+        public Boolean visitData(Abstract.DataDefinition def, Void params) {
+          return def.equals(definition) || doOrder(def);
+        }
 
-          @Override
-          public Boolean visitConstructor(Abstract.Constructor def, Void params) {
-            return def.getDataType().equals(definition) || doOrder(def.getDataType());
-          }
+        @Override
+        public Boolean visitConstructor(Abstract.Constructor def, Void params) {
+          return def.getDataType().equals(definition) || doOrder(def.getDataType());
+        }
 
-          @Override
-          public Boolean visitClass(Abstract.ClassDefinition def, Void params) {
-            if (!def.equals(definition) && !doOrder(def)) {
+        @Override
+        public Boolean visitClass(Abstract.ClassDefinition def, Void params) {
+          if (!def.equals(definition) && !doOrder(def)) {
+            return false;
+          }
+          for (Abstract.Definition nonStatic : myClassToNonStatic.get(def)) {
+            if (!(nonStatic.equals(definition)) && !doOrder(nonStatic)) {
               return false;
             }
-            for (Abstract.Definition nonStatic : myClassToNonStatic.get(def)) {
-              if (!(nonStatic.equals(definition)) && !doOrder(nonStatic)) {
-                return false;
-              }
-            }
-            return true;
           }
+          return true;
+        }
 
-          @Override
-          public Boolean visitImplement(Abstract.ImplementDefinition def, Void params) {
-            return def.getParentStatement().getParentDefinition().equals(definition) || doOrder(def.getParentStatement().getParentDefinition());
-          }
-        }, null);
-        if (!good)
-          return false;
-      }
+        @Override
+        public Boolean visitImplement(Abstract.ImplementDefinition def, Void params) {
+          return def.getParentStatement().getParentDefinition().equals(definition) || doOrder(def.getParentStatement().getParentDefinition());
+        }
+      }, null);
+      if (!good)
+        return false;
     }
 
     myVisiting.remove(definition);

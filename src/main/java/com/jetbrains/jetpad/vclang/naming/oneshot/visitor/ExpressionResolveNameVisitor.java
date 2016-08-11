@@ -9,7 +9,6 @@ import com.jetbrains.jetpad.vclang.parser.BinOpParser;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 
 import java.util.ArrayList;
@@ -53,7 +52,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
 
     if (expr.getReferent() == null) {
       if (expression != null || !myContext.contains(expr.getName())) {
-        Referable ref = myNameResolver.resolveDefCall(myParentScope, expr);
+        Abstract.Definition ref = myNameResolver.resolveDefCall(myParentScope, expr);
         if (ref != null) {
           myResolveListener.nameResolved(expr, ref);
         } else if (expression == null) {
@@ -67,7 +66,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   @Override
   public Void visitModuleCall(Abstract.ModuleCallExpression expr, Void params) {
     if (expr.getModule() == null) {
-      Referable ref = myNameResolver.resolveModuleCall(myParentScope, expr);
+      Abstract.Definition ref = myNameResolver.resolveModuleCall(myParentScope, expr);
       if (ref != null) {
         myResolveListener.moduleResolved(expr, ref);
       }
@@ -185,7 +184,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
       NotInScopeError error = null;
       for (Abstract.BinOpSequenceElem elem : sequence) {
         String name = elem.binOp.getName();
-        Referable ref = myParentScope.resolveName(name);
+        Abstract.Definition ref = myParentScope.resolveName(name);
         if (ref != null) {
           parser.pushOnStack(stack, expression, ref, ref.getPrecedence(), elem.binOp);
           expression = elem.argument;
@@ -238,7 +237,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
     if (pattern instanceof Abstract.NamePattern) {
       String name = ((Abstract.NamePattern) pattern).getName();
       if (name == null) return false;
-      Referable ref = myParentScope.resolveName(name);
+      Abstract.Definition ref = myParentScope.resolveName(name);
       if (ref != null && (ref instanceof Constructor || ref instanceof Abstract.Constructor)) {
         return true;
       } else {
@@ -271,7 +270,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
 
     Abstract.ClassDefinition classDef = Abstract.getUnderlyingClassDef(expr);
     for (Abstract.ImplementStatement statement : expr.getStatements()) {
-      Referable resolvedRef = classDef != null ? myNameResolver.resolveClassField(classDef, statement.getName()) : null;
+      Abstract.Definition resolvedRef = classDef != null ? myNameResolver.resolveClassField(classDef, statement.getName()) : null;
       if (resolvedRef instanceof Abstract.AbstractDefinition) {
         myResolveListener.implementResolved(statement, resolvedRef);
       } else {

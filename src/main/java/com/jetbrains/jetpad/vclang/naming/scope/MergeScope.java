@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -21,9 +21,9 @@ public class MergeScope implements Scope {
   }
 
   @Override
-  public Referable resolveName(String name) {
-    Referable ref1 = scope1.resolveName(name);
-    Referable ref2 = scope2.resolveName(name);
+  public Abstract.Definition resolveName(String name) {
+    Abstract.Definition ref1 = scope1.resolveName(name);
+    Abstract.Definition ref2 = scope2.resolveName(name);
 
     if (ref1 == null) return ref2;
     else if (ref2 == null) return ref1;

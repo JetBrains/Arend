@@ -10,7 +10,6 @@ import com.jetbrains.jetpad.vclang.naming.oneshot.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
@@ -63,7 +62,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
       throw new UnsupportedOperationException();
     }
 
-    final Referable referredClass;
+    final Abstract.Definition referredClass;
     if (stat.getModulePath() == null) {
       if (stat.getPath().isEmpty()) {
         myErrorReporter.report(new GeneralError("Structure error: empty namespace command", stat));  // FIXME[error]: report proper

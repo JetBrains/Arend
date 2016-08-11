@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -22,8 +22,8 @@ public class SubScope implements Scope {
   }
 
   @Override
-  public Referable resolveName(String name) {
-    Referable ref = child.resolveName(name);
+  public Abstract.Definition resolveName(String name) {
+    Abstract.Definition ref = child.resolveName(name);
     return ref != null ? ref : parent.resolveName(name);
   }
 }

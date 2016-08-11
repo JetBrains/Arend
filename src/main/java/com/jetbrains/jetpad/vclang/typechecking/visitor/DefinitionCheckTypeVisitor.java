@@ -458,7 +458,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     visiting.add(constructor);
     if (condMap.containsKey(constructor)) {
       for (Abstract.Condition condition : condMap.get(constructor)) {
-        for (Referable def : condition.getTerm().accept(new CollectDefCallsVisitor(), null)) {
+        Set<Abstract.Definition> dependencies = new HashSet<>();
+        condition.getTerm().accept(new CollectDefCallsVisitor(dependencies), null);
+        for (Abstract.Definition def : dependencies) {
           final Definition typeCheckedDef = myState.getTypechecked(def);
           if (typeCheckedDef != null && typeCheckedDef != constructor && typeCheckedDef instanceof Constructor && ((Constructor) typeCheckedDef).getDataType().equals(constructor.getDataType())) {
             List<Constructor> cycle = searchConditionCycle(condMap, (Constructor) typeCheckedDef, visited, visiting);

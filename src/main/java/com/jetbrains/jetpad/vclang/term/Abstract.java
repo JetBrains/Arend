@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.module.ModuleID;
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
@@ -67,14 +66,14 @@ public final class Abstract {
   public interface ModuleCallExpression extends Expression {
     byte PREC = 12;
     List<String> getPath();
-    Referable getModule();
+    Definition getModule();
   }
 
   public interface DefCallExpression extends Expression {
     byte PREC = 12;
     String getName();
     Expression getExpression();
-    Referable getReferent();
+    Definition getReferent();
   }
 
   public interface ClassExtExpression extends Expression {
@@ -95,7 +94,7 @@ public final class Abstract {
 
   public interface ImplementStatement extends SourceNode {
     String getName();
-    Referable getImplementedField();
+    Definition getImplementedField();
     Expression getExpression();
   }
 
@@ -137,7 +136,7 @@ public final class Abstract {
   }
 
   public interface BinOpExpression extends Expression {
-    Referable getResolvedBinOp();
+    Definition getResolvedBinOp();
     Expression getLeft();
     Expression getRight();
   }
@@ -288,7 +287,7 @@ public final class Abstract {
     Definition getDefinition();
   }
 
-  public interface Definition extends Referable, SourceNode {
+  public interface Definition extends Binding, SourceNode {
     enum Arrow { LEFT, RIGHT }
 
     DefineStatement getParentStatement();
@@ -308,7 +307,7 @@ public final class Abstract {
   }
 
   public interface ImplementDefinition extends Definition {
-    Referable getImplemented();
+    Definition getImplemented();
     Expression getExpression();
   }
 
@@ -389,7 +388,7 @@ public final class Abstract {
     List<String> getModulePath();
     List<String> getPath();
 
-    Referable getResolvedClass();
+    Definition getResolvedClass();
 
     List<String> getNames();
   }

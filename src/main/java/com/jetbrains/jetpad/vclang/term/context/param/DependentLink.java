@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.context.param;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
+import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
@@ -135,10 +135,10 @@ public interface DependentLink extends Binding {
       return accept(link, new SubstVisitor(new ExprSubstitution(), new LevelSubstitution()), null);
     }
 
-    public static boolean findBinding(DependentLink link, Callable callable) {
+    public static boolean findBinding(DependentLink link, Referable referable) {
       for (; link.hasNext(); link = link.getNext()) {
         link = link.getNextTyped(null);
-        if (link.getType().findBinding(callable)) {
+        if (link.getType().findBinding(referable)) {
           return true;
         }
       }

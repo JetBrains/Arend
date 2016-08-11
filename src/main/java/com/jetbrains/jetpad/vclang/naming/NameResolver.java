@@ -5,8 +5,6 @@ import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
 
 import java.util.List;
 
@@ -53,12 +51,12 @@ public class NameResolver {
     return parentNs != null ? parentNs.getSubmoduleNamespace(moduleCall.getName()) : null;
   }
 
-  public Referable resolveDefinition(final Scope curretScope, final List<String> path) {
+  public Abstract.Definition resolveDefinition(final Scope curretScope, final List<String> path) {
     if (path.isEmpty()) {
       throw new IllegalArgumentException();
     } else {
       Scope scope = curretScope;
-      Referable ref = null;
+      Abstract.Definition ref = null;
       for (String name : path) {
         ref = scope.resolveName(name);
         if (ref == null) return null;
@@ -68,7 +66,7 @@ public class NameResolver {
     }
   }
 
-  public Referable resolveDefCall(final Scope curretScope, final Abstract.DefCallExpression defCall) {
+  public Abstract.Definition resolveDefCall(final Scope curretScope, final Abstract.DefCallExpression defCall) {
     if (defCall.getReferent() != null) {
       return defCall.getReferent();
     }
@@ -77,7 +75,7 @@ public class NameResolver {
     if (defCall.getExpression() == null) {
       return curretScope.resolveName(defCall.getName());
     } else if (defCall.getExpression() instanceof Abstract.DefCallExpression) {
-      Referable exprTarget = resolveDefCall(curretScope, (Abstract.DefCallExpression) defCall.getExpression());
+      Abstract.Definition exprTarget = resolveDefCall(curretScope, (Abstract.DefCallExpression) defCall.getExpression());
       final Namespace ns;
       if (exprTarget != null) {
         ns = staticNamespaceFor(exprTarget);
@@ -93,7 +91,7 @@ public class NameResolver {
     }
   }
 
-  public Referable resolveModuleCall(final Scope curretScope, final Abstract.ModuleCallExpression moduleCall) {
+  public Abstract.Definition resolveModuleCall(final Scope curretScope, final Abstract.ModuleCallExpression moduleCall) {
     if (moduleCall.getModule() != null) {
       return moduleCall.getModule();
     }
@@ -106,27 +104,15 @@ public class NameResolver {
     return ns.getRegisteredClass();
   }
 
-  public Referable resolveClassField(Referable classDefiniton, String name) {
+  public Abstract.Definition resolveClassField(Abstract.ClassDefinition classDefiniton, String name) {
     return dynamicNamespaceFor(classDefiniton).resolveName(name);
   }
 
-  public Namespace staticNamespaceFor(Referable ref) {
-    if (ref instanceof Definition) {
-      return ((Definition) ref).getOwnNamespace();
-    } else if (ref instanceof Abstract.Definition) {
-      return myStaticNamespaceProvider.forDefinition((Abstract.Definition) ref);
-    } else {
-      throw new IllegalStateException();
-    }
+  public Namespace staticNamespaceFor(Abstract.Definition ref) {
+    return myStaticNamespaceProvider.forDefinition(ref);
   }
 
-  public Namespace dynamicNamespaceFor(Referable ref) {
-    if (ref instanceof ClassDefinition) {
-      return ((ClassDefinition) ref).getInstanceNamespace();
-    } else if (ref instanceof Abstract.ClassDefinition) {
-      return myDynamicNamespaceProvider.forClass((Abstract.ClassDefinition) ref);
-    } else {
-      throw new IllegalStateException();
-    }
+  public Namespace dynamicNamespaceFor(Abstract.ClassDefinition ref) {
+    return myDynamicNamespaceProvider.forClass(ref);
   }
 }

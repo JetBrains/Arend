@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.naming.namespace.EmptyNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
@@ -13,7 +12,7 @@ import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class Definition implements Referable, Callable {
+public abstract class Definition implements Referable {
   protected List<Binding> myPolyParams = new ArrayList<>();
   private boolean myHasErrors;
   private ClassDefinition myThisClass;
@@ -24,7 +23,6 @@ public abstract class Definition implements Referable, Callable {
     myHasErrors = true;
   }
 
-  @Override
   public String getName() {
     return myAbstractDefinition.getName();
   }
@@ -34,11 +32,6 @@ public abstract class Definition implements Referable, Callable {
   }
 
   public abstract Type getType();
-
-  @Override
-  public Abstract.Definition.Precedence getPrecedence() {
-    return myAbstractDefinition.getPrecedence();
-  }
 
   public abstract DefCallExpression getDefCall();
 

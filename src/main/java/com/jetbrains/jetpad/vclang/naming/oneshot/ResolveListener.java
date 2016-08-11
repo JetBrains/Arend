@@ -1,16 +1,15 @@
 package com.jetbrains.jetpad.vclang.naming.oneshot;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
 
 public interface ResolveListener {
-  void nameResolved(Abstract.DefCallExpression defCallExpression, Referable definition);
-  void moduleResolved(Abstract.ModuleCallExpression moduleCallExpression, Referable definition);
-  void nsCmdResolved(Abstract.NamespaceCommandStatement nsCmdStatement, Referable definition);
-  void implementResolved(Abstract.ImplementDefinition identifier, Referable definition);
-  void implementResolved(Abstract.ImplementStatement identifier, Referable definition);
+  void nameResolved(Abstract.DefCallExpression defCallExpression, Abstract.Definition definition);
+  void moduleResolved(Abstract.ModuleCallExpression moduleCallExpression, Abstract.Definition definition);
+  void nsCmdResolved(Abstract.NamespaceCommandStatement nsCmdStatement, Abstract.Definition definition);
+  void implementResolved(Abstract.ImplementDefinition identifier, Abstract.Definition definition);
+  void implementResolved(Abstract.ImplementStatement identifier, Abstract.Definition definition);
 
-  Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Referable binOp, Abstract.DefCallExpression var, Abstract.Expression right);
+  Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Abstract.Definition binOp, Abstract.DefCallExpression var, Abstract.Expression right);
   Abstract.Expression makeError(Abstract.BinOpSequenceExpression binOpExpr, Abstract.SourceNode node);
   void replaceBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression expression);
   void replaceWithConstructor(Abstract.PatternArgument patternArg);

@@ -10,7 +10,6 @@ import com.jetbrains.jetpad.vclang.naming.oneshot.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.scope.*;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 
 import java.util.ArrayList;
@@ -221,9 +220,9 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
 
     Abstract.Definition parentDef = def.getParentStatement().getParentDefinition();
 
-    Referable referable = null;
+    Abstract.Definition referable = null;
     if (parentDef instanceof Abstract.ClassDefinition) {
-      referable = myNameResolver.resolveClassField(parentDef, def.getName());
+      referable = myNameResolver.resolveClassField((Abstract.ClassDefinition) parentDef, def.getName());
     }
     if (referable instanceof Abstract.AbstractDefinition) {
       myResolveListener.implementResolved(def, referable);

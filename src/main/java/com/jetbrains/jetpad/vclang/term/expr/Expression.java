@@ -4,9 +4,9 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
@@ -66,11 +66,11 @@ public abstract class Expression implements PrettyPrintable, Type {
   }
 
   @Override
-  public boolean findBinding(Callable binding) {
+  public boolean findBinding(Referable binding) {
     return accept(new FindBindingVisitor(Collections.singleton(binding)), null);
   }
 
-  public boolean findBinding(Set<? extends Callable> bindings) {
+  public boolean findBinding(Set<? extends Referable> bindings) {
     return accept(new FindBindingVisitor(bindings), null);
   }
 

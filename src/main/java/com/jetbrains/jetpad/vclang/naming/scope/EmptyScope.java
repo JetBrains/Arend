@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.Collections;
 import java.util.Set;
@@ -12,7 +12,7 @@ public class EmptyScope implements Scope {
   }
 
   @Override
-  public Referable resolveName(String name) {
+  public Abstract.Definition resolveName(String name) {
     return null;
   }
 }

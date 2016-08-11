@@ -1,36 +1,35 @@
 package com.jetbrains.jetpad.vclang.naming.oneshot;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
 
 public class BaseResolveListener implements ResolveListener {
   @Override
-  public void nameResolved(Abstract.DefCallExpression defCallExpression, Referable resolvedDefinition) {
+  public void nameResolved(Abstract.DefCallExpression defCallExpression, Abstract.Definition resolvedDefinition) {
 
   }
 
   @Override
-  public void moduleResolved(Abstract.ModuleCallExpression moduleCallExpression, Referable module) {
+  public void moduleResolved(Abstract.ModuleCallExpression moduleCallExpression, Abstract.Definition module) {
 
   }
 
   @Override
-  public void nsCmdResolved(Abstract.NamespaceCommandStatement nsCmdStatement, Referable definition) {
+  public void nsCmdResolved(Abstract.NamespaceCommandStatement nsCmdStatement, Abstract.Definition definition) {
 
   }
 
   @Override
-  public void implementResolved(Abstract.ImplementDefinition identifier, Referable definition) {
+  public void implementResolved(Abstract.ImplementDefinition identifier, Abstract.Definition definition) {
 
   }
 
   @Override
-  public void implementResolved(Abstract.ImplementStatement identifier, Referable definition) {
+  public void implementResolved(Abstract.ImplementStatement identifier, Abstract.Definition definition) {
 
   }
 
   @Override
-  public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Referable definition, Abstract.DefCallExpression var, Abstract.Expression right) {
+  public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Abstract.Definition definition, Abstract.DefCallExpression var, Abstract.Expression right) {
     return null;
   }
 

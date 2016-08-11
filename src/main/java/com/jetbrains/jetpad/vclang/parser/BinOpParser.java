@@ -1,10 +1,9 @@
 package com.jetbrains.jetpad.vclang.parser;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.oneshot.ResolveListener;
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.util.List;
 
@@ -21,11 +20,11 @@ public class BinOpParser {
 
   public class StackElem {
     public Abstract.Expression argument;
-    public Referable binOp;
+    public Abstract.Definition binOp;
     public Abstract.Definition.Precedence prec;
     public Abstract.DefCallExpression var;
 
-    public StackElem(Abstract.Expression argument, Referable binOp, Abstract.Definition.Precedence prec, Abstract.DefCallExpression var) {
+    public StackElem(Abstract.Expression argument, Abstract.Definition binOp, Abstract.Definition.Precedence prec, Abstract.DefCallExpression var) {
       this.argument = argument;
       this.binOp = binOp;
       this.prec = prec;
@@ -33,7 +32,7 @@ public class BinOpParser {
     }
   }
 
-  public void pushOnStack(List<StackElem> stack, Abstract.Expression argument, Referable binOp, Abstract.Definition.Precedence prec, Abstract.DefCallExpression var) {
+  public void pushOnStack(List<StackElem> stack, Abstract.Expression argument, Abstract.Definition binOp, Abstract.Definition.Precedence prec, Abstract.DefCallExpression var) {
     StackElem elem = new StackElem(argument, binOp, prec, var);
     if (stack.isEmpty()) {
       stack.add(elem);

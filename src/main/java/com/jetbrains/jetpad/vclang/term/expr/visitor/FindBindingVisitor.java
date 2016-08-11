@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.term.context.binding.Callable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
@@ -15,9 +15,9 @@ import java.util.Map;
 import java.util.Set;
 
 public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> implements ElimTreeNodeVisitor<Void, Boolean> {
-  private final Set<? extends Callable> myBindings;
+  private final Set<? extends Referable> myBindings;
 
-  public FindBindingVisitor(Set<? extends Callable> binding) {
+  public FindBindingVisitor(Set<? extends Referable> binding) {
     myBindings = binding;
   }
 

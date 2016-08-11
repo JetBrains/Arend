@@ -76,7 +76,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     // \x y. y (y x) : N -> (N -> N) -> N
     Concrete.Expression expr = cLam("x", cLam("y", cApps(cVar("y"), cApps(cVar("y"), cVar("x")))));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Nat(), Pi(Pi(Nat(), Nat()), Nat())));
+    new CheckTypeVisitor.Builder(state, new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Nat(), Pi(Pi(Nat(), Nat()), Nat())));
     assertErrorListIsEmpty(errorReporter.getErrorList());
   }
 
@@ -95,7 +95,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     Expression type = Pi(f, Pi(Pi(x2, Pi(Apps(Reference(context.get(0)), Reference(x2)), Apps(Reference(context.get(1)), Reference(x2), Apps(Reference(f), Reference(x2))))), Apps(Reference(context.get(1)), Zero(), Apps(Reference(f), Zero()))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    new CheckTypeVisitor.Builder(context, errorReporter).build().checkType(expr, type);
+    new CheckTypeVisitor.Builder(state, context, errorReporter).build().checkType(expr, type);
     assertErrorListIsEmpty(errorReporter.getErrorList());
   }
 
@@ -119,7 +119,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     // (X : Type1) -> X -> X : Type2
     Concrete.Expression expr = cPi("X", cUniverse(1), cPi(cVar("X"), cVar("X")));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    assertEquals(Universe(2), expr.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build(), null).type.toExpression());
+    assertEquals(Universe(2), expr.accept(new CheckTypeVisitor.Builder(state, new ArrayList<Binding>(), errorReporter).build(), null).type.toExpression());
     assertErrorListIsEmpty(errorReporter.getErrorList());
   }
 
@@ -128,7 +128,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     // (f : Type1 -> Type1) -> f Type1
     Concrete.Expression expr = cPi("f", cPi(cUniverse(1), cUniverse(1)), cApps(cVar("f"), cUniverse(1)));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    assertEquals(null, expr.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build(), null));
+    assertEquals(null, expr.accept(new CheckTypeVisitor.Builder(state, new ArrayList<Binding>(), errorReporter).build(), null));
     assertErrorListSize(errorReporter.getErrorList(), 1);
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof TypeMismatchError);
   }
@@ -141,7 +141,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     defs.add(new TypedBinding("f", Pi(Nat(), Pi(Nat(), Nat()))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    assertNull(expr.accept(new CheckTypeVisitor.Builder(defs, errorReporter).build(), null));
+    assertNull(expr.accept(new CheckTypeVisitor.Builder(state, defs, errorReporter).build(), null));
     assertErrorListSize(errorReporter.getErrorList(), 2);
   }
 
@@ -150,7 +150,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     // \x:Nat. x : Nat -> Nat
     Concrete.Expression expr = cLam(cargs(cTele(true, cvars("x"), cNat())), cVar("x"));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build(), null);
+    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(state, new ArrayList<Binding>(), errorReporter).build(), null);
     assertEquals(Pi(Nat(), Nat()), result.type);
     assertErrorListIsEmpty(errorReporter.getErrorList());
   }
@@ -160,7 +160,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     // \x y. x : Nat -> Nat
     Concrete.Expression expr = cLam(cargs(cName("x"), cName("y")), cVar("x"));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    assertNull(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Nat(), Nat())));
+    assertNull(new CheckTypeVisitor.Builder(state, new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Nat(), Nat())));
     assertErrorListSize(errorReporter.getErrorList(), 1);
   }
 
@@ -176,7 +176,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     // \x. x : (Nat -> Nat) -> Nat
     Concrete.Expression expr = cLam("x", cVar("x"));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Pi(Nat(), Nat()), Nat()));
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(state, new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Pi(Nat(), Nat()), Nat()));
     assertEquals(null, result);
     assertErrorListSize(errorReporter.getErrorList(), 1);
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof TypeMismatchError);
@@ -187,7 +187,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     // \x. x x : (Nat -> Nat) -> Nat
     Concrete.Expression expr = cLam("x", cApps(cVar("x"), cVar("x")));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Pi(Nat(), Nat()), Nat()));
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(state, new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Pi(Nat(), Nat()), Nat()));
     assertEquals(null, result);
     assertErrorListSize(errorReporter.getErrorList(), 1);
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof TypeMismatchError);
@@ -198,7 +198,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     // \x. x 0 : (Nat -> Nat) -> Nat -> Nat
     Concrete.Expression expr = cLam("x", cApps(cVar("x"), cZero()));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat())));
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(state, new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat())));
     assertEquals(null, result);
     assertErrorListSize(errorReporter.getErrorList(), 1);
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof TypeMismatchError);
@@ -210,7 +210,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     Concrete.Expression expr = cLam(cargs(cTele(cvars("F"), cPi(cNat(), cUniverse(0))), cTele(cvars("f"), cPi(ctypeArgs(cTele(cvars("x"), cNat())), cApps(cVar("F"), cVar("x"))))),
             cLet(clets(clet("x", cZero())), cApps(cVar("f"), cVar("x"))));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, null);
+    new CheckTypeVisitor.Builder(state, new ArrayList<Binding>(), errorReporter).build().checkType(expr, null);
     assertErrorListIsEmpty(errorReporter.getErrorList());
   }
 
@@ -227,7 +227,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
             cTele(cvars("f"), cPi(ctypeArgs(cTele(false, cvars("A"), cUniverse(0)), cTele(cvars("x"), cVar("A"))), cApps(cVar("F"), cVar("x"))))),
         cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cNat(), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar("f"), cVar("x"))));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build(), null);
+    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(state, new ArrayList<Binding>(), errorReporter).build(), null);
     Expression typeCodom = ((Expression) result.type).getPiParameters(new ArrayList<DependentLink>(), true, false);
     assertNotNull(typeCodom.toLet());
   }
@@ -237,7 +237,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     // \let | x (y : Nat) => Zero \in x : Nat -> Nat
     Concrete.Expression expr = cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cZero())), cVar("x"));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build(), null);
+    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(state, new ArrayList<Binding>(), errorReporter).build(), null);
     assertErrorListIsEmpty(errorReporter.getErrorList());
     assertEquals(Pi(Nat(), Nat()), result.type.normalize(NormalizeVisitor.Mode.WHNF));
   }

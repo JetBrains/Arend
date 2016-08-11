@@ -3,10 +3,10 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.NamespaceUtil;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.order.TypecheckingOrdering;
@@ -110,7 +110,7 @@ public class TypeCheckingTestCase extends PreludeTest {
     }
 
     public Definition getDefinition(String path) {
-      Referable ref = NamespaceUtil.get(classDefinition, path);
+      Abstract.Definition ref = NamespaceUtil.get(classDefinition, path);
       return ref != null ? typecheckerState.getTypechecked(ref) : null;
     }
   }

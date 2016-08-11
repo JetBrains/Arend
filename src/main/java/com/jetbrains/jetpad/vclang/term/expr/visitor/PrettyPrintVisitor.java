@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.StatementPrettyPrintVisitor;
 
@@ -340,7 +339,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       boolean increaseIndent(List<String> right_strings) {
         Abstract.Expression r = expr.getRight();
         if (r instanceof Abstract.BinOpExpression) {
-          Referable referable = ((Abstract.BinOpExpression) r).getResolvedBinOp();
+          Abstract.Definition referable = ((Abstract.BinOpExpression) r).getResolvedBinOp();
           if (referable!=null) {
             if (prec <= referable.getPrecedence().priority) return false; // no bracket drawn
           }

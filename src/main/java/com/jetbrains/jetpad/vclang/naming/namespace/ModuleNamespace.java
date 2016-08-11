@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.naming.namespace;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,10 +21,10 @@ public class ModuleNamespace implements Namespace {
   }
 
   @Override
-  public Referable resolveName(String name) {
+  public Abstract.Definition resolveName(String name) {
     ModuleNamespace submoduleNamespace = getSubmoduleNamespace(name);
     Abstract.ClassDefinition submodule = submoduleNamespace != null ? submoduleNamespace.getRegisteredClass() : null;
-    Referable resolved = myClassNamespace != null ? myClassNamespace.resolveName(name) : null;
+    Abstract.Definition resolved = myClassNamespace != null ? myClassNamespace.resolveName(name) : null;
 
     if (submodule == null) return resolved;
     else if (resolved == null) return submodule;

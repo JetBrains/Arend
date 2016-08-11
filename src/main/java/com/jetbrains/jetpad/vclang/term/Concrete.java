@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.module.ModuleID;
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractCompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
@@ -231,7 +230,7 @@ public final class Concrete {
       return mySequence;
     }
 
-    public BinOpExpression makeBinOp(Abstract.Expression left, Referable binOp, Abstract.DefCallExpression var, Abstract.Expression right) {
+    public BinOpExpression makeBinOp(Abstract.Expression left, Abstract.Definition binOp, Abstract.DefCallExpression var, Abstract.Expression right) {
       assert left instanceof Expression && right instanceof Expression && var instanceof Expression;
       return new BinOpExpression(((Expression) var).getPosition(), (Expression) left, binOp, (Expression) right);
     }
@@ -253,11 +252,11 @@ public final class Concrete {
   }
 
   public static class BinOpExpression extends Expression implements Abstract.BinOpExpression {
-    private final Referable myBinOp;
+    private final Abstract.Definition myBinOp;
     private final Expression myLeft;
     private final Expression myRight;
 
-    public BinOpExpression(Position position, Expression left, Referable binOp, Expression right) {
+    public BinOpExpression(Position position, Expression left, Abstract.Definition binOp, Expression right) {
       super(position);
       myLeft = left;
       myBinOp = binOp;
@@ -265,17 +264,17 @@ public final class Concrete {
     }
 
     @Override
-    public Referable getResolvedBinOp() {
+    public Abstract.Definition getResolvedBinOp() {
       return myBinOp;
     }
 
     @Override
-    public Concrete.Expression getLeft() {
+    public Expression getLeft() {
       return myLeft;
     }
 
     @Override
-    public Concrete.Expression getRight() {
+    public Expression getRight() {
       return myRight;
     }
 
@@ -288,7 +287,7 @@ public final class Concrete {
   public static class DefCallExpression extends Expression implements Abstract.DefCallExpression {
     private Expression myExpression;
     private String myName;
-    private Referable myDefinition;
+    private Abstract.Definition myDefinition;
 
     public DefCallExpression(Position position, Expression expression, String name) {
       super(position);
@@ -297,7 +296,7 @@ public final class Concrete {
       myDefinition = null;
     }
 
-    public DefCallExpression(Position position, Referable definition) {
+    public DefCallExpression(Position position, Abstract.Definition definition) {
       super(position);
       myExpression = null;
       myName = definition.getName();
@@ -308,7 +307,7 @@ public final class Concrete {
       super(position);
       myExpression = null;
       myName = definition.getName();
-      myDefinition = definition;
+      myDefinition = definition.getAbstractDefinition();
     }
 
     @Override
@@ -317,11 +316,11 @@ public final class Concrete {
     }
 
     @Override
-    public Referable getReferent() {
+    public Abstract.Definition getReferent() {
       return myDefinition;
     }
 
-    public void setResolvedDefinition(Referable definition) {
+    public void setResolvedDefinition(Abstract.Definition definition) {
       myDefinition = definition;
     }
 
@@ -338,7 +337,7 @@ public final class Concrete {
 
   public static class ModuleCallExpression extends Expression implements Abstract.ModuleCallExpression {
     private final List<String> myPath;
-    private Referable myModule;
+    private Abstract.Definition myModule;
 
     public ModuleCallExpression(Position position, List<String> path) {
       super(position);
@@ -351,11 +350,11 @@ public final class Concrete {
     }
 
     @Override
-    public Referable getModule() {
+    public Abstract.Definition getModule() {
       return myModule;
     }
 
-    public void setModule(Referable module) {
+    public void setModule(Abstract.Definition module) {
       myModule = module;
     }
 
@@ -393,7 +392,7 @@ public final class Concrete {
 
   public static class ImplementStatement extends SourceNode implements Abstract.ImplementStatement {
     private final String myName;
-    private Referable myImplementedField;
+    private Abstract.Definition myImplementedField;
     private final Expression myExpression;
 
     public ImplementStatement(Position position, String identifier, Expression expression) {
@@ -408,11 +407,11 @@ public final class Concrete {
     }
 
     @Override
-    public Referable getImplementedField() {
+    public Abstract.Definition getImplementedField() {
       return myImplementedField;
     }
 
-    public void setImplementedField(Referable newImplementedField) {
+    public void setImplementedField(Abstract.Definition newImplementedField) {
       myImplementedField = newImplementedField;
     }
 
@@ -920,7 +919,7 @@ public final class Concrete {
   }
 
   public static class ImplementDefinition extends Definition implements Abstract.ImplementDefinition {
-    private Referable myImplemented;
+    private Abstract.Definition myImplemented;
     private final Expression myExpression;
 
     public ImplementDefinition(Position position, String name, Expression expression) {
@@ -929,11 +928,11 @@ public final class Concrete {
     }
 
     @Override
-    public Referable getImplemented() {
+    public Abstract.Definition getImplemented() {
       return myImplemented;
     }
 
-    public void setImplemented(Referable implemented) {
+    public void setImplemented(Abstract.Definition implemented) {
       myImplemented = implemented;
     }
 
@@ -1298,7 +1297,7 @@ public final class Concrete {
 
   public static class NamespaceCommandStatement extends Statement implements Abstract.NamespaceCommandStatement {
     private final Kind myKind;
-    private Referable myDefinition;
+    private Abstract.Definition myDefinition;
     private final List<String> myModulePath;
     private final List<String> myPath;
     private final List<String> myNames;
@@ -1327,12 +1326,12 @@ public final class Concrete {
       return myPath;
     }
 
-    public void setResolvedClass(Referable resolvedClass) {
+    public void setResolvedClass(Abstract.Definition resolvedClass) {
       myDefinition = resolvedClass;
     }
 
     @Override
-    public Referable getResolvedClass() {
+    public Abstract.Definition getResolvedClass() {
       return myDefinition;
     }
 

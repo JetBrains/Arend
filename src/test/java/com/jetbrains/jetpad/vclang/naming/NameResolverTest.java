@@ -28,8 +28,8 @@ public class NameResolverTest {
     Definition mul = new FunctionDefinition(new Concrete.FunctionDefinition(POSITION, "*", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 7), Collections.<Concrete.Argument>emptyList(), null, Abstract.Definition.Arrow.RIGHT, null, Collections.<Concrete.Statement>emptyList()), EmptyNamespace.INSTANCE, parameters, Nat(), EmptyElimTreeNode.getInstance());
 
     SimpleNamespace namespace = new SimpleNamespace();
-    namespace.addDefinition(plus);
-    namespace.addDefinition(mul);
+    namespace.addDefinition(plus.getAbstractDefinition());
+    namespace.addDefinition(mul.getAbstractDefinition());
 
     Concrete.Expression result = resolveNamesExpr(namespace, "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)");
     assertNotNull(result);
@@ -43,8 +43,8 @@ public class NameResolverTest {
     Definition mul = new FunctionDefinition(new Concrete.FunctionDefinition(POSITION, "*", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.RIGHT_ASSOC, (byte) 6), Collections.<Concrete.Argument>emptyList(), null, Abstract.Definition.Arrow.RIGHT, null, Collections.<Concrete.Statement>emptyList()), EmptyNamespace.INSTANCE, parameters, Nat(), EmptyElimTreeNode.getInstance());
 
     SimpleNamespace namespace = new SimpleNamespace();
-    namespace.addDefinition(plus);
-    namespace.addDefinition(mul);
+    namespace.addDefinition(plus.getAbstractDefinition());
+    namespace.addDefinition(mul.getAbstractDefinition());
 
     resolveNamesExpr(namespace, "11 + 2 * 3", 1);
   }

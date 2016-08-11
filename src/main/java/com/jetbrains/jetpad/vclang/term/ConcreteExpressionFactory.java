@@ -28,7 +28,7 @@ public class ConcreteExpressionFactory {
 
   public static Concrete.DefCallExpression cDefCall(Concrete.Expression expr, Definition definition, String name) {
     Concrete.DefCallExpression result = new Concrete.DefCallExpression(POSITION, expr, name);
-    result.setResolvedDefinition(definition);
+    result.setResolvedDefinition(definition.getAbstractDefinition());
     return result;
   }
 
@@ -236,7 +236,7 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.BinOpExpression cBinOp(Concrete.Expression left, Definition binOp, Concrete.Expression right) {
-    return new Concrete.BinOpExpression(POSITION, left, binOp, right);
+    return new Concrete.BinOpExpression(POSITION, left, binOp.getAbstractDefinition(), right);
   }
 
   public static Concrete.NumericLiteral cNum(int num) {

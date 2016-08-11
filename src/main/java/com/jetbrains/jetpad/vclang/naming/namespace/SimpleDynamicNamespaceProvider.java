@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming.namespace;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
 
 import java.util.*;
 
@@ -33,7 +32,7 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
         hiding.add(identifier.getName());
       }
 
-      for (Map.Entry<String, Referable> entry : namespace.getEntrySet()) {
+      for (Map.Entry<String, Abstract.Definition> entry : namespace.getEntrySet()) {
         if (hiding.contains(entry.getKey())) continue;
         String newName = renamings.get(entry.getKey());
         ns.addDefinition(newName != null ? newName : entry.getKey(), entry.getValue());

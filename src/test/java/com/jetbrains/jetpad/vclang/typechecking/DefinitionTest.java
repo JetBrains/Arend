@@ -153,7 +153,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     Constructor con = def.getConstructor("con");
     Concrete.Expression expr = cApps(cDefCall(null, con), cNat(), cZero(), cZero());
 
-    CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, null);
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(state, new ArrayList<Binding>(), errorReporter).build().checkType(expr, null);
     assertErrorListSize(errorReporter.getErrorList(), 0);
     assertNotNull(result);
     assertEquals(Apps(DataCall(def), Nat()), result.type);
@@ -168,7 +168,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(Apps(DataCall(def), Pi(Nat(), Nat())), Nat())));
 
-    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(localContext, errorReporter).build(), null);
+    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(state, localContext, errorReporter).build(), null);
     assertErrorListSize(errorReporter.getErrorList(), 0);
     assertNotNull(result);
     assertEquals(Nat(), result.type);
@@ -183,7 +183,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(Pi(Nat(), Apps(DataCall(def), Nat())), Pi(Nat(), Nat()))));
 
-    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(localContext, errorReporter).build(), null);
+    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(state, localContext, errorReporter).build(), null);
     assertErrorListSize(errorReporter.getErrorList(), 0);
     assertNotNull(result);
     assertEquals(Pi(Nat(), Nat()), result.type);

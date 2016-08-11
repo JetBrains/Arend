@@ -44,7 +44,7 @@ public class TypeCheckingDefCall {
   }
 
   public CheckTypeVisitor.Result typeCheckDefCall(Abstract.DefCallExpression expr) {
-    Referable resolvedDefinition = expr.getReferent();
+    Abstract.Definition resolvedDefinition = expr.getReferent();
     if (resolvedDefinition != null) {
       final Definition typeCheckedDefinition = myState.getTypechecked(resolvedDefinition);
       if (typeCheckedDefinition == null) {
@@ -85,7 +85,7 @@ public class TypeCheckingDefCall {
         ClassDefinition classDefinition = type.toClassCall().getDefinition();
 
         Definition definition;
-        Referable member = classDefinition.getInstanceNamespace().resolveName(name);
+        Abstract.Definition member = classDefinition.getInstanceNamespace().resolveName(name);
         if (member == null) {
           MemberNotFoundError error = new MemberNotFoundError(myParentDefinition, classDefinition, name, false, expr);
           expr.setWellTyped(myVisitor.getContext(), Error(null, error));
@@ -139,7 +139,7 @@ public class TypeCheckingDefCall {
     }
 
     final Definition leftDefinition;
-    final Referable member;
+    final Abstract.Definition member;
     Expression thisExpr = null;
     ClassCallExpression classCall = result.expression.toClassCall();
     if (classCall != null) {

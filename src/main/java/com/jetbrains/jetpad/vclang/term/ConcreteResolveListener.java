@@ -1,36 +1,35 @@
 package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.naming.oneshot.ResolveListener;
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
 
 public class ConcreteResolveListener implements ResolveListener {
   @Override
-  public void nameResolved(Abstract.DefCallExpression defCallExpression, Referable definition) {
+  public void nameResolved(Abstract.DefCallExpression defCallExpression, Abstract.Definition definition) {
     ((Concrete.DefCallExpression) defCallExpression).setResolvedDefinition(definition);
   }
 
   @Override
-  public void moduleResolved(Abstract.ModuleCallExpression moduleCallExpression, Referable module) {
+  public void moduleResolved(Abstract.ModuleCallExpression moduleCallExpression, Abstract.Definition module) {
     ((Concrete.ModuleCallExpression) moduleCallExpression).setModule(module);
   }
 
   @Override
-  public void nsCmdResolved(Abstract.NamespaceCommandStatement nsCmdStatement, Referable definition) {
+  public void nsCmdResolved(Abstract.NamespaceCommandStatement nsCmdStatement, Abstract.Definition definition) {
     ((Concrete.NamespaceCommandStatement) nsCmdStatement).setResolvedClass(definition);
   }
 
   @Override
-  public void implementResolved(Abstract.ImplementDefinition implementDef, Referable definition) {
+  public void implementResolved(Abstract.ImplementDefinition implementDef, Abstract.Definition definition) {
     ((Concrete.ImplementDefinition) implementDef).setImplemented(definition);
   }
 
   @Override
-  public void implementResolved(Abstract.ImplementStatement implementStmt, Referable definition) {
+  public void implementResolved(Abstract.ImplementStatement implementStmt, Abstract.Definition definition) {
     ((Concrete.ImplementStatement) implementStmt).setImplementedField(definition);
   }
 
   @Override
-  public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Referable binOp, Abstract.DefCallExpression var, Abstract.Expression right) {
+  public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Abstract.Definition binOp, Abstract.DefCallExpression var, Abstract.Expression right) {
     return ((Concrete.BinOpSequenceExpression) binOpExpr).makeBinOp(left, binOp, var, right);
   }
 
