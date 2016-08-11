@@ -950,17 +950,13 @@ public final class Concrete {
 
   public static class FunctionDefinition extends SignatureDefinition implements Abstract.FunctionDefinition {
     private final Abstract.Definition.Arrow myArrow;
-    private final boolean myOverridden;
-    private final String myOriginalName;
     private final Expression myTerm;
     private final List<Statement> myStatements;
 
-    public FunctionDefinition(Position position, String name, Precedence precedence, List<Argument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term, boolean overridden, String originalName, List<Statement> statements) {
+    public FunctionDefinition(Position position, String name, Precedence precedence, List<Argument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term, List<Statement> statements) {
       super(position, name, precedence, arguments, resultType);
       myArrow = arrow;
       myTerm = term;
-      myOverridden = overridden;
-      myOriginalName = originalName;
       myStatements = statements;
     }
 
@@ -972,16 +968,6 @@ public final class Concrete {
     @Override
     public Definition.Arrow getArrow() {
       return myArrow;
-    }
-
-    @Override
-    public boolean isOverridden() {
-      return myOverridden;
-    }
-
-    @Override
-    public String getOriginalName() {
-      return myOriginalName;
     }
 
     @Override

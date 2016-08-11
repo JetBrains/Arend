@@ -12,10 +12,11 @@ import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
 import org.junit.Test;
 
+import java.util.Collections;
+
 import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.*;
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.compare;
-import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.cBinOp;
-import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.cNum;
+import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.*;
 
@@ -23,8 +24,8 @@ public class NameResolverTest {
   @Test
   public void parserInfix() {
     DependentLink parameters = param(true, vars("x", "y"), Nat());
-    Definition plus = new FunctionDefinition("+", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 6), EmptyNamespace.INSTANCE, parameters, Nat(), EmptyElimTreeNode.getInstance());
-    Definition mul = new FunctionDefinition("*", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 7), EmptyNamespace.INSTANCE, parameters, Nat(), EmptyElimTreeNode.getInstance());
+    Definition plus = new FunctionDefinition(new Concrete.FunctionDefinition(POSITION, "+", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 6), Collections.<Concrete.Argument>emptyList(), null, Abstract.Definition.Arrow.RIGHT, null, Collections.<Concrete.Statement>emptyList()), EmptyNamespace.INSTANCE, parameters, Nat(), EmptyElimTreeNode.getInstance());
+    Definition mul = new FunctionDefinition(new Concrete.FunctionDefinition(POSITION, "*", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 7), Collections.<Concrete.Argument>emptyList(), null, Abstract.Definition.Arrow.RIGHT, null, Collections.<Concrete.Statement>emptyList()), EmptyNamespace.INSTANCE, parameters, Nat(), EmptyElimTreeNode.getInstance());
 
     SimpleNamespace namespace = new SimpleNamespace();
     namespace.addDefinition(plus);
@@ -38,8 +39,8 @@ public class NameResolverTest {
   @Test
   public void parserInfixError() {
     DependentLink parameters = param(true, vars("x", "y"), Nat());
-    Definition plus = new FunctionDefinition("+", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 6), EmptyNamespace.INSTANCE, parameters, Nat(), EmptyElimTreeNode.getInstance());
-    Definition mul = new FunctionDefinition("*", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.RIGHT_ASSOC, (byte) 6), EmptyNamespace.INSTANCE, parameters, Nat(), EmptyElimTreeNode.getInstance());
+    Definition plus = new FunctionDefinition(new Concrete.FunctionDefinition(POSITION, "+", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 6), Collections.<Concrete.Argument>emptyList(), null, Abstract.Definition.Arrow.RIGHT, null, Collections.<Concrete.Statement>emptyList()), EmptyNamespace.INSTANCE, parameters, Nat(), EmptyElimTreeNode.getInstance());
+    Definition mul = new FunctionDefinition(new Concrete.FunctionDefinition(POSITION, "*", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.RIGHT_ASSOC, (byte) 6), Collections.<Concrete.Argument>emptyList(), null, Abstract.Definition.Arrow.RIGHT, null, Collections.<Concrete.Statement>emptyList()), EmptyNamespace.INSTANCE, parameters, Nat(), EmptyElimTreeNode.getInstance());
 
     SimpleNamespace namespace = new SimpleNamespace();
     namespace.addDefinition(plus);

@@ -27,8 +27,8 @@ public class Constructor extends Definition implements Function {
   private DependentLink myParameters;
   private Patterns myPatterns;
 
-  public Constructor(String name, Abstract.Definition.Precedence precedence, DataDefinition dataType) {
-    super(name, precedence);
+  public Constructor(Abstract.Constructor abstractDef, DataDefinition dataType) {
+    super(abstractDef);
     myDataType = dataType;
     myParameters = EmptyDependentLink.getInstance();
     if (dataType != null) {
@@ -36,8 +36,8 @@ public class Constructor extends Definition implements Function {
     }
   }
 
-  public Constructor(String name, Abstract.Definition.Precedence precedence, DependentLink parameters, DataDefinition dataType, Patterns patterns) {
-    super(name, precedence);
+  public Constructor(Abstract.Constructor abstractDef, DependentLink parameters, DataDefinition dataType, Patterns patterns) {
+    super(abstractDef);
     hasErrors(false);
     myDataType = dataType;
     myParameters = parameters;
@@ -47,8 +47,8 @@ public class Constructor extends Definition implements Function {
     }
   }
 
-  public Constructor(String name, Abstract.Definition.Precedence precedence, DependentLink parameters, DataDefinition dataType) {
-    this(name, precedence, parameters, dataType, null);
+  public Constructor(Abstract.Constructor abstractDef, DependentLink parameters, DataDefinition dataType) {
+    this(abstractDef, parameters, dataType, null);
   }
 
   public Patterns getPatterns() {

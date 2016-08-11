@@ -152,36 +152,36 @@ public class ModuleSerialization {
   public enum DefinitionCodes {
     FUNCTION_CODE {
       @Override
-      FunctionDefinition toDefinition(String name, Abstract.Definition.Precedence precedence) {
-        return new FunctionDefinition(name, precedence, null);  // FIXME[serial]
+      FunctionDefinition toDefinition(Abstract.Definition abstractDef) {
+        return new FunctionDefinition((Abstract.FunctionDefinition) abstractDef, null); // FIXME[serial]
       }
     },
     DATA_CODE {
       @Override
-      DataDefinition toDefinition(String name, Abstract.Definition.Precedence precedence) {
-        return new DataDefinition(name, precedence);
+      DataDefinition toDefinition(Abstract.Definition abstractDef) {
+        return new DataDefinition((Abstract.DataDefinition) abstractDef);
       }
     },
     CLASS_CODE {
       @Override
-      ClassDefinition toDefinition(String name, Abstract.Definition.Precedence precedence) {
-        return new ClassDefinition(name, null, null);  // FIXME[serial]
+      ClassDefinition toDefinition(Abstract.Definition abstractDef) {
+        return new ClassDefinition((Abstract.ClassDefinition) abstractDef, null, null); // FIXME[serial]
       }
     },
     CONSTRUCTOR_CODE {
       @Override
-      Constructor toDefinition(String name, Abstract.Definition.Precedence precedence) {
-        return new Constructor(name, precedence, null);
+      Constructor toDefinition(Abstract.Definition abstractDef) {
+        return new Constructor((Abstract.Constructor) abstractDef, null);
       }
     },
     CLASS_FIELD_CODE {
       @Override
-      ClassField toDefinition(String name, Abstract.Definition.Precedence precedence) {
-        return new ClassField(name, precedence, null, null, null);
+      ClassField toDefinition(Abstract.Definition abstractDef) {
+        return new ClassField((Abstract.AbstractDefinition) abstractDef, null, null, null);
       }
     };
 
-    abstract Definition toDefinition(String name, Abstract.Definition.Precedence precedence);
+    abstract Definition toDefinition(Abstract.Definition abstractDef);
 
     public static DefinitionCodes getDefinitionCode(Definition definition) {
       if (definition instanceof FunctionDefinition) return FUNCTION_CODE;

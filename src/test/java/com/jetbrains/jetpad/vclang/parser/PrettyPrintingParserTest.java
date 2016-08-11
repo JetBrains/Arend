@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -79,7 +80,7 @@ public class PrettyPrintingParserTest {
   @Test
   public void prettyPrintingParserFunDef() throws UnsupportedEncodingException {
     // f {x : \Type1} (A : \Type1 -> \Type0) : A x -> (\Type1 -> \Type1) -> \Type1 -> \Type1 => \t y z. y z;
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(POSITION, "f", Abstract.Binding.DEFAULT_PRECEDENCE, cargs(cTele(false, cvars("x"), cUniverse(1)), cTele(cvars("A"), cPi(cUniverse(1), cUniverse(0)))), cPi(cApps(cVar("A"), cVar("x")), cPi(cPi(cUniverse(1), cUniverse(1)), cPi(cUniverse(1), cUniverse(1)))), Abstract.Definition.Arrow.RIGHT, cLam(cargs(cName("t"), cName("y"), cName("z")), cApps(cVar("y"), cVar("z"))), false, null, new ArrayList<Concrete.Statement>());
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(POSITION, "f", Abstract.Binding.DEFAULT_PRECEDENCE, cargs(cTele(false, cvars("x"), cUniverse(1)), cTele(cvars("A"), cPi(cUniverse(1), cUniverse(0)))), cPi(cApps(cVar("A"), cVar("x")), cPi(cPi(cUniverse(1), cUniverse(1)), cPi(cUniverse(1), cUniverse(1)))), Abstract.Definition.Arrow.RIGHT, cLam(cargs(cName("t"), cName("y"), cName("z")), cApps(cVar("y"), cVar("z"))), Collections.<Concrete.Statement>emptyList());
     testDef(def, def);
   }
 }

@@ -14,28 +14,30 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class Definition implements Referable, Callable {
-  private final String myName;
   protected List<Binding> myPolyParams = new ArrayList<>();
-  private Abstract.Definition.Precedence myPrecedence;
   private boolean myHasErrors;
   private ClassDefinition myThisClass;
+  private Abstract.Definition myAbstractDefinition;
 
-  public Definition(String name, Abstract.Definition.Precedence precedence) {
-    myName = name;
-    myPrecedence = precedence;
+  public Definition(Abstract.Definition abstractDef) {
+    myAbstractDefinition = abstractDef;
     myHasErrors = true;
   }
 
   @Override
   public String getName() {
-    return myName;
+    return myAbstractDefinition.getName();
+  }
+
+  public Abstract.Definition getAbstractDefinition() {
+    return myAbstractDefinition;
   }
 
   public abstract Type getType();
 
   @Override
   public Abstract.Definition.Precedence getPrecedence() {
-    return myPrecedence;
+    return myAbstractDefinition.getPrecedence();
   }
 
   public abstract DefCallExpression getDefCall();

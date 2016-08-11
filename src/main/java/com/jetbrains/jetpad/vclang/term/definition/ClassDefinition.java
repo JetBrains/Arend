@@ -24,12 +24,12 @@ public class ClassDefinition extends Definition {
 
   private ClassField myEnclosingThisField = null;
 
-  public ClassDefinition(String name, Namespace ownNamespace, Namespace instanceNamespace) {
-    this(name, new FieldSet(), new HashSet<ClassDefinition>(), ownNamespace, instanceNamespace);
+  public ClassDefinition(Abstract.ClassDefinition abstractDef, Namespace ownNamespace, Namespace instanceNamespace) {
+    this(abstractDef, new FieldSet(), new HashSet<ClassDefinition>(), ownNamespace, instanceNamespace);
   }
 
-  public ClassDefinition(String name, FieldSet fieldSet, Set<ClassDefinition> superClasses, Namespace ownNamespace, Namespace instanceNamespace) {
-    super(name, Abstract.Binding.DEFAULT_PRECEDENCE);
+  public ClassDefinition(Abstract.ClassDefinition abstractDef, FieldSet fieldSet, Set<ClassDefinition> superClasses, Namespace ownNamespace, Namespace instanceNamespace) {
+    super(abstractDef);
     super.hasErrors(false);
     myFieldSet = fieldSet;
     mySuperClasses = superClasses;
@@ -68,7 +68,7 @@ public class ClassDefinition extends Definition {
     assert myEnclosingThisField == null;
     super.setThisClass(enclosingClass);
     if (enclosingClass != null) {
-      myEnclosingThisField = new ClassField(getName() + "::\\parent", Abstract.Binding.DEFAULT_PRECEDENCE, ClassCall(enclosingClass), this, param("\\this", ClassCall(this)));
+      myEnclosingThisField = new ClassField(null, ClassCall(enclosingClass), this, param("\\this", ClassCall(this)));
       myEnclosingThisField.setThisClass(this);
       myFieldSet.addField(myEnclosingThisField, getDefCall());
     }

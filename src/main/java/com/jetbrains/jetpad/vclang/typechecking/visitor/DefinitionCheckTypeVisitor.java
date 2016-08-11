@@ -111,7 +111,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
   @Override
   public FunctionDefinition visitFunction(final Abstract.FunctionDefinition def, ClassDefinition enclosingClass) {
     Abstract.Definition.Arrow arrow = def.getArrow();
-    final FunctionDefinition typedDef = new FunctionDefinition(def.getName(), def.getPrecedence(), SimpleStaticNamespaceProvider.INSTANCE.forDefinition(def));
+    final FunctionDefinition typedDef = new FunctionDefinition(def, SimpleStaticNamespaceProvider.INSTANCE.forDefinition(def));
     myState.record(def, typedDef);
     // TODO[scopes] Fill namespace
 
@@ -261,7 +261,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
     SortMax inferredSorts = def.getConstructors().size() > 1 ? new SortMax(new Sort(new Level(0), Sort.SET.getHLevel())) : new SortMax();
     Sort userSort = null;
-    DataDefinition dataDefinition = new DataDefinition(def.getName(), def.getPrecedence(), inferredSorts, null);
+    DataDefinition dataDefinition = new DataDefinition(def, inferredSorts, null);
     dataDefinition.setThisClass(enclosingClass);
     dataDefinition.hasErrors(true);
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
@@ -483,7 +483,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
       String name = def.getName();
 
-      Constructor constructor = new Constructor(name, def.getPrecedence(), null, dataDefinition, null);
+      Constructor constructor = new Constructor(def, null, dataDefinition, null);
       constructor.hasErrors(true);
       List<? extends Abstract.PatternArgument> patterns = def.getPatterns();
       Patterns typedPatterns = null;
@@ -648,7 +648,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     FieldSet fieldSet = new FieldSet();
     Set<ClassDefinition> superClasses = new HashSet<>();
     try {
-      ClassDefinition typedDef = new ClassDefinition(def.getName(), fieldSet, superClasses, SimpleStaticNamespaceProvider.INSTANCE.forDefinition(def), SimpleDynamicNamespaceProvider.INSTANCE.forClass(def));
+      ClassDefinition typedDef = new ClassDefinition(def, fieldSet, superClasses, SimpleStaticNamespaceProvider.INSTANCE.forDefinition(def), SimpleDynamicNamespaceProvider.INSTANCE.forClass(def));
       typedDef.setThisClass(enclosingClass);
       ClassCallExpression thisClassCall = typedDef.getDefCall();
 
@@ -727,7 +727,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     context.add(thisParameter);
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).thisClass(enclosingClass, Reference(thisParameter)).build(def);
     LevelMax pLevel = new LevelMax();
-    ClassField typedDef = new ClassField(def.getName(), def.getPrecedence(), Error(null, null), enclosingClass, thisParameter);
+    ClassField typedDef = new ClassField(def, Error(null, null), enclosingClass, thisParameter);
     myState.record(def, typedDef);
 
     Map<String, Binding> polyParams = new HashMap<>();

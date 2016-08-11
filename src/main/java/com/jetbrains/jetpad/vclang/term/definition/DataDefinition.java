@@ -23,12 +23,12 @@ public class DataDefinition extends Definition {
   private SortMax mySorts;
   private boolean myMatchesOnInterval;
 
-  public DataDefinition(String name, Abstract.Definition.Precedence precedence) {
-    this(name, precedence, new SortMax(), EmptyDependentLink.getInstance());
+  public DataDefinition(Abstract.DataDefinition abstractDef) {
+    this(abstractDef, new SortMax(), EmptyDependentLink.getInstance());
   }
 
-  public DataDefinition(String name, Abstract.Definition.Precedence precedence, SortMax sorts, DependentLink parameters) {
-    super(name, precedence);
+  public DataDefinition(Abstract.DataDefinition abstractDef, SortMax sorts, DependentLink parameters) {
+    super(abstractDef);
     hasErrors(false);
     myConstructors = new ArrayList<>();
     myParameters = parameters;

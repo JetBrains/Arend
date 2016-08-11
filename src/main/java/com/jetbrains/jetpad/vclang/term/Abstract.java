@@ -314,8 +314,6 @@ public final class Abstract {
 
   public interface FunctionDefinition extends Definition, Function {
     boolean isAbstract();
-    boolean isOverridden();
-    String getOriginalName();
     Collection<? extends Statement> getStatements();
   }
 
