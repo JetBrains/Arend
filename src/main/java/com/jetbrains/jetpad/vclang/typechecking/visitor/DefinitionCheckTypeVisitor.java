@@ -260,7 +260,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     }
 
     SortMax inferredSorts = def.getConstructors().size() > 1 ? new SortMax(new Sort(new Level(0), Sort.SET.getHLevel())) : new SortMax();
-    Sort userSort = null;
+    SortMax userSorts = null;
     DataDefinition dataDefinition = new DataDefinition(def, inferredSorts, null);
     dataDefinition.setThisClass(enclosingClass);
     dataDefinition.hasErrors(true);
@@ -292,21 +292,25 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       }
 
       if (def.getUniverse() != null) {
-        CheckTypeVisitor.Result result = visitor.checkType(def.getUniverse(), Universe());
 
-        if (result == null || result.expression.toUniverse() == null) {
-          String msg = "Specified type " + def.getUniverse().accept(new PrettyPrintVisitor(new StringBuilder(), 0), Abstract.Expression.PREC) + " of '" + def.getName() + "' is not a universe";
+        if (def.getUniverse() instanceof Abstract.PolyUniverseExpression) {
+          userSorts = visitor.visitDataUniverse((Abstract.PolyUniverseExpression)def.getUniverse());
+        } else if (def.getUniverse() instanceof Abstract.UniverseExpression) {
+          CheckTypeVisitor.Result result = visitor.checkType(def.getUniverse(), Universe());
+          if (result != null) {
+            userSorts = new SortMax(result.expression.toUniverse().getSort());
+          }
+        } else {
+          String msg = "Specified type " + PrettyPrintVisitor.prettyPrint(def.getUniverse(), 0) + " of '" + def.getName() + "' is not a universe";
           // FIXME[errorformat]
           myErrorReporter.report(new TypeCheckingError(def, msg, def.getUniverse()));
-        } else {
-          userSort = result.expression.toUniverse().getSort();
         }
       }
     }
 
     dataDefinition.setPolyParams(polyParamsList);
     dataDefinition.setParameters(list.getFirst());
-    if (userSort != null) dataDefinition.setSorts(new SortMax(userSort));
+    if (userSorts != null) dataDefinition.setSorts(userSorts);
     dataDefinition.hasErrors(false);
     myState.record(def, dataDefinition);
 
@@ -353,12 +357,11 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       }
     }
 
-    if (userSort != null) {
-      SortMax userSorts = new SortMax(userSort);
+    if (userSorts != null) {
       if (inferredSorts.isLessOrEquals(userSorts)) {
         dataDefinition.setSorts(userSorts);
       } else {
-        String msg = "Actual universe " + inferredSorts + " is not compatible with expected universe " + new UniverseExpression(userSort);
+        String msg = "Actual universe " + inferredSorts + " is not compatible with expected universe " + userSorts;
         // FIXME[errorformat]
         myErrorReporter.report(new TypeCheckingError(def, msg, def.getUniverse()));
         dataDefinition.setSorts(inferredSorts);

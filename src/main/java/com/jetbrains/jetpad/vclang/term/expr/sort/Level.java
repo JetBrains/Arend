@@ -105,7 +105,7 @@ public class Level implements PrettyPrintable {
       }
     }
 
-    if (level1.isClosed() && level2.isClosed()) {
+    if (level1.getVar() == level2.getVar()) {
       if (cmp == Equations.CMP.LE) {
         return level1.getConstant() <= level2.getConstant();
       }
