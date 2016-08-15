@@ -19,6 +19,7 @@ import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
+import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
@@ -266,19 +267,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitAppLevel(Abstract.ApplyLevelExpression app_expr, Expression expectedType) {
-    List<Level> levelsList = new ArrayList<>();
+    List<Abstract.Expression> levelExprs = new ArrayList<>();
     Abstract.Expression expr = app_expr;
 
     while (expr instanceof Abstract.ApplyLevelExpression) {
-      Level level = typeCheckLevel(((Abstract.ApplyLevelExpression)expr).getLevel(), null);
-      if (level == null) {
-        return null;
-      }
-      levelsList.add(level);
+      levelExprs.add(((Abstract.ApplyLevelExpression)expr).getLevel());
       expr = ((Abstract.ApplyLevelExpression)expr).getFunction();
     }
-
-    Collections.reverse(levelsList);
 
     Result result = myTypeCheckingDefCall.typeCheckDefCall((Abstract.DefCallExpression)expr);
     if (result == null) {
@@ -293,17 +288,23 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return null;
     }
 
+    Collections.reverse(levelExprs);
+
     List<Binding> polyParams = defCall.getDefinition().getPolyParams();
 
-    for (int i = 0; i < levelsList.size(); ++i) {
+    for (int i = 0; i < levelExprs.size(); ++i) {
       Binding param = polyParams.get(i);
+      Level level = typeCheckLevel(levelExprs.get(i), null, param.getType().toDefCall().getDefinition() == Prelude.CNAT ? -1 : 0);
+      if (level == null) {
+        return null;
+      }
       Level value = defCall.getPolyParamsSubst().get(param);
       if (value == null) {
         assert false;
         return null;
       }
       //if (value.isBinding() && value.getUnitBinding() instanceof LevelInferenceBinding) {
-      result.getEquations().add(value, levelsList.get(i), Equations.CMP.EQ, expr);
+      result.getEquations().add(value, level, Equations.CMP.EQ, expr);
       //}
     }
 
@@ -450,35 +451,35 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getSort().succ())), expr);
   }
 
-  private Level typeCheckLevel(Abstract.Expression expr, Expression expectedType) {
-    int numSucs = 0;
+  private Level typeCheckLevel(Abstract.Expression expr, Expression expectedType, int minValue) {
+    int num_sucs = 0;
     TypeCheckingError error = null;
 
-    if (expr instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr).getName().equals("inf")) {
+    if (expr instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression)expr).getName().equals("inf")) {
       return Level.INFINITY;
     }
 
     while (expr instanceof Abstract.AppExpression) {
       Abstract.AppExpression app = (Abstract.AppExpression) expr;
       Abstract.Expression suc = app.getFunction();
-      if (!(suc instanceof Abstract.AppExpression) && (!(suc instanceof Abstract.DefCallExpression) || !((Abstract.DefCallExpression) suc).getName().equals("suc"))) {
+      if (!(suc instanceof Abstract.DefCallExpression) || !((Abstract.DefCallExpression) suc).getName().equals("suc")) {
         error = new TypeCheckingError("Expression " + suc + " is invalid, 'suc' expected", expr);
         break;
       }
       expr = app.getArgument().getExpression();
-      ++numSucs;
+      ++num_sucs;
     }
 
     if (error == null) {
       if (expr instanceof Abstract.NumericLiteral) {
         int val = ((Abstract.NumericLiteral) expr).getNumber();
-        return new Level(val + numSucs);
+        return new Level(val + num_sucs - minValue);
       }
       Result refResult = typeCheck(expr, expectedType);
       if (refResult != null) {
         ReferenceExpression ref = refResult.expression.toReference();
         if (ref != null) {
-          return new Level(ref.getBinding(), numSucs);
+          return new Level(ref.getBinding(), num_sucs);
         }
       }
       error = new TypeCheckingError("Invalid level expression", expr);
@@ -488,10 +489,32 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return null;
   }
 
+  private LevelMax typeCheckLevelMax(Abstract.Expression expr, Expression expectedType, int minValue) {
+    LevelMax result = new LevelMax();
+    List<Abstract.ArgumentExpression> args = new ArrayList<>();
+    Abstract.Expression max = Abstract.getFunction(expr, args);
+
+    if (max instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) max).getName().equals("max")) {
+      for (Abstract.ArgumentExpression arg : args) {
+        result = result.max(typeCheckLevel(arg.getExpression(), expectedType, minValue));
+      }
+      return result;
+    }
+    return new LevelMax(typeCheckLevel(expr, expectedType, minValue));
+  }
+
+
+  public SortMax visitDataUniverse(Abstract.PolyUniverseExpression expr) {
+    LevelMax levelP = typeCheckLevelMax(expr.getPLevel(), Lvl(), 0);
+    LevelMax levelH = typeCheckLevelMax(expr.getHLevel(), CNat(), -1);
+    if (levelP == null || levelH == null) return null;
+    return new SortMax(levelP, levelH);
+  }
+
   @Override
   public Result visitPolyUniverse(Abstract.PolyUniverseExpression expr, Expression expectedType) {
-    Level levelP = typeCheckLevel(expr.getPLevel(), Lvl());
-    Level levelH = typeCheckLevel(expr.getHLevel(), CNat());
+    Level levelP = typeCheckLevel(expr.getPLevel(), Lvl(), 0);
+    Level levelH = typeCheckLevel(expr.getHLevel(), CNat(), -1);
     if (levelP == null || levelH == null) return null;
     UniverseExpression universe = Universe(new Sort(levelP, levelH));
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getSort().succ())), expr);
