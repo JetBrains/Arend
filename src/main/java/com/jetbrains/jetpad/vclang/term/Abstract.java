@@ -239,7 +239,10 @@ public final class Abstract {
     int getNumber();
   }
 
-  public interface Binding extends SourceNode {
+  public interface ReferableSourceNode extends SourceNode {
+  }
+
+  public interface Binding extends ReferableSourceNode {
     enum Associativity { LEFT_ASSOC, RIGHT_ASSOC, NON_ASSOC }
 
     class Precedence {
@@ -287,7 +290,7 @@ public final class Abstract {
     Definition getDefinition();
   }
 
-  public interface Definition extends Binding, SourceNode {
+  public interface Definition extends Binding {
     enum Arrow { LEFT, RIGHT }
 
     DefineStatement getParentStatement();
@@ -323,7 +326,7 @@ public final class Abstract {
     Expression getUniverse();
   }
 
-  public interface IdPair extends SourceNode {
+  public interface IdPair extends ReferableSourceNode {
     String getFirstName();
     String getSecondName();
   }

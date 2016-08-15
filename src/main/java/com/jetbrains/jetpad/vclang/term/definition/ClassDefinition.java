@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ClassCall;
@@ -21,20 +22,27 @@ public class ClassDefinition extends Definition {
   private final Namespace myInstanceNamespace;
   private final FieldSet myFieldSet;
   private final Set<ClassDefinition> mySuperClasses;
+  private final Map<ClassField, Abstract.ReferableSourceNode> myAliases;
 
   private ClassField myEnclosingThisField = null;
 
-  public ClassDefinition(Abstract.ClassDefinition abstractDef, Namespace ownNamespace, Namespace instanceNamespace) {
-    this(abstractDef, new FieldSet(), new HashSet<ClassDefinition>(), ownNamespace, instanceNamespace);
+  public ClassDefinition(Abstract.ClassDefinition abstractDef, Namespace ownNamespace, Namespace instanceNamespace, Map<ClassField, Abstract.ReferableSourceNode> aliases) {
+    this(abstractDef, new FieldSet(), new HashSet<ClassDefinition>(), ownNamespace, instanceNamespace, aliases);
   }
 
-  public ClassDefinition(Abstract.ClassDefinition abstractDef, FieldSet fieldSet, Set<ClassDefinition> superClasses, Namespace ownNamespace, Namespace instanceNamespace) {
+  public ClassDefinition(Abstract.ClassDefinition abstractDef, FieldSet fieldSet, Set<ClassDefinition> superClasses, Namespace ownNamespace, Namespace instanceNamespace, Map<ClassField, Abstract.ReferableSourceNode> aliases) {
     super(abstractDef);
     super.hasErrors(false);
     myFieldSet = fieldSet;
     mySuperClasses = superClasses;
     myOwnNamespace = ownNamespace;
     myInstanceNamespace = instanceNamespace;
+    myAliases = aliases;
+  }
+
+  @Override
+  public Abstract.ClassDefinition getAbstractDefinition() {
+    return (Abstract.ClassDefinition) super.getAbstractDefinition();
   }
 
   public FieldSet getFieldSet() {
@@ -97,8 +105,8 @@ public class ClassDefinition extends Definition {
     return myInstanceNamespace;
   }
 
-  // Used only in ToAbstractVisitor
-  public String getFieldName(ClassField field) {
-    return "<some field>"; // HACK
+  public Abstract.ReferableSourceNode getFieldAlias(ClassField field) {
+    Abstract.ReferableSourceNode alias = myAliases.get(field);
+    return alias != null ? alias : field.getAbstractDefinition();
   }
 }

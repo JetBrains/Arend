@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.factory;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 
@@ -10,8 +9,7 @@ import java.util.List;
 public interface AbstractExpressionFactory {
   Abstract.Expression makeApp(Abstract.Expression fun, boolean explicit, Abstract.Expression arg);
   Abstract.Expression makeBinOp(Abstract.Expression left, Definition defCall, Abstract.Expression right);
-  Abstract.Expression makeDefCall(Abstract.Expression expr, Definition definition);
-  Abstract.Expression makeFieldCall(Abstract.Expression expr, ClassDefinition classDef, ClassField field);
+  Abstract.Expression makeDefCall(Abstract.Expression expr, Abstract.ReferableSourceNode alias, Definition definition);
   Abstract.Expression makeClassExt(Abstract.Expression expr, List<? extends Abstract.ImplementStatement> statements);
   Abstract.ImplementStatement makeImplementStatement(ClassField field, Abstract.Expression type, Abstract.Expression term);
   Abstract.Expression makeVar(String name);

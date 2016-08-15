@@ -794,17 +794,22 @@ public final class Concrete {
     }
   }
 
-  public static abstract class Binding extends SourceNode implements Abstract.Binding {
+  public static class ReferableSourceNode extends SourceNode {
     private final String myName;
 
-    public Binding(Position position, String name) {
+    public ReferableSourceNode(Position position, String name) {
       super(position);
       myName = name;
     }
 
-    @Override
     public String getName() {
       return myName;
+    }
+  }
+
+  public static abstract class Binding extends ReferableSourceNode implements Abstract.Binding {
+    public Binding(Position position, String name) {
+      super(position, name);
     }
   }
 
@@ -1058,14 +1063,12 @@ public final class Concrete {
     }
   }
 
-  public static class IdPair extends SourceNode implements Abstract.IdPair {
+  public static class IdPair extends ReferableSourceNode implements Abstract.IdPair {
     private final String myFirstName;
-    private final String mySecondName;
 
     public IdPair(Position position, String firstName, String secondName) {
-      super(position);
+      super(position, secondName);
       myFirstName = firstName;
-      mySecondName = secondName;
     }
 
     @Override
@@ -1075,7 +1078,7 @@ public final class Concrete {
 
     @Override
     public String getSecondName() {
-      return mySecondName;
+      return getName();
     }
   }
 

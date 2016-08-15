@@ -63,7 +63,7 @@ public class RenamingTest extends TypeCheckingTestCase {
 
   @Test
   public void renamingUnknown() {
-    resolveNamesClass("test",
+    typeCheckClass(
         "\\static \\class B {\n" +
         "  \\abstract A : \\Set0\n" +
         "  \\abstract a : A\n" +

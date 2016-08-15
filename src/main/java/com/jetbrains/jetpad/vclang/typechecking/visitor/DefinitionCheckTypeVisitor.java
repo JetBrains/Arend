@@ -650,7 +650,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     FieldSet fieldSet = new FieldSet();
     Set<ClassDefinition> superClasses = new HashSet<>();
     try {
-      ClassDefinition typedDef = new ClassDefinition(def, fieldSet, superClasses, SimpleStaticNamespaceProvider.INSTANCE.forDefinition(def), SimpleDynamicNamespaceProvider.INSTANCE.forClass(def));
+      Map<ClassField, Abstract.ReferableSourceNode> aliases = new HashMap<>();
+      ClassDefinition typedDef = new ClassDefinition(def, fieldSet, superClasses, SimpleStaticNamespaceProvider.INSTANCE.forDefinition(def), SimpleDynamicNamespaceProvider.INSTANCE.forClass(def), aliases);
       typedDef.setThisClass(enclosingClass);
       ClassCallExpression thisClassCall = typedDef.getDefCall();
 
@@ -671,6 +672,62 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
           if (!fieldSet.implementField(entry.getKey(), entry.getValue(), thisClassCall)) {
             classOk = false;
             myErrorReporter.report(new TypeCheckingError("Implementations of '" + entry.getKey().getName() + "' differ", aSuperClass.getSuperClass()));  // FIXME[error] report proper, especially in case of \\parent
+          }
+        }
+
+        Namespace ns = SimpleDynamicNamespaceProvider.INSTANCE.forClass(typeCheckedSuperClass.getDefinition().getAbstractDefinition());
+        Set<ClassField> hidden = new HashSet<>();
+        for (Abstract.Identifier identifier : aSuperClass.getHidings()) {
+          Abstract.Definition aDef = ns.resolveName(identifier.getName());
+          Definition definition = myState.getTypechecked(aDef);
+          if (definition instanceof ClassField) {
+            hidden.add((ClassField) definition);
+          } else {
+            if (definition == null) {
+              myErrorReporter.report(new TypeCheckingError("Not in scope: " + identifier.getName(), identifier));  // FIXME[error] report proper, especially in case of \\parent
+            } else {
+              myErrorReporter.report(new TypeCheckingError("Expected a field", identifier));  // FIXME[error] report proper, especially in case of \\parent
+            }
+          }
+        }
+
+        Map<ClassField, Abstract.ReferableSourceNode> renamings = new HashMap<>();
+        for (Abstract.IdPair pair : aSuperClass.getRenamings()) {
+          Abstract.Definition aDef = ns.resolveName(pair.getFirstName());
+          Definition definition = myState.getTypechecked(aDef);
+          if (definition instanceof ClassField) {
+            if (hidden.contains(definition)) {
+              myErrorReporter.report(new TypeCheckingError("Field '" + pair.getFirstName() + "' is hidden", pair));  // FIXME[error] report proper, especially in case of \\parent
+            } else {
+              renamings.put((ClassField) definition, pair);
+            }
+          } else {
+            if (definition == null) {
+              myErrorReporter.report(new TypeCheckingError("Not in scope: " + pair.getFirstName(), pair));  // FIXME[error] report proper, especially in case of \\parent
+            } else {
+              myErrorReporter.report(new TypeCheckingError("Expected a field", pair));  // FIXME[error] report proper, especially in case of \\parent
+            }
+          }
+        }
+
+        for (ClassField field : typeCheckedSuperClass.getDefinition().getFieldSet().getFields()) {
+          Abstract.ReferableSourceNode alias = renamings.get(field);
+          if (alias == null) {
+            alias = typeCheckedSuperClass.getDefinition().getFieldAlias(field);
+            if (alias == field.getAbstractDefinition()) {
+              alias = null;
+            }
+          }
+
+          if (alias != null) {
+            Abstract.ReferableSourceNode oldAlias = aliases.get(field);
+            if (oldAlias == null) {
+              aliases.put(field, alias);
+            } else {
+              if (oldAlias != alias) {
+                myErrorReporter.report(new TypeCheckingError("Field '" + field.getName() + "' is already renamed to '" + oldAlias + "'", alias));  // FIXME[error] report proper
+              }
+            }
           }
         }
       }

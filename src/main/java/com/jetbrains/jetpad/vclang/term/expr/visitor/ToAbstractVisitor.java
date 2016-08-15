@@ -130,13 +130,13 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       if (type instanceof Expression) {
         ClassCallExpression classCall = ((Expression) type).normalize(NormalizeVisitor.Mode.WHNF).toClassCall();
         if (classCall != null) {
-          result = myFactory.makeFieldCall(expr.getArguments().get(0).accept(this, null), classCall.getDefinition(), fieldCall.getDefinition());
+          result = myFactory.makeDefCall(expr.getArguments().get(0).accept(this, null), classCall.getDefinition().getFieldAlias(fieldCall.getDefinition()), fieldCall.getDefinition());
           index = 1;
         }
       }
 
       if (index == 0) {
-        result = myFactory.makeDefCall(expr.getArguments().get(0).accept(this, null), fieldCall.getDefinition());
+        result = myFactory.makeDefCall(expr.getArguments().get(0).accept(this, null), fieldCall.getDefinition().getAbstractDefinition(), fieldCall.getDefinition());
         index = 1;
       }
     } else {
@@ -157,7 +157,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitDefCall(DefCallExpression expr, Void params) {
-    return myFactory.makeDefCall(null, expr.getDefinition());
+    return myFactory.makeDefCall(null, expr.getDefinition().getAbstractDefinition(), expr.getDefinition());
   }
 
   @Override
@@ -176,7 +176,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       }
       conParams = expr.getDefinition().getDataTypeExpression(substitution).accept(this, null);
     }
-    return myFactory.makeDefCall(conParams, expr.getDefinition());
+    return myFactory.makeDefCall(conParams, expr.getDefinition().getAbstractDefinition(), expr.getDefinition());
   }
 
   @Override
@@ -192,7 +192,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       }
     }
 
-    Abstract.Expression defCallExpr = myFactory.makeDefCall(enclExpr, expr.getDefinition());
+    Abstract.Expression defCallExpr = myFactory.makeDefCall(enclExpr, expr.getDefinition().getAbstractDefinition(), expr.getDefinition());
     if (statements.isEmpty()) {
       return defCallExpr;
     } else {

@@ -165,7 +165,7 @@ public class ModuleSerialization {
     CLASS_CODE {
       @Override
       ClassDefinition toDefinition(Abstract.Definition abstractDef) {
-        return new ClassDefinition((Abstract.ClassDefinition) abstractDef, null, null); // FIXME[serial]
+        return new ClassDefinition((Abstract.ClassDefinition) abstractDef, null, null, Collections.<ClassField, Abstract.ReferableSourceNode>emptyMap()); // FIXME[serial]
       }
     },
     CONSTRUCTOR_CODE {

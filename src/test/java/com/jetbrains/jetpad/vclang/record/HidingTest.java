@@ -48,7 +48,7 @@ public class HidingTest extends TypeCheckingTestCase {
 
   @Test
   public void hidingUnknown() {
-    resolveNamesClass("test",
+    typeCheckClass(
         "\\static \\class B {\n" +
         "  \\abstract A : \\Set0\n" +
         "  \\abstract a : A\n" +
@@ -58,7 +58,7 @@ public class HidingTest extends TypeCheckingTestCase {
 
   @Test
   public void hidingRenamingError() {
-    resolveNamesClass("test",
+    typeCheckClass(
         "\\static \\class B {\n" +
         "  \\abstract A : \\Set0\n" +
         "  \\abstract a : A\n" +

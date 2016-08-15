@@ -11,10 +11,9 @@ nsCmdRoot : modulePath | name;
 
 definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?            # defFunction
             | '\\abstract' precedence name tele* ':' expr                                 # defAbstract
-            // | '\\override' name ('\\as' name)? tele* typeTermOpt where?                   # defOverride
             | '\\implement' ID '=>' expr                                                  # defImplement
             | '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef?    # defData
-            | classKindMod ID ('\\extends' atomFieldsAcc extendsOpts)* '{' statement* '}'            # defClass
+            | classKindMod ID ('\\extends' atomFieldsAcc extendsOpts)* '{' statement* '}' # defClass
             ;
 
 extendsOpts : superClassOpts*   # extendsSuperClassOpts
