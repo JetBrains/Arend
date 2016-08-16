@@ -122,21 +122,15 @@ public class TypeCheckingElim {
     return new Patterns(typedPatterns);
   }
 
-  public class Result extends TypeCheckingResult {
+  public class Result {
     public ElimTreeNode elimTree;
 
     public Result(ElimTreeNode elimTree) {
-      super(myVisitor.getImplicitArgsInference().newEquations());
       this.elimTree = elimTree;
-    }
-
-    @Override
-    public void subst(LevelSubstitution substitution) {
-      elimTree = elimTree.subst(new ExprSubstitution(), substitution);
     }
   }
 
-  public Result typeCheckElim(final Abstract.ElimCaseExpression expr, DependentLink eliminatingArgs, Expression expectedType, boolean isCase) {
+  public ElimTreeNode typeCheckElim(final Abstract.ElimCaseExpression expr, DependentLink eliminatingArgs, Expression expectedType, boolean isCase) {
     TypeCheckingError error = null;
     if (expectedType == null) {
       error = new TypeCheckingError("Cannot infer type of the expression", expr);
@@ -173,7 +167,6 @@ public class TypeCheckingElim {
 
     List<Binding> argsBindings = toContext(eliminatingArgs);
 
-    Result result = new Result(null);
     final List<List<Pattern>> patterns = new ArrayList<>();
     final List<Expression> expressions = new ArrayList<>();
     final List<Abstract.Definition.Arrow> arrows = new ArrayList<>();
@@ -214,7 +207,6 @@ public class TypeCheckingElim {
             wasError = true;
             continue;
           }
-          result.add(clauseResult);
           expressions.add(clauseResult.expression);
         } else {
           expressions.add(null);
@@ -231,8 +223,11 @@ public class TypeCheckingElim {
     PatternsToElimTreeConversion.Result elimTreeResult = PatternsToElimTreeConversion.convert(origEliminatingArgs, patterns, expressions, arrows);
 
     if (elimTreeResult instanceof PatternsToElimTreeConversion.OKResult) {
-      result.elimTree = ((PatternsToElimTreeConversion.OKResult) elimTreeResult).elimTree;
-      result.solve();
+      ElimTreeNode result = ((PatternsToElimTreeConversion.OKResult) elimTreeResult).elimTree;
+      LevelSubstitution substitution = myVisitor.getEquations().solve(myVisitor.getErrorReporter(), expr);
+      if (!substitution.getDomain().isEmpty()) {
+        result = result.subst(new ExprSubstitution(), substitution);
+      }
       return result;
     } else if (elimTreeResult instanceof PatternsToElimTreeConversion.EmptyReachableResult) {
       for (int i : ((PatternsToElimTreeConversion.EmptyReachableResult) elimTreeResult).reachable) {

@@ -26,6 +26,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.PatternsToElimTreeConversion;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingElim;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
@@ -185,11 +186,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     if (term != null) {
       if (term instanceof Abstract.ElimExpression) {
         context.subList(context.size() - size(list.getFirst()), context.size()).clear();
-        TypeCheckingElim.Result elimResult = visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, def.getArrow() == Abstract.Definition.Arrow.LEFT ? list.getFirst() : null, expectedType, false);
-        if (elimResult != null) {
-          elimResult.solve();
-          elimResult.reportErrors(myErrorReporter, term);
-          typedDef.setElimTree(elimResult.elimTree);
+        ElimTreeNode elimTree = visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, def.getArrow() == Abstract.Definition.Arrow.LEFT ? list.getFirst() : null, expectedType, false);
+        if (elimTree != null) {
+          typedDef.setElimTree(elimTree);
         }
       } else {
         CheckTypeVisitor.Result termResult = visitor.checkType(term, expectedType);

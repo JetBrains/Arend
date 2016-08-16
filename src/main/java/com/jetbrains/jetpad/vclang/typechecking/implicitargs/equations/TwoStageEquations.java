@@ -223,7 +223,7 @@ public class TwoStageEquations implements Equations {
   }
 
   @Override
-  public LevelSubstitution solve() {
+  public LevelSubstitution solve(ErrorReporter errorReporter, Abstract.SourceNode sourceNode) {
     updateEquations();
     if (solveClassCalls()) {
       updateEquations();
@@ -242,6 +242,8 @@ public class TwoStageEquations implements Equations {
       Integer constant = entry.getValue();
       result.add(entry.getKey(), constant == null ? Level.INFINITY : new Level(myBases.get(entry.getKey()), -constant));
     }
+
+    reportErrors(errorReporter, sourceNode);
     return result;
   }
 
@@ -380,8 +382,7 @@ public class TwoStageEquations implements Equations {
     }
   }
 
-  @Override
-  public void reportErrors(ErrorReporter errorReporter, Abstract.SourceNode sourceNode) {
+  private void reportErrors(ErrorReporter errorReporter, Abstract.SourceNode sourceNode) {
     myErrorReporter.reportTo(errorReporter);
 
     if (!myEquations.isEmpty()) {

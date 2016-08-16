@@ -195,11 +195,11 @@ public class TypeCheckingDefCall {
     if (definition.isPolymorphic()) {
       LevelSubstitution subst = new LevelSubstitution();
 
-      CheckTypeVisitor.Result result = myVisitor.new Result(null, null);
+      CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(null, null);
       for (Binding polyVar : definition.getPolyParams()) {
         LevelInferenceVariable l = new LevelInferenceVariable(polyVar.getName(), polyVar.getType(), sourceNode);
         subst.add(polyVar, new Level(l));
-        result.addLevelVariable(l);
+        myVisitor.getEquations().addVariable(l);
       }
 
       DefCallExpression defCall = definition.getDefCall(subst);
@@ -208,7 +208,7 @@ public class TypeCheckingDefCall {
       return result;
     }
 
-    return myVisitor.new Result(definition.getDefCall(), definition.getTypeWithThis());
+    return new CheckTypeVisitor.Result(definition.getDefCall(), definition.getTypeWithThis());
   }
 
   private Expression findParent(ClassDefinition classDefinition, Definition definition, Expression result, Abstract.Expression expr) {
@@ -248,7 +248,7 @@ public class TypeCheckingDefCall {
     while (it.hasPrevious()) {
       Binding def = it.previous();
       if (name.equals(def.getName())) {
-        return myVisitor.new Result(Reference(def), def.getType());
+        return new CheckTypeVisitor.Result(Reference(def), def.getType());
       }
     }
 

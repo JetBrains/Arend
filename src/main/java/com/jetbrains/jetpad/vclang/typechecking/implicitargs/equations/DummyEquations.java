@@ -58,12 +58,7 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public LevelSubstitution solve() {
+  public LevelSubstitution solve(ErrorReporter errorReporter, Abstract.SourceNode sourceNode) {
     return new LevelSubstitution();
-  }
-
-  @Override
-  public void reportErrors(ErrorReporter errorReporter, Abstract.SourceNode sourceNode) {
-
   }
 }

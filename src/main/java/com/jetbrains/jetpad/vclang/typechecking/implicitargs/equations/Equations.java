@@ -17,8 +17,7 @@ public interface Equations {
   void clear();
   boolean isEmpty();
   Equations newInstance();
-  LevelSubstitution solve();
-  void reportErrors(ErrorReporter errorReporter, Abstract.SourceNode sourceNode);
+  LevelSubstitution solve(ErrorReporter errorReporter, Abstract.SourceNode sourceNode);
 
   enum CMP {
     LE, EQ, GE;
