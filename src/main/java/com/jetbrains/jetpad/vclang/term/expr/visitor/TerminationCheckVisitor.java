@@ -222,7 +222,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
 
   @Override
   public Boolean visitOfType(OfTypeExpression expr, Void params) {
-    return expr.getExpression().accept(this, null);
+    throw new IllegalStateException();
   }
 
   private boolean visitLetClause(LetClause clause) {

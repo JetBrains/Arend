@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
@@ -18,12 +18,12 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public boolean add(Equations equations) {
-    return equations.isEmpty();
+  public boolean add(Expression expr1, Expression expr2, CMP cmp, Abstract.SourceNode sourceNode, InferenceVariable stuckVar) {
+    return false;
   }
 
   @Override
-  public boolean add(Expression expr1, Expression expr2, CMP cmp, Abstract.SourceNode sourceNode) {
+  public boolean solve(Type type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode) {
     return false;
   }
 
@@ -33,7 +33,7 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public boolean add(Type type, Expression expr, Abstract.SourceNode sourceNode) {
+  public boolean add(Type type, Expression expr, Abstract.SourceNode sourceNode, InferenceVariable stuckVar) {
     return false;
   }
 
@@ -43,22 +43,12 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public void clear() {
+  public void remove(Equation equation) {
 
   }
 
   @Override
-  public boolean isEmpty() {
-    return true;
-  }
-
-  @Override
-  public DummyEquations newInstance() {
-    return this;
-  }
-
-  @Override
-  public LevelSubstitution solve(ErrorReporter errorReporter, Abstract.SourceNode sourceNode) {
+  public LevelSubstitution solve(Abstract.SourceNode sourceNode) {
     return new LevelSubstitution();
   }
 }

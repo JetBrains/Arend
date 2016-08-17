@@ -150,7 +150,7 @@ public class PiUniverseType implements Type {
   public boolean isLessOrEquals(Expression expression, Equations equations, Abstract.SourceNode sourceNode) {
     InferenceVariable binding = CompareVisitor.checkIsInferVar(expression);
     if (binding != null) {
-      return equations.add(this, expression, sourceNode);
+      return equations.add(this, expression, sourceNode, binding);
     }
 
     List<DependentLink> params = new ArrayList<>();

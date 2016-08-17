@@ -123,7 +123,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
   private boolean checkIsInferVar(Expression fun, Expression expr1, Expression expr2) {
     InferenceVariable binding = checkIsInferVar(fun);
-    return binding != null && myEquations.add(expr1.subst(getSubstition()), expr2, myCMP, binding.getSourceNode());
+    return binding != null && myEquations.add(expr1.subst(getSubstition()), expr2, myCMP, binding.getSourceNode(), binding);
   }
 
   private ExprSubstitution getSubstition() {
@@ -245,7 +245,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return true;
     }
 
-    return myEquations.add(expr1, expr2.subst(getSubstition()), first ? myCMP : myCMP.not(), expr1.getVariable().getSourceNode());
+    return myEquations.add(expr1, expr2.subst(getSubstition()), first ? myCMP : myCMP.not(), expr1.getVariable().getSourceNode(), expr1.getVariable());
   }
 
   @Override
@@ -286,11 +286,9 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     for (int i = 0; i < params1.size(); i++) {
       substitution.put(params1.get(i), params2.get(i));
     }
-    Equations equations = myEquations.newInstance();
-    if (!new CompareVisitor(substitution, equations, Equations.CMP.EQ).compare(body1, body2)) {
+    if (!new CompareVisitor(substitution, myEquations, Equations.CMP.EQ).compare(body1, body2)) {
       return false;
     }
-    myEquations.add(equations);
     return true;
   }
 
@@ -310,8 +308,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       params1 = params1.subList(0, params2.size());
     }
 
-    Equations equations = myEquations.newInstance();
-    CompareVisitor visitor = new CompareVisitor(mySubstitution, equations, Equations.CMP.EQ);
+    CompareVisitor visitor = new CompareVisitor(mySubstitution, myEquations, Equations.CMP.EQ);
     for (int i = 0; i < params1.size(); i++) {
       if (!(params1.get(i) instanceof UntypedDependentLink && params2.get(i) instanceof UntypedDependentLink)) {
         if (!visitor.compare(params1.get(i).getType(), params2.get(i).getType())) {
@@ -328,7 +325,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     for (DependentLink param : params1) {
       mySubstitution.remove(param);
     }
-    myEquations.add(equations);
     return true;
   }
 
@@ -377,15 +373,13 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   public Boolean visitSigma(SigmaExpression expr1, Expression expr2) {
     SigmaExpression sigma2 = expr2.toSigma();
     if (sigma2 == null) return false;
-    Equations equations = myEquations.newInstance();
-    CompareVisitor visitor = new CompareVisitor(mySubstitution, equations, Equations.CMP.EQ);
+    CompareVisitor visitor = new CompareVisitor(mySubstitution, myEquations, Equations.CMP.EQ);
     if (!visitor.compareParameters(expr1.getParameters(), sigma2.getParameters())) {
       return false;
     }
     for (DependentLink link = expr1.getParameters(); link.hasNext(); link = link.getNext()) {
       mySubstitution.remove(link);
     }
-    myEquations.add(equations);
     return true;
   }
 
@@ -448,8 +442,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return false;
     }
 
-    Equations equations = myEquations.newInstance();
-    CompareVisitor visitor = new CompareVisitor(mySubstitution, equations, Equations.CMP.EQ);
+    CompareVisitor visitor = new CompareVisitor(mySubstitution, myEquations, Equations.CMP.EQ);
     for (int i = 0; i < letExpr1.getClauses().size(); i++) {
       if (!visitor.compareParameters(letExpr1.getClauses().get(i).getParameters(), letExpr2.getClauses().get(i).getParameters())) {
         return false;
@@ -470,7 +463,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       }
       mySubstitution.remove(letExpr1.getClauses().get(i));
     }
-    myEquations.add(equations);
     return true;
   }
 
@@ -519,8 +511,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
         mySubstitution.put(clause.getTailBindings().get(i), otherClause.getTailBindings().get(i));
       }
 
-      Equations equations = myEquations.newInstance();
-      if (!new CompareVisitor(mySubstitution, equations, Equations.CMP.EQ).compare(clause.getChild(), otherClause.getChild())) {
+      if (!new CompareVisitor(mySubstitution, myEquations, Equations.CMP.EQ).compare(clause.getChild(), otherClause.getChild())) {
         return false;
       }
 
@@ -530,7 +521,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       for (int i = 0; i < clause.getTailBindings().size() && i < otherClause.getTailBindings().size(); i++) {
         mySubstitution.remove(clause.getTailBindings().get(i));
       }
-      myEquations.add(equations);
     }
 
     for (ConstructorClause clause : other.getConstructorClauses()) {

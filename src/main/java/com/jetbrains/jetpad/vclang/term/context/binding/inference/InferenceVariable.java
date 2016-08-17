@@ -6,15 +6,37 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.InferenceReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.InferenceVariableListener;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public abstract class InferenceVariable implements Variable {
   private final String myName;
   private Expression myType;
   private InferenceReferenceExpression myReference;
+  private List<InferenceVariableListener> myListeners;
 
   public InferenceVariable(String name, Expression type) {
     myName = name;
     myType = type;
+    myListeners = Collections.emptyList();
+  }
+
+  public void addListener(InferenceVariableListener listener) {
+    if (myListeners.isEmpty()) {
+      myListeners = new ArrayList<>(3);
+    }
+    myListeners.add(listener);
+  }
+
+  public void solve(Equations equations, Expression solution) {
+    myReference.setSubstExpression(solution);
+    for (InferenceVariableListener listener : myListeners) {
+      listener.solved(equations, myReference);
+    }
   }
 
   @Override
@@ -30,12 +52,12 @@ public abstract class InferenceVariable implements Variable {
     myType = type;
   }
 
-  public InferenceReferenceExpression getReference() {
-    return myReference;
-  }
-
   public void setReference(InferenceReferenceExpression reference) {
-    myReference = reference;
+    if (myReference == null) {
+      myReference = reference;
+    } else {
+      throw new IllegalStateException();
+    }
   }
 
   public abstract Abstract.SourceNode getSourceNode();

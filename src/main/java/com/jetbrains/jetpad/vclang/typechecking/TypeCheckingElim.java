@@ -18,6 +18,7 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.StripVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
@@ -106,6 +107,7 @@ public class TypeCheckingElim {
   public Patterns visitPatternArgs(List<Abstract.PatternArgument> patternArgs, DependentLink eliminatingArgs, List<Expression> substIn, PatternExpansionMode mode) {
     List<PatternArgument> typedPatterns = new ArrayList<>();
     LinkList links = new LinkList();
+    StripVisitor stripVisitor = new StripVisitor(myVisitor.getErrorReporter());
     for (Abstract.PatternArgument patternArg : patternArgs) {
       ExpandPatternResult result = expandPattern(patternArg.getPattern(), eliminatingArgs, mode, links);
       if (result == null || result instanceof ExpandPatternErrorResult)
@@ -114,20 +116,13 @@ public class TypeCheckingElim {
       typedPatterns.add(new PatternArgument(((ExpandPatternOKResult) result).pattern, patternArg.isExplicit(), patternArg.isHidden()));
 
       for (int j = 0; j < substIn.size(); j++) {
-        substIn.set(j, substIn.get(j).subst(eliminatingArgs, ((ExpandPatternOKResult) result).expression));
+        substIn.set(j, substIn.get(j).subst(eliminatingArgs, ((ExpandPatternOKResult) result).expression.accept(stripVisitor, null)));
       }
 
       eliminatingArgs = DependentLink.Helper.subst(eliminatingArgs.getNext(), new ExprSubstitution(eliminatingArgs, ((ExpandPatternOKResult) result).expression));
     }
+
     return new Patterns(typedPatterns);
-  }
-
-  public class Result {
-    public ElimTreeNode elimTree;
-
-    public Result(ElimTreeNode elimTree) {
-      this.elimTree = elimTree;
-    }
   }
 
   public ElimTreeNode typeCheckElim(final Abstract.ElimCaseExpression expr, DependentLink eliminatingArgs, Expression expectedType, boolean isCase) {
@@ -224,11 +219,11 @@ public class TypeCheckingElim {
 
     if (elimTreeResult instanceof PatternsToElimTreeConversion.OKResult) {
       ElimTreeNode result = ((PatternsToElimTreeConversion.OKResult) elimTreeResult).elimTree;
-      LevelSubstitution substitution = myVisitor.getEquations().solve(myVisitor.getErrorReporter(), expr);
+      LevelSubstitution substitution = myVisitor.getEquations().solve(expr);
       if (!substitution.getDomain().isEmpty()) {
         result = result.subst(new ExprSubstitution(), substitution);
       }
-      return result;
+      return result.accept(new StripVisitor(myVisitor.getErrorReporter()), null);
     } else if (elimTreeResult instanceof PatternsToElimTreeConversion.EmptyReachableResult) {
       for (int i : ((PatternsToElimTreeConversion.EmptyReachableResult) elimTreeResult).reachable) {
         error = new TypeCheckingError("Empty clause is reachable", expr.getClauses().get(i));

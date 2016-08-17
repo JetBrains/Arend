@@ -55,7 +55,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   private final TypeCheckingDefCall myTypeCheckingDefCall;
   private final TypeCheckingElim myTypeCheckingElim;
   private final ImplicitArgsInference myArgsInference;
-  private final Equations myEquations = new TwoStageEquations();
+  private final Equations myEquations;
 
   public static class Result {
     public Expression expression;
@@ -76,6 +76,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     myTypeCheckingElim = new TypeCheckingElim(definition, this);
     myArgsInference = new StdImplicitArgsInference(definition, this);
     setThisClass(thisClass, thisExpr);
+    myEquations = new TwoStageEquations(errorReporter);
   }
 
   public void setThisClass(ClassDefinition thisClass, Expression thisExpr) {
@@ -200,7 +201,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   public Result checkType(Abstract.Expression expr, Expression expectedType) {
     Result result = typeCheck(expr, expectedType);
     if (result == null) return null;
-    LevelSubstitution substitution = myEquations.solve(myErrorReporter, expr);
+    LevelSubstitution substitution = myEquations.solve(expr);
     if (!substitution.getDomain().isEmpty()) {
       result.expression = result.expression.subst(substitution);
       result.type = result.type.subst(new ExprSubstitution(), substitution);

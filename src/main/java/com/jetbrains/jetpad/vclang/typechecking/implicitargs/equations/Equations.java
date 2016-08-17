@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
@@ -9,15 +9,13 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 
 public interface Equations {
-  boolean add(Equations equations);
-  boolean add(Expression expr1, Expression expr2, CMP cmp, Abstract.SourceNode sourceNode);
+  boolean add(Expression expr1, Expression expr2, CMP cmp, Abstract.SourceNode sourceNode, InferenceVariable stuckVar);
+  boolean solve(Type type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode);
   boolean add(Level level1, Level level2, CMP cmp, Abstract.SourceNode sourceNode);
-  boolean add(Type type, Expression expr, Abstract.SourceNode sourceNode);
+  boolean add(Type type, Expression expr, Abstract.SourceNode sourceNode, InferenceVariable stuckVar);
   boolean addVariable(LevelInferenceVariable var);
-  void clear();
-  boolean isEmpty();
-  Equations newInstance();
-  LevelSubstitution solve(ErrorReporter errorReporter, Abstract.SourceNode sourceNode);
+  void remove(Equation equation);
+  LevelSubstitution solve(Abstract.SourceNode sourceNode);
 
   enum CMP {
     LE, EQ, GE;

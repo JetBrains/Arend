@@ -11,11 +11,7 @@ public class InferenceReferenceExpression extends Expression {
 
   public InferenceReferenceExpression(InferenceVariable binding) {
     myVar = binding;
-    if (myVar.getReference() == null) {
-      myVar.setReference(this);
-    } else {
-      throw new IllegalStateException();
-    }
+    myVar.setReference(this);
   }
 
   public InferenceVariable getVariable() {
