@@ -782,7 +782,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         continue;
       }
 
-      Result result = fieldSet.implementField(field, statement.getExpression(), this, resultExpr, null);
+      Result result = fieldSet.implementField(field, statement.getExpression(), this, resultExpr);
       if (result == null || result.expression.toError() != null) {
         ok = false;
       }

@@ -71,9 +71,17 @@ public class FieldSet {
   }
 
   public CheckTypeVisitor.Result implementField(ClassField field, Abstract.Expression implBody, CheckTypeVisitor visitor, ClassCallExpression fieldSetClass, DependentLink thisParam) {
-    CheckTypeVisitor.Result result = visitor.typeCheck(implBody, field.getBaseType().subst(field.getThisParameter(), Reference(thisParam != null ? thisParam : param("\\this", fieldSetClass))));
+    CheckTypeVisitor.Result result = visitor.typeCheck(implBody, field.getBaseType().subst(field.getThisParameter(), Reference(thisParam)));
     if (result != null) {
       implementField(field, new FieldSet.Implementation(thisParam, result.expression), fieldSetClass);
+    }
+    return result;
+  }
+
+  public CheckTypeVisitor.Result implementField(ClassField field, Abstract.Expression implBody, CheckTypeVisitor visitor, ClassCallExpression fieldSetClass) {
+    CheckTypeVisitor.Result result = visitor.typeCheck(implBody, field.getBaseType().subst(field.getThisParameter(), New(fieldSetClass)));
+    if (result != null) {
+      implementField(field, new FieldSet.Implementation(null, result.expression), fieldSetClass);
     }
     return result;
   }

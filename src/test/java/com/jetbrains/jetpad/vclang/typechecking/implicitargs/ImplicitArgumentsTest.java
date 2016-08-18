@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -270,6 +271,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     typeCheckExpr(context, "\\lam x1 x2 => f x1 x2", null);
   }
 
+  @Ignore
   @Test
   public void untypedLambda2() {
     // f : (A : Type) (B : A -> Type) (a : A) -> B a |- \x1 x2 x3. f x1 x2 x3
