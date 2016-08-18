@@ -30,7 +30,9 @@ import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toSubstitution;
@@ -107,13 +109,18 @@ public class TypeCheckingElim {
   public Patterns visitPatternArgs(List<Abstract.PatternArgument> patternArgs, DependentLink eliminatingArgs, List<Expression> substIn, PatternExpansionMode mode) {
     List<PatternArgument> typedPatterns = new ArrayList<>();
     LinkList links = new LinkList();
-    StripVisitor stripVisitor = new StripVisitor(myVisitor.getErrorReporter());
+    Set<Binding> bounds = new HashSet<>(myVisitor.getContext());
+    StripVisitor stripVisitor = new StripVisitor(bounds, myVisitor.getErrorReporter());
     for (Abstract.PatternArgument patternArg : patternArgs) {
       ExpandPatternResult result = expandPattern(patternArg.getPattern(), eliminatingArgs, mode, links);
       if (result == null || result instanceof ExpandPatternErrorResult)
         return null;
 
       typedPatterns.add(new PatternArgument(((ExpandPatternOKResult) result).pattern, patternArg.isExplicit(), patternArg.isHidden()));
+
+      for (DependentLink link = ((ExpandPatternOKResult) result).pattern.getParameters(); link.hasNext(); link = link.getNext()) {
+        bounds.add(link);
+      }
 
       for (int j = 0; j < substIn.size(); j++) {
         substIn.set(j, substIn.get(j).subst(eliminatingArgs, ((ExpandPatternOKResult) result).expression.accept(stripVisitor, null)));
@@ -223,7 +230,7 @@ public class TypeCheckingElim {
       if (!substitution.getDomain().isEmpty()) {
         result = result.subst(new ExprSubstitution(), substitution);
       }
-      return result.accept(new StripVisitor(myVisitor.getErrorReporter()), null);
+      return result.accept(new StripVisitor(new HashSet<>(myVisitor.getContext()), myVisitor.getErrorReporter()), null);
     } else if (elimTreeResult instanceof PatternsToElimTreeConversion.EmptyReachableResult) {
       for (int i : ((PatternsToElimTreeConversion.EmptyReachableResult) elimTreeResult).reachable) {
         error = new TypeCheckingError("Empty clause is reachable", expr.getClauses().get(i));

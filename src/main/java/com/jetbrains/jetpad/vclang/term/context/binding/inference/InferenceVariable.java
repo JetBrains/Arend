@@ -33,9 +33,12 @@ public abstract class InferenceVariable implements Variable {
   }
 
   public void solve(Equations equations, Expression solution) {
-    myReference.setSubstExpression(solution);
-    for (InferenceVariableListener listener : myListeners) {
-      listener.solved(equations, myReference);
+    if (myReference != null) {
+      myReference.setSubstExpression(solution);
+      for (InferenceVariableListener listener : myListeners) {
+        listener.solved(equations, myReference);
+      }
+      myReference = null;
     }
   }
 

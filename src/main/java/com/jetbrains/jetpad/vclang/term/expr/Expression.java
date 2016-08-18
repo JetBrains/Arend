@@ -75,8 +75,8 @@ public abstract class Expression implements PrettyPrintable, Type {
   }
 
   @Override
-  public Expression strip(ErrorReporter errorReporter) {
-    return accept(new StripVisitor(errorReporter), null);
+  public Expression strip(Set<Binding> bounds, ErrorReporter errorReporter) {
+    return accept(new StripVisitor(bounds, errorReporter), null);
   }
 
   public final Expression subst(Binding binding, Expression substExpr) {

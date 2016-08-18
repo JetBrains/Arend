@@ -1,5 +1,8 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.error.CompositeErrorReporter;
+import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
+import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -206,8 +209,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       result.expression = result.expression.subst(substitution);
       result.type = result.type.subst(new ExprSubstitution(), substitution);
     }
-    result.expression = result.expression.strip(myErrorReporter);
-    result.type = result.type.strip(myErrorReporter);
+
+    CountingErrorReporter counter = new CountingErrorReporter();
+    result.expression = result.expression.strip(new HashSet<>(myContext), new CompositeErrorReporter(myErrorReporter, counter));
+    result.type = result.type.strip(new HashSet<>(myContext), counter.getErrorsNumber() == 0 ? myErrorReporter : new DummyErrorReporter());
     return result;
   }
 

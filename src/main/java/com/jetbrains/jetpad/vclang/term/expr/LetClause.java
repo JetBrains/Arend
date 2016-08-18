@@ -10,7 +10,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 public class LetClause extends NamedBinding implements Function {
   private DependentLink myParameters;
   private ElimTreeNode myElimTree;
-  private final Expression myResultType;
+  private Expression myResultType;
 
   public LetClause(String name, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
     super(name);
@@ -42,6 +42,10 @@ public class LetClause extends NamedBinding implements Function {
   @Override
   public Expression getResultType() {
     return myResultType;
+  }
+
+  public void setResultType(Expression resultType) {
+    myResultType = resultType;
   }
 
   @Override

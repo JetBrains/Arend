@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr.type;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
@@ -24,6 +25,7 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public class PiUniverseType implements Type {
   private final DependentLink myParameters;
@@ -58,14 +60,14 @@ public class PiUniverseType implements Type {
   }
 
   @Override
-  public PiUniverseType strip(ErrorReporter errorReporter) {
+  public PiUniverseType strip(Set<Binding> bounds, ErrorReporter errorReporter) {
     if (!myParameters.hasNext()) {
       return this;
     }
 
     DependentLink params = DependentLink.Helper.clone(myParameters);
     for (DependentLink link = params; link.hasNext(); link = link.getNext()) {
-      params.setType(params.getType().strip(errorReporter));
+      params.setType(params.getType().strip(bounds, errorReporter));
     }
     return new PiUniverseType(params, mySorts);
   }

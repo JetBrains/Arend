@@ -290,7 +290,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     Expression type = Pi(params(A, param("a", Reference(A))), Nat());
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("f", type));
-    typeCheckExpr(context, "\\lam x1 x2 => f x2 x1", null, -1);
+    typeCheckExpr(context, "\\lam x1 x2 => f x2 x1", null, 1);
   }
 
   @Test
@@ -302,7 +302,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("f", type));
 
-    typeCheckExpr(context, "\\lam x1 x2 x3 => f x2 x1 x3", null, -1);
+    typeCheckExpr(context, "\\lam x1 x2 x3 => f x2 x1 x3", null, 1);
   }
 
   @Test

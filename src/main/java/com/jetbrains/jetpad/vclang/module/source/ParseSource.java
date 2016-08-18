@@ -42,9 +42,7 @@ public abstract class ParseSource implements Source {
 
   public ModuleLoader.Result load() throws IOException {
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR);
-    final CompositeErrorReporter errorReporter = new CompositeErrorReporter();
-    errorReporter.addErrorReporter(myErrorReporter);
-    errorReporter.addErrorReporter(countingErrorReporter);
+    final CompositeErrorReporter errorReporter = new CompositeErrorReporter(myErrorReporter, countingErrorReporter);
 
     VcgrammarLexer lexer = new VcgrammarLexer(new ANTLRInputStream(myStream));
     lexer.removeErrorListeners();

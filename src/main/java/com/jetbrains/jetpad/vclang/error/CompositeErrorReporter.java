@@ -1,17 +1,14 @@
 package com.jetbrains.jetpad.vclang.error;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class CompositeErrorReporter implements ErrorReporter {
   private final List<ErrorReporter> myErrorReporters;
 
-  public CompositeErrorReporter() {
-    myErrorReporters = new ArrayList<>(2);
-  }
-
-  public CompositeErrorReporter(List<ErrorReporter> errorReporters) {
-    myErrorReporters = errorReporters;
+  public CompositeErrorReporter(ErrorReporter... errorReporters) {
+    myErrorReporters = new ArrayList<>(Arrays.asList(errorReporters));
   }
 
   public void addErrorReporter(ErrorReporter errorReporter) {

@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
@@ -10,12 +11,18 @@ import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.Stack;
 
 public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTreeNodeVisitor<Void, ElimTreeNode> {
+  private final Set<Binding> myBounds;
   private final ErrorReporter myErrorReporter;
+  private final Stack<InferenceReferenceExpression> myVariables;
 
-  public StripVisitor(ErrorReporter errorReporter) {
+  public StripVisitor(Set<Binding> bounds, ErrorReporter errorReporter) {
+    myBounds = bounds;
     myErrorReporter = errorReporter;
+    myVariables = new Stack<>();
   }
 
   @Override
@@ -58,7 +65,13 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
 
   @Override
   public Expression visitReference(ReferenceExpression expr, Void params) {
-    return expr;
+    if (myBounds.contains(expr.getBinding())) {
+      return expr;
+    }
+
+    TypeCheckingError error = myVariables.empty() ? new TypeCheckingError("Cannot infer some expressions", null) : myVariables.peek().getOriginalVariable().getErrorInfer(myVariables.peek().getSubstExpression());
+    myErrorReporter.report(error);
+    return new ErrorExpression(expr, error);
   }
 
   @Override
@@ -70,27 +83,52 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
       expr.setSubstExpression(result);
       return result;
     } else {
-      return expr.getSubstExpression().accept(this, null);
+      myVariables.push(expr);
+      Expression result = expr.getSubstExpression().accept(this, null);
+      myVariables.pop();
+      return result;
+    }
+  }
+
+  private void visitArguments(DependentLink link) {
+    for (; link.hasNext(); link = link.getNext()) {
+      DependentLink link1 = link.getNextTyped(null);
+      link1.setType(link1.getType().accept(this, null));
+
+      for (; link != link1; link = link.getNext()) {
+        myBounds.add(link);
+      }
+      myBounds.add(link);
+    }
+  }
+
+  private void freeArguments(DependentLink link) {
+    for (; link.hasNext(); link = link.getNext()) {
+      myBounds.remove(link);
     }
   }
 
   @Override
   public LamExpression visitLam(LamExpression expr, Void params) {
-    ExprSubstitution substitution = new ExprSubstitution();
-    DependentLink link = DependentLink.Helper.accept(expr.getParameters(), substitution, this, null);
-    return new LamExpression(link, expr.getBody().accept(this, null).subst(substitution));
+    visitArguments(expr.getParameters());
+    LamExpression result = new LamExpression(expr.getParameters(), expr.getBody().accept(this, null));
+    freeArguments(expr.getParameters());
+    return result;
   }
 
   @Override
   public PiExpression visitPi(PiExpression expr, Void params) {
-    ExprSubstitution substitution = new ExprSubstitution();
-    DependentLink link = DependentLink.Helper.accept(expr.getParameters(), substitution, this, null);
-    return new PiExpression(link, expr.getCodomain().accept(this, null).subst(substitution));
+    visitArguments(expr.getParameters());
+    PiExpression result = new PiExpression(expr.getParameters(), expr.getCodomain().accept(this, null));
+    freeArguments(expr.getParameters());
+    return result;
   }
 
   @Override
   public SigmaExpression visitSigma(SigmaExpression expr, Void params) {
-    return new SigmaExpression(DependentLink.Helper.accept(expr.getParameters(), this, null));
+    visitArguments(expr.getParameters());
+    freeArguments(expr.getParameters());
+    return expr;
   }
 
   @Override
@@ -124,15 +162,21 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
 
   @Override
   public LetExpression visitLet(LetExpression expr, Void params) {
-    ExprSubstitution substitution = new ExprSubstitution();
-    List<LetClause> clauses = new ArrayList<>(expr.getClauses().size());
     for (LetClause clause : expr.getClauses()) {
-      DependentLink link = DependentLink.Helper.accept(clause.getParameters(), substitution, this, null);
-      LetClause clause1 = new LetClause(clause.getName(), link, clause.getResultType() == null ? null : clause.getResultType().accept(this, null).subst(substitution), clause.getElimTree().accept(this, null).subst(substitution));
-      clauses.add(clause1);
-      substitution.add(clause, new ReferenceExpression(clause1));
+      visitArguments(clause.getParameters());
+      if (clause.getResultType() != null) {
+        clause.setResultType(clause.getResultType().accept(this, null));
+      }
+      clause.setElimTree(clause.getElimTree().accept(this, null));
+      freeArguments(clause.getParameters());
+      myBounds.add(clause);
     }
-    return new LetExpression(clauses, expr.getExpression().accept(this, null).subst(substitution));
+
+    LetExpression result = new LetExpression(expr.getClauses(), expr.getExpression().accept(this, null));
+    for (LetClause clause : expr.getClauses()) {
+      myBounds.remove(clause);
+    }
+    return result;
   }
 
   @Override
@@ -146,13 +190,24 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
       ConstructorClause clause1 = result.addClause(clause.getConstructor(), DependentLink.Helper.toNames(clause.getParameters()));
       ExprSubstitution substitution = new ExprSubstitution();
+
       for (DependentLink linkOld = clause.getParameters(), linkNew = clause1.getParameters(); linkOld.hasNext(); linkOld = linkOld.getNext(), linkNew = linkNew.getNext()) {
         substitution.add(linkOld, new ReferenceExpression(linkNew));
+        myBounds.add(linkNew);
       }
       for (int i = 0; i < clause.getTailBindings().size(); i++) {
         substitution.add(clause.getTailBindings().get(i), new ReferenceExpression(clause1.getTailBindings().get(i)));
+        myBounds.add(clause1.getTailBindings().get(i));
       }
-      clause1.setChild(clause.getChild().accept(this, null).subst(substitution));
+
+      clause1.setChild(clause.getChild().subst(substitution).accept(this, null));
+
+      for (DependentLink linkNew = clause1.getParameters(); linkNew.hasNext(); linkNew = linkNew.getNext()) {
+        myBounds.remove(linkNew);
+      }
+      for (Binding binding : clause1.getTailBindings()) {
+        myBounds.remove(binding);
+      }
     }
     if (branchNode.getOtherwiseClause() != null) {
       result.addOtherwiseClause().setChild(branchNode.getOtherwiseClause().getChild().accept(this, null));

@@ -14,7 +14,16 @@ public class InferenceReferenceExpression extends Expression {
     myVar.setReference(this);
   }
 
+  public InferenceReferenceExpression(InferenceVariable binding, Expression substExpression) {
+    myVar = binding;
+    mySubstExpression = substExpression;
+  }
+
   public InferenceVariable getVariable() {
+    return mySubstExpression == null ? myVar : null;
+  }
+
+  public InferenceVariable getOriginalVariable() {
     return myVar;
   }
 
@@ -24,7 +33,6 @@ public class InferenceReferenceExpression extends Expression {
 
   public void setSubstExpression(Expression substExpression) {
     mySubstExpression = substExpression;
-    myVar = null;
   }
 
   @Override
