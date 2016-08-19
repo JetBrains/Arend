@@ -913,8 +913,16 @@ public final class Concrete {
   }
 
   public static class AbstractDefinition extends SignatureDefinition implements Abstract.AbstractDefinition {
-    public AbstractDefinition(Position position, String name, Precedence precedence, List<Argument> arguments, Expression resultType) {
+    private final boolean myImplicit;
+
+    public AbstractDefinition(Position position, String name, Precedence precedence, List<Argument> arguments, Expression resultType, boolean isImplicit) {
       super(position, name, precedence, arguments, resultType);
+      myImplicit = isImplicit;
+    }
+
+    @Override
+    public boolean isImplicit() {
+      return myImplicit;
     }
 
     @Override

@@ -280,7 +280,7 @@ public class ClassesTest extends TypeCheckingTestCase {
   @Test
   public void constructorIndicesThisTest() {
     typeCheckClass(
-        "\\abstract (+) (x y : Nat) : Nat\n" +
+        "\\abstract (+) : Nat -> Nat -> Nat\n" +
         "\\class A {\n" +
         "  \\abstract x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat -> Nat)\n" +

@@ -307,6 +307,7 @@ public final class Abstract {
   public interface AbstractDefinition extends Definition {
     List<? extends Argument> getArguments();
     Expression getResultType();
+    boolean isImplicit();
   }
 
   public interface ImplementDefinition extends Definition {

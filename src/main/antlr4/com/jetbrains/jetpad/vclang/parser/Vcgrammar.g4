@@ -10,18 +10,22 @@ statement : staticMod definition                                  # statDef
 nsCmdRoot : modulePath | name;
 
 definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?            # defFunction
-            | '\\abstract' precedence name tele* ':' expr                                 # defAbstract
-            | '\\implement' ID '=>' expr                                                  # defImplement
+            | implicitOpt '\\abstract' precedence name ':' expr                           # defAbstract
+            | '\\implement' name '=>' expr                                                # defImplement
             | '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef?    # defData
             | classKindMod ID ('\\extends' atomFieldsAcc extendsOpts)* '{' statement* '}' # defClass
             ;
 
-extendsOpts : superClassOpts*   # extendsSuperClassOpts
-            | (',' atomFieldsAcc)*         # extendsMany
+implicitOpt : '\\implicit'  # implicitYes
+            |               # implicitNo
             ;
 
-superClassOpts : '\\renaming' (ID '\\to' ID) (',' ID '\\to' ID)*  # superClassRenaming
-               | '\\hiding' ID (',' ID)*                          # superClassHiding
+extendsOpts : superClassOpts*       # extendsSuperClassOpts
+            | (',' atomFieldsAcc)*  # extendsMany
+            ;
+
+superClassOpts : '\\renaming' (name '\\to' name) (',' name '\\to' name)*  # superClassRenaming
+               | '\\hiding' name (',' name)*                              # superClassHiding
                ;
 
 conditionDef : '\\with' '|'? condition ('|' condition)*;

@@ -72,32 +72,34 @@ public class ParserTest {
 
   @Test
   public void parserImplicit() {
-    Concrete.AbstractDefinition def = (Concrete.AbstractDefinition) parseDef("\\abstract f (x y : \\Type1) {z w : \\Type1} (t : \\Type1) {r : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) : A x y z w t r");
-    assertEquals(5, def.getArguments().size());
-    assertTrue(def.getArguments().get(0).getExplicit());
-    assertFalse(def.getArguments().get(1).getExplicit());
-    assertTrue(def.getArguments().get(2).getExplicit());
-    assertFalse(def.getArguments().get(3).getExplicit());
-    assertTrue(compare(cUniverse(1), ((Concrete.TypeArgument) def.getArguments().get(0)).getType()));
-    assertTrue(compare(cUniverse(1), ((Concrete.TypeArgument) def.getArguments().get(1)).getType()));
-    assertTrue(compare(cUniverse(1), ((Concrete.TypeArgument) def.getArguments().get(2)).getType()));
-    assertTrue(compare(cUniverse(1), ((Concrete.TypeArgument) def.getArguments().get(3)).getType()));
-    assertTrue(compare(cApps(cVar("A"), cVar("x"), cVar("y"), cVar("z"), cVar("w"), cVar("t"), cVar("r")), def.getResultType()));
+    Concrete.AbstractDefinition def = (Concrete.AbstractDefinition) parseDef("\\abstract f : \\Pi (x y : \\Type1) {z w : \\Type1} (t : \\Type1) {r : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) -> A x y z w t r");
+    Concrete.PiExpression pi = (Concrete.PiExpression) def.getResultType();
+    assertEquals(5, pi.getArguments().size());
+    assertTrue(pi.getArguments().get(0).getExplicit());
+    assertFalse(pi.getArguments().get(1).getExplicit());
+    assertTrue(pi.getArguments().get(2).getExplicit());
+    assertFalse(pi.getArguments().get(3).getExplicit());
+    assertTrue(compare(cUniverse(1), pi.getArguments().get(0).getType()));
+    assertTrue(compare(cUniverse(1), pi.getArguments().get(1).getType()));
+    assertTrue(compare(cUniverse(1), pi.getArguments().get(2).getType()));
+    assertTrue(compare(cUniverse(1), pi.getArguments().get(3).getType()));
+    assertTrue(compare(cApps(cVar("A"), cVar("x"), cVar("y"), cVar("z"), cVar("w"), cVar("t"), cVar("r")), pi.getCodomain()));
   }
 
   @Test
   public void parserImplicit2() {
-    Concrete.AbstractDefinition def = (Concrete.AbstractDefinition) parseDef("\\abstract f {x : \\Type1} (_ : \\Type1) {y z : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) (_ : A x y z) : \\Type1");
-    assertEquals(5, def.getArguments().size());
-    assertFalse(def.getArguments().get(0).getExplicit());
-    assertTrue(def.getArguments().get(1).getExplicit());
-    assertFalse(def.getArguments().get(2).getExplicit());
-    assertTrue(def.getArguments().get(3).getExplicit());
-    assertTrue(compare(cUniverse(1), ((Concrete.TypeArgument) def.getArguments().get(0)).getType()));
-    assertTrue(compare(cUniverse(1), ((Concrete.TypeArgument) def.getArguments().get(1)).getType()));
-    assertTrue(compare(cUniverse(1), ((Concrete.TypeArgument) def.getArguments().get(2)).getType()));
-    assertTrue(compare(cApps(cVar("A"), cVar("x"), cVar("y"), cVar("z")), ((Concrete.TypeArgument) def.getArguments().get(4)).getType()));
-    assertTrue(compare(cUniverse(1), def.getResultType()));
+    Concrete.AbstractDefinition def = (Concrete.AbstractDefinition) parseDef("\\abstract f : \\Pi {x : \\Type1} (_ : \\Type1) {y z : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) (_ : A x y z) -> \\Type1");
+    Concrete.PiExpression pi = (Concrete.PiExpression) def.getResultType();
+    assertEquals(5, pi.getArguments().size());
+    assertFalse(pi.getArguments().get(0).getExplicit());
+    assertTrue(pi.getArguments().get(1).getExplicit());
+    assertFalse(pi.getArguments().get(2).getExplicit());
+    assertTrue(pi.getArguments().get(3).getExplicit());
+    assertTrue(compare(cUniverse(1), pi.getArguments().get(0).getType()));
+    assertTrue(compare(cUniverse(1), pi.getArguments().get(1).getType()));
+    assertTrue(compare(cUniverse(1), pi.getArguments().get(2).getType()));
+    assertTrue(compare(cApps(cVar("A"), cVar("x"), cVar("y"), cVar("z")), pi.getArguments().get(4).getType()));
+    assertTrue(compare(cUniverse(1), pi.getCodomain()));
   }
 
   @Test
