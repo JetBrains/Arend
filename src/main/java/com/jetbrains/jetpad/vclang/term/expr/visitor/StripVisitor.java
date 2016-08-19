@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
@@ -186,42 +185,36 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
 
   @Override
   public BranchElimTreeNode visitBranch(BranchElimTreeNode branchNode, Void params) {
-    BranchElimTreeNode result = new BranchElimTreeNode(branchNode.getReference(), branchNode.getContextTail());
+    myBounds.remove(branchNode.getReference());
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-      ConstructorClause clause1 = result.addClause(clause.getConstructor(), DependentLink.Helper.toNames(clause.getParameters()));
-      ExprSubstitution substitution = new ExprSubstitution();
-
-      for (DependentLink linkOld = clause.getParameters(), linkNew = clause1.getParameters(); linkOld.hasNext(); linkOld = linkOld.getNext(), linkNew = linkNew.getNext()) {
-        substitution.add(linkOld, new ReferenceExpression(linkNew));
-        myBounds.add(linkNew);
+      for (DependentLink link = clause.getParameters(); link.hasNext(); link = link.getNext()) {
+        myBounds.add(link);
       }
-      for (int i = 0; i < clause.getTailBindings().size(); i++) {
-        substitution.add(clause.getTailBindings().get(i), new ReferenceExpression(clause1.getTailBindings().get(i)));
-        myBounds.add(clause1.getTailBindings().get(i));
+      for (Binding binding : clause.getTailBindings()) {
+        myBounds.add(binding);
       }
 
-      clause1.setChild(clause.getChild().subst(substitution).accept(this, null));
+      clause.setChild(clause.getChild().accept(this, null));
 
-      for (DependentLink linkNew = clause1.getParameters(); linkNew.hasNext(); linkNew = linkNew.getNext()) {
-        myBounds.remove(linkNew);
+      for (DependentLink link = clause.getParameters(); link.hasNext(); link = link.getNext()) {
+        myBounds.remove(link);
       }
-      for (Binding binding : clause1.getTailBindings()) {
+      for (Binding binding : clause.getTailBindings()) {
         myBounds.remove(binding);
       }
     }
+
+    myBounds.add(branchNode.getReference());
     if (branchNode.getOtherwiseClause() != null) {
-      result.addOtherwiseClause().setChild(branchNode.getOtherwiseClause().getChild().accept(this, null));
+      branchNode.getOtherwiseClause().setChild(branchNode.getOtherwiseClause().getChild().accept(this, null));
     }
-    return result;
+    return branchNode;
   }
 
   @Override
   public LeafElimTreeNode visitLeaf(LeafElimTreeNode leafNode, Void params) {
-    LeafElimTreeNode result = new LeafElimTreeNode(leafNode.getArrow(), leafNode.getExpression().accept(this, null));
-    if (leafNode.getMatched() != null) {
-      result.setMatched(new ArrayList<>(leafNode.getMatched()));
-    }
-    return result;
+    leafNode.setExpression(leafNode.getExpression().accept(this, null));
+    return leafNode;
   }
 
   @Override

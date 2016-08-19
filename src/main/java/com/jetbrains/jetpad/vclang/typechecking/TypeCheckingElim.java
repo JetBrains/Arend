@@ -230,7 +230,9 @@ public class TypeCheckingElim {
       if (!substitution.getDomain().isEmpty()) {
         result = result.subst(new ExprSubstitution(), substitution);
       }
-      return result.accept(new StripVisitor(new HashSet<>(myVisitor.getContext()), myVisitor.getErrorReporter()), null);
+      Set<Binding> bounds = new HashSet<>(myVisitor.getContext());
+      bounds.addAll(argsBindings);
+      return result.accept(new StripVisitor(bounds, myVisitor.getErrorReporter()), null);
     } else if (elimTreeResult instanceof PatternsToElimTreeConversion.EmptyReachableResult) {
       for (int i : ((PatternsToElimTreeConversion.EmptyReachableResult) elimTreeResult).reachable) {
         error = new TypeCheckingError("Empty clause is reachable", expr.getClauses().get(i));
