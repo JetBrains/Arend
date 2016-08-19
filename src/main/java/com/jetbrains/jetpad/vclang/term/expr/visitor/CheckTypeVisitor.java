@@ -857,7 +857,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       } else {
         Result termResult = typeCheck(clause.getTerm(), expectedType);
         if (termResult == null) return null;
-        Expression type = termResult.type.toExpression();
+        Expression type = expectedType != null ? expectedType : termResult.type.toExpression();
         if (type == null) {
           // FIXME[errorformat]
           TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Cannot infer type of expression", clause.getTerm());

@@ -12,15 +12,6 @@ import static org.junit.Assert.assertEquals;
 
 public class ExtensionsTest extends TypeCheckingTestCase {
   @Test
-  public void numberOfFields() {
-    TypeCheckClassResult result = typeCheckClass(
-        "\\class A {}\n" +
-        "\\class B \\extends A {}");
-    assertEquals(1, ((ClassDefinition) result.getDefinition("A")).getFieldSet().getFields().size());
-    assertEquals(1, ((ClassDefinition) result.getDefinition("B")).getFieldSet().getFields().size());
-  }
-
-  @Test
   public void fields() {
     typeCheckClass(
         "\\class A {\n" +

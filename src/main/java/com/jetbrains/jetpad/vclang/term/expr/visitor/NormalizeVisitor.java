@@ -139,23 +139,31 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   private Expression visitFunctionCall(Function func, LevelSubstitution polySubst, Expression expr, Mode mode) {
     List<? extends Expression> args = expr.getArguments();
     List<? extends EnumSet<AppExpression.Flag>> flags = Collections.emptyList();
-    List<? extends Expression> requiredArgs;
+    List<Expression> requiredArgs;
     DependentLink excessiveParams;
     int numberOfRequiredArgs = func.getNumberOfRequiredArguments();
     if (numberOfRequiredArgs > args.size()) {
       excessiveParams = DependentLink.Helper.subst(DependentLink.Helper.get(func.getParameters(), args.size()), new ExprSubstitution());
-      List<Expression> requiredArgs1 = new ArrayList<>();
-      for (DependentLink link = excessiveParams; link.hasNext(); link = link.getNext()) {
-        requiredArgs1.add(Reference(link));
+      if (!args.isEmpty()) {
+        ExprSubstitution substitution = new ExprSubstitution();
+        int i = 0;
+        for (DependentLink link = func.getParameters(); i < args.size(); link = link.getNext(), i++) {
+          substitution.add(link, args.get(i));
+        }
+        for (DependentLink link = excessiveParams; link.hasNext(); link = link.getNext()) {
+          link = link.getNextTyped(null);
+          link.setType(link.getType().subst(substitution));
+        }
       }
-      List<Expression> requiredArgs2 = new ArrayList<>(args.size() + requiredArgs1.size());
-      requiredArgs2.addAll(args);
-      requiredArgs2.addAll(requiredArgs1);
-      requiredArgs = requiredArgs2;
+      requiredArgs = new ArrayList<>();
+      requiredArgs.addAll(args);
+      for (DependentLink link = excessiveParams; link.hasNext(); link = link.getNext()) {
+        requiredArgs.add(Reference(link));
+      }
       args = Collections.emptyList();
     } else {
       excessiveParams = EmptyDependentLink.getInstance();
-      requiredArgs = args.subList(0, func.getNumberOfRequiredArguments());
+      requiredArgs = new ArrayList<>(args.subList(0, func.getNumberOfRequiredArguments()));
       AppExpression app = expr.toApp();
       if (app != null) {
         flags = app.getFlags().subList(numberOfRequiredArgs, args.size());
