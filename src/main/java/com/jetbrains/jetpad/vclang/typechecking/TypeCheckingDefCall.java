@@ -44,103 +44,123 @@ public class TypeCheckingDefCall {
   }
 
   public CheckTypeVisitor.Result typeCheckDefCall(Abstract.DefCallExpression expr) {
+    Abstract.Expression left = expr.getExpression();
     Abstract.Definition resolvedDefinition = expr.getReferent();
+    Definition typeCheckedDefinition = null;
     if (resolvedDefinition != null) {
-      final Definition typeCheckedDefinition = myState.getTypechecked(resolvedDefinition);
-      if (typeCheckedDefinition == null) {
+      typeCheckedDefinition = myState.getTypechecked(resolvedDefinition);
+      if (left == null && typeCheckedDefinition == null) {
         throw new IllegalStateException("Internal error: definition " + resolvedDefinition + " was not typechecked");
       }
+    }
 
-      Expression thisExpr = null;
-      if (typeCheckedDefinition.getThisClass() != null) {
-        if (myThisClass != null) {
-          thisExpr = findParent(myThisClass, typeCheckedDefinition, myThisExpr, expr);
-          if (thisExpr == null) {
+    // No left-hand side
+    if (left == null || typeCheckedDefinition != null) { // TODO: We should remove the second condition
+      if (typeCheckedDefinition != null) {
+        Expression thisExpr = null;
+        if (typeCheckedDefinition.getThisClass() != null) {
+          if (myThisClass != null) {
+            thisExpr = findParent(myThisClass, typeCheckedDefinition, myThisExpr, expr);
+            if (thisExpr == null) {
+              return null;
+            }
+          } else {
+            TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Non-static definitions are not allowed in a static context", expr);
+            expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+            myVisitor.getErrorReporter().report(error);
             return null;
           }
-        } else {
-          TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Non-static definitions are not allowed in a static context", expr);
-          expr.setWellTyped(myVisitor.getContext(), Error(null, error));
-          myVisitor.getErrorReporter().report(error);
-          return null;
         }
+        return applyThis(insertPolyVars(typeCheckedDefinition, expr), thisExpr, expr);
+      } else {
+        return getLocalVar(expr);
       }
-      return applyThis(insertPolyVars(typeCheckedDefinition, expr), thisExpr, expr);
     }
 
-
-    Abstract.Expression left = expr.getExpression();
-    if (left == null) {
-      return getLocalVar(expr);
-    }
     CheckTypeVisitor.Result result = left.accept(myVisitor, null);
     if (result == null) {
       return null;
     }
     String name = expr.getName();
 
+    // Field call
     if (result.type instanceof Expression) {
       Expression type = ((Expression) result.type).normalize(NormalizeVisitor.Mode.WHNF);
       if (type.toClassCall() != null) {
         ClassDefinition classDefinition = type.toClassCall().getDefinition();
 
-        Definition definition;
-        Abstract.Definition member = classDefinition.getInstanceNamespace().resolveName(name);
-        if (member == null) {
-          MemberNotFoundError error = new MemberNotFoundError(myParentDefinition, classDefinition, name, false, expr);
-          expr.setWellTyped(myVisitor.getContext(), Error(null, error));
-          myVisitor.getErrorReporter().report(error);
-          return null;
-        }
-        definition = myState.getTypechecked(member);
-        if (definition == null) {
-          throw new IllegalStateException("Internal error: definition " + member + " was not typechecked");
+        if (typeCheckedDefinition == null) {
+          Abstract.Definition member = classDefinition.getInstanceNamespace().resolveName(name);
+          if (member == null) {
+            MemberNotFoundError error = new MemberNotFoundError(myParentDefinition, classDefinition, name, false, expr);
+            expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+            myVisitor.getErrorReporter().report(error);
+            return null;
+          }
+          typeCheckedDefinition = myState.getTypechecked(member);
+          if (typeCheckedDefinition == null) {
+            throw new IllegalStateException("Internal error: definition " + member + " was not typechecked");
+          }
+        } else {
+          if (!(typeCheckedDefinition instanceof ClassField && classDefinition.getFieldSet().getFields().contains(typeCheckedDefinition))) {
+            throw new IllegalStateException("Internal error: field " + typeCheckedDefinition + " does not belong to class " + classDefinition);
+          }
         }
 
-        if (definition.getThisClass() == null) {
+        if (typeCheckedDefinition.getThisClass() == null) {
           TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Static definitions are not allowed in a non-static context", expr);
           expr.setWellTyped(myVisitor.getContext(), Error(null, error));
           myVisitor.getErrorReporter().report(error);
           return null;
         }
-        if (!classDefinition.isSubClassOf(definition.getThisClass())) {
-          TypeCheckingError error = new TypeMismatchError(myParentDefinition, definition.getThisClass().getDefCall(), type, left);
+        if (!classDefinition.isSubClassOf(typeCheckedDefinition.getThisClass())) {
+          TypeCheckingError error = new TypeMismatchError(myParentDefinition, typeCheckedDefinition.getThisClass().getDefCall(), type, left);
           expr.setWellTyped(myVisitor.getContext(), Error(null, error));
           myVisitor.getErrorReporter().report(error);
           return null;
         }
 
         Expression thisExpr = result.expression;
-        result.expression = definition.getDefCall();
-        result.type = definition.getTypeWithThis();
+        result.expression = typeCheckedDefinition.getDefCall();
+        result.type = typeCheckedDefinition.getTypeWithThis();
         return applyThis(result, thisExpr, expr);
       }
     }
 
-
+    // Constructor call
     List<? extends Expression> arguments = result.expression.getArguments();
     Expression fun = result.expression.getFunction();
     DataCallExpression dataCall = fun.toDataCall();
     if (dataCall != null) {
       DataDefinition dataDefinition = dataCall.getDefinition();
-      Constructor constructor = dataDefinition.getConstructor(name);
+      Constructor constructor;
+      if (typeCheckedDefinition == null) {
+        constructor = dataDefinition.getConstructor(name);
+        if (constructor == null && !arguments.isEmpty()) {
+          TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Cannot find constructor '" + name + "' of data type '" + dataDefinition.getName() + "'", expr);
+          expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+          myVisitor.getErrorReporter().report(error);
+          return null;
+        }
+      } else {
+        if (typeCheckedDefinition instanceof Constructor && dataDefinition.getConstructors().contains(typeCheckedDefinition)) {
+          constructor = (Constructor) typeCheckedDefinition;
+        } else {
+          throw new IllegalStateException("Internal error: " + typeCheckedDefinition + " is not a constructor of " + dataDefinition);
+        }
+      }
+
       if (constructor != null) {
         result.expression = ConCall(constructor, new ArrayList<>(arguments)).applyLevelSubst(dataCall.getPolyParamsSubst());
         result.type = result.expression.getType();
         return result;
       }
-
-      if (!arguments.isEmpty()) {
-        TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Cannot find constructor '" + name + "' of data type '" + dataDefinition.getName() + "'", expr);
-        expr.setWellTyped(myVisitor.getContext(), Error(null, error));
-        myVisitor.getErrorReporter().report(error);
-        return null;
-      }
     }
 
-    final Definition leftDefinition;
-    final Abstract.Definition member;
+    // Static call
     Expression thisExpr = null;
+    final Definition leftDefinition;
+    Abstract.Definition member = null;
     ClassCallExpression classCall = result.expression.toClassCall();
     if (classCall != null) {
       leftDefinition = classCall.getDefinition();
@@ -151,12 +171,14 @@ public class TypeCheckingDefCall {
           thisExpr = impl.term;
         }
       }
-      member = leftDefinition.getOwnNamespace().resolveName(expr.getName());
-      if (member == null) {
-        MemberNotFoundError error = new MemberNotFoundError(myParentDefinition, leftDefinition, name, true, expr);
-        expr.setWellTyped(myVisitor.getContext(), Error(null, error));
-        myVisitor.getErrorReporter().report(error);
-        return null;
+      if (typeCheckedDefinition == null) {
+        member = leftDefinition.getOwnNamespace().resolveName(name);
+        if (member == null) {
+          MemberNotFoundError error = new MemberNotFoundError(myParentDefinition, leftDefinition, name, true, expr);
+          expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+          myVisitor.getErrorReporter().report(error);
+          return null;
+        }
       }
     } else {
       if (result.expression.toDefCall() != null) {
@@ -172,22 +194,26 @@ public class TypeCheckingDefCall {
         return null;
       }
 
-      member = new MergeScope(leftDefinition.getOwnNamespace(), leftDefinition.getInstanceNamespace()).resolveName(name);
-      if (member == null) {
-        MemberNotFoundError error = new MemberNotFoundError(myParentDefinition, leftDefinition, name, expr);
-        expr.setWellTyped(myVisitor.getContext(), Error(null, error));
-        myVisitor.getErrorReporter().report(error);
-        return null;
+      if (typeCheckedDefinition == null) {
+        member = new MergeScope(leftDefinition.getOwnNamespace(), leftDefinition.getInstanceNamespace()).resolveName(name);
+        if (member == null) {
+          MemberNotFoundError error = new MemberNotFoundError(myParentDefinition, leftDefinition, name, expr);
+          expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+          myVisitor.getErrorReporter().report(error);
+          return null;
+        }
       }
     }
 
-    Definition definition = myState.getTypechecked(member);
-    if (definition == null) {
-      throw new IllegalStateException("Internal error: definition " + member + " was not typechecked");
+    if (member != null) {
+      typeCheckedDefinition = myState.getTypechecked(member);
+      if (typeCheckedDefinition == null) {
+        throw new IllegalStateException("Internal error: definition " + member + " was not typechecked");
+      }
     }
 
-    result.expression = definition.getDefCall();
-    result.type = definition.getTypeWithThis();
+    result.expression = typeCheckedDefinition.getDefCall();
+    result.type = typeCheckedDefinition.getTypeWithThis();
     return applyThis(result, thisExpr, expr);
   }
 
@@ -202,9 +228,8 @@ public class TypeCheckingDefCall {
         myVisitor.getEquations().addVariable(l);
       }
 
-      DefCallExpression defCall = definition.getDefCall(subst);
-      result.expression = defCall;
-      result.type = defCall.getDefinition().getTypeWithThis().subst(new ExprSubstitution(), subst);
+      result.expression = definition.getDefCall(subst);
+      result.type = definition.getTypeWithThis().subst(new ExprSubstitution(), subst);
       return result;
     }
 
