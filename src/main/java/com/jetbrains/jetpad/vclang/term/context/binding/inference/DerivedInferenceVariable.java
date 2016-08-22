@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.context.binding.inference;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
@@ -9,13 +8,8 @@ public class DerivedInferenceVariable extends InferenceVariable {
   private final InferenceVariable myVar;
 
   public DerivedInferenceVariable(String name, InferenceVariable binding) {
-    super(name, binding.getType());
+    super(name, binding.getType(), binding.getSourceNode());
     myVar = binding;
-  }
-
-  @Override
-  public Abstract.SourceNode getSourceNode() {
-    return myVar.getSourceNode();
   }
 
   @Override

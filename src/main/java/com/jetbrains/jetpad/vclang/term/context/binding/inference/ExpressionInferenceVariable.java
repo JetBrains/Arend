@@ -7,25 +7,17 @@ import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 public class ExpressionInferenceVariable extends InferenceVariable {
-  private final Abstract.SourceNode mySourceNode;
-
   public ExpressionInferenceVariable(Expression type, Abstract.SourceNode sourceNode) {
-    super(null, type);
-    mySourceNode = sourceNode;
-  }
-
-  @Override
-  public Abstract.SourceNode getSourceNode() {
-    return mySourceNode;
+    super(null, type, sourceNode);
   }
 
   @Override
   public TypeCheckingError getErrorInfer(Expression... candidates) {
-    return new ArgInferenceError(ArgInferenceError.expression(), mySourceNode, candidates);
+    return new ArgInferenceError(ArgInferenceError.expression(), getSourceNode(), candidates);
   }
 
   @Override
   public TypeCheckingError getErrorMismatch(Expression expectedType, Type actualType, Expression candidate) {
-    return new ArgInferenceError(ArgInferenceError.expression(), expectedType, actualType, mySourceNode, candidate);
+    return new ArgInferenceError(ArgInferenceError.expression(), expectedType, actualType, getSourceNode(), candidate);
   }
 }

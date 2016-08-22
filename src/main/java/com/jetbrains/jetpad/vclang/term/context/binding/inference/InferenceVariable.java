@@ -15,12 +15,14 @@ import java.util.List;
 
 public abstract class InferenceVariable implements Variable {
   private final String myName;
+  private final Abstract.SourceNode mySourceNode;
   private Expression myType;
   private InferenceReferenceExpression myReference;
   private List<InferenceVariableListener> myListeners;
 
-  public InferenceVariable(String name, Expression type) {
+  public InferenceVariable(String name, Expression type, Abstract.SourceNode sourceNode) {
     myName = name;
+    mySourceNode = sourceNode;
     myType = type;
     myListeners = Collections.emptyList();
   }
@@ -47,6 +49,11 @@ public abstract class InferenceVariable implements Variable {
     return myName;
   }
 
+  public Abstract.SourceNode getSourceNode() {
+    return mySourceNode;
+  }
+
+  @Override
   public Expression getType() {
     return myType;
   }
@@ -62,8 +69,6 @@ public abstract class InferenceVariable implements Variable {
       throw new IllegalStateException();
     }
   }
-
-  public abstract Abstract.SourceNode getSourceNode();
 
   public abstract TypeCheckingError getErrorInfer(Expression... candidates);
 

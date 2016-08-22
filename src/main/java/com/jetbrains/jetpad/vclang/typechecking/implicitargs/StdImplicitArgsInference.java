@@ -34,9 +34,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     List<EnumSet<AppExpression.Flag>> flags = new ArrayList<>();
     for (int i = 0; i < parameters.size(); i++) {
       DependentLink parameter = parameters.get(i);
-      Expression binding;
-      binding = new InferenceReferenceExpression(new FunctionInferenceVariable(parameter.getName(), parameter.getType().subst(substitution), i + 1, expr));
-
+      Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable(parameter.getName(), parameter.getType().subst(substitution), i + 1, expr));
       arguments.add(binding);
       flags.add(EnumSet.noneOf(AppExpression.Flag.class));
       substitution.add(parameter, binding);
