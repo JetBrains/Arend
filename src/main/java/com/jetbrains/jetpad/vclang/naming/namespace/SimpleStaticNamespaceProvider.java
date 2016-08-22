@@ -30,6 +30,32 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
     return forStatements(def.getStatements());
   }
 
+  private static SimpleNamespace forClassImplicit(Abstract.ClassDefinition def) {
+    SimpleNamespace ns = new SimpleNamespace();
+
+    for (Abstract.SuperClass superClass : def.getSuperClasses()) {
+      Abstract.ClassDefinition superDef = Abstract.getUnderlyingClassDef(superClass.getSuperClass());
+      if (superDef != null) {
+        ns.addAll(forClassImplicit(superDef));
+      }
+    }
+
+    for (Abstract.Statement statement : def.getStatements()) {
+      if (statement instanceof Abstract.DefineStatement && ((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.AbstractDefinition) {
+        Abstract.AbstractDefinition field = (Abstract.AbstractDefinition) ((Abstract.DefineStatement) statement).getDefinition();
+        if (field.isImplicit()) {
+          ns.addDefinition(field);
+          // Abstract.ClassDefinition classDef = Abstract.getUnderlyingClassDef(field.getResultType());
+          // if (classDef != null) {
+          //   ns.addAll(forClassImplicit(classDef));
+          // }
+        }
+      }
+    }
+
+    return ns;
+  }
+
   private static SimpleNamespace forStatements(Collection<? extends Abstract.Statement> statements) {
     SimpleNamespace ns = new SimpleNamespace();
     for (Abstract.Statement statement : statements) {
@@ -39,6 +65,9 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
         ns.addDefinition(defst.getDefinition());
         if (defst.getDefinition() instanceof Abstract.DataDefinition) {
           ns.addAll(forData((Abstract.DataDefinition) defst.getDefinition()));  // constructors
+        }
+        if (defst.getDefinition() instanceof Abstract.ClassDefinition) {
+          ns.addAll(forClassImplicit((Abstract.ClassDefinition) defst.getDefinition()));
         }
       }
     }
