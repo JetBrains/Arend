@@ -1,16 +1,15 @@
 package com.jetbrains.jetpad.vclang.typeclass;
 
-import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
 
-public class TypeClassesNameResolver extends TypeCheckingTestCase {
+public class TypeClassesNameResolver {
   @Test
   public void resolveNames() {
     resolveNamesClass("test",
         "\\static \\class X {\n" +
-        "  \\implicit \\abstract f : Nat\n" +
+        "  \\implicit \\abstract f : \\Type0\n" +
         "}\n" +
         "\\function g => f");
   }
@@ -19,7 +18,7 @@ public class TypeClassesNameResolver extends TypeCheckingTestCase {
   public void resolveNamesNonImplicit() {
     resolveNamesClass("test",
         "\\static \\class X {\n" +
-        "  \\abstract f : Nat\n" +
+        "  \\abstract f : \\Type0\n" +
         "}\n" +
         "\\function g => f", 1);
   }
@@ -28,10 +27,10 @@ public class TypeClassesNameResolver extends TypeCheckingTestCase {
   public void resolveNamesDuplicate() {
     resolveNamesClass("test",
         "\\static \\class X {\n" +
-        "  \\implicit \\abstract f : Nat\n" +
+        "  \\implicit \\abstract f : \\Type0\n" +
         "}\n" +
         "\\static \\class Y {\n" +
-        "  \\implicit \\abstract f : Nat -> Nat\n" +
+        "  \\implicit \\abstract f : \\Type0 -> \\Type0\n" +
         "}", 1);
   }
 
@@ -40,7 +39,7 @@ public class TypeClassesNameResolver extends TypeCheckingTestCase {
     resolveNamesClass("test",
         "\\static \\class X {\n" +
         "  \\static \\class Z {\n" +
-        "    \\implicit \\abstract f : Nat\n" +
+        "    \\implicit \\abstract f : \\Type0\n" +
         "  }\n" +
         "}\n" +
         "\\function g => f", 1);
@@ -51,7 +50,7 @@ public class TypeClassesNameResolver extends TypeCheckingTestCase {
     resolveNamesClass("test",
         "\\static \\class X {\n" +
         "  \\static \\class Z {\n" +
-        "    \\implicit \\abstract f : Nat\n" +
+        "    \\implicit \\abstract f : \\Type0\n" +
         "  }\n" +
         "}\n" +
         "\\static \\class Y {\n" +

@@ -4,11 +4,9 @@ import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceVariable;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
@@ -60,17 +58,27 @@ public class TypeCheckingDefCall {
         Expression thisExpr = null;
         if (typeCheckedDefinition.getThisClass() != null) {
           if (myThisClass != null) {
-            thisExpr = findParent(myThisClass, typeCheckedDefinition, myThisExpr, expr);
-            if (thisExpr == null) {
+            thisExpr = findParent(myThisClass, typeCheckedDefinition, myThisExpr);
+          }
+
+          if (thisExpr == null) {
+            if (typeCheckedDefinition.getAbstractDefinition() instanceof Abstract.AbstractDefinition && ((Abstract.AbstractDefinition) typeCheckedDefinition.getAbstractDefinition()).isImplicit()) {
+              // TODO: if typeCheckedDefinition.getThisClass() is dynamic, then we should apply it to some this expression
+              thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable(typeCheckedDefinition.getThisClass().getName() + "-inst", typeCheckedDefinition.getThisClass().getDefCall(), expr));
+            } else {
+              TypeCheckingError error;
+              if (myThisClass != null) {
+                error = new TypeCheckingError(myParentDefinition, "Definition '" + typeCheckedDefinition.getName() + "' is not available in this context", expr);
+              } else {
+                error = new TypeCheckingError(myParentDefinition, "Non-static definitions are not allowed in a static context", expr);
+              }
+              expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+              myVisitor.getErrorReporter().report(error);
               return null;
             }
-          } else {
-            TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Non-static definitions are not allowed in a static context", expr);
-            expr.setWellTyped(myVisitor.getContext(), Error(null, error));
-            myVisitor.getErrorReporter().report(error);
-            return null;
           }
         }
+
         return applyThis(insertPolyVars(typeCheckedDefinition, expr), thisExpr, expr);
       } else {
         return getLocalVar(expr);
@@ -120,10 +128,7 @@ public class TypeCheckingDefCall {
           return null;
         }
 
-        Expression thisExpr = result.expression;
-        result.expression = typeCheckedDefinition.getDefCall();
-        result.type = typeCheckedDefinition.getTypeWithThis();
-        return applyThis(result, thisExpr, expr);
+        return applyThis(insertPolyVars(typeCheckedDefinition, expr), result.expression, expr);
       }
     }
 
@@ -212,9 +217,7 @@ public class TypeCheckingDefCall {
       }
     }
 
-    result.expression = typeCheckedDefinition.getDefCall();
-    result.type = typeCheckedDefinition.getTypeWithThis();
-    return applyThis(result, thisExpr, expr);
+    return applyThis(insertPolyVars(typeCheckedDefinition, expr), thisExpr, expr);
   }
 
   private CheckTypeVisitor.Result insertPolyVars(Definition definition, Abstract.SourceNode sourceNode) {
@@ -236,18 +239,15 @@ public class TypeCheckingDefCall {
     return new CheckTypeVisitor.Result(definition.getDefCall(), definition.getTypeWithThis());
   }
 
-  private Expression findParent(ClassDefinition classDefinition, Definition definition, Expression result, Abstract.Expression expr) {
+  private Expression findParent(ClassDefinition classDefinition, Definition definition, Expression result) {
     if (classDefinition.isSubClassOf(definition.getThisClass())) {
       return result;
     }
     ClassField parentField = classDefinition.getEnclosingThisField();
     if (parentField == null || parentField.getBaseType().toClassCall() == null) {
-      TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Definition '" + definition.getName() + "' is not available in this context", expr);
-      expr.setWellTyped(myVisitor.getContext(), Error(null, error));
-      myVisitor.getErrorReporter().report(error);
       return null;
     }
-    return findParent(parentField.getBaseType().toClassCall().getDefinition(), definition, Apps(FieldCall(parentField), result), expr);
+    return findParent(parentField.getBaseType().toClassCall().getDefinition(), definition, Apps(FieldCall(parentField), result));
   }
 
   private CheckTypeVisitor.Result applyThis(CheckTypeVisitor.Result result, Expression thisExpr, Abstract.Expression expr) {
