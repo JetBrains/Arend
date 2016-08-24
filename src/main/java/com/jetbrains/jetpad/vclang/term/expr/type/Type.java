@@ -23,7 +23,7 @@ public interface Type extends PrettyPrintable {
   boolean isLessOrEquals(Sort sort);
   boolean isLessOrEquals(Expression expression, Equations equations, Abstract.SourceNode sourceNode);
   SortMax toSorts();
-  Type getImplicitParameters(List<DependentLink> params);
+  Type getPiParameters(List<DependentLink> params, boolean normalize, boolean implicitOnly);
   Type fromPiParameters(List<DependentLink> params);
   Type addParameters(DependentLink params, boolean modify);
   DependentLink getPiParameters();

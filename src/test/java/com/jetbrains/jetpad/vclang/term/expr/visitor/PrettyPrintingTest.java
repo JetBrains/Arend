@@ -24,7 +24,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   @Test
   public void prettyPrintingLam() {
     // \x. x x
-    DependentLink x = param("x", Nat());
+    DependentLink x = param("x", Pi(Nat(), Nat()));
     Expression expr = Lam(x, Apps(Reference(x), Reference(x)));
     expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC, 0);
   }
@@ -32,8 +32,8 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   @Test
   public void prettyPrintingLam2() {
     // \x. x (\y. y x) (\z w. x w z)
-    DependentLink x = param("x", Nat());
-    DependentLink y = param("y", Nat());
+    DependentLink x = param("x", Pi(Nat(), Pi(Nat(), Nat())));
+    DependentLink y = param("y", Pi(Nat(), Nat()));
     DependentLink z = param("z", Nat());
     DependentLink w = param("w", Nat());
     Expression expr = Lam(x, Apps(Reference(x), Lam(y, Apps(Reference(y), Reference(x))), Lam(params(z, w), Apps(Reference(x), Reference(w), Reference(z)))));
@@ -50,13 +50,14 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
 
   @Test
   public void prettyPrintingPi() {
-    // (x y : N) (z w : N -> N) -> ((s : N) -> N (z s) (w x)) -> N
+    // (t : Nat -> Nat -> Nat) (x y : Nat) (z w : Nat -> Nat) -> ((s : Nat) -> t (z s) (w x)) -> Nat
+    DependentLink t = param("t", Pi(Nat(), Pi(Nat(), Nat())));
     DependentLink x = param("x", Nat());
     DependentLink y = param("y", Nat());
     DependentLink z = param("z", Pi(param(Nat()), Nat()));
     DependentLink w = param("w", Pi(param(Nat()), Nat()));
     DependentLink s = param("s", Nat());
-    Expression expr = Pi(params(x, y, z, w), Pi(param(Pi(s, Apps(Nat(), Apps(Reference(z), Reference(s)), Apps(Reference(w), Reference(x))))), Nat()));
+    Expression expr = Pi(params(t, x, y, z, w), Pi(param(Pi(s, Apps(Reference(t), Apps(Reference(z), Reference(s)), Apps(Reference(w), Reference(x))))), Nat()));
     expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC, 0);
   }
 
@@ -75,7 +76,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     // \let x {A : Type0} (y ; A) : A => y \in x Zero()
     DependentLink A = param("A", Universe(0));
     DependentLink y = param("y", Reference(A));
-    LetClause clause = let("x", params(A, y), Reference(A));
+    LetClause clause = let("x", params(A, y), Reference(A), Reference(y));
     LetExpression expr = Let(lets(clause), Apps(Reference(clause), Zero()));
     expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC, 0);
   }

@@ -23,7 +23,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVis
 import java.util.*;
 
 public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expression> implements ElimTreeNodeVisitor<Void, Abstract.Expression> {
-  public enum Flag { SHOW_CON_DATA_TYPE, SHOW_CON_PARAMS, SHOW_HIDDEN_ARGS, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS }
+  public enum Flag { SHOW_CON_DATA_TYPE, SHOW_CON_PARAMS, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS }
   public static final EnumSet<Flag> DEFAULT = EnumSet.of(Flag.SHOW_IMPLICIT_ARGS, Flag.SHOW_CON_PARAMS);
 
   private final AbstractExpressionFactory myFactory;
@@ -66,11 +66,6 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     if (!(args.size() == 3 && dataCall != null && dataCall.getDefinition() == Prelude.PATH)) {
       return null;
     }
-    for (EnumSet<AppExpression.Flag> flag : expr.getFlags()) {
-      if (!flag.contains(AppExpression.Flag.EXPLICIT)) {
-        return null;
-      }
-    }
     LamExpression expr1 = args.get(0).toLam();
     if (expr1 != null) {
       if (!expr1.getBody().findBinding(expr1.getParameters())) {
@@ -87,14 +82,16 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     if (!(defCall != null && new Name(defCall.getDefinition().getName()).fixity == Name.Fixity.INFIX)) {
       return null;
     }
-    if (expr.getFlags().size() < 2 || myFlags.contains(Flag.SHOW_BIN_OP_IMPLICIT_ARGS) && (!expr.getFlags().get(0).contains(AppExpression.Flag.EXPLICIT) || !expr.getFlags().get(1).contains(AppExpression.Flag.EXPLICIT))) {
+    boolean[] isExplicit = new boolean[expr.getArguments().size()];
+    getArgumentsExplicitness(defCall, isExplicit);
+    if (isExplicit.length < 2 || myFlags.contains(Flag.SHOW_BIN_OP_IMPLICIT_ARGS) && (!isExplicit[0] || !isExplicit[1])) {
       return null;
     }
 
     Expression[] visibleArgs = new Expression[2];
     int i = 0;
     for (int j = 0; j < expr.getArguments().size(); j++) {
-      if (expr.getFlags().get(j).contains(AppExpression.Flag.EXPLICIT) && (expr.getFlags().get(j).contains(AppExpression.Flag.VISIBLE) || myFlags.contains(Flag.SHOW_HIDDEN_ARGS))) {
+      if (isExplicit[j]) {
         if (i == 2) {
           return null;
         }
@@ -143,16 +140,28 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       result = expr.getFunction().accept(this, null);
     }
 
+    boolean[] isExplicit = new boolean[expr.getArguments().size()];
+    getArgumentsExplicitness(expr.getFunction(), isExplicit);
     for (; index < expr.getArguments().size(); index++) {
-      result = visitApp(result, expr.getArguments().get(index), expr.getFlags().get(index));
+      result = visitApp(result, expr.getArguments().get(index), isExplicit[index]);
     }
     return result;
   }
 
-  private Abstract.Expression visitApp(Abstract.Expression function, Expression argument, EnumSet<AppExpression.Flag> flag) {
-    boolean showArg = (flag.contains(AppExpression.Flag.VISIBLE) || myFlags.contains(Flag.SHOW_HIDDEN_ARGS)) && (flag.contains(AppExpression.Flag.EXPLICIT) || myFlags.contains(Flag.SHOW_IMPLICIT_ARGS));
-    Abstract.Expression arg = showArg ? argument.accept(this, null) : flag.contains(AppExpression.Flag.EXPLICIT) ? myFactory.makeInferHole() : null;
-    return arg != null ? myFactory.makeApp(function, flag.contains(AppExpression.Flag.EXPLICIT), arg) : function;
+  private void getArgumentsExplicitness(Expression expr, boolean[] isExplicit) {
+    List<DependentLink> params = new ArrayList<>(isExplicit.length);
+    expr.getType().getPiParameters(params, true, false);
+    if (params.size() < isExplicit.length) {
+      throw new IllegalStateException();
+    }
+    for (int i = 0; i < isExplicit.length; i++) {
+      isExplicit[i] = params.get(i + params.size() - isExplicit.length).isExplicit();
+    }
+  }
+
+  private Abstract.Expression visitApp(Abstract.Expression function, Expression argument, boolean isExplicit) {
+    Abstract.Expression arg = isExplicit || myFlags.contains(Flag.SHOW_IMPLICIT_ARGS) ? argument.accept(this, null) : null;
+    return arg != null ? myFactory.makeApp(function, isExplicit, arg) : function;
   }
 
   @Override

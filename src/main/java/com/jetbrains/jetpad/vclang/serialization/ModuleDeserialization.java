@@ -428,19 +428,10 @@ public class ModuleDeserialization {
         Expression function = readExpression(stream, definitionMap);
         int size = stream.readInt();
         List<Expression> arguments = new ArrayList<>(size);
-        List<EnumSet<AppExpression.Flag>> flags = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
           arguments.add(readExpression(stream, definitionMap));
-          EnumSet<AppExpression.Flag> flag = EnumSet.noneOf(AppExpression.Flag.class);
-          if (stream.readBoolean()) {
-            flag.add(AppExpression.Flag.EXPLICIT);
-          }
-          if (stream.readBoolean()) {
-            flag.add(AppExpression.Flag.VISIBLE);
-          }
-          flags.add(flag);
         }
-        return new AppExpression(function, arguments, flags);
+        return new AppExpression(function, arguments);
       }
       case 2: {
         Definition definition = definitionMap.get(stream.readInt());

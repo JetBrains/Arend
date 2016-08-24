@@ -13,7 +13,6 @@ import com.jetbrains.jetpad.vclang.typechecking.normalization.Normalizer;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -32,7 +31,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     Expression fun = expr.getFunction();
     LamExpression lamFun = fun.toLam();
     if (lamFun != null) {
-      return myNormalizer.normalize(lamFun, expr.getArguments(), expr.getFlags(), mode);
+      return myNormalizer.normalize(lamFun, expr.getArguments(), mode);
     }
 
     if (fun.toDefCall() != null) {
@@ -50,7 +49,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     if (mode == Mode.TOP) return null;
     Expression newExpr = fun.accept(this, Mode.TOP);
     if (newExpr != null) {
-      newExpr = newExpr.addArguments(expr.getArguments(), expr.getFlags());
+      newExpr = newExpr.addArguments(expr.getArguments());
       return newExpr.accept(this, mode);
     }
 
@@ -65,7 +64,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       for (Expression argument : expr.getArguments()) {
         newArgs.add(argument.accept(this, mode));
       }
-      return new AppExpression(expr.getFunction(), newArgs, appExpr.getFlags());
+      return new AppExpression(expr.getFunction(), newArgs);
     } else {
       return expr;
     }
@@ -93,8 +92,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         if (impl != null) {
           final Expression term;
           term = impl.substThisParam(thisExpr);
-          List<? extends EnumSet<AppExpression.Flag>> flags = expr.toApp().getFlags();
-          Expression result = Apps(term, expr.getArguments().subList(1, expr.getArguments().size()), flags.subList(1, flags.size()));
+          Expression result = Apps(term, expr.getArguments().subList(1, expr.getArguments().size()));
           return mode == Mode.TOP ? result : result.accept(this, mode);
         }
       }
@@ -126,11 +124,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       conCallExpression = ConCall(conCallExpression.getDefinition(), parameters).applyLevelSubst(conCallExpression.getPolyParamsSubst());
       int size = args.size();
       args = args.subList(take, size);
-      if (!args.isEmpty()) {
-        expr = Apps(conCallExpression, args, expr.toApp().getFlags().subList(take, size));
-      } else {
-        expr = conCallExpression;
-      }
+      expr = args.isEmpty() ? conCallExpression : Apps(conCallExpression, args);
     }
 
     return visitFunctionCall(conCallExpression.getDefinition(), conCallExpression.getPolyParamsSubst(), expr, mode);//.subst(conCallExpression.getPolyParamsSubst());
@@ -138,7 +132,6 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   private Expression visitFunctionCall(Function func, LevelSubstitution polySubst, Expression expr, Mode mode) {
     List<? extends Expression> args = expr.getArguments();
-    List<? extends EnumSet<AppExpression.Flag>> flags = Collections.emptyList();
     List<Expression> requiredArgs;
     DependentLink excessiveParams;
     int numberOfRequiredArgs = func.getNumberOfRequiredArguments();
@@ -164,10 +157,6 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     } else {
       excessiveParams = EmptyDependentLink.getInstance();
       requiredArgs = new ArrayList<>(args.subList(0, func.getNumberOfRequiredArguments()));
-      AppExpression app = expr.toApp();
-      if (app != null) {
-        flags = app.getFlags().subList(numberOfRequiredArgs, args.size());
-      }
       args = args.subList(numberOfRequiredArgs, args.size());
     }
 
@@ -178,7 +167,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       params = conCall.getDefinition().getDataTypeParameters();
       paramArgs = conCall.getDataTypeArguments();
     }
-    Expression result = myNormalizer.normalize(func, polySubst, params, paramArgs, requiredArgs, args, flags, mode);
+    Expression result = myNormalizer.normalize(func, polySubst, params, paramArgs, requiredArgs, args, mode);
     if (result == null) {
       return applyDefCall(expr, mode);
     }

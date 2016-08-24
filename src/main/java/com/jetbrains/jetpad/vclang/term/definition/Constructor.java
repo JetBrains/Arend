@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.term.definition;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
@@ -17,7 +16,6 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -124,12 +122,10 @@ public class Constructor extends Definition implements Function {
     Expression resultType = DataCall(myDataType);
     if (myPatterns == null) {
       List<Expression> arguments = new ArrayList<>();
-      List<EnumSet<AppExpression.Flag>> flags = new ArrayList<>();
       for (DependentLink link = myDataType.getParameters(); link.hasNext(); link = link.getNext()) {
         arguments.add(Reference(link));
-        flags.add(link.isExplicit() ? EnumSet.of(AppExpression.Flag.EXPLICIT, AppExpression.Flag.VISIBLE) : EnumSet.noneOf(AppExpression.Flag.class));
       }
-      resultType = Apps(resultType, arguments, flags);
+      resultType = Apps(resultType, arguments);
     } else {
       ExprSubstitution subst = new ExprSubstitution();
 

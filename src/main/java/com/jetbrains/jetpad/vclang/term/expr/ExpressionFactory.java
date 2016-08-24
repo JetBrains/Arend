@@ -26,15 +26,15 @@ import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helpe
 
 public class ExpressionFactory {
   public static Expression Apps(Expression function, Expression... arguments) {
-    return arguments.length == 0 ? function : new AppExpression(function, new ArrayList<>(Arrays.asList(arguments)), Collections.<EnumSet<AppExpression.Flag>>emptyList());
+    return arguments.length == 0 ? function : new AppExpression(function, new ArrayList<>(Arrays.asList(arguments)));
   }
 
   public static Expression Apps(Expression fun, List<Expression> arguments) {
-    return arguments.isEmpty() ? fun : new AppExpression(fun, arguments, Collections.<EnumSet<AppExpression.Flag>>emptyList());
+    return arguments.isEmpty() ? fun : new AppExpression(fun, arguments);
   }
 
-  public static Expression Apps(Expression fun, Collection<? extends Expression> arguments, Collection<? extends EnumSet<AppExpression.Flag>> flags) {
-    return arguments.isEmpty() ? fun : new AppExpression(fun, arguments, flags);
+  public static Expression Apps(Expression fun, Collection<? extends Expression> arguments) {
+    return arguments.isEmpty() ? fun : new AppExpression(fun, arguments);
   }
 
   public static FunCallExpression FunCall(FunctionDefinition definition) {

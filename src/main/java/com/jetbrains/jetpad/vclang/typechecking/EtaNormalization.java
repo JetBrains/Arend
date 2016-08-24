@@ -53,7 +53,7 @@ public class EtaNormalization {
       return expression;
     }
 
-    body = Apps(body.getFunction(), args.subList(0, args.size() - index), body.toApp().getFlags().subList(0, args.size() - index));
+    body = Apps(body.getFunction(), args.subList(0, args.size() - index));
     if (index == params.size()) {
       return body;
     }

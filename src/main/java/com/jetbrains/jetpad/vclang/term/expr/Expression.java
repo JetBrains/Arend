@@ -27,7 +27,7 @@ public abstract class Expression implements PrettyPrintable, Type {
   public String toString() {
     StringBuilder builder = new StringBuilder();
     ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory());
-    visitor.addFlags(ToAbstractVisitor.Flag.SHOW_HIDDEN_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM);
+    visitor.addFlags(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM);
     accept(visitor, null).accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
     return builder.toString();
   }
@@ -40,7 +40,7 @@ public abstract class Expression implements PrettyPrintable, Type {
   @Override
   public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent) {
     ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory(), names);
-    visitor.addFlags(ToAbstractVisitor.Flag.SHOW_HIDDEN_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM);
+    visitor.addFlags(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM);
     accept(visitor, null).accept(new PrettyPrintVisitor(builder, indent), prec);
   }
 
@@ -110,10 +110,6 @@ public abstract class Expression implements PrettyPrintable, Type {
   }
 
   @Override
-  public Type getImplicitParameters(List<DependentLink> params) {
-    return getPiParameters(params, true, true);
-  }
-
   public Expression getPiParameters(List<DependentLink> params, boolean normalize, boolean implicitOnly) {
     Expression cod = normalize ? normalize(NormalizeVisitor.Mode.WHNF) : this;
     PiExpression piCod = cod.toPi();
@@ -225,12 +221,12 @@ public abstract class Expression implements PrettyPrintable, Type {
     return Collections.emptyList();
   }
 
-  public Expression addArgument(Expression argument, EnumSet<AppExpression.Flag> flag) {
-    return new AppExpression(this, new ArrayList<>(Collections.singletonList(argument)), new ArrayList<>(Collections.singletonList(flag)));
+  public Expression addArgument(Expression argument) {
+    return new AppExpression(this, new ArrayList<>(Collections.singletonList(argument)));
   }
 
-  public Expression addArguments(Collection<? extends Expression> arguments, Collection<? extends EnumSet<AppExpression.Flag>> flags) {
-    return arguments.isEmpty() ? this : new AppExpression(this, arguments, flags);
+  public Expression addArguments(Collection<? extends Expression> arguments) {
+    return arguments.isEmpty() ? this : new AppExpression(this, arguments);
   }
 
   public AppExpression toApp() {

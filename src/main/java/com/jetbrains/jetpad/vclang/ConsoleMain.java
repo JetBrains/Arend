@@ -85,10 +85,11 @@ public class ConsoleMain {
     }
 
     SimpleStaticNamespaceProvider staticNsProvider = new SimpleStaticNamespaceProvider();
+    SimpleDynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
     final SimpleModuleNamespaceProvider moduleNsProvider = new SimpleModuleNamespaceProvider();
     final ListErrorReporter errorReporter = new ListErrorReporter();
-    final NameResolver nameResolver = new NameResolver(moduleNsProvider, staticNsProvider, new SimpleDynamicNamespaceProvider());
-    final OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(errorReporter, nameResolver, new ConcreteResolveListener(), new SimpleStaticNamespaceProvider(), new SimpleDynamicNamespaceProvider());
+    final NameResolver nameResolver = new NameResolver(moduleNsProvider, staticNsProvider, dynamicNsProvider);
+    final OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(errorReporter, nameResolver, new ConcreteResolveListener(), staticNsProvider, dynamicNsProvider);
     final OneshotSourceInfoCollector srcInfoCollector = new OneshotSourceInfoCollector();
     final ErrorFormatter errf = new ErrorFormatter(srcInfoCollector.sourceInfoProvider);
     final List<ModuleID> loadedModules = new ArrayList<>();

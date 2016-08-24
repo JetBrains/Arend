@@ -3,7 +3,10 @@ package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 import com.jetbrains.jetpad.vclang.term.*;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.FunctionInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.ErrorExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.InferenceReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
@@ -12,7 +15,10 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeMismatchError;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
@@ -31,15 +37,13 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
     ExprSubstitution substitution = new ExprSubstitution();
     List<Expression> arguments = new ArrayList<>();
-    List<EnumSet<AppExpression.Flag>> flags = new ArrayList<>();
     for (int i = 0; i < parameters.size(); i++) {
       DependentLink parameter = parameters.get(i);
       Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable(parameter.getName(), parameter.getType().subst(substitution), i + 1, expr));
       arguments.add(binding);
-      flags.add(EnumSet.noneOf(AppExpression.Flag.class));
       substitution.add(parameter, binding);
     }
-    result.expression = Apps(result.expression, arguments, flags);
+    result.expression = Apps(result.expression, arguments);
     result.type = result.type.subst(substitution, new LevelSubstitution());
     return true;
   }
@@ -59,7 +63,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         DependentLink lamParam = param("i", interval);
         Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", pathParams.get(0).getType().toPi().getCodomain(), 1, fun));
         Expression lamExpr = Lam(lamParam, binding);
-        result.expression = result.expression.addArgument(lamExpr, EnumSet.noneOf(AppExpression.Flag.class));
+        result.expression = result.expression.addArgument(lamExpr);
         result.type = result.type.applyExpressions(Collections.singletonList(lamExpr));
 
         CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, Pi(lamParam, binding));
@@ -70,15 +74,15 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         Expression expr1 = Apps(argResult.expression, Left());
         Expression expr2 = Apps(argResult.expression, Right());
         result.expression
-            .addArgument(expr1, EnumSet.noneOf(AppExpression.Flag.class))
-            .addArgument(expr2, EnumSet.noneOf(AppExpression.Flag.class))
-            .addArgument(argResult.expression, AppExpression.DEFAULT);
+            .addArgument(expr1)
+            .addArgument(expr2)
+            .addArgument(argResult.expression);
         result.type = result.type.applyExpressions(Arrays.asList(expr1, expr2, argResult.expression));
         return result;
       }
 
       List<DependentLink> params = new ArrayList<>();
-      result.type = result.type.getImplicitParameters(params);
+      result.type = result.type.getPiParameters(params, true, true);
       if (!fixImplicitArgs(result, params, fun)) {
         return null;
       }
@@ -104,7 +108,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       return null;
     }
 
-    result.expression = result.expression.addArgument(argResult.expression, isExplicit ? EnumSet.of(AppExpression.Flag.EXPLICIT, AppExpression.Flag.VISIBLE) : EnumSet.of(AppExpression.Flag.VISIBLE));
+    result.expression = result.expression.addArgument(argResult.expression);
     result.type = result.type.applyExpressions(Collections.singletonList(argResult.expression));
     return result;
   }
@@ -133,7 +137,6 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           Expression expectedTypeNorm = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
           List<? extends Expression> args = expectedTypeNorm.getArguments();
           if (expectedTypeNorm.getFunction().toDataCall() != null) {
-            DataCallExpression dataCall = expectedTypeNorm.getFunction().toDataCall();
             List<Expression> args1 = new ArrayList<>(args.size());
             args1.addAll(result.expression.getArguments());
             args1.addAll(args.subList(result.expression.getArguments().size(), args.size()));
@@ -143,7 +146,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
                 args = args.subList(conCall.getDataTypeArguments().size(), args.size());
               }
               if (!args.isEmpty()) {
-                result.expression = Apps(result.expression, args, Collections.nCopies(args.size(), EnumSet.noneOf(AppExpression.Flag.class)));
+                result.expression = Apps(result.expression, args);
                 result.type = result.type.applyExpressions(args);
               }
           /*  if (dataCall.isPolymorphic()) {
@@ -192,7 +195,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
   @Override
   public CheckTypeVisitor.Result inferTail(CheckTypeVisitor.Result result, Expression expectedType, Abstract.Expression expr) {
     List<DependentLink> actualParams = new ArrayList<>();
-    Type actualType = result.type.getImplicitParameters(actualParams);
+    Type actualType = result.type.getPiParameters(actualParams, true, true);
     List<DependentLink> expectedParams = new ArrayList<>(actualParams.size());
     Expression expectedType1 = expectedType.getPiParameters(expectedParams, true, true);
     if (expectedParams.size() > actualParams.size()) {

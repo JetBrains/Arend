@@ -10,8 +10,6 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
-import java.util.EnumSet;
-
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 
@@ -60,9 +58,9 @@ public class GetTypeTest extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass("\\static \\class C { \\abstract x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
     DependentLink p = param("p", Pi(Nat(), ClassCall((ClassDefinition) result.getDefinition("C"))));
     Expression type = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(1))
-      .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class))
-      .addArgument(Zero(), AppExpression.DEFAULT)
-      .addArgument(Apps(FieldCall((ClassField) result.getDefinition("C.x")), Apps(Reference(p), Zero())), AppExpression.DEFAULT);
+      .addArgument(Nat())
+      .addArgument(Zero())
+      .addArgument(Apps(FieldCall((ClassField) result.getDefinition("C.x")), Apps(Reference(p), Zero())));
     assertEquals(Pi(p, Pi(type, type)).normalize(NormalizeVisitor.Mode.NF), result.getDefinition("test").getType().normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -70,9 +68,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
   public void tupleTest() {
     TypeCheckClassResult result = typeCheckClass("\\function test : \\Sigma (x y : Nat) (x = y) => (0, 0, path (\\lam _ => 0))");
     DependentLink xy = param(true, vars("x", "y"), Nat());
-    testType(Sigma(params(xy, param(Apps(FunCall(Prelude.PATH_INFIX, new Level(0), new Level(1))
-        .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class)), Reference(xy), Reference(xy.getNext()))))),
-        result);
+    testType(Sigma(params(xy, param(Apps(FunCall(Prelude.PATH_INFIX, new Level(0), new Level(1)), Nat(), Reference(xy), Reference(xy.getNext()))))), result);
   }
 
   @Test

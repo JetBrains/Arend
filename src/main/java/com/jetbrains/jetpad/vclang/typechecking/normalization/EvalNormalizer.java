@@ -11,13 +11,16 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class EvalNormalizer implements Normalizer {
   @Override
-  public Expression normalize(LamExpression fun, List<? extends Expression> arguments, List<? extends EnumSet<AppExpression.Flag>> flags, NormalizeVisitor.Mode mode) {
+  public Expression normalize(LamExpression fun, List<? extends Expression> arguments, NormalizeVisitor.Mode mode) {
     int i = 0;
     DependentLink link = fun.getParameters();
     ExprSubstitution subst = new ExprSubstitution();
@@ -32,15 +35,15 @@ public class EvalNormalizer implements Normalizer {
     }
     result = result.subst(subst);
     if (result != fun.getBody()) {
-      result = result.addArguments(arguments.subList(i, arguments.size()), flags.subList(i, flags.size()));
+      result = result.addArguments(arguments.subList(i, arguments.size()));
     } else {
-      result = Apps(result, arguments.subList(i, arguments.size()), flags.subList(i, flags.size()));
+      result = Apps(result, arguments.subList(i, arguments.size()));
     }
     return result.normalize(mode);
   }
 
   @Override
-  public Expression normalize(Function fun, LevelSubstitution polySubst, DependentLink params, List<? extends Expression> paramArgs, List<? extends Expression> arguments, List<? extends Expression> otherArguments, List<? extends EnumSet<AppExpression.Flag>> otherFlags, NormalizeVisitor.Mode mode) {
+  public Expression normalize(Function fun, LevelSubstitution polySubst, DependentLink params, List<? extends Expression> paramArgs, List<? extends Expression> arguments, List<? extends Expression> otherArguments, NormalizeVisitor.Mode mode) {
     assert fun.getNumberOfRequiredArguments() == arguments.size();
 
     if (fun == Prelude.COERCE) {
@@ -71,7 +74,7 @@ public class EvalNormalizer implements Normalizer {
       }
 
       if (result != null) {
-        return Apps(result.subst(polySubst), otherArguments, otherFlags).normalize(mode);
+        return Apps(result.subst(polySubst), otherArguments).normalize(mode);
       }
     }
 
@@ -86,7 +89,7 @@ public class EvalNormalizer implements Normalizer {
       subst.add(params, argument);
       params = params.getNext();
     }
-    return Apps(leaf.getExpression().subst(subst, polySubst), otherArguments, otherFlags).normalize(mode);
+    return Apps(leaf.getExpression().subst(subst, polySubst), otherArguments).normalize(mode);
   }
 
   @Override

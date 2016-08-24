@@ -30,7 +30,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
     for (Expression arg : expr.getArguments()) {
       args.add(arg.accept(this, null));
     }
-    return new AppExpression(expr.getFunction().accept(this, null), args, expr.getFlags());
+    return new AppExpression(expr.getFunction().accept(this, null), args);
   }
 
   @Override

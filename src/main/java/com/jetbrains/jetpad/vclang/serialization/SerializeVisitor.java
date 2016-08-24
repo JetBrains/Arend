@@ -52,8 +52,6 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
       myDataStream.writeInt(expr.getArguments().size());
       for (int i = 0; i < expr.getArguments().size(); i++) {
         expr.getArguments().get(i).accept(this, null);
-        myDataStream.writeBoolean(expr.getFlags().get(i).contains(AppExpression.Flag.EXPLICIT));
-        myDataStream.writeBoolean(expr.getFlags().get(i).contains(AppExpression.Flag.VISIBLE));
       }
     } catch (IOException e) {
       throw new IllegalStateException();

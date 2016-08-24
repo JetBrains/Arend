@@ -93,9 +93,9 @@ public class PiUniverseType implements Type {
   }
 
   @Override
-  public Type getImplicitParameters(List<DependentLink> params) {
+  public Type getPiParameters(List<DependentLink> params, boolean normalize, boolean implicitOnly) {
     DependentLink link = myParameters;
-    for (; link.hasNext() && !link.isExplicit(); link = link.getNext()) {
+    for (; link.hasNext() && (!implicitOnly || !link.isExplicit()); link = link.getNext()) {
       params.add(link);
     }
     return new PiUniverseType(link, mySorts);

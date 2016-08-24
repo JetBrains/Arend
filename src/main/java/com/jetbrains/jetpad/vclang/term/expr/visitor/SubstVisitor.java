@@ -30,7 +30,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     for (Expression argument : expr.getArguments()) {
       arguments.add(argument.accept(this, null));
     }
-    return new AppExpression(expr.getFunction().accept(this, null), arguments, expr.getFlags());
+    return new AppExpression(expr.getFunction().accept(this, null), arguments);
   }
 
   @Override
