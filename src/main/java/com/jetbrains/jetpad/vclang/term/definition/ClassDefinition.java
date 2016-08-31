@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
+import com.jetbrains.jetpad.vclang.term.typeclass.ClassView;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -68,7 +69,7 @@ public class ClassDefinition extends Definition {
 
   @Override
   public ClassCallExpression getDefCall() {
-    return ClassCall(this, myFieldSet);
+    return ClassCall(this, myFieldSet, ClassView.DEFAULT);
   }
 
   @Override

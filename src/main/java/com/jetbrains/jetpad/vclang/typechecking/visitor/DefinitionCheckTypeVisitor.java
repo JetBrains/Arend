@@ -238,7 +238,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
   }
 
   @Override
-  public ClassField visitAbstract(Abstract.AbstractDefinition def, ClassDefinition enclosingClass) {
+  public ClassField visitAbstract(Abstract.ClassViewField def, ClassDefinition enclosingClass) {
     throw new IllegalStateException();
   }
 
@@ -744,8 +744,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       for (Abstract.Statement statement : def.getStatements()) {
         if (statement instanceof Abstract.DefineStatement) {
           Abstract.Definition definition = ((Abstract.DefineStatement) statement).getDefinition();
-          if (definition instanceof Abstract.AbstractDefinition) {
-            ClassField field = visitClassField((Abstract.AbstractDefinition) definition, typedDef);
+          if (definition instanceof Abstract.ClassViewField) {
+            ClassField field = visitClassField((Abstract.ClassViewField) definition, typedDef);
             fieldSet.addField(field, thisClassCall);
           } else if (definition instanceof Abstract.ImplementDefinition) {
             Definition implementedDef = myState.getTypechecked(((Abstract.ImplementDefinition) definition).getImplemented());
@@ -778,7 +778,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     return null;
   }
 
-  private ClassField visitClassField(Abstract.AbstractDefinition def, ClassDefinition enclosingClass) {
+  private ClassField visitClassField(Abstract.ClassViewField def, ClassDefinition enclosingClass) {
     if (enclosingClass == null) throw new IllegalStateException();
 
     List<? extends Abstract.Argument> arguments = def.getArguments();

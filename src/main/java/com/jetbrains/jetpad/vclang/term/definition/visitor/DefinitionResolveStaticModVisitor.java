@@ -19,7 +19,7 @@ public class DefinitionResolveStaticModVisitor implements AbstractDefinitionVisi
   }
 
   @Override
-  public Void visitAbstract(Abstract.AbstractDefinition def, Boolean isStaticDefault) {
+  public Void visitAbstract(Abstract.ClassViewField def, Boolean isStaticDefault) {
     if (def.getParentStatement().getStaticMod() == Abstract.DefineStatement.StaticMod.DEFAULT)
       myStaticModListener.resolveStaticMod(def.getParentStatement(), isStaticDefault);
 

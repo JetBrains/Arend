@@ -304,7 +304,7 @@ public final class Abstract {
     Expression getResultType();
   }
 
-  public interface AbstractDefinition extends Definition {
+  public interface ClassViewField extends Definition {
     List<? extends Argument> getArguments();
     Expression getResultType();
     boolean isImplicit();

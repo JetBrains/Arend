@@ -84,7 +84,7 @@ public class TypecheckingOrdering {
         }
 
         @Override
-        public Boolean visitAbstract(Abstract.AbstractDefinition def, Void params) {
+        public Boolean visitAbstract(Abstract.ClassViewField def, Void params) {
           // Calss to abstracts (class fields) can not possibly add any dependencies
           // as in order to call a field we need to have an instance of the class
           // which (the class) is the actual dependency.

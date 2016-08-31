@@ -18,6 +18,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
+import com.jetbrains.jetpad.vclang.term.typeclass.ClassView;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.util.*;
@@ -58,11 +59,11 @@ public class ExpressionFactory {
   }
 
   public static ClassCallExpression ClassCall(ClassDefinition definition) {
-    return new ClassCallExpression(definition);
+    return new ClassCallExpression(definition, ClassView.DEFAULT);
   }
 
-  public static ClassCallExpression ClassCall(ClassDefinition definition, FieldSet fieldSet) {
-    return new ClassCallExpression(definition, fieldSet);
+  public static ClassCallExpression ClassCall(ClassDefinition definition, FieldSet fieldSet, ClassView classView) {
+    return new ClassCallExpression(definition, fieldSet, classView);
   }
 
   public static ConCallExpression ConCall(Constructor definition, List<Expression> parameters) {

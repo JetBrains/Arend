@@ -26,7 +26,7 @@ public class DefinitionSourceInfoVisitor implements AbstractDefinitionVisitor<Fu
   }
 
   @Override
-  public Void visitAbstract(Abstract.AbstractDefinition def, FullName params) {
+  public Void visitAbstract(Abstract.ClassViewField def, FullName params) {
     return null;
   }
 

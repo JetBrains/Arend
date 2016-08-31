@@ -43,11 +43,11 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   }
 
   @Override
-  public Set<Abstract.Definition> visitAbstract(Abstract.AbstractDefinition def, Boolean params) {
+  public Set<Abstract.Definition> visitAbstract(Abstract.ClassViewField def, Boolean params) {
     throw new IllegalStateException();
   }
 
-  private void visitAbstract(Set<Abstract.Definition> result, Abstract.AbstractDefinition def) {
+  private void visitAbstract(Set<Abstract.Definition> result, Abstract.ClassViewField def) {
     for (Abstract.Argument arg : def.getArguments()) {
       if (arg instanceof Abstract.TypeArgument) {
         ((Abstract.TypeArgument) arg).getType().accept(new CollectDefCallsVisitor(result), null);
@@ -109,8 +109,8 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
             ));
           }
         } else {
-          if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.AbstractDefinition) {
-            visitAbstract(result, (Abstract.AbstractDefinition) ((Abstract.DefineStatement) statement).getDefinition());
+          if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ClassViewField) {
+            visitAbstract(result, (Abstract.ClassViewField) ((Abstract.DefineStatement) statement).getDefinition());
           } else
           if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ImplementDefinition) {
             visitImplement(result, (Abstract.ImplementDefinition) ((Abstract.DefineStatement) statement).getDefinition());

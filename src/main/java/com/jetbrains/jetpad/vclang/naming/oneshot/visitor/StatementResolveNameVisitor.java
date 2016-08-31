@@ -42,7 +42,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
     } else if (stat.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC && flag == DefinitionResolveNameVisitor.Flag.MUST_BE_DYNAMIC) {
       myErrorReporter.report(new TypeCheckingError("Static definitions are not allowed in this context", stat));
       return null;
-    } else if (stat.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC && stat.getDefinition() instanceof Abstract.AbstractDefinition) {
+    } else if (stat.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC && stat.getDefinition() instanceof Abstract.ClassViewField) {
       myErrorReporter.report(new TypeCheckingError("Abstract definitions cannot be static", stat));
       return null;
     }

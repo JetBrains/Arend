@@ -674,7 +674,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   @Override
-  public Void visitAbstract(Abstract.AbstractDefinition def, Void params) {
+  public Void visitAbstract(Abstract.ClassViewField def, Void params) {
     myBuilder.append("\\abstract ");
     prettyPrintBinding(def);
     prettyPrintArguments(def.getArguments(), Abstract.DefCallExpression.PREC);

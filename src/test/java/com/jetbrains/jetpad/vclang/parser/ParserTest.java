@@ -72,7 +72,7 @@ public class ParserTest {
 
   @Test
   public void parserImplicit() {
-    Concrete.AbstractDefinition def = (Concrete.AbstractDefinition) parseDef("\\abstract f : \\Pi (x y : \\Type1) {z w : \\Type1} (t : \\Type1) {r : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) -> A x y z w t r");
+    Concrete.ClassViewField def = (Concrete.ClassViewField) parseDef("\\abstract f : \\Pi (x y : \\Type1) {z w : \\Type1} (t : \\Type1) {r : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) -> A x y z w t r");
     Concrete.PiExpression pi = (Concrete.PiExpression) def.getResultType();
     assertEquals(5, pi.getArguments().size());
     assertTrue(pi.getArguments().get(0).getExplicit());
@@ -88,7 +88,7 @@ public class ParserTest {
 
   @Test
   public void parserImplicit2() {
-    Concrete.AbstractDefinition def = (Concrete.AbstractDefinition) parseDef("\\abstract f : \\Pi {x : \\Type1} (_ : \\Type1) {y z : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) (_ : A x y z) -> \\Type1");
+    Concrete.ClassViewField def = (Concrete.ClassViewField) parseDef("\\abstract f : \\Pi {x : \\Type1} (_ : \\Type1) {y z : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) (_ : A x y z) -> \\Type1");
     Concrete.PiExpression pi = (Concrete.PiExpression) def.getResultType();
     assertEquals(5, pi.getArguments().size());
     assertFalse(pi.getArguments().get(0).getExplicit());

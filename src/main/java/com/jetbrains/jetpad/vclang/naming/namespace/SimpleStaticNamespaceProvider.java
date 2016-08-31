@@ -41,8 +41,8 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
     }
 
     for (Abstract.Statement statement : def.getStatements()) {
-      if (statement instanceof Abstract.DefineStatement && ((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.AbstractDefinition) {
-        Abstract.AbstractDefinition field = (Abstract.AbstractDefinition) ((Abstract.DefineStatement) statement).getDefinition();
+      if (statement instanceof Abstract.DefineStatement && ((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ClassViewField) {
+        Abstract.ClassViewField field = (Abstract.ClassViewField) ((Abstract.DefineStatement) statement).getDefinition();
         if (field.isImplicit()) {
           ns.addDefinition(field);
           // Abstract.ClassDefinition classDef = Abstract.getUnderlyingClassDef(field.getResultType());
@@ -93,7 +93,7 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
     }
 
     @Override
-    public Namespace visitAbstract(Abstract.AbstractDefinition def, Void params) {
+    public Namespace visitAbstract(Abstract.ClassViewField def, Void params) {
       return new EmptyNamespace();
     }
 

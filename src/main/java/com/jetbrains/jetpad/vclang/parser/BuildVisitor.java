@@ -314,7 +314,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.AbstractDefinition visitDefAbstract(DefAbstractContext ctx) {
+  public Concrete.ClassViewField visitDefAbstract(DefAbstractContext ctx) {
     if (ctx == null) return null;
     String name = visitName(ctx.name());
     Abstract.Definition.Precedence precedence = visitPrecedence(ctx.precedence());
@@ -323,7 +323,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return null;
     }
 
-    return new Concrete.AbstractDefinition(tokenPosition(ctx.getStart()), name, precedence, Collections.<Concrete.Argument>emptyList(), resultType, ctx.implicitOpt() instanceof ImplicitYesContext);
+    return new Concrete.ClassViewField(tokenPosition(ctx.getStart()), name, precedence, Collections.<Concrete.Argument>emptyList(), resultType, ctx.implicitOpt() instanceof ImplicitYesContext);
   }
 
   @Override

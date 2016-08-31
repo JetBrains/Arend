@@ -83,7 +83,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
   }
 
   @Override
-  public Void visitAbstract(Abstract.AbstractDefinition def, Boolean isStatic) {
+  public Void visitAbstract(Abstract.ClassViewField def, Boolean isStatic) {
     if (myResolveListener == null) {
       return null;
     }
@@ -224,7 +224,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
     if (parentDef instanceof Abstract.ClassDefinition) {
       referable = myNameResolver.resolveClassField((Abstract.ClassDefinition) parentDef, def.getName());
     }
-    if (referable instanceof Abstract.AbstractDefinition) {
+    if (referable instanceof Abstract.ClassViewField) {
       myResolveListener.implementResolved(def, referable);
     } else {
       myErrorReporter.report(new NotInScopeError(def, def.getName()));

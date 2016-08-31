@@ -912,10 +912,10 @@ public final class Concrete {
     }
   }
 
-  public static class AbstractDefinition extends SignatureDefinition implements Abstract.AbstractDefinition {
+  public static class ClassViewField extends SignatureDefinition implements Abstract.ClassViewField {
     private final boolean myImplicit;
 
-    public AbstractDefinition(Position position, String name, Precedence precedence, List<Argument> arguments, Expression resultType, boolean isImplicit) {
+    public ClassViewField(Position position, String name, Precedence precedence, List<Argument> arguments, Expression resultType, boolean isImplicit) {
       super(position, name, precedence, arguments, resultType);
       myImplicit = isImplicit;
     }
