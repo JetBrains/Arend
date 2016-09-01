@@ -400,7 +400,7 @@ public class TypeCheckingElim {
       }
 
       if (constructor.hasErrors()) {
-        error = new HasErrors(myParentDefinition, constructor.getName(), pattern);
+        error = new HasErrors(myParentDefinition, constructor.getAbstractDefinition(), pattern);
         myVisitor.getErrorReporter().report(error);
         return new ExpandPatternErrorResult(error);
       }

@@ -7,7 +7,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TypecheckerState {
-  private final Map<Abstract.Definition, Definition> myTypechecked = new HashMap<>();
+  private final Map<Abstract.Definition, Definition> myTypechecked;
+
+  public TypecheckerState() {
+    myTypechecked = new HashMap<>();
+  }
+
+  public TypecheckerState(TypecheckerState state) {
+    myTypechecked = new HashMap<>(state.myTypechecked);
+  }
 
   public void record(Abstract.Definition def, Definition res) {
     myTypechecked.put(def, res);

@@ -44,6 +44,11 @@ public class ClassField extends Definition {
   }
 
   @Override
+  public boolean typeHasErrors() {
+    return myType == null;
+  }
+
+  @Override
   public Expression getType() {
     return myType == null ? null : Pi(myThisParameter, myType);
   }

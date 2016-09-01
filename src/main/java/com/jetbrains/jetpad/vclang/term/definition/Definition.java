@@ -43,6 +43,10 @@ public abstract class Definition implements Referable {
     return defCall;
   }
 
+  public boolean typeHasErrors() {
+    return myHasErrors;
+  }
+
   public ClassDefinition getThisClass() {
     return myThisClass;
   }
