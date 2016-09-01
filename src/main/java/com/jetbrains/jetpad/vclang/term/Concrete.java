@@ -794,7 +794,7 @@ public final class Concrete {
     }
   }
 
-  public static class ReferableSourceNode extends SourceNode {
+  public static class ReferableSourceNode extends SourceNode implements Abstract.ReferableSourceNode {
     private final String myName;
 
     public ReferableSourceNode(Position position, String name) {
@@ -802,6 +802,7 @@ public final class Concrete {
       myName = name;
     }
 
+    @Override
     public String getName() {
       return myName;
     }

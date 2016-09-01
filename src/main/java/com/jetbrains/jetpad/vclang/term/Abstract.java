@@ -240,6 +240,7 @@ public final class Abstract {
   }
 
   public interface ReferableSourceNode extends SourceNode {
+    String getName();
   }
 
   public interface Binding extends ReferableSourceNode {
@@ -273,7 +274,6 @@ public final class Abstract {
     }
     Precedence DEFAULT_PRECEDENCE = new Precedence(Associativity.RIGHT_ASSOC, (byte) 10);
 
-    String getName();
     Precedence getPrecedence();
   }
 
