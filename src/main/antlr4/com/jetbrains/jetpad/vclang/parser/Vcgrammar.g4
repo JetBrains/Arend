@@ -181,3 +181,4 @@ COLON : ':';
 LAMBDA : '\\lam';
 ARROW : '->';
 BIN_OP : [~!@#$%^&*\-+=<>?/:|.]+;
+ERROR_CHAR : .;

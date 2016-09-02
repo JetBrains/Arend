@@ -30,6 +30,14 @@ public class ParserTestCase {
   public static VcgrammarParser parse(final String name, final ErrorReporter errorReporter, String text) {
     ANTLRInputStream input = new ANTLRInputStream(text);
     VcgrammarLexer lexer = new VcgrammarLexer(input);
+    lexer.removeErrorListeners();
+    lexer.addErrorListener(new BaseErrorListener() {
+      @Override
+      public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
+        errorReporter.report(new ParserError(new NameModuleID(name), new Concrete.Position(MODULE_ID, line, pos), msg));
+      }
+    });
+
     CommonTokenStream tokens = new CommonTokenStream(lexer);
     VcgrammarParser parser = new VcgrammarParser(tokens);
     parser.removeErrorListeners();

@@ -31,7 +31,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "  \\abstract A : \\Type0\n" +
         "  \\implicit \\abstract B : A -> Nat\n" +
         "}\n" +
-        "\\function f (x : X) (a : x.A) {y : X { A => x.A }} => B a", 1);
+        "\\function f (x : X) (a : x.A) {y : X { A => x.A } } => B a", 1);
   }
 
   @Test
@@ -41,7 +41,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "  \\abstract A : \\Type0\n" +
         "  \\implicit \\abstract B : A -> Nat\n" +
         "}\n" +
-        "\\function f (A' : \\Type0) (x : X { A => A' }) {y : X { A => A' }} (a : A') => B a", 1);
+        "\\function f (A' : \\Type0) (x : X { A => A' }) {y : X { A => A' } } (a : A') => B a", 1);
   }
 
   @Test
@@ -49,9 +49,9 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
     typeCheckClass(
         "\\static \\class X {\n" +
         "  \\abstract A : \\Type0\n" +
-        "  \\implicit \\abstract B : A -> Nat\n" +
+        "  \\abstract B : A -> Nat\n" +
         "}\n" +
-        "\\function f (A' : \\Type0) {y : X { A => A' -> A' }} (a : A') (x : X { A => A' }) => B a");
+        "\\function f (A' : \\Type0) {y : X { A => A' -> A' } } (a : A') (x : X { A => A' }) => B a");
   }
 
   @Test
