@@ -84,8 +84,8 @@ public class TypecheckingOrdering {
         }
 
         @Override
-        public Boolean visitAbstract(Abstract.ClassViewField def, Void params) {
-          // Calss to abstracts (class fields) can not possibly add any dependencies
+        public Boolean visitClassField(Abstract.ClassField def, Void params) {
+          // Calls to abstracts (class fields) can not possibly add any dependencies
           // as in order to call a field we need to have an instance of the class
           // which (the class) is the actual dependency.
           return true;
@@ -117,6 +117,11 @@ public class TypecheckingOrdering {
         @Override
         public Boolean visitImplement(Abstract.ImplementDefinition def, Void params) {
           return def.getParentStatement().getParentDefinition().equals(definition) || doOrder(def.getParentStatement().getParentDefinition());
+        }
+
+        @Override
+        public Boolean visitClassView(Abstract.ClassView def, Void params) {
+          return doOrder(def.getUnderlyingClass());
         }
       }, null);
       if (!good)

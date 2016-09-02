@@ -887,9 +887,10 @@ public final class Concrete {
 
     @Override
     public String toString() {
-      StringBuilder builder = new StringBuilder();
-      accept(new PrettyPrintVisitor(builder, 0), null);
-      return builder.toString();
+      // StringBuilder builder = new StringBuilder();
+      // accept(new PrettyPrintVisitor(builder, 0), null);
+      // return builder.toString();
+      return getName();
     }
   }
 
@@ -912,10 +913,77 @@ public final class Concrete {
     }
   }
 
-  public static class ClassViewField extends SignatureDefinition implements Abstract.ClassViewField {
+  public static class ClassView extends Definition implements Abstract.ClassView {
+    private final String myUnderlyingClassName;
+    private Abstract.ClassDefinition myUnderlyingClass;
+    private final List<ClassViewField> myFields;
+
+    public ClassView(Position position, String name, String underlyingClassName, List<ClassViewField> fields) {
+      super(position, name, DEFAULT_PRECEDENCE);
+      myUnderlyingClassName = underlyingClassName;
+      myFields = fields;
+    }
+
+    @Override
+    public String getUnderlyingClassName() {
+      return myUnderlyingClassName;
+    }
+
+    @Override
+    public Abstract.ClassDefinition getUnderlyingClass() {
+      return myUnderlyingClass;
+    }
+
+    public void setUnderlyingClass(Abstract.ClassDefinition underlyingClass) {
+      myUnderlyingClass = underlyingClass;
+    }
+
+    @Override
+    public List<ClassViewField> getFields() {
+      return myFields;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitClassView(this, params);
+    }
+  }
+
+  public static class ClassViewField extends Binding implements Abstract.ClassViewField {
+    private final Precedence myPrecedence;
+    private final String myUnderlyingFieldName;
+    private Abstract.ClassField myUnderlyingField;
+
+    public ClassViewField(Position position, String name, Precedence precedence, String underlyingFieldName) {
+      super(position, name);
+      myPrecedence = precedence;
+      myUnderlyingFieldName = underlyingFieldName;
+    }
+
+    @Override
+    public String getUnderlyingFieldName() {
+      return myUnderlyingFieldName;
+    }
+
+    @Override
+    public Abstract.ClassField getUnderlyingField() {
+      return myUnderlyingField;
+    }
+
+    public void setUnderlyingField(Abstract.ClassField underlyingField) {
+      myUnderlyingField = underlyingField;
+    }
+
+    @Override
+    public Precedence getPrecedence() {
+      return myPrecedence;
+    }
+  }
+
+  public static class ClassField extends SignatureDefinition implements Abstract.ClassField {
     private final boolean myImplicit;
 
-    public ClassViewField(Position position, String name, Precedence precedence, List<Argument> arguments, Expression resultType, boolean isImplicit) {
+    public ClassField(Position position, String name, Precedence precedence, List<Argument> arguments, Expression resultType, boolean isImplicit) {
       super(position, name, precedence, arguments, resultType);
       myImplicit = isImplicit;
     }
@@ -927,7 +995,7 @@ public final class Concrete {
 
     @Override
     public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitAbstract(this, params);
+      return visitor.visitClassField(this, params);
     }
   }
 

@@ -9,8 +9,9 @@ public class TypeClassesNameResolver {
   public void resolveNames() {
     resolveNamesClass("test",
         "\\static \\class X {\n" +
-        "  \\implicit \\abstract f : \\Type0\n" +
+        "  \\abstract f : \\Type0\n" +
         "}\n" +
+        "\\static \\view \\on X { f }\n" +
         "\\function g => f");
   }
 
@@ -19,19 +20,23 @@ public class TypeClassesNameResolver {
     resolveNamesClass("test",
         "\\static \\class X {\n" +
         "  \\abstract f : \\Type0\n" +
+        "  \\abstract h : \\Type0\n" +
         "}\n" +
-        "\\function g => f", 1);
+        "\\static \\view \\on X { f }\n" +
+        "\\function g => h", 1);
   }
 
   @Test
   public void resolveNamesDuplicate() {
     resolveNamesClass("test",
         "\\static \\class X {\n" +
-        "  \\implicit \\abstract f : \\Type0\n" +
+        "  \\abstract f : \\Type0\n" +
         "}\n" +
+        "\\static \\view \\on X { f }\n" +
         "\\static \\class Y {\n" +
-        "  \\implicit \\abstract f : \\Type0 -> \\Type0\n" +
-        "}", 1);
+        "  \\abstract g : \\Type0 -> \\Type0\n" +
+        "}\n" +
+        "\\static \\view \\on Y { g => f }", 1);
   }
 
   @Test
@@ -39,8 +44,9 @@ public class TypeClassesNameResolver {
     resolveNamesClass("test",
         "\\static \\class X {\n" +
         "  \\static \\class Z {\n" +
-        "    \\implicit \\abstract f : \\Type0\n" +
+        "    \\abstract f : \\Type0\n" +
         "  }\n" +
+        "  \\static \\view \\on Z { f }\n" +
         "}\n" +
         "\\function g => f", 1);
   }
@@ -50,12 +56,14 @@ public class TypeClassesNameResolver {
     resolveNamesClass("test",
         "\\static \\class X {\n" +
         "  \\static \\class Z {\n" +
-        "    \\implicit \\abstract f : \\Type0\n" +
+        "    \\abstract f : \\Type0\n" +
         "  }\n" +
+        "  \\static \\view \\on Z { f }\n" +
         "}\n" +
         "\\static \\class Y {\n" +
-        "  \\implicit \\abstract z : X.Z\n" +
+        "  \\abstract z : X.Z\n" +
         "}\n" +
+        "\\static \\view \\on Y { z }\n" +
         "\\function g => f", 1);
   }
 }

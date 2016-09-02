@@ -238,11 +238,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
   }
 
   @Override
-  public ClassField visitAbstract(Abstract.ClassViewField def, ClassDefinition enclosingClass) {
-    throw new IllegalStateException();
-  }
-
-  @Override
   public DataDefinition visitData(Abstract.DataDefinition def, ClassDefinition enclosingClass) {
     List<? extends Abstract.TypeArgument> parameters = def.getParameters();
 
@@ -744,8 +739,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       for (Abstract.Statement statement : def.getStatements()) {
         if (statement instanceof Abstract.DefineStatement) {
           Abstract.Definition definition = ((Abstract.DefineStatement) statement).getDefinition();
-          if (definition instanceof Abstract.ClassViewField) {
-            ClassField field = visitClassField((Abstract.ClassViewField) definition, typedDef);
+          if (definition instanceof Abstract.ClassField) {
+            ClassField field = visitClassField((Abstract.ClassField) definition, typedDef);
             fieldSet.addField(field, thisClassCall);
           } else if (definition instanceof Abstract.ImplementDefinition) {
             Definition implementedDef = myState.getTypechecked(((Abstract.ImplementDefinition) definition).getImplemented());
@@ -778,7 +773,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     return null;
   }
 
-  private ClassField visitClassField(Abstract.ClassViewField def, ClassDefinition enclosingClass) {
+  @Override
+  public ClassField visitClassField(Abstract.ClassField def, ClassDefinition enclosingClass) {
     if (enclosingClass == null) throw new IllegalStateException();
 
     List<? extends Abstract.Argument> arguments = def.getArguments();
@@ -854,6 +850,11 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
   @Override
   public Definition visitImplement(Abstract.ImplementDefinition def, ClassDefinition params) {
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public Definition visitClassView(Abstract.ClassView def, ClassDefinition params) {
     throw new IllegalStateException();
   }
 }

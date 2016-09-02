@@ -43,11 +43,11 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   }
 
   @Override
-  public Set<Abstract.Definition> visitAbstract(Abstract.ClassViewField def, Boolean params) {
+  public Set<Abstract.Definition> visitClassField(Abstract.ClassField def, Boolean params) {
     throw new IllegalStateException();
   }
 
-  private void visitAbstract(Set<Abstract.Definition> result, Abstract.ClassViewField def) {
+  private void visitAbstract(Set<Abstract.Definition> result, Abstract.ClassField def) {
     for (Abstract.Argument arg : def.getArguments()) {
       if (arg instanceof Abstract.TypeArgument) {
         ((Abstract.TypeArgument) arg).getType().accept(new CollectDefCallsVisitor(result), null);
@@ -109,11 +109,14 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
             ));
           }
         } else {
-          if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ClassViewField) {
-            visitAbstract(result, (Abstract.ClassViewField) ((Abstract.DefineStatement) statement).getDefinition());
+          if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ClassField) {
+            visitAbstract(result, (Abstract.ClassField) ((Abstract.DefineStatement) statement).getDefinition());
           } else
           if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ImplementDefinition) {
             visitImplement(result, (Abstract.ImplementDefinition) ((Abstract.DefineStatement) statement).getDefinition());
+          } else
+          if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ClassView) {
+            result.add(((Abstract.ClassView) ((Abstract.DefineStatement) statement).getDefinition()).getUnderlyingClass());
           } else {
             myOthers.add(defineStatement.getDefinition());
             if (parent instanceof Abstract.ClassDefinition && ((Abstract.DefineStatement) statement).getStaticMod() != Abstract.DefineStatement.StaticMod.STATIC) {
@@ -144,6 +147,11 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   @Override
   public Set<Abstract.Definition> visitImplement(Abstract.ImplementDefinition def, Boolean isStatic) {
     throw new IllegalStateException();
+  }
+
+  @Override
+  public Set<Abstract.Definition> visitClassView(Abstract.ClassView def, Boolean params) {
+    return null;
   }
 
   private void visitImplement(Set<Abstract.Definition> result, Abstract.ImplementDefinition def) {

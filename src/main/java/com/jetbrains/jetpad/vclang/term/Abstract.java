@@ -304,7 +304,18 @@ public final class Abstract {
     Expression getResultType();
   }
 
-  public interface ClassViewField extends Definition {
+  public interface ClassView extends Definition {
+    String getUnderlyingClassName();
+    ClassDefinition getUnderlyingClass();
+    List<? extends ClassViewField> getFields();
+  }
+
+  public interface ClassViewField extends Binding {
+    String getUnderlyingFieldName();
+    ClassField getUnderlyingField();
+  }
+
+  public interface ClassField extends Definition {
     List<? extends Argument> getArguments();
     Expression getResultType();
     boolean isImplicit();

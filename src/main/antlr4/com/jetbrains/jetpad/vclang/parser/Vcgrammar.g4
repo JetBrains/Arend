@@ -10,15 +10,14 @@ statement : staticMod definition                                  # statDef
 nsCmdRoot : modulePath | name;
 
 definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?            # defFunction
-            | implicitOpt '\\abstract' precedence name ':' expr                           # defAbstract
+            | '\\abstract' precedence name ':' expr                                       # defAbstract
             | '\\implement' name '=>' expr                                                # defImplement
             | '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef?    # defData
             | classKindMod ID ('\\extends' atomFieldsAcc extendsOpts)* '{' statement* '}' # defClass
+            | '\\view' ID? '\\on' ID '{' classViewField* '}'                              # defClassView
             ;
 
-implicitOpt : '\\implicit'  # implicitYes
-            |               # implicitNo
-            ;
+classViewField : name ('=>' precedence name)? ;
 
 extendsOpts : superClassOpts*       # extendsSuperClassOpts
             | (',' atomFieldsAcc)*  # extendsMany
@@ -72,10 +71,11 @@ pattern : anyPattern       # patternAny
         | name patternArg* # patternConstructor
         ;
 
-patternArg : '(' pattern ')' # patternArgExplicit
-           | '{' pattern '}' # patternArgImplicit
-           | anyPattern      # patternArgAny
-           | ID              # patternArgID
+patternArg : '(' pattern ')'    # patternArgExplicit
+           | '{' pattern '}'    # patternArgImplicit
+           | '{{' pattern '}}'  # patternArgTypeClass
+           | anyPattern         # patternArgAny
+           | ID                 # patternArgID
            ;
 
 constructor : precedence name tele*;
@@ -144,6 +144,7 @@ implementStatement : '|'? name '=>' expr;
 
 argument : atomFieldsAcc                # argumentExplicit
          | '{' expr '}'                 # argumentImplicit
+         | '{{' expr '}}'               # argumentTypeClass
          | '[' expr ']'                 # argumentLevel
          ;
 
@@ -159,6 +160,7 @@ literal : UNIVERSE                      # universe
 tele : literal                          # teleLiteral
      | '(' typedExpr ')'                # explicit
      | '{' typedExpr '}'                # implicit
+     | '{{' typedExpr '}}'              # teleTypeClass
      ;
 
 typedExpr : expr                        # notTyped

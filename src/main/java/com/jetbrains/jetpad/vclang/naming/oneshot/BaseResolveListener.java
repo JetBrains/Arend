@@ -29,6 +29,16 @@ public class BaseResolveListener implements ResolveListener {
   }
 
   @Override
+  public void classViewResolved(Abstract.ClassView classView, Abstract.ClassDefinition definition) {
+
+  }
+
+  @Override
+  public void classViewFieldResolved(Abstract.ClassViewField field, Abstract.ClassField definition) {
+
+  }
+
+  @Override
   public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Abstract.Definition definition, Abstract.DefCallExpression var, Abstract.Expression right) {
     return null;
   }

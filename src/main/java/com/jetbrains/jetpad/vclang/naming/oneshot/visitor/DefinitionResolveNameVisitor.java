@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.naming.oneshot.visitor;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
+import com.jetbrains.jetpad.vclang.naming.error.WrongDefinition;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
@@ -83,7 +84,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
   }
 
   @Override
-  public Void visitAbstract(Abstract.ClassViewField def, Boolean isStatic) {
+  public Void visitClassField(Abstract.ClassField def, Boolean isStatic) {
     if (myResolveListener == null) {
       return null;
     }
@@ -189,12 +190,17 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
     }
 
     try {
-      Namespace staticNamespace = myStaticNsProvider.forDefinition(def);
+      for (Abstract.Statement statement : def.getStatements()) {
+        if (statement instanceof Abstract.DefineStatement && Abstract.DefineStatement.StaticMod.STATIC.equals(((Abstract.DefineStatement) statement).getStaticMod()) && ((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ClassView) {
+          visitClassView((Abstract.ClassView) ((Abstract.DefineStatement) statement).getDefinition(), true);
+        }
+      }
 
+      Namespace staticNamespace = myStaticNsProvider.forDefinition(def);
       Scope staticScope = new StaticClassScope(myParentScope, staticNamespace);
       StatementResolveNameVisitor stVisitor = new StatementResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, myNameResolver, myErrorReporter, staticScope, myContext, myResolveListener);
       for (Abstract.Statement statement : def.getStatements()) {
-        if (statement instanceof Abstract.DefineStatement && !Abstract.DefineStatement.StaticMod.STATIC.equals(((Abstract.DefineStatement) statement).getStaticMod()))
+        if (statement instanceof Abstract.DefineStatement && (!Abstract.DefineStatement.StaticMod.STATIC.equals(((Abstract.DefineStatement) statement).getStaticMod()) || ((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ClassView))
           continue;  // FIXME[where]
         statement.accept(stVisitor, null);
       }
@@ -220,17 +226,40 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
 
     Abstract.Definition parentDef = def.getParentStatement().getParentDefinition();
 
-    Abstract.Definition referable = null;
     if (parentDef instanceof Abstract.ClassDefinition) {
-      referable = myNameResolver.resolveClassField((Abstract.ClassDefinition) parentDef, def.getName());
-    }
-    if (referable instanceof Abstract.ClassViewField) {
-      myResolveListener.implementResolved(def, referable);
+      Abstract.Definition referable = myNameResolver.resolveClassField((Abstract.ClassDefinition) parentDef, def.getName(), myErrorReporter, def);
+      if (referable != null) {
+        myResolveListener.implementResolved(def, referable);
+      }
     } else {
+      // TODO: Is this possible? If it is, then this error message is incorrect.
       myErrorReporter.report(new NotInScopeError(def, def.getName()));
     }
 
     def.getExpression().accept(new ExpressionResolveNameVisitor(myParentScope, myContext, myNameResolver, myErrorReporter, myResolveListener), null);
+    return null;
+  }
+
+  @Override
+  public Void visitClassView(Abstract.ClassView def, Boolean params) {
+    if (myResolveListener == null) {
+      return null;
+    }
+
+    Namespace staticNamespace = myStaticNsProvider.forDefinition(def.getParentStatement().getParentDefinition());
+    Abstract.Definition resolvedDef = staticNamespace.resolveName(def.getUnderlyingClassName());
+    if (!(resolvedDef instanceof Abstract.ClassDefinition)) {
+      myErrorReporter.report(resolvedDef != null ? new WrongDefinition("Expected a class", def) : new NotInScopeError(def, def.getUnderlyingClassName()));
+      return null;
+    }
+
+    myResolveListener.classViewResolved(def, (Abstract.ClassDefinition) resolvedDef);
+    for (Abstract.ClassViewField viewField : def.getFields()) {
+      Abstract.ClassField classField = myNameResolver.resolveClassField((Abstract.ClassDefinition) resolvedDef, viewField.getUnderlyingFieldName(), myErrorReporter, viewField);
+      if (classField != null) {
+        myResolveListener.classViewFieldResolved(viewField, classField);
+      }
+    }
     return null;
   }
 

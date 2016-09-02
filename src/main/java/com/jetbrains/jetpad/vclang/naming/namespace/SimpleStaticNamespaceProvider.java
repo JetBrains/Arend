@@ -15,63 +15,68 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
   private final Map<Abstract.Definition, Namespace> cache = new HashMap<>();
 
   public static SimpleNamespace forFunction(Abstract.FunctionDefinition def) {
-    return forStatements(def.getStatements());
+    SimpleNamespace ns = new SimpleNamespace();
+    forFunction(def, ns);
+    return ns;
   }
 
   public static SimpleNamespace forData(Abstract.DataDefinition def) {
     SimpleNamespace ns = new SimpleNamespace();
-    for (Abstract.Constructor constructor : def.getConstructors()) {
-      ns.addDefinition(constructor);
-    }
+    forData(def, ns);
     return ns;
   }
 
   public static SimpleNamespace forClass(Abstract.ClassDefinition def) {
-    return forStatements(def.getStatements());
-  }
-
-  private static SimpleNamespace forClassImplicit(Abstract.ClassDefinition def) {
     SimpleNamespace ns = new SimpleNamespace();
-
-    for (Abstract.SuperClass superClass : def.getSuperClasses()) {
-      Abstract.ClassDefinition superDef = Abstract.getUnderlyingClassDef(superClass.getSuperClass());
-      if (superDef != null) {
-        ns.addAll(forClassImplicit(superDef));
-      }
-    }
-
-    for (Abstract.Statement statement : def.getStatements()) {
-      if (statement instanceof Abstract.DefineStatement && ((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ClassViewField) {
-        Abstract.ClassViewField field = (Abstract.ClassViewField) ((Abstract.DefineStatement) statement).getDefinition();
-        if (field.isImplicit()) {
-          ns.addDefinition(field);
-          // Abstract.ClassDefinition classDef = Abstract.getUnderlyingClassDef(field.getResultType());
-          // if (classDef != null) {
-          //   ns.addAll(forClassImplicit(classDef));
-          // }
-        }
-      }
-    }
-
+    forClass(def, ns);
     return ns;
   }
 
-  private static SimpleNamespace forStatements(Collection<? extends Abstract.Statement> statements) {
-    SimpleNamespace ns = new SimpleNamespace();
+  private static boolean forFunction(Abstract.FunctionDefinition def, SimpleNamespace ns) {
+    return forStatements(def.getStatements(), ns);
+  }
+
+  private static boolean forData(Abstract.DataDefinition def, SimpleNamespace ns) {
+    for (Abstract.Constructor constructor : def.getConstructors()) {
+      ns.addDefinition(constructor);
+    }
+    return true;
+  }
+
+  private static boolean forClass(Abstract.ClassDefinition def, SimpleNamespace ns) {
+    return forStatements(def.getStatements(), ns);
+  }
+
+  private static boolean forClassView(Abstract.ClassView def, SimpleNamespace ns) {
+    boolean ok = true;
+    for (Abstract.ClassViewField field : def.getFields()) {
+      if (field.getUnderlyingField() == null) {
+        ok = false;
+      } else {
+        ns.addDefinition(field.getName(), field.getUnderlyingField());
+      }
+    }
+
+    return ok;
+  }
+
+  private static boolean forStatements(Collection<? extends Abstract.Statement> statements, SimpleNamespace ns) {
+    boolean ok = true;
     for (Abstract.Statement statement : statements) {
       if (!(statement instanceof Abstract.DefineStatement)) continue;
       Abstract.DefineStatement defst = (Abstract.DefineStatement) statement;
       if (STATIC.equals(defst.getStaticMod())) {
-        ns.addDefinition(defst.getDefinition());
-        if (defst.getDefinition() instanceof Abstract.DataDefinition) {
-          ns.addAll(forData((Abstract.DataDefinition) defst.getDefinition()));  // constructors
-        }
-        if (defst.getDefinition() instanceof Abstract.ClassDefinition) {
-          ns.addAll(forClassImplicit((Abstract.ClassDefinition) defst.getDefinition()));
+        if (defst.getDefinition() instanceof Abstract.ClassView) {
+          ok = forClassView((Abstract.ClassView) defst.getDefinition(), ns) && ok;
+        } else {
+          ns.addDefinition(defst.getDefinition());
+          if (defst.getDefinition() instanceof Abstract.DataDefinition) {
+            ok = forData((Abstract.DataDefinition) defst.getDefinition(), ns) && ok;  // constructors
+          }
         }
       }
     }
-    return ns;
+    return ok;
   }
 
   @Override
@@ -79,42 +84,49 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
     Namespace ns = cache.get(definition);
     if (ns != null) return ns;
 
-    ns = definition.accept(DefinitionGetNamespaceVisitor.INSTANCE, null);
-    cache.put(definition, ns);
-    return ns;
+    SimpleNamespace sns = new SimpleNamespace();
+    if (definition.accept(DefinitionGetNamespaceVisitor.INSTANCE, sns)) {
+      cache.put(definition, sns);
+    }
+    return sns;
   }
 
-  private static class DefinitionGetNamespaceVisitor implements AbstractDefinitionVisitor<Void, Namespace> {
+  private static class DefinitionGetNamespaceVisitor implements AbstractDefinitionVisitor<SimpleNamespace, Boolean> {
     public static final DefinitionGetNamespaceVisitor INSTANCE = new DefinitionGetNamespaceVisitor();
 
     @Override
-    public Namespace visitFunction(Abstract.FunctionDefinition def, Void params) {
-      return forFunction(def);
+    public Boolean visitFunction(Abstract.FunctionDefinition def, SimpleNamespace ns) {
+      return forFunction(def, ns);
     }
 
     @Override
-    public Namespace visitAbstract(Abstract.ClassViewField def, Void params) {
-      return new EmptyNamespace();
+    public Boolean visitClassField(Abstract.ClassField def, SimpleNamespace ns) {
+      return true;
     }
 
     @Override
-    public Namespace visitData(Abstract.DataDefinition def, Void params) {
-      return forData(def);
+    public Boolean visitData(Abstract.DataDefinition def, SimpleNamespace ns) {
+      return forData(def, ns);
     }
 
     @Override
-    public Namespace visitConstructor(Abstract.Constructor def, Void params) {
-      return new EmptyNamespace();
+    public Boolean visitConstructor(Abstract.Constructor def, SimpleNamespace ns) {
+      return true;
     }
 
     @Override
-    public Namespace visitClass(Abstract.ClassDefinition def, Void params) {
-      return forClass(def);
+    public Boolean visitClass(Abstract.ClassDefinition def, SimpleNamespace ns) {
+      return forClass(def, ns);
     }
 
     @Override
-    public Namespace visitImplement(Abstract.ImplementDefinition def, Void params) {
-      return new EmptyNamespace();
+    public Boolean visitImplement(Abstract.ImplementDefinition def, SimpleNamespace ns) {
+      return true;
+    }
+
+    @Override
+    public Boolean visitClassView(Abstract.ClassView def, SimpleNamespace ns) {
+      return true;
     }
   }
 }

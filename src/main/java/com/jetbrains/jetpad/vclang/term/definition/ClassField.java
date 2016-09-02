@@ -14,7 +14,7 @@ public class ClassField extends Definition {
   private Expression myType;
   private SortMax mySorts;
 
-  public ClassField(Abstract.ClassViewField abstractDef, Expression type, ClassDefinition thisClass, DependentLink thisParameter) {
+  public ClassField(Abstract.ClassField abstractDef, Expression type, ClassDefinition thisClass, DependentLink thisParameter) {
     super(abstractDef);
     myThisParameter = thisParameter;
     myType = type;
@@ -28,8 +28,8 @@ public class ClassField extends Definition {
   }
 
   @Override
-  public Abstract.ClassViewField getAbstractDefinition() {
-    return (Abstract.ClassViewField) super.getAbstractDefinition();
+  public Abstract.ClassField getAbstractDefinition() {
+    return (Abstract.ClassField) super.getAbstractDefinition();
   }
 
   public DependentLink getThisParameter() {

@@ -219,7 +219,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   public Abstract.Definition.Precedence visitPrecedence(PrecedenceContext ctx) {
-    return (Abstract.Definition.Precedence) visit(ctx);
+    return ctx == null ? null : (Abstract.Definition.Precedence) visit(ctx);
   }
 
   @Override
@@ -314,7 +314,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.ClassViewField visitDefAbstract(DefAbstractContext ctx) {
+  public Concrete.ClassField visitDefAbstract(DefAbstractContext ctx) {
     if (ctx == null) return null;
     String name = visitName(ctx.name());
     Abstract.Definition.Precedence precedence = visitPrecedence(ctx.precedence());
@@ -323,7 +323,31 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return null;
     }
 
-    return new Concrete.ClassViewField(tokenPosition(ctx.getStart()), name, precedence, Collections.<Concrete.Argument>emptyList(), resultType, ctx.implicitOpt() instanceof ImplicitYesContext);
+    return new Concrete.ClassField(tokenPosition(ctx.getStart()), name, precedence, Collections.<Concrete.Argument>emptyList(), resultType, false);
+  }
+
+  @Override
+  public Concrete.ClassView visitDefClassView(DefClassViewContext ctx) {
+    if (ctx == null) return null;
+    List<Concrete.ClassViewField> fields = new ArrayList<>(ctx.classViewField().size());
+    for (ClassViewFieldContext classViewFieldContext : ctx.classViewField()) {
+      Concrete.ClassViewField field = visitClassViewField(classViewFieldContext);
+      if (field != null) {
+        fields.add(field);
+      }
+    }
+    return new Concrete.ClassView(tokenPosition(ctx.getStart()), ctx.ID(0).getText(), ctx.ID(ctx.ID().size() > 1 ? 1 : 0).getText(), fields);
+  }
+
+  @Override
+  public Concrete.ClassViewField visitClassViewField(ClassViewFieldContext ctx) {
+    String underlyingField = visitName(ctx.name(0));
+    String name = ctx.name().size() > 1 ? visitName(ctx.name().get(1)) : null;
+    Abstract.Binding.Precedence precedence = visitPrecedence(ctx.precedence());
+    if (underlyingField == null || ctx.name().size() > 1 && name == null) {
+      return null;
+    }
+    return new Concrete.ClassViewField(tokenPosition(ctx.name(0).getStart()), name != null ? name : underlyingField, precedence != null ? precedence : Abstract.Binding.DEFAULT_PRECEDENCE, underlyingField);
   }
 
   @Override

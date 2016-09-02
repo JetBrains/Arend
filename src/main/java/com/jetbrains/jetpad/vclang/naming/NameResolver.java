@@ -1,5 +1,8 @@
 package com.jetbrains.jetpad.vclang.naming;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
+import com.jetbrains.jetpad.vclang.naming.error.WrongDefinition;
 import com.jetbrains.jetpad.vclang.naming.namespace.*;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
@@ -104,8 +107,14 @@ public class NameResolver {
     return ns.getRegisteredClass();
   }
 
-  public Abstract.Definition resolveClassField(Abstract.ClassDefinition classDefiniton, String name) {
-    return dynamicNamespaceFor(classDefiniton).resolveName(name);
+  public Abstract.ClassField resolveClassField(Abstract.ClassDefinition classDefiniton, String name, ErrorReporter errorReporter, Abstract.SourceNode cause) {
+    Abstract.Definition resolvedRef = dynamicNamespaceFor(classDefiniton).resolveName(name);
+    if (resolvedRef instanceof Abstract.ClassField) {
+      return (Abstract.ClassField) resolvedRef;
+    } else {
+      errorReporter.report(resolvedRef != null ? new WrongDefinition("Expected a class field", cause) : new NotInScopeError(cause, name));
+      return null;
+    }
   }
 
   public Namespace staticNamespaceFor(Abstract.Definition ref) {

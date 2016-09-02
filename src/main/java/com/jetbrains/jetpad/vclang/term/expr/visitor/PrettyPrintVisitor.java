@@ -674,7 +674,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   @Override
-  public Void visitAbstract(Abstract.ClassViewField def, Void params) {
+  public Void visitClassField(Abstract.ClassField def, Void params) {
     myBuilder.append("\\abstract ");
     prettyPrintBinding(def);
     prettyPrintArguments(def.getArguments(), Abstract.DefCallExpression.PREC);
@@ -895,7 +895,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
 
     Collection<? extends Abstract.Statement> statements = def.getStatements();
-    if (statements != null) {
+    if (statements != null && !statements.isEmpty()) {
       ++myIndent;
       StatementPrettyPrintVisitor visitor = new StatementPrettyPrintVisitor(myBuilder, myIndent, null);
       for (Abstract.Statement statement : statements) {
@@ -905,8 +905,8 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
         myBuilder.append('\n');
       }
       --myIndent;
+      printIndent();
     }
-    printIndent();
     myBuilder.append("}");
     return null;
   }
@@ -915,6 +915,39 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitImplement(Abstract.ImplementDefinition def, Void params) {
     myBuilder.append("\\implement ").append(def.getName()).append(" => ");
     def.getExpression().accept(this, null);
+    return null;
+  }
+
+  @Override
+  public Void visitClassView(Abstract.ClassView def, Void params) {
+    myBuilder.append("\\view ").append(def.getName()).append(" \\on ").append(def.getUnderlyingClassName()).append(" {");
+    if (def.getFields() != null && !def.getFields().isEmpty()) {
+      boolean hasImplemented = false;
+      for (Abstract.ClassViewField field : def.getFields()) {
+        if (field.getName() != null) {
+          hasImplemented = true;
+          break;
+        }
+      }
+
+      if (hasImplemented) {
+        ++myIndent;
+        for (Abstract.ClassViewField field : def.getFields()) {
+          myBuilder.append("\n");
+          printIndent();
+          myBuilder.append(field.getUnderlyingFieldName()).append(" => ").append(field.getName());
+        }
+        --myIndent;
+        myBuilder.append("\n");
+        printIndent();
+      } else {
+        for (Abstract.ClassViewField field : def.getFields()) {
+          myBuilder.append(" ").append(field.getUnderlyingFieldName());
+        }
+        myBuilder.append(" ");
+      }
+    }
+    myBuilder.append("}");
     return null;
   }
 

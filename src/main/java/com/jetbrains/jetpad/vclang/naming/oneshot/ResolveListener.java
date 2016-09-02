@@ -8,6 +8,8 @@ public interface ResolveListener {
   void nsCmdResolved(Abstract.NamespaceCommandStatement nsCmdStatement, Abstract.Definition definition);
   void implementResolved(Abstract.ImplementDefinition identifier, Abstract.Definition definition);
   void implementResolved(Abstract.ImplementStatement identifier, Abstract.Definition definition);
+  void classViewResolved(Abstract.ClassView classView, Abstract.ClassDefinition definition);
+  void classViewFieldResolved(Abstract.ClassViewField field, Abstract.ClassField definition);
 
   Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Abstract.Definition binOp, Abstract.DefCallExpression var, Abstract.Expression right);
   Abstract.Expression makeError(Abstract.BinOpSequenceExpression binOpExpr, Abstract.SourceNode node);

@@ -209,7 +209,7 @@ public class LoadModulesRecursively implements AbstractStatementVisitor<Void, Vo
   }
 
   @Override
-  public Void visitAbstract(Abstract.ClassViewField def, Void params) {
+  public Void visitClassField(Abstract.ClassField def, Void params) {
     for (Abstract.Argument argument : def.getArguments()) {
       visitArgument(argument);
     }
@@ -251,6 +251,11 @@ public class LoadModulesRecursively implements AbstractStatementVisitor<Void, Vo
   @Override
   public Void visitImplement(Abstract.ImplementDefinition def, Void params) {
     def.getExpression().accept(this, null);
+    return null;
+  }
+
+  @Override
+  public Void visitClassView(Abstract.ClassView def, Void params) {
     return null;
   }
 

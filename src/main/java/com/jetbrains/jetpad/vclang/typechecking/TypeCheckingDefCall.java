@@ -62,7 +62,7 @@ public class TypeCheckingDefCall {
           }
 
           if (thisExpr == null) {
-            if (typeCheckedDefinition.getAbstractDefinition() instanceof Abstract.ClassViewField && ((Abstract.ClassViewField) typeCheckedDefinition.getAbstractDefinition()).isImplicit()) {
+            if (typeCheckedDefinition.getAbstractDefinition() instanceof Abstract.ClassField && ((Abstract.ClassField) typeCheckedDefinition.getAbstractDefinition()).isImplicit()) {
               // TODO: if typeCheckedDefinition.getThisClass() is dynamic, then we should apply it to some this expression
               thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable(typeCheckedDefinition.getThisClass().getName() + "-inst", typeCheckedDefinition.getThisClass().getDefCall(), expr));
             } else {

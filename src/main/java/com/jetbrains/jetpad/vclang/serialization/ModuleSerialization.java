@@ -177,7 +177,7 @@ public class ModuleSerialization {
     CLASS_FIELD_CODE {
       @Override
       ClassField toDefinition(Abstract.Definition abstractDef) {
-        return new ClassField((Abstract.ClassViewField) abstractDef, null, null, null);
+        return new ClassField((Abstract.ClassField) abstractDef, null, null, null);
       }
     };
 
