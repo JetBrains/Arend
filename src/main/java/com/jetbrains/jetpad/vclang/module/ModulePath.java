@@ -9,7 +9,7 @@ public class ModulePath {
   private final List<String> myPath;
 
   public ModulePath(List<String> myPath) {
-    this.myPath = myPath;
+    this.myPath = new ArrayList<>(myPath);
   }
 
   public ModulePath(String name) {

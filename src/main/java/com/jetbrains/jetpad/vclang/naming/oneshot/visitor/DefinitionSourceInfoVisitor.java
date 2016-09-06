@@ -32,11 +32,16 @@ public class DefinitionSourceInfoVisitor implements AbstractDefinitionVisitor<Fu
 
   @Override
   public Void visitData(Abstract.DataDefinition def, FullName params) {
+    for (Abstract.Constructor constructor : def.getConstructors()) {
+      visitConstructor(constructor, params);
+    }
     return null;
+
   }
 
   @Override
   public Void visitConstructor(Abstract.Constructor def, FullName params) {
+    myProvider.registerDefinition(def, new FullName(params, def.getName()), myModuleId);
     return null;
   }
 
