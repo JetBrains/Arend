@@ -10,6 +10,8 @@ public class OneshotSourceInfoCollector {
 
   public void visitModule(ModuleID moduleID, Abstract.ClassDefinition module) {
     DefinitionSourceInfoVisitor vis = new DefinitionSourceInfoVisitor(sourceInfoProvider, moduleID);
-    vis.visitClass(module, new FullName(module.getName()));
+    FullName moduleFullName = new FullName(module.getName());
+    sourceInfoProvider.registerDefinition(module, moduleFullName, moduleID);
+    vis.visitClass(module, moduleFullName);
   }
 }
