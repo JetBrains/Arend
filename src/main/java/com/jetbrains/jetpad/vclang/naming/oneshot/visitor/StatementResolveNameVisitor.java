@@ -62,34 +62,37 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
       throw new UnsupportedOperationException();
     }
 
-    final Abstract.Definition referredClass;
-    if (stat.getModulePath() == null) {
-      if (stat.getPath().isEmpty()) {
-        myErrorReporter.report(new GeneralError("Structure error: empty namespace command", stat));  // FIXME[error]: report proper
-        return null;
-      }
-      referredClass = myNameResolver.resolveDefinition(myScope, stat.getPath());
-    } else {
-      ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(stat.getModulePath());
-      Abstract.ClassDefinition moduleClass = moduleNamespace != null ? moduleNamespace.getRegisteredClass() : null;
-      if (moduleClass == null) {
-        myErrorReporter.report(new GeneralError("Module not found: " + stat.getModulePath(), stat));  // FIXME[error]: report proper
-        return null;
-      }
-      if (stat.getPath().isEmpty()) {
-        referredClass = moduleNamespace.getRegisteredClass();
+    if (stat.getResolvedClass() == null) {
+      final Abstract.Definition referredClass;
+      if (stat.getModulePath() == null) {
+        if (stat.getPath().isEmpty()) {
+          myErrorReporter.report(new GeneralError("Structure error: empty namespace command", stat));  // FIXME[error]: report proper
+          return null;
+        }
+        referredClass = myNameResolver.resolveDefinition(myScope, stat.getPath());
       } else {
-        referredClass = myNameResolver.resolveDefinition(myNameResolver.staticNamespaceFor(moduleClass), stat.getPath());
+        ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(stat.getModulePath());
+        Abstract.ClassDefinition moduleClass = moduleNamespace != null ? moduleNamespace.getRegisteredClass() : null;
+        if (moduleClass == null) {
+          myErrorReporter.report(new GeneralError("Module not found: " + stat.getModulePath(), stat));  // FIXME[error]: report proper
+          return null;
+        }
+        if (stat.getPath().isEmpty()) {
+          referredClass = moduleNamespace.getRegisteredClass();
+        } else {
+          referredClass = myNameResolver.resolveDefinition(myNameResolver.staticNamespaceFor(moduleClass), stat.getPath());
+        }
       }
-    }
 
-    if (referredClass == null) {
-      myErrorReporter.report(new GeneralError("Class not found", stat));  // FIXME[error]: report proper
-      return null;
+      if (referredClass == null) {
+        myErrorReporter.report(new GeneralError("Class not found", stat));  // FIXME[error]: report proper
+        return null;
+      }
+      myResolveListener.nsCmdResolved(stat, referredClass);
     }
 
     if (stat.getKind().equals(Abstract.NamespaceCommandStatement.Kind.OPEN)) {
-      myScope = new MergeScope(myScope, myNameResolver.staticNamespaceFor(referredClass));
+      myScope = new MergeScope(myScope, myNameResolver.staticNamespaceFor(stat.getResolvedClass()));
     }
 
     return null;
