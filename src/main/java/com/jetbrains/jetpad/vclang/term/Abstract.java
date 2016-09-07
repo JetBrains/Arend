@@ -310,7 +310,7 @@ public final class Abstract {
     List<? extends ClassViewField> getFields();
   }
 
-  public interface ClassViewField extends Binding {
+  public interface ClassViewField extends Definition {
     String getUnderlyingFieldName();
     ClassField getUnderlyingField();
   }
@@ -318,7 +318,6 @@ public final class Abstract {
   public interface ClassField extends Definition {
     List<? extends Argument> getArguments();
     Expression getResultType();
-    boolean isImplicit();
   }
 
   public interface ImplementDefinition extends Definition {

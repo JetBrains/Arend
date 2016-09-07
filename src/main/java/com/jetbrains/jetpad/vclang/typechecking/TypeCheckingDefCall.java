@@ -46,7 +46,11 @@ public class TypeCheckingDefCall {
     Abstract.Definition resolvedDefinition = expr.getReferent();
     Definition typeCheckedDefinition = null;
     if (resolvedDefinition != null) {
-      typeCheckedDefinition = myState.getTypechecked(resolvedDefinition);
+      if (resolvedDefinition instanceof Abstract.ClassViewField) {
+        typeCheckedDefinition = myState.getTypechecked(((Abstract.ClassViewField) resolvedDefinition).getUnderlyingField());
+      } else {
+        typeCheckedDefinition = myState.getTypechecked(resolvedDefinition);
+      }
       if (left == null && typeCheckedDefinition == null) {
         throw new IllegalStateException("Internal error: definition " + resolvedDefinition + " was not typechecked");
       }
@@ -62,7 +66,7 @@ public class TypeCheckingDefCall {
           }
 
           if (thisExpr == null) {
-            if (typeCheckedDefinition.getAbstractDefinition() instanceof Abstract.ClassField && ((Abstract.ClassField) typeCheckedDefinition.getAbstractDefinition()).isImplicit()) {
+            if (resolvedDefinition instanceof Abstract.ClassViewField) {
               // TODO: if typeCheckedDefinition.getThisClass() is dynamic, then we should apply it to some this expression
               thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable(typeCheckedDefinition.getThisClass().getName() + "-inst", typeCheckedDefinition.getThisClass().getDefCall(), expr));
             } else {

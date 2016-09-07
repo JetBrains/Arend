@@ -10,4 +10,5 @@ public interface AbstractDefinitionVisitor<P, R> {
   R visitClass(Abstract.ClassDefinition def, P params);
   R visitImplement(Abstract.ImplementDefinition def, P params);
   R visitClassView(Abstract.ClassView def, P params);
+  R visitClassViewField(Abstract.ClassViewField def, P params);
 }

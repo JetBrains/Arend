@@ -935,7 +935,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
         for (Abstract.ClassViewField field : def.getFields()) {
           myBuilder.append("\n");
           printIndent();
-          myBuilder.append(field.getUnderlyingFieldName()).append(" => ").append(field.getName());
+          visitClassViewField(field, null);
         }
         --myIndent;
         myBuilder.append("\n");
@@ -948,6 +948,12 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       }
     }
     myBuilder.append("}");
+    return null;
+  }
+
+  @Override
+  public Void visitClassViewField(Abstract.ClassViewField def, Void params) {
+    myBuilder.append(def.getUnderlyingFieldName()).append(" => ").append(def.getName());
     return null;
   }
 

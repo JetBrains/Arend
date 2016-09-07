@@ -123,6 +123,11 @@ public class TypecheckingOrdering {
         public Boolean visitClassView(Abstract.ClassView def, Void params) {
           return doOrder(def.getUnderlyingClass());
         }
+
+        @Override
+        public Boolean visitClassViewField(Abstract.ClassViewField def, Void params) {
+          return true;
+        }
       }, null);
       if (!good)
         return false;

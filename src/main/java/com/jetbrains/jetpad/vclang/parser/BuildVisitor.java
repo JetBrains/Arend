@@ -323,7 +323,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return null;
     }
 
-    return new Concrete.ClassField(tokenPosition(ctx.getStart()), name, precedence, Collections.<Concrete.Argument>emptyList(), resultType, false);
+    return new Concrete.ClassField(tokenPosition(ctx.getStart()), name, precedence, Collections.<Concrete.Argument>emptyList(), resultType);
   }
 
   @Override

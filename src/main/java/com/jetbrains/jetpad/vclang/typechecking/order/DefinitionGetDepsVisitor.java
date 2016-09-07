@@ -154,6 +154,11 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
     return null;
   }
 
+  @Override
+  public Set<Abstract.Definition> visitClassViewField(Abstract.ClassViewField def, Boolean params) {
+    return null;
+  }
+
   private void visitImplement(Set<Abstract.Definition> result, Abstract.ImplementDefinition def) {
     def.getExpression().accept(new CollectDefCallsVisitor(result), null);
   }

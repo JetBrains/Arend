@@ -857,4 +857,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
   public Definition visitClassView(Abstract.ClassView def, ClassDefinition params) {
     throw new IllegalStateException();
   }
+
+  @Override
+  public Definition visitClassViewField(Abstract.ClassViewField def, ClassDefinition params) {
+    throw new IllegalStateException();
+  }
 }

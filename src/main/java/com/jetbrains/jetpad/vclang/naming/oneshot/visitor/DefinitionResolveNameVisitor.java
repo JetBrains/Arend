@@ -263,5 +263,10 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
     return null;
   }
 
+  @Override
+  public Void visitClassViewField(Abstract.ClassViewField def, Boolean params) {
+    throw new IllegalStateException();
+  }
+
   public enum Flag { MUST_BE_STATIC, MUST_BE_DYNAMIC }
 }

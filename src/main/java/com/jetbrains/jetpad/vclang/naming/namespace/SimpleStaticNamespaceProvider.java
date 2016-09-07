@@ -53,7 +53,7 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
       if (field.getUnderlyingField() == null) {
         ok = false;
       } else {
-        ns.addDefinition(field.getName(), field.getUnderlyingField());
+        ns.addDefinition(field);
       }
     }
 
@@ -126,6 +126,11 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
 
     @Override
     public Boolean visitClassView(Abstract.ClassView def, SimpleNamespace ns) {
+      return true;
+    }
+
+    @Override
+    public Boolean visitClassViewField(Abstract.ClassViewField def, SimpleNamespace params) {
       return true;
     }
   }

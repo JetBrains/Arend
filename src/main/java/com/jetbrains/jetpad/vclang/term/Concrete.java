@@ -949,14 +949,12 @@ public final class Concrete {
     }
   }
 
-  public static class ClassViewField extends Binding implements Abstract.ClassViewField {
-    private final Precedence myPrecedence;
+  public static class ClassViewField extends Definition implements Abstract.ClassViewField {
     private final String myUnderlyingFieldName;
     private Abstract.ClassField myUnderlyingField;
 
     public ClassViewField(Position position, String name, Precedence precedence, String underlyingFieldName) {
-      super(position, name);
-      myPrecedence = precedence;
+      super(position, name, precedence);
       myUnderlyingFieldName = underlyingFieldName;
     }
 
@@ -975,22 +973,14 @@ public final class Concrete {
     }
 
     @Override
-    public Precedence getPrecedence() {
-      return myPrecedence;
+    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitClassViewField(this, params);
     }
   }
 
   public static class ClassField extends SignatureDefinition implements Abstract.ClassField {
-    private final boolean myImplicit;
-
-    public ClassField(Position position, String name, Precedence precedence, List<Argument> arguments, Expression resultType, boolean isImplicit) {
+    public ClassField(Position position, String name, Precedence precedence, List<Argument> arguments, Expression resultType) {
       super(position, name, precedence, arguments, resultType);
-      myImplicit = isImplicit;
-    }
-
-    @Override
-    public boolean isImplicit() {
-      return myImplicit;
     }
 
     @Override
