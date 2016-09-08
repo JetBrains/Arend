@@ -247,15 +247,22 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
     }
 
     Namespace staticNamespace = myStaticNsProvider.forDefinition(def.getParentStatement().getParentDefinition());
-    Abstract.Definition resolvedDef = staticNamespace.resolveName(def.getUnderlyingClassName());
-    if (!(resolvedDef instanceof Abstract.ClassDefinition)) {
-      myErrorReporter.report(resolvedDef != null ? new WrongDefinition("Expected a class", def) : new NotInScopeError(def, def.getUnderlyingClassName()));
+    Abstract.Definition resolvedUnderlyingClass = staticNamespace.resolveName(def.getUnderlyingClassName());
+    if (!(resolvedUnderlyingClass instanceof Abstract.ClassDefinition)) {
+      myErrorReporter.report(resolvedUnderlyingClass != null ? new WrongDefinition("Expected a class", def) : new NotInScopeError(def, def.getUnderlyingClassName()));
+      return null;
+    }
+    Namespace dynamicNamespace = myDynamicNsProvider.forClass((Abstract.ClassDefinition) resolvedUnderlyingClass);
+    Abstract.Definition resolvedClassifyingField = dynamicNamespace.resolveName(def.getClassifyingFieldName());
+    if (!(resolvedClassifyingField instanceof Abstract.ClassField)) {
+      myErrorReporter.report(resolvedClassifyingField != null ? new WrongDefinition("Expected a class field", def) : new NotInScopeError(def, def.getClassifyingFieldName()));
       return null;
     }
 
-    myResolveListener.classViewResolved(def, (Abstract.ClassDefinition) resolvedDef);
+    myResolveListener.classViewResolved(def, (Abstract.ClassDefinition) resolvedUnderlyingClass, (Abstract.ClassField) resolvedClassifyingField);
+
     for (Abstract.ClassViewField viewField : def.getFields()) {
-      Abstract.ClassField classField = myNameResolver.resolveClassField((Abstract.ClassDefinition) resolvedDef, viewField.getUnderlyingFieldName(), myErrorReporter, viewField);
+      Abstract.ClassField classField = myNameResolver.resolveClassField((Abstract.ClassDefinition) resolvedUnderlyingClass, viewField.getUnderlyingFieldName(), myErrorReporter, viewField);
       if (classField != null) {
         myResolveListener.classViewFieldResolved(viewField, classField);
       }

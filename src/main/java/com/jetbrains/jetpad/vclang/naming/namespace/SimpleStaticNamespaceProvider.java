@@ -49,6 +49,7 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
 
   private static boolean forClassView(Abstract.ClassView def, SimpleNamespace ns) {
     boolean ok = true;
+
     for (Abstract.ClassViewField field : def.getFields()) {
       if (field.getUnderlyingField() == null) {
         ok = false;

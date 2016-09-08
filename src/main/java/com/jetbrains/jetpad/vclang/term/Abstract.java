@@ -307,6 +307,8 @@ public final class Abstract {
   public interface ClassView extends Definition {
     String getUnderlyingClassName();
     ClassDefinition getUnderlyingClass();
+    String getClassifyingFieldName();
+    ClassField getClassifyingField();
     List<? extends ClassViewField> getFields();
   }
 

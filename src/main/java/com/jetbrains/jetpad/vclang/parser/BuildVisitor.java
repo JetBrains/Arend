@@ -336,18 +336,23 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         fields.add(field);
       }
     }
-    return new Concrete.ClassView(tokenPosition(ctx.getStart()), ctx.ID(0).getText(), ctx.ID(ctx.ID().size() > 1 ? 1 : 0).getText(), fields);
+
+    String classifyingField = visitName(ctx.name());
+    if (classifyingField == null) {
+      return null;
+    }
+    return new Concrete.ClassView(tokenPosition(ctx.getStart()), ctx.ID(0).getText(), ctx.ID(ctx.ID().size() > 1 ? 1 : 0).getText(), classifyingField, fields);
   }
 
   @Override
   public Concrete.ClassViewField visitClassViewField(ClassViewFieldContext ctx) {
     String underlyingField = visitName(ctx.name(0));
-    String name = ctx.name().size() > 1 ? visitName(ctx.name().get(1)) : null;
+    String name = ctx.name().size() > 1 ? visitName(ctx.name().get(1)) : underlyingField;
     Abstract.Binding.Precedence precedence = visitPrecedence(ctx.precedence());
     if (underlyingField == null || ctx.name().size() > 1 && name == null) {
       return null;
     }
-    return new Concrete.ClassViewField(tokenPosition(ctx.name(0).getStart()), name != null ? name : underlyingField, precedence != null ? precedence : Abstract.Binding.DEFAULT_PRECEDENCE, underlyingField);
+    return new Concrete.ClassViewField(tokenPosition(ctx.name(0).getStart()), name, precedence != null ? precedence : Abstract.Binding.DEFAULT_PRECEDENCE, underlyingField);
   }
 
   @Override

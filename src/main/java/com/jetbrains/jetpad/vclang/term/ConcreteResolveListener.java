@@ -29,8 +29,9 @@ public class ConcreteResolveListener implements ResolveListener {
   }
 
   @Override
-  public void classViewResolved(Abstract.ClassView classView, Abstract.ClassDefinition definition) {
-    ((Concrete.ClassView) classView).setUnderlyingClass(definition);
+  public void classViewResolved(Abstract.ClassView classView, Abstract.ClassDefinition underlyingClass, Abstract.ClassField classifyingField) {
+    ((Concrete.ClassView) classView).setUnderlyingClass(underlyingClass);
+    ((Concrete.ClassView) classView).setClassifyingField(classifyingField);
   }
 
   @Override
