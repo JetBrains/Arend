@@ -57,11 +57,11 @@ public class NameResolver {
     return parentNs != null ? parentNs.getSubmoduleNamespace(moduleCall.getName()) : null;
   }
 
-  public Abstract.Definition resolveDefinition(final Scope curretScope, final List<String> path) {
+  public Abstract.Definition resolveDefinition(final Scope currentScope, final List<String> path) {
     if (path.isEmpty()) {
       throw new IllegalArgumentException();
     } else {
-      Scope scope = curretScope;
+      Scope scope = currentScope;
       Abstract.Definition ref = null;
       for (String name : path) {
         ref = scope.resolveName(name);
@@ -108,7 +108,7 @@ public class NameResolver {
     }
   }
 
-  public Abstract.Definition resolveModuleCall(final Scope curretScope, final Abstract.ModuleCallExpression moduleCall) {
+  public Abstract.Definition resolveModuleCall(final Scope currentScope, final Abstract.ModuleCallExpression moduleCall) {
     if (moduleCall.getModule() != null) {
       return moduleCall.getModule();
     }
@@ -123,8 +123,8 @@ public class NameResolver {
     return ns.getRegisteredClass();
   }
 
-  public Abstract.Definition resolveClassField(Abstract.ClassDefinition classDefiniton, String name) {
-    return dynamicNamespaceFor(classDefiniton).resolveName(name);
+  public Abstract.Definition resolveClassField(Abstract.ClassDefinition classDefinition, String name) {
+    return dynamicNamespaceFor(classDefinition).resolveName(name);
   }
 
   public Namespace staticNamespaceFor(Abstract.Definition ref) {
