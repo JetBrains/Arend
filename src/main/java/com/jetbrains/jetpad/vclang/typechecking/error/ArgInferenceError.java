@@ -50,6 +50,10 @@ public class ArgInferenceError extends TypeCheckingError {
     return "Cannot infer an expression";
   }
 
+  public static String typeClass() {
+    return "Cannot infer a type class instance";
+  }
+
   public static String suffix(int n) {
     if (n >= 10 && n < 20) {
       return "th";

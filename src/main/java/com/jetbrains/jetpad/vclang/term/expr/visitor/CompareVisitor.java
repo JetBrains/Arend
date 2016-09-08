@@ -102,6 +102,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return compareInferenceReference(ref1, expr2, true);
     }
 
+    if (expr1.getFunction() instanceof FieldCallExpression && expr1.getArguments().get(0) instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) expr1.getArguments().get(0)).getSubstExpression() == null || expr2.getFunction() instanceof FieldCallExpression && expr2.getArguments().get(0) instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) expr2.getArguments().get(0)).getSubstExpression() == null) {
+      InferenceVariable variable = expr1.getFunction() instanceof FieldCallExpression && expr1.getArguments().get(0) instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) expr1.getArguments().get(0)).getSubstExpression() == null ? ((InferenceReferenceExpression) expr1.getArguments().get(0)).getVariable() : ((InferenceReferenceExpression) expr2.getArguments().get(0)).getVariable();
+      return myEquations.add(expr1, expr2, myCMP, variable.getSourceNode(), variable);
+    }
+
     NewExpression new1 = expr1.toNew();
     NewExpression new2 = expr2.toNew();
     if (new1 != null && new2 == null) {

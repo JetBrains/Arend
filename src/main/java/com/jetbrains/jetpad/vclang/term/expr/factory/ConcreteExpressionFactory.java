@@ -82,7 +82,7 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
 
   @Override
   public Abstract.Expression makeError(Abstract.Expression expr) {
-    return expr;
+    return cError();
   }
 
   @Override
