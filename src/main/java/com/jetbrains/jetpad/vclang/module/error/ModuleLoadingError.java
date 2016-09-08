@@ -1,12 +1,12 @@
 package com.jetbrains.jetpad.vclang.module.error;
 
-import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
 
 public class ModuleLoadingError extends GeneralError {
-  public final ModuleID module;
+  public final ModuleSourceId module;
 
-  public ModuleLoadingError(ModuleID module, String message) {
+  public ModuleLoadingError(ModuleSourceId module, String message) {
     super(message, null);
     this.module = module;
   }

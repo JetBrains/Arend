@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.naming;
 
-import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 
@@ -17,8 +16,8 @@ public class Namespace {
     myResolvedName = new DefinitionResolvedName(parent.getResolvedName(), name);
   }
 
-  public Namespace(ModuleID moduleID) {
-    myResolvedName = new ModuleResolvedName(moduleID);
+  public Namespace() {
+    myResolvedName = new ModuleResolvedName();
   }
 
   public ResolvedName getResolvedName() {

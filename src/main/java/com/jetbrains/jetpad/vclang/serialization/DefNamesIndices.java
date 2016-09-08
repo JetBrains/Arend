@@ -1,10 +1,8 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
-import com.jetbrains.jetpad.vclang.module.ModuleID;
-import com.jetbrains.jetpad.vclang.module.SerializableModuleID;
+import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
+import com.jetbrains.jetpad.vclang.module.source.SerializableModuleSourceId;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
-import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -30,7 +28,9 @@ public class DefNamesIndices {
     }
   }
 
-  public void serialize(DataOutputStream stream, SerializableModuleID curModuleID) throws IOException {
+  public void serialize(DataOutputStream stream, SerializableModuleSourceId curModuleID) throws IOException {
+    // FIXME[serial]
+    /*
     stream.writeInt(myDefinitionsList.size());
     for (ResolvedName rn : myDefinitionsList) {
       ModuleID moduleID = rn.getModuleID();
@@ -43,27 +43,31 @@ public class DefNamesIndices {
           ModuleSerialization.writeDefinition(stream, rn.toDefinition());
         }
       } else {
-        stream.writeInt(moduleID == Prelude.moduleID ? 0 : 1);
-        if (moduleID != Prelude.moduleID) {
-          ((SerializableModuleID) moduleID).serialize(stream);
+        stream.writeInt(moduleID == moduleID ? 0 : 1);
+        if (moduleID != moduleID) {
+          ((SerializableModuleSourceId) moduleID).serialize(stream);
         }
         ModuleSerialization.serializeResolvedName(stream, rn);
       }
     }
+    */
   }
 
-  public void serializeHeader(DataOutputStream stream, ModuleID curModuleID) throws IOException {
-    Set<SerializableModuleID> dependencies = new HashSet<>();
+  public void serializeHeader(DataOutputStream stream, ModuleSourceId curModuleID) throws IOException {
+    Set<SerializableModuleSourceId> dependencies = new HashSet<>();
 
     for (ResolvedName resolvedName : myDefinitionsList) {
+      // FIXME[serial]
+      /*
       ModuleID moduleID = resolvedName.getModuleID();
-      if (!moduleID.equals(Prelude.moduleID) && !curModuleID.equals(moduleID)) {
-        dependencies.add((SerializableModuleID) moduleID);
+      if (!moduleID.equals(moduleID) && !curModuleID.equals(moduleID)) {
+        dependencies.add((SerializableModuleSourceId) moduleID);
       }
+      */
     }
 
     stream.writeInt(dependencies.size());
-    for (SerializableModuleID dependency : dependencies) {
+    for (SerializableModuleSourceId dependency : dependencies) {
       dependency.serialize(stream);
     }
   }

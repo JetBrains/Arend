@@ -1,18 +1,12 @@
 package com.jetbrains.jetpad.vclang.naming;
 
-import com.jetbrains.jetpad.vclang.module.ModuleID;
-import com.jetbrains.jetpad.vclang.module.Root;
-
 public class ModuleResolvedName extends ResolvedName {
-  private final ModuleID myModuleID;
-
-  public ModuleResolvedName(ModuleID moduleID) {
-    this.myModuleID = moduleID;
+  public ModuleResolvedName() {
   }
 
   @Override
   public String getName() {
-    return myModuleID.getModulePath().getName();
+    return null;
   }
 
   @Override
@@ -22,15 +16,11 @@ public class ModuleResolvedName extends ResolvedName {
 
   @Override
   public NamespaceMember toNamespaceMember() {
-    return Root.getModule(myModuleID);
-  }
-
-  public ModuleID getModuleID() {
-    return myModuleID;
+    return null;
   }
 
   @Override
   public String getFullName() {
-    return myModuleID.getModulePath().toString();
+    return null;
   }
 }

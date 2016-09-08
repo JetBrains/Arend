@@ -1,7 +1,5 @@
 package com.jetbrains.jetpad.vclang.naming;
 
-import com.jetbrains.jetpad.vclang.module.ModuleID;
-
 public class DefinitionResolvedName extends ResolvedName {
   private final String myName;
   private final ResolvedName myParent;
@@ -16,11 +14,6 @@ public class DefinitionResolvedName extends ResolvedName {
   public NamespaceMember toNamespaceMember() {
     // FIXME[serial]
     throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public ModuleID getModuleID() {
-    return myParent.getModuleID();
   }
 
   @Override

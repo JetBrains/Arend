@@ -2,12 +2,11 @@ package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
-import com.jetbrains.jetpad.vclang.module.*;
-import com.jetbrains.jetpad.vclang.module.output.FileOutputSupplier;
-import com.jetbrains.jetpad.vclang.module.source.FileSource;
-import com.jetbrains.jetpad.vclang.module.source.FileSourceSupplier;
-import com.jetbrains.jetpad.vclang.module.source.Source;
-import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
+import com.jetbrains.jetpad.vclang.module.ModuleLoader;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
+import com.jetbrains.jetpad.vclang.module.source.file.FileModuleLoader;
+import com.jetbrains.jetpad.vclang.module.source.file.FileModuleSourceId;
 import com.jetbrains.jetpad.vclang.module.utils.FileOperations;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
@@ -16,7 +15,6 @@ import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotNameResolver;
 import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotSourceInfoCollector;
-import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.ConcreteResolveListener;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -90,16 +88,11 @@ public class ConsoleMain {
     final OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(errorReporter, nameResolver, new ConcreteResolveListener(), new SimpleStaticNamespaceProvider(), new SimpleDynamicNamespaceProvider());
     final OneshotSourceInfoCollector srcInfoCollector = new OneshotSourceInfoCollector();
     final ErrorFormatter errf = new ErrorFormatter(srcInfoCollector.sourceInfoProvider);
-    final List<ModuleID> loadedModules = new ArrayList<>();
+    final List<ModuleSourceId> loadedModules = new ArrayList<>();
     final List<Abstract.Definition> modulesToTypeCheck = new ArrayList<>();
-    final BaseModuleLoader moduleLoader = new BaseModuleLoader(recompile) {
+    final ModuleLoader moduleLoader = new FileModuleLoader(sourceDir, errorReporter) {
       @Override
-      public void loadingError(GeneralError error) {
-        errorReporter.report(error);
-      }
-
-      @Override
-      public void loadingSucceeded(ModuleID module, Abstract.ClassDefinition abstractDefinition) {
+      public void loadingSucceeded(FileModuleSourceId module, Abstract.ClassDefinition abstractDefinition) {
         if (abstractDefinition != null) {
           DefinitionResolveStaticModVisitor rsmVisitor = new DefinitionResolveStaticModVisitor(new ConcreteStaticModListener());
           rsmVisitor.visitClass(abstractDefinition, true);
@@ -114,20 +107,7 @@ public class ConsoleMain {
         System.out.println("[Loaded] " + module.getModulePath());
       }
     };
-
-    Prelude.moduleID = new FileModuleID(new ModulePath("Prelude"));
-    moduleLoader.setSourceSupplier(new SourceSupplier() {
-      @Override
-      public Source getSource(ModuleID module) {
-        return new FileSource(errorReporter, Prelude.moduleID, FileOperations.getFile(new File(Paths.get("").toAbsolutePath().toFile(), "lib"), module.getModulePath(), FileOperations.EXTENSION));
-      }
-
-      @Override
-      public ModuleID locateModule(ModulePath modulePath) {
-        return new FileModuleID(modulePath);
-      }
-    });
-    Prelude.PRELUDE = (SimpleNamespace) staticNsProvider.forDefinition(moduleLoader.load(Prelude.moduleID).abstractDefinition);
+    Prelude.PRELUDE = (SimpleNamespace) staticNsProvider.forDefinition(new Prelude.PreludeLoader(errorReporter).load());
 
     if (!errorReporter.getErrorList().isEmpty()) {
       for (GeneralError error : errorReporter.getErrorList()) {
@@ -142,10 +122,6 @@ public class ConsoleMain {
     }
     modulesToTypeCheck.clear();
     errorReporter.getErrorList().clear();
-
-    ModuleDeserialization moduleDeserialization = new ModuleDeserialization();
-    moduleLoader.setSourceSupplier(new FileSourceSupplier(errorReporter, sourceDir));
-    moduleLoader.setOutputSupplier(new FileOutputSupplier(moduleDeserialization, outputDir, libDirs));
 
     if (cmdLine.getArgList().isEmpty()) {
       if (sourceDirStr == null) return;
@@ -174,7 +150,7 @@ public class ConsoleMain {
       }
     }
 
-    final Set<ModuleID> failedModules = new HashSet<>();
+    final Set<ModuleSourceId> failedModules = new HashSet<>();
 
     TypecheckingOrdering.typecheck(state, modulesToTypeCheck, errorReporter, new TypecheckedReporter() {
       @Override
@@ -183,7 +159,7 @@ public class ConsoleMain {
 
       @Override
       public void typecheckingFailed(Abstract.Definition definition) {
-        failedModules.add(srcInfoCollector.sourceInfoProvider.moduleOf(definition));
+        failedModules.add(srcInfoCollector.sourceInfoProvider.sourceOf(definition));
         for (GeneralError error : errorReporter.getErrorList()) {
           System.err.println(errf.printError(error));
         }
@@ -191,7 +167,7 @@ public class ConsoleMain {
       }
     }, false);
 
-    for (ModuleID moduleID : loadedModules) {
+    for (ModuleSourceId moduleID : loadedModules) {
       StringBuilder builder = new StringBuilder();
       builder.append("[").append(failedModules.contains(moduleID) ? "✗" : " ").append("]")
              .append(" ").append(moduleID.getModulePath())
@@ -203,7 +179,7 @@ public class ConsoleMain {
       System.err.println(errf.printError(error));
     }
 
-    for (ModuleID moduleID : loadedModules) {
+    for (ModuleSourceId moduleID : loadedModules) {
       //moduleLoader.save(moduleID);  // FIXME[serial]
     }
   }
@@ -236,11 +212,7 @@ public class ConsoleMain {
       return;
     }
 
-    ModuleID moduleID = moduleLoader.locateModule(modulePath);
-    if (moduleID == null) {
-      throw new IllegalStateException();
-    }
-    moduleLoader.load(moduleID);
+    moduleLoader.load(modulePath);
 
     for (GeneralError error : errorReporter.getErrorList()) {
       System.err.println(errf.printError(error));

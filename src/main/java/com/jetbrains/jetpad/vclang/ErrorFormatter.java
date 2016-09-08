@@ -1,8 +1,9 @@
 package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.module.ModuleID;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.error.ModuleCycleError;
+import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
 import com.jetbrains.jetpad.vclang.parser.ParserError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -159,8 +160,8 @@ public class ErrorFormatter {
     } else if (error instanceof MemberNotFoundError) {
       builder.append(((MemberNotFoundError) error).name).append(" of ").append("some compiled definition called ").append(((MemberNotFoundError) error).targetDefinition.getName());
     } else if (error instanceof ModuleCycleError) {
-      for (ModuleID moduleID : ((ModuleCycleError) error).cycle) {
-        builder.append(moduleID.getModulePath()).append(" - ");
+      for (ModulePath modulePath : ((ModuleCycleError) error).cycle) {
+        builder.append(modulePath).append(" - ");
       }
       builder.append(((ModuleCycleError) error).cycle.get(0));
       return builder.toString();
@@ -205,7 +206,7 @@ public class ErrorFormatter {
         }
 
         if (name != null) {
-          ModuleID module = mySrc.moduleOf(def);
+          ModuleSourceId module = mySrc.sourceOf(def);
           builder.append(' ').append(module != null ? module : "<Unknown module>");
           builder.append("::").append(name);
         }

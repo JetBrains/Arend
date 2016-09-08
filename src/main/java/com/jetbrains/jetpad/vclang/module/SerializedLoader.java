@@ -1,16 +1,8 @@
 package com.jetbrains.jetpad.vclang.module;
 
-import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.module.error.ModuleLoadingError;
-import com.jetbrains.jetpad.vclang.module.output.Output;
-import com.jetbrains.jetpad.vclang.module.output.OutputSupplier;
-import com.jetbrains.jetpad.vclang.module.source.Source;
-import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
-
-import java.io.IOException;
-import java.util.*;
-
 public class SerializedLoader {
+  // FIXME[serial]
+  /*
   private final List<ModuleID> myLoadingModules;
   private final ModuleLoader myModuleLoader;
   private SourceSupplier mySourceSupplier;
@@ -156,4 +148,5 @@ public class SerializedLoader {
   public void setOutputSupplier(OutputSupplier outputSupplier) {
     myOutputSupplier = outputSupplier;
   }
+  */
 }

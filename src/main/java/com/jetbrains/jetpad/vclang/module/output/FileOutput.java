@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.module.output;
 
-import com.jetbrains.jetpad.vclang.module.FileModuleID;
+import com.jetbrains.jetpad.vclang.module.source.file.FileModuleSourceId;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
@@ -10,11 +10,11 @@ import java.io.IOException;
 
 public class FileOutput implements Output {
   private final boolean myReadOnly;
-  private final FileModuleID myModule;
+  private final FileModuleSourceId myModule;
   private final File myFile;
   private final ModuleDeserialization myModuleDeserialization;
 
-  public FileOutput(ModuleDeserialization moduleDeserialization, FileModuleID module, File file, boolean readOnly) {
+  public FileOutput(ModuleDeserialization moduleDeserialization, FileModuleSourceId module, File file, boolean readOnly) {
     myReadOnly = readOnly;
     myModule = module;
     myFile = file;

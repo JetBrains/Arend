@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming.oneshot.visitor;
 
-import com.jetbrains.jetpad.vclang.module.ModuleID;
+import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
 import com.jetbrains.jetpad.vclang.naming.FullName;
 import com.jetbrains.jetpad.vclang.naming.oneshot.SimpleSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -8,13 +8,13 @@ import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVis
 
 public class DefinitionSourceInfoVisitor implements AbstractDefinitionVisitor<FullName, Void> {
   private final SimpleSourceInfoProvider myProvider;
-  private final ModuleID myModuleId;
+  private final ModuleSourceId mySourceId;
   private final StatementSourceInfoVisitor myStVisitor;
 
-  public DefinitionSourceInfoVisitor(SimpleSourceInfoProvider provider, ModuleID moduleId) {
+  public DefinitionSourceInfoVisitor(SimpleSourceInfoProvider provider, ModuleSourceId sourceId) {
     myProvider = provider;
-    myModuleId = moduleId;
-    myStVisitor = new StatementSourceInfoVisitor(myProvider, myModuleId);
+    mySourceId = sourceId;
+    myStVisitor = new StatementSourceInfoVisitor(myProvider, mySourceId);
   }
 
   @Override
@@ -41,7 +41,7 @@ public class DefinitionSourceInfoVisitor implements AbstractDefinitionVisitor<Fu
 
   @Override
   public Void visitConstructor(Abstract.Constructor def, FullName params) {
-    myProvider.registerDefinition(def, new FullName(params, def.getName()), myModuleId);
+    myProvider.registerDefinition(def, new FullName(params, def.getName()), mySourceId);
     return null;
   }
 

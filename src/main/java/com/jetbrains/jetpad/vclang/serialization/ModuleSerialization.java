@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
-import com.jetbrains.jetpad.vclang.module.Root;
-import com.jetbrains.jetpad.vclang.module.SerializableModuleID;
+import com.jetbrains.jetpad.vclang.module.source.SerializableModuleSourceId;
 import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
@@ -33,7 +32,7 @@ public class ModuleSerialization {
   public static final byte[] SIGNATURE = {'v', 'c', (byte) 0xb1, 0x0b};
   public static final int VERSION = 1;
 
-  public static void writeFile(SerializableModuleID moduleID, File outputFile) throws IOException {
+  public static void writeFile(SerializableModuleSourceId moduleID, File outputFile) throws IOException {
     Files.createDirectories(outputFile.getParentFile().toPath());
     writeStream(moduleID, new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile))));
   }
@@ -50,13 +49,13 @@ public class ModuleSerialization {
     }
   }
 
-  public static void writeStream(SerializableModuleID curModuleID, DataOutputStream stream) throws IOException {
+  public static void writeStream(SerializableModuleSourceId curModuleID, DataOutputStream stream) throws IOException {
     DefNamesIndices defNamesIndices = new DefNamesIndices();
     ByteArrayOutputStream byteArrayStream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(byteArrayStream);
     SerializeVisitor visitor = new SerializeVisitor(defNamesIndices, byteArrayStream, dataStream);
 
-    int errors = serializeDefinition(visitor, Root.getModule(curModuleID).definition);
+    int errors = 0 /*serializeDefinition(visitor, Root.getModule(curModuleID).definition)*/;  // FIXME[serial]
 
     stream.write(SIGNATURE);
     stream.writeInt(VERSION);

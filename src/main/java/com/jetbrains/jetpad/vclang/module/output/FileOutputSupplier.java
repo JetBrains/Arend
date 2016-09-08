@@ -1,15 +1,8 @@
 package com.jetbrains.jetpad.vclang.module.output;
 
-import com.jetbrains.jetpad.vclang.module.FileModuleID;
-import com.jetbrains.jetpad.vclang.module.ModuleID;
-import com.jetbrains.jetpad.vclang.module.utils.FileOperations;
-import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
-
-import java.io.File;
-import java.util.*;
-
-public class FileOutputSupplier implements OutputSupplier {
+public class FileOutputSupplier {
+  // FIXME[serial]
+  /*
   private final File myDirectory;
   private final List<File> myLibDirs;
   private final ModuleDeserialization myModuleDeserialization;
@@ -22,21 +15,22 @@ public class FileOutputSupplier implements OutputSupplier {
 
   @Override
   public Output getOutput(ModuleID module) {
-    if (!(module instanceof FileModuleID)) {
+    if (!(module instanceof FileModuleSourceId)) {
       return null;
     }
     for (File dir : myLibDirs) {
       File file = FileOperations.getFile(dir, module.getModulePath(), FileOperations.SERIALIZED_EXTENSION);
       if (file.exists()) {
-        return new FileOutput(myModuleDeserialization, (FileModuleID) module, file, true);
+        return new FileOutput(myModuleDeserialization, (FileModuleSourceId) module, file, true);
       }
     }
     File file = FileOperations.getFile(myDirectory, module.getModulePath(), FileOperations.SERIALIZED_EXTENSION);
-    return new FileOutput(myModuleDeserialization, (FileModuleID) module, file, false);
+    return new FileOutput(myModuleDeserialization, (FileModuleSourceId) module, file, false);
   }
 
   @Override
-  public FileModuleID locateModule(ModulePath modulePath) {
-    return new FileModuleID(modulePath);
+  public FileModuleSourceId locateModule(ModulePath modulePath) {
+    return new FileModuleSourceId(modulePath);
   }
+  */
 }

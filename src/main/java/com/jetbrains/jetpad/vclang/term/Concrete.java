@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term;
 
-import com.jetbrains.jetpad.vclang.module.ModuleID;
+import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractCompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
@@ -15,11 +15,11 @@ public final class Concrete {
   private Concrete() {}
 
   public static class Position {
-    public final ModuleID module;
+    public final ModuleSourceId module;
     public final int line;
     public final int column;
 
-    public Position(ModuleID module, int line, int column) {
+    public Position(ModuleSourceId module, int line, int column) {
       this.module = module;
       this.line = line;
       this.column = column + 1;
@@ -1129,7 +1129,6 @@ public final class Concrete {
     private final List<Statement> myFields;
     private final Kind myKind;
     private final List<SuperClass> mySuperClasses;
-    private ModuleID myModule;
 
     public ClassDefinition(Position position, String name, List<Statement> fields, Kind kind, List<SuperClass> superClasses) {
       super(position, name, DEFAULT_PRECEDENCE);
@@ -1140,10 +1139,6 @@ public final class Concrete {
 
     public ClassDefinition(Position position, String name, List<Statement> fields, Kind kind) {
       this(position, name, fields, kind, Collections.<SuperClass>emptyList());
-    }
-
-    public void setModuleID(ModuleID moduleID) {
-      myModule = moduleID;
     }
 
     @Override
@@ -1157,11 +1152,6 @@ public final class Concrete {
     @Override
     public Collection<SuperClass> getSuperClasses() {
       return mySuperClasses;
-    }
-
-    @Override
-    public ModuleID getModuleID() {
-      return myModule;
     }
 
     @Override

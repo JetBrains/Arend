@@ -1,11 +1,12 @@
-package com.jetbrains.jetpad.vclang.module.source;
+package com.jetbrains.jetpad.vclang.module.source.file;
 
 import com.jetbrains.jetpad.vclang.error.CompositeErrorReporter;
 import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
+import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
+import com.jetbrains.jetpad.vclang.module.source.Source;
 import com.jetbrains.jetpad.vclang.parser.BuildVisitor;
 import com.jetbrains.jetpad.vclang.parser.ParserError;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarLexer;
@@ -20,24 +21,21 @@ import java.util.List;
 
 public abstract class ParseSource implements Source {
   private final ErrorReporter myErrorReporter;
-  private final ModuleID myModule;
-  private InputStream myStream;
+  private final ModuleSourceId mySourceId;
+  private final InputStream myStream;
 
-  public ParseSource(ErrorReporter errorReporter, ModuleID module) {
+  public ParseSource(ModuleSourceId sourceId, InputStream stream, ErrorReporter errorReporter) {
+    mySourceId = sourceId;
+    myStream = stream;
     myErrorReporter = errorReporter;
-    myModule = module;
   }
 
-  protected ModuleID getModule() {
-    return myModule;
+  protected ModuleSourceId getId() {
+    return mySourceId;
   }
 
   public InputStream getStream() {
     return myStream;
-  }
-
-  public void setStream(InputStream stream) {
-    myStream = stream;
   }
 
   public ModuleLoader.Result load() throws IOException {
@@ -49,7 +47,7 @@ public abstract class ParseSource implements Source {
     lexer.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(myModule, new Concrete.Position(myModule, line, pos), msg));
+        errorReporter.report(new ParserError(mySourceId, new Concrete.Position(mySourceId, line, pos), msg));
       }
     });
 
@@ -58,7 +56,7 @@ public abstract class ParseSource implements Source {
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(myModule, new Concrete.Position(myModule, line, pos), msg));
+        errorReporter.report(new ParserError(mySourceId, new Concrete.Position(mySourceId, line, pos), msg));
       }
     });
 
@@ -67,9 +65,8 @@ public abstract class ParseSource implements Source {
       return new ModuleLoader.Result(null, countingErrorReporter.getErrorsNumber());
     }
 
-    List<Concrete.Statement> statements = new BuildVisitor(myModule, errorReporter).visitStatements(tree);
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(new Concrete.Position(myModule, 0, 0), myModule.getModulePath().getName(), statements, Abstract.ClassDefinition.Kind.Module);
-    classDefinition.setModuleID(myModule);
+    List<Concrete.Statement> statements = new BuildVisitor(mySourceId, errorReporter).visitStatements(tree);
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(new Concrete.Position(mySourceId, 0, 0), mySourceId.getModulePath().getName(), statements, Abstract.ClassDefinition.Kind.Module);
     for (Concrete.Statement statement : statements) {
       if (statement instanceof Concrete.DefineStatement) {
         ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);

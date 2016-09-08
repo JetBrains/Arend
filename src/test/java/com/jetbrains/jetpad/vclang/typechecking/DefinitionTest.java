@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
-import com.jetbrains.jetpad.vclang.module.Root;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
@@ -31,7 +30,6 @@ public class DefinitionTest extends TypeCheckingTestCase {
 
   @Before
   public void initialize() {
-    Root.initialize();
     errorReporter = new ListErrorReporter();
   }
 

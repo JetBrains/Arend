@@ -1,13 +1,15 @@
-package com.jetbrains.jetpad.vclang.module;
+package com.jetbrains.jetpad.vclang.module.source;
+
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public class NameModuleID implements SerializableModuleID {
+public class NameModuleSourceId implements SerializableModuleSourceId {
   private final String myName;
 
-  public NameModuleID(String name) {
+  public NameModuleSourceId(String name) {
     this.myName = name;
   }
 
@@ -22,13 +24,13 @@ public class NameModuleID implements SerializableModuleID {
   }
 
   @Override
-  public ModuleID deserialize(DataInputStream stream) throws IOException {
-    return new NameModuleID(stream.readUTF());
+  public NameModuleSourceId deserialize(DataInputStream stream) throws IOException {
+    return new NameModuleSourceId(stream.readUTF());
   }
 
   @Override
   public boolean equals(Object o) {
-    return o == this || o instanceof NameModuleID && myName.equals(((NameModuleID) o).myName);
+    return o == this || o instanceof NameModuleSourceId && myName.equals(((NameModuleSourceId) o).myName);
   }
 
   @Override
