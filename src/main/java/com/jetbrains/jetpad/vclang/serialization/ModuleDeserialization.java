@@ -180,7 +180,8 @@ public class ModuleDeserialization {
     Map<Integer, Definition> definitionMap = readDefIndices(stream, false, moduleID);
     ClassDefinition moduleRoot = (ClassDefinition) definitionMap.get(0);
     deserializeDefinition(stream, definitionMap);
-    return new ModuleLoader.Result(null, moduleRoot, false, errorsNumber);
+    //return new ModuleLoader.Result(null, moduleRoot, false, errorsNumber);
+    return null; // FIXME[serial]
   }
 
   private Definition deserializeDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {

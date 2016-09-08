@@ -64,7 +64,7 @@ public abstract class ParseSource implements Source {
 
     VcgrammarParser.StatementsContext tree = parser.statements();
     if (tree == null || countingErrorReporter.getErrorsNumber() != 0) {
-      return new ModuleLoader.Result(null, null, true, countingErrorReporter.getErrorsNumber());
+      return new ModuleLoader.Result(null, countingErrorReporter.getErrorsNumber());
     }
 
     List<Concrete.Statement> statements = new BuildVisitor(myModule, errorReporter).visitStatements(tree);
@@ -76,6 +76,6 @@ public abstract class ParseSource implements Source {
       }
     }
 
-    return new ModuleLoader.Result(classDefinition, null, true, countingErrorReporter.getErrorsNumber());
+    return new ModuleLoader.Result(classDefinition, countingErrorReporter.getErrorsNumber());
   }
 }

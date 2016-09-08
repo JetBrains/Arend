@@ -1,16 +1,15 @@
 package com.jetbrains.jetpad.vclang.module;
 
+import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.module.error.ModuleCycleError;
 import com.jetbrains.jetpad.vclang.module.error.ModuleLoadingError;
 import com.jetbrains.jetpad.vclang.module.error.ModuleNotFoundError;
 import com.jetbrains.jetpad.vclang.module.output.DummyOutputSupplier;
-import com.jetbrains.jetpad.vclang.module.output.Output;
 import com.jetbrains.jetpad.vclang.module.output.OutputSupplier;
 import com.jetbrains.jetpad.vclang.module.source.DummySourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Source;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
-import com.jetbrains.jetpad.vclang.error.GeneralError;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -44,18 +43,6 @@ public abstract class BaseModuleLoader implements ModuleLoader {
   public void setOutputSupplier(OutputSupplier outputSupplier) {
     myOutputSupplier = outputSupplier;
     mySerializedLoader.setOutputSupplier(outputSupplier);
-  }
-
-  @Override
-  public void save(ModuleID module) {
-    Output output = myOutputSupplier.getOutput(module);
-    if (output != null && output.canWrite()) {
-      try {
-        output.write();
-      } catch (IOException e) {
-        savingError(new GeneralError("Saving module '" + module.getModulePath() + "': " + GeneralError.ioError(e), null));
-      }
-    }
   }
 
   @Override

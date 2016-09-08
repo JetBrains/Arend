@@ -20,7 +20,6 @@ import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.ConcreteResolveListener;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveStaticModVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
@@ -95,17 +94,12 @@ public class ConsoleMain {
     final List<Abstract.Definition> modulesToTypeCheck = new ArrayList<>();
     final BaseModuleLoader moduleLoader = new BaseModuleLoader(recompile) {
       @Override
-      public void savingError(GeneralError error) {
-        errorReporter.report(error);
-      }
-
-      @Override
       public void loadingError(GeneralError error) {
         errorReporter.report(error);
       }
 
       @Override
-      public void loadingSucceeded(ModuleID module, Abstract.ClassDefinition abstractDefinition, ClassDefinition compiledDefinition, boolean compiled) {
+      public void loadingSucceeded(ModuleID module, Abstract.ClassDefinition abstractDefinition) {
         if (abstractDefinition != null) {
           DefinitionResolveStaticModVisitor rsmVisitor = new DefinitionResolveStaticModVisitor(new ConcreteStaticModListener());
           rsmVisitor.visitClass(abstractDefinition, true);
@@ -115,14 +109,9 @@ public class ConsoleMain {
 
           modulesToTypeCheck.add(abstractDefinition);
         }
-        if (compiled) {
-          moduleNsProvider.registerModule(module.getModulePath(), abstractDefinition);
-          loadedModules.add(module);
-          System.out.println("[Resolved] " + module.getModulePath());
-        } else {
-          moduleNsProvider.registerModule(module.getModulePath(), compiledDefinition);
-          System.out.println("[Loaded] " + module.getModulePath());
-        }
+        moduleNsProvider.registerModule(module.getModulePath(), abstractDefinition);
+        loadedModules.add(module);
+        System.out.println("[Loaded] " + module.getModulePath());
       }
     };
 
