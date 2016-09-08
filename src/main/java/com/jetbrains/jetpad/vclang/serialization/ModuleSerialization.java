@@ -1,37 +1,11 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
-import com.jetbrains.jetpad.vclang.module.source.SerializableModuleSourceId;
-import com.jetbrains.jetpad.vclang.naming.Namespace;
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
-import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
-import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
-import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
-import com.jetbrains.jetpad.vclang.term.expr.type.Type;
-import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
-
-import java.io.*;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 public class ModuleSerialization {
   public static final byte[] SIGNATURE = {'v', 'c', (byte) 0xb1, 0x0b};
   public static final int VERSION = 1;
 
+  // FIXME[serial]
+  /*
   public static void writeFile(SerializableModuleSourceId moduleID, File outputFile) throws IOException {
     Files.createDirectories(outputFile.getParentFile().toPath());
     writeStream(moduleID, new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile))));
@@ -55,7 +29,7 @@ public class ModuleSerialization {
     DataOutputStream dataStream = new DataOutputStream(byteArrayStream);
     SerializeVisitor visitor = new SerializeVisitor(defNamesIndices, byteArrayStream, dataStream);
 
-    int errors = 0 /*serializeDefinition(visitor, Root.getModule(curModuleID).definition)*/;  // FIXME[serial]
+    int errors = 0 serializeDefinition(visitor, Root.getModule(curModuleID).definition);
 
     stream.write(SIGNATURE);
     stream.writeInt(VERSION);
@@ -197,7 +171,6 @@ public class ModuleSerialization {
 
     writeSortMax(visitor, definition.getSorts());
 
-    /* FIXME[serial]
     visitor.getDataStream().writeInt(definition.getFields().size());
     for (Map.Entry<ClassField, ClassDefinition.FieldImplementation> entry : definition.getFieldsMap()) {
       ClassField field = entry.getKey();
@@ -216,7 +189,6 @@ public class ModuleSerialization {
         field.getType().accept(visitor, null);
       }
     }
-    */
 
     return errors;
   }
@@ -334,4 +306,5 @@ public class ModuleSerialization {
     binding.getType().accept(visitor, null);
     visitor.addBinding(binding);
   }
+  */
 }

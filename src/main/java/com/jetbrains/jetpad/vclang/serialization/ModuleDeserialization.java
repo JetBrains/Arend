@@ -4,8 +4,6 @@ import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.module.output.Output;
 import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
 import com.jetbrains.jetpad.vclang.module.source.SerializableModuleSourceId;
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
@@ -87,7 +85,9 @@ public class ModuleDeserialization {
     return result;
   }
 
-  private static Definition readDefinition(DataInputStream stream, ResolvedName rn, boolean dryRun) throws IOException {
+  private static Definition readDefinition(DataInputStream stream, boolean dryRun) throws IOException {
+    // FIXME[serial]
+    /*
     int codeIdx = stream.readInt();
     if (codeIdx >= ModuleSerialization.DefinitionCodes.values().length)
       throw new IncorrectFormat();
@@ -111,16 +111,16 @@ public class ModuleDeserialization {
     if (dryRun)
       return null;
 
-    /* FIXME[serial]
     Definition definition = code.toDefinition(rn, precedence);
     if (rn.getName().equals("\\parent"))
       ((ClassDefinition) rn.getParent().toDefinition()).addField((ClassField) definition);
     else {
       rn.toNamespaceMember().definition = definition;
     }
-    */
     Definition definition = null;
     return definition;
+    */
+    return null;
   }
 
   private static void verifySignature(DataInputStream stream) throws IOException {

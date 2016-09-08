@@ -1,9 +1,8 @@
 package com.jetbrains.jetpad.vclang.module.output;
 
-import com.jetbrains.jetpad.vclang.module.source.file.FileModuleSourceId;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
+import com.jetbrains.jetpad.vclang.module.source.file.FileModuleSourceId;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
-import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
 
 import java.io.File;
 import java.io.IOException;
@@ -55,6 +54,6 @@ public class FileOutput implements Output {
 
   @Override
   public void write() throws IOException {
-    ModuleSerialization.writeFile(myModule, myFile);
+    //ModuleSerialization.writeFile(myModule, myFile);  // FIXME[serial]
   }
 }

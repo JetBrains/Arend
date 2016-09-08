@@ -2,17 +2,19 @@ package com.jetbrains.jetpad.vclang.serialization;
 
 import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
 import com.jetbrains.jetpad.vclang.module.source.SerializableModuleSourceId;
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.*;
 
 public class DefNamesIndices {
-  final private Map<ResolvedName, Integer> myDefinitions = new HashMap<>();
-  final private List<ResolvedName> myDefinitionsList = new ArrayList<>();
+  // FIXME[serial]
+  //final private Map<ResolvedName, Integer> myDefinitions = new HashMap<>();
+  //final private List<ResolvedName> myDefinitionsList = new ArrayList<>();
   private int myCounter = 0;
 
+  // FIXME[serial]
+  /*
   public int getDefNameIndex(ResolvedName defName) {
     if (defName == null) {
       return -1;
@@ -27,6 +29,7 @@ public class DefNamesIndices {
       return index;
     }
   }
+  */
 
   public void serialize(DataOutputStream stream, SerializableModuleSourceId curModuleID) throws IOException {
     // FIXME[serial]
@@ -56,15 +59,15 @@ public class DefNamesIndices {
   public void serializeHeader(DataOutputStream stream, ModuleSourceId curModuleID) throws IOException {
     Set<SerializableModuleSourceId> dependencies = new HashSet<>();
 
+    // FIXME[serial]
+    /*
     for (ResolvedName resolvedName : myDefinitionsList) {
-      // FIXME[serial]
-      /*
       ModuleID moduleID = resolvedName.getModuleID();
       if (!moduleID.equals(moduleID) && !curModuleID.equals(moduleID)) {
         dependencies.add((SerializableModuleSourceId) moduleID);
       }
-      */
     }
+    */
 
     stream.writeInt(dependencies.size());
     for (SerializableModuleSourceId dependency : dependencies) {

@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.BaseExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ConstructorClause;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
@@ -63,6 +62,8 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
 
   @Override
   public Void visitDefCall(DefCallExpression expr, Void params) {
+    // FIXME[serial]
+    /*
     myStream.write(2);
     try {
       myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(expr.getDefinition().getResolvedName()));
@@ -70,11 +71,14 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     } catch (IOException e) {
       throw new IllegalStateException();
     }
+    */
     return null;
   }
 
   @Override
   public Void visitConCall(ConCallExpression expr, Void params) {
+    // FIXME[serial]
+    /*
     myStream.write(3);
     int index = myDefNamesIndices.getDefNameIndex(expr.getDefinition().getResolvedName());
     try {
@@ -87,6 +91,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     for (Expression parameter : expr.getDataTypeArguments()) {
       parameter.accept(this, null);
     }
+    */
     return null;
   }
 
@@ -154,6 +159,8 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
 
   @Override
   public Void visitLam(LamExpression expr, Void params) {
+    // FIXME[serial]
+    /*
     myStream.write(6);
     try {
       ModuleSerialization.writeParameters(this, expr.getParameters());
@@ -161,11 +168,14 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
       throw new IllegalStateException();
     }
     expr.getBody().accept(this, null);
+    */
     return null;
   }
 
   @Override
   public Void visitPi(PiExpression expr, Void params) {
+    // FIXME[serial]
+    /*
     myStream.write(7);
     try {
       ModuleSerialization.writeParameters(this, expr.getParameters());
@@ -173,17 +183,21 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
       throw new IllegalStateException();
     }
     expr.getCodomain().accept(this, null);
+    */
     return null;
   }
 
   @Override
   public Void visitUniverse(UniverseExpression expr, Void params) {
+    // FIXME[serial]
+    /*
     myStream.write(8);
     try {
       ModuleSerialization.writeSort(this, expr.getSort());
     } catch (IOException e) {
       throw new IllegalStateException();
     }
+    */
     return null;
   }
 
@@ -219,12 +233,15 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
 
   @Override
   public Void visitSigma(SigmaExpression expr, Void params) {
+    // FIXME[serial]
+    /*
     myStream.write(11);
     try {
       ModuleSerialization.writeParameters(this, expr.getParameters());
     } catch (IOException e) {
       throw new IllegalStateException();
     }
+    */
     return null;
   }
 
@@ -250,7 +267,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
       }
       if (pattern instanceof ConstructorPattern) {
         Constructor constructor = ((ConstructorPattern) pattern).getConstructor();
-        myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(constructor.getResolvedName()));
+        //myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(constructor.getResolvedName()));  // FIXME[serial]
         myDataStream.writeInt(((ConstructorPattern) pattern).getArguments().size());
         for (PatternArgument patternArg : ((ConstructorPattern) pattern).getArguments()) {
           visitPatternArg(patternArg);
@@ -304,6 +321,8 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   }
 
   private void visitLetClause(LetClause clause) {
+    // FIXME[serial]
+    /*
     try {
       myDataStream.writeUTF(clause.getName());
       ModuleSerialization.writeParameters(this, clause.getParameters());
@@ -316,10 +335,13 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
       throw new IllegalStateException();
     }
     addBinding(clause);
+    */
   }
 
   @Override
   public Void visitBranch(BranchElimTreeNode branchNode, Void params) {
+    // FIXME[serial]
+    /*
     try {
       myDataStream.writeInt(0);
       writeBinding(branchNode.getReference());
@@ -343,6 +365,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     } catch (IOException e) {
       throw new IllegalStateException();
     }
+    */
 
     return null;
   }

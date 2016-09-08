@@ -16,7 +16,8 @@ import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.*;
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.compare;
 import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class NameResolverTest {
   @Test
@@ -143,18 +144,22 @@ public class NameResolverTest {
 
   @Test
   public void exportPublicFieldsTest() {
+    /*
     resolveNamesClass("test", "\\static \\class A { \\static \\function x => 0 \\static \\class B { \\static \\function y => x } \\export B } \\static \\function f => A.y");
-    //assertNotNull(Root.getModule(new NameModuleSourceId("test")));
-    Namespace staticNamespace = null /*Root.getModule(new NameModuleSourceId("test")).namespace*/;  // FIXME
+    assertNotNull(Root.getModule(new NameModuleSourceId("test")));
+    Root.getModule(new NameModuleSourceId("test")).namespace;
 
     assertEquals(2, staticNamespace.getMembers().size());
     assertNotNull(staticNamespace.getMember("A"));
     assertEquals(3, staticNamespace.getMember("A").namespace.getMembers().size());
     assertEquals(3, ((Abstract.ClassDefinition) staticNamespace.getMember("A").abstractDefinition).getStatements().size());
+    */
+    assertTrue(false);
   }
 
   @Test
   public void exportTest2() {
+    /*
     resolveNamesClass("test",
         "\\abstract (+) (x y : \\Type0) : \\Type0\n" +
         "\\class A {\n" +
@@ -170,8 +175,8 @@ public class NameResolverTest {
         "  \\class D { \\export B }\n" +
         "  \\function f (b : B) : b.C.z = b.z => path (\\lam _ => b.w + b.y)\n" +
         "}");
-    //assertNotNull(Root.getModule(new NameModuleSourceId("test")));
-    Namespace namespace = null /*Root.getModule(new NameModuleSourceId("test")).namespace*/;  // FIXME
+    assertNotNull(Root.getModule(new NameModuleSourceId("test")));
+    Namespace namespace = Root.getModule(new NameModuleSourceId("test")).namespace;
 
     assertEquals(namespace.getMembers().toString(), 2, namespace.getMembers().size());
     assertNotNull(namespace.getMember("A"));
@@ -187,6 +192,8 @@ public class NameResolverTest {
     Abstract.ClassDefinition classD = (Abstract.ClassDefinition) getField(classA, "D");
     assertNotNull(classD);
     assertEquals(classD.getStatements().toString(), 1, classD.getStatements().size());
+    */
+    assertTrue(false);
   }
 
   private Abstract.Definition getField(Abstract.ClassDefinition classDefinition, String name) {
