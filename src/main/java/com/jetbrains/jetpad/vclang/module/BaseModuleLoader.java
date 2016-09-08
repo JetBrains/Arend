@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.module.output.OutputSupplier;
 import com.jetbrains.jetpad.vclang.module.source.DummySourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Source;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
+import com.jetbrains.jetpad.vclang.module.utils.LoadModulesRecursively;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 
 import java.io.EOFException;
@@ -75,8 +76,15 @@ public abstract class BaseModuleLoader implements ModuleLoader {
         myLoadingModules.add(module);
 
         Result result = source.load();
-        Helper.processLoaded(this, module, result);
-        myLoadedModules.put(module, result);
+        if (result != null && result.errorsNumber == 0) {
+          assert result.abstractDefinition != null;
+          new LoadModulesRecursively(this).visitClass(result.abstractDefinition, null);
+          loadingSucceeded(module, result.abstractDefinition);
+          myLoadedModules.put(module, result);
+        } else {
+          GeneralError error = new ModuleLoadingError(module, result == null ? "Cannot load module" : "Module  contains " + result.errorsNumber + (result.errorsNumber == 1 ? " error" : " errors"));
+          loadingError(error);
+        }
 
         return result;
       } finally {

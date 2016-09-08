@@ -133,7 +133,7 @@ public class SerializedLoader {
       for (ModuleID nestedModule : deserializedModules) {
         try {
           ModuleLoader.Result nestedResult = myDeserializingModules.get(nestedModule).output.read();
-          ModuleLoader.Helper.processLoaded(myModuleLoader, nestedModule, nestedResult);
+          //ModuleLoader.Helper.processLoaded(myModuleLoader, nestedModule, nestedResult);  // FIXME[serial]
           myDeserializingModules.get(nestedModule).result = nestedResult;
         } catch (IOException e) {
           for (ModuleID loaded : deserializedModules) {
