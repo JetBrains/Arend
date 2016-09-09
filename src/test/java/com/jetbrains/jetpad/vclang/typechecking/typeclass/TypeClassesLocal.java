@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.typeclass;
+package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
@@ -24,6 +24,50 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "}\n" +
         "\\static \\view \\on X \\by A { B }\n" +
         "\\function f (A' : \\Type0) (x : X { A => A' }) (a : A') => B a");
+  }
+
+  @Test
+  public void inferVarRenamedView() {
+    typeCheckClass(
+        "\\static \\class X {\n" +
+        "  \\abstract A : \\Type0\n" +
+        "  \\abstract B : A -> Nat\n" +
+        "}\n" +
+        "\\static \\view Y \\on X \\by A { B }\n" +
+        "\\function f (x : Y) (a : x.A) => B a");
+  }
+
+  @Test
+  public void inferVarRenamedView2() {
+    typeCheckClass(
+        "\\static \\class X {\n" +
+        "  \\abstract A : \\Type0\n" +
+        "  \\abstract B : A -> Nat\n" +
+        "}\n" +
+        "\\static \\view Y \\on X \\by A { B }\n" +
+        "\\function f (A' : \\Type0) (x : Y { A => A' }) (a : A') => B a");
+  }
+
+  @Test
+  public void inferVarRenamedViewError() {
+    typeCheckClass(
+        "\\static \\class X {\n" +
+        "  \\abstract A : \\Type0\n" +
+        "  \\abstract B : A -> Nat\n" +
+        "}\n" +
+        "\\static \\view Y \\on X \\by A { B }\n" +
+        "\\function f (x : X) (a : x.A) => B a", 1);
+  }
+
+  @Test
+  public void inferVarRenamedViewError2() {
+    typeCheckClass(
+        "\\static \\class X {\n" +
+        "  \\abstract A : \\Type0\n" +
+        "  \\abstract B : A -> Nat\n" +
+        "}\n" +
+        "\\static \\view Y \\on X \\by A { B }\n" +
+        "\\function f (A' : \\Type0) (x : X { A => A' }) (a : A') => B a", 1);
   }
 
   @Test

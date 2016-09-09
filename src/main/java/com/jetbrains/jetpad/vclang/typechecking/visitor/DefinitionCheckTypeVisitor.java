@@ -33,6 +33,8 @@ import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.EmptyInstancePool;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.LinkListClassViewInstancePool;
 
 import java.util.*;
 
@@ -118,8 +120,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
     List<? extends Abstract.Argument> arguments = def.getArguments();
     final List<Binding> context = new ArrayList<>();
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build(def);
     LinkList list = new LinkList();
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).instancePool(new LinkListClassViewInstancePool(list)).build(def);
     if (enclosingClass != null) {
       DependentLink thisParam = createThisParam(enclosingClass);
       context.add(thisParam);
@@ -242,10 +244,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     List<? extends Abstract.TypeArgument> parameters = def.getParameters();
 
     List<Binding> context = new ArrayList<>();
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build(def);
+    LinkList list = new LinkList();
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).instancePool(new LinkListClassViewInstancePool(list)).build(def);
     List<Binding> polyParamsList = new ArrayList<>();
     Map<String, Binding> polyParamsMap = new HashMap<>();
-    LinkList list = new LinkList();
     if (enclosingClass != null) {
       DependentLink thisParam = createThisParam(enclosingClass);
       context.add(thisParam);
@@ -636,7 +638,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
   public ClassDefinition visitClass(Abstract.ClassDefinition def, ClassDefinition enclosingClass) {
     boolean classOk = true;
     List<Binding> context = new ArrayList<>();
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build(def);
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).instancePool(EmptyInstancePool.INSTANCE).build(def);
 
     if (enclosingClass != null) {
       DependentLink thisParam = createThisParam(enclosingClass);
@@ -782,7 +784,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     DependentLink thisParameter = createThisParam(enclosingClass);
     List<Binding> context = new ArrayList<>();
     context.add(thisParameter);
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).thisClass(enclosingClass, Reference(thisParameter)).build(def);
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).instancePool(EmptyInstancePool.INSTANCE).thisClass(enclosingClass, Reference(thisParameter)).build(def);
     LevelMax pLevel = new LevelMax();
     ClassField typedDef = new ClassField(def, Error(null, null), enclosingClass, thisParameter);
     myState.record(def, typedDef);

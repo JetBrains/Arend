@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.typeclass;
+package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 
 import org.junit.Test;
 

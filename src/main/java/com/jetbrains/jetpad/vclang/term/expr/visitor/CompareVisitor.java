@@ -102,8 +102,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return compareInferenceReference(ref1, expr2, true);
     }
 
-    if (expr1.getFunction() instanceof FieldCallExpression && expr1.getArguments().get(0) instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) expr1.getArguments().get(0)).getSubstExpression() == null || expr2.getFunction() instanceof FieldCallExpression && expr2.getArguments().get(0) instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) expr2.getArguments().get(0)).getSubstExpression() == null) {
-      InferenceVariable variable = expr1.getFunction() instanceof FieldCallExpression && expr1.getArguments().get(0) instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) expr1.getArguments().get(0)).getSubstExpression() == null ? ((InferenceReferenceExpression) expr1.getArguments().get(0)).getVariable() : ((InferenceReferenceExpression) expr2.getArguments().get(0)).getVariable();
+    if (expr1.getFunction().toFieldCall() != null && !expr1.getArguments().isEmpty() && expr1.getArguments().get(0).toInferenceReference() != null && expr1.getArguments().get(0).toInferenceReference().getSubstExpression() == null || expr2.getFunction().toFieldCall() != null && !expr2.getArguments().isEmpty() && expr2.getArguments().get(0).toInferenceReference() != null && expr2.getArguments().get(0).toInferenceReference().getSubstExpression() == null) {
+      InferenceVariable variable = expr1.getFunction().toFieldCall() != null && !expr1.getArguments().isEmpty() && expr1.getArguments().get(0).toInferenceReference() != null && expr1.getArguments().get(0).toInferenceReference().getSubstExpression() == null ? expr1.getArguments().get(0).toInferenceReference().getVariable() : expr2.getArguments().get(0).toInferenceReference().getVariable();
       return myEquations.add(expr1, expr2, myCMP, variable.getSourceNode(), variable);
     }
 

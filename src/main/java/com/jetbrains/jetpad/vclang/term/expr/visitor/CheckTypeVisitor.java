@@ -39,6 +39,8 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.ImplicitArgsInferen
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.StdImplicitArgsInference;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.TwoStageEquations;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.ClassViewInstancePool;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.EmptyInstancePool;
 
 import java.util.*;
 
@@ -59,6 +61,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   private final TypeCheckingElim myTypeCheckingElim;
   private final ImplicitArgsInference myArgsInference;
   private final Equations myEquations;
+  private final ClassViewInstancePool myClassViewInstancePool;
 
   public static class Result {
     public Expression expression;
@@ -70,7 +73,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  private CheckTypeVisitor(TypecheckerState state, Abstract.Definition definition, ClassDefinition thisClass, Expression thisExpr, List<Binding> localContext, ErrorReporter errorReporter) {
+  private CheckTypeVisitor(TypecheckerState state, Abstract.Definition definition, ClassDefinition thisClass, Expression thisExpr, List<Binding> localContext, ErrorReporter errorReporter, ClassViewInstancePool pool) {
     myState = state;
     myParentDefinition = definition;
     myContext = localContext;
@@ -79,7 +82,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     myTypeCheckingElim = new TypeCheckingElim(definition, this);
     myArgsInference = new StdImplicitArgsInference(definition, this);
     setThisClass(thisClass, thisExpr);
-    myEquations = new TwoStageEquations(errorReporter);
+    myEquations = new TwoStageEquations(this);
+    myClassViewInstancePool = pool;
   }
 
   public void setThisClass(ClassDefinition thisClass, Expression thisExpr) {
@@ -92,6 +96,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     private final TypecheckerState myTypecheckerState;
     private final List<Binding> myLocalContext;
     private final ErrorReporter myErrorReporter;
+    private ClassViewInstancePool myPool;
     private ClassDefinition myThisClass;
     private Expression myThisExpr;
 
@@ -99,10 +104,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       this.myTypecheckerState = typecheckerState;
       myLocalContext = localContext;
       myErrorReporter = errorReporter;
-    }
-
-    public Builder(List<Binding> localContext, ErrorReporter errorReporter) {
-      this(new TypecheckerState(), localContext, errorReporter);
+      myPool = EmptyInstancePool.INSTANCE;
     }
 
     public Builder thisClass(ClassDefinition thisClass, Expression thisExpr) {
@@ -111,8 +113,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return this;
     }
 
+    public Builder instancePool(ClassViewInstancePool pool) {
+      myPool = pool;
+      return this;
+    }
+
     public CheckTypeVisitor build(Abstract.Definition definition) {
-      return new CheckTypeVisitor(myTypecheckerState, definition, myThisClass, myThisExpr, myLocalContext, myErrorReporter);
+      return new CheckTypeVisitor(myTypecheckerState, definition, myThisClass, myThisExpr, myLocalContext, myErrorReporter, myPool);
     }
 
     @Deprecated
@@ -123,6 +130,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   public TypeCheckingDefCall getTypeCheckingDefCall() {
     return myTypeCheckingDefCall;
+  }
+
+  public ClassViewInstancePool getClassViewInstancePool() {
+    return myClassViewInstancePool;
   }
 
   public ImplicitArgsInference getImplicitArgsInference() {
