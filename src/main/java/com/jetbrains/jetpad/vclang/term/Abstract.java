@@ -100,6 +100,21 @@ public final class Abstract {
     }
   }
 
+  public static ClassView getUnderlyingClassView(Expression expr) {
+    if (expr instanceof DefCallExpression) {
+      Definition definition = ((DefCallExpression) expr).getReferent();
+      if (definition instanceof ClassView) {
+        return (ClassView) definition;
+      }
+    }
+
+    if (expr instanceof ClassExtExpression) {
+      return getUnderlyingClassView(((ClassExtExpression) expr).getBaseClassExpression());
+    } else {
+      return null;
+    }
+  }
+
   public interface ImplementStatement extends SourceNode {
     String getName();
     Definition getImplementedField();

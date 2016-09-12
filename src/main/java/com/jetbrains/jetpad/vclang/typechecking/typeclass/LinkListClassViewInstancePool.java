@@ -31,6 +31,10 @@ public class LinkListClassViewInstancePool implements ClassViewInstancePool {
     if (myLinkList.getLast() == myLastLink) {
       return;
     }
+    if (!myLastLink.hasNext()) {
+      myLastLink = myLinkList.getFirst();
+    }
+
     for (DependentLink link = myLastLink; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
       ClassCallExpression type = link.getType().normalize(NormalizeVisitor.Mode.WHNF).toClassCall();

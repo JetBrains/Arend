@@ -28,6 +28,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.PatternsToElimTreeConversion;
+import com.jetbrains.jetpad.vclang.term.typeclass.ClassView;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingElim;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
@@ -111,47 +112,36 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     return levelParam;
   }
 
-  @Override
-  public FunctionDefinition visitFunction(final Abstract.FunctionDefinition def, ClassDefinition enclosingClass) {
-    Abstract.Definition.Arrow arrow = def.getArrow();
-    final FunctionDefinition typedDef = new FunctionDefinition(def, SimpleStaticNamespaceProvider.INSTANCE.forDefinition(def));
-    myState.record(def, typedDef);
-    // TODO[scopes] Fill namespace
-
-    List<? extends Abstract.Argument> arguments = def.getArguments();
-    final List<Binding> context = new ArrayList<>();
-    LinkList list = new LinkList();
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).instancePool(new LinkListClassViewInstancePool(list)).build(def);
-    if (enclosingClass != null) {
-      DependentLink thisParam = createThisParam(enclosingClass);
-      context.add(thisParam);
-      list.append(thisParam);
-      visitor.setThisClass(enclosingClass, Reference(thisParam));
-      typedDef.setThisClass(enclosingClass);
-    }
-
-    List<Binding> polyParamsList = new ArrayList<>();
+  public void visitParameters(List<? extends Abstract.Argument> arguments, Abstract.SourceNode node, List<Binding> context, List<Binding> polyParamsList, LinkList list, CheckTypeVisitor visitor) {
     Map<String, Binding> polyParamsMap = new HashMap<>();
-    // int numberOfArgs = index;
     int index = 0;
     for (Abstract.Argument argument : arguments) {
       if (argument instanceof Abstract.TypeArgument) {
         Abstract.TypeArgument typeArgument = (Abstract.TypeArgument)argument;
 
         if (isPolyParam(typeArgument)) {
-          Binding levelParam = visitPolyParam(typeArgument, polyParamsMap, def);
+          Binding levelParam = visitPolyParam(typeArgument, polyParamsMap, node);
           if (levelParam == null) {
-            return typedDef;
+            return;
           }
           context.add(levelParam);
           polyParamsList.add(levelParam);
-          //polyParams.put(((Abstract.DefCallExpression)typeArgument.getType()).getName(), levelParam);
           ++index;
           continue;
         }
 
         CheckTypeVisitor.Result result = visitor.checkType(typeArgument.getType(), Universe());
-        if (result == null) return typedDef;
+        if (result == null) return;
+
+        Abstract.ClassView classView = Abstract.getUnderlyingClassView(typeArgument.getType());
+        if (classView != null) {
+          ClassCallExpression classCallExpr = result.expression.toClassCall();
+          ClassView classView1 = new ClassView((ClassField) myState.getTypechecked(classView.getClassifyingField()));
+          result.expression = new ClassCallExpression(classCallExpr.getDefinition(), classCallExpr.getFieldSet(), classView1);
+          for (Abstract.ClassViewField viewField : classView.getFields()) {
+            classView1.addView((ClassField) myState.getTypechecked(viewField.getUnderlyingField()), viewField.getUnderlyingField());
+          }
+        }
 
         DependentLink param;
         if (argument instanceof Abstract.TelescopeArgument) {
@@ -166,9 +156,31 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         context.addAll(toContext(param));
       } else {
         myErrorReporter.report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, new Expression[0]));
-        return typedDef;
+        return;
       }
     }
+  }
+
+  @Override
+  public FunctionDefinition visitFunction(final Abstract.FunctionDefinition def, ClassDefinition enclosingClass) {
+    Abstract.Definition.Arrow arrow = def.getArrow();
+    final FunctionDefinition typedDef = new FunctionDefinition(def, SimpleStaticNamespaceProvider.INSTANCE.forDefinition(def));
+    myState.record(def, typedDef);
+    // TODO[scopes] Fill namespace
+
+    final List<Binding> context = new ArrayList<>();
+    LinkList list = new LinkList();
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).instancePool(new LinkListClassViewInstancePool(list)).build(def);
+    if (enclosingClass != null) {
+      DependentLink thisParam = createThisParam(enclosingClass);
+      context.add(thisParam);
+      list.append(thisParam);
+      visitor.setThisClass(enclosingClass, Reference(thisParam));
+      typedDef.setThisClass(enclosingClass);
+    }
+
+    List<Binding> polyParamsList = new ArrayList<>();
+    visitParameters(def.getArguments(), def, context, polyParamsList, list, visitor);
 
     Expression expectedType = null;
     Abstract.Expression resultType = def.getResultType();
@@ -241,13 +253,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
   @Override
   public DataDefinition visitData(Abstract.DataDefinition def, ClassDefinition enclosingClass) {
-    List<? extends Abstract.TypeArgument> parameters = def.getParameters();
-
     List<Binding> context = new ArrayList<>();
     LinkList list = new LinkList();
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).instancePool(new LinkListClassViewInstancePool(list)).build(def);
     List<Binding> polyParamsList = new ArrayList<>();
-    Map<String, Binding> polyParamsMap = new HashMap<>();
     if (enclosingClass != null) {
       DependentLink thisParam = createThisParam(enclosingClass);
       context.add(thisParam);
@@ -261,34 +270,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     dataDefinition.setThisClass(enclosingClass);
     dataDefinition.hasErrors(true);
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
-      for (Abstract.TypeArgument parameter : parameters) {
-        if (isPolyParam(parameter)) {
-          Binding levelParam = visitPolyParam(parameter, polyParamsMap, def);
-          if (levelParam == null) {
-            return dataDefinition;
-          }
-          context.add(levelParam);
-          polyParamsList.add(levelParam);
-          continue;
-        }
-
-        CheckTypeVisitor.Result result = visitor.checkType(parameter.getType(), Universe());
-        if (result == null) {
-          return dataDefinition;
-        }
-
-        DependentLink param;
-        if (parameter instanceof Abstract.TelescopeArgument) {
-          param = param(parameter.getExplicit(), ((Abstract.TelescopeArgument) parameter).getNames(), result.expression);
-        } else {
-          param = param(parameter.getExplicit(), (String) null, result.expression);
-        }
-        list.append(param);
-        context.addAll(toContext(param));
-      }
+      visitParameters(def.getParameters(), def, context, polyParamsList, list, visitor);
 
       if (def.getUniverse() != null) {
-
         if (def.getUniverse() instanceof Abstract.PolyUniverseExpression) {
           userSorts = visitor.visitDataUniverse((Abstract.PolyUniverseExpression)def.getUniverse());
         } else if (def.getUniverse() instanceof Abstract.UniverseExpression) {
@@ -678,7 +662,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         Set<ClassField> hidden = new HashSet<>();
         for (Abstract.Identifier identifier : aSuperClass.getHidings()) {
           Abstract.Definition aDef = ns.resolveName(identifier.getName());
-          Definition definition = myState.getTypechecked(aDef);
+          Definition definition = aDef == null ? null : myState.getTypechecked(aDef);
           if (definition instanceof ClassField) {
             hidden.add((ClassField) definition);
           } else {
@@ -693,7 +677,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         Map<ClassField, Abstract.ReferableSourceNode> renamings = new HashMap<>();
         for (Abstract.IdPair pair : aSuperClass.getRenamings()) {
           Abstract.Definition aDef = ns.resolveName(pair.getFirstName());
-          Definition definition = myState.getTypechecked(aDef);
+          Definition definition = aDef == null ? null : myState.getTypechecked(aDef);
           if (definition instanceof ClassField) {
             if (hidden.contains(definition)) {
               myErrorReporter.report(new TypeCheckingError("Field '" + pair.getFirstName() + "' is hidden", pair));  // FIXME[error] report proper, especially in case of \\parent
