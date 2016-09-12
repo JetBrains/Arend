@@ -83,9 +83,17 @@ public final class Abstract {
   }
 
   public static ClassDefinition getUnderlyingClassDef(Expression expr) {
-    if (expr instanceof DefCallExpression && ((DefCallExpression) expr).getReferent() instanceof ClassDefinition) {
-      return (ClassDefinition) ((DefCallExpression) expr).getReferent();
-    } else if (expr instanceof ClassExtExpression) {
+    if (expr instanceof DefCallExpression) {
+      Definition definition = ((DefCallExpression) expr).getReferent();
+      if (definition instanceof ClassDefinition) {
+        return (ClassDefinition) definition;
+      }
+      if (definition instanceof ClassView) {
+        return ((ClassView) definition).getUnderlyingClass();
+      }
+    }
+
+    if (expr instanceof ClassExtExpression) {
       return getUnderlyingClassDef(((ClassExtExpression) expr).getBaseClassExpression());
     } else {
       return null;

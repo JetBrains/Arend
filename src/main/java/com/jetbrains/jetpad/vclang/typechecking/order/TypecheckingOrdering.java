@@ -175,7 +175,7 @@ public class TypecheckingOrdering {
     if (result instanceof OKResult) {
       for (Map.Entry<Abstract.Definition, Abstract.ClassDefinition> entry : ((OKResult) result).order.entrySet()) {
         Abstract.Definition def = entry.getKey();
-        DefinitionCheckTypeVisitor.typeCheck(state, (ClassDefinition) state.getTypechecked(entry.getValue()), def, new LocalErrorReporter(def, errorReporter), isPrelude);
+        DefinitionCheckTypeVisitor.typeCheck(state, entry.getValue() == null ? null : (ClassDefinition) state.getTypechecked(entry.getValue()), def, new LocalErrorReporter(def, errorReporter), isPrelude);
         Definition typechecked = state.getTypechecked(def);
         if (typechecked == null || typechecked.hasErrors()) {
           typecheckedReporter.typecheckingFailed(def);
