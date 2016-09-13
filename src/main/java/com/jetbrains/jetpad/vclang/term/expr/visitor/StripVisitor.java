@@ -26,21 +26,11 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
 
   @Override
   public Expression visitApp(AppExpression expr, Void params) {
-    Expression fun = expr.getFunction().accept(this, null);
-    List<? extends Expression> args = expr.getArguments();
-    if (fun.toFieldCall() != null && expr.getArguments().get(0).toNew() != null) {
-      fun = expr.getArguments().get(0).toNew().getExpression().getFieldSet().getImplementation(fun.toFieldCall().getDefinition()).term.accept(this, null);
-      args = args.subList(1, args.size());
+    List<Expression> args = new ArrayList<>(expr.getArguments().size());
+    for (Expression arg : expr.getArguments()) {
+      args.add(arg.accept(this, null));
     }
-    if (args.isEmpty()) {
-      return fun;
-    }
-
-    List<Expression> newArgs = new ArrayList<>(args.size());
-    for (Expression arg : args) {
-      newArgs.add(arg.accept(this, null));
-    }
-    return new AppExpression(fun, newArgs);
+    return new AppExpression(expr.getFunction().accept(this, null), args);
   }
 
   @Override
@@ -63,8 +53,12 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
   }
 
   @Override
-  public FieldCallExpression visitFieldCall(FieldCallExpression expr, Void params) {
-    return expr;
+  public Expression visitFieldCall(FieldCallExpression expr, Void params) {
+    if (expr.getExpression().toNew() != null) {
+      return expr.getExpression().toNew().getExpression().getFieldSet().getImplementation(expr.getDefinition()).term.accept(this, null);
+    } else {
+      return new FieldCallExpression(expr.getDefinition(), expr.getExpression().accept(this, null));
+    }
   }
 
   @Override

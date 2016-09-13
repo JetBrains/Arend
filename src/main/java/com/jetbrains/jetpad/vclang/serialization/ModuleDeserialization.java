@@ -530,6 +530,14 @@ public class ModuleDeserialization {
         Expression type = readExpression(stream, definitionMap);
         return new OfTypeExpression(expr, type);
       }
+      case 17: {
+        Definition definition = definitionMap.get(stream.readInt());
+        if (definition instanceof ClassField) {
+          throw new IncorrectFormat();
+        }
+        LevelSubstitution polySubst = readSubstitution(stream, definitionMap);
+        return definition.getDefCall(polySubst).applyThis(readExpression(stream, definitionMap));
+      }
       default: {
         throw new IncorrectFormat();
       }

@@ -53,8 +53,8 @@ public class ExpressionFactory {
     return (DataCallExpression) new DataCallExpression(definition).applyLevelSubst(new LevelSubstitution(definition.getPolyParams().get(0), lp, definition.getPolyParams().get(1), lh));
   }
 
-  public static FieldCallExpression FieldCall(ClassField definition) {
-    return new FieldCallExpression(definition);
+  public static FieldCallExpression FieldCall(ClassField definition, Expression thisExpr) {
+    return new FieldCallExpression(definition, thisExpr);
   }
 
   public static ClassCallExpression ClassCall(ClassDefinition definition) {

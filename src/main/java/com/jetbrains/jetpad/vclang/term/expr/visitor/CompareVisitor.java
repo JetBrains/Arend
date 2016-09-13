@@ -102,8 +102,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return compareInferenceReference(ref1, expr2, true);
     }
 
-    if (expr1.getFunction().toFieldCall() != null && !expr1.getArguments().isEmpty() && expr1.getArguments().get(0).toInferenceReference() != null && expr1.getArguments().get(0).toInferenceReference().getSubstExpression() == null || expr2.getFunction().toFieldCall() != null && !expr2.getArguments().isEmpty() && expr2.getArguments().get(0).toInferenceReference() != null && expr2.getArguments().get(0).toInferenceReference().getSubstExpression() == null) {
-      InferenceVariable variable = expr1.getFunction().toFieldCall() != null && !expr1.getArguments().isEmpty() && expr1.getArguments().get(0).toInferenceReference() != null && expr1.getArguments().get(0).toInferenceReference().getSubstExpression() == null ? expr1.getArguments().get(0).toInferenceReference().getVariable() : expr2.getArguments().get(0).toInferenceReference().getVariable();
+    if (expr1.toFieldCall() != null && expr1.toFieldCall().getExpression().toInferenceReference() != null && expr1.toFieldCall().getExpression().toInferenceReference().getSubstExpression() == null || expr2.toFieldCall() != null && expr2.toFieldCall().getExpression().toInferenceReference() != null && expr2.toFieldCall().getExpression().toInferenceReference().getSubstExpression() == null) {
+      InferenceVariable variable = expr1.toFieldCall() != null && expr1.toFieldCall().getExpression().toInferenceReference() != null && expr1.toFieldCall().getExpression().toInferenceReference().getSubstExpression() == null ? expr1.toFieldCall().getExpression().toInferenceReference().getVariable() : expr2.toFieldCall().getExpression().toInferenceReference().getVariable();
       return myEquations.add(expr1, expr2, myCMP, variable.getSourceNode(), variable);
     }
 
@@ -215,6 +215,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   public Boolean visitDefCall(DefCallExpression expr1, Expression expr2) {
     DefCallExpression defCall2 = expr2.toDefCall();
     return defCall2 != null && expr1.getDefinition() == defCall2.getDefinition();
+  }
+
+  @Override
+  public Boolean visitFieldCall(FieldCallExpression expr1, Expression expr2) {
+    return expr2.toFieldCall() != null && expr1.getDefinition() == expr2.toFieldCall().getDefinition() && compare(expr1.getExpression(), expr2.toFieldCall().getExpression());
   }
 
   private boolean checkSubclassImpl(FieldSet fieldSet1, ClassCallExpression classCall2) {
@@ -413,7 +418,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
     for (Map.Entry<ClassField, FieldSet.Implementation> entry : classCall.getFieldSet().getImplemented()) {
       FieldSet.Implementation impl2 = classCall2.getFieldSet().getImplementation(entry.getKey());
-      if (!compare(entry.getValue().term, impl2 != null ? impl2.term : FieldCall(entry.getKey()).applyThis(expr2))) {
+      if (!compare(entry.getValue().term, impl2 != null ? impl2.term : FieldCall(entry.getKey(), expr2))) {
         return false;
       }
     }

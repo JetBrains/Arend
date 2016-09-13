@@ -10,8 +10,6 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
-
 public class SimpleInstancePool implements ClassViewInstancePool {
   static private class Pair {
     Expression key;
@@ -48,7 +46,7 @@ public class SimpleInstancePool implements ClassViewInstancePool {
   public boolean addLocalInstance(Binding binding, Expression type) {
     if (type instanceof ClassViewCallExpression && ((ClassViewCallExpression) type).getClassView().getClassifyingField() != null) {
       ReferenceExpression reference = new ReferenceExpression(binding);
-      return addLocalInstance(Apps(new FieldCallExpression(((ClassViewCallExpression) type).getClassView().getClassifyingField()), reference).normalize(NormalizeVisitor.Mode.NF), reference);
+      return addLocalInstance(new FieldCallExpression(((ClassViewCallExpression) type).getClassView().getClassifyingField(), reference).normalize(NormalizeVisitor.Mode.NF), reference);
     } else {
       return true;
     }

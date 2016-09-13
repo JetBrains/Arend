@@ -44,7 +44,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   private Expression getThisFI(TypeCheckClassResult result) {
     FunctionDefinition function = (FunctionDefinition) result.getDefinition("Test.test");
-    return Apps(FieldCall(((ClassDefinition) result.getDefinition("Test")).getEnclosingThisField()), Reference(function.getParameters()));
+    return Apps(FieldCall(((ClassDefinition) result.getDefinition("Test")).getEnclosingThisField(), Reference(function.getParameters())));
   }
 
   @Test

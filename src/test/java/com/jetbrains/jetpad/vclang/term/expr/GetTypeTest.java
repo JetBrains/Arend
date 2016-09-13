@@ -60,7 +60,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
     Expression type = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(1))
       .addArgument(Nat())
       .addArgument(Zero())
-      .addArgument(Apps(FieldCall((ClassField) result.getDefinition("C.x")), Apps(Reference(p), Zero())));
+      .addArgument(FieldCall((ClassField) result.getDefinition("C.x"), Apps(Reference(p), Zero())));
     assertEquals(Pi(p, Pi(type, type)).normalize(NormalizeVisitor.Mode.NF), result.getDefinition("test").getType().normalize(NormalizeVisitor.Mode.NF));
   }
 

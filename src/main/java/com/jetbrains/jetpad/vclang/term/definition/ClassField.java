@@ -55,7 +55,7 @@ public class ClassField extends Definition {
 
   @Override
   public FieldCallExpression getDefCall() {
-    return FieldCall(this);
+    return FieldCall(this, null);
   }
 
   public void setBaseType(Expression type) {

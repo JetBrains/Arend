@@ -120,29 +120,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       return result;
     }
 
-    int index = 0;
-    FieldCallExpression fieldCall = expr.getFunction().toFieldCall();
-    if (fieldCall != null) {
-      Type type = expr.getArguments().get(0).getType();
-      if (type instanceof Expression) {
-        ClassCallExpression classCall = ((Expression) type).normalize(NormalizeVisitor.Mode.WHNF).toClassCall();
-        if (classCall instanceof ClassViewCallExpression) {
-          result = myFactory.makeDefCall(expr.getArguments().get(0).accept(this, null), ((ClassViewCallExpression) classCall).getClassView().getView(fieldCall.getDefinition()), fieldCall.getDefinition());
-          index = 1;
-        }
-      }
-
-      if (index == 0) {
-        result = myFactory.makeDefCall(expr.getArguments().get(0).accept(this, null), fieldCall.getDefinition().getAbstractDefinition(), fieldCall.getDefinition());
-        index = 1;
-      }
-    } else {
-      result = expr.getFunction().accept(this, null);
-    }
+    result = expr.getFunction().accept(this, null);
 
     boolean[] isExplicit = new boolean[expr.getArguments().size()];
     getArgumentsExplicitness(expr.getFunction(), isExplicit);
-    for (; index < expr.getArguments().size(); index++) {
+    for (int index = 0; index < expr.getArguments().size(); index++) {
       result = visitApp(result, expr.getArguments().get(index), isExplicit[index]);
     }
     return result;
@@ -167,6 +149,19 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   @Override
   public Abstract.Expression visitDefCall(DefCallExpression expr, Void params) {
     return myFactory.makeDefCall(null, expr.getDefinition().getAbstractDefinition(), expr.getDefinition());
+  }
+
+  @Override
+  public Abstract.Expression visitFieldCall(FieldCallExpression expr, Void params) {
+    Type type = expr.getExpression().getType();
+    if (type instanceof Expression) {
+      ClassCallExpression classCall = ((Expression) type).normalize(NormalizeVisitor.Mode.WHNF).toClassCall();
+      if (classCall instanceof ClassViewCallExpression) {
+        return myFactory.makeDefCall(expr.getExpression().accept(this, null), ((ClassViewCallExpression) classCall).getClassView().getView(expr.getDefinition()), expr.getDefinition());
+      }
+    }
+
+    return myFactory.makeDefCall(expr.getExpression().accept(this, null), expr.getDefinition().getAbstractDefinition(), expr.getDefinition());
   }
 
   @Override

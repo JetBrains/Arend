@@ -11,6 +11,8 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 
+import java.util.Collections;
+
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.params;
 
 public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
@@ -23,6 +25,11 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
   @Override
   public Type visitDefCall(DefCallExpression expr, Void params) {
     return expr.getDefinition().getType().subst(new ExprSubstitution(), expr.getPolyParamsSubst());
+  }
+
+  @Override
+  public Type visitFieldCall(FieldCallExpression expr, Void params) {
+    return visitDefCall(expr, null).applyExpressions(Collections.singletonList(expr.getExpression()));
   }
 
   @Override

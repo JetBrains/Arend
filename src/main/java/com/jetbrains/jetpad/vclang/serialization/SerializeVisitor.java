@@ -301,6 +301,19 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     return null;
   }
 
+  @Override
+  public Void visitFieldCall(FieldCallExpression expr, Void params) {
+    myStream.write(17);
+    try {
+      myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(expr.getDefinition().getResolvedName()));
+      ModuleSerialization.serializeSubstitution(this, expr.getPolyParamsSubst());
+      expr.getExpression().accept(this, null);
+    } catch (IOException e) {
+      throw new IllegalStateException();
+    }
+    return super.visitFieldCall(expr, params);
+  }
+
   private void visitLetClause(LetClause clause) {
     try {
       myDataStream.writeUTF(clause.getName());

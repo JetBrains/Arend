@@ -40,6 +40,11 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
   }
 
   @Override
+  public Boolean visitFieldCall(FieldCallExpression expr, Void params) {
+    return myBindings.contains(expr.getDefinition()) || expr.getExpression().accept(this, null);
+  }
+
+  @Override
   public Boolean visitConCall(ConCallExpression expr, Void params) {
     if (myBindings.contains(expr.getDefinition())) {
       return true;

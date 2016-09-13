@@ -251,19 +251,28 @@ public class TypeCheckingDefCall {
     if (parentField == null || parentField.getBaseType().toClassCall() == null) {
       return null;
     }
-    return findParent(parentField.getBaseType().toClassCall().getDefinition(), definition, Apps(FieldCall(parentField), result));
+    return findParent(parentField.getBaseType().toClassCall().getDefinition(), definition, FieldCall(parentField, result));
   }
 
   private CheckTypeVisitor.Result applyThis(CheckTypeVisitor.Result result, Expression thisExpr, Abstract.Expression expr) {
     //assert thisExpr != null;  // FIXME
     DefCallExpression defCall = result.expression.toDefCall();
     //assert defCall.getDefinition().getThisClass() != null;  // FIXME
+
+    if (thisExpr == null && defCall.getDefinition() instanceof ClassField) {
+      TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Field call without a class instance", expr);
+      expr.setWellTyped(myVisitor.getContext(), Error(result.expression, error));
+      myVisitor.getErrorReporter().report(error);
+      return null;
+    }
+
     if (result.type == null) {
       TypeCheckingError error = new HasErrors(myParentDefinition, defCall.getDefinition().getName(), expr);
       expr.setWellTyped(myVisitor.getContext(), Error(result.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;
     }
+
     if (thisExpr != null) {  // FIXME
       result.expression = defCall.applyThis(thisExpr);
       result.type = result.type.applyExpressions(Collections.singletonList(thisExpr));

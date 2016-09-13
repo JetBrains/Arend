@@ -22,7 +22,7 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
 
   @Override
   public Abstract.Expression makeDefCall(Abstract.Expression expr, Abstract.ReferableSourceNode alias, Definition definition) {
-    return cDefCall((Concrete.Expression) expr, definition, ((Concrete.ReferableSourceNode) alias).getName());
+    return cDefCall((Concrete.Expression) expr, definition, alias == null ? "\\this" : ((Concrete.ReferableSourceNode) alias).getName());
   }
 
   @Override

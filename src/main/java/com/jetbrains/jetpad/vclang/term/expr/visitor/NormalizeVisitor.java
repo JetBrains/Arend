@@ -58,13 +58,17 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   private Expression applyDefCall(Expression expr, Mode mode) {
     if (mode == Mode.TOP) return null;
-    AppExpression appExpr = expr.toApp();
-    if (appExpr != null && (mode == Mode.NF || mode == Mode.HUMAN_NF)) {
-      List<Expression> newArgs = new ArrayList<>(expr.getArguments().size());
+    if ((expr.toApp() != null || expr.toFieldCall() != null) && (mode == Mode.NF || mode == Mode.HUMAN_NF)) {
+      List<Expression> newArgs = expr.getArguments().isEmpty() ? Collections.<Expression>emptyList() : new ArrayList<Expression>(expr.getArguments().size());
       for (Expression argument : expr.getArguments()) {
         newArgs.add(argument.accept(this, mode));
       }
-      return new AppExpression(expr.getFunction(), newArgs);
+
+      Expression fun = expr.getFunction();
+      if (fun.toFieldCall() != null) {
+        fun = new FieldCallExpression(fun.toFieldCall().getDefinition(), fun.toFieldCall().getExpression().accept(this, mode));
+      }
+      return newArgs.isEmpty() ? fun : new AppExpression(fun, newArgs);
     } else {
       return expr;
     }
@@ -76,23 +80,15 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return mode == Mode.TOP ? null : applyDefCall(expr, mode);
     }
 
-    if (defCallExpr.getDefinition() instanceof ClassField) {
-      if (expr.getArguments().isEmpty()) {
-        assert false;
-        if (mode == Mode.TOP) {
-          return null;
-        }
-        return expr;
-      }
-
-      Expression thisExpr = expr.getArguments().get(0).normalize(Mode.WHNF);
+    if (defCallExpr instanceof FieldCallExpression) {
+      Expression thisExpr = ((FieldCallExpression) defCallExpr).getExpression().normalize(Mode.WHNF);
       ClassCallExpression classCall = ((Expression) thisExpr.getType()).normalize(Mode.WHNF).toClassCall();
       if (classCall != null) {
         FieldSet.Implementation impl = classCall.getFieldSet().getImplementation((ClassField) defCallExpr.getDefinition());
         if (impl != null) {
           final Expression term;
           term = impl.substThisParam(thisExpr);
-          Expression result = Apps(term, expr.getArguments().subList(1, expr.getArguments().size()));
+          Expression result = Apps(term, expr.getArguments());
           return mode == Mode.TOP ? result : result.accept(this, mode);
         }
       }

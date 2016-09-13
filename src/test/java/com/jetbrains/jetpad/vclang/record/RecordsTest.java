@@ -229,9 +229,7 @@ public class RecordsTest extends TypeCheckingTestCase {
     assertNotNull(domArg0Body);
     assertEquals(Prelude.NAT, domArg0Body.getDefinition());
 
-    assertEquals(1, domArguments.get(1).getArguments().size());
-    assertEquals(Reference(testFun.getParameters()), domArguments.get(1).getArguments().get(0));
-    assertEquals(FieldCall((ClassField) result.getDefinition("A.x")), domArguments.get(1).getFunction());
+    assertEquals(FieldCall((ClassField) result.getDefinition("A.x"), Reference(testFun.getParameters())), domArguments.get(1));
 
     ConCallExpression domArg2 = domArguments.get(2).toConCall();
     assertNotNull(domArg2);
@@ -249,7 +247,7 @@ public class RecordsTest extends TypeCheckingTestCase {
       "\\static \\function test (q : A) => q.y");
     FunctionDefinition testFun = (FunctionDefinition) result.getDefinition("test");
     Expression resultType = (Expression) testFun.getResultType();
-    Expression xCall = FieldCall((ClassField) result.getDefinition("A.x"));
+    Expression xCall = FieldCall((ClassField) result.getDefinition("A.x"), Reference(testFun.getParameters()));
     PiExpression resultTypePi = resultType.toPi();
     assertNotNull(resultTypePi);
     Expression function = resultTypePi.getParameters().getType().normalize(NormalizeVisitor.Mode.NF);
@@ -268,16 +266,14 @@ public class RecordsTest extends TypeCheckingTestCase {
     Expression expr1 = arg2Fun.getDataTypeArguments().get(1);
     LamExpression expr1Arg0 = expr1.getArguments().get(0).toLam();
     assertNotNull(expr1Arg0);
-    assertEquals(xCall, expr1Arg0.getBody().getFunction());
-    assertEquals(Reference(testFun.getParameters()), expr1Arg0.getBody().getArguments().get(0));
+    assertEquals(xCall, expr1Arg0.getBody());
 
     assertEquals(foo, arguments.get(2).getFunction().toDefCall().getDefinition());
     LamExpression appPath00Arg0 = arguments.get(2).getArguments().get(0).getArguments().get(0).toLam();
     assertNotNull(appPath00Arg0);
     LamExpression appPath01Arg0 = appPath00Arg0.getBody().getArguments().get(0).toLam();
     assertNotNull(appPath01Arg0);
-    assertEquals(xCall, appPath01Arg0.getBody().getFunction());
-    assertEquals(Reference(testFun.getParameters()), appPath01Arg0.getBody().getArguments().get(0));
+    assertEquals(xCall, appPath01Arg0.getBody());
 
     ConCallExpression arg1Fun = arguments.get(1).getFunction().toConCall();
     assertNotNull(arg1Fun);
@@ -288,8 +284,7 @@ public class RecordsTest extends TypeCheckingTestCase {
     LamExpression appPath10Arg0 = arguments.get(1).getArguments().get(0).getArguments().get(0).toLam();
     assertNotNull(appPath10Arg0);
     LamExpression appPath11Arg0 = appPath10Arg0.getBody().getArguments().get(0).toLam();
-    assertEquals(xCall, appPath11Arg0.getBody().getFunction());
-    assertEquals(Reference(testFun.getParameters()), appPath11Arg0.getBody().getArguments().get(0));
+    assertEquals(xCall, appPath11Arg0.getBody());
 
     LamExpression arg0 = arguments.get(0).toLam();
     assertNotNull(arg0);
@@ -302,8 +297,7 @@ public class RecordsTest extends TypeCheckingTestCase {
     assertEquals(Prelude.PATH_CON, parameterFunction.toDefCall().getDefinition());
     LamExpression paramArg0 = parameterArguments.get(0).toLam();
     assertNotNull(paramArg0);
-    assertEquals(xCall, paramArg0.getBody().getFunction());
-    assertEquals(Reference(testFun.getParameters()), paramArg0.getBody().getArguments().get(0));
+    assertEquals(xCall, paramArg0.getBody());
 
     ConCallExpression paramConCall = parameterFunction.toConCall();
     assertNotNull(paramConCall);
@@ -314,12 +308,7 @@ public class RecordsTest extends TypeCheckingTestCase {
     assertNotNull(param0);
     assertEquals(Nat(), param0.getBody());
 
-    Expression parameter1 = parameters.get(1).normalize(NormalizeVisitor.Mode.WHNF);
-    assertEquals(xCall, parameter1.getFunction());
-    assertEquals(Reference(testFun.getParameters()), parameter1.getArguments().get(0));
-
-    Expression parameter2 = parameters.get(2).normalize(NormalizeVisitor.Mode.WHNF);
-    assertEquals(xCall, parameter2.getFunction());
-    assertEquals(Reference(testFun.getParameters()), parameter2.getArguments().get(0));
+    assertEquals(xCall, parameters.get(1).normalize(NormalizeVisitor.Mode.WHNF));
+    assertEquals(xCall, parameters.get(2).normalize(NormalizeVisitor.Mode.WHNF));
   }
 }

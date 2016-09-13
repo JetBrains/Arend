@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
@@ -310,16 +309,7 @@ public class ClassesTest extends TypeCheckingTestCase {
     ClassField xField = (ClassField) result.getDefinition("A.x");
     ClassField aField = (ClassField) result.getDefinition("B.a");
     ClassField yField = (ClassField) result.getDefinition("B.y");
-    Expression type = yField.getBaseType();
-    AppExpression appType = type.toApp();
-    assertNotNull(appType);
-    assertEquals(FieldCall(xField), appType.getFunction());
-    assertEquals(1, appType.getArguments().size());
-    AppExpression appArg = appType.getArguments().get(0).toApp();
-    assertNotNull(appArg);
-    assertEquals(FieldCall(aField), appArg.getFunction());
-    assertEquals(1, appArg.getArguments().size());
-    assertEquals(Reference(yField.getThisParameter()), appArg.getArguments().get(0));
+    assertEquals(FieldCall(xField, FieldCall(aField, Reference(yField.getThisParameter()))), yField.getBaseType());
   }
 
   @Test
@@ -367,7 +357,7 @@ public class ClassesTest extends TypeCheckingTestCase {
     assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(FunCall(plus), FunCall(pFun), Apps(FunCall(qFun), Reference(hFun.getParameters())))), hFun.getElimTree());
     FunctionDefinition kFun = (FunctionDefinition) result.getDefinition("A.C.k");
     assertEquals(Pi(ClassCall(cClass), Nat()), kFun.getType());
-    Expression aRef = Apps(FieldCall(cParent), Reference(kFun.getParameters()));
+    Expression aRef = FieldCall(cParent, Reference(kFun.getParameters()));
     assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(FunCall(plus), Apps(FunCall(hFun), aRef), Apps(FunCall(plus), FunCall(pFun), Apps(FunCall(qFun), aRef)))), kFun.getElimTree());
   }
 

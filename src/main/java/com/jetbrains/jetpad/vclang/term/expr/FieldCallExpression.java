@@ -4,13 +4,22 @@ import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 public class FieldCallExpression extends DefCallExpression {
-  public FieldCallExpression(ClassField definition) {
+  private Expression myExpression;
+
+  public FieldCallExpression(ClassField definition, Expression expression) {
     super(definition);
+    myExpression = expression;
+  }
+
+  public Expression getExpression() {
+    return myExpression;
   }
 
   @Override
   public Expression applyThis(Expression thisExpr) {
-    return ExpressionFactory.Apps(this, thisExpr);
+    assert myExpression == null;
+    myExpression = thisExpr;
+    return this;
   }
 
   @Override
