@@ -35,7 +35,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.EmptyInstancePool;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.LinkListClassViewInstancePool;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.SimpleInstancePool;
 
 import java.util.*;
 
@@ -152,6 +152,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
           param = param(argument.getExplicit(), (String) null, result.expression);
           index++;
         }
+
+        Expression type = param.getType().normalize(NormalizeVisitor.Mode.WHNF);
+        for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
+          if (!((SimpleInstancePool) visitor.getClassViewInstancePool()).addLocalInstance(link, type)) {
+            myErrorReporter.report(new TypeCheckingError("Duplicate instance", argument)); // FIXME[error] better error message
+          }
+        }
+
         list.append(param);
         context.addAll(toContext(param));
       } else {
@@ -170,7 +178,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
     final List<Binding> context = new ArrayList<>();
     LinkList list = new LinkList();
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).instancePool(new LinkListClassViewInstancePool(list)).build(def);
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).instancePool(new SimpleInstancePool()).build(def);
     if (enclosingClass != null) {
       DependentLink thisParam = createThisParam(enclosingClass);
       context.add(thisParam);
@@ -255,7 +263,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
   public DataDefinition visitData(Abstract.DataDefinition def, ClassDefinition enclosingClass) {
     List<Binding> context = new ArrayList<>();
     LinkList list = new LinkList();
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).instancePool(new LinkListClassViewInstancePool(list)).build(def);
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).instancePool(new SimpleInstancePool()).build(def);
     List<Binding> polyParamsList = new ArrayList<>();
     if (enclosingClass != null) {
       DependentLink thisParam = createThisParam(enclosingClass);

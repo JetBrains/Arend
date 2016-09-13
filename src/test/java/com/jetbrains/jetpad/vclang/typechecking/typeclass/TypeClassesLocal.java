@@ -56,7 +56,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "  \\abstract B : A -> Nat\n" +
         "}\n" +
         "\\static \\view Y \\on X \\by A { B }\n" +
-        "\\function f (x : X) (a : x.A) => B a", 1);
+        "\\function f (x : X) (a : x.A) => B a", 2);
   }
 
   @Test
@@ -67,7 +67,29 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "  \\abstract B : A -> Nat\n" +
         "}\n" +
         "\\static \\view Y \\on X \\by A { B }\n" +
-        "\\function f (A' : \\Type0) (x : X { A => A' }) (a : A') => B a", 1);
+        "\\function f (A' : \\Type0) (x : X { A => A' }) (a : A') => B a", 2);
+  }
+
+  @Test
+  public void inferVarDuplicateTele() {
+    typeCheckClass(
+        "\\static \\class X {\n" +
+        "  \\abstract A : \\Type0\n" +
+        "  \\abstract B : A -> Nat\n" +
+        "}\n" +
+        "\\static \\view \\on X \\by A { B }\n" +
+        "\\function f (x y : X) (a : y.A) => B a");
+  }
+
+  @Test
+  public void inferVarDuplicateTele2() {
+    typeCheckClass(
+        "\\static \\class X {\n" +
+        "  \\abstract A : \\Type0\n" +
+        "  \\abstract B : A -> Nat\n" +
+        "}\n" +
+        "\\static \\view \\on X \\by A { B }\n" +
+        "\\function f (A : \\Type0) (x y : X { A => A }) (a : y.A) => 0", 1);
   }
 
   @Test
@@ -78,7 +100,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "  \\abstract B : A -> Nat\n" +
         "}\n" +
         "\\static \\view \\on X \\by A { B }\n" +
-        "\\function f (x : X) (a : x.A) {y : X { A => x.A } } => B a", 1);
+        "\\function f (x : X) (a : x.A) {y : X { A => x.A } } => 0", 1);
   }
 
   @Test
@@ -89,7 +111,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "  \\abstract B : A -> Nat\n" +
         "}\n" +
         "\\static \\view \\on X \\by A { B }\n" +
-        "\\function f (A' : \\Type0) (x : X { A => A' }) {y : X { A => A' } } (a : A') => B a", 1);
+        "\\function f (A' : \\Type0) (x : X { A => A' }) {y : X { A => A' } } (a : A') => 0", 1);
   }
 
   @Test
