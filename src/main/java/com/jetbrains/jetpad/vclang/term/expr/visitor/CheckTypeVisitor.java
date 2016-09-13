@@ -821,7 +821,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     int remaining = classCallExpr.getFieldSet().getFields().size() - classCallExpr.getFieldSet().getImplemented().size();
 
     if (remaining == 0) {
-      exprResult.expression = New(normExpr);
+      exprResult.expression = New(classCallExpr);
       exprResult.type = normExpr;
       return checkResult(expectedType, exprResult, expr);
     } else {

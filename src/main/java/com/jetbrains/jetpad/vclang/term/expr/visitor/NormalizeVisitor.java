@@ -181,7 +181,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   @Override
-  public Expression visitClassCall(ClassCallExpression expr, Mode mode) {
+  public ClassCallExpression visitClassCall(ClassCallExpression expr, Mode mode) {
     if (mode == Mode.TOP) return null;
     if (mode == Mode.WHNF) return expr;
     return expr.applyVisitorToImplementedHere(this, mode);
@@ -277,7 +277,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitNew(NewExpression expr, Mode mode) {
-    return mode == Mode.TOP ? null : mode == Mode.WHNF ? expr : New(expr.getExpression().accept(this, mode));
+    return mode == Mode.TOP ? null : mode == Mode.WHNF ? expr : New(visitClassCall(expr.getExpression(), mode));
   }
 
   @Override

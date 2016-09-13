@@ -25,12 +25,22 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
   }
 
   @Override
-  public AppExpression visitApp(AppExpression expr, Void params) {
-    List<Expression> args = new ArrayList<>(expr.getArguments().size());
-    for (Expression arg : expr.getArguments()) {
-      args.add(arg.accept(this, null));
+  public Expression visitApp(AppExpression expr, Void params) {
+    Expression fun = expr.getFunction().accept(this, null);
+    List<? extends Expression> args = expr.getArguments();
+    if (fun.toFieldCall() != null && expr.getArguments().get(0).toNew() != null) {
+      fun = expr.getArguments().get(0).toNew().getExpression().getFieldSet().getImplementation(fun.toFieldCall().getDefinition()).term.accept(this, null);
+      args = args.subList(1, args.size());
     }
-    return new AppExpression(expr.getFunction().accept(this, null), args);
+    if (args.isEmpty()) {
+      return fun;
+    }
+
+    List<Expression> newArgs = new ArrayList<>(args.size());
+    for (Expression arg : args) {
+      newArgs.add(arg.accept(this, null));
+    }
+    return new AppExpression(fun, newArgs);
   }
 
   @Override
@@ -156,7 +166,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
 
   @Override
   public NewExpression visitNew(NewExpression expr, Void params) {
-    return new NewExpression(expr.getExpression().accept(this, null));
+    return new NewExpression(visitClassCall(expr.getExpression(), null));
   }
 
   @Override

@@ -94,7 +94,7 @@ public class ExpressionFactory {
     return ConCall(Prelude.RIGHT);
   }
 
-  public static NewExpression New(Expression expression) {
+  public static NewExpression New(ClassCallExpression expression) {
     return new NewExpression(expression);
   }
 

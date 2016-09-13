@@ -3,13 +3,13 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 public class NewExpression extends Expression {
-  private final Expression myExpression;
+  private final ClassCallExpression myExpression;
 
-  public NewExpression(Expression expression) {
+  public NewExpression(ClassCallExpression expression) {
     myExpression = expression;
   }
 
-  public Expression getExpression() {
+  public ClassCallExpression getExpression() {
     return myExpression;
   }
 

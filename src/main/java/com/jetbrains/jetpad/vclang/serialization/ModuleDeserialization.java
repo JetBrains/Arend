@@ -510,7 +510,11 @@ public class ModuleDeserialization {
         return Proj(expr, stream.readInt());
       }
       case 14: {
-        return New(readExpression(stream, definitionMap));
+        Expression expr = readExpression(stream, definitionMap);
+        if (!(expr instanceof ClassCallExpression)) {
+          throw new IncorrectFormat();
+        }
+        return New((ClassCallExpression) expr);
       }
       case 15: {
         final int numClauses = stream.readInt();
