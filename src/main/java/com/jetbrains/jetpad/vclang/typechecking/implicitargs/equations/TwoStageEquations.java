@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
@@ -16,10 +15,11 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.SolveEquationError;
-import com.jetbrains.jetpad.vclang.typechecking.error.SolveEquationsError;
-import com.jetbrains.jetpad.vclang.typechecking.error.SolveLevelEquationsError;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.*;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.SolveEquationError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.SolveEquationsError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.SolveLevelEquationsError;
 
 import java.util.*;
 
@@ -27,9 +27,9 @@ public class TwoStageEquations implements Equations {
   private List<Equation> myEquations;
   private final Map<LevelInferenceVariable, Variable> myBases;
   private final LevelEquations<LevelInferenceVariable> myLevelEquations;
-  private final ErrorReporter myErrorReporter;
+  private final LocalErrorReporter myErrorReporter;
 
-  public TwoStageEquations(ErrorReporter errorReporter) {
+  public TwoStageEquations(LocalErrorReporter errorReporter) {
     myEquations = new ArrayList<>();
     myBases = new HashMap<>();
     myLevelEquations = new LevelEquations<>();
@@ -333,7 +333,7 @@ public class TwoStageEquations implements Equations {
 
   private boolean solve(InferenceVariable var, Expression expr) {
     if (expr.findBinding(var)) {
-      TypeCheckingError error = var.getErrorInfer(expr);
+      LocalTypeCheckingError error = var.getErrorInfer(expr);
       myErrorReporter.report(error);
       var.solve(this, new ErrorExpression(expr, error));
       return false;
@@ -343,7 +343,7 @@ public class TwoStageEquations implements Equations {
     Type actualType = expr.getType();
     if (!actualType.isLessOrEquals(expectedType.normalize(NormalizeVisitor.Mode.NF), this, var.getSourceNode())) {
       actualType = actualType.normalize(NormalizeVisitor.Mode.HUMAN_NF);
-      TypeCheckingError error = var.getErrorMismatch(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), actualType, expr);
+      LocalTypeCheckingError error = var.getErrorMismatch(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), actualType, expr);
       myErrorReporter.report(error);
       var.solve(this, new ErrorExpression(expr, error));
       return false;

@@ -1,10 +1,10 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
-import com.jetbrains.jetpad.vclang.typechecking.error.GoalError;
+import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
 import com.jetbrains.jetpad.vclang.typechecking.order.TypecheckingOrdering;
 import org.junit.Test;
 
@@ -25,13 +25,13 @@ public class InferenceTest extends TypeCheckingTestCase {
         "  | f => {?})";
     Concrete.ClassDefinition classDefinition = parseClass("test", text);
     resolveNamesClass(classDefinition, 0);
-    ListErrorReporter errorReporter = new ListErrorReporter();
     TypecheckingOrdering.typecheck(state, classDefinition, errorReporter);
 
-    assertErrorListSize(errorReporter.getErrorList(), 2);
-    for (GeneralError error : errorReporter.getErrorList()) {
-      assertTrue(error instanceof GoalError);
-      assertEquals(0, ((GoalError) error).context.size());
+    assertErrorListSize(errorList, 2);
+    for (GeneralError error : errorList) {
+      assertTrue(error instanceof TypeCheckingError);
+      assertTrue(((TypeCheckingError) error).localError instanceof GoalError);
+      assertEquals(0, ((GoalError) ((TypeCheckingError) error).localError).context.size());
     }
   }
 

@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.expr.type;
 
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
@@ -20,6 +19,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ToAbstractVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.ArrayList;
@@ -60,7 +60,7 @@ public class PiUniverseType implements Type {
   }
 
   @Override
-  public PiUniverseType strip(Set<Binding> bounds, ErrorReporter errorReporter) {
+  public PiUniverseType strip(Set<Binding> bounds, LocalErrorReporter errorReporter) {
     if (!myParameters.hasNext()) {
       return this;
     }

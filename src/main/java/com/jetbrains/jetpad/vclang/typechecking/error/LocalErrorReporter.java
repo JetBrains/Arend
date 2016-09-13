@@ -1,23 +1,8 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
-public class LocalErrorReporter implements ErrorReporter {
-  private final Abstract.Definition myDefinition;
-  private final ErrorReporter myErrorReporter;
-
-  public LocalErrorReporter(Abstract.Definition definition, ErrorReporter errorReporter) {
-    myDefinition = definition;
-    myErrorReporter = errorReporter;
-  }
-
-  @Override
-  public void report(GeneralError error) {
-    if (error instanceof TypeCheckingError) {  // FIXME: HACK
-      ((TypeCheckingError) error).setDefinition(myDefinition);
-    }
-    myErrorReporter.report(error);
-  }
+public interface  LocalErrorReporter extends ErrorReporter {
+  void report(LocalTypeCheckingError localError);
 }

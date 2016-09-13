@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
-import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -9,7 +8,8 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
-import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
+import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -62,10 +62,9 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     DependentLink params = param(false, vars("A", "B"), Universe(0));
     context.add(new TypedBinding("f", Pi(params, Pi(Reference(params), Reference(params)))));
 
-    ListErrorReporter errorReporter = new ListErrorReporter();
-    typeCheckExpr(context, "f 0", null, errorReporter);
-    assertErrorListSize(errorReporter.getErrorList(), 1);
-    assertTrue(errorReporter.getErrorList().iterator().next() instanceof ArgInferenceError);
+    typeCheckExpr(context, "f 0", null, 1);
+    assertErrorListSize(errorList, 1);
+    assertTrue(errorList.get(0) instanceof TypeCheckingError && ((TypeCheckingError) errorList.get(0)).localError instanceof ArgInferenceError);
   }
 
   @Test
@@ -187,9 +186,8 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     DependentLink A = param(false, "A", Universe(0));
     context.add(new TypedBinding("f", Pi(A, Pi(Nat(), Pi(Reference(A), Reference(A))))));
 
-    ListErrorReporter errorReporter = new ListErrorReporter();
-    typeCheckExpr(context, "f 0", Pi(Nat(), Pi(Nat(), Nat())), errorReporter);
-    assertErrorListSize(errorReporter.getErrorList(), 1);
+    typeCheckExpr(context, "f 0", Pi(Nat(), Pi(Nat(), Nat())), 1);
+    assertErrorListSize(errorList, 1);
   }
 
   @Test

@@ -1,17 +1,17 @@
-package com.jetbrains.jetpad.vclang.typechecking.error;
+package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 
-public class ArgInferenceError extends TypeCheckingError {
+public class ArgInferenceError extends LocalTypeCheckingError {
   public final Expression[] candidates;
   public final Expression expected;
   public final Type actual;
 
   @Deprecated
   public ArgInferenceError(String message, Abstract.SourceNode expression, Expression[] candidates) {
-    super(null, message, expression);
+    super(message, expression);
     this.candidates = candidates;
     this.expected = null;
     this.actual = null;
@@ -19,7 +19,7 @@ public class ArgInferenceError extends TypeCheckingError {
 
   @Deprecated
   public ArgInferenceError(String message, Expression expected, Type actual, Abstract.SourceNode expression, Expression candidate) {
-    super(null, message, expression);
+    super(message, expression);
     this.candidates = new Expression[1];
     this.candidates[0] = candidate;
     this.expected = expected;

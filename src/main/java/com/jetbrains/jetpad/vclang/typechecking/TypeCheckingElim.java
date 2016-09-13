@@ -25,9 +25,9 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.PatternsToElimTreeConversion;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ConditionViolationsCollector;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.CoverageChecker;
-import com.jetbrains.jetpad.vclang.typechecking.error.HasErrors;
-import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.HasErrors;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.NotInScopeError;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -41,11 +41,9 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
 
 public class TypeCheckingElim {
-  private final Abstract.Definition myParentDefinition;
   private final CheckTypeVisitor myVisitor;
 
-  public TypeCheckingElim(Abstract.Definition definition, CheckTypeVisitor visitor) {
-    myParentDefinition = definition;
+  public TypeCheckingElim(CheckTypeVisitor visitor) {
     myVisitor = visitor;
   }
 
@@ -53,11 +51,11 @@ public class TypeCheckingElim {
     FUNCTION, DATATYPE, CONDITION
   }
 
-  public static TypeCheckingError checkConditions(final Abstract.Function def, DependentLink eliminatingArgs, ElimTreeNode elimTree) {
+  public static LocalTypeCheckingError checkConditions(final Abstract.Function def, DependentLink eliminatingArgs, ElimTreeNode elimTree) {
     return checkConditions(def.getName(), def, eliminatingArgs, elimTree);
   }
 
-  public static TypeCheckingError checkConditions(final String name, final Abstract.SourceNode source, final DependentLink eliminatingArgs, ElimTreeNode elimTree) {
+  public static LocalTypeCheckingError checkConditions(final String name, final Abstract.SourceNode source, final DependentLink eliminatingArgs, ElimTreeNode elimTree) {
     final StringBuilder errorMsg = new StringBuilder();
 
     ConditionViolationsCollector.check(elimTree, ExprSubstitution.getIdentity(toContext(eliminatingArgs)), new ConditionViolationsCollector.ConditionViolationChecker() {
@@ -76,12 +74,12 @@ public class TypeCheckingElim {
     });
 
     if (errorMsg.length() != 0) {
-      return new TypeCheckingError("Condition check failed: " + errorMsg.toString(), source);
+      return new LocalTypeCheckingError("Condition check failed: " + errorMsg.toString(), source);
     }
     return null;
   }
 
-  public static TypeCheckingError checkCoverage(final Abstract.Function def, final DependentLink eliminatingArgs, ElimTreeNode elimTree, Expression resultType) {
+  public static LocalTypeCheckingError checkCoverage(final Abstract.Function def, final DependentLink eliminatingArgs, ElimTreeNode elimTree, Expression resultType) {
     final StringBuilder incompleteCoverageMessage = new StringBuilder();
 
     CoverageChecker.check(elimTree, ExprSubstitution.getIdentity(toContext(eliminatingArgs)), new CoverageChecker.CoverageCheckerMissingProcessor() {
@@ -100,7 +98,7 @@ public class TypeCheckingElim {
     }, resultType);
 
     if (incompleteCoverageMessage.length() != 0) {
-      return new TypeCheckingError("Coverage check failed for: " + incompleteCoverageMessage.toString(), def);  // FIXME[error] report proper
+      return new LocalTypeCheckingError("Coverage check failed for: " + incompleteCoverageMessage.toString(), def);  // FIXME[error] report proper
     } else {
       return null;
     }
@@ -133,12 +131,12 @@ public class TypeCheckingElim {
   }
 
   public ElimTreeNode typeCheckElim(final Abstract.ElimCaseExpression expr, DependentLink eliminatingArgs, Expression expectedType, boolean isCase) {
-    TypeCheckingError error = null;
+    LocalTypeCheckingError error = null;
     if (expectedType == null) {
-      error = new TypeCheckingError("Cannot infer type of the expression", expr);
+      error = new LocalTypeCheckingError("Cannot infer type of the expression", expr);
     }
     if (eliminatingArgs == null && error == null) {
-      error = new TypeCheckingError("\\elim is allowed only at the root of a definition", expr);
+      error = new LocalTypeCheckingError("\\elim is allowed only at the root of a definition", expr);
     }
 
     if (error != null) {
@@ -235,7 +233,7 @@ public class TypeCheckingElim {
       return result.accept(new StripVisitor(bounds, myVisitor.getErrorReporter()), null);
     } else if (elimTreeResult instanceof PatternsToElimTreeConversion.EmptyReachableResult) {
       for (int i : ((PatternsToElimTreeConversion.EmptyReachableResult) elimTreeResult).reachable) {
-        error = new TypeCheckingError("Empty clause is reachable", expr.getClauses().get(i));
+        error = new LocalTypeCheckingError("Empty clause is reachable", expr.getClauses().get(i));
         expr.setWellTyped(myVisitor.getContext(), Error(null, error));
         myVisitor.getErrorReporter().report(error);
       }
@@ -252,7 +250,7 @@ public class TypeCheckingElim {
         return null;
       return exprResult.expression.toReference();
     } else {
-      TypeCheckingError error = new TypeCheckingError("\\elim can be applied only to a local variable", expression);
+      LocalTypeCheckingError error = new LocalTypeCheckingError("\\elim can be applied only to a local variable", expression);
       myVisitor.getErrorReporter().report(error);
       expression.setWellTyped(myVisitor.getContext(), Error(null, error));
       return null;
@@ -266,7 +264,7 @@ public class TypeCheckingElim {
 
       List<Integer> eliminatingIndicies = new ArrayList<>();
 
-      TypeCheckingError error;
+      LocalTypeCheckingError error;
       final List<ReferenceExpression> elimExprs = new ArrayList<>(expr.getExpressions().size());
       for (Abstract.Expression var : expr.getExpressions()) {
         ReferenceExpression refExpr = lookupLocalVar(var);
@@ -276,7 +274,7 @@ public class TypeCheckingElim {
         }
 
         if (!argsBindings.contains(refExpr.getBinding())) {
-          error = new TypeCheckingError("\\elim can be applied only to arguments of the innermost definition", var);
+          error = new LocalTypeCheckingError("\\elim can be applied only to arguments of the innermost definition", var);
           myVisitor.getErrorReporter().report(error);
           var.setWellTyped(argsBindings, Error(null, error));
           return null;
@@ -284,14 +282,14 @@ public class TypeCheckingElim {
         eliminatingIndicies.add(argsBindings.indexOf(refExpr.getBinding()));
 
         if (eliminatingIndicies.size() >= 2 && eliminatingIndicies.get(eliminatingIndicies.size() - 2) >= eliminatingIndicies.get(eliminatingIndicies.size() - 1)) {
-          error = new TypeCheckingError("Variable elimination must be in the order of variable introduction", var);
+          error = new LocalTypeCheckingError("Variable elimination must be in the order of variable introduction", var);
           myVisitor.getErrorReporter().report(error);
           var.setWellTyped(argsBindings, Error(null, error));
           return null;
         }
 
         if (((Expression) refExpr.getType()).normalize(NormalizeVisitor.Mode.WHNF).getFunction().toDataCall() == null) {
-          error = new TypeCheckingError("Elimination is allowed only for a data type variable.", var);
+          error = new LocalTypeCheckingError("Elimination is allowed only for a data type variable.", var);
           myVisitor.getErrorReporter().report(error);
           var.setWellTyped(argsBindings, Error(null, error));
           return null;
@@ -323,9 +321,9 @@ public class TypeCheckingElim {
   }
 
   private static class ExpandPatternErrorResult extends  ExpandPatternResult {
-    private final TypeCheckingError error;
+    private final LocalTypeCheckingError error;
 
-    private ExpandPatternErrorResult(TypeCheckingError error) {
+    private ExpandPatternErrorResult(LocalTypeCheckingError error) {
       this.error = error;
     }
   }
@@ -343,14 +341,14 @@ public class TypeCheckingElim {
       pattern.setWellTyped(namePattern);
       return new ExpandPatternOKResult(Reference(links.getLast()), namePattern);
     } else if (pattern instanceof Abstract.AnyConstructorPattern || pattern instanceof Abstract.ConstructorPattern) {
-      TypeCheckingError error = null;
+      LocalTypeCheckingError error = null;
 
       Expression type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF);
       List<? extends Expression> parameters = type.getArguments();
       DataCallExpression fType = type.getFunction().toDataCall();
 
       if (fType == null) {
-        error = new TypeCheckingError("Pattern expected a data type, got: " + type, pattern);
+        error = new LocalTypeCheckingError("Pattern expected a data type, got: " + type, pattern);
         myVisitor.getErrorReporter().report(error);
         return new ExpandPatternErrorResult(error);
       }
@@ -358,19 +356,19 @@ public class TypeCheckingElim {
       DataDefinition dataType = fType.getDefinition();
 
       if (mode == PatternExpansionMode.DATATYPE && !dataType.getConditions().isEmpty()) {
-        error = new TypeCheckingError("Pattern matching on a data type with conditions is not allowed here: " + type, pattern);
+        error = new LocalTypeCheckingError("Pattern matching on a data type with conditions is not allowed here: " + type, pattern);
         myVisitor.getErrorReporter().report(error);
         return new ExpandPatternErrorResult(error);
       }
 
       if ((mode == PatternExpansionMode.FUNCTION || mode == PatternExpansionMode.DATATYPE) && dataType == Prelude.INTERVAL) {
-        error = new TypeCheckingError("Pattern matching on an interval is not allowed here", pattern);
+        error = new LocalTypeCheckingError("Pattern matching on an interval is not allowed here", pattern);
         myVisitor.getErrorReporter().report(error);
         return new ExpandPatternErrorResult(error);
       }
 
       if (dataType.getMatchedConstructors(parameters) == null) {
-        error = new TypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", pattern);
+        error = new LocalTypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", pattern);
         myVisitor.getErrorReporter().report(error);
         return new ExpandPatternErrorResult(error);
       }
@@ -394,13 +392,13 @@ public class TypeCheckingElim {
       }
 
       if (constructor == null) {
-        error = new NotInScopeError(myParentDefinition, pattern, constructorPattern.getConstructorName());  // TODO: refer by reference
+        error = new NotInScopeError(pattern, constructorPattern.getConstructorName());  // TODO: refer by reference
         myVisitor.getErrorReporter().report(error);
         return new ExpandPatternErrorResult(error);
       }
 
       if (constructor.hasErrors()) {
-        error = new HasErrors(myParentDefinition, constructor.getAbstractDefinition(), pattern);
+        error = new HasErrors(constructor.getAbstractDefinition(), pattern);
         myVisitor.getErrorReporter().report(error);
         return new ExpandPatternErrorResult(error);
       }
@@ -411,8 +409,8 @@ public class TypeCheckingElim {
         if (matchResult instanceof Pattern.MatchMaybeResult) {
           throw new IllegalStateException();
         } else if (matchResult instanceof Pattern.MatchFailedResult) {
-          error = new TypeCheckingError("Constructor is not appropriate, failed to match data type parameters. " +
-              "Expected " + ((Pattern.MatchFailedResult) matchResult).failedPattern + ", got " + ((Pattern.MatchFailedResult) matchResult).actualExpression, pattern);
+          error = new LocalTypeCheckingError("Constructor is not appropriate, failed to match data type parameters. " +
+                                             "Expected " + ((Pattern.MatchFailedResult) matchResult).failedPattern + ", got " + ((Pattern.MatchFailedResult) matchResult).actualExpression, pattern);
         } else if (matchResult instanceof Pattern.MatchOKResult) {
           matchedParameters = ((Pattern.MatchOKResult) matchResult).expressions;
         } else {
@@ -430,11 +428,11 @@ public class TypeCheckingElim {
       ProcessImplicitResult implicitResult = processImplicit(constructorPattern.getArguments(), constructor.getParameters());
       if (implicitResult.patterns == null) {
         if (implicitResult.numExcessive != 0) {
-          error = new TypeCheckingError("Too many arguments: " + implicitResult.numExcessive + " excessive", pattern);
+          error = new LocalTypeCheckingError("Too many arguments: " + implicitResult.numExcessive + " excessive", pattern);
         } else if (implicitResult.wrongImplicitPosition < constructorPattern.getArguments().size()) {
-          error = new TypeCheckingError("Unexpected implicit argument", constructorPattern.getArguments().get(implicitResult.wrongImplicitPosition));
+          error = new LocalTypeCheckingError("Unexpected implicit argument", constructorPattern.getArguments().get(implicitResult.wrongImplicitPosition));
         } else {
-          error = new TypeCheckingError("Too few explicit arguments, expected: " + implicitResult.numExplicit, pattern);
+          error = new LocalTypeCheckingError("Too few explicit arguments, expected: " + implicitResult.numExplicit, pattern);
         }
         myVisitor.getErrorReporter().report(error);
         return new ExpandPatternErrorResult(error);

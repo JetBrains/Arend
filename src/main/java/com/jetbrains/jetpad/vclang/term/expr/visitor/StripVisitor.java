@@ -1,12 +1,12 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,10 +15,10 @@ import java.util.Stack;
 
 public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTreeNodeVisitor<Void, ElimTreeNode> {
   private final Set<Binding> myBounds;
-  private final ErrorReporter myErrorReporter;
+  private final LocalErrorReporter myErrorReporter;
   private final Stack<InferenceReferenceExpression> myVariables;
 
-  public StripVisitor(Set<Binding> bounds, ErrorReporter errorReporter) {
+  public StripVisitor(Set<Binding> bounds, LocalErrorReporter errorReporter) {
     myBounds = bounds;
     myErrorReporter = errorReporter;
     myVariables = new Stack<>();
@@ -68,7 +68,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
       return expr;
     }
 
-    TypeCheckingError error = myVariables.empty() ? new TypeCheckingError("Cannot infer some expressions", null) : myVariables.peek().getOriginalVariable().getErrorInfer(myVariables.peek().getSubstExpression());
+    LocalTypeCheckingError error = myVariables.empty() ? new LocalTypeCheckingError("Cannot infer some expressions", null) : myVariables.peek().getOriginalVariable().getErrorInfer(myVariables.peek().getSubstExpression());
     myErrorReporter.report(error);
     return new ErrorExpression(expr, error);
   }
@@ -76,7 +76,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
   @Override
   public Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
     if (expr.getVariable() != null) {
-      TypeCheckingError error = expr.getVariable().getErrorInfer();
+      LocalTypeCheckingError error = expr.getVariable().getErrorInfer();
       myErrorReporter.report(error);
       Expression result = new ErrorExpression(null, error);
       expr.setSubstExpression(result);

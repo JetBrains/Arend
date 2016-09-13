@@ -7,8 +7,9 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.error.CycleError;
-import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.CycleError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.DefinitionCheckTypeVisitor;
 
 import java.util.*;
@@ -165,7 +166,7 @@ public class TypecheckingOrdering {
     if (result instanceof OKResult) {
       for (Map.Entry<Abstract.Definition, Abstract.ClassDefinition> entry : ((OKResult) result).order.entrySet()) {
         Abstract.Definition def = entry.getKey();
-        DefinitionCheckTypeVisitor.typeCheck(state, (ClassDefinition) state.getTypechecked(entry.getValue()), def, new LocalErrorReporter(def, errorReporter), isPrelude);
+        DefinitionCheckTypeVisitor.typeCheck(state, (ClassDefinition) state.getTypechecked(entry.getValue()), def, new ProxyErrorReporter(def, errorReporter), isPrelude);
         Definition typechecked = state.getTypechecked(def);
         if (typechecked == null || typechecked.hasErrors()) {
           typecheckedReporter.typecheckingFailed(def);
@@ -174,7 +175,8 @@ public class TypecheckingOrdering {
         }
       }
     } else if (result instanceof CycleResult) {
-      errorReporter.report(new CycleError(((CycleResult) result).cycle));
+      List<Abstract.Definition> cycle = ((CycleResult) result).cycle;
+      errorReporter.report(new TypeCheckingError(cycle.get(0), new CycleError(cycle)));
     } else {
       throw new IllegalStateException();
     }

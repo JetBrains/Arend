@@ -1,9 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.error.CompositeErrorReporter;
-import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
-import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -34,7 +30,10 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingElim;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.error.*;
+import com.jetbrains.jetpad.vclang.typechecking.error.DummyLocalErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporterCounter;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.ImplicitArgsInference;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.StdImplicitArgsInference;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -45,16 +44,15 @@ import java.util.*;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.size;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
-import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.expression;
-import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.ordinal;
+import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.expression;
+import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.ordinal;
 
 public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, CheckTypeVisitor.Result> {
   private final TypecheckerState myState;
-  private final Abstract.Definition myParentDefinition;
   private ClassDefinition myThisClass;
   private Expression myThisExpr;
   private final List<Binding> myContext;
-  private final ErrorReporter myErrorReporter;
+  private final LocalErrorReporter myErrorReporter;
   private final TypeCheckingDefCall myTypeCheckingDefCall;
   private final TypeCheckingElim myTypeCheckingElim;
   private final ImplicitArgsInference myArgsInference;
@@ -70,14 +68,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  private CheckTypeVisitor(TypecheckerState state, Abstract.Definition definition, ClassDefinition thisClass, Expression thisExpr, List<Binding> localContext, ErrorReporter errorReporter) {
+  private CheckTypeVisitor(TypecheckerState state, ClassDefinition thisClass, Expression thisExpr, List<Binding> localContext, LocalErrorReporter errorReporter) {
     myState = state;
-    myParentDefinition = definition;
     myContext = localContext;
     myErrorReporter = errorReporter;
-    myTypeCheckingDefCall = new TypeCheckingDefCall(state, definition, this);
-    myTypeCheckingElim = new TypeCheckingElim(definition, this);
-    myArgsInference = new StdImplicitArgsInference(definition, this);
+    myTypeCheckingDefCall = new TypeCheckingDefCall(state, this);
+    myTypeCheckingElim = new TypeCheckingElim(this);
+    myArgsInference = new StdImplicitArgsInference(this);
     setThisClass(thisClass, thisExpr);
     myEquations = new TwoStageEquations(errorReporter);
   }
@@ -91,17 +88,17 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   public static class Builder {
     private final TypecheckerState myTypecheckerState;
     private final List<Binding> myLocalContext;
-    private final ErrorReporter myErrorReporter;
+    private final LocalErrorReporter myErrorReporter;
     private ClassDefinition myThisClass;
     private Expression myThisExpr;
 
-    public Builder(TypecheckerState typecheckerState, List<Binding> localContext, ErrorReporter errorReporter) {
+    public Builder(TypecheckerState typecheckerState, List<Binding> localContext, LocalErrorReporter errorReporter) {
       this.myTypecheckerState = typecheckerState;
       myLocalContext = localContext;
       myErrorReporter = errorReporter;
     }
 
-    public Builder(List<Binding> localContext, ErrorReporter errorReporter) {
+    public Builder(List<Binding> localContext, LocalErrorReporter errorReporter) {
       this(new TypecheckerState(), localContext, errorReporter);
     }
 
@@ -112,7 +109,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     public CheckTypeVisitor build(Abstract.Definition definition) {
-      return new CheckTypeVisitor(myTypecheckerState, definition, myThisClass, myThisExpr, myLocalContext, myErrorReporter);
+      return new CheckTypeVisitor(myTypecheckerState, myThisClass, myThisExpr, myLocalContext, myErrorReporter);
     }
 
     @Deprecated
@@ -137,7 +134,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return myContext;
   }
 
-  public ErrorReporter getErrorReporter() {
+  public LocalErrorReporter getErrorReporter() {
     return myErrorReporter;
   }
 
@@ -177,7 +174,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
     }
 
-    TypeCheckingError error = new TypeMismatchError(myParentDefinition, expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
+    LocalTypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
     expr.setWellTyped(myContext, Error(result.expression, error));
     myErrorReporter.report(error);
     return false;
@@ -194,7 +191,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   public Result typeCheck(Abstract.Expression expr, Expression expectedType) {
     if (expr == null) {
-      TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Incomplete expression", null);
+      LocalTypeCheckingError error = new LocalTypeCheckingError("Incomplete expression", null);
       myErrorReporter.report(error);
       return null;
     }
@@ -210,15 +207,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       result.type = result.type.subst(new ExprSubstitution(), substitution);
     }
 
-    CountingErrorReporter counter = new CountingErrorReporter();
-    result.expression = result.expression.strip(new HashSet<>(myContext), new CompositeErrorReporter(myErrorReporter, counter));
-    result.type = result.type.strip(new HashSet<>(myContext), counter.getErrorsNumber() == 0 ? myErrorReporter : new DummyErrorReporter());
+    LocalErrorReporterCounter counter = new LocalErrorReporterCounter(myErrorReporter);
+    result.expression = result.expression.strip(new HashSet<>(myContext), counter);
+    result.type = result.type.strip(new HashSet<>(myContext), counter.getErrorsNumber() == 0 ? myErrorReporter : new DummyLocalErrorReporter());
     return result;
   }
 
   private boolean compareExpressions(Result result, Expression expected, Expression actual, Abstract.Expression expr) {
     if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, expected.normalize(NormalizeVisitor.Mode.NF), actual.normalize(NormalizeVisitor.Mode.NF), expr)) {
-      TypeCheckingError error = new SolveEquationError<>(myParentDefinition, expected.normalize(NormalizeVisitor.Mode.HUMAN_NF), actual.normalize(NormalizeVisitor.Mode.HUMAN_NF), null, expr);
+      LocalTypeCheckingError error = new SolveEquationError<>(expected.normalize(NormalizeVisitor.Mode.HUMAN_NF), actual.normalize(NormalizeVisitor.Mode.HUMAN_NF), null, expr);
       expr.setWellTyped(myContext, Error(result.expression, error));
       myErrorReporter.report(error);
       return false;
@@ -233,7 +230,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         result.expression = result.expression.normalize(NormalizeVisitor.Mode.WHNF);
         if (result.expression.getArguments().isEmpty()) {
           // FIXME[errorformat]
-          TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Expected an argument for 'path'", expr);
+          LocalTypeCheckingError error = new LocalTypeCheckingError("Expected an argument for 'path'", expr);
           expr.setWellTyped(myContext, Error(result.expression, error));
           myErrorReporter.report(error);
           return false;
@@ -275,7 +272,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     DefCallExpression defCall = result.expression.getFunction().toDefCall();
     if (defCall == null) {
-      TypeCheckingError error = new TypeCheckingError("Level can only be assigned to a definition", expr);
+      LocalTypeCheckingError error = new LocalTypeCheckingError("Level can only be assigned to a definition", expr);
       expr.setWellTyped(myContext, Error(result.expression, error));
       myErrorReporter.report(error);
       return null;
@@ -316,7 +313,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   @Override
   public Result visitModuleCall(Abstract.ModuleCallExpression expr, Expression params) {
     if (expr.getModule() == null) {
-      TypeCheckingError error = new UnresolvedReferenceError(myParentDefinition, expr, new ModulePath(expr.getPath()).toString());
+      LocalTypeCheckingError error = new UnresolvedReferenceError(expr, new ModulePath(expr.getPath()).toString());
       expr.setWellTyped(myContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
@@ -324,8 +321,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Definition typeChecked = myState.getTypechecked(expr.getModule());
     if (typeChecked == null) {
       assert false;
-      // FIXME[errorformat]
-      TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Internal error: module '" + new ModulePath(expr.getPath()) + "' is not available yet", expr);
+      LocalTypeCheckingError error = new LocalTypeCheckingError("Internal error: module '" + new ModulePath(expr.getPath()) + "' is not available yet", expr);
       expr.setWellTyped(myContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
@@ -371,15 +367,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           if (piParamsIndex < piParams.size()) {
             DependentLink piLink = piParams.get(piParamsIndex++);
             if (piLink.isExplicit() != isExplicit) {
-              // FIXME[errorformat]
-              myErrorReporter.report(new TypeCheckingError(myParentDefinition, ordinal(argIndex) + " argument of the lambda should be " + (piLink.isExplicit() ? "explicit" : "implicit"), expr));
+              myErrorReporter.report(new LocalTypeCheckingError(ordinal(argIndex) + " argument of the lambda should be " + (piLink.isExplicit() ? "explicit" : "implicit"), expr));
               link.setExplicit(piLink.isExplicit());
             }
 
             Expression piLinkType = piLink.getType().subst(piLamSubst);
             if (argResult != null) {
               if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, piLinkType.normalize(NormalizeVisitor.Mode.NF), argResult.expression.normalize(NormalizeVisitor.Mode.NF), argType)) {
-                TypeCheckingError error = new TypeMismatchError(myParentDefinition, piLinkType.normalize(NormalizeVisitor.Mode.HUMAN_NF), argResult.expression.normalize(NormalizeVisitor.Mode.HUMAN_NF), argType);
+                LocalTypeCheckingError error = new TypeMismatchError(piLinkType.normalize(NormalizeVisitor.Mode.HUMAN_NF), argResult.expression.normalize(NormalizeVisitor.Mode.HUMAN_NF), argType);
                 myErrorReporter.report(error);
                 return null;
               }
@@ -444,7 +439,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   private Level typeCheckLevel(Abstract.Expression expr, Expression expectedType, int minValue) {
     int num_sucs = 0;
-    TypeCheckingError error = null;
+    LocalTypeCheckingError error = null;
 
     if (expr instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression)expr).getName().equals("inf")) {
       return Level.INFINITY;
@@ -454,7 +449,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Abstract.AppExpression app = (Abstract.AppExpression) expr;
       Abstract.Expression suc = app.getFunction();
       if (!(suc instanceof Abstract.DefCallExpression) || !((Abstract.DefCallExpression) suc).getName().equals("suc")) {
-        error = new TypeCheckingError("Expression " + suc + " is invalid, 'suc' expected", expr);
+        error = new LocalTypeCheckingError("Expression " + suc + " is invalid, 'suc' expected", expr);
         break;
       }
       expr = app.getArgument().getExpression();
@@ -473,7 +468,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           return new Level(ref.getBinding(), num_sucs);
         }
       }
-      error = new TypeCheckingError("Invalid level expression", expr);
+      error = new LocalTypeCheckingError("Invalid level expression", expr);
     }
 
     myErrorReporter.report(error);
@@ -513,7 +508,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitError(Abstract.ErrorExpression expr, Expression expectedType) {
-    TypeCheckingError error = new GoalError(myParentDefinition, myContext, expectedType == null ? null : expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
+    LocalTypeCheckingError error = new GoalError(myContext, expectedType == null ? null : expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
     expr.setWellTyped(myContext, Error(null, error));
     myErrorReporter.report(error);
     return null;
@@ -524,7 +519,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (expectedType != null) {
       return new Result(new InferenceReferenceExpression(new ExpressionInferenceVariable(expectedType, expr)), expectedType);
     } else {
-      TypeCheckingError error = new ArgInferenceError(expression(), expr, new Expression[0]);
+      LocalTypeCheckingError error = new ArgInferenceError(expression(), expr, new Expression[0]);
       expr.setWellTyped(myContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
@@ -542,8 +537,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         int sigmaParamsSize = size(sigmaParams);
 
         if (expr.getFields().size() != sigmaParamsSize) {
-          // FIXME[errorformat]
-          TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Expected a tuple with " + sigmaParamsSize + " fields, but given " + expr.getFields().size(), expr);
+          LocalTypeCheckingError error = new LocalTypeCheckingError("Expected a tuple with " + sigmaParamsSize + " fields, but given " + expr.getFields().size(), expr);
           expr.setWellTyped(myContext, Error(null, error));
           myErrorReporter.report(error);
           return null;
@@ -573,8 +567,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (result == null) return null;
       Expression type = result.type.toExpression();
       if (type == null) {
-        // FIXME[errorformat]
-        TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Cannot infer type of " + (i + 1) + "th field", expr.getFields().get(i));
+        LocalTypeCheckingError error = new LocalTypeCheckingError("Cannot infer type of " + (i + 1) + "th field", expr.getFields().get(i));
         expr.setWellTyped(myContext, Error(null, error));
         myErrorReporter.report(error);
         return null;
@@ -649,7 +642,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitElim(Abstract.ElimExpression expr, Expression expectedType) {
-    TypeCheckingError error = new TypeCheckingError(myParentDefinition, "\\elim is allowed only at the root of a definition", expr);
+    LocalTypeCheckingError error = new LocalTypeCheckingError("\\elim is allowed only at the root of a definition", expr);
     myErrorReporter.report(error);
     expr.setWellTyped(myContext, Error(null, error));
     return null;
@@ -658,7 +651,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   @Override
   public Result visitCase(Abstract.CaseExpression expr, Expression expectedType) {
     if (expectedType == null) {
-      TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Cannot infer type of the result", expr);
+      LocalTypeCheckingError error = new LocalTypeCheckingError("Cannot infer type of the result", expr);
       expr.setWellTyped(myContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
@@ -675,8 +668,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (exprResult == null) return null;
       Expression type = exprResult.type.toExpression();
       if (type == null) {
-        // FIXME[errorformat]
-        TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Cannot infer type of " + (i + 1) + "th expression", expressions.get(i));
+        LocalTypeCheckingError error = new LocalTypeCheckingError("Cannot infer type of " + (i + 1) + "th expression", expressions.get(i));
         expr.setWellTyped(myContext, Error(null, error));
         myErrorReporter.report(error);
         return null;
@@ -707,7 +699,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       sigmaType = ((Expression) exprResult.type).toSigma();
     }
     if (sigmaType == null) {
-      TypeCheckingError error = new TypeMismatchError(myParentDefinition, new StringPrettyPrintable("A sigma type"), exprResult.type, expr1);
+      LocalTypeCheckingError error = new TypeMismatchError(new StringPrettyPrintable("A sigma type"), exprResult.type, expr1);
       expr.setWellTyped(myContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
@@ -716,8 +708,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     DependentLink sigmaParams = sigmaType.getParameters();
     DependentLink fieldLink = DependentLink.Helper.get(sigmaParams, expr.getField());
     if (!fieldLink.hasNext()) {
-      // FIXME[errorformat]
-      TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Index " + (expr.getField() + 1) + " out of range", expr);
+      LocalTypeCheckingError error = new LocalTypeCheckingError("Index " + (expr.getField() + 1) + " out of range", expr);
       expr.setWellTyped(myContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
@@ -743,7 +734,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Expression normalizedBaseClassExpr = typeCheckedBaseClass.expression.normalize(NormalizeVisitor.Mode.WHNF);
     ClassCallExpression classCallExpr = normalizedBaseClassExpr.toClassCall();
     if (classCallExpr == null) {
-      TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Expected a class", baseClassExpr);
+      LocalTypeCheckingError error = new LocalTypeCheckingError("Expected a class", baseClassExpr);
       expr.setWellTyped(myContext, Error(normalizedBaseClassExpr, error));
       myErrorReporter.report(error);
       return null;
@@ -751,7 +742,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     ClassDefinition baseClass = classCallExpr.getDefinition();
     if (baseClass.hasErrors()) {
-      TypeCheckingError error = new HasErrors(myParentDefinition, baseClass.getAbstractDefinition(), expr);
+      LocalTypeCheckingError error = new HasErrors(baseClass.getAbstractDefinition(), expr);
       expr.setWellTyped(myContext, Error(classCallExpr, error));
       myErrorReporter.report(error);
       return null;
@@ -773,12 +764,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     for (Abstract.ImplementStatement statement : statements) {
       Definition implementedDef = myState.getTypechecked(statement.getImplementedField());
       if (!(implementedDef instanceof ClassField)) {
-        myErrorReporter.report(new TypeCheckingError(myParentDefinition, "'" + implementedDef.getName() + "' is not a field", statement));
+        myErrorReporter.report(new LocalTypeCheckingError("'" + implementedDef.getName() + "' is not a field", statement));
         continue;
       }
       ClassField field = (ClassField) implementedDef;
       if (fieldSet.isImplemented(field)) {
-        myErrorReporter.report(new TypeCheckingError(myParentDefinition, "Field '" + field.getName() + "' is already implemented", statement));
+        myErrorReporter.report(new LocalTypeCheckingError("Field '" + field.getName() + "' is already implemented", statement));
         continue;
       }
 
@@ -801,7 +792,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Expression normExpr = exprResult.expression.normalize(NormalizeVisitor.Mode.WHNF);
     ClassCallExpression classCallExpr = normExpr.toClassCall();
     if (classCallExpr == null) {
-      TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Expected a class", expr.getExpression());
+      LocalTypeCheckingError error = new LocalTypeCheckingError("Expected a class", expr.getExpression());
       expr.setWellTyped(myContext, Error(normExpr, error));
       myErrorReporter.report(error);
       return null;
@@ -814,7 +805,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       exprResult.type = normExpr;
       return checkResult(expectedType, exprResult, expr);
     } else {
-      TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Class '" + classCallExpr.getDefinition().getName() + "' has " + remaining + " not implemented fields", expr);
+      LocalTypeCheckingError error = new LocalTypeCheckingError("Class '" + classCallExpr.getDefinition().getName() + "' has " + remaining + " not implemented fields", expr);
       expr.setWellTyped(myContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
@@ -859,8 +850,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         if (termResult == null) return null;
         Expression type = expectedType != null ? expectedType : termResult.type.toExpression();
         if (type == null) {
-          // FIXME[errorformat]
-          TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Cannot infer type of expression", clause.getTerm());
+          LocalTypeCheckingError error = new LocalTypeCheckingError("Cannot infer type of expression", clause.getTerm());
           clause.getTerm().setWellTyped(myContext, Error(null, error));
           myErrorReporter.report(error);
           return null;
@@ -870,7 +860,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         resultType = type;
       }
 
-      TypeCheckingError error = TypeCheckingElim.checkCoverage(clause, links.getFirst(), elimTree, expectedType);
+      LocalTypeCheckingError error = TypeCheckingElim.checkCoverage(clause, links.getFirst(), elimTree, expectedType);
       if (error != null) {
         myErrorReporter.report(error);
         return null;

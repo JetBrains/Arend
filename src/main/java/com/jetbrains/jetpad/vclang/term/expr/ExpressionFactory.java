@@ -18,7 +18,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
 import java.util.*;
 
@@ -250,7 +250,7 @@ public class ExpressionFactory {
     return new UniverseExpression(universe);
   }
 
-  public static ErrorExpression Error(Expression expr, TypeCheckingError error) {
+  public static ErrorExpression Error(Expression expr, LocalTypeCheckingError error) {
     return new ErrorExpression(expr, error);
   }
 

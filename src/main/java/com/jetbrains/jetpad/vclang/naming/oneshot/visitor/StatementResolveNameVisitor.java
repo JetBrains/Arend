@@ -11,7 +11,6 @@ import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.util.List;
 
@@ -40,10 +39,10 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
       myErrorReporter.report(new GeneralError("Non-static definition in a static context", stat));
       return null;
     } else if (stat.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC && flag == DefinitionResolveNameVisitor.Flag.MUST_BE_DYNAMIC) {
-      myErrorReporter.report(new TypeCheckingError("Static definitions are not allowed in this context", stat));
+      myErrorReporter.report(new GeneralError("Static definitions are not allowed in this context", stat));
       return null;
     } else if (stat.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC && stat.getDefinition() instanceof Abstract.AbstractDefinition) {
-      myErrorReporter.report(new TypeCheckingError("Abstract definitions cannot be static", stat));
+      myErrorReporter.report(new GeneralError("Abstract definitions cannot be static", stat));
       return null;
     }
     DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, myScope, myContext, myNameResolver, myErrorReporter, myResolveListener);
@@ -54,7 +53,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
   @Override
   public Void visitNamespaceCommand(Abstract.NamespaceCommandStatement stat, DefinitionResolveNameVisitor.Flag flag) {
     if (flag == DefinitionResolveNameVisitor.Flag.MUST_BE_DYNAMIC) {
-      myErrorReporter.report(new TypeCheckingError("Namespace commands are not allowed in this context", stat));
+      myErrorReporter.report(new GeneralError("Namespace commands are not allowed in this context", stat));
       return null;
     }
 

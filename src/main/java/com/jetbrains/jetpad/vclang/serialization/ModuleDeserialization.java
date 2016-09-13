@@ -497,7 +497,7 @@ public class ModuleDeserialization {
         return new UniverseExpression(readSort(stream, definitionMap));
       }
       case 9: {
-        return null /*Error(stream.readBoolean() ? readExpression(stream, definitionMap) : null, new TypeCheckingError(myModuleID + " deserialization error"))*/;  // FIXME[serial]
+        return null /*Error(stream.readBoolean() ? readExpression(stream, definitionMap) : null, new LocalTypeCheckingError(myModuleID + " deserialization error"))*/;  // FIXME[serial]
       }
       case 10: {
         int size = stream.readInt();

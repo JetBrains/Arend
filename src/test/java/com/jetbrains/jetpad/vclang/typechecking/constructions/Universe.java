@@ -118,8 +118,12 @@ public class Universe extends TypeCheckingTestCase {
     typeCheckClass(
       "\\static \\data D : \\Prop | d1 | d2 I \n" +
         "  \\with | d2 _ => d1", 1);
+  }
+
+  @Test
+  public void guessDataUniverseAsSet2() {
     typeCheckClass(
-      "\\static \\data D : \\Set0 | d1 | d2 I \n" +
+        "\\static \\data D : \\Set0 | d1 | d2 I \n" +
         "  \\with | d2 _ => d1");
   }
 

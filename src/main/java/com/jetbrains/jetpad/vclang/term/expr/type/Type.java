@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.expr.type;
 
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
@@ -12,6 +11,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.List;
@@ -29,7 +29,7 @@ public interface Type extends PrettyPrintable {
   DependentLink getPiParameters();
   Type getPiCodomain();
   Type normalize(NormalizeVisitor.Mode mode);
-  Type strip(Set<Binding> bounds, ErrorReporter errorReporter);
+  Type strip(Set<Binding> bounds, LocalErrorReporter errorReporter); // FIXME: wtf? Why LocalErrorReporter here??
   Expression toExpression();
   boolean findBinding(Referable binding);
 }

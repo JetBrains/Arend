@@ -9,19 +9,16 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeMismatchError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
 
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class StdImplicitArgsInference extends BaseImplicitArgsInference {
-  private Abstract.Definition myParentDefinition;
-
-  public StdImplicitArgsInference(Abstract.Definition definition, CheckTypeVisitor visitor) {
+  public StdImplicitArgsInference(CheckTypeVisitor visitor) {
     super(visitor);
-    myParentDefinition = definition;
   }
 
   protected boolean fixImplicitArgs(CheckTypeVisitor.Result result, List<DependentLink> parameters, Abstract.Expression expr) {
@@ -88,7 +85,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
     DependentLink param = result.type.getPiParameters();
     if (!param.hasNext()) {
-      TypeCheckingError error = new TypeMismatchError(myParentDefinition, new StringPrettyPrintable("A pi type"), result.type, fun);
+      LocalTypeCheckingError error = new TypeMismatchError(new StringPrettyPrintable("A pi type"), result.type, fun);
       fun.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;
@@ -100,7 +97,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     if (param.isExplicit() != isExplicit) {
-      TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Expected an " + (param.isExplicit() ? "explicit" : "implicit") + " argument", arg);
+      LocalTypeCheckingError error = new LocalTypeCheckingError("Expected an " + (param.isExplicit() ? "explicit" : "implicit") + " argument", arg);
       arg.setWellTyped(myVisitor.getContext(), new ErrorExpression(argResult.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;
@@ -198,7 +195,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     List<DependentLink> expectedParams = new ArrayList<>(actualParams.size());
     Expression expectedType1 = expectedType.getPiParameters(expectedParams, true, true);
     if (expectedParams.size() > actualParams.size()) {
-      TypeCheckingError error = new TypeMismatchError(myParentDefinition, expectedType1.fromPiParameters(expectedParams), actualType.fromPiParameters(actualParams), expr);
+      LocalTypeCheckingError error = new TypeMismatchError(expectedType1.fromPiParameters(expectedParams), actualType.fromPiParameters(actualParams), expr);
       expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;

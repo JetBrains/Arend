@@ -15,7 +15,7 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.typechecking.error.*;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,14 +27,12 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
 public class TypeCheckingDefCall {
   private final TypecheckerState myState;
-  private final Abstract.Definition myParentDefinition;
   private final CheckTypeVisitor myVisitor;
   private ClassDefinition myThisClass;
   private Expression myThisExpr;
 
-  public TypeCheckingDefCall(TypecheckerState state, Abstract.Definition definition, CheckTypeVisitor visitor) {
+  public TypeCheckingDefCall(TypecheckerState state, CheckTypeVisitor visitor) {
     myState = state;
-    myParentDefinition = definition;
     myVisitor = visitor;
   }
 
@@ -49,7 +47,7 @@ public class TypeCheckingDefCall {
       throw new IllegalStateException("Internal error: definition " + definition + " was not typechecked");
     }
     if (typeCheckedDefinition.typeHasErrors()) {
-      TypeCheckingError error = new HasErrors(myParentDefinition, definition, expr);
+      LocalTypeCheckingError error = new HasErrors(definition, expr);
       expr.setWellTyped(myVisitor.getContext(), Error(null, error));
       myVisitor.getErrorReporter().report(error);
       return null;
@@ -74,7 +72,7 @@ public class TypeCheckingDefCall {
             return null;
           }
         } else {
-          TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Non-static definitions are not allowed in a static context", expr);
+          LocalTypeCheckingError error = new LocalTypeCheckingError("Non-static definitions are not allowed in a static context", expr);
           expr.setWellTyped(myVisitor.getContext(), Error(null, error));
           myVisitor.getErrorReporter().report(error);
           return null;
@@ -102,7 +100,7 @@ public class TypeCheckingDefCall {
         Definition definition;
         Abstract.Definition member = classDefinition.getInstanceNamespace().resolveName(name);
         if (member == null) {
-          MemberNotFoundError error = new MemberNotFoundError(myParentDefinition, classDefinition, name, false, expr);
+          MemberNotFoundError error = new MemberNotFoundError(classDefinition, name, false, expr);
           expr.setWellTyped(myVisitor.getContext(), Error(null, error));
           myVisitor.getErrorReporter().report(error);
           return null;
@@ -113,13 +111,13 @@ public class TypeCheckingDefCall {
         }
 
         if (definition.getThisClass() == null) {
-          TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Static definitions are not allowed in a non-static context", expr);
+          LocalTypeCheckingError error = new LocalTypeCheckingError("Static definitions are not allowed in a non-static context", expr);
           expr.setWellTyped(myVisitor.getContext(), Error(null, error));
           myVisitor.getErrorReporter().report(error);
           return null;
         }
         if (!classDefinition.isSubClassOf(definition.getThisClass())) {
-          TypeCheckingError error = new TypeMismatchError(myParentDefinition, definition.getThisClass().getDefCall(), type, left);
+          LocalTypeCheckingError error = new TypeMismatchError(definition.getThisClass().getDefCall(), type, left);
           expr.setWellTyped(myVisitor.getContext(), Error(null, error));
           myVisitor.getErrorReporter().report(error);
           return null;
@@ -146,7 +144,7 @@ public class TypeCheckingDefCall {
       }
 
       if (!arguments.isEmpty()) {
-        TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Cannot find constructor '" + name + "' of data type '" + dataDefinition.getName() + "'", expr);
+        LocalTypeCheckingError error = new LocalTypeCheckingError("Cannot find constructor '" + name + "' of data type '" + dataDefinition.getName() + "'", expr);
         expr.setWellTyped(myVisitor.getContext(), Error(null, error));
         myVisitor.getErrorReporter().report(error);
         return null;
@@ -168,7 +166,7 @@ public class TypeCheckingDefCall {
       }
       member = leftDefinition.getOwnNamespace().resolveName(expr.getName());
       if (member == null) {
-        MemberNotFoundError error = new MemberNotFoundError(myParentDefinition, leftDefinition, name, true, expr);
+        MemberNotFoundError error = new MemberNotFoundError(leftDefinition, name, true, expr);
         expr.setWellTyped(myVisitor.getContext(), Error(null, error));
         myVisitor.getErrorReporter().report(error);
         return null;
@@ -181,7 +179,7 @@ public class TypeCheckingDefCall {
         thisExpr = result.expression.getArguments().get(0);
         leftDefinition = result.expression.getFunction().toDefCall().getDefinition();
       } else {
-        TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Expected a definition", expr);
+        LocalTypeCheckingError error = new LocalTypeCheckingError("Expected a definition", expr);
         expr.setWellTyped(myVisitor.getContext(), Error(result.expression, error));
         myVisitor.getErrorReporter().report(error);
         return null;
@@ -189,7 +187,7 @@ public class TypeCheckingDefCall {
 
       member = new MergeScope(leftDefinition.getOwnNamespace(), leftDefinition.getInstanceNamespace()).resolveName(name);
       if (member == null) {
-        MemberNotFoundError error = new MemberNotFoundError(myParentDefinition, leftDefinition, name, expr);
+        MemberNotFoundError error = new MemberNotFoundError(leftDefinition, name, expr);
         expr.setWellTyped(myVisitor.getContext(), Error(null, error));
         myVisitor.getErrorReporter().report(error);
         return null;
@@ -232,7 +230,7 @@ public class TypeCheckingDefCall {
     }
     ClassField parentField = classDefinition.getEnclosingThisField();
     if (parentField == null || parentField.getBaseType().toClassCall() == null) {
-      TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Definition '" + definition.getName() + "' is not available in this context", expr);
+      LocalTypeCheckingError error = new LocalTypeCheckingError("Definition '" + definition.getName() + "' is not available in this context", expr);
       expr.setWellTyped(myVisitor.getContext(), Error(null, error));
       myVisitor.getErrorReporter().report(error);
       return null;
@@ -261,7 +259,7 @@ public class TypeCheckingDefCall {
       }
     }
 
-    TypeCheckingError error = new NotInScopeError(myParentDefinition, expr, name);
+    LocalTypeCheckingError error = new NotInScopeError(expr, name);
     expr.setWellTyped(myVisitor.getContext(), Error(null, error));
     myVisitor.getErrorReporter().report(error);
     return null;

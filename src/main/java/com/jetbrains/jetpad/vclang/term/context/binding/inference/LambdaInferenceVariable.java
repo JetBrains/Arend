@@ -3,8 +3,8 @@ package com.jetbrains.jetpad.vclang.term.context.binding.inference;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
-import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
 public class LambdaInferenceVariable extends InferenceVariable {
   private final int myIndex;
@@ -24,12 +24,12 @@ public class LambdaInferenceVariable extends InferenceVariable {
   }
 
   @Override
-  public TypeCheckingError getErrorInfer(Expression... candidates) {
+  public LocalTypeCheckingError getErrorInfer(Expression... candidates) {
     return new ArgInferenceError(myLevel ? ArgInferenceError.levelOfLambdaArg(myIndex) : ArgInferenceError.lambdaArg(myIndex), mySourceNode, candidates);
   }
 
   @Override
-  public TypeCheckingError getErrorMismatch(Expression expectedType, Type actualType, Expression candidate) {
+  public LocalTypeCheckingError getErrorMismatch(Expression expectedType, Type actualType, Expression candidate) {
     return new ArgInferenceError(myLevel ? ArgInferenceError.levelOfLambdaArg(myIndex) : ArgInferenceError.lambdaArg(myIndex), expectedType, actualType, mySourceNode, candidate);
   }
 }
