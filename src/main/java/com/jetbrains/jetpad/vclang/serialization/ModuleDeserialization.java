@@ -23,13 +23,11 @@ import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeDeserialization;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.io.*;
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
 public class ModuleDeserialization {
   private SerializableModuleSourceId myModuleID;
@@ -499,7 +497,7 @@ public class ModuleDeserialization {
         return new UniverseExpression(readSort(stream, definitionMap));
       }
       case 9: {
-        return Error(stream.readBoolean() ? readExpression(stream, definitionMap) : null, new TypeCheckingError(myModuleID + " deserialization error"));  // FIXME[error] bad error
+        return null /*Error(stream.readBoolean() ? readExpression(stream, definitionMap) : null, new TypeCheckingError(myModuleID + " deserialization error"))*/;  // FIXME[serial]
       }
       case 10: {
         int size = stream.readInt();
