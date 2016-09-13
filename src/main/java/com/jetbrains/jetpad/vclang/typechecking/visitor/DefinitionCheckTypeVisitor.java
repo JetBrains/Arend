@@ -137,7 +137,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         if (classView != null) {
           ClassCallExpression classCallExpr = result.expression.toClassCall();
           ClassView classView1 = new ClassView((ClassField) myState.getTypechecked(classView.getClassifyingField()));
-          result.expression = new ClassCallExpression(classCallExpr.getDefinition(), classCallExpr.getFieldSet(), classView1);
+          result.expression = new ClassViewCallExpression(classCallExpr.getDefinition(), classCallExpr.getFieldSet(), classView1);
           for (Abstract.ClassViewField viewField : classView.getFields()) {
             classView1.addView((ClassField) myState.getTypechecked(viewField.getUnderlyingField()), viewField.getUnderlyingField());
           }

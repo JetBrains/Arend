@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.ClassViewCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FieldCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
@@ -46,10 +46,9 @@ public class SimpleInstancePool implements ClassViewInstancePool {
   }
 
   public boolean addLocalInstance(Binding binding, Expression type) {
-    ClassCallExpression classCall = type.toClassCall();
-    if (classCall != null && classCall.getClassView().getClassifyingField() != null) {
+    if (type instanceof ClassViewCallExpression && ((ClassViewCallExpression) type).getClassView().getClassifyingField() != null) {
       ReferenceExpression reference = new ReferenceExpression(binding);
-      return addLocalInstance(Apps(new FieldCallExpression(classCall.getClassView().getClassifyingField()), reference).normalize(NormalizeVisitor.Mode.NF), reference);
+      return addLocalInstance(Apps(new FieldCallExpression(((ClassViewCallExpression) type).getClassView().getClassifyingField()), reference).normalize(NormalizeVisitor.Mode.NF), reference);
     } else {
       return true;
     }

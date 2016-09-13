@@ -126,8 +126,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       Type type = expr.getArguments().get(0).getType();
       if (type instanceof Expression) {
         ClassCallExpression classCall = ((Expression) type).normalize(NormalizeVisitor.Mode.WHNF).toClassCall();
-        if (classCall != null) {
-          result = myFactory.makeDefCall(expr.getArguments().get(0).accept(this, null), classCall.getClassView().getView(fieldCall.getDefinition()), fieldCall.getDefinition());
+        if (classCall instanceof ClassViewCallExpression) {
+          result = myFactory.makeDefCall(expr.getArguments().get(0).accept(this, null), ((ClassViewCallExpression) classCall).getClassView().getView(fieldCall.getDefinition()), fieldCall.getDefinition());
           index = 1;
         }
       }

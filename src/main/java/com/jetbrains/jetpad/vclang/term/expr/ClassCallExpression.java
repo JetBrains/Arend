@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.term.typeclass.ClassView;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -16,26 +15,19 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ClassCall;
 
 public class ClassCallExpression extends DefCallExpression {
   private final FieldSet myFieldSet;
-  private final ClassView myClassView;
 
-  public ClassCallExpression(ClassDefinition definition, ClassView classView) {
+  public ClassCallExpression(ClassDefinition definition) {
     super(definition);
     myFieldSet = new FieldSet(definition.getFieldSet());
-    myClassView = classView;
   }
 
-  public ClassCallExpression(ClassDefinition definition, FieldSet fieldSet, ClassView classView) {
+  public ClassCallExpression(ClassDefinition definition, FieldSet fieldSet) {
     super(definition);
     myFieldSet = fieldSet;
-    myClassView = classView;
   }
 
   public FieldSet getFieldSet() {
     return myFieldSet;
-  }
-
-  public ClassView getClassView() {
-    return myClassView;
   }
 
   public Collection<Map.Entry<ClassField, FieldSet.Implementation>> getImplementedHere() {
@@ -63,7 +55,7 @@ public class ClassCallExpression extends DefCallExpression {
     ClassField parent = getDefinition().getEnclosingThisField();
     boolean success = newFieldSet.implementField(parent, new FieldSet.Implementation(null, thisExpr), this);
     assert success;
-    return ClassCall(getDefinition(), newFieldSet, myClassView);
+    return ClassCall(getDefinition(), newFieldSet);
   }
 
   @Override
@@ -86,6 +78,6 @@ public class ClassCallExpression extends DefCallExpression {
         newFieldSet.implementField(entry.getKey(), new FieldSet.Implementation(entry.getValue().thisParam, entry.getValue().term.accept(visitor, arg)), this);
       }
     }
-    return ClassCall(getDefinition(), newFieldSet, myClassView);
+    return ClassCall(getDefinition(), newFieldSet);
   }
 }

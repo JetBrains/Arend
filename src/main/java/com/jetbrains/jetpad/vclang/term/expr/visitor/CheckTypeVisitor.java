@@ -770,7 +770,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     FieldSet fieldSet = new FieldSet();
     Result classExtResult = new Result(null, null);
-    ClassCallExpression resultExpr = ClassCall(baseClass, fieldSet, classCallExpr.getClassView());
+    ClassCallExpression resultExpr = ClassCall(baseClass, fieldSet);
 
     fieldSet.addFieldsFrom(classCallExpr.getFieldSet(), resultExpr);
     for (Map.Entry<ClassField, FieldSet.Implementation> entry : classCallExpr.getFieldSet().getImplemented()) {
