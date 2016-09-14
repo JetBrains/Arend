@@ -74,7 +74,7 @@ public class NameResolverTestCase extends VclangTestCase {
     assertThat(errorList, hasSize(errors));
   }
 
-  private Concrete.Definition resolveNamesDef(String text, int errors) {
+  Concrete.Definition resolveNamesDef(String text, int errors) {
     Concrete.Definition result = parseDef(text);
     resolveNamesDef(result, errors);
     return result;
