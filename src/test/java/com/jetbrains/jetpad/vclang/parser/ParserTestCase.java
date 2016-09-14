@@ -44,8 +44,9 @@ public abstract class ParserTestCase extends VclangTestCase {
   }
 
 
-  protected Concrete.Expression parseExpr(String text, int errors) {
-    Concrete.Expression result = new BuildVisitor(SOURCE_ID, errorReporter).visitExpr(_parse("test", errorReporter, text).expr());
+  Concrete.Expression parseExpr(String text, int errors) {
+    VcgrammarParser.ExprContext exprContext = _parse("$testModule$", errorReporter, text).expr();
+    Concrete.Expression result = new BuildVisitor(SOURCE_ID, errorReporter).visitExpr(exprContext);
     assertThat(errorList, hasSize(errors));
     return result;
   }
@@ -56,7 +57,7 @@ public abstract class ParserTestCase extends VclangTestCase {
 
 
   private Concrete.Definition parseDef(String text, int errors) {
-    Concrete.Definition definition = new BuildVisitor(SOURCE_ID, errorReporter).visitDefinition(_parse("test", errorReporter, text).definition());
+    Concrete.Definition definition = new BuildVisitor(SOURCE_ID, errorReporter).visitDefinition(_parse("$testModule$", errorReporter, text).definition());
     assertThat(errorList, hasSize(errors));
     return definition;
   }

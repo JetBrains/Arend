@@ -72,7 +72,7 @@ public class RenamingTest extends TypeCheckingTestCase {
 
   @Test
   public void nameClashError() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\static \\class B {\n" +
         "  \\abstract A : \\Set0\n" +
         "  \\abstract a : A\n" +
@@ -189,7 +189,7 @@ public class RenamingTest extends TypeCheckingTestCase {
 
   @Test
   public void renamingMultipleInheritedError() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\static \\class B {\n" +
         "  \\abstract A : \\Set0\n" +
         "  \\abstract a : A\n" +

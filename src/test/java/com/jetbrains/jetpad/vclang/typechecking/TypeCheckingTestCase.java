@@ -39,17 +39,8 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     //assertThat(internalErrorReporter.getErrorList(), is(empty()));  // does not type-check by design
   }
 
-  private CheckTypeVisitor.Result _typeCheckExpr(List<Binding> context, Concrete.Expression expression, Expression expectedType) {
-    return new CheckTypeVisitor.Builder(state, context, localErrorReporter).build().checkType(expression, expectedType);
-  }
-
-  private CheckTypeVisitor.Result _typeCheckExpr(Concrete.Expression expression, Expression expectedType) {
-    return _typeCheckExpr(new ArrayList<Binding>(), expression, expectedType);
-  }
-
-
   CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
-    CheckTypeVisitor.Result result = _typeCheckExpr(context, expression, expectedType);
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(state, context, localErrorReporter).build().checkType(expression, expectedType);
     assertThat(errorList, hasSize(errors));
     if (errors == 0) {
       assertThat(result, is(notNullValue()));
@@ -57,16 +48,16 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     return result;
   }
 
-  CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, Concrete.Expression expression, Expression expectedType) {
-    return typeCheckExpr(context, expression, expectedType, 0);
-  }
-
-  protected CheckTypeVisitor.Result typeCheckExpr(Concrete.Expression expression, Expression expectedType, int errors) {
+  CheckTypeVisitor.Result typeCheckExpr(Concrete.Expression expression, Expression expectedType, int errors) {
     return typeCheckExpr(new ArrayList<Binding>(), expression, expectedType, errors);
   }
 
-  CheckTypeVisitor.Result typeCheckExpr(Concrete.Expression expression, Expression expectedType) {
-    return typeCheckExpr(expression, expectedType, 0);
+  protected CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, Concrete.Expression expression, Expression expectedType) {
+    return typeCheckExpr(context, expression, expectedType, 0);
+  }
+
+  protected CheckTypeVisitor.Result typeCheckExpr(Concrete.Expression expression, Expression expectedType) {
+    return typeCheckExpr(new ArrayList<Binding>(), expression, expectedType, 0);
   }
 
 
@@ -103,7 +94,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
 
-  protected TypecheckerState typeCheckClass(Concrete.ClassDefinition classDefinition, int errors) {
+  private TypecheckerState typeCheckClass(Concrete.ClassDefinition classDefinition, int errors) {
     TypecheckingOrdering.typecheck(state, classDefinition, localErrorReporter);
     assertThat(errorList, hasSize(errors));
     return state;
@@ -125,9 +116,13 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     }
   }
 
+  protected TypeCheckClassResult typeCheckClass(Concrete.ClassDefinition classDefinition) {
+    TypecheckerState state = typeCheckClass(classDefinition, 0);
+    return new TypeCheckClassResult(state, classDefinition);
+  }
+
   protected TypeCheckClassResult typeCheckClass(String text, int nameErrors, int tcErrors) {
-    Concrete.ClassDefinition classDefinition = parseClass("test", text);
-    resolveNamesClass(classDefinition, nameErrors);
+    Concrete.ClassDefinition classDefinition = resolveNamesClass(text, nameErrors);
     TypecheckerState state = typeCheckClass(classDefinition, nameErrors + tcErrors);
     return new TypeCheckClassResult(state, classDefinition);
   }

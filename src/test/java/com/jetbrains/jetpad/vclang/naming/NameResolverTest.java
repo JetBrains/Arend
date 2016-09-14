@@ -48,7 +48,7 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void whereTest() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\static \\function f (x : \\Type0) => B.b (a x) \\where {\n" +
             "  \\static \\function a (x : \\Type0) => x\n" +
             "  \\static \\data D | D1 | D2\n" +
@@ -58,7 +58,7 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void whereTestDefCmd() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\static \\function f (x : \\Type0) => a \\where {\n" +
         "  \\static \\class A { \\static \\function a => 0 }\n" +
         "  \\open A\n" +
@@ -67,7 +67,7 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void whereOpenFunction() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\static \\function f => x \\where {\n" +
         "  \\static \\function b => 0 \\where\n" +
         "    \\static \\function x => 0\n" +
@@ -77,7 +77,7 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void whereNested() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\static \\function f => x \\where {\n" +
         "  \\static \\data B | b\n" +
         "  \\static \\function x => a \\where\n" +
@@ -87,7 +87,7 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void whereOuterScope() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\static \\function f => 0 \\where {\n" +
         "  \\static \\function g => 0\n" +
         "  \\static \\function h => g\n" +
@@ -96,14 +96,14 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void whereInSignature() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\static \\function f : D => d \\where\n" +
         "  \\static \\data D | d");
   }
 
   @Test
   public void whereAccessOuter() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\static \\function f => 0 \\where\n" +
         "  \\static \\function x => 0\n" +
         "\\static \\function g => f.x");
@@ -111,7 +111,7 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void whereNonStaticOpen() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\static \\function f => 0 \\where {\n" +
         "  \\static \\function x => 0\n" +
         "  \\static \\function y => x\n" +
@@ -122,22 +122,22 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void whereAbstractError() {
-    resolveNamesClass("test", "\\static \\function f => 0 \\where \\abstract x : \\Type0", 1);
+    resolveNamesClass("\\static \\function f => 0 \\where \\abstract x : \\Type0", 1);
   }
 
   @Test
   public void openTest() {
-    resolveNamesClass("test", "\\static \\class A { \\static \\function x => 0 } \\open A \\static \\function y => x");
+    resolveNamesClass("\\static \\class A { \\static \\function x => 0 } \\open A \\static \\function y => x");
   }
 
   @Test
   public void exportTest() {
-    resolveNamesClass("test", "\\static \\class A { \\static \\class B { \\static \\function x => 0 } \\export B } \\static \\function y => A.x");
+    resolveNamesClass("\\static \\class A { \\static \\class B { \\static \\function x => 0 } \\export B } \\static \\function y => A.x");
   }
 
   @Test
   public void staticFieldAccCallTest() {
-    resolveNamesClass("test", "\\static \\class A { \\abstract x : \\Type0 \\class B { \\static \\function y => x } } \\static \\function f (a : A) => a.B.y");
+    resolveNamesClass("\\static \\class A { \\abstract x : \\Type0 \\class B { \\static \\function y => x } } \\static \\function f (a : A) => a.B.y");
   }
 
   @Test
@@ -205,42 +205,42 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void defineExistingTestError() {
-    resolveNamesClass("test", "\\static \\class A { } \\function A => 0", 1);
+    resolveNamesClass("\\static \\class A { } \\function A => 0", 1);
   }
 
   @Test
   public void defineExistingStaticTestError() {
-    resolveNamesClass("test", "\\static \\class A { } \\static \\function A => 0", 1);
+    resolveNamesClass("\\static \\class A { } \\static \\function A => 0", 1);
   }
 
   @Test
   public void defineExistingDynamicTestError() {
-    resolveNamesClass("test", "\\class A { } \\function A => 0", 1);
+    resolveNamesClass("\\class A { } \\function A => 0", 1);
   }
 
   @Test
   public void neverCloseField() {
-    resolveNamesClass("test", "\\static \\class A { \\static \\function x => 0 } \\static \\class B { \\open A \\export A \\close A } \\static \\class C { \\static \\function y => B.x }");
+    resolveNamesClass("\\static \\class A { \\static \\function x => 0 } \\static \\class B { \\open A \\export A \\close A } \\static \\class C { \\static \\function y => B.x }");
   }
 
   @Test
   public void exportExistingTestError() {
-    resolveNamesClass("test", "\\static \\class A { \\static \\class B { \\static \\function x => 0 } } \\export A \\static \\class B { \\static \\function y => 0 }", 1);
+    resolveNamesClass("\\static \\class A { \\static \\class B { \\static \\function x => 0 } } \\export A \\static \\class B { \\static \\function y => 0 }", 1);
   }
 
   @Test
   public void exportExistingTestError2() {
-    resolveNamesClass("test", "\\static \\class B { \\static \\function y => 0 } \\static \\class A { \\static \\class B { \\static \\function x => 0 } } \\export A", 1);
+    resolveNamesClass("\\static \\class B { \\static \\function y => 0 } \\static \\class A { \\static \\class B { \\static \\function x => 0 } } \\export A", 1);
   }
 
   @Test
   public void openExportTest() {
-    resolveNamesClass("test", "\\static \\class A { \\static \\class B { \\static \\function x => 0 } \\open B } \\static \\function y => A.x");
+    resolveNamesClass("\\static \\class A { \\static \\class B { \\static \\function x => 0 } \\open B } \\static \\function y => A.x");
   }
 
   @Test
   public void classExtensionWhereTestError() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\static \\function f => 0 \\where {\n" +
         "  \\static \\class A {}\n" +
         "  \\static \\class A { \\function x => 0 }\n" +
@@ -249,7 +249,7 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void multipleDefsWhere() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\static \\function f => 0 \\where {\n" +
         "  \\static \\function d => 0\n" +
         "  \\static \\function d => 1\n" +
@@ -258,7 +258,7 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void dataConstructor() {
-    resolveNamesClass("test", "\\data D | d \\function f => D.d");
+    resolveNamesClass("\\data D | d \\function f => D.d");
   }
 
   @Test

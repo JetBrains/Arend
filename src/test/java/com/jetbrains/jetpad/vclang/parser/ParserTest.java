@@ -114,6 +114,6 @@ public class ParserTest extends ParserTestCase {
 
   @Test
   public void parseIncorrectPi() {
-    parseExpr("\\Pi (: Nat) -> Nat", -1);
+    parseExpr("\\Pi (: Nat) -> Nat", 2);
   }
 }

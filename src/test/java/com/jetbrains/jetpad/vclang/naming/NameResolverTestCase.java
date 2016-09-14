@@ -54,29 +54,17 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
 
-  private void _resolveNamesExpr(Scope parentScope, List<String> context, Concrete.Expression expression) {
-    expression.accept(new ExpressionResolveNameVisitor(parentScope, context, nameResolver, errorReporter, new ConcreteResolveListener()), null);
-  }
-
-  private void _resolveNamesExpr(Concrete.Expression expression) {
-    _resolveNamesExpr(globalScope, new ArrayList<String>(), expression);
-  }
-
-
   private Concrete.Expression resolveNamesExpr(Scope parentScope, List<String> context, String text, int errors) {
-    Concrete.Expression result = parseExpr(text);
-    assertThat(result, is(notNullValue()));
-    _resolveNamesExpr(parentScope, context, result);
+    Concrete.Expression expression = parseExpr(text);
+    assertThat(expression, is(notNullValue()));
+
+    expression.accept(new ExpressionResolveNameVisitor(parentScope, context, nameResolver, errorReporter, new ConcreteResolveListener()), null);
     assertThat(errorList, hasSize(errors));
-    return result;
+    return expression;
   }
 
   Concrete.Expression resolveNamesExpr(Scope parentScope, String text, int errors) {
     return resolveNamesExpr(parentScope, new ArrayList<String>(), text, errors);
-  }
-
-  private Concrete.Expression resolveNamesExpr(String text, int errors) {
-    return resolveNamesExpr(globalScope, text, errors);
   }
 
   Concrete.Expression resolveNamesExpr(Scope parentScope, String text) {
@@ -92,22 +80,18 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
   protected Concrete.Expression resolveNamesExpr(String text) {
-    return resolveNamesExpr(text, 0);
+    return resolveNamesExpr(new ArrayList<Binding>(), text);
   }
 
 
-  private void _resolveNamesDef(Concrete.Definition definition) {
+  private void resolveNamesDef(Concrete.Definition definition, int errors) {
     DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(staticNsProvider, dynamicNsProvider,
         new SubScope(globalScope, new SimpleNamespace(definition)), nameResolver, errorReporter, new ConcreteResolveListener());
     definition.accept(visitor, null);
-  }
-
-  private void resolveNamesDef(Concrete.Definition definition, int errors) {
-    _resolveNamesDef(definition);
     assertThat(errorList, hasSize(errors));
   }
 
-  protected Concrete.Definition resolveNamesDef(String text, int errors) {
+  Concrete.Definition resolveNamesDef(String text, int errors) {
     Concrete.Definition result = parseDef(text);
     resolveNamesDef(result, errors);
     return result;
@@ -118,22 +102,19 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
 
-  protected void resolveNamesClass(Concrete.ClassDefinition classDefinition, int errors) {
+  private void resolveNamesClass(Concrete.ClassDefinition classDefinition, int errors) {
     resolveNamesDef(classDefinition, errors);
   }
 
-  protected Concrete.ClassDefinition resolveNamesClass(String name, String text, int errors) {
-    Concrete.ClassDefinition classDefinition = parseClass(name, text);
+  // FIXME[tests] should be package-private
+  protected Concrete.ClassDefinition resolveNamesClass(String text, int errors) {
+    Concrete.ClassDefinition classDefinition = parseClass("$testClass$", text);
     resolveNamesClass(classDefinition, errors);
     return classDefinition;
   }
 
-  protected Concrete.ClassDefinition resolveNamesClass(String text, int errors) {
-    return resolveNamesClass("test", text, errors);
-  }
-
-  protected Concrete.ClassDefinition resolveNamesClass(String name, String text) {
-    return resolveNamesClass(name, text, 0);
+  protected Concrete.ClassDefinition resolveNamesClass(String text) {
+    return resolveNamesClass(text, 0);
   }
 
 

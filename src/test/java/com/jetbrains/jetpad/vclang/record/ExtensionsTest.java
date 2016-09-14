@@ -260,7 +260,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
   @Ignore
   @Test
   public void mutualRecursiveExtendsError() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\class A \\extends B {}\n" +
         "\\class B \\extends A {}", 1);
   }

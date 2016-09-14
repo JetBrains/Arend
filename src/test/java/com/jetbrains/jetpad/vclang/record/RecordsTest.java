@@ -144,7 +144,7 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void splitClassTestError() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\static \\class A {\n" +
         "  \\static \\function x => 0\n" +
         "}\n" +
