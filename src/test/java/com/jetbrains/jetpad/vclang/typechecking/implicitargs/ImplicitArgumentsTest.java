@@ -19,6 +19,8 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.*;
 
 public class ImplicitArgumentsTest extends TypeCheckingTestCase {
@@ -43,7 +45,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("f", Pi(Nat(), Nat())));
 
-    assertNull(typeCheckExpr(context, "f {0} 0", null, 1));
+    assertThat(typeCheckExpr(context, "f {0} 0", null, 1), is(nullValue()));
   }
 
   @Test
@@ -52,7 +54,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("f", Pi(param("x", Nat()), Pi(param(false, "y", Nat()), Pi(param("z", Nat()), Nat())))));
 
-    assertNull(typeCheckExpr(context, "f 0 0 0", null, 1));
+    assertThat(typeCheckExpr(context, "f 0 0 0", null, 1), is(nullValue()));
   }
 
   @Test
@@ -314,8 +316,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     A.setNext(B);
     B.setNext(params(param(Reference(A)), param(Reference(B))));
     context.add(new TypedBinding("f", Pi(A, Reference(A))));
-    CheckTypeVisitor.Result result = typeCheckExpr(context, "f Nat (\\lam x => x) 0", Pi(Nat(), Nat()));
-    assertNotNull(result);
+    typeCheckExpr(context, "f Nat (\\lam x => x) 0", Pi(Nat(), Nat()));
   }
 
   @Test

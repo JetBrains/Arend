@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseClass;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -52,6 +51,9 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
     CheckTypeVisitor.Result result = _typeCheckExpr(context, expression, expectedType);
     assertThat(errorList, hasSize(errors));
+    if (errors == 0) {
+      assertThat(result, is(notNullValue()));
+    }
     return result;
   }
 

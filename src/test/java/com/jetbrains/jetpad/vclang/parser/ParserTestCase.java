@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.parser;
 
+import com.jetbrains.jetpad.vclang.VclangTestCase;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
 import com.jetbrains.jetpad.vclang.module.source.NameModuleSourceId;
@@ -13,9 +13,10 @@ import org.antlr.v4.runtime.*;
 
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertThat;
 
-public class ParserTestCase {
+public abstract class ParserTestCase extends VclangTestCase {
   private static final ModuleSourceId SOURCE_ID = new ModuleSourceId() {
     @Override
     public ModulePath getModulePath() {
@@ -27,7 +28,7 @@ public class ParserTestCase {
     }
   };
 
-  public static VcgrammarParser parse(final String name, final ErrorReporter errorReporter, String text) {
+  private static VcgrammarParser _parse(final String name, final ErrorReporter errorReporter, String text) {
     ANTLRInputStream input = new ANTLRInputStream(text);
     VcgrammarLexer lexer = new VcgrammarLexer(input);
     CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -42,36 +43,32 @@ public class ParserTestCase {
     return parser;
   }
 
-  public static Concrete.Expression parseExpr(String text, int errors) {
-    ListErrorReporter errorReporter = new ListErrorReporter();
-    Concrete.Expression result = new BuildVisitor(SOURCE_ID, errorReporter).visitExpr(parse("test", errorReporter, text).expr());
-    assertErrorListSize(errorReporter.getErrorList(), errors);
+
+  protected Concrete.Expression parseExpr(String text, int errors) {
+    Concrete.Expression result = new BuildVisitor(SOURCE_ID, errorReporter).visitExpr(_parse("test", errorReporter, text).expr());
+    assertThat(errorList, hasSize(errors));
     return result;
   }
 
-  public static Concrete.Expression parseExpr(String text) {
+  protected Concrete.Expression parseExpr(String text) {
     return parseExpr(text, 0);
   }
 
-  public static Concrete.Definition parseDef(String text) {
-    return parseDef(text, 0);
-  }
 
-  public static Concrete.Definition parseDef(String text, int errors) {
-    ListErrorReporter errorReporter = new ListErrorReporter();
-    Concrete.Definition definition = new BuildVisitor(SOURCE_ID, errorReporter).visitDefinition(parse("test", errorReporter, text).definition());
-    assertErrorListSize(errorReporter.getErrorList(), errors);
+  private Concrete.Definition parseDef(String text, int errors) {
+    Concrete.Definition definition = new BuildVisitor(SOURCE_ID, errorReporter).visitDefinition(_parse("test", errorReporter, text).definition());
+    assertThat(errorList, hasSize(errors));
     return definition;
   }
 
-  public static Concrete.ClassDefinition parseClass(String name, String text) {
-    return parseClass(name, text, 0);
+  protected Concrete.Definition parseDef(String text) {
+    return parseDef(text, 0);
   }
 
-  public static Concrete.ClassDefinition parseClass(String name, String text, int errors) {
-    ListErrorReporter errorReporter = new ListErrorReporter();
-    VcgrammarParser.StatementsContext tree = parse(name, errorReporter, text).statements();
-    assertErrorListSize(errorReporter.getErrorList(), 0);
+
+  private Concrete.ClassDefinition parseClass(String name, String text, int errors) {
+    VcgrammarParser.StatementsContext tree = _parse(name, errorReporter, text).statements();
+    assertThat(errorList, is(empty()));
     List<Concrete.Statement> statements = new BuildVisitor(SOURCE_ID, errorReporter).visitStatements(tree);
     Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(ConcreteExpressionFactory.POSITION, name, statements, Abstract.ClassDefinition.Kind.Module);
     for (Concrete.Statement statement : statements) {
@@ -79,12 +76,17 @@ public class ParserTestCase {
         ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);
       }
     }
-    assertErrorListSize(errorReporter.getErrorList(), errors);
+    assertThat(errorList, hasSize(errors));
     // classDefinition.accept(new DefinitionResolveStaticModVisitor(new ConcreteStaticModListener()), null);
     return classDefinition;
   }
 
-  public static boolean compare(Abstract.Expression expr1, Abstract.Expression expr2) {
+  protected Concrete.ClassDefinition parseClass(String name, String text) {
+    return parseClass(name, text, 0);
+  }
+
+
+  protected static boolean compareAbstract(Abstract.Expression expr1, Abstract.Expression expr2) {
     return expr1.accept(new AbstractCompareVisitor(), expr2);
   }
 }

@@ -15,12 +15,11 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.*;
 import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.*;
 
-public class PrettyPrintingParserTest {
+public class PrettyPrintingParserTest extends ParserTestCase {
   private void testExpr(Abstract.Expression expected, Expression expr) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
     List<String> context = new ArrayList<>();
@@ -38,9 +37,9 @@ public class PrettyPrintingParserTest {
     Concrete.FunctionDefinition result = (Concrete.FunctionDefinition) parseDef(builder.toString());
     assertEquals(expected.getArguments().size(), result.getArguments().size());
     for (int i = 0; i < expected.getArguments().size(); ++i) {
-      assertTrue(compare(((Concrete.TypeArgument) expected.getArguments().get(i)).getType(), ((Concrete.TypeArgument) result.getArguments().get(i)).getType()));
+      assertTrue(compareAbstract(((Concrete.TypeArgument) expected.getArguments().get(i)).getType(), ((Concrete.TypeArgument) result.getArguments().get(i)).getType()));
     }
-    assertTrue(compare(expected.getResultType(), result.getResultType()));
+    assertTrue(compareAbstract(expected.getResultType(), result.getResultType()));
     assertNotNull(result.getTerm());
     assertEquals(expected.getTerm(), result.getTerm());
     assertEquals(expected.getArrow(), result.getArrow());

@@ -28,6 +28,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.*;
 
 public class ExpressionTest extends TypeCheckingTestCase {
@@ -132,7 +133,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     Concrete.Expression expr = cApps(cVar("f"), cSuc(), cApps(cVar("f"), cZero(), cSuc()));
     List<Binding> defs = new ArrayList<>();
     defs.add(new TypedBinding("f", Pi(Nat(), Pi(Nat(), Nat()))));
-    typeCheckExpr(defs, expr, null, 2);
+    assertThat(typeCheckExpr(defs, expr, null, 2), is(nullValue()));
   }
 
   @Test
@@ -146,7 +147,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
   public void tooManyLambdasError() {
     // \x y. x : Nat -> Nat
     Concrete.Expression expr = cLam(cargs(cName("x"), cName("y")), cVar("x"));
-    typeCheckExpr(expr, Pi(Nat(), Nat()), 1);
+    assertThat(typeCheckExpr(expr, Pi(Nat(), Nat()), 1), is(nullValue()));
   }
 
   @Test

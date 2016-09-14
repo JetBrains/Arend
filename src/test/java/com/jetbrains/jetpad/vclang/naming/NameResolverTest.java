@@ -12,7 +12,6 @@ import org.junit.Test;
 
 import java.util.Collections;
 
-import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.compare;
 import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertNotNull;
@@ -31,7 +30,7 @@ public class NameResolverTest extends NameResolverTestCase {
 
     Concrete.Expression result = resolveNamesExpr(namespace, "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)");
     assertNotNull(result);
-    assertTrue(compare(cBinOp(cBinOp(cNum(0), plus, cBinOp(cNum(1), mul, cNum(2))), plus, cBinOp(cBinOp(cNum(3), mul, cBinOp(cNum(4), mul, cNum(5))), mul, cBinOp(cNum(6), plus, cNum(7)))), result));
+    assertTrue(compareAbstract(cBinOp(cBinOp(cNum(0), plus, cBinOp(cNum(1), mul, cNum(2))), plus, cBinOp(cBinOp(cNum(3), mul, cBinOp(cNum(4), mul, cNum(5))), mul, cBinOp(cNum(6), plus, cNum(7)))), result));
   }
 
   @Test
