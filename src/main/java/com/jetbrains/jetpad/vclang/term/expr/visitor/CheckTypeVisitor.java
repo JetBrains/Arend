@@ -229,7 +229,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (conExpr != null && conExpr.getDefinition() == Prelude.PATH_CON) {
         result.expression = result.expression.normalize(NormalizeVisitor.Mode.WHNF);
         if (result.expression.getArguments().isEmpty()) {
-          // FIXME[errorformat]
           LocalTypeCheckingError error = new LocalTypeCheckingError("Expected an argument for 'path'", expr);
           expr.setWellTyped(myContext, Error(result.expression, error));
           myErrorReporter.report(error);

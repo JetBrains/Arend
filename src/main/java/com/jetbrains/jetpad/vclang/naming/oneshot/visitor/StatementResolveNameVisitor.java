@@ -65,7 +65,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
       final Abstract.Definition referredClass;
       if (stat.getModulePath() == null) {
         if (stat.getPath().isEmpty()) {
-          myErrorReporter.report(new GeneralError("Structure error: empty namespace command", stat));  // FIXME[error]: report proper
+          myErrorReporter.report(new GeneralError("Structure error: empty namespace command", stat));
           return null;
         }
         referredClass = myNameResolver.resolveDefinition(myScope, stat.getPath());
@@ -73,7 +73,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
         ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(stat.getModulePath());
         Abstract.ClassDefinition moduleClass = moduleNamespace != null ? moduleNamespace.getRegisteredClass() : null;
         if (moduleClass == null) {
-          myErrorReporter.report(new GeneralError("Module not found: " + stat.getModulePath(), stat));  // FIXME[error]: report proper
+          myErrorReporter.report(new GeneralError("Module not found: " + stat.getModulePath(), stat));
           return null;
         }
         if (stat.getPath().isEmpty()) {
@@ -84,7 +84,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
       }
 
       if (referredClass == null) {
-        myErrorReporter.report(new GeneralError("Class not found", stat));  // FIXME[error]: report proper
+        myErrorReporter.report(new GeneralError("Class not found", stat));
         return null;
       }
       myResolveListener.nsCmdResolved(stat, referredClass);

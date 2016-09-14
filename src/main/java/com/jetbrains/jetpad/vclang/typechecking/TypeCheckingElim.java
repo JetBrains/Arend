@@ -98,7 +98,7 @@ public class TypeCheckingElim {
     }, resultType);
 
     if (incompleteCoverageMessage.length() != 0) {
-      return new LocalTypeCheckingError("Coverage check failed for: " + incompleteCoverageMessage.toString(), def);  // FIXME[error] report proper
+      return new LocalTypeCheckingError("Coverage check failed for: " + incompleteCoverageMessage.toString(), def);
     } else {
       return null;
     }

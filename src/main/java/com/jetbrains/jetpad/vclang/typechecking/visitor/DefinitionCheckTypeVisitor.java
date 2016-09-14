@@ -664,7 +664,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         for (Map.Entry<ClassField, FieldSet.Implementation> entry : typeCheckedSuperClass.getFieldSet().getImplemented()) {
           if (!fieldSet.implementField(entry.getKey(), entry.getValue(), thisClassCall)) {
             classOk = false;
-            myErrorReporter.report(new LocalTypeCheckingError("Implementations of '" + entry.getKey().getName() + "' differ", aSuperClass.getSuperClass()));  // FIXME[error] report proper, especially in case of \\parent
+            myErrorReporter.report(new LocalTypeCheckingError("Implementations of '" + entry.getKey().getName() + "' differ", aSuperClass.getSuperClass()));
           }
         }
 
@@ -677,9 +677,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
             hidden.add((ClassField) definition);
           } else {
             if (definition == null) {
-              myErrorReporter.report(new LocalTypeCheckingError("Not in scope: " + identifier.getName(), identifier));  // FIXME[error] report proper, especially in case of \\parent
+              myErrorReporter.report(new LocalTypeCheckingError("Not in scope: " + identifier.getName(), identifier));
             } else {
-              myErrorReporter.report(new LocalTypeCheckingError("Expected a field", identifier));  // FIXME[error] report proper, especially in case of \\parent
+              myErrorReporter.report(new LocalTypeCheckingError("Expected a field", identifier));
             }
           }
         }
@@ -690,15 +690,15 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
           Definition definition = myState.getTypechecked(aDef);
           if (definition instanceof ClassField) {
             if (hidden.contains(definition)) {
-              myErrorReporter.report(new LocalTypeCheckingError("Field '" + pair.getFirstName() + "' is hidden", pair));  // FIXME[error] report proper, especially in case of \\parent
+              myErrorReporter.report(new LocalTypeCheckingError("Field '" + pair.getFirstName() + "' is hidden", pair));
             } else {
               renamings.put((ClassField) definition, pair);
             }
           } else {
             if (definition == null) {
-              myErrorReporter.report(new LocalTypeCheckingError("Not in scope: " + pair.getFirstName(), pair));  // FIXME[error] report proper, especially in case of \\parent
+              myErrorReporter.report(new LocalTypeCheckingError("Not in scope: " + pair.getFirstName(), pair));
             } else {
-              myErrorReporter.report(new LocalTypeCheckingError("Expected a field", pair));  // FIXME[error] report proper, especially in case of \\parent
+              myErrorReporter.report(new LocalTypeCheckingError("Expected a field", pair));
             }
           }
         }
@@ -718,7 +718,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
               aliases.put(field, alias);
             } else {
               if (oldAlias != alias) {
-                myErrorReporter.report(new LocalTypeCheckingError("Field '" + field.getName() + "' is already renamed to '" + oldAlias + "'", alias));  // FIXME[error] report proper
+                myErrorReporter.report(new LocalTypeCheckingError("Field '" + field.getName() + "' is already renamed to '" + oldAlias + "'", alias));
               }
             }
           }
