@@ -1,18 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
-import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
-import com.jetbrains.jetpad.vclang.typechecking.order.TypecheckingOrdering;
 import org.junit.Test;
-
-import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
-import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseClass;
-import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class InferenceTest extends TypeCheckingTestCase {
   @Test
@@ -23,16 +12,8 @@ public class InferenceTest extends TypeCheckingTestCase {
         "\\static \\function h : D 0 => con (\\case t\n" +
         "  | t => {?}\n" +
         "  | f => {?})";
-    Concrete.ClassDefinition classDefinition = parseClass("test", text);
-    resolveNamesClass(classDefinition, 0);
-    TypecheckingOrdering.typecheck(state, classDefinition, errorReporter);
-
-    assertErrorListSize(errorList, 2);
-    for (GeneralError error : errorList) {
-      assertTrue(error instanceof TypeCheckingError);
-      assertTrue(((TypeCheckingError) error).localError instanceof GoalError);
-      assertEquals(0, ((GoalError) ((TypeCheckingError) error).localError).context.size());
-    }
+    typeCheckClass(text, 0, 2);
+    assertThatErrorsAre(goal(0), goal(0));
   }
 
   @Test

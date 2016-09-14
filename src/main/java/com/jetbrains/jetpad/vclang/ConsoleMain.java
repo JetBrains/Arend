@@ -9,10 +9,7 @@ import com.jetbrains.jetpad.vclang.module.source.file.FileModuleLoader;
 import com.jetbrains.jetpad.vclang.module.source.file.FileModuleSourceId;
 import com.jetbrains.jetpad.vclang.module.utils.FileOperations;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.naming.namespace.SimpleModuleNamespaceProvider;
-import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
-import com.jetbrains.jetpad.vclang.naming.namespace.SimpleStaticNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.namespace.*;
 import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotNameResolver;
 import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotSourceInfoCollector;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -90,6 +87,9 @@ public class ConsoleMain {
     final ErrorFormatter errf = new ErrorFormatter(srcInfoCollector.sourceInfoProvider);
     final List<ModuleSourceId> loadedModules = new ArrayList<>();
     final List<Abstract.Definition> modulesToTypeCheck = new ArrayList<>();
+
+    final Namespace preludeNamespace = staticNsProvider.forDefinition(new Prelude.PreludeLoader(errorReporter).load());
+
     final ModuleLoader moduleLoader = new FileModuleLoader(sourceDir, errorReporter) {
       @Override
       public void loadingSucceeded(FileModuleSourceId module, Abstract.ClassDefinition abstractDefinition) {
@@ -97,7 +97,7 @@ public class ConsoleMain {
           DefinitionResolveStaticModVisitor rsmVisitor = new DefinitionResolveStaticModVisitor(new ConcreteStaticModListener());
           rsmVisitor.visitClass(abstractDefinition, true);
 
-          oneshotNameResolver.visitModule(abstractDefinition);
+          oneshotNameResolver.visitModule(abstractDefinition, preludeNamespace);
           srcInfoCollector.visitModule(module, abstractDefinition);
 
           modulesToTypeCheck.add(abstractDefinition);
@@ -107,7 +107,6 @@ public class ConsoleMain {
         System.out.println("[Loaded] " + module.getModulePath());
       }
     };
-    Prelude.PRELUDE = (SimpleNamespace) staticNsProvider.forDefinition(new Prelude.PreludeLoader(errorReporter).load());
 
     if (!errorReporter.getErrorList().isEmpty()) {
       for (GeneralError error : errorReporter.getErrorList()) {

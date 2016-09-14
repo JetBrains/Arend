@@ -1,10 +1,8 @@
 package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.naming.namespace.*;
-import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Abstract.ModuleCallExpression;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 
 import java.util.List;
@@ -96,13 +94,13 @@ public class NameResolver {
       }
       // TODO: throw MemberNotFoundError
       return ns != null ? ns.resolveName(defCall.getName()) : null;
-    } else if (defCall.getExpression() instanceof ModuleCallExpression) {
-      Abstract.Definition module = resolveModuleCall(currentScope, (ModuleCallExpression) defCall.getExpression());
-      if (module instanceof Abstract.ClassDefinition) {
-        ModuleNamespace moduleNamespace = myModuleNamespaceProvider.forModule((Abstract.ClassDefinition) module);
-        return moduleNamespace.resolveName(defCall.getName());
-      }
-      return null;
+//    } else if (defCall.getExpression() instanceof ModuleCallExpression) {
+//      Abstract.Definition module = resolveModuleCall(currentScope, (ModuleCallExpression) defCall.getExpression());
+//      if (module instanceof Abstract.ClassDefinition) {
+//        ModuleNamespace moduleNamespace = myModuleNamespaceProvider.forModule((Abstract.ClassDefinition) module);
+//        return moduleNamespace.resolveName(defCall.getName());
+//      }
+//      return null;
     } else {
       return null;
     }

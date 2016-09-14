@@ -5,9 +5,8 @@ import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.oneshot.visitor.DefinitionResolveNameVisitor;
-import com.jetbrains.jetpad.vclang.naming.scope.SubScope;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 
 public class OneshotNameResolver {
   private final ErrorReporter myErrorReporter;
@@ -24,9 +23,8 @@ public class OneshotNameResolver {
     myDynamicNsProvider = dynamicNsProvider;
   }
 
-  public void visitModule(Abstract.ClassDefinition module) {
-    /* TODO: remove the comment below */
-    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, /* new SubScope(Preprelude.PRE_PRELUDE, Prelude.PRELUDE) /**/ Prelude.PRELUDE, myNameResolver, myErrorReporter, myResolveListener);
+  public void visitModule(Abstract.ClassDefinition module, Scope globalScope) {
+    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, globalScope, myNameResolver, myErrorReporter, myResolveListener);
     visitor.visitClass(module, null);
   }
 }

@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
 import static org.junit.Assert.assertEquals;
 
 public class ExtensionsTest extends TypeCheckingTestCase {

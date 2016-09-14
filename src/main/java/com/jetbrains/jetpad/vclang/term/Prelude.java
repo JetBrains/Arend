@@ -21,10 +21,6 @@ import java.nio.file.Paths;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class Prelude extends SimpleNamespace {
-  public static FileModuleSourceId moduleID;
-
-  public static SimpleNamespace PRELUDE = new Prelude();
-
   public static DataDefinition INTERVAL;
   public static Constructor LEFT, RIGHT, ABSTRACT;
 

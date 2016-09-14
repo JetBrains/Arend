@@ -151,7 +151,7 @@ public class TypecheckingOrdering {
     return order(Collections.singletonList(definition));
   }
 
-  public static Result order(Collection<Abstract.Definition> definitions) {
+  public static Result order(Collection<? extends Abstract.Definition> definitions) {
     Queue<Abstract.Definition> queue = new LinkedList<>(definitions);
     TypecheckingOrdering orderer = new TypecheckingOrdering(queue);
     while (!queue.isEmpty()) {
@@ -192,11 +192,11 @@ public class TypecheckingOrdering {
     return result instanceof OKResult;
   }
 
-  public static boolean typecheck(TypecheckerState state, List<Abstract.Definition> definitions, ErrorReporter errorReporter, boolean isPrelude) {
+  public static boolean typecheck(TypecheckerState state, List<? extends Abstract.Definition> definitions, ErrorReporter errorReporter, boolean isPrelude) {
     return typecheck(state, definitions, errorReporter, new TypecheckedReporter.Dummy(), isPrelude);
   }
 
-  public static boolean typecheck(TypecheckerState state, List<Abstract.Definition> definitions, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, boolean isPrelude) {
+  public static boolean typecheck(TypecheckerState state, List<? extends Abstract.Definition> definitions, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, boolean isPrelude) {
     Result result = order(definitions);
     typecheck(state, result, errorReporter, typecheckedReporter, isPrelude);
     return result instanceof OKResult;

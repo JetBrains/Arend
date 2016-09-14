@@ -12,14 +12,13 @@ import org.junit.Test;
 
 import java.util.Collections;
 
-import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.*;
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.compare;
 import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class NameResolverTest {
+public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void parserInfix() {
     DependentLink parameters = param(true, vars("x", "y"), Nat());

@@ -339,7 +339,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
 
   @Test
   public void inferPathCon0() {
-    typeCheckDef("\\function f : 1 = 1 => path {\\lam _ => Nat} (\\lam _ => 0)", -1);
+    typeCheckDef("\\function f : 1 = 1 => path {\\lam _ => Nat} (\\lam _ => 0)", 1);
   }
 
   @Test

@@ -19,6 +19,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -43,7 +44,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   private Constructor bdCons;
   private Constructor bdSnoc;
 
-  public NormalizationTest() {
+  public NormalizationTest() throws IOException {
     DependentLink xPlus = param("x", Nat());
     DependentLink yPlus = param("y", Nat());
     plus = new FunctionDefinition(null, EmptyNamespace.INSTANCE, params(xPlus, yPlus), Nat(), null);

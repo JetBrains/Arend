@@ -1,108 +1,124 @@
 package com.jetbrains.jetpad.vclang.naming;
 
-import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.VclangTestCase;
+import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
+import com.jetbrains.jetpad.vclang.naming.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.oneshot.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.oneshot.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.naming.scope.SubScope;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteResolveListener;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.typechecking.PreludeTest;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.*;
-import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.Assert.assertThat;
 
-public class NameResolverTestCase extends PreludeTest {
-  public static Collection<? extends GeneralError> resolveNamesExpr(Scope parentScope, List<String> context, Concrete.Expression expression) {
-    ListErrorReporter errorReporter = new ListErrorReporter();
-    expression.accept(new ExpressionResolveNameVisitor(parentScope, context, DEFAULT_NAME_RESOLVER, errorReporter, new ConcreteResolveListener()), null);
-    return errorReporter.getErrorList();
+public class NameResolverTestCase extends VclangTestCase {
+  private void _resolveNamesExpr(Scope parentScope, List<String> context, Concrete.Expression expression) {
+    expression.accept(new ExpressionResolveNameVisitor(parentScope, context, nameResolver, errorReporter, new ConcreteResolveListener()), null);
   }
 
-  public static Collection<? extends GeneralError> resolveNamesExpr(Concrete.Expression expression) {
-    return resolveNamesExpr(Prelude.PRELUDE, new ArrayList<String>(), expression);
+  private void _resolveNamesExpr(Concrete.Expression expression) {
+    _resolveNamesExpr(globalScope, new ArrayList<String>(), expression);
   }
 
-  public static Concrete.Expression resolveNamesExpr(Scope parentScope, List<String> context, String text, int errors) {
+
+  private Concrete.Expression resolveNamesExpr(Scope parentScope, List<String> context, String text, int errors) {
     Concrete.Expression result = parseExpr(text);
-    Collection<? extends GeneralError> errorList = resolveNamesExpr(parentScope, context, result);
-    assertErrorListSize(errorList, errors);
+    _resolveNamesExpr(parentScope, context, result);
+    assertThat(errorList, hasSize(errors));
     return result;
   }
 
-  public static Concrete.Expression resolveNamesExpr(String text, int errors) {
-    Concrete.Expression result = parseExpr(text);
-    Collection<? extends GeneralError> errorList = resolveNamesExpr(result);
-    assertErrorListSize(errorList, errors);
-    return result;
-  }
-
-  public static Concrete.Expression resolveNamesExpr(Scope parentScope, String text, int errors) {
+  Concrete.Expression resolveNamesExpr(Scope parentScope, String text, int errors) {
     return resolveNamesExpr(parentScope, new ArrayList<String>(), text, errors);
   }
 
-  public static Concrete.Expression resolveNamesExpr(Scope parentScope, String text) {
+  private Concrete.Expression resolveNamesExpr(String text, int errors) {
+    return resolveNamesExpr(globalScope, text, errors);
+  }
+
+  Concrete.Expression resolveNamesExpr(Scope parentScope, String text) {
     return resolveNamesExpr(parentScope, text, 0);
   }
 
-  public static Concrete.Expression resolveNamesExpr(List<Binding> context, String text) {
+  protected Concrete.Expression resolveNamesExpr(List<Binding> context, String text) {
     List<String> names = new ArrayList<>(context.size());
     for (Binding binding : context) {
       names.add(binding.getName());
     }
-    return resolveNamesExpr(Prelude.PRELUDE, names, text, 0);
+    return resolveNamesExpr(globalScope, names, text, 0);
   }
 
-  public static Concrete.Expression resolveNamesExpr(String text) {
+  protected Concrete.Expression resolveNamesExpr(String text) {
     return resolveNamesExpr(text, 0);
   }
 
-  public static Collection<? extends GeneralError> resolveNamesDef(Concrete.Definition definition) {
-    ListErrorReporter errorReporter = new ListErrorReporter();
-    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(DEFAULT_STATIC_NS_PROVIDER, DEFAULT_DYNAMIC_NS_PROVIDER,
-        new SubScope(Prelude.PRELUDE, new SimpleNamespace(definition)), DEFAULT_NAME_RESOLVER, errorReporter, new ConcreteResolveListener());
+
+  private void _resolveNamesDef(Concrete.Definition definition) {
+    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(staticNsProvider, dynamicNsProvider,
+        new SubScope(globalScope, new SimpleNamespace(definition)), nameResolver, errorReporter, new ConcreteResolveListener());
     definition.accept(visitor, null);
-    return errorReporter.getErrorList();
   }
 
-  public static void resolveNamesDef(Concrete.Definition definition, int errors) {
-    Collection<? extends GeneralError> errorList = resolveNamesDef(definition);
-    assertErrorListSize(errorList, errors);
+  private void resolveNamesDef(Concrete.Definition definition, int errors) {
+    _resolveNamesDef(definition);
+    assertThat(errorList, hasSize(errors));
   }
 
-  public static Concrete.Definition resolveNamesDef(String text, int errors) {
+  private Concrete.Definition resolveNamesDef(String text, int errors) {
     Concrete.Definition result = parseDef(text);
     resolveNamesDef(result, errors);
     return result;
   }
 
-  public static Concrete.Definition resolveNamesDef(String text) {
+  protected Concrete.Definition resolveNamesDef(String text) {
     return resolveNamesDef(text, 0);
   }
 
-  public static void resolveNamesClass(Concrete.ClassDefinition classDefinition, int errors) {
+
+  protected void resolveNamesClass(Concrete.ClassDefinition classDefinition, int errors) {
     resolveNamesDef(classDefinition, errors);
   }
 
-  public static Concrete.ClassDefinition resolveNamesClass(String name, String text, int errors) {
+  protected Concrete.ClassDefinition resolveNamesClass(String name, String text, int errors) {
     Concrete.ClassDefinition classDefinition = parseClass(name, text);
     resolveNamesClass(classDefinition, errors);
     return classDefinition;
   }
 
-  public static Concrete.ClassDefinition resolveNamesClass(String text, int errors) {
+  protected Concrete.ClassDefinition resolveNamesClass(String text, int errors) {
     return resolveNamesClass("test", text, errors);
   }
 
-  public static Concrete.ClassDefinition resolveNamesClass(String name, String text) {
+  protected Concrete.ClassDefinition resolveNamesClass(String name, String text) {
     return resolveNamesClass(name, text, 0);
   }
+
+
+  public static Abstract.Definition get(Abstract.Definition ref, String path) {
+    for (String n : path.split("\\.")) {
+      Abstract.Definition oldref = ref;
+
+      ref = SimpleStaticNamespaceProvider.INSTANCE.forDefinition(oldref).resolveName(n);
+      if (ref != null) continue;
+
+      if (oldref instanceof Abstract.ClassDefinition) {
+        ref = SimpleDynamicNamespaceProvider.INSTANCE.forClass((Abstract.ClassDefinition) oldref).resolveName(n);
+      } else if (oldref instanceof ClassDefinition) {
+        ref = ((ClassDefinition) oldref).getInstanceNamespace().resolveName(n);
+      }
+      if (ref == null) return null;
+    }
+    return ref;
+  }
+
 }
