@@ -1,16 +1,16 @@
 package com.jetbrains.jetpad.vclang.module.output;
 
-import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
+import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
 
 import java.io.IOException;
 import java.util.List;
 
 public interface Output {
   class Header {
-    public final List<ModuleID> dependencies;
+    public final List<ModuleSourceId> dependencies;
 
-    public Header(List<ModuleID> dependencies) {
+    public Header(List<ModuleSourceId> dependencies) {
       this.dependencies = dependencies;
     }
   }

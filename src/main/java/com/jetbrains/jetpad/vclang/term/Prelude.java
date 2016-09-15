@@ -1,6 +1,9 @@
 package com.jetbrains.jetpad.vclang.term;
 
-import com.jetbrains.jetpad.vclang.module.FileModuleID;
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.module.source.file.FileModuleLoader;
+import com.jetbrains.jetpad.vclang.module.source.file.FileModuleSourceId;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
@@ -12,13 +15,12 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 
+import java.io.File;
+import java.nio.file.Paths;
+
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class Prelude extends SimpleNamespace {
-  public static FileModuleID moduleID;
-
-  public static SimpleNamespace PRELUDE = new Prelude();
-
   public static DataDefinition INTERVAL;
   public static Constructor LEFT, RIGHT, ABSTRACT;
 
@@ -110,5 +112,19 @@ public class Prelude extends SimpleNamespace {
       SET_TRUNC.setSorts(new SortMax(Sort.SetOfLevel(new Level(SET_TRUNC.getPolyParams().get(0)))));
       SET_TRUNC_PATH_CON = SET_TRUNC.getConstructor("truncS");
     }
+  }
+
+
+  public static class PreludeLoader extends FileModuleLoader {
+    public PreludeLoader(ErrorReporter errorReporter) {
+      super(new File(Paths.get("").toAbsolutePath().toFile(), "lib"), errorReporter);
+    }
+
+    public Abstract.ClassDefinition load() {
+      return load(new ModulePath("Prelude")).abstractDefinition;
+    }
+
+    @Override
+    protected void loadingSucceeded(FileModuleSourceId module, Abstract.ClassDefinition abstractDefinition) {}
   }
 }

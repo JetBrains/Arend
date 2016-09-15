@@ -17,10 +17,11 @@ import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.SolveEquationError;
-import com.jetbrains.jetpad.vclang.typechecking.error.SolveEquationsError;
-import com.jetbrains.jetpad.vclang.typechecking.error.SolveLevelEquationsError;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.*;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.SolveEquationError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.SolveEquationsError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.SolveLevelEquationsError;
 
 import java.util.*;
 
@@ -359,7 +360,7 @@ public class TwoStageEquations implements Equations {
 
   private boolean solve(InferenceVariable var, Expression expr) {
     if (expr.findBinding(var)) {
-      TypeCheckingError error = var.getErrorInfer(expr);
+      LocalTypeCheckingError error = var.getErrorInfer(expr);
       myVisitor.getErrorReporter().report(error);
       var.solve(this, new ErrorExpression(expr, error));
       return false;
@@ -369,7 +370,7 @@ public class TwoStageEquations implements Equations {
     Type actualType = expr.getType();
     if (!actualType.isLessOrEquals(expectedType.normalize(NormalizeVisitor.Mode.NF), this, var.getSourceNode())) {
       actualType = actualType.normalize(NormalizeVisitor.Mode.HUMAN_NF);
-      TypeCheckingError error = var.getErrorMismatch(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), actualType, expr);
+      LocalTypeCheckingError error = var.getErrorMismatch(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), actualType, expr);
       myVisitor.getErrorReporter().report(error);
       var.solve(this, new ErrorExpression(expr, error));
       return false;

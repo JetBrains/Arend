@@ -7,8 +7,9 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.error.CycleError;
-import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.CycleError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.DefinitionCheckTypeVisitor;
 
 import java.util.*;
@@ -165,7 +166,7 @@ public class TypecheckingOrdering {
     return order(Collections.singletonList(definition));
   }
 
-  public static Result order(Collection<Abstract.Definition> definitions) {
+  public static Result order(Collection<? extends Abstract.Definition> definitions) {
     Queue<Abstract.Definition> queue = new LinkedList<>(definitions);
     TypecheckingOrdering orderer = new TypecheckingOrdering(queue);
     while (!queue.isEmpty()) {
@@ -180,7 +181,7 @@ public class TypecheckingOrdering {
     if (result instanceof OKResult) {
       for (Map.Entry<Abstract.Definition, Abstract.ClassDefinition> entry : ((OKResult) result).order.entrySet()) {
         Abstract.Definition def = entry.getKey();
-        DefinitionCheckTypeVisitor.typeCheck(state, entry.getValue() == null ? null : (ClassDefinition) state.getTypechecked(entry.getValue()), def, new LocalErrorReporter(def, errorReporter), isPrelude);
+        DefinitionCheckTypeVisitor.typeCheck(state, entry.getValue() == null ? null : (ClassDefinition) state.getTypechecked(entry.getValue()), def, new ProxyErrorReporter(def, errorReporter), isPrelude);
         Definition typechecked = state.getTypechecked(def);
         if (typechecked == null || typechecked.hasErrors()) {
           typecheckedReporter.typecheckingFailed(def);
@@ -189,7 +190,8 @@ public class TypecheckingOrdering {
         }
       }
     } else if (result instanceof CycleResult) {
-      errorReporter.report(new CycleError(((CycleResult) result).cycle));
+      List<Abstract.Definition> cycle = ((CycleResult) result).cycle;
+      errorReporter.report(new TypeCheckingError(cycle.get(0), new CycleError(cycle)));
     } else {
       throw new IllegalStateException();
     }
@@ -205,11 +207,11 @@ public class TypecheckingOrdering {
     return result instanceof OKResult;
   }
 
-  public static boolean typecheck(TypecheckerState state, List<Abstract.Definition> definitions, ErrorReporter errorReporter, boolean isPrelude) {
+  public static boolean typecheck(TypecheckerState state, List<? extends Abstract.Definition> definitions, ErrorReporter errorReporter, boolean isPrelude) {
     return typecheck(state, definitions, errorReporter, new TypecheckedReporter.Dummy(), isPrelude);
   }
 
-  public static boolean typecheck(TypecheckerState state, List<Abstract.Definition> definitions, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, boolean isPrelude) {
+  public static boolean typecheck(TypecheckerState state, List<? extends Abstract.Definition> definitions, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, boolean isPrelude) {
     Result result = order(definitions);
     typecheck(state, result, errorReporter, typecheckedReporter, isPrelude);
     return result instanceof OKResult;

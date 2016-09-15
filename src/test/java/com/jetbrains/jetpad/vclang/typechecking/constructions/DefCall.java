@@ -18,7 +18,6 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -914,11 +913,11 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void resolvedConstructorTest() {
-      Concrete.ClassDefinition cd = resolveNamesClass("test",
+      Concrete.ClassDefinition cd = resolveNamesClass(
           "\\static \\function isequiv {A B : \\Type0} (f : A -> B) => 0\n" +
           "\\static \\function inP-isequiv (P : \\Prop) => isequiv (TrP P).inP");
       Concrete.DefineStatement lastDef = (Concrete.DefineStatement) cd.getStatements().get(((ArrayList) cd.getStatements()).size() - 1);
       ((Concrete.DefCallExpression) ((Concrete.AppExpression) ((Concrete.FunctionDefinition) lastDef.getDefinition()).getTerm()).getArgument().getExpression()).setResolvedDefinition(Prelude.PROP_TRUNC.getConstructor("inP").getAbstractDefinition());
-      typeCheckClass(cd, 0);
+      typeCheckClass(cd);
   }
 }

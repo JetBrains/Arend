@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.naming.namespace.EmptyNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -43,6 +42,10 @@ public abstract class Definition implements Referable {
     return defCall;
   }
 
+  public boolean typeHasErrors() {
+    return myHasErrors;
+  }
+
   public ClassDefinition getThisClass() {
     return myThisClass;
   }
@@ -53,11 +56,6 @@ public abstract class Definition implements Referable {
 
   public void setThisClass(ClassDefinition enclosingClass) {
     myThisClass = enclosingClass;
-  }
-
-  @Deprecated
-  public ResolvedName getResolvedName() {
-    throw new IllegalStateException();
   }
 
   public void setPolyParams(List<Binding> params) {

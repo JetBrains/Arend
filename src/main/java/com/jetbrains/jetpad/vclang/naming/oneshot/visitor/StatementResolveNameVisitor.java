@@ -11,7 +11,6 @@ import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.util.List;
 
@@ -40,10 +39,10 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
       myErrorReporter.report(new GeneralError("Non-static definition in a static context", stat));
       return null;
     } else if (stat.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC && flag == DefinitionResolveNameVisitor.Flag.MUST_BE_DYNAMIC) {
-      myErrorReporter.report(new TypeCheckingError("Static definitions are not allowed in this context", stat));
+      myErrorReporter.report(new GeneralError("Static definitions are not allowed in this context", stat));
       return null;
     } else if (stat.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC && stat.getDefinition() instanceof Abstract.ClassField) {
-      myErrorReporter.report(new TypeCheckingError("Abstract definitions cannot be static", stat));
+      myErrorReporter.report(new GeneralError("Abstract definitions cannot be static", stat));
       return null;
     }
     DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, myScope, myContext, myNameResolver, myErrorReporter, myResolveListener);
@@ -54,7 +53,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
   @Override
   public Void visitNamespaceCommand(Abstract.NamespaceCommandStatement stat, DefinitionResolveNameVisitor.Flag flag) {
     if (flag == DefinitionResolveNameVisitor.Flag.MUST_BE_DYNAMIC) {
-      myErrorReporter.report(new TypeCheckingError("Namespace commands are not allowed in this context", stat));
+      myErrorReporter.report(new GeneralError("Namespace commands are not allowed in this context", stat));
       return null;
     }
 
@@ -62,34 +61,37 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
       throw new UnsupportedOperationException();
     }
 
-    final Abstract.Definition referredClass;
-    if (stat.getModulePath() == null) {
-      if (stat.getPath().isEmpty()) {
-        myErrorReporter.report(new GeneralError("Structure error: empty namespace command", stat));  // FIXME[error]: report proper
-        return null;
-      }
-      referredClass = myNameResolver.resolveDefinition(myScope, stat.getPath());
-    } else {
-      ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(stat.getModulePath());
-      Abstract.ClassDefinition moduleClass = moduleNamespace != null ? moduleNamespace.getRegisteredClass() : null;
-      if (moduleClass == null) {
-        myErrorReporter.report(new GeneralError("Module not found: " + stat.getModulePath(), stat));  // FIXME[error]: report proper
-        return null;
-      }
-      if (stat.getPath().isEmpty()) {
-        referredClass = moduleNamespace.getRegisteredClass();
+    if (stat.getResolvedClass() == null) {
+      final Abstract.Definition referredClass;
+      if (stat.getModulePath() == null) {
+        if (stat.getPath().isEmpty()) {
+          myErrorReporter.report(new GeneralError("Structure error: empty namespace command", stat));
+          return null;
+        }
+        referredClass = myNameResolver.resolveDefinition(myScope, stat.getPath());
       } else {
-        referredClass = myNameResolver.resolveDefinition(myNameResolver.staticNamespaceFor(moduleClass), stat.getPath());
+        ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(stat.getModulePath());
+        Abstract.ClassDefinition moduleClass = moduleNamespace != null ? moduleNamespace.getRegisteredClass() : null;
+        if (moduleClass == null) {
+          myErrorReporter.report(new GeneralError("Module not found: " + stat.getModulePath(), stat));
+          return null;
+        }
+        if (stat.getPath().isEmpty()) {
+          referredClass = moduleNamespace.getRegisteredClass();
+        } else {
+          referredClass = myNameResolver.resolveDefinition(myNameResolver.staticNamespaceFor(moduleClass), stat.getPath());
+        }
       }
-    }
 
-    if (referredClass == null) {
-      myErrorReporter.report(new GeneralError("Class not found", stat));  // FIXME[error]: report proper
-      return null;
+      if (referredClass == null) {
+        myErrorReporter.report(new GeneralError("Class not found", stat));
+        return null;
+      }
+      myResolveListener.nsCmdResolved(stat, referredClass);
     }
 
     if (stat.getKind().equals(Abstract.NamespaceCommandStatement.Kind.OPEN)) {
-      myScope = new MergeScope(myScope, myNameResolver.staticNamespaceFor(referredClass));
+      myScope = new MergeScope(myScope, myNameResolver.staticNamespaceFor(stat.getResolvedClass()));
     }
 
     return null;

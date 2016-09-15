@@ -1,16 +1,9 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
-import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
-import com.jetbrains.jetpad.vclang.module.Root;
-import com.jetbrains.jetpad.vclang.module.SerializableModuleID;
 import com.jetbrains.jetpad.vclang.module.output.Output;
-import com.jetbrains.jetpad.vclang.naming.ModuleResolvedName;
-import com.jetbrains.jetpad.vclang.naming.Namespace;
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
+import com.jetbrains.jetpad.vclang.module.source.SerializableModuleSourceId;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
@@ -30,16 +23,14 @@ import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeDeserialization;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.io.*;
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
 public class ModuleDeserialization {
-  private SerializableModuleID myModuleID;
+  private SerializableModuleSourceId myModuleID;
   private List<Binding> myBindingMap;
   private final ElimTreeDeserialization myElimTreeDeserialization;
 
@@ -47,27 +38,27 @@ public class ModuleDeserialization {
     myElimTreeDeserialization = new ElimTreeDeserialization(this);
   }
 
-  public ModuleLoader.Result readFile(File file, SerializableModuleID module) throws IOException {
+  public ModuleLoader.Result readFile(File file, SerializableModuleSourceId module) throws IOException {
     return readStream(new DataInputStream(new BufferedInputStream(new FileInputStream(file))), module);
   }
 
-  public static void readStubsFromFile(File file, SerializableModuleID module) throws IOException {
+  public static void readStubsFromFile(File file, SerializableModuleSourceId module) throws IOException {
     readStubsFromStream(new DataInputStream(new BufferedInputStream(new FileInputStream(file))), module);
   }
 
-  public static void readStubsFromStream(DataInputStream stream, SerializableModuleID moduleID) throws IOException {
+  public static void readStubsFromStream(DataInputStream stream, SerializableModuleSourceId moduleID) throws IOException {
     verifySignature(stream);
     readHeader(stream, moduleID);
     stream.readInt();
-    Root.addModule(moduleID, new NamespaceMember(new Namespace(moduleID), null, null));
-    readDefIndices(stream, true, moduleID);
+    //Root.addModule(moduleID, new NamespaceMember(new Namespace(moduleID), null, null));  // FIXME[serial]
+    //readDefIndices(stream, true, moduleID);  // FIXME[serial]
   }
 
-  public static Output.Header readHeaderFromFile(File file, SerializableModuleID moduleID) throws IOException {
+  public static Output.Header readHeaderFromFile(File file, SerializableModuleSourceId moduleID) throws IOException {
     return readHeaderFromStream(new DataInputStream(new BufferedInputStream(new FileInputStream(file))), moduleID);
   }
 
-  public static Output.Header readHeaderFromStream(DataInputStream stream, SerializableModuleID moduleID) throws IOException {
+  public static Output.Header readHeaderFromStream(DataInputStream stream, SerializableModuleSourceId moduleID) throws IOException {
     verifySignature(stream);
     return readHeader(stream, moduleID);
   }
@@ -82,8 +73,8 @@ public class ModuleDeserialization {
     return result;
   }
 
-  private static Output.Header readHeader(DataInputStream stream, SerializableModuleID moduleID) throws IOException {
-    Output.Header result = new Output.Header(new ArrayList<ModuleID>());
+  private static Output.Header readHeader(DataInputStream stream, SerializableModuleSourceId moduleID) throws IOException {
+    Output.Header result = new Output.Header(new ArrayList<ModuleSourceId>());
     int size = stream.readInt();
     for (int i = 0; i < size; i++) {
       result.dependencies.add(moduleID.deserialize(stream));
@@ -92,7 +83,9 @@ public class ModuleDeserialization {
     return result;
   }
 
-  private static Definition readDefinition(DataInputStream stream, ResolvedName rn, boolean dryRun) throws IOException {
+  private static Definition readDefinition(DataInputStream stream, boolean dryRun) throws IOException {
+    // FIXME[serial]
+    /*
     int codeIdx = stream.readInt();
     if (codeIdx >= ModuleSerialization.DefinitionCodes.values().length)
       throw new IncorrectFormat();
@@ -116,16 +109,16 @@ public class ModuleDeserialization {
     if (dryRun)
       return null;
 
-    /* FIXME[serial]
     Definition definition = code.toDefinition(rn, precedence);
     if (rn.getName().equals("\\parent"))
       ((ClassDefinition) rn.getParent().toDefinition()).addField((ClassField) definition);
     else {
       rn.toNamespaceMember().definition = definition;
     }
-    */
     Definition definition = null;
     return definition;
+    */
+    return null;
   }
 
   private static void verifySignature(DataInputStream stream) throws IOException {
@@ -140,6 +133,8 @@ public class ModuleDeserialization {
     }
   }
 
+  // FIXME[serial]
+  /*
   private static ResolvedName fullPathToResolvedName(List<String> path, ModuleID moduleID) {
     ResolvedName result = new ModuleResolvedName(moduleID);
     for (String aPath : path) {
@@ -147,8 +142,11 @@ public class ModuleDeserialization {
     }
     return result;
   }
+  */
 
-  private static Map<Integer, Definition> readDefIndices(DataInputStream stream, boolean createStubs, SerializableModuleID moduleID) throws IOException {
+  // FIXME[serial]
+  /*
+  private static Map<Integer, Definition> readDefIndices(DataInputStream stream, boolean createStubs, SerializableModuleSourceId moduleID) throws IOException {
     Map<Integer, Definition> result = new HashMap<>();
 
     int size = stream.readInt();
@@ -170,17 +168,19 @@ public class ModuleDeserialization {
 
     return createStubs ? null : result;
   }
+  */
 
-  public ModuleLoader.Result readStream(DataInputStream stream, SerializableModuleID moduleID) throws IOException {
+  public ModuleLoader.Result readStream(DataInputStream stream, SerializableModuleSourceId moduleID) throws IOException {
     myModuleID = moduleID;
     myBindingMap = new ArrayList<>();
     verifySignature(stream);
     readHeader(stream, moduleID);
     int errorsNumber = stream.readInt();
-    Map<Integer, Definition> definitionMap = readDefIndices(stream, false, moduleID);
+    Map<Integer, Definition> definitionMap = null /*readDefIndices(stream, false, moduleID)*/;  // FIXME[serial]
     ClassDefinition moduleRoot = (ClassDefinition) definitionMap.get(0);
     deserializeDefinition(stream, definitionMap);
-    return new ModuleLoader.Result(null, moduleRoot, false, errorsNumber);
+    //return new ModuleLoader.Result(null, moduleRoot, false, errorsNumber);
+    return null; // FIXME[serial]
   }
 
   private Definition deserializeDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
@@ -488,7 +488,7 @@ public class ModuleDeserialization {
         return new UniverseExpression(readSort(stream, definitionMap));
       }
       case 9: {
-        return Error(stream.readBoolean() ? readExpression(stream, definitionMap) : null, new TypeCheckingError(myModuleID + " deserialization error"));  // FIXME[error] bad error
+        return null /*Error(stream.readBoolean() ? readExpression(stream, definitionMap) : null, new LocalTypeCheckingError(myModuleID + " deserialization error"))*/;  // FIXME[serial]
       }
       case 10: {
         int size = stream.readInt();

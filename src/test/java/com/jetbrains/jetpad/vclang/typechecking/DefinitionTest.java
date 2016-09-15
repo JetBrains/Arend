@@ -1,7 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
-import com.jetbrains.jetpad.vclang.module.Root;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
@@ -11,8 +9,8 @@ import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
-import org.junit.Before;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor.Result;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -20,24 +18,14 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListIsEmpty;
-import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 
 public class DefinitionTest extends TypeCheckingTestCase {
-  ListErrorReporter errorReporter;
-
-  @Before
-  public void initialize() {
-    Root.initialize();
-    errorReporter = new ListErrorReporter();
-  }
-
   @Test
   public void function() {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f : Nat => 0");
     assertNotNull(typedDef);
-    assertErrorListIsEmpty(errorReporter.getErrorList());
     assertFalse(typedDef.hasErrors());
   }
 
@@ -45,7 +33,6 @@ public class DefinitionTest extends TypeCheckingTestCase {
   public void functionUntyped() {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f => 0");
     assertNotNull(typedDef);
-    assertErrorListIsEmpty(errorReporter.getErrorList());
     assertFalse(typedDef.hasErrors());
     assertEquals(Nat(), typedDef.getType());
   }
@@ -54,7 +41,6 @@ public class DefinitionTest extends TypeCheckingTestCase {
   public void functionWithArgs() {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f (x : Nat) (y : Nat -> Nat) => y");
     assertNotNull(typedDef);
-    assertErrorListIsEmpty(errorReporter.getErrorList());
     assertFalse(typedDef.hasErrors());
     assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), typedDef.getType());
   }
@@ -83,7 +69,6 @@ public class DefinitionTest extends TypeCheckingTestCase {
     parameters2.append(param(Apps(Reference(I), Reference(a), Reference(parameters2.getFirst()))));
 
     assertNotNull(typedDef);
-    assertErrorListIsEmpty(errorReporter.getErrorList());
     assertFalse(typedDef.hasErrors());
     assertEquals(Pi(parameters.getFirst(), Universe(0)), typedDef.getType().toExpression());
     assertEquals(2, typedDef.getConstructors().size());
@@ -128,7 +113,6 @@ public class DefinitionTest extends TypeCheckingTestCase {
     parameters2.append(param(Reference(parameters2.getFirst())));
 
     assertNotNull(typedDef);
-    assertErrorListIsEmpty(errorReporter.getErrorList());
     assertFalse(typedDef.hasErrors());
     assertEquals(Pi(A, Universe(6, 7)), typedDef.getType().toExpression());
     assertEquals(2, typedDef.getConstructors().size());
@@ -151,10 +135,8 @@ public class DefinitionTest extends TypeCheckingTestCase {
     Constructor con = def.getConstructor("con");
     Concrete.Expression expr = cApps(cDefCall(null, con), cNat(), cZero(), cZero());
 
-    CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(state, new ArrayList<Binding>(), errorReporter).build().checkType(expr, null);
-    assertErrorListSize(errorReporter.getErrorList(), 0);
-    assertNotNull(result);
-    assertEquals(Apps(DataCall(def), Nat()), result.type);
+    Result result = typeCheckExpr(expr, null);
+    assertThat(result.type, is((Type) Apps(DataCall(def), Nat())));
   }
 
   @Test
@@ -166,10 +148,8 @@ public class DefinitionTest extends TypeCheckingTestCase {
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(Apps(DataCall(def), Pi(Nat(), Nat())), Nat())));
 
-    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(state, localContext, errorReporter).build(), null);
-    assertErrorListSize(errorReporter.getErrorList(), 0);
-    assertNotNull(result);
-    assertEquals(Nat(), result.type);
+    Result result = typeCheckExpr(localContext, expr, null);
+    assertThat(result.type, is((Type) Nat()));
   }
 
   @Test
@@ -181,10 +161,8 @@ public class DefinitionTest extends TypeCheckingTestCase {
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(Pi(Nat(), Apps(DataCall(def), Nat())), Pi(Nat(), Nat()))));
 
-    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(state, localContext, errorReporter).build(), null);
-    assertErrorListSize(errorReporter.getErrorList(), 0);
-    assertNotNull(result);
-    assertEquals(Pi(Nat(), Nat()), result.type);
+    Result result = typeCheckExpr(localContext, expr, null);
+    assertThat(result.type, is((Type) Pi(Nat(), Nat())));
   }
 
   @Test

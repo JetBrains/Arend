@@ -7,8 +7,6 @@ import java.util.*;
 import static com.jetbrains.jetpad.vclang.term.Abstract.DefineStatement.StaticMod.STATIC;
 
 public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider {
-  public static final DynamicNamespaceProvider INSTANCE = new SimpleDynamicNamespaceProvider();
-
   private final Map<Abstract.ClassDefinition, SimpleNamespace> classCache = new HashMap<>();
 
   @Override

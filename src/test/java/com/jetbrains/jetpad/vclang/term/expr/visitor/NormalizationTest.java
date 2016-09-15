@@ -18,6 +18,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -41,7 +42,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   private Constructor bdCons;
   private Constructor bdSnoc;
 
-  public NormalizationTest() {
+  public NormalizationTest() throws IOException {
     DependentLink xPlus = param("x", Nat());
     DependentLink yPlus = param("y", Nat());
     plus = new FunctionDefinition(null, EmptyNamespace.INSTANCE, params(xPlus, yPlus), Nat(), null);
@@ -213,14 +214,14 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizeLet1() {
     // normalize (\let | x => zero \in \let | y = suc \in y x) = 1
-    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet("x", cZero())), cLet(clets(clet("y", cSuc())), cApps(cVar("y"), cVar("x")))), null, 0);
+    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet("x", cZero())), cLet(clets(clet("y", cSuc())), cApps(cVar("y"), cVar("x")))), null);
     assertEquals(Suc(Zero()), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeLet2() {
     // normalize (\let | x => suc \in \let | y = zero \in x y) = 1
-    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet("x", cSuc())), cLet(clets(clet("y", cZero())), cApps(cVar("x"), cVar("y")))), null, 0);
+    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet("x", cSuc())), cLet(clets(clet("y", cZero())), cApps(cVar("x"), cVar("y")))), null);
     assertEquals(Suc(Zero()), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -248,7 +249,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
         cClause(cPatterns(cConPattern(Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cUniverse(0)),
         cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern(null), true, false))), Abstract.Definition.Arrow.RIGHT, cUniverse(1))
     );
-    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cUniverse(2), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar("x"), cZero())), null, 0);
+    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cUniverse(2), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar("x"), cZero())), null);
     assertEquals(Universe(0), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 

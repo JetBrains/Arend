@@ -73,6 +73,7 @@ public class FunctionDefinition extends Definition implements Function {
     myResultType = resultType;
   }
 
+  @Override
   public boolean typeHasErrors() {
     return myTypeHasErrors;
   }

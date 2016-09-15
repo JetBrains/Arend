@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term;
 
-import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
@@ -263,6 +262,7 @@ public final class Abstract {
   }
 
   public interface ReferableSourceNode extends SourceNode {
+    String getName();
   }
 
   public interface Binding extends ReferableSourceNode {
@@ -296,7 +296,6 @@ public final class Abstract {
     }
     Precedence DEFAULT_PRECEDENCE = new Precedence(Associativity.RIGHT_ASSOC, (byte) 10);
 
-    String getName();
     Precedence getPrecedence();
   }
 
@@ -387,7 +386,6 @@ public final class Abstract {
     Kind getKind();
     Collection<? extends SuperClass> getSuperClasses();
     Collection<? extends Statement> getStatements();
-    ModuleID getModuleID();
   }
 
   public interface PatternArgument extends SourceNode {

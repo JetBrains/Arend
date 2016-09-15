@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
@@ -14,6 +13,7 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
+import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import com.jetbrains.jetpad.vclang.typechecking.normalization.EvalNormalizer;
@@ -67,15 +67,15 @@ public abstract class Expression implements PrettyPrintable, Type {
 
   @Override
   public boolean findBinding(Referable binding) {
-    return accept(new FindBindingVisitor(Collections.singleton(binding)), null);
+    return this.<Void, Boolean>accept(new FindBindingVisitor(Collections.singleton(binding)), null);
   }
 
   public boolean findBinding(Set<? extends Referable> bindings) {
-    return accept(new FindBindingVisitor(bindings), null);
+    return this.<Void, Boolean>accept(new FindBindingVisitor(bindings), null);
   }
 
   @Override
-  public Expression strip(Set<Binding> bounds, ErrorReporter errorReporter) {
+  public Expression strip(Set<Binding> bounds, LocalErrorReporter errorReporter) {
     return accept(new StripVisitor(bounds, errorReporter), null);
   }
 

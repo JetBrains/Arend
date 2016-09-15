@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
 import static org.junit.Assert.assertEquals;
 
 public class ImplementTest extends TypeCheckingTestCase {
@@ -25,7 +24,7 @@ public class ImplementTest extends TypeCheckingTestCase {
 
   @Test
   public void implementInFunctionError() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\class X {\n" +
         "  \\abstract x : Nat\n" +
         "  \\static \\function f => 0\n" +
@@ -36,7 +35,7 @@ public class ImplementTest extends TypeCheckingTestCase {
 
   @Test
   public void implementUnknownError() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\class A {\n" +
         "  \\abstract a : Nat\n" +
         "}\n" +
@@ -211,7 +210,7 @@ public class ImplementTest extends TypeCheckingTestCase {
 
   @Test
   public void implementHidden2() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\class A {\n" +
         "  \\abstract A : \\Set0\n" +
         "  \\abstract a : A\n" +

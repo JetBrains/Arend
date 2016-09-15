@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.term.context.binding.inference;
 
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
 public class DerivedInferenceVariable extends InferenceVariable {
   private final InferenceVariable myVar;
@@ -13,12 +13,12 @@ public class DerivedInferenceVariable extends InferenceVariable {
   }
 
   @Override
-  public TypeCheckingError getErrorInfer(Expression... candidates) {
+  public LocalTypeCheckingError getErrorInfer(Expression... candidates) {
     return getErrorInfer(candidates);
   }
 
   @Override
-  public TypeCheckingError getErrorMismatch(Expression expectedType, Type actualType, Expression candidate) {
+  public LocalTypeCheckingError getErrorMismatch(Expression expectedType, Type actualType, Expression candidate) {
     return myVar.getErrorMismatch(expectedType, actualType, candidate);
   }
 }

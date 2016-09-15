@@ -1,13 +1,13 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
 public class ErrorExpression extends Expression {
   private final Expression myExpr;
-  private final TypeCheckingError myError;
+  private final LocalTypeCheckingError myError;
 
-  public ErrorExpression(Expression expr, TypeCheckingError error) {
+  public ErrorExpression(Expression expr, LocalTypeCheckingError error) {
     myExpr = expr;
     myError = error;
   }
@@ -16,7 +16,7 @@ public class ErrorExpression extends Expression {
     return myExpr;
   }
 
-  public TypeCheckingError getError() {
+  public LocalTypeCheckingError getError() {
     return myError;
   }
 

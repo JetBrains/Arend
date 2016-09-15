@@ -1,13 +1,12 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 
+import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
-
-public class TypeClassesNameResolver {
+public class TypeClassesNameResolver extends NameResolverTestCase {
   @Test
   public void resolveNames() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\static \\class X {\n" +
         "  \\abstract T : \\Type0\n" +
         "  \\abstract f : \\Type0\n" +
@@ -18,7 +17,7 @@ public class TypeClassesNameResolver {
 
   @Test
   public void resolveNames2() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\static \\class X {\n" +
         "  \\abstract T : \\Type0\n" +
         "  \\abstract f : \\Type0\n" +
@@ -29,7 +28,7 @@ public class TypeClassesNameResolver {
 
   @Test
   public void resolveNamesNonImplicit() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\static \\class X {\n" +
         "  \\abstract T : \\Type0\n" +
         "  \\abstract f : \\Type0\n" +
@@ -41,7 +40,7 @@ public class TypeClassesNameResolver {
 
   @Test
   public void resolveNamesDuplicate() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\static \\class X {\n" +
         "  \\abstract T : \\Type0\n" +
         "  \\abstract f : \\Type0\n" +
@@ -56,7 +55,7 @@ public class TypeClassesNameResolver {
 
   @Test
   public void resolveNamesInner() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\static \\class X {\n" +
         "  \\static \\class Z {\n" +
         "    \\abstract T : \\Type0\n" +
@@ -69,7 +68,7 @@ public class TypeClassesNameResolver {
 
   @Test
   public void resolveNamesRecursive() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\static \\class X {\n" +
         "  \\static \\class Z {\n" +
         "    \\abstract T : \\Type0\n" +

@@ -1,6 +1,8 @@
-package com.jetbrains.jetpad.vclang.module;
+package com.jetbrains.jetpad.vclang.module.source.file;
 
 
+import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.module.source.SerializableModuleSourceId;
 import com.jetbrains.jetpad.vclang.module.utils.FileOperations;
 
 import java.io.DataInputStream;
@@ -10,10 +12,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FileModuleID implements SerializableModuleID {
+public class FileModuleSourceId implements SerializableModuleSourceId {
   private final ModulePath myModulePath;
 
-  public FileModuleID(ModulePath modulePath) {
+  public FileModuleSourceId(ModulePath modulePath) {
     myModulePath = modulePath;
   }
 
@@ -32,18 +34,18 @@ public class FileModuleID implements SerializableModuleID {
   }
 
   @Override
-  public FileModuleID deserialize(DataInputStream stream) throws IOException {
+  public FileModuleSourceId deserialize(DataInputStream stream) throws IOException {
     int pathSize = stream.readInt();
     List<String> path = new ArrayList<>(pathSize);
     for (int i = 0; i < pathSize; i++) {
       path.add(stream.readUTF());
     }
-    return new FileModuleID(new ModulePath(path));
+    return new FileModuleSourceId(new ModulePath(path));
   }
 
   @Override
   public boolean equals(Object o) {
-    return o == this || o instanceof FileModuleID && ((FileModuleID) o).myModulePath.equals(myModulePath);
+    return o == this || o instanceof FileModuleSourceId && ((FileModuleSourceId) o).myModulePath.equals(myModulePath);
   }
 
   @Override

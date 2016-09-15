@@ -199,9 +199,7 @@ public class ComparisonTest extends TypeCheckingTestCase {
     Expression type = Pi(param(Nat()), Apps(DataCall(Prelude.PATH, new Level(0), new Level(1)),
             Lam(param("i", DataCall(Prelude.INTERVAL)), Nat()), Zero(), Zero()));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(param(type), type));
-    assertNotNull(result1);
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(param(type), type));
-    assertNotNull(result2);
     assertEquals(result2.expression, result1.expression);
   }
 
@@ -211,9 +209,7 @@ public class ComparisonTest extends TypeCheckingTestCase {
     Expression type = Apps(DataCall(Prelude.PATH, new Level(0), new Level(1)),
             Lam(param("i", DataCall(Prelude.INTERVAL)), Pi(param(Nat()), Nat())), Lam(x, Reference(x)), Lam(x, Reference(x)));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a => path (\\lam i x => (a @ i) x)", Pi(param(type), type));
-    assertNotNull(result1);
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(param(type), type));
-    assertNotNull(result2);
     assertEquals(result2.expression, result1.expression);
   }
 }

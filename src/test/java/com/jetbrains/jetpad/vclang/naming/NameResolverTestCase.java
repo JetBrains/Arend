@@ -1,108 +1,148 @@
 package com.jetbrains.jetpad.vclang.naming;
 
-import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
-import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.naming.namespace.*;
+import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotNameResolver;
 import com.jetbrains.jetpad.vclang.naming.oneshot.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.oneshot.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.naming.scope.SubScope;
+import com.jetbrains.jetpad.vclang.parser.ParserTestCase;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteResolveListener;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.typechecking.PreludeTest;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.*;
-import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertThat;
 
-public class NameResolverTestCase extends PreludeTest {
-  public static Collection<? extends GeneralError> resolveNamesExpr(Scope parentScope, List<String> context, Concrete.Expression expression) {
-    ListErrorReporter errorReporter = new ListErrorReporter();
-    expression.accept(new ExpressionResolveNameVisitor(parentScope, context, DEFAULT_NAME_RESOLVER, errorReporter, new ConcreteResolveListener()), null);
-    return errorReporter.getErrorList();
+public abstract class NameResolverTestCase extends ParserTestCase {
+  @SuppressWarnings("StaticNonFinalField")
+  private static Abstract.ClassDefinition LOADED_PRELUDE = null;
+
+  private final SimpleModuleNamespaceProvider  moduleNsProvider  = new SimpleModuleNamespaceProvider();
+  private final SimpleStaticNamespaceProvider  staticNsProvider  = new SimpleStaticNamespaceProvider();
+  private final SimpleDynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
+  private final NameResolver nameResolver = new NameResolver(moduleNsProvider, staticNsProvider, dynamicNsProvider);
+
+  protected Abstract.ClassDefinition prelude = null;
+  private Scope globalScope = new EmptyNamespace();
+
+  protected final void loadPrelude() {
+    if (prelude != null) throw new IllegalStateException();
+
+    if (LOADED_PRELUDE == null) {
+      ListErrorReporter internalErrorReporter = new ListErrorReporter();
+      LOADED_PRELUDE = new Prelude.PreludeLoader(internalErrorReporter).load();
+      assertThat("Failed loading Prelude", internalErrorReporter.getErrorList(), containsErrors(0));
+
+      OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(internalErrorReporter, new ConcreteResolveListener(), moduleNsProvider, staticNsProvider, dynamicNsProvider);
+      oneshotNameResolver.visitModule(LOADED_PRELUDE, globalScope);
+      assertThat("Failed resolving names in Prelude", internalErrorReporter.getErrorList(), containsErrors(0));
+    }
+
+    prelude = LOADED_PRELUDE;
+    globalScope = staticNsProvider.forDefinition(prelude);
+
+    moduleNsProvider.registerModule(new ModulePath("Prelude"), prelude);
   }
 
-  public static Collection<? extends GeneralError> resolveNamesExpr(Concrete.Expression expression) {
-    return resolveNamesExpr(Prelude.PRELUDE, new ArrayList<String>(), expression);
+  protected final void loadModule(ModulePath modulePath, Abstract.ClassDefinition module) {
+    ListErrorReporter internalErrorReporter = new ListErrorReporter();
+    OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(internalErrorReporter, new ConcreteResolveListener(), moduleNsProvider, staticNsProvider, dynamicNsProvider);
+    oneshotNameResolver.visitModule(module, globalScope);
+    assertThat("Failed loading helper module", internalErrorReporter.getErrorList(), containsErrors(0));
+
+    moduleNsProvider.registerModule(modulePath, module);
   }
 
-  public static Concrete.Expression resolveNamesExpr(Scope parentScope, List<String> context, String text, int errors) {
-    Concrete.Expression result = parseExpr(text);
-    Collection<? extends GeneralError> errorList = resolveNamesExpr(parentScope, context, result);
-    assertErrorListSize(errorList, errors);
-    return result;
+
+  private Concrete.Expression resolveNamesExpr(Scope parentScope, List<String> context, String text, int errors) {
+    Concrete.Expression expression = parseExpr(text);
+    assertThat(expression, is(notNullValue()));
+
+    expression.accept(new ExpressionResolveNameVisitor(parentScope, context, nameResolver, errorReporter, new ConcreteResolveListener()), null);
+    assertThat(errorList, containsErrors(errors));
+    return expression;
   }
 
-  public static Concrete.Expression resolveNamesExpr(String text, int errors) {
-    Concrete.Expression result = parseExpr(text);
-    Collection<? extends GeneralError> errorList = resolveNamesExpr(result);
-    assertErrorListSize(errorList, errors);
-    return result;
-  }
-
-  public static Concrete.Expression resolveNamesExpr(Scope parentScope, String text, int errors) {
+  Concrete.Expression resolveNamesExpr(Scope parentScope, String text, int errors) {
     return resolveNamesExpr(parentScope, new ArrayList<String>(), text, errors);
   }
 
-  public static Concrete.Expression resolveNamesExpr(Scope parentScope, String text) {
+  Concrete.Expression resolveNamesExpr(Scope parentScope, String text) {
     return resolveNamesExpr(parentScope, text, 0);
   }
 
-  public static Concrete.Expression resolveNamesExpr(List<Binding> context, String text) {
+  protected Concrete.Expression resolveNamesExpr(List<Binding> context, String text) {
     List<String> names = new ArrayList<>(context.size());
     for (Binding binding : context) {
       names.add(binding.getName());
     }
-    return resolveNamesExpr(Prelude.PRELUDE, names, text, 0);
+    return resolveNamesExpr(globalScope, names, text, 0);
   }
 
-  public static Concrete.Expression resolveNamesExpr(String text) {
-    return resolveNamesExpr(text, 0);
+  protected Concrete.Expression resolveNamesExpr(String text) {
+    return resolveNamesExpr(new ArrayList<Binding>(), text);
   }
 
-  public static Collection<? extends GeneralError> resolveNamesDef(Concrete.Definition definition) {
-    ListErrorReporter errorReporter = new ListErrorReporter();
-    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(DEFAULT_STATIC_NS_PROVIDER, DEFAULT_DYNAMIC_NS_PROVIDER,
-        new SubScope(Prelude.PRELUDE, new SimpleNamespace(definition)), DEFAULT_NAME_RESOLVER, errorReporter, new ConcreteResolveListener());
+
+  private void resolveNamesDef(Concrete.Definition definition, int errors) {
+    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(staticNsProvider, dynamicNsProvider,
+        new SubScope(globalScope, new SimpleNamespace(definition)), nameResolver, errorReporter, new ConcreteResolveListener());
     definition.accept(visitor, null);
-    return errorReporter.getErrorList();
+    assertThat(errorList, containsErrors(errors));
   }
 
-  public static void resolveNamesDef(Concrete.Definition definition, int errors) {
-    Collection<? extends GeneralError> errorList = resolveNamesDef(definition);
-    assertErrorListSize(errorList, errors);
-  }
-
-  public static Concrete.Definition resolveNamesDef(String text, int errors) {
+  Concrete.Definition resolveNamesDef(String text, int errors) {
     Concrete.Definition result = parseDef(text);
     resolveNamesDef(result, errors);
     return result;
   }
 
-  public static Concrete.Definition resolveNamesDef(String text) {
+  protected Concrete.Definition resolveNamesDef(String text) {
     return resolveNamesDef(text, 0);
   }
 
-  public static void resolveNamesClass(Concrete.ClassDefinition classDefinition, int errors) {
+
+  private void resolveNamesClass(Concrete.ClassDefinition classDefinition, int errors) {
     resolveNamesDef(classDefinition, errors);
   }
 
-  public static Concrete.ClassDefinition resolveNamesClass(String name, String text, int errors) {
-    Concrete.ClassDefinition classDefinition = parseClass(name, text);
+  // FIXME[tests] should be package-private
+  protected Concrete.ClassDefinition resolveNamesClass(String text, int errors) {
+    Concrete.ClassDefinition classDefinition = parseClass("$testClass$", text);
     resolveNamesClass(classDefinition, errors);
     return classDefinition;
   }
 
-  public static Concrete.ClassDefinition resolveNamesClass(String text, int errors) {
-    return resolveNamesClass("test", text, errors);
+  protected Concrete.ClassDefinition resolveNamesClass(String text) {
+    return resolveNamesClass(text, 0);
   }
 
-  public static Concrete.ClassDefinition resolveNamesClass(String name, String text) {
-    return resolveNamesClass(name, text, 0);
+
+  public Abstract.Definition get(Abstract.Definition ref, String path) {
+    for (String n : path.split("\\.")) {
+      Abstract.Definition oldref = ref;
+
+      ref = staticNsProvider.forDefinition(oldref).resolveName(n);
+      if (ref != null) continue;
+
+      if (oldref instanceof Abstract.ClassDefinition) {
+        ref = dynamicNsProvider.forClass((Abstract.ClassDefinition) oldref).resolveName(n);
+      } else if (oldref instanceof ClassDefinition) {
+        ref = ((ClassDefinition) oldref).getInstanceNamespace().resolveName(n);
+      }
+      if (ref == null) return null;
+    }
+    return ref;
   }
+
 }

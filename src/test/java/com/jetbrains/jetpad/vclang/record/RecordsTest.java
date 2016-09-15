@@ -11,7 +11,6 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -145,7 +144,7 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void splitClassTestError() {
-    resolveNamesClass("test",
+    resolveNamesClass(
         "\\static \\class A {\n" +
         "  \\static \\function x => 0\n" +
         "}\n" +

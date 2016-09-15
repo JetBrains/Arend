@@ -1,8 +1,9 @@
 package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.module.ModuleID;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.error.ModuleCycleError;
+import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
 import com.jetbrains.jetpad.vclang.parser.ParserError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -13,6 +14,7 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equation;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.LevelEquation;
@@ -41,8 +43,8 @@ public class ErrorFormatter {
       pos = ((Concrete.SourceNode) error.getCause()).getPosition();
     } else if (error instanceof ParserError) {
       pos = ((ParserError) error).position;
-    } else if (error instanceof TypeCheckingError && ((TypeCheckingError) error).getDefinition() instanceof Concrete.SourceNode) {
-      pos = ((Concrete.SourceNode) ((TypeCheckingError) error).getDefinition()).getPosition();
+    } else if (error instanceof TypeCheckingError && ((TypeCheckingError) error).definition instanceof Concrete.SourceNode) {
+      pos = ((Concrete.SourceNode) ((TypeCheckingError) error).definition).getPosition();
     } else {
       pos = null;
     }
@@ -57,6 +59,20 @@ public class ErrorFormatter {
   private String printData(GeneralError error) {
     StringBuilder builder = new StringBuilder();
 
+    if (error instanceof TypeCheckingError) {
+      printTypeCheckingErrorData(((TypeCheckingError) error).localError, builder);
+    } else if (error instanceof ModuleCycleError) {
+      for (ModulePath modulePath : ((ModuleCycleError) error).cycle) {
+        builder.append(modulePath).append(" - ");
+      }
+      builder.append(((ModuleCycleError) error).cycle.get(0));
+      return builder.toString();
+    }
+
+    return builder.toString();
+  }
+
+  private void printTypeCheckingErrorData(LocalTypeCheckingError error, StringBuilder builder) {
     if (error instanceof GoalError) {
       boolean printContext = !((GoalError) error).context.isEmpty();
       boolean printType = ((GoalError) error).type != null;
@@ -158,15 +174,7 @@ public class ErrorFormatter {
       }
     } else if (error instanceof MemberNotFoundError) {
       builder.append(((MemberNotFoundError) error).name).append(" of ").append("some compiled definition called ").append(((MemberNotFoundError) error).targetDefinition.getName());
-    } else if (error instanceof ModuleCycleError) {
-      for (ModuleID moduleID : ((ModuleCycleError) error).cycle) {
-        builder.append(moduleID.getModulePath()).append(" - ");
-      }
-      builder.append(((ModuleCycleError) error).cycle.get(0));
-      return builder.toString();
     }
-
-    return builder.toString();
   }
 
   private void printEqExpr(StringBuilder builder, Variable var, Integer constant) {
@@ -195,7 +203,7 @@ public class ErrorFormatter {
     }
 
     if (error instanceof TypeCheckingError) {
-      Abstract.Definition def = ((TypeCheckingError) error).getDefinition();
+      Abstract.Definition def = ((TypeCheckingError) error).definition;
       if (def != null) {
         builder.append('\n').append("While typechecking: ");
 
@@ -205,7 +213,7 @@ public class ErrorFormatter {
         }
 
         if (name != null) {
-          ModuleID module = mySrc.moduleOf(def);
+          ModuleSourceId module = mySrc.sourceOf(def);
           builder.append(' ').append(module != null ? module : "<Unknown module>");
           builder.append("::").append(name);
         }

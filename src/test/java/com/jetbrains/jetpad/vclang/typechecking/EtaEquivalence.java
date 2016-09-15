@@ -14,7 +14,7 @@ import static org.junit.Assert.assertTrue;
 public class EtaEquivalence extends TypeCheckingTestCase {
   @Test
   public void classesEq() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+    TypeCheckClassResult result = typeCheckClass(
         "\\class Foo { \\abstract foo : Nat \\abstract bar : Nat }\n" +
         "\\function f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
     assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));
@@ -25,7 +25,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
 
   @Test
   public void classesGe() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+    TypeCheckClassResult result = typeCheckClass(
         "\\class Foo { \\abstract foo : Nat \\abstract bar : Nat }\n" +
         "\\function f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
     assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));
@@ -36,7 +36,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
 
   @Test
   public void classesLe() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+    TypeCheckClassResult result = typeCheckClass(
         "\\class Foo { \\abstract foo : Nat \\abstract bar : Nat }\n" +
         "\\function f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
     assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));

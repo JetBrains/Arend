@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.module.utils;
 
-import com.jetbrains.jetpad.vclang.module.FileModuleID;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -37,7 +36,7 @@ public class LoadModulesRecursively implements AbstractStatementVisitor<Void, Vo
 
   @Override
   public Void visitModuleCall(Abstract.ModuleCallExpression expr, Void params) {
-    myModuleLoader.load(new FileModuleID(new ModulePath(expr.getPath())));
+    myModuleLoader.load(new ModulePath(expr.getPath()));
     return null;
   }
 
@@ -186,7 +185,7 @@ public class LoadModulesRecursively implements AbstractStatementVisitor<Void, Vo
 
   @Override
   public Void visitNamespaceCommand(Abstract.NamespaceCommandStatement stat, Void params) {
-    myModuleLoader.load(new FileModuleID(new ModulePath(stat.getModulePath())));
+    myModuleLoader.load(new ModulePath(stat.getModulePath()));
     return null;
   }
 

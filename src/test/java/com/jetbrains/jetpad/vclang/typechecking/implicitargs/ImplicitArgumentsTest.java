@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
-import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -8,7 +7,8 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
-import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
+import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -16,7 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.*;
 
 public class ImplicitArgumentsTest extends TypeCheckingTestCase {
@@ -41,7 +42,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("f", Pi(Nat(), Nat())));
 
-    assertNull(typeCheckExpr(context, "f {0} 0", null, 1));
+    assertThat(typeCheckExpr(context, "f {0} 0", null, 1), is(nullValue()));
   }
 
   @Test
@@ -50,7 +51,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("f", Pi(param("x", Nat()), Pi(param(false, "y", Nat()), Pi(param("z", Nat()), Nat())))));
 
-    assertNull(typeCheckExpr(context, "f 0 0 0", null, 1));
+    assertThat(typeCheckExpr(context, "f 0 0 0", null, 1), is(nullValue()));
   }
 
   @Test
@@ -60,10 +61,8 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     DependentLink params = param(false, vars("A", "B"), Universe(0));
     context.add(new TypedBinding("f", Pi(params, Pi(Reference(params), Reference(params)))));
 
-    ListErrorReporter errorReporter = new ListErrorReporter();
-    typeCheckExpr(context, "f 0", null, errorReporter);
-    assertErrorListSize(errorReporter.getErrorList(), 1);
-    assertTrue(errorReporter.getErrorList().iterator().next() instanceof ArgInferenceError);
+    typeCheckExpr(context, "f 0", null, 1);
+    assertTrue(errorList.get(0) instanceof TypeCheckingError && ((TypeCheckingError) errorList.get(0)).localError instanceof ArgInferenceError);
   }
 
   @Test
@@ -185,9 +184,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     DependentLink A = param(false, "A", Universe(0));
     context.add(new TypedBinding("f", Pi(A, Pi(Nat(), Pi(Reference(A), Reference(A))))));
 
-    ListErrorReporter errorReporter = new ListErrorReporter();
-    typeCheckExpr(context, "f 0", Pi(Nat(), Pi(Nat(), Nat())), errorReporter);
-    assertErrorListSize(errorReporter.getErrorList(), 1);
+    typeCheckExpr(context, "f 0", Pi(Nat(), Pi(Nat(), Nat())), 1);
   }
 
   @Test
@@ -314,8 +311,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     A.setNext(B);
     B.setNext(params(param(Reference(A)), param(Reference(B))));
     context.add(new TypedBinding("f", Pi(A, Reference(A))));
-    CheckTypeVisitor.Result result = typeCheckExpr(context, "f Nat (\\lam x => x) 0", Pi(Nat(), Nat()));
-    assertNotNull(result);
+    typeCheckExpr(context, "f Nat (\\lam x => x) 0", Pi(Nat(), Nat()));
   }
 
   @Test
@@ -339,7 +335,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
 
   @Test
   public void inferPathCon0() {
-    typeCheckDef("\\function f : 1 = 1 => path {\\lam _ => Nat} (\\lam _ => 0)", -1);
+    typeCheckDef("\\function f : 1 = 1 => path {\\lam _ => Nat} (\\lam _ => 0)", 1);
   }
 
   @Test

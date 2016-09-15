@@ -1,10 +1,10 @@
 package com.jetbrains.jetpad.vclang.term;
 
-import com.jetbrains.jetpad.vclang.module.ModuleID;
+import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
 
 public interface SourceInfoProvider {
   String nameFor(Abstract.Definition definition);
-  ModuleID moduleOf(Abstract.Definition definition);
+  ModuleSourceId sourceOf(Abstract.Definition definition);
 
   class Trivial implements SourceInfoProvider {
     @Override
@@ -13,7 +13,7 @@ public interface SourceInfoProvider {
     }
 
     @Override
-    public ModuleID moduleOf(Abstract.Definition definition) {
+    public ModuleSourceId sourceOf(Abstract.Definition definition) {
       return null;
     }
   }

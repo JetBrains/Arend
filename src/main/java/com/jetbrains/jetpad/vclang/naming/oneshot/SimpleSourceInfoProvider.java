@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming.oneshot;
 
-import com.jetbrains.jetpad.vclang.module.ModuleID;
+import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
 import com.jetbrains.jetpad.vclang.naming.FullName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
@@ -9,11 +9,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class SimpleSourceInfoProvider implements SourceInfoProvider {
-  private final Map<Abstract.Definition, ModuleID> modules = new HashMap<>();
+  private final Map<Abstract.Definition, ModuleSourceId> modules = new HashMap<>();
   private final Map<Abstract.Definition, FullName> names = new HashMap<>();
 
-  public void registerDefinition(Abstract.Definition def, FullName name, ModuleID module) {
-    modules.put(def, module);
+  public void registerDefinition(Abstract.Definition def, FullName name, ModuleSourceId source) {
+    modules.put(def, source);
     names.put(def, name);
   }
 
@@ -24,7 +24,7 @@ public class SimpleSourceInfoProvider implements SourceInfoProvider {
   }
 
   @Override
-  public ModuleID moduleOf(Abstract.Definition definition) {
+  public ModuleSourceId sourceOf(Abstract.Definition definition) {
     return modules.get(definition);
   }
 }

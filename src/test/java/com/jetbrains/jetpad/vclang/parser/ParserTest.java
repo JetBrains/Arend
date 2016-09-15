@@ -4,60 +4,59 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.*;
 import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
 import static org.junit.Assert.*;
 
-public class ParserTest {
+public class ParserTest extends ParserTestCase {
   @Test
   public void parserLetToTheRight() {
     Concrete.Expression expr = parseExpr("\\lam x => \\let | x => \\Type0 \\in x x");
     Concrete.Expression expr1 = parseExpr("\\let | x => \\Type0 \\in \\lam x => x x");
-    assertTrue(compare(cLam("x", cLet(clets(clet("x", cargs(), cUniverse(0))), cApps(cVar("x"), cVar("x")))), expr));
-    assertTrue(compare(cLet(clets(clet("x", cargs(), cUniverse(0))), cLam("x", cApps(cVar("x"), cVar("x")))), expr1));
+    assertTrue(compareAbstract(cLam("x", cLet(clets(clet("x", cargs(), cUniverse(0))), cApps(cVar("x"), cVar("x")))), expr));
+    assertTrue(compareAbstract(cLet(clets(clet("x", cargs(), cUniverse(0))), cLam("x", cApps(cVar("x"), cVar("x")))), expr1));
   }
 
   @Test
   public void parseLetMultiple() {
     Concrete.Expression expr = parseExpr("\\let | x => \\Type0 | y => x \\in y");
-    assertTrue(compare(cLet(clets(clet("x", cUniverse(0)), clet("y", cVar("x"))), cVar("y")), expr));
+    assertTrue(compareAbstract(cLet(clets(clet("x", cUniverse(0)), clet("y", cVar("x"))), cVar("y")), expr));
   }
 
   @Test
   public void parseLetTyped() {
     Concrete.Expression expr = parseExpr("\\let | x : \\Type1 => \\Type0 \\in x");
-    assertTrue(compare(cLet(clets(clet("x", cargs(), cUniverse(1), Abstract.Definition.Arrow.RIGHT, cUniverse(0))), cVar("x")), expr));
+    assertTrue(compareAbstract(cLet(clets(clet("x", cargs(), cUniverse(1), Abstract.Definition.Arrow.RIGHT, cUniverse(0))), cVar("x")), expr));
   }
 
   @Test
   public void parserLam() {
     Concrete.Expression expr = parseExpr("\\lam x y z => y");
-    boolean res = compare(cLam(cargs(cName("x"), cName("y"), cName("z")), cVar("y")), expr);
+    boolean res = compareAbstract(cLam(cargs(cName("x"), cName("y"), cName("z")), cVar("y")), expr);
     assertTrue(res);
   }
 
   @Test
   public void parserLam2() {
     Concrete.Expression expr = parseExpr("\\lam x y => (\\lam z w => y z) y");
-    assertTrue(compare(cLam(cargs(cName("x"), cName("y")), cApps(cLam(cargs(cName("z"), cName("w")), cApps(cVar("y"), cVar("z"))), cVar("y"))), expr));
+    assertTrue(compareAbstract(cLam(cargs(cName("x"), cName("y")), cApps(cLam(cargs(cName("z"), cName("w")), cApps(cVar("y"), cVar("z"))), cVar("y"))), expr));
   }
 
   @Test
   public void parserLamTele() {
     Concrete.Expression expr = parseExpr("\\lam p {x t : \\Type0} {y} (a : \\Type0 -> \\Type0) => (\\lam (z w : \\Type0) => y z) y");
-    assertTrue(compare(cLam(cargs(cName("p"), cTele(false, cvars("x", "t"), cUniverse(0)), cName(false, "y"), cTele(cvars("a"), cPi(cUniverse(0), cUniverse(0)))), cApps(cLam(cargs(cTele(cvars("z", "w"), cUniverse(0))), cApps(cVar("y"), cVar("z"))), cVar("y"))), expr));
+    assertTrue(compareAbstract(cLam(cargs(cName("p"), cTele(false, cvars("x", "t"), cUniverse(0)), cName(false, "y"), cTele(cvars("a"), cPi(cUniverse(0), cUniverse(0)))), cApps(cLam(cargs(cTele(cvars("z", "w"), cUniverse(0))), cApps(cVar("y"), cVar("z"))), cVar("y"))), expr));
   }
 
   @Test
   public void parserPi() {
     Concrete.Expression expr = parseExpr("\\Pi (x y z : \\Type0) (w t : \\Type0 -> \\Type0) -> \\Pi (a b : \\Pi (c : \\Type0) -> \\Type0 c) -> \\Type0 b y w");
-    assertTrue(compare(cPi(ctypeArgs(cTele(cvars("x", "y", "z"), cUniverse(0)), cTele(cvars("w", "t"), cPi(cUniverse(0), cUniverse(0)))), cPi(ctypeArgs(cTele(cvars("a", "b"), cPi("c", cUniverse(0), cApps(cUniverse(0), cVar("c"))))), cApps(cUniverse(0), cVar("b"), cVar("y"), cVar("w")))), expr));
+    assertTrue(compareAbstract(cPi(ctypeArgs(cTele(cvars("x", "y", "z"), cUniverse(0)), cTele(cvars("w", "t"), cPi(cUniverse(0), cUniverse(0)))), cPi(ctypeArgs(cTele(cvars("a", "b"), cPi("c", cUniverse(0), cApps(cUniverse(0), cVar("c"))))), cApps(cUniverse(0), cVar("b"), cVar("y"), cVar("w")))), expr));
   }
 
   @Test
   public void parserPi2() {
     Concrete.Expression expr = parseExpr("\\Pi (x y : \\Type0) (z : \\Type0 x -> \\Type0 y) -> \\Type0 z y x");
-    assertTrue(compare(cPi(ctypeArgs(cTele(cvars("x", "y"), cUniverse(0)), cTele(cvars("z"), cPi(cApps(cUniverse(0), cVar("x")), cApps(cUniverse(0), cVar("y"))))), cApps(cUniverse(0), cVar("z"), cVar("y"), cVar("x"))), expr));
+    assertTrue(compareAbstract(cPi(ctypeArgs(cTele(cvars("x", "y"), cUniverse(0)), cTele(cvars("z"), cPi(cApps(cUniverse(0), cVar("x")), cApps(cUniverse(0), cVar("y"))))), cApps(cUniverse(0), cVar("z"), cVar("y"), cVar("x"))), expr));
   }
 
   @Test
@@ -79,11 +78,11 @@ public class ParserTest {
     assertFalse(pi.getArguments().get(1).getExplicit());
     assertTrue(pi.getArguments().get(2).getExplicit());
     assertFalse(pi.getArguments().get(3).getExplicit());
-    assertTrue(compare(cUniverse(1), pi.getArguments().get(0).getType()));
-    assertTrue(compare(cUniverse(1), pi.getArguments().get(1).getType()));
-    assertTrue(compare(cUniverse(1), pi.getArguments().get(2).getType()));
-    assertTrue(compare(cUniverse(1), pi.getArguments().get(3).getType()));
-    assertTrue(compare(cApps(cVar("A"), cVar("x"), cVar("y"), cVar("z"), cVar("w"), cVar("t"), cVar("r")), pi.getCodomain()));
+    assertTrue(compareAbstract(cUniverse(1), pi.getArguments().get(0).getType()));
+    assertTrue(compareAbstract(cUniverse(1), pi.getArguments().get(1).getType()));
+    assertTrue(compareAbstract(cUniverse(1), pi.getArguments().get(2).getType()));
+    assertTrue(compareAbstract(cUniverse(1), pi.getArguments().get(3).getType()));
+    assertTrue(compareAbstract(cApps(cVar("A"), cVar("x"), cVar("y"), cVar("z"), cVar("w"), cVar("t"), cVar("r")), pi.getCodomain()));
   }
 
   @Test
@@ -95,11 +94,11 @@ public class ParserTest {
     assertTrue(pi.getArguments().get(1).getExplicit());
     assertFalse(pi.getArguments().get(2).getExplicit());
     assertTrue(pi.getArguments().get(3).getExplicit());
-    assertTrue(compare(cUniverse(1), pi.getArguments().get(0).getType()));
-    assertTrue(compare(cUniverse(1), pi.getArguments().get(1).getType()));
-    assertTrue(compare(cUniverse(1), pi.getArguments().get(2).getType()));
-    assertTrue(compare(cApps(cVar("A"), cVar("x"), cVar("y"), cVar("z")), pi.getArguments().get(4).getType()));
-    assertTrue(compare(cUniverse(1), pi.getCodomain()));
+    assertTrue(compareAbstract(cUniverse(1), pi.getArguments().get(0).getType()));
+    assertTrue(compareAbstract(cUniverse(1), pi.getArguments().get(1).getType()));
+    assertTrue(compareAbstract(cUniverse(1), pi.getArguments().get(2).getType()));
+    assertTrue(compareAbstract(cApps(cVar("A"), cVar("x"), cVar("y"), cVar("z")), pi.getArguments().get(4).getType()));
+    assertTrue(compareAbstract(cUniverse(1), pi.getCodomain()));
   }
 
   @Test
@@ -117,6 +116,6 @@ public class ParserTest {
 
   @Test
   public void parseIncorrectPi() {
-    parseExpr("\\Pi (: Nat) -> Nat", -1);
+    parseExpr("\\Pi (: Nat) -> Nat", 2);
   }
 }
