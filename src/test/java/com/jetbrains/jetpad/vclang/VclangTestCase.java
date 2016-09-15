@@ -14,8 +14,6 @@ import java.util.List;
 import static org.junit.Assert.assertThat;
 
 public abstract class VclangTestCase {
-  protected final ListErrorReporter internalErrorReporter = new ListErrorReporter();
-
   protected final List<GeneralError> errorList = new ArrayList<>();
   protected final ListErrorReporter errorReporter = new ListErrorReporter(errorList);
 

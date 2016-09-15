@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -24,7 +25,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -44,6 +46,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     loadPrelude();
 
     if (PRELUDE_TYPECHECKER_STATE == null) {
+      ListErrorReporter internalErrorReporter = new ListErrorReporter();
       PRELUDE_TYPECHECKER_STATE = new TypecheckerState();
       assertTrue(TypecheckingOrdering.typecheck(PRELUDE_TYPECHECKER_STATE, Collections.singletonList(prelude), internalErrorReporter, true));
       //assertThat(internalErrorReporter.getErrorList(), is(empty()));  // does not type-check by design
