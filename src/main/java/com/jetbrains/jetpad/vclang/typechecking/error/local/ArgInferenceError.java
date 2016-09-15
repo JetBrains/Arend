@@ -9,7 +9,6 @@ public class ArgInferenceError extends LocalTypeCheckingError {
   public final Expression expected;
   public final Type actual;
 
-  @Deprecated
   public ArgInferenceError(String message, Abstract.SourceNode expression, Expression[] candidates) {
     super(message, expression);
     this.candidates = candidates;
@@ -17,7 +16,6 @@ public class ArgInferenceError extends LocalTypeCheckingError {
     this.actual = null;
   }
 
-  @Deprecated
   public ArgInferenceError(String message, Expression expected, Type actual, Abstract.SourceNode expression, Expression candidate) {
     super(message, expression);
     this.candidates = new Expression[1];

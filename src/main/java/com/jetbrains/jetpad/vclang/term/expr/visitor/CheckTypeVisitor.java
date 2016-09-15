@@ -108,13 +108,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return this;
     }
 
-    public CheckTypeVisitor build(Abstract.Definition definition) {
-      return new CheckTypeVisitor(myTypecheckerState, myThisClass, myThisExpr, myLocalContext, myErrorReporter);
-    }
-
-    @Deprecated
     public CheckTypeVisitor build() {
-      return build(null);
+      return build();
     }
   }
 

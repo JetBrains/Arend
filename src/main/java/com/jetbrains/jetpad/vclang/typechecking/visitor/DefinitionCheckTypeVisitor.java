@@ -119,7 +119,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
     List<? extends Abstract.Argument> arguments = def.getArguments();
     final List<Binding> context = new ArrayList<>();
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build(def);
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build();
     LinkList list = new LinkList();
     if (enclosingClass != null) {
       DependentLink thisParam = createThisParam(enclosingClass);
@@ -247,7 +247,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     List<? extends Abstract.TypeArgument> parameters = def.getParameters();
 
     List<Binding> context = new ArrayList<>();
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build(def);
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build();
     List<Binding> polyParamsList = new ArrayList<>();
     Map<String, Binding> polyParamsMap = new HashMap<>();
     LinkList list = new LinkList();
@@ -633,7 +633,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
   public ClassDefinition visitClass(Abstract.ClassDefinition def, ClassDefinition enclosingClass) {
     boolean classOk = true;
     List<Binding> context = new ArrayList<>();
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build(def);
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build();
 
     if (enclosingClass != null) {
       DependentLink thisParam = createThisParam(enclosingClass);
@@ -778,7 +778,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     DependentLink thisParameter = createThisParam(enclosingClass);
     List<Binding> context = new ArrayList<>();
     context.add(thisParameter);
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).thisClass(enclosingClass, Reference(thisParameter)).build(def);
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).thisClass(enclosingClass, Reference(thisParameter)).build();
     LevelMax pLevel = new LevelMax();
     ClassField typedDef = new ClassField(def, Error(null, null), enclosingClass, thisParameter);
     myState.record(def, typedDef);
