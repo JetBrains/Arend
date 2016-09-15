@@ -59,7 +59,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     assertThat(expression, is(notNullValue()));
 
     expression.accept(new ExpressionResolveNameVisitor(parentScope, context, nameResolver, errorReporter, new ConcreteResolveListener()), null);
-    assertThat(errorList, hasSize(errors));
+    assertThat(errorList, containsErrors(errors));
     return expression;
   }
 
@@ -88,7 +88,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(staticNsProvider, dynamicNsProvider,
         new SubScope(globalScope, new SimpleNamespace(definition)), nameResolver, errorReporter, new ConcreteResolveListener());
     definition.accept(visitor, null);
-    assertThat(errorList, hasSize(errors));
+    assertThat(errorList, containsErrors(errors));
   }
 
   Concrete.Definition resolveNamesDef(String text, int errors) {

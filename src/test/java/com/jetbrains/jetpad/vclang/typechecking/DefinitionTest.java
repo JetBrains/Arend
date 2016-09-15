@@ -20,7 +20,6 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListIsEmpty;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 
@@ -29,7 +28,6 @@ public class DefinitionTest extends TypeCheckingTestCase {
   public void function() {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f : Nat => 0");
     assertNotNull(typedDef);
-    assertErrorListIsEmpty(errorList);
     assertFalse(typedDef.hasErrors());
   }
 
@@ -37,7 +35,6 @@ public class DefinitionTest extends TypeCheckingTestCase {
   public void functionUntyped() {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f => 0");
     assertNotNull(typedDef);
-    assertErrorListIsEmpty(errorList);
     assertFalse(typedDef.hasErrors());
     assertEquals(Nat(), typedDef.getType());
   }
@@ -46,7 +43,6 @@ public class DefinitionTest extends TypeCheckingTestCase {
   public void functionWithArgs() {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f (x : Nat) (y : Nat -> Nat) => y");
     assertNotNull(typedDef);
-    assertErrorListIsEmpty(errorList);
     assertFalse(typedDef.hasErrors());
     assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), typedDef.getType());
   }
@@ -75,7 +71,6 @@ public class DefinitionTest extends TypeCheckingTestCase {
     parameters2.append(param(Apps(Reference(I), Reference(a), Reference(parameters2.getFirst()))));
 
     assertNotNull(typedDef);
-    assertErrorListIsEmpty(errorList);
     assertFalse(typedDef.hasErrors());
     assertEquals(Pi(parameters.getFirst(), Universe(0)), typedDef.getType().toExpression());
     assertEquals(2, typedDef.getConstructors().size());
@@ -120,7 +115,6 @@ public class DefinitionTest extends TypeCheckingTestCase {
     parameters2.append(param(Reference(parameters2.getFirst())));
 
     assertNotNull(typedDef);
-    assertErrorListIsEmpty(errorList);
     assertFalse(typedDef.hasErrors());
     assertEquals(Pi(A, Universe(6, 7)), typedDef.getType().toExpression());
     assertEquals(2, typedDef.getConstructors().size());

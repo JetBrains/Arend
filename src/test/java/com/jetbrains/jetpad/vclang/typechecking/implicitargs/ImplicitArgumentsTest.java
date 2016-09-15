@@ -18,7 +18,6 @@ import java.util.EnumSet;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.*;
@@ -65,7 +64,6 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     context.add(new TypedBinding("f", Pi(params, Pi(Reference(params), Reference(params)))));
 
     typeCheckExpr(context, "f 0", null, 1);
-    assertErrorListSize(errorList, 1);
     assertTrue(errorList.get(0) instanceof TypeCheckingError && ((TypeCheckingError) errorList.get(0)).localError instanceof ArgInferenceError);
   }
 
@@ -189,7 +187,6 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     context.add(new TypedBinding("f", Pi(A, Pi(Nat(), Pi(Reference(A), Reference(A))))));
 
     typeCheckExpr(context, "f 0", Pi(Nat(), Pi(Nat(), Nat())), 1);
-    assertErrorListSize(errorList, 1);
   }
 
   @Test

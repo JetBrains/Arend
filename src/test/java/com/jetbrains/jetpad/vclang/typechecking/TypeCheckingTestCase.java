@@ -41,7 +41,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
   CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
     CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(state, context, localErrorReporter).build().checkType(expression, expectedType);
-    assertThat(errorList, hasSize(errors));
+    assertThat(errorList, containsErrors(errors));
     if (errors == 0) {
       assertThat(result, is(notNullValue()));
     }
@@ -81,7 +81,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   private Definition typeCheckDef(Concrete.Definition definition, int errors) {
     DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(state, localErrorReporter);
     Definition result = definition.accept(visitor, null);
-    assertThat(errorList, hasSize(errors));
+    assertThat(errorList, containsErrors(errors));
     return result;
   }
 
@@ -96,7 +96,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
   private TypecheckerState typeCheckClass(Concrete.ClassDefinition classDefinition, int errors) {
     TypecheckingOrdering.typecheck(state, classDefinition, localErrorReporter);
-    assertThat(errorList, hasSize(errors));
+    assertThat(errorList, containsErrors(errors));
     return state;
   }
 

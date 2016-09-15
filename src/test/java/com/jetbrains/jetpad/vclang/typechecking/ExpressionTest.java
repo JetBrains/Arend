@@ -25,10 +25,7 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
 public class ExpressionTest extends TypeCheckingTestCase {
@@ -63,7 +60,6 @@ public class ExpressionTest extends TypeCheckingTestCase {
     // \X x. X : (X : Type0) -> X -> X
     DependentLink param = param("X", Universe(0));
     typeCheckExpr("\\lam X x => X", Pi(param, Pi(Reference(param), Reference(param))), 1);
-    assertErrorListSize(errorList, 1);
     assertTrue(errorList.get(0) instanceof TypeCheckingError && ((TypeCheckingError) errorList.get(0)).localError instanceof TypeMismatchError);
   }
 
