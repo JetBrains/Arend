@@ -23,11 +23,11 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
 
   @Override
   public Boolean visitApp(AppExpression expr, Void params) {
-    if (expr.getFunction().accept(this, null)) {
+    if (expr.getFunction().<Void, Boolean>accept(this, null)) {
       return true;
     }
     for (Expression argument : expr.getArguments()) {
-      if (argument.accept(this, null)) {
+      if (argument.<Void, Boolean>accept(this, null)) {
         return true;
       }
     }
@@ -45,7 +45,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
       return true;
     }
     for (Expression parameter : expr.getDataTypeArguments()) {
-      if (parameter.accept(this, null)) {
+      if (parameter.<Void, Boolean>accept(this, null)) {
         return true;
       }
     }
@@ -58,7 +58,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
       return true;
     }
     for (Map.Entry<ClassField, FieldSet.Implementation> entry : expr.getImplementedHere()) {
-      if (entry.getValue().term.accept(this, null)) return true;
+      if (entry.getValue().term.<Void, Boolean>accept(this, null)) return true;
     }
     return false;
   }
@@ -96,7 +96,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
   @Override
   public Boolean visitTuple(TupleExpression expr, Void params) {
     for (Expression field : expr.getFields()) {
-      if (field.accept(this, null)) return true;
+      if (field.<Void, Boolean>accept(this, null)) return true;
     }
     return false;
   }
@@ -114,7 +114,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
   private boolean visitDependentLink(DependentLink link) {
     for (; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
-      if (link.getType().accept(this, null)) {
+      if (link.getType().<Void, Boolean>accept(this, null)) {
         return true;
       }
     }
