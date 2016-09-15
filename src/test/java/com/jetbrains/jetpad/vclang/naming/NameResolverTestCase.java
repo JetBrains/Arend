@@ -22,25 +22,30 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 
 public abstract class NameResolverTestCase extends ParserTestCase {
-  private   final SimpleModuleNamespaceProvider  moduleNsProvider  = new SimpleModuleNamespaceProvider();
-  protected final SimpleStaticNamespaceProvider  staticNsProvider  = new SimpleStaticNamespaceProvider();
-  protected final SimpleDynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
-  protected final NameResolver nameResolver = new NameResolver(moduleNsProvider, staticNsProvider, dynamicNsProvider);
+  private static Abstract.ClassDefinition LOADED_PRELUDE = null;
+
+  private final SimpleModuleNamespaceProvider  moduleNsProvider  = new SimpleModuleNamespaceProvider();
+  private final SimpleStaticNamespaceProvider  staticNsProvider  = new SimpleStaticNamespaceProvider();
+  private final SimpleDynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
+  private final NameResolver nameResolver = new NameResolver(moduleNsProvider, staticNsProvider, dynamicNsProvider);
 
   protected Abstract.ClassDefinition prelude = null;
-  protected Scope globalScope = new EmptyNamespace();
+  private Scope globalScope = new EmptyNamespace();
 
   protected final void loadPrelude() {
     if (prelude != null) throw new IllegalStateException();
 
-    prelude = new Prelude.PreludeLoader(internalErrorReporter).load();
-    assertThat(internalErrorReporter.getErrorList(), is(empty()));
+    if (LOADED_PRELUDE == null) {
+      LOADED_PRELUDE = new Prelude.PreludeLoader(internalErrorReporter).load();
+      assertThat("Failed loading Prelude", internalErrorReporter.getErrorList(), is(empty()));
 
+      OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(internalErrorReporter, nameResolver, new ConcreteResolveListener(), staticNsProvider, dynamicNsProvider);
+      oneshotNameResolver.visitModule(LOADED_PRELUDE, globalScope);
+      assertThat("Failed resolving names in Prelude", internalErrorReporter.getErrorList(), is(empty()));
+    }
+
+    prelude = LOADED_PRELUDE;
     globalScope = staticNsProvider.forDefinition(prelude);
-
-    OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(internalErrorReporter, nameResolver, new ConcreteResolveListener(), staticNsProvider, dynamicNsProvider);
-    oneshotNameResolver.visitModule(prelude, globalScope);
-    assertThat(internalErrorReporter.getErrorList(), is(empty()));
 
     moduleNsProvider.registerModule(new ModulePath("Prelude"), prelude);
   }

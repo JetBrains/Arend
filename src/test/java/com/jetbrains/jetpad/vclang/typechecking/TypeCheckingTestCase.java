@@ -29,15 +29,28 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class TypeCheckingTestCase extends NameResolverTestCase {
+  private static TypecheckerState PRELUDE_TYPECHECKER_STATE = null;
+
   private TypecheckerState state = new TypecheckerState();
 
   protected LocalErrorReporter localErrorReporter = new ProxyErrorReporter(null, errorReporter);
 
   public TypeCheckingTestCase() {
-    loadPrelude();
-    assertTrue(TypecheckingOrdering.typecheck(state, Collections.singletonList(prelude), internalErrorReporter, true));
-    //assertThat(internalErrorReporter.getErrorList(), is(empty()));  // does not type-check by design
+    typeCheckPrelude();
   }
+
+  private void typeCheckPrelude() {
+    loadPrelude();
+
+    if (PRELUDE_TYPECHECKER_STATE == null) {
+      PRELUDE_TYPECHECKER_STATE = new TypecheckerState();
+      assertTrue(TypecheckingOrdering.typecheck(PRELUDE_TYPECHECKER_STATE, Collections.singletonList(prelude), internalErrorReporter, true));
+      //assertThat(internalErrorReporter.getErrorList(), is(empty()));  // does not type-check by design
+    }
+
+    state = new TypecheckerState(PRELUDE_TYPECHECKER_STATE);
+  }
+
 
   CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
     CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(state, context, localErrorReporter).build().checkType(expression, expectedType);
