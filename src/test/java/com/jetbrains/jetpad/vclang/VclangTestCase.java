@@ -9,6 +9,7 @@ import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static org.junit.Assert.assertThat;
@@ -25,10 +26,10 @@ public abstract class VclangTestCase {
 
   private static final ErrorFormatter ERROR_FORMATTER = new ErrorFormatter(SourceInfoProvider.TRIVIAL);
 
-  protected static Matcher<? super List<? extends GeneralError>> containsErrors(final int n) {
-    return new TypeSafeDiagnosingMatcher<List<? extends GeneralError>>() {
+  protected static Matcher<? super Collection<? extends GeneralError>> containsErrors(final int n) {
+    return new TypeSafeDiagnosingMatcher<Collection<? extends GeneralError>>() {
       @Override
-      protected boolean matchesSafely(List<? extends GeneralError> errors, Description description) {
+      protected boolean matchesSafely(Collection<? extends GeneralError> errors, Description description) {
         if (errors.size() == 0) {
           description.appendText("there were no errors");
         } else {
