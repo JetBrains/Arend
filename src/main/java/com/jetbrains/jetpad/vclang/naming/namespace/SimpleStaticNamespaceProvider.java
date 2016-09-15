@@ -10,8 +10,6 @@ import java.util.Map;
 import static com.jetbrains.jetpad.vclang.term.Abstract.DefineStatement.StaticMod.STATIC;
 
 public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
-  public static final StaticNamespaceProvider INSTANCE = new SimpleStaticNamespaceProvider();
-
   private final Map<Abstract.Definition, Namespace> cache = new HashMap<>();
 
   public static SimpleNamespace forFunction(Abstract.FunctionDefinition def) {

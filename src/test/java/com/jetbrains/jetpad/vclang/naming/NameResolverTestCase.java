@@ -128,15 +128,15 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
 
-  public static Abstract.Definition get(Abstract.Definition ref, String path) {
+  public Abstract.Definition get(Abstract.Definition ref, String path) {
     for (String n : path.split("\\.")) {
       Abstract.Definition oldref = ref;
 
-      ref = SimpleStaticNamespaceProvider.INSTANCE.forDefinition(oldref).resolveName(n);
+      ref = staticNsProvider.forDefinition(oldref).resolveName(n);
       if (ref != null) continue;
 
       if (oldref instanceof Abstract.ClassDefinition) {
-        ref = SimpleDynamicNamespaceProvider.INSTANCE.forClass((Abstract.ClassDefinition) oldref).resolveName(n);
+        ref = dynamicNsProvider.forClass((Abstract.ClassDefinition) oldref).resolveName(n);
       } else if (oldref instanceof ClassDefinition) {
         ref = ((ClassDefinition) oldref).getInstanceNamespace().resolveName(n);
       }

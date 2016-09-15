@@ -118,7 +118,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
 
-  protected static class TypeCheckClassResult {
+  protected class TypeCheckClassResult {
     public final TypecheckerState typecheckerState;
     public final Concrete.ClassDefinition classDefinition;
 

@@ -1,8 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.visitor;
 
-import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
-import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.naming.namespace.SimpleStaticNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.namespace.*;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
@@ -29,8 +27,8 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.PatternsToElimTreeConversion;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingElim;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.NotInScopeError;
 
@@ -45,6 +43,9 @@ import static com.jetbrains.jetpad.vclang.term.pattern.Utils.toPatterns;
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.typeOfFunctionArg;
 
 public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<ClassDefinition, Definition> {
+  private final static StaticNamespaceProvider STATIC_NS_SNAPSHOT_PROVIDER = new SimpleStaticNamespaceProvider();
+  private final static DynamicNamespaceProvider DYNAMIC_NS_SNAPSHOT_PROVIDER = new SimpleDynamicNamespaceProvider();
+
   private final TypecheckerState myState;
   private final LocalErrorReporter myErrorReporter;
 
@@ -112,7 +113,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
   @Override
   public FunctionDefinition visitFunction(final Abstract.FunctionDefinition def, ClassDefinition enclosingClass) {
     Abstract.Definition.Arrow arrow = def.getArrow();
-    final FunctionDefinition typedDef = new FunctionDefinition(def, SimpleStaticNamespaceProvider.INSTANCE.forDefinition(def));
+    final FunctionDefinition typedDef = new FunctionDefinition(def, STATIC_NS_SNAPSHOT_PROVIDER.forDefinition(def));
     myState.record(def, typedDef);
     // TODO[scopes] Fill namespace
 
@@ -644,7 +645,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     Set<ClassDefinition> superClasses = new HashSet<>();
     try {
       Map<ClassField, Abstract.ReferableSourceNode> aliases = new HashMap<>();
-      ClassDefinition typedDef = new ClassDefinition(def, fieldSet, superClasses, SimpleStaticNamespaceProvider.INSTANCE.forDefinition(def), SimpleDynamicNamespaceProvider.INSTANCE.forClass(def), aliases);
+      ClassDefinition typedDef = new ClassDefinition(def, fieldSet, superClasses, STATIC_NS_SNAPSHOT_PROVIDER.forDefinition(def), DYNAMIC_NS_SNAPSHOT_PROVIDER.forClass(def), aliases);
       typedDef.setThisClass(enclosingClass);
       ClassCallExpression thisClassCall = typedDef.getDefCall();
 
@@ -668,7 +669,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
           }
         }
 
-        Namespace ns = SimpleDynamicNamespaceProvider.INSTANCE.forClass(typeCheckedSuperClass.getDefinition().getAbstractDefinition());
+        Namespace ns = typeCheckedSuperClass.getDefinition().getInstanceNamespace();
         Set<ClassField> hidden = new HashSet<>();
         for (Abstract.Identifier identifier : aSuperClass.getHidings()) {
           Abstract.Definition aDef = ns.resolveName(identifier.getName());
