@@ -62,4 +62,9 @@ public class DefinitionSourceInfoVisitor implements AbstractDefinitionVisitor<Fu
   public Void visitClassViewField(Abstract.ClassViewField def, FullName params) {
     return null;
   }
+
+  @Override
+  public Void visitClassViewInstance(Abstract.ClassViewInstance def, FullName params) {
+    return null;
+  }
 }

@@ -962,6 +962,21 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
+  @Override
+  public Void visitClassViewInstance(Abstract.ClassViewInstance def, Void params) {
+    myBuilder.append("\\instance ");
+    prettyPrintBinding(def);
+    prettyPrintArguments(def.getArguments(), Abstract.DefCallExpression.PREC);
+
+    Abstract.Expression term = def.getTerm();
+    if (term != null) {
+      myBuilder.append(" => ");
+      term.accept(new PrettyPrintVisitor(myBuilder, myIndent), Abstract.Expression.PREC);
+    }
+
+    return null;
+  }
+
   public static abstract class ListLayout<T>{
     abstract void printListElement(PrettyPrintVisitor ppv, T t);
 

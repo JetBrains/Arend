@@ -128,6 +128,11 @@ public class TypecheckingOrdering {
         public Boolean visitClassViewField(Abstract.ClassViewField def, Void params) {
           return true;
         }
+
+        @Override
+        public Boolean visitClassViewInstance(Abstract.ClassViewInstance def, Void params) {
+          return def.equals(definition) || doOrder(def);
+        }
       }, null);
       if (!good)
         return false;

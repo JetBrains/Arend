@@ -995,6 +995,32 @@ public final class Concrete {
     }
   }
 
+  public static class ClassViewInstance extends Definition implements Abstract.ClassViewInstance {
+    private final List<Argument> myArguments;
+    private final Expression myTerm;
+
+    public ClassViewInstance(Position position, String name, Precedence precedence, List<Argument> arguments, Expression term) {
+      super(position, name, precedence);
+      myArguments = arguments;
+      myTerm = term;
+    }
+
+    @Override
+    public List<Argument> getArguments() {
+      return myArguments;
+    }
+
+    @Override
+    public Expression getTerm() {
+      return myTerm;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitClassViewInstance(this, params);
+    }
+  }
+
   public static class ClassField extends SignatureDefinition implements Abstract.ClassField {
     public ClassField(Position position, String name, Precedence precedence, List<Argument> arguments, Expression resultType) {
       super(position, name, precedence, arguments, resultType);
@@ -1045,11 +1071,6 @@ public final class Concrete {
       myArrow = arrow;
       myTerm = term;
       myStatements = statements;
-    }
-
-    @Override
-    public boolean isAbstract() {
-      return false;
     }
 
     @Override

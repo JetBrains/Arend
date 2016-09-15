@@ -345,13 +345,17 @@ public final class Abstract {
     Expression getResultType();
   }
 
+  public interface ClassViewInstance extends Definition {
+    List<? extends Argument> getArguments();
+    Expression getTerm();
+  }
+
   public interface ImplementDefinition extends Definition {
     Definition getImplemented();
     Expression getExpression();
   }
 
   public interface FunctionDefinition extends Definition, Function {
-    boolean isAbstract();
     Collection<? extends Statement> getStatements();
   }
 

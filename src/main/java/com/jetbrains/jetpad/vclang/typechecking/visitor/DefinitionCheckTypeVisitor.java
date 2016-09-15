@@ -856,4 +856,52 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
   public Definition visitClassViewField(Abstract.ClassViewField def, ClassDefinition params) {
     throw new IllegalStateException();
   }
+
+  @Override
+  public Definition visitClassViewInstance(Abstract.ClassViewInstance def, ClassDefinition enclosingClass) {
+    final FunctionDefinition typedDef = new FunctionDefinition(def, SimpleStaticNamespaceProvider.INSTANCE.forDefinition(def));
+    myState.record(def, typedDef);
+
+    final List<Binding> context = new ArrayList<>();
+    LinkList list = new LinkList();
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).instancePool(new SimpleInstancePool()).build(def);
+
+    List<Binding> polyParamsList = new ArrayList<>();
+    visitParameters(def.getArguments(), def, context, polyParamsList, list, visitor);
+    typedDef.setPolyParams(polyParamsList);
+    typedDef.setParameters(list.getFirst());
+    typedDef.typeHasErrors(typedDef.getResultType() == null);
+
+    Abstract.Expression term = def.getTerm();
+    if (term != null) {
+      if (term instanceof Abstract.ElimExpression) {
+        myErrorReporter.report(new TypeCheckingError("\\elim is not allowed in \\instance", def));
+      } else {
+        CheckTypeVisitor.Result termResult = visitor.checkType(term, null);
+        if (termResult != null) {
+          typedDef.setElimTree(top(list.getFirst(), leaf(Abstract.Definition.Arrow.RIGHT, termResult.expression)));
+          typedDef.setResultType(termResult.type);
+        }
+      }
+
+      if (typedDef.getElimTree() != null) {
+        if (!typedDef.getElimTree().accept(new TerminationCheckVisitor(typedDef, typedDef.getParameters()), null)) {
+          // FIXME[errorformat]
+          myErrorReporter.report(new TypeCheckingError(def, "Termination check failed", term));
+          typedDef.setElimTree(null);
+        }
+      }
+    }
+
+    if (typedDef.getElimTree() == null) {
+      typedDef.hasErrors(true);
+    }
+
+    typedDef.typeHasErrors(typedDef.getResultType() == null);
+    if (typedDef.typeHasErrors()) {
+      typedDef.hasErrors(true);
+    }
+
+    return typedDef;
+  }
 }

@@ -139,5 +139,10 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
     public Boolean visitClassViewField(Abstract.ClassViewField def, SimpleNamespace params) {
       return true;
     }
+
+    @Override
+    public Boolean visitClassViewInstance(Abstract.ClassViewInstance def, SimpleNamespace params) {
+      return true;
+    }
   }
 }

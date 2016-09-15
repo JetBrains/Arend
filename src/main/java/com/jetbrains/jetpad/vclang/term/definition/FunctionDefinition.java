@@ -17,14 +17,14 @@ public class FunctionDefinition extends Definition implements Function {
   private boolean myTypeHasErrors;
   private final Namespace myOwnNamespace;
 
-  public FunctionDefinition(Abstract.FunctionDefinition abstractDef, Namespace ownNamespace) {
+  public FunctionDefinition(Abstract.Definition abstractDef, Namespace ownNamespace) {
     super(abstractDef);
     myOwnNamespace = ownNamespace;
     myTypeHasErrors = true;
     myParameters = EmptyDependentLink.getInstance();
   }
 
-  public FunctionDefinition(Abstract.FunctionDefinition abstractDef, Namespace ownNamespace, DependentLink parameters, Type resultType, ElimTreeNode elimTree) {
+  public FunctionDefinition(Abstract.Definition abstractDef, Namespace ownNamespace, DependentLink parameters, Type resultType, ElimTreeNode elimTree) {
     super(abstractDef);
     assert parameters != null;
     myOwnNamespace = ownNamespace;

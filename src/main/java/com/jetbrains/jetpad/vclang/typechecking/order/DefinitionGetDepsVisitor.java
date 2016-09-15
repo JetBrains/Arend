@@ -47,7 +47,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
     throw new IllegalStateException();
   }
 
-  private void visitAbstract(Set<Abstract.Definition> result, Abstract.ClassField def) {
+  private void visitClassField(Set<Abstract.Definition> result, Abstract.ClassField def) {
     for (Abstract.Argument arg : def.getArguments()) {
       if (arg instanceof Abstract.TypeArgument) {
         ((Abstract.TypeArgument) arg).getType().accept(new CollectDefCallsVisitor(result), null);
@@ -110,7 +110,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
           }
         } else {
           if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ClassField) {
-            visitAbstract(result, (Abstract.ClassField) ((Abstract.DefineStatement) statement).getDefinition());
+            visitClassField(result, (Abstract.ClassField) ((Abstract.DefineStatement) statement).getDefinition());
           } else
           if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ImplementDefinition) {
             visitImplement(result, (Abstract.ImplementDefinition) ((Abstract.DefineStatement) statement).getDefinition());
@@ -157,6 +157,24 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   @Override
   public Set<Abstract.Definition> visitClassViewField(Abstract.ClassViewField def, Boolean params) {
     return null;
+  }
+
+  @Override
+  public Set<Abstract.Definition> visitClassViewInstance(Abstract.ClassViewInstance def, Boolean params) {
+    Set<Abstract.Definition> result = new HashSet<>();
+
+    for (Abstract.Argument arg : def.getArguments()) {
+      if (arg instanceof Abstract.TypeArgument) {
+        ((Abstract.TypeArgument) arg).getType().accept(new CollectDefCallsVisitor(result), null);
+      }
+    }
+
+    Abstract.Expression term = def.getTerm();
+    if (term != null) {
+      term.accept(new CollectDefCallsVisitor(result), null);
+    }
+
+    return result;
   }
 
   private void visitImplement(Set<Abstract.Definition> result, Abstract.ImplementDefinition def) {

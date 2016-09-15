@@ -57,17 +57,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
 
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(statementVisitor.getCurrentScope(), myContext, myNameResolver, myErrorReporter, myResolveListener);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      for (Abstract.Argument argument : def.getArguments()) {
-        if (argument instanceof Abstract.TypeArgument) {
-          ((Abstract.TypeArgument) argument).getType().accept(exprVisitor, null);
-        }
-        if (argument instanceof Abstract.TelescopeArgument) {
-          myContext.addAll(((Abstract.TelescopeArgument) argument).getNames());
-        } else
-        if (argument instanceof Abstract.NameArgument) {
-          myContext.add(((Abstract.NameArgument) argument).getName());
-        }
-      }
+      visitArguments(def.getArguments(), exprVisitor);
 
       Abstract.Expression resultType = def.getResultType();
       if (resultType != null) {
@@ -83,6 +73,20 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
     return null;
   }
 
+  private void visitArguments(List<? extends Abstract.Argument> arguments, ExpressionResolveNameVisitor visitor) {
+    for (Abstract.Argument argument : arguments) {
+      if (argument instanceof Abstract.TypeArgument) {
+        ((Abstract.TypeArgument) argument).getType().accept(visitor, null);
+      }
+      if (argument instanceof Abstract.TelescopeArgument) {
+        myContext.addAll(((Abstract.TelescopeArgument) argument).getNames());
+      } else
+      if (argument instanceof Abstract.NameArgument) {
+        myContext.add(((Abstract.NameArgument) argument).getName());
+      }
+    }
+  }
+
   @Override
   public Void visitClassField(Abstract.ClassField def, Boolean isStatic) {
     if (myResolveListener == null) {
@@ -91,17 +95,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
 
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myParentScope, myContext, myNameResolver, myErrorReporter, myResolveListener);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      for (Abstract.Argument argument : def.getArguments()) {
-        if (argument instanceof Abstract.TypeArgument) {
-          ((Abstract.TypeArgument) argument).getType().accept(exprVisitor, null);
-        }
-        if (argument instanceof Abstract.TelescopeArgument) {
-          myContext.addAll(((Abstract.TelescopeArgument) argument).getNames());
-        } else
-        if (argument instanceof Abstract.NameArgument) {
-          myContext.add(((Abstract.NameArgument) argument).getName());
-        }
-      }
+      visitArguments(def.getArguments(), exprVisitor);
 
       Abstract.Expression resultType = def.getResultType();
       if (resultType != null) {
@@ -273,6 +267,25 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
   @Override
   public Void visitClassViewField(Abstract.ClassViewField def, Boolean params) {
     throw new IllegalStateException();
+  }
+
+  @Override
+  public Void visitClassViewInstance(Abstract.ClassViewInstance def, Boolean params) {
+    if (myResolveListener == null) {
+      return null;
+    }
+
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myParentScope, myContext, myNameResolver, myErrorReporter, myResolveListener);
+    try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
+      visitArguments(def.getArguments(), exprVisitor);
+
+      Abstract.Expression term = def.getTerm();
+      if (term != null) {
+        term.accept(exprVisitor, null);
+      }
+    }
+
+    return null;
   }
 
   public enum Flag { MUST_BE_STATIC, MUST_BE_DYNAMIC }
