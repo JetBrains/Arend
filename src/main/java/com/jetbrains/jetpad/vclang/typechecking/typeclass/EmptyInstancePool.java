@@ -8,7 +8,7 @@ public class EmptyInstancePool implements ClassViewInstancePool {
   private EmptyInstancePool() {}
 
   @Override
-  public Expression getLocalInstance(Expression classifyingExpression) {
+  public Expression getInstance(Expression classifyingExpression) {
     return null;
   }
 }

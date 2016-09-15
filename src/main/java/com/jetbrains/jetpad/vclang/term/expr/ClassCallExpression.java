@@ -78,6 +78,8 @@ public class ClassCallExpression extends DefCallExpression {
         newFieldSet.implementField(entry.getKey(), new FieldSet.Implementation(entry.getValue().thisParam, entry.getValue().term.accept(visitor, arg)), this);
       }
     }
-    return ClassCall(getDefinition(), newFieldSet);
+    ClassCallExpression classCall = this instanceof ClassViewCallExpression ? new ClassViewCallExpression(getDefinition(), newFieldSet, ((ClassViewCallExpression) this).getClassView()) : ClassCall(getDefinition(), newFieldSet);
+    classCall = (ClassCallExpression) classCall.applyLevelSubst(getPolyParamsSubst());
+    return classCall;
   }
 }

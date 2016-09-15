@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
+import com.jetbrains.jetpad.vclang.term.typeclass.ClassView;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
 
 import java.util.ArrayList;
@@ -45,11 +46,18 @@ public class TypeCheckingDefCall {
     Abstract.Expression left = expr.getExpression();
     Abstract.Definition resolvedDefinition = expr.getReferent();
     Definition typeCheckedDefinition = null;
+    ClassView classView = null;
     if (resolvedDefinition != null) {
       if (resolvedDefinition instanceof Abstract.ClassViewField) {
         typeCheckedDefinition = myState.getTypechecked(((Abstract.ClassViewField) resolvedDefinition).getUnderlyingField());
       } else {
         typeCheckedDefinition = myState.getTypechecked(resolvedDefinition);
+      }
+      if (resolvedDefinition instanceof Abstract.ClassView && typeCheckedDefinition instanceof ClassDefinition) {
+        Definition classifyingField = myState.getTypechecked(((Abstract.ClassView) resolvedDefinition).getClassifyingField());
+        if (classifyingField instanceof ClassField) {
+          classView = new ClassView((ClassField) classifyingField);
+        }
       }
       if (left == null && typeCheckedDefinition == null) {
         throw new IllegalStateException("Internal error: definition " + resolvedDefinition + " was not typechecked");
@@ -83,7 +91,7 @@ public class TypeCheckingDefCall {
           }
         }
 
-        return applyThis(insertPolyVars(typeCheckedDefinition, expr), thisExpr, expr);
+        return applyThis(insertPolyVars(typeCheckedDefinition, expr, classView), thisExpr, expr);
       } else {
         return getLocalVar(expr);
       }
@@ -132,7 +140,7 @@ public class TypeCheckingDefCall {
           return null;
         }
 
-        return applyThis(insertPolyVars(typeCheckedDefinition, expr), result.expression, expr);
+        return applyThis(insertPolyVars(typeCheckedDefinition, expr, classView), result.expression, expr);
       }
     }
 
@@ -221,10 +229,17 @@ public class TypeCheckingDefCall {
       }
     }
 
-    return applyThis(insertPolyVars(typeCheckedDefinition, expr), thisExpr, expr);
+    return applyThis(insertPolyVars(typeCheckedDefinition, expr, classView), thisExpr, expr);
   }
 
-  private CheckTypeVisitor.Result insertPolyVars(Definition definition, Abstract.SourceNode sourceNode) {
+  private CheckTypeVisitor.Result insertPolyVars(Definition definition, Abstract.SourceNode sourceNode, ClassView classView) {
+    DefCallExpression defCall;
+    if (classView != null) {
+      defCall = new ClassViewCallExpression((ClassDefinition) definition, classView);
+    } else {
+      defCall = definition.getDefCall();
+    }
+
     if (definition.isPolymorphic()) {
       LevelSubstitution subst = new LevelSubstitution();
 
@@ -235,12 +250,15 @@ public class TypeCheckingDefCall {
         myVisitor.getEquations().addVariable(l);
       }
 
-      result.expression = definition.getDefCall(subst);
+      if (!definition.hasErrors()) {
+        defCall = defCall.applyLevelSubst(subst);
+      }
+      result.expression = defCall;
       result.type = definition.getTypeWithThis().subst(new ExprSubstitution(), subst);
       return result;
     }
 
-    return new CheckTypeVisitor.Result(definition.getDefCall(), definition.getTypeWithThis());
+    return new CheckTypeVisitor.Result(defCall, definition.getTypeWithThis());
   }
 
   private Expression findParent(ClassDefinition classDefinition, Definition definition, Expression result) {

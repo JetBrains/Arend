@@ -10,7 +10,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SimpleInstancePool implements ClassViewInstancePool {
+public class LocalInstancePool implements ClassViewInstancePool {
   static private class Pair {
     Expression key;
     Expression value;
@@ -24,7 +24,7 @@ public class SimpleInstancePool implements ClassViewInstancePool {
   private final List<Pair> myPool = new ArrayList<>();
 
   @Override
-  public Expression getLocalInstance(Expression classifyingExpression) {
+  public Expression getInstance(Expression classifyingExpression) {
     Expression expr = classifyingExpression.normalize(NormalizeVisitor.Mode.NF);
     for (Pair pair : myPool) {
       if (pair.key.equals(expr)) {
@@ -34,8 +34,8 @@ public class SimpleInstancePool implements ClassViewInstancePool {
     return null;
   }
 
-  private boolean addLocalInstance(Expression classifyingExpression, Expression instance) {
-    if (getLocalInstance(classifyingExpression) != null) {
+  private boolean addInstance(Expression classifyingExpression, Expression instance) {
+    if (getInstance(classifyingExpression) != null) {
       return false;
     } else {
       myPool.add(new Pair(classifyingExpression, instance));
@@ -43,10 +43,10 @@ public class SimpleInstancePool implements ClassViewInstancePool {
     }
   }
 
-  public boolean addLocalInstance(Binding binding, Expression type) {
+  public boolean addInstance(Binding binding, Expression type) {
     if (type instanceof ClassViewCallExpression && ((ClassViewCallExpression) type).getClassView().getClassifyingField() != null) {
       ReferenceExpression reference = new ReferenceExpression(binding);
-      return addLocalInstance(new FieldCallExpression(((ClassViewCallExpression) type).getClassView().getClassifyingField(), reference).normalize(NormalizeVisitor.Mode.NF), reference);
+      return addInstance(new FieldCallExpression(((ClassViewCallExpression) type).getClassView().getClassifyingField(), reference).normalize(NormalizeVisitor.Mode.NF), reference);
     } else {
       return true;
     }

@@ -27,6 +27,17 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   }
 
   @Test
+  public void inferVarGlobalType() {
+    typeCheckClass(
+        "\\static \\class X {\n" +
+        "  \\abstract A : \\Type0\n" +
+        "  \\abstract B : A -> Nat\n" +
+        "}\n" +
+        "\\static \\view \\on X \\by A { B }\n" +
+        "\\function f (x : X { A => Nat }) => B 0");
+  }
+
+  @Test
   public void inferVarRenamedView() {
     typeCheckClass(
         "\\static \\class X {\n" +
