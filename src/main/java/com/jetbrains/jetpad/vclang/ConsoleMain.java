@@ -79,10 +79,9 @@ public class ConsoleMain {
     }
 
     SimpleStaticNamespaceProvider staticNsProvider = new SimpleStaticNamespaceProvider();
-    final SimpleModuleNamespaceProvider moduleNsProvider = new SimpleModuleNamespaceProvider();
     final ListErrorReporter errorReporter = new ListErrorReporter();
-    final NameResolver nameResolver = new NameResolver(moduleNsProvider, staticNsProvider, new SimpleDynamicNamespaceProvider());
-    final OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(errorReporter, nameResolver, new ConcreteResolveListener(), new SimpleStaticNamespaceProvider(), new SimpleDynamicNamespaceProvider());
+    final SimpleModuleNamespaceProvider moduleNsProvider = new SimpleModuleNamespaceProvider();
+    final OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(errorReporter, new ConcreteResolveListener(), moduleNsProvider, new SimpleStaticNamespaceProvider(), new SimpleDynamicNamespaceProvider());
     final OneshotSourceInfoCollector srcInfoCollector = new OneshotSourceInfoCollector();
     final ErrorFormatter errf = new ErrorFormatter(srcInfoCollector.sourceInfoProvider);
     final List<ModuleSourceId> loadedModules = new ArrayList<>();

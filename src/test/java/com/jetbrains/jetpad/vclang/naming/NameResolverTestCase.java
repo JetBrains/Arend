@@ -40,7 +40,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
       LOADED_PRELUDE = new Prelude.PreludeLoader(internalErrorReporter).load();
       assertThat("Failed loading Prelude", internalErrorReporter.getErrorList(), is(empty()));
 
-      OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(internalErrorReporter, nameResolver, new ConcreteResolveListener(), staticNsProvider, dynamicNsProvider);
+      OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(internalErrorReporter, new ConcreteResolveListener(), moduleNsProvider, staticNsProvider, dynamicNsProvider);
       oneshotNameResolver.visitModule(LOADED_PRELUDE, globalScope);
       assertThat("Failed resolving names in Prelude", internalErrorReporter.getErrorList(), is(empty()));
     }
@@ -52,7 +52,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
   protected final void loadModule(ModulePath modulePath, Abstract.ClassDefinition module) {
-    OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(internalErrorReporter, nameResolver, new ConcreteResolveListener(), staticNsProvider, dynamicNsProvider);
+    OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(internalErrorReporter, new ConcreteResolveListener(), moduleNsProvider, staticNsProvider, dynamicNsProvider);
     oneshotNameResolver.visitModule(module, globalScope);
     assertThat(internalErrorReporter.getErrorList(), is(empty()));
 

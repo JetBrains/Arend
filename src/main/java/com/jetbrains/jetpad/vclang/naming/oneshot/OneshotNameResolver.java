@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.naming.oneshot;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.oneshot.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
@@ -15,9 +16,9 @@ public class OneshotNameResolver {
   private final StaticNamespaceProvider myStaticNsProvider;
   private final DynamicNamespaceProvider myDynamicNsProvider;
 
-  public OneshotNameResolver(ErrorReporter errorReporter, NameResolver nameResolver, ResolveListener listener, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider) {
+  public OneshotNameResolver(ErrorReporter errorReporter, ResolveListener listener, ModuleNamespaceProvider moduleNsProvider, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider) {
     myErrorReporter = errorReporter;
-    myNameResolver = nameResolver;
+    myNameResolver = new NameResolver(moduleNsProvider, staticNsProvider, dynamicNsProvider);
     myResolveListener = listener;
     myStaticNsProvider = staticNsProvider;
     myDynamicNsProvider = dynamicNsProvider;
