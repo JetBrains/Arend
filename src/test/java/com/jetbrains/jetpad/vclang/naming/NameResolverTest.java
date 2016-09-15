@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -267,8 +268,16 @@ public class NameResolverTest extends NameResolverTestCase {
     resolveNamesDef("\\function test' => ::Prelude.suc");
   }
 
+  @Ignore("#46")
   @Test
-  public void testPreludeNotFound() {
-    resolveNamesDef("\\function test' => ::Prelude.doesnotexist", 1);
+  public void testPreludeNonExistentMember() {
+    loadPrelude();
+    resolveNamesDef("\\function test' => ::Prelude.suc", 1);
+  }
+
+  @Ignore("#46")
+  @Test
+  public void testPreludeNotLoaded() {
+    resolveNamesDef("\\function test' => ::Prelude.suc", 1);
   }
 }

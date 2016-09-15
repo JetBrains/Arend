@@ -94,13 +94,13 @@ public class NameResolver {
       }
       // TODO: throw MemberNotFoundError
       return ns != null ? ns.resolveName(defCall.getName()) : null;
-//    } else if (defCall.getExpression() instanceof ModuleCallExpression) {
-//      Abstract.Definition module = resolveModuleCall(currentScope, (ModuleCallExpression) defCall.getExpression());
-//      if (module instanceof Abstract.ClassDefinition) {
-//        ModuleNamespace moduleNamespace = myModuleNamespaceProvider.forModule((Abstract.ClassDefinition) module);
-//        return moduleNamespace.resolveName(defCall.getName());
-//      }
-//      return null;
+    } else if (defCall.getExpression() instanceof Abstract.ModuleCallExpression) {
+      Abstract.Definition module = resolveModuleCall(currentScope, (Abstract.ModuleCallExpression) defCall.getExpression());
+      if (module instanceof Abstract.ClassDefinition) {
+        ModuleNamespace moduleNamespace = myModuleNamespaceProvider.forModule((Abstract.ClassDefinition) module);
+        return moduleNamespace.resolveName(defCall.getName());
+      }
+      return null;
     } else {
       return null;
     }
@@ -117,6 +117,7 @@ public class NameResolver {
     ModuleNamespace ns = myModuleNamespaceProvider.root();
     for (String name : moduleCall.getPath()) {
       ns = ns.getSubmoduleNamespace(name);
+      if (ns == null) return null;
     }
     return ns.getRegisteredClass();
   }
