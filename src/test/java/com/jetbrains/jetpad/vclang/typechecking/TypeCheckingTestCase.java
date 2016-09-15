@@ -29,6 +29,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class TypeCheckingTestCase extends NameResolverTestCase {
+  @SuppressWarnings("StaticNonFinalField")
   private static TypecheckerState PRELUDE_TYPECHECKER_STATE = null;
 
   private TypecheckerState state = new TypecheckerState();

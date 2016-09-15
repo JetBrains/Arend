@@ -22,6 +22,7 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 
 public abstract class NameResolverTestCase extends ParserTestCase {
+  @SuppressWarnings("StaticNonFinalField")
   private static Abstract.ClassDefinition LOADED_PRELUDE = null;
 
   private final SimpleModuleNamespaceProvider  moduleNsProvider  = new SimpleModuleNamespaceProvider();

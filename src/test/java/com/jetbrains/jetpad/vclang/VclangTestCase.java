@@ -25,7 +25,7 @@ public abstract class VclangTestCase {
   }
 
 
-  private static ErrorFormatter ERROR_FORMATTER = new ErrorFormatter(SourceInfoProvider.TRIVIAL);
+  private static final ErrorFormatter ERROR_FORMATTER = new ErrorFormatter(SourceInfoProvider.TRIVIAL);
 
   protected static Matcher<? super List<? extends GeneralError>> containsErrors(final int n) {
     return new TypeSafeDiagnosingMatcher<List<? extends GeneralError>>() {
