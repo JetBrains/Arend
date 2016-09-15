@@ -109,7 +109,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     public CheckTypeVisitor build() {
-      return build();
+      return new CheckTypeVisitor(myTypecheckerState, myThisClass, myThisExpr, myLocalContext, myErrorReporter);
     }
   }
 
