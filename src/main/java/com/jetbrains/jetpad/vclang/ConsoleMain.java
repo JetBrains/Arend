@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang;
 
+import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
@@ -8,10 +9,13 @@ import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
 import com.jetbrains.jetpad.vclang.module.source.file.FileModuleLoader;
 import com.jetbrains.jetpad.vclang.module.source.file.FileModuleSourceId;
 import com.jetbrains.jetpad.vclang.module.utils.FileOperations;
-import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.namespace.*;
+import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
+import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.namespace.SimpleModuleNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotNameResolver;
 import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotSourceInfoCollector;
+import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.ConcreteResolveListener;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -26,10 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class ConsoleMain {
   public static void main(String[] args) {
@@ -86,8 +87,13 @@ public class ConsoleMain {
     final ErrorFormatter errf = new ErrorFormatter(srcInfoCollector.sourceInfoProvider);
     final List<ModuleSourceId> loadedModules = new ArrayList<>();
     final List<Abstract.Definition> modulesToTypeCheck = new ArrayList<>();
+    final TypecheckerState state = new TypecheckerState();
 
-    final Namespace preludeNamespace = staticNsProvider.forDefinition(new Prelude.PreludeLoader(errorReporter).load());
+    final Abstract.ClassDefinition prelude = new Prelude.PreludeLoader(errorReporter).load();
+    oneshotNameResolver.visitModule(prelude, new EmptyScope());
+    TypecheckingOrdering.typecheck(state, Collections.singletonList(prelude), new DummyErrorReporter(), true);
+    assert errorReporter.getErrorList().isEmpty();
+    final Namespace preludeNamespace = staticNsProvider.forDefinition(prelude);
 
     final ModuleLoader moduleLoader = new FileModuleLoader(sourceDir, errorReporter) {
       @Override
@@ -114,7 +120,6 @@ public class ConsoleMain {
       return;
     }
 
-    TypecheckerState state = new TypecheckerState();
     if (!TypecheckingOrdering.typecheck(state, modulesToTypeCheck, errorReporter, true)) {
       return;
     }
