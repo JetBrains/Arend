@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FieldCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.term.typeclass.ClassView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,10 +14,12 @@ import java.util.List;
 public class LocalInstancePool implements ClassViewInstancePool {
   static private class Pair {
     Expression key;
+    ClassView classView;
     Expression value;
 
-    public Pair(Expression key, Expression value) {
+    public Pair(Expression key, ClassView classView, Expression value) {
       this.key = key;
+      this.classView = classView;
       this.value = value;
     }
   }
@@ -24,31 +27,33 @@ public class LocalInstancePool implements ClassViewInstancePool {
   private final List<Pair> myPool = new ArrayList<>();
 
   @Override
-  public Expression getInstance(Expression classifyingExpression) {
+  public Expression getInstance(Expression classifyingExpression, ClassView classView) {
     Expression expr = classifyingExpression.normalize(NormalizeVisitor.Mode.NF);
     for (Pair pair : myPool) {
-      if (pair.key.equals(expr)) {
+      if (pair.key.equals(expr) && pair.classView == classView) {
         return pair.value;
       }
     }
     return null;
   }
 
-  private boolean addInstance(Expression classifyingExpression, Expression instance) {
-    if (getInstance(classifyingExpression) != null) {
+  private boolean addInstance(Expression classifyingExpression, ClassView classView, Expression instance) {
+    if (getInstance(classifyingExpression, classView) != null) {
       return false;
     } else {
-      myPool.add(new Pair(classifyingExpression, instance));
+      myPool.add(new Pair(classifyingExpression, classView, instance));
       return true;
     }
   }
 
   public boolean addInstance(Binding binding, Expression type) {
-    if (type instanceof ClassViewCallExpression && ((ClassViewCallExpression) type).getClassView().getClassifyingField() != null) {
-      ReferenceExpression reference = new ReferenceExpression(binding);
-      return addInstance(new FieldCallExpression(((ClassViewCallExpression) type).getClassView().getClassifyingField(), reference).normalize(NormalizeVisitor.Mode.NF), reference);
-    } else {
-      return true;
+    if (type instanceof ClassViewCallExpression) {
+      ClassView classView = ((ClassViewCallExpression) type).getClassView();
+      if (classView.getClassifyingField() != null) {
+        ReferenceExpression reference = new ReferenceExpression(binding);
+        return addInstance(new FieldCallExpression(((ClassViewCallExpression) type).getClassView().getClassifyingField(), reference).normalize(NormalizeVisitor.Mode.NF), classView, reference);
+      }
     }
+    return true;
   }
 }

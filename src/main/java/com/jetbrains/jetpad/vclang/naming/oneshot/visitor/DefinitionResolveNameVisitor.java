@@ -242,6 +242,9 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
 
     Namespace staticNamespace = myStaticNsProvider.forDefinition(def.getParentStatement().getParentDefinition());
     Abstract.Definition resolvedUnderlyingClass = staticNamespace.resolveName(def.getUnderlyingClassName());
+    if (resolvedUnderlyingClass instanceof Abstract.ClassView) {
+      resolvedUnderlyingClass = ((Abstract.ClassView) resolvedUnderlyingClass).getUnderlyingClass();
+    }
     if (!(resolvedUnderlyingClass instanceof Abstract.ClassDefinition)) {
       myErrorReporter.report(resolvedUnderlyingClass != null ? new WrongDefinition("Expected a class", def) : new NotInScopeError(def, def.getUnderlyingClassName()));
       return null;

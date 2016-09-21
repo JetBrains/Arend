@@ -3,12 +3,20 @@ package com.jetbrains.jetpad.vclang.term.context.binding.inference;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.typeclass.ClassView;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
 public class TypeClassInferenceVariable extends InferenceVariable {
-  public TypeClassInferenceVariable(String name, Expression type, Abstract.SourceNode sourceNode) {
+  private final ClassView myClassView;
+
+  public TypeClassInferenceVariable(String name, Expression type, ClassView classView, Abstract.SourceNode sourceNode) {
     super(name, type, sourceNode);
+    myClassView = classView;
+  }
+
+  public ClassView getClassView() {
+    return myClassView;
   }
 
   @Override

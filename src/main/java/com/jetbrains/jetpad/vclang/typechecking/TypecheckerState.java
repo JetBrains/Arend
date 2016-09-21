@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class TypecheckerState {
   private final Map<Abstract.Definition, Definition> myTypechecked;
-  private final Map<Abstract.ClassView, ClassView> myClassViews;
+  private final Map<Abstract.Definition, ClassView> myClassViews;
   private final GlobalInstancePool myInstancePool = new GlobalInstancePool();
 
   public TypecheckerState() {
@@ -31,6 +31,10 @@ public class TypecheckerState {
     myClassViews.put(classView, res);
   }
 
+  public void record(Abstract.ClassViewField classViewField, ClassView res) {
+    myClassViews.put(classViewField, res);
+  }
+
   public Definition getTypechecked(Abstract.Definition def) {
     assert def != null;
     Abstract.Definition definition = def instanceof Abstract.ClassView ? ((Abstract.ClassView) def).getUnderlyingClass() : def;
@@ -45,6 +49,15 @@ public class TypecheckerState {
     ClassView result = myClassViews.get(classView);
     if (result == null) {
       throw new IllegalStateException("Internal error: class view " + classView + " was not type checked");
+    }
+    return result;
+  }
+
+  public ClassView getClassView(Abstract.ClassViewField classViewField) {
+    assert classViewField != null;
+    ClassView result = myClassViews.get(classViewField);
+    if (result == null) {
+      throw new IllegalStateException("Internal error: cannot find class view for " + classViewField);
     }
     return result;
   }

@@ -751,10 +751,11 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
               continue;
             }
             ClassView classView = new ClassView((ClassField) classifyingField, (Abstract.ClassView) definition);
+            myState.record((Abstract.ClassView) definition, classView);
             for (Abstract.ClassViewField viewField : ((Abstract.ClassView) definition).getFields()) {
               classView.addView((ClassField) myState.getTypechecked(viewField.getUnderlyingField()), viewField.getUnderlyingField());
+              myState.record(viewField, classView);
             }
-            myState.record((Abstract.ClassView) definition, classView);
           }
         }
       }
@@ -914,7 +915,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         myErrorReporter.report(new LocalTypeCheckingError("Expected an expression of a class view type", term));
         return typedDef;
       }
-      FieldSet.Implementation impl = expr.toClassCall().getFieldSet().getImplementation(((ClassViewCallExpression) expr.toClassCall()).getClassView().getClassifyingField());
+
+      ClassView classView = ((ClassViewCallExpression) expr.toClassCall()).getClassView();
+      FieldSet.Implementation impl = expr.toClassCall().getFieldSet().getImplementation(classView.getClassifyingField());
       if (impl == null) {
         myErrorReporter.report(new LocalTypeCheckingError("Classifying field is not implemented", term));
         return typedDef;
@@ -924,10 +927,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         myErrorReporter.report(new LocalTypeCheckingError("Expected a definition in the classifying field", term));
         return typedDef;
       }
-      if (myState.getInstancePool().getInstance(defCall.getDefinition()) != null) {
-        myErrorReporter.report(new LocalTypeCheckingError("Instance of '" + ((ClassViewCallExpression) expr.toClassCall()).getClassView().getAbstract().getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", term));
+      if (myState.getInstancePool().getInstance(defCall.getDefinition(), classView) != null) {
+        myErrorReporter.report(new LocalTypeCheckingError("Instance of '" + classView.getAbstract().getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", term));
       } else {
-        myState.getInstancePool().addInstance(defCall.getDefinition(), FunCall(typedDef));
+        myState.getInstancePool().addInstance(defCall.getDefinition(), classView, FunCall(typedDef));
       }
     }
 

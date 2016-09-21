@@ -17,7 +17,6 @@ import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.SolveEquationError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.SolveEquationsError;
@@ -55,13 +54,13 @@ public class TwoStageEquations implements Equations {
         if (expr1.toFieldCall() != null && expr1.toFieldCall().getExpression().toInferenceReference() != null) {
           variable = expr1.toFieldCall().getExpression().toInferenceReference().getVariable();
           if (variable instanceof TypeClassInferenceVariable) {
-            result = myVisitor.getClassViewInstancePool().getInstance(expr);
+            result = myVisitor.getClassViewInstancePool().getInstance(expr, ((TypeClassInferenceVariable) variable).getClassView());
           }
         }
         if (variable == null && expr.toFieldCall() != null && expr.toFieldCall().getExpression().toInferenceReference() != null) {
           variable = expr.toFieldCall().getExpression().toInferenceReference().getVariable();
           if (variable instanceof TypeClassInferenceVariable) {
-            result = myVisitor.getClassViewInstancePool().getInstance(expr1);
+            result = myVisitor.getClassViewInstancePool().getInstance(expr1, ((TypeClassInferenceVariable) variable).getClassView());
           }
         }
         if (result != null) {
