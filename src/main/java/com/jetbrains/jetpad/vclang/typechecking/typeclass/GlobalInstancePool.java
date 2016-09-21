@@ -20,6 +20,10 @@ public class GlobalInstancePool implements ClassViewInstancePool {
     return myPool.get(defCall.getDefinition());
   }
 
+  public Expression getInstance(Definition definition) {
+    return myPool.get(definition);
+  }
+
   public void addInstance(Definition classifyingDefinition, Expression instance) {
     myPool.put(classifyingDefinition, instance);
   }

@@ -126,6 +126,18 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   }
 
   @Test
+  public void inferVarDifferent() {
+    typeCheckClass(
+        "\\static \\class X {\n" +
+        "  \\abstract A : \\Type0\n" +
+        "  \\abstract B : A -> Nat\n" +
+        "}\n" +
+        "\\static \\view \\on X \\by A { B }\n" +
+        "\\static \\view Y \\on X \\by A { B => C }\n" +
+        "\\function f (A' : \\Type0) (x : X { A => A' }) {y : Y { A => A' } } (a : A') => 0");
+  }
+
+  @Test
   public void inferVar3() {
     typeCheckClass(
         "\\static \\class X {\n" +

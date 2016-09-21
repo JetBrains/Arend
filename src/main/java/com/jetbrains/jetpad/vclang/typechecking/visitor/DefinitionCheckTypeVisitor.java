@@ -137,12 +137,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
         Abstract.ClassView classView = Abstract.getUnderlyingClassView(typeArgument.getType());
         if (classView != null) {
-          ClassCallExpression classCallExpr = result.expression.toClassCall();
-          ClassView classView1 = new ClassView((ClassField) myState.getTypechecked(classView.getClassifyingField()));
-          result.expression = new ClassViewCallExpression(classCallExpr.getDefinition(), classCallExpr.getFieldSet(), classView1);
-          for (Abstract.ClassViewField viewField : classView.getFields()) {
-            classView1.addView((ClassField) myState.getTypechecked(viewField.getUnderlyingField()), viewField.getUnderlyingField());
-          }
+          result.expression = new ClassViewCallExpression(result.expression.toClassCall().getDefinition(), result.expression.toClassCall().getFieldSet(), myState.getClassView(classView));
         }
 
         DependentLink param;
@@ -749,6 +744,17 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
             if (result == null || result.expression.toError() != null) {
               classOk = false;
             }
+          } else if (definition instanceof Abstract.ClassView) {
+            Definition classifyingField = myState.getTypechecked(((Abstract.ClassView) definition).getClassifyingField());
+            if (!(classifyingField instanceof ClassField)) {
+              myErrorReporter.report(new LocalTypeCheckingError("'" + classifyingField.getName() + "' is not a field", definition));
+              continue;
+            }
+            ClassView classView = new ClassView((ClassField) classifyingField, (Abstract.ClassView) definition);
+            for (Abstract.ClassViewField viewField : ((Abstract.ClassView) definition).getFields()) {
+              classView.addView((ClassField) myState.getTypechecked(viewField.getUnderlyingField()), viewField.getUnderlyingField());
+            }
+            myState.record((Abstract.ClassView) definition, classView);
           }
         }
       }
@@ -918,7 +924,11 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         myErrorReporter.report(new LocalTypeCheckingError("Expected a definition in the classifying field", term));
         return typedDef;
       }
-      myState.getInstancePool().addInstance(defCall.getDefinition(), FunCall(typedDef));
+      if (myState.getInstancePool().getInstance(defCall.getDefinition()) != null) {
+        myErrorReporter.report(new LocalTypeCheckingError("Instance of '" + ((ClassViewCallExpression) expr.toClassCall()).getClassView().getAbstract().getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", term));
+      } else {
+        myState.getInstancePool().addInstance(defCall.getDefinition(), FunCall(typedDef));
+      }
     }
 
     return typedDef;

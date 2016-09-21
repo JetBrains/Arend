@@ -3,24 +3,22 @@ package com.jetbrains.jetpad.vclang.term.typeclass;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 public class ClassView {
   private final Map<ClassField, Abstract.ClassField> myViews;
   private final ClassField myClassifyingField;
+  private final Abstract.ClassView myAbstractClassView;
 
-  public static ClassView DEFAULT = new ClassView(Collections.<ClassField, Abstract.ClassField>emptyMap());
-
-  public ClassView(ClassField classifyingField) {
+  public ClassView(ClassField classifyingField, Abstract.ClassView classView) {
     myViews = new HashMap<>();
     myClassifyingField = classifyingField;
+    myAbstractClassView = classView;
   }
 
-  private ClassView(Map<ClassField, Abstract.ClassField> view) {
-    myViews = view;
-    myClassifyingField = null;
+  public Abstract.ClassView getAbstract() {
+    return myAbstractClassView;
   }
 
   public void addView(ClassField field, Abstract.ClassField abstractField) {

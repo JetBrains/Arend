@@ -43,7 +43,7 @@ public class TypeCheckingDefCall {
   private Definition getTypeCheckedDefinition(Abstract.Definition definition, Abstract.Expression expr) {
     Definition typeCheckedDefinition = myState.getTypechecked(definition);
     if (typeCheckedDefinition == null) {
-      throw new IllegalStateException("Internal error: definition " + definition + " was not typechecked");
+      throw new IllegalStateException("Internal error: definition " + definition + " was not type checked");
     }
     if (typeCheckedDefinition.typeHasErrors()) {
       LocalTypeCheckingError error = new HasErrors(definition, expr);
@@ -70,10 +70,7 @@ public class TypeCheckingDefCall {
         return null;
       }
       if (resolvedDefinition instanceof Abstract.ClassView && typeCheckedDefinition instanceof ClassDefinition) {
-        Definition classifyingField = myState.getTypechecked(((Abstract.ClassView) resolvedDefinition).getClassifyingField());
-        if (classifyingField instanceof ClassField && !classifyingField.hasErrors()) {
-          classView = new ClassView((ClassField) classifyingField);
-        }
+        classView = myState.getClassView((Abstract.ClassView) resolvedDefinition);
       }
     }
 

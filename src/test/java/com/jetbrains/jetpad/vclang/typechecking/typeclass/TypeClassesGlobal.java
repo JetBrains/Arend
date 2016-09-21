@@ -59,7 +59,20 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
         "}\n" +
         "\\static \\view Y \\on X \\by A { B }\n" +
         "\\static \\instance Nat-X => \\new Y { A => Nat | B => \\lam n => Nat }\n" +
-        "\\static \\instance Nat-Y => \\new Y { A => Nat | B => \\lam n => Nat -> Nat }\n", 1);
+        "\\static \\instance Nat-Y => \\new Y { A => Nat | B => \\lam n => Nat -> Nat }", 1);
+  }
+
+  @Test
+  public void differentViews() {
+    typeCheckClass(
+        "\\static \\class X {\n" +
+        "  \\abstract A : \\Type0\n" +
+        "  \\abstract B : A -> \\Type0\n" +
+        "}\n" +
+        "\\static \\view Y \\on X \\by A { B }\n" +
+        "\\static \\view Z \\on X \\by A { B => C }\n" +
+        "\\static \\instance Nat-Y => \\new Y { A => Nat | B => \\lam n => Nat }\n" +
+        "\\static \\instance Nat-Z => \\new Z { A => Nat | B => \\lam n => Nat -> Nat }");
   }
 
   @Test
@@ -81,7 +94,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
     typeCheckClass(
         "\\static \\class X {\n" +
         "  \\abstract A : \\Type0\n" +
-        "  \\abstract B : A -> \\Type0\n" +
+        "  \\abstract B : A -> \\Set0\n" +
         "}\n" +
         "\\static \\view Y \\on X \\by A { B }\n" +
         "\\static \\instance Nat-X => \\new Y { A => Nat | B => \\lam n => Nat -> Nat }\n" +
