@@ -13,7 +13,6 @@ import org.antlr.v4.runtime.*;
 
 import java.util.List;
 
-import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 
 public abstract class ParserTestCase extends VclangTestCase {
@@ -77,7 +76,6 @@ public abstract class ParserTestCase extends VclangTestCase {
 
   private Concrete.ClassDefinition parseClass(String name, String text, int errors) {
     VcgrammarParser.StatementsContext tree = _parse(name, errorReporter, text).statements();
-    assertThat(errorList, is(empty()));
     List<Concrete.Statement> statements = new BuildVisitor(SOURCE_ID, errorReporter).visitStatements(tree);
     Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(ConcreteExpressionFactory.POSITION, name, statements, Abstract.ClassDefinition.Kind.Module);
     for (Concrete.Statement statement : statements) {

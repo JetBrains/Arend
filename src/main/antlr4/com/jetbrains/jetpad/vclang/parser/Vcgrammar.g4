@@ -74,7 +74,6 @@ pattern : anyPattern       # patternAny
 
 patternArg : '(' pattern ')'    # patternArgExplicit
            | '{' pattern '}'    # patternArgImplicit
-           | '{{' pattern '}}'  # patternArgTypeClass
            | anyPattern         # patternArgAny
            | ID                 # patternArgID
            ;
@@ -145,7 +144,6 @@ implementStatement : '|'? name '=>' expr;
 
 argument : atomFieldsAcc                # argumentExplicit
          | '{' expr '}'                 # argumentImplicit
-         | '{{' expr '}}'               # argumentTypeClass
          | '[' expr ']'                 # argumentLevel
          ;
 
@@ -161,7 +159,6 @@ literal : UNIVERSE                      # universe
 tele : literal                          # teleLiteral
      | '(' typedExpr ')'                # explicit
      | '{' typedExpr '}'                # implicit
-     | '{{' typedExpr '}}'              # teleTypeClass
      ;
 
 typedExpr : expr                        # notTyped

@@ -54,13 +54,15 @@ public class TwoStageEquations implements Equations {
         if (expr1.toFieldCall() != null && expr1.toFieldCall().getExpression().toInferenceReference() != null) {
           variable = expr1.toFieldCall().getExpression().toInferenceReference().getVariable();
           if (variable instanceof TypeClassInferenceVariable) {
-            result = myVisitor.getClassViewInstancePool().getInstance(expr, ((TypeClassInferenceVariable) variable).getClassView());
+            TypeClassInferenceVariable tcVar = (TypeClassInferenceVariable) variable;
+            result = tcVar.getClassView() != null ? myVisitor.getClassViewInstancePool().getInstance(expr, tcVar.getClassView()) : myVisitor.getClassViewInstancePool().getInstance(expr, tcVar.getClassDefinition());
           }
         }
         if (variable == null && expr.toFieldCall() != null && expr.toFieldCall().getExpression().toInferenceReference() != null) {
           variable = expr.toFieldCall().getExpression().toInferenceReference().getVariable();
           if (variable instanceof TypeClassInferenceVariable) {
-            result = myVisitor.getClassViewInstancePool().getInstance(expr1, ((TypeClassInferenceVariable) variable).getClassView());
+            TypeClassInferenceVariable tcVar = (TypeClassInferenceVariable) variable;
+            result = tcVar.getClassView() != null ? myVisitor.getClassViewInstancePool().getInstance(expr1, tcVar.getClassView()) : myVisitor.getClassViewInstancePool().getInstance(expr1, tcVar.getClassDefinition());
           }
         }
         if (result != null) {

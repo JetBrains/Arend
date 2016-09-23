@@ -83,4 +83,37 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
         "\\static \\view \\on Y \\by T { z }\n" +
         "\\function g => f", 1);
   }
+
+  @Test
+  public void resolveClassExt() {
+    resolveNamesClass(
+        "\\static \\class X {\n" +
+        "  \\abstract T : \\Type1\n" +
+        "  \\abstract f : \\Type1\n" +
+        "}\n" +
+        "\\static \\view Y \\on X \\by T { f => g }\n" +
+        "\\function h => \\new Y { T => \\Type0 | g => \\Type0 }");
+  }
+
+  @Test
+  public void resolveClassExtSameName() {
+    resolveNamesClass(
+        "\\static \\class X {\n" +
+        "  \\abstract T : \\Type1\n" +
+        "  \\abstract f : \\Type1\n" +
+        "}\n" +
+        "\\static \\view \\on X \\by T { f => g }\n" +
+        "\\function h => \\new X { T => \\Type0 | g => \\Type0 }");
+  }
+
+  @Test
+  public void resolveClassExtSameName2() {
+    resolveNamesClass(
+        "\\static \\class X {\n" +
+        "  \\abstract T : \\Type1\n" +
+        "  \\abstract f : \\Type1\n" +
+        "}\n" +
+        "\\static \\view \\on X \\by T { f => g }\n" +
+        "\\function h => \\new X { T => \\Type0 | f => \\Type0 }", 1);
+  }
 }

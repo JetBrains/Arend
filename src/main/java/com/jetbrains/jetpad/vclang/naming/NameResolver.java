@@ -135,6 +135,20 @@ public class NameResolver {
     }
   }
 
+  public Abstract.ClassField resolveClassFieldByView(Abstract.ClassView classView, String name, ErrorReporter errorReporter, Abstract.SourceNode cause) {
+    if (name.equals(classView.getClassifyingFieldName())) {
+      return classView.getClassifyingField();
+    }
+    for (Abstract.ClassViewField viewField : classView.getFields()) {
+      if (name.equals(viewField.getName())) {
+        return viewField.getUnderlyingField();
+      }
+    }
+
+    errorReporter.report(new NotInScopeError(cause, name));
+    return null;
+  }
+
   public Namespace staticNamespaceFor(Abstract.Definition ref) {
     return myStaticNamespaceProvider.forDefinition(ref);
   }

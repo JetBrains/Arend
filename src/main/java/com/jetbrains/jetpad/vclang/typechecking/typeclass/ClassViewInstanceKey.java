@@ -1,13 +1,12 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.typeclass.ClassView;
 
-public class ClassViewInstanceKey {
+public class ClassViewInstanceKey<T> {
   public final Definition definition;
-  public final ClassView classView;
+  public final T classView;
 
-  public ClassViewInstanceKey(Definition definition, ClassView classView) {
+  public ClassViewInstanceKey(Definition definition, T classView) {
     this.definition = definition;
     this.classView = classView;
   }

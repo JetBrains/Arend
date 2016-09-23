@@ -72,7 +72,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
         "\\static \\view Y \\on X \\by A { B }\n" +
         "\\static \\view Z \\on X \\by A { B => C }\n" +
         "\\static \\instance Nat-Y => \\new Y { A => Nat | B => \\lam n => Nat }\n" +
-        "\\static \\instance Nat-Z => \\new Z { A => Nat | B => \\lam n => Nat -> Nat }");
+        "\\static \\instance Nat-Z => \\new Z { A => Nat | C => \\lam n => Nat -> Nat }");
   }
 
   @Test
@@ -112,6 +112,36 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
         "\\static \\view Y \\on X \\by A { B }\n" +
         "\\static \\instance Nat-X => \\new Y { A => Nat | B => \\lam n => Nat -> Nat }\n" +
         "\\static \\function f {A : \\Type0} {y : Y { A => A } } (a : A) => B a\n" +
+        "\\static \\function g => f 0");
+  }
+
+  @Test
+  public void transitiveDuplicate() {
+    typeCheckClass(
+        "\\static \\class X {\n" +
+        "  \\abstract A : \\Type0\n" +
+        "  \\abstract B : A -> \\Type0\n" +
+        "}\n" +
+        "\\static \\view Y \\on X \\by A { B }\n" +
+        "\\static \\view Z \\on X \\by A { B => C }\n" +
+        "\\static \\instance Nat-Y => \\new Y { A => Nat | B => \\lam n => Nat -> Nat }\n" +
+        "\\static \\instance Nat-Z => \\new Z { A => Nat | C => \\lam n => Nat -> Nat }\n" +
+        "\\static \\function f {A : \\Type0} {y : Y { A => A } } (a : A) => B a\n" +
+        "\\static \\function g => f 0", 1);
+  }
+
+  @Test
+  public void transitiveDuplicateDefault() {
+    typeCheckClass(
+        "\\static \\class X {\n" +
+        "  \\abstract A : \\Type0\n" +
+        "  \\abstract B : A -> \\Type0\n" +
+        "}\n" +
+        "\\static \\view X \\on X \\by A { B }\n" +
+        "\\static \\view Z \\on X \\by A { B => C }\n" +
+        "\\static \\instance Nat-Y => \\new X { A => Nat | B => \\lam n => Nat -> Nat }\n" +
+        "\\static \\instance Nat-Z => \\new Z { A => Nat | C => \\lam n => Nat -> Nat }\n" +
+        "\\static \\function f {A : \\Type0} {z : Z { A => A } } (a : A) => C a\n" +
         "\\static \\function g => f 0");
   }
 }
