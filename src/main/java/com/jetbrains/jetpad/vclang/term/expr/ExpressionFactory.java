@@ -42,7 +42,9 @@ public class ExpressionFactory {
   }
 
   public static FunCallExpression FunCall(FunctionDefinition definition, Level lp, Level lh) {
-    return (FunCallExpression) new FunCallExpression(definition).applyLevelSubst(new LevelSubstitution(definition.getPolyParams().get(0), lp, definition.getPolyParams().get(1), lh));
+    FunCallExpression expr = new FunCallExpression(definition);
+    expr.setPolyParamsSubst(new LevelSubstitution(definition.getPolyParams().get(0), lp, definition.getPolyParams().get(1), lh));
+    return expr;
   }
 
   public static DataCallExpression DataCall(DataDefinition definition) {
@@ -50,7 +52,9 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression DataCall(DataDefinition definition, Level lp, Level lh) {
-    return (DataCallExpression) new DataCallExpression(definition).applyLevelSubst(new LevelSubstitution(definition.getPolyParams().get(0), lp, definition.getPolyParams().get(1), lh));
+    DataCallExpression expr = new DataCallExpression(definition);
+    expr.setPolyParamsSubst(new LevelSubstitution(definition.getPolyParams().get(0), lp, definition.getPolyParams().get(1), lh));
+    return expr;
   }
 
   public static FieldCallExpression FieldCall(ClassField definition, Expression thisExpr) {
@@ -70,7 +74,9 @@ public class ExpressionFactory {
   }
 
   public static ConCallExpression ConCall(Constructor definition, Level lp, Level lh, List<Expression> parameters) {
-    return new ConCallExpression(definition, parameters).applyLevelSubst(new LevelSubstitution(definition.getPolyParams().get(0), lp, definition.getPolyParams().get(1), lh));
+    ConCallExpression expr = new ConCallExpression(definition, parameters);
+    expr.setPolyParamsSubst(new LevelSubstitution(definition.getPolyParams().get(0), lp, definition.getPolyParams().get(1), lh));
+    return expr;
   }
 
   public static ConCallExpression ConCall(Constructor definition) {

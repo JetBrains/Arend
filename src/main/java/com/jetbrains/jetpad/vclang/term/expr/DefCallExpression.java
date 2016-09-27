@@ -31,13 +31,8 @@ public abstract class DefCallExpression extends Expression {
     return myDefinition;
   }
 
-  public DefCallExpression applyLevelSubst(LevelSubstitution subst) {
-    // TODO [sorts]: rewrite this
-    if (subst.getDomain().isEmpty()) {
-      return this;
-    }
-    myPolyParamsSubst = myPolyParamsSubst.compose(subst, myDefinition.getPolyParams());
-    return this;
+  public void setPolyParamsSubst(LevelSubstitution polyParams) {
+    myPolyParamsSubst = polyParams;
   }
 
   @Override

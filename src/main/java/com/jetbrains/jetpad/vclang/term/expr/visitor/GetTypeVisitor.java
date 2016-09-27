@@ -39,7 +39,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
 
   @Override
   public Type visitClassCall(ClassCallExpression expr, Void params) {
-    return expr.getSorts().toType();
+    return expr.getSorts().toType().subst(new ExprSubstitution(), expr.getPolyParamsSubst());
   }
 
   @Override

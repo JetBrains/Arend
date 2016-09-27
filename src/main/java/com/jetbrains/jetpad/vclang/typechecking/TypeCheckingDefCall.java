@@ -178,7 +178,8 @@ public class TypeCheckingDefCall {
       }
 
       if (constructor != null) {
-        result.expression = ConCall(constructor, new ArrayList<>(arguments)).applyLevelSubst(dataCall.getPolyParamsSubst());
+        result.expression = ConCall(constructor, new ArrayList<>(arguments));
+        ((ConCallExpression) result.expression).setPolyParamsSubst(dataCall.getPolyParamsSubst());
         result.type = result.expression.getType();
         return result;
       }
@@ -260,9 +261,7 @@ public class TypeCheckingDefCall {
         myVisitor.getEquations().addVariable(l);
       }
 
-      if (!definition.hasErrors()) {
-        defCall = defCall.applyLevelSubst(subst);
-      }
+      defCall.setPolyParamsSubst(subst);
       result.expression = defCall;
       result.type = definition.getTypeWithThis().subst(new ExprSubstitution(), subst);
       return result;

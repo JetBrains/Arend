@@ -34,11 +34,9 @@ public abstract class Definition implements Referable {
 
   public abstract DefCallExpression getDefCall();
 
-  public DefCallExpression getDefCall(LevelSubstitution subst) {
+  public DefCallExpression getDefCall(LevelSubstitution polyParams) {
     DefCallExpression defCall = getDefCall();
-    if (!hasErrors()) {
-      defCall.applyLevelSubst(subst);
-    }
+    defCall.setPolyParamsSubst(polyParams);
     return defCall;
   }
 

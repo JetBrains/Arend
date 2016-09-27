@@ -35,7 +35,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public DefCallExpression visitDefCall(DefCallExpression expr, Void params) {
-    return myLevelSubstitution.getDomain().isEmpty() ? expr : expr.getDefinition().getDefCall(expr.getPolyParamsSubst()).applyLevelSubst(myLevelSubstitution);
+    return myLevelSubstitution.getDomain().isEmpty() ? expr : expr.getDefinition().getDefCall(expr.getPolyParamsSubst().subst(myLevelSubstitution));
   }
 
   @Override
@@ -43,6 +43,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     if (expr.getDataTypeArguments().isEmpty()) {
       return (ConCallExpression) visitDefCall(expr, null);
     }
+
     List<Expression> parameters = new ArrayList<>(expr.getDataTypeArguments().size());
     for (Expression parameter : expr.getDataTypeArguments()) {
       Expression expr2 = parameter.accept(this, null);
@@ -51,12 +52,17 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
       }
       parameters.add(expr2);
     }
-    return ConCall(expr.getDefinition(), parameters).applyLevelSubst(expr.getPolyParamsSubst()).applyLevelSubst(myLevelSubstitution);
+
+    ConCallExpression conCall = ConCall(expr.getDefinition(), parameters);
+    conCall.setPolyParamsSubst(expr.getPolyParamsSubst().subst(myLevelSubstitution));
+    return conCall;
   }
 
   @Override
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
-    return (ClassCallExpression) expr.applyVisitorToImplementedHere(this, params).applyLevelSubst(myLevelSubstitution);
+    ClassCallExpression classCall = expr.applyVisitorToImplementedHere(this, params);
+    classCall.setPolyParamsSubst(classCall.getPolyParamsSubst().subst(myLevelSubstitution));
+    return classCall;
   }
 
   @Override
@@ -65,8 +71,9 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     if (result != null) {
       return Apps(result, expr.getExpression().accept(this, null));
     } else {
-      FieldCallExpression defCall = (FieldCallExpression) visitDefCall(expr, null);
-      return new FieldCallExpression(defCall.getDefinition(), expr.getExpression().accept(this, null));
+      FieldCallExpression defCall = new FieldCallExpression(expr.getDefinition(), expr.getExpression().accept(this, null));
+      defCall.setPolyParamsSubst(expr.getPolyParamsSubst().subst(myLevelSubstitution));
+      return defCall;
     }
   }
 

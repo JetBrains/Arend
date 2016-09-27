@@ -3,7 +3,10 @@ package com.jetbrains.jetpad.vclang.term.expr.subst;
 import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class LevelSubstitution {
   private Map<Variable, Level> mySubstExprs;
@@ -51,39 +54,15 @@ public class LevelSubstitution {
     mySubstExprs.putAll(subst.mySubstExprs);
   }
 
-  public void subst(Variable var, Level expr) {
-    for (Map.Entry<Variable, Level> entry : mySubstExprs.entrySet()) {
-      entry.setValue(entry.getValue().subst(var, expr));
+  public LevelSubstitution subst(LevelSubstitution subst) {
+    if (subst.getDomain().isEmpty()) {
+      return this;
     }
-  }
 
-  public LevelSubstitution compose(LevelSubstitution subst, Collection<? extends Variable> params) {
     LevelSubstitution result = new LevelSubstitution();
-    result.add(this);
-
-    loop:
-    for (Variable var : subst.getDomain()) {
-      if (mySubstExprs.containsKey(var)) {
-        result.add(var, subst.get(var));
-        continue;
-      }
-
-      for (Map.Entry<Variable, Level> substExpr : mySubstExprs.entrySet()) {
-        if (substExpr.getValue().getVar() == var) {
-          result.add(substExpr.getKey(), substExpr.getValue().subst(subst));
-          continue loop;
-        }
-      }
-
-      for (Variable var1 : getDomain()) {
-        if (var1.getType().toDataCall().getDefinition() == var.getType().toDefCall().getDefinition()) {
-          continue loop;
-        }
-      }
-
-      if (params.contains(var)) {
-        result.add(var, subst.get(var));
-      }
+    result.mySubstExprs = new HashMap<>(mySubstExprs);
+    for (Map.Entry<Variable, Level> entry : result.mySubstExprs.entrySet()) {
+      entry.setValue(entry.getValue().subst(subst));
     }
     return result;
   }

@@ -25,7 +25,10 @@ import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeDeserialization;
 
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
@@ -450,7 +453,9 @@ public class ModuleDeserialization {
         for (int i = 0; i < size; ++i) {
           parameters.add(readExpression(stream, definitionMap));
         }
-        return ConCall((Constructor) definition, parameters).applyLevelSubst(polySubst);
+        ConCallExpression expr = ConCall((Constructor) definition, parameters);
+        expr.setPolyParamsSubst(polySubst);
+        return expr;
       }
       case 4: {
         Definition definition = definitionMap.get(stream.readInt());
