@@ -72,6 +72,11 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
+  public int getNumberOfParameters() {
+    return 0;
+  }
+
+  @Override
   public void setThisClass(ClassDefinition enclosingClass) {
     assert myEnclosingThisField == null;
     super.setThisClass(enclosingClass);

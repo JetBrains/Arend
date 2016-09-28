@@ -129,4 +129,9 @@ public class DataDefinition extends Definition {
   public DataCallExpression getDefCall() {
     return DataCall(this);
   }
+
+  @Override
+  public int getNumberOfParameters() {
+    return DependentLink.Helper.size(myParameters);
+  }
 }

@@ -63,6 +63,11 @@ public class ClassField extends Definition {
     return FieldCall(this, null);
   }
 
+  @Override
+  public int getNumberOfParameters() {
+    return 0;
+  }
+
   public void setBaseType(Expression type) {
     myType = type;
   }

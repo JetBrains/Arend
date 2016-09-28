@@ -96,6 +96,11 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   @Override
+  public int getNumberOfParameters() {
+    return DependentLink.Helper.size(myParameters);
+  }
+
+  @Override
   public Namespace getOwnNamespace() {
     return myOwnNamespace;
   }

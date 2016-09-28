@@ -75,7 +75,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     myState = state;
     myContext = localContext;
     myErrorReporter = errorReporter;
-    myTypeCheckingDefCall = new TypeCheckingDefCall(state, this);
+    myTypeCheckingDefCall = new TypeCheckingDefCall(this);
     myTypeCheckingElim = new TypeCheckingElim(this);
     myArgsInference = new StdImplicitArgsInference(this);
     setThisClass(thisClass, thisExpr);
@@ -118,6 +118,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     public CheckTypeVisitor build() {
       return new CheckTypeVisitor(myTypecheckerState, myThisClass, myThisExpr, myLocalContext, myErrorReporter, myPool);
     }
+  }
+
+  public TypecheckerState getTypecheckingState() {
+    return myState;
   }
 
   public TypeCheckingDefCall getTypeCheckingDefCall() {

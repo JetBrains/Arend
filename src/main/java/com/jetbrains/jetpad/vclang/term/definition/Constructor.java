@@ -182,4 +182,9 @@ public class Constructor extends Definition implements Function {
   public ConCallExpression getDefCall() {
     return ConCall(this);
   }
+
+  @Override
+  public int getNumberOfParameters() {
+    return DependentLink.Helper.size(myPatterns.getParameters()) + DependentLink.Helper.size(myParameters);
+  }
 }

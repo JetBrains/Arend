@@ -128,7 +128,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       if (isExplicit && result != null) {
         ConCallExpression conCall = result.expression.getFunction().toConCall();
         if (conCall != null &&
-            result.expression.getArguments().size() < DependentLink.Helper.size(conCall.getDefinition().getDataType().getParameters()) &&
+            result.expression.getArguments().size() < DependentLink.Helper.size(conCall.getDefinition().getDataTypeParameters()) &&
             expectedType != null &&
             !conCall.getDefinition().hasErrors()) {
           Expression expectedTypeNorm = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
@@ -146,23 +146,6 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
                 result.expression = Apps(result.expression, args);
                 result.type = result.type.applyExpressions(args);
               }
-          /*  if (dataCall.isPolymorphic()) {
-              if (result.getEquations() instanceof DummyEquations) {
-                result.setEquations(newEquations());
-              }
-              //conCall.applyLevelSubst(dataCall.getPolyParamsSubst());
-              //result.type.toDataCall().applyLevelSubst(dataCall.getPolyParamsSubst());
-              LevelSubstitution levels = conCall.getPolyParamsSubst();
-              for (Binding binding : levels.getDomain()) {
-                LevelExpression expectedLevel = dataCall.getPolyParamsSubst().get(binding);
-                if (expectedLevel != null) {
-                  result.getEquations().add(levels.get(binding), expectedLevel, Equations.CMP.EQ, fun);
-               //   if (expectedLevel.isBinding() && expectedLevel.getUnitBinding() instanceof InferenceBinding) {
-               //     result.addUnsolvedVariable((InferenceBinding) expectedLevel.getUnitBinding());
-               //   }
-                }
-              }
-            }/**/
             }
             return inferArg(result, arg, true, fun);
           }

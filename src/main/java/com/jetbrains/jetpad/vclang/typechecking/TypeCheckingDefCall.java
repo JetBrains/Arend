@@ -25,13 +25,11 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
 public class TypeCheckingDefCall {
-  private final TypecheckerState myState;
   private final CheckTypeVisitor myVisitor;
   private ClassDefinition myThisClass;
   private Expression myThisExpr;
 
-  public TypeCheckingDefCall(TypecheckerState state, CheckTypeVisitor visitor) {
-    myState = state;
+  public TypeCheckingDefCall(CheckTypeVisitor visitor) {
     myVisitor = visitor;
   }
 
@@ -41,7 +39,7 @@ public class TypeCheckingDefCall {
   }
 
   private Definition getTypeCheckedDefinition(Abstract.Definition definition, Abstract.Expression expr) {
-    Definition typeCheckedDefinition = myState.getTypechecked(definition);
+    Definition typeCheckedDefinition = myVisitor.getTypecheckingState().getTypechecked(definition);
     if (typeCheckedDefinition == null) {
       throw new IllegalStateException("Internal error: definition " + definition + " was not type checked");
     }
@@ -70,7 +68,7 @@ public class TypeCheckingDefCall {
         return null;
       }
       if (resolvedDefinition instanceof Abstract.ClassView && typeCheckedDefinition instanceof ClassDefinition) {
-        classView = myState.getClassView((Abstract.ClassView) resolvedDefinition);
+        classView = myVisitor.getTypecheckingState().getClassView((Abstract.ClassView) resolvedDefinition);
       }
     }
 
@@ -86,7 +84,7 @@ public class TypeCheckingDefCall {
           if (thisExpr == null) {
             if (resolvedDefinition instanceof Abstract.ClassViewField) {
               // TODO: if typeCheckedDefinition.getThisClass() is dynamic, then we should apply it to some this expression
-              thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable(typeCheckedDefinition.getThisClass().getName() + "-inst", typeCheckedDefinition.getThisClass().getDefCall(), myState.getClassView((Abstract.ClassViewField) resolvedDefinition), expr));
+              thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable(typeCheckedDefinition.getThisClass().getName() + "-inst", typeCheckedDefinition.getThisClass().getDefCall(), myVisitor.getTypecheckingState().getClassView((Abstract.ClassViewField) resolvedDefinition), expr));
             } else {
               LocalTypeCheckingError error;
               if (myThisClass != null) {
@@ -101,7 +99,7 @@ public class TypeCheckingDefCall {
           }
         }
 
-        return applyThis(insertPolyVars(typeCheckedDefinition, expr, classView), thisExpr, expr);
+        return makeResult(typeCheckedDefinition, classView, thisExpr, expr);
       } else {
         return getLocalVar(expr);
       }
@@ -150,7 +148,7 @@ public class TypeCheckingDefCall {
           return null;
         }
 
-        return applyThis(insertPolyVars(typeCheckedDefinition, expr, classView), result.expression, expr);
+        return makeResult(typeCheckedDefinition, classView, result.expression, expr);
       }
     }
 
@@ -240,10 +238,10 @@ public class TypeCheckingDefCall {
       }
     }
 
-    return applyThis(insertPolyVars(typeCheckedDefinition, expr, classView), thisExpr, expr);
+    return makeResult(typeCheckedDefinition, classView, thisExpr, expr);
   }
 
-  private CheckTypeVisitor.Result insertPolyVars(Definition definition, Abstract.SourceNode sourceNode, ClassView classView) {
+  private CheckTypeVisitor.Result makeResult(Definition definition, ClassView classView, Expression thisExpr, Abstract.Expression expr) {
     DefCallExpression defCall;
     if (classView != null) {
       defCall = new ClassViewCallExpression((ClassDefinition) definition, classView);
@@ -251,23 +249,27 @@ public class TypeCheckingDefCall {
       defCall = definition.getDefCall();
     }
 
-    if (definition.isPolymorphic()) {
-      LevelSubstitution subst = new LevelSubstitution();
+    LevelSubstitution subst = new LevelSubstitution();
+    for (Binding polyVar : definition.getPolyParams()) {
+      LevelInferenceVariable l = new LevelInferenceVariable(polyVar.getName(), polyVar.getType(), expr);
+      subst.add(polyVar, new Level(l));
+      myVisitor.getEquations().addVariable(l);
+    }
+    defCall.setPolyParamsSubst(subst);
 
-      CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(null, null);
-      for (Binding polyVar : definition.getPolyParams()) {
-        LevelInferenceVariable l = new LevelInferenceVariable(polyVar.getName(), polyVar.getType(), sourceNode);
-        subst.add(polyVar, new Level(l));
-        myVisitor.getEquations().addVariable(l);
-      }
-
-      defCall.setPolyParamsSubst(subst);
-      result.expression = defCall;
-      result.type = definition.getTypeWithThis().subst(new ExprSubstitution(), subst);
-      return result;
+    if (thisExpr == null && definition instanceof ClassField) {
+      LocalTypeCheckingError error = new LocalTypeCheckingError("Field call without a class instance", expr);
+      expr.setWellTyped(myVisitor.getContext(), Error(defCall, error));
+      myVisitor.getErrorReporter().report(error);
+      return null;
     }
 
-    return new CheckTypeVisitor.Result(defCall, definition.getTypeWithThis());
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(defCall, definition.getTypeWithThis().subst(new ExprSubstitution(), subst));
+    if (thisExpr != null) {
+      result.expression = defCall.applyThis(thisExpr);
+      result.type = result.type.applyExpressions(Collections.singletonList(thisExpr));
+    }
+    return result;
   }
 
   private Expression findParent(ClassDefinition classDefinition, Definition definition, Expression result) {
@@ -279,25 +281,6 @@ public class TypeCheckingDefCall {
       return null;
     }
     return findParent(parentField.getBaseType().toClassCall().getDefinition(), definition, FieldCall(parentField, result));
-  }
-
-  private CheckTypeVisitor.Result applyThis(CheckTypeVisitor.Result result, Expression thisExpr, Abstract.Expression expr) {
-    //assert thisExpr != null;  // FIXME
-    DefCallExpression defCall = result.expression.toDefCall();
-    //assert defCall.getDefinition().getThisClass() != null;  // FIXME
-
-    if (thisExpr == null && defCall.getDefinition() instanceof ClassField) {
-      LocalTypeCheckingError error = new LocalTypeCheckingError("Field call without a class instance", expr);
-      expr.setWellTyped(myVisitor.getContext(), Error(result.expression, error));
-      myVisitor.getErrorReporter().report(error);
-      return null;
-    }
-
-    if (thisExpr != null) {  // FIXME
-      result.expression = defCall.applyThis(thisExpr);
-      result.type = result.type.applyExpressions(Collections.singletonList(thisExpr));
-    }
-    return result;
   }
 
   public CheckTypeVisitor.Result getLocalVar(Abstract.DefCallExpression expr) {
