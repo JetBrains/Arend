@@ -37,7 +37,7 @@ public class TypecheckerState {
 
   public Definition getTypechecked(Abstract.Definition def) {
     assert def != null;
-    Abstract.Definition definition = def instanceof Abstract.ClassView ? ((Abstract.ClassView) def).getUnderlyingClass() : def;
+    Abstract.Definition definition = def instanceof Abstract.ClassView ? ((Abstract.ClassView) def).getUnderlyingClassDefCall().getReferent() : def;
     if (definition == null) {
       throw new IllegalStateException("Internal error: class view " + def + " was not resolved");
     }

@@ -337,11 +337,20 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
     }
 
+    Concrete.Expression expr = null;
+    if (ctx.expr() != null) {
+      expr = visitExpr(ctx.expr());
+      if (expr == null) {
+        return null;
+      }
+    }
+
     String classifyingField = visitName(ctx.name());
     if (classifyingField == null) {
       return null;
     }
-    return new Concrete.ClassView(tokenPosition(ctx.getStart()), ctx.ID(0).getText(), ctx.ID(ctx.ID().size() > 1 ? 1 : 0).getText(), classifyingField, fields);
+    Concrete.Position pos = tokenPosition(ctx.expr() != null ? ctx.expr().getStart() : ctx.ID(ctx.ID().size() > 1 ? 1 : 0).getSymbol());
+    return new Concrete.ClassView(tokenPosition(ctx.getStart()), ctx.ID(0).getText(), new Concrete.DefCallExpression(pos, expr, ctx.ID(ctx.ID().size() > 1 ? 1 : 0).getText()), classifyingField, fields);
   }
 
   @Override
@@ -915,6 +924,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private String visitName(NameContext ctx) {
+    if (ctx == null) return null;
     return (String) visit(ctx);
   }
 

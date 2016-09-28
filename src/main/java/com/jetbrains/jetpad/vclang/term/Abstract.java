@@ -88,7 +88,7 @@ public final class Abstract {
         return (ClassDefinition) definition;
       }
       if (definition instanceof ClassView) {
-        return ((ClassView) definition).getUnderlyingClass();
+        return (ClassDefinition) ((ClassView) definition).getUnderlyingClassDefCall().getReferent();
       }
     }
 
@@ -327,8 +327,7 @@ public final class Abstract {
   }
 
   public interface ClassView extends Definition {
-    String getUnderlyingClassName();
-    ClassDefinition getUnderlyingClass();
+    DefCallExpression getUnderlyingClassDefCall();
     String getClassifyingFieldName();
     ClassField getClassifyingField();
     List<? extends ClassViewField> getFields();

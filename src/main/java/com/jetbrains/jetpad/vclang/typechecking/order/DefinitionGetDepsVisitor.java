@@ -116,14 +116,13 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
             visitImplement(result, (Abstract.ImplementDefinition) ((Abstract.DefineStatement) statement).getDefinition());
           } else
           if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ClassView) {
-            result.add(((Abstract.ClassView) ((Abstract.DefineStatement) statement).getDefinition()).getUnderlyingClass());
+            // TODO: I'm not sure what to do here.
+            ((Abstract.ClassView) ((Abstract.DefineStatement) statement).getDefinition()).getUnderlyingClassDefCall().accept(new CollectDefCallsVisitor(result), null);
           } else {
             myOthers.add(defineStatement.getDefinition());
             if (parent instanceof Abstract.ClassDefinition && ((Abstract.DefineStatement) statement).getStaticMod() != Abstract.DefineStatement.StaticMod.STATIC) {
               nonStatic.add(defineStatement.getDefinition());
-              for (Abstract.Definition def : ((Abstract.DefineStatement) statement).getDefinition().accept(new DefinitionGetDepsVisitor(myOthers, null), true)) {
-                nonStatic.add(def);
-              }
+              nonStatic.addAll(((Abstract.DefineStatement) statement).getDefinition().accept(new DefinitionGetDepsVisitor(myOthers, null), true));
             }
           }
         }

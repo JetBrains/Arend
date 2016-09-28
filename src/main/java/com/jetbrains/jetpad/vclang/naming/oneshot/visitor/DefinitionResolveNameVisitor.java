@@ -241,14 +241,17 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
     }
 
     Namespace staticNamespace = myStaticNsProvider.forDefinition(def.getParentStatement().getParentDefinition());
-    Abstract.Definition resolvedUnderlyingClass = staticNamespace.resolveName(def.getUnderlyingClassName());
+    def.getUnderlyingClassDefCall().accept(new ExpressionResolveNameVisitor(staticNamespace /* TODO: Why not myParentScope? */, myContext, myNameResolver, myErrorReporter, myResolveListener), null);
+    Abstract.Definition resolvedUnderlyingClass = def.getUnderlyingClassDefCall().getReferent();
     if (resolvedUnderlyingClass instanceof Abstract.ClassView) {
-      resolvedUnderlyingClass = ((Abstract.ClassView) resolvedUnderlyingClass).getUnderlyingClass();
+      resolvedUnderlyingClass = ((Abstract.ClassView) resolvedUnderlyingClass).getUnderlyingClassDefCall().getReferent();
+      myResolveListener.nameResolved(def.getUnderlyingClassDefCall(), resolvedUnderlyingClass);
     }
     if (!(resolvedUnderlyingClass instanceof Abstract.ClassDefinition)) {
-      myErrorReporter.report(resolvedUnderlyingClass != null ? new WrongDefinition("Expected a class", def) : new NotInScopeError(def, def.getUnderlyingClassName()));
+      myErrorReporter.report(resolvedUnderlyingClass != null ? new WrongDefinition("Expected a class", def) : new NotInScopeError(def, def.getUnderlyingClassDefCall().getName()));
       return null;
     }
+
     Namespace dynamicNamespace = myDynamicNsProvider.forClass((Abstract.ClassDefinition) resolvedUnderlyingClass);
     Abstract.Definition resolvedClassifyingField = dynamicNamespace.resolveName(def.getClassifyingFieldName());
     if (!(resolvedClassifyingField instanceof Abstract.ClassField)) {
@@ -256,7 +259,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       return null;
     }
 
-    myResolveListener.classViewResolved(def, (Abstract.ClassDefinition) resolvedUnderlyingClass, (Abstract.ClassField) resolvedClassifyingField);
+    myResolveListener.classViewResolved(def, (Abstract.ClassField) resolvedClassifyingField);
 
     for (Abstract.ClassViewField viewField : def.getFields()) {
       Abstract.ClassField classField = myNameResolver.resolveClassField((Abstract.ClassDefinition) resolvedUnderlyingClass, viewField.getUnderlyingFieldName(), myErrorReporter, viewField);

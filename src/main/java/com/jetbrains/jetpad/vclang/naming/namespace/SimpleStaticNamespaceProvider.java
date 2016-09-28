@@ -66,7 +66,7 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
       Abstract.DefineStatement defst = (Abstract.DefineStatement) statement;
       if (STATIC.equals(defst.getStaticMod())) {
         if (defst.getDefinition() instanceof Abstract.ClassView) {
-          if (((Abstract.ClassView) defst.getDefinition()).getUnderlyingClass() != null) {
+          if (((Abstract.ClassView) defst.getDefinition()).getUnderlyingClassDefCall().getReferent() != null) {
             ns.addDefinition(defst.getDefinition());
           } else {
             ok = false;

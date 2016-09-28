@@ -29,7 +29,7 @@ public class BaseResolveListener implements ResolveListener {
   }
 
   @Override
-  public void classViewResolved(Abstract.ClassView classView, Abstract.ClassDefinition underlyingClass, Abstract.ClassField classifyingField) {
+  public void classViewResolved(Abstract.ClassView classView, Abstract.ClassField classifyingField) {
 
   }
 

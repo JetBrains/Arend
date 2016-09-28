@@ -915,26 +915,20 @@ public final class Concrete {
   }
 
   public static class ClassView extends Definition implements Abstract.ClassView {
-    private final String myUnderlyingClassName;
-    private Abstract.ClassDefinition myUnderlyingClass;
+    private DefCallExpression myUnderlyingClass;
     private final String myClassifyingFieldName;
     private Abstract.ClassField myClassifyingField;
     private final List<ClassViewField> myFields;
 
-    public ClassView(Position position, String name, String underlyingClassName, String classifyingFieldName, List<ClassViewField> fields) {
+    public ClassView(Position position, String name, DefCallExpression underlyingClass, String classifyingFieldName, List<ClassViewField> fields) {
       super(position, name, DEFAULT_PRECEDENCE);
-      myUnderlyingClassName = underlyingClassName;
+      myUnderlyingClass = underlyingClass;
       myFields = fields;
       myClassifyingFieldName = classifyingFieldName;
     }
 
     @Override
-    public String getUnderlyingClassName() {
-      return myUnderlyingClassName;
-    }
-
-    @Override
-    public Abstract.ClassDefinition getUnderlyingClass() {
+    public DefCallExpression getUnderlyingClassDefCall() {
       return myUnderlyingClass;
     }
 
@@ -946,10 +940,6 @@ public final class Concrete {
     @Override
     public Abstract.ClassField getClassifyingField() {
       return myClassifyingField;
-    }
-
-    public void setUnderlyingClass(Abstract.ClassDefinition underlyingClass) {
-      myUnderlyingClass = underlyingClass;
     }
 
     public void setClassifyingField(Abstract.ClassField classifyingField) {

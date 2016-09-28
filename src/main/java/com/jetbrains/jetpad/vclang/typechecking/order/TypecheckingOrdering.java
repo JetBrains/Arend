@@ -122,7 +122,7 @@ public class TypecheckingOrdering {
 
         @Override
         public Boolean visitClassView(Abstract.ClassView def, Void params) {
-          return doOrder(def.getUnderlyingClass());
+          return doOrder(def.getUnderlyingClassDefCall().getReferent());
         }
 
         @Override

@@ -29,7 +29,7 @@ public class SimpleNamespace implements Namespace {
 
   public void addDefinition(String name, final Abstract.Definition def) {
     final Abstract.Definition prev = myNames.put(name, def);
-    if (!(prev == null || prev == def || def instanceof Abstract.ClassView && ((Abstract.ClassView) def).getUnderlyingClass() == prev)) {
+    if (!(prev == null || prev == def || def instanceof Abstract.ClassView && ((Abstract.ClassView) def).getUnderlyingClassDefCall().getReferent() == prev)) {
       throw new InvalidNamespaceException() {
         @Override
         public GeneralError toError() {
