@@ -124,7 +124,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         if (isPolyParam(typeArgument)) {
           Binding levelParam = visitPolyParam(typeArgument, polyParamsMap, node);
           if (levelParam == null) {
-            return;
+            continue;
           }
           context.add(levelParam);
           polyParamsList.add(levelParam);
@@ -133,7 +133,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         }
 
         CheckTypeVisitor.Result result = visitor.checkType(typeArgument.getType(), Universe());
-        if (result == null) return;
+        if (result == null) continue;
 
         Abstract.ClassView classView = Abstract.getUnderlyingClassView(typeArgument.getType());
         if (classView != null) {
@@ -161,7 +161,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         context.addAll(toContext(param));
       } else {
         myErrorReporter.report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, new Expression[0]));
-        return;
       }
     }
   }

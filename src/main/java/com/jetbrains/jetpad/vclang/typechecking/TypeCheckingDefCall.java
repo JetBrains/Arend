@@ -72,43 +72,47 @@ public class TypeCheckingDefCall {
       }
     }
 
-    // No left-hand side
-    if (left == null || typeCheckedDefinition != null) { // TODO: We should remove the second condition
-      if (typeCheckedDefinition != null) {
-        Expression thisExpr = null;
-        if (typeCheckedDefinition.getThisClass() != null) {
-          if (myThisClass != null) {
-            thisExpr = findParent(myThisClass, typeCheckedDefinition, myThisExpr);
-          }
-
-          if (thisExpr == null) {
-            if (resolvedDefinition instanceof Abstract.ClassViewField) {
-              // TODO: if typeCheckedDefinition.getThisClass() is dynamic, then we should apply it to some this expression
-              thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable(typeCheckedDefinition.getThisClass().getName() + "-inst", typeCheckedDefinition.getThisClass().getDefCall(), myVisitor.getTypecheckingState().getClassView((Abstract.ClassViewField) resolvedDefinition), expr));
-            } else {
-              LocalTypeCheckingError error;
-              if (myThisClass != null) {
-                error = new LocalTypeCheckingError("Definition '" + typeCheckedDefinition.getName() + "' is not available in this context", expr);
-              } else {
-                error = new LocalTypeCheckingError("Non-static definitions are not allowed in a static context", expr);
-              }
-              expr.setWellTyped(myVisitor.getContext(), Error(null, error));
-              myVisitor.getErrorReporter().report(error);
-              return null;
-            }
-          }
-        }
-
-        return makeResult(typeCheckedDefinition, classView, thisExpr, expr);
-      } else {
-        return getLocalVar(expr);
+    CheckTypeVisitor.Result result = null;
+    if (left != null && (typeCheckedDefinition == null || !(left instanceof Abstract.DefCallExpression))) {
+      result = left.accept(myVisitor, null);
+      if (result == null) {
+        return null;
       }
     }
 
-    CheckTypeVisitor.Result result = left.accept(myVisitor, null);
-    if (result == null) {
-      return null;
+    // No left-hand side
+    if (result == null && typeCheckedDefinition != null) {
+      Expression thisExpr = null;
+      if (typeCheckedDefinition.getThisClass() != null) {
+        if (myThisClass != null) {
+          thisExpr = findParent(myThisClass, typeCheckedDefinition, myThisExpr);
+        }
+
+        if (thisExpr == null) {
+          if (resolvedDefinition instanceof Abstract.ClassViewField) {
+            // TODO: if typeCheckedDefinition.getThisClass() is dynamic, then we should apply it to some this expression
+            thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable(typeCheckedDefinition.getThisClass().getName() + "-inst", typeCheckedDefinition.getThisClass().getDefCall(), myVisitor.getTypecheckingState().getClassView((Abstract.ClassViewField) resolvedDefinition), expr));
+          } else {
+            LocalTypeCheckingError error;
+            if (myThisClass != null) {
+              error = new LocalTypeCheckingError("Definition '" + typeCheckedDefinition.getName() + "' is not available in this context", expr);
+            } else {
+              error = new LocalTypeCheckingError("Non-static definitions are not allowed in a static context", expr);
+            }
+            expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+            myVisitor.getErrorReporter().report(error);
+            return null;
+          }
+        }
+      }
+
+      return makeResult(typeCheckedDefinition, classView, thisExpr, expr);
     }
+
+    if (left == null) {
+      return getLocalVar(expr);
+    }
+
     String name = expr.getName();
 
     // Field call
@@ -148,7 +152,7 @@ public class TypeCheckingDefCall {
           return null;
         }
 
-        return makeResult(typeCheckedDefinition, classView, result.expression, expr);
+        return makeResult(typeCheckedDefinition, null, result.expression, expr);
       }
     }
 
