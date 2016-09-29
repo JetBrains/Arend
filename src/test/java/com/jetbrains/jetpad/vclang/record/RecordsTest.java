@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
@@ -159,7 +160,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { x => 0 }");
     assertEquals(new SortMax(Sort.SetOfLevel(0)), ((ClassDefinition) result.getDefinition("Point")).getSorts());
-    assertEquals(Universe(Sort.SetOfLevel(0)), result.getDefinition("C").getType().toExpression());
+    assertEquals(Universe(Sort.SetOfLevel(0)), result.getDefinition("C").getType(new LevelSubstitution()).toExpression());
   }
 
   @Test
@@ -168,7 +169,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { x => 0 | y => 1 }");
     assertEquals(new SortMax(Sort.SetOfLevel(0)), ((ClassDefinition) result.getDefinition("Point")).getSorts());
-    assertEquals(Universe(Sort.PROP), result.getDefinition("C").getType().toExpression());
+    assertEquals(Universe(Sort.PROP), result.getDefinition("C").getType(new LevelSubstitution()).toExpression());
   }
 
   @Test
@@ -177,7 +178,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\static \\class Point { \\abstract x : \\Type3 \\abstract y : \\Type1 }\n" +
         "\\static \\function C => Point { x => Nat }");
     assertEquals(new SortMax(new Sort(4, Sort.NOT_TRUNCATED)), ((ClassDefinition) result.getDefinition("Point")).getSorts());
-    assertEquals(Universe(new Sort(2, Sort.NOT_TRUNCATED)), result.getDefinition("C").getType().toExpression());
+    assertEquals(Universe(new Sort(2, Sort.NOT_TRUNCATED)), result.getDefinition("C").getType(new LevelSubstitution()).toExpression());
   }
 
   @Test

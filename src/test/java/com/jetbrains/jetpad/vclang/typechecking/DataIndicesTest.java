@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import org.junit.Test;
@@ -49,10 +50,10 @@ public class DataIndicesTest extends TypeCheckingTestCase {
         "  | NatVec zero => nil\n" +
         "  | NatVec (suc n) => cons Nat (NatVec n)");
     DataDefinition data = (DataDefinition) result.getDefinition("NatVec");
-    assertEquals(Apps(DataCall(data), Zero()), data.getConstructor("nil").getType());
+    assertEquals(Apps(DataCall(data), Zero()), data.getConstructor("nil").getType(new LevelSubstitution()));
     DependentLink param = param(false, "n", Nat());
     param.setNext(params(param((String) null, Nat()), param((String) null, Apps(DataCall(data), Reference(param)))));
-    assertEquals(Pi(param, Apps(DataCall(data), Suc(Reference(param)))), data.getConstructor("cons").getType());
+    assertEquals(Pi(param, Apps(DataCall(data), Suc(Reference(param)))), data.getConstructor("cons").getType(new LevelSubstitution()));
   }
 
   @Test

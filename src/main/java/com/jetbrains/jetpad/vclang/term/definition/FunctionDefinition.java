@@ -5,6 +5,8 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.FunCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
@@ -59,7 +61,6 @@ public class FunctionDefinition extends Definition implements Function {
     myParameters = parameters;
   }
 
-  @Override
   public Type getResultType() {
     return myResultType;
   }
@@ -83,11 +84,11 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   @Override
-  public Type getType() {
+  public Type getType(LevelSubstitution polyParams) {
     if (myTypeHasErrors) {
       return null;
     }
-    return myResultType.addParameters(myParameters, false);
+    return myResultType.addParameters(myParameters, false).subst(new ExprSubstitution(), polyParams);
   }
 
   @Override

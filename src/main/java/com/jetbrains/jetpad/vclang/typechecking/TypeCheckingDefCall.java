@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.term.context.binding.inference.TypeClassInfer
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
-import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -268,7 +267,7 @@ public class TypeCheckingDefCall {
       return null;
     }
 
-    CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(defCall, definition.getTypeWithThis().subst(new ExprSubstitution(), subst));
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(defCall, definition.getTypeWithThis(subst));
     if (thisExpr != null) {
       result.expression = defCall.applyThis(thisExpr);
       result.type = result.type.applyExpressions(Collections.singletonList(thisExpr));

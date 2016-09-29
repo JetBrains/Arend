@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
@@ -34,8 +35,8 @@ public class GetTypeTest extends TypeCheckingTestCase {
   @Test
   public void classExtTest() {
     TypeCheckClassResult result = typeCheckClass("\\static \\class Test { \\abstract A : \\Type0 \\abstract a : A } \\static \\function test => Test { A => Nat }");
-    assertEquals(Universe(1), result.getDefinition("Test").getType().toExpression());
-    assertEquals(Universe(Sort.SetOfLevel(0)), result.getDefinition("test").getType().toExpression());
+    assertEquals(Universe(1), result.getDefinition("Test").getType(new LevelSubstitution()).toExpression());
+    assertEquals(Universe(Sort.SetOfLevel(0)), result.getDefinition("test").getType(new LevelSubstitution()).toExpression());
     testType(Universe(Sort.SetOfLevel(0)), result);
   }
 
@@ -61,7 +62,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
       .addArgument(Nat())
       .addArgument(Zero())
       .addArgument(FieldCall((ClassField) result.getDefinition("C.x"), Apps(Reference(p), Zero())));
-    assertEquals(Pi(p, Pi(type, type)).normalize(NormalizeVisitor.Mode.NF), result.getDefinition("test").getType().normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Pi(p, Pi(type, type)).normalize(NormalizeVisitor.Mode.NF), result.getDefinition("test").getType(new LevelSubstitution()).normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
@@ -85,11 +86,11 @@ public class GetTypeTest extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\static \\data C (n : Nat) | C (zero) => c1 | C (suc n) => c2 Nat");
     DataDefinition data = (DataDefinition) result.getDefinition("C");
-    assertEquals(Apps(DataCall(data), Zero()), data.getConstructor("c1").getType());
+    assertEquals(Apps(DataCall(data), Zero()), data.getConstructor("c1").getType(new LevelSubstitution()));
     DependentLink params = data.getConstructor("c2").getDataTypeParameters();
     assertEquals(
         Pi(params, Pi(param(Nat()), Apps(DataCall(data), Suc(Reference(params))))),
-        data.getConstructor("c2").getType()
+        data.getConstructor("c2").getType(new LevelSubstitution())
     );
   }
 
@@ -102,17 +103,17 @@ public class GetTypeTest extends TypeCheckingTestCase {
     DataDefinition d = (DataDefinition) result.getDefinition("D");
     assertEquals(
         Pi(d.getConstructor("dzero").getDataTypeParameters(), Apps(DataCall(d), Zero(), Reference(d.getConstructor("dzero").getDataTypeParameters()))),
-        d.getConstructor("dzero").getType()
+        d.getConstructor("dzero").getType(new LevelSubstitution())
     );
     DependentLink doneParams = d.getConstructor("done").getDataTypeParameters();
     assertEquals(
         Pi(d.getConstructor("done").getDataTypeParameters(), Apps(DataCall(d), Suc(Reference(doneParams)), Reference(doneParams.getNext()))),
-        d.getConstructor("done").getType()
+        d.getConstructor("done").getType(new LevelSubstitution())
     );
     DependentLink consParams = vec.getConstructor("Cons").getDataTypeParameters();
     assertEquals(
         Pi(consParams, Pi(Reference(consParams), Pi(Apps(DataCall(vec), Reference(consParams), Reference(consParams.getNext())), Apps(DataCall(vec), Reference(consParams), Suc(Reference(consParams.getNext())))))),
-        vec.getConstructor("Cons").getType()
+        vec.getConstructor("Cons").getType(new LevelSubstitution())
     );
   }
 
@@ -126,7 +127,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
     DependentLink A = c.getConstructor("c").getDataTypeParameters();
     assertEquals(
         Pi(c.getConstructor("c").getDataTypeParameters(), Pi(Reference(A), Apps(DataCall(c), Apps(ConCall(d.getConstructor("d")), Reference(A))))),
-        c.getConstructor("c").getType()
+        c.getConstructor("c").getType(new LevelSubstitution())
     );
   }
 
@@ -138,7 +139,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
     DataDefinition d = (DataDefinition) result.getDefinition("D");
     assertEquals(
         Pi(d.getConstructor("d").getDataTypeParameters(), Apps(DataCall(d), Zero(), Reference(d.getConstructor("d").getDataTypeParameters()))),
-        d.getConstructor("d").getType()
+        d.getConstructor("d").getType(new LevelSubstitution())
     );
   }
 }

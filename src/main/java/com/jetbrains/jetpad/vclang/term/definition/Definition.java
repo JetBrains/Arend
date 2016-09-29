@@ -30,7 +30,7 @@ public abstract class Definition implements Referable {
     return myAbstractDefinition;
   }
 
-  public abstract Type getType();
+  public abstract Type getType(LevelSubstitution polyParams);
 
   public abstract DefCallExpression getDefCall();
 
@@ -50,8 +50,8 @@ public abstract class Definition implements Referable {
     return myThisClass;
   }
 
-  public Type getTypeWithThis() {
-    return getType();
+  public Type getTypeWithThis(LevelSubstitution polyParams) {
+    return getType(polyParams);
   }
 
   public void setThisClass(ClassDefinition enclosingClass) {

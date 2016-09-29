@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor.Result;
 import org.junit.Test;
@@ -34,7 +35,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f => 0");
     assertNotNull(typedDef);
     assertFalse(typedDef.hasErrors());
-    assertEquals(Nat(), typedDef.getType());
+    assertEquals(Nat(), typedDef.getType(new LevelSubstitution()));
   }
 
   @Test
@@ -42,7 +43,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f (x : Nat) (y : Nat -> Nat) => y");
     assertNotNull(typedDef);
     assertFalse(typedDef.hasErrors());
-    assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), typedDef.getType());
+    assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), typedDef.getType(new LevelSubstitution()));
   }
 
   @Test
@@ -70,7 +71,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
 
     assertNotNull(typedDef);
     assertFalse(typedDef.hasErrors());
-    assertEquals(Pi(parameters.getFirst(), Universe(0)), typedDef.getType().toExpression());
+    assertEquals(Pi(parameters.getFirst(), Universe(0)), typedDef.getType(new LevelSubstitution()).toExpression());
     assertEquals(2, typedDef.getConstructors().size());
 
     ExprSubstitution substitution = new ExprSubstitution();
@@ -89,13 +90,13 @@ public class DefinitionTest extends TypeCheckingTestCase {
         .addArgument(Reference(B))
         .addArgument(Reference(I))
         .addArgument(Reference(a))
-        .addArgument(Reference(b)))), typedDef.getConstructors().get(0).getType());
+        .addArgument(Reference(b)))), typedDef.getConstructors().get(0).getType(new LevelSubstitution()));
     assertEquals(Pi(parameters.getFirst(), Pi(parameters2.getFirst(), DataCall(typedDef)
         .addArgument(Reference(A))
         .addArgument(Reference(B))
         .addArgument(Reference(I))
         .addArgument(Reference(a))
-        .addArgument(Reference(b)))), typedDef.getConstructors().get(1).getType());
+        .addArgument(Reference(b)))), typedDef.getConstructors().get(1).getType(new LevelSubstitution()));
   }
 
   @Test
@@ -114,11 +115,11 @@ public class DefinitionTest extends TypeCheckingTestCase {
 
     assertNotNull(typedDef);
     assertFalse(typedDef.hasErrors());
-    assertEquals(Pi(A, Universe(6, 7)), typedDef.getType().toExpression());
+    assertEquals(Pi(A, Universe(6, 7)), typedDef.getType(new LevelSubstitution()).toExpression());
     assertEquals(2, typedDef.getConstructors().size());
 
-    assertEquals(Pi(A, Pi(parameters1.getFirst(), Apps(DataCall(typedDef), Reference(A)))), typedDef.getConstructors().get(0).getType());
-    assertEquals(Pi(A, Pi(parameters2.getFirst(), Apps(DataCall(typedDef), Reference(A)))), typedDef.getConstructors().get(1).getType());
+    assertEquals(Pi(A, Pi(parameters1.getFirst(), Apps(DataCall(typedDef), Reference(A)))), typedDef.getConstructors().get(0).getType(new LevelSubstitution()));
+    assertEquals(Pi(A, Pi(parameters2.getFirst(), Apps(DataCall(typedDef), Reference(A)))), typedDef.getConstructors().get(1).getType(new LevelSubstitution()));
   }
 
   @Test

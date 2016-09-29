@@ -39,7 +39,6 @@ public class LetClause extends NamedBinding implements Function {
     myParameters = parameters;
   }
 
-  @Override
   public Expression getResultType() {
     return myResultType;
   }

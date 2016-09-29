@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -332,19 +333,19 @@ public class ClassesTest extends TypeCheckingTestCase {
     ClassDefinition aClass = (ClassDefinition) result.getDefinition("A");
     assertTrue(aClass.getFieldSet().getFields().isEmpty());
     FunctionDefinition pFun = (FunctionDefinition) result.getDefinition("A.p");
-    assertEquals(Nat(), pFun.getType());
+    assertEquals(Nat(), pFun.getType(new LevelSubstitution()));
     assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Zero()), pFun.getElimTree());
     FunctionDefinition qFun = (FunctionDefinition) result.getDefinition("A.q");
-    assertEquals(Pi(ClassCall(aClass), Nat()), qFun.getType());
+    assertEquals(Pi(ClassCall(aClass), Nat()), qFun.getType(new LevelSubstitution()));
     assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(pFun)), qFun.getElimTree());
 
     ClassDefinition bClass = (ClassDefinition) result.getDefinition("A.B");
     assertTrue(bClass.getFieldSet().getFields().isEmpty());
     FunctionDefinition fFun = (FunctionDefinition) result.getDefinition("A.B.f");
-    assertEquals(Nat(), fFun.getType());
+    assertEquals(Nat(), fFun.getType(new LevelSubstitution()));
     assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(pFun)), fFun.getElimTree());
     FunctionDefinition gFun = (FunctionDefinition) result.getDefinition("A.B.g");
-    assertEquals(Pi(ClassCall(bClass), Nat()), gFun.getType());
+    assertEquals(Pi(ClassCall(bClass), Nat()), gFun.getType(new LevelSubstitution()));
     assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(FunCall(plus), FunCall(fFun), FunCall(pFun))), gFun.getElimTree());
 
     ClassDefinition cClass = (ClassDefinition) result.getDefinition("A.C");
@@ -352,10 +353,10 @@ public class ClassesTest extends TypeCheckingTestCase {
     ClassField cParent = cClass.getEnclosingThisField();
     assertNotNull(cParent);
     FunctionDefinition hFun = (FunctionDefinition) result.getDefinition("A.C.h");
-    assertEquals(Pi(ClassCall(aClass), Nat()), hFun.getType());
+    assertEquals(Pi(ClassCall(aClass), Nat()), hFun.getType(new LevelSubstitution()));
     assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(FunCall(plus), FunCall(pFun), Apps(FunCall(qFun), Reference(hFun.getParameters())))), hFun.getElimTree());
     FunctionDefinition kFun = (FunctionDefinition) result.getDefinition("A.C.k");
-    assertEquals(Pi(ClassCall(cClass), Nat()), kFun.getType());
+    assertEquals(Pi(ClassCall(cClass), Nat()), kFun.getType(new LevelSubstitution()));
     Expression aRef = FieldCall(cParent, Reference(kFun.getParameters()));
     assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(FunCall(plus), Apps(FunCall(hFun), aRef), Apps(FunCall(plus), FunCall(pFun), Apps(FunCall(qFun), aRef)))), kFun.getElimTree());
   }

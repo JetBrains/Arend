@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
@@ -64,14 +65,10 @@ public class Constructor extends Definition implements Function {
     return condition == null ? EmptyElimTreeNode.getInstance() : condition.getElimTree();
   }
 
+  @Override
   public DependentLink getParameters() {
     assert !hasErrors() && !myDataType.hasErrors();
     return myParameters;
-  }
-
-  @Override
-  public Expression getResultType() {
-    return getDataTypeExpression();
   }
 
   @Override
@@ -112,14 +109,14 @@ public class Constructor extends Definition implements Function {
     }
   }
 
-  public Expression getDataTypeExpression() {
-    return getDataTypeExpression(null);
+  public Expression getDataTypeExpression(LevelSubstitution polyParams) {
+    return getDataTypeExpression(null, polyParams);
   }
 
-  public Expression getDataTypeExpression(ExprSubstitution substitution) {
+  public Expression getDataTypeExpression(ExprSubstitution substitution, LevelSubstitution polyParams) {
     assert !hasErrors() && !myDataType.hasErrors();
 
-    Expression resultType = DataCall(myDataType);
+    Expression resultType = myDataType.getDefCall(polyParams);
     if (myPatterns == null) {
       List<Expression> arguments = new ArrayList<>();
       for (DependentLink link = myDataType.getParameters(); link.hasNext(); link = link.getNext()) {
@@ -156,12 +153,12 @@ public class Constructor extends Definition implements Function {
   }
 
   @Override
-  public Expression getType() {
+  public Expression getType(LevelSubstitution polyParams) {
     if (hasErrors()) {
       return null;
     }
 
-    Expression resultType = getDataTypeExpression();
+    Expression resultType = getDataTypeExpression(polyParams);
     if (myParameters.hasNext()) {
       resultType = Pi(myParameters, resultType);
     }
@@ -169,11 +166,13 @@ public class Constructor extends Definition implements Function {
     DependentLink parameters = getDataTypeParameters();
     if (parameters.hasNext()) {
       ExprSubstitution substitution = new ExprSubstitution();
-      parameters = DependentLink.Helper.subst(parameters, substitution);
+      parameters = DependentLink.Helper.subst(parameters, substitution, polyParams);
       for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
         link.setExplicit(false);
       }
-      resultType = Pi(parameters, resultType.subst(substitution));
+      resultType = Pi(parameters, resultType.subst(substitution, polyParams));
+    } else {
+      resultType = resultType.subst(polyParams);
     }
     return resultType;
   }

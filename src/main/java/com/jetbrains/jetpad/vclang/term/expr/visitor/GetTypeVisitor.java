@@ -24,7 +24,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
 
   @Override
   public Type visitDefCall(DefCallExpression expr, Void params) {
-    return expr.getDefinition().getType().subst(new ExprSubstitution(), expr.getPolyParamsSubst());
+    return expr.getDefinition().getType(expr.getPolyParamsSubst());
   }
 
   @Override

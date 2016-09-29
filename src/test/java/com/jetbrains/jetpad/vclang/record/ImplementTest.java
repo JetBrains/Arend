@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -259,6 +260,6 @@ public class ImplementTest extends TypeCheckingTestCase {
     assertEquals(new SortMax(new Sort(1,1)), ((ClassDefinition) result.getDefinition("B")).getSorts());
     assertEquals(new SortMax(new Sort(2,1)), ((ClassDefinition) result.getDefinition("C")).getSorts());
     assertEquals(new SortMax(new Sort(0,0)), ((ClassDefinition) result.getDefinition("D")).getSorts());
-    assertEquals(ExpressionFactory.Universe(Sort.PROP), result.getDefinition("f").getType().toExpression());
+    assertEquals(ExpressionFactory.Universe(Sort.PROP), result.getDefinition("f").getType(new LevelSubstitution()).toExpression());
   }
 }

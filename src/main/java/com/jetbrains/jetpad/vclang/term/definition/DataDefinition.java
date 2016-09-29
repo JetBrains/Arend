@@ -7,6 +7,8 @@ import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
@@ -117,12 +119,12 @@ public class DataDefinition extends Definition {
   public void setMatchesOnInterval() { myMatchesOnInterval = true; }
 
   @Override
-  public Type getType() {
+  public Type getType(LevelSubstitution polyParams) {
     if (hasErrors()) {
       return null;
     }
 
-    return new PiUniverseType(myParameters, mySorts);
+    return new PiUniverseType(myParameters, mySorts).subst(new ExprSubstitution(), polyParams);
   }
 
   @Override

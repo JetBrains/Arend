@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
@@ -62,8 +63,8 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
-  public Type getType() {
-    return new PiUniverseType(EmptyDependentLink.getInstance(), getSorts());
+  public Type getType(LevelSubstitution polyParams) {
+    return new PiUniverseType(EmptyDependentLink.getInstance(), getSorts().subst(polyParams));
   }
 
   @Override
@@ -92,12 +93,13 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
-  public Type getTypeWithThis() {
+  public Type getTypeWithThis(LevelSubstitution polyParams) {
     DependentLink link = EmptyDependentLink.getInstance();
     if (getThisClass() != null) {
+      // TODO: set polyParams?
       link = param(ClassCall(getThisClass()));
     }
-    return new PiUniverseType(link, getSorts());
+    return new PiUniverseType(link, getSorts().subst(polyParams));
   }
 
   @Override

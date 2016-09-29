@@ -16,6 +16,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
@@ -384,7 +385,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
         for (Abstract.Condition cond : condMap.get(constructor)) {
           try (Utils.ContextSaver saver = new Utils.ContextSaver(visitor.getContext())) {
-            List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getDataTypeExpression()));
+            List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getDataTypeExpression(new LevelSubstitution())));
             DependentLink params = constructor.getParameters();
             List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(cond, params, cond.getPatterns(), def);
             if (processedPatterns == null)

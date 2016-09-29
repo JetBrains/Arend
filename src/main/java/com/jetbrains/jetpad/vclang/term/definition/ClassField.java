@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FieldCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FieldCall;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
@@ -54,8 +55,8 @@ public class ClassField extends Definition {
   }
 
   @Override
-  public Expression getType() {
-    return myType == null ? null : Pi(myThisParameter, myType);
+  public Expression getType(LevelSubstitution polyParams) {
+    return myType == null ? null : Pi(myThisParameter, myType.subst(polyParams));
   }
 
   @Override
