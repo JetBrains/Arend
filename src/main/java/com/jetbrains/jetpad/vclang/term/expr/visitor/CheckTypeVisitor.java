@@ -235,19 +235,18 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   private boolean checkPath(Result result, Abstract.Expression expr) {
     if (result != null) {
-      ConCallExpression conExpr = result.expression.getFunction().toConCall();
+      ConCallExpression conExpr = result.expression.toConCall();
       if (conExpr != null && conExpr.getDefinition() == Prelude.PATH_CON) {
-        result.expression = result.expression.normalize(NormalizeVisitor.Mode.WHNF);
-        if (result.expression.getArguments().isEmpty()) {
+        if (conExpr.getDefCallArguments().isEmpty()) {
           LocalTypeCheckingError error = new LocalTypeCheckingError("Expected an argument for 'path'", expr);
           expr.setWellTyped(myContext, Error(result.expression, error));
           myErrorReporter.report(error);
           return false;
         }
 
-        List<? extends Expression> args = result.expression.getFunction().toConCall().getDataTypeArguments();
-        if (!compareExpressions(result, args.get(1), Apps(result.expression.getArguments().get(0), Left()), expr) ||
-            !compareExpressions(result, args.get(2), Apps(result.expression.getArguments().get(0), Right()), expr)) {
+        List<? extends Expression> args = conExpr.getDataTypeArguments();
+        if (!compareExpressions(result, args.get(1), Apps(conExpr.getDefCallArguments().get(0), Left()), expr) ||
+            !compareExpressions(result, args.get(2), Apps(conExpr.getDefCallArguments().get(0), Right()), expr)) {
           return false;
         }
       }

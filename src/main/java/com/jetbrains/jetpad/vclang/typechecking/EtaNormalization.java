@@ -64,14 +64,18 @@ public class EtaNormalization {
   }
 
   public static Expression normalizePath(AppExpression expr) {
-    List<? extends Expression> args = expr.getArguments();
-    ConCallExpression fun = expr.getFunction().toConCall();
-    if (fun != null && fun.getDefinition() == Prelude.PATH_CON) {
-      Expression arg = normalize(args.get(args.size() - 1));
-      List<? extends Expression> argArgs = arg.getArguments();
-      FunCallExpression argFun = arg.getFunction().toFunCall();
-      if (argArgs.size() > 0 && argFun != null && argFun.getDefinition() == Prelude.AT) {
-        return normalize(argArgs.get(argArgs.size() - 1));
+    if (expr.toConCall() != null && expr.toConCall().getDefinition() == Prelude.PATH_CON) {
+      Expression arg = normalize(expr.toConCall().getDefCallArguments().get(0));
+      if (arg.toLam() != null && !arg.toLam().getParameters().getNext().hasNext() && arg.toLam().getBody().toFunCall() != null && arg.toLam().getBody().toFunCall().getDefinition() == Prelude.AT) {
+        List<? extends Expression> args = arg.toLam().getBody().toFunCall().getDefCallArguments();
+        if (args.get(4).toReference() != null && args.get(4).toReference().getBinding() == arg.toLam().getParameters()) {
+          for (int i = 0; i < 4; i++) {
+            if (args.get(i).findBinding(arg.toLam().getParameters())) {
+              return expr;
+            }
+          }
+          return normalize(args.get(3));
+        }
       }
     }
     return expr;

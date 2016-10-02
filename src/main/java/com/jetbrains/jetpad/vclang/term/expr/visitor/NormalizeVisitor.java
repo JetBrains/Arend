@@ -116,7 +116,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
 
     if (defCallExpr.toConCall() != null) {
-      return visitConstructorCall(expr, mode);
+      return visitConstructorCall(defCallExpr.toConCall(), mode);
     }
     if (defCallExpr.getDefinition() instanceof Function) {
       return visitFunctionCall((Function) defCallExpr.getDefinition(), defCallExpr.getPolyParamsSubst(), expr, mode); //.subst(defCallExpr.getPolyParamsSubst());
@@ -125,30 +125,27 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     return mode == Mode.TOP ? null : applyDefCall(expr, mode);
   }
 
-  private Expression visitConstructorCall(Expression expr, Mode mode) {
-    ConCallExpression conCallExpression = expr.getFunction().toConCall();
-    List<Expression> args = new ArrayList<>(conCallExpression.getDefCallArguments());
-    args.addAll(expr.getArguments());
-    int take = DependentLink.Helper.size(conCallExpression.getDefinition().getDataTypeParameters()) - conCallExpression.getDataTypeArguments().size();
+  private Expression visitConstructorCall(ConCallExpression expr, Mode mode) {
+    List<Expression> args = new ArrayList<>(expr.getDefCallArguments());
+    int take = DependentLink.Helper.size(expr.getDefinition().getDataTypeParameters()) - expr.getDataTypeArguments().size();
     if (take > 0) {
       if (take >= args.size()) {
         take = args.size();
       }
-      List<Expression> parameters = new ArrayList<>(conCallExpression.getDataTypeArguments().size() + take);
-      parameters.addAll(conCallExpression.getDataTypeArguments());
+      List<Expression> parameters = new ArrayList<>(expr.getDataTypeArguments().size() + take);
+      parameters.addAll(expr.getDataTypeArguments());
       for (int i = 0; i < take; i++) {
         parameters.add(args.get(i));
       }
-      conCallExpression = ConCall(conCallExpression.getDefinition(), parameters, args.subList(take, args.size()));
-      conCallExpression.setPolyParamsSubst(conCallExpression.getPolyParamsSubst());
-      expr = conCallExpression;
+      expr = ConCall(expr.getDefinition(), parameters, args.subList(take, args.size()));
+      expr.setPolyParamsSubst(expr.getPolyParamsSubst());
     }
 
-    return visitFunctionCall(conCallExpression.getDefinition(), conCallExpression.getPolyParamsSubst(), expr, mode);
+    return visitFunctionCall(expr.getDefinition(), expr.getPolyParamsSubst(), expr, mode);
   }
 
   private Expression visitFunctionCall(Function func, LevelSubstitution polySubst, Expression expr, Mode mode) {
-    List<Expression> args = new ArrayList<>(expr.getFunction().toFunCall() != null ? expr.getFunction().toFunCall().getDefCallArguments() : expr.getFunction().toConCall().getDefCallArguments());
+    List<Expression> args = new ArrayList<>(expr.getFunction().toDefCall().getDefCallArguments());
     args.addAll(expr.getArguments());
     List<Expression> requiredArgs;
     DependentLink excessiveParams;
@@ -179,7 +176,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
     DependentLink params = EmptyDependentLink.getInstance();
     List<? extends Expression> paramArgs = Collections.<Expression>emptyList();
-    ConCallExpression conCall = expr.getFunction().toConCall();
+    ConCallExpression conCall = expr.toConCall();
     if (conCall != null) {
       params = conCall.getDefinition().getDataTypeParameters();
       paramArgs = conCall.getDataTypeArguments();

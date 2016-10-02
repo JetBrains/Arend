@@ -51,14 +51,13 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     if (isExplicit) {
-      ConCallExpression conCall = result.expression.getFunction().toConCall();
-      if (conCall != null && conCall.getDefinition() == Prelude.PATH_CON && result.expression.getArguments().isEmpty()) {
+      ConCallExpression conCall = result.expression.toConCall();
+      if (conCall != null && conCall.getDefinition() == Prelude.PATH_CON && conCall.getDefCallArguments().isEmpty()) {
         List<DependentLink> pathParams = new ArrayList<>();
         ((Expression) conCall.getType()).getPiParameters(pathParams, false, false);
         DependentLink lamParam = param("i", Interval());
         Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", pathParams.get(0).getType().toPi().getCodomain(), 1, fun));
         Expression lamExpr = Lam(lamParam, binding);
-        result.expression = result.expression.addArgument(lamExpr);
         result.type = result.type.applyExpressions(Collections.singletonList(lamExpr));
 
         CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, Pi(lamParam, binding));
@@ -68,10 +67,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
         Expression expr1 = Apps(argResult.expression, Left());
         Expression expr2 = Apps(argResult.expression, Right());
-        result.expression
-            .addArgument(expr1)
-            .addArgument(expr2)
-            .addArgument(argResult.expression);
+        result.expression = ConCall(conCall.getDefinition(), Arrays.asList(lamExpr, expr1, expr2), Collections.singletonList(argResult.expression));
+        result.expression.toConCall().setPolyParamsSubst(conCall.getPolyParamsSubst());
         result.type = result.type.applyExpressions(Arrays.asList(expr1, expr2, argResult.expression));
         return result;
       }

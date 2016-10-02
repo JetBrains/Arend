@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
@@ -60,9 +61,8 @@ class PatternsExpander {
       return new ExpansionResult(leaf, Collections.singletonList(new Branch(Reference(binding), leaf, anyPatternIdxs, context)));
     }
 
-    Expression ftype = binding.getType().normalize(NormalizeVisitor.Mode.WHNF);
-    List<? extends Expression> args = ftype.getArguments();
-    List<ConCallExpression> validConstructors = ftype.getFunction().toDataCall().getDefinition().getMatchedConstructors(args);
+    DataCallExpression dType = binding.getType().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
+    List<ConCallExpression> validConstructors = dType.getDefinition().getMatchedConstructors(dType.getDefCallArguments());
 
     BranchElimTreeNode resultTree = new BranchElimTreeNode(binding, context);
     List<Branch> resultBranches = new ArrayList<>();

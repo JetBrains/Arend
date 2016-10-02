@@ -61,7 +61,7 @@ public class ConstructorClause implements Clause {
     for (DependentLink link = myParameters; link.hasNext(); link = link.getNext()) {
       arguments.add(Reference(link));
     }
-    result.add(myParent.getReference(), new ConCallExpression(myConstructor, myConstructor.matchDataTypeArguments(new ArrayList<>(myParent.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF).getArguments())), arguments));
+    result.add(myParent.getReference(), new ConCallExpression(myConstructor, myConstructor.matchDataTypeArguments(new ArrayList<>(myParent.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF).toDataCall().getDefCallArguments())), arguments));
 
     for (int i = 0; i < myParent.getContextTail().size(); i++) {
       result.add(myParent.getContextTail().get(i), Reference(myTailBindings.get(i)));

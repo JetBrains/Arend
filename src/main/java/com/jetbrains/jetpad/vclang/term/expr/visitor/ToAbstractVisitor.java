@@ -302,11 +302,14 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   }
 
   private Integer getNum(Expression expr) {
-    if (expr.toConCall() != null && expr.toConCall().getDefinition() == Prelude.ZERO) {
+    if (expr.toConCall() == null) {
+      return null;
+    }
+    if (expr.toConCall().getDefinition() == Prelude.ZERO) {
       return 0;
     }
-    if (expr.toApp() != null && expr.toApp().getArguments().size() == 1 && expr.toApp().getFunction().toConCall() != null && expr.toApp().getFunction().toConCall().getDefinition() == Prelude.SUC) {
-      Integer result = getNum(expr.toApp().getArguments().get(0));
+    if (expr.toConCall().getDefinition() == Prelude.SUC) {
+      Integer result = getNum(expr.toConCall().getDefCallArguments().get(0));
       if (result != null) {
         return result + 1;
       }

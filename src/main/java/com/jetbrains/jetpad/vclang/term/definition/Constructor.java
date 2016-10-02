@@ -132,7 +132,7 @@ public class Constructor extends Definition implements Function {
         ExprSubstitution innerSubst = new ExprSubstitution();
 
         if (patternArg.getPattern() instanceof ConstructorPattern) {
-          List<? extends Expression> argDataTypeParams = dataTypeParams.getType().subst(subst).normalize(NormalizeVisitor.Mode.WHNF).getArguments();
+          List<? extends Expression> argDataTypeParams = dataTypeParams.getType().subst(subst).normalize(NormalizeVisitor.Mode.WHNF).toDataCall().getDefCallArguments();
           Collections.reverse(argDataTypeParams);
           innerSubst = ((ConstructorPattern) patternArg.getPattern()).getMatchedArguments(new ArrayList<>(argDataTypeParams));
         }

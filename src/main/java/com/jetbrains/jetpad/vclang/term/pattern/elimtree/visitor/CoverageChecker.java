@@ -35,11 +35,9 @@ public class CoverageChecker implements ElimTreeNodeVisitor<ExprSubstitution, Bo
   @Override
   public Boolean visitBranch(BranchElimTreeNode branchNode, ExprSubstitution argsSubst) {
     Expression type = branchNode.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF);
-    List<? extends Expression> parameters = type.getArguments();
-    DataCallExpression ftype = type.getFunction().toDataCall();
 
     boolean result = true;
-    for (ConCallExpression conCall : ftype.getDefinition().getMatchedConstructors(parameters)) {
+    for (ConCallExpression conCall : type.toDataCall().getDefinition().getMatchedConstructors(type.toDataCall().getDefCallArguments())) {
       if (myResultType.getType().isLessOrEquals(Sort.PROP)) {
         if (conCall.getDefinition() == Prelude.PROP_TRUNC_PATH_CON) {
           continue;
@@ -82,14 +80,12 @@ public class CoverageChecker implements ElimTreeNodeVisitor<ExprSubstitution, Bo
       return false;
     }
 
-    Expression ftype = tailContext.get(0).getType().normalize(NormalizeVisitor.Mode.WHNF);
-    List<? extends Expression> parameters = ftype.getArguments();
-    DataCallExpression dtype = ftype.getFunction().toDataCall();
-
-    if (dtype == null) {
+    DataCallExpression dType = tailContext.get(0).getType().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
+    if (dType == null) {
       return checkEmptyContext(new ArrayList<>(tailContext.subList(1, tailContext.size())), argsSubst);
     }
-    List<ConCallExpression> validConCalls = dtype.getDefinition().getMatchedConstructors(parameters);
+
+    List<ConCallExpression> validConCalls = dType.getDefinition().getMatchedConstructors(dType.getDefCallArguments());
     if (validConCalls == null) {
       return checkEmptyContext(new ArrayList<>(tailContext.subList(1, tailContext.size())), argsSubst);
     }

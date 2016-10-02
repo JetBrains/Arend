@@ -17,7 +17,6 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.ListIterator;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -156,15 +155,13 @@ public class TypeCheckingDefCall {
     }
 
     // Constructor call
-    List<? extends Expression> arguments = result.expression.getArguments();
-    Expression fun = result.expression.getFunction();
-    DataCallExpression dataCall = fun.toDataCall();
+    DataCallExpression dataCall = result.expression.toDataCall();
     if (dataCall != null) {
       DataDefinition dataDefinition = dataCall.getDefinition();
       Constructor constructor;
       if (typeCheckedDefinition == null) {
         constructor = dataDefinition.getConstructor(name);
-        if (constructor == null && !arguments.isEmpty()) {
+        if (constructor == null && !dataCall.getDefCallArguments().isEmpty()) {
           LocalTypeCheckingError error = new LocalTypeCheckingError("Cannot find constructor '" + name + "' of data type '" + dataDefinition.getName() + "'", expr);
           expr.setWellTyped(myVisitor.getContext(), Error(null, error));
           myVisitor.getErrorReporter().report(error);
@@ -179,7 +176,7 @@ public class TypeCheckingDefCall {
       }
 
       if (constructor != null) {
-        result.expression = ConCall(constructor, new ArrayList<>(arguments), new ArrayList<Expression>());
+        result.expression = ConCall(constructor, new ArrayList<>(dataCall.getDefCallArguments()), new ArrayList<Expression>());
         ((ConCallExpression) result.expression).setPolyParamsSubst(dataCall.getPolyParamsSubst());
         result.type = result.expression.getType();
         return result;
@@ -213,9 +210,9 @@ public class TypeCheckingDefCall {
       if (result.expression.toDefCall() != null) {
         thisExpr = null;
         leftDefinition = result.expression.toDefCall().getDefinition();
-      } else if (result.expression.getFunction().toDefCall() != null && result.expression.getArguments().size() == 1) {
-        thisExpr = result.expression.getArguments().get(0);
-        leftDefinition = result.expression.getFunction().toDefCall().getDefinition();
+      } else if (result.expression.toDefCall() != null && result.expression.toDefCall().getDefCallArguments().size() == 1) {
+        thisExpr = result.expression.toDefCall().getDefCallArguments().get(0);
+        leftDefinition = result.expression.toDefCall().getDefinition();
       } else {
         LocalTypeCheckingError error = new LocalTypeCheckingError("Expected a definition", expr);
         expr.setWellTyped(myVisitor.getContext(), Error(result.expression, error));

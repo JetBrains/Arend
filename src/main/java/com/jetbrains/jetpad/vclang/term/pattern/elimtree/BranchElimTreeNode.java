@@ -34,8 +34,8 @@ public class BranchElimTreeNode extends ElimTreeNode {
     myReference = reference;
     myContextTail = contextTail;
 
-    DataCallExpression ftype = reference.getType().normalize(NormalizeVisitor.Mode.WHNF).getFunction().toDataCall();
-    myIsInterval = ftype != null && ftype.getDefinition() == Prelude.INTERVAL;
+    DataCallExpression dType = reference.getType().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
+    myIsInterval = dType != null && dType.getDefinition() == Prelude.INTERVAL;
   }
 
   @Override
@@ -53,7 +53,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
 
   public ConstructorClause addClause(Constructor constructor, List<String> names) {
     assert !constructor.hasErrors();
-    List<? extends Expression> dataTypeArguments = myReference.getType().normalize(NormalizeVisitor.Mode.WHNF).getArguments();
+    List<? extends Expression> dataTypeArguments = myReference.getType().normalize(NormalizeVisitor.Mode.WHNF).toDataCall().getDefCallArguments();
 
     dataTypeArguments = constructor.matchDataTypeArguments(new ArrayList<>(dataTypeArguments));
     DependentLink constructorArgs = DependentLink.Helper.subst(constructor.getParameters(), toSubstitution(constructor.getDataTypeParameters(), dataTypeArguments));
@@ -110,8 +110,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
     if (normalize) {
       func = func.normalize(NormalizeVisitor.Mode.WHNF);
     }
-    List<? extends Expression> arguments = func.getArguments();
-    ConCallExpression conFunc = func.getFunction().toConCall();
+    ConCallExpression conFunc = func.toConCall();
 
     if (conFunc == null) {
       if (myIsInterval && myOtherwiseClause != null) {
@@ -128,7 +127,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
 
     int i = 0;
     for (DependentLink link = clause.getParameters(); link.hasNext(); link = link.getNext(), i++) {
-      subst.add(link, arguments.get(i));
+      subst.add(link, conFunc.getDefCallArguments().get(i));
     }
     for (i = 0; i < myContextTail.size(); i++) {
       subst.add(clause.getTailBindings().get(i), subst.get(myContextTail.get(i)));
@@ -170,10 +169,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
   @Override
   public LeafElimTreeNode match(List<Expression> expressions) {
     int idx = expressions.size() - 1 - myContextTail.size();
-    Expression func = expressions.get(idx).normalize(NormalizeVisitor.Mode.WHNF);
-    List<? extends Expression> arguments = func.getArguments();
-    ConCallExpression conFunc = func.getFunction().toConCall();
-
+    ConCallExpression conFunc = expressions.get(idx).normalize(NormalizeVisitor.Mode.WHNF).toConCall();
     if (conFunc == null) {
       if (myIsInterval && myOtherwiseClause != null) {
         return myOtherwiseClause.getChild().match(expressions);
@@ -188,7 +184,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
     }
 
     expressions.remove(idx);
-    expressions.addAll(idx, arguments);
+    expressions.addAll(idx, conFunc.getDefCallArguments());
     return clause.getChild().match(expressions);
   }
 }

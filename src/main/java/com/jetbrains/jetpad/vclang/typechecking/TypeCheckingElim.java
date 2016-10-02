@@ -11,7 +11,6 @@ import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
-import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
@@ -288,7 +287,7 @@ public class TypeCheckingElim {
           return null;
         }
 
-        if (((Expression) refExpr.getType()).normalize(NormalizeVisitor.Mode.WHNF).getFunction().toDataCall() == null) {
+        if (((Expression) refExpr.getType()).normalize(NormalizeVisitor.Mode.WHNF).toDataCall() == null) {
           error = new LocalTypeCheckingError("Elimination is allowed only for a data type variable.", var);
           myVisitor.getErrorReporter().report(error);
           var.setWellTyped(argsBindings, Error(null, error));
@@ -344,16 +343,14 @@ public class TypeCheckingElim {
       LocalTypeCheckingError error = null;
 
       Expression type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF);
-      List<? extends Expression> parameters = type.getArguments();
-      DataCallExpression fType = type.getFunction().toDataCall();
-
-      if (fType == null) {
+      if (type.toDataCall() == null) {
         error = new LocalTypeCheckingError("Pattern expected a data type, got: " + type, pattern);
         myVisitor.getErrorReporter().report(error);
         return new ExpandPatternErrorResult(error);
       }
 
-      DataDefinition dataType = fType.getDefinition();
+      DataDefinition dataType = type.toDataCall().getDefinition();
+      List<? extends Expression> parameters = type.toDataCall().getDefCallArguments();
 
       if (mode == PatternExpansionMode.DATATYPE && !dataType.getConditions().isEmpty()) {
         error = new LocalTypeCheckingError("Pattern matching on a data type with conditions is not allowed here: " + type, pattern);

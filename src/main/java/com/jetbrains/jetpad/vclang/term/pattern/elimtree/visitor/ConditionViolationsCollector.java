@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
@@ -36,10 +35,7 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<ExprSub
   @Override
   public Void visitBranch(final BranchElimTreeNode branchNode, final ExprSubstitution argSubst) {
     Expression type = branchNode.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF);
-    List<? extends Expression> parameters = type.getArguments();
-    DataDefinition dataType = type.getFunction().toDataCall().getDefinition();
-
-    for (final ConCallExpression conCall : dataType.getMatchedConstructors(parameters)) {
+    for (final ConCallExpression conCall : type.toDataCall().getDefinition().getMatchedConstructors(type.toDataCall().getDefCallArguments())) {
       if (branchNode.getClause(conCall.getDefinition()) != null) {
         Clause clause = branchNode.getClause(conCall.getDefinition());
         clause.getChild().accept(this, clause.getSubst().compose(argSubst));

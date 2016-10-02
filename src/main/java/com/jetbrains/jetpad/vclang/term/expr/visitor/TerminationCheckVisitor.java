@@ -61,15 +61,14 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
   private enum Ord { LESS, EQUALS, NOT_LESS }
 
   private Ord isLess(Expression expr1, Expression expr2) {
-    List<? extends Expression> args1 = expr1.getArguments();
-    Expression fun1 = expr1.getFunction();
-    List<? extends Expression> args2 = expr2.getArguments();
-    Expression fun2 = expr2.getFunction();
-    if (fun1.equals(fun2)) {
-      Ord ord = isLess(args1, args2);
+    if (expr1.toConCall() == null || expr2.toConCall() == null) {
+      return Ord.NOT_LESS;
+    }
+    if (expr1.toConCall().getDefinition() == expr2.toConCall().getDefinition()) {
+      Ord ord = isLess(expr1.toConCall().getDefCallArguments(), expr2.toConCall().getDefCallArguments());
       if (ord != Ord.NOT_LESS) return ord;
     }
-    for (Expression arg : args2) {
+    for (Expression arg : expr2.toConCall().getDefCallArguments()) {
       if (isLess(expr1, arg) != Ord.NOT_LESS) return Ord.LESS;
     }
     return Ord.NOT_LESS;
@@ -85,21 +84,22 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
 
   @Override
   public Boolean visitApp(AppExpression expr, Void params) {
-    List<? extends Expression> args = expr.getArguments();
     Expression fun = expr.getFunction();
-    ConCallExpression conCall = fun.toConCall();
-    if (conCall != null) {
-      List<? extends Expression> dataTypeArguments = conCall.getDataTypeArguments();
-      if (!dataTypeArguments.isEmpty()) {
-        List<Expression> newArgs = new ArrayList<>(args.size() + dataTypeArguments.size());
-        newArgs.addAll(dataTypeArguments);
-        newArgs.addAll(args);
-        args = newArgs;
-      }
-    }
-
     DefCallExpression defCall = fun.toDefCall();
+    List<? extends Expression> args;
     if (defCall != null) {
+      ConCallExpression conCall = expr.toConCall();
+      args = defCall.getDefCallArguments();
+      if (conCall != null) {
+        List<? extends Expression> dataTypeArguments = conCall.getDataTypeArguments();
+        if (!dataTypeArguments.isEmpty()) {
+          List<Expression> newArgs = new ArrayList<>(args.size() + dataTypeArguments.size());
+          newArgs.addAll(dataTypeArguments);
+          newArgs.addAll(args);
+          args = newArgs;
+        }
+      }
+
       if (defCall.getDefinition() == myDef && isLess(args, myPatterns) != Ord.LESS) {
         return false;
       }
@@ -113,6 +113,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
       if (!fun.accept(this, null)) {
         return false;
       }
+      args = expr.getArguments();
     }
 
     for (Expression arg : args) {

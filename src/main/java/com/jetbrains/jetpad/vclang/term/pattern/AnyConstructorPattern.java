@@ -34,7 +34,7 @@ public class AnyConstructorPattern extends Pattern implements Abstract.AnyConstr
 
   @Override
   public MatchResult match(Expression expr, boolean normalize) {
-    if ((normalize ? expr.normalize(NormalizeVisitor.Mode.WHNF) : expr).getFunction().toConCall() == null) {
+    if ((normalize ? expr.normalize(NormalizeVisitor.Mode.WHNF) : expr).toConCall() == null) {
       return new MatchMaybeResult(this, expr);
     } else {
       return new MatchOKResult(Collections.singletonList(expr));

@@ -59,10 +59,8 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
       assert link.hasNext();
       if (patternArgument.getPattern() instanceof ConstructorPattern) {
         Expression type = link.getType().subst(subst).normalize(NormalizeVisitor.Mode.WHNF);
-        List<? extends Expression> args = type.getArguments();
-        type = type.getFunction();
         assert type.toDataCall() != null && type.toDataCall().getDefinition() == ((ConstructorPattern) patternArgument.getPattern()).getConstructor().getDataType();
-        ExprSubstitution subSubst = ((ConstructorPattern) patternArgument.getPattern()).getMatchedArguments(new ArrayList<>(args));
+        ExprSubstitution subSubst = ((ConstructorPattern) patternArgument.getPattern()).getMatchedArguments(new ArrayList<>(type.toDataCall().getDefCallArguments()));
         for (Referable binding : subSubst.getDomain()) {
           subst.add(binding, subSubst.get(binding));
         }
@@ -90,8 +88,6 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
       expr = expr.normalize(NormalizeVisitor.Mode.WHNF);
     }
 
-    List<? extends Expression> constructorArgs = expr.getArguments();
-    expr = expr.getFunction();
     ConCallExpression conCall = expr.toConCall();
     if (conCall == null) {
       return new MatchMaybeResult(this, expr);
@@ -99,9 +95,10 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
     if (conCall.getDefinition() != myConstructor) {
       return new MatchFailedResult(this, expr);
     }
-    if (constructorArgs.size() != myArguments.getPatterns().size()) {
+
+    if (conCall.getDefCallArguments().size() != myArguments.getPatterns().size()) {
       throw new IllegalStateException();
     }
-    return myArguments.match(constructorArgs, normalize);
+    return myArguments.match(conCall.getDefCallArguments(), normalize);
   }
 }

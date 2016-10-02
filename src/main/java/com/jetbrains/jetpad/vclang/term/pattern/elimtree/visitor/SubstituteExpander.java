@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
@@ -53,11 +54,9 @@ public class SubstituteExpander {
           return null;
         }
         Binding binding = reference.getBinding();
-        Expression ftype = binding.getType().normalize(NormalizeVisitor.Mode.WHNF);
-        List<? extends Expression> arguments = ftype.getArguments();
-        ftype = ftype.getFunction();
+        DataCallExpression dType = binding.getType().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
 
-        for (ConCallExpression conCall : ftype.toDataCall().getDefinition().getMatchedConstructors(arguments)) {
+        for (ConCallExpression conCall : dType.getDefinition().getMatchedConstructors(dType.getDefCallArguments())) {
           DependentLink constructorArgs = DependentLink.Helper.subst(conCall.getDefinition().getParameters(), toSubstitution(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments()));
           List<Expression> args = new ArrayList<>();
           for (DependentLink link = constructorArgs; link.hasNext(); link = link.getNext()) {
