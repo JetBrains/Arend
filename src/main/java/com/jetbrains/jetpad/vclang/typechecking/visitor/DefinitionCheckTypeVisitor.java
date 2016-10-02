@@ -536,11 +536,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         boolean check = true;
         while (check) {
           check = false;
-          List<? extends Expression> exprs = type.getArguments();
-          type = type.getFunction();
-          DataCallExpression dataCall = type.toDataCall();
-          if (dataCall != null) {
-            DataDefinition typeDef = dataCall.getDefinition();
+          if (type.toDataCall() != null) {
+            List<? extends Expression> exprs = type.toDataCall().getDefCallArguments();
+            DataDefinition typeDef = type.toDataCall().getDefinition();
             if (typeDef == Prelude.PATH && exprs.size() >= 1) {
               LamExpression lam = exprs.get(0).normalize(NormalizeVisitor.Mode.WHNF).toLam();
               if (lam != null) {
@@ -549,14 +547,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
                 exprs = exprs.subList(1, exprs.size());
               }
             }
+
+            for (Expression expr : exprs) {
+              if (!checkNonPositiveError(expr, abstractData, dataDefinition, name, list.getFirst(), link, arguments, def)) {
+                return constructor;
+              }
+            }
           } else {
             if (!checkNonPositiveError(type, abstractData, dataDefinition, name, list.getFirst(), link, arguments, def)) {
-              return constructor;
-            }
-          }
-
-          for (Expression expr : exprs) {
-            if (!checkNonPositiveError(expr, abstractData, dataDefinition, name, list.getFirst(), link, arguments, def)) {
               return constructor;
             }
           }
@@ -930,7 +928,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       if (myState.getInstancePool().getInstance(defCall.getDefinition(), classView) != null) {
         myErrorReporter.report(new LocalTypeCheckingError("Instance of '" + classView.getAbstract().getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", term));
       } else {
-        myState.getInstancePool().addInstance(defCall.getDefinition(), classView, expr.toClassCall().getDefinition(), FunCall(typedDef));
+        myState.getInstancePool().addInstance(defCall.getDefinition(), classView, expr.toClassCall().getDefinition(), FunCall(typedDef, Collections.<Expression>emptyList()));
       }
     }
 

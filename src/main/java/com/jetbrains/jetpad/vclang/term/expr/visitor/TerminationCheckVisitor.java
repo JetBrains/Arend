@@ -125,22 +125,22 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
 
   @Override
   public Boolean visitDefCall(DefCallExpression expr, Void params) {
-    return expr.getDefinition() != myDef;
-  }
-
-  @Override
-  public Boolean visitFieldCall(FieldCallExpression expr, Void params) {
-    return expr.getDefinition() != myDef && expr.getExpression().accept(this, null);
-  }
-
-  @Override
-  public Boolean visitConCall(ConCallExpression expr, Void params) {
-    for (Expression parameter : expr.getDataTypeArguments()) {
-      if (!parameter.accept(this, null)) {
+    for (Expression arg : expr.getDefCallArguments()) {
+      if (!arg.accept(this, null)) {
         return false;
       }
     }
     return expr.getDefinition() != myDef;
+  }
+
+  @Override
+  public Boolean visitConCall(ConCallExpression expr, Void params) {
+    for (Expression arg : expr.getDataTypeArguments()) {
+      if (!arg.accept(this, null)) {
+        return false;
+      }
+    }
+    return visitDefCall(expr, null);
   }
 
   @Override

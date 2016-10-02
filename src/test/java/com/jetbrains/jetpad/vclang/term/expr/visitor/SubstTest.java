@@ -13,18 +13,18 @@ import static org.junit.Assert.assertEquals;
 public class SubstTest extends TypeCheckingTestCase {
   @Test
   public void substConst() {
-    // Nat -> A x [y := S] = Nat -> A x
+    // Nat -> A x [y := zero] = Nat -> A x
     Expression expr = Pi(Nat(), Apps(Reference(new TypedBinding("A", Pi(Nat(), Universe(0)))), Reference(new TypedBinding("x", Nat()))));
-    assertEquals(expr, expr.subst(new TypedBinding("x", Nat()), Suc()));
+    assertEquals(expr, expr.subst(new TypedBinding("x", Nat()), Zero()));
   }
 
   @Test
   public void substIndexEquals() {
-    // Nat -> A x [x := S] = Nat -> A S
+    // Nat -> A x [x := zero] = Nat -> A zero
     Binding x = new TypedBinding("x", Pi(Nat(), Nat()));
     Binding A = new TypedBinding("A", Pi(Pi(Nat(), Nat()), Universe(0)));
     Expression expr = Pi(Nat(), Apps(Reference(A), Reference(x)));
-    assertEquals(Pi(Nat(), Apps(Reference(A), Suc())), expr.subst(x, Suc()));
+    assertEquals(Pi(Nat(), Apps(Reference(A), Zero())), expr.subst(x, Zero()));
   }
 
   @Test

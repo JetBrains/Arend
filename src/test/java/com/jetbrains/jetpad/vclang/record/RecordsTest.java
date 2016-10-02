@@ -288,9 +288,10 @@ public class RecordsTest extends TypeCheckingTestCase {
 
     LamExpression arg0 = arguments.get(0).toLam();
     assertNotNull(arg0);
-    assertEquals(DataCall(Foo), arg0.getBody().getFunction());
-    assertEquals(Reference(testFun.getParameters()), arg0.getBody().getArguments().get(0));
-    Expression parameterFunction = arg0.getBody().getArguments().get(1);
+    assertNotNull(arg0.getBody().toDataCall());
+    assertEquals(Foo, arg0.getBody().toDataCall().getDefinition());
+    assertEquals(Reference(testFun.getParameters()), arg0.getBody().toDataCall().getDefCallArguments().get(0));
+    Expression parameterFunction = arg0.getBody().toDataCall().getDefCallArguments().get(1);
     List<? extends Expression> parameterArguments = parameterFunction.getArguments();
     parameterFunction = parameterFunction.getFunction();
     assertEquals(1, parameterArguments.size());

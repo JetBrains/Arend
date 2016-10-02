@@ -49,17 +49,16 @@ public class EvalNormalizer implements Normalizer {
     if (fun == Prelude.COERCE) {
       Expression result = null;
 
-      Binding binding = new TypedBinding("i", DataCall(Prelude.INTERVAL));
+      Binding binding = new TypedBinding("i", Interval());
       Expression normExpr = Apps(arguments.get(0), Reference(binding)).normalize(NormalizeVisitor.Mode.NF);
       if (!normExpr.findBinding(binding)) {
         result = arguments.get(1);
       } else {
-        FunCallExpression mbIsoFun = normExpr.getFunction().toFunCall();
-        List<? extends Expression> mbIsoArgs = normExpr.getArguments();
-        if (mbIsoFun != null && mbIsoFun.getDefinition() == Prelude.ISO && mbIsoArgs.size() == 7) {
+        if (normExpr.toFunCall() != null && normExpr.toFunCall().getDefinition() == Prelude.ISO) {
+          List<? extends Expression> isoArgs = normExpr.toFunCall().getDefCallArguments();
           boolean noFreeVar = true;
-          for (int i = 0; i < mbIsoArgs.size() - 1; i++) {
-            if (mbIsoArgs.get(i).findBinding(binding)) {
+          for (int i = 0; i < isoArgs.size() - 1; i++) {
+            if (isoArgs.get(i).findBinding(binding)) {
               noFreeVar = false;
               break;
             }
@@ -67,7 +66,7 @@ public class EvalNormalizer implements Normalizer {
           if (noFreeVar) {
             ConCallExpression normedPtCon = arguments.get(2).normalize(NormalizeVisitor.Mode.NF).toConCall();
             if (normedPtCon != null && normedPtCon.getDefinition() == Prelude.RIGHT) {
-              result = Apps(mbIsoArgs.get(2), arguments.get(1));
+              result = Apps(isoArgs.get(2), arguments.get(1));
             }
           }
         }

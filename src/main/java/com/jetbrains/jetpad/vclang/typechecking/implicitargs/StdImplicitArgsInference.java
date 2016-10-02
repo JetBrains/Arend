@@ -53,11 +53,9 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     if (isExplicit) {
       ConCallExpression conCall = result.expression.getFunction().toConCall();
       if (conCall != null && conCall.getDefinition() == Prelude.PATH_CON && result.expression.getArguments().isEmpty()) {
-        Expression interval = DataCall(Prelude.INTERVAL);
         List<DependentLink> pathParams = new ArrayList<>();
-
         ((Expression) conCall.getType()).getPiParameters(pathParams, false, false);
-        DependentLink lamParam = param("i", interval);
+        DependentLink lamParam = param("i", Interval());
         Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", pathParams.get(0).getType().toPi().getCodomain(), 1, fun));
         Expression lamExpr = Lam(lamParam, binding);
         result.expression = result.expression.addArgument(lamExpr);

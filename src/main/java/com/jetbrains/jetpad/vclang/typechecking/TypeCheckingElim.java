@@ -456,7 +456,7 @@ public class TypeCheckingElim {
 
       ConstructorPattern result = new ConstructorPattern(constructor, new Patterns(resultPatterns));
       pattern.setWellTyped(result);
-      return new ExpandPatternOKResult(Apps(ConCall(constructor, matchedParameters), arguments), result);
+      return new ExpandPatternOKResult(ConCall(constructor, matchedParameters, arguments), result);
     } else {
       throw new IllegalStateException();
     }

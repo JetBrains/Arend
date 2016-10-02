@@ -10,6 +10,8 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import org.junit.Test;
 
+import java.util.Collections;
+
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 
@@ -139,10 +141,10 @@ public class ElimTest extends TypeCheckingTestCase {
     FunctionDefinition test = (FunctionDefinition) result.getDefinition("test");
     Constructor d = (Constructor) result.getDefinition("d");
     Binding binding = new TypedBinding("y", Nat());
-    Expression call1 = Apps(ConCall(d), Zero(), Reference(binding));
-    Expression call2 = Apps(ConCall(d), Suc(Zero()), Reference(binding));
-    assertEquals(Apps(FunCall(test), call1), Apps(FunCall(test), call1).normalize(NormalizeVisitor.Mode.NF));
-    assertEquals(Suc(Zero()), Apps(FunCall(test), call2).normalize(NormalizeVisitor.Mode.NF));
+    Expression call1 = ConCall(d, Collections.<Expression>emptyList(), Zero(), Reference(binding));
+    Expression call2 = ConCall(d, Collections.<Expression>emptyList(), Suc(Zero()), Reference(binding));
+    assertEquals(FunCall(test, call1), FunCall(test, call1).normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Suc(Zero()), FunCall(test, call2).normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test

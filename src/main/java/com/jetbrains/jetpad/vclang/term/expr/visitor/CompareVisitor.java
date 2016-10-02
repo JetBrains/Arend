@@ -214,12 +214,15 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   @Override
   public Boolean visitDefCall(DefCallExpression expr1, Expression expr2) {
     DefCallExpression defCall2 = expr2.toDefCall();
-    return defCall2 != null && expr1.getDefinition() == defCall2.getDefinition();
-  }
-
-  @Override
-  public Boolean visitFieldCall(FieldCallExpression expr1, Expression expr2) {
-    return expr2.toFieldCall() != null && expr1.getDefinition() == expr2.toFieldCall().getDefinition() && compare(expr1.getExpression(), expr2.toFieldCall().getExpression());
+    if (defCall2 == null || expr1.getDefinition() != defCall2.getDefinition() || expr1.getDefCallArguments().size() != defCall2.getDefCallArguments().size()) {
+      return false;
+    }
+    for (int i = 0; i < expr1.getDefCallArguments().size(); i++) {
+      if (!compare(expr1.getDefCallArguments().get(i), defCall2.getDefCallArguments().get(i))) {
+        return false;
+      }
+    }
+    return true;
   }
 
   private boolean checkSubclassImpl(FieldSet fieldSet1, ClassCallExpression classCall2) {

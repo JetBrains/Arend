@@ -4,11 +4,15 @@ import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FunCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FunCall;
 
@@ -93,7 +97,14 @@ public class FunctionDefinition extends Definition implements Function {
 
   @Override
   public FunCallExpression getDefCall() {
-    return FunCall(this);
+    return FunCall(this, new ArrayList<Expression>());
+  }
+
+  @Override
+  public FunCallExpression getDefCall(LevelSubstitution polyParams, List<Expression> args) {
+    FunCallExpression funCall = new FunCallExpression(this, args);
+    funCall.setPolyParamsSubst(polyParams);
+    return funCall;
   }
 
   @Override

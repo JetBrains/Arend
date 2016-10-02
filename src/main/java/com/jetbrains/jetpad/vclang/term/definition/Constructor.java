@@ -19,7 +19,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 
 public class Constructor extends Definition implements Function {
   private DataDefinition myDataType;
@@ -116,18 +117,17 @@ public class Constructor extends Definition implements Function {
   public Expression getDataTypeExpression(ExprSubstitution substitution, LevelSubstitution polyParams) {
     assert !hasErrors() && !myDataType.hasErrors();
 
-    Expression resultType = myDataType.getDefCall(polyParams);
+    List<Expression> arguments;
     if (myPatterns == null) {
-      List<Expression> arguments = new ArrayList<>();
+      arguments = new ArrayList<>();
       for (DependentLink link = myDataType.getParameters(); link.hasNext(); link = link.getNext()) {
         arguments.add(Reference(link));
       }
-      resultType = Apps(resultType, arguments);
     } else {
       ExprSubstitution subst = new ExprSubstitution();
 
       DependentLink dataTypeParams = myDataType.getParameters();
-      List<Expression> arguments = new ArrayList<>(myPatterns.getPatterns().size());
+      arguments = new ArrayList<>(myPatterns.getPatterns().size());
       for (PatternArgument patternArg : myPatterns.getPatterns()) {
         ExprSubstitution innerSubst = new ExprSubstitution();
 
@@ -146,10 +146,9 @@ public class Constructor extends Definition implements Function {
         arguments.add(expr);
         dataTypeParams = dataTypeParams.getNext();
       }
-      resultType = Apps(resultType, arguments);
     }
 
-    return resultType;
+    return myDataType.getDefCall(polyParams, arguments);
   }
 
   @Override
@@ -179,7 +178,12 @@ public class Constructor extends Definition implements Function {
 
   @Override
   public ConCallExpression getDefCall() {
-    return ConCall(this);
+    return new ConCallExpression(this, Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
+  }
+
+  @Override
+  public ConCallExpression getDefCall(LevelSubstitution polyParams, List<Expression> args) {
+    throw new IllegalStateException();
   }
 
   @Override

@@ -58,7 +58,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   private Expression applyDefCall(Expression expr, Mode mode) {
     if (mode == Mode.TOP) return null;
-    if ((expr.toApp() != null || expr.toFieldCall() != null) && (mode == Mode.NF || mode == Mode.HUMAN_NF)) {
+    if ((expr.toApp() != null || expr.toDefCall() != null && !expr.toDefCall().getDefCallArguments().isEmpty()) && (mode == Mode.NF || mode == Mode.HUMAN_NF)) {
       List<Expression> newArgs = expr.getArguments().isEmpty() ? Collections.<Expression>emptyList() : new ArrayList<Expression>(expr.getArguments().size());
       for (Expression argument : expr.getArguments()) {
         newArgs.add(argument.accept(this, mode));
@@ -67,6 +67,27 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       Expression fun = expr.getFunction();
       if (fun.toFieldCall() != null) {
         fun = new FieldCallExpression(fun.toFieldCall().getDefinition(), fun.toFieldCall().getExpression().accept(this, mode));
+      }
+      if (fun.toFunCall() != null && !fun.toFunCall().getDefCallArguments().isEmpty()) {
+        List<Expression> args = new ArrayList<>(fun.toFunCall().getDefCallArguments().size());
+        for (Expression arg : fun.toFunCall().getDefCallArguments()) {
+          args.add(arg.accept(this, mode));
+        }
+        fun = new FunCallExpression(fun.toFunCall().getDefinition(), args);
+      }
+      if (fun.toDataCall() != null && !fun.toDataCall().getDefCallArguments().isEmpty()) {
+        List<Expression> args = new ArrayList<>(fun.toDataCall().getDefCallArguments().size());
+        for (Expression arg : fun.toDataCall().getDefCallArguments()) {
+          args.add(arg.accept(this, mode));
+        }
+        fun = new DataCallExpression(fun.toDataCall().getDefinition(), args);
+      }
+      if (fun.toConCall() != null && !fun.toConCall().getDefCallArguments().isEmpty()) {
+        List<Expression> args = new ArrayList<>(fun.toConCall().getDefCallArguments().size());
+        for (Expression arg : fun.toConCall().getDefCallArguments()) {
+          args.add(arg.accept(this, mode));
+        }
+        fun = new ConCallExpression(fun.toConCall().getDefinition(), new ArrayList<>(fun.toConCall().getDataTypeArguments()), args);
       }
       return newArgs.isEmpty() ? fun : new AppExpression(fun, newArgs);
     } else {
@@ -106,7 +127,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   private Expression visitConstructorCall(Expression expr, Mode mode) {
     ConCallExpression conCallExpression = expr.getFunction().toConCall();
-    List<? extends Expression> args = expr.getArguments();
+    List<Expression> args = new ArrayList<>(conCallExpression.getDefCallArguments());
+    args.addAll(expr.getArguments());
     int take = DependentLink.Helper.size(conCallExpression.getDefinition().getDataTypeParameters()) - conCallExpression.getDataTypeArguments().size();
     if (take > 0) {
       if (take >= args.size()) {
@@ -117,18 +139,17 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       for (int i = 0; i < take; i++) {
         parameters.add(args.get(i));
       }
-      conCallExpression = ConCall(conCallExpression.getDefinition(), parameters);
+      conCallExpression = ConCall(conCallExpression.getDefinition(), parameters, args.subList(take, args.size()));
       conCallExpression.setPolyParamsSubst(conCallExpression.getPolyParamsSubst());
-      int size = args.size();
-      args = args.subList(take, size);
-      expr = args.isEmpty() ? conCallExpression : Apps(conCallExpression, args);
+      expr = conCallExpression;
     }
 
-    return visitFunctionCall(conCallExpression.getDefinition(), conCallExpression.getPolyParamsSubst(), expr, mode);//.subst(conCallExpression.getPolyParamsSubst());
+    return visitFunctionCall(conCallExpression.getDefinition(), conCallExpression.getPolyParamsSubst(), expr, mode);
   }
 
   private Expression visitFunctionCall(Function func, LevelSubstitution polySubst, Expression expr, Mode mode) {
-    List<? extends Expression> args = expr.getArguments();
+    List<Expression> args = new ArrayList<>(expr.getFunction().toFunCall() != null ? expr.getFunction().toFunCall().getDefCallArguments() : expr.getFunction().toConCall().getDefCallArguments());
+    args.addAll(expr.getArguments());
     List<Expression> requiredArgs;
     DependentLink excessiveParams;
     int numberOfRequiredArgs = func.getNumberOfRequiredArguments();
@@ -145,15 +166,14 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
           link.setType(link.getType().subst(substitution));
         }
       }
-      requiredArgs = new ArrayList<>();
-      requiredArgs.addAll(args);
+      requiredArgs = args;
       for (DependentLink link = excessiveParams; link.hasNext(); link = link.getNext()) {
         requiredArgs.add(Reference(link));
       }
       args = Collections.emptyList();
     } else {
       excessiveParams = EmptyDependentLink.getInstance();
-      requiredArgs = new ArrayList<>(args.subList(0, func.getNumberOfRequiredArguments()));
+      requiredArgs = args.subList(0, func.getNumberOfRequiredArguments());
       args = args.subList(numberOfRequiredArgs, args.size());
     }
 

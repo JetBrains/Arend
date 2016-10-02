@@ -12,7 +12,8 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ConCall;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 
 public class ConstructorPattern extends Pattern implements Abstract.ConstructorPattern {
   private final Constructor myConstructor;
@@ -76,7 +77,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
       link = link.getNext();
     }
     DependentLink.Helper.freeSubsts(constructorParameters, subst);
-    return Apps(ConCall(myConstructor, params), arguments);
+    return ConCall(myConstructor, params, arguments);
   }
 
   public ExprSubstitution getMatchedArguments(List<Expression> dataTypeArguments) {

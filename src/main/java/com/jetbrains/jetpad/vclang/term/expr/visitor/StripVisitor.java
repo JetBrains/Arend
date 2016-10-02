@@ -35,24 +35,37 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
 
   @Override
   public FunCallExpression visitFunCall(FunCallExpression expr, Void params) {
-    return expr;
+    List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
+    for (Expression arg : expr.getDefCallArguments()) {
+      args.add(arg.accept(this, null));
+    }
+    return new FunCallExpression(expr.getDefinition(), args);
   }
 
   @Override
   public ConCallExpression visitConCall(ConCallExpression expr, Void params) {
-    List<Expression> args = new ArrayList<>(expr.getDataTypeArguments().size());
+    List<Expression> dataTypeArgs = new ArrayList<>(expr.getDataTypeArguments().size());
     for (Expression arg : expr.getDataTypeArguments()) {
+      dataTypeArgs.add(arg.accept(this, null));
+    }
+
+    List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
+    for (Expression arg : expr.getDefCallArguments()) {
       args.add(arg.accept(this, null));
     }
 
-    ConCallExpression conCall = new ConCallExpression(expr.getDefinition(), args);
+    ConCallExpression conCall = new ConCallExpression(expr.getDefinition(), dataTypeArgs, args);
     conCall.setPolyParamsSubst(expr.getPolyParamsSubst());
     return conCall;
   }
 
   @Override
   public DataCallExpression visitDataCall(DataCallExpression expr, Void params) {
-    return expr;
+    List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
+    for (Expression arg : expr.getDefCallArguments()) {
+      args.add(arg.accept(this, null));
+    }
+    return new DataCallExpression(expr.getDefinition(), args);
   }
 
   @Override

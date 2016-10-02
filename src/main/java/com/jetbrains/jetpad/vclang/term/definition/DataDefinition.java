@@ -46,6 +46,7 @@ public class DataDefinition extends Definition {
     mySorts = sorts;
   }
 
+  @Override
   public DependentLink getParameters() {
     assert !hasErrors();
     return myParameters;
@@ -81,7 +82,7 @@ public class DataDefinition extends Definition {
         matchedParameters = parameters;
       }
 
-      result.add(ConCall(constructor, new ArrayList<>(matchedParameters)));
+      result.add(ConCall(constructor, new ArrayList<>(matchedParameters), new ArrayList<Expression>()));
     }
     return result;
   }
@@ -129,7 +130,14 @@ public class DataDefinition extends Definition {
 
   @Override
   public DataCallExpression getDefCall() {
-    return DataCall(this);
+    return DataCall(this, new ArrayList<Expression>());
+  }
+
+  @Override
+  public DataCallExpression getDefCall(LevelSubstitution polyParams, List<Expression> args) {
+    DataCallExpression dataCall = new DataCallExpression(this, args);
+    dataCall.setPolyParamsSubst(polyParams);
+    return dataCall;
   }
 
   @Override

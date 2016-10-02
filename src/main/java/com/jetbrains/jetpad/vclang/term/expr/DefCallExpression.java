@@ -3,6 +3,9 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 
+import java.util.Collections;
+import java.util.List;
+
 public abstract class DefCallExpression extends Expression {
   private final Definition myDefinition;
   private LevelSubstitution myPolyParamsSubst;
@@ -15,6 +18,10 @@ public abstract class DefCallExpression extends Expression {
   public DefCallExpression(Definition definition, LevelSubstitution subst) {
     myDefinition = definition;
     myPolyParamsSubst = subst;
+  }
+
+  public List<? extends Expression> getDefCallArguments() {
+    return Collections.emptyList();
   }
 
   public boolean isPolymorphic() {

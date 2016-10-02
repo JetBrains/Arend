@@ -19,7 +19,8 @@ import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toSubstitution;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ConCall;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 
 public class BranchElimTreeNode extends ElimTreeNode {
   private final Binding myReference;
@@ -69,7 +70,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
       arguments.add(Reference(link));
     }
 
-    List<Binding> tailBindings = new ExprSubstitution(myReference, Apps(ConCall(constructor, new ArrayList<>(dataTypeArguments)), arguments)).extendBy(myContextTail);
+    List<Binding> tailBindings = new ExprSubstitution(myReference, ConCall(constructor, new ArrayList<>(dataTypeArguments), arguments)).extendBy(myContextTail);
     ConstructorClause result = new ConstructorClause(constructor, constructorArgs, tailBindings, this);
     myClauses.put(constructor, result);
     return result;

@@ -7,6 +7,8 @@ import com.jetbrains.jetpad.vclang.term.expr.FieldCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 
+import java.util.List;
+
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FieldCall;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 
@@ -31,6 +33,11 @@ public class ClassField extends Definition {
   @Override
   public Abstract.ClassField getAbstractDefinition() {
     return (Abstract.ClassField) super.getAbstractDefinition();
+  }
+
+  @Override
+  public DependentLink getParameters() {
+    return myThisParameter;
   }
 
   public DependentLink getThisParameter() {
@@ -62,6 +69,13 @@ public class ClassField extends Definition {
   @Override
   public FieldCallExpression getDefCall() {
     return FieldCall(this, null);
+  }
+
+  @Override
+  public FieldCallExpression getDefCall(LevelSubstitution polyParams, List<Expression> args) {
+    FieldCallExpression fieldCall = new FieldCallExpression(this, args.get(0));
+    fieldCall.setPolyParamsSubst(polyParams);
+    return fieldCall;
   }
 
   @Override

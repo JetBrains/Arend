@@ -4,7 +4,10 @@ import com.jetbrains.jetpad.vclang.naming.namespace.EmptyNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 
@@ -30,17 +33,17 @@ public abstract class Definition implements Referable {
     return myAbstractDefinition;
   }
 
+  public DependentLink getParameters() {
+    return EmptyDependentLink.getInstance();
+  }
+
   public abstract Type getType(LevelSubstitution polyParams);
 
   public abstract DefCallExpression getDefCall();
 
-  public abstract int getNumberOfParameters();
+  public abstract DefCallExpression getDefCall(LevelSubstitution polyParams, List<Expression> args);
 
-  public DefCallExpression getDefCall(LevelSubstitution polyParams) {
-    DefCallExpression defCall = getDefCall();
-    defCall.setPolyParamsSubst(polyParams);
-    return defCall;
-  }
+  public abstract int getNumberOfParameters();
 
   public boolean typeHasErrors() {
     return myHasErrors;

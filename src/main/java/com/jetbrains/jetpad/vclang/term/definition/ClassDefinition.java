@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
@@ -12,6 +13,7 @@ import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -70,6 +72,13 @@ public class ClassDefinition extends Definition {
   @Override
   public ClassCallExpression getDefCall() {
     return ClassCall(this, myFieldSet);
+  }
+
+  @Override
+  public ClassCallExpression getDefCall(LevelSubstitution polyParams, List<Expression> args) {
+    ClassCallExpression classCall = new ClassCallExpression(this, myFieldSet);
+    classCall.setPolyParamsSubst(polyParams);
+    return classCall;
   }
 
   @Override

@@ -3,6 +3,9 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
+import java.util.Collections;
+import java.util.List;
+
 public class FieldCallExpression extends DefCallExpression {
   private Expression myExpression;
 
@@ -13,6 +16,11 @@ public class FieldCallExpression extends DefCallExpression {
 
   public Expression getExpression() {
     return myExpression;
+  }
+
+  @Override
+  public List<? extends Expression> getDefCallArguments() {
+    return Collections.singletonList(myExpression);
   }
 
   @Override

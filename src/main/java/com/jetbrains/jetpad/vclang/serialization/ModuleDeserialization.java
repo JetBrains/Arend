@@ -437,9 +437,12 @@ public class ModuleDeserialization {
         return new AppExpression(function, arguments);
       }
       case 2: {
+        /* FIXME[serial]
         Definition definition = definitionMap.get(stream.readInt());
         LevelSubstitution polySubst = readSubstitution(stream, definitionMap);
         return definition.getDefCall(polySubst);
+        */
+        return null;
       }
       case 3: {
         Definition definition = definitionMap.get(stream.readInt());
@@ -453,9 +456,12 @@ public class ModuleDeserialization {
         for (int i = 0; i < size; ++i) {
           parameters.add(readExpression(stream, definitionMap));
         }
+        /* FIXME[serial]
         ConCallExpression expr = ConCall((Constructor) definition, parameters);
         expr.setPolyParamsSubst(polySubst);
         return expr;
+        */
+        return null;
       }
       case 4: {
         Definition definition = definitionMap.get(stream.readInt());
@@ -541,7 +547,10 @@ public class ModuleDeserialization {
           throw new IncorrectFormat();
         }
         LevelSubstitution polySubst = readSubstitution(stream, definitionMap);
+        /* FIXME[serial]
         return definition.getDefCall(polySubst).applyThis(readExpression(stream, definitionMap));
+        */
+        return null;
       }
       default: {
         throw new IncorrectFormat();

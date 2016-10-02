@@ -146,9 +146,18 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return arg != null ? myFactory.makeApp(function, isExplicit, arg) : function;
   }
 
+  private Abstract.Expression visitArguments(Abstract.Expression expr, DefCallExpression defCall) {
+    DependentLink link = defCall.getDefinition().getParameters();
+    for (Expression arg : defCall.getDefCallArguments()) {
+      expr = myFactory.makeApp(expr, link.isExplicit(), arg.accept(this, null));
+      link = link.getNext();
+    }
+    return expr;
+  }
+
   @Override
   public Abstract.Expression visitDefCall(DefCallExpression expr, Void params) {
-    return myFactory.makeDefCall(null, expr.getDefinition().getAbstractDefinition(), expr.getDefinition());
+    return visitArguments(myFactory.makeDefCall(null, expr.getDefinition().getAbstractDefinition(), expr.getDefinition()), expr);
   }
 
   @Override
@@ -180,7 +189,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       }
       conParams = expr.getDefinition().getDataTypeExpression(substitution, expr.getPolyParamsSubst()).accept(this, null);
     }
-    return myFactory.makeDefCall(conParams, expr.getDefinition().getAbstractDefinition(), expr.getDefinition());
+    return visitArguments(myFactory.makeDefCall(conParams, expr.getDefinition().getAbstractDefinition(), expr.getDefinition()), expr);
   }
 
   @Override

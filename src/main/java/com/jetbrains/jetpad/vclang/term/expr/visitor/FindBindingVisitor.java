@@ -36,36 +36,30 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
 
   @Override
   public Boolean visitDefCall(DefCallExpression expr, Void params) {
+    for (Expression arg : expr.getDefCallArguments()) {
+      if (arg.accept(this, null)) {
+        return true;
+      }
+    }
     return myBindings.contains(expr.getDefinition());
   }
 
   @Override
-  public Boolean visitFieldCall(FieldCallExpression expr, Void params) {
-    return myBindings.contains(expr.getDefinition()) || expr.getExpression().accept(this, null);
-  }
-
-  @Override
   public Boolean visitConCall(ConCallExpression expr, Void params) {
-    if (myBindings.contains(expr.getDefinition())) {
-      return true;
-    }
-    for (Expression parameter : expr.getDataTypeArguments()) {
-      if (parameter.<Void, Boolean>accept(this, null)) {
+    for (Expression arg : expr.getDataTypeArguments()) {
+      if (arg.accept(this, null)) {
         return true;
       }
     }
-    return false;
+    return visitDefCall(expr, null);
   }
 
   @Override
   public Boolean visitClassCall(ClassCallExpression expr, Void params) {
-    if (myBindings.contains(expr.getDefinition())) {
-      return true;
-    }
     for (Map.Entry<ClassField, FieldSet.Implementation> entry : expr.getImplementedHere()) {
       if (entry.getValue().term.<Void, Boolean>accept(this, null)) return true;
     }
-    return false;
+    return visitDefCall(expr, null);
   }
 
   @Override

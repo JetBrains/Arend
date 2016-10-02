@@ -35,25 +35,30 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public DefCallExpression visitDefCall(DefCallExpression expr, Void params) {
-    return myLevelSubstitution.getDomain().isEmpty() ? expr : expr.getDefinition().getDefCall(expr.getPolyParamsSubst().subst(myLevelSubstitution));
+    List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
+    for (Expression arg : expr.getDefCallArguments()) {
+      args.add(arg.accept(this, null));
+    }
+    return expr.getDefinition().getDefCall(expr.getPolyParamsSubst().subst(myLevelSubstitution), args);
   }
 
   @Override
   public ConCallExpression visitConCall(ConCallExpression expr, Void params) {
-    if (expr.getDataTypeArguments().isEmpty()) {
-      return (ConCallExpression) visitDefCall(expr, null);
-    }
-
-    List<Expression> parameters = new ArrayList<>(expr.getDataTypeArguments().size());
+    List<Expression> dataTypeArgs = new ArrayList<>(expr.getDataTypeArguments().size());
     for (Expression parameter : expr.getDataTypeArguments()) {
       Expression expr2 = parameter.accept(this, null);
       if (expr2 == null) {
         return null;
       }
-      parameters.add(expr2);
+      dataTypeArgs.add(expr2);
     }
 
-    ConCallExpression conCall = ConCall(expr.getDefinition(), parameters);
+    List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
+    for (Expression arg : expr.getDefCallArguments()) {
+      args.add(arg.accept(this, null));
+    }
+
+    ConCallExpression conCall = ConCall(expr.getDefinition(), dataTypeArgs, args);
     conCall.setPolyParamsSubst(expr.getPolyParamsSubst().subst(myLevelSubstitution));
     return conCall;
   }

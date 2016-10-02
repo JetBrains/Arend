@@ -394,8 +394,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             piLamSubst.add(piLink, Reference(link));
           } else {
             if (argResult == null) {
-              LevelInferenceVariable pLvl = new LevelInferenceVariable("plvl-of-" + name, DataCall(Prelude.LVL), expr);
-              LevelInferenceVariable hLvl = new LevelInferenceVariable("hlvl-of-" + name, DataCall(Prelude.CNAT), expr);
+              LevelInferenceVariable pLvl = new LevelInferenceVariable("plvl-of-" + name, Lvl(), expr);
+              LevelInferenceVariable hLvl = new LevelInferenceVariable("hlvl-of-" + name, CNat(), expr);
               myEquations.addVariable(pLvl);
               myEquations.addVariable(hLvl);
               InferenceVariable inferenceVariable = new LambdaInferenceVariable("type-of-" + name, Universe(new Level(pLvl), new Level(hLvl)), argIndex, expr, false);

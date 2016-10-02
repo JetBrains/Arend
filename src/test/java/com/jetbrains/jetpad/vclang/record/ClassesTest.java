@@ -346,7 +346,7 @@ public class ClassesTest extends TypeCheckingTestCase {
     assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(pFun)), fFun.getElimTree());
     FunctionDefinition gFun = (FunctionDefinition) result.getDefinition("A.B.g");
     assertEquals(Pi(ClassCall(bClass), Nat()), gFun.getType(new LevelSubstitution()));
-    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(FunCall(plus), FunCall(fFun), FunCall(pFun))), gFun.getElimTree());
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(plus, FunCall(fFun), FunCall(pFun))), gFun.getElimTree());
 
     ClassDefinition cClass = (ClassDefinition) result.getDefinition("A.C");
     assertEquals(1, cClass.getFieldSet().getFields().size());
@@ -354,11 +354,11 @@ public class ClassesTest extends TypeCheckingTestCase {
     assertNotNull(cParent);
     FunctionDefinition hFun = (FunctionDefinition) result.getDefinition("A.C.h");
     assertEquals(Pi(ClassCall(aClass), Nat()), hFun.getType(new LevelSubstitution()));
-    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(FunCall(plus), FunCall(pFun), Apps(FunCall(qFun), Reference(hFun.getParameters())))), hFun.getElimTree());
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(plus, FunCall(pFun), FunCall(qFun, Reference(hFun.getParameters())))), hFun.getElimTree());
     FunctionDefinition kFun = (FunctionDefinition) result.getDefinition("A.C.k");
     assertEquals(Pi(ClassCall(cClass), Nat()), kFun.getType(new LevelSubstitution()));
     Expression aRef = FieldCall(cParent, Reference(kFun.getParameters()));
-    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(FunCall(plus), Apps(FunCall(hFun), aRef), Apps(FunCall(plus), FunCall(pFun), Apps(FunCall(qFun), aRef)))), kFun.getElimTree());
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(plus, FunCall(hFun, aRef), FunCall(plus, FunCall(pFun), FunCall(qFun, aRef)))), kFun.getElimTree());
   }
 
   @Test

@@ -50,7 +50,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink xPlusMinusOne = param("x'", Nat());
     ElimTreeNode plusElimTree = top(xPlus, branch(xPlus, tail(yPlus),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Reference(yPlus)),
-        clause(Prelude.SUC, xPlusMinusOne, Suc(Apps(FunCall(plus), Reference(xPlusMinusOne), Reference(yPlus))))));
+        clause(Prelude.SUC, xPlusMinusOne, Suc(FunCall(plus, Reference(xPlusMinusOne), Reference(yPlus))))));
     plus.setElimTree(plusElimTree);
 
     DependentLink xMul = param("x", Nat());
@@ -59,7 +59,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink xMulMinusOne = param("x'", Nat());
     ElimTreeNode mulElimTree = top(xMul, branch(xMul, tail(yMul),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Zero()),
-        clause(Prelude.SUC, xMulMinusOne, Apps(FunCall(plus), Reference(yMul), Apps(FunCall(mul), Reference(xMulMinusOne), Reference(yMul))))
+        clause(Prelude.SUC, xMulMinusOne, FunCall(plus, Reference(yMul), FunCall(mul, Reference(xMulMinusOne), Reference(yMul))))
     ));
     mul.setElimTree(mulElimTree);
 
@@ -68,7 +68,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink xFacMinusOne = param("x'", Nat());
     ElimTreeNode facElimTree = top(xFac, branch(xFac, tail(),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Suc(Zero())),
-        clause(Prelude.SUC, xFacMinusOne, Apps(FunCall(mul), Suc(Reference(xFacMinusOne)), Apps(FunCall(fac), Reference(xFacMinusOne))))
+        clause(Prelude.SUC, xFacMinusOne, FunCall(mul, Suc(Reference(xFacMinusOne)), FunCall(fac, Reference(xFacMinusOne))))
     ));
     fac.setElimTree(facElimTree);
 
@@ -79,7 +79,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink xNElimMinusOne = param("x'", Nat());
     ElimTreeNode nelimElimTree = top(zNElim, branch(xNElim, tail(),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Reference(zNElim)),
-        clause(Prelude.SUC, xNElimMinusOne, Apps(Reference(sNElim), Reference(xNElimMinusOne), Apps(FunCall(nelim), Reference(zNElim), Reference(sNElim), Reference(xNElimMinusOne))))
+        clause(Prelude.SUC, xNElimMinusOne, Apps(Reference(sNElim), Reference(xNElimMinusOne), FunCall(nelim, Reference(zNElim), Reference(sNElim), Reference(xNElimMinusOne))))
     ));
     nelim.setElimTree(nelimElimTree);
   }
@@ -136,8 +136,9 @@ public class NormalizationTest extends TypeCheckingTestCase {
 
   @Test
   public void normalizeNelimZero() {
-    // normalize( N-elim (suc zero) suc 0 ) = suc zero
-    Expression expr = Apps(FunCall(nelim), Suc(Zero()), Suc(), Zero());
+    // normalize( N-elim (suc zero) (\x. suc x) 0 ) = suc zero
+    DependentLink x = param("x", Nat());
+    Expression expr = FunCall(nelim, Suc(Zero()), Lam(x, Suc(Reference(x))), Zero());
     assertEquals(Suc(Zero()), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -147,7 +148,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink var0 = param("var0", Pi(Nat(), Nat()));
     DependentLink x = param("x", Nat());
     DependentLink y = param("y", Nat());
-    Expression expr = Apps(FunCall(nelim), Suc(Zero()), Lam(x, Lam(y, Apps(Reference(var0), Reference(y)))), Suc(Zero()));
+    Expression expr = FunCall(nelim, Suc(Zero()), Lam(x, Lam(y, Apps(Reference(var0), Reference(y)))), Suc(Zero()));
     assertEquals(Apps(Reference(var0), Suc(Zero())), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -157,7 +158,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink var0 = param("var0", Universe(0));
     DependentLink x = param("x", Nat());
     Expression arg = Apps(Lam(x, Reference(x)), Zero());
-    Expression expr = Apps(FunCall(nelim), Suc(Zero()), Reference(var0), arg);
+    Expression expr = FunCall(nelim, Suc(Zero()), Reference(var0), arg);
     Expression result = expr.normalize(NormalizeVisitor.Mode.NF);
     assertEquals(Suc(Zero()), result);
   }
@@ -165,49 +166,49 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizePlus0a3() {
     // normalize (plus 0 3) = 3
-    Expression expr = Apps(FunCall(plus), Zero(), Suc(Suc(Suc(Zero()))));
+    Expression expr = FunCall(plus, Zero(), Suc(Suc(Suc(Zero()))));
     assertEquals(Suc(Suc(Suc(Zero()))), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizePlus3a0() {
     // normalize (plus 3 0) = 3
-    Expression expr = Apps(FunCall(plus), Suc(Suc(Suc(Zero()))), Zero());
+    Expression expr = FunCall(plus, Suc(Suc(Suc(Zero()))), Zero());
     assertEquals(Suc(Suc(Suc(Zero()))), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizePlus3a3() {
     // normalize (plus 3 3) = 6
-    Expression expr = Apps(FunCall(plus), Suc(Suc(Suc(Zero()))), Suc(Suc(Suc(Zero()))));
+    Expression expr = FunCall(plus, Suc(Suc(Suc(Zero()))), Suc(Suc(Suc(Zero()))));
     assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeMul3a0() {
     // normalize (mul 3 0) = 0
-    Expression expr = Apps(FunCall(mul), Suc(Suc(Suc(Zero()))), Zero());
+    Expression expr = FunCall(mul, Suc(Suc(Suc(Zero()))), Zero());
     assertEquals(Zero(), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeMul0a3() {
     // normalize (mul 0 3) = 0
-    Expression expr = Apps(FunCall(mul), Zero(), Suc(Suc(Suc(Zero()))));
+    Expression expr = FunCall(mul, Zero(), Suc(Suc(Suc(Zero()))));
     assertEquals(Zero(), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeMul3a3() {
     // normalize (mul 3 3) = 9
-    Expression expr = Apps(FunCall(mul), Suc(Suc(Suc(Zero()))), Suc(Suc(Suc(Zero()))));
+    Expression expr = FunCall(mul, Suc(Suc(Suc(Zero()))), Suc(Suc(Suc(Zero()))));
     assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Suc(Suc(Suc(Zero()))))))))), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeFac3() {
     // normalize (fac 3) = 6
-    Expression expr = Apps(FunCall(fac), Suc(Suc(Suc(Zero()))));
+    Expression expr = FunCall(fac, Suc(Suc(Suc(Zero()))));
     assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -260,7 +261,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
         "\\static \\data D | d Nat\n" +
         "\\static \\function test (x : D) : Nat <= \\elim x | _! => 0");
     FunctionDefinition test = (FunctionDefinition) result.getDefinition("test");
-    assertEquals(Apps(FunCall(test), Reference(var0)), Apps(FunCall(test), Reference(var0)).normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(FunCall(test, Reference(var0)), FunCall(test, Reference(var0)).normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
@@ -280,52 +281,33 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void testConCallNormFull() {
     initializeBDList();
-    Expression expr1 = Apps(ConCall(bdSnoc, Nat()), ConCall(bdNil, Nat()), Zero());
-    assertEquals(Apps(ConCall(bdCons, Nat()), Zero(), ConCall(bdNil, Nat())), expr1.normalize(NormalizeVisitor.Mode.NF));
-  }
-
-  @Test
-  public void testConCallPartial() {
-    initializeBDList();
-    Expression expr1 = Apps(ConCall(bdSnoc, Nat()), ConCall(bdNil, Nat()));
-    DependentLink y = param("y", Nat());
-    assertEquals(Lam(y, Apps(ConCall(bdCons, Nat()), Reference(y), ConCall(bdNil, Nat()))), expr1.normalize(NormalizeVisitor.Mode.NF));
-  }
-
-  @Test
-  public void testFuncNorm() {
-    Expression expr1 = Apps(FunCall(Prelude.PATH_INFIX, new Level(0), new Level(1)), Nat(), Zero());
-    DependentLink a_ = param("a'", Nat());
-    assertEquals(
-        Lam(a_, Apps(FunCall(Prelude.PATH_INFIX, new Level(0), new Level(1)), Nat(), Zero(), Reference(a_))).normalize(NormalizeVisitor.Mode.NF),
-        expr1.normalize(NormalizeVisitor.Mode.NF)
-    );
+    Expression expr1 = ConCall(bdSnoc, Collections.<Expression>singletonList(Nat()), ConCall(bdNil, Collections.<Expression>singletonList(Nat())), Zero());
+    assertEquals(ConCall(bdCons, Collections.<Expression>singletonList(Nat()), Zero(), ConCall(bdNil, Collections.<Expression>singletonList(Nat()))), expr1.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void testIsoleft() {
-    // TODO
     DependentLink A = param("A", Universe(new Level(0), new Level(0)));
     DependentLink B = param("B", Universe(new Level(0), new Level(0)));
-    // DependentLink A = param("A", Universe(new Level(Prelude.LP), new Level(Prelude.LH)));
-    // DependentLink B = param("B", Universe(new Level(Prelude.LP), new Level(Prelude.LH)));
     DependentLink f = param("f", Pi(param(Reference(A)), Reference(B)));
     DependentLink g = param("g", Pi(param(Reference(B)), Reference(A)));
     DependentLink a = param("a", Reference(A));
     DependentLink b = param("b", Reference(B));
-    Expression linvType = FunCall(Prelude.PATH_INFIX)
-      .addArgument(Reference(A))
-      .addArgument(Apps(Reference(g), Apps(Reference(f), Reference(a)), Reference(a)));
+    Expression linvType = FunCall(Prelude.PATH_INFIX,
+        Reference(A),
+        Apps(Reference(g), Apps(Reference(f), Reference(a))),
+        Reference(a));
     DependentLink linv = param("linv", Pi(a, linvType));
-    Expression rinvType = FunCall(Prelude.PATH_INFIX)
-      .addArgument(Reference(B))
-      .addArgument(Apps(Reference(f), Apps(Reference(g), Reference(b)), Reference(b)));
+    Expression rinvType = FunCall(Prelude.PATH_INFIX,
+        Reference(B),
+        Apps(Reference(f), Apps(Reference(g), Reference(b))),
+        Reference(b));
     DependentLink rinv = param("rinv", Pi(b, rinvType));
-    Expression iso_expr = FunCall(Prelude.ISO)
-            .addArgument(Reference(A)).addArgument(Reference(B))
-            .addArgument(Reference(f)).addArgument(Reference(g))
-            .addArgument(Reference(linv)).addArgument(Reference(rinv))
-            .addArgument(Left());
+    Expression iso_expr = FunCall(Prelude.ISO,
+        Reference(A), Reference(B),
+        Reference(f), Reference(g),
+        Reference(linv), Reference(rinv),
+        Left());
     assertEquals(Reference(A), iso_expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -339,75 +321,91 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink g = param("g", Pi(param(Reference(B)), Reference(A)));
     DependentLink a = param("a", Reference(A));
     DependentLink b = param("b", Reference(B));
-    Expression linvType = FunCall(Prelude.PATH_INFIX)
-      .addArgument(Reference(A))
-      .addArgument(Apps(Reference(g), Apps(Reference(f), Reference(a)), Reference(a)));
+    Expression linvType = FunCall(Prelude.PATH_INFIX,
+        Reference(A),
+        Apps(Reference(g), Apps(Reference(f), Reference(a))),
+        Reference(a));
     DependentLink linv = param("linv", Pi(a, linvType));
-    Expression rinvType = FunCall(Prelude.PATH_INFIX)
-      .addArgument(Reference(B))
-      .addArgument(Apps(Reference(f), Apps(Reference(g), Reference(b)), Reference(b)));
+    Expression rinvType = FunCall(Prelude.PATH_INFIX,
+        Reference(B),
+        Apps(Reference(f), Apps(Reference(g), Reference(b))),
+        Reference(b));
     DependentLink rinv = param("rinv", Pi(b, rinvType));
-    Expression iso_expr = FunCall(Prelude.ISO)
-            .addArgument(Reference(A)).addArgument(Reference(B))
-            .addArgument(Reference(f)).addArgument(Reference(g))
-            .addArgument(Reference(linv)).addArgument(Reference(rinv))
-            .addArgument(Right());
+    Expression iso_expr = FunCall(Prelude.ISO,
+        Reference(A), Reference(B),
+        Reference(f), Reference(g),
+        Reference(linv), Reference(rinv),
+        Right());
     assertEquals(Reference(B), iso_expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void testCoeIso() {
-    // TODO
     DependentLink A = param("A", Universe(new Level(0), new Level(0)));
     DependentLink B = param("B", Universe(new Level(0), new Level(0)));
-    // DependentLink A = param("A", Universe(new Level(Prelude.LP), new Level(Prelude.LH)));
-    // DependentLink B = param("B", Universe(new Level(Prelude.LP), new Level(Prelude.LH)));
     DependentLink f = param("f", Pi(param(Reference(A)), Reference(B)));
     DependentLink g = param("g", Pi(param(Reference(B)), Reference(A)));
     DependentLink a = param("a", Reference(A));
     DependentLink b = param("b", Reference(B));
-    DependentLink k = param("k", DataCall(Prelude.INTERVAL));
-    Expression linvType = FunCall(Prelude.PATH_INFIX)
-            .addArgument(Reference(A))
-            .addArgument(Apps(Reference(g), Apps(Reference(f), Reference(a)), Reference(a)));
+    DependentLink k = param("k", Interval());
+    Expression linvType = FunCall(Prelude.PATH_INFIX,
+        Reference(A),
+        Apps(Reference(g), Apps(Reference(f), Reference(a))),
+        Reference(a));
     DependentLink linv = param("linv", Pi(a, linvType));
-    Expression rinvType = FunCall(Prelude.PATH_INFIX)
-            .addArgument(Reference(B))
-            .addArgument(Apps(Reference(f), Apps(Reference(g), Reference(b)), Reference(b)));
+    Expression rinvType = FunCall(Prelude.PATH_INFIX,
+        Reference(B),
+        Apps(Reference(f), Apps(Reference(g), Reference(b))),
+        Reference(b));
     DependentLink rinv = param("rinv", Pi(b, rinvType));
     DependentLink aleft = param("aleft", Reference(A));
-    Expression iso_expr = FunCall(Prelude.ISO)
-            .addArgument(Reference(A)).addArgument(Reference(B))
-            .addArgument(Reference(f)).addArgument(Reference(g))
-            .addArgument(Reference(linv)).addArgument(Reference(rinv))
-            .addArgument(Reference(k));
-    Expression expr = FunCall(Prelude.COERCE)
-        .addArgument(Lam(k, iso_expr))
-        .addArgument(Reference(aleft))
-        .addArgument(Right());
+    Expression iso_expr = FunCall(Prelude.ISO,
+        Reference(A), Reference(B),
+        Reference(f), Reference(g),
+        Reference(linv), Reference(rinv),
+        Reference(k));
+    Expression expr = FunCall(Prelude.COERCE,
+        Lam(k, iso_expr),
+        Reference(aleft),
+        Right());
     assertEquals(Apps(Reference(f), Reference(aleft)), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void testCoeIsoFreeVar() {
-    DependentLink k = param("k", DataCall(Prelude.INTERVAL));
-    DependentLink i = param("i", DataCall(Prelude.INTERVAL));
-    Expression A = Apps(DataCall(Prelude.PATH, new Level(0), new Level(0)), Lam(i, DataCall(Prelude.INTERVAL)), Reference(k), Reference(k));
+    DependentLink k = param("k", Interval());
+    DependentLink i = param("i", Interval());
+    Expression A = DataCall(Prelude.PATH, new Level(0), new Level(0), Lam(i, Interval()), Reference(k), Reference(k));
     DependentLink B = param("B", Universe(new Level(0), new Level(0)));
     DependentLink f = param("f", Pi(param(A), Reference(B)));
     DependentLink g = param("g", Pi(param(Reference(B)), A));
     DependentLink a = param("a", A);
     DependentLink b = param("b", Reference(B));
-    Expression linvType = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0))
-      .addArgument(A)
-      .addArgument(Apps(Reference(g), Apps(Reference(f), Reference(a)), Reference(a)));
+    Expression linvType = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0),
+        A,
+        Apps(Reference(g), Apps(Reference(f), Reference(a))),
+        Reference(a));
     DependentLink linv = param("linv", Pi(a, linvType));
-    Expression rinvType = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0))
-      .addArgument(Reference(B))
-      .addArgument(Apps(Reference(f), Apps(Reference(g), Reference(b)), Reference(b)));
+    Expression rinvType = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0),
+        Reference(B),
+        Apps(Reference(f), Apps(Reference(g), Reference(b))),
+        Reference(b));
     DependentLink rinv = param("rinv", Pi(b, rinvType));
     DependentLink aleft = param("aleft", A.subst(k, Right()));
-    Expression expr = Apps(FunCall(Prelude.COERCE, new Level(0), new Level(0)), Lam(k, Apps(FunCall(Prelude.ISO, new Level(0), new Level(0)), Apps(DataCall(Prelude.PATH, new Level(0), new Level(0)), Lam(i, DataCall(Prelude.INTERVAL)), Reference(k), Reference(k)), Reference(B), Reference(f), Reference(g), Reference(linv), Reference(rinv), Reference(k))), Reference(aleft), Right());
+    Expression expr = FunCall(Prelude.COERCE, new Level(0), new Level(0),
+        Lam(k, FunCall(Prelude.ISO, new Level(0), new Level(0),
+            DataCall(Prelude.PATH, new Level(0), new Level(0),
+                Lam(i, Interval()),
+                Reference(k),
+                Reference(k)),
+            Reference(B),
+            Reference(f),
+            Reference(g),
+            Reference(linv),
+            Reference(rinv),
+            Reference(k))),
+        Reference(aleft),
+        Right());
     assertEquals(expr, expr.normalize(NormalizeVisitor.Mode.NF));
   }
 

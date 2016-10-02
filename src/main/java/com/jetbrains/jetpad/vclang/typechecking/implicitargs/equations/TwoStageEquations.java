@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.DerivedInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
@@ -23,6 +22,9 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.SolveEquationsError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.SolveLevelEquationsError;
 
 import java.util.*;
+
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.CNat;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Lvl;
 
 public class TwoStageEquations implements Equations {
   private List<Equation> myEquations;
@@ -105,8 +107,8 @@ public class TwoStageEquations implements Equations {
 
       SortMax sorts = cType.toSorts();
       if (sorts != null) {
-        LevelInferenceVariable lpInf = new LevelInferenceVariable(cInf.getName() + "-lp", new DataCallExpression(Prelude.LVL), cInf.getSourceNode());
-        LevelInferenceVariable lhInf = new LevelInferenceVariable(cInf.getName() + "-lh", new DataCallExpression(Prelude.CNAT), cInf.getSourceNode());
+        LevelInferenceVariable lpInf = new LevelInferenceVariable(cInf.getName() + "-lp", Lvl(), cInf.getSourceNode());
+        LevelInferenceVariable lhInf = new LevelInferenceVariable(cInf.getName() + "-lh", CNat(), cInf.getSourceNode());
         myLevelEquations.addVariable(lpInf);
         myLevelEquations.addVariable(lhInf);
         Level lp = new Level(lpInf);

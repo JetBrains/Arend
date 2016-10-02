@@ -1,13 +1,21 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
+
+import java.util.List;
 
 public class FunCallExpression extends DefCallExpression {
-  public FunCallExpression(FunctionDefinition definition) {
+  private final List<Expression> myArguments;
+
+  public FunCallExpression(FunctionDefinition definition, List<Expression> arguments) {
     super(definition);
+    myArguments = arguments;
+  }
+
+  @Override
+  public List<? extends Expression> getDefCallArguments() {
+    return myArguments;
   }
 
   @Override
@@ -29,13 +37,4 @@ public class FunCallExpression extends DefCallExpression {
   public FunCallExpression toFunCall() {
     return this;
   }
-
-  /*
-  public ElimTreeNode getElimTree() {
-    return getDefinition().getElimTree().subst(new Substitution(new ExprSubstitution(), getPolyParamsSubst()));
-  }
-
-  public DependentLink getParameters() {
-
-  } /**/
 }

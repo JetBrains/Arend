@@ -11,7 +11,6 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 
 public class ConstructorClause implements Clause {
@@ -62,7 +61,7 @@ public class ConstructorClause implements Clause {
     for (DependentLink link = myParameters; link.hasNext(); link = link.getNext()) {
       arguments.add(Reference(link));
     }
-    result.add(myParent.getReference(), Apps(new ConCallExpression(myConstructor, myConstructor.matchDataTypeArguments(new ArrayList<>(myParent.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF).getArguments()))), arguments));
+    result.add(myParent.getReference(), new ConCallExpression(myConstructor, myConstructor.matchDataTypeArguments(new ArrayList<>(myParent.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF).getArguments())), arguments));
 
     for (int i = 0; i < myParent.getContextTail().size(); i++) {
       result.add(myParent.getContextTail().get(i), Reference(myTailBindings.get(i)));

@@ -37,24 +37,40 @@ public class ExpressionFactory {
     return arguments.isEmpty() ? fun : new AppExpression(fun, arguments);
   }
 
-  public static FunCallExpression FunCall(FunctionDefinition definition) {
-    return new FunCallExpression(definition);
+  public static FunCallExpression FunCall(FunctionDefinition definition, List<Expression> arguments) {
+    return new FunCallExpression(definition, arguments);
   }
 
-  public static FunCallExpression FunCall(FunctionDefinition definition, Level lp, Level lh) {
-    FunCallExpression expr = new FunCallExpression(definition);
+  public static FunCallExpression FunCall(FunctionDefinition definition, Expression... arguments) {
+    return FunCall(definition, Arrays.asList(arguments));
+  }
+
+  public static FunCallExpression FunCall(FunctionDefinition definition, Level lp, Level lh, List<Expression> arguments) {
+    FunCallExpression expr = new FunCallExpression(definition, arguments);
     expr.setPolyParamsSubst(new LevelSubstitution(definition.getPolyParams().get(0), lp, definition.getPolyParams().get(1), lh));
     return expr;
   }
 
-  public static DataCallExpression DataCall(DataDefinition definition) {
-    return new DataCallExpression(definition);
+  public static FunCallExpression FunCall(FunctionDefinition definition, Level lp, Level lh, Expression... arguments) {
+    return FunCall(definition, lp, lh, Arrays.asList(arguments));
   }
 
-  public static DataCallExpression DataCall(DataDefinition definition, Level lp, Level lh) {
-    DataCallExpression expr = new DataCallExpression(definition);
+  public static DataCallExpression DataCall(DataDefinition definition, List<Expression> arguments) {
+    return new DataCallExpression(definition, arguments);
+  }
+
+  public static DataCallExpression DataCall(DataDefinition definition, Expression... arguments) {
+    return DataCall(definition, Arrays.asList(arguments));
+  }
+
+  public static DataCallExpression DataCall(DataDefinition definition, Level lp, Level lh, List<Expression> arguments) {
+    DataCallExpression expr = new DataCallExpression(definition, arguments);
     expr.setPolyParamsSubst(new LevelSubstitution(definition.getPolyParams().get(0), lp, definition.getPolyParams().get(1), lh));
     return expr;
+  }
+
+  public static DataCallExpression DataCall(DataDefinition definition, Level lp, Level lh, Expression... arguments) {
+    return DataCall(definition, lp, lh, Arrays.asList(arguments));
   }
 
   public static FieldCallExpression FieldCall(ClassField definition, Expression thisExpr) {
@@ -67,37 +83,36 @@ public class ExpressionFactory {
 
   public static ClassCallExpression ClassCall(ClassDefinition definition, FieldSet fieldSet) {
     return new ClassCallExpression(definition, fieldSet);
+   }
+
+  public static ConCallExpression ConCall(Constructor definition, List<Expression> parameters, List<Expression> arguments) {
+    return new ConCallExpression(definition, parameters, arguments);
   }
 
-  public static ConCallExpression ConCall(Constructor definition, List<Expression> parameters) {
-    return new ConCallExpression(definition, parameters);
+  public static ConCallExpression ConCall(Constructor definition, List<Expression> dataTypeArguments, Expression... arguments) {
+    return ConCall(definition, dataTypeArguments, Arrays.asList(arguments));
   }
 
-  public static ConCallExpression ConCall(Constructor definition, Level lp, Level lh, List<Expression> parameters) {
-    ConCallExpression expr = new ConCallExpression(definition, parameters);
+  public static ConCallExpression ConCall(Constructor definition, Level lp, Level lh, List<Expression> dataTypeArguments, List<Expression> arguments) {
+    ConCallExpression expr = new ConCallExpression(definition, dataTypeArguments, arguments);
     expr.setPolyParamsSubst(new LevelSubstitution(definition.getPolyParams().get(0), lp, definition.getPolyParams().get(1), lh));
     return expr;
   }
 
-  public static ConCallExpression ConCall(Constructor definition) {
-    int size = definition.hasErrors() ? 1 : size(definition.getDataTypeParameters());
-    return new ConCallExpression(definition, size == 0 ? Collections.<Expression>emptyList() : new ArrayList<Expression>(size));
-  }
-
-  public static ConCallExpression ConCall(Constructor definition, Expression... parameters) {
-    return ConCall(definition, Arrays.asList(parameters));
+  public static ConCallExpression ConCall(Constructor definition, Level lp, Level lh, List<Expression> dataTypeArguments, Expression... arguments) {
+    return ConCall(definition, lp, lh, dataTypeArguments, Arrays.asList(arguments));
   }
 
   public static DataCallExpression Interval() {
-    return DataCall(Prelude.INTERVAL);
+    return DataCall(Prelude.INTERVAL, Collections.<Expression>emptyList());
   }
 
   public static ConCallExpression Left() {
-    return ConCall(Prelude.LEFT);
+    return ConCall(Prelude.LEFT, Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
   }
 
   public static ConCallExpression Right() {
-    return ConCall(Prelude.RIGHT);
+    return ConCall(Prelude.RIGHT, Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
   }
 
   public static NewExpression New(ClassCallExpression expression) {
@@ -213,28 +228,24 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Nat() {
-    return DataCall(Prelude.NAT);
+    return DataCall(Prelude.NAT, Collections.<Expression>emptyList());
   }
 
   public static ConCallExpression Zero() {
-    return ConCall(Prelude.ZERO);
+    return ConCall(Prelude.ZERO, Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
   }
 
-  public static ConCallExpression Suc() {
-    return ConCall(Prelude.SUC);
+  public static ConCallExpression Suc(Expression expr) {
+    return ConCall(Prelude.SUC, Collections.<Expression>emptyList(), Collections.singletonList(expr));
   }
 
-  public static Expression Suc(Expression expr) {
-    return Apps(Suc(), expr);
+  public static DataCallExpression Lvl() {
+    return DataCall(Prelude.LVL, Collections.<Expression>emptyList());
   }
-
-  public static DataCallExpression Lvl() {return DataCall(Prelude.LVL); }
 
   public static DataCallExpression CNat() {
-    return DataCall(Prelude.CNAT);
+    return DataCall(Prelude.CNAT, Collections.<Expression>emptyList());
   }
-
-  public static Expression Fin(Expression expr) { return Apps(ConCall(Prelude.FIN), expr); }
 
   public static UniverseExpression Universe() {
     return new UniverseExpression(new Sort(Sort.ANY_LEVEL, Sort.ANY_LEVEL));

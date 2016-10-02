@@ -25,14 +25,14 @@ public class PathsTest extends TypeCheckingTestCase {
     CheckTypeVisitor.Result idp = typeCheckExpr("\\lam {A : \\Type0} (a : A) => path (\\lam _ => a)", null);
     DependentLink A = param(false, "A", Universe(0));
     A.setNext(param("a", Reference(A)));
-    DependentLink C = param((String) null, DataCall(Prelude.INTERVAL));
+    DependentLink C = param((String) null, Interval());
     List<Expression> pathArgs = new ArrayList<>();
     pathArgs.add(Lam(C, Reference(A)));
     pathArgs.add(Reference(A.getNext()));
     pathArgs.add(Reference(A.getNext()));
-    Expression pathCall = ConCall(Prelude.PATH_CON, new Level(0), new Level(0), pathArgs).addArgument(Lam(C, Reference(A.getNext())));
+    Expression pathCall = ConCall(Prelude.PATH_CON, new Level(0), new Level(0), pathArgs, Lam(C, Reference(A.getNext())));
     assertEquals(Lam(A, pathCall).normalize(NormalizeVisitor.Mode.NF), idp.expression);
-    assertEquals(Pi(A, Apps(FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0)), Reference(A), Reference(A.getNext()), Reference(A.getNext()))).normalize(NormalizeVisitor.Mode.NF), idp.type.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Pi(A, FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0), Reference(A), Reference(A.getNext()), Reference(A.getNext()))).normalize(NormalizeVisitor.Mode.NF), idp.type.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test

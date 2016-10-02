@@ -3,9 +3,19 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
+import java.util.List;
+
 public class DataCallExpression extends DefCallExpression {
-  public DataCallExpression(DataDefinition definition) {
+  private final List<Expression> myArguments;
+
+  public DataCallExpression(DataDefinition definition, List<Expression> arguments) {
     super(definition);
+    myArguments = arguments;
+  }
+
+  @Override
+  public List<? extends Expression> getDefCallArguments() {
+    return myArguments;
   }
 
   @Override

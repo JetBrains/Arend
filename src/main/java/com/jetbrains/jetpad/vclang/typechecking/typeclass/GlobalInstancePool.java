@@ -16,7 +16,7 @@ public class GlobalInstancePool implements ClassViewInstancePool {
 
   @Override
   public Expression getInstance(Expression classifyingExpression, ClassView classView) {
-    DefCallExpression defCall = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF).getFunction().toDefCall();
+    DefCallExpression defCall = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF).toDefCall();
     if (defCall == null) {
       return null;
     }
@@ -25,7 +25,7 @@ public class GlobalInstancePool implements ClassViewInstancePool {
 
   @Override
   public Expression getInstance(Expression classifyingExpression, ClassDefinition classDef) {
-    DefCallExpression defCall = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF).getFunction().toDefCall();
+    DefCallExpression defCall = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF).toDefCall();
     if (defCall == null) {
       return null;
     }

@@ -83,30 +83,32 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
 
   @Test
   public void inferFromFunction() {
-    // f : {A : Type0} -> (Nat -> A) -> A |- f suc : Nat
-    List<Binding> context = new ArrayList<>();
+    // s : Nat -> Nat, f : {A : Type0} -> (Nat -> A) -> A |- f s : Nat
+    List<Binding> context = new ArrayList<>(2);
     DependentLink A = param(false, "A", Universe(0));
+    context.add(new TypedBinding("s", Pi(Nat(), Nat())));
     context.add(new TypedBinding("f", Pi(A, Pi(Pi(Nat(), Reference(A)), Reference(A)))));
 
-    CheckTypeVisitor.Result result = typeCheckExpr(context, "f suc", null);
-    Expression expr = Reference(context.get(0))
+    CheckTypeVisitor.Result result = typeCheckExpr(context, "f s", null);
+    Expression expr = Reference(context.get(1))
       .addArgument(Nat())
-      .addArgument(Suc());
+      .addArgument(Reference(context.get(0)));
     assertEquals(expr, result.expression);
     assertEquals(Nat(), result.type);
   }
 
   @Test
   public void inferFromLam() {
-    // f : {A : Type0} -> (Nat -> A) -> A |- f (\x. S) : Nat -> Nat
+    // f : {A : Type0} -> (Nat -> A) -> A |- f (\x y. suc y) : Nat -> Nat
     List<Binding> context = new ArrayList<>();
     DependentLink A = param(false, "A", Universe(0));
     context.add(new TypedBinding("f", Pi(A, Pi(Pi(Nat(), Reference(A)), Reference(A)))));
 
-    CheckTypeVisitor.Result result = typeCheckExpr(context, "f (\\lam x => suc)", null);
+    CheckTypeVisitor.Result result = typeCheckExpr(context, "f (\\lam x y => suc y)", null);
+    DependentLink xy = param(true, vars("x", "y"), Nat());
     Expression expr = Reference(context.get(0))
       .addArgument(Pi(Nat(), Nat()))
-      .addArgument(Lam(param("x", Nat()), Suc()));
+      .addArgument(Lam(xy, Suc(Reference(xy.getNext()))));
     assertEquals(expr, result.expression);
     assertEquals(Pi(Nat(), Nat()), result.type);
   }
@@ -205,8 +207,8 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("I", Pi(Nat(), Universe(0))));
     DependentLink x = param(false, "x", Nat());
-    context.add(new TypedBinding("i", Pi(x, Apps(Reference(context.get(0)), Apps(Suc(), Reference(x))))));
-    Expression type = Apps(Reference(context.get(0)), Apps(Suc(), Apps(Suc(), Zero())));
+    context.add(new TypedBinding("i", Pi(x, Apps(Reference(context.get(0)), Suc(Reference(x))))));
+    Expression type = Apps(Reference(context.get(0)), Suc(Suc(Zero())));
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "i", type);
     Expression expr = Reference(context.get(1))

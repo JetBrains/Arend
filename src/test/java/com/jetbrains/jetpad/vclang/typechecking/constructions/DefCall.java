@@ -16,6 +16,8 @@ import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -100,7 +102,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\function test => A.B.f");
-    test(Apps(FunCall((FunctionDefinition) result.getDefinition("A.B.f")), Reference(getThis(result))), result);
+    test(FunCall((FunctionDefinition) result.getDefinition("A.B.f"), Reference(getThis(result))), result);
   }
 
   @Test
@@ -110,7 +112,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\function f => 0\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.f");
-    test(Apps(FunCall((FunctionDefinition) result.getDefinition("E.f")), Reference(getThis(result))), result);
+    test(FunCall((FunctionDefinition) result.getDefinition("E.f"), Reference(getThis(result))), result);
   }
 
   @Test
@@ -129,7 +131,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\function f => 0\n" +
         "}\n" +
         "\\function test (e : E) => e.f");
-    test(Apps(FunCall((FunctionDefinition) result.getDefinition("E.f")), Reference(getThis(result).getNext())), result);
+    test(FunCall((FunctionDefinition) result.getDefinition("E.f"), Reference(getThis(result).getNext())), result);
   }
 
   @Test
@@ -143,7 +145,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.A.B.f");
-    test(Apps(FunCall((FunctionDefinition) result.getDefinition("E.A.B.f")), Reference(getThis(result))), result);
+    test(FunCall((FunctionDefinition) result.getDefinition("E.A.B.f"), Reference(getThis(result))), result);
   }
 
   @Test
@@ -157,7 +159,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\static \\function test (e : E) (b : e.A.B) => b.f");
-    test(Apps(FunCall((FunctionDefinition) result.getDefinition("E.A.B.f")), Reference(getThis(result).getNext())), result);
+    test(FunCall((FunctionDefinition) result.getDefinition("E.A.B.f"), Reference(getThis(result).getNext())), result);
   }
 
   @Test
@@ -191,7 +193,7 @@ public class DefCall extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\static \\data D | c\n" +
         "\\static \\function test => c");
-    test(ConCall((Constructor) result.getDefinition("c")), result);
+    test(ConCall((Constructor) result.getDefinition("c"), Collections.<Expression>emptyList()), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -200,7 +202,7 @@ public class DefCall extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\static \\data D | c\n" +
         "\\static \\function test => D.c");
-    test(ConCall((Constructor) result.getDefinition("c")), result);
+    test(ConCall((Constructor) result.getDefinition("c"), Collections.<Expression>emptyList()), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -209,8 +211,9 @@ public class DefCall extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\static \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\static \\function test => (D 0 (\\lam _ => 1)).c");
-    test(ConCall((Constructor) result.getDefinition("c"), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(DataCall((DataDefinition) result.getDefinition("D")), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    List<Expression> dataTypeArgs = Arrays.asList(Zero(), Lam(param(Nat()), Suc(Zero())));
+    test(ConCall((Constructor) result.getDefinition("c"), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("D"), dataTypeArgs), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -218,9 +221,10 @@ public class DefCall extends TypeCheckingTestCase {
   public void data1Static() {
     TypeCheckClassResult result = typeCheckClass(
         "\\static \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
-        "\\static \\function test => (D 0).c {\\lam _ => 1}");
-    test(Apps(ConCall((Constructor) result.getDefinition("c"), Zero()), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(DataCall((DataDefinition) result.getDefinition("D")), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+            "\\static \\function test => (D 0).c {\\lam _ => 1}");
+    List<Expression> dataTypeArgs = Arrays.asList(Zero(), Lam(param(Nat()), Suc(Zero())));
+    test(ConCall((Constructor) result.getDefinition("c"), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("D"), dataTypeArgs), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -229,8 +233,9 @@ public class DefCall extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\static \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\static \\function test => D.c {0} {\\lam _ => 1}");
-    test(Apps(ConCall((Constructor) result.getDefinition("c")), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(DataCall((DataDefinition) result.getDefinition("D")), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    List<Expression> dataTypeArgs = Arrays.asList(Zero(), Lam(param(Nat()), Suc(Zero())));
+    test(ConCall((Constructor) result.getDefinition("c"), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("D"), dataTypeArgs), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -239,7 +244,7 @@ public class DefCall extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\data D | c\n" +
         "\\function test => c");
-    test(ConCall((Constructor) result.getDefinition("c"), Reference(getThis(result))), result);
+    test(ConCall((Constructor) result.getDefinition("c"), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -250,7 +255,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class Test {\n" +
         "  \\function test => c\n" +
         "}");
-    testFI(ConCall((Constructor) result.getDefinition("c"), getThisFI(result)), result);
+    testFI(ConCall((Constructor) result.getDefinition("c"), Collections.singletonList(getThisFI(result))), result);
   }
 
   @Test
@@ -258,7 +263,7 @@ public class DefCall extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\data D | c\n" +
         "\\function test => D.c");
-    test(ConCall((Constructor) result.getDefinition("c"), Reference(getThis(result))), result);
+    test(ConCall((Constructor) result.getDefinition("c"), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -269,7 +274,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class Test {\n" +
         "  \\function test => D.c\n" +
         "}");
-    testFI(ConCall((Constructor) result.getDefinition("c"), getThisFI(result)), result);
+    testFI(ConCall((Constructor) result.getDefinition("c"), Collections.singletonList(getThisFI(result))), result);
   }
 
   @Test
@@ -277,8 +282,9 @@ public class DefCall extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\function test => (D 0 (\\lam _ => 1)).c");
-    test(ConCall((Constructor) result.getDefinition("c"), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(DataCall((DataDefinition) result.getDefinition("D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
+    test(ConCall((Constructor) result.getDefinition("c"), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("D"), dataTypeArgs), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -289,7 +295,8 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class Test {\n" +
         "  \\function test => (D 0 (\\lam _ => 1)).c\n" +
         "}");
-    testFI(ConCall((Constructor) result.getDefinition("c"), getThisFI(result), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    List<Expression> dataTypeArgs = Arrays.asList(getThisFI(result), Zero(), Lam(param(Nat()), Suc(Zero())));
+    testFI(ConCall((Constructor) result.getDefinition("c"), dataTypeArgs), result);
   }
 
   @Test
@@ -297,8 +304,9 @@ public class DefCall extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\function test => (D 0).c {\\lam _ => 1}");
-    test(Apps(ConCall((Constructor) result.getDefinition("c"), Reference(getThis(result)), Zero()), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(DataCall((DataDefinition) result.getDefinition("D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
+    test(ConCall((Constructor) result.getDefinition("c"), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("D"), dataTypeArgs), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -309,7 +317,8 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class Test {\n" +
         "  \\function test => (D 0).c {\\lam _ => 1}\n" +
         "}");
-    testFI(Apps(ConCall((Constructor) result.getDefinition("c"), getThisFI(result), Zero()), Lam(param(Nat()), Suc(Zero()))), result);
+    List<Expression> dataTypeArgs = Arrays.asList(getThisFI(result), Zero(), Lam(param(Nat()), Suc(Zero())));
+    testFI(ConCall((Constructor) result.getDefinition("c"), dataTypeArgs), result);
   }
 
   @Test
@@ -317,8 +326,9 @@ public class DefCall extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\function test => D.c {0} {\\lam _ => 1}");
-    test(Apps(ConCall((Constructor) result.getDefinition("c"), Reference(getThis(result))), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(DataCall((DataDefinition) result.getDefinition("D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
+    test(ConCall((Constructor) result.getDefinition("c"), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("D"), dataTypeArgs), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -329,7 +339,8 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class Test {\n" +
         "  \\function test => D.c {0} {\\lam _ => 1}\n" +
         "}");
-    testFI(Apps(ConCall((Constructor) result.getDefinition("c"), getThisFI(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    List<Expression> dataTypeArgs = Arrays.asList(getThisFI(result), Zero(), Lam(param(Nat()), Suc(Zero())));
+    testFI(ConCall((Constructor) result.getDefinition("c"), dataTypeArgs), result);
   }
 
   @Test
@@ -355,7 +366,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\static \\function test => A.B.c");
-    test(ConCall((Constructor) result.getDefinition("A.B.c")), result);
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), Collections.<Expression>emptyList()), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -368,7 +379,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\static \\function test => A.B.D.c");
-    test(ConCall((Constructor) result.getDefinition("A.B.c")), result);
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), Collections.<Expression>emptyList()), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -381,8 +392,9 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\static \\function test => (A.B.D 0 (\\lam _ => 1)).c");
-    test(ConCall((Constructor) result.getDefinition("A.B.c"), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(DataCall((DataDefinition) result.getDefinition("A.B.D")), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    List<Expression> dataTypeArgs = Arrays.asList(Zero(), Lam(param(Nat()), Suc(Zero())));
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("A.B.D"), dataTypeArgs), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -395,8 +407,9 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\static \\function test => (A.B.D 0).c {\\lam _ => 1}");
-    test(Apps(ConCall((Constructor) result.getDefinition("A.B.c"), Zero()), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(DataCall((DataDefinition) result.getDefinition("A.B.D")), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    List<Expression> dataTypeArgs = Arrays.asList(Zero(), Lam(param(Nat()), Suc(Zero())));
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("A.B.D"), dataTypeArgs), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -409,8 +422,9 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\static \\function test => A.B.D.c {0} {\\lam _ => 1}");
-    test(Apps(ConCall((Constructor) result.getDefinition("A.B.c")), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(DataCall((DataDefinition) result.getDefinition("A.B.D")), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    List<Expression> dataTypeArgs = Arrays.asList(Zero(), Lam(param(Nat()), Suc(Zero())));
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("A.B.D"), dataTypeArgs), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -423,7 +437,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\function test => A.B.c");
-    test(ConCall((Constructor) result.getDefinition("A.B.c"), Reference(getThis(result))), result);
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -436,7 +450,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\function test => A.B.D.c");
-    test(ConCall((Constructor) result.getDefinition("A.B.c"), Reference(getThis(result))), result);
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -449,8 +463,9 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\function test => (A.B.D 0 (\\lam _ => 1)).c");
-    test(ConCall((Constructor) result.getDefinition("A.B.c"), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(DataCall((DataDefinition) result.getDefinition("A.B.D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("A.B.D"), dataTypeArgs), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -463,8 +478,9 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\function test => (A.B.D 0).c {\\lam _ => 1}");
-    test(Apps(ConCall((Constructor) result.getDefinition("A.B.c"), Reference(getThis(result)), Zero()), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(DataCall((DataDefinition) result.getDefinition("A.B.D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("A.B.D"), dataTypeArgs), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -477,8 +493,9 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\function test => A.B.D.c {0} {\\lam _ => 1}");
-    test(Apps(ConCall((Constructor) result.getDefinition("A.B.c"), Reference(getThis(result))), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(DataCall((DataDefinition) result.getDefinition("A.B.D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("A.B.D"), dataTypeArgs), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -489,7 +506,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\data D | c\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.c");
-    test(ConCall((Constructor) result.getDefinition("E.c"), Reference(getThis(result))), result);
+    test(ConCall((Constructor) result.getDefinition("E.c"), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -500,7 +517,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\data D | c\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.D.c");
-    test(ConCall((Constructor) result.getDefinition("E.c"), Reference(getThis(result))), result);
+    test(ConCall((Constructor) result.getDefinition("E.c"), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -511,8 +528,9 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
         "\\static \\function test (e : E) => (e.D 0 (\\lam _ => 1)).c");
-    test(ConCall((Constructor) result.getDefinition("E.c"), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(DataCall((DataDefinition) result.getDefinition("E.D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
+    test(ConCall((Constructor) result.getDefinition("E.c"), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("E.D"), dataTypeArgs), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -523,8 +541,9 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
         "\\static \\function test (e : E) => (e.D 0).c {\\lam _ => 1}");
-    test(Apps(ConCall((Constructor) result.getDefinition("E.c"), Reference(getThis(result)), Zero()), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(DataCall((DataDefinition) result.getDefinition("E.D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
+    test(ConCall((Constructor) result.getDefinition("E.c"), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("E.D"), dataTypeArgs), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -535,8 +554,9 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.D.c {0} {\\lam _ => 1}");
-    test(Apps(ConCall((Constructor) result.getDefinition("E.c"), Reference(getThis(result))), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(DataCall((DataDefinition) result.getDefinition("E.D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
+    test(ConCall((Constructor) result.getDefinition("E.c"), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("E.D"), dataTypeArgs), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -565,7 +585,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\data D | c\n" +
         "}\n" +
         "\\function test (e : E) => e.c");
-    test(ConCall((Constructor) result.getDefinition("E.c"), Reference(getThis(result).getNext())), result);
+    test(ConCall((Constructor) result.getDefinition("E.c"), Collections.<Expression>singletonList(Reference(getThis(result).getNext()))), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -576,7 +596,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\data D | c\n" +
         "}\n" +
         "\\function test (e : E) => e.D.c");
-    test(ConCall((Constructor) result.getDefinition("E.c"), Reference(getThis(result).getNext())), result);
+    test(ConCall((Constructor) result.getDefinition("E.c"), Collections.<Expression>singletonList(Reference(getThis(result).getNext()))), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -587,8 +607,9 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
         "\\function test (e : E) => (e.D 0 (\\lam _ => 1)).c");
-    test(ConCall((Constructor) result.getDefinition("E.c"), Reference(getThis(result).getNext()), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(DataCall((DataDefinition) result.getDefinition("E.D")), Reference(getThis(result).getNext()), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result).getNext()), Zero(), Lam(param(Nat()), Suc(Zero())));
+    test(ConCall((Constructor) result.getDefinition("E.c"), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("E.D"), dataTypeArgs), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -599,8 +620,9 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
         "\\function test (e : E) => (e.D 0).c {\\lam _ => 1}");
-    test(Apps(ConCall((Constructor) result.getDefinition("E.c"), Reference(getThis(result).getNext()), Zero()), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(DataCall((DataDefinition) result.getDefinition("E.D")), Reference(getThis(result).getNext()), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result).getNext()), Zero(), Lam(param(Nat()), Suc(Zero())));
+    test(ConCall((Constructor) result.getDefinition("E.c"), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("E.D"), dataTypeArgs), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -611,8 +633,9 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
         "\\function test (e : E) => e.D.c {0} {\\lam _ => 1}");
-    test(Apps(ConCall((Constructor) result.getDefinition("E.c"), Reference(getThis(result).getNext())), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(DataCall((DataDefinition) result.getDefinition("E.D")), Reference(getThis(result).getNext()), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result).getNext()), Zero(), Lam(param(Nat()), Suc(Zero())));
+    test(ConCall((Constructor) result.getDefinition("E.c"), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("E.D"), dataTypeArgs), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -627,7 +650,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.A.B.c");
-    test(ConCall((Constructor) result.getDefinition("E.A.B.c"), Reference(getThis(result))), result);
+    test(ConCall((Constructor) result.getDefinition("E.A.B.c"), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
     assertEquals(result.getDefinition("E.A.B.c"), result.getDefinition("E.A.B.D.c"));
   }
 
@@ -642,7 +665,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.A.B.D.c");
-    test(ConCall((Constructor) result.getDefinition("E.A.B.c"), Reference(getThis(result))), result);
+    test(ConCall((Constructor) result.getDefinition("E.A.B.c"), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
     assertEquals(result.getDefinition("E.A.B.c"), result.getDefinition("E.A.B.D.c"));
   }
 
@@ -657,8 +680,9 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\static \\function test (e : E) => (e.A.B.D 0 (\\lam _ => 1)).c");
-    test(ConCall((Constructor) result.getDefinition("E.A.B.c"), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(DataCall((DataDefinition) result.getDefinition("E.A.B.D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
+    test(ConCall((Constructor) result.getDefinition("E.A.B.c"), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("E.A.B.D"), dataTypeArgs), result);
     assertEquals(result.getDefinition("E.A.B.c"), result.getDefinition("E.A.B.D.c"));
   }
 
@@ -673,8 +697,9 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\static \\function test (e : E) => (e.A.B.D 0).c {\\lam _ => 1}");
-    test(Apps(ConCall((Constructor) result.getDefinition("E.A.B.c"), Reference(getThis(result)), Zero()), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(DataCall((DataDefinition) result.getDefinition("E.A.B.D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
+    test(ConCall((Constructor) result.getDefinition("E.A.B.c"), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("E.A.B.D"), dataTypeArgs), result);
     assertEquals(result.getDefinition("E.A.B.c"), result.getDefinition("E.A.B.D.c"));
   }
 
@@ -689,8 +714,9 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.A.B.D.c {0} {\\lam _ => 1}");
-    test(Apps(ConCall((Constructor) result.getDefinition("E.A.B.c"), Reference(getThis(result))), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(DataCall((DataDefinition) result.getDefinition("E.A.B.D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
+    test(ConCall((Constructor) result.getDefinition("E.A.B.c"), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("E.A.B.D"), dataTypeArgs), result);
     assertEquals(result.getDefinition("E.A.B.c"), result.getDefinition("E.A.B.D.c"));
   }
 
