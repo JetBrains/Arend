@@ -188,6 +188,6 @@ public class Constructor extends Definition implements Function {
 
   @Override
   public int getNumberOfParameters() {
-    return DependentLink.Helper.size(myPatterns.getParameters()) + DependentLink.Helper.size(myParameters);
+    return DependentLink.Helper.size(getDataTypeParameters()) + DependentLink.Helper.size(myParameters);
   }
 }

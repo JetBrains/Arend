@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
@@ -44,6 +45,17 @@ public class ConCallExpression extends DefCallExpression {
 
   @Override
   public ConCallExpression toConCall() {
+    return this;
+  }
+
+  @Override
+  public Expression addArgument(Expression argument) {
+    if (myDataTypeArguments.size() < DependentLink.Helper.size(getDefinition().getDataTypeParameters())) {
+      myDataTypeArguments.add(argument);
+    } else {
+      assert myArguments.size() < DependentLink.Helper.size(getDefinition().getParameters());
+      myArguments.add(argument);
+    }
     return this;
   }
 }

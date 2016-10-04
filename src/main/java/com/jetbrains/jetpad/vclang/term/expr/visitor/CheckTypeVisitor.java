@@ -254,10 +254,30 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return true;
   }
 
+  private boolean checkDefCall(Result result) {
+    if (result.expression.toDefCall() == null) {
+      return true;
+    }
+
+    int requiredArgs = result.expression.toDefCall().getDefinition().getNumberOfParameters();
+    if (result.expression.toDefCall().getDefCallArguments().size() == requiredArgs) {
+      return true;
+    }
+    assert result.expression.toDefCall().getDefCallArguments().size() < requiredArgs;
+
+    List<DependentLink> params = new ArrayList<>();
+    result.type.getPiParameters(params, true, false);
+    assert requiredArgs - result.expression.toDefCall().getDefCallArguments().size() <= params.size();
+    return true;
+  }
+
   @Override
   public Result visitApp(Abstract.AppExpression expr, Expression expectedType) {
     Result result = myArgsInference.infer(expr, expectedType);
     if (!checkPath(result, expr)) {
+      return null;
+    }
+    if (!checkDefCall(result)) {
       return null;
     }
     return checkResultImplicit(expectedType, result, expr);
@@ -313,6 +333,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
     Result result = myTypeCheckingDefCall.typeCheckDefCall(expr);
     if (!checkPath(result, expr)) {
+      return null;
+    }
+    if (!checkDefCall(result)) {
       return null;
     }
     return checkResultImplicit(expectedType, result, expr);

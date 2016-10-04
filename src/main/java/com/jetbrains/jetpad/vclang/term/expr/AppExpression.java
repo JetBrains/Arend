@@ -12,6 +12,7 @@ public class AppExpression extends Expression {
 
   private void initialize(Expression function, Collection<? extends Expression> arguments) {
     assert !arguments.isEmpty();
+    assert function.toConCall() == null && function.toDataCall() == null && function.toClassCall() == null;
 
     myFunction = function.getFunction();
     AppExpression app = function.toApp();

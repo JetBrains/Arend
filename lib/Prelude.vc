@@ -16,7 +16,7 @@
     | path (\Pi (i : I) -> A i)
 
 \static \function \infix 1
-(=) {lp : Lvl} {lh : CNat} {A : \Type (lp,lh)} => Path (\lam _ => A)
+(=) {lp : Lvl} {lh : CNat} {A : \Type (lp,lh)} (a a' : A) => Path (\lam _ => A) a a'
 
 \static \function \infixl 9
 (@) {lp : Lvl} {lh : CNat} {A : I -> \Type (lp,lh)} {a : A left} {a' : A right} (p : Path A a a') (i : I) : A i <= \elim i

@@ -82,4 +82,9 @@ public class ClassCallExpression extends DefCallExpression {
     classCall.setPolyParamsSubst(getPolyParamsSubst());
     return classCall;
   }
+
+  @Override
+  public Expression addArgument(Expression argument) {
+    throw new IllegalStateException();
+  }
 }

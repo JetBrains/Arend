@@ -38,6 +38,11 @@ public class OfTypeExpression extends Expression {
   }
 
   @Override
+  public Expression addArgument(Expression argument) {
+    return myExpression.addArgument(argument);
+  }
+
+  @Override
   public AppExpression toApp() {
     return myExpression.toApp();
   }

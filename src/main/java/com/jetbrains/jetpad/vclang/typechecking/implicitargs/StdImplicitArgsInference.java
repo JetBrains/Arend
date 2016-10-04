@@ -3,10 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 import com.jetbrains.jetpad.vclang.term.*;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.FunctionInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.ErrorExpression;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.InferenceReferenceExpression;
+import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
@@ -33,14 +30,12 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     ExprSubstitution substitution = new ExprSubstitution();
-    List<Expression> arguments = new ArrayList<>();
     for (int i = 0; i < parameters.size(); i++) {
       DependentLink parameter = parameters.get(i);
       Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable(parameter.getName(), parameter.getType().subst(substitution), i + 1, expr));
-      arguments.add(binding);
+      result.expression = result.expression.addArgument(binding);
       substitution.add(parameter, binding);
     }
-    result.expression = Apps(result.expression, arguments);
     result.type = result.type.subst(substitution, new LevelSubstitution());
     return true;
   }
@@ -52,7 +47,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
     if (isExplicit) {
       ConCallExpression conCall = result.expression.toConCall();
-      if (conCall != null && conCall.getDefinition() == Prelude.PATH_CON && conCall.getDefCallArguments().isEmpty()) {
+      if (conCall != null && conCall.getDefinition() == Prelude.PATH_CON && conCall.getDataTypeArguments().isEmpty()) {
         List<DependentLink> pathParams = new ArrayList<>();
         ((Expression) conCall.getType()).getPiParameters(pathParams, false, false);
         DependentLink lamParam = param("i", Interval());
@@ -121,26 +116,22 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       }
 
       if (isExplicit && result != null) {
-        ConCallExpression conCall = result.expression.getFunction().toConCall();
+        ConCallExpression conCall = result.expression.toConCall();
         if (conCall != null &&
-            result.expression.getArguments().size() < DependentLink.Helper.size(conCall.getDefinition().getDataTypeParameters()) &&
+            conCall.getDataTypeArguments().size() < DependentLink.Helper.size(conCall.getDefinition().getDataTypeParameters()) &&
             expectedType != null &&
             !conCall.getDefinition().hasErrors()) {
-          Expression expectedTypeNorm = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
-          List<? extends Expression> args = expectedTypeNorm.getArguments();
-          if (expectedTypeNorm.getFunction().toDataCall() != null) {
+          DataCallExpression dataCall = expectedType.normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
+          if (dataCall != null) {
+            List<? extends Expression> args = dataCall.getDefCallArguments();
             List<Expression> args1 = new ArrayList<>(args.size());
-            args1.addAll(result.expression.getArguments());
-            args1.addAll(args.subList(result.expression.getArguments().size(), args.size()));
-            args = conCall.getDefinition().matchDataTypeArguments(args1);
-            if (args != null) {
-              if (!conCall.getDataTypeArguments().isEmpty()) {
-                args = args.subList(conCall.getDataTypeArguments().size(), args.size());
-              }
-              if (!args.isEmpty()) {
-                result.expression = Apps(result.expression, args);
-                result.type = result.type.applyExpressions(args);
-              }
+            args1.addAll(conCall.getDataTypeArguments());
+            args1.addAll(args.subList(conCall.getDataTypeArguments().size(), args.size()));
+            args1 = conCall.getDefinition().matchDataTypeArguments(args1);
+            if (args1 != null && !args1.isEmpty()) {
+              result.expression = ConCall(conCall.getDefinition(), args1, new ArrayList<Expression>());
+              result.expression.toConCall().setPolyParamsSubst(conCall.getPolyParamsSubst());
+              result.type = result.type.applyExpressions(args1);
             }
             return inferArg(result, arg, true, fun);
           }
