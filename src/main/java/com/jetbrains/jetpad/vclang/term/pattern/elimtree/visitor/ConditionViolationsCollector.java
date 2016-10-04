@@ -10,12 +10,12 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toSubstitution;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Left;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Right;
 
 public class ConditionViolationsCollector implements ElimTreeNodeVisitor<ExprSubstitution, Void>  {
   public interface ConditionViolationChecker {
@@ -45,13 +45,12 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<ExprSub
           SubstituteExpander.substituteExpand(conCall.getDefinition().getDataType().getCondition(conCall.getDefinition()).getElimTree(), subst, toContext(constructorArgs), new SubstituteExpander.SubstituteExpansionProcessor() {
             @Override
             public void process(ExprSubstitution subst, ExprSubstitution toCtxC, List<Binding> ctx, LeafElimTreeNode leaf) {
-              List<Expression> arguments = new ArrayList<>();
               for (DependentLink link = constructorArgs; link.hasNext(); link = link.getNext()) {
-                arguments.add(toCtxC.get(link));
+                conCall.addArgument(toCtxC.get(link));
               }
               final Expression rhs = leaf.getExpression().subst(subst);
               try (Utils.ContextSaver ignore = new Utils.ContextSaver(ctx)) {
-                final ExprSubstitution subst1 = new ExprSubstitution(branchNode.getReference(), Apps(conCall, arguments));
+                final ExprSubstitution subst1 = new ExprSubstitution(branchNode.getReference(), conCall);
                 ctx.addAll(subst1.extendBy(branchNode.getContextTail()));
                 SubstituteExpander.substituteExpand(branchNode, subst1, ctx, new SubstituteExpander.SubstituteExpansionProcessor() {
                   @Override

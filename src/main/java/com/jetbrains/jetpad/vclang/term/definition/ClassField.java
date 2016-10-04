@@ -80,7 +80,7 @@ public class ClassField extends Definition {
 
   @Override
   public int getNumberOfParameters() {
-    return 0;
+    return 1;
   }
 
   public void setBaseType(Expression type) {

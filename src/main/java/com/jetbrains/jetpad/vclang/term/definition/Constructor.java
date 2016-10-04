@@ -178,7 +178,7 @@ public class Constructor extends Definition implements Function {
 
   @Override
   public ConCallExpression getDefCall() {
-    return new ConCallExpression(this, Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
+    return new ConCallExpression(this, new ArrayList<Expression>(), new ArrayList<Expression>());
   }
 
   @Override

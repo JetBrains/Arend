@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
+import java.util.Collection;
 import java.util.List;
 
 public class ConCallExpression extends DefCallExpression {
@@ -57,5 +58,10 @@ public class ConCallExpression extends DefCallExpression {
       myArguments.add(argument);
     }
     return this;
+  }
+
+  public void addDefCallArguments(Collection<? extends Expression> arguments) {
+    myArguments.addAll(arguments);
+    assert myArguments.size() <= DependentLink.Helper.size(getDefinition().getParameters());
   }
 }

@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -19,7 +18,6 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toSubstitution;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 
 
@@ -58,15 +56,14 @@ public class SubstituteExpander {
 
         for (ConCallExpression conCall : dType.getDefinition().getMatchedConstructors(dType.getDefCallArguments())) {
           DependentLink constructorArgs = DependentLink.Helper.subst(conCall.getDefinition().getParameters(), toSubstitution(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments()));
-          List<Expression> args = new ArrayList<>();
           for (DependentLink link = constructorArgs; link.hasNext(); link = link.getNext()) {
-            args.add(Reference(link));
+            conCall.addArgument(Reference(link));
           }
 
           List<Binding> tail = new ArrayList<>(myContext.subList(myContext.lastIndexOf(binding) + 1, myContext.size()));
           myContext.subList(myContext.lastIndexOf(binding), myContext.size()).clear();
           try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
-            ExprSubstitution currentSubst = new ExprSubstitution(binding, Apps(conCall, args));
+            ExprSubstitution currentSubst = new ExprSubstitution(binding, conCall);
             myContext.addAll(toContext(constructorArgs));
             myContext.addAll(currentSubst.extendBy(tail));
             substituteExpand(branchNode, currentSubst.compose(nestedSubstitution), currentSubst.compose(toCtx));

@@ -60,8 +60,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           return null;
         }
 
-        Expression expr1 = Apps(argResult.expression, Left());
-        Expression expr2 = Apps(argResult.expression, Right());
+        Expression expr1 = argResult.expression.addArgument(Left());
+        Expression expr2 = argResult.expression.addArgument(Right());
         result.expression = ConCall(conCall.getDefinition(), Arrays.asList(lamExpr, expr1, expr2), Collections.singletonList(argResult.expression));
         result.expression.toConCall().setPolyParamsSubst(conCall.getPolyParamsSubst());
         result.type = result.type.applyExpressions(Arrays.asList(expr1, expr2, argResult.expression));

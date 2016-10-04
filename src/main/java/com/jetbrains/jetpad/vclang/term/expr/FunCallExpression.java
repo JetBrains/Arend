@@ -21,7 +21,8 @@ public class FunCallExpression extends DefCallExpression {
 
   @Override
   public Expression applyThis(Expression thisExpr) {
-    return ExpressionFactory.Apps(this, thisExpr);
+    myArguments.add(thisExpr);
+    return this;
   }
 
   @Override

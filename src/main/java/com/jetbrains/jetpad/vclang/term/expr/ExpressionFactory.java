@@ -29,10 +29,6 @@ public class ExpressionFactory {
     return arguments.length == 0 ? function : new AppExpression(function, new ArrayList<>(Arrays.asList(arguments)));
   }
 
-  public static Expression Apps(Expression fun, List<Expression> arguments) {
-    return arguments.isEmpty() ? fun : new AppExpression(fun, arguments);
-  }
-
   public static Expression Apps(Expression fun, Collection<? extends Expression> arguments) {
     return arguments.isEmpty() ? fun : new AppExpression(fun, arguments);
   }

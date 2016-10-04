@@ -16,7 +16,6 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.size;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.toPatterns;
 
@@ -79,8 +78,8 @@ class PatternsExpander {
       );
       clause.setChild(nestedResult.tree);
       for (MultiBranch branch : nestedResult.branches) {
-        Expression expr = Apps(conCall, new ArrayList<>(branch.expressions));
-        resultBranches.add(new Branch(expr, branch.leaf, recalcIndices(matching.indices, branch.indices), branch.newContext));
+        conCall.addDefCallArguments(branch.expressions);
+        resultBranches.add(new Branch(conCall, branch.leaf, recalcIndices(matching.indices, branch.indices), branch.newContext));
       }
     }
     if (!anyPatternIdxs.isEmpty()) {

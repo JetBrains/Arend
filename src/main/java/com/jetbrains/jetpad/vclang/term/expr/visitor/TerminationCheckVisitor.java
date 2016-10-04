@@ -61,10 +61,10 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
   private enum Ord { LESS, EQUALS, NOT_LESS }
 
   private Ord isLess(Expression expr1, Expression expr2) {
-    if (expr1.toConCall() == null || expr2.toConCall() == null) {
-      return Ord.NOT_LESS;
+    if (expr2.toConCall() == null) {
+      return expr1.equals(expr2) ? Ord.EQUALS : Ord.NOT_LESS;
     }
-    if (expr1.toConCall().getDefinition() == expr2.toConCall().getDefinition()) {
+    if (expr1.toConCall() != null && expr1.toConCall().getDefinition() == expr2.toConCall().getDefinition()) {
       Ord ord = isLess(expr1.toConCall().getDefCallArguments(), expr2.toConCall().getDefCallArguments());
       if (ord != Ord.NOT_LESS) return ord;
     }
@@ -84,39 +84,10 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
 
   @Override
   public Boolean visitApp(AppExpression expr, Void params) {
-    Expression fun = expr.getFunction();
-    DefCallExpression defCall = fun.toDefCall();
-    List<? extends Expression> args;
-    if (defCall != null) {
-      ConCallExpression conCall = expr.toConCall();
-      args = defCall.getDefCallArguments();
-      if (conCall != null) {
-        List<? extends Expression> dataTypeArguments = conCall.getDataTypeArguments();
-        if (!dataTypeArguments.isEmpty()) {
-          List<Expression> newArgs = new ArrayList<>(args.size() + dataTypeArguments.size());
-          newArgs.addAll(dataTypeArguments);
-          newArgs.addAll(args);
-          args = newArgs;
-        }
-      }
-
-      if (defCall.getDefinition() == myDef && isLess(args, myPatterns) != Ord.LESS) {
-        return false;
-      }
-      if (conCall != null && conCall.getDefinition() != myDef && !visitConCall(conCall, null)) {
-        return false;
-      }
-      if (fun.toClassCall() != null && !visitClassCall(fun.toClassCall(), null)) {
-        return false;
-      }
-    } else {
-      if (!fun.accept(this, null)) {
-        return false;
-      }
-      args = expr.getArguments();
+    if (!expr.getFunction().accept(this, null)) {
+      return false;
     }
-
-    for (Expression arg : args) {
+    for (Expression arg : expr.getArguments()) {
       if (!arg.accept(this, null)) {
         return false;
       }
@@ -126,28 +97,37 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
 
   @Override
   public Boolean visitDefCall(DefCallExpression expr, Void params) {
-    for (Expression arg : expr.getDefCallArguments()) {
-      if (!arg.accept(this, null)) {
-        return false;
+    ConCallExpression conCall = expr.toConCall();
+    List<? extends Expression> args = expr.getDefCallArguments();
+    if (conCall != null) {
+      List<? extends Expression> dataTypeArguments = conCall.getDataTypeArguments();
+      if (!dataTypeArguments.isEmpty()) {
+        List<Expression> newArgs = new ArrayList<>(args.size() + dataTypeArguments.size());
+        newArgs.addAll(dataTypeArguments);
+        newArgs.addAll(args);
+        args = newArgs;
       }
     }
-    return expr.getDefinition() != myDef;
-  }
 
-  @Override
-  public Boolean visitConCall(ConCallExpression expr, Void params) {
-    for (Expression arg : expr.getDataTypeArguments()) {
+    if (expr.getDefinition() == myDef && isLess(args, myPatterns) != Ord.LESS) {
+      return false;
+    }
+
+    for (Expression arg : args) {
       if (!arg.accept(this, null)) {
         return false;
       }
     }
-    return visitDefCall(expr, null);
+
+    return true;
   }
 
   @Override
   public Boolean visitClassCall(ClassCallExpression expr, Void params) {
     for (Map.Entry<ClassField, FieldSet.Implementation> entry : expr.getImplementedHere()) {
-      if (!entry.getValue().term.accept(this, params)) return false;
+      if (!entry.getValue().term.accept(this, params)) {
+        return false;
+      }
     }
     return true;
   }

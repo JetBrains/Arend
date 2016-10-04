@@ -50,7 +50,7 @@ public class EvalNormalizer implements Normalizer {
       Expression result = null;
 
       Binding binding = new TypedBinding("i", Interval());
-      Expression normExpr = Apps(arguments.get(0), Reference(binding)).normalize(NormalizeVisitor.Mode.NF);
+      Expression normExpr = arguments.get(0).addArgument(Reference(binding)).normalize(NormalizeVisitor.Mode.NF);
       if (!normExpr.findBinding(binding)) {
         result = arguments.get(1);
       } else {
@@ -66,7 +66,7 @@ public class EvalNormalizer implements Normalizer {
           if (noFreeVar) {
             ConCallExpression normedPtCon = arguments.get(2).normalize(NormalizeVisitor.Mode.NF).toConCall();
             if (normedPtCon != null && normedPtCon.getDefinition() == Prelude.RIGHT) {
-              result = Apps(isoArgs.get(2), arguments.get(1));
+              result = isoArgs.get(2).addArgument(arguments.get(1));
             }
           }
         }

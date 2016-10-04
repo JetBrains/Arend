@@ -107,9 +107,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       if (classCall != null) {
         FieldSet.Implementation impl = classCall.getFieldSet().getImplementation((ClassField) defCallExpr.getDefinition());
         if (impl != null) {
-          final Expression term;
-          term = impl.substThisParam(thisExpr);
-          Expression result = Apps(term, expr.getArguments());
+          Expression result = Apps(impl.substThisParam(thisExpr), expr.getArguments());
           return mode == Mode.TOP ? result : result.accept(this, mode);
         }
       }
@@ -145,7 +143,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   private Expression visitFunctionCall(Function func, LevelSubstitution polySubst, Expression expr, Mode mode) {
-    List<Expression> args = new ArrayList<>(expr.getFunction().toDefCall().getDefCallArguments());
+    List<Expression> args = expr.getFunction().toDefCall() != null ? new ArrayList<>(expr.getFunction().toDefCall().getDefCallArguments()) : new ArrayList<Expression>(expr.getArguments().size());
     args.addAll(expr.getArguments());
     List<Expression> requiredArgs;
     DependentLink excessiveParams;

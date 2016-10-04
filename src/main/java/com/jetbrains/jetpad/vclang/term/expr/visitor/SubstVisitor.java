@@ -74,7 +74,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
     Expression result = myExprSubstitution.get(expr.getDefinition());
     if (result != null) {
-      return Apps(result, expr.getExpression().accept(this, null));
+      return result.addArgument(expr.getExpression().accept(this, null));
     } else {
       FieldCallExpression defCall = new FieldCallExpression(expr.getDefinition(), expr.getExpression().accept(this, null));
       defCall.setPolyParamsSubst(expr.getPolyParamsSubst().subst(myLevelSubstitution));

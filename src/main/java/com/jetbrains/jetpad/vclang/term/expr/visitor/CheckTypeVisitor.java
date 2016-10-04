@@ -234,51 +234,52 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   private boolean checkPath(Result result, Abstract.Expression expr) {
-    if (result != null) {
-      ConCallExpression conExpr = result.expression.toConCall();
-      if (conExpr != null && conExpr.getDefinition() == Prelude.PATH_CON) {
-        if (conExpr.getDefCallArguments().isEmpty()) {
-          LocalTypeCheckingError error = new LocalTypeCheckingError("Expected an argument for 'path'", expr);
-          expr.setWellTyped(myContext, Error(result.expression, error));
-          myErrorReporter.report(error);
-          return false;
-        }
+    ConCallExpression conExpr = result.expression.toConCall();
+    if (conExpr != null && conExpr.getDefinition() == Prelude.PATH_CON) {
+      if (conExpr.getDefCallArguments().isEmpty()) {
+        LocalTypeCheckingError error = new LocalTypeCheckingError("Expected an argument for 'path'", expr);
+        expr.setWellTyped(myContext, Error(result.expression, error));
+        myErrorReporter.report(error);
+        return false;
+      }
 
-        List<? extends Expression> args = conExpr.getDataTypeArguments();
-        if (!compareExpressions(result, args.get(1), Apps(conExpr.getDefCallArguments().get(0), Left()), expr) ||
-            !compareExpressions(result, args.get(2), Apps(conExpr.getDefCallArguments().get(0), Right()), expr)) {
-          return false;
-        }
+      List<? extends Expression> args = conExpr.getDataTypeArguments();
+      if (!compareExpressions(result, args.get(1), conExpr.getDefCallArguments().get(0).addArgument(Left()), expr) ||
+          !compareExpressions(result, args.get(2), conExpr.getDefCallArguments().get(0).addArgument(Right()), expr)) {
+        return false;
       }
     }
     return true;
   }
 
-  private boolean checkDefCall(Result result) {
+  private void checkDefCall(Result result) {
     if (result.expression.toDefCall() == null) {
-      return true;
+      return;
     }
 
     int requiredArgs = result.expression.toDefCall().getDefinition().getNumberOfParameters();
     if (result.expression.toDefCall().getDefCallArguments().size() == requiredArgs) {
-      return true;
+      return;
     }
     assert result.expression.toDefCall().getDefCallArguments().size() < requiredArgs;
 
-    List<DependentLink> params = new ArrayList<>();
-    result.type.getPiParameters(params, true, false);
-    assert requiredArgs - result.expression.toDefCall().getDefCallArguments().size() <= params.size();
-    return true;
+    DependentLink params = result.type.getPiParameters().subst(new ExprSubstitution(), new LevelSubstitution(), requiredArgs - result.expression.toDefCall().getDefCallArguments().size());
+    for (DependentLink link = params; link.hasNext(); link = link.getNext()) {
+      result.expression.toDefCall().addArgument(Reference(link));
+    }
+    if (params.hasNext()) {
+      result.expression = Lam(params, result.expression);
+    }
   }
 
   @Override
   public Result visitApp(Abstract.AppExpression expr, Expression expectedType) {
     Result result = myArgsInference.infer(expr, expectedType);
-    if (!checkPath(result, expr)) {
-      return null;
-    }
-    if (!checkDefCall(result)) {
-      return null;
+    if (result != null) {
+      if (!checkPath(result, expr)) {
+        return null;
+      }
+      checkDefCall(result);
     }
     return checkResultImplicit(expectedType, result, expr);
   }
@@ -332,11 +333,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
     Result result = myTypeCheckingDefCall.typeCheckDefCall(expr);
-    if (!checkPath(result, expr)) {
-      return null;
-    }
-    if (!checkDefCall(result)) {
-      return null;
+    if (result != null) {
+      if (!checkPath(result, expr)) {
+        return null;
+      }
+      checkDefCall(result);
     }
     return checkResultImplicit(expectedType, result, expr);
   }
