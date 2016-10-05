@@ -73,21 +73,21 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         for (Expression arg : fun.toFunCall().getDefCallArguments()) {
           args.add(arg.accept(this, mode));
         }
-        fun = new FunCallExpression(fun.toFunCall().getDefinition(), args);
+        fun = new FunCallExpression(fun.toFunCall().getDefinition(), fun.toFunCall().getPolyParamsSubst(), args);
       }
       if (fun.toDataCall() != null && !fun.toDataCall().getDefCallArguments().isEmpty()) {
         List<Expression> args = new ArrayList<>(fun.toDataCall().getDefCallArguments().size());
         for (Expression arg : fun.toDataCall().getDefCallArguments()) {
           args.add(arg.accept(this, mode));
         }
-        fun = new DataCallExpression(fun.toDataCall().getDefinition(), args);
+        fun = new DataCallExpression(fun.toDataCall().getDefinition(), fun.toDataCall().getPolyParamsSubst(), args);
       }
       if (fun.toConCall() != null && !fun.toConCall().getDefCallArguments().isEmpty()) {
         List<Expression> args = new ArrayList<>(fun.toConCall().getDefCallArguments().size());
         for (Expression arg : fun.toConCall().getDefCallArguments()) {
           args.add(arg.accept(this, mode));
         }
-        fun = new ConCallExpression(fun.toConCall().getDefinition(), new ArrayList<>(fun.toConCall().getDataTypeArguments()), args);
+        fun = new ConCallExpression(fun.toConCall().getDefinition(), fun.toConCall().getPolyParamsSubst(), new ArrayList<>(fun.toConCall().getDataTypeArguments()), args);
       }
       return newArgs.isEmpty() ? fun : new AppExpression(fun, newArgs);
     } else {
@@ -135,8 +135,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       for (int i = 0; i < take; i++) {
         parameters.add(args.get(i));
       }
-      expr = ConCall(expr.getDefinition(), parameters, args.subList(take, args.size()));
-      expr.setPolyParamsSubst(expr.getPolyParamsSubst());
+      expr = ConCall(expr.getDefinition(), expr.getPolyParamsSubst(), parameters, args.subList(take, args.size()));
     }
 
     return visitFunctionCall(expr.getDefinition(), expr.getPolyParamsSubst(), expr, mode);

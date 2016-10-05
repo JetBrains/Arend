@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -54,6 +55,7 @@ public class ConstructorClause implements Clause {
     return myParameters;
   }
 
+  @Override
   public ExprSubstitution getSubst() {
     ExprSubstitution result = new ExprSubstitution();
 
@@ -61,7 +63,8 @@ public class ConstructorClause implements Clause {
     for (DependentLink link = myParameters; link.hasNext(); link = link.getNext()) {
       arguments.add(Reference(link));
     }
-    result.add(myParent.getReference(), new ConCallExpression(myConstructor, myConstructor.matchDataTypeArguments(new ArrayList<>(myParent.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF).toDataCall().getDefCallArguments())), arguments));
+    DataCallExpression dataCall = myParent.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
+    result.add(myParent.getReference(), new ConCallExpression(myConstructor, dataCall.getPolyParamsSubst(), myConstructor.matchDataTypeArguments(new ArrayList<>(dataCall.getDefCallArguments())), arguments));
 
     for (int i = 0; i < myParent.getContextTail().size(); i++) {
       result.add(myParent.getContextTail().get(i), Reference(myTailBindings.get(i)));

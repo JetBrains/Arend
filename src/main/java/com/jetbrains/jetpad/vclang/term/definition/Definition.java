@@ -39,7 +39,7 @@ public abstract class Definition implements Referable {
 
   public abstract Type getType(LevelSubstitution polyParams);
 
-  public abstract DefCallExpression getDefCall();
+  public abstract DefCallExpression getDefCall(LevelSubstitution polyParams);
 
   public abstract DefCallExpression getDefCall(LevelSubstitution polyParams, List<Expression> args);
 

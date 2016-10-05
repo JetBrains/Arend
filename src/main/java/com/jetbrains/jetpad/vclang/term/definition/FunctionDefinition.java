@@ -96,15 +96,13 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   @Override
-  public FunCallExpression getDefCall() {
-    return FunCall(this, new ArrayList<Expression>());
+  public FunCallExpression getDefCall(LevelSubstitution polyParams) {
+    return FunCall(this, polyParams, new ArrayList<Expression>());
   }
 
   @Override
   public FunCallExpression getDefCall(LevelSubstitution polyParams, List<Expression> args) {
-    FunCallExpression funCall = new FunCallExpression(this, args);
-    funCall.setPolyParamsSubst(polyParams);
-    return funCall;
+    return new FunCallExpression(this, polyParams, args);
   }
 
   @Override

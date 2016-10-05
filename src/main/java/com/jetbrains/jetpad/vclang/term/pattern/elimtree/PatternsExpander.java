@@ -16,6 +16,7 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.size;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ConCall;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.toPatterns;
 
@@ -61,7 +62,7 @@ class PatternsExpander {
     }
 
     DataCallExpression dType = binding.getType().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
-    List<ConCallExpression> validConstructors = dType.getDefinition().getMatchedConstructors(dType.getDefCallArguments());
+    List<ConCallExpression> validConstructors = dType.getDefinition().getMatchedConstructors(dType);
 
     BranchElimTreeNode resultTree = new BranchElimTreeNode(binding, context);
     List<Branch> resultBranches = new ArrayList<>();
@@ -78,8 +79,8 @@ class PatternsExpander {
       );
       clause.setChild(nestedResult.tree);
       for (MultiBranch branch : nestedResult.branches) {
-        conCall.addDefCallArguments(branch.expressions);
-        resultBranches.add(new Branch(conCall, branch.leaf, recalcIndices(matching.indices, branch.indices), branch.newContext));
+        Expression expr = ConCall(conCall.getDefinition(), conCall.getPolyParamsSubst(), new ArrayList<>(conCall.getDataTypeArguments()), branch.expressions);
+        resultBranches.add(new Branch(expr, branch.leaf, recalcIndices(matching.indices, branch.indices), branch.newContext));
       }
     }
     if (!anyPatternIdxs.isEmpty()) {

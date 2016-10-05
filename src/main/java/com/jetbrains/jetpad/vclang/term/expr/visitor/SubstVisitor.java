@@ -58,9 +58,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
       args.add(arg.accept(this, null));
     }
 
-    ConCallExpression conCall = ConCall(expr.getDefinition(), dataTypeArgs, args);
-    conCall.setPolyParamsSubst(expr.getPolyParamsSubst().subst(myLevelSubstitution));
-    return conCall;
+    return ConCall(expr.getDefinition(), expr.getPolyParamsSubst().subst(myLevelSubstitution), dataTypeArgs, args);
   }
 
   @Override
@@ -76,9 +74,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     if (result != null) {
       return result.addArgument(expr.getExpression().accept(this, null));
     } else {
-      FieldCallExpression defCall = new FieldCallExpression(expr.getDefinition(), expr.getExpression().accept(this, null));
-      defCall.setPolyParamsSubst(expr.getPolyParamsSubst().subst(myLevelSubstitution));
-      return defCall;
+      return new FieldCallExpression(expr.getDefinition(), expr.getExpression().accept(this, null));
     }
   }
 

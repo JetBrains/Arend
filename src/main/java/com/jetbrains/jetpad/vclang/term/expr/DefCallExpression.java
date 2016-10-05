@@ -10,14 +10,9 @@ public abstract class DefCallExpression extends Expression {
   private final Definition myDefinition;
   private LevelSubstitution myPolyParamsSubst;
 
-  public DefCallExpression(Definition definition) {
+  public DefCallExpression(Definition definition, LevelSubstitution polyParams) {
     myDefinition = definition;
-    myPolyParamsSubst = new LevelSubstitution();
-  }
-
-  public DefCallExpression(Definition definition, LevelSubstitution subst) {
-    myDefinition = definition;
-    myPolyParamsSubst = subst;
+    myPolyParamsSubst = polyParams;
   }
 
   public List<? extends Expression> getDefCallArguments() {

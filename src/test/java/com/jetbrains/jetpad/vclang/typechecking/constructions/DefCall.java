@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
@@ -53,7 +54,7 @@ public class DefCall extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\static \\function f => 0\n" +
         "\\static \\function test => f");
-    test(FunCall((FunctionDefinition) result.getDefinition("f")), result);
+    test(FunCall((FunctionDefinition) result.getDefinition("f"), new LevelSubstitution()), result);
   }
 
   @Test
@@ -61,7 +62,7 @@ public class DefCall extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\function f => 0\n" +
         "\\function test => f");
-    test(Apps(FunCall((FunctionDefinition) result.getDefinition("f")), Reference(getThis(result))), result);
+    test(Apps(FunCall((FunctionDefinition) result.getDefinition("f"), new LevelSubstitution()), Reference(getThis(result))), result);
   }
 
   @Test
@@ -71,7 +72,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class Test {\n" +
         "  \\function test => f\n" +
         "}");
-    testFI(Apps(FunCall((FunctionDefinition) result.getDefinition("f")), getThisFI(result)), result);
+    testFI(Apps(FunCall((FunctionDefinition) result.getDefinition("f"), new LevelSubstitution()), getThisFI(result)), result);
   }
 
   @Test
@@ -90,7 +91,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\static \\function test => A.B.f");
-    test(FunCall((FunctionDefinition) result.getDefinition("A.B.f")), result);
+    test(FunCall((FunctionDefinition) result.getDefinition("A.B.f"), new LevelSubstitution()), result);
   }
 
   @Test
@@ -102,7 +103,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\function test => A.B.f");
-    test(FunCall((FunctionDefinition) result.getDefinition("A.B.f"), Reference(getThis(result))), result);
+    test(FunCall((FunctionDefinition) result.getDefinition("A.B.f"), new LevelSubstitution(), Reference(getThis(result))), result);
   }
 
   @Test
@@ -112,7 +113,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\function f => 0\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.f");
-    test(FunCall((FunctionDefinition) result.getDefinition("E.f"), Reference(getThis(result))), result);
+    test(FunCall((FunctionDefinition) result.getDefinition("E.f"), new LevelSubstitution(), Reference(getThis(result))), result);
   }
 
   @Test
@@ -131,7 +132,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\function f => 0\n" +
         "}\n" +
         "\\function test (e : E) => e.f");
-    test(FunCall((FunctionDefinition) result.getDefinition("E.f"), Reference(getThis(result).getNext())), result);
+    test(FunCall((FunctionDefinition) result.getDefinition("E.f"), new LevelSubstitution(), Reference(getThis(result).getNext())), result);
   }
 
   @Test
@@ -145,7 +146,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.A.B.f");
-    test(FunCall((FunctionDefinition) result.getDefinition("E.A.B.f"), Reference(getThis(result))), result);
+    test(FunCall((FunctionDefinition) result.getDefinition("E.A.B.f"), new LevelSubstitution(), Reference(getThis(result))), result);
   }
 
   @Test
@@ -159,7 +160,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\static \\function test (e : E) (b : e.A.B) => b.f");
-    test(FunCall((FunctionDefinition) result.getDefinition("E.A.B.f"), Reference(getThis(result).getNext())), result);
+    test(FunCall((FunctionDefinition) result.getDefinition("E.A.B.f"), new LevelSubstitution(), Reference(getThis(result).getNext())), result);
   }
 
   @Test
@@ -193,7 +194,7 @@ public class DefCall extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\static \\data D | c\n" +
         "\\static \\function test => c");
-    test(ConCall((Constructor) result.getDefinition("c"), Collections.<Expression>emptyList()), result);
+    test(ConCall((Constructor) result.getDefinition("c"), new LevelSubstitution(), Collections.<Expression>emptyList()), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -202,7 +203,7 @@ public class DefCall extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\static \\data D | c\n" +
         "\\static \\function test => D.c");
-    test(ConCall((Constructor) result.getDefinition("c"), Collections.<Expression>emptyList()), result);
+    test(ConCall((Constructor) result.getDefinition("c"), new LevelSubstitution(), Collections.<Expression>emptyList()), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -212,8 +213,8 @@ public class DefCall extends TypeCheckingTestCase {
         "\\static \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\static \\function test => (D 0 (\\lam _ => 1)).c");
     List<Expression> dataTypeArgs = Arrays.asList(Zero(), Lam(param(Nat()), Suc(Zero())));
-    test(ConCall((Constructor) result.getDefinition("c"), dataTypeArgs), result);
-    testType(DataCall((DataDefinition) result.getDefinition("D"), dataTypeArgs), result);
+    test(ConCall((Constructor) result.getDefinition("c"), new LevelSubstitution(), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("D"), new LevelSubstitution(), dataTypeArgs), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -223,8 +224,8 @@ public class DefCall extends TypeCheckingTestCase {
         "\\static \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
             "\\static \\function test => (D 0).c {\\lam _ => 1}");
     List<Expression> dataTypeArgs = Arrays.asList(Zero(), Lam(param(Nat()), Suc(Zero())));
-    test(ConCall((Constructor) result.getDefinition("c"), dataTypeArgs), result);
-    testType(DataCall((DataDefinition) result.getDefinition("D"), dataTypeArgs), result);
+    test(ConCall((Constructor) result.getDefinition("c"), new LevelSubstitution(), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("D"), new LevelSubstitution(), dataTypeArgs), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -234,8 +235,8 @@ public class DefCall extends TypeCheckingTestCase {
         "\\static \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\static \\function test => D.c {0} {\\lam _ => 1}");
     List<Expression> dataTypeArgs = Arrays.asList(Zero(), Lam(param(Nat()), Suc(Zero())));
-    test(ConCall((Constructor) result.getDefinition("c"), dataTypeArgs), result);
-    testType(DataCall((DataDefinition) result.getDefinition("D"), dataTypeArgs), result);
+    test(ConCall((Constructor) result.getDefinition("c"), new LevelSubstitution(), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("D"), new LevelSubstitution(), dataTypeArgs), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -244,7 +245,7 @@ public class DefCall extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\data D | c\n" +
         "\\function test => c");
-    test(ConCall((Constructor) result.getDefinition("c"), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
+    test(ConCall((Constructor) result.getDefinition("c"), new LevelSubstitution(), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -255,7 +256,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class Test {\n" +
         "  \\function test => c\n" +
         "}");
-    testFI(ConCall((Constructor) result.getDefinition("c"), Collections.singletonList(getThisFI(result))), result);
+    testFI(ConCall((Constructor) result.getDefinition("c"), new LevelSubstitution(), Collections.singletonList(getThisFI(result))), result);
   }
 
   @Test
@@ -263,7 +264,7 @@ public class DefCall extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\data D | c\n" +
         "\\function test => D.c");
-    test(ConCall((Constructor) result.getDefinition("c"), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
+    test(ConCall((Constructor) result.getDefinition("c"), new LevelSubstitution(), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -274,7 +275,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class Test {\n" +
         "  \\function test => D.c\n" +
         "}");
-    testFI(ConCall((Constructor) result.getDefinition("c"), Collections.singletonList(getThisFI(result))), result);
+    testFI(ConCall((Constructor) result.getDefinition("c"), new LevelSubstitution(), Collections.singletonList(getThisFI(result))), result);
   }
 
   @Test
@@ -283,8 +284,8 @@ public class DefCall extends TypeCheckingTestCase {
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\function test => (D 0 (\\lam _ => 1)).c");
     List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
-    test(ConCall((Constructor) result.getDefinition("c"), dataTypeArgs), result);
-    testType(DataCall((DataDefinition) result.getDefinition("D"), dataTypeArgs), result);
+    test(ConCall((Constructor) result.getDefinition("c"), new LevelSubstitution(), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("D"), new LevelSubstitution(), dataTypeArgs), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -296,7 +297,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\function test => (D 0 (\\lam _ => 1)).c\n" +
         "}");
     List<Expression> dataTypeArgs = Arrays.asList(getThisFI(result), Zero(), Lam(param(Nat()), Suc(Zero())));
-    testFI(ConCall((Constructor) result.getDefinition("c"), dataTypeArgs), result);
+    testFI(ConCall((Constructor) result.getDefinition("c"), new LevelSubstitution(), dataTypeArgs), result);
   }
 
   @Test
@@ -305,8 +306,8 @@ public class DefCall extends TypeCheckingTestCase {
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\function test => (D 0).c {\\lam _ => 1}");
     List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
-    test(ConCall((Constructor) result.getDefinition("c"), dataTypeArgs), result);
-    testType(DataCall((DataDefinition) result.getDefinition("D"), dataTypeArgs), result);
+    test(ConCall((Constructor) result.getDefinition("c"), new LevelSubstitution(), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("D"), new LevelSubstitution(), dataTypeArgs), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -318,7 +319,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\function test => (D 0).c {\\lam _ => 1}\n" +
         "}");
     List<Expression> dataTypeArgs = Arrays.asList(getThisFI(result), Zero(), Lam(param(Nat()), Suc(Zero())));
-    testFI(ConCall((Constructor) result.getDefinition("c"), dataTypeArgs), result);
+    testFI(ConCall((Constructor) result.getDefinition("c"), new LevelSubstitution(), dataTypeArgs), result);
   }
 
   @Test
@@ -327,8 +328,8 @@ public class DefCall extends TypeCheckingTestCase {
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\function test => D.c {0} {\\lam _ => 1}");
     List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
-    test(ConCall((Constructor) result.getDefinition("c"), dataTypeArgs), result);
-    testType(DataCall((DataDefinition) result.getDefinition("D"), dataTypeArgs), result);
+    test(ConCall((Constructor) result.getDefinition("c"), new LevelSubstitution(), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("D"), new LevelSubstitution(), dataTypeArgs), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -340,7 +341,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\function test => D.c {0} {\\lam _ => 1}\n" +
         "}");
     List<Expression> dataTypeArgs = Arrays.asList(getThisFI(result), Zero(), Lam(param(Nat()), Suc(Zero())));
-    testFI(ConCall((Constructor) result.getDefinition("c"), dataTypeArgs), result);
+    testFI(ConCall((Constructor) result.getDefinition("c"), new LevelSubstitution(), dataTypeArgs), result);
   }
 
   @Test
@@ -366,7 +367,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\static \\function test => A.B.c");
-    test(ConCall((Constructor) result.getDefinition("A.B.c"), Collections.<Expression>emptyList()), result);
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), new LevelSubstitution(), Collections.<Expression>emptyList()), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -379,7 +380,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\static \\function test => A.B.D.c");
-    test(ConCall((Constructor) result.getDefinition("A.B.c"), Collections.<Expression>emptyList()), result);
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), new LevelSubstitution(), Collections.<Expression>emptyList()), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -393,8 +394,8 @@ public class DefCall extends TypeCheckingTestCase {
         "}\n" +
         "\\static \\function test => (A.B.D 0 (\\lam _ => 1)).c");
     List<Expression> dataTypeArgs = Arrays.asList(Zero(), Lam(param(Nat()), Suc(Zero())));
-    test(ConCall((Constructor) result.getDefinition("A.B.c"), dataTypeArgs), result);
-    testType(DataCall((DataDefinition) result.getDefinition("A.B.D"), dataTypeArgs), result);
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), new LevelSubstitution(), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("A.B.D"), new LevelSubstitution(), dataTypeArgs), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -408,8 +409,8 @@ public class DefCall extends TypeCheckingTestCase {
         "}\n" +
         "\\static \\function test => (A.B.D 0).c {\\lam _ => 1}");
     List<Expression> dataTypeArgs = Arrays.asList(Zero(), Lam(param(Nat()), Suc(Zero())));
-    test(ConCall((Constructor) result.getDefinition("A.B.c"), dataTypeArgs), result);
-    testType(DataCall((DataDefinition) result.getDefinition("A.B.D"), dataTypeArgs), result);
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), new LevelSubstitution(), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("A.B.D"), new LevelSubstitution(), dataTypeArgs), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -423,8 +424,8 @@ public class DefCall extends TypeCheckingTestCase {
         "}\n" +
         "\\static \\function test => A.B.D.c {0} {\\lam _ => 1}");
     List<Expression> dataTypeArgs = Arrays.asList(Zero(), Lam(param(Nat()), Suc(Zero())));
-    test(ConCall((Constructor) result.getDefinition("A.B.c"), dataTypeArgs), result);
-    testType(DataCall((DataDefinition) result.getDefinition("A.B.D"), dataTypeArgs), result);
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), new LevelSubstitution(), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("A.B.D"), new LevelSubstitution(), dataTypeArgs), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -437,7 +438,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\function test => A.B.c");
-    test(ConCall((Constructor) result.getDefinition("A.B.c"), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), new LevelSubstitution(), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -450,7 +451,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\function test => A.B.D.c");
-    test(ConCall((Constructor) result.getDefinition("A.B.c"), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), new LevelSubstitution(), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -464,8 +465,8 @@ public class DefCall extends TypeCheckingTestCase {
         "}\n" +
         "\\function test => (A.B.D 0 (\\lam _ => 1)).c");
     List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
-    test(ConCall((Constructor) result.getDefinition("A.B.c"), dataTypeArgs), result);
-    testType(DataCall((DataDefinition) result.getDefinition("A.B.D"), dataTypeArgs), result);
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), new LevelSubstitution(), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("A.B.D"), new LevelSubstitution(), dataTypeArgs), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -479,8 +480,8 @@ public class DefCall extends TypeCheckingTestCase {
         "}\n" +
         "\\function test => (A.B.D 0).c {\\lam _ => 1}");
     List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
-    test(ConCall((Constructor) result.getDefinition("A.B.c"), dataTypeArgs), result);
-    testType(DataCall((DataDefinition) result.getDefinition("A.B.D"), dataTypeArgs), result);
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), new LevelSubstitution(), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("A.B.D"), new LevelSubstitution(), dataTypeArgs), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -494,8 +495,8 @@ public class DefCall extends TypeCheckingTestCase {
         "}\n" +
         "\\function test => A.B.D.c {0} {\\lam _ => 1}");
     List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
-    test(ConCall((Constructor) result.getDefinition("A.B.c"), dataTypeArgs), result);
-    testType(DataCall((DataDefinition) result.getDefinition("A.B.D"), dataTypeArgs), result);
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), new LevelSubstitution(), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("A.B.D"), new LevelSubstitution(), dataTypeArgs), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -506,7 +507,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\data D | c\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.c");
-    test(ConCall((Constructor) result.getDefinition("E.c"), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
+    test(ConCall((Constructor) result.getDefinition("E.c"), new LevelSubstitution(), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -517,7 +518,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\data D | c\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.D.c");
-    test(ConCall((Constructor) result.getDefinition("E.c"), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
+    test(ConCall((Constructor) result.getDefinition("E.c"), new LevelSubstitution(), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -529,8 +530,8 @@ public class DefCall extends TypeCheckingTestCase {
         "}\n" +
         "\\static \\function test (e : E) => (e.D 0 (\\lam _ => 1)).c");
     List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
-    test(ConCall((Constructor) result.getDefinition("E.c"), dataTypeArgs), result);
-    testType(DataCall((DataDefinition) result.getDefinition("E.D"), dataTypeArgs), result);
+    test(ConCall((Constructor) result.getDefinition("E.c"), new LevelSubstitution(), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("E.D"), new LevelSubstitution(), dataTypeArgs), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -542,8 +543,8 @@ public class DefCall extends TypeCheckingTestCase {
         "}\n" +
         "\\static \\function test (e : E) => (e.D 0).c {\\lam _ => 1}");
     List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
-    test(ConCall((Constructor) result.getDefinition("E.c"), dataTypeArgs), result);
-    testType(DataCall((DataDefinition) result.getDefinition("E.D"), dataTypeArgs), result);
+    test(ConCall((Constructor) result.getDefinition("E.c"), new LevelSubstitution(), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("E.D"), new LevelSubstitution(), dataTypeArgs), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -555,8 +556,8 @@ public class DefCall extends TypeCheckingTestCase {
         "}\n" +
         "\\static \\function test (e : E) => e.D.c {0} {\\lam _ => 1}");
     List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
-    test(ConCall((Constructor) result.getDefinition("E.c"), dataTypeArgs), result);
-    testType(DataCall((DataDefinition) result.getDefinition("E.D"), dataTypeArgs), result);
+    test(ConCall((Constructor) result.getDefinition("E.c"), new LevelSubstitution(), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("E.D"), new LevelSubstitution(), dataTypeArgs), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -585,7 +586,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\data D | c\n" +
         "}\n" +
         "\\function test (e : E) => e.c");
-    test(ConCall((Constructor) result.getDefinition("E.c"), Collections.<Expression>singletonList(Reference(getThis(result).getNext()))), result);
+    test(ConCall((Constructor) result.getDefinition("E.c"), new LevelSubstitution(), Collections.<Expression>singletonList(Reference(getThis(result).getNext()))), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -596,7 +597,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\data D | c\n" +
         "}\n" +
         "\\function test (e : E) => e.D.c");
-    test(ConCall((Constructor) result.getDefinition("E.c"), Collections.<Expression>singletonList(Reference(getThis(result).getNext()))), result);
+    test(ConCall((Constructor) result.getDefinition("E.c"), new LevelSubstitution(), Collections.<Expression>singletonList(Reference(getThis(result).getNext()))), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -608,8 +609,8 @@ public class DefCall extends TypeCheckingTestCase {
         "}\n" +
         "\\function test (e : E) => (e.D 0 (\\lam _ => 1)).c");
     List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result).getNext()), Zero(), Lam(param(Nat()), Suc(Zero())));
-    test(ConCall((Constructor) result.getDefinition("E.c"), dataTypeArgs), result);
-    testType(DataCall((DataDefinition) result.getDefinition("E.D"), dataTypeArgs), result);
+    test(ConCall((Constructor) result.getDefinition("E.c"), new LevelSubstitution(), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("E.D"), new LevelSubstitution(), dataTypeArgs), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -621,8 +622,8 @@ public class DefCall extends TypeCheckingTestCase {
         "}\n" +
         "\\function test (e : E) => (e.D 0).c {\\lam _ => 1}");
     List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result).getNext()), Zero(), Lam(param(Nat()), Suc(Zero())));
-    test(ConCall((Constructor) result.getDefinition("E.c"), dataTypeArgs), result);
-    testType(DataCall((DataDefinition) result.getDefinition("E.D"), dataTypeArgs), result);
+    test(ConCall((Constructor) result.getDefinition("E.c"), new LevelSubstitution(), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("E.D"), new LevelSubstitution(), dataTypeArgs), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -634,8 +635,8 @@ public class DefCall extends TypeCheckingTestCase {
         "}\n" +
         "\\function test (e : E) => e.D.c {0} {\\lam _ => 1}");
     List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result).getNext()), Zero(), Lam(param(Nat()), Suc(Zero())));
-    test(ConCall((Constructor) result.getDefinition("E.c"), dataTypeArgs), result);
-    testType(DataCall((DataDefinition) result.getDefinition("E.D"), dataTypeArgs), result);
+    test(ConCall((Constructor) result.getDefinition("E.c"), new LevelSubstitution(), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("E.D"), new LevelSubstitution(), dataTypeArgs), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -650,7 +651,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.A.B.c");
-    test(ConCall((Constructor) result.getDefinition("E.A.B.c"), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
+    test(ConCall((Constructor) result.getDefinition("E.A.B.c"), new LevelSubstitution(), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
     assertEquals(result.getDefinition("E.A.B.c"), result.getDefinition("E.A.B.D.c"));
   }
 
@@ -665,7 +666,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.A.B.D.c");
-    test(ConCall((Constructor) result.getDefinition("E.A.B.c"), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
+    test(ConCall((Constructor) result.getDefinition("E.A.B.c"), new LevelSubstitution(), Collections.<Expression>singletonList(Reference(getThis(result)))), result);
     assertEquals(result.getDefinition("E.A.B.c"), result.getDefinition("E.A.B.D.c"));
   }
 
@@ -681,8 +682,8 @@ public class DefCall extends TypeCheckingTestCase {
         "}\n" +
         "\\static \\function test (e : E) => (e.A.B.D 0 (\\lam _ => 1)).c");
     List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
-    test(ConCall((Constructor) result.getDefinition("E.A.B.c"), dataTypeArgs), result);
-    testType(DataCall((DataDefinition) result.getDefinition("E.A.B.D"), dataTypeArgs), result);
+    test(ConCall((Constructor) result.getDefinition("E.A.B.c"), new LevelSubstitution(), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("E.A.B.D"), new LevelSubstitution(), dataTypeArgs), result);
     assertEquals(result.getDefinition("E.A.B.c"), result.getDefinition("E.A.B.D.c"));
   }
 
@@ -698,8 +699,8 @@ public class DefCall extends TypeCheckingTestCase {
         "}\n" +
         "\\static \\function test (e : E) => (e.A.B.D 0).c {\\lam _ => 1}");
     List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
-    test(ConCall((Constructor) result.getDefinition("E.A.B.c"), dataTypeArgs), result);
-    testType(DataCall((DataDefinition) result.getDefinition("E.A.B.D"), dataTypeArgs), result);
+    test(ConCall((Constructor) result.getDefinition("E.A.B.c"), new LevelSubstitution(), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("E.A.B.D"), new LevelSubstitution(), dataTypeArgs), result);
     assertEquals(result.getDefinition("E.A.B.c"), result.getDefinition("E.A.B.D.c"));
   }
 
@@ -715,8 +716,8 @@ public class DefCall extends TypeCheckingTestCase {
         "}\n" +
         "\\static \\function test (e : E) => e.A.B.D.c {0} {\\lam _ => 1}");
     List<Expression> dataTypeArgs = Arrays.asList(Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero())));
-    test(ConCall((Constructor) result.getDefinition("E.A.B.c"), dataTypeArgs), result);
-    testType(DataCall((DataDefinition) result.getDefinition("E.A.B.D"), dataTypeArgs), result);
+    test(ConCall((Constructor) result.getDefinition("E.A.B.c"), new LevelSubstitution(), dataTypeArgs), result);
+    testType(DataCall((DataDefinition) result.getDefinition("E.A.B.D"), new LevelSubstitution(), dataTypeArgs), result);
     assertEquals(result.getDefinition("E.A.B.c"), result.getDefinition("E.A.B.D.c"));
   }
 
@@ -777,7 +778,7 @@ public class DefCall extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\static \\class C {}\n" +
         "\\static \\function test => C");
-    test(ClassCall((ClassDefinition) result.getDefinition("C")), result);
+    test(ClassCall((ClassDefinition) result.getDefinition("C"), new LevelSubstitution()), result);
   }
 
   @Test
@@ -785,7 +786,7 @@ public class DefCall extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\class C {}\n" +
         "\\function test => C");
-    test(ClassCall((ClassDefinition) result.getDefinition("C")).applyThis(Reference(getThis(result))), result);
+    test(ClassCall((ClassDefinition) result.getDefinition("C"), new LevelSubstitution()).applyThis(Reference(getThis(result))), result);
   }
 
   @Test
@@ -795,7 +796,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class Test {\n" +
         "  \\function test => C\n" +
         "}");
-    testFI(ClassCall((ClassDefinition) result.getDefinition("C")).applyThis(getThisFI(result)), result);
+    testFI(ClassCall((ClassDefinition) result.getDefinition("C"), new LevelSubstitution()).applyThis(getThisFI(result)), result);
   }
 
   @Test
@@ -814,7 +815,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\static \\function test => A.B.C");
-    test(ClassCall((ClassDefinition) result.getDefinition("A.B.C")), result);
+    test(ClassCall((ClassDefinition) result.getDefinition("A.B.C"), new LevelSubstitution()), result);
   }
 
   @Test
@@ -826,7 +827,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\function test => A.B.C");
-    test(ClassCall((ClassDefinition) result.getDefinition("A.B.C")).applyThis(Reference(getThis(result))), result);
+    test(ClassCall((ClassDefinition) result.getDefinition("A.B.C"), new LevelSubstitution()).applyThis(Reference(getThis(result))), result);
   }
 
   @Test
@@ -836,7 +837,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\class C {}\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.C");
-    test(ClassCall((ClassDefinition) result.getDefinition("E.C")).applyThis(Reference(getThis(result))), result);
+    test(ClassCall((ClassDefinition) result.getDefinition("E.C"), new LevelSubstitution()).applyThis(Reference(getThis(result))), result);
   }
 
   @Test
@@ -855,7 +856,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\class C {}\n" +
         "}\n" +
         "\\function test (e : E) => e.C");
-    test(ClassCall((ClassDefinition) result.getDefinition("E.C")).applyThis(Reference(getThis(result).getNext())), result);
+    test(ClassCall((ClassDefinition) result.getDefinition("E.C"), new LevelSubstitution()).applyThis(Reference(getThis(result).getNext())), result);
   }
 
   @Test
@@ -869,7 +870,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.A.B.C");
-    test(ClassCall((ClassDefinition) result.getDefinition("E.A.B.C")).applyThis(Reference(getThis(result))), result);
+    test(ClassCall((ClassDefinition) result.getDefinition("E.A.B.C"), new LevelSubstitution()).applyThis(Reference(getThis(result))), result);
   }
 
   @Test

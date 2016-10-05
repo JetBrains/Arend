@@ -33,36 +33,32 @@ public class ExpressionFactory {
     return arguments.isEmpty() ? fun : new AppExpression(fun, arguments);
   }
 
-  public static FunCallExpression FunCall(FunctionDefinition definition, List<Expression> arguments) {
-    return new FunCallExpression(definition, arguments);
+  public static FunCallExpression FunCall(FunctionDefinition definition, LevelSubstitution polyParams, List<Expression> arguments) {
+    return new FunCallExpression(definition, polyParams, arguments);
   }
 
-  public static FunCallExpression FunCall(FunctionDefinition definition, Expression... arguments) {
-    return FunCall(definition, Arrays.asList(arguments));
+  public static FunCallExpression FunCall(FunctionDefinition definition, LevelSubstitution polyParams, Expression... arguments) {
+    return FunCall(definition, polyParams, Arrays.asList(arguments));
   }
 
   public static FunCallExpression FunCall(FunctionDefinition definition, Level lp, Level lh, List<Expression> arguments) {
-    FunCallExpression expr = new FunCallExpression(definition, arguments);
-    expr.setPolyParamsSubst(new LevelSubstitution(definition.getPolyParams().get(0), lp, definition.getPolyParams().get(1), lh));
-    return expr;
+    return FunCall(definition, new LevelSubstitution(definition.getPolyParams().get(0), lp, definition.getPolyParams().get(1), lh), arguments);
   }
 
   public static FunCallExpression FunCall(FunctionDefinition definition, Level lp, Level lh, Expression... arguments) {
     return FunCall(definition, lp, lh, Arrays.asList(arguments));
   }
 
-  public static DataCallExpression DataCall(DataDefinition definition, List<Expression> arguments) {
-    return new DataCallExpression(definition, arguments);
+  public static DataCallExpression DataCall(DataDefinition definition, LevelSubstitution polyParams, List<Expression> arguments) {
+    return new DataCallExpression(definition, polyParams, arguments);
   }
 
-  public static DataCallExpression DataCall(DataDefinition definition, Expression... arguments) {
-    return DataCall(definition, Arrays.asList(arguments));
+  public static DataCallExpression DataCall(DataDefinition definition, LevelSubstitution polyParams, Expression... arguments) {
+    return DataCall(definition, polyParams, Arrays.asList(arguments));
   }
 
   public static DataCallExpression DataCall(DataDefinition definition, Level lp, Level lh, List<Expression> arguments) {
-    DataCallExpression expr = new DataCallExpression(definition, arguments);
-    expr.setPolyParamsSubst(new LevelSubstitution(definition.getPolyParams().get(0), lp, definition.getPolyParams().get(1), lh));
-    return expr;
+    return new DataCallExpression(definition, new LevelSubstitution(definition.getPolyParams().get(0), lp, definition.getPolyParams().get(1), lh), arguments);
   }
 
   public static DataCallExpression DataCall(DataDefinition definition, Level lp, Level lh, Expression... arguments) {
@@ -73,26 +69,36 @@ public class ExpressionFactory {
     return new FieldCallExpression(definition, thisExpr);
   }
 
-  public static ClassCallExpression ClassCall(ClassDefinition definition) {
-    return new ClassCallExpression(definition);
+  public static ClassCallExpression ClassCall(ClassDefinition definition, LevelSubstitution polyParams) {
+    return new ClassCallExpression(definition, polyParams);
   }
 
-  public static ClassCallExpression ClassCall(ClassDefinition definition, FieldSet fieldSet) {
-    return new ClassCallExpression(definition, fieldSet);
+  // TODO: This function is incorrect, it should be removed.
+  @Deprecated
+  public static ClassCallExpression ClassCall(ClassDefinition definition) {
+    return ClassCall(definition, new LevelSubstitution());
+  }
+
+  public static ClassCallExpression ClassCall(ClassDefinition definition, LevelSubstitution polyParams, FieldSet fieldSet) {
+    return new ClassCallExpression(definition, polyParams, fieldSet);
    }
 
-  public static ConCallExpression ConCall(Constructor definition, List<Expression> parameters, List<Expression> arguments) {
-    return new ConCallExpression(definition, parameters, arguments);
+  // TODO: This function is incorrect, it should be removed.
+  @Deprecated
+  public static ClassCallExpression ClassCall(ClassDefinition definition, FieldSet fieldSet) {
+    return ClassCall(definition, new LevelSubstitution(), fieldSet);
   }
 
-  public static ConCallExpression ConCall(Constructor definition, List<Expression> dataTypeArguments, Expression... arguments) {
-    return ConCall(definition, dataTypeArguments, Arrays.asList(arguments));
+  public static ConCallExpression ConCall(Constructor definition, LevelSubstitution polyParams, List<Expression> parameters, List<Expression> arguments) {
+    return new ConCallExpression(definition, polyParams, parameters, arguments);
+  }
+
+  public static ConCallExpression ConCall(Constructor definition, LevelSubstitution polyParams, List<Expression> dataTypeArguments, Expression... arguments) {
+    return ConCall(definition, polyParams, dataTypeArguments, Arrays.asList(arguments));
   }
 
   public static ConCallExpression ConCall(Constructor definition, Level lp, Level lh, List<Expression> dataTypeArguments, List<Expression> arguments) {
-    ConCallExpression expr = new ConCallExpression(definition, dataTypeArguments, arguments);
-    expr.setPolyParamsSubst(new LevelSubstitution(definition.getPolyParams().get(0), lp, definition.getPolyParams().get(1), lh));
-    return expr;
+    return new ConCallExpression(definition, new LevelSubstitution(definition.getPolyParams().get(0), lp, definition.getPolyParams().get(1), lh), dataTypeArguments, arguments);
   }
 
   public static ConCallExpression ConCall(Constructor definition, Level lp, Level lh, List<Expression> dataTypeArguments, Expression... arguments) {
@@ -100,15 +106,15 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Interval() {
-    return DataCall(Prelude.INTERVAL, Collections.<Expression>emptyList());
+    return DataCall(Prelude.INTERVAL, new LevelSubstitution(), Collections.<Expression>emptyList());
   }
 
   public static ConCallExpression Left() {
-    return ConCall(Prelude.LEFT, Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
+    return ConCall(Prelude.LEFT, new LevelSubstitution(), Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
   }
 
   public static ConCallExpression Right() {
-    return ConCall(Prelude.RIGHT, Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
+    return ConCall(Prelude.RIGHT, new LevelSubstitution(), Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
   }
 
   public static NewExpression New(ClassCallExpression expression) {
@@ -224,39 +230,39 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Nat() {
-    return DataCall(Prelude.NAT, Collections.<Expression>emptyList());
+    return DataCall(Prelude.NAT, new LevelSubstitution(), Collections.<Expression>emptyList());
   }
 
   public static ConCallExpression Zero() {
-    return ConCall(Prelude.ZERO, Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
+    return ConCall(Prelude.ZERO, new LevelSubstitution(), Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
   }
 
   public static ConCallExpression Suc(Expression expr) {
-    return ConCall(Prelude.SUC, Collections.<Expression>emptyList(), Collections.singletonList(expr));
+    return ConCall(Prelude.SUC, new LevelSubstitution(), Collections.<Expression>emptyList(), Collections.singletonList(expr));
   }
 
   public static DataCallExpression Lvl() {
-    return DataCall(Prelude.LVL, Collections.<Expression>emptyList());
+    return DataCall(Prelude.LVL, new LevelSubstitution(), Collections.<Expression>emptyList());
   }
 
   public static DataCallExpression CNat() {
-    return DataCall(Prelude.CNAT, Collections.<Expression>emptyList());
+    return DataCall(Prelude.CNAT, new LevelSubstitution(), Collections.<Expression>emptyList());
   }
 
   public static UniverseExpression Universe() {
     return new UniverseExpression(new Sort(Sort.ANY_LEVEL, Sort.ANY_LEVEL));
   }
 
-  public static UniverseExpression Universe(int plevel) {
-    return new UniverseExpression(new Sort(plevel, Sort.NOT_TRUNCATED));
+  public static UniverseExpression Universe(int pLevel) {
+    return new UniverseExpression(new Sort(pLevel, Sort.NOT_TRUNCATED));
   }
 
-  public static UniverseExpression Universe(int plevel, int hlevel) {
-    return new UniverseExpression(new Sort(plevel, hlevel));
+  public static UniverseExpression Universe(int pLevel, int hLevel) {
+    return new UniverseExpression(new Sort(pLevel, hLevel));
   }
 
-  public static UniverseExpression Universe(Level plevel, Level hlevel) {
-    return new UniverseExpression(new Sort(plevel, hlevel));
+  public static UniverseExpression Universe(Level pLevel, Level hLevel) {
+    return new UniverseExpression(new Sort(pLevel, hLevel));
   }
 
   public static UniverseExpression Universe(Sort universe) {

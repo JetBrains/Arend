@@ -138,7 +138,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
         Abstract.ClassView classView = Abstract.getUnderlyingClassView(typeArgument.getType());
         if (classView != null) {
-          result.expression = new ClassViewCallExpression(result.expression.toClassCall().getDefinition(), result.expression.toClassCall().getFieldSet(), myState.getClassView(classView));
+          result.expression = new ClassViewCallExpression(result.expression.toClassCall().getDefinition(), result.expression.toClassCall().getPolyParamsSubst(), result.expression.toClassCall().getFieldSet(), myState.getClassView(classView));
         }
 
         DependentLink param;
@@ -632,7 +632,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       Map<ClassField, Abstract.ReferableSourceNode> aliases = new HashMap<>();
       ClassDefinition typedDef = new ClassDefinition(def, fieldSet, superClasses, STATIC_NS_SNAPSHOT_PROVIDER.forDefinition(def), DYNAMIC_NS_SNAPSHOT_PROVIDER.forClass(def), aliases);
       typedDef.setThisClass(enclosingClass);
-      ClassCallExpression thisClassCall = typedDef.getDefCall();
+      ClassCallExpression thisClassCall = ClassCall(typedDef);
 
       for (Abstract.SuperClass aSuperClass : def.getSuperClasses()) {
         CheckTypeVisitor.Result result = aSuperClass.getSuperClass().accept(visitor, Universe());
@@ -928,7 +928,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       if (myState.getInstancePool().getInstance(defCall.getDefinition(), classView) != null) {
         myErrorReporter.report(new LocalTypeCheckingError("Instance of '" + classView.getAbstract().getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", term));
       } else {
-        myState.getInstancePool().addInstance(defCall.getDefinition(), classView, expr.toClassCall().getDefinition(), FunCall(typedDef, Collections.<Expression>emptyList()));
+        myState.getInstancePool().addInstance(defCall.getDefinition(), classView, expr.toClassCall().getDefinition(), FunCall(typedDef, new LevelSubstitution(), Collections.<Expression>emptyList()));
       }
     }
 

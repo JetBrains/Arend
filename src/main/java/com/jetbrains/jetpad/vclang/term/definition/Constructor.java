@@ -140,7 +140,7 @@ public class Constructor extends Definition implements Function {
         if (substitution != null) {
           innerSubst.add(substitution);
         }
-        Expression expr = patternArg.getPattern().toExpression(innerSubst);
+        Expression expr = patternArg.getPattern().toExpression(innerSubst, polyParams);
 
         subst.add(dataTypeParams, expr);
         arguments.add(expr);
@@ -177,8 +177,8 @@ public class Constructor extends Definition implements Function {
   }
 
   @Override
-  public ConCallExpression getDefCall() {
-    return new ConCallExpression(this, new ArrayList<Expression>(), new ArrayList<Expression>());
+  public ConCallExpression getDefCall(LevelSubstitution polyParams) {
+    return new ConCallExpression(this, polyParams, new ArrayList<Expression>(), new ArrayList<Expression>());
   }
 
   @Override

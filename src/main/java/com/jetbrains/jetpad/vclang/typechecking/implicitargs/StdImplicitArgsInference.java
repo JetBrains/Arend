@@ -62,8 +62,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
         Expression expr1 = argResult.expression.addArgument(Left());
         Expression expr2 = argResult.expression.addArgument(Right());
-        result.expression = ConCall(conCall.getDefinition(), Arrays.asList(lamExpr, expr1, expr2), Collections.singletonList(argResult.expression));
-        result.expression.toConCall().setPolyParamsSubst(conCall.getPolyParamsSubst());
+        result.expression = ConCall(conCall.getDefinition(), conCall.getPolyParamsSubst(), Arrays.asList(lamExpr, expr1, expr2), Collections.singletonList(argResult.expression));
         result.type = result.type.applyExpressions(Arrays.asList(expr1, expr2, argResult.expression));
         return result;
       }
@@ -129,8 +128,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
             args1.addAll(args.subList(conCall.getDataTypeArguments().size(), args.size()));
             args1 = conCall.getDefinition().matchDataTypeArguments(args1);
             if (args1 != null && !args1.isEmpty()) {
-              result.expression = ConCall(conCall.getDefinition(), args1, new ArrayList<Expression>());
-              result.expression.toConCall().setPolyParamsSubst(conCall.getPolyParamsSubst());
+              result.expression = ConCall(conCall.getDefinition(), conCall.getPolyParamsSubst(), args1, new ArrayList<Expression>());
               result.type = result.type.applyExpressions(args1);
             }
             return inferArg(result, arg, true, fun);

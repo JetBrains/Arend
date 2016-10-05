@@ -337,16 +337,16 @@ public class ClassesTest extends TypeCheckingTestCase {
     assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Zero()), pFun.getElimTree());
     FunctionDefinition qFun = (FunctionDefinition) result.getDefinition("A.q");
     assertEquals(Pi(ClassCall(aClass), Nat()), qFun.getType(new LevelSubstitution()));
-    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(pFun)), qFun.getElimTree());
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(pFun, new LevelSubstitution())), qFun.getElimTree());
 
     ClassDefinition bClass = (ClassDefinition) result.getDefinition("A.B");
     assertTrue(bClass.getFieldSet().getFields().isEmpty());
     FunctionDefinition fFun = (FunctionDefinition) result.getDefinition("A.B.f");
     assertEquals(Nat(), fFun.getType(new LevelSubstitution()));
-    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(pFun)), fFun.getElimTree());
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(pFun, new LevelSubstitution())), fFun.getElimTree());
     FunctionDefinition gFun = (FunctionDefinition) result.getDefinition("A.B.g");
     assertEquals(Pi(ClassCall(bClass), Nat()), gFun.getType(new LevelSubstitution()));
-    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(plus, FunCall(fFun), FunCall(pFun))), gFun.getElimTree());
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(plus, new LevelSubstitution(), FunCall(fFun, new LevelSubstitution()), FunCall(pFun, new LevelSubstitution()))), gFun.getElimTree());
 
     ClassDefinition cClass = (ClassDefinition) result.getDefinition("A.C");
     assertEquals(1, cClass.getFieldSet().getFields().size());
@@ -354,11 +354,11 @@ public class ClassesTest extends TypeCheckingTestCase {
     assertNotNull(cParent);
     FunctionDefinition hFun = (FunctionDefinition) result.getDefinition("A.C.h");
     assertEquals(Pi(ClassCall(aClass), Nat()), hFun.getType(new LevelSubstitution()));
-    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(plus, FunCall(pFun), FunCall(qFun, Reference(hFun.getParameters())))), hFun.getElimTree());
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(plus, new LevelSubstitution(), FunCall(pFun, new LevelSubstitution()), FunCall(qFun, new LevelSubstitution(), Reference(hFun.getParameters())))), hFun.getElimTree());
     FunctionDefinition kFun = (FunctionDefinition) result.getDefinition("A.C.k");
     assertEquals(Pi(ClassCall(cClass), Nat()), kFun.getType(new LevelSubstitution()));
     Expression aRef = FieldCall(cParent, Reference(kFun.getParameters()));
-    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(plus, FunCall(hFun, aRef), FunCall(plus, FunCall(pFun), FunCall(qFun, aRef)))), kFun.getElimTree());
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(plus, new LevelSubstitution(), FunCall(hFun, new LevelSubstitution(), aRef), FunCall(plus, new LevelSubstitution(), FunCall(pFun, new LevelSubstitution()), FunCall(qFun, new LevelSubstitution(), aRef)))), kFun.getElimTree());
   }
 
   @Test

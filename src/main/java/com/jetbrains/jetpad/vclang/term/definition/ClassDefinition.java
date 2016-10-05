@@ -53,7 +53,7 @@ public class ClassDefinition extends Definition {
   }
 
   public SortMax getSorts() {
-    return myFieldSet.getSorts(getDefCall());
+    return myFieldSet.getSorts(ClassCall(this, myFieldSet));
   }
 
   public boolean isSubClassOf(ClassDefinition classDefinition) {
@@ -70,15 +70,13 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
-  public ClassCallExpression getDefCall() {
-    return ClassCall(this, myFieldSet);
+  public ClassCallExpression getDefCall(LevelSubstitution polyParams) {
+    return ClassCall(this, polyParams, myFieldSet);
   }
 
   @Override
   public ClassCallExpression getDefCall(LevelSubstitution polyParams, List<Expression> args) {
-    ClassCallExpression classCall = new ClassCallExpression(this, myFieldSet);
-    classCall.setPolyParamsSubst(polyParams);
-    return classCall;
+    return new ClassCallExpression(this, polyParams, myFieldSet);
   }
 
   @Override
@@ -93,7 +91,7 @@ public class ClassDefinition extends Definition {
     if (enclosingClass != null) {
       myEnclosingThisField = new ClassField(null, ClassCall(enclosingClass), this, param("\\this", ClassCall(this)));
       myEnclosingThisField.setThisClass(this);
-      myFieldSet.addField(myEnclosingThisField, getDefCall());
+      myFieldSet.addField(myEnclosingThisField, ClassCall(this, myFieldSet));
     }
   }
 
@@ -105,7 +103,6 @@ public class ClassDefinition extends Definition {
   public Type getTypeWithThis(LevelSubstitution polyParams) {
     DependentLink link = EmptyDependentLink.getInstance();
     if (getThisClass() != null) {
-      // TODO: set polyParams?
       link = param(ClassCall(getThisClass()));
     }
     return new PiUniverseType(link, getSorts().subst(polyParams));

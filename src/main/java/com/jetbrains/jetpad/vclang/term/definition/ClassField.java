@@ -67,15 +67,13 @@ public class ClassField extends Definition {
   }
 
   @Override
-  public FieldCallExpression getDefCall() {
+  public FieldCallExpression getDefCall(LevelSubstitution polyParams) {
     return FieldCall(this, null);
   }
 
   @Override
   public FieldCallExpression getDefCall(LevelSubstitution polyParams, List<Expression> args) {
-    FieldCallExpression fieldCall = new FieldCallExpression(this, args.get(0));
-    fieldCall.setPolyParamsSubst(polyParams);
-    return fieldCall;
+    return new FieldCallExpression(this, args.get(0));
   }
 
   @Override

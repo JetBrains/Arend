@@ -258,14 +258,26 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     int requiredArgs = result.expression.toDefCall().getDefinition().getNumberOfParameters();
-    if (result.expression.toDefCall().getDefCallArguments().size() == requiredArgs) {
+    int actualArgs = result.expression.toDefCall().getDefCallArguments().size();
+    if (result.expression.toConCall() != null) {
+      actualArgs += result.expression.toConCall().getDataTypeArguments().size();
+    }
+    if (actualArgs == requiredArgs) {
       return;
     }
-    assert result.expression.toDefCall().getDefCallArguments().size() < requiredArgs;
+    assert actualArgs < requiredArgs;
 
-    DependentLink params = result.type.getPiParameters().subst(new ExprSubstitution(), new LevelSubstitution(), requiredArgs - result.expression.toDefCall().getDefCallArguments().size());
+    ExprSubstitution substitution = new ExprSubstitution();
+    DependentLink params = result.type.getPiParameters().subst(substitution, new LevelSubstitution(), requiredArgs - actualArgs);
+    int paramsNumber = DependentLink.Helper.size(params);
+    if (paramsNumber < requiredArgs - actualArgs) {
+      assert result.expression.toConCall() != null;
+      params.setNext(result.type.getPiCodomain().getPiParameters().subst(substitution, new LevelSubstitution(), requiredArgs - actualArgs - paramsNumber));
+      assert DependentLink.Helper.size(params) == requiredArgs - actualArgs;
+    }
+
     for (DependentLink link = params; link.hasNext(); link = link.getNext()) {
-      result.expression.toDefCall().addArgument(Reference(link));
+      result.expression.addArgument(Reference(link));
     }
     if (params.hasNext()) {
       result.expression = Lam(params, result.expression);
@@ -663,7 +675,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitBinOp(Abstract.BinOpExpression expr, Expression expectedType) {
-    return checkResultImplicit(expectedType, myArgsInference.infer(expr, expectedType), expr);
+    Result result = myArgsInference.infer(expr, expectedType);
+    if (result != null) {
+      checkDefCall(result);
+    }
+    return checkResultImplicit(expectedType, result, expr);
   }
 
   @Override
@@ -782,7 +798,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     FieldSet fieldSet = new FieldSet();
     Result classExtResult = new Result(null, null);
-    ClassCallExpression resultExpr = classCallExpr instanceof ClassViewCallExpression ? new ClassViewCallExpression(baseClass, fieldSet, ((ClassViewCallExpression) classCallExpr).getClassView()) : ClassCall(baseClass, fieldSet);
+    ClassCallExpression resultExpr = classCallExpr instanceof ClassViewCallExpression ? new ClassViewCallExpression(baseClass, classCallExpr.getPolyParamsSubst(), fieldSet, ((ClassViewCallExpression) classCallExpr).getClassView()) : ClassCall(baseClass, classCallExpr.getPolyParamsSubst(), fieldSet);
 
     fieldSet.addFieldsFrom(classCallExpr.getFieldSet(), resultExpr);
     for (Map.Entry<ClassField, FieldSet.Implementation> entry : classCallExpr.getFieldSet().getImplemented()) {

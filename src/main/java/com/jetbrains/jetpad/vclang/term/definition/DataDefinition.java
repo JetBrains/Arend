@@ -61,14 +61,14 @@ public class DataDefinition extends Definition {
     return myConstructors;
   }
 
-  public List<ConCallExpression> getMatchedConstructors(List<? extends Expression> parameters) {
+  public List<ConCallExpression> getMatchedConstructors(DataCallExpression dataCall) {
     List<ConCallExpression> result = new ArrayList<>();
     for (Constructor constructor : myConstructors) {
       if (constructor.hasErrors())
         continue;
       List<? extends Expression> matchedParameters;
       if (constructor.getPatterns() != null) {
-        Pattern.MatchResult matchResult = constructor.getPatterns().match(parameters);
+        Pattern.MatchResult matchResult = constructor.getPatterns().match(dataCall.getDefCallArguments());
         if (matchResult instanceof Pattern.MatchMaybeResult) {
           return null;
         } else if (matchResult instanceof Pattern.MatchFailedResult) {
@@ -79,10 +79,10 @@ public class DataDefinition extends Definition {
           throw new IllegalStateException();
         }
       } else {
-        matchedParameters = parameters;
+        matchedParameters = dataCall.getDefCallArguments();
       }
 
-      result.add(ConCall(constructor, new ArrayList<>(matchedParameters), new ArrayList<Expression>()));
+      result.add(ConCall(constructor, dataCall.getPolyParamsSubst(), new ArrayList<>(matchedParameters), new ArrayList<Expression>()));
     }
     return result;
   }
@@ -129,15 +129,13 @@ public class DataDefinition extends Definition {
   }
 
   @Override
-  public DataCallExpression getDefCall() {
-    return DataCall(this, new ArrayList<Expression>());
+  public DataCallExpression getDefCall(LevelSubstitution polyParams) {
+    return DataCall(this, polyParams, new ArrayList<Expression>());
   }
 
   @Override
   public DataCallExpression getDefCall(LevelSubstitution polyParams, List<Expression> args) {
-    DataCallExpression dataCall = new DataCallExpression(this, args);
-    dataCall.setPolyParamsSubst(polyParams);
-    return dataCall;
+    return new DataCallExpression(this, polyParams, args);
   }
 
   @Override

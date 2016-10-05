@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
 import java.util.ArrayList;
@@ -45,7 +46,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
   }
 
   @Override
-  public Expression toExpression(ExprSubstitution subst) {
+  public Expression toExpression(ExprSubstitution subst, LevelSubstitution polyParams) {
     List<Expression> params = new ArrayList<>();
     for (DependentLink link = myConstructor.getDataTypeParameters(); link.hasNext(); link = link.getNext()) {
       Expression param = subst.get(link);
@@ -57,15 +58,17 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
     List<Expression> arguments = new ArrayList<>();
     for (PatternArgument patternArgument : myArguments.getPatterns()) {
       assert link.hasNext();
+      LevelSubstitution polyParams1 = null;
       if (patternArgument.getPattern() instanceof ConstructorPattern) {
         Expression type = link.getType().subst(subst).normalize(NormalizeVisitor.Mode.WHNF);
         assert type.toDataCall() != null && type.toDataCall().getDefinition() == ((ConstructorPattern) patternArgument.getPattern()).getConstructor().getDataType();
         ExprSubstitution subSubst = ((ConstructorPattern) patternArgument.getPattern()).getMatchedArguments(new ArrayList<>(type.toDataCall().getDefCallArguments()));
+        polyParams1 = type.toDataCall().getPolyParamsSubst();
         for (Referable binding : subSubst.getDomain()) {
           subst.add(binding, subSubst.get(binding));
         }
       }
-      Expression param = patternArgument.getPattern().toExpression(subst);
+      Expression param = patternArgument.getPattern().toExpression(subst, polyParams1);
       if (patternArgument.getPattern() instanceof ConstructorPattern) {
         DependentLink.Helper.freeSubsts(getParameters(), subst);
       }
@@ -75,7 +78,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
       link = link.getNext();
     }
     DependentLink.Helper.freeSubsts(constructorParameters, subst);
-    return ConCall(myConstructor, params, arguments);
+    return ConCall(myConstructor, polyParams, params, arguments);
   }
 
   public ExprSubstitution getMatchedArguments(List<Expression> dataTypeArguments) {

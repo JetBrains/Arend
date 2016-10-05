@@ -364,7 +364,7 @@ public class TypeCheckingElim {
         return new ExpandPatternErrorResult(error);
       }
 
-      if (dataType.getMatchedConstructors(parameters) == null) {
+      if (dataType.getMatchedConstructors(type.toDataCall()) == null) {
         error = new LocalTypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", pattern);
         myVisitor.getErrorReporter().report(error);
         return new ExpandPatternErrorResult(error);
@@ -453,7 +453,7 @@ public class TypeCheckingElim {
 
       ConstructorPattern result = new ConstructorPattern(constructor, new Patterns(resultPatterns));
       pattern.setWellTyped(result);
-      return new ExpandPatternOKResult(ConCall(constructor, matchedParameters, arguments), result);
+      return new ExpandPatternOKResult(ConCall(constructor, type.toDataCall().getPolyParamsSubst(), matchedParameters, arguments), result);
     } else {
       throw new IllegalStateException();
     }

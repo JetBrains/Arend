@@ -53,7 +53,8 @@ public class BranchElimTreeNode extends ElimTreeNode {
 
   public ConstructorClause addClause(Constructor constructor, List<String> names) {
     assert !constructor.hasErrors();
-    List<? extends Expression> dataTypeArguments = myReference.getType().normalize(NormalizeVisitor.Mode.WHNF).toDataCall().getDefCallArguments();
+    DataCallExpression dataCall = myReference.getType().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
+    List<? extends Expression> dataTypeArguments = dataCall.getDefCallArguments();
 
     dataTypeArguments = constructor.matchDataTypeArguments(new ArrayList<>(dataTypeArguments));
     DependentLink constructorArgs = DependentLink.Helper.subst(constructor.getParameters(), toSubstitution(constructor.getDataTypeParameters(), dataTypeArguments));
@@ -70,7 +71,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
       arguments.add(Reference(link));
     }
 
-    List<Binding> tailBindings = new ExprSubstitution(myReference, ConCall(constructor, new ArrayList<>(dataTypeArguments), arguments)).extendBy(myContextTail);
+    List<Binding> tailBindings = new ExprSubstitution(myReference, ConCall(constructor, dataCall.getPolyParamsSubst(), new ArrayList<>(dataTypeArguments), arguments)).extendBy(myContextTail);
     ConstructorClause result = new ConstructorClause(constructor, constructorArgs, tailBindings, this);
     myClauses.put(constructor, result);
     return result;

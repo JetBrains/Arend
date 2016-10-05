@@ -85,13 +85,13 @@ public class DefinitionTest extends TypeCheckingTestCase {
     substitution.add(link, Reference(a));
     link = link.getNext();
     substitution.add(link, Reference(b));
-    assertEquals(Pi(parameters.getFirst(), Pi(parameters1.getFirst(), DataCall(typedDef,
+    assertEquals(Pi(parameters.getFirst(), Pi(parameters1.getFirst(), DataCall(typedDef, new LevelSubstitution(),
         Reference(A),
         Reference(B),
         Reference(I),
         Reference(a),
         Reference(b)))), typedDef.getConstructors().get(0).getType(new LevelSubstitution()));
-    assertEquals(Pi(parameters.getFirst(), Pi(parameters2.getFirst(), DataCall(typedDef,
+    assertEquals(Pi(parameters.getFirst(), Pi(parameters2.getFirst(), DataCall(typedDef, new LevelSubstitution(),
         Reference(A),
         Reference(B),
         Reference(I),
@@ -118,8 +118,8 @@ public class DefinitionTest extends TypeCheckingTestCase {
     assertEquals(Pi(A, Universe(6, 7)), typedDef.getType(new LevelSubstitution()).toExpression());
     assertEquals(2, typedDef.getConstructors().size());
 
-    assertEquals(Pi(A, Pi(parameters1.getFirst(), DataCall(typedDef, Reference(A)))), typedDef.getConstructors().get(0).getType(new LevelSubstitution()));
-    assertEquals(Pi(A, Pi(parameters2.getFirst(), DataCall(typedDef, Reference(A)))), typedDef.getConstructors().get(1).getType(new LevelSubstitution()));
+    assertEquals(Pi(A, Pi(parameters1.getFirst(), DataCall(typedDef, new LevelSubstitution(), Reference(A)))), typedDef.getConstructors().get(0).getType(new LevelSubstitution()));
+    assertEquals(Pi(A, Pi(parameters2.getFirst(), DataCall(typedDef, new LevelSubstitution(), Reference(A)))), typedDef.getConstructors().get(1).getType(new LevelSubstitution()));
   }
 
   @Test
@@ -137,7 +137,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     Concrete.Expression expr = cApps(cDefCall(null, con), cNat(), cZero(), cZero());
 
     Result result = typeCheckExpr(expr, null);
-    assertThat(result.type, is((Type) DataCall(def, Nat())));
+    assertThat(result.type, is((Type) DataCall(def, new LevelSubstitution(), Nat())));
   }
 
   @Test
@@ -147,7 +147,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     Constructor con = def.getConstructor("con");
     Concrete.Expression expr = cApps(cVar("f"), cApps(cDefCall(null, con), cNat(), cLam("x", cVar("x")), cZero()));
     List<Binding> localContext = new ArrayList<>(1);
-    localContext.add(new TypedBinding("f", Pi(DataCall(def, Pi(Nat(), Nat())), Nat())));
+    localContext.add(new TypedBinding("f", Pi(DataCall(def, new LevelSubstitution(), Pi(Nat(), Nat())), Nat())));
 
     Result result = typeCheckExpr(localContext, expr, null);
     assertThat(result.type, is((Type) Nat()));
@@ -160,7 +160,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     Constructor con = def.getConstructor("con");
     Concrete.Expression expr = cApps(cVar("f"), cDefCall(null, con));
     List<Binding> localContext = new ArrayList<>(1);
-    localContext.add(new TypedBinding("f", Pi(Pi(Nat(), DataCall(def, Nat())), Pi(Nat(), Nat()))));
+    localContext.add(new TypedBinding("f", Pi(Pi(Nat(), DataCall(def, new LevelSubstitution(), Nat())), Pi(Nat(), Nat()))));
 
     Result result = typeCheckExpr(localContext, expr, null);
     assertThat(result.type, is((Type) Pi(Nat(), Nat())));
