@@ -44,7 +44,15 @@ public class TypedDependentLink implements DependentLink {
 
   @Override
   public void setNext(DependentLink next) {
-    myNext = next;
+    if (myNext.hasNext()) {
+      DependentLink last = myNext;
+      while (last.getNext().hasNext()) {
+        last = last.getNext();
+      }
+      last.setNext(next);
+    } else {
+      myNext = next;
+    }
   }
 
   @Override

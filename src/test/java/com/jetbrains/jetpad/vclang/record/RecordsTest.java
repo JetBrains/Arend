@@ -200,13 +200,13 @@ public class RecordsTest extends TypeCheckingTestCase {
     DataDefinition Foo = (DataDefinition) result.getDefinition("A.Foo");
     Constructor foo = Foo.getConstructor("foo");
 
-    ConCallExpression arg2 = arguments.get(2).toConCall();
+    ConCallExpression arg2 = arguments.get(2).toLam().getBody().toConCall();
     assertNotNull(arg2);
     assertEquals(1, arg2.getDataTypeArguments().size());
     assertEquals(Reference(testFun.getParameters()), arg2.getDataTypeArguments().get(0));
     assertEquals(foo, arg2.getDefinition());
 
-    ConCallExpression arg1 = arguments.get(1).toConCall();
+    ConCallExpression arg1 = arguments.get(1).toLam().getBody().toConCall();
     assertNotNull(arg1);
     assertEquals(1, arg1.getDataTypeArguments().size());
     assertEquals(Reference(testFun.getParameters()), arg1.getDataTypeArguments().get(0));
@@ -260,15 +260,23 @@ public class RecordsTest extends TypeCheckingTestCase {
     assertNotNull(arg2Fun);
     assertEquals(2, arg2Fun.getDataTypeArguments().size());
     assertEquals(Reference(testFun.getParameters()), arg2Fun.getDataTypeArguments().get(0));
-    Expression expr1 = arg2Fun.getDataTypeArguments().get(1);
-    LamExpression expr1Arg0 = expr1.getArguments().get(0).toLam();
+    ConCallExpression expr1 = arg2Fun.getDataTypeArguments().get(1).toConCall();
+    assertNotNull(expr1);
+    assertEquals(Prelude.PATH_CON, expr1.getDefinition());
+    LamExpression expr1Arg0 = expr1.getDefCallArguments().get(0).toLam();
     assertNotNull(expr1Arg0);
     assertEquals(xCall, expr1Arg0.getBody());
 
     assertEquals(foo, arg2Fun.getDefinition());
-    LamExpression appPath00Arg0 = arg2Fun.getDefCallArguments().get(0).getArguments().get(0).toLam();
+    ConCallExpression expr2 = arg2Fun.getDefCallArguments().get(0).toConCall();
+    assertNotNull(expr2);
+    assertEquals(Prelude.PATH_CON, expr2.getDefinition());
+    LamExpression appPath00Arg0 = expr2.getDefCallArguments().get(0).toLam();
     assertNotNull(appPath00Arg0);
-    LamExpression appPath01Arg0 = appPath00Arg0.getBody().getArguments().get(0).toLam();
+    ConCallExpression expr3 = appPath00Arg0.getBody().toConCall();
+    assertNotNull(expr3);
+    assertEquals(Prelude.PATH_CON, expr3.getDefinition());
+    LamExpression appPath01Arg0 = expr3.getDefCallArguments().get(0).toLam();
     assertNotNull(appPath01Arg0);
     assertEquals(xCall, appPath01Arg0.getBody());
 
@@ -278,9 +286,15 @@ public class RecordsTest extends TypeCheckingTestCase {
     assertEquals(Reference(testFun.getParameters()), arg1Fun.getDataTypeArguments().get(0));
     assertEquals(expr1, arg1Fun.getDataTypeArguments().get(1));
     assertEquals(foo, arg1Fun.getDefinition());
-    LamExpression appPath10Arg0 = arg1Fun.getDefCallArguments().get(0).getArguments().get(0).toLam();
+    ConCallExpression expr4 = arg1Fun.getDefCallArguments().get(0).toConCall();
+    assertNotNull(expr4);
+    assertEquals(Prelude.PATH_CON, expr4.getDefinition());
+    LamExpression appPath10Arg0 = expr4.getDefCallArguments().get(0).toLam();
     assertNotNull(appPath10Arg0);
-    LamExpression appPath11Arg0 = appPath10Arg0.getBody().getArguments().get(0).toLam();
+    ConCallExpression expr5 = appPath10Arg0.getBody().toConCall();
+    assertNotNull(expr5);
+    assertEquals(Prelude.PATH_CON, expr5.getDefinition());
+    LamExpression appPath11Arg0 = expr5.getDefCallArguments().get(0).toLam();
     assertEquals(xCall, appPath11Arg0.getBody());
 
     LamExpression arg0 = arguments.get(0).toLam();

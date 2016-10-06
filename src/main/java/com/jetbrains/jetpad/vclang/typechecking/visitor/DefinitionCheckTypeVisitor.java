@@ -921,7 +921,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         return typedDef;
       }
       DefCallExpression defCall = impl.term.normalize(NormalizeVisitor.Mode.WHNF).toDefCall();
-      if (defCall == null) {
+      if (defCall == null || !defCall.getDefCallArguments().isEmpty()) {
         myErrorReporter.report(new LocalTypeCheckingError("Expected a definition in the classifying field", term));
         return typedDef;
       }

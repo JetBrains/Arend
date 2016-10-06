@@ -46,7 +46,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   private Expression getThisFI(TypeCheckClassResult result) {
     FunctionDefinition function = (FunctionDefinition) result.getDefinition("Test.test");
-    return Apps(FieldCall(((ClassDefinition) result.getDefinition("Test")).getEnclosingThisField(), Reference(function.getParameters())));
+    return FieldCall(((ClassDefinition) result.getDefinition("Test")).getEnclosingThisField(), Reference(function.getParameters()));
   }
 
   @Test
@@ -62,7 +62,7 @@ public class DefCall extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\function f => 0\n" +
         "\\function test => f");
-    test(Apps(FunCall((FunctionDefinition) result.getDefinition("f"), new LevelSubstitution()), Reference(getThis(result))), result);
+    test(FunCall((FunctionDefinition) result.getDefinition("f"), new LevelSubstitution(), Reference(getThis(result))), result);
   }
 
   @Test
@@ -72,7 +72,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class Test {\n" +
         "  \\function test => f\n" +
         "}");
-    testFI(Apps(FunCall((FunctionDefinition) result.getDefinition("f"), new LevelSubstitution()), getThisFI(result)), result);
+    testFI(FunCall((FunctionDefinition) result.getDefinition("f"), new LevelSubstitution(), getThisFI(result)), result);
   }
 
   @Test

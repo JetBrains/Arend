@@ -19,9 +19,9 @@ public class EtaNormalization {
     if (lam != null) {
       return normalizeLam(lam);
     }
-    AppExpression app = expression.toApp();
-    if (app != null) {
-      return normalizePath(app);
+    ConCallExpression conCall = expression.toConCall();
+    if (conCall != null) {
+      return normalizePath(conCall);
     }
     TupleExpression tuple = expression.toTuple();
     if (tuple != null) {
@@ -63,9 +63,9 @@ public class EtaNormalization {
     return new LamExpression(newParams, body.subst(substitution));
   }
 
-  public static Expression normalizePath(AppExpression expr) {
-    if (expr.toConCall() != null && expr.toConCall().getDefinition() == Prelude.PATH_CON) {
-      Expression arg = normalize(expr.toConCall().getDefCallArguments().get(0));
+  public static Expression normalizePath(ConCallExpression expr) {
+    if (expr.getDefinition() == Prelude.PATH_CON) {
+      Expression arg = normalize(expr.getDefCallArguments().get(0));
       if (arg.toLam() != null && !arg.toLam().getParameters().getNext().hasNext() && arg.toLam().getBody().toFunCall() != null && arg.toLam().getBody().toFunCall().getDefinition() == Prelude.AT) {
         List<? extends Expression> args = arg.toLam().getBody().toFunCall().getDefCallArguments();
         if (args.get(4).toReference() != null && args.get(4).toReference().getBinding() == arg.toLam().getParameters()) {

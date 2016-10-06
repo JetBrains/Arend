@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
@@ -45,12 +46,13 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<ExprSub
           SubstituteExpander.substituteExpand(conCall.getDefinition().getDataType().getCondition(conCall.getDefinition()).getElimTree(), subst, toContext(constructorArgs), new SubstituteExpander.SubstituteExpansionProcessor() {
             @Override
             public void process(ExprSubstitution subst, ExprSubstitution toCtxC, List<Binding> ctx, LeafElimTreeNode leaf) {
+              List<Expression> arguments = new ArrayList<>();
               for (DependentLink link = constructorArgs; link.hasNext(); link = link.getNext()) {
-                conCall.addArgument(toCtxC.get(link));
+                arguments.add(toCtxC.get(link));
               }
               final Expression rhs = leaf.getExpression().subst(subst);
               try (Utils.ContextSaver ignore = new Utils.ContextSaver(ctx)) {
-                final ExprSubstitution subst1 = new ExprSubstitution(branchNode.getReference(), conCall);
+                final ExprSubstitution subst1 = new ExprSubstitution(branchNode.getReference(), new ConCallExpression(conCall.getDefinition(), conCall.getPolyParamsSubst(), new ArrayList<>(conCall.getDataTypeArguments()), arguments));
                 ctx.addAll(subst1.extendBy(branchNode.getContextTail()));
                 SubstituteExpander.substituteExpand(branchNode, subst1, ctx, new SubstituteExpander.SubstituteExpansionProcessor() {
                   @Override

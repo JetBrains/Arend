@@ -129,7 +129,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
             args1 = conCall.getDefinition().matchDataTypeArguments(args1);
             if (args1 != null && !args1.isEmpty()) {
               result.expression = ConCall(conCall.getDefinition(), conCall.getPolyParamsSubst(), args1, new ArrayList<Expression>());
-              result.type = result.type.applyExpressions(args1);
+              result.type = result.expression.getType();
             }
             return inferArg(result, arg, true, fun);
           }

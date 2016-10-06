@@ -90,7 +90,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     DependentLink x2 = param("x", Nat());
     Expression type = Pi(f, Pi(Pi(x2, Pi(Apps(Reference(context.get(0)), Reference(x2)), Apps(Reference(context.get(1)), Reference(x2), Apps(Reference(f), Reference(x2))))), Apps(Reference(context.get(1)), Zero(), Apps(Reference(f), Zero()))));
 
-    typeCheckExpr(expr, type);
+    typeCheckExpr(context, expr, type);
   }
 
   @Test
