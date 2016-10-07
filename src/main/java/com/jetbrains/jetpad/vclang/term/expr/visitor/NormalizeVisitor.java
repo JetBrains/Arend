@@ -66,7 +66,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
       Expression fun = expr.getFunction();
       if (fun.toFieldCall() != null) {
-        fun = new FieldCallExpression(fun.toFieldCall().getDefinition(), fun.toFieldCall().getExpression().accept(this, mode));
+        fun = FieldCall(fun.toFieldCall().getDefinition(), fun.toFieldCall().getExpression().accept(this, mode));
       }
       if (fun.toFunCall() != null && !fun.toFunCall().getDefCallArguments().isEmpty()) {
         List<Expression> args = new ArrayList<>(fun.toFunCall().getDefCallArguments().size());

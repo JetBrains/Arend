@@ -34,7 +34,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   }
 
   @Override
-  public DefCallExpression visitDefCall(DefCallExpression expr, Void params) {
+  public Expression visitDefCall(DefCallExpression expr, Void params) {
     List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
     for (Expression arg : expr.getDefCallArguments()) {
       args.add(arg.accept(this, null));
@@ -74,7 +74,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     if (result != null) {
       return result.addArgument(expr.getExpression().accept(this, null));
     } else {
-      return new FieldCallExpression(expr.getDefinition(), expr.getExpression().accept(this, null));
+      return FieldCall(expr.getDefinition(), expr.getExpression().accept(this, null));
     }
   }
 

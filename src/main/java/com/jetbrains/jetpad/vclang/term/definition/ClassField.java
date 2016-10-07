@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FieldCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
@@ -67,13 +68,14 @@ public class ClassField extends Definition {
   }
 
   @Override
-  public FieldCallExpression getDefCall(LevelSubstitution polyParams) {
-    return FieldCall(this, null);
+  public DefCallExpression getDefCall(LevelSubstitution polyParams) {
+    return new FieldCallExpression(this, null);
   }
 
   @Override
-  public FieldCallExpression getDefCall(LevelSubstitution polyParams, List<Expression> args) {
-    return new FieldCallExpression(this, args.get(0));
+  public Expression getDefCall(LevelSubstitution polyParams, List<Expression> args) {
+    assert args.size() == 1;
+    return FieldCall(this, args.get(0));
   }
 
   @Override

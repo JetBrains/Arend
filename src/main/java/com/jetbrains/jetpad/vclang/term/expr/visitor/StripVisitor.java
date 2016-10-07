@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.Stack;
 
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FieldCall;
+
 public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTreeNodeVisitor<Void, ElimTreeNode> {
   private final Set<Binding> myBounds;
   private final LocalErrorReporter myErrorReporter;
@@ -71,7 +73,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
     if (expr.getExpression().toNew() != null) {
       return expr.getExpression().toNew().getExpression().getFieldSet().getImplementation(expr.getDefinition()).term.accept(this, null);
     } else {
-      return new FieldCallExpression(expr.getDefinition(), expr.getExpression().accept(this, null));
+      return FieldCall(expr.getDefinition(), expr.getExpression().accept(this, null));
     }
   }
 

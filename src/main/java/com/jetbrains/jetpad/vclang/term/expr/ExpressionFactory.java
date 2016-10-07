@@ -65,8 +65,12 @@ public class ExpressionFactory {
     return DataCall(definition, lp, lh, Arrays.asList(arguments));
   }
 
-  public static FieldCallExpression FieldCall(ClassField definition, Expression thisExpr) {
-    return new FieldCallExpression(definition, thisExpr);
+  public static Expression FieldCall(ClassField definition, Expression thisExpr) {
+    if (thisExpr.toNew() != null) {
+      return thisExpr.toNew().getExpression().getFieldSet().getImplementation(definition).term;
+    } else {
+      return new FieldCallExpression(definition, thisExpr);
+    }
   }
 
   public static ClassCallExpression ClassCall(ClassDefinition definition, LevelSubstitution polyParams) {

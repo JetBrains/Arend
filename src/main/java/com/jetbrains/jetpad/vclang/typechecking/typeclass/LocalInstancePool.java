@@ -4,13 +4,14 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.ClassViewCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.FieldCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.typeclass.ClassView;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FieldCall;
 
 public class LocalInstancePool implements ClassViewInstancePool {
   static private class Pair {
@@ -57,7 +58,7 @@ public class LocalInstancePool implements ClassViewInstancePool {
       ClassView classView = ((ClassViewCallExpression) type).getClassView();
       if (classView.getClassifyingField() != null) {
         ReferenceExpression reference = new ReferenceExpression(binding);
-        return addInstance(new FieldCallExpression(((ClassViewCallExpression) type).getClassView().getClassifyingField(), reference).normalize(NormalizeVisitor.Mode.NF), classView, reference);
+        return addInstance(FieldCall(((ClassViewCallExpression) type).getClassView().getClassifyingField(), reference).normalize(NormalizeVisitor.Mode.NF), classView, reference);
       }
     }
     return true;

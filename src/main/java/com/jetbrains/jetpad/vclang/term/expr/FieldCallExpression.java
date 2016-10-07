@@ -7,6 +7,8 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import java.util.Collections;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FieldCall;
+
 public class FieldCallExpression extends DefCallExpression {
   private Expression myExpression;
 
@@ -27,8 +29,7 @@ public class FieldCallExpression extends DefCallExpression {
   @Override
   public Expression applyThis(Expression thisExpr) {
     assert myExpression == null;
-    myExpression = thisExpr;
-    return this;
+    return FieldCall(getDefinition(), thisExpr);
   }
 
   @Override
