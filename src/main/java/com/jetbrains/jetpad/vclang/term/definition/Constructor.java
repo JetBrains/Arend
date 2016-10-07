@@ -133,7 +133,6 @@ public class Constructor extends Definition implements Function {
 
         if (patternArg.getPattern() instanceof ConstructorPattern) {
           List<? extends Expression> argDataTypeParams = dataTypeParams.getType().subst(subst).normalize(NormalizeVisitor.Mode.WHNF).toDataCall().getDefCallArguments();
-          Collections.reverse(argDataTypeParams);
           innerSubst = ((ConstructorPattern) patternArg.getPattern()).getMatchedArguments(new ArrayList<>(argDataTypeParams));
         }
 

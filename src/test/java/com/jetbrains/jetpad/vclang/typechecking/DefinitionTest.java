@@ -295,9 +295,17 @@ public class DefinitionTest extends TypeCheckingTestCase {
   public void patternNormalizeTest() {
     typeCheckClass(
         "\\static \\data E (x : 0 = 0) | e\n" +
-        "\\static \\data C (n : Nat) | C (suc n) => c (n = n)\n" +
-        "\\static \\data D ((\\lam (x : \\Type0) => x) (C 1)) | D (c p) => x (E p)\n" +
+        "\\static \\data C (n m : Nat) | C (suc n) (suc (suc n)) => c (n = n)\n" +
+        "\\static \\data D ((\\lam (x : \\Type0) => x) (C 1 2)) | D (c p) => x (E p)\n" +
         "\\static \\function test => x (E (path (\\lam _ => 0))).e");
+  }
+
+  @Test
+  public void patternNormalizeTest1() {
+    typeCheckClass(
+        "\\static \\data E (x : 0 = 0) | e\n" +
+        "\\static \\data C (n m : Nat) | C (suc n) (suc (suc n)) => c (n = n)\n" +
+        "\\static \\data D ((\\lam (x : \\Type0) => x) (C 1 1)) | D (c p) => x (E p)", 1);
   }
 
   @Test
