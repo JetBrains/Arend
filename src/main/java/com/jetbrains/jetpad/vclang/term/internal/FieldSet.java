@@ -1,13 +1,11 @@
 package com.jetbrains.jetpad.vclang.term.internal;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
 import java.util.*;
@@ -68,22 +66,6 @@ public class FieldSet {
     Implementation old = myImplemented.put(field, impl);  // TODO[java8]: putIfAbsent
     updateUniverseFieldImplemented(field, thisClass);
     return old == null || old.substThisParam(thisRef).equals(impl.substThisParam(thisRef));
-  }
-
-  public CheckTypeVisitor.Result implementField(ClassField field, Abstract.Expression implBody, CheckTypeVisitor visitor, ClassCallExpression fieldSetClass, DependentLink thisParam) {
-    CheckTypeVisitor.Result result = visitor.typeCheck(implBody, field.getBaseType().subst(field.getThisParameter(), Reference(thisParam)));
-    if (result != null) {
-      implementField(field, new FieldSet.Implementation(thisParam, result.expression), fieldSetClass);
-    }
-    return result;
-  }
-
-  public CheckTypeVisitor.Result implementField(ClassField field, Abstract.Expression implBody, CheckTypeVisitor visitor, ClassCallExpression fieldSetClass) {
-    CheckTypeVisitor.Result result = visitor.typeCheck(implBody, field.getBaseType().subst(field.getThisParameter(), New(fieldSetClass)));
-    if (result != null) {
-      implementField(field, new FieldSet.Implementation(null, result.expression), fieldSetClass);
-    }
-    return result;
   }
 
   public boolean isImplemented(ClassField field) {

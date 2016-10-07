@@ -67,7 +67,9 @@ public class ExpressionFactory {
 
   public static Expression FieldCall(ClassField definition, Expression thisExpr) {
     if (thisExpr.toNew() != null) {
-      return thisExpr.toNew().getExpression().getFieldSet().getImplementation(definition).term;
+      FieldSet.Implementation impl = thisExpr.toNew().getExpression().getFieldSet().getImplementation(definition);
+      assert impl != null;
+      return impl.term;
     } else {
       return new FieldCallExpression(definition, thisExpr);
     }

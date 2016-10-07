@@ -553,9 +553,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   @Override
   public Result visitError(Abstract.ErrorExpression expr, Expression expectedType) {
     LocalTypeCheckingError error = new GoalError(myContext, expectedType == null ? null : expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
-    expr.setWellTyped(myContext, Error(null, error));
+    Expression result = Error(null, error);
+    expr.setWellTyped(myContext, result);
     myErrorReporter.report(error);
-    return null;
+    return new Result(result, result);
   }
 
   @Override
@@ -807,7 +808,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     // Some tricks to keep going as long as possible in case of error
-    boolean ok = true;
     Collection<? extends Abstract.ImplementStatement> statements = expr.getStatements();
     for (Abstract.ImplementStatement statement : statements) {
       Definition implementedDef = myState.getTypechecked(statement.getImplementedField());
@@ -821,16 +821,18 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         continue;
       }
 
-      Result result = fieldSet.implementField(field, statement.getExpression(), this, resultExpr);
-      if (result == null || result.expression.toError() != null) {
-        ok = false;
-      }
+      implementField(fieldSet, field, statement.getExpression(), this, resultExpr);
     }
-    if (!ok) return null;
 
     classExtResult.expression = resultExpr;
     classExtResult.type = new PiUniverseType(EmptyDependentLink.getInstance(), resultExpr.getSorts());
     return checkResult(expectedType, classExtResult, expr);
+  }
+
+  private CheckTypeVisitor.Result implementField(FieldSet fieldSet, ClassField field, Abstract.Expression implBody, CheckTypeVisitor visitor, ClassCallExpression fieldSetClass) {
+    CheckTypeVisitor.Result result = visitor.typeCheck(implBody, field.getBaseType().subst(field.getThisParameter(), New(fieldSetClass)));
+    fieldSet.implementField(field, new FieldSet.Implementation(null, result != null ? result.expression : Error(null, null)), fieldSetClass);
+    return result;
   }
 
   @Override

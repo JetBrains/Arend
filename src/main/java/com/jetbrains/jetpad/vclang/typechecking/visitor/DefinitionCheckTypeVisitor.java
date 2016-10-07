@@ -738,7 +738,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
             DependentLink thisParameter = createThisParam(typedDef);
             visitor.setThisClass(typedDef, Reference(thisParameter));
-            CheckTypeVisitor.Result result = fieldSet.implementField(field, ((Abstract.ImplementDefinition) definition).getExpression(), visitor, thisClassCall, thisParameter);
+            CheckTypeVisitor.Result result = implementField(fieldSet, field, ((Abstract.ImplementDefinition) definition).getExpression(), visitor, thisClassCall, thisParameter);
             if (result == null || result.expression.toError() != null) {
               classOk = false;
             }
@@ -765,6 +765,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       myErrorReporter.report(e.toError());
     }
     return null;
+  }
+
+  private CheckTypeVisitor.Result implementField(FieldSet fieldSet, ClassField field, Abstract.Expression implBody, CheckTypeVisitor visitor, ClassCallExpression fieldSetClass, DependentLink thisParam) {
+    CheckTypeVisitor.Result result = visitor.typeCheck(implBody, field.getBaseType().subst(field.getThisParameter(), Reference(thisParam)));
+    fieldSet.implementField(field, new FieldSet.Implementation(thisParam, result != null ? result.expression : Error(null, null)), fieldSetClass);
+    return result;
   }
 
   @Override
