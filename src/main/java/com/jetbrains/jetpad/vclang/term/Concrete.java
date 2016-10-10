@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term;
 
-import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
+import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.parser.Precedence;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractCompareVisitor;
@@ -15,11 +15,11 @@ public final class Concrete {
   private Concrete() {}
 
   public static class Position {
-    public final ModuleSourceId module;
+    public final SourceId module;
     public final int line;
     public final int column;
 
-    public Position(ModuleSourceId module, int line, int column) {
+    public Position(SourceId module, int line, int column) {
       this.module = module;
       this.line = line;
       this.column = column + 1;

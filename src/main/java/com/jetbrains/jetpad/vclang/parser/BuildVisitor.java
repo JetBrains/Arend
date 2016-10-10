@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.parser;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
+import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import org.antlr.v4.runtime.Token;
@@ -15,10 +15,10 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.parser.VcgrammarParser.*;
 
 public class BuildVisitor extends VcgrammarBaseVisitor {
-  private final ModuleSourceId myModule;
+  private final SourceId myModule;
   private final ErrorReporter myErrorReporter;
 
-  public BuildVisitor(ModuleSourceId module, ErrorReporter errorReporter) {
+  public BuildVisitor(SourceId module, ErrorReporter errorReporter) {
     myModule = module;
     myErrorReporter = errorReporter;
   }

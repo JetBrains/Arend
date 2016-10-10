@@ -1,14 +1,14 @@
 package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
+import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 
 import java.util.Arrays;
 import java.util.List;
 
 public class ConcreteExpressionFactory {
-  private static final ModuleSourceId SOURCE_ID = new ModuleSourceId() {
+  private static final SourceId SOURCE_ID = new SourceId() {
     @Override public ModulePath getModulePath() { return ModulePath.moduleName(toString()); }
     @Override public String toString() { return "$transient$"; }
   };

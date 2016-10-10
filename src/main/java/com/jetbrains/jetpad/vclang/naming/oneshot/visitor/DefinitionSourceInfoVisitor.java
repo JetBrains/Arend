@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming.oneshot.visitor;
 
-import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
+import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.FullName;
 import com.jetbrains.jetpad.vclang.naming.oneshot.SimpleSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -9,9 +9,9 @@ import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisit
 
 public class DefinitionSourceInfoVisitor implements AbstractDefinitionVisitor<FullName, Void>, AbstractStatementVisitor<FullName, Void> {
   private final SimpleSourceInfoProvider myProvider;
-  private final ModuleSourceId mySourceId;
+  private final SourceId mySourceId;
 
-  public DefinitionSourceInfoVisitor(SimpleSourceInfoProvider provider, ModuleSourceId sourceId) {
+  public DefinitionSourceInfoVisitor(SimpleSourceInfoProvider provider, SourceId sourceId) {
     myProvider = provider;
     mySourceId = sourceId;
   }

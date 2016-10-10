@@ -3,16 +3,14 @@ package com.jetbrains.jetpad.vclang;
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.module.BaseModuleLoader;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
-import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
-import com.jetbrains.jetpad.vclang.module.source.file.FileModuleLoader;
-import com.jetbrains.jetpad.vclang.module.source.file.FileModuleSourceId;
-import com.jetbrains.jetpad.vclang.module.utils.FileOperations;
+import com.jetbrains.jetpad.vclang.module.source.*;
+import com.jetbrains.jetpad.vclang.module.source.file.FileStorage;
+import com.jetbrains.jetpad.vclang.module.utils.LoadModulesRecursively;
 import com.jetbrains.jetpad.vclang.naming.namespace.*;
 import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotNameResolver;
 import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotSourceInfoCollector;
-import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.ConcreteResolveListener;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -24,7 +22,10 @@ import org.apache.commons.cli.*;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
@@ -33,8 +34,8 @@ public class ConsoleMain {
     Options cmdOptions = new Options();
     cmdOptions.addOption("h", "help", false, "print this message");
     cmdOptions.addOption(Option.builder("s").longOpt("source").hasArg().argName("dir").desc("source directory").build());
-    cmdOptions.addOption(Option.builder("o").longOpt("output").hasArg().argName("dir").desc("output directory").build());
-    cmdOptions.addOption(Option.builder("L").hasArg().argName("dir").desc("add <dir> to the list of directories searched for libraries").build());
+    //cmdOptions.addOption(Option.builder("o").longOpt("output").hasArg().argName("dir").desc("output directory").build());
+    //cmdOptions.addOption(Option.builder("L").hasArg().argName("dir").desc("add <dir> to the list of directories searched for libraries").build());
     cmdOptions.addOption(Option.builder().longOpt("recompile").desc("recompile files").build());
     CommandLineParser cmdParser = new DefaultParser();
     CommandLine cmdLine;
@@ -49,53 +50,46 @@ public class ConsoleMain {
       new HelpFormatter().printHelp("vclang [FILES]", cmdOptions);
     }
 
-    String sourceDirStr = cmdLine.getOptionValue("s");
+    final String sourceDirStr = cmdLine.getOptionValue("s");
     final File sourceDir = new File(sourceDirStr == null ? System.getProperty("user.dir") : sourceDirStr);
-    String outputDirStr = cmdLine.getOptionValue("o");
-    File outputDir = outputDirStr == null ? sourceDir : new File(outputDirStr);
     boolean recompile = cmdLine.hasOption("recompile");
 
-    List<File> libDirs = new ArrayList<>();
-    String workingDir = System.getenv("AppData");
-    File workingPath = null;
-    if (workingDir != null) {
-      workingPath = new File(workingDir, "vclang");
-    } else {
-      workingDir = System.getProperty("user.home");
-      if (workingDir != null) {
-        workingPath = new File(workingDir, ".vclang");
-      }
-    }
-    if (cmdLine.getOptionValues("L") != null) {
-      for (String dir : cmdLine.getOptionValues("L")) {
-        libDirs.add(new File(dir));
-      }
-    }
-    if (workingPath != null) {
-      libDirs.add(new File(workingPath, "lib"));
-    }
-
-    SimpleStaticNamespaceProvider staticNsProvider = new SimpleStaticNamespaceProvider();
-    DynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
+    final SimpleStaticNamespaceProvider staticNsProvider = new SimpleStaticNamespaceProvider();
+    final DynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
     final ListErrorReporter errorReporter = new ListErrorReporter();
     final SimpleModuleNamespaceProvider moduleNsProvider = new SimpleModuleNamespaceProvider();
     final OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(errorReporter, new ConcreteResolveListener(), moduleNsProvider, staticNsProvider, dynamicNsProvider);
-    final OneshotSourceInfoCollector srcInfoCollector = new OneshotSourceInfoCollector();
+    final OneshotSourceInfoCollector<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> srcInfoCollector = new OneshotSourceInfoCollector<>();
     final ErrorFormatter errf = new ErrorFormatter(srcInfoCollector.sourceInfoProvider);
-    final List<ModuleSourceId> loadedModules = new ArrayList<>();
+    final List<SourceId> loadedModules = new ArrayList<>();
     final List<Abstract.Definition> modulesToTypeCheck = new ArrayList<>();
-    final TypecheckerState state = new SimpleTypecheckerState();
+    final Map<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId, Map<String, Abstract.Definition>> definitionIds = new HashMap<>();
 
-    final Abstract.ClassDefinition prelude = new Prelude.PreludeLoader(errorReporter).load();
-    oneshotNameResolver.visitModule(prelude, new EmptyScope());
-    TypecheckingOrdering.typecheck(state, staticNsProvider, dynamicNsProvider, Collections.singletonList(prelude), new DummyErrorReporter(), true);
-    assert errorReporter.getErrorList().isEmpty();
-    final Namespace preludeNamespace = staticNsProvider.forDefinition(prelude);
+    // Storage
+    final Prelude.PreludeStorage preludeStorage = new Prelude.PreludeStorage(errorReporter);
+    final FileStorage fileStorage = new FileStorage(sourceDir, errorReporter);
+    final CompositeStorage<Prelude.SourceId, FileStorage.SourceId> storage = new CompositeStorage<>(preludeStorage, fileStorage, preludeStorage, fileStorage);
 
-    final ModuleLoader moduleLoader = new FileModuleLoader(sourceDir, errorReporter) {
+    class ModuleLoadingListener extends BaseModuleLoader.ModuleLoadingListener<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> {
+      private ModuleLoader moduleLoader = null;
+      private Namespace preludeNamespace = new EmptyNamespace();
+
+      private void setModuleLoader(ModuleLoader moduleLoader) {
+        this.moduleLoader = moduleLoader;
+      }
+      private void setPreludeNamespace(Namespace preludeNamespace) {
+        this.preludeNamespace = preludeNamespace;
+      }
+
       @Override
-      public void loadingSucceeded(FileModuleSourceId module, Abstract.ClassDefinition abstractDefinition) {
+      public void loadingSucceeded(CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId module, Abstract.ClassDefinition abstractDefinition) {
         if (abstractDefinition != null) {
+          if (!definitionIds.containsKey(module)) {
+            definitionIds.put(module, new HashMap<String, Abstract.Definition>());
+          }
+
+          new LoadModulesRecursively(moduleLoader).visitClass(abstractDefinition, null);
+
           oneshotNameResolver.visitModule(abstractDefinition, preludeNamespace);
           srcInfoCollector.visitModule(module, abstractDefinition);
 
@@ -105,7 +99,21 @@ public class ConsoleMain {
         loadedModules.add(module);
         System.out.println("[Loaded] " + module.getModulePath());
       }
-    };
+    }
+    ModuleLoadingListener moduleLoadingListener = new ModuleLoadingListener();
+
+    final BaseModuleLoader<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> moduleLoader = new BaseModuleLoader<>(storage, moduleLoadingListener);
+    moduleLoadingListener.setModuleLoader(moduleLoader);
+
+    final Abstract.ClassDefinition prelude = moduleLoader.load(Prelude.PreludeStorage.PRELUDE_MODULE_PATH);
+    final Namespace preludeNamespace = staticNsProvider.forDefinition(prelude);
+    moduleLoadingListener.setPreludeNamespace(preludeNamespace);
+
+    final TypecheckerState state = new SimpleTypecheckerState();
+
+    TypecheckingOrdering.typecheck(state, staticNsProvider, dynamicNsProvider, Collections.singletonList(prelude), new DummyErrorReporter(), true);
+    assert errorReporter.getErrorList().isEmpty();
+
 
     if (!errorReporter.getErrorList().isEmpty()) {
       for (GeneralError error : errorReporter.getErrorList()) {
@@ -114,14 +122,15 @@ public class ConsoleMain {
       return;
     }
 
+    final Path sourceDirPath = sourceDir.toPath();
     if (cmdLine.getArgList().isEmpty()) {
       if (sourceDirStr == null) return;
       try {
-        Files.walkFileTree(sourceDir.toPath(), new SimpleFileVisitor<Path>() {
+        Files.walkFileTree(sourceDirPath, new SimpleFileVisitor<Path>() {
           @Override
           public FileVisitResult visitFile(Path path, BasicFileAttributes basicFileAttributes) throws IOException {
-            if (path.getFileName().toString().endsWith(FileOperations.EXTENSION)) {
-              processFile(moduleLoader, errorReporter, errf, path, sourceDir);
+            if (path.toString().endsWith(FileStorage.EXTENSION)) {
+              processFile(storage, moduleLoader, errorReporter, errf, sourceDirPath.relativize(path).toFile());
             }
             return FileVisitResult.CONTINUE;
           }
@@ -137,11 +146,11 @@ public class ConsoleMain {
       }
     } else {
       for (String fileName : cmdLine.getArgList()) {
-        processFile(moduleLoader, errorReporter, errf, Paths.get(fileName), sourceDir);
+        processFile(storage, moduleLoader, errorReporter, errf, new File(fileName));
       }
     }
 
-    final Set<ModuleSourceId> failedModules = new HashSet<>();
+    final Set<SourceId> failedModules = new HashSet<>();
 
     TypecheckingOrdering.typecheck(state, staticNsProvider, dynamicNsProvider, modulesToTypeCheck, errorReporter, new TypecheckedReporter() {
       @Override
@@ -159,7 +168,7 @@ public class ConsoleMain {
       }
     }, false);
 
-    for (ModuleSourceId moduleID : loadedModules) {
+    for (SourceId moduleID : loadedModules) {
       StringBuilder builder = new StringBuilder();
       builder.append("[").append(failedModules.contains(moduleID) ? "✗" : " ").append("]")
              .append(" ").append(moduleID.getModulePath())
@@ -171,45 +180,27 @@ public class ConsoleMain {
       System.err.println(errf.printError(error));
     }
 
-    for (ModuleSourceId moduleID : loadedModules) {
-      //moduleLoader.save(moduleID);  // FIXME[serial]
-    }
+    // TODO: Serialize typechecked modules
   }
 
-  static private ModulePath getModule(Path file) {
-    int nameCount = file.getNameCount();
-    if (nameCount < 1) return null;
-    List<String> names = new ArrayList<>(nameCount);
-    for (int i = 0; i < nameCount; ++i) {
-      String name = file.getName(i).toString();
-      if (i == nameCount - 1) {
-        if (!name.endsWith(FileOperations.EXTENSION)) return null;
-        name = name.substring(0, name.length() - 3);
-      }
+  static private <SourceIdT extends SourceId> void processFile(SourceSupplier<SourceIdT> storage, SourceModuleLoader<SourceIdT> moduleLoader, ListErrorReporter errorReporter, ErrorFormatter errf, File file) {
+    if (!file.getName().endsWith(FileStorage.EXTENSION)) return;
+    String fileName = file.toString();
+    fileName = fileName.substring(0, fileName.length() - FileStorage.EXTENSION.length());
 
-      if (name.length() == 0 || !(Character.isLetterOrDigit(name.charAt(0)) || name.charAt(0) == '_')) return null;
-      for (int j = 1; j < name.length(); ++j) {
-        if (!(Character.isLetterOrDigit(name.charAt(j)) || name.charAt(j) == '_' || name.charAt(j) == '-' || name.charAt(j) == '\'')) return null;
-      }
-      names.add(name);
-    }
-    return new ModulePath(names);
-  }
-
-  static private void processFile(ModuleLoader moduleLoader, ListErrorReporter errorReporter, ErrorFormatter errf, Path fileName, File sourceDir) {
-    Path relativePath = sourceDir != null && fileName.startsWith(sourceDir.toPath()) ? sourceDir.toPath().relativize(fileName) : fileName;
-    ModulePath modulePath = getModule(relativePath);
-    if (modulePath == null) {
-      System.err.println(fileName + ": incorrect file name");
+    SourceIdT sourceId = storage.locateModule(FileStorage.modulePath(fileName));
+    if (sourceId == null) {
+      System.err.println(file + ": incorrect file name");
       return;
     }
 
-    moduleLoader.load(modulePath);
+    moduleLoader.load(sourceId);
 
     for (GeneralError error : errorReporter.getErrorList()) {
       System.err.println(errf.printError(error));
     }
-
     errorReporter.getErrorList().clear();
   }
+
+
 }

@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.module.BaseModuleLoader;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.namespace.*;
 import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotNameResolver;
@@ -40,7 +41,8 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
     if (LOADED_PRELUDE == null) {
       ListErrorReporter internalErrorReporter = new ListErrorReporter();
-      LOADED_PRELUDE = new Prelude.PreludeLoader(internalErrorReporter).load();
+      Prelude.PreludeStorage preludeStorage = new Prelude.PreludeStorage(internalErrorReporter);
+      LOADED_PRELUDE = new BaseModuleLoader<>(preludeStorage, new BaseModuleLoader.ModuleLoadingListener()).load(preludeStorage.preludeSourceId).definition;
       assertThat("Failed loading Prelude", internalErrorReporter.getErrorList(), containsErrors(0));
 
       OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(internalErrorReporter, new ConcreteResolveListener(), moduleNsProvider, staticNsProvider, dynamicNsProvider);

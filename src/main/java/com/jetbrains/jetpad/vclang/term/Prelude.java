@@ -2,8 +2,9 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.module.source.file.FileModuleLoader;
-import com.jetbrains.jetpad.vclang.module.source.file.FileModuleSourceId;
+import com.jetbrains.jetpad.vclang.module.caching.CacheStorageSupplier;
+import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
+import com.jetbrains.jetpad.vclang.module.source.file.ParseSource;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
@@ -16,8 +17,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 
-import java.io.File;
-import java.nio.file.Paths;
+import java.io.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
@@ -117,16 +117,59 @@ public class Prelude extends SimpleNamespace {
   }
 
 
-  public static class PreludeLoader extends FileModuleLoader {
-    public PreludeLoader(ErrorReporter errorReporter) {
-      super(new File(Paths.get("").toAbsolutePath().toFile(), "lib"), errorReporter);
-    }
+  public static class PreludeStorage implements SourceSupplier<SourceId>, CacheStorageSupplier<SourceId> {
+    public static ModulePath PRELUDE_MODULE_PATH = new ModulePath("Prelude");
+    public final SourceId preludeSourceId = new SourceId();
 
-    public Abstract.ClassDefinition load() {
-      return load(new ModulePath("Prelude")).abstractDefinition;
+    private final byte[] myPreludeEtag = new byte[0];
+    private final ErrorReporter myErrorReporter;
+
+    public PreludeStorage(ErrorReporter myErrorReporter) {
+      this.myErrorReporter = myErrorReporter;
     }
 
     @Override
-    protected void loadingSucceeded(FileModuleSourceId module, Abstract.ClassDefinition abstractDefinition) {}
+    public InputStream getCacheInputStream(SourceId sourceId) {
+      if (sourceId != preludeSourceId) return null;
+      return null;
+    }
+
+    @Override
+    public OutputStream getCacheOutputStream(SourceId sourceId) {
+      if (sourceId != preludeSourceId) return null;
+      return null;
+    }
+
+    @Override
+    public byte[] getCurrentEtag(SourceId sourceId) {
+      if (sourceId != preludeSourceId) return null;
+      return myPreludeEtag;
+    }
+
+    @Override
+    public SourceId locateModule(ModulePath modulePath) {
+      if (modulePath.getParent().list().length == 0 && modulePath.getName().equals("Prelude")) {
+        return preludeSourceId;
+      } else {
+        return null;
+      }
+    }
+
+    @Override
+    public Result loadSource(SourceId sourceId) throws IOException {
+      if (sourceId != preludeSourceId) return null;
+      InputStream stream = new FileInputStream(new File("lib/Prelude.vc"));
+      ParseSource.ParseSourceResult parseResult = new ParseSource(preludeSourceId, stream, myErrorReporter) {}.load();
+      return new Result(myPreludeEtag, parseResult.definition, parseResult.errorCount);
+    }
+  }
+
+  public static class SourceId implements com.jetbrains.jetpad.vclang.module.source.SourceId {
+    private SourceId() {}
+
+    @Override
+    public ModulePath getModulePath() {
+      return PreludeStorage.PRELUDE_MODULE_PATH;
+    }
   }
 }

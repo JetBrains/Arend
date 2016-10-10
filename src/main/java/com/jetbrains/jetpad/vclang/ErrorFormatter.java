@@ -1,9 +1,8 @@
 package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.error.ModuleCycleError;
-import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
+import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.parser.ParserError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -62,8 +61,8 @@ public class ErrorFormatter {
     if (error instanceof TypeCheckingError) {
       printTypeCheckingErrorData(((TypeCheckingError) error).localError, builder);
     } else if (error instanceof ModuleCycleError) {
-      for (ModulePath modulePath : ((ModuleCycleError) error).cycle) {
-        builder.append(modulePath).append(" - ");
+      for (SourceId sourceId: ((ModuleCycleError) error).cycle) {
+        builder.append(sourceId.getModulePath()).append(" - ");
       }
       builder.append(((ModuleCycleError) error).cycle.get(0));
       return builder.toString();
@@ -204,7 +203,7 @@ public class ErrorFormatter {
         }
 
         if (name != null) {
-          ModuleSourceId module = mySrc.sourceOf(def);
+          SourceId module = mySrc.sourceOf(def);
           builder.append(' ').append(module != null ? module : "<Unknown module>");
           builder.append("::").append(name);
         }
