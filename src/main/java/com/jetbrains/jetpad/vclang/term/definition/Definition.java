@@ -37,7 +37,9 @@ public abstract class Definition implements Referable {
     return EmptyDependentLink.getInstance();
   }
 
-  public abstract Type getType(LevelSubstitution polyParams);
+  public abstract Type getTypeWithParams(List<DependentLink> params, LevelSubstitution polySubst);
+
+  // public abstract Type getType(LevelSubstitution polyParams);
 
   public abstract DefCallExpression getDefCall(LevelSubstitution polyParams);
 
@@ -53,9 +55,9 @@ public abstract class Definition implements Referable {
     return myThisClass;
   }
 
-  public Type getTypeWithThis(LevelSubstitution polyParams) {
+/*  public Type getTypeWithThis(LevelSubstitution polyParams) {
     return getType(polyParams);
-  }
+  } /**/
 
   public void setThisClass(ClassDefinition enclosingClass) {
     myThisClass = enclosingClass;

@@ -15,6 +15,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
@@ -64,11 +65,86 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   public static class Result {
     public Expression expression;
     public Type type;
+    public List<DependentLink> parameters = new ArrayList<>();
 
     public Result(Expression expression, Type type) {
       this.expression = expression;
-      this.type = type;
+      if (type != null) {
+        List<DependentLink> params = new ArrayList<>();
+        this.type = type.getPiParameters(params, true, false);
+        this.parameters.addAll(params);
+      }
     }
+
+    public Result(Expression expression, Type type, List<DependentLink> parameters) {
+      this(expression, type);
+      List<DependentLink> params = new ArrayList<>(parameters);
+      params.addAll(this.parameters);
+      this.parameters = params;
+    }
+
+    public Result(Expression expression, Type type, DependentLink parameters) {
+      this(expression, type, DependentLink.Helper.toList(parameters));
+    }
+
+    /* public Result(Constructor cons, List<Expression> dataArgs, List<Expression> conArgs, LevelSubstitution polySubst) {
+      expression = ConCall(cons, polySubst, dataArgs, conArgs);
+      type = cons.getTypeWithParams(parameters, polySubst);
+
+    } /**/
+
+    public void getImplicitParameters(List<DependentLink> params) {
+      for (int i = 0; i < parameters.size() && !parameters.get(i).isExplicit(); ++i) {
+        params.add(parameters.get(i));
+      }
+    }
+
+    public void applyThis(Expression thisExpr) {
+      assert expression.toDefCall() != null && !parameters.isEmpty();
+      expression = expression.toDefCall().applyThis(thisExpr);
+      ExprSubstitution subst = DependentLink.Helper.toSubstitution(parameters.get(0), Collections.singletonList(thisExpr));
+      parameters = DependentLink.Helper.subst(parameters.subList(1, parameters.size()), subst, new LevelSubstitution());
+      type = type.subst(subst, new LevelSubstitution());
+    }
+
+    public void applyExpressions(List<? extends Expression> expressions) {
+      expression = expression.addArguments(expressions);
+      ExprSubstitution subst = new ExprSubstitution();
+      int size = Math.min(expressions.size(), parameters.size());
+      int i = 0;
+      for (; i < size; ++i) {
+        subst.add(parameters.get(i), expressions.get(i));
+      }
+      parameters = DependentLink.Helper.subst(parameters.subList(i, parameters.size()), subst, new LevelSubstitution());
+      type = type.subst(subst, new LevelSubstitution()).applyExpressions(expressions.subList(i, expressions.size()));
+    }
+
+    public Result subst(ExprSubstitution expr_subst, LevelSubstitution level_subst) {
+      List<DependentLink> params = DependentLink.Helper.subst(parameters, expr_subst, level_subst);
+      return new Result(expression.subst(expr_subst, level_subst), type.subst(expr_subst, level_subst), params);
+    }
+
+    /*
+    public List<DependentLink> getParameters() {
+      return DependentLink.Helper.toList(type.getPiParameters());
+    }
+
+    public void getImplicitParameters(List<DependentLink> params) {
+      List<DependentLink<Expression>> paramsExpr = new ArrayList<>();
+      type.getImplicitParameters(paramsExpr);
+      params.addAll(paramsExpr);
+    }
+
+    public void applyExpression(Expression expression) {
+      applyExpressions(Collections.singletonList(expression));
+    }
+
+    public void applyExpressions(List<? extends Expression> expressions) {
+      expression = Apps(expression, expressions);
+      type = type.applyExpressions(expressions);
+    }
+
+    /**/
   }
 
   private CheckTypeVisitor(TypecheckerState state, ClassDefinition thisClass, Expression thisExpr, List<Binding> localContext, LocalErrorReporter errorReporter, ClassViewInstancePool pool) {

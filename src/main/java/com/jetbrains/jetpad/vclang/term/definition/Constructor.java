@@ -151,15 +151,15 @@ public class Constructor extends Definition implements Function {
   }
 
   @Override
-  public Expression getType(LevelSubstitution polyParams) {
+  public Expression getTypeWithParams(List<DependentLink> params, LevelSubstitution polyParams) {
     if (hasErrors()) {
       return null;
     }
 
     Expression resultType = getDataTypeExpression(polyParams);
-    if (myParameters.hasNext()) {
-      resultType = Pi(myParameters, resultType);
-    }
+    //if (myParameters.hasNext()) {
+    //  resultType = Pi(myParameters, resultType);
+   // }
 
     DependentLink parameters = getDataTypeParameters();
     if (parameters.hasNext()) {
@@ -168,10 +168,13 @@ public class Constructor extends Definition implements Function {
       for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
         link.setExplicit(false);
       }
-      resultType = Pi(parameters, resultType.subst(substitution, polyParams));
+      // resultType = Pi(parameters, resultType.subst(substitution, polyParams));
+      resultType = resultType.subst(substitution, polyParams);
+      params.addAll(DependentLink.Helper.toList(parameters));
     } else {
       resultType = resultType.subst(polyParams);
     }
+    params.addAll(DependentLink.Helper.toList(myParameters));
     return resultType;
   }
 

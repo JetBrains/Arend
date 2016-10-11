@@ -9,7 +9,9 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
@@ -183,9 +185,12 @@ public class TypeCheckingDefCall {
       }
 
       if (constructor != null) {
-        result.expression = ConCall(constructor, dataCall.getPolyParamsSubst(), new ArrayList<>(args), new ArrayList<Expression>());
-        result.type = result.expression.getType();
-        return result;
+        //result.expression = ConCall(constructor, dataCall.getPolyParamsSubst(), new ArrayList<>(args), new ArrayList<Expression>());
+        //result.type = result.expression.getType();
+        Expression conCall = ConCall(constructor, dataCall.getPolyParamsSubst(), new ArrayList<>(args), new ArrayList<Expression>());
+        List<DependentLink> conParams = new ArrayList<>();
+        Expression conType = constructor.getTypeWithParams(conParams, dataCall.getPolyParamsSubst());
+        return new CheckTypeVisitor.Result(conCall, conType, conParams);
       }
     }
 
@@ -269,10 +274,13 @@ public class TypeCheckingDefCall {
       return null;
     }
 
-    CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(defCall, definition.getTypeWithThis(polySubst));
+    List<DependentLink> params = new ArrayList<>();
+    Type type = definition.getTypeWithParams(params, polySubst);
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(defCall, type, params);
     if (thisExpr != null) {
-      result.expression = defCall.applyThis(thisExpr);
-      result.type = result.type.applyExpressions(Collections.singletonList(thisExpr));
+      //result.expression = defCall.applyThis(thisExpr);
+      //result.type = result.type.applyExpressions(Collections.singletonList(thisExpr));
+      result.applyThis(thisExpr);
     }
     return result;
   }

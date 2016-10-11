@@ -118,6 +118,20 @@ public interface DependentLink extends Binding {
       return subst(link, substitution, new LevelSubstitution());
     }
 
+    public static List<DependentLink> subst(List<DependentLink> links, ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
+      List<DependentLink> newLinks = new ArrayList<>();
+      int i = 0;
+      while (i < links.size()) {
+        DependentLink substLink = DependentLink.Helper.subst(links.get(i), exprSubst, levelSubst);
+        while (substLink.hasNext()) {
+          newLinks.add(substLink);
+          substLink = substLink.getNext();
+          ++i;
+        }
+      }
+      return newLinks;
+    }
+
     public static <P> DependentLink accept(DependentLink link, ExprSubstitution substitution, ExpressionVisitor<? super P, ? extends Expression> visitor, P params) {
       link = DependentLink.Helper.subst(link, substitution);
       for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {

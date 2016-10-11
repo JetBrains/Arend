@@ -65,7 +65,7 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
-  public Type getType(LevelSubstitution polyParams) {
+  public Type getTypeWithParams(List<DependentLink> params, LevelSubstitution polyParams) {
     return new PiUniverseType(EmptyDependentLink.getInstance(), getSorts().subst(polyParams));
   }
 
@@ -99,6 +99,7 @@ public class ClassDefinition extends Definition {
     return myEnclosingThisField;
   }
 
+  /*
   @Override
   public Type getTypeWithThis(LevelSubstitution polyParams) {
     DependentLink link = EmptyDependentLink.getInstance();
@@ -106,7 +107,7 @@ public class ClassDefinition extends Definition {
       link = param(ClassCall(getThisClass()));
     }
     return new PiUniverseType(link, getSorts().subst(polyParams));
-  }
+  } /**/
 
   @Override
   public Namespace getOwnNamespace() {

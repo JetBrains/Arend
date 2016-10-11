@@ -88,11 +88,13 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   @Override
-  public Type getType(LevelSubstitution polyParams) {
+  public Type getTypeWithParams(List<DependentLink> params, LevelSubstitution polyParams) {
     if (myTypeHasErrors) {
       return null;
     }
-    return myResultType.addParameters(myParameters, false).subst(new ExprSubstitution(), polyParams);
+    ExprSubstitution subst = new ExprSubstitution();
+    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, subst, polyParams)));
+    return myResultType.subst(subst, polyParams);
   }
 
   @Override

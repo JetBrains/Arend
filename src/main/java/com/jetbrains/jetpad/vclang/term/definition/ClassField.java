@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FieldCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 
 import java.util.List;
@@ -63,8 +64,10 @@ public class ClassField extends Definition {
   }
 
   @Override
-  public Expression getType(LevelSubstitution polyParams) {
-    return myType == null ? null : Pi(myThisParameter, myType.subst(polyParams));
+  public Expression getTypeWithParams(List<DependentLink> params, LevelSubstitution polyParams) {
+    ExprSubstitution subst = new ExprSubstitution();
+    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myThisParameter, subst, polyParams)));
+    return myType == null ? null : myType.subst(subst, polyParams);
   }
 
   @Override

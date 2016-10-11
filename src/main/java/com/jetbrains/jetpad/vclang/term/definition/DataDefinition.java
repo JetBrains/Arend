@@ -120,12 +120,14 @@ public class DataDefinition extends Definition {
   public void setMatchesOnInterval() { myMatchesOnInterval = true; }
 
   @Override
-  public Type getType(LevelSubstitution polyParams) {
+  public Type getTypeWithParams(List<DependentLink> params, LevelSubstitution polyParams) {
     if (hasErrors()) {
       return null;
     }
 
-    return new PiUniverseType(myParameters, mySorts).subst(new ExprSubstitution(), polyParams);
+    ExprSubstitution subst = new ExprSubstitution();
+    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, subst, polyParams)));
+    return new PiUniverseType(EmptyDependentLink.getInstance(), mySorts).subst(subst, polyParams);
   }
 
   @Override

@@ -128,8 +128,11 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
             args1.addAll(args.subList(conCall.getDataTypeArguments().size(), args.size()));
             args1 = conCall.getDefinition().matchDataTypeArguments(args1);
             if (args1 != null && !args1.isEmpty()) {
-              result.expression = ConCall(conCall.getDefinition(), conCall.getPolyParamsSubst(), args1, new ArrayList<Expression>());
-              result.type = result.expression.getType();
+              Expression conCallUpdated = ConCall(conCall.getDefinition(), conCall.getPolyParamsSubst(), new ArrayList<Expression>(), new ArrayList<Expression>());
+              List<DependentLink> params = new ArrayList<>();
+              Expression type = conCall.getDefinition().getTypeWithParams(params, conCall.getPolyParamsSubst());
+              result = new CheckTypeVisitor.Result(conCallUpdated, type, params);
+              result.applyExpressions(args1);
             }
             return inferArg(result, arg, true, fun);
           }
