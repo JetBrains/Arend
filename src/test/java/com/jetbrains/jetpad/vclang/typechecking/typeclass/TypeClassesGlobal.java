@@ -116,6 +116,19 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
   }
 
   @Test
+  public void transitiveInferInstance2() {
+    typeCheckClass(
+        "\\static \\class X {\n" +
+        "  \\abstract A : \\Type0\n" +
+        "  \\abstract B : A -> \\Type0\n" +
+        "}\n" +
+        "\\static \\view Y \\on X \\by A { B }\n" +
+        "\\static \\instance Nat-X => \\new Y { A => Nat | B => \\lam n => Nat -> Nat }\n" +
+        "\\static \\function f {y : Y} (a : y.A) => B a\n" +
+        "\\static \\function g => f 0");
+  }
+
+  @Test
   public void transitiveDuplicate() {
     typeCheckClass(
         "\\static \\class X {\n" +

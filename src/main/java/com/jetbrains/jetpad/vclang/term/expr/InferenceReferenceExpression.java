@@ -1,7 +1,11 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
+import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.List;
 
@@ -9,9 +13,24 @@ public class InferenceReferenceExpression extends Expression {
   private InferenceVariable myVar;
   private Expression mySubstExpression;
 
-  public InferenceReferenceExpression(InferenceVariable binding) {
+  public InferenceReferenceExpression(InferenceVariable binding, Equations equations) {
     myVar = binding;
     myVar.setReference(this);
+
+    Expression type = myVar.getType().normalize(NormalizeVisitor.Mode.WHNF);
+    if (type.toClassCall() != null) {
+      FieldSet fieldSet = type.toClassCall().getFieldSet();
+      if (!fieldSet.getFields().isEmpty()) {
+        for (ClassField field : fieldSet.getFields()) {
+          FieldSet.Implementation impl = fieldSet.getImplementation(field);
+          if (impl != null) {
+            equations.add(new FieldCallExpression(field, this), impl.term, Equations.CMP.EQ, myVar.getSourceNode(), myVar);
+          }
+        }
+        type = type.toClassCall() instanceof ClassViewCallExpression ? new ClassViewCallExpression(type.toClassCall().getDefinition(), type.toClassCall().getPolyParamsSubst(), ((ClassViewCallExpression) type.toClassCall()).getClassView()) : new ClassCallExpression(type.toClassCall().getDefinition(), type.toClassCall().getPolyParamsSubst());
+      }
+    }
+    myVar.setType(type);
   }
 
   public InferenceReferenceExpression(InferenceVariable binding, Expression substExpression) {

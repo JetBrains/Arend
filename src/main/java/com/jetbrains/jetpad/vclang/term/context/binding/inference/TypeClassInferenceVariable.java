@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.context.binding.inference;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.typeclass.ClassView;
@@ -10,26 +9,20 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingErr
 
 public class TypeClassInferenceVariable extends InferenceVariable {
   private final ClassView myClassView;
-  private final ClassDefinition myClassDef;
+  private final boolean myExactClassView;
 
-  public TypeClassInferenceVariable(String name, Expression type, ClassView classView, Abstract.SourceNode sourceNode) {
+  public TypeClassInferenceVariable(String name, Expression type, ClassView classView, boolean isExactClassView, Abstract.SourceNode sourceNode) {
     super(name, type, sourceNode);
     myClassView = classView;
-    myClassDef = null;
-  }
-
-  public TypeClassInferenceVariable(String name, Expression type, ClassDefinition classDef, Abstract.SourceNode sourceNode) {
-    super(name, type, sourceNode);
-    myClassView = null;
-    myClassDef = classDef;
+    myExactClassView = isExactClassView;
   }
 
   public ClassView getClassView() {
     return myClassView;
   }
 
-  public ClassDefinition getClassDefinition() {
-    return myClassDef;
+  public boolean isExactClassView() {
+    return myExactClassView;
   }
 
   @Override

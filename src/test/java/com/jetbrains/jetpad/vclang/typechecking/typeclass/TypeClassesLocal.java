@@ -217,6 +217,19 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   }
 
   @Test
+  public void transitiveInferLocal2() {
+    typeCheckClass(
+        "\\static \\class X {\n" +
+        "  \\abstract A : \\Type0\n" +
+        "  \\abstract B : A -> \\Type0\n" +
+        "}\n" +
+        "\\static \\view Y \\on X \\by A { B }\n" +
+        "\\static \\view Z \\on X \\by A { B => C }\n" +
+        "\\static \\function f {y : Y} (a : y.A) => B a\n" +
+        "\\static \\function g (z : Z) (a : z.A) => f a");
+  }
+
+  @Test
   public void transitiveLocalDuplicate() {
     typeCheckClass(
         "\\static \\class X {\n" +
@@ -225,8 +238,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "}\n" +
         "\\static \\view Y \\on X \\by A { B }\n" +
         "\\static \\view Z \\on X \\by A { B => C }\n" +
-        "\\static \\function f {A : \\Type0} {y : Y { A => A } } (a : A) => B a\n" +
-        "\\static \\function g {A : \\Type0} {y : Y { A => A } } {z : Z { A => A }} (a : A) => f a", 1);
+        "\\static \\function f {A : \\Type0} {y : Y { A => A }} (a : A) => B a\n" +
+        "\\static \\function g {A : \\Type0} {y : Y { A => A }} {z : Z { A => A }} (a : A) => f a", 1);
   }
 
   @Test
@@ -238,7 +251,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "}\n" +
         "\\static \\view \\on X \\by A { B }\n" +
         "\\static \\view Z \\on X \\by A { B => C }\n" +
-        "\\static \\function f {A : \\Type0} {z : Z { A => A }} (a : A) => B a\n" +
+        "\\static \\function f {A : \\Type0} {z : Z { A => A }} (a : A) => C a\n" +
         "\\static \\function g {A : \\Type0} {z : Z { A => A }} {x : X { A => A }} (a : A) => f a");
   }
 }

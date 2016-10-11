@@ -15,13 +15,18 @@ public class ClassViewInstanceKey<T> {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    ClassViewInstanceKey that = (ClassViewInstanceKey) o;
-    return definition.equals(that.definition) && classView.equals(that.classView);
+
+    ClassViewInstanceKey<?> that = (ClassViewInstanceKey<?>) o;
+
+    if (!definition.equals(that.definition)) return false;
+    return classView != null ? classView.equals(that.classView) : that.classView == null;
 
   }
 
   @Override
   public int hashCode() {
-    return 31 * definition.hashCode() + classView.hashCode();
+    int result = definition.hashCode();
+    result = 31 * result + (classView != null ? classView.hashCode() : 0);
+    return result;
   }
 }

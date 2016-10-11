@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.ClassViewCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
@@ -32,15 +31,10 @@ public class LocalInstancePool implements ClassViewInstancePool {
   public Expression getInstance(Expression classifyingExpression, ClassView classView) {
     Expression expr = classifyingExpression.normalize(NormalizeVisitor.Mode.NF);
     for (Pair pair : myPool) {
-      if (pair.key.equals(expr) && pair.classView == classView) {
+      if (pair.key.equals(expr) && (classView == null || pair.classView == classView)) {
         return pair.value;
       }
     }
-    return null;
-  }
-
-  @Override
-  public Expression getInstance(Expression classifyingExpression, ClassDefinition classDef) {
     return null;
   }
 

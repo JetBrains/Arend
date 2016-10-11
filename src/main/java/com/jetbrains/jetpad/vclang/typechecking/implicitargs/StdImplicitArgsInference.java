@@ -2,6 +2,8 @@ package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
 import com.jetbrains.jetpad.vclang.term.*;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.FunctionInferenceVariable;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
@@ -32,7 +34,14 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     ExprSubstitution substitution = new ExprSubstitution();
     for (int i = 0; i < parameters.size(); i++) {
       DependentLink parameter = parameters.get(i);
-      Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable(parameter.getName(), parameter.getType().subst(substitution), i + 1, expr));
+      Expression type = parameter.getType().subst(substitution).normalize(NormalizeVisitor.Mode.WHNF);
+      InferenceVariable infVar;
+      if (type.toClassCall() != null && type.toClassCall() instanceof ClassViewCallExpression) {
+        infVar = new TypeClassInferenceVariable(parameter.getName(), type, ((ClassViewCallExpression) type.toClassCall()).getClassView(), false, expr);
+      } else {
+        infVar = new FunctionInferenceVariable(parameter.getName(), type, i + 1, expr);
+      }
+      Expression binding = new InferenceReferenceExpression(infVar, myVisitor.getEquations());
       result.expression = result.expression.addArgument(binding);
       substitution.add(parameter, binding);
     }
@@ -51,7 +60,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         List<DependentLink> pathParams = new ArrayList<>();
         ((Expression) conCall.getType()).getPiParameters(pathParams, false, false);
         DependentLink lamParam = param("i", Interval());
-        Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", pathParams.get(0).getType().toPi().getCodomain(), 1, fun));
+        Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", pathParams.get(0).getType().toPi().getCodomain(), 1, fun), myVisitor.getEquations());
         Expression lamExpr = Lam(lamParam, binding);
         result.type = result.type.applyExpressions(Collections.singletonList(lamExpr));
 

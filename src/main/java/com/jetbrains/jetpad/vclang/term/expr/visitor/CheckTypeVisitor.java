@@ -434,7 +434,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
               myEquations.addVariable(pLvl);
               myEquations.addVariable(hLvl);
               InferenceVariable inferenceVariable = new LambdaInferenceVariable("type-of-" + name, Universe(new Level(pLvl), new Level(hLvl)), argIndex, expr, false);
-              link.setType(new InferenceReferenceExpression(inferenceVariable));
+              link.setType(new InferenceReferenceExpression(inferenceVariable, myEquations));
             }
             if (actualPiLink == null) {
               actualPiLink = link;
@@ -562,7 +562,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   @Override
   public Result visitInferHole(Abstract.InferHoleExpression expr, Expression expectedType) {
     if (expectedType != null) {
-      return new Result(new InferenceReferenceExpression(new ExpressionInferenceVariable(expectedType, expr)), expectedType);
+      return new Result(new InferenceReferenceExpression(new ExpressionInferenceVariable(expectedType, expr), myEquations), expectedType);
     } else {
       LocalTypeCheckingError error = new ArgInferenceError(expression(), expr, new Expression[0]);
       expr.setWellTyped(myContext, Error(null, error));

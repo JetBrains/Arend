@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.typeclass.ClassView;
 
@@ -11,11 +10,6 @@ public class EmptyInstancePool implements ClassViewInstancePool {
 
   @Override
   public Expression getInstance(Expression classifyingExpression, ClassView classView) {
-    return null;
-  }
-
-  @Override
-  public Expression getInstance(Expression classifyingExpression, ClassDefinition classDef) {
     return null;
   }
 }
