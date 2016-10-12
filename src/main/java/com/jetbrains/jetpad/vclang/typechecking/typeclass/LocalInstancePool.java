@@ -30,12 +30,21 @@ public class LocalInstancePool implements ClassViewInstancePool {
   @Override
   public Expression getInstance(Expression classifyingExpression, ClassView classView) {
     Expression expr = classifyingExpression.normalize(NormalizeVisitor.Mode.NF);
+    Expression result = null;
     for (Pair pair : myPool) {
       if (pair.key.equals(expr) && (classView == null || pair.classView == classView)) {
-        return pair.value;
+        if (classView != null) {
+          return pair.value;
+        } else {
+          if (result != null) {
+            return null;
+          } else {
+            result = pair.value;
+          }
+        }
       }
     }
-    return null;
+    return result;
   }
 
   private boolean addInstance(Expression classifyingExpression, ClassView classView, Expression instance) {

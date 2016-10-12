@@ -15,7 +15,11 @@ definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?  
             | '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef?    # defData
             | classKindMod ID ('\\extends' atomFieldsAcc extendsOpts)* '{' statement* '}' # defClass
             | '\\view' ID? '\\on' (expr '.')? ID '\\by' name '{' classViewField* '}'      # defClassView
-            | '\\instance' ID tele* '=>' expr                                             # defInstance
+            | defaultInst '\\instance' ID tele* '=>' expr                                 # defInstance
+            ;
+
+defaultInst :             # noDefault
+            | '\\default' # withDefault
             ;
 
 classViewField : name ('=>' precedence name)? ;

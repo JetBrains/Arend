@@ -134,7 +134,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "}\n" +
         "\\static \\view \\on X \\by A { B }\n" +
         "\\static \\view Y \\on X \\by A { B => C }\n" +
-        "\\function f (A' : \\Type0) (x : X { A => A' }) {y : Y { A => A' } } (a : A') => 0");
+        "\\function f (A' : \\Type0) (x : X { A => A' }) {y : Y { A => A' } } (a : A') => B a = C a");
   }
 
   @Test
@@ -239,19 +239,6 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "\\static \\view Y \\on X \\by A { B }\n" +
         "\\static \\view Z \\on X \\by A { B => C }\n" +
         "\\static \\function f {A : \\Type0} {y : Y { A => A }} (a : A) => B a\n" +
-        "\\static \\function g {A : \\Type0} {y : Y { A => A }} {z : Z { A => A }} (a : A) => f a", 1);
-  }
-
-  @Test
-  public void transitiveLocalDuplicateDefault() {
-    typeCheckClass(
-        "\\static \\class X {\n" +
-        "  \\abstract A : \\Type0\n" +
-        "  \\abstract B : A -> \\Type0\n" +
-        "}\n" +
-        "\\static \\view \\on X \\by A { B }\n" +
-        "\\static \\view Z \\on X \\by A { B => C }\n" +
-        "\\static \\function f {A : \\Type0} {z : Z { A => A }} (a : A) => C a\n" +
-        "\\static \\function g {A : \\Type0} {z : Z { A => A }} {x : X { A => A }} (a : A) => f a");
+        "\\static \\function g {A : \\Type0} {y : Y { A => A }} {z : Z { A => A }} (a : A) => f a", 2);
   }
 }

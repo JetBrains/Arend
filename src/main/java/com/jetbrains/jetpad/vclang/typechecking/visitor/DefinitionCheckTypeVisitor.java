@@ -934,7 +934,15 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       if (myState.getInstancePool().getInstance(defCall.getDefinition(), classView) != null) {
         myErrorReporter.report(new LocalTypeCheckingError("Instance of '" + classView.getAbstract().getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", term));
       } else {
-        myState.getInstancePool().addInstance(defCall.getDefinition(), classView, FunCall(typedDef, new LevelSubstitution(), Collections.<Expression>emptyList()));
+        Expression instance = FunCall(typedDef, new LevelSubstitution(), Collections.<Expression>emptyList());
+        myState.getInstancePool().addInstance(defCall.getDefinition(), classView, instance);
+        if (def.isDefault()) {
+          if (myState.getInstancePool().getInstance(defCall.getDefinition(), null) != null) {
+            myErrorReporter.report(new LocalTypeCheckingError("Default instance of '" + classView.getAbstract().getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", term));
+          } else {
+            myState.getInstancePool().addInstance(defCall.getDefinition(), null, instance);
+          }
+        }
       }
     }
 

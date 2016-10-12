@@ -27,6 +27,5 @@ public class GlobalInstancePool implements ClassViewInstancePool {
 
   public void addInstance(Definition classifyingDefinition, ClassView classView, Expression instance) {
     myViewPool.put(new ClassViewInstanceKey<>(classifyingDefinition, classView), instance);
-    myViewPool.put(new ClassViewInstanceKey<ClassView>(classifyingDefinition, null), instance);
   }
 }

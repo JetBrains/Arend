@@ -344,6 +344,7 @@ public final class Abstract {
   }
 
   public interface ClassViewInstance extends Definition {
+    boolean isDefault();
     List<? extends Argument> getArguments();
     Expression getTerm();
   }
