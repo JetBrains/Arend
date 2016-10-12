@@ -139,7 +139,6 @@ atom  : literal                         # atomLiteral
       | modulePath                      # atomModuleCall
       ;
 
-
 atomFieldsAcc : atom fieldAcc* implementStatements?;
 
 implementStatements : '{' implementStatement* '}';
@@ -175,12 +174,14 @@ UNIVERSE : '\\Type' [0-9]+;
 TRUNCATED_UNIVERSE : '\\' [0-9]+ '-Type' [0-9]+;
 PROP : '\\Prop';
 SET : '\\Set' [0-9]+;
-ID : [a-zA-Z_][a-zA-Z0-9_\-\']*;
+LAMBDA : '\\lam';
+COLON : ':';
+ARROW : '->';
 WS : [ \t\r\n]+ -> skip;
 LINE_COMMENT : '--' .*? '\r'? '\n' -> skip;
 COMMENT : '{-' .*? '-}' -> skip;
-COLON : ':';
-LAMBDA : '\\lam';
-ARROW : '->';
-BIN_OP : [~!@#$%^&*\-+=<>?/:|.]+;
+fragment BIN_OP_CHAR : [~!@#$%^&*\-+=<>?/|.:];
+BIN_OP : BIN_OP_CHAR+;
+fragment ID_FRAGMENT : [a-zA-Z_] [a-zA-Z0-9_\']* | BIN_OP_CHAR+;
+ID : ID_FRAGMENT ('-' ID_FRAGMENT)*;
 ERROR_CHAR : .;

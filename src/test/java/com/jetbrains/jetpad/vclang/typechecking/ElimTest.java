@@ -244,11 +244,11 @@ public class ElimTest extends TypeCheckingTestCase {
   public void elimFail() {
       typeCheckClass("\\static \\function\n" +
                      "test (x y : Nat) : y = 0 <= \\elim x, y\n" +
-                     "| _, zero => path (\\lam _ => zero)" +
-                     "| zero, suc y' => test x y'" +
-                     "| suc x', suc y' => test x y'" +
-
-                     "\\static \\function" +
+                     "| _, zero => path (\\lam _ => zero)\n" +
+                     "| zero, suc y' => test x y'\n" +
+                     "| suc x', suc y' => test x y'\n" +
+                     "\n" +
+                     "\\static \\function\n" +
                      "zero-is-one : 1 = 0 => test 0 1", 2);
   }
 
