@@ -31,8 +31,8 @@ public class PathsTest extends TypeCheckingTestCase {
     pathArgs.add(Reference(A.getNext()));
     pathArgs.add(Reference(A.getNext()));
     Expression pathCall = ConCall(Prelude.PATH_CON, new Level(0), new Level(0), pathArgs, Lam(C, Reference(A.getNext())));
-    assertEquals(Lam(A, pathCall).normalize(NormalizeVisitor.Mode.NF), idp.expression);
-    assertEquals(Pi(A, FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0), Reference(A), Reference(A.getNext()), Reference(A.getNext()))).normalize(NormalizeVisitor.Mode.NF), idp.type.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Lam(A, pathCall).normalize(NormalizeVisitor.Mode.NF), idp.getExpression());
+    assertEquals(Pi(A, FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0), Reference(A), Reference(A.getNext()), Reference(A.getNext()))).normalize(NormalizeVisitor.Mode.NF), idp.getType().normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test

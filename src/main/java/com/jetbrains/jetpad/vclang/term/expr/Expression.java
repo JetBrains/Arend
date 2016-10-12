@@ -226,7 +226,12 @@ public abstract class Expression implements PrettyPrintable, Type {
   }
 
   public Expression addArguments(Collection<? extends Expression> arguments) {
-    return arguments.isEmpty() ? this : new AppExpression(this, arguments);
+    Expression result = this;
+    for (Expression argument : arguments) {
+      result = result.addArgument(argument);
+    }
+    return result;
+//    return arguments.isEmpty() ? this : new AppExpression(this, arguments);
   }
 
   public AppExpression toApp() {

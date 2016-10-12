@@ -21,7 +21,7 @@ public class Sigma extends TypeCheckingTestCase {
     context.add(new TypedBinding("A", Universe(3, 7)));
     context.add(new TypedBinding("B", Universe(4, 6)));
     CheckTypeVisitor.Result result = typeCheckExpr(context, "\\Sigma A B", null);
-    assertEquals(Universe(4, 7), result.type.toExpression());
+    assertEquals(Universe(4, 7), result.getType().toExpression());
   }
 
   @Test
@@ -30,13 +30,13 @@ public class Sigma extends TypeCheckingTestCase {
     context.add(new TypedBinding("A", Universe(4, 6)));
     context.add(new TypedBinding("B", Pi(Reference(context.get(0)), Universe(2, 8))));
     CheckTypeVisitor.Result result = typeCheckExpr(context, "\\Sigma (x : A) (B x)", null);
-    assertEquals(Universe(4, 8), result.type.toExpression());
+    assertEquals(Universe(4, 8), result.getType().toExpression());
   }
 
   @Test
   public void sigmaTest() {
     CheckTypeVisitor.Result result = typeCheckExpr("\\Sigma (x y : Nat) (\\Sigma (z : \\4-Type3) (w : \\5-Type2))", null);
-    assertEquals(Universe(4, 6), result.type.toExpression());
+    assertEquals(Universe(4, 6), result.getType().toExpression());
   }
 
   @Test
@@ -45,7 +45,7 @@ public class Sigma extends TypeCheckingTestCase {
     context.add(new TypedBinding("A", Universe(3, 7)));
     context.add(new TypedBinding("B", Pi(Reference(context.get(0)), Universe(5, -1))));
     CheckTypeVisitor.Result result = typeCheckExpr(context, "\\Sigma (x : A) (B x)", null);
-    assertEquals(Universe(3, 7), result.type.toExpression());
+    assertEquals(Universe(3, 7), result.getType().toExpression());
   }
 
   @Test
@@ -54,6 +54,6 @@ public class Sigma extends TypeCheckingTestCase {
     context.add(new TypedBinding("A", Universe(4, -1)));
     context.add(new TypedBinding("B", Universe(2, 6)));
     CheckTypeVisitor.Result result = typeCheckExpr(context, "\\Sigma A B", null);
-    assertEquals(Universe(2, 6), result.type.toExpression());
+    assertEquals(Universe(2, 6), result.getType().toExpression());
   }
 }

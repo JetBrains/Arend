@@ -206,7 +206,7 @@ public class TypeCheckingElim {
             wasError = true;
             continue;
           }
-          expressions.add(clauseResult.expression);
+          expressions.add(clauseResult.getExpression());
         } else {
           expressions.add(null);
         }
@@ -247,7 +247,7 @@ public class TypeCheckingElim {
       CheckTypeVisitor.Result exprResult = myVisitor.getTypeCheckingDefCall().getLocalVar((Abstract.DefCallExpression) expression);
       if (exprResult == null)
         return null;
-      return exprResult.expression.toReference();
+      return exprResult.getExpression().toReference();
     } else {
       LocalTypeCheckingError error = new LocalTypeCheckingError("\\elim can be applied only to a local variable", expression);
       myVisitor.getErrorReporter().report(error);

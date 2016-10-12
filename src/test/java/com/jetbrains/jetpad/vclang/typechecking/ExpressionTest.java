@@ -104,7 +104,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
           "-> (\\Pi (z : (Nat -> Nat) -> Nat) -> Y (z (\\lam _ => 0)) (f (\\lam x => z (\\lam _ => x)))) " +
           "-> Y 0 (f (\\lam x => x))", null);
     assertNotNull(typeResult);
-    CheckTypeVisitor.Result result = typeCheckExpr(context, "\\lam f h => h (\\lam k => k 1)", typeResult.expression);
+    CheckTypeVisitor.Result result = typeCheckExpr(context, "\\lam f h => h (\\lam k => k 1)", typeResult.getExpression());
     assertNotNull(result);
   }
 
@@ -112,7 +112,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
   public void typeCheckingInferPiIndex() {
     // (X : Type1) -> X -> X : Type2
     Concrete.Expression expr = cPi("X", cUniverse(1), cPi(cVar("X"), cVar("X")));
-    assertThat(typeCheckExpr(expr, null).type.toExpression(), is((Expression) Universe(2)));
+    assertThat(typeCheckExpr(expr, null).getType().toExpression(), is((Expression) Universe(2)));
   }
 
   @Test
@@ -136,7 +136,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
   public void typedLambda() {
     // \x:Nat. x : Nat -> Nat
     Concrete.Expression expr = cLam(cargs(cTele(true, cvars("x"), cNat())), cVar("x"));
-    assertThat(typeCheckExpr(expr, null).type, is((Type) Pi(Nat(), Nat())));
+    assertThat(typeCheckExpr(expr, null).getType(), is((Type) Pi(Nat(), Nat())));
   }
 
   @Test
@@ -198,7 +198,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
             cTele(cvars("f"), cPi(ctypeArgs(cTele(false, cvars("A"), cUniverse(0)), cTele(cvars("x"), cVar("A"))), cApps(cVar("F"), cVar("x"))))),
         cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cNat(), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar("f"), cVar("x"))));
     CheckTypeVisitor.Result result = typeCheckExpr(expr, null);
-    Expression typeCodom = ((Expression) result.type).getPiParameters(new ArrayList<DependentLink>(), true, false);
+    Expression typeCodom = ((Expression) result.getType()).getPiParameters(new ArrayList<DependentLink>(), true, false);
     assertThat(typeCodom.toLet(), is(notNullValue()));
   }
 
@@ -207,7 +207,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     // \let | x (y : Nat) => Zero \in x : Nat -> Nat
     Concrete.Expression expr = cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cZero())), cVar("x"));
     CheckTypeVisitor.Result result = typeCheckExpr(expr, null);
-    assertThat(result.type.normalize(NormalizeVisitor.Mode.WHNF), is((Type) Pi(Nat(), Nat())));
+    assertThat(result.getType().normalize(NormalizeVisitor.Mode.WHNF), is((Type) Pi(Nat(), Nat())));
   }
 
   @Test

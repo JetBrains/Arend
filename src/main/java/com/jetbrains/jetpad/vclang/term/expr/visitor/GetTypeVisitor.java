@@ -11,6 +11,9 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.params;
 
 public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
@@ -22,12 +25,23 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
 
   @Override
   public Type visitDefCall(DefCallExpression expr, Void params) {
-    return expr.getDefinition().getType(expr.getPolyParamsSubst()).applyExpressions(expr.getDefCallArguments());
+    List<DependentLink> defParams = new ArrayList<>();
+    Type type = expr.getDefinition().getTypeWithParams(defParams, expr.getPolyParamsSubst());
+    assert expr.getDefCallArguments().size() == defParams.size();
+    return type.subst(DependentLink.Helper.toSubstitution(defParams, expr.getDefCallArguments()), new LevelSubstitution());
+    // return expr.getDefinition().getType(expr.getPolyParamsSubst()).applyExpressions(expr.getDefCallArguments());
   }
 
   @Override
   public Type visitConCall(ConCallExpression expr, Void params) {
-    return expr.getDefinition().getType(expr.getPolyParamsSubst()).applyExpressions(expr.getDataTypeArguments()).applyExpressions(expr.getDefCallArguments());
+    List<DependentLink> defParams = new ArrayList<>();
+    Type type = expr.getDefinition().getTypeWithParams(defParams, expr.getPolyParamsSubst());
+    assert expr.getDataTypeArguments().size() + expr.getDefCallArguments().size() == defParams.size();
+    ExprSubstitution subst = DependentLink.Helper.toSubstitution(defParams, expr.getDataTypeArguments());
+    defParams = defParams.subList(expr.getDataTypeArguments().size(), defParams.size());
+    subst.add(DependentLink.Helper.toSubstitution(defParams, expr.getDefCallArguments()));
+    return type.subst(subst, new LevelSubstitution());
+    //return expr.getDefinition().getType(expr.getPolyParamsSubst()).applyExpressions(expr.getDataTypeArguments()).applyExpressions(expr.getDefCallArguments());
   }
 
   @Override

@@ -38,6 +38,14 @@ public interface DependentLink extends Binding {
       return result;
     }
 
+    public static ExprSubstitution toSubstitution(List<DependentLink> links, List<? extends Expression> expressions) {
+      ExprSubstitution result = new ExprSubstitution();
+      for (int i = 0; i < Math.min(links.size(), expressions.size()); ++i) {
+        result.add(links.get(i), expressions.get(i));
+      }
+      return result;
+    }
+
     public static List<Binding> toContext(DependentLink link) {
       List<Binding> result = new ArrayList<>();
       for (; link.hasNext(); link = link.getNext()) {
@@ -108,6 +116,20 @@ public interface DependentLink extends Binding {
         }
       }
       return result;
+    }
+
+    public static DependentLink mergeList(List<DependentLink> list, ExprSubstitution subst) {
+      if (list.isEmpty()) {
+        return EmptyDependentLink.getInstance();
+      }
+
+      list = fromList(list);
+      DependentLink link = subst(list.get(0), subst);
+      for (int i = 1; i < list.size(); ++i) {
+        DependentLink nextLink = subst(list.get(i), subst);
+        link.setNext(nextLink);
+      }
+      return link;
     }
 
     public static DependentLink subst(DependentLink link, ExprSubstitution exprSubst, LevelSubstitution levelSubst) {

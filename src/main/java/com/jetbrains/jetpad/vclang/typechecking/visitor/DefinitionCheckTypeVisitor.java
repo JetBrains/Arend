@@ -138,16 +138,17 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
         Abstract.ClassView classView = Abstract.getUnderlyingClassView(typeArgument.getType());
         if (classView != null) {
-          result.expression = new ClassViewCallExpression(result.expression.toClassCall().getDefinition(), result.expression.toClassCall().getPolyParamsSubst(), result.expression.toClassCall().getFieldSet(), myState.getClassView(classView));
+          Expression newExpr = new ClassViewCallExpression(result.getExpression().toClassCall().getDefinition(), result.getExpression().toClassCall().getPolyParamsSubst(), result.getExpression().toClassCall().getFieldSet(), myState.getClassView(classView));
+          result.reset(newExpr);
         }
 
         DependentLink param;
         if (argument instanceof Abstract.TelescopeArgument) {
           List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
-          param = param(argument.getExplicit(), names, result.expression);
+          param = param(argument.getExplicit(), names, result.getExpression());
           index += names.size();
         } else {
-          param = param(argument.getExplicit(), (String) null, result.expression);
+          param = param(argument.getExplicit(), (String) null, result.getExpression());
           index++;
         }
 
@@ -193,7 +194,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     if (resultType != null) {
       CheckTypeVisitor.Result typeResult = visitor.checkType(resultType, Universe());
       if (typeResult != null) {
-        expectedType = typeResult.expression;
+        expectedType = typeResult.getExpression();
       }
     }
 
@@ -213,9 +214,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       } else {
         CheckTypeVisitor.Result termResult = visitor.checkType(term, expectedType);
         if (termResult != null) {
-          typedDef.setElimTree(top(list.getFirst(), leaf(def.getArrow(), termResult.expression)));
+          typedDef.setElimTree(top(list.getFirst(), leaf(def.getArrow(), termResult.getExpression())));
           if (expectedType == null) {
-            typedDef.setResultType(termResult.type);
+            typedDef.setResultType(termResult.getType());
           }
         }
       }
@@ -284,7 +285,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         } else if (def.getUniverse() instanceof Abstract.UniverseExpression) {
           CheckTypeVisitor.Result result = visitor.checkType(def.getUniverse(), Universe());
           if (result != null) {
-            userSorts = new SortMax(result.expression.toUniverse().getSort());
+            userSorts = new SortMax(result.getExpression().toUniverse().getSort());
           }
         } else {
           String msg = "Specified type " + PrettyPrintVisitor.prettyPrint(def.getUniverse(), 0) + " of '" + def.getName() + "' is not a universe";
@@ -401,7 +402,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
               continue;
 
             patterns.add(toPatterns(typedPatterns.getPatterns()));
-            expressions.add(result.expression.normalize(NormalizeVisitor.Mode.NF));
+            expressions.add(result.getExpression().normalize(NormalizeVisitor.Mode.NF));
             arrows.add(Abstract.Definition.Arrow.RIGHT);
           }
         }
@@ -507,13 +508,13 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         //  constructor.setContainsInterval();
        // }
 
-        sorts.add(result.type.toSorts());
+        sorts.add(result.getType().toSorts());
 
         DependentLink param;
         if (argument instanceof Abstract.TelescopeArgument) {
-          param = param(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), result.expression);
+          param = param(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), result.getExpression());
         } else {
-          param = param(argument.getExplicit(), (String) null, result.expression);
+          param = param(argument.getExplicit(), (String) null, result.getExpression());
         }
         list.append(param);
         visitor.getContext().addAll(toContext(param));
@@ -638,7 +639,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         CheckTypeVisitor.Result result = aSuperClass.getSuperClass().accept(visitor, Universe());
         if (result == null) continue;
 
-        ClassCallExpression typeCheckedSuperClass = result.expression.toClassCall();
+        ClassCallExpression typeCheckedSuperClass = result.getExpression().toClassCall();
         if (typeCheckedSuperClass == null) {
           myErrorReporter.report(new LocalTypeCheckingError("Parent must be a class", aSuperClass.getSuperClass()));
           continue;
@@ -739,7 +740,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
             DependentLink thisParameter = createThisParam(typedDef);
             visitor.setThisClass(typedDef, Reference(thisParameter));
             CheckTypeVisitor.Result result = implementField(fieldSet, field, ((Abstract.ImplementDefinition) definition).getExpression(), visitor, thisClassCall, thisParameter);
-            if (result == null || result.expression.toError() != null) {
+            if (result == null || result.getExpression().toError() != null) {
               classOk = false;
             }
           } else if (definition instanceof Abstract.ClassView) {
@@ -769,7 +770,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
   private CheckTypeVisitor.Result implementField(FieldSet fieldSet, ClassField field, Abstract.Expression implBody, CheckTypeVisitor visitor, ClassCallExpression fieldSetClass, DependentLink thisParam) {
     CheckTypeVisitor.Result result = visitor.typeCheck(implBody, field.getBaseType().subst(field.getThisParameter(), Reference(thisParam)));
-    fieldSet.implementField(field, new FieldSet.Implementation(thisParam, result != null ? result.expression : Error(null, null)), fieldSetClass);
+    fieldSet.implementField(field, new FieldSet.Implementation(thisParam, result != null ? result.getExpression() : Error(null, null)), fieldSetClass);
     return result;
   }
 
@@ -812,15 +813,15 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         DependentLink param;
         if (argument instanceof Abstract.TelescopeArgument) {
           List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
-          param = param(argument.getExplicit(), names, result.expression);
+          param = param(argument.getExplicit(), names, result.getExpression());
           index += names.size();
         } else {
-          param = param(argument.getExplicit(), (String) null, result.expression);
+          param = param(argument.getExplicit(), (String) null, result.getExpression());
           index++;
         }
         list.append(param);
         context.addAll(toContext(param));
-        pLevel.add(result.type.toSorts().getPLevel());
+        pLevel.add(result.getType().toSorts().getPLevel());
       } else {
         myErrorReporter.report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, new Expression[0]));
         return typedDef;
@@ -835,9 +836,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     if (typeResult == null) {
       return typedDef;
     }
-    typedResultType = typeResult.expression;
+    typedResultType = typeResult.getExpression();
 
-    SortMax resultSort = typeResult.type.toSorts();
+    SortMax resultSort = typeResult.getType().toSorts();
     pLevel.add(resultSort.getPLevel());
 
     typedDef.hasErrors(false);
@@ -885,8 +886,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       } else {
         CheckTypeVisitor.Result termResult = visitor.checkType(term, null);
         if (termResult != null) {
-          typedDef.setElimTree(top(list.getFirst(), leaf(Abstract.Definition.Arrow.RIGHT, termResult.expression)));
-          typedDef.setResultType(termResult.type);
+          typedDef.setElimTree(top(list.getFirst(), leaf(Abstract.Definition.Arrow.RIGHT, termResult.getExpression())));
+          typedDef.setResultType(termResult.getType());
         }
       }
 

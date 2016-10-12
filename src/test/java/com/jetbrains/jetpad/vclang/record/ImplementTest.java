@@ -1,12 +1,17 @@
 package com.jetbrains.jetpad.vclang.record;
 
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -256,10 +261,12 @@ public class ImplementTest extends TypeCheckingTestCase {
         " \\implement x' => 0\n" +
         "}\n" +
         "\\static \\function f => D { x => 1 }");
+    List<DependentLink> fParams = new ArrayList<>();
+    Type fType = result.getDefinition("f").getTypeWithParams(fParams, new LevelSubstitution());
     assertEquals(new SortMax(new Sort(2,1)), ((ClassDefinition) result.getDefinition("A")).getSorts());
     assertEquals(new SortMax(new Sort(1,1)), ((ClassDefinition) result.getDefinition("B")).getSorts());
     assertEquals(new SortMax(new Sort(2,1)), ((ClassDefinition) result.getDefinition("C")).getSorts());
     assertEquals(new SortMax(new Sort(0,0)), ((ClassDefinition) result.getDefinition("D")).getSorts());
-    assertEquals(ExpressionFactory.Universe(Sort.PROP), result.getDefinition("f").getType(new LevelSubstitution()).toExpression());
+    assertEquals(ExpressionFactory.Universe(Sort.PROP), fType.fromPiParameters(fParams).toExpression());
   }
 }

@@ -905,7 +905,7 @@ public class DefCall extends TypeCheckingTestCase {
     context.add(new TypedBinding("x", Nat()));
     CheckTypeVisitor.Result result = typeCheckExpr(context, "x", null);
     assertNotNull(result);
-    assertEquals(Reference(context.get(0)), result.expression);
+    assertEquals(Reference(context.get(0)), result.getExpression());
   }
 
   @Test

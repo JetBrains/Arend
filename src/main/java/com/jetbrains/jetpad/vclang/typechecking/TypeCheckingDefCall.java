@@ -55,7 +55,7 @@ public class TypeCheckingDefCall {
     }
   }
 
-  public CheckTypeVisitor.Result typeCheckDefCall(Abstract.DefCallExpression expr) {
+  public CheckTypeVisitor.PreResult typeCheckDefCall(Abstract.DefCallExpression expr) {
     Abstract.Expression left = expr.getExpression();
     Abstract.Definition resolvedDefinition = expr.getReferent();
     Definition typeCheckedDefinition = null;
@@ -118,8 +118,8 @@ public class TypeCheckingDefCall {
     String name = expr.getName();
 
     // Field call
-    if (result.type instanceof Expression) {
-      Expression type = ((Expression) result.type).normalize(NormalizeVisitor.Mode.WHNF);
+    if (result.getType() instanceof Expression) {
+      Expression type = ((Expression) result.getType()).normalize(NormalizeVisitor.Mode.WHNF);
       if (type.toClassCall() != null) {
         ClassDefinition classDefinition = type.toClassCall().getDefinition();
 
@@ -154,17 +154,17 @@ public class TypeCheckingDefCall {
           return null;
         }
 
-        return makeResult(typeCheckedDefinition, null, result.expression, expr);
+        return makeResult(typeCheckedDefinition, null, result.getExpression(), expr);
       }
     }
 
     // Constructor call
-    DataCallExpression dataCall = result.expression.toLam() != null ? result.expression.toLam().getBody().toDataCall() : result.expression.toDataCall();
+    DataCallExpression dataCall = result.getExpression().toLam() != null ? result.getExpression().toLam().getBody().toDataCall() : result.getExpression().toDataCall();
     if (dataCall != null) {
       DataDefinition dataDefinition = dataCall.getDefinition();
       List<? extends Expression> args = dataCall.getDefCallArguments();
-      if (result.expression.toLam() != null) {
-        args = args.subList(0, args.size() - DependentLink.Helper.size(result.expression.toLam().getParameters()));
+      if (result.getExpression().toLam() != null) {
+        args = args.subList(0, args.size() - DependentLink.Helper.size(result.getExpression().toLam().getParameters()));
       }
 
       Constructor constructor;
@@ -190,7 +190,7 @@ public class TypeCheckingDefCall {
         Expression conCall = ConCall(constructor, dataCall.getPolyParamsSubst(), new ArrayList<>(args), new ArrayList<Expression>());
         List<DependentLink> conParams = new ArrayList<>();
         Expression conType = constructor.getTypeWithParams(conParams, dataCall.getPolyParamsSubst());
-        return new CheckTypeVisitor.Result(conCall, conType, conParams);
+        return new CheckTypeVisitor.PreResult(conCall, conType, conParams);
       }
     }
 
@@ -198,7 +198,7 @@ public class TypeCheckingDefCall {
     Expression thisExpr = null;
     final Definition leftDefinition;
     Abstract.Definition member = null;
-    ClassCallExpression classCall = result.expression.toClassCall();
+    ClassCallExpression classCall = result.getExpression().toClassCall();
     if (classCall != null) {
       leftDefinition = classCall.getDefinition();
       ClassField parentField = classCall.getDefinition().getEnclosingThisField();
@@ -218,15 +218,15 @@ public class TypeCheckingDefCall {
         }
       }
     } else {
-      if (result.expression.toDefCall() != null) {
+      if (result.getExpression().toDefCall() != null) {
         thisExpr = null;
-        leftDefinition = result.expression.toDefCall().getDefinition();
-      } else if (result.expression.toDefCall() != null && result.expression.toDefCall().getDefCallArguments().size() == 1) {
-        thisExpr = result.expression.toDefCall().getDefCallArguments().get(0);
-        leftDefinition = result.expression.toDefCall().getDefinition();
+        leftDefinition = result.getExpression().toDefCall().getDefinition();
+      } else if (result.getExpression().toDefCall() != null && result.getExpression().toDefCall().getDefCallArguments().size() == 1) {
+        thisExpr = result.getExpression().toDefCall().getDefCallArguments().get(0);
+        leftDefinition = result.getExpression().toDefCall().getDefinition();
       } else {
         LocalTypeCheckingError error = new LocalTypeCheckingError("Expected a definition", expr);
-        expr.setWellTyped(myVisitor.getContext(), Error(result.expression, error));
+        expr.setWellTyped(myVisitor.getContext(), Error(result.getExpression(), error));
         myVisitor.getErrorReporter().report(error);
         return null;
       }
@@ -252,7 +252,7 @@ public class TypeCheckingDefCall {
     return makeResult(typeCheckedDefinition, classView, thisExpr, expr);
   }
 
-  private CheckTypeVisitor.Result makeResult(Definition definition, ClassView classView, Expression thisExpr, Abstract.Expression expr) {
+  private CheckTypeVisitor.PreResult makeResult(Definition definition, ClassView classView, Expression thisExpr, Abstract.Expression expr) {
     LevelSubstitution polySubst = new LevelSubstitution();
     for (Binding polyVar : definition.getPolyParams()) {
       LevelInferenceVariable l = new LevelInferenceVariable(polyVar.getName(), polyVar.getType(), expr);
@@ -276,7 +276,7 @@ public class TypeCheckingDefCall {
 
     List<DependentLink> params = new ArrayList<>();
     Type type = definition.getTypeWithParams(params, polySubst);
-    CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(defCall, type, params);
+    CheckTypeVisitor.PreResult result = new CheckTypeVisitor.PreResult(defCall, type, params);
     if (thisExpr != null) {
       //result.expression = defCall.applyThis(thisExpr);
       //result.type = result.type.applyExpressions(Collections.singletonList(thisExpr));

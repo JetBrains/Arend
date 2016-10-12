@@ -162,19 +162,17 @@ public class Constructor extends Definition implements Function {
    // }
 
     DependentLink parameters = getDataTypeParameters();
+    ExprSubstitution substitution = new ExprSubstitution();
     if (parameters.hasNext()) {
-      ExprSubstitution substitution = new ExprSubstitution();
       parameters = DependentLink.Helper.subst(parameters, substitution, polyParams);
       for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
         link.setExplicit(false);
       }
       // resultType = Pi(parameters, resultType.subst(substitution, polyParams));
-      resultType = resultType.subst(substitution, polyParams);
       params.addAll(DependentLink.Helper.toList(parameters));
-    } else {
-      resultType = resultType.subst(polyParams);
     }
-    params.addAll(DependentLink.Helper.toList(myParameters));
+    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, substitution, polyParams)));
+    resultType = resultType.subst(substitution, polyParams);
     return resultType;
   }
 

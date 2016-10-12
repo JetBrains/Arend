@@ -100,7 +100,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   @Test
   public void testAt() {
     CheckTypeVisitor.Result result = typeCheckExpr("\\lam (p : suc = suc) => (p @ left) 0", null);
-    assertNotNull(result.expression.getType());
+    assertNotNull(result.getExpression().getType());
   }
 
   @Test

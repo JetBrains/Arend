@@ -35,7 +35,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f => 0");
     assertNotNull(typedDef);
     assertFalse(typedDef.hasErrors());
-    assertEquals(Nat(), typedDef.getType(new LevelSubstitution()));
+    assertEquals(Nat(), typedDef.getTypeWithParams(new ArrayList<DependentLink>(), new LevelSubstitution()));
   }
 
   @Test
@@ -43,12 +43,16 @@ public class DefinitionTest extends TypeCheckingTestCase {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f (x : Nat) (y : Nat -> Nat) => y");
     assertNotNull(typedDef);
     assertFalse(typedDef.hasErrors());
-    assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), typedDef.getType(new LevelSubstitution()));
+    List<DependentLink> params = new ArrayList<>();
+    Type type = typedDef.getTypeWithParams(params, new LevelSubstitution());
+    assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), type.fromPiParameters(params));
   }
 
   @Test
   public void dataType() {
     DataDefinition typedDef = (DataDefinition) typeCheckDef("\\data D {A B : \\Type0} (I : A -> B -> \\Type0) (a : A) (b : B) | con1 (x : A) (I x b) | con2 {y : B} (I a y)");
+    List<DependentLink> params = new ArrayList<>();
+    Type type = typedDef.getTypeWithParams(params, new LevelSubstitution());
 
     LinkList parameters = new LinkList();
     parameters.append(param(false, vars("A", "B"), Universe(0)));
@@ -71,7 +75,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
 
     assertNotNull(typedDef);
     assertFalse(typedDef.hasErrors());
-    assertEquals(Pi(parameters.getFirst(), Universe(0)), typedDef.getType(new LevelSubstitution()).toExpression());
+    assertEquals(Pi(parameters.getFirst(), Universe(0)), type.fromPiParameters(params).toExpression());
     assertEquals(2, typedDef.getConstructors().size());
 
     ExprSubstitution substitution = new ExprSubstitution();
@@ -85,24 +89,34 @@ public class DefinitionTest extends TypeCheckingTestCase {
     substitution.add(link, Reference(a));
     link = link.getNext();
     substitution.add(link, Reference(b));
+    List<DependentLink> con1Params = new ArrayList<>();
+    Type con1Type = typedDef.getConstructors().get(0).getTypeWithParams(con1Params, new LevelSubstitution());
     assertEquals(Pi(parameters.getFirst(), Pi(parameters1.getFirst(), DataCall(typedDef, new LevelSubstitution(),
         Reference(A),
         Reference(B),
         Reference(I),
         Reference(a),
-        Reference(b)))), typedDef.getConstructors().get(0).getType(new LevelSubstitution()));
+        Reference(b)))), con1Type.fromPiParameters(con1Params));
+    List<DependentLink> con2Params = new ArrayList<>();
+    Type con2Type = typedDef.getConstructors().get(1).getTypeWithParams(con2Params, new LevelSubstitution());
     assertEquals(Pi(parameters.getFirst(), Pi(parameters2.getFirst(), DataCall(typedDef, new LevelSubstitution(),
         Reference(A),
         Reference(B),
         Reference(I),
         Reference(a),
-        Reference(b)))), typedDef.getConstructors().get(1).getType(new LevelSubstitution()));
+        Reference(b)))), con2Type.fromPiParameters(con2Params));
   }
 
   @Test
   public void dataType2() {
     DataDefinition typedDef = (DataDefinition) typeCheckDef("\\data D (A : \\7-Type2) | con1 (X : \\1-Type5) X | con2 (Y : \\2-Type3) A Y");
     DependentLink A = typedDef.getParameters();
+    List<DependentLink> params = new ArrayList<>();
+    Type type = typedDef.getTypeWithParams(params, new LevelSubstitution());
+    List<DependentLink> con1Params = new ArrayList<>();
+    Type con1Type = typedDef.getConstructors().get(0).getTypeWithParams(con1Params, new LevelSubstitution());
+    List<DependentLink> con2Params = new ArrayList<>();
+    Type con2Type = typedDef.getConstructors().get(1).getTypeWithParams(con2Params, new LevelSubstitution());
 
     LinkList parameters1 = new LinkList();
     parameters1.append(param("X", Universe(5, 1)));
@@ -115,11 +129,11 @@ public class DefinitionTest extends TypeCheckingTestCase {
 
     assertNotNull(typedDef);
     assertFalse(typedDef.hasErrors());
-    assertEquals(Pi(A, Universe(6, 7)), typedDef.getType(new LevelSubstitution()).toExpression());
+    assertEquals(Pi(A, Universe(6, 7)), type.fromPiParameters(params).toExpression());
     assertEquals(2, typedDef.getConstructors().size());
 
-    assertEquals(Pi(A, Pi(parameters1.getFirst(), DataCall(typedDef, new LevelSubstitution(), Reference(A)))), typedDef.getConstructors().get(0).getType(new LevelSubstitution()));
-    assertEquals(Pi(A, Pi(parameters2.getFirst(), DataCall(typedDef, new LevelSubstitution(), Reference(A)))), typedDef.getConstructors().get(1).getType(new LevelSubstitution()));
+    assertEquals(Pi(A, Pi(parameters1.getFirst(), DataCall(typedDef, new LevelSubstitution(), Reference(A)))), con1Type.fromPiParameters(con1Params));
+    assertEquals(Pi(A, Pi(parameters2.getFirst(), DataCall(typedDef, new LevelSubstitution(), Reference(A)))), con2Type.fromPiParameters(con2Params));
   }
 
   @Test
@@ -137,7 +151,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     Concrete.Expression expr = cApps(cDefCall(null, con), cNat(), cZero(), cZero());
 
     Result result = typeCheckExpr(expr, null);
-    assertThat(result.type, is((Type) DataCall(def, new LevelSubstitution(), Nat())));
+    assertThat(result.getType(), is((Type) DataCall(def, new LevelSubstitution(), Nat())));
   }
 
   @Test
@@ -150,7 +164,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     localContext.add(new TypedBinding("f", Pi(DataCall(def, new LevelSubstitution(), Pi(Nat(), Nat())), Nat())));
 
     Result result = typeCheckExpr(localContext, expr, null);
-    assertThat(result.type, is((Type) Nat()));
+    assertThat(result.getType(), is((Type) Nat()));
   }
 
   @Test
@@ -163,7 +177,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     localContext.add(new TypedBinding("f", Pi(Pi(Nat(), DataCall(def, new LevelSubstitution(), Nat())), Pi(Nat(), Nat()))));
 
     Result result = typeCheckExpr(localContext, expr, null);
-    assertThat(result.type, is((Type) Pi(Nat(), Nat())));
+    assertThat(result.getType(), is((Type) Pi(Nat(), Nat())));
   }
 
   @Test
