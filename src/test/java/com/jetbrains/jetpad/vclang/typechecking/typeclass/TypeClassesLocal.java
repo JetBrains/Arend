@@ -239,6 +239,6 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "\\static \\view Y \\on X \\by A { B }\n" +
         "\\static \\view Z \\on X \\by A { B => C }\n" +
         "\\static \\function f {A : \\Type0} {y : Y { A => A }} (a : A) => B a\n" +
-        "\\static \\function g {A : \\Type0} {y : Y { A => A }} {z : Z { A => A }} (a : A) => f a", 2);
+        "\\static \\function g {A : \\Type0} {y : Y { A => A }} {z : Z { A => A }} (a : A) : f a = y.B a => path (\\lam _ => B a)");
   }
 }
