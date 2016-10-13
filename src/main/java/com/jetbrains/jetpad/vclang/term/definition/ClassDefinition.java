@@ -66,8 +66,12 @@ public class ClassDefinition extends Definition {
 
   @Override
   public Type getTypeWithParams(List<DependentLink> params, LevelSubstitution polyParams) {
-    return new PiUniverseType(EmptyDependentLink.getInstance(), getSorts().subst(polyParams));
-  }
+    DependentLink link = EmptyDependentLink.getInstance();
+    if (getThisClass() != null) {
+      link = param(ClassCall(getThisClass()));
+    }
+    return new PiUniverseType(link, getSorts().subst(polyParams));
+  } /**/
 
   @Override
   public ClassCallExpression getDefCall(LevelSubstitution polyParams) {

@@ -187,10 +187,12 @@ public class TypeCheckingDefCall {
       if (constructor != null) {
         //result.expression = ConCall(constructor, dataCall.getPolyParamsSubst(), new ArrayList<>(args), new ArrayList<Expression>());
         //result.type = result.expression.getType();
-        Expression conCall = ConCall(constructor, dataCall.getPolyParamsSubst(), new ArrayList<>(args), new ArrayList<Expression>());
+        Expression conCall = ConCall(constructor, dataCall.getPolyParamsSubst(), new ArrayList<Expression>(), new ArrayList<Expression>());
         List<DependentLink> conParams = new ArrayList<>();
         Expression conType = constructor.getTypeWithParams(conParams, dataCall.getPolyParamsSubst());
-        return new CheckTypeVisitor.PreResult(conCall, conType, conParams);
+        CheckTypeVisitor.PreResult conResult = new CheckTypeVisitor.PreResult(conCall, conType, conParams);
+        conResult.applyExpressions(args);
+        return conResult;
       }
     }
 

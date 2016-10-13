@@ -504,7 +504,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Expression expectedCodomain = expectedType == null ? null : expectedType.getPiParameters(piParams, true, false);
     LinkList list = new LinkList();
     DependentLink actualPiLink = null;
-    Result result = new Result(null, null);
+    Result result;//  = new Result(null, null);
     ExprSubstitution piLamSubst = new ExprSubstitution();
     int piParamsIndex = 0;
     int argIndex = 1;
@@ -580,17 +580,19 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       bodyResult = typeCheck(body, expectedBodyType);
       if (bodyResult == null) return null;
       if (actualPiLink != null && expectedCodomain != null) {
-        result.expression = bodyResult.expression;
-        result.type = bodyResult.type.addParameters(actualPiLink, true);
+        result = new Result(bodyResult.expression, bodyResult.type.addParameters(actualPiLink, true));
+        // result.expression = bodyResult.expression;
+        // result.type = bodyResult.type.addParameters(actualPiLink, true);
         if (!compare(result, expectedCodomain, body)) {
           return null;
         }
       }
     }
 
-    result.expression = Lam(list.getFirst(), bodyResult.expression);
-    result.type = bodyResult.type.addParameters(list.getFirst(), true);
-    return result;
+    //result.expression = Lam(list.getFirst(), bodyResult.expression);
+    //result.type = bodyResult.type.addParameters(list.getFirst(), true);
+    return new Result(Lam(list.getFirst(), bodyResult.expression),
+            bodyResult.type.addParameters(list.getFirst(), true));
   }
 
   @Override
@@ -730,7 +732,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     List<Expression> fields = new ArrayList<>(expr.getFields().size());
     LinkList list = new LinkList();
-    Result tupleResult = new Result(null, null);
+    Result tupleResult; // = new Result(null, null);
     for (int i = 0; i < expr.getFields().size(); i++) {
       Result result = typeCheck(expr.getFields().get(i), null);
       if (result == null) return null;
@@ -747,14 +749,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     SigmaExpression type = Sigma(list.getFirst());
-    tupleResult.expression = Tuple(fields, type);
-    tupleResult.type = type;
-    tupleResult = checkResult(expectedTypeNorm, tupleResult, expr);
+    //tupleResult.expression = Tuple(fields, type);
+    //tupleResult.type = type;
+    tupleResult = checkResult(expectedTypeNorm, new Result(Tuple(fields, type), type), expr);
     return tupleResult;
   }
 
   public Result visitArguments(List<? extends Abstract.TypeArgument> arguments, Abstract.Expression codomain, Abstract.Expression expr) {
-    Result argsResult = new Result(null, null);
+    //Result argsResult = new Result(null, null);
     LinkList list = new LinkList();
     Result codomainResult = null;
     SortMax maxDomainUni = new SortMax();
@@ -788,9 +790,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       maxDomainUni = new SortMax(maxDomainUni.getPLevel(), codomainUniverse.getHLevel());
     }
 
-    argsResult.expression = codomainResult == null ? Sigma(list.getFirst()) : Pi(list.getFirst(), codomainResult.expression);
-    argsResult.type = new PiUniverseType(EmptyDependentLink.getInstance(), maxDomainUni);
-    return argsResult;
+   // argsResult.expression = codomainResult == null ? Sigma(list.getFirst()) : Pi(list.getFirst(), codomainResult.expression);
+   // argsResult.type = new PiUniverseType(EmptyDependentLink.getInstance(), maxDomainUni);
+    return new Result(codomainResult == null ? Sigma(list.getFirst()) : Pi(list.getFirst(), codomainResult.expression),
+            new PiUniverseType(EmptyDependentLink.getInstance(), maxDomainUni));
   }
 
   @Override
@@ -922,7 +925,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     FieldSet fieldSet = new FieldSet();
-    Result classExtResult = new Result(null, null);
+    Result classExtResult; // = new Result(null, null);
     ClassCallExpression resultExpr = classCallExpr instanceof ClassViewCallExpression ? new ClassViewCallExpression(baseClass, classCallExpr.getPolyParamsSubst(), fieldSet, ((ClassViewCallExpression) classCallExpr).getClassView()) : ClassCall(baseClass, classCallExpr.getPolyParamsSubst(), fieldSet);
 
     fieldSet.addFieldsFrom(classCallExpr.getFieldSet(), resultExpr);
@@ -948,8 +951,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       implementField(fieldSet, field, statement.getExpression(), this, resultExpr);
     }
 
-    classExtResult.expression = resultExpr;
-    classExtResult.type = new PiUniverseType(EmptyDependentLink.getInstance(), resultExpr.getSorts());
+    classExtResult = new Result(resultExpr, new PiUniverseType(EmptyDependentLink.getInstance(), resultExpr.getSorts()));
+    //classExtResult.expression = resultExpr;
+    //classExtResult.type = new PiUniverseType(EmptyDependentLink.getInstance(), resultExpr.getSorts());
     return checkResult(expectedType, classExtResult, expr);
   }
 
@@ -1055,7 +1059,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   public Result visitLet(Abstract.LetExpression expr, Expression expectedType) {
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
       List<LetClause> clauses = new ArrayList<>();
-      Result letResult = new Result(null, null);
+      //Result letResult = new Result(null, null);
       for (int i = 0; i < expr.getClauses().size(); i++) {
         LetClause clauseResult = typeCheckLetClause(expr.getClauses().get(i));
         if (clauseResult == null) return null;
@@ -1065,9 +1069,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (result == null) return null;
 
       LetExpression letExpr = Let(clauses, result.expression);
-      letResult.expression = letExpr;
-      letResult.type = letExpr.getType(result.type);
-      return letResult;
+      //letResult.expression = letExpr;
+      //letResult.type = letExpr.getType(result.type);
+      return new Result(letExpr, letExpr.getType(result.type));
     }
   }
 
