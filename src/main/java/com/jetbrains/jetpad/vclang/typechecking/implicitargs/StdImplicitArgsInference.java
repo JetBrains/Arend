@@ -26,19 +26,11 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
   }
 
   protected boolean fixImplicitArgs(CheckTypeVisitor.PreResult result, int num_params, Abstract.Expression expr) {
-   // if (parameters.isEmpty()) {
-   //   return true;
-   // }
-
-    // ExprSubstitution substitution = new ExprSubstitution();
     for (int i = 0; i < num_params; i++) {
       DependentLink parameter = result.getParameters().get(0);
       Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable(parameter.getName(), parameter.getType(), i + 1, expr));
       result.applyExpressions(Collections.singletonList(binding));
-      //result.expression = result.expression.addArgument(binding);
-     // substitution.add(parameter, binding);
     }
-    //result.type = result.type.subst(substitution, new LevelSubstitution());
     return true;
   }
 
@@ -51,12 +43,10 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       ConCallExpression conCall = result.getExpression().toConCall();
       if (conCall != null && conCall.getDefinition() == Prelude.PATH_CON && conCall.getDataTypeArguments().isEmpty()) {
         List<DependentLink> pathParams = new ArrayList<>();
-        //((Expression) conCall.getType()).getPiParameters(pathParams, false, false);
         Prelude.PATH_CON.getTypeWithParams(pathParams, conCall.getPolyParamsSubst());
         DependentLink lamParam = param("i", Interval());
         Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", pathParams.get(0).getType().getPiCodomain().toExpression(), 1, fun)); // TODO: get rid of toExpression
         Expression lamExpr = Lam(lamParam, binding);
-        // result.type = result.type.applyExpressions(Collections.singletonList(lamExpr));
         result.applyExpressions(Collections.singletonList(lamExpr));
 
         CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, Pi(lamParam, binding));
@@ -67,13 +57,10 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         Expression expr1 = argResult.getExpression().addArgument(Left());
         Expression expr2 = argResult.getExpression().addArgument(Right());
         result.applyExpressions(Arrays.asList(expr1, expr2, argResult.getExpression()));
-        //result.expression = ConCall(conCall.getDefinition(), conCall.getPolyParamsSubst(), Arrays.asList(lamExpr, expr1, expr2), Collections.singletonList(argResult.expression));
-        //result.type = result.type.applyExpressions(Arrays.asList(expr1, expr2, argResult.expression));
         return result;
       }
 
       List<DependentLink> params = new ArrayList<>();
-      //result.type = result.type.getPiParameters(params, true, true);
       result.getImplicitParameters(params);
       if (!fixImplicitArgs(result, params.size(), fun)) {
         return null;
@@ -100,8 +87,6 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       return null;
     }
 
-    //result.expression = result.expression.addArgument(argResult.expression);
-    //result.type = result.type.applyExpressions(Collections.singletonList(argResult.expression));
     result.applyExpressions(Collections.singletonList(argResult.getExpression()));
     return result;
   }
@@ -112,8 +97,12 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       Abstract.ArgumentExpression argument = ((Abstract.AppExpression) fun).getArgument();
       result = inferArg(((Abstract.AppExpression) fun).getFunction(), argument.getExpression(), argument.isExplicit(), expectedType);
     } else {
-      if (fun instanceof Abstract.DefCallExpression) {
-        result = myVisitor.getTypeCheckingDefCall().typeCheckDefCall((Abstract.DefCallExpression) fun);
+      if (fun instanceof Abstract.DefCallExpression || fun instanceof Abstract.ApplyLevelExpression) {
+        if (fun instanceof Abstract.DefCallExpression) {
+          result = myVisitor.getTypeCheckingDefCall().typeCheckDefCall((Abstract.DefCallExpression) fun);
+        } else {
+          result = myVisitor.getTypeCheckingDefCall().typeCheckDefCall((Abstract.ApplyLevelExpression) fun);
+        }
         if (result != null) {
           fun.setWellTyped(myVisitor.getContext(), result.getExpression());
         }
@@ -169,12 +158,10 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
   @Override
   public CheckTypeVisitor.Result inferTail(CheckTypeVisitor.Result result, Expression expectedType, Abstract.Expression expr) {
     List<DependentLink> actualParams = new ArrayList<>();
-    // Type actualType = result.type.getPiParameters(actualParams, true, true);
     List<DependentLink> expectedParams = new ArrayList<>(actualParams.size());
     Expression expectedType1 = expectedType.getPiParameters(expectedParams, true, true);
     result.getImplicitParameters(actualParams);
     if (expectedParams.size() > actualParams.size()) {
-      // TODO: what if result.parameters contain parameter, which is not Expression?
       LocalTypeCheckingError error = new TypeMismatchError(expectedType1.fromPiParameters(expectedParams), result.getType(), expr);
       expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.getExpression(), error));
       myVisitor.getErrorReporter().report(error);
@@ -183,7 +170,6 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
     if (expectedParams.size() != actualParams.size()) {
       int argsNumber = actualParams.size() - expectedParams.size();
-      //result.type = actualType.fromPiParameters(actualParams.subList(argsNumber, actualParams.size()));
       if (!fixImplicitArgs(result, argsNumber, expr)) {
         return null;
       }

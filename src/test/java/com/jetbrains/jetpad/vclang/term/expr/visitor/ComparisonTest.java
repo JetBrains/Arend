@@ -200,7 +200,16 @@ public class ComparisonTest extends TypeCheckingTestCase {
             Lam(param("i", Interval()), Nat()), Zero(), Zero()));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(param(type), type));
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(param(type), type));
-    assertEquals(result2.expression, result1.expression);
+    assertEquals(result2.getExpression(), result1.getExpression());
+  }
+
+  @Test
+  public void etaLamBody() {
+    Expression type = Pi(param(Nat()), DataCall(Prelude.PATH, new Level(0), new Level(1),
+      Lam(param("i", Interval()), Nat()), Zero(), Zero()));
+    CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(param(type), type));
+    CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => \\lam x => a x", Pi(param(type), type));
+    assertEquals(result2.getExpression(), result1.getExpression());
   }
 
   @Test
@@ -210,6 +219,6 @@ public class ComparisonTest extends TypeCheckingTestCase {
             Lam(param("i", Interval()), Pi(param(Nat()), Nat())), Lam(x, Reference(x)), Lam(x, Reference(x)));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a => path (\\lam i x => (a @ i) x)", Pi(param(type), type));
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(param(type), type));
-    assertEquals(result2.expression, result1.expression);
+    assertEquals(result2.getExpression(), result1.getExpression());
   }
 }

@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.TypeClassInferenceVariable;
@@ -17,6 +18,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.term.typeclass.ClassView;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -53,6 +55,51 @@ public class TypeCheckingDefCall {
     } else {
       return typeCheckedDefinition;
     }
+  }
+
+  public CheckTypeVisitor.PreResult typeCheckDefCall(Abstract.ApplyLevelExpression expr) {
+    List<Abstract.Expression> levelExprs = new ArrayList<>();
+    Abstract.Expression app_expr = expr;
+
+    while (app_expr instanceof Abstract.ApplyLevelExpression) {
+      levelExprs.add(((Abstract.ApplyLevelExpression)app_expr).getLevel());
+      app_expr = ((Abstract.ApplyLevelExpression)app_expr).getFunction();
+    }
+
+    CheckTypeVisitor.PreResult result = typeCheckDefCall((Abstract.DefCallExpression)app_expr);
+    if (result == null) {
+      return null;
+    }
+
+    DefCallExpression defCall = result.getExpression().getFunction().toDefCall();
+    if (defCall == null) {
+      LocalTypeCheckingError error = new LocalTypeCheckingError("Level can only be assigned to a definition", app_expr);
+      expr.setWellTyped(myVisitor.getContext(), Error(result.getExpression(), error));
+      myVisitor.getErrorReporter().report(error);
+      return null;
+    }
+
+    Collections.reverse(levelExprs);
+
+    List<Binding> polyParams = defCall.getDefinition().getPolyParams();
+
+    for (int i = 0; i < levelExprs.size(); ++i) {
+      Binding param = polyParams.get(i);
+      Level level = myVisitor.typeCheckLevel(levelExprs.get(i), null, param.getType().toDefCall().getDefinition() == Prelude.CNAT ? -1 : 0);
+      if (level == null) {
+        return null;
+      }
+      Level value = defCall.getPolyParamsSubst().get(param);
+      if (value == null) {
+        assert false;
+        return null;
+      }
+      //if (value.isBinding() && value.getUnitBinding() instanceof LevelInferenceBinding) {
+      myVisitor.getEquations().add(value, level, Equations.CMP.EQ, expr);
+      //}
+    }
+
+    return result;
   }
 
   public CheckTypeVisitor.PreResult typeCheckDefCall(Abstract.DefCallExpression expr) {

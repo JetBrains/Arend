@@ -219,14 +219,14 @@ public class NormalizationTest extends TypeCheckingTestCase {
   public void normalizeLet1() {
     // normalize (\let | x => zero \in \let | y = suc \in y x) = 1
     CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet("x", cZero())), cLet(clets(clet("y", cSuc())), cApps(cVar("y"), cVar("x")))), null);
-    assertEquals(Suc(Zero()), result.expression.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Suc(Zero()), result.getExpression().normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeLet2() {
     // normalize (\let | x => suc \in \let | y = zero \in x y) = 1
     CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet("x", cSuc())), cLet(clets(clet("y", cZero())), cApps(cVar("x"), cVar("y")))), null);
-    assertEquals(Suc(Zero()), result.expression.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Suc(Zero()), result.getExpression().normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
@@ -234,7 +234,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     // normalize (\let | x (y z : N) => zero \in x zero) = \lam (z : N) => zero
     CheckTypeVisitor.Result result = typeCheckExpr("\\let x (y z : Nat) => 0 \\in x 0", null);
     DependentLink x = param("x", Nat());
-    assertEquals(Lam(x, Zero()), result.expression.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Lam(x, Zero()), result.getExpression().normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
@@ -243,7 +243,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("n", Nat()));
     CheckTypeVisitor.Result result = typeCheckExpr(context, "\\let x (y : Nat) : Nat <= \\elim y | zero => zero | suc _ => zero \\in x n", null);
-    assertEquals(result.expression, result.expression.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(result.getExpression(), result.getExpression().normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
@@ -254,7 +254,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
         cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern(null), true, false))), Abstract.Definition.Arrow.RIGHT, cUniverse(1))
     );
     CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cUniverse(2), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar("x"), cZero())), null);
-    assertEquals(Universe(0), result.expression.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Universe(0), result.getExpression().normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
@@ -316,7 +316,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
 
   @Test
   public void testIsoRight() {
-    Binding lp = Prelude.PATH.getPolyParamByType(Prelude.LVL); //new TypedBinding("lp", Lvl());
+    Binding lp = Prelude.PATH.getPolyParamByType(Prelude.LVL);
     Binding lh = Prelude.PATH.getPolyParamByType(Prelude.CNAT);
     DependentLink A = param("A", Universe(new Level(lp), new Level(lh)));
     DependentLink B = param("B", Universe(new Level(lp), new Level(lh)));
