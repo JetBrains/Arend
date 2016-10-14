@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.term.expr.FunCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
 import java.util.ArrayList;
@@ -18,7 +19,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FunCall;
 
 public class FunctionDefinition extends Definition implements Function {
   private DependentLink myParameters;
-  private Type myResultType;
+  private TypeMax myResultType;
   private ElimTreeNode myElimTree;
   private boolean myTypeHasErrors;
   private final Namespace myOwnNamespace;
@@ -65,7 +66,7 @@ public class FunctionDefinition extends Definition implements Function {
     myParameters = parameters;
   }
 
-  public Type getResultType() {
+  public TypeMax getResultType() {
     return myResultType;
   }
 
@@ -74,7 +75,7 @@ public class FunctionDefinition extends Definition implements Function {
     return DependentLink.Helper.size(myParameters);
   }
 
-  public void setResultType(Type resultType) {
+  public void setResultType(TypeMax resultType) {
     myResultType = resultType;
   }
 
@@ -88,7 +89,7 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   @Override
-  public Type getTypeWithParams(List<DependentLink> params, LevelSubstitution polyParams) {
+  public TypeMax getTypeWithParams(List<DependentLink> params, LevelSubstitution polyParams) {
     if (myTypeHasErrors) {
       return null;
     }

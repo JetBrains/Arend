@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +38,7 @@ public abstract class Definition implements Referable {
     return EmptyDependentLink.getInstance();
   }
 
-  public abstract Type getTypeWithParams(List<DependentLink> params, LevelSubstitution polySubst);
+  public abstract TypeMax getTypeWithParams(List<DependentLink> params, LevelSubstitution polySubst);
 
   // public abstract Type getType(LevelSubstitution polyParams);
 

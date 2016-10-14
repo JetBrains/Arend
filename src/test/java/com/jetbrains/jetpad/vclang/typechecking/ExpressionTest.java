@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -136,7 +137,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
   public void typedLambda() {
     // \x:Nat. x : Nat -> Nat
     Concrete.Expression expr = cLam(cargs(cTele(true, cvars("x"), cNat())), cVar("x"));
-    assertThat(typeCheckExpr(expr, null).getType(), is((Type) Pi(Nat(), Nat())));
+    assertThat(typeCheckExpr(expr, null).getType(), is((TypeMax) Pi(Nat(), Nat())));
   }
 
   @Test
@@ -207,7 +208,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     // \let | x (y : Nat) => Zero \in x : Nat -> Nat
     Concrete.Expression expr = cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cZero())), cVar("x"));
     CheckTypeVisitor.Result result = typeCheckExpr(expr, null);
-    assertThat(result.getType().normalize(NormalizeVisitor.Mode.WHNF), is((Type) Pi(Nat(), Nat())));
+    assertThat(result.getType().normalize(NormalizeVisitor.Mode.WHNF), is((TypeMax) Pi(Nat(), Nat())));
   }
 
   @Test

@@ -27,7 +27,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-public class PiUniverseType implements Type {
+public class PiUniverseType implements TypeMax {
   private final DependentLink myParameters;
   private final SortMax mySorts;
 
@@ -93,7 +93,7 @@ public class PiUniverseType implements Type {
   }
 
   @Override
-  public Type getPiParameters(List<DependentLink> params, boolean normalize, boolean implicitOnly) {
+  public PiUniverseType getPiParameters(List<DependentLink> params, boolean normalize, boolean implicitOnly) {
     DependentLink link = myParameters;
     for (; link.hasNext() && (!implicitOnly || !link.isExplicit()); link = link.getNext()) {
       params.add(link);
@@ -102,7 +102,7 @@ public class PiUniverseType implements Type {
   }
 
   @Override
-  public Type fromPiParameters(List<DependentLink> params) {
+  public PiUniverseType fromPiParameters(List<DependentLink> params) {
     return new PiUniverseType(params.isEmpty() ? EmptyDependentLink.getInstance() : params.get(0), mySorts);
   }
 
@@ -129,7 +129,7 @@ public class PiUniverseType implements Type {
   }
 
   @Override
-  public Type applyExpressions(List<? extends Expression> expressions) {
+  public PiUniverseType applyExpressions(List<? extends Expression> expressions) {
     DependentLink link = myParameters;
     ExprSubstitution subst = new ExprSubstitution();
     for (Expression expr : expressions) {

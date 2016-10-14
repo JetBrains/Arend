@@ -7,12 +7,13 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 
 public interface Equations {
   boolean add(Expression expr1, Expression expr2, CMP cmp, Abstract.SourceNode sourceNode, InferenceVariable stuckVar);
-  boolean solve(Type type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode);
+  boolean solve(TypeMax type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode);
   boolean add(Level level1, Level level2, CMP cmp, Abstract.SourceNode sourceNode);
-  boolean add(Type type, Expression expr, Abstract.SourceNode sourceNode, InferenceVariable stuckVar);
+  boolean add(TypeMax type, Expression expr, Abstract.SourceNode sourceNode, InferenceVariable stuckVar);
   boolean addVariable(LevelInferenceVariable var);
   void remove(Equation equation);
   LevelSubstitution solve(Abstract.SourceNode sourceNode);

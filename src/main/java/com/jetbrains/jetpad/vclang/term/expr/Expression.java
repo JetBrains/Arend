@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
@@ -61,7 +62,7 @@ public abstract class Expression implements PrettyPrintable, Type {
     return universe == null ? null : new SortMax(universe.getSort());
   }
 
-  public Type getType() {
+  public TypeMax getType() {
     return accept(new GetTypeVisitor(), null);
   }
 

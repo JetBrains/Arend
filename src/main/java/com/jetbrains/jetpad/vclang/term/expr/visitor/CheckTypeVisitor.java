@@ -26,6 +26,7 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
@@ -64,10 +65,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   public static class PreResult {
     private Expression expression;
-    private Type type;
+    private TypeMax type;
     private List<DependentLink> parameters = new ArrayList<>();
 
-    public PreResult(Expression expression, Type type) {
+    public PreResult(Expression expression, TypeMax type) {
       this.expression = expression;
       if (type != null) {
         List<DependentLink> params = new ArrayList<>();
@@ -76,14 +77,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
     }
 
-    public PreResult(Expression expression, Type type, List<DependentLink> parameters) {
+    public PreResult(Expression expression, TypeMax type, List<DependentLink> parameters) {
       this(expression, type);
       List<DependentLink> params = new ArrayList<>(parameters);
       params.addAll(this.parameters);
       this.parameters = params;
     }
 
-    public PreResult(Expression expression, Type type, DependentLink parameters) {
+    public PreResult(Expression expression, TypeMax type, DependentLink parameters) {
       this(expression, type, DependentLink.Helper.toList(parameters));
     }
 
@@ -91,7 +92,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return expression;
     }
 
-    public Type getAtomicType() {
+    public TypeMax getAtomicType() {
       return type;
     }
 
@@ -103,7 +104,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       this.expression = expression;
     }
 
-    public void reset(Expression expression, Type type) {
+    public void reset(Expression expression, TypeMax type) {
       PreResult result = new PreResult(expression, type);
       this.expression = result.expression;
       this.type = result.type;
@@ -146,11 +147,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   public static class Result extends PreResult {
-    public Result(Expression expression, Type type) {
+    public Result(Expression expression, TypeMax type) {
       super(expression, type);
     }
 
-    public Type getType() {
+    public TypeMax getType() {
       return getAtomicType().fromPiParameters(getParameters());
     }
   }

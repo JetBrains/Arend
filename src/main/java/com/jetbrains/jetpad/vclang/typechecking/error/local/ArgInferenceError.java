@@ -3,11 +3,12 @@ package com.jetbrains.jetpad.vclang.typechecking.error.local;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 
 public class ArgInferenceError extends LocalTypeCheckingError {
   public final Expression[] candidates;
   public final Expression expected;
-  public final Type actual;
+  public final TypeMax actual;
 
   public ArgInferenceError(String message, Abstract.SourceNode expression, Expression[] candidates) {
     super(message, expression);
@@ -16,7 +17,7 @@ public class ArgInferenceError extends LocalTypeCheckingError {
     this.actual = null;
   }
 
-  public ArgInferenceError(String message, Expression expected, Type actual, Abstract.SourceNode expression, Expression candidate) {
+  public ArgInferenceError(String message, Expression expected, TypeMax actual, Abstract.SourceNode expression, Expression candidate) {
     super(message, expression);
     this.candidates = new Expression[1];
     this.candidates[0] = candidate;

@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
@@ -324,7 +325,7 @@ public class TypeCheckingDefCall {
     }
 
     List<DependentLink> params = new ArrayList<>();
-    Type type = definition.getTypeWithParams(params, polySubst);
+    TypeMax type = definition.getTypeWithParams(params, polySubst);
     CheckTypeVisitor.PreResult result = new CheckTypeVisitor.PreResult(defCall, type, params);
     if (thisExpr != null) {
       //result.expression = defCall.applyThis(thisExpr);

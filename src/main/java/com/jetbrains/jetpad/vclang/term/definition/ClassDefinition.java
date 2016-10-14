@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 
 import java.util.HashSet;
@@ -65,7 +66,7 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
-  public Type getTypeWithParams(List<DependentLink> params, LevelSubstitution polyParams) {
+  public TypeMax getTypeWithParams(List<DependentLink> params, LevelSubstitution polyParams) {
     DependentLink link = EmptyDependentLink.getInstance();
     if (getThisClass() != null) {
       link = param(ClassCall(getThisClass()));

@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.context.binding.inference;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
@@ -22,7 +23,7 @@ public class LambdaInferenceVariable extends InferenceVariable {
   }
 
   @Override
-  public LocalTypeCheckingError getErrorMismatch(Expression expectedType, Type actualType, Expression candidate) {
+  public LocalTypeCheckingError getErrorMismatch(Expression expectedType, TypeMax actualType, Expression candidate) {
     return new ArgInferenceError(myLevel ? ArgInferenceError.levelOfLambdaArg(myIndex) : ArgInferenceError.lambdaArg(myIndex), expectedType, actualType, getSourceNode(), candidate);
   }
 }

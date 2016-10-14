@@ -17,13 +17,19 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 import java.util.List;
 import java.util.Set;
 
-public interface Type extends TypeMax {
-  Type subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst);
-  Type applyExpressions(List<? extends Expression> expressions);
-  Type getPiParameters(List<DependentLink> params, boolean normalize, boolean implicitOnly);
-  Type fromPiParameters(List<DependentLink> params);
-  Type addParameters(DependentLink params, boolean modify);
-  Type getPiCodomain();
-  Type normalize(NormalizeVisitor.Mode mode);
-  Type strip(Set<Binding> bounds, LocalErrorReporter errorReporter);
+public interface TypeMax extends PrettyPrintable {
+  TypeMax subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst);
+  TypeMax applyExpressions(List<? extends Expression> expressions);
+  boolean isLessOrEquals(Sort sort);
+  boolean isLessOrEquals(Expression expression, Equations equations, Abstract.SourceNode sourceNode);
+  SortMax toSorts();
+  TypeMax getPiParameters(List<DependentLink> params, boolean normalize, boolean implicitOnly);
+  TypeMax fromPiParameters(List<DependentLink> params);
+  TypeMax addParameters(DependentLink params, boolean modify);
+  DependentLink getPiParameters();
+  TypeMax getPiCodomain();
+  TypeMax normalize(NormalizeVisitor.Mode mode);
+  TypeMax strip(Set<Binding> bounds, LocalErrorReporter errorReporter); // FIXME: wtf? Why LocalErrorReporter here??
+  Expression toExpression();
+  boolean findBinding(Referable binding);
 }

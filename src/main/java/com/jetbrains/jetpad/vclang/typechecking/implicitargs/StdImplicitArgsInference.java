@@ -103,9 +103,9 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         } else {
           result = myVisitor.getTypeCheckingDefCall().typeCheckDefCall((Abstract.ApplyLevelExpression) fun);
         }
-        if (result != null) {
-          fun.setWellTyped(myVisitor.getContext(), result.getExpression());
-        }
+      //  if (result != null) {
+      //    fun.setWellTyped(myVisitor.getContext(), result.getExpression());
+      //  }
       } else {
         result = myVisitor.typeCheck(fun, null);
       }

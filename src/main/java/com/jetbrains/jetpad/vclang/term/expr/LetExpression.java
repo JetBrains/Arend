@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 import java.util.ArrayList;
@@ -61,7 +62,7 @@ public class LetExpression extends Expression {
     return result;
   }
 
-  public Type getType(Type type) {
+  public TypeMax getType(TypeMax type) {
     if (type instanceof Expression) {
       return new LetExpression(myClauses, (Expression) type);
     } else {

@@ -16,6 +16,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
@@ -159,7 +160,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    Type type = expr.getExpression().getType();
+    TypeMax type = expr.getExpression().getType();
     if (type instanceof Expression) {
       ClassCallExpression classCall = ((Expression) type).normalize(NormalizeVisitor.Mode.WHNF).toClassCall();
       if (classCall instanceof ClassViewCallExpression) {

@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.InferenceReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.InferenceVariableListener;
@@ -72,7 +73,7 @@ public abstract class InferenceVariable implements Variable {
 
   public abstract LocalTypeCheckingError getErrorInfer(Expression... candidates);
 
-  public abstract LocalTypeCheckingError getErrorMismatch(Expression expectedType, Type actualType, Expression candidate);
+  public abstract LocalTypeCheckingError getErrorMismatch(Expression expectedType, TypeMax actualType, Expression candidate);
 
   @Override
   public String toString() {

@@ -10,32 +10,33 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.params;
 
-public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
+public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
   @Override
-  public Type visitApp(AppExpression expr, Void params) {
-    Type functionType = expr.getFunction().accept(this, null);
+  public TypeMax visitApp(AppExpression expr, Void params) {
+    TypeMax functionType = expr.getFunction().accept(this, null);
     return functionType != null ? functionType.applyExpressions(expr.getArguments()) : null;
   }
 
   @Override
-  public Type visitDefCall(DefCallExpression expr, Void params) {
+  public TypeMax visitDefCall(DefCallExpression expr, Void params) {
     List<DependentLink> defParams = new ArrayList<>();
-    Type type = expr.getDefinition().getTypeWithParams(defParams, expr.getPolyParamsSubst());
+    TypeMax type = expr.getDefinition().getTypeWithParams(defParams, expr.getPolyParamsSubst());
     assert expr.getDefCallArguments().size() == defParams.size();
     return type.subst(DependentLink.Helper.toSubstitution(defParams, expr.getDefCallArguments()), new LevelSubstitution());
     // return expr.getDefinition().getType(expr.getPolyParamsSubst()).applyExpressions(expr.getDefCallArguments());
   }
 
   @Override
-  public Type visitConCall(ConCallExpression expr, Void params) {
+  public TypeMax visitConCall(ConCallExpression expr, Void params) {
     List<DependentLink> defParams = new ArrayList<>();
-    Type type = expr.getDefinition().getTypeWithParams(defParams, expr.getPolyParamsSubst());
+    TypeMax type = expr.getDefinition().getTypeWithParams(defParams, expr.getPolyParamsSubst());
     assert expr.getDataTypeArguments().size() + expr.getDefCallArguments().size() == defParams.size();
     ExprSubstitution subst = DependentLink.Helper.toSubstitution(defParams, expr.getDataTypeArguments());
     defParams = defParams.subList(expr.getDataTypeArguments().size(), defParams.size());
@@ -45,7 +46,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
   }
 
   @Override
-  public Type visitClassCall(ClassCallExpression expr, Void params) {
+  public TypeMax visitClassCall(ClassCallExpression expr, Void params) {
     return expr.getSorts().toType().subst(new ExprSubstitution(), expr.getPolyParamsSubst());
   }
 
@@ -55,13 +56,13 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
   }
 
   @Override
-  public Type visitInferenceReference(InferenceReferenceExpression expr, Void params) {
+  public TypeMax visitInferenceReference(InferenceReferenceExpression expr, Void params) {
     return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : expr.getVariable().getType().accept(new SubstVisitor(new ExprSubstitution(), new LevelSubstitution()), null);
   }
 
   @Override
-  public Type visitLam(LamExpression expr, Void ignored) {
-    Type bodyType = expr.getBody().accept(this, null);
+  public TypeMax visitLam(LamExpression expr, Void ignored) {
+    TypeMax bodyType = expr.getBody().accept(this, null);
     if (bodyType instanceof Expression) {
       return new PiExpression(expr.getParameters(), (Expression) bodyType);
     } else
@@ -72,7 +73,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
     }
   }
 
-  private SortMax getSorts(Type type) {
+  private SortMax getSorts(TypeMax type) {
     if (type instanceof Expression) {
       UniverseExpression universeType = ((Expression) type).normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
       if (universeType != null) {
@@ -87,7 +88,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
     return null;
   }
 
-  private Type visitDependentType(DependentTypeExpression expr) {
+  private TypeMax visitDependentType(DependentTypeExpression expr) {
     SortMax codomain = null;
     if (expr instanceof PiExpression) {
       codomain = getSorts(((PiExpression) expr).getCodomain().accept(this, null));
@@ -119,12 +120,12 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
   }
 
   @Override
-  public Type visitPi(PiExpression expr, Void params) {
+  public TypeMax visitPi(PiExpression expr, Void params) {
     return visitDependentType(expr);
   }
 
   @Override
-  public Type visitSigma(SigmaExpression expr, Void params) {
+  public TypeMax visitSigma(SigmaExpression expr, Void params) {
     return visitDependentType(expr);
   }
 
@@ -137,7 +138,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
   public Expression visitError(ErrorExpression expr, Void params) {
     Expression expr1 = null;
     if (expr.getExpr() != null) {
-      Type type = expr.getExpr().accept(this, null);
+      TypeMax type = expr.getExpr().accept(this, null);
       if (type instanceof Expression) {
         expr1 = (Expression) type;
       }
@@ -152,7 +153,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
 
   @Override
   public Expression visitProj(ProjExpression expr, Void ignored) {
-    Type type = expr.getExpression().accept(this, null);
+    TypeMax type = expr.getExpression().accept(this, null);
     if (!(type instanceof Expression)) {
       return null;
     }
@@ -181,7 +182,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Type> {
   }
 
   @Override
-  public Type visitLet(LetExpression expr, Void params) {
+  public TypeMax visitLet(LetExpression expr, Void params) {
     return expr.getType(expr.getExpression().accept(this, null));
   }
 

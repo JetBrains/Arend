@@ -21,6 +21,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeDeserialization;
 
@@ -257,7 +258,7 @@ public class ModuleDeserialization {
     }
   }
 
-  private Type readType(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+  private TypeMax readType(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     if (stream.readBoolean()) {
       DependentLink params = readParameters(stream, definitionMap);
       return new PiUniverseType(params, readSortMax(stream, definitionMap));

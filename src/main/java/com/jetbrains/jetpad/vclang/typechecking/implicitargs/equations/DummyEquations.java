@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 
 public class DummyEquations implements Equations {
   private static final DummyEquations INSTANCE = new DummyEquations();
@@ -23,7 +24,7 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public boolean solve(Type type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode) {
+  public boolean solve(TypeMax type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode) {
     return false;
   }
 
@@ -33,7 +34,7 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public boolean add(Type type, Expression expr, Abstract.SourceNode sourceNode, InferenceVariable stuckVar) {
+  public boolean add(TypeMax type, Expression expr, Abstract.SourceNode sourceNode, InferenceVariable stuckVar) {
     return false;
   }
 

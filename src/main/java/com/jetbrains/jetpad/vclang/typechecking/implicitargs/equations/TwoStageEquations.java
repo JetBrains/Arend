@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -39,7 +40,7 @@ public class TwoStageEquations implements Equations {
     myVisitor = visitor;
   }
 
-  private void addEquation(Type type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode, InferenceVariable stuckVar) {
+  private void addEquation(TypeMax type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode, InferenceVariable stuckVar) {
     InferenceVariable inf1 = type instanceof Expression && ((Expression) type).toInferenceReference() != null ? ((Expression) type).toInferenceReference().getVariable() : null;
     InferenceVariable inf2 = expr.toInferenceReference() != null ? expr.toInferenceReference().getVariable() : null;
 
@@ -76,7 +77,7 @@ public class TwoStageEquations implements Equations {
 
     if (inf1 != null && inf2 == null || inf2 != null && inf1 == null) {
       InferenceVariable cInf = inf1 != null ? inf1 : inf2;
-      Type cType = inf1 != null ? expr : type;
+      TypeMax cType = inf1 != null ? expr : type;
 
       if (cType instanceof Expression) {
         Expression cExpr = (Expression) cType;
@@ -188,7 +189,7 @@ public class TwoStageEquations implements Equations {
   }
 
   @Override
-  public boolean solve(Type type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode) {
+  public boolean solve(TypeMax type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode) {
     boolean ok;
     if (type instanceof Expression) {
       ok = CompareVisitor.compare(this, cmp, ((Expression) type).normalize(NormalizeVisitor.Mode.NF), expr.normalize(NormalizeVisitor.Mode.NF), sourceNode);
@@ -229,7 +230,7 @@ public class TwoStageEquations implements Equations {
   }
 
   @Override
-  public boolean add(Type type, Expression expr, Abstract.SourceNode sourceNode, InferenceVariable stuckVar) {
+  public boolean add(TypeMax type, Expression expr, Abstract.SourceNode sourceNode, InferenceVariable stuckVar) {
     addEquation(type, expr, CMP.LE, sourceNode, stuckVar);
     return true;
   }
@@ -370,7 +371,7 @@ public class TwoStageEquations implements Equations {
     }
 
     Expression expectedType = var.getType();
-    Type actualType = expr.getType();
+    TypeMax actualType = expr.getType();
     if (!actualType.isLessOrEquals(expectedType.normalize(NormalizeVisitor.Mode.NF), this, var.getSourceNode())) {
       actualType = actualType.normalize(NormalizeVisitor.Mode.HUMAN_NF);
       LocalTypeCheckingError error = var.getErrorMismatch(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), actualType, expr);

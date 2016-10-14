@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
@@ -68,7 +69,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
         Zero(),
         FieldCall((ClassField) result.getDefinition("C.x"), Apps(Reference(p), Zero())));
     List<DependentLink> testParams = new ArrayList<>();
-    Type testType = result.getDefinition("test").getTypeWithParams(testParams, new LevelSubstitution());
+    TypeMax testType = result.getDefinition("test").getTypeWithParams(testParams, new LevelSubstitution());
     assertEquals(Pi(p, Pi(type, type)).normalize(NormalizeVisitor.Mode.NF), testType.fromPiParameters(testParams).normalize(NormalizeVisitor.Mode.NF));
   }
 

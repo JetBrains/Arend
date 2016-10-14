@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
 import java.util.*;
@@ -120,7 +121,7 @@ public class DataDefinition extends Definition {
   public void setMatchesOnInterval() { myMatchesOnInterval = true; }
 
   @Override
-  public Type getTypeWithParams(List<DependentLink> params, LevelSubstitution polyParams) {
+  public TypeMax getTypeWithParams(List<DependentLink> params, LevelSubstitution polyParams) {
     if (hasErrors()) {
       return null;
     }
