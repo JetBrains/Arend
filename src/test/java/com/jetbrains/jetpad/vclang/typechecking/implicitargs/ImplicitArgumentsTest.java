@@ -407,4 +407,18 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void piTest() {
     typeCheckDef("\\function f {lp : Lvl} {lh : CNat} (A : \\Type (lp,lh)) (B : A -> \\Type (lp,lh)) (f g : \\Pi (x : A) -> B x) => f = g");
   }
+
+  @Test
+  public void etaExpansionTest() {
+    typeCheckClass(
+        "\\function ($) {A B : \\Set0} (f : A -> B) (a : A) => f a\n" +
+        "\\data Fin (n : Nat) | Fin n => fzero | Fin (suc n) => fsuc (Fin n)\n" +
+        "\\function unsuc {n : Nat} (x : Fin (suc n)) : Fin n <= \\elim n, x\n" +
+        "  | _, fzero => fzero\n" +
+        "  | zero, fsuc x => fzero\n" +
+        "  | suc n, fsuc x => fsuc (unsuc x)\n" +
+        "\\function foo {n : Nat} (x : Fin n) : Nat <= \\elim n\n" +
+        "  | zero => zero\n" +
+        "  | suc n => foo $ unsuc x");
+  }
 }
