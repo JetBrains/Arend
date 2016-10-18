@@ -810,7 +810,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     // Some tricks to keep going as long as possible in case of error
     Collection<? extends Abstract.ImplementStatement> statements = expr.getStatements();
     for (Abstract.ImplementStatement statement : statements) {
-      Definition implementedDef = myState.getTypechecked(statement.getImplementedField());
+      Abstract.Definition implementField = statement.getImplementedField();
+      if (implementField instanceof Abstract.ClassViewField) {
+        implementField = ((Abstract.ClassViewField) implementField).getUnderlyingField();
+      }
+      Definition implementedDef = myState.getTypechecked(implementField);
       if (!(implementedDef instanceof ClassField)) {
         myErrorReporter.report(new LocalTypeCheckingError("'" + implementedDef.getName() + "' is not a field", statement));
         continue;
