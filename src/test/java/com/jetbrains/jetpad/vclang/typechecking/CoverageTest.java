@@ -12,8 +12,9 @@ public class CoverageTest extends TypeCheckingTestCase {
   public void coverageTest() {
     typeCheckClass(
         "\\data Fin (n : Nat) | Fin n => fzero | Fin (suc n) => fsuc (Fin n)\n" +
-        "\\function unsuc {n : Nat} (x : Fin (suc n)) : Fin n <= \\elim n, x\n" +
-        "  | _, fzero => fzero\n" +
+        "\\function unsuc {n : Nat} (x : Fin n) : Fin n <= \\elim n, x\n" +
+        "  | zero, fzero => fzero\n" +
+        "  | suc n, fzero => fzero\n" +
         "  | suc n, fsuc x => fsuc (unsuc x)");
   }
 
@@ -21,9 +22,8 @@ public class CoverageTest extends TypeCheckingTestCase {
   public void coverageTest2() {
     typeCheckClass(
         "\\data Fin (n : Nat) | Fin n => fzero | Fin (suc n) => fsuc (Fin n)\n" +
-        "\\function unsuc {n : Nat} (x : Fin (suc n)) : Fin n <= \\elim n, x\n" +
+        "\\function unsuc {n : Nat} (x : Fin n) : Fin n <= \\elim n, x\n" +
         "  | _, fzero => fzero\n" +
-        "  | zero, fsuc x => fsuc (unsuc x)\n" +
-        "  | suc n, fsuc x => fsuc (unsuc x)");
+        "  | suc n, fsuc x => fsuc (unsuc x)", 1);
   }
 }
