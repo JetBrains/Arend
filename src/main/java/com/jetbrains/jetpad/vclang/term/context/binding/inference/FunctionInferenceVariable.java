@@ -10,7 +10,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingErr
 public class FunctionInferenceVariable extends InferenceVariable {
   private final int myIndex;
 
-  public FunctionInferenceVariable(String name, Expression type, int index, Abstract.SourceNode sourceNode) {
+  public FunctionInferenceVariable(String name, Type type, int index, Abstract.SourceNode sourceNode) {
     super(name, type, sourceNode);
     myIndex = index;
   }
@@ -21,7 +21,7 @@ public class FunctionInferenceVariable extends InferenceVariable {
   }
 
   @Override
-  public LocalTypeCheckingError getErrorMismatch(Expression expectedType, TypeMax actualType, Expression candidate) {
+  public LocalTypeCheckingError getErrorMismatch(Type expectedType, TypeMax actualType, Expression candidate) {
     return new ArgInferenceError(ArgInferenceError.functionArg(myIndex), expectedType, actualType, getSourceNode(), candidate);
   }
 }

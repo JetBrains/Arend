@@ -219,6 +219,12 @@ public final class Abstract {
     Expression getHLevel();
   }
 
+  public interface TypeOmegaExpression extends Expression {
+    byte PREC = 12;
+
+  }
+
+
   public interface InferHoleExpression extends Expression {
     byte PREC = 12;
   }

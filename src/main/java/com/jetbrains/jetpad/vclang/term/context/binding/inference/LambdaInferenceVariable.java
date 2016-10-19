@@ -18,12 +18,17 @@ public class LambdaInferenceVariable extends InferenceVariable {
   }
 
   @Override
+  public Expression getType() {
+    return (Expression)super.getType();
+  }
+
+  @Override
   public LocalTypeCheckingError getErrorInfer(Expression... candidates) {
     return new ArgInferenceError(myLevel ? ArgInferenceError.levelOfLambdaArg(myIndex) : ArgInferenceError.lambdaArg(myIndex), getSourceNode(), candidates);
   }
 
   @Override
-  public LocalTypeCheckingError getErrorMismatch(Expression expectedType, TypeMax actualType, Expression candidate) {
+  public LocalTypeCheckingError getErrorMismatch(Type expectedType, TypeMax actualType, Expression candidate) {
     return new ArgInferenceError(myLevel ? ArgInferenceError.levelOfLambdaArg(myIndex) : ArgInferenceError.lambdaArg(myIndex), expectedType, actualType, getSourceNode(), candidate);
   }
 }

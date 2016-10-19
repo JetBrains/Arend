@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 
 import java.util.List;
 
@@ -34,7 +35,7 @@ public class UntypedDependentLink implements DependentLink {
   }
 
   @Override
-  public void setType(Expression type) {
+  public void setType(Type type) {
 
   }
 
@@ -82,7 +83,7 @@ public class UntypedDependentLink implements DependentLink {
   }
 
   @Override
-  public Expression getType() {
+  public Type getType() {
     return myNext.getType();
   }
 

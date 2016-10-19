@@ -76,6 +76,11 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
+  public Abstract.Expression makeUniverse() {
+    return cTypeOmega();
+  }
+
+  @Override
   public Abstract.Expression makeInferHole() {
     return cInferHole();
   }

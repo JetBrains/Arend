@@ -157,7 +157,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         }
         for (DependentLink link = excessiveParams; link.hasNext(); link = link.getNext()) {
           link = link.getNextTyped(null);
-          link.setType(link.getType().subst(substitution));
+          link.setType(link.getType().subst(substitution, new LevelSubstitution()));
         }
       }
       requiredArgs = args;

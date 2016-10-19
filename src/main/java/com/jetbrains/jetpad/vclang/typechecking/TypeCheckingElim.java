@@ -15,6 +15,7 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.StripVisitor;
@@ -129,7 +130,7 @@ public class TypeCheckingElim {
     return new Patterns(typedPatterns);
   }
 
-  public ElimTreeNode typeCheckElim(final Abstract.ElimCaseExpression expr, DependentLink eliminatingArgs, Expression expectedType, boolean isCase) {
+  public ElimTreeNode typeCheckElim(final Abstract.ElimCaseExpression expr, DependentLink eliminatingArgs, Type expectedType, boolean isCase) {
     LocalTypeCheckingError error = null;
     if (expectedType == null) {
       error = new LocalTypeCheckingError("Cannot infer type of the expression", expr);
@@ -173,7 +174,7 @@ public class TypeCheckingElim {
     for (Abstract.Clause clause : expr.getClauses()) {
       try (Utils.ContextSaver ignore = new Utils.ContextSaver(myVisitor.getContext())) {
         List<Pattern> clausePatterns = new ArrayList<>(dummyPatterns);
-        Expression clauseExpectedType = expectedType;
+        Type clauseExpectedType = expectedType;
 
         DependentLink tailArgs = eliminatingArgs;
         LinkList links = new LinkList();
@@ -197,7 +198,7 @@ public class TypeCheckingElim {
           clausePatterns.add(okResult.pattern);
           ExprSubstitution subst = new ExprSubstitution(tailArgs, okResult.expression);
           tailArgs = DependentLink.Helper.subst(tailArgs.getNext(), subst);
-          clauseExpectedType = clauseExpectedType.subst(subst);
+          clauseExpectedType = clauseExpectedType.subst(subst, new LevelSubstitution());
         }
 
         if (clause.getExpression() != null) {
@@ -342,7 +343,7 @@ public class TypeCheckingElim {
     } else if (pattern instanceof Abstract.AnyConstructorPattern || pattern instanceof Abstract.ConstructorPattern) {
       LocalTypeCheckingError error = null;
 
-      Expression type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF);
+      Expression type = binding.getType().toExpression().normalize(NormalizeVisitor.Mode.WHNF);
       if (type.toDataCall() == null) {
         error = new LocalTypeCheckingError("Pattern expected a data type, got: " + type, pattern);
         myVisitor.getErrorReporter().report(error);

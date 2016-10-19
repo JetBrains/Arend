@@ -21,7 +21,7 @@ public interface TypeMax extends PrettyPrintable {
   TypeMax subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst);
   TypeMax applyExpressions(List<? extends Expression> expressions);
   boolean isLessOrEquals(Sort sort);
-  boolean isLessOrEquals(Expression expression, Equations equations, Abstract.SourceNode sourceNode);
+  boolean isLessOrEquals(Type type, Equations equations, Abstract.SourceNode sourceNode);
   SortMax toSorts();
   TypeMax getPiParameters(List<DependentLink> params, boolean normalize, boolean implicitOnly);
   TypeMax fromPiParameters(List<DependentLink> params);

@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.PiTypeOmega;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
@@ -52,8 +53,16 @@ public abstract class Expression implements PrettyPrintable, Type {
   }
 
   @Override
-  public boolean isLessOrEquals(Expression expression, Equations equations, Abstract.SourceNode sourceNode) {
-    return CompareVisitor.compare(equations, Equations.CMP.LE, normalize(NormalizeVisitor.Mode.NF), expression, sourceNode);
+  public boolean isLessOrEquals(Type type, Equations equations, Abstract.SourceNode sourceNode) {
+    if (type instanceof PiTypeOmega) {
+      List<DependentLink> params = new ArrayList<>();
+      Expression cod = getPiParameters(params, true, false).toUniverse();
+      return cod != null && (params.isEmpty() || CompareVisitor.compare(equations, params, DependentLink.Helper.toList(type.getPiParameters()), sourceNode));
+    }
+    Expression typeExpr = type.toExpression();
+    assert typeExpr != null;
+    typeExpr = typeExpr.normalize(NormalizeVisitor.Mode.NF);
+    return CompareVisitor.compare(equations, Equations.CMP.LE, normalize(NormalizeVisitor.Mode.NF), typeExpr, sourceNode);
   }
 
   @Override

@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.FindMatchOnIntervalVisitor;
@@ -17,6 +18,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
@@ -133,28 +135,30 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
           continue;
         }
 
-        CheckTypeVisitor.Result result = visitor.checkType(typeArgument.getType(), Universe());
-        if (result == null) continue;
+        Type paramType = visitor.checkTypeExpression(typeArgument.getType());
+        if (paramType == null) continue;
+
+        paramType = paramType.strip(new HashSet<>(visitor.getContext()), visitor.getErrorReporter());
 
         Abstract.ClassView classView = Abstract.getUnderlyingClassView(typeArgument.getType());
         if (classView != null) {
-          Expression newExpr = new ClassViewCallExpression(result.getExpression().toClassCall().getDefinition(), result.getExpression().toClassCall().getPolyParamsSubst(), result.getExpression().toClassCall().getFieldSet(), myState.getClassView(classView));
-          result.reset(newExpr);
+          paramType = new ClassViewCallExpression(paramType.toExpression().toClassCall().getDefinition(), paramType.toExpression().toClassCall().getPolyParamsSubst(), paramType.toExpression().toClassCall().getFieldSet(), myState.getClassView(classView));
+          //result.reset(newExpr);
         }
 
         DependentLink param;
         if (argument instanceof Abstract.TelescopeArgument) {
           List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
-          param = param(argument.getExplicit(), names, result.getExpression());
+          param = param(argument.getExplicit(), names, paramType);
           index += names.size();
         } else {
-          param = param(argument.getExplicit(), (String) null, result.getExpression());
+          param = param(argument.getExplicit(), (String) null, paramType);
           index++;
         }
 
-        Expression type = param.getType().normalize(NormalizeVisitor.Mode.WHNF);
+        paramType = paramType.normalize(NormalizeVisitor.Mode.WHNF);
         for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
-          if (localInstancePool != null && !localInstancePool.addInstance(link, type)) {
+          if (localInstancePool != null && paramType.toExpression() != null && !localInstancePool.addInstance(link, paramType.toExpression())) {
             myErrorReporter.report(new LocalTypeCheckingError("Duplicate instance", argument)); // FIXME[error] better error message
           }
         }
@@ -499,8 +503,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
       LinkList list = new LinkList();
       for (Abstract.TypeArgument argument : arguments) {
-        CheckTypeVisitor.Result result = visitor.checkType(argument.getType(), Universe());
-        if (result == null) {
+        Type paramType = visitor.checkTypeExpression(argument.getType()).strip(new HashSet<>(visitor.getContext()), visitor.getErrorReporter());
+        if (paramType == null) {
           return constructor;
         }
 
@@ -508,55 +512,57 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         //  constructor.setContainsInterval();
        // }
 
-        sorts.add(result.getType().toSorts());
+        sorts.add(paramType.toExpression() != null ? paramType.toExpression().getType().toSorts() : SortMax.OMEGA);
 
         DependentLink param;
         if (argument instanceof Abstract.TelescopeArgument) {
-          param = param(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), result.getExpression());
+          param = param(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), paramType);
         } else {
-          param = param(argument.getExplicit(), (String) null, result.getExpression());
+          param = param(argument.getExplicit(), (String) null, paramType);
         }
         list.append(param);
         visitor.getContext().addAll(toContext(param));
       }
 
       for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext()) {
-        Expression type = link.getType().normalize(NormalizeVisitor.Mode.WHNF);
-        PiExpression pi = type.toPi();
-        while (pi != null) {
-          for (DependentLink link1 = pi.getParameters(); link1.hasNext(); link1 = link1.getNext()) {
-            link1 = link1.getNextTyped(null);
-            if (!checkNonPositiveError(link1.getType(), abstractData, dataDefinition, name, list.getFirst(), link, arguments, def)) {
-              return constructor;
-            }
+        Type type = link.getType().normalize(NormalizeVisitor.Mode.WHNF);
+        List<DependentLink> piParams = new ArrayList<>();
+        type = type.getPiParameters(piParams, true, false);
+        for (DependentLink piParam : piParams) {
+          //link1 = link1.getNextTyped(null);
+          if (piParam instanceof UntypedDependentLink) {
+            continue;
           }
-          type = pi.getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
-          pi = type.toPi();
+          if (!checkNonPositiveError(piParam.getType().toExpression(), abstractData, dataDefinition, name, list.getFirst(), link, arguments, def)) {
+            return constructor;
+          }
         }
 
         boolean check = true;
         while (check) {
           check = false;
-          if (type.toDataCall() != null) {
-            List<? extends Expression> exprs = type.toDataCall().getDefCallArguments();
-            DataDefinition typeDef = type.toDataCall().getDefinition();
-            if (typeDef == Prelude.PATH && exprs.size() >= 1) {
-              LamExpression lam = exprs.get(0).normalize(NormalizeVisitor.Mode.WHNF).toLam();
-              if (lam != null) {
-                check = true;
-                type = lam.getBody().normalize(NormalizeVisitor.Mode.WHNF);
-                exprs = exprs.subList(1, exprs.size());
+          if (type.toExpression() != null) {
+            if (type.toExpression().toDataCall() != null) {
+              List<? extends Expression> exprs = type.toExpression().toDataCall().getDefCallArguments();
+              DataDefinition typeDef = type.toExpression().toDataCall().getDefinition();
+              if (typeDef == Prelude.PATH && exprs.size() >= 1) {
+                LamExpression lam = exprs.get(0).normalize(NormalizeVisitor.Mode.WHNF).toLam();
+                if (lam != null) {
+                  check = true;
+                  type = lam.getBody().normalize(NormalizeVisitor.Mode.WHNF);
+                  exprs = exprs.subList(1, exprs.size());
+                }
               }
-            }
 
-            for (Expression expr : exprs) {
-              if (!checkNonPositiveError(expr, abstractData, dataDefinition, name, list.getFirst(), link, arguments, def)) {
+              for (Expression expr : exprs) {
+                if (!checkNonPositiveError(expr, abstractData, dataDefinition, name, list.getFirst(), link, arguments, def)) {
+                  return constructor;
+                }
+              }
+            } else {
+              if (!checkNonPositiveError(type.toExpression(), abstractData, dataDefinition, name, list.getFirst(), link, arguments, def)) {
                 return constructor;
               }
-            }
-          } else {
-            if (!checkNonPositiveError(type, abstractData, dataDefinition, name, list.getFirst(), link, arguments, def)) {
-              return constructor;
             }
           }
         }

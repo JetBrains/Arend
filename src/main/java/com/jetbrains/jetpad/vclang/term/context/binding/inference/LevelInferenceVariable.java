@@ -18,7 +18,7 @@ public class LevelInferenceVariable extends InferenceVariable {
   }
 
   @Override
-  public LocalTypeCheckingError getErrorMismatch(Expression expectedType, TypeMax actualType, Expression candidate) {
+  public LocalTypeCheckingError getErrorMismatch(Type expectedType, TypeMax actualType, Expression candidate) {
     return new LevelInferenceError(this, getSourceNode());
   }
 }

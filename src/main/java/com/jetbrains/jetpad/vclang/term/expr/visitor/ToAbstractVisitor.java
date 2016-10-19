@@ -14,6 +14,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.PiTypeOmega;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
@@ -259,7 +260,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
         if (names.isEmpty()) {
           names.add(null);
         }
-        arguments.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(names), link.getType().accept(this, null)));
+        arguments.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(names), link.getType().toExpression().accept(this, null)));
         names.clear();
       }
     } else {
@@ -282,9 +283,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
         names.set(i, renameVar(names.get(i)));
       }
       if (names.isEmpty() || names.get(0) == null) {
-        args.add(myFactory.makeTypeArgument(link.isExplicit(), link.getType().accept(this, null)));
+        args.add(myFactory.makeTypeArgument(link.isExplicit(), link.getType().toExpression().accept(this, null)));
       } else {
-        args.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(names), link.getType().accept(this, null)));
+        args.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(names), link.getType().toExpression().accept(this, null)));
         names.clear();
       }
     }
@@ -348,6 +349,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   }
 
   public Abstract.Expression visitSortMax(SortMax sort) {
+    if (sort.isOmega()) {
+      return myFactory.makeUniverse();
+    }
     return myFactory.makeUniverse(visitLevelMax(sort.getPLevel(), 0), visitLevelMax(sort.getHLevel(), -1));
   }
 
@@ -387,8 +391,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return result;
   }
 
-  public Abstract.Expression visitPiUniverseType(PiUniverseType type) {
-    return myFactory.makePi(visitTypeArguments(type.getPiParameters()), visitSortMax(type.getSorts()));
+  public Abstract.Expression visitTypeMax(TypeMax type) {
+    if (type.toExpression() != null) {
+      return type.toExpression().accept(this, null);
+    }
+    return myFactory.makePi(visitTypeArguments(type.getPiParameters()), visitSortMax(type.toSorts()));
   }
 
   @Override
@@ -452,7 +459,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     List<Abstract.LetClause> clauses = new ArrayList<>(letExpression.getClauses().size());
     for (LetClause clause : letExpression.getClauses()) {
       List<Abstract.TypeArgument> arguments = visitTypeArguments(clause.getParameters());
-      Abstract.Expression resultType = clause.getResultType() == null ? null : clause.getResultType().accept(this, null);
+      Abstract.Expression resultType = clause.getResultType() == null ? null : visitTypeMax(clause.getResultType());
       Abstract.Expression term = visitElimTree(clause.getElimTree(), clause.getParameters());
       freeVars(clause.getParameters());
       clauses.add(myFactory.makeLetClause(renameVar(clause.getName()), arguments, resultType, getTopLevelArrow(clause.getElimTree()), term));

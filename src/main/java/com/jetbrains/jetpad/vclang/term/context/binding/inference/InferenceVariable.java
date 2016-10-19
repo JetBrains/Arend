@@ -17,11 +17,11 @@ import java.util.List;
 public abstract class InferenceVariable implements Variable {
   private final String myName;
   private final Abstract.SourceNode mySourceNode;
-  private Expression myType;
+  private Type myType;
   private InferenceReferenceExpression myReference;
   private List<InferenceVariableListener> myListeners;
 
-  public InferenceVariable(String name, Expression type, Abstract.SourceNode sourceNode) {
+  public InferenceVariable(String name, Type type, Abstract.SourceNode sourceNode) {
     myName = name;
     mySourceNode = sourceNode;
     myType = type;
@@ -55,7 +55,7 @@ public abstract class InferenceVariable implements Variable {
   }
 
   @Override
-  public Expression getType() {
+  public Type getType() {
     return myType;
   }
 
@@ -73,7 +73,7 @@ public abstract class InferenceVariable implements Variable {
 
   public abstract LocalTypeCheckingError getErrorInfer(Expression... candidates);
 
-  public abstract LocalTypeCheckingError getErrorMismatch(Expression expectedType, TypeMax actualType, Expression candidate);
+  public abstract LocalTypeCheckingError getErrorMismatch(Type expectedType, TypeMax actualType, Expression candidate);
 
   @Override
   public String toString() {

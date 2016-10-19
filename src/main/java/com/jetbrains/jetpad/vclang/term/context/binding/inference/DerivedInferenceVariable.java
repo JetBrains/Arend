@@ -19,7 +19,7 @@ public class DerivedInferenceVariable extends InferenceVariable {
   }
 
   @Override
-  public LocalTypeCheckingError getErrorMismatch(Expression expectedType, TypeMax actualType, Expression candidate) {
+  public LocalTypeCheckingError getErrorMismatch(Type expectedType, TypeMax actualType, Expression candidate) {
     return myVar.getErrorMismatch(expectedType, actualType, candidate);
   }
 }

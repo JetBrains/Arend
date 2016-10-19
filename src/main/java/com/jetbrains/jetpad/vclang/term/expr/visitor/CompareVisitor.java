@@ -43,6 +43,10 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     myCMP = cmp;
   }
 
+  public static boolean compare(Equations equations, List<DependentLink> params1, List<DependentLink> params2, Abstract.SourceNode sourceNode) {
+    return new CompareVisitor(equations, Equations.CMP.EQ, sourceNode).compareParameters(params1, params2);
+  }
+
   public static boolean compare(Equations equations, Equations.CMP cmp, Expression expr1, Expression expr2, Abstract.SourceNode sourceNode) {
     return new CompareVisitor(equations, cmp, sourceNode).compare(expr1, expr2);
   }
@@ -324,7 +328,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     CompareVisitor visitor = new CompareVisitor(mySubstitution, myEquations, Equations.CMP.EQ);
     for (int i = 0; i < params1.size(); i++) {
       if (!(params1.get(i) instanceof UntypedDependentLink && params2.get(i) instanceof UntypedDependentLink)) {
-        if (!visitor.compare(params1.get(i).getType(), params2.get(i).getType())) {
+        if (!visitor.compare(params1.get(i).getType().toExpression(), params2.get(i).getType().toExpression())) {
           return false;
         }
       }
@@ -341,14 +345,19 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     return true;
   }
 
-  private boolean compareParameters(DependentLink params1, DependentLink params2) {
-    for (; params1.hasNext() && params2.hasNext(); params1 = params1.getNext(), params2 = params2.getNext()) {
-      if (!compare(params1.getType(), params2.getType())) {
+  private boolean compareParameters(List<DependentLink> params1, List<DependentLink> params2) {
+    if (params1.size() != params2.size()) {
+      return false;
+    }
+
+    for (int i = 0; i < params1.size() && i < params2.size(); ++i) {
+      if (!compare(params1.get(i).getType().toExpression(), params2.get(i).getType().toExpression())) {
         return false;
       }
-      mySubstitution.put(params1, params2);
+      mySubstitution.put(params1.get(i), params2.get(i));
     }
-    return !params1.hasNext() && !params2.hasNext();
+
+    return true;
   }
 
 
@@ -387,7 +396,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     SigmaExpression sigma2 = expr2.toSigma();
     if (sigma2 == null) return false;
     CompareVisitor visitor = new CompareVisitor(mySubstitution, myEquations, Equations.CMP.EQ);
-    if (!visitor.compareParameters(expr1.getParameters(), sigma2.getParameters())) {
+    if (!visitor.compareParameters(DependentLink.Helper.toList(expr1.getParameters()), DependentLink.Helper.toList(sigma2.getParameters()))) {
       return false;
     }
     for (DependentLink link = expr1.getParameters(); link.hasNext(); link = link.getNext()) {
@@ -457,7 +466,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
     CompareVisitor visitor = new CompareVisitor(mySubstitution, myEquations, Equations.CMP.EQ);
     for (int i = 0; i < letExpr1.getClauses().size(); i++) {
-      if (!visitor.compareParameters(letExpr1.getClauses().get(i).getParameters(), letExpr2.getClauses().get(i).getParameters())) {
+      if (!visitor.compareParameters(DependentLink.Helper.toList(letExpr1.getClauses().get(i).getParameters()), DependentLink.Helper.toList(letExpr2.getClauses().get(i).getParameters()))) {
         return false;
       }
       if (!visitor.compare(letExpr1.getClauses().get(i).getElimTree(), letExpr2.getClauses().get(i).getElimTree())) {

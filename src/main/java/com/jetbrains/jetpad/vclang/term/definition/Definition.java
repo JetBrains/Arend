@@ -74,7 +74,7 @@ public abstract class Definition implements Referable {
 
   public Binding getPolyParamByType(Definition typeDef) {
     for (Binding binding : myPolyParams) {
-      if (binding.getType().toDefCall().getDefinition() == typeDef) {
+      if (binding.getType().toExpression().toDefCall().getDefinition() == typeDef) {
         return binding;
       }
     }

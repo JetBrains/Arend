@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
@@ -91,7 +92,7 @@ public class ErrorFormatter {
         List<String> names = new ArrayList<>(((GoalError) error).context.size());
         for (Binding binding : ((GoalError) error).context) {
           builder.append("\n  ").append(binding.getName() == null ? "_" : binding.getName()).append(" : ");
-          Expression type = binding.getType();
+          Type type = binding.getType();
           if (type != null) {
             type.prettyPrint(builder, names, Abstract.Expression.PREC, 0);
           } else {

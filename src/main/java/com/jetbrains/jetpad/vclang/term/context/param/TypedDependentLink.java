@@ -5,16 +5,17 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 
 import java.util.List;
 
 public class TypedDependentLink implements DependentLink {
   private boolean myExplicit;
   private String myName;
-  private Expression myType;
+  private Type myType;
   private DependentLink myNext;
 
-  public TypedDependentLink(boolean isExplicit, String name, Expression type, DependentLink next) {
+  public TypedDependentLink(boolean isExplicit, String name, Type type, DependentLink next) {
     assert next != null;
     myExplicit = isExplicit;
     myName = name;
@@ -33,7 +34,7 @@ public class TypedDependentLink implements DependentLink {
   }
 
   @Override
-  public void setType(Expression type) {
+  public void setType(Type type) {
     myType = type;
   }
 
@@ -66,7 +67,7 @@ public class TypedDependentLink implements DependentLink {
   }
 
   @Override
-  public Expression getType() {
+  public Type getType() {
     return myType;
   }
 

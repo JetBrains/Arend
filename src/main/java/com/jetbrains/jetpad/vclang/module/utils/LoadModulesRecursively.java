@@ -73,6 +73,11 @@ public class LoadModulesRecursively implements AbstractStatementVisitor<Void, Vo
   }
 
   @Override
+  public Void visitTypeOmega(Abstract.TypeOmegaExpression expr, Void params) {
+    return null;
+  }
+
+  @Override
   public Void visitInferHole(Abstract.InferHoleExpression expr, Void params) {
     return null;
   }

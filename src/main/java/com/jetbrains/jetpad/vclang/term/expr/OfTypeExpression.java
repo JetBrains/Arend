@@ -1,14 +1,15 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 import java.util.List;
 
 public class OfTypeExpression extends Expression {
   private final Expression myExpression;
-  private final Expression myType;
+  private final Type myType;
 
-  public OfTypeExpression(Expression expression, Expression type) {
+  public OfTypeExpression(Expression expression, Type type) {
     myExpression = expression;
     myType = type;
   }
@@ -33,7 +34,7 @@ public class OfTypeExpression extends Expression {
   }
 
   @Override
-  public Expression getType() {
+  public Type getType() {
     return myType;
   }
 

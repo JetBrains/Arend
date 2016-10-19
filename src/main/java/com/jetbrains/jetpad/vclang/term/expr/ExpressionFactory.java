@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
@@ -159,15 +160,15 @@ public class ExpressionFactory {
     return let(name, params, null, elimTree);
   }
 
-  public static LetClause let(String name, DependentLink params, Expression resultType, Abstract.Definition.Arrow arrow, Expression expr) {
+  public static LetClause let(String name, DependentLink params, Type resultType, Abstract.Definition.Arrow arrow, Expression expr) {
     return let(name, params, resultType, leaf(arrow, expr));
   }
 
-  public static LetClause let(String name, DependentLink params, Expression resultType, Expression expr) {
+  public static LetClause let(String name, DependentLink params, Type resultType, Expression expr) {
     return let(name, params, resultType, leaf(expr));
   }
 
-  public static LetClause let(String name, DependentLink params, Expression resultType, ElimTreeNode elimTree) {
+  public static LetClause let(String name, DependentLink params, Type resultType, ElimTreeNode elimTree) {
     return new LetClause(name, params, resultType, elimTree);
   }
 
@@ -178,15 +179,15 @@ public class ExpressionFactory {
     return links[0];
   }
 
-  public static DependentLink param(boolean explicit, String var, Expression type) {
+  public static DependentLink param(boolean explicit, String var, Type type) {
     return new TypedDependentLink(explicit, var, type, EmptyDependentLink.getInstance());
   }
 
-  public static DependentLink param(String var, Expression type) {
+  public static DependentLink param(String var, Type type) {
     return new TypedDependentLink(true, var, type, EmptyDependentLink.getInstance());
   }
 
-  public static DependentLink param(Expression type) {
+  public static DependentLink param(Type type) {
     return new TypedDependentLink(true, null, type, EmptyDependentLink.getInstance());
   }
 
@@ -194,7 +195,7 @@ public class ExpressionFactory {
     return Arrays.asList(vars);
   }
 
-  public static DependentLink param(boolean explicit, List<String> names, Expression type) {
+  public static DependentLink param(boolean explicit, List<String> names, Type type) {
     DependentLink link = new TypedDependentLink(explicit, names.get(names.size() - 1), type, EmptyDependentLink.getInstance());
     for (int i = names.size() - 2; i >= 0; i--) {
       link = new UntypedDependentLink(names.get(i), link);

@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
@@ -112,7 +113,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
   private void visitArguments(DependentLink link) {
     for (; link.hasNext(); link = link.getNext()) {
       DependentLink link1 = link.getNextTyped(null);
-      link1.setType(link1.getType().accept(this, null));
+      link1.setType(link1.getType().strip(myBounds, myErrorReporter));
 
       for (; link != link1; link = link.getNext()) {
         myBounds.add(link);
@@ -184,7 +185,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
     for (LetClause clause : expr.getClauses()) {
       visitArguments(clause.getParameters());
       if (clause.getResultType() != null) {
-        clause.setResultType(clause.getResultType().accept(this, null));
+        clause.setResultType(clause.getResultType().strip(myBounds, myErrorReporter));
       }
       clause.setElimTree(clause.getElimTree().accept(this, null));
       freeArguments(clause.getParameters());

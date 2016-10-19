@@ -668,6 +668,17 @@ public final class Concrete {
     }
   }
 
+  public static class TypeOmegaExpression extends Expression implements Abstract.TypeOmegaExpression {
+    public TypeOmegaExpression(Position position) {
+      super(position);
+    }
+
+    @Override
+    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitTypeOmega(this, params);
+    }
+  }
+
   public static class ProjExpression extends Expression implements Abstract.ProjExpression {
     private final Expression myExpression;
     private final int myField;

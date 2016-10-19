@@ -74,6 +74,11 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
   }
 
   @Override
+  public Boolean visitTypeOmega(Abstract.TypeOmegaExpression expr1, Abstract.Expression expr2) {
+    return expr2 instanceof Abstract.TypeOmegaExpression;
+  }
+
+  @Override
   public Boolean visitInferHole(Abstract.InferHoleExpression expr1, Abstract.Expression expr2) {
     return expr2 instanceof Abstract.InferHoleExpression;
   }

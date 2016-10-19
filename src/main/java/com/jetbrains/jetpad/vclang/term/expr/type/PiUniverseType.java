@@ -75,7 +75,7 @@ public class PiUniverseType implements TypeMax {
   @Override
   public Expression toExpression() {
     Sort sort = mySorts.toSort();
-    return sort == null ? null : myParameters.hasNext() ? new PiExpression(myParameters, new UniverseExpression(sort)) : new UniverseExpression(sort);
+    return sort == null || sort.isOmega() ? null : myParameters.hasNext() ? new PiExpression(myParameters, new UniverseExpression(sort)) : new UniverseExpression(sort);
   }
 
   @Override
@@ -149,34 +149,29 @@ public class PiUniverseType implements TypeMax {
   }
 
   @Override
-  public boolean isLessOrEquals(Expression expression, Equations equations, Abstract.SourceNode sourceNode) {
-    InferenceVariable binding = CompareVisitor.checkIsInferVar(expression);
-    if (binding != null) {
-      return equations.add(this, expression, sourceNode, binding);
-    }
-
-    List<DependentLink> params = new ArrayList<>();
-    Expression cod = expression.getPiParameters(params, false, false);
-    UniverseExpression uniCod = cod.toUniverse();
-    if (uniCod == null) {
-      return false;
-    }
-
-    PiUniverseType normalized = normalize(NormalizeVisitor.Mode.NF);
-
-    int i = 0;
-    for (DependentLink link = normalized.myParameters; link.hasNext(); link = link.getNext(), i++) {
-      if (i == params.size() || !CompareVisitor.compare(equations, Equations.CMP.EQ, params.get(i).getType(), link.getType(), sourceNode)) {
-        return false;
+  public boolean isLessOrEquals(Type type, Equations equations, Abstract.SourceNode sourceNode) {
+    if (type instanceof Expression) {
+      Expression exprType = (Expression)type;
+      InferenceVariable binding = CompareVisitor.checkIsInferVar(exprType);
+      if (binding != null) {
+        return equations.add(this, exprType, sourceNode, binding);
       }
     }
 
-    return mySorts.isLessOrEquals(uniCod.getSort(), equations, sourceNode);
+    List<DependentLink> params = new ArrayList<>();
+    Type cod = type.getPiParameters(params, false, false);
+    Sort sortCod = cod.toSorts().toSort();
+
+    assert sortCod != null;
+
+    PiUniverseType normalized = normalize(NormalizeVisitor.Mode.NF);
+
+    return CompareVisitor.compare(equations, DependentLink.Helper.toList(normalized.getPiParameters()), params, sourceNode) && mySorts.isLessOrEquals(sortCod, equations, sourceNode);
   }
 
   @Override
   public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent) {
-    new ToAbstractVisitor(new ConcreteExpressionFactory(), names).visitPiUniverseType(this).accept(new PrettyPrintVisitor(builder, indent), prec);
+    new ToAbstractVisitor(new ConcreteExpressionFactory(), names).visitTypeMax(this).accept(new PrettyPrintVisitor(builder, indent), prec);
   }
 
   @Override

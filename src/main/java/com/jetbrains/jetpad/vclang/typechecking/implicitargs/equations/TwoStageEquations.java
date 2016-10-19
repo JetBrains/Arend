@@ -370,7 +370,7 @@ public class TwoStageEquations implements Equations {
       return false;
     }
 
-    Expression expectedType = var.getType();
+    Type expectedType = var.getType();
     TypeMax actualType = expr.getType();
     if (!actualType.isLessOrEquals(expectedType.normalize(NormalizeVisitor.Mode.NF), this, var.getSourceNode())) {
       actualType = actualType.normalize(NormalizeVisitor.Mode.HUMAN_NF);

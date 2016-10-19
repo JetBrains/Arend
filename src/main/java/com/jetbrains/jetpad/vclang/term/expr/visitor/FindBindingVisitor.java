@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ConstructorClause;
@@ -110,10 +111,17 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
     return expr.getExpression().accept(this, null);
   }
 
+  private boolean visitTypeExpression(Type type) {
+    if (type.toExpression() != null) {
+      return type.toExpression().accept(this, null);
+    }
+    return visitDependentLink(type.getPiParameters());
+  }
+
   private boolean visitDependentLink(DependentLink link) {
     for (; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
-      if (link.getType().<Void, Boolean>accept(this, null)) {
+      if (visitTypeExpression(link.getType())) {
         return true;
       }
     }
@@ -135,12 +143,12 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
 
   @Override
   public Boolean visitOfType(OfTypeExpression expr, Void params) {
-    return expr.getExpression().accept(this, null) || expr.getType().accept(this, null);
+    return expr.getExpression().accept(this, null) || visitTypeExpression(expr.getType());
   }
 
   public boolean visitLetClause(LetClause clause) {
     if (visitDependentLink(clause.getParameters())) return true;
-    if (clause.getResultType() != null && clause.getResultType().accept(this, null)) return true;
+    if (clause.getResultType() != null && visitTypeExpression(clause.getResultType())) return true;
     return clause.getElimTree().accept(this, null);
   }
 

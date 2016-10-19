@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.context.param;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 
 import java.util.List;
 
@@ -26,7 +27,7 @@ public class EmptyDependentLink implements DependentLink {
   }
 
   @Override
-  public void setType(Expression type) {
+  public void setType(Type type) {
     throw new IllegalStateException();
   }
 
@@ -66,7 +67,7 @@ public class EmptyDependentLink implements DependentLink {
   }
 
   @Override
-  public Expression getType() {
+  public Type getType() {
     throw new IllegalStateException();
   }
 

@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ConstructorClause;
@@ -152,9 +153,16 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
     return visitArguments(expr.getParameters()) && expr.getCodomain().accept(this, null);
   }
 
+  private boolean visitTypeExpression(Type type) {
+    if (type.toExpression() != null) {
+      return type.toExpression().accept(this, null);
+    }
+    return visitArguments(type.getPiParameters());
+  }
+
   private boolean visitArguments(DependentLink parameters) {
     for (; parameters.hasNext(); parameters = parameters.getNext()) {
-      if (!parameters.getType().accept(this, null)) {
+      if (!visitTypeExpression(parameters.getType())) {
         return false;
       }
     }

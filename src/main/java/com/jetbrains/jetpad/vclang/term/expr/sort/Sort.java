@@ -56,6 +56,10 @@ public class Sort {
     return myHLevel;
   }
 
+  public boolean isOmega() {
+    return myPLevel.isInfinity();
+  }
+
   public Sort succ() {
     return isProp() ? SetOfLevel(0) : new Sort(getPLevel().add(1), getHLevel().add(1));
   }

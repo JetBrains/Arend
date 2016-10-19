@@ -51,13 +51,15 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
   }
 
   @Override
-  public Expression visitReference(ReferenceExpression expr, Void params) {
-    return expr.getBinding().getType().accept(new SubstVisitor(new ExprSubstitution(), new LevelSubstitution()), null);
+  public TypeMax visitReference(ReferenceExpression expr, Void params) {
+    return expr.getBinding().getType(); //TODO: do we need this copying .accept(new SubstVisitor(new ExprSubstitution(), new LevelSubstitution()), null);
   }
 
   @Override
   public TypeMax visitInferenceReference(InferenceReferenceExpression expr, Void params) {
-    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : expr.getVariable().getType().accept(new SubstVisitor(new ExprSubstitution(), new LevelSubstitution()), null);
+    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : expr.getVariable().getType();
+    //TODO: do we need this copying
+    //.accept(new SubstVisitor(new ExprSubstitution(), new LevelSubstitution()), null);
   }
 
   @Override
@@ -104,7 +106,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
     SortMax sorts = new SortMax();
     for (DependentLink link = expr.getParameters(); link.hasNext(); link = link.getNext()) {
       if (!(link instanceof UntypedDependentLink)) {
-        SortMax sorts1 = getSorts(link.getType().accept(this, null));
+        SortMax sorts1 = getSorts(link.getType().toExpression().accept(this, null));
         if (sorts1 == null) {
           return null;
         }
@@ -152,7 +154,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
   }
 
   @Override
-  public Expression visitProj(ProjExpression expr, Void ignored) {
+  public TypeMax visitProj(ProjExpression expr, Void ignored) {
     TypeMax type = expr.getExpression().accept(this, null);
     if (!(type instanceof Expression)) {
       return null;
@@ -173,7 +175,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
       subst.add(params, new ProjExpression(expr.getExpression(), i));
       params = params.getNext();
     }
-    return params.getType().subst(subst);
+    return params.getType().subst(subst, new LevelSubstitution());
   }
 
   @Override
@@ -187,7 +189,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
   }
 
   @Override
-  public Expression visitOfType(OfTypeExpression expr, Void params) {
+  public TypeMax visitOfType(OfTypeExpression expr, Void params) {
     return expr.getType();
   }
 }

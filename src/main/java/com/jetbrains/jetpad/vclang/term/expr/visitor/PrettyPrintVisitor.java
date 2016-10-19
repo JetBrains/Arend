@@ -269,6 +269,12 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   @Override
+  public Void visitTypeOmega(Abstract.TypeOmegaExpression expr, Byte prec) {
+    myBuilder.append("\\Type");
+    return null;
+  }
+
+  @Override
   public Void visitInferHole(Abstract.InferHoleExpression expr, Byte prec) {
     myBuilder.append('_');
     return null;

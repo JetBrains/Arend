@@ -67,8 +67,8 @@ public class LetExpression extends Expression {
       return new LetExpression(myClauses, (Expression) type);
     } else {
       for (DependentLink link = type.getPiParameters(); link.hasNext(); link = link.getNext()) {
-        List<LetClause> clauses = getBindingsFreeIn(myClauses, link.getType());
-        link.setType(clauses.isEmpty() ? link.getType() : new LetExpression(clauses, link.getType()));
+        List<LetClause> clauses = getBindingsFreeIn(myClauses, link.getType().toExpression());
+        link.setType(clauses.isEmpty() ? link.getType() : new LetExpression(clauses, link.getType().toExpression()));
       }
       return type;
     }

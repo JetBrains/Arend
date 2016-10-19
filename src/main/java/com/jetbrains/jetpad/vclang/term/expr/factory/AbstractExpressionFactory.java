@@ -20,6 +20,7 @@ public interface AbstractExpressionFactory {
   Abstract.Expression makePi(List<? extends Abstract.TypeArgument> arguments, Abstract.Expression codomain);
   Abstract.Expression makeUniverse(Abstract.Expression plevel, Abstract.Expression hlevel);
   Abstract.Expression makeUniverse(int pLevel, int hLevel);
+  Abstract.Expression makeUniverse();
   Abstract.Expression makeInferHole();
   Abstract.Expression makeError(Abstract.Expression expr);
   Abstract.Expression makeTuple(List<? extends Abstract.Expression> fields);

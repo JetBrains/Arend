@@ -5,14 +5,15 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
 public class LetClause extends NamedBinding implements Function {
   private DependentLink myParameters;
   private ElimTreeNode myElimTree;
-  private Expression myResultType;
+  private Type myResultType;
 
-  public LetClause(String name, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
+  public LetClause(String name, DependentLink parameters, Type resultType, ElimTreeNode elimTree) {
     super(name);
     assert parameters != null;
     myParameters = parameters;
@@ -39,11 +40,11 @@ public class LetClause extends NamedBinding implements Function {
     myParameters = parameters;
   }
 
-  public Expression getResultType() {
+  public Type getResultType() {
     return myResultType;
   }
 
-  public void setResultType(Expression resultType) {
+  public void setResultType(Type resultType) {
     myResultType = resultType;
   }
 
@@ -53,7 +54,7 @@ public class LetClause extends NamedBinding implements Function {
   }
 
   @Override
-  public Expression getType() {
+  public Type getType() {
     return myResultType.addParameters(myParameters, false);
   }
 

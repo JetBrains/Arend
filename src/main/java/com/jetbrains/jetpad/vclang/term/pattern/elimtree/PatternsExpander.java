@@ -61,7 +61,7 @@ class PatternsExpander {
       return new ExpansionResult(leaf, Collections.singletonList(new Branch(Reference(binding), leaf, anyPatternIdxs, context)));
     }
 
-    DataCallExpression dType = binding.getType().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
+    DataCallExpression dType = binding.getType().normalize(NormalizeVisitor.Mode.WHNF).toExpression().toDataCall();
     List<ConCallExpression> validConstructors = dType.getDefinition().getMatchedConstructors(dType);
 
     BranchElimTreeNode resultTree = new BranchElimTreeNode(binding, context);

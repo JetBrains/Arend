@@ -86,7 +86,7 @@ public class TypeCheckingDefCall {
 
     for (int i = 0; i < levelExprs.size(); ++i) {
       Binding param = polyParams.get(i);
-      Level level = myVisitor.typeCheckLevel(levelExprs.get(i), null, param.getType().toDefCall().getDefinition() == Prelude.CNAT ? -1 : 0);
+      Level level = myVisitor.typeCheckLevel(levelExprs.get(i), null, param.getType().toExpression().toDefCall().getDefinition() == Prelude.CNAT ? -1 : 0);
       if (level == null) {
         return null;
       }
@@ -305,7 +305,7 @@ public class TypeCheckingDefCall {
   private CheckTypeVisitor.PreResult makeResult(Definition definition, ClassView classView, Expression thisExpr, Abstract.Expression expr) {
     LevelSubstitution polySubst = new LevelSubstitution();
     for (Binding polyVar : definition.getPolyParams()) {
-      LevelInferenceVariable l = new LevelInferenceVariable(polyVar.getName(), polyVar.getType(), expr);
+      LevelInferenceVariable l = new LevelInferenceVariable(polyVar.getName(), polyVar.getType().toExpression(), expr);
       polySubst.add(polyVar, new Level(l));
       myVisitor.getEquations().addVariable(l);
     }

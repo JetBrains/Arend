@@ -133,7 +133,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     if (index == null) {
       myDataStream.writeInt(-1);
       myDataStream.writeUTF("?" + (binding.getName() == null ? "" : binding.getName()));
-      binding.getType().accept(this, null);
+      // ModuleSerialization.writeType(this, binding.getType());
     } else {
       myDataStream.writeInt(index);
     }
@@ -314,7 +314,8 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   public Void visitOfType(OfTypeExpression expr, Void params) {
     myStream.write(16);
     expr.getExpression().accept(this, null);
-    expr.getType().accept(this, null);
+    //expr.getType().accept(this, null);
+    // ModuleSerialization.writeType(this, binding.getType());
     return null;
   }
 

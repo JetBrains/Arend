@@ -17,6 +17,8 @@ public class SortMax {
   private LevelMax myPLevel;
   private LevelMax myHLevel;
 
+  public static SortMax OMEGA = new SortMax(LevelMax.INFINITY, LevelMax.INFINITY);
+
   public SortMax() {
     myPLevel = new LevelMax();
     myHLevel = new LevelMax();
@@ -38,6 +40,10 @@ public class SortMax {
 
   public LevelMax getHLevel() {
     return myHLevel;
+  }
+
+  public boolean isOmega() {
+    return myPLevel.isInfinity();
   }
 
   public Sort toSort() {

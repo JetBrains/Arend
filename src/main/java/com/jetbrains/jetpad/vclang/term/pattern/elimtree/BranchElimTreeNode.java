@@ -34,7 +34,8 @@ public class BranchElimTreeNode extends ElimTreeNode {
     myReference = reference;
     myContextTail = contextTail;
 
-    DataCallExpression dType = reference.getType().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
+    Expression type = reference.getType().normalize(NormalizeVisitor.Mode.WHNF).toExpression();
+    DataCallExpression dType = type != null ? type.toDataCall() : null;
     myIsInterval = dType != null && dType.getDefinition() == Prelude.INTERVAL;
   }
 
@@ -53,7 +54,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
 
   public ConstructorClause addClause(Constructor constructor, List<String> names) {
     assert !constructor.hasErrors();
-    DataCallExpression dataCall = myReference.getType().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
+    DataCallExpression dataCall = myReference.getType().normalize(NormalizeVisitor.Mode.WHNF).toExpression().toDataCall();
     List<? extends Expression> dataTypeArguments = dataCall.getDefCallArguments();
 
     dataTypeArguments = constructor.matchDataTypeArguments(new ArrayList<>(dataTypeArguments));
