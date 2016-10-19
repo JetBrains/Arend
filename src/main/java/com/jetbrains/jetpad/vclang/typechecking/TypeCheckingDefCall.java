@@ -123,7 +123,7 @@ public class TypeCheckingDefCall {
     }
 
     CheckTypeVisitor.Result result = null;
-    if (left != null && (typeCheckedDefinition == null || !(left instanceof Abstract.DefCallExpression))) {
+    if (left != null && (typeCheckedDefinition == null || !(left instanceof Abstract.DefCallExpression || left instanceof Abstract.ModuleCallExpression))) {
       result = left.accept(myVisitor, null);
       if (result == null) {
         return null;
