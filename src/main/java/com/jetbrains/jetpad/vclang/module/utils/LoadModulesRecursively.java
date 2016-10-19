@@ -190,7 +190,9 @@ public class LoadModulesRecursively implements AbstractStatementVisitor<Void, Vo
 
   @Override
   public Void visitNamespaceCommand(Abstract.NamespaceCommandStatement stat, Void params) {
-    myModuleLoader.load(new ModulePath(stat.getModulePath()));
+    if (stat.getModulePath() != null) {
+      myModuleLoader.load(new ModulePath(stat.getModulePath()));
+    }
     return null;
   }
 

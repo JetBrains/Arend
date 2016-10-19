@@ -373,7 +373,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (term == null) {
       return null;
     }
-    return new Concrete.ClassViewInstance(tokenPosition(ctx.getStart()), ctx.ID().getText(), Abstract.Binding.DEFAULT_PRECEDENCE, arguments, term);
+    return new Concrete.ClassViewInstance(tokenPosition(ctx.getStart()), ctx.defaultInst() instanceof WithDefaultContext, ctx.ID().getText(), Abstract.Binding.DEFAULT_PRECEDENCE, arguments, term);
   }
 
   @Override

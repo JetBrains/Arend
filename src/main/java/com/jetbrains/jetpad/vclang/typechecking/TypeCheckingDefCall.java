@@ -123,7 +123,7 @@ public class TypeCheckingDefCall {
     }
 
     CheckTypeVisitor.Result result = null;
-    if (left != null && (typeCheckedDefinition == null || !(left instanceof Abstract.DefCallExpression))) {
+    if (left != null && (typeCheckedDefinition == null || !(left instanceof Abstract.DefCallExpression || left instanceof Abstract.ModuleCallExpression))) {
       result = left.accept(myVisitor, null);
       if (result == null) {
         return null;
@@ -141,7 +141,7 @@ public class TypeCheckingDefCall {
         if (thisExpr == null) {
           if (resolvedDefinition instanceof Abstract.ClassViewField) {
             // TODO: if typeCheckedDefinition.getThisClass() is dynamic, then we should apply it to some this expression
-            thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable(typeCheckedDefinition.getThisClass().getName() + "-inst", ClassCall(typeCheckedDefinition.getThisClass()), myVisitor.getTypecheckingState().getClassView((Abstract.ClassViewField) resolvedDefinition), expr));
+            thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable(typeCheckedDefinition.getThisClass().getName() + "-inst", ClassCall(typeCheckedDefinition.getThisClass()), myVisitor.getTypecheckingState().getClassView((Abstract.ClassViewField) resolvedDefinition), true, expr), myVisitor.getEquations());
           } else {
             LocalTypeCheckingError error;
             if (myThisClass != null) {

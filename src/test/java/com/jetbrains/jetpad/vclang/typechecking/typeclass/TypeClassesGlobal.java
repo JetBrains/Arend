@@ -110,13 +110,26 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
         "  \\abstract B : A -> \\Type0\n" +
         "}\n" +
         "\\static \\view Y \\on X \\by A { B }\n" +
-        "\\static \\instance Nat-X => \\new Y { A => Nat | B => \\lam n => Nat -> Nat }\n" +
+        "\\static \\default \\instance Nat-X => \\new Y { A => Nat | B => \\lam n => Nat -> Nat }\n" +
         "\\static \\function f {A : \\Type0} {y : Y { A => A } } (a : A) => B a\n" +
         "\\static \\function g => f 0");
   }
 
   @Test
-  public void transitiveDuplicate() {
+  public void transitiveInferInstance2() {
+    typeCheckClass(
+        "\\static \\class X {\n" +
+        "  \\abstract A : \\Type0\n" +
+        "  \\abstract B : A -> \\Type0\n" +
+        "}\n" +
+        "\\static \\view Y \\on X \\by A { B }\n" +
+        "\\static \\default \\instance Nat-X => \\new Y { A => Nat | B => \\lam n => Nat -> Nat }\n" +
+        "\\static \\function f {y : Y} (a : y.A) => B a\n" +
+        "\\static \\function g => f 0");
+  }
+
+  @Test
+  public void transitiveNoDefault() {
     typeCheckClass(
         "\\static \\class X {\n" +
         "  \\abstract A : \\Type0\n" +
@@ -127,7 +140,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
         "\\static \\instance Nat-Y => \\new Y { A => Nat | B => \\lam n => Nat -> Nat }\n" +
         "\\static \\instance Nat-Z => \\new Z { A => Nat | C => \\lam n => Nat -> Nat }\n" +
         "\\static \\function f {A : \\Type0} {y : Y { A => A } } (a : A) => B a\n" +
-        "\\static \\function g => f 0", 1);
+        "\\static \\function g => f 0", 2);
   }
 
   @Test
@@ -137,11 +150,26 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
         "  \\abstract A : \\Type0\n" +
         "  \\abstract B : A -> \\Type0\n" +
         "}\n" +
-        "\\static \\view X \\on X \\by A { B }\n" +
+        "\\static \\view Y \\on X \\by A { B }\n" +
         "\\static \\view Z \\on X \\by A { B => C }\n" +
-        "\\static \\instance Nat-Y => \\new X { A => Nat | B => \\lam n => Nat -> Nat }\n" +
-        "\\static \\instance Nat-Z => \\new Z { A => Nat | C => \\lam n => Nat -> Nat }\n" +
+        "\\static \\default \\instance Nat-Y => \\new Y { A => Nat | B => \\lam n => Nat -> Nat }\n" +
+        "\\static \\default \\instance Nat-Z => \\new Z { A => Nat | C => \\lam n => Nat -> Nat }\n" +
+        "\\static \\function f {A : \\Type0} {y : Y { A => A } } (a : A) => B a\n" +
+        "\\static \\function g => f 0", 1);
+  }
+
+  @Test
+  public void transitiveDefault() {
+    typeCheckClass(
+        "\\static \\class X {\n" +
+        "  \\abstract A : \\Type0\n" +
+        "  \\abstract B : A -> Nat\n" +
+        "}\n" +
+        "\\static \\view Y \\on X \\by A { B }\n" +
+        "\\static \\view Z \\on X \\by A { B => C }\n" +
+        "\\static \\default \\instance Nat-Y => \\new Y { A => Nat | B => \\lam n => n }\n" +
+        "\\static \\instance Nat-Z => \\new Z { A => Nat | C => \\lam n => 0 }\n" +
         "\\static \\function f {A : \\Type0} {z : Z { A => A } } (a : A) => C a\n" +
-        "\\static \\function g => f 0");
+        "\\static \\function g : f 1 = 1 => path (\\lam _ => 1)");
   }
 }
