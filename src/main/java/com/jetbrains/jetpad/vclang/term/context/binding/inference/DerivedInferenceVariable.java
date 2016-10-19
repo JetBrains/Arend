@@ -15,7 +15,7 @@ public class DerivedInferenceVariable extends InferenceVariable {
 
   @Override
   public LocalTypeCheckingError getErrorInfer(Expression... candidates) {
-    return getErrorInfer(candidates);
+    return myVar.getErrorInfer(candidates);
   }
 
   @Override

@@ -987,13 +987,20 @@ public final class Concrete {
   }
 
   public static class ClassViewInstance extends Definition implements Abstract.ClassViewInstance {
+    private final boolean myDefault;
     private final List<Argument> myArguments;
     private final Expression myTerm;
 
-    public ClassViewInstance(Position position, String name, Precedence precedence, List<Argument> arguments, Expression term) {
+    public ClassViewInstance(Position position, boolean isDefault, String name, Precedence precedence, List<Argument> arguments, Expression term) {
       super(position, name, precedence);
+      myDefault = isDefault;
       myArguments = arguments;
       myTerm = term;
+    }
+
+    @Override
+    public boolean isDefault() {
+      return myDefault;
     }
 
     @Override

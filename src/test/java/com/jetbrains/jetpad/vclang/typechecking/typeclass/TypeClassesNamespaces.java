@@ -57,6 +57,21 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
   }
 
   @Test
+  public void typeClassFullNameInstanceInside() {
+    typeCheckClass(
+        "\\static \\class M {\n" +
+        "  \\static \\class X {\n" +
+        "    \\abstract A : \\Type0\n" +
+        "    \\abstract B : A -> Nat\n" +
+        "  }\n" +
+        "  \\static \\view \\on X \\by A { B }\n" +
+        "  \\static \\instance Nat-X => \\new X { A => Nat | B => \\lam x => x }\n" +
+        "  \\static \\function T => B 0 = 0" +
+        "}\n" +
+        "\\function f (t : M.T) => 0");
+  }
+
+  @Test
   public void typeClassFullNameInstanceII() {
     typeCheckClass(
         "\\static \\class M {\n" +
@@ -66,8 +81,9 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
         "  }\n" +
         "  \\static \\view \\on X \\by A { B }\n" +
         "  \\static \\instance Nat-X => \\new X { A => Nat | B => \\lam x => x }\n" +
+        "  \\static \\function T => B 0 = 0" +
         "}\n" +
-        "\\function f => M.B 0", 2);
+        "\\function f (t : M.T) => M.B 0", 2);
   }
 
   @Test

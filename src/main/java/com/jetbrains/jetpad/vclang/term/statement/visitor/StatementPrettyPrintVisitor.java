@@ -43,7 +43,7 @@ public class StatementPrettyPrintVisitor implements AbstractStatementVisitor<Voi
         throw new IllegalStateException();
     }
 
-    if (!stat.getModulePath().isEmpty()) {
+    if (stat.getModulePath() != null) {
       for (int i = 0; i < stat.getModulePath().size(); i++) {
         myBuilder.append("::").append(stat.getModulePath().get(i));
       }
