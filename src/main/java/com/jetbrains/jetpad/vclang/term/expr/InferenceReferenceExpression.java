@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
@@ -17,9 +18,10 @@ public class InferenceReferenceExpression extends Expression {
     myVar = binding;
     myVar.setReference(this);
 
-    Expression type = myVar.getType().normalize(NormalizeVisitor.Mode.WHNF);
-    if (type.toClassCall() != null) {
-      FieldSet fieldSet = type.toClassCall().getFieldSet();
+    Type type = myVar.getType().normalize(NormalizeVisitor.Mode.WHNF);
+    if (type.toExpression() != null && type.toExpression().toClassCall() != null) {
+      ClassCallExpression classCall = type.toExpression().toClassCall();
+      FieldSet fieldSet = classCall.getFieldSet();
       if (!fieldSet.getFields().isEmpty()) {
         for (ClassField field : fieldSet.getFields()) {
           FieldSet.Implementation impl = fieldSet.getImplementation(field);
@@ -27,7 +29,7 @@ public class InferenceReferenceExpression extends Expression {
             equations.add(new FieldCallExpression(field, this), impl.term, Equations.CMP.EQ, myVar.getSourceNode(), myVar);
           }
         }
-        type = type.toClassCall() instanceof ClassViewCallExpression ? new ClassViewCallExpression(type.toClassCall().getDefinition(), type.toClassCall().getPolyParamsSubst(), ((ClassViewCallExpression) type.toClassCall()).getClassView()) : new ClassCallExpression(type.toClassCall().getDefinition(), type.toClassCall().getPolyParamsSubst());
+        type = classCall instanceof ClassViewCallExpression ? new ClassViewCallExpression(classCall.getDefinition(), classCall.getPolyParamsSubst(), ((ClassViewCallExpression) classCall).getClassView()) : new ClassCallExpression(classCall.getDefinition(), classCall.getPolyParamsSubst());
       }
     }
     myVar.setType(type);

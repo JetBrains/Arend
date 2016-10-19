@@ -381,7 +381,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         myEquations.addVariable(pLvl);
         myEquations.addVariable(hLvl);
         InferenceVariable inferenceVariable = new LambdaInferenceVariable("type-of-" + link.getName(), Universe(new Level(pLvl), new Level(hLvl)), argIndex, null, false);
-        Expression type = new InferenceReferenceExpression(inferenceVariable);
+        Expression type = new InferenceReferenceExpression(inferenceVariable, myEquations);
         if (link.getType().getPiParameters().hasNext()) {
           type = Pi(link.getType().getPiParameters(), type);
         }

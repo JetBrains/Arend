@@ -59,7 +59,7 @@ public abstract class InferenceVariable implements Variable {
     return myType;
   }
 
-  public void setType(Expression type) {
+  public void setType(Type type) {
     myType = type;
   }
 
