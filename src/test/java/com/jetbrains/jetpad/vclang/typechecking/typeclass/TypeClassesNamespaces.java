@@ -12,9 +12,9 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
         "    \\abstract A : \\Type0\n" +
         "    \\abstract B : A -> Nat\n" +
         "  }\n" +
-        "  \\static \\view \\on X \\by A { B }\n" +
+        "  \\static \\view X' \\on X \\by A { B }\n" +
         "}\n" +
-        "\\function f (x : M.X) (a : x.A) => M.B a");
+        "\\function f (x : M.X') (a : x.A) => M.B a");
   }
 
   @Test
@@ -39,8 +39,8 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
         "    \\abstract B : A -> Nat\n" +
         "  }\n" +
         "}\n" +
-        "\\static \\view \\on M.X \\by A { B }\n" +
-        "\\function f (x : X) (a : x.A) => B a");
+        "\\static \\view X' \\on M.X \\by A { B }\n" +
+        "\\function f (x : X') (a : x.A) => B a");
   }
 
   @Test
@@ -64,8 +64,8 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
         "    \\abstract A : \\Type0\n" +
         "    \\abstract B : A -> Nat\n" +
         "  }\n" +
-        "  \\static \\view \\on X \\by A { B }\n" +
-        "  \\static \\instance Nat-X => \\new X { A => Nat | B => \\lam x => x }\n" +
+        "  \\static \\view X' \\on X \\by A { B }\n" +
+        "  \\static \\instance Nat-X => \\new X' { A => Nat | B => \\lam x => x }\n" +
         "  \\static \\function T => B 0 = 0" +
         "}\n" +
         "\\function f (t : M.T) => 0");
@@ -79,8 +79,8 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
         "    \\abstract A : \\Type0\n" +
         "    \\abstract B : A -> Nat\n" +
         "  }\n" +
-        "  \\static \\view \\on X \\by A { B }\n" +
-        "  \\static \\instance Nat-X => \\new X { A => Nat | B => \\lam x => x }\n" +
+        "  \\static \\view X' \\on X \\by A { B }\n" +
+        "  \\static \\instance Nat-X => \\new X' { A => Nat | B => \\lam x => x }\n" +
         "  \\static \\function T => B 0 = 0" +
         "}\n" +
         "\\function f (t : M.T) => M.B 0", 2);
@@ -94,9 +94,9 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
         "    \\abstract A : \\Type0\n" +
         "    \\abstract B : A -> Nat\n" +
         "  }\n" +
-        "  \\static \\view \\on X \\by A { B }\n" +
+        "  \\static \\view X' \\on X \\by A { B }\n" +
         "}\n" +
-        "\\static \\instance Nat-X => \\new M.X { A => Nat | B => \\lam x => x }\n" +
+        "\\static \\instance Nat-X => \\new M.X' { A => Nat | B => \\lam x => x }\n" +
         "\\function f => M.B 0");
   }
 
@@ -109,8 +109,8 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
         "    \\abstract B : A -> Nat\n" +
         "  }\n" +
         "}\n" +
-        "\\static \\view \\on M.X \\by A { B }\n" +
-        "\\static \\instance Nat-X => \\new X { A => Nat | B => \\lam x => x }\n" +
+        "\\static \\view X' \\on M.X \\by A { B }\n" +
+        "\\static \\instance Nat-X => \\new X' { A => Nat | B => \\lam x => x }\n" +
         "\\function f => B 0");
   }
 
@@ -124,8 +124,8 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\open M\n" +
-        "\\static \\view \\on X \\by A { B }\n" +
-        "\\function f (x : X) (a : x.A) => B a");
+        "\\static \\view X' \\on X \\by A { B }\n" +
+        "\\function f (x : X') (a : x.A) => B a");
   }
 
   @Test
@@ -136,8 +136,8 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
         "    \\abstract A : \\Type0\n" +
         "    \\abstract B : A -> Nat\n" +
         "  }\n" +
-        "  \\static \\view \\on X \\by A { B }\n" +
-        "  \\static \\instance Nat-X => \\new X { A => Nat | B => \\lam x => x }\n" +
+        "  \\static \\view X' \\on X \\by A { B }\n" +
+        "  \\static \\instance Nat-X => \\new X' { A => Nat | B => \\lam x => x }\n" +
         "}\n" +
         "\\open M\n" +
         "\\function f => B 0");

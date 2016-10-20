@@ -15,7 +15,6 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
@@ -26,7 +25,6 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiTypeOmega;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
-import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
@@ -909,11 +907,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     // Some tricks to keep going as long as possible in case of error
     Collection<? extends Abstract.ImplementStatement> statements = expr.getStatements();
     for (Abstract.ImplementStatement statement : statements) {
-      Abstract.Definition implementField = statement.getImplementedField();
-      if (implementField instanceof Abstract.ClassViewField) {
-        implementField = ((Abstract.ClassViewField) implementField).getUnderlyingField();
-      }
-      Definition implementedDef = myState.getTypechecked(implementField);
+      Definition implementedDef = myState.getTypechecked(statement.getImplementedField());
       if (!(implementedDef instanceof ClassField)) {
         myErrorReporter.report(new LocalTypeCheckingError("'" + implementedDef.getName() + "' is not a field", statement));
         continue;

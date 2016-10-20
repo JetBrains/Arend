@@ -10,9 +10,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
-import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -109,11 +107,7 @@ public class TypeCheckingDefCall {
     Definition typeCheckedDefinition = null;
     ClassView classView = null;
     if (resolvedDefinition != null) {
-      if (resolvedDefinition instanceof Abstract.ClassViewField) {
-        typeCheckedDefinition = getTypeCheckedDefinition(((Abstract.ClassViewField) resolvedDefinition).getUnderlyingField(), expr);
-      } else {
-        typeCheckedDefinition = getTypeCheckedDefinition(resolvedDefinition, expr);
-      }
+      typeCheckedDefinition = getTypeCheckedDefinition(resolvedDefinition, expr);
       if (typeCheckedDefinition == null) {
         return null;
       }
