@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -225,8 +224,13 @@ public class NameResolverTest extends NameResolverTestCase {
   }
 
   @Test
-  public void openExportTest() {
-    resolveNamesClass("\\static \\class A { \\static \\class B { \\static \\function x => 0 } \\open B } \\static \\function y => A.x");
+  public void openInsideTest() {
+    resolveNamesClass("\\static \\class A { \\static \\class B { \\static \\function x => 0 } \\open B } \\static \\function y => A.x", 1);
+  }
+
+  @Test
+  public void exportInsideTest() {
+    resolveNamesClass("\\static \\class A { \\static \\class B { \\static \\function x => 0 } \\export B } \\static \\function y => A.x");
   }
 
   @Test
@@ -258,14 +262,12 @@ public class NameResolverTest extends NameResolverTestCase {
     resolveNamesDef("\\function test' => ::Prelude.suc");
   }
 
-  @Ignore("#46")
   @Test
   public void testPreludeNonExistentMember() {
     loadPrelude();
     resolveNamesDef("\\function test' => ::Prelude.foo", 1);
   }
 
-  @Ignore("#46")
   @Test
   public void testPreludeNotLoaded() {
     resolveNamesDef("\\function test' => ::Prelude.suc", 1);

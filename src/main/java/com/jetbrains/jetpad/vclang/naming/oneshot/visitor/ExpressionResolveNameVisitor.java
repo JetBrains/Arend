@@ -55,7 +55,13 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
         Abstract.Definition ref = myNameResolver.resolveDefCall(myParentScope, expr);
         if (ref != null) {
           myResolveListener.nameResolved(expr, ref);
-        } else if (expression == null) {
+        } else
+        if (expression == null
+            || expression instanceof Abstract.ModuleCallExpression
+            || expression instanceof Abstract.DefCallExpression &&
+              (((Abstract.DefCallExpression) expression).getReferent() instanceof Abstract.ClassDefinition
+              || ((Abstract.DefCallExpression) expression).getReferent() instanceof Abstract.DataDefinition
+              || ((Abstract.DefCallExpression) expression).getReferent() instanceof Abstract.ClassView)) {
           myErrorReporter.report(new NotInScopeError(expr, expr.getName()));
         }
       }
@@ -74,20 +80,24 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
     return null;
   }
 
+  private void visitArguments(List<? extends Abstract.Argument> arguments) {
+    for (Abstract.Argument argument : arguments) {
+      if (argument instanceof Abstract.TypeArgument) {
+        ((Abstract.TypeArgument) argument).getType().accept(this, null);
+      }
+      if (argument instanceof Abstract.TelescopeArgument) {
+        myContext.addAll(((Abstract.TelescopeArgument) argument).getNames());
+      } else
+      if (argument instanceof Abstract.NameArgument) {
+        myContext.add(((Abstract.NameArgument) argument).getName());
+      }
+    }
+  }
+
   @Override
   public Void visitLam(Abstract.LamExpression expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      for (Abstract.Argument argument : expr.getArguments()) {
-        if (argument instanceof Abstract.TypeArgument) {
-          ((Abstract.TypeArgument) argument).getType().accept(this, null);
-        }
-        if (argument instanceof Abstract.TelescopeArgument) {
-          myContext.addAll(((Abstract.TelescopeArgument) argument).getNames());
-        } else if (argument instanceof Abstract.NameArgument) {
-          myContext.add(((Abstract.NameArgument) argument).getName());
-        }
-      }
-
+      visitArguments(expr.getArguments());
       expr.getBody().accept(this, null);
     }
     return null;
@@ -96,17 +106,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   @Override
   public Void visitPi(Abstract.PiExpression expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      for (Abstract.Argument argument : expr.getArguments()) {
-        if (argument instanceof Abstract.TypeArgument) {
-          ((Abstract.TypeArgument) argument).getType().accept(this, null);
-        }
-        if (argument instanceof Abstract.TelescopeArgument) {
-          myContext.addAll(((Abstract.TelescopeArgument) argument).getNames());
-        } else if (argument instanceof Abstract.NameArgument) {
-          myContext.add(((Abstract.NameArgument) argument).getName());
-        }
-      }
-
+      visitArguments(expr.getArguments());
       expr.getCodomain().accept(this, null);
     }
     return null;
@@ -148,16 +148,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   @Override
   public Void visitSigma(Abstract.SigmaExpression expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      for (Abstract.Argument argument : expr.getArguments()) {
-        if (argument instanceof Abstract.TypeArgument) {
-          ((Abstract.TypeArgument) argument).getType().accept(this, null);
-        }
-        if (argument instanceof Abstract.TelescopeArgument) {
-          myContext.addAll(((Abstract.TelescopeArgument) argument).getNames());
-        } else if (argument instanceof Abstract.NameArgument) {
-          myContext.add(((Abstract.NameArgument) argument).getName());
-        }
-      }
+      visitArguments(expr.getArguments());
     }
     return null;
   }
@@ -291,17 +282,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   public Void visitLet(Abstract.LetExpression expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       for (Abstract.LetClause clause : expr.getClauses()) {
-        for (Abstract.Argument argument : clause.getArguments()) {
-          if (argument instanceof Abstract.TypeArgument) {
-            ((Abstract.TypeArgument) argument).getType().accept(this, null);
-          }
-          if (argument instanceof Abstract.TelescopeArgument) {
-            myContext.addAll(((Abstract.TelescopeArgument) argument).getNames());
-          } else
-          if (argument instanceof Abstract.NameArgument) {
-            myContext.add(((Abstract.NameArgument) argument).getName());
-          }
-        }
+        visitArguments(clause.getArguments());
 
         if (clause.getResultType() != null) {
           clause.getResultType().accept(this, null);
