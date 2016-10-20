@@ -200,7 +200,7 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void defineExistingTestError() {
-    resolveNamesClass("\\static \\class A { } \\function A => 0 \\function B => A");
+    resolveNamesClass("\\static \\class A { } \\function A => 0 \\function B => A", 1);
   }
 
   @Test
@@ -271,5 +271,34 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void testPreludeNotLoaded() {
     resolveNamesDef("\\function test' => ::Prelude.suc", 1);
+  }
+
+  @Test
+  public void openDuplicate() {
+    resolveNamesClass(
+        "\\static \\function f => \\Type0\n" +
+        "\\static \\class X { \\static \\function f => \\Type0 }\n" +
+        "\\open X\n" +
+        "\\static \\function g => f", 1);
+  }
+
+  @Test
+  public void openDuplicateModule() {
+    resolveNamesClass(
+        "\\static \\class X { \\static \\function f => \\Type0 }\n" +
+        "\\static \\class Y { \\static \\function f => \\Type0 }\n" +
+        "\\open X\n" +
+        "\\open Y\n" +
+        "\\static \\function g => f", 1);
+  }
+
+  @Test
+  public void openDuplicateModuleHiding() {
+    resolveNamesClass(
+        "\\static \\class X { \\static \\function f => \\Type0 }\n" +
+        "\\static \\class Y { \\static \\function f => \\Type0 }\n" +
+        "\\open X\n" +
+        "\\open Y \\hiding (f)\n" +
+        "\\static \\function g => f");
   }
 }

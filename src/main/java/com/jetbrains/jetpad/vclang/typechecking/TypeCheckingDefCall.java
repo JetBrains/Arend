@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
+import com.jetbrains.jetpad.vclang.naming.scope.OverridingScope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
@@ -274,7 +274,7 @@ public class TypeCheckingDefCall {
       }
 
       if (typeCheckedDefinition == null) {
-        member = new MergeScope(leftDefinition.getOwnNamespace(), leftDefinition.getInstanceNamespace()).resolveName(name);
+        member = new OverridingScope(leftDefinition.getOwnNamespace(), leftDefinition.getInstanceNamespace()).resolveName(name);
         if (member == null) {
           MemberNotFoundError error = new MemberNotFoundError(leftDefinition, name, expr);
           expr.setWellTyped(myVisitor.getContext(), Error(null, error));

@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.naming.scope;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
+import java.util.HashSet;
 import java.util.Set;
 
 public class FilteredScope implements Scope {
@@ -17,7 +18,7 @@ public class FilteredScope implements Scope {
 
   @Override
   public Set<String> getNames() {
-    Set<String> names = myScope.getNames();
+    Set<String> names = new HashSet<>(myScope.getNames());
     if (myInclude) {
       names.retainAll(myNames);
     } else {

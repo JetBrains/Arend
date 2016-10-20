@@ -8,7 +8,7 @@ import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.oneshot.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.scope.FilteredScope;
-import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
+import com.jetbrains.jetpad.vclang.naming.scope.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
@@ -97,7 +97,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
       if (stat.getNames() != null) {
         scope = new FilteredScope(scope, new HashSet<>(stat.getNames()), !stat.isHiding());
       }
-      myScope = new MergeScope(myScope, scope);
+      myScope = OverridingScope.merge(myScope, scope, myErrorReporter);
     }
 
     return null;
