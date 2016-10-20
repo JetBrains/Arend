@@ -238,12 +238,12 @@ public class TypeCheckingDefCall {
       }
     }
 
-    // Static call
     Expression thisExpr = null;
     final Definition leftDefinition;
     Abstract.Definition member = null;
     ClassCallExpression classCall = result.getExpression().toClassCall();
     if (classCall != null) {
+      // Static call
       leftDefinition = classCall.getDefinition();
       ClassField parentField = classCall.getDefinition().getEnclosingThisField();
       if (parentField != null) {
@@ -262,11 +262,9 @@ public class TypeCheckingDefCall {
         }
       }
     } else {
+      // Dynamic call
       if (result.getExpression().toDefCall() != null) {
-        thisExpr = null;
-        leftDefinition = result.getExpression().toDefCall().getDefinition();
-      } else if (result.getExpression().toDefCall() != null && result.getExpression().toDefCall().getDefCallArguments().size() == 1) {
-        thisExpr = result.getExpression().toDefCall().getDefCallArguments().get(0);
+        thisExpr = result.getExpression().toDefCall().getDefCallArguments().size() == 1 ? result.getExpression().toDefCall().getDefCallArguments().get(0) : null;
         leftDefinition = result.getExpression().toDefCall().getDefinition();
       } else {
         LocalTypeCheckingError error = new LocalTypeCheckingError("Expected a definition", expr);

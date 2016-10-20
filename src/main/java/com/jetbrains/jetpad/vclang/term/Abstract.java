@@ -429,7 +429,7 @@ public final class Abstract {
   }
 
   public interface NamespaceCommandStatement extends Statement {
-    enum Kind { OPEN, CLOSE, EXPORT }
+    enum Kind { OPEN, EXPORT }
 
     Kind getKind();
     List<String> getModulePath();
@@ -437,6 +437,7 @@ public final class Abstract {
 
     Definition getResolvedClass();
 
+    boolean isHiding();
     List<String> getNames();
   }
 

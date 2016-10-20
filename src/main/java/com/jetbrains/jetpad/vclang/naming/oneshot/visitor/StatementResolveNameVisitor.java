@@ -7,11 +7,13 @@ import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.oneshot.ResolveListener;
+import com.jetbrains.jetpad.vclang.naming.scope.FilteredScope;
 import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
 
+import java.util.HashSet;
 import java.util.List;
 
 public class StatementResolveNameVisitor implements AbstractStatementVisitor<DefinitionResolveNameVisitor.Flag, Object> {
@@ -91,7 +93,11 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
     }
 
     if (stat.getKind().equals(Abstract.NamespaceCommandStatement.Kind.OPEN)) {
-      myScope = new MergeScope(myScope, myNameResolver.staticNamespaceFor(stat.getResolvedClass()));
+      Scope scope = myNameResolver.staticNamespaceFor(stat.getResolvedClass());
+      if (stat.getNames() != null) {
+        scope = new FilteredScope(scope, new HashSet<>(stat.getNames()), !stat.isHiding());
+      }
+      myScope = new MergeScope(myScope, scope);
     }
 
     return null;
@@ -101,28 +107,6 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
   public Object visitDefaultStaticCommand(Abstract.DefaultStaticStatement stat, DefinitionResolveNameVisitor.Flag params) {
     return null;
   }
-
-  /*
-  private void processNamespaceCommand(NamespaceMember member, boolean export, boolean remove, Abstract.SourceNode sourceNode) {
-    boolean ok;
-    if (export) {
-      ok = myNamespace.addMember(member) == null;
-    } else
-    if (remove) {
-      ok = myPrivateNameResolver.locateName(member.namespace.getName()) != null;
-      myPrivateNameResolver.remove(member.namespace.getName());
-    } else {
-      ok = myPrivateNameResolver.locateName(member.namespace.getName()) == null;
-      myPrivateNameResolver.add(member);
-    }
-
-    if (!ok) {
-      GeneralError error = new NameDefinedError(!remove, sourceNode, member.namespace.getName(), null);
-      error.setLevel(GeneralError.Level.WARNING);
-      myErrorReporter.report(error);
-    }
-  }
-  */
 
   public Scope getCurrentScope() {
     return myScope;
