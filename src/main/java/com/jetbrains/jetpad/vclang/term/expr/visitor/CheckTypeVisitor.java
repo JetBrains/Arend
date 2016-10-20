@@ -360,7 +360,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     return true;
   }
 
-  private Result checkDefCall(PreResult result) {
+  private Result checkDefCall(PreResult result, Abstract.Expression expr) {
     if (result == null) {
       return null;
     }
@@ -376,12 +376,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     int argIndex = 0;
     for (DependentLink link = params; link.hasNext(); link = link.getNext(), ++argIndex) {
       if (link.getType().toExpression() == null) {
-        LevelInferenceVariable pLvl = new LevelInferenceVariable("plvl-of-" + link.getName(), Lvl(), null);
-        LevelInferenceVariable hLvl = new LevelInferenceVariable("hlvl-of-" + link.getName(), CNat(), null);
+        LevelInferenceVariable pLvl = new LevelInferenceVariable("plvl-of-" + link.getName(), Lvl(), expr);
+        LevelInferenceVariable hLvl = new LevelInferenceVariable("hlvl-of-" + link.getName(), CNat(), expr);
         myEquations.addVariable(pLvl);
         myEquations.addVariable(hLvl);
-        InferenceVariable inferenceVariable = new LambdaInferenceVariable("type-of-" + link.getName(), Universe(new Level(pLvl), new Level(hLvl)), argIndex, null, false);
-        Expression type = new InferenceReferenceExpression(inferenceVariable, myEquations);
+        Expression type = Universe(new Level(pLvl), new Level(hLvl));
         if (link.getType().getPiParameters().hasNext()) {
           type = Pi(link.getType().getPiParameters(), type);
         }
@@ -394,34 +393,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
 
     return new Result(expression, result.getAtomicType().subst(subst, new LevelSubstitution()).fromPiParameters(DependentLink.Helper.toList(params)));
-
-    /*
-    int requiredArgs = result.expression.toDefCall().getDefinition().getNumberOfParameters();
-    int actualArgs = result.expression.toDefCall().getDefCallArguments().size();
-    if (result.expression.toConCall() != null) {
-      actualArgs += result.expression.toConCall().getDataTypeArguments().size();
-    }
-    if (actualArgs == requiredArgs) {
-      return;
-    }
-    assert actualArgs < requiredArgs;
-
-    ExprSubstitution substitution = new ExprSubstitution();
-    DependentLink params = result.type.getPiParameters().subst(substitution, new LevelSubstitution(), requiredArgs - actualArgs);
-    int paramsNumber = DependentLink.Helper.size(params);
-    if (paramsNumber < requiredArgs - actualArgs) {
-      assert result.expression.toConCall() != null;
-      params.setNext(result.type.getPiCodomain().getPiParameters().subst(substitution, new LevelSubstitution(), requiredArgs - actualArgs - paramsNumber));
-      assert DependentLink.Helper.size(params) == requiredArgs - actualArgs;
-    }
-
-    for (DependentLink link = params; link.hasNext(); link = link.getNext()) {
-      result.expression.addArgument(Reference(link));
-    }
-    if (params.hasNext()) {
-      result.expression = Lam(params, result.expression);
-    }
-    /**/
   }
 
   @Override
@@ -431,7 +402,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       return null;
     }
 
-    return checkResultImplicit(expectedType, checkDefCall(result), expr);
+    return checkResultImplicit(expectedType, checkDefCall(result, expr), expr);
   }
 
   @Override
@@ -442,7 +413,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       return null;
     }
 
-    return checkResultImplicit(expectedType, checkDefCall(result), expr);
+    return checkResultImplicit(expectedType, checkDefCall(result, expr), expr);
   }
 
   @Override
@@ -453,7 +424,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       return null;
     }
 
-    return checkResultImplicit(expectedType, checkDefCall(result), expr);
+    return checkResultImplicit(expectedType, checkDefCall(result, expr), expr);
   }
 
   @Override
@@ -655,10 +626,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   }
 
   @Override
-  public Result visitTypeOmega(Abstract.TypeOmegaExpression expr, Type params) {
+  public Result visitTypeOmega(Abstract.TypeOmegaExpression expr, Type expectedType) {
+    myErrorReporter.report(new LocalTypeCheckingError("\\Type can only be used in a definition as codomain in either its own type or the type of its parameter", expr));
     return null;
   }
-
   @Override
   public Result visitError(Abstract.ErrorExpression expr, Type expectedType) {
     LocalTypeCheckingError error = new GoalError(myContext, expectedType == null ? null : expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
@@ -808,7 +779,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     if (result == null) {
       return null;
     }
-    return checkResultImplicit(expectedType, checkDefCall(result), expr);
+    return checkResultImplicit(expectedType, checkDefCall(result, expr), expr);
   }
 
   @Override
