@@ -122,11 +122,6 @@ public class NameResolverTest extends NameResolverTestCase {
   }
 
   @Test
-  public void whereAbstractError() {
-    resolveNamesClass("\\static \\function f => 0 \\where \\abstract x : \\Type0", 1);
-  }
-
-  @Test
   public void openTest() {
     resolveNamesClass("\\static \\class A { \\static \\function x => 0 } \\open A \\static \\function y => x");
   }
@@ -206,7 +201,7 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void defineExistingTestError() {
-    resolveNamesClass("\\static \\class A { } \\function A => 0", 1);
+    resolveNamesClass("\\static \\class A { } \\function A => 0 \\function B => A");
   }
 
   @Test
@@ -217,11 +212,6 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void defineExistingDynamicTestError() {
     resolveNamesClass("\\class A { } \\function A => 0", 1);
-  }
-
-  @Test
-  public void neverCloseField() {
-    resolveNamesClass("\\static \\class A { \\static \\function x => 0 } \\static \\class B { \\open A \\export A \\close A } \\static \\class C { \\static \\function y => B.x }");
   }
 
   @Test
@@ -272,7 +262,7 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void testPreludeNonExistentMember() {
     loadPrelude();
-    resolveNamesDef("\\function test' => ::Prelude.suc", 1);
+    resolveNamesDef("\\function test' => ::Prelude.foo", 1);
   }
 
   @Ignore("#46")
