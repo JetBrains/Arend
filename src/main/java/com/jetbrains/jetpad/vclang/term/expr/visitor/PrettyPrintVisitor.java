@@ -920,11 +920,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitClassView(Abstract.ClassView def, Void params) {
-    myBuilder.append("\\view ");
-    if (!def.getName().equals(def.getUnderlyingClassDefCall().getName())) {
-      myBuilder.append(def.getName()).append(" ");
-    }
-    myBuilder.append("\\on ");
+    myBuilder.append("\\view ").append(def.getName()).append(" \\on ");
     def.getUnderlyingClassDefCall().accept(this, null);
     myBuilder.append(" \\by ").append(def.getClassifyingFieldName()).append(" {");
 
