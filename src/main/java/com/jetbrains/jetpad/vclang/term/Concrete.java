@@ -1406,14 +1406,16 @@ public final class Concrete {
     private Abstract.Definition myDefinition;
     private final List<String> myModulePath;
     private final List<String> myPath;
+    private final boolean myHiding;
     private final List<String> myNames;
 
-    public NamespaceCommandStatement(Position position, Kind kind, List<String> modulePath, List<String> path, List<String> names) {
+    public NamespaceCommandStatement(Position position, Kind kind, List<String> modulePath, List<String> path, boolean isHiding, List<String> names) {
       super(position);
       myKind = kind;
       myDefinition = null;
       myModulePath = modulePath;
       myPath = path;
+      myHiding = isHiding;
       myNames = names;
     }
 
@@ -1439,6 +1441,11 @@ public final class Concrete {
     @Override
     public Abstract.Definition getResolvedClass() {
       return myDefinition;
+    }
+
+    @Override
+    public boolean isHiding() {
+      return myHiding;
     }
 
     @Override

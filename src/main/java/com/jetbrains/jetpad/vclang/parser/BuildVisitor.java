@@ -176,7 +176,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     } else {
       names = null;
     }
-    return new Concrete.NamespaceCommandStatement(tokenPosition(ctx.getStart()), kind, modulePath, path, names);
+    return new Concrete.NamespaceCommandStatement(tokenPosition(ctx.getStart()), kind, modulePath, path, ctx.hidingOpt() instanceof WithHidingContext, names);
   }
 
   @Override
@@ -202,11 +202,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Abstract.NamespaceCommandStatement.Kind visitOpenCmd(OpenCmdContext ctx) {
     return Abstract.NamespaceCommandStatement.Kind.OPEN;
-  }
-
-  @Override
-  public Abstract.NamespaceCommandStatement.Kind visitCloseCmd(CloseCmdContext ctx) {
-    return Abstract.NamespaceCommandStatement.Kind.CLOSE;
   }
 
   @Override

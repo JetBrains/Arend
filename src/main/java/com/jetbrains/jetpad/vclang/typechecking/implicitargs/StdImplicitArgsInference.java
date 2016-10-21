@@ -127,7 +127,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         if (conCall != null &&
             conCall.getDataTypeArguments().size() < DependentLink.Helper.size(conCall.getDefinition().getDataTypeParameters()) &&
             expectedType != null &&
-            !conCall.getDefinition().hasErrors()) {
+            !conCall.getDefinition().typeHasErrors()) {
           Expression exprExpType = expectedType.toExpression();
           DataCallExpression dataCall = exprExpType == null ? null : exprExpType.normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
           if (dataCall != null) {

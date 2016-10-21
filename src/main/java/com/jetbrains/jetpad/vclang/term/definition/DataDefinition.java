@@ -10,7 +10,6 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
-import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
@@ -25,6 +24,8 @@ public class DataDefinition extends Definition {
   private Map<Constructor, Condition> myConditions;
   private SortMax mySorts;
   private boolean myMatchesOnInterval;
+  private boolean myTypeHasErrors;
+  private TypeCheckingStatus myHasErrors;
 
   public DataDefinition(Abstract.DataDefinition abstractDef) {
     this(abstractDef, new SortMax(), EmptyDependentLink.getInstance());
@@ -32,11 +33,12 @@ public class DataDefinition extends Definition {
 
   public DataDefinition(Abstract.DataDefinition abstractDef, SortMax sorts, DependentLink parameters) {
     super(abstractDef);
-    hasErrors(false);
     myConstructors = new ArrayList<>();
     myParameters = parameters;
     mySorts = sorts;
     myMatchesOnInterval = false;
+    myTypeHasErrors = myParameters != null;
+    myHasErrors = myTypeHasErrors ? TypeCheckingStatus.HAS_ERRORS : TypeCheckingStatus.TYPE_CHECKING;
   }
 
   public SortMax getSorts() {
@@ -49,7 +51,7 @@ public class DataDefinition extends Definition {
 
   @Override
   public DependentLink getParameters() {
-    assert !hasErrors();
+    assert !typeHasErrors();
     return myParameters;
   }
 
@@ -65,7 +67,7 @@ public class DataDefinition extends Definition {
   public List<ConCallExpression> getMatchedConstructors(DataCallExpression dataCall) {
     List<ConCallExpression> result = new ArrayList<>();
     for (Constructor constructor : myConstructors) {
-      if (constructor.hasErrors())
+      if (constructor.typeHasErrors())
         continue;
       List<? extends Expression> matchedParameters;
       if (constructor.getPatterns() != null) {
@@ -122,7 +124,7 @@ public class DataDefinition extends Definition {
 
   @Override
   public TypeMax getTypeWithParams(List<DependentLink> params, LevelSubstitution polyParams) {
-    if (hasErrors()) {
+    if (typeHasErrors()) {
       return null;
     }
 
@@ -142,7 +144,23 @@ public class DataDefinition extends Definition {
   }
 
   @Override
-  public int getNumberOfParameters() {
-    return DependentLink.Helper.size(myParameters);
+  public boolean typeHasErrors() {
+    return myTypeHasErrors;
+  }
+
+  public void typeHasErrors(boolean has) {
+    myTypeHasErrors = has;
+    if (has) {
+      myHasErrors = TypeCheckingStatus.HAS_ERRORS;
+    }
+  }
+
+  @Override
+  public TypeCheckingStatus hasErrors() {
+    return myHasErrors;
+  }
+
+  public void hasErrors(TypeCheckingStatus status) {
+    myHasErrors = status;
   }
 }

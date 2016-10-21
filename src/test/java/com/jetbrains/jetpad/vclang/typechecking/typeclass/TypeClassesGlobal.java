@@ -11,8 +11,8 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
         "  \\abstract A : \\Type0\n" +
         "  \\abstract B : A -> \\Type0\n" +
         "}\n" +
-        "\\static \\view \\on X \\by A { B }\n" +
-        "\\static \\instance Nat-X => \\new X { A => Nat | B => \\lam n => Nat }\n" +
+        "\\static \\view X' \\on X \\by A { B }\n" +
+        "\\static \\instance Nat-X => \\new X' { A => Nat | B => \\lam n => Nat }\n" +
         "\\static \\function f => B 0");
   }
 

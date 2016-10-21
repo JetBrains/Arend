@@ -2,9 +2,13 @@ grammar Vcgrammar;
 
 statements : statement*;
 
-statement : staticMod definition                                  # statDef
-          | nsCmd nsCmdRoot fieldAcc* ('(' name (',' name)* ')')? # statCmd
-          | defaultStaticMod                                      # defaultStatic
+statement : staticMod definition                                              # statDef
+          | nsCmd nsCmdRoot fieldAcc* (hidingOpt '(' name (',' name)* ')')?   # statCmd
+          | defaultStaticMod                                                  # defaultStatic
+          ;
+
+hidingOpt : '\\hiding'  # withHiding
+          |             # withoutHiding
           ;
 
 nsCmdRoot : modulePath | name;
@@ -52,7 +56,6 @@ defaultStaticMod : '\\allstatic'        # staticDefaultStatic
 where : '\\where' ('{' statement+ '}' | statement);
 
 nsCmd : '\\open'                        # openCmd
-      | '\\close'                       # closeCmd
       | '\\export'                      # exportCmd
       ;
 

@@ -122,15 +122,11 @@ public class NameResolverTest extends NameResolverTestCase {
   }
 
   @Test
-  public void whereAbstractError() {
-    resolveNamesClass("\\static \\function f => 0 \\where \\abstract x : \\Type0", 1);
-  }
-
-  @Test
   public void openTest() {
     resolveNamesClass("\\static \\class A { \\static \\function x => 0 } \\open A \\static \\function y => x");
   }
 
+  @Ignore
   @Test
   public void exportTest() {
     resolveNamesClass("\\static \\class A { \\static \\class B { \\static \\function x => 0 } \\export B } \\static \\function y => A.x");
@@ -141,6 +137,7 @@ public class NameResolverTest extends NameResolverTestCase {
     resolveNamesClass("\\static \\class A { \\abstract x : \\Type0 \\class B { \\static \\function y => x } } \\static \\function f (a : A) => a.B.y");
   }
 
+  @Ignore
   @Test
   public void exportPublicFieldsTest() {
     /*
@@ -156,6 +153,7 @@ public class NameResolverTest extends NameResolverTestCase {
     assertTrue(false);
   }
 
+  @Ignore
   @Test
   public void exportTest2() {
     /*
@@ -206,7 +204,7 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void defineExistingTestError() {
-    resolveNamesClass("\\static \\class A { } \\function A => 0", 1);
+    resolveNamesClass("\\static \\class A { } \\function A => 0 \\function B => A", 1);
   }
 
   @Test
@@ -219,24 +217,27 @@ public class NameResolverTest extends NameResolverTestCase {
     resolveNamesClass("\\class A { } \\function A => 0", 1);
   }
 
-  @Test
-  public void neverCloseField() {
-    resolveNamesClass("\\static \\class A { \\static \\function x => 0 } \\static \\class B { \\open A \\export A \\close A } \\static \\class C { \\static \\function y => B.x }");
-  }
-
+  @Ignore
   @Test
   public void exportExistingTestError() {
     resolveNamesClass("\\static \\class A { \\static \\class B { \\static \\function x => 0 } } \\export A \\static \\class B { \\static \\function y => 0 }", 1);
   }
 
+  @Ignore
   @Test
   public void exportExistingTestError2() {
     resolveNamesClass("\\static \\class B { \\static \\function y => 0 } \\static \\class A { \\static \\class B { \\static \\function x => 0 } } \\export A", 1);
   }
 
   @Test
-  public void openExportTest() {
-    resolveNamesClass("\\static \\class A { \\static \\class B { \\static \\function x => 0 } \\open B } \\static \\function y => A.x");
+  public void openInsideTest() {
+    resolveNamesClass("\\static \\class A { \\static \\class B { \\static \\function x => 0 } \\open B } \\static \\function y => A.x", 1);
+  }
+
+  @Ignore
+  @Test
+  public void exportInsideTest() {
+    resolveNamesClass("\\static \\class A { \\static \\class B { \\static \\function x => 0 } \\export B } \\static \\function y => A.x");
   }
 
   @Test
@@ -268,16 +269,43 @@ public class NameResolverTest extends NameResolverTestCase {
     resolveNamesDef("\\function test' => ::Prelude.suc");
   }
 
-  @Ignore("#46")
   @Test
   public void testPreludeNonExistentMember() {
     loadPrelude();
-    resolveNamesDef("\\function test' => ::Prelude.suc", 1);
+    resolveNamesDef("\\function test' => ::Prelude.foo", 1);
   }
 
-  @Ignore("#46")
   @Test
   public void testPreludeNotLoaded() {
     resolveNamesDef("\\function test' => ::Prelude.suc", 1);
+  }
+
+  @Test
+  public void openDuplicate() {
+    resolveNamesClass(
+        "\\static \\function f => \\Type0\n" +
+        "\\static \\class X { \\static \\function f => \\Type0 }\n" +
+        "\\open X\n" +
+        "\\static \\function g => f", 1);
+  }
+
+  @Test
+  public void openDuplicateModule() {
+    resolveNamesClass(
+        "\\static \\class X { \\static \\function f => \\Type0 }\n" +
+        "\\static \\class Y { \\static \\function f => \\Type0 }\n" +
+        "\\open X\n" +
+        "\\open Y\n" +
+        "\\static \\function g => f", 1);
+  }
+
+  @Test
+  public void openDuplicateModuleHiding() {
+    resolveNamesClass(
+        "\\static \\class X { \\static \\function f => \\Type0 }\n" +
+        "\\static \\class Y { \\static \\function f => \\Type0 }\n" +
+        "\\open X\n" +
+        "\\open Y \\hiding (f)\n" +
+        "\\static \\function g => f");
   }
 }

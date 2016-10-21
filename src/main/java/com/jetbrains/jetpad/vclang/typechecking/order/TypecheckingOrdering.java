@@ -183,7 +183,7 @@ public class TypecheckingOrdering {
         Abstract.Definition def = entry.getKey();
         DefinitionCheckTypeVisitor.typeCheck(state, entry.getValue() == null ? null : (ClassDefinition) state.getTypechecked(entry.getValue()), def, new ProxyErrorReporter(def, errorReporter), isPrelude);
         Definition typechecked = state.getTypechecked(def);
-        if (typechecked == null || typechecked.hasErrors()) {
+        if (typechecked == null || typechecked.hasErrors() != Definition.TypeCheckingStatus.NO_ERRORS) {
           typecheckedReporter.typecheckingFailed(def);
         } else {
           typecheckedReporter.typecheckingSucceeded(def);

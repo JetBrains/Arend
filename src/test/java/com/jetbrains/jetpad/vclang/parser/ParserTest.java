@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.parser;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
@@ -107,7 +108,7 @@ public class ParserTest extends ParserTestCase {
   }
 
   @Test
-  public void elimManyMistmatch() {
+  public void elimManyMismatch() {
     parseExpr(
         "\\static \\data D Nat | D (suc n) => dsuc\n" +
         "\\static \\function tests (n : Nat) (d : D n) : Nat <= \\elim n d\n" +
@@ -117,5 +118,11 @@ public class ParserTest extends ParserTestCase {
   @Test
   public void parseIncorrectPi() {
     parseExpr("\\Pi (: Nat) -> Nat", 2);
+  }
+
+  @Ignore("#29")
+  @Test
+  public void whereAbstractError() {
+    parseClass("test", "\\function f => 0 \\where \\abstract x : \\Type0", 1);
   }
 }

@@ -184,22 +184,16 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
     }
 
     try {
-      for (Abstract.Statement statement : def.getStatements()) {
-        if (statement instanceof Abstract.DefineStatement && Abstract.DefineStatement.StaticMod.STATIC.equals(((Abstract.DefineStatement) statement).getStaticMod()) && ((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ClassView) {
-          visitClassView((Abstract.ClassView) ((Abstract.DefineStatement) statement).getDefinition(), true);
-        }
-      }
-
       Namespace staticNamespace = myStaticNsProvider.forDefinition(def);
       Scope staticScope = new StaticClassScope(myParentScope, staticNamespace);
       StatementResolveNameVisitor stVisitor = new StatementResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, myNameResolver, myErrorReporter, staticScope, myContext, myResolveListener);
       for (Abstract.Statement statement : def.getStatements()) {
-        if (statement instanceof Abstract.DefineStatement && (!Abstract.DefineStatement.StaticMod.STATIC.equals(((Abstract.DefineStatement) statement).getStaticMod()) || ((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ClassView))
+        if (statement instanceof Abstract.DefineStatement && (!Abstract.DefineStatement.StaticMod.STATIC.equals(((Abstract.DefineStatement) statement).getStaticMod())))
           continue;  // FIXME[where]
         statement.accept(stVisitor, null);
       }
 
-      Scope dynamicScope = new DynamicClassScope(myParentScope, staticNamespace, myDynamicNsProvider.forClass(def));
+      Scope dynamicScope = new DynamicClassScope(myParentScope, staticNamespace, myDynamicNsProvider.forClass(def), myErrorReporter);
       StatementResolveNameVisitor dyVisitor = new StatementResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, myNameResolver, myErrorReporter, dynamicScope, myContext, myResolveListener);
       for (Abstract.Statement statement : def.getStatements()) {
         if (statement instanceof Abstract.DefineStatement && !Abstract.DefineStatement.StaticMod.STATIC.equals(((Abstract.DefineStatement) statement).getStaticMod()))
@@ -240,13 +234,8 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       return null;
     }
 
-    Namespace staticNamespace = myStaticNsProvider.forDefinition(def.getParentStatement().getParentDefinition());
-    def.getUnderlyingClassDefCall().accept(new ExpressionResolveNameVisitor(staticNamespace /* TODO: Why not myParentScope? */, myContext, myNameResolver, myErrorReporter, myResolveListener), null);
+    def.getUnderlyingClassDefCall().accept(new ExpressionResolveNameVisitor(myParentScope, myContext, myNameResolver, myErrorReporter, myResolveListener), null);
     Abstract.Definition resolvedUnderlyingClass = def.getUnderlyingClassDefCall().getReferent();
-    if (resolvedUnderlyingClass instanceof Abstract.ClassView) {
-      resolvedUnderlyingClass = ((Abstract.ClassView) resolvedUnderlyingClass).getUnderlyingClassDefCall().getReferent();
-      myResolveListener.nameResolved(def.getUnderlyingClassDefCall(), resolvedUnderlyingClass);
-    }
     if (!(resolvedUnderlyingClass instanceof Abstract.ClassDefinition)) {
       myErrorReporter.report(resolvedUnderlyingClass != null ? new WrongDefinition("Expected a class", def) : new NotInScopeError(def, def.getUnderlyingClassDefCall().getName()));
       return null;

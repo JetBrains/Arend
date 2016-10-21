@@ -20,7 +20,6 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
-import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeDeserialization;
@@ -191,7 +190,7 @@ public class ModuleDeserialization {
     Definition definition = definitionMap.get(stream.readInt());
     if (stream.readBoolean())
       definition.setThisClass((ClassDefinition) definitionMap.get(stream.readInt()));
-    definition.hasErrors(stream.readBoolean());
+    // definition.hasErrors(stream.readBoolean());
 
     List<Binding> polyParams = new ArrayList<>(stream.readInt());
 
@@ -214,7 +213,7 @@ public class ModuleDeserialization {
   }
 
   private void deserializeDataDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, DataDefinition definition) throws IOException {
-    if (!definition.hasErrors()) {
+    if (!definition.typeHasErrors()) {
       definition.setSorts(readSortMax(stream, definitionMap));
       definition.setParameters(readParameters(stream, definitionMap));
     }
@@ -226,9 +225,9 @@ public class ModuleDeserialization {
         throw new IncorrectFormat();
       }
       constructor.setDataType(definition);
-      constructor.hasErrors(stream.readBoolean());
+      // constructor.hasErrors(stream.readBoolean());
 
-      if (!constructor.hasErrors()) {
+      if (!constructor.typeHasErrors()) {
         if (stream.readBoolean()) {
           DependentLink link = readParameters(stream, definitionMap);
           int numPatterns = stream.readInt();
@@ -308,9 +307,9 @@ public class ModuleDeserialization {
       ClassField field = (ClassField) definitionMap.get(stream.readInt());
       //definition.addField(field, name, thisParameter, implementation);  // FIXME[serial]
       //field.setThisParameter(readParameters(stream, definitionMap));
-      field.hasErrors(stream.readBoolean());
+      //field.hasErrors(stream.readBoolean());
 
-      if (!field.hasErrors()) {
+      if (!field.typeHasErrors()) {
         field.setSorts(readSortMax(stream, definitionMap));
         field.setBaseType(readExpression(stream, definitionMap));
         field.setThisClass(definition);

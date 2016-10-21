@@ -87,20 +87,20 @@ public class Prelude extends SimpleNamespace {
         clause(RIGHT, EmptyDependentLink.getInstance(), Reference(AT.getParameters().getNext().getNext())),
         clause(branch(param4, tail(param4.getNext()),
             clause(PATH_CON, atPath, Apps(Reference(atPath), Reference(param4.getNext()))))))));
-      AT.hasErrors(false);
+      AT.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
     } else
     if (abstractDef.getName().equals("coe")) {
       COERCE = (FunctionDefinition) definition;
       COERCE.setElimTree(top(COERCE.getParameters(), branch(COERCE.getParameters().getNext().getNext(), tail(),
         clause(LEFT, EmptyDependentLink.getInstance(), Abstract.Definition.Arrow.RIGHT, Reference(COERCE.getParameters().getNext())))));
-      COERCE.hasErrors(false);
+      COERCE.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
     } else
     if (abstractDef.getName().equals("iso")) {
       ISO = (FunctionDefinition) definition;
       ISO.setElimTree(top(ISO.getParameters(), branch(ISO.getParameters().getNext().getNext().getNext().getNext().getNext().getNext(), tail(),
         clause(LEFT, EmptyDependentLink.getInstance(), Reference(ISO.getParameters())),
         clause(RIGHT, EmptyDependentLink.getInstance(), Reference(ISO.getParameters().getNext())))));
-      ISO.hasErrors(false);
+      ISO.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
     } else
     if (abstractDef.getName().equals("TrP")) {
       PROP_TRUNC = (DataDefinition) definition;

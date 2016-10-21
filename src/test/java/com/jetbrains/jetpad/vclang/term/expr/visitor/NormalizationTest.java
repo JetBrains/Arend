@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.LetClause;
@@ -55,6 +56,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Reference(yPlus)),
         clause(Prelude.SUC, xPlusMinusOne, Suc(FunCall(plus, new LevelSubstitution(), Reference(xPlusMinusOne), Reference(yPlus))))));
     plus.setElimTree(plusElimTree);
+    plus.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
 
     DependentLink xMul = param("x", Nat());
     DependentLink yMul = param("y", Nat());
@@ -65,6 +67,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
         clause(Prelude.SUC, xMulMinusOne, FunCall(plus, new LevelSubstitution(), Reference(yMul), FunCall(mul, new LevelSubstitution(), Reference(xMulMinusOne), Reference(yMul))))
     ));
     mul.setElimTree(mulElimTree);
+    mul.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
 
     DependentLink xFac = param("x", Nat());
     fac = new FunctionDefinition(null, EmptyNamespace.INSTANCE, xFac, Nat(), null);
@@ -74,6 +77,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
         clause(Prelude.SUC, xFacMinusOne, FunCall(mul, new LevelSubstitution(), Suc(Reference(xFacMinusOne)), FunCall(fac, new LevelSubstitution(), Reference(xFacMinusOne))))
     ));
     fac.setElimTree(facElimTree);
+    fac.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
 
     DependentLink zNElim = param("z", Nat());
     DependentLink sNElim = param("s", Pi(param(Nat()), Pi(param(Nat()), Nat())));
@@ -85,6 +89,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
         clause(Prelude.SUC, xNElimMinusOne, Apps(Reference(sNElim), Reference(xNElimMinusOne), FunCall(nelim, new LevelSubstitution(), Reference(zNElim), Reference(sNElim), Reference(xNElimMinusOne))))
     ));
     nelim.setElimTree(nelimElimTree);
+    nelim.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
   }
 
   private void initializeBDList() {

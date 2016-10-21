@@ -9,7 +9,6 @@ import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 
 import java.util.ArrayList;
@@ -17,13 +16,11 @@ import java.util.List;
 
 public abstract class Definition implements Referable {
   protected List<Binding> myPolyParams = new ArrayList<>();
-  private boolean myHasErrors;
   private ClassDefinition myThisClass;
   private Abstract.Definition myAbstractDefinition;
 
   public Definition(Abstract.Definition abstractDef) {
     myAbstractDefinition = abstractDef;
-    myHasErrors = true;
   }
 
   public String getName() {
@@ -40,25 +37,13 @@ public abstract class Definition implements Referable {
 
   public abstract TypeMax getTypeWithParams(List<DependentLink> params, LevelSubstitution polySubst);
 
-  // public abstract Type getType(LevelSubstitution polyParams);
-
   public abstract DefCallExpression getDefCall(LevelSubstitution polyParams);
 
   public abstract Expression getDefCall(LevelSubstitution polyParams, List<Expression> args);
 
-  public abstract int getNumberOfParameters();
-
-  public boolean typeHasErrors() {
-    return myHasErrors;
-  }
-
   public ClassDefinition getThisClass() {
     return myThisClass;
   }
-
-/*  public Type getTypeWithThis(LevelSubstitution polyParams) {
-    return getType(polyParams);
-  } /**/
 
   public void setThisClass(ClassDefinition enclosingClass) {
     myThisClass = enclosingClass;
@@ -83,17 +68,11 @@ public abstract class Definition implements Referable {
 
   public boolean isPolymorphic() { return !myPolyParams.isEmpty(); }
 
-  public boolean hasErrors() {
-    return myHasErrors;
-  }
+  public enum TypeCheckingStatus { HAS_ERRORS, NO_ERRORS, TYPE_CHECKING }
 
-  public void hasErrors(boolean has) {
-    myHasErrors = has;
-  }
-
-  public boolean isAbstract() {
-    return false;
-  }
+  // typeHasErrors should imply hasErrors == HAS_ERRORS
+  public abstract boolean typeHasErrors();
+  public abstract TypeCheckingStatus hasErrors();
 
   public Namespace getOwnNamespace() {
     return EmptyNamespace.INSTANCE;

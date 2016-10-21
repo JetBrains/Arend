@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
+import com.jetbrains.jetpad.vclang.error.Error;
+import com.jetbrains.jetpad.vclang.naming.scope.OverridingScope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
@@ -10,9 +11,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
-import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -54,6 +53,9 @@ public class TypeCheckingDefCall {
       myVisitor.getErrorReporter().report(error);
       return null;
     } else {
+      if (typeCheckedDefinition.hasErrors() == Definition.TypeCheckingStatus.HAS_ERRORS) {
+        myVisitor.getErrorReporter().report(new HasErrors(Error.Level.WARNING, definition, expr));
+      }
       return typeCheckedDefinition;
     }
   }
@@ -116,11 +118,7 @@ public class TypeCheckingDefCall {
     Definition typeCheckedDefinition = null;
     ClassView classView = null;
     if (resolvedDefinition != null) {
-      if (resolvedDefinition instanceof Abstract.ClassViewField) {
-        typeCheckedDefinition = getTypeCheckedDefinition(((Abstract.ClassViewField) resolvedDefinition).getUnderlyingField(), expr);
-      } else {
-        typeCheckedDefinition = getTypeCheckedDefinition(resolvedDefinition, expr);
-      }
+      typeCheckedDefinition = getTypeCheckedDefinition(resolvedDefinition, expr);
       if (typeCheckedDefinition == null) {
         return null;
       }
@@ -251,12 +249,12 @@ public class TypeCheckingDefCall {
       }
     }
 
-    // Static call
     Expression thisExpr = null;
     final Definition leftDefinition;
     Abstract.Definition member = null;
     ClassCallExpression classCall = result.getExpression().toClassCall();
     if (classCall != null) {
+      // Static call
       leftDefinition = classCall.getDefinition();
       ClassField parentField = classCall.getDefinition().getEnclosingThisField();
       if (parentField != null) {
@@ -275,11 +273,9 @@ public class TypeCheckingDefCall {
         }
       }
     } else {
+      // Dynamic call
       if (result.getExpression().toDefCall() != null) {
-        thisExpr = null;
-        leftDefinition = result.getExpression().toDefCall().getDefinition();
-      } else if (result.getExpression().toDefCall() != null && result.getExpression().toDefCall().getDefCallArguments().size() == 1) {
-        thisExpr = result.getExpression().toDefCall().getDefCallArguments().get(0);
+        thisExpr = result.getExpression().toDefCall().getDefCallArguments().size() == 1 ? result.getExpression().toDefCall().getDefCallArguments().get(0) : null;
         leftDefinition = result.getExpression().toDefCall().getDefinition();
       } else {
         LocalTypeCheckingError error = new LocalTypeCheckingError("Expected a definition", expr);
@@ -289,7 +285,7 @@ public class TypeCheckingDefCall {
       }
 
       if (typeCheckedDefinition == null) {
-        member = new MergeScope(leftDefinition.getOwnNamespace(), leftDefinition.getInstanceNamespace()).resolveName(name);
+        member = new OverridingScope(leftDefinition.getOwnNamespace(), leftDefinition.getInstanceNamespace()).resolveName(name);
         if (member == null) {
           MemberNotFoundError error = new MemberNotFoundError(leftDefinition, name, expr);
           expr.setWellTyped(myVisitor.getContext(), Error(null, error));

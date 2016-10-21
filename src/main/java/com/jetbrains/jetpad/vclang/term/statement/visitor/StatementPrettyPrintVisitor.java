@@ -33,9 +33,6 @@ public class StatementPrettyPrintVisitor implements AbstractStatementVisitor<Voi
       case OPEN:
         myBuilder.append("\\open ");
         break;
-      case CLOSE:
-        myBuilder.append("\\close ");
-        break;
       case EXPORT:
         myBuilder.append("\\export ");
         break;
@@ -57,6 +54,9 @@ public class StatementPrettyPrintVisitor implements AbstractStatementVisitor<Voi
     }
 
     if (stat.getNames() != null) {
+      if (stat.isHiding()) {
+        myBuilder.append(" \\hiding");
+      }
       myBuilder.append(" (");
       if (!stat.getNames().isEmpty()) {
         myBuilder.append(new Name(stat.getNames().get(0)).getPrefixName());

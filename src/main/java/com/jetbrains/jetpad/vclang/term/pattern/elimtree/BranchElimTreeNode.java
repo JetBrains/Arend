@@ -53,7 +53,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
   }
 
   public ConstructorClause addClause(Constructor constructor, List<String> names) {
-    assert !constructor.hasErrors();
+    assert !constructor.typeHasErrors();
     DataCallExpression dataCall = myReference.getType().normalize(NormalizeVisitor.Mode.WHNF).toExpression().toDataCall();
     List<? extends Expression> dataTypeArguments = dataCall.getDefCallArguments();
 

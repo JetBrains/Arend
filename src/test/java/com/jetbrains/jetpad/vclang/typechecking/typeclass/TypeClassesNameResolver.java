@@ -11,7 +11,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
         "  \\abstract T : \\Type0\n" +
         "  \\abstract f : \\Type0\n" +
         "}\n" +
-        "\\static \\view \\on X \\by T { f }\n" +
+        "\\static \\view X' \\on X \\by T { f }\n" +
         "\\function g => f");
   }
 
@@ -22,7 +22,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
         "  \\abstract T : \\Type0\n" +
         "  \\abstract f : \\Type0\n" +
         "}\n" +
-        "\\static \\view \\on X \\by T { f }\n" +
+        "\\static \\view X' \\on X \\by T { f }\n" +
         "\\function g => f");
   }
 
@@ -34,7 +34,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
         "  \\abstract f : \\Type0\n" +
         "  \\abstract h : \\Type0\n" +
         "}\n" +
-        "\\static \\view \\on X \\by T { f }\n" +
+        "\\static \\view X' \\on X \\by T { f }\n" +
         "\\function g => h", 1);
   }
 
@@ -45,12 +45,12 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
         "  \\abstract T : \\Type0\n" +
         "  \\abstract f : \\Type0\n" +
         "}\n" +
-        "\\static \\view \\on X \\by T { f }\n" +
+        "\\static \\view X' \\on X \\by T { f }\n" +
         "\\static \\class Y {\n" +
         "  \\abstract T : \\Type0\n" +
         "  \\abstract g : \\Type0 -> \\Type0\n" +
         "}\n" +
-        "\\static \\view \\on Y \\by T { g => f }", 1);
+        "\\static \\view Y' \\on Y \\by T { g => f }", 1);
   }
 
   @Test
@@ -61,7 +61,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
         "    \\abstract T : \\Type0\n" +
         "    \\abstract f : \\Type0\n" +
         "  }\n" +
-        "  \\static \\view \\on Z \\by T { f }\n" +
+        "  \\static \\view Z' \\on Z \\by T { f }\n" +
         "}\n" +
         "\\function g => f", 1);
   }
@@ -74,13 +74,13 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
         "    \\abstract T : \\Type0\n" +
         "    \\abstract f : \\Type0\n" +
         "  }\n" +
-        "  \\static \\view \\on Z \\by T { f }\n" +
+        "  \\static \\view Z' \\on Z \\by T { f }\n" +
         "}\n" +
         "\\static \\class Y {\n" +
         "  \\abstract T : \\Type0\n" +
         "  \\abstract z : X.Z\n" +
         "}\n" +
-        "\\static \\view \\on Y \\by T { z }\n" +
+        "\\static \\view Y' \\on Y \\by T { z }\n" +
         "\\function g => f", 1);
   }
 
@@ -102,8 +102,8 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
         "  \\abstract T : \\Type1\n" +
         "  \\abstract f : \\Type1\n" +
         "}\n" +
-        "\\static \\view \\on X \\by T { f => g }\n" +
-        "\\function h => \\new X { T => \\Type0 | g => \\Type0 }");
+        "\\static \\view X' \\on X \\by T { f => g }\n" +
+        "\\function h => \\new X' { T => \\Type0 | g => \\Type0 }");
   }
 
   @Test
@@ -113,7 +113,12 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
         "  \\abstract T : \\Type1\n" +
         "  \\abstract f : \\Type1\n" +
         "}\n" +
-        "\\static \\view \\on X \\by T { f => g }\n" +
-        "\\function h => \\new X { T => \\Type0 | f => \\Type0 }", 1);
+        "\\static \\view X' \\on X \\by T { f => g }\n" +
+        "\\function h => \\new X' { T => \\Type0 | f => \\Type0 }", 1);
+  }
+
+  @Test
+  public void cyclicView() {
+    resolveNamesClass("\\view X \\on X \\by X { }", 1);
   }
 }
