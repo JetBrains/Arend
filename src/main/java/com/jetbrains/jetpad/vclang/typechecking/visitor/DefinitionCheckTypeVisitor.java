@@ -18,7 +18,9 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.PiTypeOmega;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
@@ -35,6 +37,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.NotInScopeError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.CompositeInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.EmptyInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.LocalInstancePool;
@@ -135,7 +138,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
           continue;
         }
 
-        Type paramType = visitor.checkTypeExpression(typeArgument.getType());
+        Type paramType = visitor.checkParamType(typeArgument.getType());
         if (paramType == null) continue;
 
         paramType = paramType.strip(new HashSet<>(visitor.getContext()), visitor.getErrorReporter());
@@ -193,12 +196,19 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     List<Binding> polyParamsList = new ArrayList<>();
     visitParameters(def.getArguments(), def, context, polyParamsList, list, visitor, localInstancePool);
 
-    Expression expectedType = null;
+    TypeMax expectedType = null;
+    Type expectedTypeErased = null;
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
-      CheckTypeVisitor.Result typeResult = visitor.checkType(resultType, Universe());
-      if (typeResult != null) {
-        expectedType = typeResult.getExpression();
+      expectedType = visitor.checkFunOrDataType(resultType); //visitor.checkType(resultType, Universe());
+      if (expectedType != null) {
+        if (expectedType.toExpression() != null) {
+          expectedTypeErased = expectedType.toExpression();
+        } else if (expectedType instanceof PiTypeOmega) {
+          expectedTypeErased = (PiTypeOmega)expectedType;
+        } else {
+          expectedTypeErased = PiTypeOmega.toPiTypeOmega(expectedType);
+        }
       }
     }
 
@@ -211,16 +221,20 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     if (term != null) {
       if (term instanceof Abstract.ElimExpression) {
         context.subList(context.size() - size(list.getFirst()), context.size()).clear();
-        ElimTreeNode elimTree = visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, def.getArrow() == Abstract.Definition.Arrow.LEFT ? list.getFirst() : null, expectedType, false);
+        ElimTreeNode elimTree = visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, def.getArrow() == Abstract.Definition.Arrow.LEFT ? list.getFirst() : null, expectedTypeErased, false);
         if (elimTree != null) {
           typedDef.setElimTree(elimTree);
         }
       } else {
-        CheckTypeVisitor.Result termResult = visitor.checkType(term, expectedType);
+        CheckTypeVisitor.Result termResult = visitor.checkType(term, expectedTypeErased);
         if (termResult != null) {
-          typedDef.setElimTree(top(list.getFirst(), leaf(def.getArrow(), termResult.getExpression())));
-          if (expectedType == null) {
-            typedDef.setResultType(termResult.getType());
+          if (expectedType != null && termResult.getType().toSorts() != null && !termResult.getType().toSorts().isLessOrEquals(expectedType.toSorts())) {
+            myErrorReporter.report(new TypeMismatchError(expectedType, termResult.getType(), term));
+          } else {
+            typedDef.setElimTree(top(list.getFirst(), leaf(def.getArrow(), termResult.getExpression())));
+            if (expectedType == null) {
+              typedDef.setResultType(termResult.getType());
+            }
           }
         }
       }
@@ -233,7 +247,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       }
 
       if (typedDef.getElimTree() != null) {
-        LocalTypeCheckingError error = TypeCheckingElim.checkCoverage(def, list.getFirst(), typedDef.getElimTree(), expectedType);
+        LocalTypeCheckingError error = TypeCheckingElim.checkCoverage(def, list.getFirst(), typedDef.getElimTree(), expectedTypeErased);
         if (error != null) {
           myErrorReporter.report(error);
         }
@@ -285,7 +299,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
       if (def.getUniverse() != null) {
         if (def.getUniverse() instanceof Abstract.PolyUniverseExpression) {
-          userSorts = visitor.visitDataUniverse((Abstract.PolyUniverseExpression)def.getUniverse());
+          userSorts = visitor.sortMax((Abstract.PolyUniverseExpression)def.getUniverse());
         } else if (def.getUniverse() instanceof Abstract.UniverseExpression) {
           CheckTypeVisitor.Result result = visitor.checkType(def.getUniverse(), Universe());
           if (result != null) {
@@ -503,10 +517,11 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
       LinkList list = new LinkList();
       for (Abstract.TypeArgument argument : arguments) {
-        Type paramType = visitor.checkTypeExpression(argument.getType()).strip(new HashSet<>(visitor.getContext()), visitor.getErrorReporter());
+        Type paramType = visitor.checkParamType(argument.getType());
         if (paramType == null) {
           return constructor;
         }
+        paramType = paramType.strip(new HashSet<>(visitor.getContext()), visitor.getErrorReporter());
 
         //if (!constructor.containsInterval() && result.expression.accept(new FindIntervalVisitor(), null)) {
         //  constructor.setContainsInterval();

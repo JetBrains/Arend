@@ -378,26 +378,26 @@ public class NormalizationTest extends TypeCheckingTestCase {
   public void testCoeIsoFreeVar() {
     DependentLink k = param("k", Interval());
     DependentLink i = param("i", Interval());
-    Expression A = DataCall(Prelude.PATH, new Level(0), new Level(0), Lam(i, Interval()), Reference(k), Reference(k));
+    Expression A = DataCall(Prelude.PATH, new LevelSubstitution(), Lam(i, Interval()), Reference(k), Reference(k));
     DependentLink B = param("B", Universe(new Level(0), new Level(0)));
     DependentLink f = param("f", Pi(param(A), Reference(B)));
     DependentLink g = param("g", Pi(param(Reference(B)), A));
     DependentLink a = param("a", A);
     DependentLink b = param("b", Reference(B));
-    Expression linvType = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0),
+    Expression linvType = FunCall(Prelude.PATH_INFIX, new LevelSubstitution(),
         A,
         Apps(Reference(g), Apps(Reference(f), Reference(a))),
         Reference(a));
     DependentLink linv = param("linv", Pi(a, linvType));
-    Expression rinvType = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0),
+    Expression rinvType = FunCall(Prelude.PATH_INFIX, new LevelSubstitution(),
         Reference(B),
         Apps(Reference(f), Apps(Reference(g), Reference(b))),
         Reference(b));
     DependentLink rinv = param("rinv", Pi(b, rinvType));
     DependentLink aleft = param("aleft", A.subst(k, Right()));
-    Expression expr = FunCall(Prelude.COERCE, new Level(0), new Level(0),
-        Lam(k, FunCall(Prelude.ISO, new Level(0), new Level(0),
-            DataCall(Prelude.PATH, new Level(0), new Level(0),
+    Expression expr = FunCall(Prelude.COERCE, new LevelSubstitution(),
+        Lam(k, FunCall(Prelude.ISO, new LevelSubstitution(),
+            DataCall(Prelude.PATH, new LevelSubstitution(),
                 Lam(i, Interval()),
                 Reference(k),
                 Reference(k)),

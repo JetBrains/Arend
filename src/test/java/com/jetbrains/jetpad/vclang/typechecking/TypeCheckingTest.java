@@ -81,8 +81,8 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void testPMap1Error() {
-    typeCheckDef("\\function pmap {A B : \\Type0} {a a' : A} (f : A -> B) (p : a = a') : ((=) [1] [inf] {B} (f a) (f a'))" +
-            " => path [2] [inf] (\\lam i => f (p @ i))");
+    typeCheckDef("\\function pmap {A B : \\Type0} {a a' : A} (f : A -> B) (p : a = a') : ((=) {B} (f a) (f a'))" +
+            " => path (\\lam i => f (p @ i))");
   }
 
   @Test

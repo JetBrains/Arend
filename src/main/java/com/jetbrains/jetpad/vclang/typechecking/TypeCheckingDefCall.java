@@ -74,7 +74,7 @@ public class TypeCheckingDefCall {
 
     DefCallExpression defCall = result.getExpression().getFunction().toDefCall();
     if (defCall == null) {
-      LocalTypeCheckingError error = new LocalTypeCheckingError("Level can only be assigned to a definition", app_expr);
+      LocalTypeCheckingError error = new LocalTypeCheckingError("Level can only be assigned to a definition", expr);
       expr.setWellTyped(myVisitor.getContext(), Error(result.getExpression(), error));
       myVisitor.getErrorReporter().report(error);
       return null;
@@ -83,6 +83,13 @@ public class TypeCheckingDefCall {
     Collections.reverse(levelExprs);
 
     List<Binding> polyParams = defCall.getDefinition().getPolyParams();
+
+    if (levelExprs.size() > polyParams.size()) {
+      LocalTypeCheckingError error = new LocalTypeCheckingError("Too many level assignments", expr);
+      expr.setWellTyped(myVisitor.getContext(), Error(result.getExpression(), error));
+      myVisitor.getErrorReporter().report(error);
+      return null;
+    }
 
     for (int i = 0; i < levelExprs.size(); ++i) {
       Binding param = polyParams.get(i);

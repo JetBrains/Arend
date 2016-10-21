@@ -12,25 +12,25 @@
     | left
     | right
 
-\static \data Path {lp : Lvl} {lh : CNat} (A : I -> \Type (lp,lh)) (a : A left) (a' : A right)
+\static \data Path (A : I -> \Type) (a : A left) (a' : A right)
     | path (\Pi (i : I) -> A i)
 
 \static \function \infix 1
-(=) {lp : Lvl} {lh : CNat} {A : \Type (lp,lh)} (a a' : A) => Path (\lam _ => A) a a'
+(=) {A : \Type} (a a' : A) => Path (\lam _ => A) a a'
 
 \static \function \infixl 9
-(@) {lp : Lvl} {lh : CNat} {A : I -> \Type (lp,lh)} {a : A left} {a' : A right} (p : Path A a a') (i : I) : A i <= \elim i
+(@) {A : I -> \Type} {a : A left} {a' : A right} (p : Path A a a') (i : I) : A i <= \elim i
     | left => a
     | right => a'
     | _ <= \elim p
         | path f => f i
 
 \static \function
-coe {lp : Lvl} {lh : CNat} (A : I -> \Type (lp,lh)) (a : A left) (i : I) : A i <= \elim i
+coe (A : I -> \Type) (a : A left) (i : I) : A i <= \elim i
     | left => a
 
 \static \function
-iso {lp : Lvl} {lh : CNat} {A B : \Type (lp,lh)} (f : A -> B) (g : B -> A) (p : \Pi (x : A) -> g (f x) = x) (q : \Pi (y : B) -> f (g y) = y) (i : I) : \Type (lp,lh) <= \elim i
+iso {A B : \Type} (f : A -> B) (g : B -> A) (p : \Pi (x : A) -> g (f x) = x) (q : \Pi (y : B) -> f (g y) = y) (i : I) : \Type <= \elim i
     | left => A
     | right => B
 

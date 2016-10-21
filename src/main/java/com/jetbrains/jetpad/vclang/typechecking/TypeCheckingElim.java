@@ -79,7 +79,7 @@ public class TypeCheckingElim {
     return null;
   }
 
-  public static LocalTypeCheckingError checkCoverage(final Abstract.Function def, final DependentLink eliminatingArgs, ElimTreeNode elimTree, Expression resultType) {
+  public static LocalTypeCheckingError checkCoverage(final Abstract.Function def, final DependentLink eliminatingArgs, ElimTreeNode elimTree, Type resultType) {
     final StringBuilder incompleteCoverageMessage = new StringBuilder();
 
     CoverageChecker.check(elimTree, ExprSubstitution.getIdentity(toContext(eliminatingArgs)), new CoverageChecker.CoverageCheckerMissingProcessor() {

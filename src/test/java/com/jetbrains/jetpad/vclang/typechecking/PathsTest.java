@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import org.junit.Test;
@@ -30,9 +31,9 @@ public class PathsTest extends TypeCheckingTestCase {
     pathArgs.add(Lam(C, Reference(A)));
     pathArgs.add(Reference(A.getNext()));
     pathArgs.add(Reference(A.getNext()));
-    Expression pathCall = ConCall(Prelude.PATH_CON, new Level(0), new Level(0), pathArgs, Lam(C, Reference(A.getNext())));
+    Expression pathCall = ConCall(Prelude.PATH_CON, new LevelSubstitution(), pathArgs, Lam(C, Reference(A.getNext())));
     assertEquals(Lam(A, pathCall).normalize(NormalizeVisitor.Mode.NF), idp.getExpression());
-    assertEquals(Pi(A, FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0), Reference(A), Reference(A.getNext()), Reference(A.getNext()))).normalize(NormalizeVisitor.Mode.NF), idp.getType().normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Pi(A, FunCall(Prelude.PATH_INFIX, new LevelSubstitution(), Reference(A), Reference(A.getNext()), Reference(A.getNext()))).normalize(NormalizeVisitor.Mode.NF), idp.getType().normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
@@ -46,24 +47,24 @@ public class PathsTest extends TypeCheckingTestCase {
   @Test
   public void concatTest() {
     typeCheckClass(
-        "\\static \\function transport {A : \\Type0} (B : A -> \\Type0) {a a' : A} (p : a = a') (b : B a) <= coe (\\lam i => B (p @ i)) b right\n" +
-        "\\static \\function concat {A : I -> \\Type0} {a : A left} {a' a'' : A right} (p : Path A a a') (q : a' = a'') <= transport (Path A a) q p\n" +
-        "\\static \\function (*>) {A : \\Type0} {a a' a'' : A} (p : a = a') (q : a' = a'') <= concat p q");
+        "\\static \\function transport {A : \\Type} (B : A -> \\Type) {a a' : A} (p : a = a') (b : B a) <= coe (\\lam i => B (p @ i)) b right\n" +
+        "\\static \\function concat {A : I -> \\Type} {a : A left} {a' a'' : A right} (p : Path A a a') (q : a' = a'') <= transport (Path A a) q p\n" +
+        "\\static \\function (*>) {A : \\Type} {a a' a'' : A} (p : a = a') (q : a' = a'') <= concat p q");
   }
 
   @Test
   public void inv0Test() {
     typeCheckClass(
-        "\\static \\function idp {A : \\Type0} {a : A} => path (\\lam _ => a)\n" +
-        "\\static \\function transport {A : \\Type0} (B : A -> \\Type0) {a a' : A} (p : a = a') (b : B a) <= coe (\\lam i => B (p @ i)) b right\n" +
-        "\\static \\function inv {A : \\Type0} {a a' : A} (p : a = a') <= transport (\\lam a'' => a'' = a) p idp\n" +
+        "\\static \\function idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
+        "\\static \\function transport {A : \\Type} (B : A -> \\Type) {a a' : A} (p : a = a') (b : B a) <= coe (\\lam i => B (p @ i)) b right\n" +
+        "\\static \\function inv {A : \\Type} {a a' : A} (p : a = a') <= transport (\\lam a'' => a'' = a) p idp\n" +
         "\\static \\function squeeze1 (i j : I) : I <= coe (\\lam x => left = x) (path (\\lam _ => left)) j @ i\n" +
         "\\static \\function squeeze (i j : I) <= coe (\\lam i => Path (\\lam j => left = squeeze1 i j) (path (\\lam _ => left)) (path (\\lam j => squeeze1 i j))) (path (\\lam _ => path (\\lam _ => left))) right @ i @ j\n" +
-        "\\static \\function psqueeze {A : \\Type0} {a a' : A} (p : a = a') (i : I) : a = p @ i => path (\\lam j => p @ squeeze i j)\n" +
-        "\\static \\function Jl {A : \\Type0} {a : A} (B : \\Pi (a' : A) -> a = a' -> \\Type0) (b : B a idp) {a' : A} (p : a = a') : B a' p\n" +
+        "\\static \\function psqueeze {A : \\Type} {a a' : A} (p : a = a') (i : I) : a = p @ i => path (\\lam j => p @ squeeze i j)\n" +
+        "\\static \\function Jl {A : \\Type} {a : A} (B : \\Pi (a' : A) -> a = a' -> \\Type) (b : B a idp) {a' : A} (p : a = a') : B a' p\n" +
         "  <= coe (\\lam i => B (p @ i) (psqueeze p i)) b right\n" +
-        "\\static \\function inv-inv {A : \\Type0} {a a' : A} (p : a = a') : inv (inv p) = p <= Jl (\\lam _ p => inv (inv p) = p) idp p\n" +
-        "\\static \\function path-sym {A : \\Type0} (a a' : A) : (a = a') = (a' = a) => path (iso inv inv inv-inv inv-inv)");
+        "\\static \\function inv-inv {A : \\Type} {a a' : A} (p : a = a') : inv (inv p) = p <= Jl (\\lam _ p => inv (inv p) = p) idp p\n" +
+        "\\static \\function path-sym {A : \\Type} (a a' : A) : (a = a') = (a' = a) => path (iso inv inv inv-inv inv-inv)");
   }
 
   @Test

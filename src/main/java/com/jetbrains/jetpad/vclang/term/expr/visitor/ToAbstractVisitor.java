@@ -395,7 +395,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     if (type.toExpression() != null) {
       return type.toExpression().accept(this, null);
     }
-    return myFactory.makePi(visitTypeArguments(type.getPiParameters()), visitSortMax(type.toSorts()));
+    return myFactory.makePi(visitTypeArguments(type.getPiParameters()), visitSortMax(type.getPiCodomain().toSorts()));
   }
 
   @Override

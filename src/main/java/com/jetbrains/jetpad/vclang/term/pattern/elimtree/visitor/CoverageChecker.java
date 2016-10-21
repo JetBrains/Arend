@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 
@@ -21,14 +22,14 @@ public class CoverageChecker implements ElimTreeNodeVisitor<ExprSubstitution, Bo
   }
 
   private final CoverageCheckerMissingProcessor myProcessor;
-  private final Expression myResultType;
+  private final Type myResultType;
 
-  private CoverageChecker(CoverageCheckerMissingProcessor processor, Expression resultType) {
+  private CoverageChecker(CoverageCheckerMissingProcessor processor, Type resultType) {
     myProcessor = processor;
     myResultType = resultType;
   }
 
-  public static boolean check(ElimTreeNode tree, ExprSubstitution argsSubst, CoverageCheckerMissingProcessor processor, Expression resultType) {
+  public static boolean check(ElimTreeNode tree, ExprSubstitution argsSubst, CoverageCheckerMissingProcessor processor, Type resultType) {
     return tree.accept(new CoverageChecker(processor, resultType), argsSubst);
   }
 
@@ -38,13 +39,15 @@ public class CoverageChecker implements ElimTreeNodeVisitor<ExprSubstitution, Bo
 
     boolean result = true;
     for (ConCallExpression conCall : type.toDataCall().getDefinition().getMatchedConstructors(type.toDataCall())) {
-      if (myResultType.getType().isLessOrEquals(Sort.PROP)) {
-        if (conCall.getDefinition() == Prelude.PROP_TRUNC_PATH_CON) {
-          continue;
-        }
-      } else if (myResultType.getType().isLessOrEquals(Sort.SET)) {
-        if (conCall.getDefinition() == Prelude.SET_TRUNC_PATH_CON) {
-          continue;
+      if (myResultType.toExpression() != null) {
+        if (myResultType.toExpression().getType().toSorts().isLessOrEquals(Sort.PROP)) {
+          if (conCall.getDefinition() == Prelude.PROP_TRUNC_PATH_CON) {
+            continue;
+          }
+        } else if (myResultType.toExpression().getType().toSorts().isLessOrEquals(Sort.SET)) {
+          if (conCall.getDefinition() == Prelude.SET_TRUNC_PATH_CON) {
+            continue;
+          }
         }
       }
       if (branchNode.getClause(conCall.getDefinition()) == null) {

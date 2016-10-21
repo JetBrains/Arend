@@ -160,9 +160,16 @@ public class PiUniverseType implements TypeMax {
 
     List<DependentLink> params = new ArrayList<>();
     Type cod = type.getPiParameters(params, false, false);
+
+    if (cod.toSorts() == null) {
+      return false;
+    }
+
     Sort sortCod = cod.toSorts().toSort();
 
-    assert sortCod != null;
+    if (sortCod == null) {
+      return false;
+    }
 
     PiUniverseType normalized = normalize(NormalizeVisitor.Mode.NF);
 

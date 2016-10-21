@@ -2,8 +2,10 @@ package com.jetbrains.jetpad.vclang.term.expr.sort;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.type.PiTypeOmega;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
@@ -67,6 +69,12 @@ public class SortMax {
   }
 
   public TypeMax toType() {
+    if (isOmega()) {
+      return new PiTypeOmega(EmptyDependentLink.getInstance());
+    }
+    if (toSort() != null) {
+      return new UniverseExpression(toSort());
+    }
     return new PiUniverseType(EmptyDependentLink.getInstance(), this);
   }
 
