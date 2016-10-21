@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -125,6 +126,7 @@ public class NameResolverTest extends NameResolverTestCase {
     resolveNamesClass("\\static \\class A { \\static \\function x => 0 } \\open A \\static \\function y => x");
   }
 
+  @Ignore
   @Test
   public void exportTest() {
     resolveNamesClass("\\static \\class A { \\static \\class B { \\static \\function x => 0 } \\export B } \\static \\function y => A.x");
@@ -135,6 +137,7 @@ public class NameResolverTest extends NameResolverTestCase {
     resolveNamesClass("\\static \\class A { \\abstract x : \\Type0 \\class B { \\static \\function y => x } } \\static \\function f (a : A) => a.B.y");
   }
 
+  @Ignore
   @Test
   public void exportPublicFieldsTest() {
     /*
@@ -150,6 +153,7 @@ public class NameResolverTest extends NameResolverTestCase {
     assertTrue(false);
   }
 
+  @Ignore
   @Test
   public void exportTest2() {
     /*
@@ -213,11 +217,13 @@ public class NameResolverTest extends NameResolverTestCase {
     resolveNamesClass("\\class A { } \\function A => 0", 1);
   }
 
+  @Ignore
   @Test
   public void exportExistingTestError() {
     resolveNamesClass("\\static \\class A { \\static \\class B { \\static \\function x => 0 } } \\export A \\static \\class B { \\static \\function y => 0 }", 1);
   }
 
+  @Ignore
   @Test
   public void exportExistingTestError2() {
     resolveNamesClass("\\static \\class B { \\static \\function y => 0 } \\static \\class A { \\static \\class B { \\static \\function x => 0 } } \\export A", 1);
@@ -228,6 +234,7 @@ public class NameResolverTest extends NameResolverTestCase {
     resolveNamesClass("\\static \\class A { \\static \\class B { \\static \\function x => 0 } \\open B } \\static \\function y => A.x", 1);
   }
 
+  @Ignore
   @Test
   public void exportInsideTest() {
     resolveNamesClass("\\static \\class A { \\static \\class B { \\static \\function x => 0 } \\export B } \\static \\function y => A.x");

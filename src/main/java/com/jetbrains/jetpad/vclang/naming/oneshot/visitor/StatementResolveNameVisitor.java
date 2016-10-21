@@ -59,10 +59,6 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
       return null;
     }
 
-    if (Abstract.NamespaceCommandStatement.Kind.EXPORT.equals(stat.getKind())) {
-      throw new UnsupportedOperationException();
-    }
-
     if (stat.getResolvedClass() == null) {
       final Abstract.Definition referredClass;
       if (stat.getModulePath() == null) {
