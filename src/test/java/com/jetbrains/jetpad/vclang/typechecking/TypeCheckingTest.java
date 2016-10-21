@@ -128,6 +128,6 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
         "\\class C {\n" +
         "  \\abstract A : X\n" +
         "  \\abstract a : (\\lam (x : Nat) => Nat) A\n" +
-        "}", 1, 1);
+        "}", 1, 2);
   }
 }

@@ -22,12 +22,14 @@ public class FunctionDefinition extends Definition implements Function {
   private TypeMax myResultType;
   private ElimTreeNode myElimTree;
   private boolean myTypeHasErrors;
+  private TypeCheckingStatus myHasErrors;
   private final Namespace myOwnNamespace;
 
   public FunctionDefinition(Abstract.Definition abstractDef, Namespace ownNamespace) {
     super(abstractDef);
     myOwnNamespace = ownNamespace;
     myTypeHasErrors = true;
+    myHasErrors = TypeCheckingStatus.TYPE_CHECKING;
     myParameters = EmptyDependentLink.getInstance();
   }
 
@@ -35,21 +37,16 @@ public class FunctionDefinition extends Definition implements Function {
     super(abstractDef);
     assert parameters != null;
     myOwnNamespace = ownNamespace;
-    hasErrors(false);
     myParameters = parameters;
     myResultType = resultType;
-    myTypeHasErrors = false;
     myElimTree = elimTree;
+    myTypeHasErrors = resultType == null;
+    myHasErrors = myTypeHasErrors ? TypeCheckingStatus.HAS_ERRORS : myElimTree == null ? TypeCheckingStatus.TYPE_CHECKING : TypeCheckingStatus.NO_ERRORS;
   }
 
   @Override
   public ElimTreeNode getElimTree() {
     return myElimTree;
-  }
-
-  @Override
-  public boolean isAbstract() {
-    return myElimTree == null;
   }
 
   public void setElimTree(ElimTreeNode elimTree) {
@@ -85,7 +82,16 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   public void typeHasErrors(boolean has) {
-    myTypeHasErrors = has;
+    myTypeHasErrors = has || myResultType == null;
+  }
+
+  @Override
+  public TypeCheckingStatus hasErrors() {
+    return myHasErrors;
+  }
+
+  public void hasErrors(TypeCheckingStatus status) {
+    myHasErrors = status;
   }
 
   @Override
@@ -106,11 +112,6 @@ public class FunctionDefinition extends Definition implements Function {
   @Override
   public FunCallExpression getDefCall(LevelSubstitution polyParams, List<Expression> args) {
     return new FunCallExpression(this, polyParams, args);
-  }
-
-  @Override
-  public int getNumberOfParameters() {
-    return DependentLink.Helper.size(myParameters);
   }
 
   @Override

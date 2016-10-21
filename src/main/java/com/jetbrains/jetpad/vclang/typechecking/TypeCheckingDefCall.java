@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.naming.scope.OverridingScope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -52,6 +53,9 @@ public class TypeCheckingDefCall {
       myVisitor.getErrorReporter().report(error);
       return null;
     } else {
+      if (typeCheckedDefinition.hasErrors() == Definition.TypeCheckingStatus.HAS_ERRORS) {
+        myVisitor.getErrorReporter().report(new HasErrors(Error.Level.WARNING, definition, expr));
+      }
       return typeCheckedDefinition;
     }
   }

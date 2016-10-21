@@ -12,7 +12,6 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FieldCall;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 
 public class ClassField extends Definition {
   private DependentLink myThisParameter;
@@ -24,7 +23,6 @@ public class ClassField extends Definition {
     myThisParameter = thisParameter;
     myType = type;
     setThisClass(thisClass);
-    hasErrors(type == null || type.toError() != null);
   }
 
   @Override
@@ -64,6 +62,11 @@ public class ClassField extends Definition {
   }
 
   @Override
+  public TypeCheckingStatus hasErrors() {
+    return myType == null || myType.toError() != null ? TypeCheckingStatus.HAS_ERRORS : TypeCheckingStatus.NO_ERRORS;
+  }
+
+  @Override
   public Expression getTypeWithParams(List<DependentLink> params, LevelSubstitution polyParams) {
     ExprSubstitution subst = new ExprSubstitution();
     params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myThisParameter, subst, polyParams)));
@@ -79,11 +82,6 @@ public class ClassField extends Definition {
   public Expression getDefCall(LevelSubstitution polyParams, List<Expression> args) {
     assert args.size() == 1;
     return FieldCall(this, args.get(0));
-  }
-
-  @Override
-  public int getNumberOfParameters() {
-    return 1;
   }
 
   public void setBaseType(Expression type) {

@@ -9,7 +9,6 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
-import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 
@@ -27,6 +26,7 @@ public class ClassDefinition extends Definition {
   private final FieldSet myFieldSet;
   private final Set<ClassDefinition> mySuperClasses;
   private final Map<ClassField, Abstract.ReferableSourceNode> myAliases;
+  private boolean myHasErrors;
 
   private ClassField myEnclosingThisField = null;
 
@@ -36,12 +36,12 @@ public class ClassDefinition extends Definition {
 
   public ClassDefinition(Abstract.ClassDefinition abstractDef, FieldSet fieldSet, Set<ClassDefinition> superClasses, Namespace ownNamespace, Namespace instanceNamespace, Map<ClassField, Abstract.ReferableSourceNode> aliases) {
     super(abstractDef);
-    super.hasErrors(false);
     myFieldSet = fieldSet;
     mySuperClasses = superClasses;
     myOwnNamespace = ownNamespace;
     myInstanceNamespace = instanceNamespace;
     myAliases = aliases;
+    myHasErrors = false;
   }
 
   @Override
@@ -72,7 +72,7 @@ public class ClassDefinition extends Definition {
       link = param(ClassCall(getThisClass()));
     }
     return new PiUniverseType(link, getSorts().subst(polyParams));
-  } /**/
+  }
 
   @Override
   public ClassCallExpression getDefCall(LevelSubstitution polyParams) {
@@ -82,11 +82,6 @@ public class ClassDefinition extends Definition {
   @Override
   public ClassCallExpression getDefCall(LevelSubstitution polyParams, List<Expression> args) {
     return new ClassCallExpression(this, polyParams, myFieldSet);
-  }
-
-  @Override
-  public int getNumberOfParameters() {
-    return 0;
   }
 
   @Override
@@ -100,19 +95,23 @@ public class ClassDefinition extends Definition {
     }
   }
 
+  @Override
+  public boolean typeHasErrors() {
+    return false;
+  }
+
+  @Override
+  public TypeCheckingStatus hasErrors() {
+    return myHasErrors ? TypeCheckingStatus.HAS_ERRORS : TypeCheckingStatus.NO_ERRORS;
+  }
+
+  public void hasErrors(boolean has) {
+    myHasErrors = has;
+  }
+
   public ClassField getEnclosingThisField() {
     return myEnclosingThisField;
   }
-
-  /*
-  @Override
-  public Type getTypeWithThis(LevelSubstitution polyParams) {
-    DependentLink link = EmptyDependentLink.getInstance();
-    if (getThisClass() != null) {
-      link = param(ClassCall(getThisClass()));
-    }
-    return new PiUniverseType(link, getSorts().subst(polyParams));
-  } /**/
 
   @Override
   public Namespace getOwnNamespace() {

@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
@@ -97,7 +98,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   private Expression visitDefCallExpr(Expression expr, Mode mode) {
     DefCallExpression defCallExpr = expr.getFunction().toDefCall();
-    if (defCallExpr.getDefinition().hasErrors()) {
+    if (defCallExpr.getDefinition().hasErrors() != Definition.TypeCheckingStatus.NO_ERRORS) {
       return mode == Mode.TOP ? null : applyDefCall(expr, mode);
     }
 

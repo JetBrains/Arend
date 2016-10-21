@@ -910,7 +910,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void nonStaticTestError() {
-    typeCheckClass("\\static \\class A { \\function x => 0 } \\static \\function y => A.x", 1);
+    resolveNamesClass("\\static \\class A { \\function x => 0 } \\static \\function y => A.x", 1);
   }
 
   @Test

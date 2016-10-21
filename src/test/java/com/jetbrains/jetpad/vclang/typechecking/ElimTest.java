@@ -249,7 +249,7 @@ public class ElimTest extends TypeCheckingTestCase {
                      "| suc x', suc y' => test x y'\n" +
                      "\n" +
                      "\\static \\function\n" +
-                     "zero-is-one : 1 = 0 => test 0 1", 2);
+                     "zero-is-one : 1 = 0 => test 0 1", 3);
   }
 
   @Test

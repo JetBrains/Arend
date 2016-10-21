@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
@@ -28,14 +29,14 @@ public class DefinitionTest extends TypeCheckingTestCase {
   public void function() {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f : Nat => 0");
     assertNotNull(typedDef);
-    assertFalse(typedDef.hasErrors());
+    assertTrue(typedDef.hasErrors() == Definition.TypeCheckingStatus.NO_ERRORS);
   }
 
   @Test
   public void functionUntyped() {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f => 0");
     assertNotNull(typedDef);
-    assertFalse(typedDef.hasErrors());
+    assertTrue(typedDef.hasErrors() == Definition.TypeCheckingStatus.NO_ERRORS);
     assertEquals(Nat(), typedDef.getTypeWithParams(new ArrayList<DependentLink>(), new LevelSubstitution()));
   }
 
@@ -43,7 +44,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
   public void functionWithArgs() {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f (x : Nat) (y : Nat -> Nat) => y");
     assertNotNull(typedDef);
-    assertFalse(typedDef.hasErrors());
+    assertTrue(typedDef.hasErrors() == Definition.TypeCheckingStatus.NO_ERRORS);
     List<DependentLink> params = new ArrayList<>();
     TypeMax type = typedDef.getTypeWithParams(params, new LevelSubstitution());
     assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), type.fromPiParameters(params));
@@ -75,7 +76,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     parameters2.append(param(Apps(Reference(I), Reference(a), Reference(parameters2.getFirst()))));
 
     assertNotNull(typedDef);
-    assertFalse(typedDef.hasErrors());
+    assertTrue(typedDef.hasErrors() == Definition.TypeCheckingStatus.NO_ERRORS);
     assertEquals(Pi(parameters.getFirst(), Universe(0)), type.fromPiParameters(params).toExpression());
     assertEquals(2, typedDef.getConstructors().size());
 
@@ -129,7 +130,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     parameters2.append(param(Reference(parameters2.getFirst())));
 
     assertNotNull(typedDef);
-    assertFalse(typedDef.hasErrors());
+    assertTrue(typedDef.hasErrors() == Definition.TypeCheckingStatus.NO_ERRORS);
     assertEquals(Pi(A, Universe(6, 7)), type.fromPiParameters(params).toExpression());
     assertEquals(2, typedDef.getConstructors().size());
 

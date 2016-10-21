@@ -16,16 +16,15 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 
 public class Constructor extends Definition implements Function {
   private DataDefinition myDataType;
   private DependentLink myParameters;
   private Patterns myPatterns;
+  private boolean myTypeHasError;
 
   public Constructor(Abstract.Constructor abstractDef, DataDefinition dataType) {
     super(abstractDef);
@@ -34,17 +33,18 @@ public class Constructor extends Definition implements Function {
     if (dataType != null) {
       setPolyParams(dataType.getPolyParams());
     }
+    myTypeHasError = true;
   }
 
   public Constructor(Abstract.Constructor abstractDef, DependentLink parameters, DataDefinition dataType, Patterns patterns) {
     super(abstractDef);
-    hasErrors(false);
     myDataType = dataType;
     myParameters = parameters;
     myPatterns = patterns;
     if (dataType != null) {
       setPolyParams(dataType.getPolyParams());
     }
+    myTypeHasError = myParameters == null;
   }
 
   public Constructor(Abstract.Constructor abstractDef, DependentLink parameters, DataDefinition dataType) {
@@ -52,7 +52,7 @@ public class Constructor extends Definition implements Function {
   }
 
   public Patterns getPatterns() {
-    assert !hasErrors() && !myDataType.hasErrors();
+    assert !typeHasErrors();
     return myPatterns;
   }
 
@@ -68,7 +68,7 @@ public class Constructor extends Definition implements Function {
 
   @Override
   public DependentLink getParameters() {
-    assert !hasErrors() && !myDataType.hasErrors();
+    assert !typeHasErrors();
     return myParameters;
   }
 
@@ -92,12 +92,12 @@ public class Constructor extends Definition implements Function {
   }
 
   public DependentLink getDataTypeParameters() {
-    assert !hasErrors() && !myDataType.hasErrors();
+    assert !typeHasErrors() && !myDataType.typeHasErrors();
     return myPatterns == null ? myDataType.getParameters() : myPatterns.getParameters();
   }
 
   public List<Expression> matchDataTypeArguments(List<Expression> arguments) {
-    assert !hasErrors() && !myDataType.hasErrors();
+    assert !typeHasErrors() && !myDataType.typeHasErrors();
     if (myPatterns == null) {
       return arguments;
     } else {
@@ -115,7 +115,7 @@ public class Constructor extends Definition implements Function {
   }
 
   public Expression getDataTypeExpression(ExprSubstitution substitution, LevelSubstitution polyParams) {
-    assert !hasErrors() && !myDataType.hasErrors();
+    assert !typeHasErrors() && !myDataType.typeHasErrors();
 
     List<Expression> arguments;
     if (myPatterns == null) {
@@ -152,15 +152,11 @@ public class Constructor extends Definition implements Function {
 
   @Override
   public Expression getTypeWithParams(List<DependentLink> params, LevelSubstitution polyParams) {
-    if (hasErrors()) {
+    if (typeHasErrors()) {
       return null;
     }
 
     Expression resultType = getDataTypeExpression(polyParams);
-    //if (myParameters.hasNext()) {
-    //  resultType = Pi(myParameters, resultType);
-   // }
-
     DependentLink parameters = getDataTypeParameters();
     ExprSubstitution substitution = new ExprSubstitution();
     if (parameters.hasNext()) {
@@ -168,7 +164,6 @@ public class Constructor extends Definition implements Function {
       for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
         link.setExplicit(false);
       }
-      // resultType = Pi(parameters, resultType.subst(substitution, polyParams));
       params.addAll(DependentLink.Helper.toList(parameters));
     }
     params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, substitution, polyParams)));
@@ -187,7 +182,16 @@ public class Constructor extends Definition implements Function {
   }
 
   @Override
-  public int getNumberOfParameters() {
-    return DependentLink.Helper.size(getDataTypeParameters()) + DependentLink.Helper.size(myParameters);
+  public boolean typeHasErrors() {
+    return myTypeHasError;
+  }
+
+  public void typeHasErrors(boolean has) {
+    myTypeHasError = has;
+  }
+
+  @Override
+  public TypeCheckingStatus hasErrors() {
+    return myTypeHasError ? TypeCheckingStatus.HAS_ERRORS : TypeCheckingStatus.NO_ERRORS;
   }
 }
