@@ -277,28 +277,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   }
 
   public TypeMax checkFunOrDataType(Abstract.Expression typeExpr) {
-    TypeMax type = typeMax(typeExpr, false);
-    return type;
-    /*if (type != null) {
-      return type;
-    }
-    Result result = typeCheck(typeExpr, new PiTypeOmega(EmptyDependentLink.getInstance()));
-    if (result == null) return null;
-    return result.getExpression(); /**/
+    return typeMax(typeExpr, false);
   }
 
   public Type checkParamType(Abstract.Expression typeExpr) {
-    Type type = checkPiTypeOmegaExpression(typeExpr);
-    return type;
-    /*if (type != null) return type;
-    Result result = typeCheck(typeExpr, new PiTypeOmega(EmptyDependentLink.getInstance()));
-    if (result == null) return null;
-    return result.getExpression();/**/
-  }
-
-  public Type checkPiTypeOmegaExpression(Abstract.Expression typeExpr) {
-    TypeMax type = typeMax(typeExpr, true);
-    return (Type)type; // type == null ? null : type;
+    return (Type)typeMax(typeExpr, true);
   }
 
   private TypeMax typeMax(Abstract.Expression type, boolean onlyOmegaAllowed) {
@@ -314,7 +297,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         codomain = codomain.getPiParameters(allArgs, true, false);
         ExprSubstitution subst = new ExprSubstitution();
         allArgs = DependentLink.Helper.toList(DependentLink.Helper.mergeList(allArgs, subst));
-        return codomain.subst(subst, new LevelSubstitution()).fromPiParameters(allArgs); //visitArguments(piType.getArguments(), codomain, type);
+        return codomain.subst(subst, new LevelSubstitution()).fromPiParameters(allArgs);
       }
     } else if (type instanceof Abstract.PolyUniverseExpression) {
       SortMax sort = sortMax((Abstract.PolyUniverseExpression)type);
