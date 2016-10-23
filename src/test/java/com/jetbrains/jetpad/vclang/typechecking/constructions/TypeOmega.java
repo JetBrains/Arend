@@ -27,7 +27,7 @@ public class TypeOmega extends TypeCheckingTestCase {
   }
 
   @Test
-  public void noEqualityOfTypes() {
+  public void equalityOfTypes() {
     typeCheckClass(
             "\\function f (A B : \\Type) => A = B", 1);
   }
