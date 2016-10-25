@@ -18,12 +18,12 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 public class ConstructorClause implements Clause {
   private final Constructor myConstructor;
   private final DependentLink myParameters;
-  private final List<Binding> myPolyParams;
+  private final List<TypedBinding> myPolyParams;
   private ElimTreeNode myChild;
   private final BranchElimTreeNode myParent;
   private final List<TypedBinding> myTailBindings;
 
-  ConstructorClause(Constructor constructor, DependentLink parameters, List<Binding> polyParams, List<TypedBinding> tailBindings, BranchElimTreeNode parent) {
+  ConstructorClause(Constructor constructor, DependentLink parameters, List<TypedBinding> polyParams, List<TypedBinding> tailBindings, BranchElimTreeNode parent) {
     assert !constructor.typeHasErrors();
     myConstructor = constructor;
     myParameters = parameters;
@@ -58,7 +58,7 @@ public class ConstructorClause implements Clause {
     return myParameters;
   }
 
-  public List<Binding> getPolyParams() { return myPolyParams; }
+  public List<TypedBinding> getPolyParams() { return myPolyParams; }
 
   @Override
   public ExprSubstitution getSubst() {

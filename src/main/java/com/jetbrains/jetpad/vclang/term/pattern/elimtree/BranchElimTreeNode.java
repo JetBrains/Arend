@@ -61,7 +61,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
 
     dataTypeArguments = constructor.matchDataTypeArguments(new ArrayList<>(dataTypeArguments));
     LevelSubstitution polySubst = new LevelSubstitution();
-    List<Binding> constructorPolyParams = LevelSubstitution.clone(constructor.getPolyParams(), polySubst);
+    List<TypedBinding> constructorPolyParams = LevelSubstitution.clone(constructor.getPolyParams(), polySubst);
     DependentLink constructorArgs = DependentLink.Helper.subst(constructor.getParameters(), toSubstitution(constructor.getDataTypeParameters(), dataTypeArguments), polySubst);
     if (names != null) {
       constructorArgs = DependentLink.Helper.subst(constructorArgs, new ExprSubstitution());
@@ -87,8 +87,8 @@ public class BranchElimTreeNode extends ElimTreeNode {
     return myOtherwiseClause;
   }
 
-  void addClause(Constructor constructor, DependentLink constructorArgs, List<Binding> constructorPolyParams, List<TypedBinding> tailBindings, ElimTreeNode child) {
-    ConstructorClause clause = new ConstructorClause(constructor, constructorArgs, constructorPolyParams, tailBindings, this);
+  void addClause(Constructor constructor, DependentLink constructorParams, List<TypedBinding> constructorPolyParams, List<TypedBinding> tailBindings, ElimTreeNode child) {
+    ConstructorClause clause = new ConstructorClause(constructor, constructorParams, constructorPolyParams, tailBindings, this);
     myClauses.put(constructor, clause);
     clause.setChild(child);
   }

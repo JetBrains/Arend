@@ -192,10 +192,10 @@ public class ModuleDeserialization {
       definition.setThisClass((ClassDefinition) definitionMap.get(stream.readInt()));
     // definition.hasErrors(stream.readBoolean());
 
-    List<Binding> polyParams = new ArrayList<>(stream.readInt());
+    List<TypedBinding> polyParams = new ArrayList<>(stream.readInt());
 
     for (int i = 0; i < polyParams.size(); ++i) {
-      polyParams.set(i, readBinding(stream, definitionMap));
+      //polyParams.set(i, readBinding(stream, definitionMap));
     }
 
     definition.setPolyParams(polyParams);

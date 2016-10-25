@@ -103,7 +103,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     return null;
   }
 
-  private Binding visitPolyParam(Abstract.TypeArgument typeArgument, Map<String, Binding> polyParams, Abstract.SourceNode node) {
+  private TypedBinding visitPolyParam(Abstract.TypeArgument typeArgument, Map<String, TypedBinding> polyParams, Abstract.SourceNode node) {
     assert (typeArgument.getType() instanceof Abstract.DefCallExpression);
     String typeName = ((Abstract.DefCallExpression) typeArgument.getType()).getName();
     if (!(typeArgument instanceof Abstract.TelescopeArgument)) {
@@ -119,14 +119,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       myErrorReporter.report(new LocalTypeCheckingError("Polymorphic variables must be implicit", node));
       return null;
     }
-    Binding levelParam = new TypedBinding(((Abstract.TelescopeArgument) typeArgument).getNames().get(0), levelTypeByName(typeName));
+    TypedBinding levelParam = new TypedBinding(((Abstract.TelescopeArgument) typeArgument).getNames().get(0), levelTypeByName(typeName));
     polyParams.put(typeName, levelParam);
     return levelParam;
   }
 
-  private Expression typeOmegaToUniverse(PiTypeOmega type, List<Binding> polyParams) {
-    Binding lpParam;
-    Binding lhParam;
+  private Expression typeOmegaToUniverse(PiTypeOmega type, List<TypedBinding> polyParams) {
+    TypedBinding lpParam;
+    TypedBinding lhParam;
 
     if (polyParams.isEmpty()) {
       lpParam = new TypedBinding("lp-gen", Lvl());
@@ -142,9 +142,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     return type.getPiParameters().hasNext() ? Pi(type.getPiParameters(), cod) : cod;
   }
 
-  private boolean visitParameters(List<? extends Abstract.Argument> arguments, Abstract.SourceNode node, List<Binding> context, List<Binding> polyParamsList, List<Binding> generatedPolyParams, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
+  private boolean visitParameters(List<? extends Abstract.Argument> arguments, Abstract.SourceNode node, List<Binding> context, List<TypedBinding> polyParamsList, List<TypedBinding> generatedPolyParams, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
     boolean ok = true;
-    Map<String, Binding> polyParamsMap = new HashMap<>();
+    Map<String, TypedBinding> polyParamsMap = new HashMap<>();
     int index = 0;
 
     for (Abstract.Argument argument : arguments) {
@@ -152,7 +152,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         Abstract.TypeArgument typeArgument = (Abstract.TypeArgument)argument;
 
         if (isPolyParam(typeArgument)) {
-          Binding levelParam = visitPolyParam(typeArgument, polyParamsMap, node);
+          TypedBinding levelParam = visitPolyParam(typeArgument, polyParamsMap, node);
           if (levelParam == null) {
             ok = false;
             continue;
@@ -238,8 +238,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       typedDef.setThisClass(enclosingClass);
     }
 
-    List<Binding> polyParamsList = new ArrayList<>();
-    List<Binding> generatedPolyParams = new ArrayList<>();
+    List<TypedBinding> polyParamsList = new ArrayList<>();
+    List<TypedBinding> generatedPolyParams = new ArrayList<>();
     boolean paramsOk = visitParameters(def.getArguments(), def, context, polyParamsList, generatedPolyParams, list, visitor, localInstancePool);
 
     TypeMax expectedType = null;
@@ -327,8 +327,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     LinkList list = new LinkList();
     LocalInstancePool localInstancePool = new LocalInstancePool();
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, myStaticNsProvider, myDynamicNsProvider, context, myErrorReporter).instancePool(new CompositeInstancePool(localInstancePool, myState.getInstancePool())).build();
-    List<Binding> polyParamsList = new ArrayList<>();
-    List<Binding> generatedPolyParams = new ArrayList<>();
+    List<TypedBinding> polyParamsList = new ArrayList<>();
+    List<TypedBinding> generatedPolyParams = new ArrayList<>();
     if (enclosingClass != null) {
       DependentLink thisParam = createThisParam(enclosingClass);
       context.add(thisParam);
@@ -550,7 +550,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     throw new IllegalStateException();
   }
 
-  private Constructor visitConstructor(Abstract.Constructor def, DataDefinition dataDefinition, CheckTypeVisitor visitor, SortMax sorts, List<Binding> generatedPolyParams) {
+  private Constructor visitConstructor(Abstract.Constructor def, DataDefinition dataDefinition, CheckTypeVisitor visitor, SortMax sorts, List<TypedBinding> generatedPolyParams) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(visitor.getContext())) {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
       String name = def.getName();
@@ -814,7 +814,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     ClassField typedDef = new ClassField(def, Error(null, null), enclosingClass, thisParameter);
     myState.record(def, typedDef);
 
-    Map<String, Binding> polyParams = new HashMap<>();
+    Map<String, TypedBinding> polyParams = new HashMap<>();
     int index = 0;
     LinkList list = new LinkList();
     for (Abstract.Argument argument : arguments) {
@@ -893,8 +893,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     LinkList list = new LinkList();
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, myStaticNsProvider, myDynamicNsProvider, context, myErrorReporter).build();
 
-    List<Binding> polyParamsList = new ArrayList<>();
-    List<Binding> generatedPolyParams = new ArrayList<>();
+    List<TypedBinding> polyParamsList = new ArrayList<>();
+    List<TypedBinding> generatedPolyParams = new ArrayList<>();
     boolean paramsOk = visitParameters(def.getArguments(), def, context, polyParamsList, generatedPolyParams, list, visitor, null);
     polyParamsList.addAll(generatedPolyParams);
     typedDef.setPolyParams(polyParamsList);

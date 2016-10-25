@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class Definition implements Referable {
-  protected List<Binding> myPolyParams = new ArrayList<>();
+  protected List<TypedBinding> myPolyParams = new ArrayList<>();
   private ClassDefinition myThisClass;
   private Abstract.Definition myAbstractDefinition;
 
@@ -47,16 +47,16 @@ public abstract class Definition implements Referable {
     myThisClass = enclosingClass;
   }
 
-  public void setPolyParams(List<Binding> params) {
+  public void setPolyParams(List<TypedBinding> params) {
     myPolyParams = params;
   }
 
-  public List<Binding> getPolyParams() {
+  public List<TypedBinding> getPolyParams() {
     return myPolyParams;
   }
 
-  public Binding getPolyParamByType(Definition typeDef) {
-    for (Binding binding : myPolyParams) {
+  public TypedBinding getPolyParamByType(Definition typeDef) {
+    for (TypedBinding binding : myPolyParams) {
       if (binding.getType().toExpression().toDefCall().getDefinition() == typeDef) {
         return binding;
       }

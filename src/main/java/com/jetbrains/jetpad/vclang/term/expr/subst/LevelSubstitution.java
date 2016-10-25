@@ -33,11 +33,11 @@ public class LevelSubstitution {
     myLevels.put(variable, level);
   }
 
-  public static List<Binding> clone(List<? extends Binding> params, LevelSubstitution subst) {
-    List<Binding> newParams = new ArrayList<>();
+  public static List<TypedBinding> clone(List<TypedBinding> params, LevelSubstitution subst) {
+    List<TypedBinding> newParams = new ArrayList<>();
 
     for (Binding param : params) {
-      Binding newParam = new TypedBinding(param.getName(), param.getType());
+      TypedBinding newParam = new TypedBinding(param.getName(), param.getType());
       subst.add(param, new Level(newParam));
       newParams.add(newParam);
     }

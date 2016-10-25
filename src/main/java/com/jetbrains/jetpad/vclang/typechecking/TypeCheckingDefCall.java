@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -82,7 +83,7 @@ public class TypeCheckingDefCall {
 
     Collections.reverse(levelExprs);
 
-    List<Binding> polyParams = defCall.getDefinition().getPolyParams();
+    List<TypedBinding> polyParams = defCall.getDefinition().getPolyParams();
 
     if (levelExprs.size() > polyParams.size()) {
       LocalTypeCheckingError error = new LocalTypeCheckingError("Too many level assignments", expr);
