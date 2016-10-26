@@ -34,12 +34,12 @@ public class SubstituteExpander {
     myContext = context;
   }
 
-  public static void substituteExpand(ElimTreeNode tree, final ExprSubstitution subst, List<Binding> context, SubstituteExpansionProcessor processor) {
+  public static void substituteExpand(ElimTreeNode tree, final ExprSubstitution subst, List<? extends Binding> context, SubstituteExpansionProcessor processor) {
     ExprSubstitution toCtx = new ExprSubstitution();
     for (Binding binding : context) {
       toCtx.add(binding, Reference(binding));
     }
-    new SubstituteExpander(processor, context).substituteExpand(tree, subst, toCtx);
+    new SubstituteExpander(processor, new ArrayList<>(context)).substituteExpand(tree, subst, toCtx);
   }
 
   private void substituteExpand(ElimTreeNode tree, ExprSubstitution subst, final ExprSubstitution toCtx) {

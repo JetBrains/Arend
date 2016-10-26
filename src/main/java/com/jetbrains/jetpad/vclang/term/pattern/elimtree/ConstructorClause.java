@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
@@ -19,9 +19,9 @@ public class ConstructorClause implements Clause {
   private final DependentLink myParameters;
   private ElimTreeNode myChild;
   private final BranchElimTreeNode myParent;
-  private final List<Binding> myTailBindings;
+  private final List<TypedBinding> myTailBindings;
 
-  ConstructorClause(Constructor constructor, DependentLink parameters, List<Binding> tailBindings, BranchElimTreeNode parent) {
+  ConstructorClause(Constructor constructor, DependentLink parameters, List<TypedBinding> tailBindings, BranchElimTreeNode parent) {
     assert !constructor.typeHasErrors();
     myConstructor = constructor;
     myParameters = parameters;
@@ -47,7 +47,7 @@ public class ConstructorClause implements Clause {
     return myConstructor;
   }
 
-  public List<Binding> getTailBindings() {
+  public List<TypedBinding> getTailBindings() {
     return myTailBindings;
   }
 

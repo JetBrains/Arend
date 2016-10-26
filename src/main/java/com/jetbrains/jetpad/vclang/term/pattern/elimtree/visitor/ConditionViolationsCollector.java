@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -92,7 +93,7 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<ExprSub
 
   private void checkInterval(final BranchElimTreeNode branchNode, final ExprSubstitution argSubst, final ConCallExpression conCall) {
     final ExprSubstitution subst1 = new ExprSubstitution(branchNode.getReference(), conCall);
-    List<Binding> ctx = subst1.extendBy(branchNode.getContextTail());
+    List<TypedBinding> ctx = subst1.extendBy(branchNode.getContextTail());
     SubstituteExpander.substituteExpand(branchNode, subst1, ctx, new SubstituteExpander.SubstituteExpansionProcessor() {
       @Override
       public void process(ExprSubstitution subst, final ExprSubstitution toCtx1, List<Binding> ctx, LeafElimTreeNode leaf) {

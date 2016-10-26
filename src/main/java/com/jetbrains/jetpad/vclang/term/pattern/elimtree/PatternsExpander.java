@@ -75,7 +75,7 @@ class PatternsExpander {
 
       ConstructorClause clause = resultTree.addClause(conCall.getDefinition(), matching.names);
       MultiPatternsExpander.MultiElimTreeExpansionResult nestedResult = MultiPatternsExpander.expandPatterns(
-        toContext(clause.getParameters()), matching.nestedPatterns, clause.getTailBindings()
+        toContext(clause.getParameters()), matching.nestedPatterns, new ArrayList<Binding>(clause.getTailBindings())
       );
       clause.setChild(nestedResult.tree);
       for (MultiBranch branch : nestedResult.branches) {

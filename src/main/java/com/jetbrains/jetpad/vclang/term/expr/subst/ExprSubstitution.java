@@ -72,8 +72,8 @@ public class ExprSubstitution {
     return result;
   }
 
-  public List<Binding> extendBy(List<Binding> context) {
-    List<Binding> result = new ArrayList<>();
+  public List<TypedBinding> extendBy(List<Binding> context) {
+    List<TypedBinding> result = new ArrayList<>();
     for (Binding binding : context) {
       result.add(new TypedBinding(binding.getName(), binding.getType().subst(this, new LevelSubstitution())));
       add(binding, Reference(result.get(result.size() - 1)));

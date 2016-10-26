@@ -77,7 +77,7 @@ public class CoverageChecker implements ElimTreeNodeVisitor<ExprSubstitution, Bo
     return checkEmptyContext(tailContext, argsSubst);
   }
 
-  public boolean checkEmptyContext(List<Binding> tailContext, ExprSubstitution argsSubst) {
+  public boolean checkEmptyContext(List<? extends Binding> tailContext, ExprSubstitution argsSubst) {
     if (tailContext.isEmpty()) {
       myProcessor.process(argsSubst);
       return false;
@@ -94,7 +94,7 @@ public class CoverageChecker implements ElimTreeNodeVisitor<ExprSubstitution, Bo
       return checkEmptyContext(new ArrayList<>(tailContext.subList(1, tailContext.size())), argsSubst);
     }
 
-    BranchElimTreeNode fakeBranch = new BranchElimTreeNode(tailContext.get(0), tailContext.subList(1, tailContext.size()));
+    BranchElimTreeNode fakeBranch = new BranchElimTreeNode(tailContext.get(0), new ArrayList<>(tailContext.subList(1, tailContext.size())));
     for (ConCallExpression conCall : validConCalls) {
       ConstructorClause clause = fakeBranch.addClause(conCall.getDefinition(), null);
       if (!checkEmptyContext(clause.getTailBindings(), clause.getSubst().compose(argsSubst)))

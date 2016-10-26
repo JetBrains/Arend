@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
@@ -34,7 +35,7 @@ public class ElimTreeDeserialization {
         for (int i = 0; i < size; i++) {
           Constructor constructor = (Constructor) definitionMap.get(stream.readInt());
           DependentLink parameters = myModuleDeserialization.readParameters(stream, definitionMap);
-          List<Binding> tailBindings = new ArrayList<>(contextTailSize);
+          List<TypedBinding> tailBindings = new ArrayList<>(contextTailSize);
           for (int j = 0; j < contextTailSize; j++) {
             tailBindings.add(myModuleDeserialization.readTypedBinding(stream, definitionMap));
           }
