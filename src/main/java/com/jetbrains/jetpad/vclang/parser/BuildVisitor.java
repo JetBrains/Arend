@@ -213,17 +213,17 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return arrowCtx instanceof ArrowLeftContext ? Abstract.Definition.Arrow.LEFT : arrowCtx instanceof ArrowRightContext ? Abstract.Definition.Arrow.RIGHT : null;
   }
 
-  public Abstract.Definition.Precedence visitPrecedence(PrecedenceContext ctx) {
-    return ctx == null ? null : (Abstract.Definition.Precedence) visit(ctx);
+  public Precedence visitPrecedence(PrecedenceContext ctx) {
+    return ctx == null ? null : (Precedence) visit(ctx);
   }
 
   @Override
-  public Abstract.Definition.Precedence visitNoPrecedence(NoPrecedenceContext ctx) {
-    return Abstract.Binding.DEFAULT_PRECEDENCE;
+  public Precedence visitNoPrecedence(NoPrecedenceContext ctx) {
+    return Precedence.DEFAULT;
   }
 
   @Override
-  public Abstract.Definition.Precedence visitWithPrecedence(WithPrecedenceContext ctx) {
+  public Precedence visitWithPrecedence(WithPrecedenceContext ctx) {
     if (ctx == null) return null;
     int priority = Integer.valueOf(ctx.NUMBER().getText());
     if (priority < 1 || priority > 9) {
@@ -236,22 +236,22 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
     }
 
-    return new Abstract.Definition.Precedence((Abstract.Definition.Associativity) visit(ctx.associativity()), (byte) priority);
+    return new Precedence((Precedence.Associativity) visit(ctx.associativity()), (byte) priority);
   }
 
   @Override
-  public Abstract.Definition.Associativity visitNonAssoc(NonAssocContext ctx) {
-    return Abstract.Binding.Associativity.NON_ASSOC;
+  public Precedence.Associativity visitNonAssoc(NonAssocContext ctx) {
+    return Precedence.Associativity.NON_ASSOC;
   }
 
   @Override
-  public Abstract.Definition.Associativity visitLeftAssoc(LeftAssocContext ctx) {
-    return Abstract.Binding.Associativity.LEFT_ASSOC;
+  public Precedence.Associativity visitLeftAssoc(LeftAssocContext ctx) {
+    return Precedence.Associativity.LEFT_ASSOC;
   }
 
   @Override
-  public Abstract.Definition.Associativity visitRightAssoc(RightAssocContext ctx) {
-    return Abstract.Binding.Associativity.RIGHT_ASSOC;
+  public Precedence.Associativity visitRightAssoc(RightAssocContext ctx) {
+    return Precedence.Associativity.RIGHT_ASSOC;
   }
 
   @Override
@@ -312,7 +312,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.ClassField visitDefAbstract(DefAbstractContext ctx) {
     if (ctx == null) return null;
     String name = visitName(ctx.name());
-    Abstract.Definition.Precedence precedence = visitPrecedence(ctx.precedence());
+    Precedence precedence = visitPrecedence(ctx.precedence());
     Concrete.Expression resultType = visitExpr(ctx.expr());
     if (name == null || precedence == null || resultType == null) {
       return null;
@@ -353,11 +353,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (ctx == null) return null;
     String underlyingField = visitName(ctx.name(0));
     String name = ctx.name().size() > 1 ? visitName(ctx.name().get(1)) : underlyingField;
-    Abstract.Binding.Precedence precedence = visitPrecedence(ctx.precedence());
+    Precedence precedence = visitPrecedence(ctx.precedence());
     if (underlyingField == null || ctx.name().size() > 1 && name == null) {
       return null;
     }
-    return new Concrete.ClassViewField(tokenPosition(ctx.name(0).getStart()), name, precedence != null ? precedence : Abstract.Binding.DEFAULT_PRECEDENCE, underlyingField);
+    return new Concrete.ClassViewField(tokenPosition(ctx.name(0).getStart()), name, precedence != null ? precedence : Precedence.DEFAULT, underlyingField);
   }
 
   @Override
@@ -368,14 +368,14 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (term == null) {
       return null;
     }
-    return new Concrete.ClassViewInstance(tokenPosition(ctx.getStart()), ctx.defaultInst() instanceof WithDefaultContext, ctx.ID().getText(), Abstract.Binding.DEFAULT_PRECEDENCE, arguments, term);
+    return new Concrete.ClassViewInstance(tokenPosition(ctx.getStart()), ctx.defaultInst() instanceof WithDefaultContext, ctx.ID().getText(), Precedence.DEFAULT, arguments, term);
   }
 
   @Override
   public Concrete.FunctionDefinition visitDefFunction(DefFunctionContext ctx) {
     if (ctx == null) return null;
     String name = visitName(ctx.name());
-    Abstract.Definition.Precedence precedence = visitPrecedence(ctx.precedence());
+    Precedence precedence = visitPrecedence(ctx.precedence());
     Concrete.Expression resultType = ctx.expr().size() == 2 ? visitExpr(ctx.expr(0)) : null;
     Abstract.Definition.Arrow arrow = visitArrow(ctx.arrow());
     Concrete.Expression term = visitExpr(ctx.expr().size() == 2 ? ctx.expr(1) : ctx.expr(0));
@@ -414,7 +414,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (ctx == null) return null;
     String name = visitName(ctx.name());
     List<Concrete.TypeArgument> parameters = visitTeles(ctx.tele());
-    Abstract.Definition.Precedence precedence = visitPrecedence(ctx.precedence());
+    Precedence precedence = visitPrecedence(ctx.precedence());
     if (name == null || parameters == null || precedence == null) {
       return null;
     }

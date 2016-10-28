@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.parser.Precedence;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
@@ -327,12 +328,12 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       @Override
       void printLeft(PrettyPrintVisitor pp) {
         if (prec > expr.getResolvedBinOp().getPrecedence().priority) pp.myBuilder.append('(');
-        expr.getLeft().accept(pp, (byte) (expr.getResolvedBinOp().getPrecedence().priority + (expr.getResolvedBinOp().getPrecedence().associativity == Abstract.Binding.Associativity.LEFT_ASSOC ? 0 : 1)));
+        expr.getLeft().accept(pp, (byte) (expr.getResolvedBinOp().getPrecedence().priority + (expr.getResolvedBinOp().getPrecedence().associativity == Precedence.Associativity.LEFT_ASSOC ? 0 : 1)));
       }
 
       @Override
       void printRight(PrettyPrintVisitor pp) {
-        expr.getRight().accept(pp, (byte) (expr.getResolvedBinOp().getPrecedence().priority + (expr.getResolvedBinOp().getPrecedence().associativity == Abstract.Binding.Associativity.RIGHT_ASSOC ? 0 : 1)));
+        expr.getRight().accept(pp, (byte) (expr.getResolvedBinOp().getPrecedence().priority + (expr.getResolvedBinOp().getPrecedence().associativity == Precedence.Associativity.RIGHT_ASSOC ? 0 : 1)));
         if (prec > expr.getResolvedBinOp().getPrecedence().priority) pp.myBuilder.append(')');
       }
 
@@ -573,12 +574,12 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
   }
 
-  private Void prettyPrintBinding (Abstract.Binding def) {
-    Abstract.Definition.Precedence precedence = def.getPrecedence();
-    if (precedence != null && !precedence.equals(Abstract.Binding.DEFAULT_PRECEDENCE)) {
+  private Void prettyPrintNameWithPrecedence(Abstract.Definition def) {
+    Precedence precedence = def.getPrecedence();
+    if (precedence != null && !precedence.equals(Precedence.DEFAULT)) {
       myBuilder.append("\\infix");
-      if (precedence.associativity == Abstract.Binding.Associativity.LEFT_ASSOC) myBuilder.append('l');
-      if (precedence.associativity == Abstract.Binding.Associativity.RIGHT_ASSOC) myBuilder.append('r');
+      if (precedence.associativity == Precedence.Associativity.LEFT_ASSOC) myBuilder.append('l');
+      if (precedence.associativity == Precedence.Associativity.RIGHT_ASSOC) myBuilder.append('r');
       myBuilder.append(' ');
       myBuilder.append(precedence.priority);
       myBuilder.append(' ');
@@ -592,7 +593,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitFunction(final Abstract.FunctionDefinition def, Void ignored) {
     myBuilder.append("\\function\n");
     printIndent();
-    prettyPrintBinding(def);
+    prettyPrintNameWithPrecedence(def);
     myBuilder.append(" ");
 
 
@@ -682,7 +683,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   @Override
   public Void visitClassField(Abstract.ClassField def, Void params) {
     myBuilder.append("\\abstract ");
-    prettyPrintBinding(def);
+    prettyPrintNameWithPrecedence(def);
     prettyPrintArguments(def.getArguments(), Abstract.DefCallExpression.PREC);
 
     Abstract.Expression resultType = def.getResultType();
@@ -709,7 +710,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   @Override
   public Void visitData(Abstract.DataDefinition def, Void ignored) {
     myBuilder.append("\\data ");
-    prettyPrintBinding(def);
+    prettyPrintNameWithPrecedence(def);
 
     List<? extends Abstract.TypeArgument> parameters = def.getParameters();
     if (parameters != null) {
@@ -789,7 +790,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       myBuilder.append("=> ");
     }
 
-    prettyPrintBinding(def);
+    prettyPrintNameWithPrecedence(def);
     List<? extends Abstract.TypeArgument> arguments = def.getArguments();
     if (arguments == null) {
       myBuilder.append("{!error}");
@@ -807,9 +808,11 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myBuilder.append("\\class ").append(def.getName());
     if (def.getSuperClasses() != null && !def.getSuperClasses().isEmpty()) {
       myBuilder.append(" \\extends");
-      for (int i = 0; i < def.getSuperClasses().size(); i++) {
-        myBuilder.append(" ").append("<super>" /* def.getSuperClasses().get(i).getName() */); // HACK
-        if (i < def.getSuperClasses().size() - 1) {
+      int i = def.getSuperClasses().size();
+      for (Abstract.SuperClass superClass : def.getSuperClasses()) {
+        myBuilder.append(" ");
+        superClass.getSuperClass().accept(this, null);
+        if (--i == 0) {
           myBuilder.append(",");
         }
       }
@@ -885,7 +888,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   @Override
   public Void visitClassViewInstance(Abstract.ClassViewInstance def, Void params) {
     myBuilder.append("\\instance ");
-    prettyPrintBinding(def);
+    prettyPrintNameWithPrecedence(def);
     prettyPrintArguments(def.getArguments(), Abstract.DefCallExpression.PREC);
 
     Abstract.Expression term = def.getTerm();

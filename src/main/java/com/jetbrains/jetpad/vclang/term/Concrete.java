@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
+import com.jetbrains.jetpad.vclang.parser.Precedence;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractCompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
@@ -493,7 +494,7 @@ public final class Concrete {
     }
   }
 
-  public static class LetClause extends Binding implements Abstract.LetClause {
+  public static class LetClause extends ReferableSourceNode implements Abstract.LetClause {
     private final List<Argument> myArguments;
     private final Expression myResultType;
     private final Abstract.Definition.Arrow myArrow;
@@ -525,11 +526,6 @@ public final class Concrete {
     @Override
     public Abstract.Expression getResultType() {
       return myResultType;
-    }
-
-    @Override
-    public Precedence getPrecedence() {
-      return DEFAULT_PRECEDENCE;
     }
   }
 
@@ -819,12 +815,6 @@ public final class Concrete {
     }
   }
 
-  public static abstract class Binding extends ReferableSourceNode implements Abstract.Binding {
-    public Binding(Position position, String name) {
-      super(position, name);
-    }
-  }
-
   public static abstract class Statement extends SourceNode implements Abstract.Statement {
     public Statement(Position position) {
       super(position);
@@ -874,7 +864,7 @@ public final class Concrete {
     }
   }
 
-  public static abstract class Definition extends Binding implements Abstract.Definition {
+  public static abstract class Definition extends ReferableSourceNode implements Abstract.Definition {
     private final Precedence myPrecedence;
     private DefineStatement myParent;
 
@@ -932,7 +922,7 @@ public final class Concrete {
     private final List<ClassViewField> myFields;
 
     public ClassView(Position position, String name, DefCallExpression underlyingClass, String classifyingFieldName, List<ClassViewField> fields) {
-      super(position, name, DEFAULT_PRECEDENCE);
+      super(position, name, Precedence.DEFAULT);
       myUnderlyingClass = underlyingClass;
       myFields = fields;
       myClassifyingFieldName = classifyingFieldName;
@@ -1046,7 +1036,7 @@ public final class Concrete {
     private final Expression myExpression;
 
     public ImplementDefinition(Position position, String name, Expression expression) {
-      super(position, name, Abstract.Binding.DEFAULT_PRECEDENCE);
+      super(position, name, Precedence.DEFAULT);
       myExpression = expression;
     }
 
@@ -1210,7 +1200,7 @@ public final class Concrete {
     private final List<SuperClass> mySuperClasses;
 
     public ClassDefinition(Position position, String name, List<Statement> fields, Kind kind, List<SuperClass> superClasses) {
-      super(position, name, DEFAULT_PRECEDENCE);
+      super(position, name, Precedence.DEFAULT);
       mySuperClasses = superClasses;
       myFields = fields;
       myKind = kind;

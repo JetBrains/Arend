@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term;
 
+import com.jetbrains.jetpad.vclang.parser.Precedence;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
@@ -271,40 +272,6 @@ public final class Abstract {
     String getName();
   }
 
-  public interface Binding extends ReferableSourceNode {
-    enum Associativity { LEFT_ASSOC, RIGHT_ASSOC, NON_ASSOC }
-
-    class Precedence {
-      public final Associativity associativity;
-      public final byte priority;
-
-      public Precedence(Associativity associativity, byte priority) {
-        this.associativity = associativity;
-        this.priority = priority;
-      }
-
-      @Override
-      public String toString() {
-        String result = "infix";
-        if (associativity == Associativity.LEFT_ASSOC) {
-          result += "l";
-        }
-        if (associativity == Associativity.RIGHT_ASSOC) {
-          result += "r";
-        }
-        return result + " " + priority;
-      }
-
-      @Override
-      public boolean equals(Object obj) {
-        return this == obj || obj instanceof Precedence && associativity == ((Precedence) obj).associativity && priority == ((Precedence) obj).priority;
-      }
-    }
-    Precedence DEFAULT_PRECEDENCE = new Precedence(Associativity.RIGHT_ASSOC, (byte) 10);
-
-    Precedence getPrecedence();
-  }
-
   public interface Statement extends SourceNode {
     <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params);
   }
@@ -312,20 +279,21 @@ public final class Abstract {
   public interface DefineStatement extends Statement {
     enum StaticMod { STATIC, DYNAMIC, DEFAULT }
 
-    //boolean isStatic();
     StaticMod getStaticMod();
     Definition getParentDefinition();
     Definition getDefinition();
   }
 
-  public interface Definition extends Binding {
+  public interface Definition extends ReferableSourceNode {
     enum Arrow { LEFT, RIGHT }
+
+    Precedence getPrecedence();
 
     DefineStatement getParentStatement();
     <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params);
   }
 
-  public interface Function extends Binding {
+  public interface Function extends ReferableSourceNode {
     Definition.Arrow getArrow();
     Expression getTerm();
     List<? extends Argument> getArguments();
