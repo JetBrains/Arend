@@ -487,68 +487,15 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public List<Concrete.IdPair> visitSuperClassRenaming(SuperClassRenamingContext ctx) {
-    if (ctx == null) return null;
-    List<Concrete.IdPair> idPairs = new ArrayList<>(ctx.name().size() / 2);
-    for (int j = 0; j < ctx.name().size(); j += 2) {
-      String first = visitName(ctx.name(j));
-      String second = visitName(ctx.name(j + 1));
-      if (first != null && second != null) {
-        idPairs.add(new Concrete.IdPair(tokenPosition(ctx.name(j).getStart()), first, second));
-      }
-    }
-    return idPairs;
-  }
-
-  @Override
-  public List<Concrete.Identifier> visitSuperClassHiding(SuperClassHidingContext ctx) {
-    if (ctx == null) return null;
-    List<Concrete.Identifier> result = new ArrayList<>(ctx.name().size());
-    for (NameContext nameCtx : ctx.name()) {
-      String name = visitName(nameCtx);
-      if (name != null) {
-        result.add(new Concrete.Identifier(tokenPosition(nameCtx.getStart()), name));
-      }
-    }
-    return result;
-  }
-
-  @Override
   public Concrete.ClassDefinition visitDefClass(DefClassContext ctx) {
     if (ctx == null || ctx.statement() == null) return null;
     List<Concrete.Statement> statements = visitStatementList(ctx.statement());
     Abstract.ClassDefinition.Kind classKind = ctx.classKindMod() instanceof ClassClassModContext ? Abstract.ClassDefinition.Kind.Class : Abstract.ClassDefinition.Kind.Module;
-    List<Concrete.SuperClass> superClasses = new ArrayList<>(ctx.extendsOpts().size());
-    for (int i = 0; i < ctx.extendsOpts().size(); i++) {
-      if (ctx.extendsOpts().get(i) instanceof ExtendsSuperClassOptsContext) {
-        ExtendsSuperClassOptsContext supCtx = (ExtendsSuperClassOptsContext) ctx.extendsOpts().get(i);
-        List<Concrete.IdPair> renamings = new ArrayList<>();
-        List<Concrete.Identifier> hidings = new ArrayList<>();
-        Concrete.Expression superExpr = visitAtomFieldsAcc(ctx.atomFieldsAcc(i));
-        superClasses.add(new Concrete.SuperClass(tokenPosition(ctx.atomFieldsAcc(i).getStart()), superExpr, renamings, hidings));
-
-        for (SuperClassOptsContext optsCtx : supCtx.superClassOpts()) {
-          if (optsCtx instanceof SuperClassRenamingContext) {
-            List<Concrete.IdPair> renamings1 = visitSuperClassRenaming((SuperClassRenamingContext) optsCtx);
-            if (renamings1 != null) {
-              renamings.addAll(renamings1);
-            }
-          } else
-          if (optsCtx instanceof SuperClassHidingContext) {
-            List<Concrete.Identifier> hidings1 = visitSuperClassHiding((SuperClassHidingContext) optsCtx);
-            if (hidings1 != null) {
-              hidings.addAll(hidings1);
-            }
-          }
-        }
-      } else
-      if (ctx.extendsOpts().get(i) instanceof ExtendsManyContext) {
-        Concrete.Expression superExpr = visitAtomFieldsAcc(ctx.atomFieldsAcc(i));
-        superClasses.add(new Concrete.SuperClass(tokenPosition(ctx.atomFieldsAcc(i).getStart()), superExpr, Collections.<Concrete.IdPair>emptyList(), Collections.<Concrete.Identifier>emptyList()));
-        for (AtomFieldsAccContext atomFieldsCtx : ((ExtendsManyContext) ctx.extendsOpts().get(i)).atomFieldsAcc()) {
-          superExpr = visitAtomFieldsAcc(atomFieldsCtx);
-          superClasses.add(new Concrete.SuperClass(tokenPosition(atomFieldsCtx.getStart()), superExpr, Collections.<Concrete.IdPair>emptyList(), Collections.<Concrete.Identifier>emptyList()));
-        }
+    List<Concrete.SuperClass> superClasses = new ArrayList<>(ctx.atomFieldsAcc().size());
+    for (AtomFieldsAccContext atomFieldsCtx : ctx.atomFieldsAcc()) {
+      Concrete.Expression superExpr = visitAtomFieldsAcc(atomFieldsCtx);
+      if (superExpr != null) {
+        superClasses.add(new Concrete.SuperClass(tokenPosition(atomFieldsCtx.getStart()), superExpr));
       }
     }
 

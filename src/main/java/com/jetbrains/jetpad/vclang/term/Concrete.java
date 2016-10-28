@@ -646,10 +646,10 @@ public final class Concrete {
     private final Expression myPLevel;
     private final Expression myHLevel;
 
-    public PolyUniverseExpression(Position position, Expression plevel, Expression hlevel) {
+    public PolyUniverseExpression(Position position, Expression pLevel, Expression hLevel) {
       super(position);
-      myPLevel = plevel;
-      myHLevel = hlevel;
+      myPLevel = pLevel;
+      myHLevel = hLevel;
     }
 
     @Override
@@ -1176,25 +1176,6 @@ public final class Concrete {
     }
   }
 
-  public static class IdPair extends ReferableSourceNode implements Abstract.IdPair {
-    private final String myFirstName;
-
-    public IdPair(Position position, String firstName, String secondName) {
-      super(position, secondName);
-      myFirstName = firstName;
-    }
-
-    @Override
-    public String getFirstName() {
-      return myFirstName;
-    }
-
-    @Override
-    public String getSecondName() {
-      return getName();
-    }
-  }
-
   public static class Identifier extends SourceNode implements Abstract.Identifier {
     private final String myName;
 
@@ -1211,29 +1192,15 @@ public final class Concrete {
 
   public static class SuperClass extends SourceNode implements Abstract.SuperClass {
     private Expression mySuperClass;
-    private final List<IdPair> myRenamings;
-    private final List<Identifier> myHidings;
 
-    public SuperClass(Position position, Expression superClass, List<IdPair> renamings, List<Identifier> hidings) {
+    public SuperClass(Position position, Expression superClass) {
       super(position);
       mySuperClass = superClass;
-      myRenamings = renamings;
-      myHidings = hidings;
     }
 
     @Override
     public Expression getSuperClass() {
       return mySuperClass;
-    }
-
-    @Override
-    public Collection<IdPair> getRenamings() {
-      return myRenamings;
-    }
-
-    @Override
-    public Collection<Identifier> getHidings() {
-      return myHidings;
     }
   }
 

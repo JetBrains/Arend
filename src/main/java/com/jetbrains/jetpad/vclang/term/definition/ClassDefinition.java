@@ -14,7 +14,6 @@ import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ClassCall;
@@ -25,22 +24,20 @@ public class ClassDefinition extends Definition {
   private final Namespace myInstanceNamespace;
   private final FieldSet myFieldSet;
   private final Set<ClassDefinition> mySuperClasses;
-  private final Map<ClassField, Abstract.ReferableSourceNode> myAliases;
   private boolean myHasErrors;
 
   private ClassField myEnclosingThisField = null;
 
-  public ClassDefinition(Abstract.ClassDefinition abstractDef, Namespace ownNamespace, Namespace instanceNamespace, Map<ClassField, Abstract.ReferableSourceNode> aliases) {
-    this(abstractDef, new FieldSet(), new HashSet<ClassDefinition>(), ownNamespace, instanceNamespace, aliases);
+  public ClassDefinition(Abstract.ClassDefinition abstractDef, Namespace ownNamespace, Namespace instanceNamespace) {
+    this(abstractDef, new FieldSet(), new HashSet<ClassDefinition>(), ownNamespace, instanceNamespace);
   }
 
-  public ClassDefinition(Abstract.ClassDefinition abstractDef, FieldSet fieldSet, Set<ClassDefinition> superClasses, Namespace ownNamespace, Namespace instanceNamespace, Map<ClassField, Abstract.ReferableSourceNode> aliases) {
+  public ClassDefinition(Abstract.ClassDefinition abstractDef, FieldSet fieldSet, Set<ClassDefinition> superClasses, Namespace ownNamespace, Namespace instanceNamespace) {
     super(abstractDef);
     myFieldSet = fieldSet;
     mySuperClasses = superClasses;
     myOwnNamespace = ownNamespace;
     myInstanceNamespace = instanceNamespace;
-    myAliases = aliases;
     myHasErrors = false;
   }
 
@@ -121,10 +118,5 @@ public class ClassDefinition extends Definition {
   @Override
   public Namespace getInstanceNamespace() {
     return myInstanceNamespace;
-  }
-
-  public Abstract.ReferableSourceNode getFieldAlias(ClassField field) {
-    Abstract.ReferableSourceNode alias = myAliases.get(field);
-    return alias != null ? alias : field.getAbstractDefinition();
   }
 }

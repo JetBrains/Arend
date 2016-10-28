@@ -658,8 +658,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     FieldSet fieldSet = new FieldSet();
     Set<ClassDefinition> superClasses = new HashSet<>();
     try {
-      Map<ClassField, Abstract.ReferableSourceNode> aliases = new HashMap<>();
-      ClassDefinition typedDef = new ClassDefinition(def, fieldSet, superClasses, STATIC_NS_SNAPSHOT_PROVIDER.forDefinition(def), DYNAMIC_NS_SNAPSHOT_PROVIDER.forClass(def), aliases);
+      ClassDefinition typedDef = new ClassDefinition(def, fieldSet, superClasses, STATIC_NS_SNAPSHOT_PROVIDER.forDefinition(def), DYNAMIC_NS_SNAPSHOT_PROVIDER.forClass(def));
       typedDef.setThisClass(enclosingClass);
       ClassCallExpression thisClassCall = ClassCall(typedDef);
 
@@ -684,66 +683,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
           if (!fieldSet.implementField(entry.getKey(), entry.getValue(), thisClassCall)) {
             classOk = false;
             myErrorReporter.report(new LocalTypeCheckingError("Implementations of '" + entry.getKey().getName() + "' differ", aSuperClass.getSuperClass()));
-          }
-        }
-
-        Namespace ns = typeCheckedSuperClass.getDefinition().getInstanceNamespace();
-        Set<ClassField> hidden = new HashSet<>();
-        for (Abstract.Identifier identifier : aSuperClass.getHidings()) {
-          Abstract.Definition aDef = ns.resolveName(identifier.getName());
-          Definition definition = aDef == null ? null : myState.getTypechecked(aDef);
-          if (definition instanceof ClassField) {
-            hidden.add((ClassField) definition);
-          } else {
-            classOk = false;
-            if (definition == null) {
-              myErrorReporter.report(new LocalTypeCheckingError("Not in scope: " + identifier.getName(), identifier));
-            } else {
-              myErrorReporter.report(new LocalTypeCheckingError("Expected a field", identifier));
-            }
-          }
-        }
-
-        Map<ClassField, Abstract.ReferableSourceNode> renamings = new HashMap<>();
-        for (Abstract.IdPair pair : aSuperClass.getRenamings()) {
-          Abstract.Definition aDef = ns.resolveName(pair.getFirstName());
-          Definition definition = aDef == null ? null : myState.getTypechecked(aDef);
-          if (definition instanceof ClassField) {
-            if (hidden.contains(definition)) {
-              classOk = false;
-              myErrorReporter.report(new LocalTypeCheckingError("Field '" + pair.getFirstName() + "' is hidden", pair));
-            } else {
-              renamings.put((ClassField) definition, pair);
-            }
-          } else {
-            classOk = false;
-            if (definition == null) {
-              myErrorReporter.report(new LocalTypeCheckingError("Not in scope: " + pair.getFirstName(), pair));
-            } else {
-              myErrorReporter.report(new LocalTypeCheckingError("Expected a field", pair));
-            }
-          }
-        }
-
-        for (ClassField field : typeCheckedSuperClass.getDefinition().getFieldSet().getFields()) {
-          Abstract.ReferableSourceNode alias = renamings.get(field);
-          if (alias == null) {
-            alias = typeCheckedSuperClass.getDefinition().getFieldAlias(field);
-            if (alias == field.getAbstractDefinition()) {
-              alias = null;
-            }
-          }
-
-          if (alias != null) {
-            Abstract.ReferableSourceNode oldAlias = aliases.get(field);
-            if (oldAlias == null) {
-              aliases.put(field, alias);
-            } else {
-              if (oldAlias != alias) {
-                classOk = false;
-                myErrorReporter.report(new LocalTypeCheckingError("Field '" + field.getName() + "' is already renamed to '" + oldAlias + "'", alias));
-              }
-            }
           }
         }
       }

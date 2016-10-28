@@ -802,103 +802,19 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
-  private class ListWrapper {
-    List<String> list;
-
-    void print() {
-      for (int i = 0; i < list.size(); i++) {
-        myBuilder.append(list.get(i));
-        if (i < list.size() - 1) {
-          myBuilder.append(", ");
-        }
-      }
-    }
-  }
-
-  private void printRenamings(Collection<? extends Abstract.IdPair> renamings) {
-    myBuilder.append("\\renaming ");
-    int i = 0;
-    for (Abstract.IdPair idPair : renamings) {
-      myBuilder.append(idPair.getFirstName()).append(" \\to ").append(idPair.getSecondName());
-      if (++i < renamings.size()) {
-        myBuilder.append(", ");
-      }
-    }
-  }
-
-  private void printHidings(Collection<? extends Abstract.Identifier> hidings) {
-    myBuilder.append("\\hiding ");
-    int i = 0;
-    for (Abstract.Identifier id : hidings) {
-      myBuilder.append(id.getName());
-      if (++i < hidings.size()) {
-        myBuilder.append(", ");
-      }
-    }
-  }
-
   @Override
   public Void visitClass(Abstract.ClassDefinition def, Void ignored) {
     myBuilder.append("\\class ").append(def.getName());
-    if (!def.getSuperClasses().isEmpty()) {
-      List<Object> superClasses = new ArrayList<>(def.getSuperClasses().size());
-      for (Abstract.SuperClass superClass : def.getSuperClasses()) {
-        if ((superClass.getRenamings() == null || superClass.getRenamings().isEmpty()) && (superClass.getHidings() == null || superClass.getHidings().isEmpty())) {
-          if (superClasses.isEmpty() || !(superClasses.get(superClasses.size() - 1) instanceof ListWrapper)) {
-            ListWrapper wrapper = new ListWrapper();
-            wrapper.list = new ArrayList<>(3);
-            wrapper.list.add("<super>" /*superClass.getName()*/);  // HACK
-            superClasses.add(wrapper);
-          } else {
-            ((ListWrapper) superClasses.get(superClasses.size() - 1)).list.add("<super>" /*superClass.getName()*/);  // HACK
-          }
-        } else {
-          superClasses.add(superClass);
+    if (def.getSuperClasses() != null && !def.getSuperClasses().isEmpty()) {
+      myBuilder.append(" \\extends");
+      for (int i = 0; i < def.getSuperClasses().size(); i++) {
+        myBuilder.append(" ").append("<super>" /* def.getSuperClasses().get(i).getName() */); // HACK
+        if (i < def.getSuperClasses().size() - 1) {
+          myBuilder.append(",");
         }
       }
-
-      if (superClasses.size() == 1 && superClasses.get(0) instanceof ListWrapper) {
-        myBuilder.append(" \\extends ");
-        ((ListWrapper) superClasses.get(0)).print();
-        myBuilder.append(" {");
-      } else {
-        myBuilder.append('\n');
-        ++myIndent;
-        for (Object superClass : superClasses) {
-          printIndent();
-          myBuilder.append("\\extends ");
-          if (superClass instanceof ListWrapper) {
-            ((ListWrapper) superClass).print();
-          } else {
-            Abstract.SuperClass aSuperClass = (Abstract.SuperClass) superClass;
-            aSuperClass.getSuperClass().accept(this, null);
-            if (aSuperClass.getHidings() == null || aSuperClass.getHidings().isEmpty()) {
-              myBuilder.append(' ');
-              printRenamings(aSuperClass.getRenamings());
-            } else
-            if (aSuperClass.getRenamings() == null || aSuperClass.getRenamings().isEmpty()) {
-              myBuilder.append(' ');
-              printHidings(aSuperClass.getHidings());
-            } else {
-              ++myIndent;
-              myBuilder.append('\n');
-              printIndent();
-              printRenamings(aSuperClass.getRenamings());
-              myBuilder.append('\n');
-              printIndent();
-              printHidings(aSuperClass.getHidings());
-              --myIndent;
-            }
-          }
-          myBuilder.append('\n');
-        }
-        --myIndent;
-        printIndent();
-        myBuilder.append("{");
-      }
-    } else {
-      myBuilder.append(" {");
     }
+    myBuilder.append(" {");
 
     Collection<? extends Abstract.Statement> statements = def.getStatements();
     if (statements != null && !statements.isEmpty()) {

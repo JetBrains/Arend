@@ -371,19 +371,12 @@ public final class Abstract {
     Expression getUniverse();
   }
 
-  public interface IdPair extends ReferableSourceNode {
-    String getFirstName();
-    String getSecondName();
-  }
-
   public interface Identifier extends SourceNode {
     String getName();
   }
 
   public interface SuperClass extends SourceNode {
     Expression getSuperClass();
-    Collection<? extends IdPair> getRenamings();
-    Collection<? extends Identifier> getHidings();
   }
 
   public interface ClassDefinition extends Definition {

@@ -13,13 +13,13 @@ hidingOpt : '\\hiding'  # withHiding
 
 nsCmdRoot : modulePath | name;
 
-definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?            # defFunction
-            | '\\abstract' precedence name ':' expr                                       # defAbstract
-            | '\\implement' name '=>' expr                                                # defImplement
-            | '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef?    # defData
-            | classKindMod ID ('\\extends' atomFieldsAcc extendsOpts)* '{' statement* '}' # defClass
-            | '\\view' ID? '\\on' (expr '.')? ID '\\by' name '{' classViewField* '}'      # defClassView
-            | defaultInst '\\instance' ID tele* '=>' expr                                 # defInstance
+definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?                      # defFunction
+            | '\\abstract' precedence name ':' expr                                                 # defAbstract
+            | '\\implement' name '=>' expr                                                          # defImplement
+            | '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef?              # defData
+            | classKindMod ID ('\\extends' atomFieldsAcc (',' atomFieldsAcc)*)? '{' statement* '}'  # defClass
+            | '\\view' ID? '\\on' (expr '.')? ID '\\by' name '{' classViewField* '}'                # defClassView
+            | defaultInst '\\instance' ID tele* '=>' expr                                           # defInstance
             ;
 
 defaultInst :             # noDefault
@@ -27,14 +27,6 @@ defaultInst :             # noDefault
             ;
 
 classViewField : name ('=>' precedence name)? ;
-
-extendsOpts : superClassOpts*       # extendsSuperClassOpts
-            | (',' atomFieldsAcc)*  # extendsMany
-            ;
-
-superClassOpts : '\\renaming' (name '\\to' name) (',' name '\\to' name)*  # superClassRenaming
-               | '\\hiding' name (',' name)*                              # superClassHiding
-               ;
 
 conditionDef : '\\with' '|'? condition ('|' condition)*;
 
