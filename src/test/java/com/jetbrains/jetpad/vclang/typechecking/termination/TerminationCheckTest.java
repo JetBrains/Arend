@@ -39,7 +39,9 @@ public class TerminationCheckTest {
     cms.add(new TestCallMatrix("g-f", g, f, '=', 0, '=', 1));
     cms.add(new TestCallMatrix("g-g", g, g, '<', 0, '?'));
     cms.add(new TestCallMatrix("g-h", g, h, '?', '?'));
-    System.out.println(CallGraph.calculateClosure(new CallGraph(cms)));
+    CallGraph callCategory = CallGraph.calculateClosure(new CallGraph(cms));
+    System.out.println(callCategory);
+    assert !callCategory.checkTermination();
   }
 
 }
