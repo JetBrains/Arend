@@ -36,7 +36,6 @@ public abstract class BaseCallMatrix {
   }
 
   public static boolean rleq(BaseCallMatrix.R a, BaseCallMatrix.R b) {
-    // returns true if "a" contains less  (or equal) amount of information than "b" 
     switch (a) {
       case LessThan:
         return (b == BaseCallMatrix.R.LessThan);
@@ -54,10 +53,6 @@ public abstract class BaseCallMatrix {
   public BaseCallMatrix(int width, int height) {
     myWidth = width;
     myHeight = height;
-    // (f invokes g) (g invokes h) = (f invokes h) 
-    // height -- number  of rows--  who invokes -- first argument 
-    // width -- number of cols -- what is invoked -- second argument 
-    // initialize call matrix 
   }
 
   public BaseCallMatrix(BaseCallMatrix m) {
@@ -123,7 +118,6 @@ public abstract class BaseCallMatrix {
   }
 
   public final boolean leq(BaseCallMatrix cm) {
-    // should return true if the present call matrix contains a smaller amount of information than the one specified by "cm" 
     if (getCodomain() != cm.getCodomain() || getDomain() != cm.getDomain()) {
       return false;
     }
@@ -144,8 +138,7 @@ public abstract class BaseCallMatrix {
       if (getCodomain() != cm.getCodomain() || getDomain() != cm.getDomain()) {
         return false;
       }
-      boolean result = myMatrixMap.equals(cm.myMatrixMap);
-      return result;
+      return myMatrixMap.equals(cm.myMatrixMap);
     } else {
       return false;
     }
@@ -177,6 +170,17 @@ public abstract class BaseCallMatrix {
     return "";
   }
 
+  public static char rToChar(R r) {
+    switch (r) {
+      case Equal:
+        return '=';
+      case LessThan:
+        return '<';
+      default:
+        return '?';
+    }
+  }
+
   @Override
   public String toString() {
     String result = getMatrixLabel() + "\n";
@@ -197,20 +201,8 @@ public abstract class BaseCallMatrix {
     result += "\n";
     for (int i = 0; i < myHeight; i++) {
       result += String.format("%" + max + "s", rowLabels[i]);
-      for (int j = 0; j < myWidth; j++) {
-        char c;
-        switch (getValue(i, j)) {
-          case Equal:
-            c = '=';
-            break;
-          case LessThan:
-            c = '<';
-            break;
-          default:
-            c = '?';
-        }
-        result += String.format("%" + (columnLabels[j].length() + 1) + "s", String.valueOf(c));
-      }
+      for (int j = 0; j < myWidth; j++)
+        result += String.format("%" + (columnLabels[j].length() + 1) + "s", String.valueOf(rToChar(getValue(i, j))));
       result += "\n";
     }
 

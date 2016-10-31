@@ -15,7 +15,7 @@ public class CompositeCallMatrix extends BaseCallMatrix {
 
   @Override
   protected String getMatrixLabel() {
-    return myM1.getMatrixLabel() + " " + "̊  " + myM2.getMatrixLabel();
+    return myM1.getMatrixLabel() + " o " + myM2.getMatrixLabel();
   }
 
   @Override
