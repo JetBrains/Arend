@@ -1,6 +1,8 @@
 package com.jetbrains.jetpad.vclang.typechecking.order;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
@@ -177,11 +179,11 @@ public class TypecheckingOrdering {
     return orderer.getResult();
   }
 
-  private static void typecheck(TypecheckerState state, Result result, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, boolean isPrelude) {
+  private static void typecheck(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, Result result, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, boolean isPrelude) {
     if (result instanceof OKResult) {
       for (Map.Entry<Abstract.Definition, Abstract.ClassDefinition> entry : ((OKResult) result).order.entrySet()) {
         Abstract.Definition def = entry.getKey();
-        DefinitionCheckTypeVisitor.typeCheck(state, entry.getValue() == null ? null : (ClassDefinition) state.getTypechecked(entry.getValue()), def, new ProxyErrorReporter(def, errorReporter), isPrelude);
+        DefinitionCheckTypeVisitor.typeCheck(state, staticNsProvider, dynamicNsProvider, entry.getValue() == null ? null : (ClassDefinition) state.getTypechecked(entry.getValue()), def, new ProxyErrorReporter(def, errorReporter), isPrelude);
         Definition typechecked = state.getTypechecked(def);
         if (typechecked == null || typechecked.hasErrors() != Definition.TypeCheckingStatus.NO_ERRORS) {
           typecheckedReporter.typecheckingFailed(def);
@@ -197,23 +199,23 @@ public class TypecheckingOrdering {
     }
   }
 
-  public static boolean typecheck(TypecheckerState state, Abstract.Definition definition, ErrorReporter errorReporter) {
-    return typecheck(state, definition, errorReporter, new TypecheckedReporter.Dummy());
+  public static boolean typecheck(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, Abstract.Definition definition, ErrorReporter errorReporter) {
+    return typecheck(state, staticNsProvider, dynamicNsProvider, definition, errorReporter, new TypecheckedReporter.Dummy());
   }
 
-  public static boolean typecheck(TypecheckerState state, Abstract.Definition definition, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
+  public static boolean typecheck(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, Abstract.Definition definition, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
     Result result = order(definition);
-    typecheck(state, result, errorReporter, typecheckedReporter, false);
+    typecheck(state, staticNsProvider, dynamicNsProvider, result, errorReporter, typecheckedReporter, false);
     return result instanceof OKResult;
   }
 
-  public static boolean typecheck(TypecheckerState state, List<? extends Abstract.Definition> definitions, ErrorReporter errorReporter, boolean isPrelude) {
-    return typecheck(state, definitions, errorReporter, new TypecheckedReporter.Dummy(), isPrelude);
+  public static boolean typecheck(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, List<? extends Abstract.Definition> definitions, ErrorReporter errorReporter, boolean isPrelude) {
+    return typecheck(state, staticNsProvider, dynamicNsProvider, definitions, errorReporter, new TypecheckedReporter.Dummy(), isPrelude);
   }
 
-  public static boolean typecheck(TypecheckerState state, List<? extends Abstract.Definition> definitions, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, boolean isPrelude) {
+  public static boolean typecheck(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, List<? extends Abstract.Definition> definitions, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, boolean isPrelude) {
     Result result = order(definitions);
-    typecheck(state, result, errorReporter, typecheckedReporter, isPrelude);
+    typecheck(state, staticNsProvider, dynamicNsProvider, result, errorReporter, typecheckedReporter, isPrelude);
     return result instanceof OKResult;
   }
 }

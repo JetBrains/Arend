@@ -1,6 +1,8 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.StringPrettyPrintable;
@@ -53,6 +55,8 @@ import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceE
 
 public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTypeVisitor.Result> {
   private final TypecheckerState myState;
+  private final StaticNamespaceProvider myStaticNsProvider;
+  private final DynamicNamespaceProvider myDynamicNsProvider;
   private ClassDefinition myThisClass;
   private Expression myThisExpr;
   private final List<Binding> myContext;
@@ -156,8 +160,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
   }
 
-  private CheckTypeVisitor(TypecheckerState state, ClassDefinition thisClass, Expression thisExpr, List<Binding> localContext, LocalErrorReporter errorReporter, ClassViewInstancePool pool) {
+  private CheckTypeVisitor(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ClassDefinition thisClass, Expression thisExpr, List<Binding> localContext, LocalErrorReporter errorReporter, ClassViewInstancePool pool) {
     myState = state;
+    myStaticNsProvider = staticNsProvider;
+    myDynamicNsProvider = dynamicNsProvider;
     myContext = localContext;
     myErrorReporter = errorReporter;
     myTypeCheckingDefCall = new TypeCheckingDefCall(this);
@@ -181,9 +187,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     private ClassViewInstancePool myPool;
     private ClassDefinition myThisClass;
     private Expression myThisExpr;
+    private StaticNamespaceProvider myStaticNsProvider;
+    private DynamicNamespaceProvider myDynamicNsProvider;
 
-    public Builder(TypecheckerState typecheckerState, List<Binding> localContext, LocalErrorReporter errorReporter) {
+    public Builder(TypecheckerState typecheckerState, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, List<Binding> localContext, LocalErrorReporter errorReporter) {
       this.myTypecheckerState = typecheckerState;
+      myStaticNsProvider = staticNsProvider;
+      myDynamicNsProvider = dynamicNsProvider;
       myLocalContext = localContext;
       myErrorReporter = errorReporter;
       myPool = EmptyInstancePool.INSTANCE;
@@ -201,12 +211,20 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
 
     public CheckTypeVisitor build() {
-      return new CheckTypeVisitor(myTypecheckerState, myThisClass, myThisExpr, myLocalContext, myErrorReporter, myPool);
+      return new CheckTypeVisitor(myTypecheckerState, myStaticNsProvider, myDynamicNsProvider, myThisClass, myThisExpr, myLocalContext, myErrorReporter, myPool);
     }
   }
 
   public TypecheckerState getTypecheckingState() {
     return myState;
+  }
+
+  public StaticNamespaceProvider getStaticNamespaceProvider() {
+    return myStaticNsProvider;
+  }
+
+  public DynamicNamespaceProvider getDynamicNamespaceProvider() {
+    return myDynamicNsProvider;
   }
 
   public TypeCheckingDefCall getTypeCheckingDefCall() {

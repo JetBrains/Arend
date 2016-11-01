@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.naming.scope.OverridingScope;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
@@ -177,7 +178,7 @@ public class TypeCheckingDefCall {
         ClassDefinition classDefinition = type.toClassCall().getDefinition();
 
         if (typeCheckedDefinition == null) {
-          Abstract.Definition member = classDefinition.getInstanceNamespace().resolveName(name);
+          Abstract.Definition member = myVisitor.getDynamicNamespaceProvider().forClass(classDefinition.getAbstractDefinition()).resolveName(name);
           if (member == null) {
             MemberNotFoundError error = new MemberNotFoundError(classDefinition, name, false, expr);
             expr.setWellTyped(myVisitor.getContext(), Error(null, error));
@@ -264,7 +265,7 @@ public class TypeCheckingDefCall {
         }
       }
       if (typeCheckedDefinition == null) {
-        member = leftDefinition.getOwnNamespace().resolveName(name);
+        member = myVisitor.getStaticNamespaceProvider().forDefinition(leftDefinition.getAbstractDefinition()).resolveName(name);
         if (member == null) {
           MemberNotFoundError error = new MemberNotFoundError(leftDefinition, name, true, expr);
           expr.setWellTyped(myVisitor.getContext(), Error(null, error));
@@ -285,7 +286,11 @@ public class TypeCheckingDefCall {
       }
 
       if (typeCheckedDefinition == null) {
-        member = new OverridingScope(leftDefinition.getOwnNamespace(), leftDefinition.getInstanceNamespace()).resolveName(name);
+        Scope scope = myVisitor.getStaticNamespaceProvider().forDefinition(leftDefinition.getAbstractDefinition());
+        if (leftDefinition instanceof ClassDefinition) {
+          scope = new OverridingScope(scope, myVisitor.getDynamicNamespaceProvider().forClass(((ClassDefinition) leftDefinition).getAbstractDefinition()));
+        }
+        member = scope.resolveName(name);
         if (member == null) {
           MemberNotFoundError error = new MemberNotFoundError(leftDefinition, name, expr);
           expr.setWellTyped(myVisitor.getContext(), Error(null, error));

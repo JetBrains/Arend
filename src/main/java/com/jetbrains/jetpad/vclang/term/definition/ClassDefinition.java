@@ -113,16 +113,6 @@ public class ClassDefinition extends Definition {
     return myEnclosingThisField;
   }
 
-  @Override
-  public Namespace getOwnNamespace() {
-    return myOwnNamespace;
-  }
-
-  @Override
-  public Namespace getInstanceNamespace() {
-    return myInstanceNamespace;
-  }
-
   public Abstract.ReferableSourceNode getFieldAlias(ClassField field) {
     Abstract.ReferableSourceNode alias = myAliases.get(field);
     return alias != null ? alias : field.getAbstractDefinition();

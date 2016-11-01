@@ -27,10 +27,10 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   @SuppressWarnings("StaticNonFinalField")
   private static Abstract.ClassDefinition LOADED_PRELUDE = null;
 
-  private final SimpleModuleNamespaceProvider  moduleNsProvider  = new SimpleModuleNamespaceProvider();
-  private final SimpleStaticNamespaceProvider  staticNsProvider  = new SimpleStaticNamespaceProvider();
-  private final SimpleDynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
-  private final NameResolver nameResolver = new NameResolver(moduleNsProvider, staticNsProvider, dynamicNsProvider);
+  private   final SimpleModuleNamespaceProvider  moduleNsProvider  = new SimpleModuleNamespaceProvider();
+  protected final SimpleStaticNamespaceProvider  staticNsProvider  = new SimpleStaticNamespaceProvider();
+  protected final SimpleDynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
+  private   final NameResolver nameResolver = new NameResolver(moduleNsProvider, staticNsProvider, dynamicNsProvider);
 
   protected Abstract.ClassDefinition prelude = null;
   private Scope globalScope = new EmptyNamespace();
@@ -138,7 +138,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
       if (oldref instanceof Abstract.ClassDefinition) {
         ref = dynamicNsProvider.forClass((Abstract.ClassDefinition) oldref).resolveName(n);
       } else if (oldref instanceof ClassDefinition) {
-        ref = ((ClassDefinition) oldref).getInstanceNamespace().resolveName(n);
+        ref = dynamicNsProvider.forClass(((ClassDefinition) oldref).getAbstractDefinition()).resolveName(n);
       }
       if (ref == null) return null;
     }

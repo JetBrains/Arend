@@ -26,12 +26,6 @@ public class SimpleModuleNamespaceProvider extends BaseModuleNamespaceProvider {
     return ns;
   }
 
-  public ModuleNamespace registerModule(ModulePath modulePath, ClassDefinition module) {
-    ModuleNamespace ns = registerModuleNs(modulePath, module);
-    ns.registerClass(module);
-    return ns;
-  }
-
   private ModuleNamespace registerModuleNs(ModulePath modulePath, Object module) {
     if (myMap.get(module) != null) throw new IllegalStateException();
     ModuleNamespace ns = ensureModuleNamespace(root(), modulePath);

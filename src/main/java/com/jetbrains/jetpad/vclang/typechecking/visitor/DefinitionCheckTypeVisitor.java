@@ -58,24 +58,28 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
   private final static DynamicNamespaceProvider DYNAMIC_NS_SNAPSHOT_PROVIDER = new SimpleDynamicNamespaceProvider();
 
   private final TypecheckerState myState;
+  private final StaticNamespaceProvider myStaticNsProvider;
+  private final DynamicNamespaceProvider myDynamicNsProvider;
   private final LocalErrorReporter myErrorReporter;
 
-  public DefinitionCheckTypeVisitor(TypecheckerState state, LocalErrorReporter errorReporter) {
+  public DefinitionCheckTypeVisitor(TypecheckerState state, StaticNamespaceProvider staticNamespaceProvider, DynamicNamespaceProvider dynamicNsProvider, LocalErrorReporter errorReporter) {
     myState = state;
+    myStaticNsProvider = staticNamespaceProvider;
+    myDynamicNsProvider = dynamicNsProvider;
     myErrorReporter = errorReporter;
   }
 
-  public static void typeCheck(TypecheckerState state, ClassDefinition enclosingClass, Abstract.Definition definition, LocalErrorReporter errorReporter, boolean isPrelude) {
+  public static void typeCheck(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ClassDefinition enclosingClass, Abstract.Definition definition, LocalErrorReporter errorReporter, boolean isPrelude) {
     if (state.getTypechecked(definition) == null) {
-      definition.accept(new DefinitionCheckTypeVisitor(state, errorReporter), enclosingClass);
+      definition.accept(new DefinitionCheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, errorReporter), enclosingClass);
       if (isPrelude) {
         Prelude.update(definition, state.getTypechecked(definition));
       }
     }
   }
 
-  public static void typeCheck(TypecheckerState state, ClassDefinition enclosingClass, Abstract.Definition definition, LocalErrorReporter errorReporter) {
-    typeCheck(state, enclosingClass, definition, errorReporter, false);
+  public static void typeCheck(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ClassDefinition enclosingClass, Abstract.Definition definition, LocalErrorReporter errorReporter) {
+    typeCheck(state, staticNsProvider, dynamicNsProvider, enclosingClass, definition, errorReporter, false);
   }
 
   private DependentLink createThisParam(ClassDefinition enclosingClass) {
@@ -190,7 +194,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     final List<Binding> context = new ArrayList<>();
     LinkList list = new LinkList();
     LocalInstancePool localInstancePool = new LocalInstancePool();
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).instancePool(new CompositeInstancePool(localInstancePool, myState.getInstancePool())).build();
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, myStaticNsProvider, myDynamicNsProvider, context, myErrorReporter).instancePool(new CompositeInstancePool(localInstancePool, myState.getInstancePool())).build();
     if (enclosingClass != null) {
       DependentLink thisParam = createThisParam(enclosingClass);
       context.add(thisParam);
@@ -280,7 +284,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     List<Binding> context = new ArrayList<>();
     LinkList list = new LinkList();
     LocalInstancePool localInstancePool = new LocalInstancePool();
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).instancePool(new CompositeInstancePool(localInstancePool, myState.getInstancePool())).build();
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, myStaticNsProvider, myDynamicNsProvider, context, myErrorReporter).instancePool(new CompositeInstancePool(localInstancePool, myState.getInstancePool())).build();
     List<Binding> polyParamsList = new ArrayList<>();
     if (enclosingClass != null) {
       DependentLink thisParam = createThisParam(enclosingClass);
@@ -647,7 +651,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
   public ClassDefinition visitClass(Abstract.ClassDefinition def, ClassDefinition enclosingClass) {
     boolean classOk = true;
     List<Binding> context = new ArrayList<>();
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).instancePool(EmptyInstancePool.INSTANCE).build();
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, myStaticNsProvider, myDynamicNsProvider, context, myErrorReporter).instancePool(EmptyInstancePool.INSTANCE).build();
 
     if (enclosingClass != null) {
       DependentLink thisParam = createThisParam(enclosingClass);
@@ -687,7 +691,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
           }
         }
 
-        Namespace ns = typeCheckedSuperClass.getDefinition().getInstanceNamespace();
+        Namespace ns = myDynamicNsProvider.forClass(typeCheckedSuperClass.getDefinition().getAbstractDefinition());
         Set<ClassField> hidden = new HashSet<>();
         for (Abstract.Identifier identifier : aSuperClass.getHidings()) {
           Abstract.Definition aDef = ns.resolveName(identifier.getName());
@@ -822,7 +826,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     DependentLink thisParameter = createThisParam(enclosingClass);
     List<Binding> context = new ArrayList<>();
     context.add(thisParameter);
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).instancePool(EmptyInstancePool.INSTANCE).thisClass(enclosingClass, Reference(thisParameter)).build();
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, myStaticNsProvider, myDynamicNsProvider, context, myErrorReporter).instancePool(EmptyInstancePool.INSTANCE).thisClass(enclosingClass, Reference(thisParameter)).build();
     LevelMax pLevel = new LevelMax();
     ClassField typedDef = new ClassField(def, Error(null, null), enclosingClass, thisParameter);
     myState.record(def, typedDef);
@@ -909,7 +913,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
     final List<Binding> context = new ArrayList<>();
     LinkList list = new LinkList();
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build();
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, myStaticNsProvider, myDynamicNsProvider, context, myErrorReporter).build();
 
     List<Binding> polyParamsList = new ArrayList<>();
     boolean paramsOk = visitParameters(def.getArguments(), def, context, polyParamsList, list, visitor, null);

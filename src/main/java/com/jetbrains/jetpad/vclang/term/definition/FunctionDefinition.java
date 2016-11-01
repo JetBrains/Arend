@@ -113,9 +113,4 @@ public class FunctionDefinition extends Definition implements Function {
   public FunCallExpression getDefCall(LevelSubstitution polyParams, List<Expression> args) {
     return new FunCallExpression(this, polyParams, args);
   }
-
-  @Override
-  public Namespace getOwnNamespace() {
-    return myOwnNamespace;
-  }
 }

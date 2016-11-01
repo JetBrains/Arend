@@ -9,10 +9,7 @@ import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
 import com.jetbrains.jetpad.vclang.module.source.file.FileModuleLoader;
 import com.jetbrains.jetpad.vclang.module.source.file.FileModuleSourceId;
 import com.jetbrains.jetpad.vclang.module.utils.FileOperations;
-import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
-import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.naming.namespace.SimpleModuleNamespaceProvider;
-import com.jetbrains.jetpad.vclang.naming.namespace.SimpleStaticNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.namespace.*;
 import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotNameResolver;
 import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotSourceInfoCollector;
 import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
@@ -80,9 +77,10 @@ public class ConsoleMain {
     }
 
     SimpleStaticNamespaceProvider staticNsProvider = new SimpleStaticNamespaceProvider();
+    DynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
     final ListErrorReporter errorReporter = new ListErrorReporter();
     final SimpleModuleNamespaceProvider moduleNsProvider = new SimpleModuleNamespaceProvider();
-    final OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(errorReporter, new ConcreteResolveListener(), moduleNsProvider, new SimpleStaticNamespaceProvider(), new SimpleDynamicNamespaceProvider());
+    final OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(errorReporter, new ConcreteResolveListener(), moduleNsProvider, staticNsProvider, dynamicNsProvider);
     final OneshotSourceInfoCollector srcInfoCollector = new OneshotSourceInfoCollector();
     final ErrorFormatter errf = new ErrorFormatter(srcInfoCollector.sourceInfoProvider);
     final List<ModuleSourceId> loadedModules = new ArrayList<>();
@@ -91,7 +89,7 @@ public class ConsoleMain {
 
     final Abstract.ClassDefinition prelude = new Prelude.PreludeLoader(errorReporter).load();
     oneshotNameResolver.visitModule(prelude, new EmptyScope());
-    TypecheckingOrdering.typecheck(state, Collections.singletonList(prelude), new DummyErrorReporter(), true);
+    TypecheckingOrdering.typecheck(state, staticNsProvider, dynamicNsProvider, Collections.singletonList(prelude), new DummyErrorReporter(), true);
     assert errorReporter.getErrorList().isEmpty();
     final Namespace preludeNamespace = staticNsProvider.forDefinition(prelude);
 
@@ -120,7 +118,7 @@ public class ConsoleMain {
       return;
     }
 
-    if (!TypecheckingOrdering.typecheck(state, modulesToTypeCheck, errorReporter, true)) {
+    if (!TypecheckingOrdering.typecheck(state, staticNsProvider, dynamicNsProvider, modulesToTypeCheck, errorReporter, true)) {
       return;
     }
     modulesToTypeCheck.clear();
@@ -155,7 +153,7 @@ public class ConsoleMain {
 
     final Set<ModuleSourceId> failedModules = new HashSet<>();
 
-    TypecheckingOrdering.typecheck(state, modulesToTypeCheck, errorReporter, new TypecheckedReporter() {
+    TypecheckingOrdering.typecheck(state, staticNsProvider, dynamicNsProvider, modulesToTypeCheck, errorReporter, new TypecheckedReporter() {
       @Override
       public void typecheckingSucceeded(Abstract.Definition definition) {
       }

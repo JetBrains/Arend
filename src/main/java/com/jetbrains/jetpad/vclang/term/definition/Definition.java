@@ -73,12 +73,4 @@ public abstract class Definition implements Referable {
   // typeHasErrors should imply hasErrors == HAS_ERRORS
   public abstract boolean typeHasErrors();
   public abstract TypeCheckingStatus hasErrors();
-
-  public Namespace getOwnNamespace() {
-    return EmptyNamespace.INSTANCE;
-  }
-
-  public Namespace getInstanceNamespace() {
-    return EmptyNamespace.INSTANCE;
-  }
 }
