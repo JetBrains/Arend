@@ -38,7 +38,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
   @Override
   public Boolean visitDefCall(DefCallExpression expr, Void params) {
     for (Expression arg : expr.getDefCallArguments()) {
-      if (arg.accept(this, null)) {
+      if (arg.<Void, Boolean>accept(this, null)) {
         return true;
       }
     }
@@ -48,7 +48,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
   @Override
   public Boolean visitConCall(ConCallExpression expr, Void params) {
     for (Expression arg : expr.getDataTypeArguments()) {
-      if (arg.accept(this, null)) {
+      if (arg.<Void, Boolean>accept(this, null)) {
         return true;
       }
     }
@@ -113,7 +113,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
 
   private boolean visitTypeExpression(Type type) {
     if (type.toExpression() != null) {
-      return type.toExpression().accept(this, null);
+      return type.toExpression().<Void, Boolean>accept(this, null);
     }
     return visitDependentLink(type.getPiParameters());
   }
@@ -155,7 +155,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
   @Override
   public Boolean visitBranch(BranchElimTreeNode branchNode, Void params) {
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-      if (clause.getChild().accept(this, null))
+      if (clause.getChild().<Void, Boolean>accept(this, null))
         return true;
     }
     if (branchNode.getOtherwiseClause() != null) {

@@ -155,7 +155,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
 
   private boolean visitTypeExpression(Type type) {
     if (type.toExpression() != null) {
-      return type.toExpression().accept(this, null);
+      return type.toExpression().<Void, Boolean>accept(this, null);
     }
     return visitArguments(type.getPiParameters());
   }
