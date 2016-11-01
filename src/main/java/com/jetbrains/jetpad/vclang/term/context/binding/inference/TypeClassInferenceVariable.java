@@ -4,21 +4,20 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
-import com.jetbrains.jetpad.vclang.term.typeclass.ClassView;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
 public class TypeClassInferenceVariable extends InferenceVariable {
-  private final ClassView myClassView;
+  private final Abstract.ClassView myClassView;
   private final boolean myExactClassView;
 
-  public TypeClassInferenceVariable(String name, Expression type, ClassView classView, boolean isExactClassView, Abstract.SourceNode sourceNode) {
+  public TypeClassInferenceVariable(String name, Expression type, Abstract.ClassView classView, boolean isExactClassView, Abstract.SourceNode sourceNode) {
     super(name, type, sourceNode);
     myClassView = classView;
     myExactClassView = isExactClassView;
   }
 
-  public ClassView getClassView() {
+  public Abstract.ClassView getClassView() {
     return myClassView;
   }
 

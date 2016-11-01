@@ -961,10 +961,12 @@ public final class Concrete {
   public static class ClassViewField extends Definition implements Abstract.ClassViewField {
     private final String myUnderlyingFieldName;
     private Abstract.ClassField myUnderlyingField;
+    private final ClassView myOwnView;
 
-    public ClassViewField(Position position, String name, Precedence precedence, String underlyingFieldName) {
+    public ClassViewField(Position position, String name, Precedence precedence, String underlyingFieldName, ClassView ownView) {
       super(position, name, precedence);
       myUnderlyingFieldName = underlyingFieldName;
+      myOwnView = ownView;
     }
 
     @Override
@@ -975,6 +977,11 @@ public final class Concrete {
     @Override
     public Abstract.ClassField getUnderlyingField() {
       return myUnderlyingField;
+    }
+
+    @Override
+    public ClassView getOwnView() {
+      return myOwnView;
     }
 
     public void setUnderlyingField(Abstract.ClassField underlyingField) {

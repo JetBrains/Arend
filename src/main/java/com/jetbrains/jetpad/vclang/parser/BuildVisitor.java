@@ -325,12 +325,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.ClassView visitDefClassView(DefClassViewContext ctx) {
     if (ctx == null) return null;
     List<Concrete.ClassViewField> fields = new ArrayList<>(ctx.classViewField().size());
-    for (ClassViewFieldContext classViewFieldContext : ctx.classViewField()) {
-      Concrete.ClassViewField field = visitClassViewField(classViewFieldContext);
-      if (field != null) {
-        fields.add(field);
-      }
-    }
 
     Concrete.Expression expr = null;
     if (ctx.expr() != null) {
@@ -345,11 +339,19 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return null;
     }
     Concrete.Position pos = tokenPosition(ctx.expr() != null ? ctx.expr().getStart() : ctx.ID(ctx.ID().size() > 1 ? 1 : 0).getSymbol());
-    return new Concrete.ClassView(tokenPosition(ctx.getStart()), ctx.ID(0).getText(), new Concrete.DefCallExpression(pos, expr, ctx.ID(ctx.ID().size() > 1 ? 1 : 0).getText()), classifyingField, fields);
+    Concrete.ClassView classView = new Concrete.ClassView(tokenPosition(ctx.getStart()), ctx.ID(0).getText(), new Concrete.DefCallExpression(pos, expr, ctx.ID(ctx.ID().size() > 1 ? 1 : 0).getText()), classifyingField, fields);
+
+    for (ClassViewFieldContext classViewFieldContext : ctx.classViewField()) {
+      Concrete.ClassViewField field = visitClassViewField(classViewFieldContext, classView);
+      if (field != null) {
+        fields.add(field);
+      }
+    }
+
+    return classView;
   }
 
-  @Override
-  public Concrete.ClassViewField visitClassViewField(ClassViewFieldContext ctx) {
+  public Concrete.ClassViewField visitClassViewField(ClassViewFieldContext ctx, Concrete.ClassView classView) {
     if (ctx == null) return null;
     String underlyingField = visitName(ctx.name(0));
     String name = ctx.name().size() > 1 ? visitName(ctx.name().get(1)) : underlyingField;
@@ -357,7 +359,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (underlyingField == null || ctx.name().size() > 1 && name == null) {
       return null;
     }
-    return new Concrete.ClassViewField(tokenPosition(ctx.name(0).getStart()), name, precedence != null ? precedence : Precedence.DEFAULT, underlyingField);
+    return new Concrete.ClassViewField(tokenPosition(ctx.name(0).getStart()), name, precedence != null ? precedence : Precedence.DEFAULT, underlyingField, classView);
+  }
+
+  @Override
+  public Concrete.ClassViewField visitClassViewField(ClassViewFieldContext ctx) {
+    throw new IllegalStateException();
   }
 
   @Override

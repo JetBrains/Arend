@@ -310,6 +310,7 @@ public final class Abstract {
   public interface ClassViewField extends Definition {
     String getUnderlyingFieldName();
     ClassField getUnderlyingField();
+    ClassView getOwnView();
   }
 
   public interface ClassField extends Definition {
