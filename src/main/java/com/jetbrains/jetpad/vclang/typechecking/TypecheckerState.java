@@ -5,70 +5,18 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.typeclass.ClassView;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.GlobalInstancePool;
 
-import java.util.HashMap;
-import java.util.Map;
+public interface TypecheckerState {
+  void record(Abstract.Definition def, Definition res);
 
-public class TypecheckerState {
-  private final Map<Abstract.Definition, Definition> myTypechecked;
-  private final Map<Abstract.Definition, ClassView> myClassViews;
-  private final GlobalInstancePool myInstancePool = new GlobalInstancePool();
+  void record(Abstract.ClassView classView, ClassView res);
 
-  public TypecheckerState() {
-    myTypechecked = new HashMap<>();
-    myClassViews = new HashMap<>();
-  }
+  void record(Abstract.ClassViewField classViewField, ClassView res);
 
-  public TypecheckerState(TypecheckerState state) {
-    myTypechecked = new HashMap<>(state.myTypechecked);
-    myClassViews = new HashMap<>(state.myClassViews);
-  }
+  Definition getTypechecked(Abstract.Definition def);
 
-  public void record(Abstract.Definition def, Definition res) {
-    myTypechecked.put(def, res);
-  }
+  ClassView getClassView(Abstract.ClassView classView);
 
-  public void record(Abstract.ClassView classView, ClassView res) {
-    myClassViews.put(classView, res);
-  }
+  ClassView getClassView(Abstract.ClassViewField classViewField);
 
-  public void record(Abstract.ClassViewField classViewField, ClassView res) {
-    myClassViews.put(classViewField, res);
-  }
-
-  public Definition getTypechecked(Abstract.Definition def) {
-    assert def != null;
-    Abstract.Definition definition = def;
-    while (definition instanceof Abstract.ClassView) {
-      definition = ((Abstract.ClassView) definition).getUnderlyingClassDefCall().getReferent();
-    }
-    if (definition instanceof Abstract.ClassViewField) {
-      definition = ((Abstract.ClassViewField) definition).getUnderlyingField();
-    }
-    if (definition == null) {
-      throw new IllegalStateException("Internal error: " + def + " was not resolved");
-    }
-    return myTypechecked.get(definition);
-  }
-
-  public ClassView getClassView(Abstract.ClassView classView) {
-    assert classView != null;
-    ClassView result = myClassViews.get(classView);
-    if (result == null) {
-      throw new IllegalStateException("Internal error: class view " + classView + " was not type checked");
-    }
-    return result;
-  }
-
-  public ClassView getClassView(Abstract.ClassViewField classViewField) {
-    assert classViewField != null;
-    ClassView result = myClassViews.get(classViewField);
-    if (result == null) {
-      throw new IllegalStateException("Internal error: cannot find class view for " + classViewField);
-    }
-    return result;
-  }
-
-  public GlobalInstancePool getInstancePool() {
-    return myInstancePool;
-  }
+  GlobalInstancePool getInstancePool();
 }

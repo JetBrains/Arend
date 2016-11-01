@@ -17,6 +17,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.ConcreteResolveListener;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveStaticModVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.SimpleTypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.order.TypecheckingOrdering;
@@ -85,7 +86,7 @@ public class ConsoleMain {
     final ErrorFormatter errf = new ErrorFormatter(srcInfoCollector.sourceInfoProvider);
     final List<ModuleSourceId> loadedModules = new ArrayList<>();
     final List<Abstract.Definition> modulesToTypeCheck = new ArrayList<>();
-    final TypecheckerState state = new TypecheckerState();
+    final TypecheckerState state = new SimpleTypecheckerState();
 
     final Abstract.ClassDefinition prelude = new Prelude.PreludeLoader(errorReporter).load();
     oneshotNameResolver.visitModule(prelude, new EmptyScope());

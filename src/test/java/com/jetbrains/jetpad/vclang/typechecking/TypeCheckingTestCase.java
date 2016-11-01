@@ -32,9 +32,9 @@ import static org.junit.Assert.assertTrue;
 
 public class TypeCheckingTestCase extends NameResolverTestCase {
   @SuppressWarnings("StaticNonFinalField")
-  private static TypecheckerState PRELUDE_TYPECHECKER_STATE = null;
+  private static SimpleTypecheckerState PRELUDE_TYPECHECKER_STATE = null;
 
-  private TypecheckerState state = new TypecheckerState();
+  private TypecheckerState state = new SimpleTypecheckerState();
 
   protected LocalErrorReporter localErrorReporter = new ProxyErrorReporter(null, errorReporter);
 
@@ -47,12 +47,12 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
     if (PRELUDE_TYPECHECKER_STATE == null) {
       ListErrorReporter internalErrorReporter = new ListErrorReporter();
-      PRELUDE_TYPECHECKER_STATE = new TypecheckerState();
+      PRELUDE_TYPECHECKER_STATE = new SimpleTypecheckerState();
       assertTrue(TypecheckingOrdering.typecheck(PRELUDE_TYPECHECKER_STATE, staticNsProvider, dynamicNsProvider, Collections.singletonList(prelude), internalErrorReporter, true));
       //assertThat(internalErrorReporter.getErrorList(), is(empty()));  // does not type-check by design
     }
 
-    state = new TypecheckerState(PRELUDE_TYPECHECKER_STATE);
+    state = new SimpleTypecheckerState(PRELUDE_TYPECHECKER_STATE);
   }
 
 
