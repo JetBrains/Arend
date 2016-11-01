@@ -213,17 +213,17 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return arrowCtx instanceof ArrowLeftContext ? Abstract.Definition.Arrow.LEFT : arrowCtx instanceof ArrowRightContext ? Abstract.Definition.Arrow.RIGHT : null;
   }
 
-  public Abstract.Definition.Precedence visitPrecedence(PrecedenceContext ctx) {
-    return ctx == null ? null : (Abstract.Definition.Precedence) visit(ctx);
+  public Precedence visitPrecedence(PrecedenceContext ctx) {
+    return ctx == null ? null : (Precedence) visit(ctx);
   }
 
   @Override
-  public Abstract.Definition.Precedence visitNoPrecedence(NoPrecedenceContext ctx) {
-    return Abstract.Binding.DEFAULT_PRECEDENCE;
+  public Precedence visitNoPrecedence(NoPrecedenceContext ctx) {
+    return Precedence.DEFAULT;
   }
 
   @Override
-  public Abstract.Definition.Precedence visitWithPrecedence(WithPrecedenceContext ctx) {
+  public Precedence visitWithPrecedence(WithPrecedenceContext ctx) {
     if (ctx == null) return null;
     int priority = Integer.valueOf(ctx.NUMBER().getText());
     if (priority < 1 || priority > 9) {
@@ -236,22 +236,22 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
     }
 
-    return new Abstract.Definition.Precedence((Abstract.Definition.Associativity) visit(ctx.associativity()), (byte) priority);
+    return new Precedence((Precedence.Associativity) visit(ctx.associativity()), (byte) priority);
   }
 
   @Override
-  public Abstract.Definition.Associativity visitNonAssoc(NonAssocContext ctx) {
-    return Abstract.Binding.Associativity.NON_ASSOC;
+  public Precedence.Associativity visitNonAssoc(NonAssocContext ctx) {
+    return Precedence.Associativity.NON_ASSOC;
   }
 
   @Override
-  public Abstract.Definition.Associativity visitLeftAssoc(LeftAssocContext ctx) {
-    return Abstract.Binding.Associativity.LEFT_ASSOC;
+  public Precedence.Associativity visitLeftAssoc(LeftAssocContext ctx) {
+    return Precedence.Associativity.LEFT_ASSOC;
   }
 
   @Override
-  public Abstract.Definition.Associativity visitRightAssoc(RightAssocContext ctx) {
-    return Abstract.Binding.Associativity.RIGHT_ASSOC;
+  public Precedence.Associativity visitRightAssoc(RightAssocContext ctx) {
+    return Precedence.Associativity.RIGHT_ASSOC;
   }
 
   @Override
@@ -312,7 +312,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.ClassField visitDefAbstract(DefAbstractContext ctx) {
     if (ctx == null) return null;
     String name = visitName(ctx.name());
-    Abstract.Definition.Precedence precedence = visitPrecedence(ctx.precedence());
+    Precedence precedence = visitPrecedence(ctx.precedence());
     Concrete.Expression resultType = visitExpr(ctx.expr());
     if (name == null || precedence == null || resultType == null) {
       return null;
@@ -325,12 +325,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.ClassView visitDefClassView(DefClassViewContext ctx) {
     if (ctx == null) return null;
     List<Concrete.ClassViewField> fields = new ArrayList<>(ctx.classViewField().size());
-    for (ClassViewFieldContext classViewFieldContext : ctx.classViewField()) {
-      Concrete.ClassViewField field = visitClassViewField(classViewFieldContext);
-      if (field != null) {
-        fields.add(field);
-      }
-    }
 
     Concrete.Expression expr = null;
     if (ctx.expr() != null) {
@@ -345,19 +339,32 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return null;
     }
     Concrete.Position pos = tokenPosition(ctx.expr() != null ? ctx.expr().getStart() : ctx.ID(ctx.ID().size() > 1 ? 1 : 0).getSymbol());
-    return new Concrete.ClassView(tokenPosition(ctx.getStart()), ctx.ID(0).getText(), new Concrete.DefCallExpression(pos, expr, ctx.ID(ctx.ID().size() > 1 ? 1 : 0).getText()), classifyingField, fields);
+    Concrete.ClassView classView = new Concrete.ClassView(tokenPosition(ctx.getStart()), ctx.ID(0).getText(), new Concrete.DefCallExpression(pos, expr, ctx.ID(ctx.ID().size() > 1 ? 1 : 0).getText()), classifyingField, fields);
+
+    for (ClassViewFieldContext classViewFieldContext : ctx.classViewField()) {
+      Concrete.ClassViewField field = visitClassViewField(classViewFieldContext, classView);
+      if (field != null) {
+        fields.add(field);
+      }
+    }
+
+    return classView;
+  }
+
+  public Concrete.ClassViewField visitClassViewField(ClassViewFieldContext ctx, Concrete.ClassView classView) {
+    if (ctx == null) return null;
+    String underlyingField = visitName(ctx.name(0));
+    String name = ctx.name().size() > 1 ? visitName(ctx.name().get(1)) : underlyingField;
+    Precedence precedence = visitPrecedence(ctx.precedence());
+    if (underlyingField == null || ctx.name().size() > 1 && name == null) {
+      return null;
+    }
+    return new Concrete.ClassViewField(tokenPosition(ctx.name(0).getStart()), name, precedence != null ? precedence : Precedence.DEFAULT, underlyingField, classView);
   }
 
   @Override
   public Concrete.ClassViewField visitClassViewField(ClassViewFieldContext ctx) {
-    if (ctx == null) return null;
-    String underlyingField = visitName(ctx.name(0));
-    String name = ctx.name().size() > 1 ? visitName(ctx.name().get(1)) : underlyingField;
-    Abstract.Binding.Precedence precedence = visitPrecedence(ctx.precedence());
-    if (underlyingField == null || ctx.name().size() > 1 && name == null) {
-      return null;
-    }
-    return new Concrete.ClassViewField(tokenPosition(ctx.name(0).getStart()), name, precedence != null ? precedence : Abstract.Binding.DEFAULT_PRECEDENCE, underlyingField);
+    throw new IllegalStateException();
   }
 
   @Override
@@ -368,14 +375,14 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (term == null) {
       return null;
     }
-    return new Concrete.ClassViewInstance(tokenPosition(ctx.getStart()), ctx.defaultInst() instanceof WithDefaultContext, ctx.ID().getText(), Abstract.Binding.DEFAULT_PRECEDENCE, arguments, term);
+    return new Concrete.ClassViewInstance(tokenPosition(ctx.getStart()), ctx.defaultInst() instanceof WithDefaultContext, ctx.ID().getText(), Precedence.DEFAULT, arguments, term);
   }
 
   @Override
   public Concrete.FunctionDefinition visitDefFunction(DefFunctionContext ctx) {
     if (ctx == null) return null;
     String name = visitName(ctx.name());
-    Abstract.Definition.Precedence precedence = visitPrecedence(ctx.precedence());
+    Precedence precedence = visitPrecedence(ctx.precedence());
     Concrete.Expression resultType = ctx.expr().size() == 2 ? visitExpr(ctx.expr(0)) : null;
     Abstract.Definition.Arrow arrow = visitArrow(ctx.arrow());
     Concrete.Expression term = visitExpr(ctx.expr().size() == 2 ? ctx.expr(1) : ctx.expr(0));
@@ -414,7 +421,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (ctx == null) return null;
     String name = visitName(ctx.name());
     List<Concrete.TypeArgument> parameters = visitTeles(ctx.tele());
-    Abstract.Definition.Precedence precedence = visitPrecedence(ctx.precedence());
+    Precedence precedence = visitPrecedence(ctx.precedence());
     if (name == null || parameters == null || precedence == null) {
       return null;
     }
@@ -487,68 +494,15 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public List<Concrete.IdPair> visitSuperClassRenaming(SuperClassRenamingContext ctx) {
-    if (ctx == null) return null;
-    List<Concrete.IdPair> idPairs = new ArrayList<>(ctx.name().size() / 2);
-    for (int j = 0; j < ctx.name().size(); j += 2) {
-      String first = visitName(ctx.name(j));
-      String second = visitName(ctx.name(j + 1));
-      if (first != null && second != null) {
-        idPairs.add(new Concrete.IdPair(tokenPosition(ctx.name(j).getStart()), first, second));
-      }
-    }
-    return idPairs;
-  }
-
-  @Override
-  public List<Concrete.Identifier> visitSuperClassHiding(SuperClassHidingContext ctx) {
-    if (ctx == null) return null;
-    List<Concrete.Identifier> result = new ArrayList<>(ctx.name().size());
-    for (NameContext nameCtx : ctx.name()) {
-      String name = visitName(nameCtx);
-      if (name != null) {
-        result.add(new Concrete.Identifier(tokenPosition(nameCtx.getStart()), name));
-      }
-    }
-    return result;
-  }
-
-  @Override
   public Concrete.ClassDefinition visitDefClass(DefClassContext ctx) {
     if (ctx == null || ctx.statement() == null) return null;
     List<Concrete.Statement> statements = visitStatementList(ctx.statement());
     Abstract.ClassDefinition.Kind classKind = ctx.classKindMod() instanceof ClassClassModContext ? Abstract.ClassDefinition.Kind.Class : Abstract.ClassDefinition.Kind.Module;
-    List<Concrete.SuperClass> superClasses = new ArrayList<>(ctx.extendsOpts().size());
-    for (int i = 0; i < ctx.extendsOpts().size(); i++) {
-      if (ctx.extendsOpts().get(i) instanceof ExtendsSuperClassOptsContext) {
-        ExtendsSuperClassOptsContext supCtx = (ExtendsSuperClassOptsContext) ctx.extendsOpts().get(i);
-        List<Concrete.IdPair> renamings = new ArrayList<>();
-        List<Concrete.Identifier> hidings = new ArrayList<>();
-        Concrete.Expression superExpr = visitAtomFieldsAcc(ctx.atomFieldsAcc(i));
-        superClasses.add(new Concrete.SuperClass(tokenPosition(ctx.atomFieldsAcc(i).getStart()), superExpr, renamings, hidings));
-
-        for (SuperClassOptsContext optsCtx : supCtx.superClassOpts()) {
-          if (optsCtx instanceof SuperClassRenamingContext) {
-            List<Concrete.IdPair> renamings1 = visitSuperClassRenaming((SuperClassRenamingContext) optsCtx);
-            if (renamings1 != null) {
-              renamings.addAll(renamings1);
-            }
-          } else
-          if (optsCtx instanceof SuperClassHidingContext) {
-            List<Concrete.Identifier> hidings1 = visitSuperClassHiding((SuperClassHidingContext) optsCtx);
-            if (hidings1 != null) {
-              hidings.addAll(hidings1);
-            }
-          }
-        }
-      } else
-      if (ctx.extendsOpts().get(i) instanceof ExtendsManyContext) {
-        Concrete.Expression superExpr = visitAtomFieldsAcc(ctx.atomFieldsAcc(i));
-        superClasses.add(new Concrete.SuperClass(tokenPosition(ctx.atomFieldsAcc(i).getStart()), superExpr, Collections.<Concrete.IdPair>emptyList(), Collections.<Concrete.Identifier>emptyList()));
-        for (AtomFieldsAccContext atomFieldsCtx : ((ExtendsManyContext) ctx.extendsOpts().get(i)).atomFieldsAcc()) {
-          superExpr = visitAtomFieldsAcc(atomFieldsCtx);
-          superClasses.add(new Concrete.SuperClass(tokenPosition(atomFieldsCtx.getStart()), superExpr, Collections.<Concrete.IdPair>emptyList(), Collections.<Concrete.Identifier>emptyList()));
-        }
+    List<Concrete.SuperClass> superClasses = new ArrayList<>(ctx.atomFieldsAcc().size());
+    for (AtomFieldsAccContext atomFieldsCtx : ctx.atomFieldsAcc()) {
+      Concrete.Expression superExpr = visitAtomFieldsAcc(atomFieldsCtx);
+      if (superExpr != null) {
+        superClasses.add(new Concrete.SuperClass(tokenPosition(atomFieldsCtx.getStart()), superExpr));
       }
     }
 

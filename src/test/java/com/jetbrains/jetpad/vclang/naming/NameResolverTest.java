@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.naming.namespace.EmptyNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
+import com.jetbrains.jetpad.vclang.parser.Precedence;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -22,8 +23,8 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void parserInfix() {
     DependentLink parameters = param(true, vars("x", "y"), Nat());
-    Definition plus = new FunctionDefinition(new Concrete.FunctionDefinition(POSITION, "+", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 6), Collections.<Concrete.Argument>emptyList(), null, Abstract.Definition.Arrow.RIGHT, null, Collections.<Concrete.Statement>emptyList()), EmptyNamespace.INSTANCE, parameters, Nat(), EmptyElimTreeNode.getInstance());
-    Definition mul = new FunctionDefinition(new Concrete.FunctionDefinition(POSITION, "*", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 7), Collections.<Concrete.Argument>emptyList(), null, Abstract.Definition.Arrow.RIGHT, null, Collections.<Concrete.Statement>emptyList()), EmptyNamespace.INSTANCE, parameters, Nat(), EmptyElimTreeNode.getInstance());
+    Definition plus = new FunctionDefinition(new Concrete.FunctionDefinition(POSITION, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6), Collections.<Concrete.Argument>emptyList(), null, Abstract.Definition.Arrow.RIGHT, null, Collections.<Concrete.Statement>emptyList()), EmptyNamespace.INSTANCE, parameters, Nat(), EmptyElimTreeNode.getInstance());
+    Definition mul = new FunctionDefinition(new Concrete.FunctionDefinition(POSITION, "*", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 7), Collections.<Concrete.Argument>emptyList(), null, Abstract.Definition.Arrow.RIGHT, null, Collections.<Concrete.Statement>emptyList()), EmptyNamespace.INSTANCE, parameters, Nat(), EmptyElimTreeNode.getInstance());
 
     SimpleNamespace namespace = new SimpleNamespace();
     namespace.addDefinition(plus.getAbstractDefinition());
@@ -37,8 +38,8 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void parserInfixError() {
     DependentLink parameters = param(true, vars("x", "y"), Nat());
-    Definition plus = new FunctionDefinition(new Concrete.FunctionDefinition(POSITION, "+", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 6), Collections.<Concrete.Argument>emptyList(), null, Abstract.Definition.Arrow.RIGHT, null, Collections.<Concrete.Statement>emptyList()), EmptyNamespace.INSTANCE, parameters, Nat(), EmptyElimTreeNode.getInstance());
-    Definition mul = new FunctionDefinition(new Concrete.FunctionDefinition(POSITION, "*", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.RIGHT_ASSOC, (byte) 6), Collections.<Concrete.Argument>emptyList(), null, Abstract.Definition.Arrow.RIGHT, null, Collections.<Concrete.Statement>emptyList()), EmptyNamespace.INSTANCE, parameters, Nat(), EmptyElimTreeNode.getInstance());
+    Definition plus = new FunctionDefinition(new Concrete.FunctionDefinition(POSITION, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6), Collections.<Concrete.Argument>emptyList(), null, Abstract.Definition.Arrow.RIGHT, null, Collections.<Concrete.Statement>emptyList()), EmptyNamespace.INSTANCE, parameters, Nat(), EmptyElimTreeNode.getInstance());
+    Definition mul = new FunctionDefinition(new Concrete.FunctionDefinition(POSITION, "*", new Precedence(Precedence.Associativity.RIGHT_ASSOC, (byte) 6), Collections.<Concrete.Argument>emptyList(), null, Abstract.Definition.Arrow.RIGHT, null, Collections.<Concrete.Statement>emptyList()), EmptyNamespace.INSTANCE, parameters, Nat(), EmptyElimTreeNode.getInstance());
 
     SimpleNamespace namespace = new SimpleNamespace();
     namespace.addDefinition(plus.getAbstractDefinition());

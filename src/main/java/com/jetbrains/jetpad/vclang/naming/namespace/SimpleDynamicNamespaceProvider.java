@@ -2,7 +2,9 @@ package com.jetbrains.jetpad.vclang.naming.namespace;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.Abstract.DefineStatement.StaticMod.STATIC;
 
@@ -17,23 +19,8 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
     ns = forStatements(classDefinition.getStatements());
     for (final Abstract.SuperClass superClass : classDefinition.getSuperClasses()) {
       Abstract.ClassDefinition superDef = Abstract.getUnderlyingClassDef(superClass.getSuperClass());
-      if (superDef == null) continue;
-
-      SimpleNamespace namespace = forClass(superDef);
-
-      Map<String, String> renamings = new HashMap<>();
-      for (Abstract.IdPair idPair : superClass.getRenamings()) {
-        renamings.put(idPair.getFirstName(), idPair.getSecondName());
-      }
-      Set<String> hiding = new HashSet<>();
-      for (Abstract.Identifier identifier : superClass.getHidings()) {
-        hiding.add(identifier.getName());
-      }
-
-      for (Map.Entry<String, Abstract.Definition> entry : namespace.getEntrySet()) {
-        if (hiding.contains(entry.getKey())) continue;
-        String newName = renamings.get(entry.getKey());
-        ns.addDefinition(newName != null ? newName : entry.getKey(), entry.getValue());
+      if (superDef != null) {
+        ns.addAll(forClass(superDef));
       }
     }
 

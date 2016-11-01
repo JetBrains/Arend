@@ -17,7 +17,6 @@ import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.term.typeclass.ClassView;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
@@ -117,14 +116,14 @@ public class TypeCheckingDefCall {
     Abstract.Expression left = expr.getExpression();
     Abstract.Definition resolvedDefinition = expr.getReferent();
     Definition typeCheckedDefinition = null;
-    ClassView classView = null;
+    Abstract.ClassView classView = null;
     if (resolvedDefinition != null) {
       typeCheckedDefinition = getTypeCheckedDefinition(resolvedDefinition, expr);
       if (typeCheckedDefinition == null) {
         return null;
       }
       if (resolvedDefinition instanceof Abstract.ClassView && typeCheckedDefinition instanceof ClassDefinition) {
-        classView = myVisitor.getTypecheckingState().getClassView((Abstract.ClassView) resolvedDefinition);
+        classView = (Abstract.ClassView) resolvedDefinition;
       }
     }
 
@@ -147,7 +146,7 @@ public class TypeCheckingDefCall {
         if (thisExpr == null) {
           if (resolvedDefinition instanceof Abstract.ClassViewField) {
             // TODO: if typeCheckedDefinition.getThisClass() is dynamic, then we should apply it to some this expression
-            thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable(typeCheckedDefinition.getThisClass().getName() + "-inst", ClassCall(typeCheckedDefinition.getThisClass()), myVisitor.getTypecheckingState().getClassView((Abstract.ClassViewField) resolvedDefinition), true, expr), myVisitor.getEquations());
+            thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable(typeCheckedDefinition.getThisClass().getName() + "-inst", ClassCall(typeCheckedDefinition.getThisClass()), ((Abstract.ClassViewField) resolvedDefinition).getOwnView(), true, expr), myVisitor.getEquations());
           } else {
             LocalTypeCheckingError error;
             if (myThisClass != null) {
@@ -310,7 +309,7 @@ public class TypeCheckingDefCall {
     return makeResult(typeCheckedDefinition, classView, thisExpr, expr);
   }
 
-  private CheckTypeVisitor.PreResult makeResult(Definition definition, ClassView classView, Expression thisExpr, Abstract.Expression expr) {
+  private CheckTypeVisitor.PreResult makeResult(Definition definition, Abstract.ClassView classView, Expression thisExpr, Abstract.Expression expr) {
     LevelSubstitution polySubst = new LevelSubstitution();
     for (Binding polyVar : definition.getPolyParams()) {
       LevelInferenceVariable l = new LevelInferenceVariable(polyVar.getName(), polyVar.getType().toExpression(), expr);

@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.parser.Precedence;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
@@ -327,12 +328,12 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       @Override
       void printLeft(PrettyPrintVisitor pp) {
         if (prec > expr.getResolvedBinOp().getPrecedence().priority) pp.myBuilder.append('(');
-        expr.getLeft().accept(pp, (byte) (expr.getResolvedBinOp().getPrecedence().priority + (expr.getResolvedBinOp().getPrecedence().associativity == Abstract.Binding.Associativity.LEFT_ASSOC ? 0 : 1)));
+        expr.getLeft().accept(pp, (byte) (expr.getResolvedBinOp().getPrecedence().priority + (expr.getResolvedBinOp().getPrecedence().associativity == Precedence.Associativity.LEFT_ASSOC ? 0 : 1)));
       }
 
       @Override
       void printRight(PrettyPrintVisitor pp) {
-        expr.getRight().accept(pp, (byte) (expr.getResolvedBinOp().getPrecedence().priority + (expr.getResolvedBinOp().getPrecedence().associativity == Abstract.Binding.Associativity.RIGHT_ASSOC ? 0 : 1)));
+        expr.getRight().accept(pp, (byte) (expr.getResolvedBinOp().getPrecedence().priority + (expr.getResolvedBinOp().getPrecedence().associativity == Precedence.Associativity.RIGHT_ASSOC ? 0 : 1)));
         if (prec > expr.getResolvedBinOp().getPrecedence().priority) pp.myBuilder.append(')');
       }
 
@@ -573,12 +574,12 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
   }
 
-  private Void prettyPrintBinding (Abstract.Binding def) {
-    Abstract.Definition.Precedence precedence = def.getPrecedence();
-    if (precedence != null && !precedence.equals(Abstract.Binding.DEFAULT_PRECEDENCE)) {
+  private Void prettyPrintNameWithPrecedence(Abstract.Definition def) {
+    Precedence precedence = def.getPrecedence();
+    if (precedence != null && !precedence.equals(Precedence.DEFAULT)) {
       myBuilder.append("\\infix");
-      if (precedence.associativity == Abstract.Binding.Associativity.LEFT_ASSOC) myBuilder.append('l');
-      if (precedence.associativity == Abstract.Binding.Associativity.RIGHT_ASSOC) myBuilder.append('r');
+      if (precedence.associativity == Precedence.Associativity.LEFT_ASSOC) myBuilder.append('l');
+      if (precedence.associativity == Precedence.Associativity.RIGHT_ASSOC) myBuilder.append('r');
       myBuilder.append(' ');
       myBuilder.append(precedence.priority);
       myBuilder.append(' ');
@@ -592,7 +593,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitFunction(final Abstract.FunctionDefinition def, Void ignored) {
     myBuilder.append("\\function\n");
     printIndent();
-    prettyPrintBinding(def);
+    prettyPrintNameWithPrecedence(def);
     myBuilder.append(" ");
 
 
@@ -682,7 +683,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   @Override
   public Void visitClassField(Abstract.ClassField def, Void params) {
     myBuilder.append("\\abstract ");
-    prettyPrintBinding(def);
+    prettyPrintNameWithPrecedence(def);
     prettyPrintArguments(def.getArguments(), Abstract.DefCallExpression.PREC);
 
     Abstract.Expression resultType = def.getResultType();
@@ -709,7 +710,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   @Override
   public Void visitData(Abstract.DataDefinition def, Void ignored) {
     myBuilder.append("\\data ");
-    prettyPrintBinding(def);
+    prettyPrintNameWithPrecedence(def);
 
     List<? extends Abstract.TypeArgument> parameters = def.getParameters();
     if (parameters != null) {
@@ -789,7 +790,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       myBuilder.append("=> ");
     }
 
-    prettyPrintBinding(def);
+    prettyPrintNameWithPrecedence(def);
     List<? extends Abstract.TypeArgument> arguments = def.getArguments();
     if (arguments == null) {
       myBuilder.append("{!error}");
@@ -802,103 +803,21 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
-  private class ListWrapper {
-    List<String> list;
-
-    void print() {
-      for (int i = 0; i < list.size(); i++) {
-        myBuilder.append(list.get(i));
-        if (i < list.size() - 1) {
-          myBuilder.append(", ");
-        }
-      }
-    }
-  }
-
-  private void printRenamings(Collection<? extends Abstract.IdPair> renamings) {
-    myBuilder.append("\\renaming ");
-    int i = 0;
-    for (Abstract.IdPair idPair : renamings) {
-      myBuilder.append(idPair.getFirstName()).append(" \\to ").append(idPair.getSecondName());
-      if (++i < renamings.size()) {
-        myBuilder.append(", ");
-      }
-    }
-  }
-
-  private void printHidings(Collection<? extends Abstract.Identifier> hidings) {
-    myBuilder.append("\\hiding ");
-    int i = 0;
-    for (Abstract.Identifier id : hidings) {
-      myBuilder.append(id.getName());
-      if (++i < hidings.size()) {
-        myBuilder.append(", ");
-      }
-    }
-  }
-
   @Override
   public Void visitClass(Abstract.ClassDefinition def, Void ignored) {
     myBuilder.append("\\class ").append(def.getName());
-    if (!def.getSuperClasses().isEmpty()) {
-      List<Object> superClasses = new ArrayList<>(def.getSuperClasses().size());
+    if (def.getSuperClasses() != null && !def.getSuperClasses().isEmpty()) {
+      myBuilder.append(" \\extends");
+      int i = def.getSuperClasses().size();
       for (Abstract.SuperClass superClass : def.getSuperClasses()) {
-        if ((superClass.getRenamings() == null || superClass.getRenamings().isEmpty()) && (superClass.getHidings() == null || superClass.getHidings().isEmpty())) {
-          if (superClasses.isEmpty() || !(superClasses.get(superClasses.size() - 1) instanceof ListWrapper)) {
-            ListWrapper wrapper = new ListWrapper();
-            wrapper.list = new ArrayList<>(3);
-            wrapper.list.add("<super>" /*superClass.getName()*/);  // HACK
-            superClasses.add(wrapper);
-          } else {
-            ((ListWrapper) superClasses.get(superClasses.size() - 1)).list.add("<super>" /*superClass.getName()*/);  // HACK
-          }
-        } else {
-          superClasses.add(superClass);
+        myBuilder.append(" ");
+        superClass.getSuperClass().accept(this, null);
+        if (--i == 0) {
+          myBuilder.append(",");
         }
       }
-
-      if (superClasses.size() == 1 && superClasses.get(0) instanceof ListWrapper) {
-        myBuilder.append(" \\extends ");
-        ((ListWrapper) superClasses.get(0)).print();
-        myBuilder.append(" {");
-      } else {
-        myBuilder.append('\n');
-        ++myIndent;
-        for (Object superClass : superClasses) {
-          printIndent();
-          myBuilder.append("\\extends ");
-          if (superClass instanceof ListWrapper) {
-            ((ListWrapper) superClass).print();
-          } else {
-            Abstract.SuperClass aSuperClass = (Abstract.SuperClass) superClass;
-            aSuperClass.getSuperClass().accept(this, null);
-            if (aSuperClass.getHidings() == null || aSuperClass.getHidings().isEmpty()) {
-              myBuilder.append(' ');
-              printRenamings(aSuperClass.getRenamings());
-            } else
-            if (aSuperClass.getRenamings() == null || aSuperClass.getRenamings().isEmpty()) {
-              myBuilder.append(' ');
-              printHidings(aSuperClass.getHidings());
-            } else {
-              ++myIndent;
-              myBuilder.append('\n');
-              printIndent();
-              printRenamings(aSuperClass.getRenamings());
-              myBuilder.append('\n');
-              printIndent();
-              printHidings(aSuperClass.getHidings());
-              --myIndent;
-            }
-          }
-          myBuilder.append('\n');
-        }
-        --myIndent;
-        printIndent();
-        myBuilder.append("{");
-      }
-    } else {
-      myBuilder.append(" {");
     }
+    myBuilder.append(" {");
 
     Collection<? extends Abstract.Statement> statements = def.getStatements();
     if (statements != null && !statements.isEmpty()) {
@@ -969,7 +888,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   @Override
   public Void visitClassViewInstance(Abstract.ClassViewInstance def, Void params) {
     myBuilder.append("\\instance ");
-    prettyPrintBinding(def);
+    prettyPrintNameWithPrecedence(def);
     prettyPrintArguments(def.getArguments(), Abstract.DefCallExpression.PREC);
 
     Abstract.Expression term = def.getTerm();

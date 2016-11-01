@@ -21,10 +21,10 @@ public class BinOpParser {
   public class StackElem {
     public Abstract.Expression argument;
     public Abstract.Definition binOp;
-    public Abstract.Definition.Precedence prec;
+    public Precedence prec;
     public Abstract.DefCallExpression var;
 
-    public StackElem(Abstract.Expression argument, Abstract.Definition binOp, Abstract.Definition.Precedence prec, Abstract.DefCallExpression var) {
+    public StackElem(Abstract.Expression argument, Abstract.Definition binOp, Precedence prec, Abstract.DefCallExpression var) {
       this.argument = argument;
       this.binOp = binOp;
       this.prec = prec;
@@ -32,7 +32,7 @@ public class BinOpParser {
     }
   }
 
-  public void pushOnStack(List<StackElem> stack, Abstract.Expression argument, Abstract.Definition binOp, Abstract.Definition.Precedence prec, Abstract.DefCallExpression var) {
+  public void pushOnStack(List<StackElem> stack, Abstract.Expression argument, Abstract.Definition binOp, Precedence prec, Abstract.DefCallExpression var) {
     StackElem elem = new StackElem(argument, binOp, prec, var);
     if (stack.isEmpty()) {
       stack.add(elem);
@@ -41,12 +41,12 @@ public class BinOpParser {
 
     StackElem topElem = stack.get(stack.size() - 1);
 
-    if (topElem.prec.priority < elem.prec.priority || (topElem.prec.priority == elem.prec.priority && topElem.prec.associativity == Abstract.Binding.Associativity.RIGHT_ASSOC && elem.prec.associativity == Abstract.Binding.Associativity.RIGHT_ASSOC)) {
+    if (topElem.prec.priority < elem.prec.priority || (topElem.prec.priority == elem.prec.priority && topElem.prec.associativity == Precedence.Associativity.RIGHT_ASSOC && elem.prec.associativity == Precedence.Associativity.RIGHT_ASSOC)) {
       stack.add(elem);
       return;
     }
 
-    if (!(topElem.prec.priority > elem.prec.priority || (topElem.prec.priority == elem.prec.priority && topElem.prec.associativity == Abstract.Binding.Associativity.LEFT_ASSOC && elem.prec.associativity == Abstract.Binding.Associativity.LEFT_ASSOC))) {
+    if (!(topElem.prec.priority > elem.prec.priority || (topElem.prec.priority == elem.prec.priority && topElem.prec.associativity == Precedence.Associativity.LEFT_ASSOC && elem.prec.associativity == Precedence.Associativity.LEFT_ASSOC))) {
       String msg = "Precedence parsing error: cannot mix (" + topElem.binOp.getName() + ") [" + topElem.prec + "] and (" + elem.binOp.getName() + ") [" + elem.prec + "] in the same infix expression";
       myErrorReporter.report(new GeneralError(msg, elem.var));
     }

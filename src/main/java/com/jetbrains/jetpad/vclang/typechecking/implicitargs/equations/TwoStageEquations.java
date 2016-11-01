@@ -56,13 +56,13 @@ public class TwoStageEquations implements Equations {
         Expression result = null;
         if (expr1.toFieldCall() != null && expr1.toFieldCall().getExpression().toInferenceReference() != null) {
           variable = expr1.toFieldCall().getExpression().toInferenceReference().getVariable();
-          if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassView().getClassifyingField() == expr1.toFieldCall().getDefinition()) {
+          if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassView().getClassifyingField() == expr1.toFieldCall().getDefinition().getAbstractDefinition()) {
             result = myVisitor.getClassViewInstancePool().getInstance(expr, ((TypeClassInferenceVariable) variable).isExactClassView() ? ((TypeClassInferenceVariable) variable).getClassView() : null);
           }
         }
         if (variable == null && expr.toFieldCall() != null && expr.toFieldCall().getExpression().toInferenceReference() != null) {
           variable = expr.toFieldCall().getExpression().toInferenceReference().getVariable();
-          if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassView().getClassifyingField() == expr.toFieldCall().getDefinition()) {
+          if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassView().getClassifyingField() == expr.toFieldCall().getDefinition().getAbstractDefinition()) {
             result = myVisitor.getClassViewInstancePool().getInstance(expr1, ((TypeClassInferenceVariable) variable).isExactClassView() ? ((TypeClassInferenceVariable) variable).getClassView() : null);
           }
         }

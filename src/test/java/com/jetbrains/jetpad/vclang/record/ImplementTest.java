@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
@@ -183,50 +182,6 @@ public class ImplementTest extends TypeCheckingTestCase {
         "  \\implement a => 1\n" +
         "}\n" +
         "\\static \\class D \\extends B, C {}", 1);
-  }
-
-  @Test
-  public void implementRenamed() {
-    typeCheckClass(
-        "\\class A {\n" +
-        "  \\abstract A : \\Set0\n" +
-        "  \\abstract a : A\n" +
-        "}\n" +
-        "\\class B \\extends A \\renaming A \\to A', a \\to a' {\n" +
-        "  \\implement A => Nat\n" +
-        "}\n" +
-        "\\class C \\extends B {" +
-        "  \\implement a' => 0\n" +
-        "}\n" +
-        "\\function f (c : C) : c.a' = 0 => path (\\lam _ => 0)\n" +
-        "\\function g => f (\\new C)");
-  }
-
-  @Test
-  public void implementHidden() {
-    typeCheckClass(
-        "\\class A {\n" +
-        "  \\abstract A : \\Set0\n" +
-        "  \\abstract a : A\n" +
-        "}\n" +
-        "\\class B \\extends A \\hiding A {\n" +
-        "  \\implement A => Nat\n" +
-        "}\n" +
-        "\\function f => \\new B { a => 0 }");
-  }
-
-  @Test
-  public void implementHidden2() {
-    resolveNamesClass(
-        "\\class A {\n" +
-        "  \\abstract A : \\Set0\n" +
-        "  \\abstract a : A\n" +
-        "}\n" +
-        "\\class B \\extends A \\hiding A {}\n" +
-        "\\class C \\extends B {\n" +
-        "  \\implement A => Nat\n" +
-        "}\n" +
-        "\\function f => \\new C { a => 0 }", 1);
   }
 
   @Test
