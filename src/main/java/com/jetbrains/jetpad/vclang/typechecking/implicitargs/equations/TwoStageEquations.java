@@ -256,10 +256,10 @@ public class TwoStageEquations implements Equations {
       myVisitor.getErrorReporter().report(new SolveLevelEquationsError(new ArrayList<LevelEquation<? extends Variable>>(circle), var.getSourceNode()));
     }
 
-    LevelSubstitution result = new LevelSubstitution();
+    Map<Variable, Level> result = new HashMap<>();
     for (Map.Entry<InferenceLevelVariable, Integer> entry : solution.entrySet()) {
       Integer constant = entry.getValue();
-      result.add(entry.getKey(), constant == null ? Level.INFINITY : new Level(myBases.get(entry.getKey()), -constant));
+      result.put(entry.getKey(), constant == null ? Level.INFINITY : new Level(myBases.get(entry.getKey()), -constant));
     }
 
     if (!myEquations.isEmpty()) {
@@ -268,7 +268,7 @@ public class TwoStageEquations implements Equations {
     myEquations.clear();
     myBases.clear();
     myLevelEquations.clear();
-    return result;
+    return new LevelSubstitution(result);
   }
 
   private void solveClassCalls() {

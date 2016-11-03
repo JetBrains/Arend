@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
@@ -58,22 +58,22 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
-  public TypeMax getTypeWithParams(List<DependentLink> params, LevelSubstitution polyParams) {
+  public TypeMax getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
     DependentLink link = EmptyDependentLink.getInstance();
     if (getThisClass() != null) {
       link = param(ClassCall(getThisClass()));
     }
-    return new PiUniverseType(link, getSorts().subst(polyParams));
+    return new PiUniverseType(link, getSorts().subst(polyArguments.toLevelSubstitution(this)));
   }
 
   @Override
-  public ClassCallExpression getDefCall(LevelSubstitution polyParams) {
-    return ClassCall(this, polyParams, myFieldSet);
+  public ClassCallExpression getDefCall(LevelArguments polyArguments) {
+    return ClassCall(this, polyArguments, myFieldSet);
   }
 
   @Override
-  public ClassCallExpression getDefCall(LevelSubstitution polyParams, List<Expression> args) {
-    return new ClassCallExpression(this, polyParams, myFieldSet);
+  public ClassCallExpression getDefCall(LevelArguments polyArguments, List<Expression> args) {
+    return new ClassCallExpression(this, polyArguments, myFieldSet);
   }
 
   @Override

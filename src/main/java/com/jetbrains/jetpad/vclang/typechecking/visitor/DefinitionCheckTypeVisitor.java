@@ -21,7 +21,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiTypeOmega;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
@@ -156,7 +156,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
         Abstract.ClassView classView = Abstract.getUnderlyingClassView(typeArgument.getType());
         if (classView != null) {
-          paramType = new ClassViewCallExpression(paramType.toExpression().toClassCall().getDefinition(), paramType.toExpression().toClassCall().getPolyParamsSubst(), paramType.toExpression().toClassCall().getFieldSet(), classView);
+          paramType = new ClassViewCallExpression(paramType.toExpression().toClassCall().getDefinition(), paramType.toExpression().toClassCall().getPolyArguments(), paramType.toExpression().toClassCall().getFieldSet(), classView);
         }
 
         DependentLink param;
@@ -432,7 +432,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
         for (Abstract.Condition cond : condMap.get(constructor)) {
           try (Utils.ContextSaver saver = new Utils.ContextSaver(visitor.getContext())) {
-            List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getDataTypeExpression(new LevelSubstitution())));
+            List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getDataTypeExpression(new LevelArguments())));
             DependentLink params = constructor.getParameters();
             List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(cond, params, cond.getPatterns());
             if (processedPatterns == null)
@@ -910,7 +910,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       if (myState.getInstancePool().getInstance(defCall.getDefinition(), classView) != null) {
         myErrorReporter.report(new LocalTypeCheckingError("Instance of '" + classView.getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", term));
       } else {
-        Expression instance = FunCall(typedDef, new LevelSubstitution(), Collections.<Expression>emptyList());
+        Expression instance = FunCall(typedDef, new LevelArguments(), Collections.<Expression>emptyList());
         myState.getInstancePool().addInstance(defCall.getDefinition(), classView, instance);
         if (def.isDefault()) {
           if (myState.getInstancePool().getInstance(defCall.getDefinition(), null) != null) {

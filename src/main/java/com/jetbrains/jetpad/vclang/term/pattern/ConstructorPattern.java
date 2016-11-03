@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
 import java.util.ArrayList;
@@ -46,7 +46,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
   }
 
   @Override
-  public Expression toExpression(ExprSubstitution subst, LevelSubstitution polyParams) {
+  public Expression toExpression(ExprSubstitution subst, LevelArguments polyParams) {
     List<Expression> params = new ArrayList<>();
     for (DependentLink link = myConstructor.getDataTypeParameters(); link.hasNext(); link = link.getNext()) {
       Expression param = subst.get(link);
@@ -58,13 +58,13 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
     List<Expression> arguments = new ArrayList<>();
     for (PatternArgument patternArgument : myArguments.getPatterns()) {
       assert link.hasNext();
-      LevelSubstitution polyParams1 = null;
+      LevelArguments polyParams1 = null;
       if (patternArgument.getPattern() instanceof ConstructorPattern) {
         assert link.getType().toExpression() != null;
         Expression type = link.getType().toExpression().subst(subst).normalize(NormalizeVisitor.Mode.WHNF);
         assert type.toDataCall() != null && type.toDataCall().getDefinition() == ((ConstructorPattern) patternArgument.getPattern()).getConstructor().getDataType();
         ExprSubstitution subSubst = ((ConstructorPattern) patternArgument.getPattern()).getMatchedArguments(new ArrayList<>(type.toDataCall().getDefCallArguments()));
-        polyParams1 = type.toDataCall().getPolyParamsSubst();
+        polyParams1 = type.toDataCall().getPolyArguments();
         for (Referable binding : subSubst.getDomain()) {
           subst.add(binding, subSubst.get(binding));
         }

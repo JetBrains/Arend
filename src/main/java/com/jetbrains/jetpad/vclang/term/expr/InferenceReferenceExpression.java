@@ -29,7 +29,7 @@ public class InferenceReferenceExpression extends Expression {
             equations.add(new FieldCallExpression(field, this), impl.term, Equations.CMP.EQ, myVar.getSourceNode(), myVar);
           }
         }
-        type = classCall instanceof ClassViewCallExpression ? new ClassViewCallExpression(classCall.getDefinition(), classCall.getPolyParamsSubst(), ((ClassViewCallExpression) classCall).getClassView()) : new ClassCallExpression(classCall.getDefinition(), classCall.getPolyParamsSubst());
+        type = classCall instanceof ClassViewCallExpression ? new ClassViewCallExpression(classCall.getDefinition(), classCall.getPolyArguments(), ((ClassViewCallExpression) classCall).getClassView()) : new ClassCallExpression(classCall.getDefinition(), classCall.getPolyArguments());
       }
     }
     myVar.setType(type);

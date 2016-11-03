@@ -18,7 +18,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
@@ -411,16 +411,16 @@ public class ModuleDeserialization {
     return result.getFirst();
   }
 
-  public LevelSubstitution readSubstitution(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+  public LevelArguments readSubstitution(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     int num_vars = stream.readInt();
-    LevelSubstitution subst = new LevelSubstitution();
+    List<Level> levels = new ArrayList<>();
 
     for (int i = 0; i < num_vars; ++i) {
       Binding var = readBinding(stream, definitionMap);
-      subst.add(var, readLevel(stream, definitionMap));
+      levels.add(readLevel(stream, definitionMap));
     }
 
-    return subst;
+    return new LevelArguments(levels);
   }
 
   public Expression readExpression(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
@@ -445,7 +445,7 @@ public class ModuleDeserialization {
       }
       case 3: {
         Definition definition = definitionMap.get(stream.readInt());
-        LevelSubstitution polySubst = readSubstitution(stream, definitionMap);
+        LevelArguments polySubst = readSubstitution(stream, definitionMap);
         int size = stream.readInt();
         if (!(definition instanceof Constructor)) {
           throw new IncorrectFormat();
@@ -464,7 +464,7 @@ public class ModuleDeserialization {
       }
       case 4: {
         Definition definition = definitionMap.get(stream.readInt());
-        LevelSubstitution polySubst = readSubstitution(stream, definitionMap);
+        LevelArguments polySubst = readSubstitution(stream, definitionMap);
         if (!(definition instanceof ClassDefinition)) {
           throw new IncorrectFormat();
         }
@@ -545,7 +545,7 @@ public class ModuleDeserialization {
         if (definition instanceof ClassField) {
           throw new IncorrectFormat();
         }
-        LevelSubstitution polySubst = readSubstitution(stream, definitionMap);
+        LevelArguments polySubst = readSubstitution(stream, definitionMap);
         /* FIXME[serial]
         return definition.getDefCall(polySubst).applyThis(readExpression(stream, definitionMap));
         */

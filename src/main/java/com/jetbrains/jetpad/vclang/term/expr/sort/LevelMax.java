@@ -147,7 +147,7 @@ public class LevelMax implements PrettyPrintable {
   }
 
   public LevelMax subst(LevelSubstitution subst) {
-    if (myVars == null || myVars.isEmpty() || subst.getDomain().isEmpty()) {
+    if (myVars == null || myVars.isEmpty() || subst.isEmpty()) {
       return this;
     }
 

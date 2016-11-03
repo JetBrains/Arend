@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 import java.util.Collections;
@@ -13,7 +13,7 @@ public class FieldCallExpression extends DefCallExpression {
   private Expression myExpression;
 
   public FieldCallExpression(ClassField definition, Expression expression) {
-    super(definition, new LevelSubstitution());
+    super(definition, new LevelArguments());
     myExpression = expression;
   }
 

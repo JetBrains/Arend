@@ -9,7 +9,6 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
-import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 
 import java.util.ArrayList;
@@ -27,7 +26,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
   @Override
   public TypeMax visitDefCall(DefCallExpression expr, Void params) {
     List<DependentLink> defParams = new ArrayList<>();
-    TypeMax type = expr.getDefinition().getTypeWithParams(defParams, expr.getPolyParamsSubst());
+    TypeMax type = expr.getDefinition().getTypeWithParams(defParams, expr.getPolyArguments());
     assert expr.getDefCallArguments().size() == defParams.size();
     return type.subst(DependentLink.Helper.toSubstitution(defParams, expr.getDefCallArguments()), new LevelSubstitution());
     // return expr.getDefinition().getType(expr.getPolyParamsSubst()).applyExpressions(expr.getDefCallArguments());
@@ -36,7 +35,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
   @Override
   public TypeMax visitConCall(ConCallExpression expr, Void params) {
     List<DependentLink> defParams = new ArrayList<>();
-    TypeMax type = expr.getDefinition().getTypeWithParams(defParams, expr.getPolyParamsSubst());
+    TypeMax type = expr.getDefinition().getTypeWithParams(defParams, expr.getPolyArguments());
     assert expr.getDataTypeArguments().size() + expr.getDefCallArguments().size() == defParams.size();
     ExprSubstitution subst = DependentLink.Helper.toSubstitution(defParams, expr.getDataTypeArguments());
     defParams = defParams.subList(expr.getDataTypeArguments().size(), defParams.size());
@@ -47,7 +46,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
 
   @Override
   public TypeMax visitClassCall(ClassCallExpression expr, Void params) {
-    return expr.getSorts().toType().subst(new ExprSubstitution(), expr.getPolyParamsSubst());
+    return expr.getSorts().toType().subst(new ExprSubstitution(), expr.getPolyArguments().toLevelSubstitution(expr.getDefinition()));
   }
 
   @Override

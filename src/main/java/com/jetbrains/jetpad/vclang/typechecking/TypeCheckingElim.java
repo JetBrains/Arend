@@ -225,7 +225,7 @@ public class TypeCheckingElim {
       ElimTreeNode result = ((PatternsToElimTreeConversion.OKResult) elimTreeResult).elimTree;
       if (isTopLevel) {
         LevelSubstitution substitution = myVisitor.getEquations().solve(expr);
-        if (!substitution.getDomain().isEmpty()) {
+        if (!substitution.isEmpty()) {
           result = result.subst(new ExprSubstitution(), substitution);
         }
         Set<Binding> bounds = new HashSet<>(myVisitor.getContext());
@@ -456,7 +456,7 @@ public class TypeCheckingElim {
 
       ConstructorPattern result = new ConstructorPattern(constructor, new Patterns(resultPatterns));
       pattern.setWellTyped(result);
-      return new ExpandPatternOKResult(ConCall(constructor, type.toDataCall().getPolyParamsSubst(), matchedParameters, arguments), result);
+      return new ExpandPatternOKResult(ConCall(constructor, type.toDataCall().getPolyArguments(), matchedParameters, arguments), result);
     } else {
       throw new IllegalStateException();
     }

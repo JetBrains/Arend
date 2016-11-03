@@ -40,7 +40,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     for (Expression arg : expr.getDefCallArguments()) {
       args.add(arg.accept(this, null));
     }
-    return expr.getDefinition().getDefCall(expr.getPolyParamsSubst().subst(myLevelSubstitution), args);
+    return expr.getDefinition().getDefCall(expr.getPolyArguments().subst(myLevelSubstitution), args);
   }
 
   @Override
@@ -59,13 +59,13 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
       args.add(arg.accept(this, null));
     }
 
-    return ConCall(expr.getDefinition(), expr.getPolyParamsSubst().subst(myLevelSubstitution), dataTypeArgs, args);
+    return ConCall(expr.getDefinition(), expr.getPolyArguments().subst(myLevelSubstitution), dataTypeArgs, args);
   }
 
   @Override
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
     ClassCallExpression classCall = expr.applyVisitorToImplementedHere(this, params);
-    classCall.setPolyParamsSubst(classCall.getPolyParamsSubst().subst(myLevelSubstitution));
+    classCall.setPolyParamsSubst(classCall.getPolyArguments().subst(myLevelSubstitution));
     return classCall;
   }
 
@@ -172,7 +172,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public UniverseExpression visitUniverse(UniverseExpression expr, Void params) {
-    return myLevelSubstitution.getDomain().isEmpty() ? expr : Universe(expr.getSort().subst(myLevelSubstitution));
+    return myLevelSubstitution.isEmpty() ? expr : Universe(expr.getSort().subst(myLevelSubstitution));
   }
 
   @Override

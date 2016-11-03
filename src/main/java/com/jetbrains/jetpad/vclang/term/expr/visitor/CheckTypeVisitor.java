@@ -144,9 +144,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       parameters.addAll(newParams);
     }
 
-    public PreResult subst(ExprSubstitution expr_subst, LevelSubstitution level_subst) {
-      List<DependentLink> params = DependentLink.Helper.subst(parameters, expr_subst, level_subst);
-      return new PreResult(expression.subst(expr_subst, level_subst), type.subst(expr_subst, level_subst), params);
+    public PreResult subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
+      List<DependentLink> params = DependentLink.Helper.subst(parameters, exprSubst, levelSubst);
+      return new PreResult(expression.subst(exprSubst, levelSubst), type.subst(exprSubst, levelSubst), params);
     }
   }
 
@@ -350,7 +350,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     Result result = typeCheck(expr, expectedType);
     if (result == null) return null;
     LevelSubstitution substitution = myEquations.solve(expr);
-    if (!substitution.getDomain().isEmpty()) {
+    if (!substitution.isEmpty()) {
       result.reset(result.getExpression().subst(substitution), result.getType().subst(new ExprSubstitution(), substitution));
     }
 
@@ -905,7 +905,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
     FieldSet fieldSet = new FieldSet();
     Result classExtResult; // = new Result(null, null);
-    ClassCallExpression resultExpr = classCallExpr instanceof ClassViewCallExpression ? new ClassViewCallExpression(baseClass, classCallExpr.getPolyParamsSubst(), fieldSet, ((ClassViewCallExpression) classCallExpr).getClassView()) : ClassCall(baseClass, classCallExpr.getPolyParamsSubst(), fieldSet);
+    ClassCallExpression resultExpr = classCallExpr instanceof ClassViewCallExpression ? new ClassViewCallExpression(baseClass, classCallExpr.getPolyArguments(), fieldSet, ((ClassViewCallExpression) classCallExpr).getClassView()) : ClassCall(baseClass, classCallExpr.getPolyArguments(), fieldSet);
 
     fieldSet.addFieldsFrom(classCallExpr.getFieldSet(), resultExpr);
     for (Map.Entry<ClassField, FieldSet.Implementation> entry : classCallExpr.getFieldSet().getImplemented()) {

@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 import java.util.Collection;
@@ -12,7 +12,7 @@ public class ConCallExpression extends DefCallExpression {
   private final List<Expression> myDataTypeArguments;
   private final List<Expression> myArguments;
 
-  public ConCallExpression(Constructor definition, LevelSubstitution polyParams, List<Expression> dataTypeArguments, List<Expression> arguments) {
+  public ConCallExpression(Constructor definition, LevelArguments polyParams, List<Expression> dataTypeArguments, List<Expression> arguments) {
     super(definition, polyParams);
     assert dataTypeArguments != null;
     myDataTypeArguments = dataTypeArguments;

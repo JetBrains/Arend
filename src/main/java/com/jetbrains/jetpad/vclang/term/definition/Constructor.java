@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
@@ -110,11 +111,11 @@ public class Constructor extends Definition implements Function {
     }
   }
 
-  public Expression getDataTypeExpression(LevelSubstitution polyParams) {
+  public Expression getDataTypeExpression(LevelArguments polyParams) {
     return getDataTypeExpression(null, polyParams);
   }
 
-  public Expression getDataTypeExpression(ExprSubstitution substitution, LevelSubstitution polyParams) {
+  public Expression getDataTypeExpression(ExprSubstitution substitution, LevelArguments polyParams) {
     assert !typeHasErrors() && !myDataType.typeHasErrors();
 
     List<Expression> arguments;
@@ -151,33 +152,34 @@ public class Constructor extends Definition implements Function {
   }
 
   @Override
-  public Expression getTypeWithParams(List<DependentLink> params, LevelSubstitution polyParams) {
+  public Expression getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
     if (typeHasErrors()) {
       return null;
     }
 
-    Expression resultType = getDataTypeExpression(polyParams);
+    LevelSubstitution polySubst = polyArguments.toLevelSubstitution(this);
+    Expression resultType = getDataTypeExpression(polyArguments);
     DependentLink parameters = getDataTypeParameters();
     ExprSubstitution substitution = new ExprSubstitution();
     if (parameters.hasNext()) {
-      parameters = DependentLink.Helper.subst(parameters, substitution, polyParams);
+      parameters = DependentLink.Helper.subst(parameters, substitution, polySubst);
       for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
         link.setExplicit(false);
       }
       params.addAll(DependentLink.Helper.toList(parameters));
     }
-    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, substitution, polyParams)));
-    resultType = resultType.subst(substitution, polyParams);
+    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, substitution, polySubst)));
+    resultType = resultType.subst(substitution, polySubst);
     return resultType;
   }
 
   @Override
-  public ConCallExpression getDefCall(LevelSubstitution polyParams) {
-    return new ConCallExpression(this, polyParams, new ArrayList<Expression>(), new ArrayList<Expression>());
+  public ConCallExpression getDefCall(LevelArguments polyArguments) {
+    return new ConCallExpression(this, polyArguments, new ArrayList<Expression>(), new ArrayList<Expression>());
   }
 
   @Override
-  public ConCallExpression getDefCall(LevelSubstitution polyParams, List<Expression> args) {
+  public ConCallExpression getDefCall(LevelArguments polyArguments, List<Expression> args) {
     throw new IllegalStateException();
   }
 

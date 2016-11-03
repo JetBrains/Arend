@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 
@@ -17,12 +17,12 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ClassCall;
 public class ClassCallExpression extends DefCallExpression {
   private final FieldSet myFieldSet;
 
-  public ClassCallExpression(ClassDefinition definition, LevelSubstitution polyParams) {
+  public ClassCallExpression(ClassDefinition definition, LevelArguments polyParams) {
     super(definition, polyParams);
     myFieldSet = new FieldSet(definition.getFieldSet());
   }
 
-  public ClassCallExpression(ClassDefinition definition, LevelSubstitution polyParams, FieldSet fieldSet) {
+  public ClassCallExpression(ClassDefinition definition, LevelArguments polyParams, FieldSet fieldSet) {
     super(definition, polyParams);
     myFieldSet = fieldSet;
   }
@@ -56,7 +56,7 @@ public class ClassCallExpression extends DefCallExpression {
     ClassField parent = getDefinition().getEnclosingThisField();
     boolean success = newFieldSet.implementField(parent, new FieldSet.Implementation(null, thisExpr), this);
     assert success;
-    return ClassCall(getDefinition(), getPolyParamsSubst(), newFieldSet);
+    return ClassCall(getDefinition(), getPolyArguments(), newFieldSet);
   }
 
   @Override
@@ -79,7 +79,7 @@ public class ClassCallExpression extends DefCallExpression {
         newFieldSet.implementField(entry.getKey(), new FieldSet.Implementation(entry.getValue().thisParam, entry.getValue().term.accept(visitor, arg)), this);
       }
     }
-    return this instanceof ClassViewCallExpression ? new ClassViewCallExpression(getDefinition(), getPolyParamsSubst(), newFieldSet, ((ClassViewCallExpression) this).getClassView()) : ClassCall(getDefinition(), getPolyParamsSubst(), newFieldSet);
+    return this instanceof ClassViewCallExpression ? new ClassViewCallExpression(getDefinition(), getPolyArguments(), newFieldSet, ((ClassViewCallExpression) this).getClassView()) : ClassCall(getDefinition(), getPolyArguments(), newFieldSet);
   }
 
   @Override

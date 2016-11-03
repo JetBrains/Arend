@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
@@ -85,7 +86,7 @@ public class DataDefinition extends Definition {
         matchedParameters = dataCall.getDefCallArguments();
       }
 
-      result.add(ConCall(constructor, dataCall.getPolyParamsSubst(), new ArrayList<>(matchedParameters), new ArrayList<Expression>()));
+      result.add(ConCall(constructor, dataCall.getPolyArguments(), new ArrayList<>(matchedParameters), new ArrayList<Expression>()));
     }
     return result;
   }
@@ -123,24 +124,25 @@ public class DataDefinition extends Definition {
   public void setMatchesOnInterval() { myMatchesOnInterval = true; }
 
   @Override
-  public TypeMax getTypeWithParams(List<DependentLink> params, LevelSubstitution polyParams) {
+  public TypeMax getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
     if (typeHasErrors()) {
       return null;
     }
 
     ExprSubstitution subst = new ExprSubstitution();
-    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, subst, polyParams)));
-    return new PiUniverseType(EmptyDependentLink.getInstance(), mySorts).subst(subst, polyParams);
+    LevelSubstitution polySubst = polyArguments.toLevelSubstitution(this);
+    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, subst, polySubst)));
+    return new PiUniverseType(EmptyDependentLink.getInstance(), mySorts).subst(subst, polySubst);
   }
 
   @Override
-  public DataCallExpression getDefCall(LevelSubstitution polyParams) {
-    return DataCall(this, polyParams, new ArrayList<Expression>());
+  public DataCallExpression getDefCall(LevelArguments polyArguments) {
+    return DataCall(this, polyArguments, new ArrayList<Expression>());
   }
 
   @Override
-  public DataCallExpression getDefCall(LevelSubstitution polyParams, List<Expression> args) {
-    return new DataCallExpression(this, polyParams, args);
+  public DataCallExpression getDefCall(LevelArguments polyArguments, List<Expression> args) {
+    return new DataCallExpression(this, polyArguments, args);
   }
 
   @Override

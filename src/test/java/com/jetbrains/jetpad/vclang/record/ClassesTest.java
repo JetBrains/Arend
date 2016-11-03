@@ -6,8 +6,7 @@ import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.type.Type;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
@@ -339,24 +338,24 @@ public class ClassesTest extends TypeCheckingTestCase {
     ClassDefinition aClass = (ClassDefinition) result.getDefinition("A");
     assertTrue(aClass.getFieldSet().getFields().isEmpty());
     FunctionDefinition pFun = (FunctionDefinition) result.getDefinition("A.p");
-    assertEquals(Nat(), pFun.getTypeWithParams(new ArrayList<DependentLink>(), new LevelSubstitution()));
+    assertEquals(Nat(), pFun.getTypeWithParams(new ArrayList<DependentLink>(), new LevelArguments()));
     assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Zero()), pFun.getElimTree());
     FunctionDefinition qFun = (FunctionDefinition) result.getDefinition("A.q");
     List<DependentLink> qParams = new ArrayList<>();
-    TypeMax qType = qFun.getTypeWithParams(qParams, new LevelSubstitution());
+    TypeMax qType = qFun.getTypeWithParams(qParams, new LevelArguments());
     assertEquals(Pi(ClassCall(aClass), Nat()), qType.fromPiParameters(qParams));
-    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(pFun, new LevelSubstitution())), qFun.getElimTree());
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(pFun, new LevelArguments())), qFun.getElimTree());
 
     ClassDefinition bClass = (ClassDefinition) result.getDefinition("A.B");
     assertTrue(bClass.getFieldSet().getFields().isEmpty());
     FunctionDefinition fFun = (FunctionDefinition) result.getDefinition("A.B.f");
-    assertEquals(Nat(), fFun.getTypeWithParams(new ArrayList<DependentLink>(), new LevelSubstitution()));
-    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(pFun, new LevelSubstitution())), fFun.getElimTree());
+    assertEquals(Nat(), fFun.getTypeWithParams(new ArrayList<DependentLink>(), new LevelArguments()));
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(pFun, new LevelArguments())), fFun.getElimTree());
     FunctionDefinition gFun = (FunctionDefinition) result.getDefinition("A.B.g");
     List<DependentLink> gParams = new ArrayList<>();
-    TypeMax gType = gFun.getTypeWithParams(gParams, new LevelSubstitution());
+    TypeMax gType = gFun.getTypeWithParams(gParams, new LevelArguments());
     assertEquals(Pi(ClassCall(bClass), Nat()), gType.fromPiParameters(gParams));
-    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(plus, new LevelSubstitution(), FunCall(fFun, new LevelSubstitution()), FunCall(pFun, new LevelSubstitution()))), gFun.getElimTree());
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(plus, new LevelArguments(), FunCall(fFun, new LevelArguments()), FunCall(pFun, new LevelArguments()))), gFun.getElimTree());
 
     ClassDefinition cClass = (ClassDefinition) result.getDefinition("A.C");
     assertEquals(1, cClass.getFieldSet().getFields().size());
@@ -364,15 +363,15 @@ public class ClassesTest extends TypeCheckingTestCase {
     assertNotNull(cParent);
     FunctionDefinition hFun = (FunctionDefinition) result.getDefinition("A.C.h");
     List<DependentLink> hParams = new ArrayList<>();
-    TypeMax hType = hFun.getTypeWithParams(hParams, new LevelSubstitution());
+    TypeMax hType = hFun.getTypeWithParams(hParams, new LevelArguments());
     assertEquals(Pi(ClassCall(aClass), Nat()), hType.fromPiParameters(hParams));
-    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(plus, new LevelSubstitution(), FunCall(pFun, new LevelSubstitution()), FunCall(qFun, new LevelSubstitution(), Reference(hFun.getParameters())))), hFun.getElimTree());
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(plus, new LevelArguments(), FunCall(pFun, new LevelArguments()), FunCall(qFun, new LevelArguments(), Reference(hFun.getParameters())))), hFun.getElimTree());
     FunctionDefinition kFun = (FunctionDefinition) result.getDefinition("A.C.k");
     List<DependentLink> kParams = new ArrayList<>();
-    TypeMax kType = kFun.getTypeWithParams(kParams, new LevelSubstitution());
+    TypeMax kType = kFun.getTypeWithParams(kParams, new LevelArguments());
     assertEquals(Pi(ClassCall(cClass), Nat()), kType.fromPiParameters(kParams));
     Expression aRef = FieldCall(cParent, Reference(kFun.getParameters()));
-    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(plus, new LevelSubstitution(), FunCall(hFun, new LevelSubstitution(), aRef), FunCall(plus, new LevelSubstitution(), FunCall(pFun, new LevelSubstitution()), FunCall(qFun, new LevelSubstitution(), aRef)))), kFun.getElimTree());
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(plus, new LevelArguments(), FunCall(hFun, new LevelArguments(), aRef), FunCall(plus, new LevelArguments(), FunCall(pFun, new LevelArguments()), FunCall(qFun, new LevelArguments(), aRef)))), kFun.getElimTree());
   }
 
   @Test

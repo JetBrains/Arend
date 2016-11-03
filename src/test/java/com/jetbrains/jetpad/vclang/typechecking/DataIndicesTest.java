@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
@@ -54,12 +54,12 @@ public class DataIndicesTest extends TypeCheckingTestCase {
         "  | NatVec zero => nil\n" +
         "  | NatVec (suc n) => cons Nat (NatVec n)");
     DataDefinition data = (DataDefinition) result.getDefinition("NatVec");
-    assertEquals(DataCall(data, new LevelSubstitution(), Zero()), data.getConstructor("nil").getTypeWithParams(new ArrayList<DependentLink>(), new LevelSubstitution()));
+    assertEquals(DataCall(data, new LevelArguments(), Zero()), data.getConstructor("nil").getTypeWithParams(new ArrayList<DependentLink>(), new LevelArguments()));
     DependentLink param = param(false, "n", Nat());
-    param.setNext(params(param((String) null, Nat()), param((String) null, DataCall(data, new LevelSubstitution(), Reference(param)))));
+    param.setNext(params(param((String) null, Nat()), param((String) null, DataCall(data, new LevelArguments(), Reference(param)))));
     List<DependentLink> consParams = new ArrayList<>();
-    Type consType = data.getConstructor("cons").getTypeWithParams(consParams, new LevelSubstitution());
-    assertEquals(Pi(param, DataCall(data, new LevelSubstitution(), Suc(Reference(param)))), consType.fromPiParameters(consParams));
+    Type consType = data.getConstructor("cons").getTypeWithParams(consParams, new LevelArguments());
+    assertEquals(Pi(param, DataCall(data, new LevelArguments(), Suc(Reference(param)))), consType.fromPiParameters(consParams));
   }
 
   @Test

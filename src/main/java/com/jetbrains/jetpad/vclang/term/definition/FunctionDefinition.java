@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FunCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
@@ -91,22 +92,23 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   @Override
-  public TypeMax getTypeWithParams(List<DependentLink> params, LevelSubstitution polyParams) {
+  public TypeMax getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
     if (myTypeHasErrors) {
       return null;
     }
     ExprSubstitution subst = new ExprSubstitution();
-    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, subst, polyParams)));
-    return myResultType.subst(subst, polyParams);
+    LevelSubstitution polySubst = polyArguments.toLevelSubstitution(this);
+    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, subst, polySubst)));
+    return myResultType.subst(subst, polySubst);
   }
 
   @Override
-  public FunCallExpression getDefCall(LevelSubstitution polyParams) {
-    return FunCall(this, polyParams, new ArrayList<Expression>());
+  public FunCallExpression getDefCall(LevelArguments polyArguments) {
+    return FunCall(this, polyArguments, new ArrayList<Expression>());
   }
 
   @Override
-  public FunCallExpression getDefCall(LevelSubstitution polyParams, List<Expression> args) {
-    return new FunCallExpression(this, polyParams, args);
+  public FunCallExpression getDefCall(LevelArguments polyArguments, List<Expression> args) {
+    return new FunCallExpression(this, polyArguments, args);
   }
 }

@@ -9,8 +9,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.LetClause;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import org.junit.Test;
@@ -197,7 +196,7 @@ public class ComparisonTest extends TypeCheckingTestCase {
 
   @Test
   public void etaLam() {
-    Expression type = Pi(param(Nat()), DataCall(Prelude.PATH, new LevelSubstitution(),
+    Expression type = Pi(param(Nat()), DataCall(Prelude.PATH, new LevelArguments(),
             Lam(param("i", Interval()), Nat()), Zero(), Zero()));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(param(type), type));
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(param(type), type));
@@ -206,7 +205,7 @@ public class ComparisonTest extends TypeCheckingTestCase {
 
   @Test
   public void etaLamBody() {
-    Expression type = Pi(param(Nat()), DataCall(Prelude.PATH, new LevelSubstitution(),
+    Expression type = Pi(param(Nat()), DataCall(Prelude.PATH, new LevelArguments(),
       Lam(param("i", Interval()), Nat()), Zero(), Zero()));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(param(type), type));
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => \\lam x => a x", Pi(param(type), type));
@@ -216,7 +215,7 @@ public class ComparisonTest extends TypeCheckingTestCase {
   @Test
   public void etaPath() {
     DependentLink x = param("x", Nat());
-    Expression type = DataCall(Prelude.PATH, new LevelSubstitution(),
+    Expression type = DataCall(Prelude.PATH, new LevelArguments(),
             Lam(param("i", Interval()), Pi(param(Nat()), Nat())), Lam(x, Reference(x)), Lam(x, Reference(x)));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a => path (\\lam i x => (a @ i) x)", Pi(param(type), type));
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(param(type), type));

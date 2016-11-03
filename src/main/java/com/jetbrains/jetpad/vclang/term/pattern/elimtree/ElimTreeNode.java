@@ -28,7 +28,7 @@ public abstract class ElimTreeNode {
   }
 
   public ElimTreeNode subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
-    if (exprSubst.getDomain().isEmpty() && levelSubst.getDomain().isEmpty()) {
+    if (exprSubst.getDomain().isEmpty() && levelSubst.isEmpty()) {
       return this;
     }
     return accept(new SubstVisitor(exprSubst, levelSubst), null);

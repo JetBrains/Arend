@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
@@ -42,7 +41,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
     for (Expression arg : expr.getDefCallArguments()) {
       args.add(arg.accept(this, null));
     }
-    return new FunCallExpression(expr.getDefinition(), expr.getPolyParamsSubst(), args);
+    return new FunCallExpression(expr.getDefinition(), expr.getPolyArguments(), args);
   }
 
   @Override
@@ -57,7 +56,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
       args.add(arg.accept(this, null));
     }
 
-    return new ConCallExpression(expr.getDefinition(), expr.getPolyParamsSubst(), dataTypeArgs, args);
+    return new ConCallExpression(expr.getDefinition(), expr.getPolyArguments(), dataTypeArgs, args);
   }
 
   @Override
@@ -66,7 +65,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
     for (Expression arg : expr.getDefCallArguments()) {
       args.add(arg.accept(this, null));
     }
-    return new DataCallExpression(expr.getDefinition(), expr.getPolyParamsSubst(), args);
+    return new DataCallExpression(expr.getDefinition(), expr.getPolyArguments(), args);
   }
 
   @Override

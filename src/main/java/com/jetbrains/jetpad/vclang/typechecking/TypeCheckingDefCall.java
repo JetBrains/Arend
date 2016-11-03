@@ -12,7 +12,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -99,7 +99,7 @@ public class TypeCheckingDefCall {
       if (level == null) {
         return null;
       }
-      Level value = defCall.getPolyParamsSubst().get(param);
+      Level value = defCall.getPolyArguments().getLevels().get(i);
       if (value == null) {
         assert false;
         return null;
@@ -240,9 +240,9 @@ public class TypeCheckingDefCall {
       if (constructor != null) {
         //result.expression = ConCall(constructor, dataCall.getPolyParamsSubst(), new ArrayList<>(args), new ArrayList<Expression>());
         //result.type = result.expression.getType();
-        Expression conCall = ConCall(constructor, dataCall.getPolyParamsSubst(), new ArrayList<Expression>(), new ArrayList<Expression>());
+        Expression conCall = ConCall(constructor, dataCall.getPolyArguments(), new ArrayList<Expression>(), new ArrayList<Expression>());
         List<DependentLink> conParams = new ArrayList<>();
-        Expression conType = constructor.getTypeWithParams(conParams, dataCall.getPolyParamsSubst());
+        Expression conType = constructor.getTypeWithParams(conParams, dataCall.getPolyArguments());
         CheckTypeVisitor.PreResult conResult = new CheckTypeVisitor.PreResult(conCall, conType, conParams);
         conResult.applyExpressions(args);
         return conResult;
@@ -310,18 +310,19 @@ public class TypeCheckingDefCall {
   }
 
   private CheckTypeVisitor.PreResult makeResult(Definition definition, Abstract.ClassView classView, Expression thisExpr, Abstract.Expression expr) {
-    LevelSubstitution polySubst = new LevelSubstitution();
+    List<Level> levels = new ArrayList<>(definition.getPolyParams().size());
     for (Binding polyVar : definition.getPolyParams()) {
       InferenceLevelVariable l = new InferenceLevelVariable(polyVar.getName(), polyVar.getType().toExpression(), expr);
-      polySubst.add(polyVar, new Level(l));
+      levels.add(new Level(l));
       myVisitor.getEquations().addVariable(l);
     }
+    LevelArguments polyArgs = new LevelArguments(levels);
 
     DefCallExpression defCall;
     if (classView != null) {
-      defCall = new ClassViewCallExpression((ClassDefinition) definition, polySubst, classView);
+      defCall = new ClassViewCallExpression((ClassDefinition) definition, polyArgs, classView);
     } else {
-      defCall = definition.getDefCall(polySubst);
+      defCall = definition.getDefCall(polyArgs);
     }
 
     if (thisExpr == null && definition instanceof ClassField) {
@@ -332,7 +333,7 @@ public class TypeCheckingDefCall {
     }
 
     List<DependentLink> params = new ArrayList<>();
-    TypeMax type = definition.getTypeWithParams(params, polySubst);
+    TypeMax type = definition.getTypeWithParams(params, polyArgs);
     CheckTypeVisitor.PreResult result = new CheckTypeVisitor.PreResult(defCall, type, params);
     if (thisExpr != null) {
       //result.expression = defCall.applyThis(thisExpr);

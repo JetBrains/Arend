@@ -55,7 +55,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       ConCallExpression conCall = result.getExpression().toConCall();
       if (conCall != null && conCall.getDefinition() == Prelude.PATH_CON && conCall.getDataTypeArguments().isEmpty()) {
         List<DependentLink> pathParams = new ArrayList<>();
-        Prelude.PATH_CON.getTypeWithParams(pathParams, conCall.getPolyParamsSubst());
+        Prelude.PATH_CON.getTypeWithParams(pathParams, conCall.getPolyArguments());
         DependentLink lamParam = param("i", Interval());
         Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", pathParams.get(0).getType().getPiCodomain(), 1, fun), myVisitor.getEquations());
         Expression lamExpr = Lam(lamParam, binding);
@@ -137,9 +137,9 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
             args1.addAll(args.subList(conCall.getDataTypeArguments().size(), args.size()));
             args1 = conCall.getDefinition().matchDataTypeArguments(args1);
             if (args1 != null && !args1.isEmpty()) {
-              Expression conCallUpdated = ConCall(conCall.getDefinition(), conCall.getPolyParamsSubst(), new ArrayList<Expression>(), new ArrayList<Expression>());
+              Expression conCallUpdated = ConCall(conCall.getDefinition(), conCall.getPolyArguments(), new ArrayList<Expression>(), new ArrayList<Expression>());
               List<DependentLink> params = new ArrayList<>();
-              Expression type = conCall.getDefinition().getTypeWithParams(params, conCall.getPolyParamsSubst());
+              Expression type = conCall.getDefinition().getTypeWithParams(params, conCall.getPolyArguments());
               result = new CheckTypeVisitor.PreResult(conCallUpdated, type, params);
               result.applyExpressions(args1);
             }

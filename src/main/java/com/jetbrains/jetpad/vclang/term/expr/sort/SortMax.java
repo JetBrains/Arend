@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiTypeOmega;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
-import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ToAbstractVisitor;
@@ -79,7 +78,7 @@ public class SortMax {
   }
 
   public SortMax subst(LevelSubstitution subst) {
-    if (subst.getDomain().isEmpty()) {
+    if (subst.isEmpty()) {
       return this;
     }
     return new SortMax(myPLevel.subst(subst), myHLevel.subst(subst));

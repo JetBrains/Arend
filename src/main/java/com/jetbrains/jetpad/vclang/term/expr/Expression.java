@@ -103,7 +103,7 @@ public abstract class Expression implements PrettyPrintable, Type {
 
   @Override
   public final Expression subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
-    return exprSubst.getDomain().isEmpty() && levelSubst.getDomain().isEmpty() ? this : accept(new SubstVisitor(exprSubst, levelSubst), null);
+    return exprSubst.getDomain().isEmpty() && levelSubst.isEmpty() ? this : accept(new SubstVisitor(exprSubst, levelSubst), null);
   }
 
   @Override

@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 
 import java.util.ArrayList;
@@ -33,11 +33,11 @@ public abstract class Definition implements Referable {
     return EmptyDependentLink.getInstance();
   }
 
-  public abstract TypeMax getTypeWithParams(List<DependentLink> params, LevelSubstitution polySubst);
+  public abstract TypeMax getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments);
 
-  public abstract DefCallExpression getDefCall(LevelSubstitution polyParams);
+  public abstract DefCallExpression getDefCall(LevelArguments polyArguments);
 
-  public abstract Expression getDefCall(LevelSubstitution polyParams, List<Expression> args);
+  public abstract Expression getDefCall(LevelArguments polyArguments, List<Expression> args);
 
   public ClassDefinition getThisClass() {
     return myThisClass;
@@ -63,8 +63,6 @@ public abstract class Definition implements Referable {
     }
     return null;
   }
-
-  public boolean isPolymorphic() { return !myPolyParams.isEmpty(); }
 
   public enum TypeCheckingStatus { HAS_ERRORS, NO_ERRORS, TYPE_CHECKING }
 

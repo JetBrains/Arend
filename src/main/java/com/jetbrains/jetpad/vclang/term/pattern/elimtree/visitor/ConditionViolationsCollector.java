@@ -53,7 +53,7 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<ExprSub
               }
               final Expression rhs = leaf.getExpression().subst(subst);
               try (Utils.ContextSaver ignore = new Utils.ContextSaver(ctx)) {
-                final ExprSubstitution subst1 = new ExprSubstitution(branchNode.getReference(), new ConCallExpression(conCall.getDefinition(), conCall.getPolyParamsSubst(), new ArrayList<>(conCall.getDataTypeArguments()), arguments));
+                final ExprSubstitution subst1 = new ExprSubstitution(branchNode.getReference(), new ConCallExpression(conCall.getDefinition(), conCall.getPolyArguments(), new ArrayList<>(conCall.getDataTypeArguments()), arguments));
                 ctx.addAll(subst1.extendBy(branchNode.getContextTail()));
                 SubstituteExpander.substituteExpand(branchNode, subst1, ctx, new SubstituteExpander.SubstituteExpansionProcessor() {
                   @Override

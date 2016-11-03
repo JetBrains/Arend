@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FieldCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 
 import java.util.List;
@@ -57,19 +58,20 @@ public class ClassField extends Definition {
   }
 
   @Override
-  public Expression getTypeWithParams(List<DependentLink> params, LevelSubstitution polyParams) {
+  public Expression getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
     ExprSubstitution subst = new ExprSubstitution();
-    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myThisParameter, subst, polyParams)));
-    return myType == null ? null : myType.subst(subst, polyParams);
+    LevelSubstitution polySubst = polyArguments.toLevelSubstitution(this);
+    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myThisParameter, subst, polySubst)));
+    return myType == null ? null : myType.subst(subst, polySubst);
   }
 
   @Override
-  public DefCallExpression getDefCall(LevelSubstitution polyParams) {
+  public DefCallExpression getDefCall(LevelArguments polyArguments) {
     return new FieldCallExpression(this, null);
   }
 
   @Override
-  public Expression getDefCall(LevelSubstitution polyParams, List<Expression> args) {
+  public Expression getDefCall(LevelArguments polyArguments, List<Expression> args) {
     assert args.size() == 1;
     return FieldCall(this, args.get(0));
   }

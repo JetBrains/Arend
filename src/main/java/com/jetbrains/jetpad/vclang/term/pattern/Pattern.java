@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 
 import java.util.List;
@@ -53,7 +53,7 @@ public abstract class Pattern implements Abstract.Pattern {
   }
 
   public abstract DependentLink getParameters();
-  public abstract Expression toExpression(ExprSubstitution subst, LevelSubstitution polyParams);
+  public abstract Expression toExpression(ExprSubstitution subst, LevelArguments polyParams);
   public MatchResult match(Expression expr) {
     return match(expr, true);
   }
