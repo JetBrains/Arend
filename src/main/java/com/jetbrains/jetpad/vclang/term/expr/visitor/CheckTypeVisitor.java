@@ -355,7 +355,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
 
     LocalErrorReporterCounter counter = new LocalErrorReporterCounter(myErrorReporter);
-    result.reset(result.getExpression().strip(new HashSet<>(myContext), counter), result.getType().strip(new HashSet<>(myContext), counter.getErrorsNumber() == 0 ? myErrorReporter : new DummyLocalErrorReporter()));
+    Expression term = result.getExpression().strip(new HashSet<>(myContext), counter);
+    TypeMax type = result.getType().strip(new HashSet<>(myContext), counter.getErrorsNumber() == 0 ? myErrorReporter : new DummyLocalErrorReporter());
+    result.reset(term, type);
     return result;
   }
 
@@ -750,7 +752,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         Result result = typeCheck(arg.getType(), new PiTypeOmega(EmptyDependentLink.<Expression>getInstance()));
         if (result == null) return null;
 
-        Expression paramType = result.getExpression(); //.strip(new HashSet<>(myContext), myErrorReporter);
+        Expression paramType = result.getExpression();
         result.reset(paramType, paramType.getType());
 
         if (arg instanceof Abstract.TelescopeArgument) {
@@ -774,7 +776,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   public Result visitSigma(Abstract.SigmaExpression expr, Type expectedType) {
     DependentLink args = visitArguments(expr.getArguments(), expr);
     if (args == null || !args.hasNext()) return null;
-    Expression sigmaExpr = Sigma(args);//sigmaType.toExpression().strip(new HashSet<>(myContext), myErrorReporter);
+    Expression sigmaExpr = Sigma(args);
     return checkResult(expectedType, new Result(sigmaExpr, sigmaExpr.getType()), expr);
   }
 

@@ -345,6 +345,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
     boolean dataOk = true;
     for (Abstract.Constructor constructor : def.getConstructors()) {
+      visitor.getContext().clear();
       Constructor typedConstructor = visitConstructor(constructor, dataDefinition, visitor, inferredSorts);
       myState.record(constructor, typedConstructor);
       if (typedConstructor.typeHasErrors()) {
@@ -729,10 +730,13 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
             }
 
             DependentLink thisParameter = createThisParam(typedDef);
-            visitor.setThisClass(typedDef, Reference(thisParameter));
-            CheckTypeVisitor.Result result = implementField(fieldSet, field, ((Abstract.ImplementDefinition) definition).getExpression(), visitor, thisClassCall, thisParameter);
-            if (result == null || result.getExpression().toError() != null) {
-              classOk = false;
+            try (Utils.ContextSaver saver = new Utils.ContextSaver(context)) {
+              context.add(thisParameter);
+              visitor.setThisClass(typedDef, Reference(thisParameter));
+              CheckTypeVisitor.Result result = implementField(fieldSet, field, ((Abstract.ImplementDefinition) definition).getExpression(), visitor, thisClassCall, thisParameter);
+              if (result == null || result.getExpression().toError() != null) {
+                classOk = false;
+              }
             }
           } else if (definition instanceof Abstract.ClassView) {
             Definition classifyingField = myState.getTypechecked(((Abstract.ClassView) definition).getClassifyingField());
