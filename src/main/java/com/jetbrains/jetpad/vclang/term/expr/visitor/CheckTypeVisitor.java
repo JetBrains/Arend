@@ -503,7 +503,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
           argAbsType = ((Abstract.TypeArgument) argument).getType();
           Result argResult = typeCheck(argAbsType, Universe());
           if (argResult == null) return null;
-          argType = argResult.getExpression().strip(new HashSet<>(myContext), myErrorReporter);
+          argType = argResult.getExpression();
         } else {
           throw new IllegalStateException();
         }
@@ -579,7 +579,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       myContext.addAll(DependentLink.Helper.toContext(args));
       Result result = typeCheck(expr.getCodomain(), new PiTypeOmega(EmptyDependentLink.getInstance()));
       if (result == null) return null;
-      Expression piExpr = Pi(args, result.getExpression().strip(new HashSet<>(myContext), myErrorReporter));
+      Expression piExpr = Pi(args, result.getExpression());
       return checkResult(expectedType, new Result(piExpr, piExpr.getType()), expr);
     }
   }
@@ -978,7 +978,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
           Abstract.TelescopeArgument teleArg = (Abstract.TelescopeArgument) arg;
           Result result = typeCheck(teleArg.getType(), new PiTypeOmega(EmptyDependentLink.getInstance()));
           if (result == null) return null;
-          Expression argType = result.getExpression().strip(new HashSet<>(myContext), myErrorReporter);
+          Expression argType = result.getExpression();
           links.append(param(teleArg.getExplicit(), teleArg.getNames(), argType));
           for (DependentLink link = links.getLast(); link != EmptyDependentLink.getInstance(); link = link.getNext()) {
             myContext.add(link);
