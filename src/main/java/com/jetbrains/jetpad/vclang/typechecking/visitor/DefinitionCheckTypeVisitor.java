@@ -1,7 +1,9 @@
 package com.jetbrains.jetpad.vclang.typechecking.visitor;
 
 import com.jetbrains.jetpad.vclang.error.Error;
-import com.jetbrains.jetpad.vclang.naming.namespace.*;
+import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
+import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
@@ -752,7 +754,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
   }
 
   private CheckTypeVisitor.Result implementField(FieldSet fieldSet, ClassField field, Abstract.Expression implBody, CheckTypeVisitor visitor, ClassCallExpression fieldSetClass, DependentLink thisParam) {
-    CheckTypeVisitor.Result result = visitor.typeCheck(implBody, field.getBaseType().subst(field.getThisParameter(), Reference(thisParam)));
+    CheckTypeVisitor.Result result = visitor.checkType(implBody, field.getBaseType().subst(field.getThisParameter(), Reference(thisParam)));
     fieldSet.implementField(field, new FieldSet.Implementation(thisParam, result != null ? result.getExpression() : Error(null, null)), fieldSetClass);
     return result;
   }

@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceVariable;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
@@ -312,7 +312,7 @@ public class TypeCheckingDefCall {
   private CheckTypeVisitor.PreResult makeResult(Definition definition, Abstract.ClassView classView, Expression thisExpr, Abstract.Expression expr) {
     LevelSubstitution polySubst = new LevelSubstitution();
     for (Binding polyVar : definition.getPolyParams()) {
-      LevelInferenceVariable l = new LevelInferenceVariable(polyVar.getName(), polyVar.getType().toExpression(), expr);
+      InferenceLevelVariable l = new InferenceLevelVariable(polyVar.getName(), polyVar.getType().toExpression(), expr);
       polySubst.add(polyVar, new Level(l));
       myVisitor.getEquations().addVariable(l);
     }

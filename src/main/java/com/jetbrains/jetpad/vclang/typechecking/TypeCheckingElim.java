@@ -202,7 +202,7 @@ public class TypeCheckingElim {
         }
 
         if (clause.getExpression() != null) {
-          CheckTypeVisitor.Result clauseResult = myVisitor.typeCheck(clause.getExpression(), clauseExpectedType);
+          CheckTypeVisitor.Result clauseResult = myVisitor.checkType(clause.getExpression(), clauseExpectedType);
           if (clauseResult == null) {
             wasError = true;
             continue;

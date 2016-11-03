@@ -5,12 +5,12 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 
-public class LevelInferenceVariable implements Variable {
+public class InferenceLevelVariable implements Variable {
   private final String myName;
   private final Abstract.SourceNode mySourceNode;
   private Type myType;
 
-  public LevelInferenceVariable(String name, Expression type, Abstract.SourceNode sourceNode) {
+  public InferenceLevelVariable(String name, Expression type, Abstract.SourceNode sourceNode) {
     myName = name;
     myType = type;
     mySourceNode = sourceNode;
@@ -28,5 +28,10 @@ public class LevelInferenceVariable implements Variable {
 
   public Abstract.SourceNode getSourceNode() {
     return mySourceNode;
+  }
+
+  @Override
+  public String toString() {
+    return "?" + myName;
   }
 }

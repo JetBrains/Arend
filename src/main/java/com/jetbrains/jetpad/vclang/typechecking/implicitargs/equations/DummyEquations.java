@@ -1,12 +1,11 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 
 public class DummyEquations implements Equations {
@@ -39,7 +38,7 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public boolean addVariable(LevelInferenceVariable var) {
+  public boolean addVariable(InferenceLevelVariable var) {
     return false;
   }
 

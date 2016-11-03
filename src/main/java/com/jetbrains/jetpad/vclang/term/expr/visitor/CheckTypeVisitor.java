@@ -10,9 +10,9 @@ import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.ExpressionInferenceVariable;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.LambdaInferenceVariable;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.LevelInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
@@ -404,8 +404,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     int argIndex = 0;
     for (DependentLink link = params; link.hasNext(); link = link.getNext(), ++argIndex) {
       if (link.getType().toExpression() == null) {
-        LevelInferenceVariable pLvl = new LevelInferenceVariable("plvl-of-" + link.getName(), Lvl(), expr);
-        LevelInferenceVariable hLvl = new LevelInferenceVariable("hlvl-of-" + link.getName(), CNat(), expr);
+        InferenceLevelVariable pLvl = new InferenceLevelVariable("plvl-of-" + link.getName(), Lvl(), expr);
+        InferenceLevelVariable hLvl = new InferenceLevelVariable("hlvl-of-" + link.getName(), CNat(), expr);
         myEquations.addVariable(pLvl);
         myEquations.addVariable(hLvl);
         Expression type = Universe(new Level(pLvl), new Level(hLvl));
@@ -531,8 +531,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
             piLamSubst.add(piLink, Reference(link));
           } else {
             if (argType == null) {
-              LevelInferenceVariable pLvl = new LevelInferenceVariable("plvl-of-" + name, Lvl(), expr);
-              LevelInferenceVariable hLvl = new LevelInferenceVariable("hlvl-of-" + name, CNat(), expr);
+              InferenceLevelVariable pLvl = new InferenceLevelVariable("plvl-of-" + name, Lvl(), expr);
+              InferenceLevelVariable hLvl = new InferenceLevelVariable("hlvl-of-" + name, CNat(), expr);
               myEquations.addVariable(pLvl);
               myEquations.addVariable(hLvl);
               InferenceVariable inferenceVariable = new LambdaInferenceVariable("type-of-" + name, Universe(new Level(pLvl), new Level(hLvl)), argIndex, expr, false);
