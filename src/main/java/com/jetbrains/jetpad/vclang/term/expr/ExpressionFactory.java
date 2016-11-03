@@ -164,15 +164,15 @@ public class ExpressionFactory {
     return let(name, params, null, elimTree);
   }
 
-  public static LetClause let(String name, DependentLink params, Type resultType, Abstract.Definition.Arrow arrow, Expression expr) {
+  public static LetClause let(String name, DependentLink params, Expression resultType, Abstract.Definition.Arrow arrow, Expression expr) {
     return let(name, params, resultType, leaf(arrow, expr));
   }
 
-  public static LetClause let(String name, DependentLink params, Type resultType, Expression expr) {
+  public static LetClause let(String name, DependentLink params, Expression resultType, Expression expr) {
     return let(name, params, resultType, leaf(expr));
   }
 
-  public static LetClause let(String name, DependentLink params, Type resultType, ElimTreeNode elimTree) {
+  public static LetClause let(String name, DependentLink params, Expression resultType, ElimTreeNode elimTree) {
     return new LetClause(name, params, resultType, elimTree);
   }
 

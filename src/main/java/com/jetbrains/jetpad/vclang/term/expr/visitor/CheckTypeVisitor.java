@@ -811,9 +811,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       myErrorReporter.report(error);
       return null;
     }
+    if (!(expectedType instanceof Expression)) {
+      LocalTypeCheckingError error = new LocalTypeCheckingError("Type of \\case cannot be \\Type", expr);
+      expr.setWellTyped(myContext, Error(null, error));
+      myErrorReporter.report(error);
+      return null;
+    }
 
     Result caseResult = new Result(null, expectedType);
-    LetClause letBinding = let(Abstract.CaseExpression.FUNCTION_NAME, EmptyDependentLink.getInstance(), expectedType, (ElimTreeNode) null);
+    LetClause letBinding = let(Abstract.CaseExpression.FUNCTION_NAME, EmptyDependentLink.getInstance(), (Expression) expectedType, (ElimTreeNode) null);
     List<? extends Abstract.Expression> expressions = expr.getExpressions();
 
     LinkList list = new LinkList();

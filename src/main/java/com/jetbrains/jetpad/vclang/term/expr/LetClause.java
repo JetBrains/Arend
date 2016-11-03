@@ -9,9 +9,9 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 public class LetClause extends NamedBinding implements Function {
   private DependentLink myParameters;
   private ElimTreeNode myElimTree;
-  private Type myResultType;
+  private Expression myResultType;
 
-  public LetClause(String name, DependentLink parameters, Type resultType, ElimTreeNode elimTree) {
+  public LetClause(String name, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
     super(name);
     assert parameters != null;
     myParameters = parameters;
@@ -38,11 +38,11 @@ public class LetClause extends NamedBinding implements Function {
     myParameters = parameters;
   }
 
-  public Type getResultType() {
+  public Expression getResultType() {
     return myResultType;
   }
 
-  public void setResultType(Type resultType) {
+  public void setResultType(Expression resultType) {
     myResultType = resultType;
   }
 
