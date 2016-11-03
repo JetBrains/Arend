@@ -11,10 +11,9 @@ import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.*;
+import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equation;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -162,15 +161,6 @@ public class ErrorFormatter {
           String text = "  Actual type: ";
           builder.append('\n').append(text);
           ((ArgInferenceError) error).actual.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, text.length());
-        }
-      }
-    } else if (error instanceof LevelInferenceError) {
-      if (((LevelInferenceError) error).candidates.length > 0) {
-        builder.append("\nCandidates are:");
-        for (Level candidate : ((LevelInferenceError) error).candidates) {
-          builder.append("\n");
-          PrettyPrintVisitor.printIndent(builder, 2);
-          candidate.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, 2);
         }
       }
     } else if (error instanceof MemberNotFoundError) {

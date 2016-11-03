@@ -1,24 +1,32 @@
 package com.jetbrains.jetpad.vclang.term.context.binding.inference;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
-import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.LevelInferenceError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
-public class LevelInferenceVariable extends InferenceVariable {
+public class LevelInferenceVariable implements Variable {
+  private final String myName;
+  private final Abstract.SourceNode mySourceNode;
+  private Type myType;
+
   public LevelInferenceVariable(String name, Expression type, Abstract.SourceNode sourceNode) {
-    super(name, type, sourceNode);
+    myName = name;
+    myType = type;
+    mySourceNode = sourceNode;
   }
 
   @Override
-  public LocalTypeCheckingError getErrorInfer(Expression... candidates) {
-    return new LevelInferenceError(this, getSourceNode());
+  public String getName() {
+    return myName;
   }
 
   @Override
-  public LocalTypeCheckingError getErrorMismatch(Type expectedType, TypeMax actualType, Expression candidate) {
-    return new LevelInferenceError(this, getSourceNode());
+  public Type getType() {
+    return myType;
+  }
+
+  public Abstract.SourceNode getSourceNode() {
+    return mySourceNode;
   }
 }
