@@ -272,10 +272,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   public boolean compare(Result result, Type expectedType, Abstract.Expression expr) {
     if (result.getType().isLessOrEquals(expectedType.normalize(NormalizeVisitor.Mode.NF), myEquations, expr)) {
-      //  if (expectedType instanceof Expression) {
+        if (expectedType instanceof Expression) {
       //    Expression exprType = (Expression)expectedType;
-      result.reset(new OfTypeExpression(result.getExpression(), expectedType), expectedType);
-      //  }
+          result.reset(new OfTypeExpression(result.getExpression(), expectedType), expectedType);
+        }
       return true;
     }
 
@@ -309,13 +309,20 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       if (args == null) return null;
       try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
         myContext.addAll(DependentLink.Helper.toContext(args));
+
         List<DependentLink> allArgs = DependentLink.Helper.toList(args);
         TypeMax codomain = typeMax(piType.getCodomain(), onlyOmegaAllowed);
         if (codomain == null) return null;
         codomain = codomain.getPiParameters(allArgs, true, false);
+        ExprSubstitution exprSubst = new ExprSubstitution();
+        allArgs = DependentLink.Helper.toList(DependentLink.Helper.mergeList(allArgs, exprSubst));
+
+        LevelSubstitution levelSubst = myEquations.solve(type);
         ExprSubstitution subst = new ExprSubstitution();
-        allArgs = DependentLink.Helper.toList(DependentLink.Helper.mergeList(allArgs, subst));
-        return codomain.subst(subst, new LevelSubstitution()).fromPiParameters(allArgs);
+        allArgs = DependentLink.Helper.subst(allArgs, subst, levelSubst);
+        exprSubst = subst.compose(exprSubst); // exprSubst.compose(subst);
+        LocalErrorReporterCounter counter = new LocalErrorReporterCounter(myErrorReporter);
+        return codomain.subst(exprSubst, levelSubst).fromPiParameters(allArgs).strip(new HashSet<>(myContext), counter);
       }
     } else if (type instanceof Abstract.PolyUniverseExpression) {
       SortMax sort = sortMax((Abstract.PolyUniverseExpression)type);
@@ -743,7 +750,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         Result result = typeCheck(arg.getType(), new PiTypeOmega(EmptyDependentLink.<Expression>getInstance()));
         if (result == null) return null;
 
-        Expression paramType = result.getExpression().strip(new HashSet<>(myContext), myErrorReporter);
+        Expression paramType = result.getExpression(); //.strip(new HashSet<>(myContext), myErrorReporter);
         result.reset(paramType, paramType.getType());
 
         if (arg instanceof Abstract.TelescopeArgument) {

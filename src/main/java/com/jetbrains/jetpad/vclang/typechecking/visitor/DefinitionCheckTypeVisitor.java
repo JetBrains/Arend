@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
@@ -128,6 +129,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     boolean ok = true;
     Map<String, Binding> polyParamsMap = new HashMap<>();
     int index = 0;
+    Binding lpParam = new TypedBinding("lp", Lvl());
+    Binding lhParam = new TypedBinding("lh", CNat());
     for (Abstract.Argument argument : arguments) {
       if (argument instanceof Abstract.TypeArgument) {
         Abstract.TypeArgument typeArgument = (Abstract.TypeArgument)argument;
@@ -150,7 +153,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
           continue;
         }
 
-        paramType = paramType.strip(new HashSet<>(visitor.getContext()), visitor.getErrorReporter());
+        // paramType = paramType.strip(new HashSet<>(visitor.getContext()), visitor.getErrorReporter());
 
         Abstract.ClassView classView = Abstract.getUnderlyingClassView(typeArgument.getType());
         if (classView != null) {
@@ -788,7 +791,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
           continue;
         }
 
-        CheckTypeVisitor.Result result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());
+        CheckTypeVisitor.Result result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), new PiTypeOmega(EmptyDependentLink.getInstance()));
         if (result == null) {
           return typedDef;
         }
@@ -815,7 +818,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     if (resultType == null) {
       return typedDef;
     }
-    CheckTypeVisitor.Result typeResult = visitor.checkType(resultType, Universe());
+    CheckTypeVisitor.Result typeResult = visitor.checkType(resultType, new PiTypeOmega(EmptyDependentLink.getInstance()));
     if (typeResult == null) {
       return typedDef;
     }
