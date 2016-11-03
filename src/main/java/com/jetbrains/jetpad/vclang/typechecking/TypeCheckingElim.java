@@ -108,7 +108,6 @@ public class TypeCheckingElim {
     List<PatternArgument> typedPatterns = new ArrayList<>();
     LinkList links = new LinkList();
     Set<Binding> bounds = new HashSet<>(myVisitor.getContext());
-    StripVisitor stripVisitor = new StripVisitor(bounds, myVisitor.getErrorReporter());
     for (Abstract.PatternArgument patternArg : patternArgs) {
       ExpandPatternResult result = expandPattern(patternArg.getPattern(), eliminatingArgs, mode, links);
       if (result == null || result instanceof ExpandPatternErrorResult)
@@ -121,7 +120,7 @@ public class TypeCheckingElim {
       }
 
       for (int j = 0; j < substIn.size(); j++) {
-        substIn.set(j, substIn.get(j).subst(eliminatingArgs, ((ExpandPatternOKResult) result).expression.accept(stripVisitor, null)));
+        substIn.set(j, substIn.get(j).subst(eliminatingArgs, ((ExpandPatternOKResult) result).expression));
       }
 
       eliminatingArgs = DependentLink.Helper.subst(eliminatingArgs.getNext(), new ExprSubstitution(eliminatingArgs, ((ExpandPatternOKResult) result).expression));
@@ -130,7 +129,7 @@ public class TypeCheckingElim {
     return new Patterns(typedPatterns);
   }
 
-  public ElimTreeNode typeCheckElim(final Abstract.ElimCaseExpression expr, DependentLink eliminatingArgs, Type expectedType, boolean isCase) {
+  public ElimTreeNode typeCheckElim(final Abstract.ElimCaseExpression expr, DependentLink eliminatingArgs, Type expectedType, boolean isCase, boolean isTopLevel) {
     LocalTypeCheckingError error = null;
     if (expectedType == null) {
       error = new LocalTypeCheckingError("Cannot infer type of the expression", expr);
@@ -202,7 +201,7 @@ public class TypeCheckingElim {
         }
 
         if (clause.getExpression() != null) {
-          CheckTypeVisitor.Result clauseResult = myVisitor.checkType(clause.getExpression(), clauseExpectedType);
+          CheckTypeVisitor.Result clauseResult = isTopLevel ? myVisitor.checkType(clause.getExpression(), clauseExpectedType) : myVisitor.typeCheck(clause.getExpression(), clauseExpectedType);
           if (clauseResult == null) {
             wasError = true;
             continue;
@@ -224,13 +223,16 @@ public class TypeCheckingElim {
 
     if (elimTreeResult instanceof PatternsToElimTreeConversion.OKResult) {
       ElimTreeNode result = ((PatternsToElimTreeConversion.OKResult) elimTreeResult).elimTree;
-      LevelSubstitution substitution = myVisitor.getEquations().solve(expr);
-      if (!substitution.getDomain().isEmpty()) {
-        result = result.subst(new ExprSubstitution(), substitution);
+      if (isTopLevel) {
+        LevelSubstitution substitution = myVisitor.getEquations().solve(expr);
+        if (!substitution.getDomain().isEmpty()) {
+          result = result.subst(new ExprSubstitution(), substitution);
+        }
+        Set<Binding> bounds = new HashSet<>(myVisitor.getContext());
+        bounds.addAll(argsBindings);
+        result = result.accept(new StripVisitor(bounds, myVisitor.getErrorReporter()), null);
       }
-      Set<Binding> bounds = new HashSet<>(myVisitor.getContext());
-      bounds.addAll(argsBindings);
-      return result.accept(new StripVisitor(bounds, myVisitor.getErrorReporter()), null);
+      return result;
     } else if (elimTreeResult instanceof PatternsToElimTreeConversion.EmptyReachableResult) {
       for (int i : ((PatternsToElimTreeConversion.EmptyReachableResult) elimTreeResult).reachable) {
         error = new LocalTypeCheckingError("Empty clause is reachable", expr.getClauses().get(i));

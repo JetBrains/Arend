@@ -832,7 +832,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
     letBinding.setParameters(list.getFirst());
 
-    ElimTreeNode elimTree = myTypeCheckingElim.typeCheckElim(expr, list.getFirst(), expectedType, true);
+    ElimTreeNode elimTree = myTypeCheckingElim.typeCheckElim(expr, list.getFirst(), expectedType, true, false);
     if (elimTree == null) return null;
     letBinding.setElimTree(elimTree);
 
@@ -995,7 +995,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
       if (clause.getTerm() instanceof Abstract.ElimExpression)  {
         myContext.subList(myContext.size() - size(links.getFirst()), myContext.size()).clear();
-        elimTree = myTypeCheckingElim.typeCheckElim((Abstract.ElimExpression) clause.getTerm(), clause.getArrow() == Abstract.Definition.Arrow.LEFT ? links.getFirst() : null, expectedType, false);
+        elimTree = myTypeCheckingElim.typeCheckElim((Abstract.ElimExpression) clause.getTerm(), clause.getArrow() == Abstract.Definition.Arrow.LEFT ? links.getFirst() : null, expectedType, false, false);
         if (elimTree == null) return null;
         resultType = expectedType;
       } else {
