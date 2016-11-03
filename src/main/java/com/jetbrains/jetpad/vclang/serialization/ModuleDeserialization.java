@@ -310,7 +310,6 @@ public class ModuleDeserialization {
       //field.hasErrors(stream.readBoolean());
 
       if (!field.typeHasErrors()) {
-        field.setSorts(readSortMax(stream, definitionMap));
         field.setBaseType(readExpression(stream, definitionMap));
         field.setThisClass(definition);
       }

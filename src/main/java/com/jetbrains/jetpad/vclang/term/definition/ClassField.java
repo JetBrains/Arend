@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FieldCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 
@@ -16,7 +15,6 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FieldCall;
 public class ClassField extends Definition {
   private DependentLink myThisParameter;
   private Expression myType;
-  private SortMax mySorts;
 
   public ClassField(Abstract.ClassField abstractDef, Expression type, ClassDefinition thisClass, DependentLink thisParameter) {
     super(abstractDef);
@@ -46,14 +44,6 @@ public class ClassField extends Definition {
 
   public Expression getBaseType() {
     return myType;
-  }
-
-  public SortMax getSorts() {
-    return mySorts;
-  }
-
-  public void setSorts(SortMax sorts) {
-    mySorts = sorts;
   }
 
   @Override

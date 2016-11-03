@@ -767,7 +767,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     List<Binding> context = new ArrayList<>();
     context.add(thisParameter);
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, myStaticNsProvider, myDynamicNsProvider, context, myErrorReporter).instancePool(EmptyInstancePool.INSTANCE).thisClass(enclosingClass, Reference(thisParameter)).build();
-    LevelMax pLevel = new LevelMax();
     ClassField typedDef = new ClassField(def, Error(null, null), enclosingClass, thisParameter);
     myState.record(def, typedDef);
 
@@ -804,7 +803,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         }
         list.append(param);
         context.addAll(toContext(param));
-        pLevel.add(result.getType().toSorts().getPLevel());
       } else {
         myErrorReporter.report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, new Expression[0]));
         return typedDef;
@@ -821,12 +819,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     }
     typedResultType = typeResult.getExpression();
 
-    SortMax resultSort = typeResult.getType().toSorts();
-    pLevel.add(resultSort.getPLevel());
-
     typedDef.setPolyParams(new ArrayList<>(polyParams.values()));
     typedDef.setBaseType(list.isEmpty() ? typedResultType : Pi(list.getFirst(), typedResultType));
-    typedDef.setSorts(new SortMax(pLevel, resultSort.getHLevel()));
     typedDef.setThisClass(enclosingClass);
     return typedDef;
   }
