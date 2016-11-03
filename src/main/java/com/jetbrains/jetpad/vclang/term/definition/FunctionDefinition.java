@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
@@ -23,20 +22,17 @@ public class FunctionDefinition extends Definition implements Function {
   private ElimTreeNode myElimTree;
   private boolean myTypeHasErrors;
   private TypeCheckingStatus myHasErrors;
-  private final Namespace myOwnNamespace;
 
-  public FunctionDefinition(Abstract.Definition abstractDef, Namespace ownNamespace) {
+  public FunctionDefinition(Abstract.Definition abstractDef) {
     super(abstractDef);
-    myOwnNamespace = ownNamespace;
     myTypeHasErrors = true;
     myHasErrors = TypeCheckingStatus.TYPE_CHECKING;
     myParameters = EmptyDependentLink.getInstance();
   }
 
-  public FunctionDefinition(Abstract.Definition abstractDef, Namespace ownNamespace, DependentLink parameters, Type resultType, ElimTreeNode elimTree) {
+  public FunctionDefinition(Abstract.Definition abstractDef, DependentLink parameters, Type resultType, ElimTreeNode elimTree) {
     super(abstractDef);
     assert parameters != null;
-    myOwnNamespace = ownNamespace;
     myParameters = parameters;
     myResultType = resultType;
     myElimTree = elimTree;

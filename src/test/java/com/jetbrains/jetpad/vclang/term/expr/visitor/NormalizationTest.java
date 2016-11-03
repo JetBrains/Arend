@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.naming.namespace.EmptyNamespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -49,7 +48,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   public NormalizationTest() throws IOException {
     DependentLink xPlus = param("x", Nat());
     DependentLink yPlus = param("y", Nat());
-    plus = new FunctionDefinition(null, EmptyNamespace.INSTANCE, params(xPlus, yPlus), Nat(), null);
+    plus = new FunctionDefinition(null, params(xPlus, yPlus), Nat(), null);
 
     DependentLink xPlusMinusOne = param("x'", Nat());
     ElimTreeNode plusElimTree = top(xPlus, branch(xPlus, tail(yPlus),
@@ -60,7 +59,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
 
     DependentLink xMul = param("x", Nat());
     DependentLink yMul = param("y", Nat());
-    mul = new FunctionDefinition(null, EmptyNamespace.INSTANCE, params(xMul, yMul), Nat(), null);
+    mul = new FunctionDefinition(null, params(xMul, yMul), Nat(), null);
     DependentLink xMulMinusOne = param("x'", Nat());
     ElimTreeNode mulElimTree = top(xMul, branch(xMul, tail(yMul),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Zero()),
@@ -70,7 +69,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     mul.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
 
     DependentLink xFac = param("x", Nat());
-    fac = new FunctionDefinition(null, EmptyNamespace.INSTANCE, xFac, Nat(), null);
+    fac = new FunctionDefinition(null, xFac, Nat(), null);
     DependentLink xFacMinusOne = param("x'", Nat());
     ElimTreeNode facElimTree = top(xFac, branch(xFac, tail(),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Suc(Zero())),
@@ -82,7 +81,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink zNElim = param("z", Nat());
     DependentLink sNElim = param("s", Pi(param(Nat()), Pi(param(Nat()), Nat())));
     DependentLink xNElim = param("x", Nat());
-    nelim = new FunctionDefinition(null, EmptyNamespace.INSTANCE, params(zNElim, sNElim, xNElim), Nat(), null);
+    nelim = new FunctionDefinition(null, params(zNElim, sNElim, xNElim), Nat(), null);
     DependentLink xNElimMinusOne = param("x'", Nat());
     ElimTreeNode nelimElimTree = top(zNElim, branch(xNElim, tail(),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Reference(zNElim)),

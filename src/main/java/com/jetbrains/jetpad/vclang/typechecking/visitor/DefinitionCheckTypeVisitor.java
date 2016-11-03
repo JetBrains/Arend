@@ -54,9 +54,6 @@ import static com.jetbrains.jetpad.vclang.term.pattern.Utils.toPatterns;
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.typeOfFunctionArg;
 
 public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<ClassDefinition, Definition> {
-  private final static StaticNamespaceProvider STATIC_NS_SNAPSHOT_PROVIDER = new SimpleStaticNamespaceProvider();
-  private final static DynamicNamespaceProvider DYNAMIC_NS_SNAPSHOT_PROVIDER = new SimpleDynamicNamespaceProvider();
-
   private final TypecheckerState myState;
   private final StaticNamespaceProvider myStaticNsProvider;
   private final DynamicNamespaceProvider myDynamicNsProvider;
@@ -198,7 +195,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
   @Override
   public FunctionDefinition visitFunction(final Abstract.FunctionDefinition def, ClassDefinition enclosingClass) {
-    final FunctionDefinition typedDef = new FunctionDefinition(def, STATIC_NS_SNAPSHOT_PROVIDER.forDefinition(def));
+    final FunctionDefinition typedDef = new FunctionDefinition(def);
     myState.record(def, typedDef);
     // TODO[scopes] Fill namespace
 
@@ -673,7 +670,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     FieldSet fieldSet = new FieldSet();
     Set<ClassDefinition> superClasses = new HashSet<>();
     try {
-      ClassDefinition typedDef = new ClassDefinition(def, fieldSet, superClasses, STATIC_NS_SNAPSHOT_PROVIDER.forDefinition(def), DYNAMIC_NS_SNAPSHOT_PROVIDER.forClass(def));
+      ClassDefinition typedDef = new ClassDefinition(def, fieldSet, superClasses);
       typedDef.setThisClass(enclosingClass);
       ClassCallExpression thisClassCall = ClassCall(typedDef);
 
@@ -851,7 +848,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
   @Override
   public Definition visitClassViewInstance(Abstract.ClassViewInstance def, ClassDefinition enclosingClass) {
-    FunctionDefinition typedDef = new FunctionDefinition(def, STATIC_NS_SNAPSHOT_PROVIDER.forDefinition(def));
+    FunctionDefinition typedDef = new FunctionDefinition(def);
     myState.record(def, typedDef);
 
     final List<Binding> context = new ArrayList<>();

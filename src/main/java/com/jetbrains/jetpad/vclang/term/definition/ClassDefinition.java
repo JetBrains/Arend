@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
@@ -20,24 +19,20 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ClassCall;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.param;
 
 public class ClassDefinition extends Definition {
-  private final Namespace myOwnNamespace;
-  private final Namespace myInstanceNamespace;
   private final FieldSet myFieldSet;
   private final Set<ClassDefinition> mySuperClasses;
   private boolean myHasErrors;
 
   private ClassField myEnclosingThisField = null;
 
-  public ClassDefinition(Abstract.ClassDefinition abstractDef, Namespace ownNamespace, Namespace instanceNamespace) {
-    this(abstractDef, new FieldSet(), new HashSet<ClassDefinition>(), ownNamespace, instanceNamespace);
+  public ClassDefinition(Abstract.ClassDefinition abstractDef) {
+    this(abstractDef, new FieldSet(), new HashSet<ClassDefinition>());
   }
 
-  public ClassDefinition(Abstract.ClassDefinition abstractDef, FieldSet fieldSet, Set<ClassDefinition> superClasses, Namespace ownNamespace, Namespace instanceNamespace) {
+  public ClassDefinition(Abstract.ClassDefinition abstractDef, FieldSet fieldSet, Set<ClassDefinition> superClasses) {
     super(abstractDef);
     myFieldSet = fieldSet;
     mySuperClasses = superClasses;
-    myOwnNamespace = ownNamespace;
-    myInstanceNamespace = instanceNamespace;
     myHasErrors = false;
   }
 

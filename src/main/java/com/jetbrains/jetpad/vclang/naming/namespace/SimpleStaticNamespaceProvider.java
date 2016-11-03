@@ -12,18 +12,6 @@ import static com.jetbrains.jetpad.vclang.term.Abstract.DefineStatement.StaticMo
 public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
   private final Map<Abstract.Definition, Namespace> cache = new HashMap<>();
 
-  public static SimpleNamespace forFunction(Abstract.FunctionDefinition def) {
-    SimpleNamespace ns = new SimpleNamespace();
-    forFunction(def, ns);
-    return ns;
-  }
-
-  public static SimpleNamespace forData(Abstract.DataDefinition def) {
-    SimpleNamespace ns = new SimpleNamespace();
-    forData(def, ns);
-    return ns;
-  }
-
   public static SimpleNamespace forClass(Abstract.ClassDefinition def) {
     SimpleNamespace ns = new SimpleNamespace();
     forClass(def, ns);
