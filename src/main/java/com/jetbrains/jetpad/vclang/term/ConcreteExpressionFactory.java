@@ -239,8 +239,8 @@ public class ConcreteExpressionFactory {
     return new Concrete.PatternArgument(POSITION, pattern, isExplicit, isHidden);
   }
 
-  public static Concrete.BinOpExpression cBinOp(Concrete.Expression left, Definition binOp, Concrete.Expression right) {
-    return new Concrete.BinOpExpression(POSITION, left, binOp.getAbstractDefinition(), right);
+  public static Concrete.BinOpExpression cBinOp(Concrete.Expression left, Abstract.Definition binOp, Concrete.Expression right) {
+    return new Concrete.BinOpExpression(POSITION, left, binOp, right);
   }
 
   public static Concrete.NumericLiteral cNum(int num) {

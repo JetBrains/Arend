@@ -68,7 +68,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     LamExpression expr1 = args.get(0).toLam();
     if (expr1 != null) {
       if (!expr1.getBody().findBinding(expr1.getParameters())) {
-        return myFactory.makeBinOp(args.get(1).accept(this, null), Prelude.PATH_INFIX, args.get(2).accept(this, null));
+        return myFactory.makeBinOp(args.get(1).accept(this, null), Prelude.PATH_INFIX.getAbstractDefinition(), args.get(2).accept(this, null));
       }
     }
     return null;
@@ -97,7 +97,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
         visibleArgs[i++] = expr.getArguments().get(j);
       }
     }
-    return i < 0 ? myFactory.makeBinOp(visibleArgs[0].accept(this, null), defCall.getDefinition(), visibleArgs[1].accept(this, null)) : null;
+    return i < 0 ? myFactory.makeBinOp(visibleArgs[0].accept(this, null), defCall.getDefinition().getAbstractDefinition(), visibleArgs[1].accept(this, null)) : null;
   }
 
   @Override

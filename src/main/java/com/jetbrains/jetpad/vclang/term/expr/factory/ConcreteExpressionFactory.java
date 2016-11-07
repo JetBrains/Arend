@@ -16,7 +16,7 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.Expression makeBinOp(Abstract.Expression left, Definition defCall, Abstract.Expression right) {
+  public Abstract.Expression makeBinOp(Abstract.Expression left, Abstract.Definition defCall, Abstract.Expression right) {
     return cBinOp((Concrete.Expression) left, defCall, (Concrete.Expression) right);
   }
 
