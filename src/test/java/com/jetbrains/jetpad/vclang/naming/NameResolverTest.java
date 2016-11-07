@@ -4,25 +4,20 @@ import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.parser.Precedence;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collections;
 
 import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void parserInfix() {
-    Concrete.FunctionDefinition plus = new Concrete.FunctionDefinition(POSITION, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6), Collections.<Concrete.Argument>emptyList(), null, Abstract.Definition.Arrow.RIGHT, null, Collections.<Concrete.Statement>emptyList());
-    Concrete.FunctionDefinition mul = new Concrete.FunctionDefinition(POSITION, "*", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 7), Collections.<Concrete.Argument>emptyList(), null, Abstract.Definition.Arrow.RIGHT, null, Collections.<Concrete.Statement>emptyList());
+    Abstract.Definition plus = new Concrete.FunctionDefinition(POSITION, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6), Collections.<Concrete.Argument>emptyList(), null, Abstract.Definition.Arrow.RIGHT, null, Collections.<Concrete.Statement>emptyList());
+    Abstract.Definition mul = new Concrete.FunctionDefinition(POSITION, "*", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 7), Collections.<Concrete.Argument>emptyList(), null, Abstract.Definition.Arrow.RIGHT, null, Collections.<Concrete.Statement>emptyList());
 
     SimpleNamespace namespace = new SimpleNamespace();
     namespace.addDefinition(plus);
@@ -35,13 +30,12 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void parserInfixError() {
-    DependentLink parameters = param(true, vars("x", "y"), Nat());
-    Definition plus = new FunctionDefinition(new Concrete.FunctionDefinition(POSITION, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6), Collections.<Concrete.Argument>emptyList(), null, Abstract.Definition.Arrow.RIGHT, null, Collections.<Concrete.Statement>emptyList()), parameters, Nat(), EmptyElimTreeNode.getInstance());
-    Definition mul = new FunctionDefinition(new Concrete.FunctionDefinition(POSITION, "*", new Precedence(Precedence.Associativity.RIGHT_ASSOC, (byte) 6), Collections.<Concrete.Argument>emptyList(), null, Abstract.Definition.Arrow.RIGHT, null, Collections.<Concrete.Statement>emptyList()), parameters, Nat(), EmptyElimTreeNode.getInstance());
+    Abstract.Definition plus = new Concrete.FunctionDefinition(POSITION, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6), Collections.<Concrete.Argument>emptyList(), null, Abstract.Definition.Arrow.RIGHT, null, Collections.<Concrete.Statement>emptyList());
+    Abstract.Definition mul = new Concrete.FunctionDefinition(POSITION, "*", new Precedence(Precedence.Associativity.RIGHT_ASSOC, (byte) 6), Collections.<Concrete.Argument>emptyList(), null, Abstract.Definition.Arrow.RIGHT, null, Collections.<Concrete.Statement>emptyList());
 
     SimpleNamespace namespace = new SimpleNamespace();
-    namespace.addDefinition(plus.getAbstractDefinition());
-    namespace.addDefinition(mul.getAbstractDefinition());
+    namespace.addDefinition(plus);
+    namespace.addDefinition(mul);
 
     resolveNamesExpr(namespace, "11 + 2 * 3", 1);
   }
