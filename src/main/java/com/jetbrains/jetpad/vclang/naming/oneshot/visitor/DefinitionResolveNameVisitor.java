@@ -187,17 +187,20 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       Namespace staticNamespace = myStaticNsProvider.forDefinition(def);
       Scope staticScope = new StaticClassScope(myParentScope, staticNamespace);
       StatementResolveNameVisitor stVisitor = new StatementResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, myNameResolver, myErrorReporter, staticScope, myContext, myResolveListener);
-      for (Abstract.Statement statement : def.getStatements()) {
-        if (statement instanceof Abstract.DefineStatement && (!Abstract.DefineStatement.StaticMod.STATIC.equals(((Abstract.DefineStatement) statement).getStaticMod())))
-          continue;  // FIXME[where]
+      for (Abstract.Statement statement : def.getGlobalStatements()) {
         statement.accept(stVisitor, null);
       }
 
       Scope dynamicScope = new DynamicClassScope(myParentScope, staticNamespace, myDynamicNsProvider.forClass(def), myErrorReporter);
-      StatementResolveNameVisitor dyVisitor = new StatementResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, myNameResolver, myErrorReporter, dynamicScope, myContext, myResolveListener);
-      for (Abstract.Statement statement : def.getStatements()) {
-        if (statement instanceof Abstract.DefineStatement && !Abstract.DefineStatement.StaticMod.STATIC.equals(((Abstract.DefineStatement) statement).getStaticMod()))
-          statement.accept(dyVisitor, null);
+      DefinitionResolveNameVisitor dyVisitor = new DefinitionResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, dynamicScope, myNameResolver, myErrorReporter, myResolveListener);
+      for (Abstract.ClassField field : def.getFields()) {
+        field.accept(dyVisitor, false);
+      }
+      for (Abstract.Implementation implementation : def.getImplementations()) {
+        implementation.accept(dyVisitor, false);
+      }
+      for (Abstract.Definition definition : def.getInstanceDefinitions()) {
+        definition.accept(dyVisitor, false);
       }
     } catch (Namespace.InvalidNamespaceException e) {
       myErrorReporter.report(e.toError());

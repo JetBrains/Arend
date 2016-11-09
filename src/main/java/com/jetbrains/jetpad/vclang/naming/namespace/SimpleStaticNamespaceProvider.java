@@ -29,7 +29,7 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
   }
 
   private static void forClass(Abstract.ClassDefinition def, SimpleNamespace ns) {
-    forStatements(def.getStatements(), ns);
+    forStatements(def.getGlobalStatements(), ns);
   }
 
   private static void forClassView(Abstract.ClassView def, SimpleNamespace ns) {

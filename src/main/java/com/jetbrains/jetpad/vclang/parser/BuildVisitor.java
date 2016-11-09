@@ -379,6 +379,18 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
+  public List<Concrete.Statement> visitWhere(WhereContext ctx) {
+    if (ctx == null) return null;
+    if (ctx.statements() != null && ctx.statements().statement() != null) {
+      return visitStatementList(ctx.statements().statement());
+    }
+    if (ctx.statement() != null) {
+      return visitStatementList(Collections.singletonList(ctx.statement()));
+    }
+    return null;
+  }
+
+  @Override
   public Concrete.FunctionDefinition visitDefFunction(DefFunctionContext ctx) {
     if (ctx == null) return null;
     String name = visitName(ctx.name());
@@ -387,11 +399,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Abstract.Definition.Arrow arrow = visitArrow(ctx.arrow());
     Concrete.Expression term = visitExpr(ctx.expr().size() == 2 ? ctx.expr(1) : ctx.expr(0));
     List<Concrete.Argument> arguments = visitFunctionArguments(ctx.tele());
-    if (name == null || precedence == null || ctx.expr().size() == 2 && resultType == null || arrow == null || term == null) {
+    List<Concrete.Statement> statements = ctx.where() == null ? Collections.<Concrete.Statement>emptyList() : visitWhere(ctx.where());
+    if (name == null || precedence == null || ctx.expr().size() == 2 && resultType == null || arrow == null || term == null || statements == null) {
       return null;
     }
 
-    List<Concrete.Statement> statements = ctx.where() == null ? Collections.<Concrete.Statement>emptyList() : visitStatementList(ctx.where().statement());
     Concrete.FunctionDefinition result = new Concrete.FunctionDefinition(tokenPosition(ctx.getStart()), name, precedence, arguments, resultType, arrow, term, statements);
     for (Concrete.Statement statement : statements) {
       if (statement instanceof Concrete.DefineStatement) {
@@ -493,12 +505,53 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
   }
 
+  private void misplacedDefinitionError(Concrete.Position position) {
+    myErrorReporter.report(new ParserError(myModule, position, "This definition is not allowed here"));
+  }
+
+  private List<Concrete.Definition> visitInstanceStatements(List<StatementContext> ctx, List<Concrete.ClassField> fields, List<Concrete.Implementation> implementations) {
+    List<Concrete.Definition> definitions = new ArrayList<>(ctx.size());
+    for (StatementContext statementCtx : ctx) {
+      Concrete.SourceNode sourceNode = (Concrete.SourceNode) visit(statementCtx);
+      if (sourceNode != null) {
+        if (sourceNode instanceof Concrete.DefineStatement) {
+          Concrete.Definition definition = ((Concrete.DefineStatement) sourceNode).getDefinition();
+          if (definition instanceof Concrete.ClassField) {
+            if (fields != null) {
+              fields.add((Concrete.ClassField) definition);
+            } else {
+              misplacedDefinitionError(definition.getPosition());
+            }
+          } else
+          if (definition instanceof Concrete.Implementation) {
+            if (implementations != null) {
+              implementations.add((Concrete.Implementation) definition);
+            } else {
+              misplacedDefinitionError(definition.getPosition());
+            }
+          } else
+          if (definition instanceof Concrete.FunctionDefinition || definition instanceof Concrete.DataDefinition) {
+            definitions.add(definition);
+          } else {
+            misplacedDefinitionError(definition.getPosition());
+          }
+        } else {
+          misplacedDefinitionError(sourceNode.getPosition());
+        }
+      }
+    }
+    return definitions;
+  }
+
   @Override
   public Concrete.ClassDefinition visitDefClass(DefClassContext ctx) {
-    if (ctx == null || ctx.statement() == null) return null;
-    List<Concrete.Statement> statements = visitStatementList(ctx.statement());
-    Abstract.ClassDefinition.Kind classKind = ctx.classKindMod() instanceof ClassClassModContext ? Abstract.ClassDefinition.Kind.Class : Abstract.ClassDefinition.Kind.Module;
+    if (ctx == null || ctx.statements() == null || ctx.statements().statement() == null || ctx.where() == null) return null;
+
     List<Concrete.SuperClass> superClasses = new ArrayList<>(ctx.atomFieldsAcc().size());
+    List<Concrete.ClassField> fields = new ArrayList<>();
+    List<Concrete.Implementation> implementations = new ArrayList<>();
+    List<Concrete.Statement> globalStatements = visitStatementList(ctx.statements().statement());
+    List<Concrete.Definition> instanceDefinitions = visitInstanceStatements(ctx.statements().statement(), fields, implementations);
     for (AtomFieldsAccContext atomFieldsCtx : ctx.atomFieldsAcc()) {
       Concrete.Expression superExpr = visitAtomFieldsAcc(atomFieldsCtx);
       if (superExpr != null) {
@@ -506,8 +559,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
     }
 
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), statements, classKind, superClasses);
-    for (Concrete.Statement statement : statements) {
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), superClasses, fields, implementations, globalStatements, instanceDefinitions);
+    for (Concrete.Statement statement : globalStatements) {
       if (statement instanceof Concrete.DefineStatement) {
         ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);
       }

@@ -319,11 +319,12 @@ public final class Abstract {
   }
 
   public interface ClassDefinition extends Definition {
-    enum Kind { Module, Class }
-
-    Kind getKind();
     Collection<? extends SuperClass> getSuperClasses();
-    Collection<? extends Statement> getStatements();
+    Collection<? extends ClassField> getFields();
+    Collection<? extends Implementation> getImplementations();
+
+    Collection<? extends Statement> getGlobalStatements();
+    Collection<? extends Definition> getInstanceDefinitions();
   }
 
   // ClassViews

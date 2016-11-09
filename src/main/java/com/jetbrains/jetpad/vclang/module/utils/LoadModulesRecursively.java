@@ -248,8 +248,17 @@ public class LoadModulesRecursively implements AbstractStatementVisitor<Void, Vo
 
   @Override
   public Void visitClass(Abstract.ClassDefinition def, Void params) {
-    for (Abstract.Statement statement : def.getStatements()) {
+    for (Abstract.ClassField field : def.getFields()) {
+      field.accept(this, null);
+    }
+    for (Abstract.Implementation implementation : def.getImplementations()) {
+      implementation.accept(this, null);
+    }
+    for (Abstract.Statement statement : def.getGlobalStatements()) {
       statement.accept(this, null);
+    }
+    for (Abstract.Definition definition : def.getInstanceDefinitions()) {
+      definition.accept(this, null);
     }
     return null;
   }

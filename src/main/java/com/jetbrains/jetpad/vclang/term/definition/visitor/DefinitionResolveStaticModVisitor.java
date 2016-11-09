@@ -47,15 +47,6 @@ public class DefinitionResolveStaticModVisitor implements AbstractDefinitionVisi
     if (def.getParentStatement() != null && def.getParentStatement().getStaticMod() == Abstract.DefineStatement.StaticMod.DEFAULT)
       myStaticModListener.resolveStaticMod(def.getParentStatement(), isStaticDefault);
 
-    boolean curDefaultIsStatic = def.getKind() == Abstract.ClassDefinition.Kind.Module;
-
-    for (Abstract.Statement statement : def.getStatements()) {
-      if (statement instanceof Abstract.DefaultStaticStatement) {
-        curDefaultIsStatic = ((Abstract.DefaultStaticStatement) statement).isStatic();
-      } else if (statement instanceof Abstract.DefineStatement) {
-        ((Abstract.DefineStatement)statement).getDefinition().accept(this, curDefaultIsStatic);
-      }
-    }
     return null;
   }
 

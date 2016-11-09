@@ -739,36 +739,39 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         assert context.size() == 0;
       }
 
-      for (Abstract.Statement statement : def.getStatements()) {
+      for (Abstract.ClassField field : def.getFields()) {
+        fieldSet.addField(visitClassField(field, typedDef), thisClassCall);
+      }
+
+      for (Abstract.Implementation implementation : def.getImplementations()) {
+        Definition implementedDef = myState.getTypechecked(implementation.getImplementedField());
+        if (!(implementedDef instanceof ClassField)) {
+          classOk = false;
+          myErrorReporter.report(new LocalTypeCheckingError("'" + implementedDef.getName() + "' is not a field", implementation));
+          continue;
+        }
+        ClassField field = (ClassField) implementedDef;
+        if (fieldSet.isImplemented(field)) {
+          classOk = false;
+          myErrorReporter.report(new LocalTypeCheckingError("Field '" + field.getName() + "' is already implemented", implementation));
+          continue;
+        }
+
+        DependentLink thisParameter = createThisParam(typedDef);
+        try (Utils.ContextSaver saver = new Utils.ContextSaver(context)) {
+          context.add(thisParameter);
+          visitor.setThisClass(typedDef, Reference(thisParameter));
+          CheckTypeVisitor.Result result = implementField(fieldSet, field, implementation.getImplementation(), visitor, thisClassCall, thisParameter);
+          if (result == null || result.getExpression().toError() != null) {
+            classOk = false;
+          }
+        }
+      }
+
+      for (Abstract.Statement statement : def.getGlobalStatements()) {
         if (statement instanceof Abstract.DefineStatement) {
           Abstract.Definition definition = ((Abstract.DefineStatement) statement).getDefinition();
-          if (definition instanceof Abstract.ClassField) {
-            ClassField field = visitClassField((Abstract.ClassField) definition, typedDef);
-            fieldSet.addField(field, thisClassCall);
-          } else if (definition instanceof Abstract.Implementation) {
-            Definition implementedDef = myState.getTypechecked(((Abstract.Implementation) definition).getImplementedField());
-            if (!(implementedDef instanceof ClassField)) {
-              classOk = false;
-              myErrorReporter.report(new LocalTypeCheckingError("'" + implementedDef.getName() + "' is not a field", definition));
-              continue;
-            }
-            ClassField field = (ClassField) implementedDef;
-            if (fieldSet.isImplemented(field)) {
-              classOk = false;
-              myErrorReporter.report(new LocalTypeCheckingError("Field '" + field.getName() + "' is already implemented", definition));
-              continue;
-            }
-
-            DependentLink thisParameter = createThisParam(typedDef);
-            try (Utils.ContextSaver saver = new Utils.ContextSaver(context)) {
-              context.add(thisParameter);
-              visitor.setThisClass(typedDef, Reference(thisParameter));
-              CheckTypeVisitor.Result result = implementField(fieldSet, field, ((Abstract.Implementation) definition).getImplementation(), visitor, thisClassCall, thisParameter);
-              if (result == null || result.getExpression().toError() != null) {
-                classOk = false;
-              }
-            }
-          } else if (definition instanceof Abstract.ClassView) {
+          if (definition instanceof Abstract.ClassView) {
             Definition classifyingField = myState.getTypechecked(((Abstract.ClassView) definition).getClassifyingField());
             if (!(classifyingField instanceof ClassField)) {
               classOk = false;

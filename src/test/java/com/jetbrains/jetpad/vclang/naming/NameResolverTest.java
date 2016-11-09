@@ -187,11 +187,13 @@ public class NameResolverTest extends NameResolverTestCase {
   }
 
   private Abstract.Definition getField(Abstract.ClassDefinition classDefinition, String name) {
+    /*
     for (Abstract.Statement statement : classDefinition.getStatements()) {
       if (statement instanceof Abstract.DefineStatement && ((Abstract.DefineStatement) statement).getDefinition().getName().equals(name)) {
         return ((Abstract.DefineStatement) statement).getDefinition();
       }
     }
+    */
     return null;
   }
 

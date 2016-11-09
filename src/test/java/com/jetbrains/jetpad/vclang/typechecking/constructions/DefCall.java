@@ -940,11 +940,11 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void resolvedConstructorTest() {
-      Concrete.ClassDefinition cd = resolveNamesClass(
-          "\\static \\function isequiv {A B : \\Type0} (f : A -> B) => 0\n" +
-          "\\static \\function inP-isequiv (P : \\Prop) => isequiv (TrP P).inP");
-      Concrete.DefineStatement lastDef = (Concrete.DefineStatement) cd.getStatements().get(((ArrayList) cd.getStatements()).size() - 1);
-      ((Concrete.DefCallExpression) ((Concrete.AppExpression) ((Concrete.FunctionDefinition) lastDef.getDefinition()).getTerm()).getArgument().getExpression()).setResolvedDefinition(Prelude.PROP_TRUNC.getConstructor("inP").getAbstractDefinition());
-      typeCheckClass(cd);
+    Concrete.ClassDefinition cd = resolveNamesClass(
+        "\\static \\function isequiv {A B : \\Type0} (f : A -> B) => 0\n" +
+        "\\static \\function inP-isequiv (P : \\Prop) => isequiv (TrP P).inP");
+    Concrete.FunctionDefinition lastDef = (Concrete.FunctionDefinition) ((Concrete.DefineStatement) cd.getGlobalStatements().get(1)).getDefinition();
+    ((Concrete.DefCallExpression) ((Concrete.AppExpression) lastDef.getTerm()).getArgument().getExpression()).setResolvedDefinition(Prelude.PROP_TRUNC.getConstructor("inP").getAbstractDefinition());
+    typeCheckClass(cd);
   }
 }

@@ -13,13 +13,13 @@ hidingOpt : '\\hiding'  # withHiding
 
 nsCmdRoot : modulePath | name;
 
-definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?                      # defFunction
-            | '\\abstract' precedence name ':' expr                                                 # defAbstract
-            | '\\implement' name '=>' expr                                                          # defImplement
-            | '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef?              # defData
-            | classKindMod ID ('\\extends' atomFieldsAcc (',' atomFieldsAcc)*)? '{' statement* '}'  # defClass
-            | '\\view' ID? '\\on' (expr '.')? ID '\\by' name '{' classViewField* '}'                # defClassView
-            | defaultInst '\\instance' ID tele* '=>' expr                                           # defInstance
+definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?                            # defFunction
+            | '\\abstract' precedence name ':' expr                                                       # defAbstract
+            | '\\implement' name '=>' expr                                                                # defImplement
+            | '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef?                    # defData
+            | '\\class' ID ('\\extends' atomFieldsAcc (',' atomFieldsAcc)*)? ('{' statements '}')? where? # defClass
+            | '\\view' ID? '\\on' (expr '.')? ID '\\by' name '{' classViewField* '}'                          # defClassView
+            | defaultInst '\\instance' ID tele* '=>' expr                                                     # defInstance
             ;
 
 defaultInst :             # noDefault
@@ -32,10 +32,6 @@ conditionDef : '\\with' '|'? condition ('|' condition)*;
 
 condition : name patternArg* '=>' expr;
 
-classKindMod : '\\class'                # classClassMod
-             | '\\module'               # moduleClassMod
-             ;
-
 staticMod : '\\static'                  # staticStatic
           | '\\dynamic'                 # dynamicStatic
           |                             # noStatic
@@ -45,7 +41,7 @@ defaultStaticMod : '\\allstatic'        # staticDefaultStatic
                  | '\\alldynamic'       # dynamicDefaultStatic
                  ;
 
-where : '\\where' ('{' statement+ '}' | statement);
+where : '\\where' ('{' statements '}' | statement);
 
 nsCmd : '\\open'                        # openCmd
       | '\\export'                      # exportCmd
