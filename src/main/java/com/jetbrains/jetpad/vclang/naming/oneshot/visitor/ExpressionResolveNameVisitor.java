@@ -266,12 +266,12 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
 
     Abstract.ClassView classView = Abstract.getUnderlyingClassView(expr);
     Abstract.ClassDefinition classDef = Abstract.getUnderlyingClassDef(expr);
-    for (Abstract.ImplementStatement statement : expr.getStatements()) {
-      Abstract.Definition resolvedRef = classView != null ? myNameResolver.resolveClassFieldByView(classView, statement.getName(), myErrorReporter, statement) : classDef != null ? myNameResolver.resolveClassField(classDef, statement.getName(), myErrorReporter, statement) : null;
+    for (Abstract.ClassFieldImpl statement : expr.getStatements()) {
+      Abstract.Definition resolvedRef = classView != null ? myNameResolver.resolveClassFieldByView(classView, statement.getImplementedFieldName(), myErrorReporter, statement) : classDef != null ? myNameResolver.resolveClassField(classDef, statement.getImplementedFieldName(), myErrorReporter, statement) : null;
       if (resolvedRef != null) {
         myResolveListener.implementResolved(statement, resolvedRef);
       }
-      statement.getExpression().accept(this, null);
+      statement.getImplementation().accept(this, null);
     }
 
     return null;

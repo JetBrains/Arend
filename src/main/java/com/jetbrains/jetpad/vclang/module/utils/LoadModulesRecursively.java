@@ -152,8 +152,8 @@ public class LoadModulesRecursively implements AbstractStatementVisitor<Void, Vo
   @Override
   public Void visitClassExt(Abstract.ClassExtExpression expr, Void params) {
     expr.getBaseClassExpression().accept(this, null);
-    for (Abstract.ImplementStatement implementStatement : expr.getStatements()) {
-      implementStatement.getExpression().accept(this, null);
+    for (Abstract.ClassFieldImpl classFieldImpl : expr.getStatements()) {
+      classFieldImpl.getImplementation().accept(this, null);
     }
     return null;
   }
@@ -255,8 +255,8 @@ public class LoadModulesRecursively implements AbstractStatementVisitor<Void, Vo
   }
 
   @Override
-  public Void visitImplement(Abstract.ImplementDefinition def, Void params) {
-    def.getExpression().accept(this, null);
+  public Void visitImplement(Abstract.Implementation def, Void params) {
+    def.getImplementation().accept(this, null);
     return null;
   }
 

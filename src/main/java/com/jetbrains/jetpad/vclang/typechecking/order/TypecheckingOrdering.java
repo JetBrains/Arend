@@ -118,7 +118,7 @@ public class TypecheckingOrdering {
         }
 
         @Override
-        public Boolean visitImplement(Abstract.ImplementDefinition def, Void params) {
+        public Boolean visitImplement(Abstract.Implementation def, Void params) {
           return def.getParentStatement().getParentDefinition().equals(definition) || doOrder(def.getParentStatement().getParentDefinition());
         }
 

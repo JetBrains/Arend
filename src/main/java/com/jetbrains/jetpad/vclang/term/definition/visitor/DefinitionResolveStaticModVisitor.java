@@ -60,7 +60,7 @@ public class DefinitionResolveStaticModVisitor implements AbstractDefinitionVisi
   }
 
   @Override
-  public Void visitImplement(Abstract.ImplementDefinition def, Boolean isStaticDefault) {
+  public Void visitImplement(Abstract.Implementation def, Boolean isStaticDefault) {
     if (def.getParentStatement().getStaticMod() == Abstract.DefineStatement.StaticMod.DEFAULT) {
       myStaticModListener.resolveStaticMod(def.getParentStatement(), isStaticDefault);
     }

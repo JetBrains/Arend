@@ -8,7 +8,7 @@ public interface AbstractDefinitionVisitor<P, R> {
   R visitData(Abstract.DataDefinition def, P params);
   R visitConstructor(Abstract.Constructor def, P params);
   R visitClass(Abstract.ClassDefinition def, P params);
-  R visitImplement(Abstract.ImplementDefinition def, P params);
+  R visitImplement(Abstract.Implementation def, P params);
   R visitClassView(Abstract.ClassView def, P params);
   R visitClassViewField(Abstract.ClassViewField def, P params);
   R visitClassViewInstance(Abstract.ClassViewInstance def, P params);

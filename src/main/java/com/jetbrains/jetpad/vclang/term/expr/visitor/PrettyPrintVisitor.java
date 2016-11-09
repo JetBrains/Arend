@@ -463,10 +463,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     expr.getBaseClassExpression().accept(this, (byte) -Abstract.ClassExtExpression.PREC);
     myBuilder.append(" {\n");
     myIndent += INDENT;
-    for (Abstract.ImplementStatement statement : expr.getStatements()) {
+    for (Abstract.ClassFieldImpl statement : expr.getStatements()) {
       printIndent();
-      myBuilder.append("| ").append(new Name(statement.getName()).getPrefixName()).append(" => ");
-      statement.getExpression().accept(this, Abstract.Expression.PREC);
+      myBuilder.append("| ").append(new Name(statement.getImplementedFieldName()).getPrefixName()).append(" => ");
+      statement.getImplementation().accept(this, Abstract.Expression.PREC);
       myBuilder.append("\n");
     }
     myIndent -= INDENT;
@@ -837,9 +837,9 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   @Override
-  public Void visitImplement(Abstract.ImplementDefinition def, Void params) {
+  public Void visitImplement(Abstract.Implementation def, Void params) {
     myBuilder.append("\\implement ").append(def.getName()).append(" => ");
-    def.getExpression().accept(this, null);
+    def.getImplementation().accept(this, null);
     return null;
   }
 

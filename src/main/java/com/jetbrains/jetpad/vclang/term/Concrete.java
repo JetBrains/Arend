@@ -367,9 +367,9 @@ public final class Concrete {
 
   public static class ClassExtExpression extends Expression implements Abstract.ClassExtExpression {
     private final Expression myBaseClassExpression;
-    private final List<ImplementStatement> myDefinitions;
+    private final List<ClassFieldImpl> myDefinitions;
 
-    public ClassExtExpression(Position position, Expression baseClassExpression, List<ImplementStatement> definitions) {
+    public ClassExtExpression(Position position, Expression baseClassExpression, List<ClassFieldImpl> definitions) {
       super(position);
       myBaseClassExpression = baseClassExpression;
       myDefinitions = definitions;
@@ -381,7 +381,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<ImplementStatement> getStatements() {
+    public List<ClassFieldImpl> getStatements() {
       return myDefinitions;
     }
 
@@ -391,19 +391,19 @@ public final class Concrete {
     }
   }
 
-  public static class ImplementStatement extends SourceNode implements Abstract.ImplementStatement {
+  public static class ClassFieldImpl extends SourceNode implements Abstract.ClassFieldImpl {
     private final String myName;
     private Abstract.Definition myImplementedField;
     private final Expression myExpression;
 
-    public ImplementStatement(Position position, String identifier, Expression expression) {
+    public ClassFieldImpl(Position position, String identifier, Expression expression) {
       super(position);
       myName = identifier;
       myExpression = expression;
     }
 
     @Override
-    public String getName() {
+    public String getImplementedFieldName() {
       return myName;
     }
 
@@ -417,7 +417,7 @@ public final class Concrete {
     }
 
     @Override
-    public Expression getExpression() {
+    public Expression getImplementation() {
       return myExpression;
     }
   }
@@ -1038,17 +1038,17 @@ public final class Concrete {
     }
   }
 
-  public static class ImplementDefinition extends Definition implements Abstract.ImplementDefinition {
+  public static class Implementation extends Definition implements Abstract.Implementation {
     private Abstract.Definition myImplemented;
     private final Expression myExpression;
 
-    public ImplementDefinition(Position position, String name, Expression expression) {
+    public Implementation(Position position, String name, Expression expression) {
       super(position, name, Precedence.DEFAULT);
       myExpression = expression;
     }
 
     @Override
-    public Abstract.Definition getImplemented() {
+    public Abstract.Definition getImplementedField() {
       return myImplemented;
     }
 
@@ -1057,7 +1057,7 @@ public final class Concrete {
     }
 
     @Override
-    public Expression getExpression() {
+    public Expression getImplementation() {
       return myExpression;
     }
 
@@ -1170,20 +1170,6 @@ public final class Concrete {
     @Override
     public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitData(this, params);
-    }
-  }
-
-  public static class Identifier extends SourceNode implements Abstract.Identifier {
-    private final String myName;
-
-    public Identifier(Position position, String name) {
-      super(position);
-      myName = name;
-    }
-
-    @Override
-    public String getName() {
-      return myName;
     }
   }
 

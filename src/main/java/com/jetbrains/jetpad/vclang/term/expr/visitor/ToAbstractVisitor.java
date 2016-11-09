@@ -197,7 +197,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   public Abstract.Expression visitClassCall(ClassCallExpression expr, Void params) {
     Collection<Map.Entry<ClassField, FieldSet.Implementation>> implHere = expr.getImplementedHere();
     Abstract.Expression enclExpr = null;
-    List<Abstract.ImplementStatement> statements = new ArrayList<>(implHere.size());
+    List<Abstract.ClassFieldImpl> statements = new ArrayList<>(implHere.size());
     for (Map.Entry<ClassField, FieldSet.Implementation> entry : implHere) {
       if (entry.getKey().equals(expr.getDefinition().getEnclosingThisField())) {
         enclExpr = entry.getValue().term.accept(this, params);

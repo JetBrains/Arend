@@ -99,7 +99,7 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
     }
 
     @Override
-    public Void visitImplement(Abstract.ImplementDefinition def, SimpleNamespace ns) {
+    public Void visitImplement(Abstract.Implementation def, SimpleNamespace ns) {
       return null;
     }
 

@@ -183,8 +183,8 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
     return expr2 instanceof Abstract.ProjExpression && expr1.getField() == ((Abstract.ProjExpression) expr2).getField() && expr1.getExpression().accept(this, ((Abstract.ProjExpression) expr2).getExpression());
   }
 
-  private boolean compareImplementStatement(Abstract.ImplementStatement implStat1, Abstract.ImplementStatement implStat2) {
-    return implStat1.getExpression().accept(this, implStat2.getExpression()) && implStat1.getName().equals(implStat2.getName());
+  private boolean compareImplementStatement(Abstract.ClassFieldImpl implStat1, Abstract.ClassFieldImpl implStat2) {
+    return implStat1.getImplementation().accept(this, implStat2.getImplementation()) && implStat1.getImplementedFieldName().equals(implStat2.getImplementedFieldName());
   }
 
   @Override
@@ -192,7 +192,7 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
     if (!(expr2 instanceof Abstract.ClassExtExpression)) return false;
     Abstract.ClassExtExpression classExtExpr2 = (Abstract.ClassExtExpression) expr2;
     if (!(expr1.getBaseClassExpression().accept(this, classExtExpr2.getBaseClassExpression()) && expr1.getStatements().size() == classExtExpr2.getStatements().size())) return false;
-    for (Iterator<? extends Abstract.ImplementStatement> it1 = expr1.getStatements().iterator(), it2 = classExtExpr2.getStatements().iterator(); it1.hasNext(); ) {
+    for (Iterator<? extends Abstract.ClassFieldImpl> it1 = expr1.getStatements().iterator(), it2 = classExtExpr2.getStatements().iterator(); it1.hasNext(); ) {
       if (!compareImplementStatement(it1.next(), it2.next())) {
         return false;
       }

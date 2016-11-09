@@ -207,7 +207,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
   }
 
   @Override
-  public Void visitImplement(Abstract.ImplementDefinition def, Boolean params) {
+  public Void visitImplement(Abstract.Implementation def, Boolean params) {
     if (myResolveListener == null) {
       return null;
     }
@@ -224,7 +224,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       myErrorReporter.report(new NotInScopeError(def, def.getName()));
     }
 
-    def.getExpression().accept(new ExpressionResolveNameVisitor(myParentScope, myContext, myNameResolver, myErrorReporter, myResolveListener), null);
+    def.getImplementation().accept(new ExpressionResolveNameVisitor(myParentScope, myContext, myNameResolver, myErrorReporter, myResolveListener), null);
     return null;
   }
 

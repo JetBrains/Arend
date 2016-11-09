@@ -745,8 +745,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
           if (definition instanceof Abstract.ClassField) {
             ClassField field = visitClassField((Abstract.ClassField) definition, typedDef);
             fieldSet.addField(field, thisClassCall);
-          } else if (definition instanceof Abstract.ImplementDefinition) {
-            Definition implementedDef = myState.getTypechecked(((Abstract.ImplementDefinition) definition).getImplemented());
+          } else if (definition instanceof Abstract.Implementation) {
+            Definition implementedDef = myState.getTypechecked(((Abstract.Implementation) definition).getImplementedField());
             if (!(implementedDef instanceof ClassField)) {
               classOk = false;
               myErrorReporter.report(new LocalTypeCheckingError("'" + implementedDef.getName() + "' is not a field", definition));
@@ -763,7 +763,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
             try (Utils.ContextSaver saver = new Utils.ContextSaver(context)) {
               context.add(thisParameter);
               visitor.setThisClass(typedDef, Reference(thisParameter));
-              CheckTypeVisitor.Result result = implementField(fieldSet, field, ((Abstract.ImplementDefinition) definition).getExpression(), visitor, thisClassCall, thisParameter);
+              CheckTypeVisitor.Result result = implementField(fieldSet, field, ((Abstract.Implementation) definition).getImplementation(), visitor, thisClassCall, thisParameter);
               if (result == null || result.getExpression().toError() != null) {
                 classOk = false;
               }
@@ -862,7 +862,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
   }
 
   @Override
-  public Definition visitImplement(Abstract.ImplementDefinition def, ClassDefinition params) {
+  public Definition visitImplement(Abstract.Implementation def, ClassDefinition params) {
     throw new IllegalStateException();
   }
 

@@ -41,7 +41,7 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
     for (Abstract.Statement statement : statements) {
       if (!(statement instanceof Abstract.DefineStatement)) continue;
       Abstract.DefineStatement defst = (Abstract.DefineStatement) statement;
-      if (defst.getDefinition() instanceof Abstract.ImplementDefinition) continue;  // HACK[impldef]
+      if (defst.getDefinition() instanceof Abstract.Implementation) continue;  // HACK[impldef]
       if (!STATIC.equals(defst.getStaticMod())) {
         ns.addDefinition(defst.getDefinition());
         if (defst.getDefinition() instanceof Abstract.DataDefinition) {

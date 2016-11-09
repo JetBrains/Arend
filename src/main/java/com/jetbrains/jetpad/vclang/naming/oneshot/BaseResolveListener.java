@@ -19,12 +19,12 @@ public class BaseResolveListener implements ResolveListener {
   }
 
   @Override
-  public void implementResolved(Abstract.ImplementDefinition identifier, Abstract.Definition definition) {
+  public void implementResolved(Abstract.Implementation identifier, Abstract.Definition definition) {
 
   }
 
   @Override
-  public void implementResolved(Abstract.ImplementStatement identifier, Abstract.Definition definition) {
+  public void implementResolved(Abstract.ClassFieldImpl identifier, Abstract.Definition definition) {
 
   }
 

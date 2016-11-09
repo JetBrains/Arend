@@ -36,12 +36,12 @@ public class ConcreteExpressionFactory {
     return cDefCall(expr, definition, definition.getName());
   }
 
-  public static Concrete.ClassExtExpression cClassExt(Concrete.Expression expr, List<Concrete.ImplementStatement> definitions) {
+  public static Concrete.ClassExtExpression cClassExt(Concrete.Expression expr, List<Concrete.ClassFieldImpl> definitions) {
     return new Concrete.ClassExtExpression(POSITION, expr, definitions);
   }
 
-  public static Concrete.ImplementStatement cImplStatement(String name, Concrete.Expression expr) {
-    return new Concrete.ImplementStatement(POSITION, name, expr);
+  public static Concrete.ClassFieldImpl cImplStatement(String name, Concrete.Expression expr) {
+    return new Concrete.ClassFieldImpl(POSITION, name, expr);
   }
 
   public static Concrete.Expression cApps(Concrete.Expression expr, Concrete.Expression... exprs) {

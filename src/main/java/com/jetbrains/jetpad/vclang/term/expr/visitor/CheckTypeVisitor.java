@@ -920,8 +920,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
 
     // Some tricks to keep going as long as possible in case of error
-    Collection<? extends Abstract.ImplementStatement> statements = expr.getStatements();
-    for (Abstract.ImplementStatement statement : statements) {
+    Collection<? extends Abstract.ClassFieldImpl> statements = expr.getStatements();
+    for (Abstract.ClassFieldImpl statement : statements) {
       Definition implementedDef = myState.getTypechecked(statement.getImplementedField());
       if (!(implementedDef instanceof ClassField)) {
         myErrorReporter.report(new LocalTypeCheckingError("'" + implementedDef.getName() + "' is not a field", statement));
@@ -933,7 +933,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         continue;
       }
 
-      implementField(fieldSet, field, statement.getExpression(), this, resultExpr);
+      implementField(fieldSet, field, statement.getImplementation(), this, resultExpr);
     }
 
     classExtResult = new Result(resultExpr, new PiUniverseType(EmptyDependentLink.getInstance(), resultExpr.getSorts()));

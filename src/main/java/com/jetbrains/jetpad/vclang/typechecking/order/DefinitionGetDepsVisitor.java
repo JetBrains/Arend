@@ -112,8 +112,8 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
           if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ClassField) {
             visitClassField(result, (Abstract.ClassField) ((Abstract.DefineStatement) statement).getDefinition());
           } else
-          if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ImplementDefinition) {
-            visitImplement(result, (Abstract.ImplementDefinition) ((Abstract.DefineStatement) statement).getDefinition());
+          if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.Implementation) {
+            visitImplement(result, (Abstract.Implementation) ((Abstract.DefineStatement) statement).getDefinition());
           } else
           if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ClassView) {
             // TODO: I'm not sure what to do here.
@@ -144,7 +144,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   }
 
   @Override
-  public Set<Abstract.Definition> visitImplement(Abstract.ImplementDefinition def, Boolean isStatic) {
+  public Set<Abstract.Definition> visitImplement(Abstract.Implementation def, Boolean isStatic) {
     throw new IllegalStateException();
   }
 
@@ -176,7 +176,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
     return result;
   }
 
-  private void visitImplement(Set<Abstract.Definition> result, Abstract.ImplementDefinition def) {
-    def.getExpression().accept(new CollectDefCallsVisitor(result), null);
+  private void visitImplement(Set<Abstract.Definition> result, Abstract.Implementation def) {
+    def.getImplementation().accept(new CollectDefCallsVisitor(result), null);
   }
 }

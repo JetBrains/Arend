@@ -516,11 +516,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.ImplementDefinition visitDefImplement(DefImplementContext ctx) {
+  public Concrete.Implementation visitDefImplement(DefImplementContext ctx) {
     if (ctx == null) return null;
     Concrete.Expression expression = visitExpr(ctx.expr());
     String name = visitName(ctx.name());
-    return expression == null || name == null ? null : new Concrete.ImplementDefinition(tokenPosition(ctx.getStart()), name, expression);
+    return expression == null || name == null ? null : new Concrete.Implementation(tokenPosition(ctx.getStart()), name, expression);
   }
 
   @Override
@@ -850,12 +850,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     if (ctx.implementStatements() != null) {
-      List<Concrete.ImplementStatement> implementStatements = new ArrayList<>(ctx.implementStatements().implementStatement().size());
+      List<Concrete.ClassFieldImpl> implementStatements = new ArrayList<>(ctx.implementStatements().implementStatement().size());
       for (ImplementStatementContext implementStatement : ctx.implementStatements().implementStatement()) {
         String name = visitName(implementStatement.name());
         Concrete.Expression expression1 = visitExpr(implementStatement.expr());
         if (name != null && expression1 != null) {
-          implementStatements.add(new Concrete.ImplementStatement(tokenPosition(implementStatement.name().getStart()), name, expression1));
+          implementStatements.add(new Concrete.ClassFieldImpl(tokenPosition(implementStatement.name().getStart()), name, expression1));
         }
       }
       expression = new Concrete.ClassExtExpression(tokenPosition(ctx.getStart()), expression, implementStatements);
