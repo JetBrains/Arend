@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import org.junit.Test;
@@ -30,9 +30,9 @@ public class PathsTest extends TypeCheckingTestCase {
     pathArgs.add(Lam(C, Reference(A)));
     pathArgs.add(Reference(A.getNext()));
     pathArgs.add(Reference(A.getNext()));
-    Expression pathCall = ConCall(Prelude.PATH_CON, new LevelArguments(), pathArgs, Lam(C, Reference(A.getNext())));
+    Expression pathCall = ConCall(Prelude.PATH_CON, new Level(0), Level.INFINITY, pathArgs, Lam(C, Reference(A.getNext())));
     assertEquals(Lam(A, pathCall).normalize(NormalizeVisitor.Mode.NF), idp.getExpression());
-    assertEquals(Pi(A, FunCall(Prelude.PATH_INFIX, new LevelArguments(), Reference(A), Reference(A.getNext()), Reference(A.getNext()))).normalize(NormalizeVisitor.Mode.NF), idp.getType().normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Pi(A, FunCall(Prelude.PATH_INFIX, new Level(0), Level.INFINITY, Reference(A), Reference(A.getNext()), Reference(A.getNext()))).normalize(NormalizeVisitor.Mode.NF), idp.getType().normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test

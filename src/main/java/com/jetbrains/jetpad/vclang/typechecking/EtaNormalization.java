@@ -50,7 +50,7 @@ public class EtaNormalization {
     }
 
     if (index == 0) {
-      return expression;
+      return new LamExpression(expression.getParameters(), body);
     }
 
     body = Apps(body.getFunction(), args.subList(0, args.size() - index));

@@ -85,10 +85,10 @@ public class InferenceTest extends TypeCheckingTestCase {
   @Test
   public void equations() {
     typeCheckClass(
-        "\\static \\data E {lp : Lvl} {lh : CNat} (A B : \\Type (lp, lh)) | inl A | inr B\n" +
+        "\\static \\data E (A B : \\Type) | inl A | inr B\n" +
         "\\static \\data Empty : \\Prop\n" +
-        "\\static \\function neg {lp : Lvl} {lh : CNat} (A : \\Type (lp, lh)) => A -> Empty\n" +
-        "\\static \\function test {lp : Lvl} {lh : CNat} (A : \\Type (lp, lh)) => E (neg A) A"
+        "\\static \\function neg (A : \\Type) => A -> Empty\n" +
+        "\\static \\function test (A : \\Type) => E (neg A) A"
     );
   }
 }

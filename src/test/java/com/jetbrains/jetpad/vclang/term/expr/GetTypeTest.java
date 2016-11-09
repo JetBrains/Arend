@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
@@ -63,7 +64,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
   public void fieldAccTest() {
     TypeCheckClassResult result = typeCheckClass("\\static \\class C { \\abstract x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
     DependentLink p = param("p", Pi(Nat(), ClassCall((ClassDefinition) result.getDefinition("C"), new LevelArguments())));
-    Expression type = FunCall(Prelude.PATH_INFIX, new LevelArguments(),
+    Expression type = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(1),
         Nat(),
         Zero(),
         FieldCall((ClassField) result.getDefinition("C.x"), Apps(Reference(p), Zero())));

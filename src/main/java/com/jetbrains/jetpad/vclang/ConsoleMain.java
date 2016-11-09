@@ -157,6 +157,7 @@ public class ConsoleMain {
     TypecheckingOrdering.typecheck(state, staticNsProvider, dynamicNsProvider, modulesToTypeCheck, errorReporter, new TypecheckedReporter() {
       @Override
       public void typecheckingSucceeded(Abstract.Definition definition) {
+
       }
 
       @Override

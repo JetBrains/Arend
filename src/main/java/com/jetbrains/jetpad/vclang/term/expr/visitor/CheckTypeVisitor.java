@@ -501,7 +501,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         } else if (argument instanceof Abstract.TypeArgument) {
           names = argument instanceof Abstract.TelescopeArgument ? ((Abstract.TelescopeArgument) argument).getNames() : Collections.<String>singletonList(null);
           argAbsType = ((Abstract.TypeArgument) argument).getType();
-          Result argResult = typeCheck(argAbsType, Universe());
+          Result argResult = typeCheck(argAbsType, new PiTypeOmega(EmptyDependentLink.getInstance()));
           if (argResult == null) return null;
           argType = argResult.getExpression();
         } else {

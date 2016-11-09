@@ -47,6 +47,10 @@ public class SortMax {
     return myPLevel.isInfinity();
   }
 
+  public SortMax max(SortMax sort) {
+    return new SortMax(myPLevel.max(sort.getPLevel()), myHLevel.max(sort.getHLevel()));
+  }
+
   public Sort toSort() {
     if (myHLevel.isMinimum()) {
       return Sort.PROP;

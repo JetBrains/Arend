@@ -138,12 +138,13 @@ public class DefinitionTest extends TypeCheckingTestCase {
     assertEquals(Pi(A, Pi(parameters2.getFirst(), DataCall(typedDef, new LevelArguments(), Reference(A)))), con2Type.fromPiParameters(con2Params));
   }
 
+  /* Not valid test anymore since we don't have explicit universes for data
   @Test
   public void dataExplicitUniverse() {
     typeCheckDef("\\data Either {lp : Lvl} {lh : CNat} (A B : \\Type (lp,lh)) : \\Type (lp, max lh 1)\n" +
             "    | inl A\n" +
             "    | inr B");
-  }
+  } /**/
 
   @Test
   public void constructor() {

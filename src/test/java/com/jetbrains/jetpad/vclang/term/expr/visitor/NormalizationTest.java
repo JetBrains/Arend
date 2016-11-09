@@ -300,17 +300,17 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink g = param("g", Pi(param(Reference(B)), Reference(A)));
     DependentLink a = param("a", Reference(A));
     DependentLink b = param("b", Reference(B));
-    Expression linvType = FunCall(Prelude.PATH_INFIX, new LevelArguments(),
+    Expression linvType = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0),
         Reference(A),
         Apps(Reference(g), Apps(Reference(f), Reference(a))),
         Reference(a));
     DependentLink linv = param("linv", Pi(a, linvType));
-    Expression rinvType = FunCall(Prelude.PATH_INFIX, new LevelArguments(),
+    Expression rinvType = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0),
         Reference(B),
         Apps(Reference(f), Apps(Reference(g), Reference(b))),
         Reference(b));
     DependentLink rinv = param("rinv", Pi(b, rinvType));
-    Expression iso_expr = FunCall(Prelude.ISO, new LevelArguments(),
+    Expression iso_expr = FunCall(Prelude.ISO, new Level(0), new Level(0),
         Reference(A), Reference(B),
         Reference(f), Reference(g),
         Reference(linv), Reference(rinv),
@@ -328,17 +328,17 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink g = param("g", Pi(param(Reference(B)), Reference(A)));
     DependentLink a = param("a", Reference(A));
     DependentLink b = param("b", Reference(B));
-    Expression linvType = FunCall(Prelude.PATH_INFIX, new LevelArguments(),
+    Expression linvType = FunCall(Prelude.PATH_INFIX, new Level(lp), new Level(lh),
         Reference(A),
         Apps(Reference(g), Apps(Reference(f), Reference(a))),
         Reference(a));
     DependentLink linv = param("linv", Pi(a, linvType));
-    Expression rinvType = FunCall(Prelude.PATH_INFIX, new LevelArguments(),
+    Expression rinvType = FunCall(Prelude.PATH_INFIX, new Level(lp), new Level(lh),
         Reference(B),
         Apps(Reference(f), Apps(Reference(g), Reference(b))),
         Reference(b));
     DependentLink rinv = param("rinv", Pi(b, rinvType));
-    Expression iso_expr = FunCall(Prelude.ISO, new LevelArguments(),
+    Expression iso_expr = FunCall(Prelude.ISO, new Level(lp), new Level(lh),
         Reference(A), Reference(B),
         Reference(f), Reference(g),
         Reference(linv), Reference(rinv),
@@ -355,23 +355,23 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink a = param("a", Reference(A));
     DependentLink b = param("b", Reference(B));
     DependentLink k = param("k", Interval());
-    Expression linvType = FunCall(Prelude.PATH_INFIX, new LevelArguments(),
+    Expression linvType = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0),
         Reference(A),
         Apps(Reference(g), Apps(Reference(f), Reference(a))),
         Reference(a));
     DependentLink linv = param("linv", Pi(a, linvType));
-    Expression rinvType = FunCall(Prelude.PATH_INFIX, new LevelArguments(),
+    Expression rinvType = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0),
         Reference(B),
         Apps(Reference(f), Apps(Reference(g), Reference(b))),
         Reference(b));
     DependentLink rinv = param("rinv", Pi(b, rinvType));
     DependentLink aleft = param("aleft", Reference(A));
-    Expression iso_expr = FunCall(Prelude.ISO, new LevelArguments(),
+    Expression iso_expr = FunCall(Prelude.ISO, new Level(0), new Level(0),
         Reference(A), Reference(B),
         Reference(f), Reference(g),
         Reference(linv), Reference(rinv),
         Reference(k));
-    Expression expr = FunCall(Prelude.COERCE, new LevelArguments(),
+    Expression expr = FunCall(Prelude.COERCE, new Level(0), new Level(0),
         Lam(k, iso_expr),
         Reference(aleft),
         Right());
@@ -382,26 +382,26 @@ public class NormalizationTest extends TypeCheckingTestCase {
   public void testCoeIsoFreeVar() {
     DependentLink k = param("k", Interval());
     DependentLink i = param("i", Interval());
-    Expression A = DataCall(Prelude.PATH, new LevelArguments(), Lam(i, Interval()), Reference(k), Reference(k));
+    Expression A = DataCall(Prelude.PATH, new Level(0), new Level(0), Lam(i, Interval()), Reference(k), Reference(k));
     DependentLink B = param("B", Universe(new Level(0), new Level(0)));
     DependentLink f = param("f", Pi(param(A), Reference(B)));
     DependentLink g = param("g", Pi(param(Reference(B)), A));
     DependentLink a = param("a", A);
     DependentLink b = param("b", Reference(B));
-    Expression linvType = FunCall(Prelude.PATH_INFIX, new LevelArguments(),
+    Expression linvType = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0),
         A,
         Apps(Reference(g), Apps(Reference(f), Reference(a))),
         Reference(a));
     DependentLink linv = param("linv", Pi(a, linvType));
-    Expression rinvType = FunCall(Prelude.PATH_INFIX, new LevelArguments(),
+    Expression rinvType = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0),
         Reference(B),
         Apps(Reference(f), Apps(Reference(g), Reference(b))),
         Reference(b));
     DependentLink rinv = param("rinv", Pi(b, rinvType));
     DependentLink aleft = param("aleft", A.subst(k, Right()));
-    Expression expr = FunCall(Prelude.COERCE, new LevelArguments(),
-        Lam(k, FunCall(Prelude.ISO, new LevelArguments(),
-            DataCall(Prelude.PATH, new LevelArguments(),
+    Expression expr = FunCall(Prelude.COERCE, new Level(0), new Level(0),
+        Lam(k, FunCall(Prelude.ISO, new Level(0), new Level(0),
+            DataCall(Prelude.PATH, new Level(0), new Level(0),
                 Lam(i, Interval()),
                 Reference(k),
                 Reference(k)),

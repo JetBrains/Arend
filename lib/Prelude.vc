@@ -34,14 +34,14 @@ iso {A B : \Type} (f : A -> B) (g : B -> A) (p : \Pi (x : A) -> g (f x) = x) (q 
     | left => A
     | right => B
 
-\static \data TrP {lp : Lvl} {lh : CNat} (A : \Type (lp,lh))
+\static \data TrP (A : \Type)
     | inP A
     | truncP (a a' : TrP A) I
   \with
     | truncP a _  left  => a
     | truncP _ a' right => a'
 
-\static \data TrS {lp : Lvl} {lh : CNat} (A : \Type (lp,lh))
+\static \data TrS (A : \Type)
     | inS A
     | truncS (a a' : TrS A) (p p' : TrS A) I I
   \with
