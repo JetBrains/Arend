@@ -155,13 +155,20 @@ public class TwoStageEquations implements Equations {
   }
 
   private void addLevelEquation(Variable var1, Variable var2, int constant, Abstract.SourceNode sourceNode) {
-    if (!(var1 instanceof InferenceLevelVariable) && !(var2 instanceof InferenceLevelVariable)) {
+    // 0 <= c, 0 <= y + c, 0 <= ?y + c
+    if (var1 == null && constant >= 0) {
+      return;
+    }
+
+    // x <= +-c, 0 <= y - c, 0 <= -c, x <= y +- c, ?x <= -c, ?x <= y - c
+    if (!(var2 instanceof InferenceLevelVariable) && (constant < 0 || !(var1 instanceof InferenceLevelVariable))) {
       if (var1 != var2 || constant < 0) {
         myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant)), sourceNode));
       }
       return;
     }
 
+    // ?x <= ?y + c, x <= ?y +- c
     if (var1 != null && var2 instanceof InferenceLevelVariable) {
       Variable base = var1 instanceof InferenceLevelVariable ? myBases.get(var1) : var1;
       if (base != null) {
@@ -169,6 +176,7 @@ public class TwoStageEquations implements Equations {
       }
     }
 
+    // 0 <= ?y - c, ?x <= c, ?x <= y + c, ?x <= ?y +- c, x <= ?y +- c
     myLevelEquations.addEquation(new LevelEquation<>(var1 instanceof InferenceLevelVariable ? (InferenceLevelVariable) var1 : null, var2 instanceof InferenceLevelVariable ? (InferenceLevelVariable) var2 : null, constant));
   }
 
