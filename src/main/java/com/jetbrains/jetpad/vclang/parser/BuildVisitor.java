@@ -133,14 +133,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (definition == null) {
       return null;
     }
-    Concrete.DefineStatement statement = new Concrete.DefineStatement(definition.getPosition(), (Abstract.DefineStatement.StaticMod)ctx.staticMod().accept(this), definition);
-    definition.setParentStatement(statement);
-    if (definition instanceof Concrete.DataDefinition) {
-      for (Concrete.Constructor constructor : ((Concrete.DataDefinition) definition).getConstructors()) {
-        constructor.setParentStatement(statement);
-      }
-    }
-    return statement;
+    return new Concrete.DefineStatement(definition.getPosition(), definition);
   }
 
   @Override
@@ -177,26 +170,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       names = null;
     }
     return new Concrete.NamespaceCommandStatement(tokenPosition(ctx.getStart()), kind, modulePath, path, ctx.hidingOpt() instanceof WithHidingContext, names);
-  }
-
-  @Override
-  public Concrete.DefaultStaticStatement visitDefaultStatic(DefaultStaticContext ctx) {
-    return new Concrete.DefaultStaticStatement(tokenPosition(ctx.getStart()), ctx.defaultStaticMod() instanceof StaticDefaultStaticContext);
-  }
-
-  @Override
-  public Abstract.DefineStatement.StaticMod visitStaticStatic(StaticStaticContext ctx) {
-    return Abstract.DefineStatement.StaticMod.STATIC;
-  }
-
-  @Override
-  public Abstract.DefineStatement.StaticMod visitDynamicStatic(DynamicStaticContext ctx) {
-    return Abstract.DefineStatement.StaticMod.DYNAMIC;
-  }
-
-  @Override
-  public Abstract.DefineStatement.StaticMod visitNoStatic(NoStaticContext ctx) {
-    return Abstract.DefineStatement.StaticMod.DEFAULT;
   }
 
   @Override
@@ -404,13 +377,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return null;
     }
 
-    Concrete.FunctionDefinition result = new Concrete.FunctionDefinition(tokenPosition(ctx.getStart()), name, precedence, arguments, resultType, arrow, term, statements);
-    for (Concrete.Statement statement : statements) {
-      if (statement instanceof Concrete.DefineStatement) {
-        ((Concrete.DefineStatement) statement).setParentDefinition(result);
-      }
-    }
-    return result;
+    return new Concrete.FunctionDefinition(tokenPosition(ctx.getStart()), name, precedence, arguments, resultType, arrow, term, statements);
   }
 
   private List<Concrete.Argument> visitFunctionArguments(List<TeleContext> teleCtx) {
@@ -560,10 +527,14 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), superClasses, fields, implementations, globalStatements, instanceDefinitions);
-    for (Concrete.Statement statement : globalStatements) {
-      if (statement instanceof Concrete.DefineStatement) {
-        ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);
-      }
+    for (Concrete.ClassField field : fields) {
+      field.setEnclosingClass(classDefinition);
+    }
+    for (Concrete.Implementation implementation : implementations) {
+      implementation.setEnclosingClass(classDefinition);
+    }
+    for (Concrete.Definition definition : instanceDefinitions) {
+      definition.setEnclosingClass(classDefinition);
     }
     return classDefinition;
   }

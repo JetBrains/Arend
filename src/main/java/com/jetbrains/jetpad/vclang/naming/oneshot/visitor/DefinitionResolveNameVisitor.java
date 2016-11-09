@@ -215,16 +215,9 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       return null;
     }
 
-    Abstract.Definition parentDef = def.getParentStatement().getParentDefinition();
-
-    if (parentDef instanceof Abstract.ClassDefinition) {
-      Abstract.Definition referable = myNameResolver.resolveClassField((Abstract.ClassDefinition) parentDef, def.getName(), myErrorReporter, def);
-      if (referable != null) {
-        myResolveListener.implementResolved(def, referable);
-      }
-    } else {
-      // TODO: Is this possible? If it is, then this error message is incorrect.
-      myErrorReporter.report(new NotInScopeError(def, def.getName()));
+    Abstract.Definition referable = myNameResolver.resolveClassField(def.getEnclosingClass(), def.getName(), myErrorReporter, def);
+    if (referable != null) {
+      myResolveListener.implementResolved(def, referable);
     }
 
     def.getImplementation().accept(new ExpressionResolveNameVisitor(myParentScope, myContext, myNameResolver, myErrorReporter, myResolveListener), null);

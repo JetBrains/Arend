@@ -2,9 +2,8 @@ grammar Vcgrammar;
 
 statements : statement*;
 
-statement : staticMod definition                                              # statDef
+statement : definition                                              # statDef
           | nsCmd nsCmdRoot fieldAcc* (hidingOpt '(' name (',' name)* ')')?   # statCmd
-          | defaultStaticMod                                                  # defaultStatic
           ;
 
 hidingOpt : '\\hiding'  # withHiding
@@ -18,8 +17,8 @@ definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?  
             | '\\implement' name '=>' expr                                                                # defImplement
             | '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef?                    # defData
             | '\\class' ID ('\\extends' atomFieldsAcc (',' atomFieldsAcc)*)? ('{' statements '}')? where? # defClass
-            | '\\view' ID? '\\on' (expr '.')? ID '\\by' name '{' classViewField* '}'                          # defClassView
-            | defaultInst '\\instance' ID tele* '=>' expr                                                     # defInstance
+            | '\\view' ID? '\\on' (expr '.')? ID '\\by' name '{' classViewField* '}'                      # defClassView
+            | defaultInst '\\instance' ID tele* '=>' expr                                                 # defInstance
             ;
 
 defaultInst :             # noDefault
@@ -32,15 +31,6 @@ conditionDef : '\\with' '|'? condition ('|' condition)*;
 
 condition : name patternArg* '=>' expr;
 
-staticMod : '\\static'                  # staticStatic
-          | '\\dynamic'                 # dynamicStatic
-          |                             # noStatic
-          ;
-
-defaultStaticMod : '\\allstatic'        # staticDefaultStatic
-                 | '\\alldynamic'       # dynamicDefaultStatic
-                 ;
-
 where : '\\where' ('{' statements '}' | statement);
 
 nsCmd : '\\open'                        # openCmd
@@ -50,10 +40,6 @@ nsCmd : '\\open'                        # openCmd
 arrow : '<='                            # arrowLeft
       | '=>'                            # arrowRight
       ;
-
-typeTermOpt : ':' expr (arrow expr)?    # withType
-            | arrow expr                # withoutType
-            ;
 
 constructorDef : '|' name patternArg* '=>' constructor ('|' constructor)* ';'? # withPatterns
                | '|' constructor                                               # noPatterns

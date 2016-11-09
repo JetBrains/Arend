@@ -279,10 +279,8 @@ public final class Abstract {
 
   public interface Definition extends ReferableSourceNode {
     enum Arrow { LEFT, RIGHT }
-
     Precedence getPrecedence();
-
-    DefineStatement getParentStatement();
+    ClassDefinition getEnclosingClass();
     <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params);
   }
 
@@ -355,10 +353,6 @@ public final class Abstract {
   }
 
   public interface DefineStatement extends Statement {
-    enum StaticMod { STATIC, DYNAMIC, DEFAULT }
-
-    StaticMod getStaticMod();
-    Definition getParentDefinition();
     Definition getDefinition();
   }
 
@@ -373,10 +367,6 @@ public final class Abstract {
 
     boolean isHiding();
     List<String> getNames();
-  }
-
-  public interface DefaultStaticStatement extends Statement {
-    boolean isStatic();
   }
 
   // Patterns

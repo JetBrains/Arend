@@ -37,18 +37,8 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
 
   @Override
   public Void visitDefine(Abstract.DefineStatement stat, DefinitionResolveNameVisitor.Flag flag) {
-    if (stat.getStaticMod() != Abstract.DefineStatement.StaticMod.STATIC && flag == DefinitionResolveNameVisitor.Flag.MUST_BE_STATIC) {
-      myErrorReporter.report(new GeneralError("Non-static definition in a static context", stat));
-      return null;
-    } else if (stat.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC && flag == DefinitionResolveNameVisitor.Flag.MUST_BE_DYNAMIC) {
-      myErrorReporter.report(new GeneralError("Static definitions are not allowed in this context", stat));
-      return null;
-    } else if (stat.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC && stat.getDefinition() instanceof Abstract.ClassField) {
-      myErrorReporter.report(new GeneralError("Abstract definitions cannot be static", stat));
-      return null;
-    }
     DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, myScope, myContext, myNameResolver, myErrorReporter, myResolveListener);
-    stat.getDefinition().accept(visitor, stat.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC);
+    stat.getDefinition().accept(visitor, true);
     return null;
   }
 
@@ -96,11 +86,6 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
       myScope = OverridingScope.merge(myScope, scope, myErrorReporter);
     }
 
-    return null;
-  }
-
-  @Override
-  public Object visitDefaultStaticCommand(Abstract.DefaultStaticStatement stat, DefinitionResolveNameVisitor.Flag params) {
     return null;
   }
 

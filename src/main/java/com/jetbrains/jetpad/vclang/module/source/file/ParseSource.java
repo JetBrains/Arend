@@ -66,12 +66,6 @@ public abstract class ParseSource implements Source {
 
     List<Concrete.Statement> statements = new BuildVisitor(mySourceId, errorReporter).visitStatements(tree);
     Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(new Concrete.Position(mySourceId, 0, 0), mySourceId.getModulePath().getName(), statements);
-    for (Concrete.Statement statement : statements) {
-      if (statement instanceof Concrete.DefineStatement) {
-        ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);
-      }
-    }
-
     return new ModuleLoader.Result(classDefinition, countingErrorReporter.getErrorsNumber());
   }
 }

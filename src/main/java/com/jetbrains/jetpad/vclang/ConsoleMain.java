@@ -16,12 +16,10 @@ import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.ConcreteResolveListener;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveStaticModVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.SimpleTypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.order.TypecheckingOrdering;
-import com.jetbrains.jetpad.vclang.typechecking.staticmodresolver.ConcreteStaticModListener;
 import org.apache.commons.cli.*;
 
 import java.io.File;
@@ -98,9 +96,6 @@ public class ConsoleMain {
       @Override
       public void loadingSucceeded(FileModuleSourceId module, Abstract.ClassDefinition abstractDefinition) {
         if (abstractDefinition != null) {
-          DefinitionResolveStaticModVisitor rsmVisitor = new DefinitionResolveStaticModVisitor(new ConcreteStaticModListener());
-          rsmVisitor.visitClass(abstractDefinition, true);
-
           oneshotNameResolver.visitModule(abstractDefinition, preludeNamespace);
           srcInfoCollector.visitModule(module, abstractDefinition);
 

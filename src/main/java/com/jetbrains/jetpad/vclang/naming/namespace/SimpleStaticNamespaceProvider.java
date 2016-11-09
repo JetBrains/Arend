@@ -7,8 +7,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.jetbrains.jetpad.vclang.term.Abstract.DefineStatement.StaticMod.STATIC;
-
 public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
   private final Map<Abstract.Definition, Namespace> cache = new HashMap<>();
 
@@ -42,15 +40,13 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
     for (Abstract.Statement statement : statements) {
       if (!(statement instanceof Abstract.DefineStatement)) continue;
       Abstract.DefineStatement defst = (Abstract.DefineStatement) statement;
-      if (STATIC.equals(defst.getStaticMod())) {
-        if (defst.getDefinition() instanceof Abstract.ClassView) {
-          ns.addDefinition(defst.getDefinition());
-          forClassView((Abstract.ClassView) defst.getDefinition(), ns);
-        } else {
-          ns.addDefinition(defst.getDefinition());
-          if (defst.getDefinition() instanceof Abstract.DataDefinition) {
-            forData((Abstract.DataDefinition) defst.getDefinition(), ns);  // constructors
-          }
+      if (defst.getDefinition() instanceof Abstract.ClassView) {
+        ns.addDefinition(defst.getDefinition());
+        forClassView((Abstract.ClassView) defst.getDefinition(), ns);
+      } else {
+        ns.addDefinition(defst.getDefinition());
+        if (defst.getDefinition() instanceof Abstract.DataDefinition) {
+          forData((Abstract.DataDefinition) defst.getDefinition(), ns);  // constructors
         }
       }
     }

@@ -1126,14 +1126,4 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
     return null;
   }
-
-  @Override
-  public Void visitDefaultStaticCommand(Abstract.DefaultStaticStatement stat, Void params) {
-    if (stat.isStatic()) {
-      myBuilder.append("\\allstatic");
-    } else {
-      myBuilder.append("\\alldynamic");
-    }
-    return null;
-  }
 }

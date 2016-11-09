@@ -96,9 +96,4 @@ public class DefinitionSourceInfoVisitor implements AbstractDefinitionVisitor<Fu
   public Void visitNamespaceCommand(Abstract.NamespaceCommandStatement stat, FullName fullName) {
     return null;
   }
-
-  @Override
-  public Void visitDefaultStaticCommand(Abstract.DefaultStaticStatement stat, FullName fullName) {
-    return null;
-  }
 }

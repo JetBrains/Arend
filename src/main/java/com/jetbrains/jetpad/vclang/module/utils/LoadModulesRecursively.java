@@ -197,11 +197,6 @@ public class LoadModulesRecursively implements AbstractStatementVisitor<Void, Vo
   }
 
   @Override
-  public Void visitDefaultStaticCommand(Abstract.DefaultStaticStatement stat, Void params) {
-    return null;
-  }
-
-  @Override
   public Void visitFunction(Abstract.FunctionDefinition def, Void params) {
     for (Abstract.Argument argument : def.getArguments()) {
       visitArgument(argument);

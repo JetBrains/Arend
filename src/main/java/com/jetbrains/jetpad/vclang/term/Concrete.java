@@ -822,7 +822,7 @@ public final class Concrete {
 
   public static abstract class Definition extends ReferableSourceNode implements Abstract.Definition {
     private final Precedence myPrecedence;
-    private DefineStatement myParent;
+    private ClassDefinition myEnclosingClass;
 
     public Definition(Position position, String name, Precedence precedence) {
       super(position, name);
@@ -835,19 +835,16 @@ public final class Concrete {
     }
 
     @Override
-    public DefineStatement getParentStatement() {
-      return myParent;
+    public ClassDefinition getEnclosingClass() {
+      return myEnclosingClass;
     }
 
-    public void setParentStatement(DefineStatement parent) {
-      myParent = parent;
+    public void setEnclosingClass(ClassDefinition enclosingClass) {
+      myEnclosingClass = enclosingClass;
     }
 
     @Override
     public String toString() {
-      // StringBuilder builder = new StringBuilder();
-      // accept(new PrettyPrintVisitor(builder, 0), null);
-      // return builder.toString();
       return getName();
     }
   }
@@ -1238,40 +1235,16 @@ public final class Concrete {
   }
 
   public static class DefineStatement extends Statement implements Abstract.DefineStatement {
-    //private final boolean myStatic;
-    private StaticMod myStatic;
     private final Definition myDefinition;
-    private Definition myParent;
 
-    public DefineStatement(Position position, StaticMod staticMod, Definition definition) {
+    public DefineStatement(Position position, Definition definition) {
       super(position);
-      myStatic = staticMod;
       myDefinition = definition;
     }
-
-    /*
-    @Override
-    public boolean isStatic() { return myStatic; } /**/
 
     @Override
     public Definition getDefinition() {
       return myDefinition;
-    }
-
-    @Override
-    public StaticMod getStaticMod() {
-      return myStatic;
-    }
-
-    public void setExplicitStaticMod(boolean isStatic) { myStatic = isStatic ? StaticMod.STATIC : StaticMod.DYNAMIC; }
-
-    @Override
-    public Definition getParentDefinition() {
-      return myParent;
-    }
-
-    public void setParentDefinition(Definition parent) {
-      myParent = parent;
     }
 
     @Override
@@ -1335,23 +1308,6 @@ public final class Concrete {
     @Override
     public <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitNamespaceCommand(this, params);
-    }
-  }
-
-  public static class DefaultStaticStatement extends Statement implements Abstract.DefaultStaticStatement {
-    private final boolean myIsStatic;
-
-    public DefaultStaticStatement(Position position, boolean isStatic) {
-      super(position);
-      myIsStatic = isStatic;
-    }
-
-    @Override
-    public boolean isStatic() { return myIsStatic; }
-
-    @Override
-    public <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitDefaultStaticCommand(this, params);
     }
   }
 
