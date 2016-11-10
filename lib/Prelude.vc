@@ -12,11 +12,11 @@
     | left
     | right
 
-\static \data Path (A : I -> \Type) (a : A left) (a' : A right)
+\static \data Path {lp : Lvl} {lh : CNat} (A : I -> \Type (lp, suc lh)) (a : A left) (a' : A right)
     | path (\Pi (i : I) -> A i)
 
 \static \function \infix 1
-(=) {A : \Type} (a a' : A) => Path (\lam _ => A) a a'
+(=) {lp : Lvl} {lh : CNat} {A : \Type (lp, suc lh)} (a a' : A) => Path (\lam _ => A) a a'
 
 \static \function \infixl 9
 (@) {A : I -> \Type} {a : A left} {a' : A right} (p : Path A a a') (i : I) : A i <= \elim i

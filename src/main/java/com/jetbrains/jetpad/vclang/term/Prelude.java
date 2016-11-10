@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
+import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 
@@ -73,6 +74,7 @@ public class Prelude extends SimpleNamespace {
     } else
     if (abstractDef.getName().equals("Path")) {
       PATH = (DataDefinition) definition;
+      PATH.setSorts(new SortMax(new LevelMax(new Level(PATH.getPolyParamByType(LVL))), new LevelMax(new Level(PATH.getPolyParamByType(CNAT)))));
       PATH_CON = PATH.getConstructor("path");
     } else
     if (abstractDef.getName().equals("=")) {

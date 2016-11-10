@@ -170,7 +170,11 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         }
 
         if (paramType instanceof PiTypeOmega) {
+          boolean firstTime = generatedPolyParams.isEmpty();
           paramType = typeOmegaToUniverse((PiTypeOmega) paramType, generatedPolyParams);
+          if (firstTime) {
+            context.addAll(generatedPolyParams);
+          }
         }
 
         // paramType = paramType.strip(new HashSet<>(visitor.getContext()), visitor.getErrorReporter());
