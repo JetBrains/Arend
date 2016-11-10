@@ -20,7 +20,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
     assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));
     assertTrue(result.getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) result.getDefinition("f");
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Reference(f.getParameters().getNext()), null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Reference(f.getParameters()), null));
   }
 
   @Test
@@ -31,7 +31,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
     assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));
     assertTrue(result.getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) result.getDefinition("f");
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.GE, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Reference(f.getParameters().getNext()), null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.GE, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Reference(f.getParameters()), null));
   }
 
   @Test
@@ -42,7 +42,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
     assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));
     assertTrue(result.getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) result.getDefinition("f");
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Reference(f.getParameters().getNext()), null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Reference(f.getParameters()), null));
   }
   @Test
   public void pathEtaLeftTest() {

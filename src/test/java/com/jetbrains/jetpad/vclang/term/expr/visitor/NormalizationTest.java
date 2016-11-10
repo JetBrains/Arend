@@ -437,6 +437,6 @@ public class NormalizationTest extends TypeCheckingTestCase {
     assertEquals(result.getDefinition("fsuc"), term.toConCall().getDefinition());
     assertEquals(1, term.toConCall().getDefCallArguments().size());
     assertNotNull(term.toConCall().getDefCallArguments().get(0).toReference());
-    assertEquals(f.getParameters().getNext().getNext(), term.toConCall().getDefCallArguments().get(0).toReference().getBinding());
+    assertEquals(f.getParameters().getNext(), term.toConCall().getDefCallArguments().get(0).toReference().getBinding());
   }
 }

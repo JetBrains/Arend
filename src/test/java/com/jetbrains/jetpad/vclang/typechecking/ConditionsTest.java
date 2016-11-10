@@ -177,8 +177,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
         "\\field loop' : I -> S'\n" +
         "\\function test (s : S) : S' <= \\elim s" +
         "  | base => base'\n" +
-        "  | loop i => loop' i\n"
-    , 1);
+        "  | loop i => loop' i\n", "", 1);
   }
 
   @Test
