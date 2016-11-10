@@ -44,6 +44,7 @@ public class TwoStageEquations implements Equations {
     InferenceVariable inf1 = type instanceof Expression && ((Expression) type).toInferenceReference() != null ? ((Expression) type).toInferenceReference().getVariable() : null;
     InferenceVariable inf2 = expr.toInferenceReference() != null ? expr.toInferenceReference().getVariable() : null;
 
+    // expr1 == expr2 == ?x
     if (inf1 == inf2 && inf1 != null) {
       return;
     }
@@ -51,21 +52,29 @@ public class TwoStageEquations implements Equations {
     if (inf1 == null && inf2 == null) {
       Expression expr1 = type.toExpression();
       // TODO: correctly check for stuck expressions
+      // expr1 /= stuck, expr2 /= stuck
       if (expr1 != null && (expr1.getFunction().toInferenceReference() == null || expr1.getFunction().toInferenceReference().getVariable() == null) && (expr.getFunction().toInferenceReference() == null || expr.getFunction().toInferenceReference().getVariable() == null)) {
         InferenceVariable variable = null;
         Expression result = null;
+
+        // expr1 == field call
         if (expr1.toFieldCall() != null && expr1.toFieldCall().getExpression().toInferenceReference() != null) {
           variable = expr1.toFieldCall().getExpression().toInferenceReference().getVariable();
+          // expr1 == view field call
           if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassView().getClassifyingField() == expr1.toFieldCall().getDefinition().getAbstractDefinition()) {
             result = myVisitor.getClassViewInstancePool().getInstance(expr, ((TypeClassInferenceVariable) variable).isExactClassView() ? ((TypeClassInferenceVariable) variable).getClassView() : null);
           }
         }
+
+        // expr2 == field call
         if (variable == null && expr.toFieldCall() != null && expr.toFieldCall().getExpression().toInferenceReference() != null) {
           variable = expr.toFieldCall().getExpression().toInferenceReference().getVariable();
+          // expr2 == view field call
           if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassView().getClassifyingField() == expr.toFieldCall().getDefinition().getAbstractDefinition()) {
             result = myVisitor.getClassViewInstancePool().getInstance(expr1, ((TypeClassInferenceVariable) variable).isExactClassView() ? ((TypeClassInferenceVariable) variable).getClassView() : null);
           }
         }
+
         if (result != null) {
           solve(variable, result);
           return;
@@ -73,6 +82,7 @@ public class TwoStageEquations implements Equations {
       }
     }
 
+    // expr1 == ?x && expr2 /= ?y || expr1 /= ?x && expr2 == ?y
     if (inf1 != null && inf2 == null || inf2 != null && inf1 == null) {
       InferenceVariable cInf = inf1 != null ? inf1 : inf2;
       TypeMax cType = inf1 != null ? expr : type;
@@ -80,11 +90,13 @@ public class TwoStageEquations implements Equations {
       if (cType instanceof Expression) {
         Expression cExpr = (Expression) cType;
         // TODO: set cmp to CMP.EQ only if cExpr is not stuck on a meta-variable
+        // cExpr /= Pi, cExpr /= Type, cExpr /= Class, cExpr /= stuck
         if (cExpr.toPi() == null && cExpr.toUniverse() == null && cExpr.toClassCall() == null) {
           cmp = CMP.EQ;
         }
       }
 
+      // ?x == _
       if (cmp == CMP.EQ) {
         assert cType instanceof Expression;
         solve(cInf, (Expression) cType);
@@ -95,6 +107,7 @@ public class TwoStageEquations implements Equations {
         cmp = cmp.not();
       }
 
+      // ?x <> Pi
       DependentLink piParams = cType.getPiParameters();
       if (piParams.hasNext()) {
         InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf);
@@ -104,6 +117,7 @@ public class TwoStageEquations implements Equations {
         return;
       }
 
+      // ?x <> Type
       SortMax sorts = cType.toSorts();
       if (sorts != null) {
         InferenceLevelVariable lpInf = new InferenceLevelVariable(cInf.getName() + "-lp", Lvl(), cInf.getSourceNode());
