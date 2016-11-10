@@ -93,7 +93,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
 
   private void initializeBDList() {
     TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
-        "\\static \\data BD-list (A : \\Type0) | nil | cons A (BD-list A) | snoc (BD-list A) A\n" +
+        "\\data BD-list (A : \\Type0) | nil | cons A (BD-list A) | snoc (BD-list A) A\n" +
         "  \\with | snoc (cons x xs) x => cons x (snoc xs x) | snoc nil x => cons x nil\n"
     );
     bdList = (DataDefinition) result.getDefinition("BD-list");
@@ -265,8 +265,8 @@ public class NormalizationTest extends TypeCheckingTestCase {
   public void normalizeElimAnyConstructor() {
     DependentLink var0 = param("var0", Universe(0));
     TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
-        "\\static \\data D | d Nat\n" +
-        "\\static \\function test (x : D) : Nat <= \\elim x | _! => 0");
+        "\\data D | d Nat\n" +
+        "\\function test (x : D) : Nat <= \\elim x | _! => 0");
     FunctionDefinition test = (FunctionDefinition) result.getDefinition("test");
     assertEquals(FunCall(test, new LevelArguments(), Reference(var0)), FunCall(test, new LevelArguments(), Reference(var0)).normalize(NormalizeVisitor.Mode.NF));
   }
@@ -280,8 +280,8 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void testConditionNormalization() {
     typeCheckClass(
-        "\\static \\data Z | pos Nat | neg Nat \\with | pos zero => neg 0\n" +
-        "\\static \\function only-one-zero : pos 0 = neg 0 => path (\\lam _ => pos 0)"
+        "\\data Z | pos Nat | neg Nat \\with | pos zero => neg 0\n" +
+        "\\function only-one-zero : pos 0 = neg 0 => path (\\lam _ => pos 0)"
     );
   }
 
@@ -437,6 +437,6 @@ public class NormalizationTest extends TypeCheckingTestCase {
     assertEquals(result.getDefinition("fsuc"), term.toConCall().getDefinition());
     assertEquals(1, term.toConCall().getDefCallArguments().size());
     assertNotNull(term.toConCall().getDefCallArguments().get(0).toReference());
-    assertEquals(f.getParameters().getNext().getNext(), term.toConCall().getDefCallArguments().get(0).toReference().getBinding());
+    assertEquals(f.getParameters().getNext(), term.toConCall().getDefCallArguments().get(0).toReference().getBinding());
   }
 }

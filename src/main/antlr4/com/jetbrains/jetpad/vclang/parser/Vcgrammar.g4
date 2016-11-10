@@ -2,9 +2,8 @@ grammar Vcgrammar;
 
 statements : statement*;
 
-statement : staticMod definition                                              # statDef
+statement : definition                                              # statDef
           | nsCmd nsCmdRoot fieldAcc* (hidingOpt '(' name (',' name)* ')')?   # statCmd
-          | defaultStaticMod                                                  # defaultStatic
           ;
 
 hidingOpt : '\\hiding'  # withHiding
@@ -13,13 +12,13 @@ hidingOpt : '\\hiding'  # withHiding
 
 nsCmdRoot : modulePath | name;
 
-definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?                      # defFunction
-            | '\\abstract' precedence name ':' expr                                                 # defAbstract
-            | '\\implement' name '=>' expr                                                          # defImplement
-            | '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef?              # defData
-            | classKindMod ID ('\\extends' atomFieldsAcc (',' atomFieldsAcc)*)? '{' statement* '}'  # defClass
-            | '\\view' ID? '\\on' (expr '.')? ID '\\by' name '{' classViewField* '}'                # defClassView
-            | defaultInst '\\instance' ID tele* '=>' expr                                           # defInstance
+definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?                            # defFunction
+            | '\\field' precedence name ':' expr                                                          # defAbstract
+            | '\\implement' name '=>' expr                                                                # defImplement
+            | '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef?                    # defData
+            | '\\class' ID ('\\extends' atomFieldsAcc (',' atomFieldsAcc)*)? ('{' statements '}')? where? # defClass
+            | '\\view' ID? '\\on' (expr '.')? ID '\\by' name '{' classViewField* '}'                      # defClassView
+            | defaultInst '\\instance' ID tele* '=>' expr                                                 # defInstance
             ;
 
 defaultInst :             # noDefault
@@ -32,20 +31,7 @@ conditionDef : '\\with' '|'? condition ('|' condition)*;
 
 condition : name patternArg* '=>' expr;
 
-classKindMod : '\\class'                # classClassMod
-             | '\\module'               # moduleClassMod
-             ;
-
-staticMod : '\\static'                  # staticStatic
-          | '\\dynamic'                 # dynamicStatic
-          |                             # noStatic
-          ;
-
-defaultStaticMod : '\\allstatic'        # staticDefaultStatic
-                 | '\\alldynamic'       # dynamicDefaultStatic
-                 ;
-
-where : '\\where' ('{' statement+ '}' | statement);
+where : '\\where' ('{' statements '}' | statement);
 
 nsCmd : '\\open'                        # openCmd
       | '\\export'                      # exportCmd
@@ -54,10 +40,6 @@ nsCmd : '\\open'                        # openCmd
 arrow : '<='                            # arrowLeft
       | '=>'                            # arrowRight
       ;
-
-typeTermOpt : ':' expr (arrow expr)?    # withType
-            | arrow expr                # withoutType
-            ;
 
 constructorDef : '|' name patternArg* '=>' constructor ('|' constructor)* ';'? # withPatterns
                | '|' constructor                                               # noPatterns

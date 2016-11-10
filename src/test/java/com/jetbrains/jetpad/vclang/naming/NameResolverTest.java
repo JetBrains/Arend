@@ -43,18 +43,18 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void whereTest() {
     resolveNamesClass(
-        "\\static \\function f (x : \\Type0) => B.b (a x) \\where {\n" +
-            "  \\static \\function a (x : \\Type0) => x\n" +
-            "  \\static \\data D | D1 | D2\n" +
-            "  \\static \\class B { \\static \\data C | cr \\static \\function b (x : \\Type0) => D1 }\n" +
+        "\\function f (x : \\Type0) => B.b (a x) \\where {\n" +
+            "  \\function a (x : \\Type0) => x\n" +
+            "  \\data D | D1 | D2\n" +
+            "  \\class B \\where { \\data C | cr \\function b (x : \\Type0) => D1 }\n" +
             "}");
   }
 
   @Test
   public void whereTestDefCmd() {
     resolveNamesClass(
-        "\\static \\function f (x : \\Type0) => a \\where {\n" +
-        "  \\static \\class A { \\static \\function a => 0 }\n" +
+        "\\function f (x : \\Type0) => a \\where {\n" +
+        "  \\class A \\where { \\function a => 0 }\n" +
         "  \\open A\n" +
         "}");
   }
@@ -62,9 +62,9 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void whereOpenFunction() {
     resolveNamesClass(
-        "\\static \\function f => x \\where {\n" +
-        "  \\static \\function b => 0 \\where\n" +
-        "    \\static \\function x => 0\n" +
+        "\\function f => x \\where {\n" +
+        "  \\function b => 0 \\where\n" +
+        "    \\function x => 0\n" +
         "  \\open b(x)\n" +
         "}");
   }
@@ -72,69 +72,69 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void whereNested() {
     resolveNamesClass(
-        "\\static \\function f => x \\where {\n" +
-        "  \\static \\data B | b\n" +
-        "  \\static \\function x => a \\where\n" +
-        "    \\static \\function a => b\n" +
+        "\\function f => x \\where {\n" +
+        "  \\data B | b\n" +
+        "  \\function x => a \\where\n" +
+        "    \\function a => b\n" +
         "}");
   }
 
   @Test
   public void whereOuterScope() {
     resolveNamesClass(
-        "\\static \\function f => 0 \\where {\n" +
-        "  \\static \\function g => 0\n" +
-        "  \\static \\function h => g\n" +
+        "\\function f => 0 \\where {\n" +
+        "  \\function g => 0\n" +
+        "  \\function h => g\n" +
         "}");
   }
 
   @Test
   public void whereInSignature() {
     resolveNamesClass(
-        "\\static \\function f : D => d \\where\n" +
-        "  \\static \\data D | d");
+        "\\function f : D => d \\where\n" +
+        "  \\data D | d");
   }
 
   @Test
   public void whereAccessOuter() {
     resolveNamesClass(
-        "\\static \\function f => 0 \\where\n" +
-        "  \\static \\function x => 0\n" +
-        "\\static \\function g => f.x");
+        "\\function f => 0 \\where\n" +
+        "  \\function x => 0\n" +
+        "\\function g => f.x");
   }
 
   @Test
   public void whereNonStaticOpen() {
     resolveNamesClass(
-        "\\static \\function f => 0 \\where {\n" +
-        "  \\static \\function x => 0\n" +
-        "  \\static \\function y => x\n" +
+        "\\function f => 0 \\where {\n" +
+        "  \\function x => 0\n" +
+        "  \\function y => x\n" +
         "}\n" +
-        "\\static \\function g => 0 \\where\n" +
+        "\\function g => 0 \\where\n" +
         "  \\open f(y)");
   }
 
   @Test
   public void openTest() {
-    resolveNamesClass("\\static \\class A { \\static \\function x => 0 } \\open A \\static \\function y => x");
+    resolveNamesClass("\\class A \\where { \\function x => 0 } \\open A \\function y => x");
   }
 
   @Ignore
   @Test
   public void exportTest() {
-    resolveNamesClass("\\static \\class A { \\static \\class B { \\static \\function x => 0 } \\export B } \\static \\function y => A.x");
+    resolveNamesClass("\\class A \\where { \\class B \\where { \\function x => 0 } \\export B } \\function y => A.x");
   }
 
   @Test
   public void staticFieldAccCallTest() {
-    resolveNamesClass("\\static \\class A { \\abstract x : \\Type0 \\class B { \\static \\function y => x } } \\static \\function f (a : A) => a.B.y");
+    resolveNamesClass("\\class A { \\field x : \\Type0 \\class B \\where { \\function y => x } } \\function f (a : A) => a.B.y");
   }
 
   @Ignore
   @Test
   public void exportPublicFieldsTest() {
     /*
-    resolveNamesClass("test", "\\static \\class A { \\static \\function x => 0 \\static \\class B { \\static \\function y => x } \\export B } \\static \\function f => A.y");
+    resolveNamesClass("test", "\\class A \\where { \\function x => 0 \\class B \\where { \\function y => x } \\export B } \\function f => A.y");
     assertNotNull(Root.getModule(new NameModuleSourceId("test")));
     Root.getModule(new NameModuleSourceId("test")).namespace;
 
@@ -150,20 +150,22 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void exportTest2() {
     /*
-    resolveNamesClass("test",
-        "\\abstract (+) (x y : \\Type0) : \\Type0\n" +
-        "\\class A {\n" +
-        "  \\abstract x : \\Type0\n" +
-        "  \\class B {\n" +
-        "    \\abstract y : \\Type0\n" +
-        "    \\class C {\n" +
-        "      \\static \\function z => x + y\n" +
-        "      \\static \\function w => x\n" +
+    resolveNamesDef(
+        "\\class Test {\n" +
+        "  \\field (+) (x y : \\Type0) : \\Type0\n" +
+        "  \\class A {\n" +
+        "    \\field x : \\Type0\n" +
+        "    \\class B {\n" +
+        "      \\field y : \\Type0\n" +
+        "      \\class C \\where {\n" +
+        "        \\function z => x + y\n" +
+        "        \\function w => x\n" +
+        "      }\n" +
+        "      \\export C\n" +
         "    }\n" +
-        "    \\export C\n" +
+        "    \\class D { \\export B }\n" +
+        "    \\function f (b : B) : b.C.z = b.z => path (\\lam _ => b.w + b.y)\n" +
         "  }\n" +
-        "  \\class D { \\export B }\n" +
-        "  \\function f (b : B) : b.C.z = b.z => path (\\lam _ => b.w + b.y)\n" +
         "}");
     assertNotNull(Root.getModule(new NameModuleSourceId("test")));
     Namespace namespace = Root.getModule(new NameModuleSourceId("test")).namespace;
@@ -187,67 +189,69 @@ public class NameResolverTest extends NameResolverTestCase {
   }
 
   private Abstract.Definition getField(Abstract.ClassDefinition classDefinition, String name) {
+    /*
     for (Abstract.Statement statement : classDefinition.getStatements()) {
       if (statement instanceof Abstract.DefineStatement && ((Abstract.DefineStatement) statement).getDefinition().getName().equals(name)) {
         return ((Abstract.DefineStatement) statement).getDefinition();
       }
     }
+    */
     return null;
   }
 
   @Test
   public void defineExistingTestError() {
-    resolveNamesClass("\\static \\class A { } \\function A => 0 \\function B => A", 1);
+    resolveNamesDef("\\class Test { \\function A => 0 \\function B => A } \\where { \\class A { } }", 1);
   }
 
   @Test
   public void defineExistingStaticTestError() {
-    resolveNamesClass("\\static \\class A { } \\static \\function A => 0", 1);
+    resolveNamesClass("\\class A { } \\function A => 0", 1);
   }
 
   @Test
   public void defineExistingDynamicTestError() {
-    resolveNamesClass("\\class A { } \\function A => 0", 1);
+    resolveNamesDef("\\class Test { \\class A \\function A => 0 }", 1);
   }
 
   @Ignore
   @Test
   public void exportExistingTestError() {
-    resolveNamesClass("\\static \\class A { \\static \\class B { \\static \\function x => 0 } } \\export A \\static \\class B { \\static \\function y => 0 }", 1);
+    resolveNamesClass("\\class A \\where { \\class B \\where { \\function x => 0 } } \\export A \\class B \\where { \\function y => 0 }", 1);
   }
 
   @Ignore
   @Test
   public void exportExistingTestError2() {
-    resolveNamesClass("\\static \\class B { \\static \\function y => 0 } \\static \\class A { \\static \\class B { \\static \\function x => 0 } } \\export A", 1);
+    resolveNamesClass("\\class B \\where { \\function y => 0 } \\class A \\where { \\class B \\where { \\function x => 0 } } \\export A", 1);
   }
 
   @Test
   public void openInsideTest() {
-    resolveNamesClass("\\static \\class A { \\static \\class B { \\static \\function x => 0 } \\open B } \\static \\function y => A.x", 1);
+    resolveNamesClass("\\class A \\where { \\class B \\where { \\function x => 0 } \\open B } \\function y => A.x", 1);
   }
 
   @Ignore
   @Test
   public void exportInsideTest() {
-    resolveNamesClass("\\static \\class A { \\static \\class B { \\static \\function x => 0 } \\export B } \\static \\function y => A.x");
+    resolveNamesClass("\\class A \\where { \\class B \\where { \\function x => 0 } \\export B } \\function y => A.x");
   }
 
   @Test
   public void classExtensionWhereTestError() {
     resolveNamesClass(
-        "\\static \\function f => 0 \\where {\n" +
-        "  \\static \\class A {}\n" +
-        "  \\static \\class A { \\function x => 0 }\n" +
+        "\\function f => 0 \\where {\n" +
+        "  \\class A {}\n" +
+        "  \\class A { \\function x => 0 }\n" +
         "}", 1);
   }
 
   @Test
   public void multipleDefsWhere() {
     resolveNamesClass(
-        "\\static \\function f => 0 \\where {\n" +
-        "  \\static \\function d => 0\n" +
-        "  \\static \\function d => 1\n" +
+        "\\function f => 0 \\where {\n" +
+        "  \\function d => 0\n" +
+        "  \\function d => 1\n" +
         "}", 1);
   }
 
@@ -276,29 +280,29 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void openDuplicate() {
     resolveNamesClass(
-        "\\static \\function f => \\Type0\n" +
-        "\\static \\class X { \\static \\function f => \\Type0 }\n" +
+        "\\function f => \\Type0\n" +
+        "\\class X \\where { \\function f => \\Type0 }\n" +
         "\\open X\n" +
-        "\\static \\function g => f", 1);
+        "\\function g => f", 1);
   }
 
   @Test
   public void openDuplicateModule() {
     resolveNamesClass(
-        "\\static \\class X { \\static \\function f => \\Type0 }\n" +
-        "\\static \\class Y { \\static \\function f => \\Type0 }\n" +
+        "\\class X \\where { \\function f => \\Type0 }\n" +
+        "\\class Y \\where { \\function f => \\Type0 }\n" +
         "\\open X\n" +
         "\\open Y\n" +
-        "\\static \\function g => f", 1);
+        "\\function g => f", 1);
   }
 
   @Test
   public void openDuplicateModuleHiding() {
     resolveNamesClass(
-        "\\static \\class X { \\static \\function f => \\Type0 }\n" +
-        "\\static \\class Y { \\static \\function f => \\Type0 }\n" +
+        "\\class X \\where { \\function f => \\Type0 }\n" +
+        "\\class Y \\where { \\function f => \\Type0 }\n" +
         "\\open X\n" +
         "\\open Y \\hiding (f)\n" +
-        "\\static \\function g => f");
+        "\\function g => f");
   }
 }

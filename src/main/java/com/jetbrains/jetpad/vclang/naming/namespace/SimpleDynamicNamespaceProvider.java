@@ -6,8 +6,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.jetbrains.jetpad.vclang.term.Abstract.DefineStatement.StaticMod.STATIC;
-
 public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider {
   private final Map<Abstract.ClassDefinition, SimpleNamespace> classCache = new HashMap<>();
 
@@ -16,7 +14,12 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
     SimpleNamespace ns = classCache.get(classDefinition);
     if (ns != null) return ns;
 
-    ns = forStatements(classDefinition.getStatements());
+    ns = forDefinitions(classDefinition.getInstanceDefinitions());
+
+    for (Abstract.ClassField field : classDefinition.getFields()) {
+      ns.addDefinition(field);
+    }
+
     for (final Abstract.SuperClass superClass : classDefinition.getSuperClasses()) {
       Abstract.ClassDefinition superDef = Abstract.getUnderlyingClassDef(superClass.getSuperClass());
       if (superDef != null) {
@@ -36,17 +39,12 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
     return ns;
   }
 
-  private static SimpleNamespace forStatements(Collection<? extends Abstract.Statement> statements) {
+  private static SimpleNamespace forDefinitions(Collection<? extends Abstract.Definition> definitions) {
     SimpleNamespace ns = new SimpleNamespace();
-    for (Abstract.Statement statement : statements) {
-      if (!(statement instanceof Abstract.DefineStatement)) continue;
-      Abstract.DefineStatement defst = (Abstract.DefineStatement) statement;
-      if (defst.getDefinition() instanceof Abstract.ImplementDefinition) continue;  // HACK[impldef]
-      if (!STATIC.equals(defst.getStaticMod())) {
-        ns.addDefinition(defst.getDefinition());
-        if (defst.getDefinition() instanceof Abstract.DataDefinition) {
-          ns.addAll(forData((Abstract.DataDefinition) defst.getDefinition()));  // constructors
-        }
+    for (Abstract.Definition definition : definitions) {
+      ns.addDefinition(definition);
+      if (definition instanceof Abstract.DataDefinition) {
+        ns.addAll(forData((Abstract.DataDefinition) definition));  // constructors
       }
     }
     return ns;

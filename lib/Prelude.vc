@@ -1,47 +1,47 @@
-\static \data Nat
+\data Nat
     | zero
     | suc Nat
 
-\static \data Lvl
+\data Lvl
 
-\static \data CNat
+\data CNat
     | inf
     | fin Nat
 
-\static \data I
+\data I
     | left
     | right
 
-\static \data Path {lp : Lvl} {lh : CNat} (A : I -> \Type (lp, suc lh)) (a : A left) (a' : A right)
+\data Path {lp : Lvl} {lh : CNat} (A : I -> \Type (lp, suc lh)) (a : A left) (a' : A right)
     | path (\Pi (i : I) -> A i)
 
-\static \function \infix 1
+\function \infix 1
 (=) {lp : Lvl} {lh : CNat} {A : \Type (lp, suc lh)} (a a' : A) => Path (\lam _ => A) a a'
 
-\static \function \infixl 9
+\function \infixl 9
 (@) {A : I -> \Type} {a : A left} {a' : A right} (p : Path A a a') (i : I) : A i <= \elim i
     | left => a
     | right => a'
     | _ <= \elim p
         | path f => f i
 
-\static \function
+\function
 coe (A : I -> \Type) (a : A left) (i : I) : A i <= \elim i
     | left => a
 
-\static \function
+\function
 iso {A B : \Type} (f : A -> B) (g : B -> A) (p : \Pi (x : A) -> g (f x) = x) (q : \Pi (y : B) -> f (g y) = y) (i : I) : \Type <= \elim i
     | left => A
     | right => B
 
-\static \data TrP (A : \Type)
+\data TrP (A : \Type)
     | inP A
     | truncP (a a' : TrP A) I
   \with
     | truncP a _  left  => a
     | truncP _ a' right => a'
 
-\static \data TrS (A : \Type)
+\data TrS (A : \Type)
     | inS A
     | truncS (a a' : TrS A) (p p' : TrS A) I I
   \with

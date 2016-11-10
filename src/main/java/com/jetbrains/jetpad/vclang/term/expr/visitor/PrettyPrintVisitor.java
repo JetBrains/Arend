@@ -5,14 +5,14 @@ import com.jetbrains.jetpad.vclang.parser.Precedence;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
-import com.jetbrains.jetpad.vclang.term.statement.visitor.StatementPrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>, AbstractDefinitionVisitor<Void, Void> {
+public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>, AbstractDefinitionVisitor<Void, Void>, AbstractStatementVisitor<Void, Void> {
   private final StringBuilder myBuilder;
   private int myIndent;
   public static final int INDENT = 4;
@@ -463,10 +463,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     expr.getBaseClassExpression().accept(this, (byte) -Abstract.ClassExtExpression.PREC);
     myBuilder.append(" {\n");
     myIndent += INDENT;
-    for (Abstract.ImplementStatement statement : expr.getStatements()) {
+    for (Abstract.ClassFieldImpl statement : expr.getStatements()) {
       printIndent();
-      myBuilder.append("| ").append(new Name(statement.getName()).getPrefixName()).append(" => ");
-      statement.getExpression().accept(this, Abstract.Expression.PREC);
+      myBuilder.append("| ").append(new Name(statement.getImplementedFieldName()).getPrefixName()).append(" => ");
+      statement.getImplementation().accept(this, Abstract.Expression.PREC);
       myBuilder.append("\n");
     }
     myIndent -= INDENT;
@@ -596,7 +596,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     prettyPrintNameWithPrecedence(def);
     myBuilder.append(" ");
 
-
     final BinOpLayout l = new BinOpLayout(){
       @Override
       void printLeft(PrettyPrintVisitor pp) {
@@ -661,28 +660,17 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
     r.doPrettyPrint(this);
 
-    Collection<? extends Abstract.Statement> statements = def.getStatements();
-    if (!statements.isEmpty()) {
+    if (!def.getStatements().isEmpty()) {
       myBuilder.append("\n");
       printIndent();
-      myBuilder.append("\\where ");
-      myIndent += INDENT;
-      boolean isFirst = true;
-      for (Abstract.Statement statement : statements) {
-        if (!isFirst)
-          printIndent();
-        statement.accept(new StatementPrettyPrintVisitor(myBuilder, myIndent, null), null);
-        myBuilder.append("\n");
-        isFirst = false;
-      }
-      myIndent -= INDENT;
+      visitWhere(def.getStatements());
     }
     return null;
   }
 
   @Override
   public Void visitClassField(Abstract.ClassField def, Void params) {
-    myBuilder.append("\\abstract ");
+    myBuilder.append("\\field ");
     prettyPrintNameWithPrecedence(def);
     prettyPrintArguments(def.getArguments(), Abstract.DefCallExpression.PREC);
 
@@ -803,8 +791,20 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
-  @Override
-  public Void visitClass(Abstract.ClassDefinition def, Void ignored) {
+  private void visitWhere(Collection<? extends Abstract.Statement> statements) {
+    myBuilder.append("\\where {");
+    myIndent += INDENT;
+    for (Abstract.Statement statement : statements) {
+      myBuilder.append("\n");
+      printIndent();
+      statement.accept(this, null);
+      myBuilder.append("\n");
+    }
+    myIndent -= INDENT;
+    myBuilder.append("}");
+  }
+
+  private void prettyPrintClassDefinitionHeader(Abstract.ClassDefinition def) {
     myBuilder.append("\\class ").append(def.getName());
     if (def.getSuperClasses() != null && !def.getSuperClasses().isEmpty()) {
       myBuilder.append(" \\extends");
@@ -817,29 +817,65 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
         }
       }
     }
-    myBuilder.append(" {");
+  }
 
-    Collection<? extends Abstract.Statement> statements = def.getStatements();
-    if (statements != null && !statements.isEmpty()) {
-      ++myIndent;
-      StatementPrettyPrintVisitor visitor = new StatementPrettyPrintVisitor(myBuilder, myIndent, null);
-      for (Abstract.Statement statement : statements) {
-        myBuilder.append('\n');
-        printIndent();
-        statement.accept(visitor, null);
-        myBuilder.append('\n');
+  @Override
+  public Void visitClass(Abstract.ClassDefinition def, Void ignored) {
+    prettyPrintClassDefinitionHeader(def);
+
+    Collection<? extends Abstract.ClassField> fields = def.getFields();
+    Collection<? extends Abstract.Implementation> implementations = def.getImplementations();
+    Collection<? extends Abstract.Statement> globalStatements = def.getGlobalStatements();
+    Collection<? extends Abstract.Definition> instanceDefinitions = def.getInstanceDefinitions();
+
+    if (fields != null && !fields.isEmpty() || implementations != null && !implementations.isEmpty() || instanceDefinitions != null && !instanceDefinitions.isEmpty()) {
+      myBuilder.append(" {");
+      myIndent += INDENT;
+
+      if (fields != null) {
+        for (Abstract.ClassField field : fields) {
+          myBuilder.append('\n');
+          printIndent();
+          field.accept(this, null);
+          myBuilder.append('\n');
+        }
       }
-      --myIndent;
+
+      if (implementations != null) {
+        for (Abstract.Implementation implementation : implementations) {
+          myBuilder.append('\n');
+          printIndent();
+          implementation.accept(this, null);
+          myBuilder.append('\n');
+        }
+      }
+
+      if (instanceDefinitions != null) {
+        for (Abstract.Definition definition : instanceDefinitions) {
+          myBuilder.append('\n');
+          printIndent();
+          definition.accept(this, null);
+          myBuilder.append('\n');
+        }
+      }
+
+      myIndent -= INDENT;
       printIndent();
+      myBuilder.append("}");
     }
-    myBuilder.append("}");
+
+    if (globalStatements != null && !globalStatements.isEmpty()) {
+      myBuilder.append(" ");
+      visitWhere(globalStatements);
+    }
+
     return null;
   }
 
   @Override
-  public Void visitImplement(Abstract.ImplementDefinition def, Void params) {
+  public Void visitImplement(Abstract.Implementation def, Void params) {
     myBuilder.append("\\implement ").append(def.getName()).append(" => ");
-    def.getExpression().accept(this, null);
+    def.getImplementation().accept(this, null);
     return null;
   }
 
@@ -859,13 +895,13 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       }
 
       if (hasImplemented) {
-        ++myIndent;
+        myIndent += INDENT;
         for (Abstract.ClassViewField field : def.getFields()) {
           myBuilder.append("\n");
           printIndent();
           visitClassViewField(field, null);
         }
-        --myIndent;
+        myIndent -= INDENT;
         myBuilder.append("\n");
         printIndent();
       } else {
@@ -1041,5 +1077,53 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       }
       if (ii) ppv_default.myIndent-=INDENT;
     }
+  }
+
+  @Override
+  public Void visitDefine(Abstract.DefineStatement stat, Void params) {
+    stat.getDefinition().accept(new PrettyPrintVisitor(myBuilder, myIndent), null);
+    return null;
+  }
+
+  @Override
+  public Void visitNamespaceCommand(Abstract.NamespaceCommandStatement stat, Void params) {
+    switch (stat.getKind()) {
+      case OPEN:
+        myBuilder.append("\\open ");
+        break;
+      case EXPORT:
+        myBuilder.append("\\export ");
+        break;
+      default:
+        throw new IllegalStateException();
+    }
+
+    if (stat.getModulePath() != null) {
+      for (int i = 0; i < stat.getModulePath().size(); i++) {
+        myBuilder.append("::").append(stat.getModulePath().get(i));
+      }
+    }
+
+    if (!stat.getPath().isEmpty()){
+      myBuilder.append(stat.getPath().get(0));
+      for (int i = 1; i < stat.getPath().size(); i++) {
+        myBuilder.append('.').append(stat.getPath().get(i));
+      }
+    }
+
+    if (stat.getNames() != null) {
+      if (stat.isHiding()) {
+        myBuilder.append(" \\hiding");
+      }
+      myBuilder.append(" (");
+      if (!stat.getNames().isEmpty()) {
+        myBuilder.append(new Name(stat.getNames().get(0)).getPrefixName());
+        for (int i = 1; i < stat.getNames().size(); i++) {
+          myBuilder.append(", ").append(new Name(stat.getNames().get(i)).getPrefixName());
+        }
+      }
+      myBuilder.append(')');
+    }
+    return null;
   }
 }

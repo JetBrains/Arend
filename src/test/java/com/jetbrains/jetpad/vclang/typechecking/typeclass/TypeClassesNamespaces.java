@@ -7,12 +7,12 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
   @Test
   public void typeClassFullNameInside() {
     typeCheckClass(
-        "\\static \\class M {\n" +
-        "  \\static \\class X {\n" +
-        "    \\abstract A : \\Type0\n" +
-        "    \\abstract B : A -> Nat\n" +
+        "\\class M \\where {\n" +
+        "  \\class X {\n" +
+        "    \\field A : \\Type0\n" +
+        "    \\field B : A -> Nat\n" +
         "  }\n" +
-        "  \\static \\view X' \\on X \\by A { B }\n" +
+        "  \\view X' \\on X \\by A { B }\n" +
         "}\n" +
         "\\function f (x : M.X') (a : x.A) => M.B a");
   }
@@ -20,12 +20,12 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
   @Test
   public void typeClassFullNameInsideRenamed() {
     typeCheckClass(
-        "\\static \\class M {\n" +
-        "  \\static \\class X {\n" +
-        "    \\abstract A : \\Type0\n" +
-        "    \\abstract B : A -> Nat\n" +
+        "\\class M \\where {\n" +
+        "  \\class X {\n" +
+        "    \\field A : \\Type0\n" +
+        "    \\field B : A -> Nat\n" +
         "  }\n" +
-        "  \\static \\view Y \\on X \\by A { B }\n" +
+        "  \\view Y \\on X \\by A { B }\n" +
         "}\n" +
         "\\function f (x : M.Y) (a : x.A) => M.B a");
   }
@@ -33,40 +33,40 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
   @Test
   public void typeClassFullNameOutside() {
     typeCheckClass(
-        "\\static \\class M {\n" +
-        "  \\static \\class X {\n" +
-        "    \\abstract A : \\Type0\n" +
-        "    \\abstract B : A -> Nat\n" +
+        "\\class M \\where {\n" +
+        "  \\class X {\n" +
+        "    \\field A : \\Type0\n" +
+        "    \\field B : A -> Nat\n" +
         "  }\n" +
         "}\n" +
-        "\\static \\view X' \\on M.X \\by A { B }\n" +
+        "\\view X' \\on M.X \\by A { B }\n" +
         "\\function f (x : X') (a : x.A) => B a");
   }
 
   @Test
   public void typeClassFullNameOutsideRenamed() {
     typeCheckClass(
-        "\\static \\class M {\n" +
-        "  \\static \\class X {\n" +
-        "    \\abstract A : \\Type0\n" +
-        "    \\abstract B : A -> Nat\n" +
+        "\\class M \\where {\n" +
+        "  \\class X {\n" +
+        "    \\field A : \\Type0\n" +
+        "    \\field B : A -> Nat\n" +
         "  }\n" +
         "}\n" +
-        "\\static \\view Y \\on M.X \\by A { B }\n" +
+        "\\view Y \\on M.X \\by A { B }\n" +
         "\\function f (x : Y) (a : x.A) => B a");
   }
 
   @Test
   public void typeClassFullNameInstanceInside() {
     typeCheckClass(
-        "\\static \\class M {\n" +
-        "  \\static \\class X {\n" +
-        "    \\abstract A : \\Type0\n" +
-        "    \\abstract B : A -> Nat\n" +
+        "\\class M \\where {\n" +
+        "  \\class X {\n" +
+        "    \\field A : \\Type0\n" +
+        "    \\field B : A -> Nat\n" +
         "  }\n" +
-        "  \\static \\view X' \\on X \\by A { B }\n" +
-        "  \\static \\instance Nat-X => \\new X' { A => Nat | B => \\lam x => x }\n" +
-        "  \\static \\function T => B 0 = 0" +
+        "  \\view X' \\on X \\by A { B }\n" +
+        "  \\instance Nat-X => \\new X' { A => Nat | B => \\lam x => x }\n" +
+        "  \\function T => B 0 = 0" +
         "}\n" +
         "\\function f (t : M.T) => 0");
   }
@@ -74,14 +74,14 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
   @Test
   public void typeClassFullNameInstanceII() {
     typeCheckClass(
-        "\\static \\class M {\n" +
-        "  \\static \\class X {\n" +
-        "    \\abstract A : \\Type0\n" +
-        "    \\abstract B : A -> Nat\n" +
+        "\\class M \\where {\n" +
+        "  \\class X {\n" +
+        "    \\field A : \\Type0\n" +
+        "    \\field B : A -> Nat\n" +
         "  }\n" +
-        "  \\static \\view X' \\on X \\by A { B }\n" +
-        "  \\static \\instance Nat-X => \\new X' { A => Nat | B => \\lam x => x }\n" +
-        "  \\static \\function T => B 0 = 0" +
+        "  \\view X' \\on X \\by A { B }\n" +
+        "  \\instance Nat-X => \\new X' { A => Nat | B => \\lam x => x }\n" +
+        "  \\function T => B 0 = 0" +
         "}\n" +
         "\\function f (t : M.T) => M.B 0", 2);
   }
@@ -89,55 +89,55 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
   @Test
   public void typeClassFullNameInstanceIO() {
     typeCheckClass(
-        "\\static \\class M {\n" +
-        "  \\static \\class X {\n" +
-        "    \\abstract A : \\Type0\n" +
-        "    \\abstract B : A -> Nat\n" +
+        "\\class M \\where {\n" +
+        "  \\class X {\n" +
+        "    \\field A : \\Type0\n" +
+        "    \\field B : A -> Nat\n" +
         "  }\n" +
-        "  \\static \\view X' \\on X \\by A { B }\n" +
+        "  \\view X' \\on X \\by A { B }\n" +
         "}\n" +
-        "\\static \\instance Nat-X => \\new M.X' { A => Nat | B => \\lam x => x }\n" +
+        "\\instance Nat-X => \\new M.X' { A => Nat | B => \\lam x => x }\n" +
         "\\function f => M.B 0");
   }
 
   @Test
   public void typeClassFullNameInstanceOO() {
     typeCheckClass(
-        "\\static \\class M {\n" +
-        "  \\static \\class X {\n" +
-        "    \\abstract A : \\Type0\n" +
-        "    \\abstract B : A -> Nat\n" +
+        "\\class M \\where {\n" +
+        "  \\class X {\n" +
+        "    \\field A : \\Type0\n" +
+        "    \\field B : A -> Nat\n" +
         "  }\n" +
         "}\n" +
-        "\\static \\view X' \\on M.X \\by A { B }\n" +
-        "\\static \\instance Nat-X => \\new X' { A => Nat | B => \\lam x => x }\n" +
+        "\\view X' \\on M.X \\by A { B }\n" +
+        "\\instance Nat-X => \\new X' { A => Nat | B => \\lam x => x }\n" +
         "\\function f => B 0");
   }
 
   @Test
   public void typeClassOpen() {
     typeCheckClass(
-        "\\static \\class M {" +
-        "  \\static \\class X {\n" +
-        "    \\abstract A : \\Type0\n" +
-        "    \\abstract B : A -> Nat\n" +
+        "\\class M \\where {" +
+        "  \\class X {\n" +
+        "    \\field A : \\Type0\n" +
+        "    \\field B : A -> Nat\n" +
         "  }\n" +
         "}\n" +
         "\\open M\n" +
-        "\\static \\view X' \\on X \\by A { B }\n" +
+        "\\view X' \\on X \\by A { B }\n" +
         "\\function f (x : X') (a : x.A) => B a");
   }
 
   @Test
   public void typeClassFullNameInstanceIIOpen() {
     typeCheckClass(
-        "\\static \\class M {\n" +
-        "  \\static \\class X {\n" +
-        "    \\abstract A : \\Type0\n" +
-        "    \\abstract B : A -> Nat\n" +
+        "\\class M \\where {\n" +
+        "  \\class X {\n" +
+        "    \\field A : \\Type0\n" +
+        "    \\field B : A -> Nat\n" +
         "  }\n" +
-        "  \\static \\view X' \\on X \\by A { B }\n" +
-        "  \\static \\instance Nat-X => \\new X' { A => Nat | B => \\lam x => x }\n" +
+        "  \\view X' \\on X \\by A { B }\n" +
+        "  \\instance Nat-X => \\new X' { A => Nat | B => \\lam x => x }\n" +
         "}\n" +
         "\\open M\n" +
         "\\function f => B 0");

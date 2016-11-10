@@ -14,11 +14,7 @@ public final class Abstract {
 
   public interface SourceNode {}
 
-  public interface Expression extends SourceNode {
-    byte PREC = -12;
-    <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
-    void setWellTyped(List<com.jetbrains.jetpad.vclang.term.context.binding.Binding> context, com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped);
-  }
+  // Arguments
 
   public interface Argument extends SourceNode {
     boolean getExplicit();
@@ -34,6 +30,14 @@ public final class Abstract {
 
   public interface TelescopeArgument extends TypeArgument {
     List<String> getNames();
+  }
+
+  // Expressions
+
+  public interface Expression extends SourceNode {
+    byte PREC = -12;
+    <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
+    void setWellTyped(List<com.jetbrains.jetpad.vclang.term.context.binding.Binding> context, com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped);
   }
 
   public interface ApplyLevelExpression extends Expression {
@@ -79,7 +83,13 @@ public final class Abstract {
   public interface ClassExtExpression extends Expression {
     byte PREC = 12;
     Expression getBaseClassExpression();
-    Collection<? extends ImplementStatement> getStatements();
+    Collection<? extends ClassFieldImpl> getStatements();
+  }
+
+  public interface ClassFieldImpl extends SourceNode {
+    String getImplementedFieldName();
+    Definition getImplementedField();
+    Expression getImplementation();
   }
 
   public static ClassDefinition getUnderlyingClassDef(Expression expr) {
@@ -113,12 +123,6 @@ public final class Abstract {
     } else {
       return null;
     }
-  }
-
-  public interface ImplementStatement extends SourceNode {
-    String getName();
-    Definition getImplementedField();
-    Expression getExpression();
   }
 
   public interface NewExpression extends Expression {
@@ -222,7 +226,6 @@ public final class Abstract {
 
   public interface TypeOmegaExpression extends Expression {
     byte PREC = 12;
-
   }
 
 
@@ -268,28 +271,16 @@ public final class Abstract {
     int getNumber();
   }
 
+  // Definitions
+
   public interface ReferableSourceNode extends SourceNode {
     String getName();
   }
 
-  public interface Statement extends SourceNode {
-    <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params);
-  }
-
-  public interface DefineStatement extends Statement {
-    enum StaticMod { STATIC, DYNAMIC, DEFAULT }
-
-    StaticMod getStaticMod();
-    Definition getParentDefinition();
-    Definition getDefinition();
-  }
-
   public interface Definition extends ReferableSourceNode {
     enum Arrow { LEFT, RIGHT }
-
     Precedence getPrecedence();
-
-    DefineStatement getParentStatement();
+    ClassDefinition getEnclosingClass();
     <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params);
   }
 
@@ -299,6 +290,42 @@ public final class Abstract {
     List<? extends Argument> getArguments();
     Expression getResultType();
   }
+
+  public interface ClassField extends Definition {
+    List<? extends Argument> getArguments();
+    Expression getResultType();
+  }
+
+  public interface Implementation extends Definition {
+    Definition getImplementedField();
+    Expression getImplementation();
+  }
+
+  public interface FunctionDefinition extends Definition, Function {
+    Collection<? extends Statement> getStatements();
+  }
+
+  public interface DataDefinition extends Definition {
+    List<? extends TypeArgument> getParameters();
+    List<? extends Constructor> getConstructors();
+    Collection<? extends Condition> getConditions();
+    Expression getUniverse();
+  }
+
+  public interface SuperClass extends SourceNode {
+    Expression getSuperClass();
+  }
+
+  public interface ClassDefinition extends Definition {
+    Collection<? extends SuperClass> getSuperClasses();
+    Collection<? extends ClassField> getFields();
+    Collection<? extends Implementation> getImplementations();
+
+    Collection<? extends Statement> getGlobalStatements();
+    Collection<? extends Definition> getInstanceDefinitions();
+  }
+
+  // ClassViews
 
   public interface ClassView extends Definition {
     DefCallExpression getUnderlyingClassDefCall();
@@ -313,48 +340,36 @@ public final class Abstract {
     ClassView getOwnView();
   }
 
-  public interface ClassField extends Definition {
-    List<? extends Argument> getArguments();
-    Expression getResultType();
-  }
-
   public interface ClassViewInstance extends Definition {
     boolean isDefault();
     List<? extends Argument> getArguments();
     Expression getTerm();
   }
 
-  public interface ImplementDefinition extends Definition {
-    Definition getImplemented();
-    Expression getExpression();
+  // Statements
+
+  public interface Statement extends SourceNode {
+    <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params);
   }
 
-  public interface FunctionDefinition extends Definition, Function {
-    Collection<? extends Statement> getStatements();
+  public interface DefineStatement extends Statement {
+    Definition getDefinition();
   }
 
-  public interface DataDefinition extends Definition {
-    List<? extends TypeArgument> getParameters();
-    List<? extends Constructor> getConstructors();
-    Collection<? extends Condition> getConditions();
-    Expression getUniverse();
-  }
-
-  public interface Identifier extends SourceNode {
-    String getName();
-  }
-
-  public interface SuperClass extends SourceNode {
-    Expression getSuperClass();
-  }
-
-  public interface ClassDefinition extends Definition {
-    enum Kind { Module, Class }
+  public interface NamespaceCommandStatement extends Statement {
+    enum Kind { OPEN, EXPORT }
 
     Kind getKind();
-    Collection<? extends SuperClass> getSuperClasses();
-    Collection<? extends Statement> getStatements();
+    List<String> getModulePath();
+    List<String> getPath();
+
+    Definition getResolvedClass();
+
+    boolean isHiding();
+    List<String> getNames();
   }
+
+  // Patterns
 
   public interface PatternArgument extends SourceNode {
     boolean isHidden();
@@ -388,22 +403,5 @@ public final class Abstract {
     String getConstructorName();
     Expression getTerm();
     void setWellTyped(com.jetbrains.jetpad.vclang.term.definition.Condition condition);
-  }
-
-  public interface NamespaceCommandStatement extends Statement {
-    enum Kind { OPEN, EXPORT }
-
-    Kind getKind();
-    List<String> getModulePath();
-    List<String> getPath();
-
-    Definition getResolvedClass();
-
-    boolean isHiding();
-    List<String> getNames();
-  }
-
-  public interface DefaultStaticStatement extends Statement {
-    boolean isStatic();
   }
 }

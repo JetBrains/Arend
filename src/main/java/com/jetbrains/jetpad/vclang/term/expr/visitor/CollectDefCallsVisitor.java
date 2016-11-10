@@ -154,8 +154,8 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, V
   @Override
   public Void visitClassExt(Abstract.ClassExtExpression expr, Void ignore) {
     expr.getBaseClassExpression().accept(this, null);
-    for (Abstract.ImplementStatement statement : expr.getStatements()) {
-      statement.getExpression().accept(this, null);
+    for (Abstract.ClassFieldImpl statement : expr.getStatements()) {
+      statement.getImplementation().accept(this, null);
     }
     return null;
   }

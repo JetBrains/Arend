@@ -18,7 +18,8 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   @Override
   public Set<Abstract.Definition> visitFunction(Abstract.FunctionDefinition def, Boolean isStatic) {
     Set<Abstract.Definition> result = new HashSet<>();
-    visitStatements(result, def, def.getStatements(), isStatic);
+    // TODO: This statements might not be global.
+    visitGlobalStatements(result, def.getStatements(), isStatic);
     if (isStatic) {
       return result;
     }
@@ -96,35 +97,38 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
     }
   }
 
-  public void visitStatements(Set<Abstract.Definition> result, Abstract.Definition parent, Collection<? extends Abstract.Statement> statements, boolean isStatic) {
-    Set<Abstract.Definition> nonStatic = !isStatic && parent instanceof Abstract.ClassDefinition ? new HashSet<Abstract.Definition>() : null;
+  public void visitGlobalStatements(Set<Abstract.Definition> result, Collection<? extends Abstract.Statement> statements, boolean isStatic) {
     for (Abstract.Statement statement : statements) {
       if (statement instanceof Abstract.DefineStatement) {
         Abstract.DefineStatement defineStatement = (Abstract.DefineStatement) statement;
         if (isStatic) {
-          if (defineStatement.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC || parent instanceof Abstract.FunctionDefinition) {
-            result.add(defineStatement.getDefinition());
-            result.addAll(defineStatement.getDefinition().accept(
-                new DefinitionGetDepsVisitor(myOthers, null), true
-            ));
-          }
+          result.add(defineStatement.getDefinition());
+          result.addAll(defineStatement.getDefinition().accept(new DefinitionGetDepsVisitor(myOthers, null), true));
         } else {
-          if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ClassField) {
-            visitClassField(result, (Abstract.ClassField) ((Abstract.DefineStatement) statement).getDefinition());
-          } else
-          if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ImplementDefinition) {
-            visitImplement(result, (Abstract.ImplementDefinition) ((Abstract.DefineStatement) statement).getDefinition());
-          } else
           if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ClassView) {
             // TODO: I'm not sure what to do here.
             ((Abstract.ClassView) ((Abstract.DefineStatement) statement).getDefinition()).getUnderlyingClassDefCall().accept(new CollectDefCallsVisitor(result), null);
           } else {
             myOthers.add(defineStatement.getDefinition());
-            if (parent instanceof Abstract.ClassDefinition && ((Abstract.DefineStatement) statement).getStaticMod() != Abstract.DefineStatement.StaticMod.STATIC) {
-              nonStatic.add(defineStatement.getDefinition());
-              nonStatic.addAll(((Abstract.DefineStatement) statement).getDefinition().accept(new DefinitionGetDepsVisitor(myOthers, null), true));
-            }
           }
+        }
+      }
+    }
+  }
+
+  public void visitInstanceDefinitions(Set<Abstract.Definition> result, Abstract.Definition parent, Collection<? extends Abstract.Definition> definitions, boolean isStatic) {
+    Set<Abstract.Definition> nonStatic = !isStatic && parent instanceof Abstract.ClassDefinition ? new HashSet<Abstract.Definition>() : null;
+    for (Abstract.Definition definition : definitions) {
+      if (isStatic) {
+        if (parent instanceof Abstract.FunctionDefinition) {
+          result.add(definition);
+          result.addAll(definition.accept(new DefinitionGetDepsVisitor(myOthers, null), true));
+        }
+      } else {
+        myOthers.add(definition);
+        if (parent instanceof Abstract.ClassDefinition) {
+          nonStatic.add(definition);
+          nonStatic.addAll(definition.accept(new DefinitionGetDepsVisitor(myOthers, null), true));
         }
       }
     }
@@ -139,12 +143,21 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
     for (Abstract.SuperClass superClass : def.getSuperClasses()) {
       superClass.getSuperClass().accept(new CollectDefCallsVisitor(result), null);
     }
-    visitStatements(result, def, def.getStatements(), isStatic);
+    if (!isStatic) {
+      for (Abstract.ClassField field : def.getFields()) {
+        visitClassField(result, field);
+      }
+      for (Abstract.Implementation implementation : def.getImplementations()) {
+        visitImplement(result, implementation);
+      }
+    }
+    visitGlobalStatements(result, def.getGlobalStatements(), isStatic);
+    visitInstanceDefinitions(result, def, def.getInstanceDefinitions(), isStatic);
     return result;
   }
 
   @Override
-  public Set<Abstract.Definition> visitImplement(Abstract.ImplementDefinition def, Boolean isStatic) {
+  public Set<Abstract.Definition> visitImplement(Abstract.Implementation def, Boolean isStatic) {
     throw new IllegalStateException();
   }
 
@@ -176,7 +189,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
     return result;
   }
 
-  private void visitImplement(Set<Abstract.Definition> result, Abstract.ImplementDefinition def) {
-    def.getExpression().accept(new CollectDefCallsVisitor(result), null);
+  private void visitImplement(Set<Abstract.Definition> result, Abstract.Implementation def) {
+    def.getImplementation().accept(new CollectDefCallsVisitor(result), null);
   }
 }

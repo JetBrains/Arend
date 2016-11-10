@@ -22,48 +22,48 @@ public class RecordsTest extends TypeCheckingTestCase {
   @Test
   public void unknownExtTestError() {
     resolveNamesClass(
-        "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
-        "\\static \\function C => Point { x => 0 | z => 0 | y => 0 }", 1);
+        "\\class Point { \\field x : Nat \\field y : Nat }\n" +
+        "\\function C => Point { x => 0 | z => 0 | y => 0 }", 1);
   }
 
   /*
   @Test
   public void typeMismatchMoreTestError() {
     typeCheckClass(
-        "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
-        "\\static \\function C => Point { x (a : Nat) => a }", 1);
+        "\\class Point { \\field x : Nat \\field y : Nat }\n" +
+        "\\function C => Point { x (a : Nat) => a }", 1);
   }
 
   @Test
   public void typeMismatchLessTest() {
     typeCheckClass(
-        "\\static \\class C { \\abstract f (x y z : Nat) : Nat }\n" +
-        "\\static \\function D => C { f a => \\lam z w => z }");
+        "\\class C { \\field f : Nat -> Nat -> Nat -> Nat }\n" +
+        "\\function D => C { f a => \\lam z w => z }");
   }
 
   @Test
   public void argTypeMismatchTestError() {
     typeCheckClass(
-        "\\static \\class C { \\abstract f (a : Nat) : Nat }\n" +
-        "\\static \\function D => C { f (a : Nat -> Nat) => 0 }", 1);
+        "\\class C { \\field f : Nat -> Nat }\n" +
+        "\\function D => C { f (a : Nat -> Nat) => 0 }", 1);
   }
   */
 
   @Test
   public void resultTypeMismatchTestError() {
     typeCheckClass(
-        "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
-        "\\static \\function C => Point { x => \\lam (t : Nat) => t }", 1);
+        "\\class Point { \\field x : Nat \\field y : Nat }\n" +
+        "\\function C => Point { x => \\lam (t : Nat) => t }", 1);
   }
 
   @Test
   public void parentCallTest() {
     typeCheckClass(
-        "\\static \\class A {\n" +
-        "  \\abstract c : Nat -> Nat -> Nat\n" +
-        "  \\abstract f : Nat -> Nat\n" +
+        "\\class A {\n" +
+        "  \\field c : Nat -> Nat -> Nat\n" +
+        "  \\field f : Nat -> Nat\n" +
         "}\n" +
-        "\\static \\function B => A {\n" +
+        "\\function B => A {\n" +
         "  f => \\lam n => c n n\n" +
         "}", 1, 1);
   }
@@ -72,18 +72,18 @@ public class RecordsTest extends TypeCheckingTestCase {
   @Test
   public void recursiveTestError() {
     typeCheckClass(
-        "\\static \\class A { \\abstract f : Nat -> Nat }\n" +
-        "\\static \\function B => A { \\override f n <= \\elim n | zero => zero | suc n' => f (suc n') }", 1);
+        "\\class A { \\field f : Nat -> Nat }\n" +
+        "\\function B => A { \\implement f n <= \\elim n | zero => zero | suc n' => f (suc n') }", 1);
   }
   */
 
   @Test
   public void duplicateNameTestError() {
     typeCheckClass(
-        "\\static \\class A {\n" +
-        "  \\abstract f : Nat\n" +
+        "\\class A {\n" +
+        "  \\field f : Nat\n" +
         "}\n" +
-        "\\static \\function B => A {\n" +
+        "\\function B => A {\n" +
         "  | f => 0\n" +
         "  | f => 1\n" +
         "}", 1);
@@ -92,54 +92,54 @@ public class RecordsTest extends TypeCheckingTestCase {
   @Test
   public void overriddenFieldAccTest() {
     typeCheckClass(
-        "\\static \\class Point {\n" +
-        "  \\abstract x : Nat\n" +
-        "  \\abstract y : Nat\n" +
+        "\\class Point {\n" +
+        "  \\field x : Nat\n" +
+        "  \\field y : Nat\n" +
         "}\n" +
-        "\\static \\function diagonal => \\lam (d : Nat) => Point {\n" +
+        "\\function diagonal => \\lam (d : Nat) => Point {\n" +
         "  | x => d\n" +
         "  | y => d\n" +
         "}\n" +
-        "\\static \\function test (p : diagonal 0) : p.x = 0 => path (\\lam _ => 0)");
+        "\\function test (p : diagonal 0) : p.x = 0 => path (\\lam _ => 0)");
   }
 
   @Test
   public void newAbstractTestError() {
     typeCheckClass(
-        "\\static \\class Point {\n" +
-        "  \\abstract x : Nat\n" +
-        "  \\abstract y : Nat\n" +
+        "\\class Point {\n" +
+        "  \\field x : Nat\n" +
+        "  \\field y : Nat\n" +
         "}\n" +
-        "\\static \\function diagonal => Point { y => 0 }\n" +
-        "\\static \\function test => \\new diagonal", 1);
+        "\\function diagonal => Point { y => 0 }\n" +
+        "\\function test => \\new diagonal", 1);
   }
 
   @Test
   public void newTest() {
     typeCheckClass(
-        "\\static \\class Point {\n" +
-        "  \\abstract x : Nat\n" +
-        "  \\abstract y : Nat\n" +
+        "\\class Point {\n" +
+        "  \\field x : Nat\n" +
+        "  \\field y : Nat\n" +
         "}\n" +
-        "\\static \\function diagonal => \\lam (d : Nat) => Point {\n" +
+        "\\function diagonal => \\lam (d : Nat) => Point {\n" +
         "  | x => d\n" +
         "  | y => d\n" +
         "}\n" +
-        "\\static \\function diagonal1 => Point {\n" +
+        "\\function diagonal1 => Point {\n" +
         "  | x => 0\n" +
         "  | y => 0\n" +
         "}\n" +
-        "\\static \\function test : \\new diagonal1 = \\new diagonal 0 => path (\\lam _ => \\new Point { x => 0 | y => 0 })");
+        "\\function test : \\new diagonal1 = \\new diagonal 0 => path (\\lam _ => \\new Point { x => 0 | y => 0 })");
   }
 
   @Test
   public void mutualRecursionTestError() {
     typeCheckClass(
-        "\\static \\class Point {\n" +
-        "  \\abstract x : Nat\n" +
-        "  \\abstract y : Nat\n" +
+        "\\class Point {\n" +
+        "  \\field x : Nat\n" +
+        "  \\field y : Nat\n" +
         "}\n" +
-        "\\static \\function test => Point {\n" +
+        "\\function test => Point {\n" +
         "  | x => y\n" +
         "  | y => x\n" +
         "}", 2, 2);
@@ -148,19 +148,19 @@ public class RecordsTest extends TypeCheckingTestCase {
   @Test
   public void splitClassTestError() {
     resolveNamesClass(
-        "\\static \\class A {\n" +
-        "  \\static \\function x => 0\n" +
+        "\\class A \\where {\n" +
+        "  \\function x => 0\n" +
         "}\n" +
-        "\\static \\class A {\n" +
-        "  \\static \\function y => 0\n" +
+        "\\class A \\where {\n" +
+        "  \\function y => 0\n" +
         "}", 1);
   }
 
   @Test
   public void recordUniverseTest() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
-        "\\static \\function C => Point { x => 0 }");
+        "\\class Point { \\field x : Nat \\field y : Nat }\n" +
+        "\\function C => Point { x => 0 }");
     assertEquals(new SortMax(Sort.SetOfLevel(0)), ((ClassDefinition) result.getDefinition("Point")).getSorts());
     assertEquals(Universe(Sort.SetOfLevel(0)), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), new LevelArguments()).toExpression());
   }
@@ -168,8 +168,8 @@ public class RecordsTest extends TypeCheckingTestCase {
   @Test
   public void recordUniverseTest2() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
-        "\\static \\function C => Point { x => 0 | y => 1 }");
+        "\\class Point { \\field x : Nat \\field y : Nat }\n" +
+        "\\function C => Point { x => 0 | y => 1 }");
     assertEquals(new SortMax(Sort.SetOfLevel(0)), ((ClassDefinition) result.getDefinition("Point")).getSorts());
     assertEquals(Universe(Sort.PROP), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), new LevelArguments()).toExpression());
   }
@@ -177,8 +177,8 @@ public class RecordsTest extends TypeCheckingTestCase {
   @Test
   public void recordUniverseTest3() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\static \\class Point { \\abstract x : \\Type3 \\abstract y : \\Type1 }\n" +
-        "\\static \\function C => Point { x => Nat }");
+        "\\class Point { \\field x : \\Type3 \\field y : \\Type1 }\n" +
+        "\\function C => Point { x => Nat }");
     assertEquals(new SortMax(new Sort(4, Sort.NOT_TRUNCATED)), ((ClassDefinition) result.getDefinition("Point")).getSorts());
     assertEquals(Universe(new Sort(2, Sort.NOT_TRUNCATED)), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), new LevelArguments()).toExpression());
   }
@@ -186,12 +186,12 @@ public class RecordsTest extends TypeCheckingTestCase {
   @Test
   public void recordConstructorsTest() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\static \\class A {\n" +
-        "  \\abstract x : Nat\n" +
+        "\\class A {\n" +
+        "  \\field x : Nat\n" +
         "  \\data Foo | foo (x = 0)\n" +
         "  \\function y : foo = foo => path (\\lam _ => foo)\n" +
         "}\n" +
-        "\\static \\function test (p : A) => p.y");
+        "\\function test (p : A) => p.y");
     FunctionDefinition testFun = (FunctionDefinition) result.getDefinition("test");
     Expression resultType = (Expression) testFun.getResultType();
     Expression function = resultType.normalize(NormalizeVisitor.Mode.WHNF);
@@ -239,12 +239,12 @@ public class RecordsTest extends TypeCheckingTestCase {
   @Test
   public void recordConstructorsParametersTest() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\static \\class A {\n" +
-            "  \\abstract x : Nat\n" +
-            "  \\data Foo (p : x = x) | foo (p = p)\n" +
-            "  \\function y (_ : foo (path (\\lam _ => path (\\lam _ => x))) = foo (path (\\lam _ => path (\\lam _ => x)))) => 0\n" +
-            "}\n" +
-            "\\static \\function test (q : A) => q.y");
+        "\\class A {\n" +
+        "  \\field x : Nat\n" +
+        "  \\data Foo (p : x = x) | foo (p = p)\n" +
+        "  \\function y (_ : foo (path (\\lam _ => path (\\lam _ => x))) = foo (path (\\lam _ => path (\\lam _ => x)))) => 0\n" +
+        "}\n" +
+        "\\function test (q : A) => q.y");
     FunctionDefinition testFun = (FunctionDefinition) result.getDefinition("test");
     Expression resultType = (Expression) testFun.getResultType();
     Expression xCall = FieldCall((ClassField) result.getDefinition("A.x"), Reference(testFun.getParameters()));

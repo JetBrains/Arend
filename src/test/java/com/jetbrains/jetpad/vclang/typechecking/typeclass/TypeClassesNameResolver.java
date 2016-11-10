@@ -7,61 +7,61 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
   @Test
   public void resolveNames() {
     resolveNamesClass(
-        "\\static \\class X {\n" +
-        "  \\abstract T : \\Type0\n" +
-        "  \\abstract f : \\Type0\n" +
+        "\\class X {\n" +
+        "  \\field T : \\Type0\n" +
+        "  \\field f : \\Type0\n" +
         "}\n" +
-        "\\static \\view X' \\on X \\by T { f }\n" +
+        "\\view X' \\on X \\by T { f }\n" +
         "\\function g => f");
   }
 
   @Test
   public void resolveNames2() {
     resolveNamesClass(
-        "\\static \\class X {\n" +
-        "  \\abstract T : \\Type0\n" +
-        "  \\abstract f : \\Type0\n" +
+        "\\class X {\n" +
+        "  \\field T : \\Type0\n" +
+        "  \\field f : \\Type0\n" +
         "}\n" +
-        "\\static \\view X' \\on X \\by T { f }\n" +
+        "\\view X' \\on X \\by T { f }\n" +
         "\\function g => f");
   }
 
   @Test
   public void resolveNamesNonImplicit() {
     resolveNamesClass(
-        "\\static \\class X {\n" +
-        "  \\abstract T : \\Type0\n" +
-        "  \\abstract f : \\Type0\n" +
-        "  \\abstract h : \\Type0\n" +
+        "\\class X {\n" +
+        "  \\field T : \\Type0\n" +
+        "  \\field f : \\Type0\n" +
+        "  \\field h : \\Type0\n" +
         "}\n" +
-        "\\static \\view X' \\on X \\by T { f }\n" +
+        "\\view X' \\on X \\by T { f }\n" +
         "\\function g => h", 1);
   }
 
   @Test
   public void resolveNamesDuplicate() {
     resolveNamesClass(
-        "\\static \\class X {\n" +
-        "  \\abstract T : \\Type0\n" +
-        "  \\abstract f : \\Type0\n" +
+        "\\class X {\n" +
+        "  \\field T : \\Type0\n" +
+        "  \\field f : \\Type0\n" +
         "}\n" +
-        "\\static \\view X' \\on X \\by T { f }\n" +
-        "\\static \\class Y {\n" +
-        "  \\abstract T : \\Type0\n" +
-        "  \\abstract g : \\Type0 -> \\Type0\n" +
+        "\\view X' \\on X \\by T { f }\n" +
+        "\\class Y {\n" +
+        "  \\field T : \\Type0\n" +
+        "  \\field g : \\Type0 -> \\Type0\n" +
         "}\n" +
-        "\\static \\view Y' \\on Y \\by T { g => f }", 1);
+        "\\view Y' \\on Y \\by T { g => f }", 1);
   }
 
   @Test
   public void resolveNamesInner() {
     resolveNamesClass(
-        "\\static \\class X {\n" +
-        "  \\static \\class Z {\n" +
-        "    \\abstract T : \\Type0\n" +
-        "    \\abstract f : \\Type0\n" +
+        "\\class X \\where {\n" +
+        "  \\class Z {\n" +
+        "    \\field T : \\Type0\n" +
+        "    \\field f : \\Type0\n" +
         "  }\n" +
-        "  \\static \\view Z' \\on Z \\by T { f }\n" +
+        "  \\view Z' \\on Z \\by T { f }\n" +
         "}\n" +
         "\\function g => f", 1);
   }
@@ -69,51 +69,51 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
   @Test
   public void resolveNamesRecursive() {
     resolveNamesClass(
-        "\\static \\class X {\n" +
-        "  \\static \\class Z {\n" +
-        "    \\abstract T : \\Type0\n" +
-        "    \\abstract f : \\Type0\n" +
+        "\\class X \\where {\n" +
+        "  \\class Z {\n" +
+        "    \\field T : \\Type0\n" +
+        "    \\field f : \\Type0\n" +
         "  }\n" +
-        "  \\static \\view Z' \\on Z \\by T { f }\n" +
+        "  \\view Z' \\on Z \\by T { f }\n" +
         "}\n" +
-        "\\static \\class Y {\n" +
-        "  \\abstract T : \\Type0\n" +
-        "  \\abstract z : X.Z\n" +
+        "\\class Y {\n" +
+        "  \\field T : \\Type0\n" +
+        "  \\field z : X.Z\n" +
         "}\n" +
-        "\\static \\view Y' \\on Y \\by T { z }\n" +
+        "\\view Y' \\on Y \\by T { z }\n" +
         "\\function g => f", 1);
   }
 
   @Test
   public void resolveClassExt() {
     resolveNamesClass(
-        "\\static \\class X {\n" +
-        "  \\abstract T : \\Type1\n" +
-        "  \\abstract f : \\Type1\n" +
+        "\\class X {\n" +
+        "  \\field T : \\Type1\n" +
+        "  \\field f : \\Type1\n" +
         "}\n" +
-        "\\static \\view Y \\on X \\by T { f => g }\n" +
+        "\\view Y \\on X \\by T { f => g }\n" +
         "\\function h => \\new Y { T => \\Type0 | g => \\Type0 }");
   }
 
   @Test
   public void resolveClassExtSameName() {
     resolveNamesClass(
-        "\\static \\class X {\n" +
-        "  \\abstract T : \\Type1\n" +
-        "  \\abstract f : \\Type1\n" +
+        "\\class X {\n" +
+        "  \\field T : \\Type1\n" +
+        "  \\field f : \\Type1\n" +
         "}\n" +
-        "\\static \\view X' \\on X \\by T { f => g }\n" +
+        "\\view X' \\on X \\by T { f => g }\n" +
         "\\function h => \\new X' { T => \\Type0 | g => \\Type0 }");
   }
 
   @Test
   public void resolveClassExtSameName2() {
     resolveNamesClass(
-        "\\static \\class X {\n" +
-        "  \\abstract T : \\Type1\n" +
-        "  \\abstract f : \\Type1\n" +
+        "\\class X {\n" +
+        "  \\field T : \\Type1\n" +
+        "  \\field f : \\Type1\n" +
         "}\n" +
-        "\\static \\view X' \\on X \\by T { f => g }\n" +
+        "\\view X' \\on X \\by T { f => g }\n" +
         "\\function h => \\new X' { T => \\Type0 | f => \\Type0 }", 1);
   }
 

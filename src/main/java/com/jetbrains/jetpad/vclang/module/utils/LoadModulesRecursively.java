@@ -152,8 +152,8 @@ public class LoadModulesRecursively implements AbstractStatementVisitor<Void, Vo
   @Override
   public Void visitClassExt(Abstract.ClassExtExpression expr, Void params) {
     expr.getBaseClassExpression().accept(this, null);
-    for (Abstract.ImplementStatement implementStatement : expr.getStatements()) {
-      implementStatement.getExpression().accept(this, null);
+    for (Abstract.ClassFieldImpl classFieldImpl : expr.getStatements()) {
+      classFieldImpl.getImplementation().accept(this, null);
     }
     return null;
   }
@@ -193,11 +193,6 @@ public class LoadModulesRecursively implements AbstractStatementVisitor<Void, Vo
     if (stat.getModulePath() != null) {
       myModuleLoader.load(new ModulePath(stat.getModulePath()));
     }
-    return null;
-  }
-
-  @Override
-  public Void visitDefaultStaticCommand(Abstract.DefaultStaticStatement stat, Void params) {
     return null;
   }
 
@@ -248,15 +243,24 @@ public class LoadModulesRecursively implements AbstractStatementVisitor<Void, Vo
 
   @Override
   public Void visitClass(Abstract.ClassDefinition def, Void params) {
-    for (Abstract.Statement statement : def.getStatements()) {
+    for (Abstract.ClassField field : def.getFields()) {
+      field.accept(this, null);
+    }
+    for (Abstract.Implementation implementation : def.getImplementations()) {
+      implementation.accept(this, null);
+    }
+    for (Abstract.Statement statement : def.getGlobalStatements()) {
       statement.accept(this, null);
+    }
+    for (Abstract.Definition definition : def.getInstanceDefinitions()) {
+      definition.accept(this, null);
     }
     return null;
   }
 
   @Override
-  public Void visitImplement(Abstract.ImplementDefinition def, Void params) {
-    def.getExpression().accept(this, null);
+  public Void visitImplement(Abstract.Implementation def, Void params) {
+    def.getImplementation().accept(this, null);
     return null;
   }
 

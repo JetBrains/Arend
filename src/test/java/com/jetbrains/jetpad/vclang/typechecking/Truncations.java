@@ -13,14 +13,15 @@ public class Truncations extends TypeCheckingTestCase {
 
   @Test
   public void truncPEval() {
-    typeCheckClass("\\static \\function inP-inv (P : \\Prop) (p : TrP P) : P <= \\elim p | inP p => p\n" +
-            "\\static \\function trunc-eval (P : \\Prop) (p : TrP P) : (Path (\\lam _ => TrP P) ((TrP P).inP (inP-inv P p)) p) => path ((TrP P).truncP ((TrP P).inP (inP-inv P p)) p)");
+    typeCheckClass(
+        "\\function inP-inv (P : \\Prop) (p : TrP P) : P <= \\elim p | inP p => p\n" +
+        "\\function trunc-eval (P : \\Prop) (p : TrP P) : (Path (\\lam _ => TrP P) ((TrP P).inP (inP-inv P p)) p) => path ((TrP P).truncP ((TrP P).inP (inP-inv P p)) p)");
   }
 
   @Test
   public void setTruncationTests() {
     typeCheckClass(
-        "\\static \\data TrS' (A : \\Type0)\n" +
+        "\\data TrS' (A : \\Type0)\n" +
         "    | inS' A\n" +
         "    | truncS' (a a' : TrS' A) (p q : a = a') I I\n" +
         "  \\with\n" +
@@ -29,17 +30,17 @@ public class Truncations extends TypeCheckingTestCase {
         "    | truncS' _ _ p _ i left => p @ i\n" +
         "    | truncS' _ _ _ q i right => q @ i\n" +
         "\n" +
-        "\\static \\function\n" +
+        "\\function\n" +
         "set-trunc-test (A : \\Type0) (a a' : TrS' A) (p q : a = a') : TrS' A => truncS' a a' p q left left\n" +
         "\n" +
-        "\\static \\function\n" +
+        "\\function\n" +
         "set-trunc-test' (A : \\Type0) (a a' : TrS' A) (p q : a = a') : p = q => path (\\lam i => path (\\lam j => truncS' a a' p q j i))");
   }
 
   @Test
   public void dynamicSetTruncationTests() {
     typeCheckClass(
-        "\\dynamic \\data TrS' (A : \\Type0)\n" +
+        "\\data TrS' (A : \\Type0)\n" +
         "    | inS' A\n" +
         "    | truncS' (a a' : TrS' A) (p q : a = a') I I\n" +
         "  \\with\n" +
@@ -48,11 +49,11 @@ public class Truncations extends TypeCheckingTestCase {
         "    | truncS' _ _ p _ i left => p @ i\n" +
         "    | truncS' _ _ _ q i right => q @ i\n" +
         "\n" +
-        "\\dynamic \\function\n" +
+        "\\function\n" +
         "set-trunc-test (A : \\Type0) (a a' : TrS' A) (p q : a = a') : TrS' A => truncS' a a' p q left left\n" +
         "\n" +
-        "\\dynamic \\function\n" +
-        "set-trunc-test' (A : \\Type0) (a a' : TrS' A) (p q : a = a') : p = q => path (\\lam i => path (\\lam j => truncS' a a' p q j i))");
+        "\\function\n" +
+        "set-trunc-test' (A : \\Type0) (a a' : TrS' A) (p q : a = a') : p = q => path (\\lam i => path (\\lam j => truncS' a a' p q j i))", "");
   }
 
   @Test

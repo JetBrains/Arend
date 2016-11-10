@@ -187,17 +187,20 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       Namespace staticNamespace = myStaticNsProvider.forDefinition(def);
       Scope staticScope = new StaticClassScope(myParentScope, staticNamespace);
       StatementResolveNameVisitor stVisitor = new StatementResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, myNameResolver, myErrorReporter, staticScope, myContext, myResolveListener);
-      for (Abstract.Statement statement : def.getStatements()) {
-        if (statement instanceof Abstract.DefineStatement && (!Abstract.DefineStatement.StaticMod.STATIC.equals(((Abstract.DefineStatement) statement).getStaticMod())))
-          continue;  // FIXME[where]
+      for (Abstract.Statement statement : def.getGlobalStatements()) {
         statement.accept(stVisitor, null);
       }
 
       Scope dynamicScope = new DynamicClassScope(myParentScope, staticNamespace, myDynamicNsProvider.forClass(def), myErrorReporter);
-      StatementResolveNameVisitor dyVisitor = new StatementResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, myNameResolver, myErrorReporter, dynamicScope, myContext, myResolveListener);
-      for (Abstract.Statement statement : def.getStatements()) {
-        if (statement instanceof Abstract.DefineStatement && !Abstract.DefineStatement.StaticMod.STATIC.equals(((Abstract.DefineStatement) statement).getStaticMod()))
-          statement.accept(dyVisitor, null);
+      DefinitionResolveNameVisitor dyVisitor = new DefinitionResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, dynamicScope, myNameResolver, myErrorReporter, myResolveListener);
+      for (Abstract.ClassField field : def.getFields()) {
+        field.accept(dyVisitor, false);
+      }
+      for (Abstract.Implementation implementation : def.getImplementations()) {
+        implementation.accept(dyVisitor, false);
+      }
+      for (Abstract.Definition definition : def.getInstanceDefinitions()) {
+        definition.accept(dyVisitor, false);
       }
     } catch (Namespace.InvalidNamespaceException e) {
       myErrorReporter.report(e.toError());
@@ -207,24 +210,17 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
   }
 
   @Override
-  public Void visitImplement(Abstract.ImplementDefinition def, Boolean params) {
+  public Void visitImplement(Abstract.Implementation def, Boolean params) {
     if (myResolveListener == null) {
       return null;
     }
 
-    Abstract.Definition parentDef = def.getParentStatement().getParentDefinition();
-
-    if (parentDef instanceof Abstract.ClassDefinition) {
-      Abstract.Definition referable = myNameResolver.resolveClassField((Abstract.ClassDefinition) parentDef, def.getName(), myErrorReporter, def);
-      if (referable != null) {
-        myResolveListener.implementResolved(def, referable);
-      }
-    } else {
-      // TODO: Is this possible? If it is, then this error message is incorrect.
-      myErrorReporter.report(new NotInScopeError(def, def.getName()));
+    Abstract.Definition referable = myNameResolver.resolveClassField(def.getEnclosingClass(), def.getName(), myErrorReporter, def);
+    if (referable != null) {
+      myResolveListener.implementResolved(def, referable);
     }
 
-    def.getExpression().accept(new ExpressionResolveNameVisitor(myParentScope, myContext, myNameResolver, myErrorReporter, myResolveListener), null);
+    def.getImplementation().accept(new ExpressionResolveNameVisitor(myParentScope, myContext, myNameResolver, myErrorReporter, myResolveListener), null);
     return null;
   }
 

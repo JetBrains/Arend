@@ -20,7 +20,6 @@ public class SimpleModuleNamespaceProvider extends BaseModuleNamespaceProvider {
   }
 
   public ModuleNamespace registerModule(ModulePath modulePath, Abstract.ClassDefinition module) {
-    if (module.getKind() != Abstract.ClassDefinition.Kind.Module) throw new IllegalArgumentException();
     ModuleNamespace ns = registerModuleNs(modulePath, module);
     ns.registerClass(module);
     return ns;

@@ -74,7 +74,7 @@ public class TypecheckingOrdering {
 
     myVisiting.add(definition);
 
-    Abstract.ClassDefinition enclosingClass = getEnclosingClass(definition);
+    Abstract.ClassDefinition enclosingClass = definition.getEnclosingClass();
     if (enclosingClass != null && !doOrder(enclosingClass)) {
       return false;
     }
@@ -118,8 +118,8 @@ public class TypecheckingOrdering {
         }
 
         @Override
-        public Boolean visitImplement(Abstract.ImplementDefinition def, Void params) {
-          return def.getParentStatement().getParentDefinition().equals(definition) || doOrder(def.getParentStatement().getParentDefinition());
+        public Boolean visitImplement(Abstract.Implementation def, Void params) {
+          return def.getEnclosingClass().equals(definition) || doOrder(def.getEnclosingClass());
         }
 
         @Override
@@ -146,18 +146,6 @@ public class TypecheckingOrdering {
 
     myVisited.add(definition);
     return true;
-  }
-
-  private static Abstract.ClassDefinition getEnclosingClass(Abstract.Definition definition) {
-    Abstract.DefineStatement parentStatement = definition.getParentStatement();
-    if (parentStatement == null) return null;
-
-    Abstract.Definition parentDefinition = parentStatement.getParentDefinition();
-    if (!Abstract.DefineStatement.StaticMod.STATIC.equals(parentStatement.getStaticMod()) && parentDefinition instanceof Abstract.ClassDefinition) {
-      return (Abstract.ClassDefinition) parentDefinition;
-    } else {
-      return getEnclosingClass(parentDefinition);
-    }
   }
 
   private Result getResult() {

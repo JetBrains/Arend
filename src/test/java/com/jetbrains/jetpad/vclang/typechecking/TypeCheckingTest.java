@@ -9,30 +9,30 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   @Test
   public void typeCheckDefinition() {
     typeCheckClass(
-        "\\static \\function x : Nat => zero\n" +
-        "\\static \\function y : Nat => x");
+        "\\function x : Nat => zero\n" +
+        "\\function y : Nat => x");
   }
 
   @Test
   public void typeCheckDefType() {
     typeCheckClass(
-        "\\static \\function x : \\Type0 => Nat\n" +
-        "\\static \\function y : x => zero");
+        "\\function x : \\Type0 => Nat\n" +
+        "\\function y : x => zero");
   }
 
   @Test
   public void typeCheckInfixDef() {
     typeCheckClass(
-        "\\static \\function (+) : Nat -> Nat -> Nat => \\lam x y => x\n" +
-        "\\static \\function (*) : Nat -> Nat => \\lam x => x + zero");
+        "\\function (+) : Nat -> Nat -> Nat => \\lam x y => x\n" +
+        "\\function (*) : Nat -> Nat => \\lam x => x + zero");
   }
 
   @Test
   public void typeCheckConstructor1() {
     typeCheckClass(
-        "\\static \\data D (n : Nat) {k : Nat} (m : Nat) | con\n" +
-        "\\static \\function idp {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a : A} => path (\\lam _ => a)\n" +
-        "\\static \\function f : con {1} {2} {3} = (D 1 {2} 3).con => idp");
+        "\\data D (n : Nat) {k : Nat} (m : Nat) | con\n" +
+        "\\function idp {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a : A} => path (\\lam _ => a)\n" +
+        "\\function f : con {1} {2} {3} = (D 1 {2} 3).con => idp");
   }
 
   @Test
@@ -46,9 +46,9 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   @Test
   public void typeCheckConstructor2() {
     typeCheckClass(
-        "\\static \\data D (n : Nat) {k : Nat} (m : Nat) | con (k = m)\n" +
-        "\\static \\function idp {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a : A} => path (\\lam _ => a)\n" +
-        "\\static \\function f : con {0} (path (\\lam _ => 1)) = (D 0).con idp => idp");
+        "\\data D (n : Nat) {k : Nat} (m : Nat) | con (k = m)\n" +
+        "\\function idp {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a : A} => path (\\lam _ => a)\n" +
+        "\\function f : con {0} (path (\\lam _ => 1)) = (D 0).con idp => idp");
   }
 
   @Test
@@ -62,11 +62,11 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   @Test
   public void testEither() {
     typeCheckClass(
-        "\\static \\data Either (A B : \\Type0) | inl A | inr B\n" +
-        "\\static \\function fun {A B : \\Type0} (e : Either A B) : \\Set0 <= \\elim e\n" +
+        "\\data Either (A B : \\Type0) | inl A | inr B\n" +
+        "\\function fun {A B : \\Type0} (e : Either A B) : \\Set0 <= \\elim e\n" +
         "  | inl _ => Nat\n" +
         "  | inr _ => Nat\n" +
-        "\\static \\function test : fun (inl {Nat} {Nat} 0) => 0");
+        "\\function test : fun (inl {Nat} {Nat} 0) => 0");
   }
 
   @Test
@@ -114,11 +114,11 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   @Test
   public void universeInference() {
     typeCheckClass(
-        "\\static \\function\n" +
+        "\\function\n" +
         "transport {lp : Lvl} {lh : CNat} {A : \\Type (lp,lh)} (B : A -> \\Type (lp,lh)) {a a' : A} (p : a = a') (b : B a)\n" +
         "  <= coe (\\lam i => B (p @ i)) b right\n" +
         "\n" +
-        "\\static \\function\n" +
+        "\\function\n" +
         "foo (A : \\1-Type0) (B : A -> \\Type0) (a a' : A) (p : a = a') => transport B p");
   }
 
@@ -126,8 +126,8 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   public void definitionsWithErrors() {
     typeCheckClass(
         "\\class C {\n" +
-        "  \\abstract A : X\n" +
-        "  \\abstract a : (\\lam (x : Nat) => Nat) A\n" +
+        "  \\field A : X\n" +
+        "  \\field a : (\\lam (x : Nat) => Nat) A\n" +
         "}", 1, 2);
   }
 }

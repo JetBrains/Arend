@@ -75,12 +75,7 @@ public abstract class ParserTestCase extends VclangTestCase {
   Concrete.ClassDefinition parseClass(String name, String text, int errors) {
     VcgrammarParser.StatementsContext tree = _parse(name, errorReporter, text).statements();
     List<Concrete.Statement> statements = new BuildVisitor(SOURCE_ID, errorReporter).visitStatements(tree);
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(ConcreteExpressionFactory.POSITION, name, statements, Abstract.ClassDefinition.Kind.Module);
-    for (Concrete.Statement statement : statements) {
-      if (statement instanceof Concrete.DefineStatement) {
-        ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);
-      }
-    }
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(ConcreteExpressionFactory.POSITION, name, statements);
     assertThat(errorList, containsErrors(errors));
     // classDefinition.accept(new DefinitionResolveStaticModVisitor(new ConcreteStaticModListener()), null);
     return classDefinition;

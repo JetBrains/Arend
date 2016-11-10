@@ -26,12 +26,12 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.Expression makeClassExt(Abstract.Expression expr, List<? extends Abstract.ImplementStatement> statements) {
-    return cClassExt((Concrete.Expression) expr, (List<Concrete.ImplementStatement>) statements);
+  public Abstract.Expression makeClassExt(Abstract.Expression expr, List<? extends Abstract.ClassFieldImpl> statements) {
+    return cClassExt((Concrete.Expression) expr, (List<Concrete.ClassFieldImpl>) statements);
   }
 
   @Override
-  public Abstract.ImplementStatement makeImplementStatement(ClassField field, Abstract.Expression type, Abstract.Expression term) {
+  public Abstract.ClassFieldImpl makeImplementStatement(ClassField field, Abstract.Expression type, Abstract.Expression term) {
     return cImplStatement(field.getName(), (Concrete.Expression) term);
   }
 

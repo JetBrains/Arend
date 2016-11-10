@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -44,29 +43,7 @@ public final class Concrete {
     }
   }
 
-  public static abstract class Expression extends SourceNode implements Abstract.Expression {
-    public Expression(Position position) {
-      super(position);
-    }
-
-    @Override
-    public void setWellTyped(List<com.jetbrains.jetpad.vclang.term.context.binding.Binding> context, com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped) {
-    }
-
-    @Override
-    public String toString() {
-      StringBuilder builder = new StringBuilder();
-      accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
-      return builder.toString();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (this == obj) return true;
-      if (!(obj instanceof Expression)) return false;
-      return accept(new AbstractCompareVisitor(), (Expression) obj);
-    }
-  }
+  // Arguments
 
   public static class Argument extends SourceNode implements Abstract.Argument {
     private boolean myExplicit;
@@ -129,6 +106,32 @@ public final class Concrete {
     @Override
     public List<String> getNames() {
       return myNames;
+    }
+  }
+
+  // Expressions
+
+  public static abstract class Expression extends SourceNode implements Abstract.Expression {
+    public Expression(Position position) {
+      super(position);
+    }
+
+    @Override
+    public void setWellTyped(List<com.jetbrains.jetpad.vclang.term.context.binding.Binding> context, com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped) {
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder builder = new StringBuilder();
+      accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
+      return builder.toString();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) return true;
+      if (!(obj instanceof Expression)) return false;
+      return accept(new AbstractCompareVisitor(), (Expression) obj);
     }
   }
 
@@ -367,9 +370,9 @@ public final class Concrete {
 
   public static class ClassExtExpression extends Expression implements Abstract.ClassExtExpression {
     private final Expression myBaseClassExpression;
-    private final List<ImplementStatement> myDefinitions;
+    private final List<ClassFieldImpl> myDefinitions;
 
-    public ClassExtExpression(Position position, Expression baseClassExpression, List<ImplementStatement> definitions) {
+    public ClassExtExpression(Position position, Expression baseClassExpression, List<ClassFieldImpl> definitions) {
       super(position);
       myBaseClassExpression = baseClassExpression;
       myDefinitions = definitions;
@@ -381,7 +384,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<ImplementStatement> getStatements() {
+    public List<ClassFieldImpl> getStatements() {
       return myDefinitions;
     }
 
@@ -391,19 +394,19 @@ public final class Concrete {
     }
   }
 
-  public static class ImplementStatement extends SourceNode implements Abstract.ImplementStatement {
+  public static class ClassFieldImpl extends SourceNode implements Abstract.ClassFieldImpl {
     private final String myName;
     private Abstract.Definition myImplementedField;
     private final Expression myExpression;
 
-    public ImplementStatement(Position position, String identifier, Expression expression) {
+    public ClassFieldImpl(Position position, String identifier, Expression expression) {
       super(position);
       myName = identifier;
       myExpression = expression;
     }
 
     @Override
-    public String getName() {
+    public String getImplementedFieldName() {
       return myName;
     }
 
@@ -417,7 +420,7 @@ public final class Concrete {
     }
 
     @Override
-    public Expression getExpression() {
+    public Expression getImplementation() {
       return myExpression;
     }
   }
@@ -801,6 +804,8 @@ public final class Concrete {
     }
   }
 
+  // Definitions
+
   public static class ReferableSourceNode extends SourceNode implements Abstract.ReferableSourceNode {
     private final String myName;
 
@@ -815,58 +820,9 @@ public final class Concrete {
     }
   }
 
-  public static abstract class Statement extends SourceNode implements Abstract.Statement {
-    public Statement(Position position) {
-      super(position);
-    }
-  }
-
-  public static class DefineStatement extends Statement implements Abstract.DefineStatement {
-    //private final boolean myStatic;
-    private StaticMod myStatic;
-    private final Definition myDefinition;
-    private Definition myParent;
-
-    public DefineStatement(Position position, StaticMod staticMod, Definition definition) {
-      super(position);
-      myStatic = staticMod;
-      myDefinition = definition;
-    }
-
-    /*
-    @Override
-    public boolean isStatic() { return myStatic; } /**/
-
-    @Override
-    public Definition getDefinition() {
-      return myDefinition;
-    }
-
-    @Override
-    public StaticMod getStaticMod() {
-      return myStatic;
-    }
-
-    public void setExplicitStaticMod(boolean isStatic) { myStatic = isStatic ? StaticMod.STATIC : StaticMod.DYNAMIC; }
-
-    @Override
-    public Definition getParentDefinition() {
-      return myParent;
-    }
-
-    public void setParentDefinition(Definition parent) {
-      myParent = parent;
-    }
-
-    @Override
-    public <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitDefine(this, params);
-    }
-  }
-
   public static abstract class Definition extends ReferableSourceNode implements Abstract.Definition {
     private final Precedence myPrecedence;
-    private DefineStatement myParent;
+    private ClassDefinition myEnclosingClass;
 
     public Definition(Position position, String name, Precedence precedence) {
       super(position, name);
@@ -879,19 +835,16 @@ public final class Concrete {
     }
 
     @Override
-    public DefineStatement getParentStatement() {
-      return myParent;
+    public ClassDefinition getEnclosingClass() {
+      return myEnclosingClass;
     }
 
-    public void setParentStatement(DefineStatement parent) {
-      myParent = parent;
+    public void setEnclosingClass(ClassDefinition enclosingClass) {
+      myEnclosingClass = enclosingClass;
     }
 
     @Override
     public String toString() {
-      // StringBuilder builder = new StringBuilder();
-      // accept(new PrettyPrintVisitor(builder, 0), null);
-      // return builder.toString();
       return getName();
     }
   }
@@ -914,6 +867,252 @@ public final class Concrete {
       return myResultType;
     }
   }
+
+  public static class SuperClass extends SourceNode implements Abstract.SuperClass {
+    private Expression mySuperClass;
+
+    public SuperClass(Position position, Expression superClass) {
+      super(position);
+      mySuperClass = superClass;
+    }
+
+    @Override
+    public Expression getSuperClass() {
+      return mySuperClass;
+    }
+  }
+
+  public static class ClassDefinition extends Definition implements Abstract.ClassDefinition {
+    private final List<SuperClass> mySuperClasses;
+    private final List<ClassField> myFields;
+    private final List<Implementation> myImplementations;
+    private final List<Statement> myGlobalStatements;
+    private final List<Definition> myInstanceDefinitions;
+
+    public ClassDefinition(Position position, String name, List<SuperClass> superClasses, List<ClassField> fields, List<Implementation> implementations, List<Statement> globalStatements, List<Definition> instanceDefinitions) {
+      super(position, name, Precedence.DEFAULT);
+      mySuperClasses = superClasses;
+      myFields = fields;
+      myImplementations = implementations;
+      myGlobalStatements = globalStatements;
+      myInstanceDefinitions = instanceDefinitions;
+    }
+
+    public ClassDefinition(Position position, String name, List<Statement> globalStatements) {
+      this(position, name, Collections.<SuperClass>emptyList(), Collections.<ClassField>emptyList(), Collections.<Implementation>emptyList(), globalStatements, Collections.<Definition>emptyList());
+    }
+
+    @Override
+    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitClass(this, params);
+    }
+
+    @Override
+    public List<SuperClass> getSuperClasses() {
+      return mySuperClasses;
+    }
+
+    @Override
+    public List<ClassField> getFields() {
+      return myFields;
+    }
+
+    @Override
+    public List<Implementation> getImplementations() {
+      return myImplementations;
+    }
+
+    @Override
+    public List<Statement> getGlobalStatements() {
+      return myGlobalStatements;
+    }
+
+    @Override
+    public List<Definition> getInstanceDefinitions() {
+      return myInstanceDefinitions;
+    }
+  }
+
+  public static class ClassField extends SignatureDefinition implements Abstract.ClassField {
+    public ClassField(Position position, String name, Precedence precedence, List<Argument> arguments, Expression resultType) {
+      super(position, name, precedence, arguments, resultType);
+    }
+
+    @Override
+    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitClassField(this, params);
+    }
+  }
+
+  public static class Implementation extends Definition implements Abstract.Implementation {
+    private Abstract.Definition myImplemented;
+    private final Expression myExpression;
+
+    public Implementation(Position position, String name, Expression expression) {
+      super(position, name, Precedence.DEFAULT);
+      myExpression = expression;
+    }
+
+    @Override
+    public Abstract.Definition getImplementedField() {
+      return myImplemented;
+    }
+
+    public void setImplemented(Abstract.Definition implemented) {
+      myImplemented = implemented;
+    }
+
+    @Override
+    public Expression getImplementation() {
+      return myExpression;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitImplement(this, params);
+    }
+  }
+
+  public static class FunctionDefinition extends SignatureDefinition implements Abstract.FunctionDefinition {
+    private final Abstract.Definition.Arrow myArrow;
+    private final Expression myTerm;
+    private final List<Statement> myStatements;
+
+    public FunctionDefinition(Position position, String name, Precedence precedence, List<Argument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term, List<Statement> statements) {
+      super(position, name, precedence, arguments, resultType);
+      myArrow = arrow;
+      myTerm = term;
+      myStatements = statements;
+    }
+
+    @Override
+    public Definition.Arrow getArrow() {
+      return myArrow;
+    }
+
+    @Override
+    public List<Statement> getStatements() {
+      return myStatements;
+    }
+
+    @Override
+    public Expression getTerm() {
+      return myTerm;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitFunction(this, params);
+    }
+  }
+
+  public static class DataDefinition extends Definition implements Abstract.DataDefinition {
+    private final List<Constructor> myConstructors;
+    private final List<TypeArgument> myParameters;
+    private final List<Condition> myConditions;
+    private final Expression myUniverse;
+
+    public DataDefinition(Position position, String name, Precedence precedence, List<TypeArgument> parameters, Expression universe, List<Concrete.Constructor> constructors, List<Condition> conditions) {
+      super(position, name, precedence);
+      myParameters = parameters;
+      myConstructors = constructors;
+      myConditions = conditions;
+      myUniverse = universe;
+    }
+
+    @Override
+    public List<TypeArgument> getParameters() {
+      return myParameters;
+    }
+
+    @Override
+    public List<Constructor> getConstructors() {
+      return myConstructors;
+    }
+
+    @Override
+    public List<? extends Abstract.Condition> getConditions() {
+      return myConditions;
+    }
+
+    @Override
+    public Expression getUniverse() {
+      return myUniverse;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitData(this, params);
+    }
+  }
+
+  public static class Constructor extends Definition implements Abstract.Constructor {
+    private final DataDefinition myDataType;
+    private final List<TypeArgument> myArguments;
+    private final List<PatternArgument> myPatterns;
+
+    public Constructor(Position position, String name, Precedence precedence, List<TypeArgument> arguments, DataDefinition dataType, List<PatternArgument> patterns) {
+      super(position, name, precedence);
+      myArguments = arguments;
+      myDataType = dataType;
+      myPatterns = patterns;
+    }
+
+    @Override
+    public List<PatternArgument> getPatterns() {
+      return myPatterns;
+    }
+
+    @Override
+    public List<TypeArgument> getArguments() {
+      return myArguments;
+    }
+
+    @Override
+    public DataDefinition getDataType() {
+      return myDataType;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitConstructor(this, params);
+    }
+  }
+
+  public static class Condition extends SourceNode implements Abstract.Condition {
+    private final String myConstructorName;
+    private final List<PatternArgument> myPatterns;
+    private final Expression myTerm;
+
+    public Condition(Position position, String constructorName, List<PatternArgument> patterns, Expression term) {
+      super(position);
+      myConstructorName = constructorName;
+      myPatterns = patterns;
+      myTerm = term;
+    }
+
+    @Override
+    public String getConstructorName() {
+      return myConstructorName;
+    }
+
+    @Override
+    public List<PatternArgument> getPatterns() {
+      return myPatterns;
+    }
+
+    @Override
+    public Expression getTerm() {
+      return myTerm;
+    }
+
+    @Override
+    public void setWellTyped(com.jetbrains.jetpad.vclang.term.definition.Condition condition) {
+
+    }
+  }
+
+  // ClassViews
 
   public static class ClassView extends Definition implements Abstract.ClassView {
     private DefCallExpression myUnderlyingClass;
@@ -1027,214 +1226,92 @@ public final class Concrete {
     }
   }
 
-  public static class ClassField extends SignatureDefinition implements Abstract.ClassField {
-    public ClassField(Position position, String name, Precedence precedence, List<Argument> arguments, Expression resultType) {
-      super(position, name, precedence, arguments, resultType);
-    }
+  // Statements
 
-    @Override
-    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitClassField(this, params);
-    }
-  }
-
-  public static class ImplementDefinition extends Definition implements Abstract.ImplementDefinition {
-    private Abstract.Definition myImplemented;
-    private final Expression myExpression;
-
-    public ImplementDefinition(Position position, String name, Expression expression) {
-      super(position, name, Precedence.DEFAULT);
-      myExpression = expression;
-    }
-
-    @Override
-    public Abstract.Definition getImplemented() {
-      return myImplemented;
-    }
-
-    public void setImplemented(Abstract.Definition implemented) {
-      myImplemented = implemented;
-    }
-
-    @Override
-    public Expression getExpression() {
-      return myExpression;
-    }
-
-    @Override
-    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitImplement(this, params);
-    }
-  }
-
-  public static class FunctionDefinition extends SignatureDefinition implements Abstract.FunctionDefinition {
-    private final Abstract.Definition.Arrow myArrow;
-    private final Expression myTerm;
-    private final List<Statement> myStatements;
-
-    public FunctionDefinition(Position position, String name, Precedence precedence, List<Argument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term, List<Statement> statements) {
-      super(position, name, precedence, arguments, resultType);
-      myArrow = arrow;
-      myTerm = term;
-      myStatements = statements;
-    }
-
-    @Override
-    public Definition.Arrow getArrow() {
-      return myArrow;
-    }
-
-    @Override
-    public List<Statement> getStatements() {
-      return myStatements;
-    }
-
-    @Override
-    public Expression getTerm() {
-      return myTerm;
-    }
-
-    @Override
-    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitFunction(this, params);
-    }
-  }
-
-  public static class Condition extends SourceNode implements Abstract.Condition {
-    private final String myConstructorName;
-    private final List<PatternArgument> myPatterns;
-    private final Expression myTerm;
-
-    public Condition(Position position, String constructorName, List<PatternArgument> patterns, Expression term) {
+  public static abstract class Statement extends SourceNode implements Abstract.Statement {
+    public Statement(Position position) {
       super(position);
-      myConstructorName = constructorName;
-      myPatterns = patterns;
-      myTerm = term;
-    }
-
-    @Override
-    public String getConstructorName() {
-      return myConstructorName;
-    }
-
-    @Override
-    public List<PatternArgument> getPatterns() {
-      return myPatterns;
-    }
-
-    @Override
-    public Expression getTerm() {
-      return myTerm;
-    }
-
-    @Override
-    public void setWellTyped(com.jetbrains.jetpad.vclang.term.definition.Condition condition) {
-
     }
   }
 
-  public static class DataDefinition extends Definition implements Abstract.DataDefinition {
-    private final List<Constructor> myConstructors;
-    private final List<TypeArgument> myParameters;
-    private final List<Condition> myConditions;
-    private final Expression myUniverse;
+  public static class DefineStatement extends Statement implements Abstract.DefineStatement {
+    private final Definition myDefinition;
 
-    public DataDefinition(Position position, String name, Precedence precedence, List<TypeArgument> parameters, Expression universe, List<Concrete.Constructor> constructors, List<Condition> conditions) {
-      super(position, name, precedence);
-      myParameters = parameters;
-      myConstructors = constructors;
-      myConditions = conditions;
-      myUniverse = universe;
-    }
-
-    @Override
-    public List<TypeArgument> getParameters() {
-      return myParameters;
-    }
-
-    @Override
-    public List<Constructor> getConstructors() {
-      return myConstructors;
-    }
-
-    @Override
-    public List<? extends Abstract.Condition> getConditions() {
-      return myConditions;
-    }
-
-    @Override
-    public Expression getUniverse() {
-      return myUniverse;
-    }
-
-    @Override
-    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitData(this, params);
-    }
-  }
-
-  public static class Identifier extends SourceNode implements Abstract.Identifier {
-    private final String myName;
-
-    public Identifier(Position position, String name) {
+    public DefineStatement(Position position, Definition definition) {
       super(position);
-      myName = name;
+      myDefinition = definition;
     }
 
     @Override
-    public String getName() {
-      return myName;
-    }
-  }
-
-  public static class SuperClass extends SourceNode implements Abstract.SuperClass {
-    private Expression mySuperClass;
-
-    public SuperClass(Position position, Expression superClass) {
-      super(position);
-      mySuperClass = superClass;
+    public Definition getDefinition() {
+      return myDefinition;
     }
 
     @Override
-    public Expression getSuperClass() {
-      return mySuperClass;
+    public <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitDefine(this, params);
     }
   }
 
-  public static class ClassDefinition extends Definition implements Abstract.ClassDefinition {
-    private final List<Statement> myFields;
+  public static class NamespaceCommandStatement extends Statement implements Abstract.NamespaceCommandStatement {
     private final Kind myKind;
-    private final List<SuperClass> mySuperClasses;
+    private Abstract.Definition myDefinition;
+    private final List<String> myModulePath;
+    private final List<String> myPath;
+    private final boolean myHiding;
+    private final List<String> myNames;
 
-    public ClassDefinition(Position position, String name, List<Statement> fields, Kind kind, List<SuperClass> superClasses) {
-      super(position, name, Precedence.DEFAULT);
-      mySuperClasses = superClasses;
-      myFields = fields;
+    public NamespaceCommandStatement(Position position, Kind kind, List<String> modulePath, List<String> path, boolean isHiding, List<String> names) {
+      super(position);
       myKind = kind;
-    }
-
-    public ClassDefinition(Position position, String name, List<Statement> fields, Kind kind) {
-      this(position, name, fields, kind, Collections.<SuperClass>emptyList());
-    }
-
-    @Override
-    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitClass(this, params);
+      myDefinition = null;
+      myModulePath = modulePath;
+      myPath = path;
+      myHiding = isHiding;
+      myNames = names;
     }
 
     @Override
-    public Kind getKind() { return myKind; }
-
-    @Override
-    public Collection<SuperClass> getSuperClasses() {
-      return mySuperClasses;
+    public Kind getKind() {
+      return myKind;
     }
 
     @Override
-    public List<Statement> getStatements() {
-      return myFields;
+    public List<String> getModulePath() {
+      return myModulePath;
+    }
+
+    @Override
+    public List<String> getPath() {
+      return myPath;
+    }
+
+    public void setResolvedClass(Abstract.Definition resolvedClass) {
+      myDefinition = resolvedClass;
+    }
+
+    @Override
+    public Abstract.Definition getResolvedClass() {
+      return myDefinition;
+    }
+
+    @Override
+    public boolean isHiding() {
+      return myHiding;
+    }
+
+    @Override
+    public List<String> getNames() {
+      return myNames;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitNamespaceCommand(this, params);
     }
   }
+
+  // Patterns
 
   public static class PatternArgument extends SourceNode implements Abstract.PatternArgument {
     private final boolean myHidden;
@@ -1329,114 +1406,6 @@ public final class Concrete {
     @Override
     public String getName() {
       return null;
-    }
-  }
-
-  public static class Constructor extends Definition implements Abstract.Constructor {
-    private final DataDefinition myDataType;
-    private final List<TypeArgument> myArguments;
-    private final List<PatternArgument> myPatterns;
-
-    public Constructor(Position position, String name, Precedence precedence, List<TypeArgument> arguments, DataDefinition dataType, List<PatternArgument> patterns) {
-      super(position, name, precedence);
-      myArguments = arguments;
-      myDataType = dataType;
-      myPatterns = patterns;
-    }
-
-    @Override
-    public List<PatternArgument> getPatterns() {
-      return myPatterns;
-    }
-
-    @Override
-    public List<TypeArgument> getArguments() {
-      return myArguments;
-    }
-
-    @Override
-    public DataDefinition getDataType() {
-      return myDataType;
-    }
-
-    @Override
-    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitConstructor(this, params);
-    }
-  }
-
-  public static class NamespaceCommandStatement extends Statement implements Abstract.NamespaceCommandStatement {
-    private final Kind myKind;
-    private Abstract.Definition myDefinition;
-    private final List<String> myModulePath;
-    private final List<String> myPath;
-    private final boolean myHiding;
-    private final List<String> myNames;
-
-    public NamespaceCommandStatement(Position position, Kind kind, List<String> modulePath, List<String> path, boolean isHiding, List<String> names) {
-      super(position);
-      myKind = kind;
-      myDefinition = null;
-      myModulePath = modulePath;
-      myPath = path;
-      myHiding = isHiding;
-      myNames = names;
-    }
-
-    @Override
-    public Kind getKind() {
-      return myKind;
-    }
-
-    @Override
-    public List<String> getModulePath() {
-      return myModulePath;
-    }
-
-    @Override
-    public List<String> getPath() {
-      return myPath;
-    }
-
-    public void setResolvedClass(Abstract.Definition resolvedClass) {
-      myDefinition = resolvedClass;
-    }
-
-    @Override
-    public Abstract.Definition getResolvedClass() {
-      return myDefinition;
-    }
-
-    @Override
-    public boolean isHiding() {
-      return myHiding;
-    }
-
-    @Override
-    public List<String> getNames() {
-      return myNames;
-    }
-
-    @Override
-    public <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitNamespaceCommand(this, params);
-    }
-  }
-
-  public static class DefaultStaticStatement extends Statement implements Abstract.DefaultStaticStatement {
-    private final boolean myIsStatic;
-
-    public DefaultStaticStatement(Position position, boolean isStatic) {
-      super(position);
-      myIsStatic = isStatic;
-    }
-
-    @Override
-    public boolean isStatic() { return myIsStatic; }
-
-    @Override
-    public <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitDefaultStaticCommand(this, params);
     }
   }
 }

@@ -20,7 +20,7 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void implement() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\abstract a : Nat\n" +
+        "  \\field a : Nat\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
         "  \\implement a => 0\n" +
@@ -32,8 +32,9 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void implementInFunctionError() {
     resolveNamesClass(
         "\\class X {\n" +
-        "  \\abstract x : Nat\n" +
-        "  \\static \\function f => 0\n" +
+        "  \\field x : Nat\n" +
+        "} \\where {\n" +
+        "  \\function f => 0\n" +
         "    \\where\n" +
         "      \\implement x => 1\n" +
         "}", 1);
@@ -43,7 +44,7 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void implementUnknownError() {
     resolveNamesClass(
         "\\class A {\n" +
-        "  \\abstract a : Nat\n" +
+        "  \\field a : Nat\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
         "  \\implement b => 0\n" +
@@ -54,7 +55,7 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void implementTypeMismatchError() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\abstract a : Nat -> Nat\n" +
+        "  \\field a : Nat -> Nat\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
         "  \\implement a => 0\n" +
@@ -65,8 +66,8 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void implement2() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\abstract A : \\Set0\n" +
-        "  \\abstract a : A\n" +
+        "  \\field A : \\Set0\n" +
+        "  \\field a : A\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
         "  \\implement A => Nat\n" +
@@ -78,10 +79,10 @@ public class ImplementTest extends TypeCheckingTestCase {
   @Test
   public void implement3() {
     typeCheckClass(
-        "\\static \\class A {\n" +
-        "  \\abstract a : Nat\n" +
+        "\\class A {\n" +
+        "  \\field a : Nat\n" +
         "}\n" +
-        "\\static \\class B \\extends A {\n" +
+        "\\class B \\extends A {\n" +
         "  \\implement a => 0\n" +
         "}\n" +
         "\\function f (x : A) => x.a\n" +
@@ -91,13 +92,13 @@ public class ImplementTest extends TypeCheckingTestCase {
   @Test
   public void implementImplementedError() {
     typeCheckClass(
-        "\\static \\class A {\n" +
-        "  \\abstract a : Nat\n" +
+        "\\class A {\n" +
+        "  \\field a : Nat\n" +
         "}\n" +
-        "\\static \\class B \\extends A {\n" +
+        "\\class B \\extends A {\n" +
         "  \\implement a => 0\n" +
         "}\n" +
-        "\\static \\class C \\extends B {\n" +
+        "\\class C \\extends B {\n" +
         "  \\implement a => 0\n" +
         "}", 1);
   }
@@ -105,11 +106,11 @@ public class ImplementTest extends TypeCheckingTestCase {
   @Test
   public void implementNew() {
     typeCheckClass(
-        "\\static \\class A {\n" +
-        "  \\abstract A : \\Set0\n" +
-        "  \\abstract a : A\n" +
+        "\\class A {\n" +
+        "  \\field A : \\Set0\n" +
+        "  \\field a : A\n" +
         "}\n" +
-        "\\static \\class B \\extends A {\n" +
+        "\\class B \\extends A {\n" +
         "  \\implement A => Nat\n" +
         "}\n" +
         "\\function f (x : A) => x.a\n" +
@@ -119,10 +120,10 @@ public class ImplementTest extends TypeCheckingTestCase {
   @Test
   public void implementNewError() {
     typeCheckClass(
-        "\\static \\class A {\n" +
-        "  \\abstract a : Nat\n" +
+        "\\class A {\n" +
+        "  \\field a : Nat\n" +
         "}\n" +
-        "\\static \\class B \\extends A {\n" +
+        "\\class B \\extends A {\n" +
         "  \\implement a => 0\n" +
         "}\n" +
         "\\function f => \\new B { a => 1 }", 1);
@@ -131,20 +132,20 @@ public class ImplementTest extends TypeCheckingTestCase {
   @Test
   public void implementMultiple() {
     typeCheckClass(
-        "\\static \\class A {\n" +
-        "  \\abstract a : Nat\n" +
-        "  \\abstract b : Nat\n" +
-        "  \\abstract c : Nat\n" +
+        "\\class A {\n" +
+        "  \\field a : Nat\n" +
+        "  \\field b : Nat\n" +
+        "  \\field c : Nat\n" +
         "}\n" +
-        "\\static \\class B \\extends A {\n" +
+        "\\class B \\extends A {\n" +
         "  \\implement b => 0\n" +
         "}\n" +
-        "\\static \\class C \\extends A {\n" +
+        "\\class C \\extends A {\n" +
         "  \\implement c => 0\n" +
         "}\n" +
-        "\\static \\class D \\extends B, C {\n" +
-        "  \\abstract p : b = c\n" +
-        "  \\abstract f : \\Pi (q : 0 = 0 -> \\Set0) -> q p -> Nat\n" +
+        "\\class D \\extends B, C {\n" +
+        "  \\field p : b = c\n" +
+        "  \\field f : \\Pi (q : 0 = 0 -> \\Set0) -> q p -> Nat\n" +
         "}\n" +
         "\\function f => \\new D { a => 1 | p => path (\\lam _ => 0) | f => \\lam _ _ => 0 }");
   }
@@ -152,18 +153,18 @@ public class ImplementTest extends TypeCheckingTestCase {
   @Test
   public void implementMultipleSame() {
     typeCheckClass(
-        "\\static \\class A {\n" +
-        "  \\abstract a : Nat\n" +
-        "  \\abstract b : Nat\n" +
-        "  \\abstract c : Nat\n" +
+        "\\class A {\n" +
+        "  \\field a : Nat\n" +
+        "  \\field b : Nat\n" +
+        "  \\field c : Nat\n" +
         "}\n" +
-        "\\static \\class B \\extends A {\n" +
+        "\\class B \\extends A {\n" +
         "  \\implement b => a\n" +
         "}\n" +
-        "\\static \\class C \\extends A {\n" +
+        "\\class C \\extends A {\n" +
         "  \\implement b => a\n" +
         "}\n" +
-        "\\static \\class D \\extends B, C {\n" +
+        "\\class D \\extends B, C {\n" +
         "  \\implement a => 1\n" +
         "}\n" +
         "\\function f => \\new D { c => 2 }");
@@ -172,26 +173,26 @@ public class ImplementTest extends TypeCheckingTestCase {
   @Test
   public void implementMultipleSameError() {
     typeCheckClass(
-        "\\static \\class A {\n" +
-        "  \\abstract a : Nat\n" +
+        "\\class A {\n" +
+        "  \\field a : Nat\n" +
         "}\n" +
-        "\\static \\class B \\extends A {\n" +
+        "\\class B \\extends A {\n" +
         "  \\implement a => 0\n" +
         "}\n" +
-        "\\static \\class C \\extends A {\n" +
+        "\\class C \\extends A {\n" +
         "  \\implement a => 1\n" +
         "}\n" +
-        "\\static \\class D \\extends B, C {}", 1);
+        "\\class D \\extends B, C", 1);
   }
 
   @Test
   public void universe() {
     TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
-        "\\static \\class A {\n" +
-        "  \\abstract A : \\Set1\n" +
-        "  \\abstract a : A\n" +
+        "\\class A {\n" +
+        "  \\field A : \\Set1\n" +
+        "  \\field a : A\n" +
         "}\n" +
-        "\\static \\class B \\extends A {\n" +
+        "\\class B \\extends A {\n" +
         "  \\implement A => Nat\n" +
         "}");
     assertEquals(new SortMax(new Sort(2,1)), ((ClassDefinition) result.getDefinition("A")).getSorts());
@@ -201,22 +202,22 @@ public class ImplementTest extends TypeCheckingTestCase {
   @Test
   public void universeMultiple() {
     TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
-        "\\static \\class A {\n" +
-        "  \\abstract X : \\Set1\n" +
-        "  \\abstract Y : \\Set0\n" +
-        "  \\abstract x : X\n" +
+        "\\class A {\n" +
+        "  \\field X : \\Set1\n" +
+        "  \\field Y : \\Set0\n" +
+        "  \\field x : X\n" +
         "}\n" +
-        "\\static \\class B \\extends A {\n" +
+        "\\class B \\extends A {\n" +
         "  \\implement X => Nat\n" +
         "}\n" +
-        "\\static \\class C \\extends A {\n" +
+        "\\class C \\extends A {\n" +
         " \\implement Y => Nat\n" +
-        " \\abstract x' : X\n" +
+        " \\field x' : X\n" +
         "}\n" +
-        "\\static \\class D \\extends B, C {\n" +
+        "\\class D \\extends B, C {\n" +
         " \\implement x' => 0\n" +
         "}\n" +
-        "\\static \\function f => D { x => 1 }");
+        "\\function f => D { x => 1 }");
     List<DependentLink> fParams = new ArrayList<>();
     TypeMax fType = result.getDefinition("f").getTypeWithParams(fParams, new LevelArguments());
     assertEquals(new SortMax(new Sort(2,1)), ((ClassDefinition) result.getDefinition("A")).getSorts());

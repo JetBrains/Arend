@@ -12,8 +12,8 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
   @Test
   public void classViewFieldNotInScope() {
     typeCheckClass(
-        "\\static \\class X {\n" +
-        "  \\abstract A : \\Type0\n" +
+        "\\class X {\n" +
+        "  \\field A : \\Type0\n" +
         "}\n" +
         "\\view Foo \\on X \\by A { B }", 1, 0);
   }
@@ -21,8 +21,8 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
   @Test
   public void classifyingFieldNotInScope() {
     typeCheckClass(
-        "\\static \\class X {\n" +
-        "  \\abstract A : \\Type0\n" +
+        "\\class X {\n" +
+        "  \\field A : \\Type0\n" +
         "}\n" +
         "\\view Foo \\on X \\by Y { }", 1, 0);
   }
@@ -30,9 +30,9 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
   @Test
   public void instanceNotView() {
     typeCheckClass(
-        "\\static \\class X {\n" +
-        "  \\abstract A : \\Type0\n" +
-        "  \\abstract B : A -> \\Type0\n" +
+        "\\class X {\n" +
+        "  \\field A : \\Type0\n" +
+        "  \\field B : A -> \\Type0\n" +
         "}\n" +
         "\\view X' \\on X \\by A { B }\n" +
         "\\instance Nat-X => \\new X { A => Nat | B => \\lam _ => Nat }", 1);

@@ -19,13 +19,13 @@ public class ConcreteResolveListener implements ResolveListener {
   }
 
   @Override
-  public void implementResolved(Abstract.ImplementDefinition implementDef, Abstract.Definition definition) {
-    ((Concrete.ImplementDefinition) implementDef).setImplemented(definition);
+  public void implementResolved(Abstract.Implementation implementDef, Abstract.Definition definition) {
+    ((Concrete.Implementation) implementDef).setImplemented(definition);
   }
 
   @Override
-  public void implementResolved(Abstract.ImplementStatement implementStmt, Abstract.Definition definition) {
-    ((Concrete.ImplementStatement) implementStmt).setImplementedField(definition);
+  public void implementResolved(Abstract.ClassFieldImpl implementStmt, Abstract.Definition definition) {
+    ((Concrete.ClassFieldImpl) implementStmt).setImplementedField(definition);
   }
 
   @Override
