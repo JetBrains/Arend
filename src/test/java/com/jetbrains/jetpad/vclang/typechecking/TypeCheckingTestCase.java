@@ -152,6 +152,15 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     return typeCheckClass(text, 0, 0);
   }
 
+  protected TypeCheckClassResult typeCheckClass(String instance, String global, int errors) {
+    Concrete.ClassDefinition def = (Concrete.ClassDefinition) resolveNamesDef("\\class Test {\n" + instance + (global.isEmpty() ? "" : "\n} \\where {\n" + global) + "\n}");
+    return new TypeCheckClassResult(typeCheckClass(def, errors), def);
+  }
+
+  protected TypeCheckClassResult typeCheckClass(String instance, String global) {
+    return typeCheckClass(instance, global, 0);
+  }
+
 
   protected abstract static class TypeCheckingErrorMatcher extends TypeSafeDiagnosingMatcher<GeneralError> {
     @Override

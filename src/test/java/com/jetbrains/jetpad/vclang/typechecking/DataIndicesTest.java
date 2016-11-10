@@ -19,38 +19,38 @@ public class DataIndicesTest extends TypeCheckingTestCase {
   @Test
   public void vectorTest() {
     typeCheckClass(
-      "\\static \\data Vector (n : Nat) (A : \\Type0)\n" +
+      "\\data Vector (n : Nat) (A : \\Type0)\n" +
       "  | Vector  zero   A => vnil\n" +
       "  | Vector (suc n) A => \\infixr 5 (:^) A (Vector n A)\n" +
       "\n" +
-      "\\static \\function \\infixl 6\n" +
+      "\\function \\infixl 6\n" +
       "(+) (x y : Nat) : Nat <= \\elim x\n" +
       "  | zero => y\n" +
       "  | suc x' => suc (x' + y)\n" +
       "\n" +
-      "\\static \\function\n" +
+      "\\function\n" +
       "(+^) {n m : Nat} {A : \\Type0} (xs : Vector n A) (ys : Vector m A) : Vector (n + m) A <= \\elim n, xs\n" +
       "  | zero, vnil => ys\n" +
       "  | suc n', (:^) x xs' => x :^ xs' +^ ys\n" +
       "\n" +
-      "\\static \\function\n" +
+      "\\function\n" +
       "vnil-vconcat {n : Nat} {A : \\Type0} (xs : Vector n A) : vnil +^ xs = xs => path (\\lam _ => xs)");
   }
 
   @Test
   public void vectorTest2() {
     typeCheckClass(
-      "\\static \\data Vector (n : Nat) (A : \\Type0)\n" +
+      "\\data Vector (n : Nat) (A : \\Type0)\n" +
       "  | Vector  zero   A => vnil\n" +
       "  | Vector (suc n) A => \\infixr 5 (:^) A (Vector n A)\n" +
-      "\\static \\function id {n : Nat} (A : \\Type0) (v : Vector n A) => v\n" +
-      "\\static \\function test => id Nat vnil");
+      "\\function id {n : Nat} (A : \\Type0) (v : Vector n A) => v\n" +
+      "\\function test => id Nat vnil");
   }
 
   @Test
   public void constructorTypeTest() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\static \\data NatVec (n : Nat)\n" +
+        "\\data NatVec (n : Nat)\n" +
         "  | NatVec zero => nil\n" +
         "  | NatVec (suc n) => cons Nat (NatVec n)");
     DataDefinition data = (DataDefinition) result.getDefinition("NatVec");
@@ -65,10 +65,10 @@ public class DataIndicesTest extends TypeCheckingTestCase {
   @Test
   public void toAbstractTest() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\static \\data Fin (n : Nat)\n" +
+        "\\data Fin (n : Nat)\n" +
         "  | Fin (suc n) => fzero\n" +
         "  | Fin (suc n) => fsuc (Fin n)\n" +
-        "\\static \\function f (n : Nat) (x : Fin n) => fsuc (fsuc x)");
+        "\\function f (n : Nat) (x : Fin n) => fsuc (fsuc x)");
     assertEquals("(Fin (suc (suc n))).fsuc ((Fin (suc n)).fsuc x)", ((LeafElimTreeNode) ((FunctionDefinition) result.getDefinition("f")).getElimTree()).getExpression().normalize(NormalizeVisitor.Mode.NF).toString());
   }
 }

@@ -13,7 +13,7 @@ hidingOpt : '\\hiding'  # withHiding
 nsCmdRoot : modulePath | name;
 
 definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?                            # defFunction
-            | '\\abstract' precedence name ':' expr                                                       # defAbstract
+            | '\\field' precedence name ':' expr                                                          # defAbstract
             | '\\implement' name '=>' expr                                                                # defImplement
             | '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef?                    # defData
             | '\\class' ID ('\\extends' atomFieldsAcc (',' atomFieldsAcc)*)? ('{' statements '}')? where? # defClass

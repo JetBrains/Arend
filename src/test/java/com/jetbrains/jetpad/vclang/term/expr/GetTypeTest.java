@@ -28,19 +28,19 @@ public class GetTypeTest extends TypeCheckingTestCase {
 
   @Test
   public void constructorTest() {
-    TypeCheckClassResult result = typeCheckClass("\\static \\data List (A : \\Type0) | nil | cons A (List A) \\static \\function test => cons 0 nil");
+    TypeCheckClassResult result = typeCheckClass("\\data List (A : \\Type0) | nil | cons A (List A) \\function test => cons 0 nil");
     testType(DataCall((DataDefinition) result.getDefinition("List"), new LevelArguments(), Nat()), result);
   }
 
   @Test
   public void nilConstructorTest() {
-    TypeCheckClassResult result = typeCheckClass("\\static \\data List (A : \\Type0) | nil | cons A (List A) \\static \\function test => (List Nat).nil");
+    TypeCheckClassResult result = typeCheckClass("\\data List (A : \\Type0) | nil | cons A (List A) \\function test => (List Nat).nil");
     testType(DataCall((DataDefinition) result.getDefinition("List"), new LevelArguments(), Nat()), result);
   }
 
   @Test
   public void classExtTest() {
-    TypeCheckClassResult result = typeCheckClass("\\static \\class Test { \\abstract A : \\Type0 \\abstract a : A } \\static \\function test => Test { A => Nat }");
+    TypeCheckClassResult result = typeCheckClass("\\class Test { \\field A : \\Type0 \\field a : A } \\function test => Test { A => Nat }");
     assertEquals(Universe(1), result.getDefinition("Test").getTypeWithParams(new ArrayList<DependentLink>(), new LevelArguments()).toExpression());
     assertEquals(Universe(Sort.SetOfLevel(0)), result.getDefinition("test").getTypeWithParams(new ArrayList<DependentLink>(), new LevelArguments()).toExpression());
     testType(Universe(Sort.SetOfLevel(0)), result);
@@ -48,7 +48,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
 
   @Test
   public void lambdaTest() {
-    TypeCheckClassResult result = typeCheckClass("\\static \\function test => \\lam (f : Nat -> Nat) => f 0");
+    TypeCheckClassResult result = typeCheckClass("\\function test => \\lam (f : Nat -> Nat) => f 0");
     testType(Pi(Pi(Nat(), Nat()), Nat()), result);
   }
 
@@ -62,7 +62,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
 
   @Test
   public void fieldAccTest() {
-    TypeCheckClassResult result = typeCheckClass("\\static \\class C { \\abstract x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
+    TypeCheckClassResult result = typeCheckClass("\\class C { \\field x : Nat \\function f (p : 0 = x) => p } \\function test (p : Nat -> C) => (p 0).f");
     DependentLink p = param("p", Pi(Nat(), ClassCall((ClassDefinition) result.getDefinition("C"), new LevelArguments())));
     Expression type = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(1),
         Nat(),
@@ -92,7 +92,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
   @Test
   public void patternConstructor1() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\static \\data C (n : Nat) | C (zero) => c1 | C (suc n) => c2 Nat");
+        "\\data C (n : Nat) | C (zero) => c1 | C (suc n) => c2 Nat");
     DataDefinition data = (DataDefinition) result.getDefinition("C");
     List<DependentLink> c1Params = new ArrayList<>();
     Type c1Type = data.getConstructor("c1").getTypeWithParams(c1Params, new LevelArguments());
@@ -109,8 +109,8 @@ public class GetTypeTest extends TypeCheckingTestCase {
   @Test
   public void patternConstructor2() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\static \\data Vec \\Type0 Nat | Vec A zero => Nil | Vec A (suc n) => Cons A (Vec A n)" +
-        "\\static \\data D (n : Nat) (Vec Nat n) | D zero _ => dzero | D (suc n) _ => done");
+        "\\data Vec \\Type0 Nat | Vec A zero => Nil | Vec A (suc n) => Cons A (Vec A n)" +
+        "\\data D (n : Nat) (Vec Nat n) | D zero _ => dzero | D (suc n) _ => done");
     DataDefinition vec = (DataDefinition) result.getDefinition("Vec");
     DataDefinition d = (DataDefinition) result.getDefinition("D");
     List<DependentLink> dzeroParams = new ArrayList<>();
@@ -138,8 +138,8 @@ public class GetTypeTest extends TypeCheckingTestCase {
   @Test
   public void patternConstructor3() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\static \\data D | d \\Type0\n" +
-        "\\static \\data C D | C (d A) => c A");
+        "\\data D | d \\Type0\n" +
+        "\\data C D | C (d A) => c A");
     DataDefinition d = (DataDefinition) result.getDefinition("D");
     DataDefinition c = (DataDefinition) result.getDefinition("C");
     DependentLink A = c.getConstructor("c").getDataTypeParameters();
@@ -154,8 +154,8 @@ public class GetTypeTest extends TypeCheckingTestCase {
   @Test
   public void patternConstructorDep() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\static \\data Box (n : Nat) | box\n" +
-        "\\static \\data D (n : Nat) (Box n) | D (zero) _ => d");
+        "\\data Box (n : Nat) | box\n" +
+        "\\data D (n : Nat) (Box n) | D (zero) _ => d");
     DataDefinition d = (DataDefinition) result.getDefinition("D");
     List<DependentLink> dParams = new ArrayList<>();
     Type dType = d.getConstructor("d").getTypeWithParams(dParams, new LevelArguments());

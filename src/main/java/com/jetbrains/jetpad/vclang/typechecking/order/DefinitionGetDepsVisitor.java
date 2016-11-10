@@ -143,11 +143,13 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
     for (Abstract.SuperClass superClass : def.getSuperClasses()) {
       superClass.getSuperClass().accept(new CollectDefCallsVisitor(result), null);
     }
-    for (Abstract.ClassField field : def.getFields()) {
-      visitClassField(result, field);
-    }
-    for (Abstract.Implementation implementation : def.getImplementations()) {
-      visitImplement(result, implementation);
+    if (!isStatic) {
+      for (Abstract.ClassField field : def.getFields()) {
+        visitClassField(result, field);
+      }
+      for (Abstract.Implementation implementation : def.getImplementations()) {
+        visitImplement(result, implementation);
+      }
     }
     visitGlobalStatements(result, def.getGlobalStatements(), isStatic);
     visitInstanceDefinitions(result, def, def.getInstanceDefinitions(), isStatic);

@@ -1,8 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
@@ -17,7 +15,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
   @Test
   public void classesEq() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\class Foo { \\abstract foo : Nat \\abstract bar : Nat }\n" +
+        "\\class Foo { \\field foo : Nat \\field bar : Nat }\n" +
         "\\function f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
     assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));
     assertTrue(result.getDefinition("f") instanceof FunctionDefinition);
@@ -28,7 +26,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
   @Test
   public void classesGe() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\class Foo { \\abstract foo : Nat \\abstract bar : Nat }\n" +
+        "\\class Foo { \\field foo : Nat \\field bar : Nat }\n" +
         "\\function f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
     assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));
     assertTrue(result.getDefinition("f") instanceof FunctionDefinition);
@@ -39,7 +37,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
   @Test
   public void classesLe() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\class Foo { \\abstract foo : Nat \\abstract bar : Nat }\n" +
+        "\\class Foo { \\field foo : Nat \\field bar : Nat }\n" +
         "\\function f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
     assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));
     assertTrue(result.getDefinition("f") instanceof FunctionDefinition);

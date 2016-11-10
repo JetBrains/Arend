@@ -353,7 +353,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public List<Concrete.Statement> visitWhere(WhereContext ctx) {
-    if (ctx == null) return null;
+    if (ctx == null) {
+      return Collections.emptyList();
+    }
     if (ctx.statements() != null && ctx.statements().statement() != null) {
       return visitStatementList(ctx.statements().statement());
     }
@@ -372,7 +374,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Abstract.Definition.Arrow arrow = visitArrow(ctx.arrow());
     Concrete.Expression term = visitExpr(ctx.expr().size() == 2 ? ctx.expr(1) : ctx.expr(0));
     List<Concrete.Argument> arguments = visitFunctionArguments(ctx.tele());
-    List<Concrete.Statement> statements = ctx.where() == null ? Collections.<Concrete.Statement>emptyList() : visitWhere(ctx.where());
+    List<Concrete.Statement> statements = visitWhere(ctx.where());
     if (name == null || precedence == null || ctx.expr().size() == 2 && resultType == null || arrow == null || term == null || statements == null) {
       return null;
     }
@@ -497,7 +499,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
               misplacedDefinitionError(definition.getPosition());
             }
           } else
-          if (definition instanceof Concrete.FunctionDefinition || definition instanceof Concrete.DataDefinition) {
+          // TODO: Allow only function and data.
+          if (definition instanceof Concrete.FunctionDefinition || definition instanceof Concrete.DataDefinition || definition instanceof Concrete.ClassDefinition) {
             definitions.add(definition);
           } else {
             misplacedDefinitionError(definition.getPosition());
@@ -512,13 +515,16 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.ClassDefinition visitDefClass(DefClassContext ctx) {
-    if (ctx == null || ctx.statements() == null || ctx.statements().statement() == null || ctx.where() == null) return null;
+    if (ctx == null) return null;
 
     List<Concrete.SuperClass> superClasses = new ArrayList<>(ctx.atomFieldsAcc().size());
     List<Concrete.ClassField> fields = new ArrayList<>();
     List<Concrete.Implementation> implementations = new ArrayList<>();
-    List<Concrete.Statement> globalStatements = visitStatementList(ctx.statements().statement());
-    List<Concrete.Definition> instanceDefinitions = visitInstanceStatements(ctx.statements().statement(), fields, implementations);
+    List<Concrete.Statement> globalStatements = visitWhere(ctx.where());
+    List<Concrete.Definition> instanceDefinitions =
+        ctx.statements() == null || ctx.statements().statement() == null ?
+        Collections.<Concrete.Definition>emptyList() :
+        visitInstanceStatements(ctx.statements().statement(), fields, implementations);
     for (AtomFieldsAccContext atomFieldsCtx : ctx.atomFieldsAcc()) {
       Concrete.Expression superExpr = visitAtomFieldsAcc(atomFieldsCtx);
       if (superExpr != null) {

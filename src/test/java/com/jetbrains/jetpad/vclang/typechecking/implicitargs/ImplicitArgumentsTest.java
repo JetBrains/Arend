@@ -319,15 +319,15 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   @Test
   public void inferUnderPi() {
     typeCheckClass(
-        "\\static \\function ($) {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
-        "\\static \\function foo (A : \\Type0) (B : A -> \\Type0) (f : \\Pi (a : A) -> B a) (a' : A) => f $ a'", 1);
+        "\\function ($) {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
+        "\\function foo (A : \\Type0) (B : A -> \\Type0) (f : \\Pi (a : A) -> B a) (a' : A) => f $ a'", 1);
   }
 
   @Test
   public void inferUnderPiExpected() {
     typeCheckClass(
-        "\\static \\function ($) {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
-        "\\static \\function foo (A : \\Type0) (B : A -> \\Type0) (f : \\Pi (a : A) -> B a) (a' : A) : B a' => f $ a'", 1);
+        "\\function ($) {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
+        "\\function foo (A : \\Type0) (B : A -> \\Type0) (f : \\Pi (a : A) -> B a) (a' : A) : B a' => f $ a'", 1);
   }
 
   @Test
@@ -399,8 +399,8 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   @Test
   public void differentLevels() {
     typeCheckClass(
-        "\\static \\function F {lp : Lvl} (X : \\Type (lp,inf)) (B : X -> \\Type (lp,inf)) => zero\n" +
-        "\\static \\function g {lp : Lvl} (X : \\Type (lp,inf)) => F X (\\lam _ => (=) X X)");
+        "\\function F {lp : Lvl} (X : \\Type (lp,inf)) (B : X -> \\Type (lp,inf)) => zero\n" +
+        "\\function g {lp : Lvl} (X : \\Type (lp,inf)) => F X (\\lam _ => (=) X X)");
   }
 
   @Test
