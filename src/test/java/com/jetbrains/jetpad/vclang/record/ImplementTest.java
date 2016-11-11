@@ -29,18 +29,6 @@ public class ImplementTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void implementInFunctionError() {
-    resolveNamesClass(
-        "\\class X {\n" +
-        "  \\field x : Nat\n" +
-        "} \\where {\n" +
-        "  \\function f => 0\n" +
-        "    \\where\n" +
-        "      \\implement x => 1\n" +
-        "}", 1);
-  }
-
-  @Test
   public void implementUnknownError() {
     resolveNamesClass(
         "\\class A {\n" +

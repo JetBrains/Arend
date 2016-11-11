@@ -22,13 +22,18 @@ public class TypeOmega extends TypeCheckingTestCase {
 
   @Test
   public void notAllowedAsExpression() {
-    typeCheckClass(
-      "\\function f => \\Type", 1);
+    typeCheckClass("\\function f => \\Type", 1);
   }
 
   @Test
   public void equalityOfTypes() {
-    typeCheckClass(
-            "\\function f (A B : \\Type) => A = B");
+    typeCheckClass("\\function f (A B : \\Type) => A = B");
+  }
+
+  @Test
+  public void callPolyFromOmega() {
+     typeCheckClass(
+         "\\function f {lp : Lvl} {lh : CNat} (A : \\Type (lp,lh)) => A\n" +
+         "\\function g (A : \\Type) => f A");
   }
 }

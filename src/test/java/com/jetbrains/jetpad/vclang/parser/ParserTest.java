@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.parser;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
@@ -120,9 +119,20 @@ public class ParserTest extends ParserTestCase {
     parseExpr("\\Pi (: Nat) -> Nat", 2);
   }
 
-  @Ignore("#29")
   @Test
   public void whereAbstractError() {
-    parseClass("test", "\\function f => 0 \\where \\abstract x : \\Type0", 1);
+    parseClass("test", "\\function f => 0 \\where \\field x : \\Type0", 1);
+  }
+
+  @Test
+  public void implementInFunctionError() {
+    parseClass("test",
+        "\\class X {\n" +
+        "  \\field x : Nat\n" +
+        "} \\where {\n" +
+        "  \\function f => 0\n" +
+        "    \\where\n" +
+        "      \\implement x => 1\n" +
+        "}", 1);
   }
 }
