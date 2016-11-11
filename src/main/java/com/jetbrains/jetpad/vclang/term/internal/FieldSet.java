@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
@@ -31,41 +30,40 @@ public class FieldSet {
     }
   }
 
-  private final Set<ClassField> myFields;
+  private final LinkedHashSet<ClassField> myFields;
   private final Map<ClassField, Implementation> myImplemented;
   private SortMax mySorts;
 
   public FieldSet() {
-    this(new HashSet<ClassField>(), new HashMap<ClassField, Implementation>(), new SortMax());
+    this(new LinkedHashSet<ClassField>(), new HashMap<ClassField, Implementation>(), new SortMax());
   }
 
   public FieldSet(FieldSet other) {
-    this(new HashSet<>(other.myFields), new HashMap<>(other.myImplemented), other.mySorts);
+    this(new LinkedHashSet<>(other.myFields), new HashMap<>(other.myImplemented), other.mySorts);
   }
 
-  private FieldSet(Set<ClassField> fields, Map<ClassField, Implementation> implemented, SortMax sorts) {
+  private FieldSet(LinkedHashSet<ClassField> fields, Map<ClassField, Implementation> implemented, SortMax sorts) {
     myFields = fields;
     myImplemented = implemented;
     mySorts = sorts;
   }
 
-  public void addField(ClassField field, ClassCallExpression thisClass) {
+  public void addField(ClassField field) {
     myFields.add(field);
-    updateUniverseFieldAdded(field, thisClass);
+    mySorts = null;
   }
 
-  public void addFieldsFrom(FieldSet other, ClassCallExpression thisClass) {
+  public void addFieldsFrom(FieldSet other) {
     for (ClassField field : other.myFields) {
-      addField(field, thisClass);
+      addField(field);
     }
   }
 
-  public boolean implementField(ClassField field, Implementation impl, ClassCallExpression thisClass) {
+  public boolean implementField(ClassField field, Implementation impl) {
     assert myFields.contains(field);
-    ReferenceExpression thisRef = Reference(param("\\this", thisClass));
-    Implementation old = myImplemented.put(field, impl);  // TODO[java8]: putIfAbsent
-    updateUniverseFieldImplemented(field, thisClass);
-    return old == null || old.substThisParam(thisRef).equals(impl.substThisParam(thisRef));
+    Implementation old = myImplemented.put(field, impl);
+    mySorts = null;
+    return old == null;
   }
 
   public boolean isImplemented(ClassField field) {
@@ -89,14 +87,6 @@ public class FieldSet {
       updateUniverse(thisClass);
     }
     return mySorts;
-  }
-
-  private void updateUniverseFieldAdded(ClassField field, ClassCallExpression thisClass) {
-    mySorts = null;  // just invalidate
-  }
-
-  private void updateUniverseFieldImplemented(ClassField ignored, ClassCallExpression thisClass) {
-    mySorts = null;  // just invalidate
   }
 
   private void updateUniverse(ClassCallExpression thisClass) {

@@ -54,7 +54,7 @@ public class ClassCallExpression extends DefCallExpression {
   public Expression applyThis(Expression thisExpr) {
     FieldSet newFieldSet = new FieldSet(myFieldSet);
     ClassField parent = getDefinition().getEnclosingThisField();
-    boolean success = newFieldSet.implementField(parent, new FieldSet.Implementation(null, thisExpr), this);
+    boolean success = newFieldSet.implementField(parent, new FieldSet.Implementation(null, thisExpr));
     assert success;
     return ClassCall(getDefinition(), getPolyArguments(), newFieldSet);
   }
@@ -71,12 +71,12 @@ public class ClassCallExpression extends DefCallExpression {
 
   public <P> ClassCallExpression applyVisitorToImplementedHere(ExpressionVisitor<P, Expression> visitor, P arg) {
     FieldSet newFieldSet = new FieldSet();
-    newFieldSet.addFieldsFrom(getFieldSet(), this);
+    newFieldSet.addFieldsFrom(getFieldSet());
     for (Map.Entry<ClassField, FieldSet.Implementation> entry : getFieldSet().getImplemented()) {
       if (getDefinition().getFieldSet().isImplemented(entry.getKey())) {
-        newFieldSet.implementField(entry.getKey(), entry.getValue(), this);
+        newFieldSet.implementField(entry.getKey(), entry.getValue());
       } else {
-        newFieldSet.implementField(entry.getKey(), new FieldSet.Implementation(entry.getValue().thisParam, entry.getValue().term.accept(visitor, arg)), this);
+        newFieldSet.implementField(entry.getKey(), new FieldSet.Implementation(entry.getValue().thisParam, entry.getValue().term.accept(visitor, arg)));
       }
     }
     return this instanceof ClassViewCallExpression ? new ClassViewCallExpression(getDefinition(), getPolyArguments(), newFieldSet, ((ClassViewCallExpression) this).getClassView()) : ClassCall(getDefinition(), getPolyArguments(), newFieldSet);

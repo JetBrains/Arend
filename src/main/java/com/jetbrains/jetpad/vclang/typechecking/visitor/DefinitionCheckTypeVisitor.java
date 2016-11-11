@@ -721,7 +721,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     try {
       ClassDefinition typedDef = new ClassDefinition(def, fieldSet, superClasses);
       typedDef.setThisClass(enclosingClass);
-      ClassCallExpression thisClassCall = ClassCall(typedDef);
 
       for (Abstract.SuperClass aSuperClass : def.getSuperClasses()) {
         CheckTypeVisitor.Result result = aSuperClass.getSuperClass().accept(visitor, Universe());
@@ -737,11 +736,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
           continue;
         }
 
-        fieldSet.addFieldsFrom(typeCheckedSuperClass.getFieldSet(), thisClassCall);
+        fieldSet.addFieldsFrom(typeCheckedSuperClass.getFieldSet());
         superClasses.add(typeCheckedSuperClass.getDefinition());
 
         for (Map.Entry<ClassField, FieldSet.Implementation> entry : typeCheckedSuperClass.getFieldSet().getImplemented()) {
-          if (!fieldSet.implementField(entry.getKey(), entry.getValue(), thisClassCall)) {
+          FieldSet.Implementation oldImpl = fieldSet.getImplementation(entry.getKey());
+          if (oldImpl == null || oldImpl.substThisParam(Reference(entry.getValue().thisParam)).equals(entry.getValue().term)) {
+            fieldSet.implementField(entry.getKey(), entry.getValue());
+          } else {
             classOk = false;
             myErrorReporter.report(new LocalTypeCheckingError("Implementations of '" + entry.getKey().getName() + "' differ", aSuperClass.getSuperClass()));
           }
@@ -756,7 +758,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       }
 
       for (Abstract.ClassField field : def.getFields()) {
-        fieldSet.addField(visitClassField(field, typedDef), thisClassCall);
+        fieldSet.addField(visitClassField(field, typedDef));
       }
 
       for (Abstract.Implementation implementation : def.getImplementations()) {
@@ -777,7 +779,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         try (Utils.ContextSaver saver = new Utils.ContextSaver(context)) {
           context.add(thisParameter);
           visitor.setThisClass(typedDef, Reference(thisParameter));
-          CheckTypeVisitor.Result result = implementField(fieldSet, field, implementation.getImplementation(), visitor, thisClassCall, thisParameter);
+          CheckTypeVisitor.Result result = implementField(fieldSet, field, implementation.getImplementation(), visitor, thisParameter);
           if (result == null || result.getExpression().toError() != null) {
             classOk = false;
           }
@@ -806,9 +808,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     return null;
   }
 
-  private CheckTypeVisitor.Result implementField(FieldSet fieldSet, ClassField field, Abstract.Expression implBody, CheckTypeVisitor visitor, ClassCallExpression fieldSetClass, DependentLink thisParam) {
+  private CheckTypeVisitor.Result implementField(FieldSet fieldSet, ClassField field, Abstract.Expression implBody, CheckTypeVisitor visitor, DependentLink thisParam) {
     CheckTypeVisitor.Result result = visitor.checkType(implBody, field.getBaseType().subst(field.getThisParameter(), Reference(thisParam)));
-    fieldSet.implementField(field, new FieldSet.Implementation(thisParam, result != null ? result.getExpression() : Error(null, null)), fieldSetClass);
+    fieldSet.implementField(field, new FieldSet.Implementation(thisParam, result != null ? result.getExpression() : Error(null, null)));
     return result;
   }
 

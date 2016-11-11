@@ -918,39 +918,78 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
 
     FieldSet fieldSet = new FieldSet();
-    Result classExtResult; // = new Result(null, null);
-    ClassCallExpression resultExpr = classCallExpr instanceof ClassViewCallExpression ? new ClassViewCallExpression(baseClass, classCallExpr.getPolyArguments(), fieldSet, ((ClassViewCallExpression) classCallExpr).getClassView()) : ClassCall(baseClass, classCallExpr.getPolyArguments(), fieldSet);
+    Expression resultExpr = classCallExpr instanceof ClassViewCallExpression ? new ClassViewCallExpression(baseClass, classCallExpr.getPolyArguments(), fieldSet, ((ClassViewCallExpression) classCallExpr).getClassView()) : ClassCall(baseClass, classCallExpr.getPolyArguments(), fieldSet);
 
-    fieldSet.addFieldsFrom(classCallExpr.getFieldSet(), resultExpr);
+    fieldSet.addFieldsFrom(classCallExpr.getFieldSet());
     for (Map.Entry<ClassField, FieldSet.Implementation> entry : classCallExpr.getFieldSet().getImplemented()) {
-      boolean ok = fieldSet.implementField(entry.getKey(), entry.getValue(), resultExpr);
+      boolean ok = fieldSet.implementField(entry.getKey(), entry.getValue());
       assert ok;
     }
 
-    // Some tricks to keep going as long as possible in case of error
     Collection<? extends Abstract.ClassFieldImpl> statements = expr.getStatements();
+    Map<ClassField, Abstract.ClassFieldImpl> classFieldMap = new HashMap<>();
+
     for (Abstract.ClassFieldImpl statement : statements) {
       Definition implementedDef = myState.getTypechecked(statement.getImplementedField());
       if (!(implementedDef instanceof ClassField)) {
-        myErrorReporter.report(new LocalTypeCheckingError("'" + implementedDef.getName() + "' is not a field", statement));
-        continue;
-      }
-      ClassField field = (ClassField) implementedDef;
-      if (fieldSet.isImplemented(field)) {
-        myErrorReporter.report(new LocalTypeCheckingError("Field '" + field.getName() + "' is already implemented", statement));
+        LocalTypeCheckingError error = new LocalTypeCheckingError("'" + implementedDef.getName() + "' is not a field", statement);
+        if (resultExpr instanceof ClassCallExpression) {
+          resultExpr = Error(resultExpr, error);
+        }
+        myErrorReporter.report(error);
         continue;
       }
 
-      implementField(fieldSet, field, statement.getImplementation(), this, resultExpr);
+      ClassField field = (ClassField) implementedDef;
+      if (fieldSet.isImplemented(field) || classFieldMap.containsKey(field)) {
+        LocalTypeCheckingError error = new LocalTypeCheckingError("Field '" + field.getName() + "' is already implemented", statement);
+        if (resultExpr instanceof ClassCallExpression) {
+          resultExpr = Error(resultExpr, error);
+        }
+        myErrorReporter.report(error);
+        continue;
+      }
+
+      classFieldMap.put(field, statement);
     }
 
-    classExtResult = new Result(resultExpr, new PiUniverseType(EmptyDependentLink.getInstance(), resultExpr.getSorts()));
-    return checkResult(expectedType, classExtResult, expr);
+    if (!(resultExpr instanceof ClassCallExpression)) {
+      return checkResult(expectedType, new Result(resultExpr, new PiUniverseType(EmptyDependentLink.getInstance(), new SortMax())), expr);
+    }
+
+    if (!classFieldMap.isEmpty()) {
+      Set<? extends ClassField> fields = baseClass.getFieldSet().getFields();
+      for (ClassField field : fields) {
+        if (fieldSet.isImplemented(field)) {
+          continue;
+        }
+
+        Abstract.ClassFieldImpl impl = classFieldMap.get(field);
+        if (impl != null) {
+          if (resultExpr instanceof ClassCallExpression) {
+            implementField(fieldSet, field, impl.getImplementation(), this, (ClassCallExpression) resultExpr);
+          }
+          classFieldMap.remove(field);
+          if (classFieldMap.isEmpty()) {
+            break;
+          }
+        } else {
+          LocalTypeCheckingError error = new LocalTypeCheckingError("Field '" + field.getName() + "' is not implemented", expr);
+          if (resultExpr instanceof ClassCallExpression) {
+            resultExpr = Error(resultExpr, error);
+          }
+          myErrorReporter.report(error);
+        }
+      }
+    }
+
+    Result result = new Result(resultExpr, new PiUniverseType(EmptyDependentLink.getInstance(), resultExpr instanceof ClassCallExpression ? ((ClassCallExpression) resultExpr).getSorts() : new SortMax()));
+    return checkResult(expectedType, result, expr);
   }
 
   private CheckTypeVisitor.Result implementField(FieldSet fieldSet, ClassField field, Abstract.Expression implBody, CheckTypeVisitor visitor, ClassCallExpression fieldSetClass) {
     CheckTypeVisitor.Result result = visitor.typeCheck(implBody, field.getBaseType().subst(field.getThisParameter(), New(fieldSetClass)));
-    fieldSet.implementField(field, new FieldSet.Implementation(null, result != null ? result.getExpression() : Error(null, null)), fieldSetClass);
+    fieldSet.implementField(field, new FieldSet.Implementation(null, result != null ? result.getExpression() : Error(null, null)));
     return result;
   }
 
@@ -961,10 +1000,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     Expression normExpr = exprResult.getExpression().normalize(NormalizeVisitor.Mode.WHNF);
     ClassCallExpression classCallExpr = normExpr.toClassCall();
     if (classCallExpr == null) {
-      LocalTypeCheckingError error = new LocalTypeCheckingError("Expected a class", expr.getExpression());
-      expr.setWellTyped(myContext, Error(normExpr, error));
-      myErrorReporter.report(error);
-      return null;
+      classCallExpr = normExpr.toError().getExpr().normalize(NormalizeVisitor.Mode.WHNF).toClassCall();
+      if (classCallExpr == null) {
+        LocalTypeCheckingError error = new LocalTypeCheckingError("Expected a class", expr.getExpression());
+        expr.setWellTyped(myContext, Error(normExpr, error));
+        myErrorReporter.report(error);
+        return null;
+      } else {
+        exprResult.reset(Error(New(classCallExpr), normExpr.toError().getError()), normExpr);
+        return exprResult;
+      }
     }
 
     int remaining = classCallExpr.getFieldSet().getFields().size() - classCallExpr.getFieldSet().getImplemented().size();

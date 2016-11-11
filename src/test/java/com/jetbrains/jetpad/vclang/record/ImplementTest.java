@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.record;
 
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
@@ -88,6 +89,17 @@ public class ImplementTest extends TypeCheckingTestCase {
         "}\n" +
         "\\class C \\extends B {\n" +
         "  \\implement a => 0\n" +
+        "}", 1);
+  }
+
+  @Test
+  public void implementExistingFunction() {
+    resolveNamesClass(
+        "\\class A {\n" +
+        "  \\function a => \\Type0\n" +
+        "}\n" +
+        "\\class B \\extends A {\n" +
+        "  \\implement a => \\Type0\n" +
         "}", 1);
   }
 
@@ -188,6 +200,18 @@ public class ImplementTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void universeClassExt() {
+    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+        "\\class A {\n" +
+        "  \\field A : \\Set1\n" +
+        "  \\field a : A\n" +
+        "}\n" +
+        "\\function f => A { A => Nat }");
+    assertEquals(new SortMax(new Sort(2,1)), ((ClassDefinition) result.getDefinition("A")).getSorts());
+    assertEquals(new SortMax(new Sort(0,0)), ((FunctionDefinition) result.getDefinition("f")).getResultType().toSorts());
+  }
+
+  @Test
   public void universeMultiple() {
     TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
         "\\class A {\n" +
@@ -213,5 +237,72 @@ public class ImplementTest extends TypeCheckingTestCase {
     assertEquals(new SortMax(new Sort(2,1)), ((ClassDefinition) result.getDefinition("C")).getSorts());
     assertEquals(new SortMax(new Sort(0,0)), ((ClassDefinition) result.getDefinition("D")).getSorts());
     assertEquals(ExpressionFactory.Universe(Sort.PROP), fType.fromPiParameters(fParams).toExpression());
+  }
+
+  @Test
+  public void classExtDep() {
+    typeCheckClass(
+        "\\class A {\n" +
+        "  \\field x : Nat\n" +
+        "  \\field y : x = 0\n" +
+        "}\n" +
+        "\\function f => A { x => 0 | y => path (\\lam _ => 0) }");
+  }
+
+  @Test
+  public void classImplDep() {
+    typeCheckClass(
+        "\\class A {\n" +
+        "  \\field x : Nat\n" +
+        "  \\field y : x = 0\n" +
+        "}\n" +
+        "\\class B \\extends A {\n" +
+        "  \\implement x => 0\n" +
+        "  \\implement y => path (\\lam _ => 0)\n" +
+        "}");
+  }
+
+  @Test
+  public void classExtDepMissingError() {
+    typeCheckClass(
+        "\\class A {\n" +
+        "  \\field x : Nat\n" +
+        "  \\field y : x = 0\n" +
+        "}\n" +
+        "\\function f => A { y => path (\\lam _ => 0) }", 1);
+  }
+
+  @Test
+  public void classExtDepOrder() {
+    typeCheckClass(
+        "\\class A {\n" +
+        "  \\field x : Nat\n" +
+        "  \\field y : x = 0\n" +
+        "}\n" +
+        "\\function f => A { y => path (\\lam _ => 0) | x => 0 }");
+  }
+
+  @Test
+  public void classImplDepMissingError() {
+    typeCheckClass(
+        "\\class A {\n" +
+        "  \\field x : Nat\n" +
+        "  \\field y : x = 0\n" +
+        "}\n" +
+        "\\class B \\extends A {\n" +
+        "  \\implement y => path (\\lam _ => 0)\n" +
+        "}", 1);
+  }
+
+  @Test
+  public void classImplDepOrderError() {
+    typeCheckClass(
+        "\\class A {\n" +
+        "  \\field x : Nat\n" +
+        "  \\field y : x = 0\n" +
+        "}\n" +
+        "\\class B \\extends A {\n" +
+        "  \\implement y => path (\\lam _ => 0)\n" +
+        "}", 1);
   }
 }

@@ -83,7 +83,7 @@ public class ClassDefinition extends Definition {
     if (enclosingClass != null) {
       myEnclosingThisField = new ClassField(null, ClassCall(enclosingClass), this, param("\\this", ClassCall(this)));
       myEnclosingThisField.setThisClass(this);
-      myFieldSet.addField(myEnclosingThisField, ClassCall(this, myFieldSet));
+      myFieldSet.addField(myEnclosingThisField);
     }
   }
 
