@@ -118,6 +118,32 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
   }
 
   @Test
+  public void duplicateClassView() {
+    resolveNamesClass(
+        "\\class X {\n" +
+        "  \\field T : \\Type0\n" +
+        "  \\field f : \\Type0\n" +
+        "}\n" +
+        "\\class Y {\n" +
+        "  \\field T : \\Type0\n" +
+        "  \\field f : \\Type0\n" +
+        "}\n" +
+        "\\view X' \\on X \\by T { f }\n" +
+        "\\view Y' \\on Y \\by T { f }", 1);
+  }
+
+  @Test
+  public void duplicateClassViewFieldName() {
+    resolveNamesClass(
+        "\\class X {\n" +
+        "  \\field T : \\Type0\n" +
+        "  \\field f : \\Type0\n" +
+        "}\n" +
+        "\\function f => 0\n" +
+        "\\view X' \\on X \\by T { f }", 1);
+  }
+
+  @Test
   public void cyclicView() {
     resolveNamesClass("\\view X \\on X \\by X { }", 1);
   }
