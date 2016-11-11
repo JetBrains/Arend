@@ -534,13 +534,19 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), superClasses, fields, implementations, globalStatements, instanceDefinitions);
     for (Concrete.ClassField field : fields) {
-      field.setEnclosingClass(classDefinition);
+      field.setParent(classDefinition);
     }
     for (Concrete.Implementation implementation : implementations) {
-      implementation.setEnclosingClass(classDefinition);
+      implementation.setParent(classDefinition);
     }
     for (Concrete.Definition definition : instanceDefinitions) {
-      definition.setEnclosingClass(classDefinition);
+      definition.setParent(classDefinition);
+      definition.setIsStatic(false);
+    }
+    for (Concrete.Statement statement : globalStatements) {
+      if (statement instanceof Concrete.DefineStatement) {
+        ((Concrete.DefineStatement) statement).getDefinition().setParent(classDefinition);
+      }
     }
     return classDefinition;
   }

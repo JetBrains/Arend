@@ -53,6 +53,17 @@ public class TypecheckingOrdering {
     myClassToNonStatic = new HashMap<>();
   }
 
+  private Abstract.ClassDefinition getEnclosingClass(Abstract.Definition definition) {
+    Abstract.Definition parent = definition.getParent();
+    if (parent == null) {
+      return null;
+    }
+    if (parent instanceof Abstract.ClassDefinition && !definition.isStatic()) {
+      return (Abstract.ClassDefinition) parent;
+    }
+    return getEnclosingClass(parent);
+  }
+
   private boolean doOrder(final Abstract.Definition definition) {
     if (myCycle != null)
       return false;
@@ -74,7 +85,7 @@ public class TypecheckingOrdering {
 
     myVisiting.add(definition);
 
-    Abstract.ClassDefinition enclosingClass = definition.getEnclosingClass();
+    Abstract.ClassDefinition enclosingClass = getEnclosingClass(definition);
     if (enclosingClass != null && !doOrder(enclosingClass)) {
       return false;
     }
@@ -119,7 +130,7 @@ public class TypecheckingOrdering {
 
         @Override
         public Boolean visitImplement(Abstract.Implementation def, Void params) {
-          return def.getEnclosingClass().equals(definition) || doOrder(def.getEnclosingClass());
+          return def.getParent().equals(definition) || doOrder(def.getParent());
         }
 
         @Override

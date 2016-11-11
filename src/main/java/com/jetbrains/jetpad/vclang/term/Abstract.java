@@ -280,7 +280,8 @@ public final class Abstract {
   public interface Definition extends ReferableSourceNode {
     enum Arrow { LEFT, RIGHT }
     Precedence getPrecedence();
-    ClassDefinition getEnclosingClass();
+    Definition getParent();
+    boolean isStatic();
     <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params);
   }
 
@@ -299,6 +300,9 @@ public final class Abstract {
   public interface Implementation extends Definition {
     Definition getImplementedField();
     Expression getImplementation();
+
+    @Override
+    ClassDefinition getParent();
   }
 
   public interface FunctionDefinition extends Definition, Function {

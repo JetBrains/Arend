@@ -215,7 +215,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       return null;
     }
 
-    Abstract.Definition referable = myNameResolver.resolveClassField(def.getEnclosingClass(), def.getName(), myErrorReporter, def);
+    Abstract.Definition referable = myNameResolver.resolveClassField(def.getParent(), def.getName(), myErrorReporter, def);
     if (referable != null) {
       myResolveListener.implementResolved(def, referable);
     }

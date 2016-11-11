@@ -822,10 +822,12 @@ public final class Concrete {
 
   public static abstract class Definition extends ReferableSourceNode implements Abstract.Definition {
     private final Precedence myPrecedence;
-    private ClassDefinition myEnclosingClass;
+    private Definition myParent;
+    private boolean myStatic;
 
     public Definition(Position position, String name, Precedence precedence) {
       super(position, name);
+      myStatic = true;
       myPrecedence = precedence;
     }
 
@@ -835,12 +837,21 @@ public final class Concrete {
     }
 
     @Override
-    public ClassDefinition getEnclosingClass() {
-      return myEnclosingClass;
+    public Definition getParent() {
+      return myParent;
     }
 
-    public void setEnclosingClass(ClassDefinition enclosingClass) {
-      myEnclosingClass = enclosingClass;
+    public void setParent(Definition parent) {
+      myParent = parent;
+    }
+
+    @Override
+    public boolean isStatic() {
+      return myStatic;
+    }
+
+    public void setIsStatic(boolean isStatic) {
+      myStatic = isStatic;
     }
 
     @Override
@@ -936,6 +947,7 @@ public final class Concrete {
   public static class ClassField extends SignatureDefinition implements Abstract.ClassField {
     public ClassField(Position position, String name, Precedence precedence, List<Argument> arguments, Expression resultType) {
       super(position, name, precedence, arguments, resultType);
+      setIsStatic(false);
     }
 
     @Override
@@ -951,6 +963,7 @@ public final class Concrete {
     public Implementation(Position position, String name, Expression expression) {
       super(position, name, Precedence.DEFAULT);
       myExpression = expression;
+      setIsStatic(false);
     }
 
     @Override
@@ -965,6 +978,11 @@ public final class Concrete {
     @Override
     public Expression getImplementation() {
       return myExpression;
+    }
+
+    @Override
+    public ClassDefinition getParent() {
+      return (ClassDefinition) super.getParent();
     }
 
     @Override
