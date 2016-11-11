@@ -400,11 +400,19 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
 
     Expression expression = result.getExpression();
-    ExprSubstitution subst = new ExprSubstitution();
-    DependentLink params = DependentLink.Helper.mergeList(result.getParameters(), subst);
+    ExprSubstitution allSubst = new ExprSubstitution();
+    ExprSubstitution absSubst = new ExprSubstitution();
+    List<DependentLink> defParams = new ArrayList<>();
+    result.getExpression().toDefCall().getDefinition().getTypeWithParams(defParams, result.getExpression().toDefCall().getPolyArguments());
+    int numDefCallParameters = defParams.size();
+    int numDefCallArguments = expression.toDefCall().getDefCallArguments().size() + (expression.toConCall() != null ? expression.toConCall().getDataTypeArguments().size() : 0);
+    int numAbsParams = numDefCallParameters - numDefCallArguments;
+    assert result.getParameters().size() >= numAbsParams;
+    DependentLink absParams = numAbsParams > 0 ? DependentLink.Helper.mergeList(result.getParameters().subList(0, numAbsParams), absSubst) : EmptyDependentLink.getInstance();
+    DependentLink allParams = DependentLink.Helper.mergeList(result.getParameters(), allSubst);
 
     int argIndex = 0;
-    for (DependentLink link = params; link.hasNext(); link = link.getNext(), ++argIndex) {
+    for (DependentLink link = absParams; link.hasNext() && argIndex < numAbsParams; link = link.getNext(), ++argIndex) {
       if (link.getType().toExpression() == null) {
         InferenceLevelVariable pLvl = new InferenceLevelVariable("plvl-of-" + link.getName(), Lvl(), expr);
         InferenceLevelVariable hLvl = new InferenceLevelVariable("hlvl-of-" + link.getName(), CNat(), expr);
@@ -418,11 +426,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       }
       expression = expression.addArgument(Reference(link));
     }
-    if (params.hasNext()) {
-      expression = Lam(params, expression);
+    if (absParams.hasNext()) {
+      expression = Lam(absParams, expression.subst(absSubst));
     }
 
-    return new Result(expression, result.getAtomicType().subst(subst, new LevelSubstitution()).fromPiParameters(DependentLink.Helper.toList(params)));
+    return new Result(expression, result.getAtomicType().subst(allSubst, new LevelSubstitution()).fromPiParameters(DependentLink.Helper.toList(allParams)));
   }
 
   @Override

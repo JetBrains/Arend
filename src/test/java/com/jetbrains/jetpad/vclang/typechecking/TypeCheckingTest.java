@@ -106,7 +106,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   @Test
   public void compareData() {
     typeCheckClass(
-        "\\data D | con\n" +
+        "\\data D {lp : Lvl} {lh : CNat} | con\n" +
         "\\function f {l : Lvl} (d : D [l] [0]) => d\n" +
         "\\function g {l : Lvl} (d : D [l] [inf]) => f d");
   }

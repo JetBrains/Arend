@@ -341,7 +341,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     boolean paramsOk;
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
       paramsOk = visitParameters(def.getParameters(), def, context, polyParamsList, generatedPolyParams, list, visitor, localInstancePool);
-      polyParamsList.addAll(generatedPolyParams);
+      // polyParamsList.addAll(generatedPolyParams);
 
       if (def.getUniverse() != null) {
         if (def.getUniverse() instanceof Abstract.PolyUniverseExpression) {
@@ -380,13 +380,17 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     boolean dataOk = true;
     for (Abstract.Constructor constructor : def.getConstructors()) {
       visitor.getContext().clear();
-      Constructor typedConstructor = visitConstructor(constructor, dataDefinition, visitor, inferredSorts);
+      Constructor typedConstructor = visitConstructor(constructor, dataDefinition, visitor, inferredSorts, generatedPolyParams);
       myState.record(constructor, typedConstructor);
       if (typedConstructor.typeHasErrors()) {
         dataOk = false;
       }
     }
     dataDefinition.hasErrors(dataOk ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.HAS_ERRORS);
+    if (!generatedPolyParams.isEmpty()) {
+      polyParamsList.addAll(generatedPolyParams);
+      dataDefinition.setPolyParams(polyParamsList);
+    }
 
     context.clear();
     if (def.getConditions() != null) {
@@ -546,7 +550,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     throw new IllegalStateException();
   }
 
-  private Constructor visitConstructor(Abstract.Constructor def, DataDefinition dataDefinition, CheckTypeVisitor visitor, SortMax sorts) {
+  private Constructor visitConstructor(Abstract.Constructor def, DataDefinition dataDefinition, CheckTypeVisitor visitor, SortMax sorts, List<Binding> generatedPolyParams) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(visitor.getContext())) {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
       String name = def.getName();
@@ -582,7 +586,15 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         if (paramType == null) {
           return constructor;
         }
-        paramType = paramType.strip(new HashSet<>(visitor.getContext()), visitor.getErrorReporter());
+//        paramType = paramType.strip(new HashSet<>(visitor.getContext()), visitor.getErrorReporter());
+
+        if (paramType instanceof PiTypeOmega) {
+          boolean firstTime = generatedPolyParams.isEmpty();
+          paramType = typeOmegaToUniverse((PiTypeOmega) paramType, generatedPolyParams);
+          if (firstTime) {
+            visitor.getContext().addAll(generatedPolyParams);
+          }
+        }
 
         sorts.add(paramType.toExpression() != null ? paramType.toExpression().getType().toSorts() : SortMax.OMEGA);
 

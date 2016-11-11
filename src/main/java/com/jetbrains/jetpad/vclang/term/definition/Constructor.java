@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
@@ -71,6 +72,11 @@ public class Constructor extends Definition implements Function {
   public DependentLink getParameters() {
     assert !typeHasErrors();
     return myParameters;
+  }
+
+  @Override
+  public List<Binding> getPolyParams() {
+    return myDataType.getPolyParams();
   }
 
   @Override
