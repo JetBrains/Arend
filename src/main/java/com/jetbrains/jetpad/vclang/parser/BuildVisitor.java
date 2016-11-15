@@ -9,6 +9,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.parser.VcgrammarParser.*;
@@ -379,7 +380,20 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return null;
     }
 
-    return new Concrete.FunctionDefinition(tokenPosition(ctx.getStart()), name, precedence, arguments, resultType, arrow, term, statements);
+    Concrete.FunctionDefinition result = new Concrete.FunctionDefinition(tokenPosition(ctx.getStart()), name, precedence, arguments, resultType, arrow, term, statements);
+    for (Iterator<Concrete.Statement> iterator = statements.iterator(); iterator.hasNext(); ) {
+      Concrete.Statement statement = iterator.next();
+      if (statement instanceof Concrete.DefineStatement) {
+        Concrete.Definition definition = ((Concrete.DefineStatement) statement).getDefinition();
+        if (definition instanceof Concrete.ClassField || definition instanceof Concrete.Implementation) {
+          misplacedDefinitionError(definition.getPosition());
+          iterator.remove();
+        } else {
+          definition.setParent(result);
+        }
+      }
+    }
+    return result;
   }
 
   private List<Concrete.Argument> visitFunctionArguments(List<TeleContext> teleCtx) {
