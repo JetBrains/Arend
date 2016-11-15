@@ -22,13 +22,6 @@ public class LoadModulesRecursively implements AbstractStatementVisitor<Void, Vo
   }
 
   @Override
-  public Void visitAppLevel(Abstract.ApplyLevelExpression expr, Void params) {
-    expr.getFunction().accept(this, null);
-    expr.getLevel().accept(this, null);
-    return null;
-  }
-
-  @Override
   public Void visitDefCall(Abstract.DefCallExpression expr, Void params) {
     if (expr.getExpression() != null) expr.getExpression().accept(this, null);
     return null;

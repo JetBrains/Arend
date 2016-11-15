@@ -12,11 +12,6 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
   }
 
   @Override
-  public Boolean visitAppLevel(Abstract.ApplyLevelExpression expr1, Abstract.Expression expr2) {
-    return expr2 instanceof Abstract.ApplyLevelExpression && expr1.getFunction().accept(this, ((Abstract.ApplyLevelExpression) expr2).getFunction()) && expr1.getLevel().accept(this, ((Abstract.ApplyLevelExpression) expr2).getLevel());
-  }
-
-  @Override
   public Boolean visitDefCall(Abstract.DefCallExpression expr1, Abstract.Expression expr2) {
     if (!(expr2 instanceof Abstract.DefCallExpression)) return false;
     Abstract.DefCallExpression defCallExpr2 = (Abstract.DefCallExpression) expr2;

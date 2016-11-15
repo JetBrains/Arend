@@ -124,7 +124,6 @@ implementStatement : '|'? name '=>' expr;
 
 argument : atomFieldsAcc                # argumentExplicit
          | '{' expr '}'                 # argumentImplicit
-         | '[' expr ']'                 # argumentLevel
          ;
 
 literal : UNIVERSE                      # universe

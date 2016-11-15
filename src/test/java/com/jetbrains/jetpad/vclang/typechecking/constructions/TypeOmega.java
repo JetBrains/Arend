@@ -10,7 +10,7 @@ public class TypeOmega extends TypeCheckingTestCase {
     typeCheckClass(
       "\\data D (A : \\Type) (a : A) | d (B : A -> \\Type)\n" +
       "\\function f {lp : Lvl} {lh : CNat} : (\\Pi {A : \\Type (lp, lh)} {a : A} -> (A -> \\Type (lp, lh)) -> D A a) => d\n" +
-      "\\function test => f {\\Set0} {\\Prop} (\\lam _ => \\Type0)");
+      "\\function test => f {_} {_} {\\Set0} {\\Prop} (\\lam _ => \\Type0)");
   }
 
   @Test

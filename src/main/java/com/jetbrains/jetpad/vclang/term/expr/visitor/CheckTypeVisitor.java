@@ -71,6 +71,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     private Expression expression;
     private TypeMax type;
     private List<DependentLink> parameters = new ArrayList<>();
+    private List<Level> levels = new ArrayList<>();
 
     public PreResult(Expression expression, TypeMax type) {
       this.expression = expression;
@@ -104,6 +105,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       return parameters;
     }
 
+    public List<Level> getLevels() { return levels; }
+
     public void reset(Expression expression) {
       this.expression = expression;
     }
@@ -127,6 +130,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       ExprSubstitution subst = DependentLink.Helper.toSubstitution(parameters.get(0), Collections.singletonList(thisExpr));
       parameters = DependentLink.Helper.subst(parameters.subList(1, parameters.size()), subst, new LevelSubstitution());
       type = type.subst(subst, new LevelSubstitution());
+    }
+
+    public void applyLevels(List<Level> levels) {
+      this.levels.addAll(levels);
     }
 
     public void applyExpressions(List<? extends Expression> expressions) {
@@ -436,17 +443,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   @Override
   public Result visitApp(Abstract.AppExpression expr, Type expectedType) {
     PreResult result = myArgsInference.infer(expr, expectedType);
-    if (result == null || !checkPath(result, expr)) {
-      return null;
-    }
-
-    return checkResultImplicit(expectedType, checkDefCall(result, expr), expr);
-  }
-
-  @Override
-  public Result visitAppLevel(Abstract.ApplyLevelExpression expr, Type expectedType) {
-    PreResult result = myTypeCheckingDefCall.typeCheckDefCall(expr);
-
     if (result == null || !checkPath(result, expr)) {
       return null;
     }

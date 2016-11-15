@@ -103,4 +103,12 @@ public class InferLevelTest extends TypeCheckingTestCase {
         "\\function f {l : Lvl} (A : \\Type (l, inf)) => A\n" +
         "\\function g => f \\Type0");
   }
+
+  @Test
+  public void propImpredicative() {
+    typeCheckClass(
+      "\\function f {lp : Lvl} {lh : CNat} (X : \\Set10) (P : X -> \\Type (lp, lh)) => \\Pi (a : X) -> P a\n" +
+      "\\function g (X : \\Set10) (P : X -> \\Prop) : \\Prop => f X P"
+    );
+  }
 }

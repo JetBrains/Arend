@@ -40,12 +40,6 @@ public final class Abstract {
     void setWellTyped(List<com.jetbrains.jetpad.vclang.term.context.binding.Binding> context, com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped);
   }
 
-  public interface ApplyLevelExpression extends Expression {
-    byte PREC = 12;
-    Expression getFunction();
-    Expression getLevel();
-  }
-
   public interface ArgumentExpression extends SourceNode {
     Expression getExpression();
     boolean isExplicit();

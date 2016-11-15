@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.naming.scope.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.TypeClassInferenceVariable;
@@ -18,10 +17,8 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -60,6 +57,7 @@ public class TypeCheckingDefCall {
     }
   }
 
+  /*
   public CheckTypeVisitor.PreResult typeCheckDefCall(Abstract.ApplyLevelExpression expr) {
     List<Abstract.Expression> levelExprs = new ArrayList<>();
     Abstract.Expression app_expr = expr;
@@ -110,7 +108,7 @@ public class TypeCheckingDefCall {
     }
 
     return result;
-  }
+  } /**/
 
   public CheckTypeVisitor.PreResult typeCheckDefCall(Abstract.DefCallExpression expr) {
     Abstract.Expression left = expr.getExpression();
