@@ -311,8 +311,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (classifyingField == null) {
       return null;
     }
-    Concrete.Position pos = tokenPosition(ctx.expr() != null ? ctx.expr().getStart() : ctx.ID(ctx.ID().size() > 1 ? 1 : 0).getSymbol());
-    Concrete.ClassView classView = new Concrete.ClassView(tokenPosition(ctx.getStart()), ctx.ID(0).getText(), new Concrete.DefCallExpression(pos, expr, ctx.ID(ctx.ID().size() > 1 ? 1 : 0).getText()), classifyingField, fields);
+    Concrete.Position pos = tokenPosition(ctx.expr() != null ? ctx.expr().getStart() : ctx.ID(1).getSymbol());
+    Concrete.ClassView classView = new Concrete.ClassView(tokenPosition(ctx.getStart()), ctx.ID(0).getText(), new Concrete.DefCallExpression(pos, expr, ctx.ID(1).getText()), classifyingField, fields);
 
     for (ClassViewFieldContext classViewFieldContext : ctx.classViewField()) {
       Concrete.ClassViewField field = visitClassViewField(classViewFieldContext, classView);

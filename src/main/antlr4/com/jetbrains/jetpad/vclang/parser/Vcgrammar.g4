@@ -17,7 +17,7 @@ definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?  
             | '\\implement' name '=>' expr                                                                # defImplement
             | '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef?                    # defData
             | '\\class' ID ('\\extends' atomFieldsAcc (',' atomFieldsAcc)*)? ('{' statements '}')? where? # defClass
-            | '\\view' ID? '\\on' (expr '.')? ID '\\by' name '{' classViewField* '}'                      # defClassView
+            | '\\view' ID '\\on' (expr '.')? ID '\\by' name '{' classViewField* '}'                       # defClassView
             | defaultInst '\\instance' ID tele* '=>' expr                                                 # defInstance
             ;
 
