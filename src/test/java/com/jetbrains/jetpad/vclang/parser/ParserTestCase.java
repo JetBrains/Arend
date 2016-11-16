@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.VclangTestCase;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.ModuleSourceId;
-import com.jetbrains.jetpad.vclang.module.source.NameModuleSourceId;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory;
@@ -27,14 +26,14 @@ public abstract class ParserTestCase extends VclangTestCase {
     }
   };
 
-  private static VcgrammarParser _parse(final String name, final ErrorReporter errorReporter, String text) {
+  private static VcgrammarParser _parse(final ErrorReporter errorReporter, String text) {
     ANTLRInputStream input = new ANTLRInputStream(text);
     VcgrammarLexer lexer = new VcgrammarLexer(input);
     lexer.removeErrorListeners();
     lexer.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(new NameModuleSourceId(name), new Concrete.Position(SOURCE_ID, line, pos), msg));
+        errorReporter.report(new ParserError(new Concrete.Position(SOURCE_ID, line, pos), msg));
       }
     });
 
@@ -44,7 +43,7 @@ public abstract class ParserTestCase extends VclangTestCase {
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(new NameModuleSourceId(name), new Concrete.Position(SOURCE_ID, line, pos), msg));
+        errorReporter.report(new ParserError(new Concrete.Position(SOURCE_ID, line, pos), msg));
       }
     });
     return parser;
@@ -52,7 +51,7 @@ public abstract class ParserTestCase extends VclangTestCase {
 
 
   Concrete.Expression parseExpr(String text, int errors) {
-    VcgrammarParser.ExprContext exprContext = _parse("$testModule$", errorReporter, text).expr();
+    VcgrammarParser.ExprContext exprContext = _parse(errorReporter, text).expr();
     Concrete.Expression result = new BuildVisitor(SOURCE_ID, errorReporter).visitExpr(exprContext);
     assertThat(errorList, containsErrors(errors));
     return result;
@@ -63,7 +62,7 @@ public abstract class ParserTestCase extends VclangTestCase {
   }
 
   Concrete.Definition parseDef(String text, int errors) {
-    Concrete.Definition definition = new BuildVisitor(SOURCE_ID, errorReporter).visitDefinition(_parse("$testModule$", errorReporter, text).definition());
+    Concrete.Definition definition = new BuildVisitor(SOURCE_ID, errorReporter).visitDefinition(_parse(errorReporter, text).definition());
     assertThat(errorList, containsErrors(errors));
     return definition;
   }
@@ -73,7 +72,7 @@ public abstract class ParserTestCase extends VclangTestCase {
   }
 
   Concrete.ClassDefinition parseClass(String name, String text, int errors) {
-    VcgrammarParser.StatementsContext tree = _parse(name, errorReporter, text).statements();
+    VcgrammarParser.StatementsContext tree = _parse(errorReporter, text).statements();
     List<Concrete.Statement> statements = new BuildVisitor(SOURCE_ID, errorReporter).visitStatements(tree);
     Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(ConcreteExpressionFactory.POSITION, name, statements);
     assertThat(errorList, containsErrors(errors));

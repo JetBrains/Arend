@@ -46,7 +46,7 @@ public abstract class ParseSource implements Source {
     lexer.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(mySourceId, new Concrete.Position(mySourceId, line, pos), msg));
+        errorReporter.report(new ParserError(new Concrete.Position(mySourceId, line, pos), msg));
       }
     });
 
@@ -55,7 +55,7 @@ public abstract class ParseSource implements Source {
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(mySourceId, new Concrete.Position(mySourceId, line, pos), msg));
+        errorReporter.report(new ParserError(new Concrete.Position(mySourceId, line, pos), msg));
       }
     });
 

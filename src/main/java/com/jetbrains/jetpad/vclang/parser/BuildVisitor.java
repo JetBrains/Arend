@@ -489,7 +489,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private void misplacedDefinitionError(Concrete.Position position) {
-    myErrorReporter.report(new ParserError(myModule, position, "This definition is not allowed here"));
+    myErrorReporter.report(new ParserError(position, "This definition is not allowed here"));
   }
 
   private List<Concrete.Definition> visitInstanceStatements(List<StatementContext> ctx, List<Concrete.ClassField> fields, List<Concrete.Implementation> implementations) {
