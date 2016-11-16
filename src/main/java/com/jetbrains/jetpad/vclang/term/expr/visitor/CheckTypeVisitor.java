@@ -302,11 +302,19 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   }
 
   public TypeMax checkFunOrDataType(Abstract.Expression typeExpr) {
-    return typeMax(typeExpr, false);
+    TypeMax type = typeMax(typeExpr, false);
+    if (type == null) return null;
+    LevelSubstitution levelSubst = myEquations.solve(typeExpr);
+    LocalErrorReporterCounter counter = new LocalErrorReporterCounter(myErrorReporter);
+    return type.subst(new ExprSubstitution(), levelSubst).strip(new HashSet<>(myContext), counter);
   }
 
   public Type checkParamType(Abstract.Expression typeExpr) {
-    return (Type)typeMax(typeExpr, true);
+    Type type = (Type)typeMax(typeExpr, true);
+    if (type == null) return null;
+    LevelSubstitution levelSubst = myEquations.solve(typeExpr);
+    LocalErrorReporterCounter counter = new LocalErrorReporterCounter(myErrorReporter);
+    return type.subst(new ExprSubstitution(), levelSubst).strip(new HashSet<>(myContext), counter);
   }
 
   private TypeMax typeMax(Abstract.Expression type, boolean onlyOmegaAllowed) {
@@ -324,12 +332,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         ExprSubstitution exprSubst = new ExprSubstitution();
         allArgs = DependentLink.Helper.toList(DependentLink.Helper.mergeList(allArgs, exprSubst));
 
-        LevelSubstitution levelSubst = myEquations.solve(type);
-        ExprSubstitution subst = new ExprSubstitution();
-        allArgs = DependentLink.Helper.subst(allArgs, subst, levelSubst);
-        exprSubst = subst.compose(exprSubst); // exprSubst.compose(subst);
+        //LevelSubstitution levelSubst = myEquations.solve(type);
+        //ExprSubstitution subst = new ExprSubstitution();
+        //allArgs = DependentLink.Helper.subst(allArgs, subst, levelSubst);
+        //exprSubst = subst.compose(exprSubst); // exprSubst.compose(subst);
         LocalErrorReporterCounter counter = new LocalErrorReporterCounter(myErrorReporter);
-        return codomain.subst(exprSubst, levelSubst).fromPiParameters(allArgs).strip(new HashSet<>(myContext), counter);
+        return codomain.subst(exprSubst, new LevelSubstitution()).fromPiParameters(allArgs);
       }
     } else if (type instanceof Abstract.PolyUniverseExpression) {
       SortMax sort = sortMax((Abstract.PolyUniverseExpression)type);
