@@ -233,7 +233,9 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
     def.getUnderlyingClassDefCall().accept(new ExpressionResolveNameVisitor(myParentScope, myContext, myNameResolver, myErrorReporter, myResolveListener), null);
     Abstract.Definition resolvedUnderlyingClass = def.getUnderlyingClassDefCall().getReferent();
     if (!(resolvedUnderlyingClass instanceof Abstract.ClassDefinition)) {
-      myErrorReporter.report(resolvedUnderlyingClass != null ? new WrongDefinition("Expected a class", def) : new NotInScopeError(def, def.getUnderlyingClassDefCall().getName()));
+      if (resolvedUnderlyingClass != null) {
+        myErrorReporter.report(new WrongDefinition("Expected a class", def));
+      }
       return null;
     }
 

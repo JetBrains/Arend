@@ -786,19 +786,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         }
       }
 
-      for (Abstract.Statement statement : def.getGlobalStatements()) {
-        if (statement instanceof Abstract.DefineStatement) {
-          Abstract.Definition definition = ((Abstract.DefineStatement) statement).getDefinition();
-          if (definition instanceof Abstract.ClassView) {
-            Definition classifyingField = myState.getTypechecked(((Abstract.ClassView) definition).getClassifyingField());
-            if (!(classifyingField instanceof ClassField)) {
-              classOk = false;
-              myErrorReporter.report(new LocalTypeCheckingError("'" + classifyingField.getName() + "' is not a field", definition));
-            }
-          }
-        }
-      }
-
       myState.record(def, typedDef);
       typedDef.hasErrors(!classOk);
       return typedDef;
