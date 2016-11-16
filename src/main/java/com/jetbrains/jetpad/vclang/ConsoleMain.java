@@ -114,12 +114,6 @@ public class ConsoleMain {
       return;
     }
 
-    if (!TypecheckingOrdering.typecheck(state, staticNsProvider, dynamicNsProvider, modulesToTypeCheck, errorReporter, true)) {
-      return;
-    }
-    modulesToTypeCheck.clear();
-    errorReporter.getErrorList().clear();
-
     if (cmdLine.getArgList().isEmpty()) {
       if (sourceDirStr == null) return;
       try {
