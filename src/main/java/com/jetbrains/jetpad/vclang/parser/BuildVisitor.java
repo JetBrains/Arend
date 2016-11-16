@@ -300,21 +300,17 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (ctx == null) return null;
     List<Concrete.ClassViewField> fields = new ArrayList<>(ctx.classViewField().size());
 
-    Concrete.Expression expr = null;
-    if (ctx.expr() != null) {
-      expr = visitExpr(ctx.expr());
-      if (expr == null) {
-        return null;
-      }
-    }
-
+    Concrete.Expression expr = visitExpr(ctx.expr());
     String classifyingField = visitName(ctx.name());
-    if (classifyingField == null) {
+    if (expr == null || classifyingField == null) {
       return null;
     }
-    Concrete.Position pos = tokenPosition(ctx.expr() != null ? ctx.expr().getStart() : ctx.ID(1).getSymbol());
-    Concrete.ClassView classView = new Concrete.ClassView(tokenPosition(ctx.getStart()), ctx.ID(0).getText(), new Concrete.DefCallExpression(pos, expr, ctx.ID(1).getText()), classifyingField, fields);
+    if (!(expr instanceof Concrete.DefCallExpression)) {
+      myErrorReporter.report(new ParserError(expr.getPosition(), "Expected a class"));
+      return null;
+    }
 
+    Concrete.ClassView classView = new Concrete.ClassView(tokenPosition(ctx.getStart()), ctx.ID().getText(), (Concrete.DefCallExpression) expr, classifyingField, fields);
     for (ClassViewFieldContext classViewFieldContext : ctx.classViewField()) {
       Concrete.ClassViewField field = visitClassViewField(classViewFieldContext, classView);
       if (field != null) {
