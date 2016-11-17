@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
@@ -132,6 +133,9 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
       ConstructorClause newClause = newNode.addClause(clause.getConstructor(), toNames(clause.getParameters()));
       for (DependentLink linkOld = clause.getParameters(), linkNew = newClause.getParameters(); linkOld.hasNext(); linkOld = linkOld.getNext(), linkNew = linkNew.getNext()) {
         myExprSubstitution.add(linkOld, Reference(linkNew));
+      }
+      for (int i = 0; i < clause.getPolyParams().size(); ++i) {
+        myLevelSubstitution.add(clause.getPolyParams().get(i), new Level(clause.getPolyParams().get(i)));
       }
       for (int i = 0; i < clause.getTailBindings().size(); i++) {
         myExprSubstitution.add(clause.getTailBindings().get(i), Reference(newClause.getTailBindings().get(i)));

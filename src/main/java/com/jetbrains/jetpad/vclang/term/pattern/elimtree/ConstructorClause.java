@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
@@ -17,14 +18,16 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 public class ConstructorClause implements Clause {
   private final Constructor myConstructor;
   private final DependentLink myParameters;
+  private final List<Binding> myPolyParams;
   private ElimTreeNode myChild;
   private final BranchElimTreeNode myParent;
   private final List<TypedBinding> myTailBindings;
 
-  ConstructorClause(Constructor constructor, DependentLink parameters, List<TypedBinding> tailBindings, BranchElimTreeNode parent) {
+  ConstructorClause(Constructor constructor, DependentLink parameters, List<Binding> polyParams, List<TypedBinding> tailBindings, BranchElimTreeNode parent) {
     assert !constructor.typeHasErrors();
     myConstructor = constructor;
     myParameters = parameters;
+    myPolyParams = polyParams;
     myTailBindings = tailBindings;
     myParent = parent;
     myChild = EmptyElimTreeNode.getInstance();
@@ -54,6 +57,8 @@ public class ConstructorClause implements Clause {
   public DependentLink getParameters() {
     return myParameters;
   }
+
+  public List<Binding> getPolyParams() { return myPolyParams; }
 
   @Override
   public ExprSubstitution getSubst() {

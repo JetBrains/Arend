@@ -39,7 +39,7 @@ public class ElimTreeDeserialization {
           for (int j = 0; j < contextTailSize; j++) {
             tailBindings.add(myModuleDeserialization.readTypedBinding(stream, definitionMap));
           }
-          elimTree.addClause(constructor, parameters, tailBindings, readElimTree(stream, definitionMap));
+          elimTree.addClause(constructor, parameters, new ArrayList<Binding>(), tailBindings, readElimTree(stream, definitionMap));
         }
         if (stream.readBoolean()) {
           elimTree.addOtherwiseClause(readElimTree(stream, definitionMap));

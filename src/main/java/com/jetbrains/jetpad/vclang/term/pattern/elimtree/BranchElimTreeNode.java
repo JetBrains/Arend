@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
@@ -59,7 +60,9 @@ public class BranchElimTreeNode extends ElimTreeNode {
     List<? extends Expression> dataTypeArguments = dataCall.getDefCallArguments();
 
     dataTypeArguments = constructor.matchDataTypeArguments(new ArrayList<>(dataTypeArguments));
-    DependentLink constructorArgs = DependentLink.Helper.subst(constructor.getParameters(), toSubstitution(constructor.getDataTypeParameters(), dataTypeArguments));
+    LevelSubstitution polySubst = new LevelSubstitution();
+    List<Binding> constructorPolyParams = LevelSubstitution.clone(constructor.getPolyParams(), polySubst);
+    DependentLink constructorArgs = DependentLink.Helper.subst(constructor.getParameters(), toSubstitution(constructor.getDataTypeParameters(), dataTypeArguments), polySubst);
     if (names != null) {
       constructorArgs = DependentLink.Helper.subst(constructorArgs, new ExprSubstitution());
       int i = 0;
@@ -74,7 +77,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
     }
 
     List<TypedBinding> tailBindings = new ExprSubstitution(myReference, ConCall(constructor, dataCall.getPolyArguments(), new ArrayList<>(dataTypeArguments), arguments)).extendBy(myContextTail);
-    ConstructorClause result = new ConstructorClause(constructor, constructorArgs, tailBindings, this);
+    ConstructorClause result = new ConstructorClause(constructor, constructorArgs, constructorPolyParams, tailBindings, this);
     myClauses.put(constructor, result);
     return result;
   }
@@ -84,8 +87,8 @@ public class BranchElimTreeNode extends ElimTreeNode {
     return myOtherwiseClause;
   }
 
-  void addClause(Constructor constructor, DependentLink constructorArgs, List<TypedBinding> tailBindings, ElimTreeNode child) {
-    ConstructorClause clause = new ConstructorClause(constructor, constructorArgs, tailBindings, this);
+  void addClause(Constructor constructor, DependentLink constructorArgs, List<Binding> constructorPolyParams, List<TypedBinding> tailBindings, ElimTreeNode child) {
+    ConstructorClause clause = new ConstructorClause(constructor, constructorArgs, constructorPolyParams, tailBindings, this);
     myClauses.put(constructor, clause);
     clause.setChild(child);
   }
