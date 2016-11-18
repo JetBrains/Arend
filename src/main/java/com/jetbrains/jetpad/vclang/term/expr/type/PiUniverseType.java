@@ -67,8 +67,18 @@ public class PiUniverseType implements TypeMax {
 
     DependentLink params = DependentLink.Helper.clone(myParameters);
     for (DependentLink link = params; link.hasNext(); link = link.getNext()) {
-      params.setType(params.getType().strip(bounds, errorReporter));
+      DependentLink link1 = link.getNextTyped(null);
+      for (; link != link1; link = link.getNext()) {
+        bounds.add(link);
+      }
+      bounds.add(link);
+      link.setType(link.getType().strip(bounds, errorReporter));
     }
+
+    for (DependentLink link = params; link.hasNext(); link = link.getNext()) {
+      bounds.remove(link);
+    }
+
     return new PiUniverseType(params, mySorts);
   }
 
