@@ -83,7 +83,7 @@ public class TypedDependentLink implements DependentLink {
   }
 
   @Override
-  public DependentLink getNextTyped(List<String> names) {
+  public TypedDependentLink getNextTyped(List<String> names) {
     if (names != null) {
       names.add(myName);
     }

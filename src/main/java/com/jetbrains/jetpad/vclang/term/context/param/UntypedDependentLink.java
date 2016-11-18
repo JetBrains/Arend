@@ -58,7 +58,7 @@ public class UntypedDependentLink implements DependentLink {
   }
 
   @Override
-  public DependentLink getNextTyped(List<String> names) {
+  public TypedDependentLink getNextTyped(List<String> names) {
     DependentLink link = this;
     for (; link instanceof UntypedDependentLink; link = link.getNext()) {
       if (names != null) {
@@ -68,7 +68,7 @@ public class UntypedDependentLink implements DependentLink {
     if (names != null) {
       names.add(link.getName());
     }
-    return link;
+    return (TypedDependentLink) link;
   }
 
   @Override

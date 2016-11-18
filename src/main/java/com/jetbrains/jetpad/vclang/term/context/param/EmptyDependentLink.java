@@ -51,7 +51,7 @@ public class EmptyDependentLink implements DependentLink {
   }
 
   @Override
-  public DependentLink getNextTyped(List<String> names) {
+  public TypedDependentLink getNextTyped(List<String> names) {
     throw new IllegalStateException();
   }
 

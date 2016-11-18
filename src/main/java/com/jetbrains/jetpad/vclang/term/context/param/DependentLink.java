@@ -20,7 +20,7 @@ public interface DependentLink extends Binding {
   void setNext(DependentLink next);
   void setName(String name);
   DependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size);
-  DependentLink getNextTyped(List<String> names);
+  TypedDependentLink getNextTyped(List<String> names);
   boolean hasNext();
 
   class Helper {
