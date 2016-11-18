@@ -265,7 +265,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     typedDef.setResultType(expectedType);
     polyParamsList.addAll(generatedPolyParams);
     typedDef.setPolyParams(polyParamsList);
-    typedDef.typeHasErrors(!paramsOk);
+    typedDef.typeHasErrors(!paramsOk || expectedType == null);
     typedDef.hasErrors(Definition.TypeCheckingStatus.TYPE_CHECKING);
 
     Abstract.Expression term = def.getTerm();
@@ -289,7 +289,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
             } else if (expectedType == null) {
               typedDef.setResultType(termResult.getType());
             }
-            typedDef.typeHasErrors(!paramsOk);
+            typedDef.typeHasErrors(!paramsOk || typedDef.getResultType() == null);
           }
         }
       }
@@ -908,7 +908,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         CheckTypeVisitor.Result termResult = visitor.checkType(term, null);
         if (termResult != null) {
           typedDef.setResultType(termResult.getType());
-          typedDef.typeHasErrors(!paramsOk);
+          typedDef.typeHasErrors(!paramsOk || termResult.getType() == null);
           typedDef.setElimTree(top(list.getFirst(), leaf(Abstract.Definition.Arrow.RIGHT, termResult.getExpression())));
           typedDef.hasErrors(paramsOk ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.HAS_ERRORS);
         }

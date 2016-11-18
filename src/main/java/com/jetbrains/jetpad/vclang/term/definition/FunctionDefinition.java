@@ -79,7 +79,7 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   public void typeHasErrors(boolean has) {
-    myTypeHasErrors = has || myResultType == null;
+    myTypeHasErrors = has;
   }
 
   @Override
