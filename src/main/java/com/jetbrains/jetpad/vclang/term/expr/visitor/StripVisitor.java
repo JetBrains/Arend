@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
@@ -207,18 +208,15 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
   public BranchElimTreeNode visitBranch(BranchElimTreeNode branchNode, Void params) {
     myBounds.remove(branchNode.getReference());
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-      for (DependentLink link = clause.getParameters(); link.hasNext(); link = link.getNext()) {
-        myBounds.add(link);
-      }
-      for (Binding binding : clause.getTailBindings()) {
+      visitArguments(clause.getParameters());
+      for (TypedBinding binding : clause.getTailBindings()) {
+        binding.setType(binding.getType().strip(myBounds, myErrorReporter));
         myBounds.add(binding);
       }
 
       clause.setChild(clause.getChild().accept(this, null));
 
-      for (DependentLink link = clause.getParameters(); link.hasNext(); link = link.getNext()) {
-        myBounds.remove(link);
-      }
+      freeArguments(clause.getParameters());
       for (Binding binding : clause.getTailBindings()) {
         myBounds.remove(binding);
       }

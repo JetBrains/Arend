@@ -1,10 +1,9 @@
 package com.jetbrains.jetpad.vclang.term.context.binding;
 
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 
 public class TypedBinding extends NamedBinding {
-  protected Type myType;
+  private Type myType;
 
   public TypedBinding(String name, Type type) {
     super(name);
@@ -14,6 +13,10 @@ public class TypedBinding extends NamedBinding {
   @Override
   public Type getType() {
     return myType;
+  }
+
+  public void setType(Type type) {
+    myType = type;
   }
 
   public String toString() {
