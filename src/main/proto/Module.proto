@@ -4,5 +4,22 @@ package vclang.compiled;
 option java_package = "com.jetbrains.jetpad.vclang.module.caching.serialization";
 option java_outer_classname = "ModuleProtos";
 
+import "Definition.proto";
+
+
 message Module {
+    DefinitionState definition_state = 1;
+    InstanceState instance_state = 2;
+
+    repeated DefinitionReference referred_definition = 3;
+    message DefinitionReference {
+        string source_url = 1;
+        string definition_id = 2;
+    }
+
+    message DefinitionState {
+        map<string, Definition> definition = 1;
+    }
+    message InstanceState {
+    }
 }
