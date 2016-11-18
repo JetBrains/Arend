@@ -1,14 +1,20 @@
 package com.jetbrains.jetpad.vclang;
 
-import com.jetbrains.jetpad.vclang.error.*;
+import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.Error;
+import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.module.BaseModuleLoader;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.caching.CachingModuleLoader;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.CompositeSourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.CompositeStorage;
 import com.jetbrains.jetpad.vclang.module.source.file.FileStorage;
-import com.jetbrains.jetpad.vclang.naming.namespace.*;
+import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
+import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotSourceInfoCollector;
 import com.jetbrains.jetpad.vclang.naming.oneshot.ResolvingModuleLoader;
 import com.jetbrains.jetpad.vclang.term.*;
@@ -22,6 +28,8 @@ import org.apache.commons.cli.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -48,6 +56,7 @@ public class ConsoleMain {
   // Storage
   private final String sourceDirStr;
   private final File sourceDir;
+  private final FileStorage fileStorage;
   private final CompositeStorage<Prelude.SourceId, FileStorage.SourceId> storage;
 
   // Modules
@@ -71,13 +80,15 @@ public class ConsoleMain {
     srcInfoProvider = srcInfoCollector.sourceInfoProvider;
     errf = new ErrorFormatter(srcInfoProvider);
 
+    Prelude.PreludeStorage preludeStorage = new Prelude.PreludeStorage();
     sourceDirStr = cmdLine.getOptionValue("s");
     sourceDir = new File(sourceDirStr == null ? System.getProperty("user.dir") : sourceDirStr);
-    storage = createStorage(sourceDir);
+    fileStorage = new FileStorage(sourceDir);
+    storage = new CompositeStorage<>(preludeStorage, fileStorage, preludeStorage, fileStorage);
 
     boolean recompile = cmdLine.hasOption("recompile");
     ModuleLoadingListener moduleLoadingListener = new ModuleLoadingListener(srcInfoCollector);
-    resolvingModuleLoader = createResolvingModuleLoader(storage, errorReporter, moduleLoadingListener, staticNsProvider, dynamicNsProvider);
+    resolvingModuleLoader = createResolvingModuleLoader(moduleLoadingListener);
     moduleLoader = createCachingModuleLoader(recompile);
     state = moduleLoader.getTypecheckerState();
 
@@ -87,18 +98,14 @@ public class ConsoleMain {
     argFiles = cmdLine.getArgList();
   }
 
-  private static CompositeStorage<Prelude.SourceId, FileStorage.SourceId> createStorage(File sourceDir) {
-    Prelude.PreludeStorage preludeStorage = new Prelude.PreludeStorage();
-    FileStorage fileStorage = new FileStorage(sourceDir);
-    return new CompositeStorage<>(preludeStorage, fileStorage, preludeStorage, fileStorage);
-  }
-
-  private static ResolvingModuleLoader<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> createResolvingModuleLoader(CompositeStorage<Prelude.SourceId, FileStorage.SourceId> storage, ErrorReporter errorReporter, ModuleLoadingListener moduleLoadingListener, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider) {
+  private ResolvingModuleLoader<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> createResolvingModuleLoader(ModuleLoadingListener moduleLoadingListener) {
     return new ResolvingModuleLoader<>(storage, moduleLoadingListener, staticNsProvider, dynamicNsProvider, new ConcreteResolveListener(), errorReporter);
   }
 
   private CachingModuleLoader<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> createCachingModuleLoader(boolean recompile) {
-    return new CachingModuleLoader<>(resolvingModuleLoader, new MyPersistenceProvider(), storage, srcInfoProvider, !recompile);
+    CachingModuleLoader<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> moduleLoader = new CachingModuleLoader<>(resolvingModuleLoader, new MyPersistenceProvider(), storage, srcInfoProvider, !recompile);
+    resolvingModuleLoader.overrideModuleLoader(moduleLoader);
+    return moduleLoader;
   }
 
   private Namespace loadPrelude() {
@@ -305,15 +312,18 @@ public class ConsoleMain {
       try {
         final String root;
         final String path;
+        final String query;
         if (sourceId.source1 != null) {
           root = "prelude";
           path = "Prelude";
+          query = null;
         } else {
           root = "";
           path = sourceId.source2.getFilePath().toString();
+          query = "" + sourceId.source2.getLastModified();
         }
-        return new URL("file", root, "/" + path);
-      } catch (MalformedURLException e){
+        return new URI("file", root, "/" + path, query, null).toURL();
+      } catch (URISyntaxException | MalformedURLException e) {
         throw new IllegalStateException();
       }
     }
@@ -323,7 +333,18 @@ public class ConsoleMain {
       if (sourceUrl.getAuthority() != null && sourceUrl.getAuthority().equals("prelude")) {
         return storage.locateModule(Prelude.PreludeStorage.PRELUDE_MODULE_PATH);
       } else if (sourceUrl.getAuthority() == null) {
-        return storage.locateModule(FileStorage.modulePath(sourceUrl.getPath().substring(1)));
+        ModulePath modulePath = FileStorage.modulePath(sourceUrl.getPath().substring(1));
+        if (sourceUrl.getQuery() != null) {
+          return storage.locateModule(modulePath);
+        } else {
+          try {
+            long mtime = Long.parseLong(sourceUrl.getQuery());
+            FileStorage.SourceId fileSourceId = fileStorage.locateModule(modulePath, mtime);
+            return fileSourceId != null ? storage.idFromSecond(fileSourceId) : null;
+          } catch (NumberFormatException ignored) {
+            return null;
+          }
+        }
       } else {
         return null;
       }

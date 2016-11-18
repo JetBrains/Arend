@@ -39,6 +39,10 @@ public class ResolvingModuleLoader<SourceIdT extends SourceId> extends BaseModul
     return result;
   }
 
+  public void overrideModuleLoader(ModuleLoader moduleLoader) {
+    myResolvingModuleListener.setModuleLoader(moduleLoader);
+  }
+
   public void setPreludeNamespace(Namespace namespace) {
     myResolvingModuleListener.setPreludeNamespace(namespace);
   }

@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -19,8 +20,8 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ClassCall;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.param;
 
 public class ClassDefinition extends Definition {
-  private final FieldSet myFieldSet;
-  private final Set<ClassDefinition> mySuperClasses;
+  private FieldSet myFieldSet;
+  private Set<ClassDefinition> mySuperClasses;
   private boolean myHasErrors;
 
   private ClassField myEnclosingThisField = null;
@@ -45,6 +46,10 @@ public class ClassDefinition extends Definition {
     return myFieldSet;
   }
 
+  public void setFieldSet(FieldSet fieldSet) {
+    myFieldSet = fieldSet;
+  }
+
   public SortMax getSorts() {
     return myFieldSet.getSorts(ClassCall(this, myFieldSet));
   }
@@ -55,6 +60,14 @@ public class ClassDefinition extends Definition {
       if (superClass.isSubClassOf(classDefinition)) return true;
     }
     return false;
+  }
+
+  public Set<ClassDefinition> getSuperClasses() {
+    return Collections.unmodifiableSet(mySuperClasses);
+  }
+
+  public void setSuperClasses(Set<ClassDefinition> superClasses) {
+    mySuperClasses = superClasses;
   }
 
   @Override
@@ -97,8 +110,9 @@ public class ClassDefinition extends Definition {
     return myHasErrors ? TypeCheckingStatus.HAS_ERRORS : TypeCheckingStatus.NO_ERRORS;
   }
 
-  public void hasErrors(boolean has) {
-    myHasErrors = has;
+  @Override
+  public void hasErrors(TypeCheckingStatus status) {
+    myHasErrors = !TypeCheckingStatus.NO_ERRORS.equals(status);
   }
 
   public ClassField getEnclosingThisField() {

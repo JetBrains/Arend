@@ -20,11 +20,11 @@ public class CompositeSourceSupplier<SourceId1T extends SourceId, SourceId2T ext
   public SourceId locateModule(ModulePath modulePath) {
     SourceId1T source1 = mySup1.locateModule(modulePath);
     if (source1 != null) {
-      return new SourceId(source1, null);
+      return idFromFirst(source1);
     } else {
       SourceId2T source2 = mySup2.locateModule(modulePath);
       if (source2 != null) {
-        return new SourceId(null, source2);
+        return idFromSecond(source2);
       } else {
         return null;
       }
@@ -49,6 +49,14 @@ public class CompositeSourceSupplier<SourceId1T extends SourceId, SourceId2T ext
     } else {
       return mySup2.loadSource(sourceId.source2, errorReporter);
     }
+  }
+
+  public SourceId idFromFirst(SourceId1T sourceId) {
+    return new SourceId(sourceId, null);
+  }
+
+  public SourceId idFromSecond(SourceId2T sourceId) {
+    return new SourceId(null, sourceId);
   }
 
   public class SourceId implements com.jetbrains.jetpad.vclang.module.source.SourceId {

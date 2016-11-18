@@ -787,7 +787,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       }
 
       myState.record(def, typedDef);
-      typedDef.hasErrors(!classOk);
+      typedDef.hasErrors(classOk ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.HAS_ERRORS);
       return typedDef;
     } catch (Namespace.InvalidNamespaceException e) {
       myErrorReporter.report(e.toError());

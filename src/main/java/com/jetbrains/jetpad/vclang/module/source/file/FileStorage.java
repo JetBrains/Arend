@@ -65,6 +65,10 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
     }
   }
 
+  public SourceId locateModule(ModulePath modulePath, long mtime) {
+    return new SourceId(modulePath, mtime);
+  }
+
   @Override
   public boolean isAvailable(SourceId sourceId) {
     if (sourceId.getStorage() != this) return false;
@@ -137,6 +141,10 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
 
     public Path getFilePath() {
       return myRoot.toPath().relativize(baseFileFromPath(myModulePath).toPath());
+    }
+
+    public long getLastModified() {
+      return myMtime;
     }
 
     @Override

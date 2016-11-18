@@ -24,7 +24,6 @@ public class NameResolver {
   }
 
   public void setModuleLoader(ModuleLoader moduleLoader) {
-    assert myModuleLoader == null;
     myModuleLoader = moduleLoader;
   }
 
