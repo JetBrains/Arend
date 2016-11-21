@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
+import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.module.BaseModuleLoader;
@@ -150,7 +151,7 @@ public class ConsoleMain {
       }
     }
 
-    final Set<SourceId> failedModules = new HashSet<>();
+    final Map<SourceId, ModuleResult> failedModules = new HashMap<>();
 
     TypecheckingOrdering.typecheck(state, staticNsProvider, dynamicNsProvider, modulesToTypeCheck, errorReporter, new TypecheckedReporter() {
       @Override
@@ -160,9 +161,20 @@ public class ConsoleMain {
 
       @Override
       public void typecheckingFailed(Abstract.Definition definition) {
-        failedModules.add(srcInfoCollector.sourceInfoProvider.sourceOf(definition));
+        boolean goals = false;
+        boolean errors = false;
         for (GeneralError error : errorReporter.getErrorList()) {
+          if (error.getLevel() == Error.Level.GOAL) {
+            goals = true;
+          }
+          if (error.getLevel() == Error.Level.ERROR) {
+            errors = true;
+          }
           System.err.println(errf.printError(error));
+        }
+
+        if (errors || goals) {
+          failedModules.put(srcInfoCollector.sourceInfoProvider.sourceOf(definition), errors ? ModuleResult.ERRORS : ModuleResult.GOALS);
         }
         errorReporter.getErrorList().clear();
       }
@@ -170,7 +182,8 @@ public class ConsoleMain {
 
     for (SourceId moduleID : loadedModules) {
       StringBuilder builder = new StringBuilder();
-      builder.append("[").append(failedModules.contains(moduleID) ? "✗" : " ").append("]")
+      ModuleResult result = failedModules.get(moduleID);
+      builder.append("[").append(result == ModuleResult.ERRORS ? "✗" : result == ModuleResult.GOALS ? "o" : " ").append("]")
              .append(" ").append(moduleID.getModulePath())
              .append(" (").append(moduleID).append(")");
       System.out.println(builder);
@@ -182,6 +195,8 @@ public class ConsoleMain {
 
     // TODO: Serialize typechecked modules
   }
+
+  private enum ModuleResult { GOALS, ERRORS, OK }
 
   static private <SourceIdT extends SourceId> void processFile(SourceSupplier<SourceIdT> storage, SourceModuleLoader<SourceIdT> moduleLoader, ListErrorReporter errorReporter, ErrorFormatter errf, File file) {
     if (!file.getName().endsWith(FileStorage.EXTENSION)) return;

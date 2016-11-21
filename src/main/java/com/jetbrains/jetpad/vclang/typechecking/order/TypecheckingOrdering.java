@@ -1,11 +1,12 @@
 package com.jetbrains.jetpad.vclang.typechecking.order;
 
+import com.jetbrains.jetpad.vclang.error.CompositeErrorReporter;
+import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
@@ -182,9 +183,9 @@ public class TypecheckingOrdering {
     if (result instanceof OKResult) {
       for (Map.Entry<Abstract.Definition, Abstract.ClassDefinition> entry : ((OKResult) result).order.entrySet()) {
         Abstract.Definition def = entry.getKey();
-        DefinitionCheckTypeVisitor.typeCheck(state, staticNsProvider, dynamicNsProvider, entry.getValue() == null ? null : (ClassDefinition) state.getTypechecked(entry.getValue()), def, new ProxyErrorReporter(def, errorReporter), isPrelude);
-        Definition typechecked = state.getTypechecked(def);
-        if (typechecked == null || typechecked.hasErrors() != Definition.TypeCheckingStatus.NO_ERRORS) {
+        CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
+        DefinitionCheckTypeVisitor.typeCheck(state, staticNsProvider, dynamicNsProvider, entry.getValue() == null ? null : (ClassDefinition) state.getTypechecked(entry.getValue()), def, new ProxyErrorReporter(def, new CompositeErrorReporter(errorReporter, countingErrorReporter)), isPrelude);
+        if (countingErrorReporter.getErrorsNumber() > 0) {
           typecheckedReporter.typecheckingFailed(def);
         } else {
           typecheckedReporter.typecheckingSucceeded(def);
