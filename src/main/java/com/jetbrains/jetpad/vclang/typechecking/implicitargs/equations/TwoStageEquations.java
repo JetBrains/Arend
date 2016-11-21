@@ -271,11 +271,11 @@ public class TwoStageEquations implements Equations {
     solveClassCalls();
 
     Map<InferenceLevelVariable, Integer> solution = new HashMap<>();
-    List<LevelEquation<InferenceLevelVariable>> circle = myLevelEquations.solve(solution);
-    if (circle != null) {
-      LevelEquation<InferenceLevelVariable> lastEquation = circle.get(circle.size() - 1);
+    List<LevelEquation<InferenceLevelVariable>> cycle = myLevelEquations.solve(solution);
+    if (cycle != null) {
+      LevelEquation<InferenceLevelVariable> lastEquation = cycle.get(cycle.size() - 1);
       InferenceLevelVariable var = lastEquation.getVariable1() != null ? lastEquation.getVariable1() : lastEquation.getVariable2();
-      myVisitor.getErrorReporter().report(new SolveLevelEquationsError(new ArrayList<LevelEquation<? extends Variable>>(circle), var.getSourceNode()));
+      myVisitor.getErrorReporter().report(new SolveLevelEquationsError(new ArrayList<LevelEquation<? extends Variable>>(cycle), var.getSourceNode()));
     }
 
     Map<Variable, Level> result = new HashMap<>();

@@ -347,7 +347,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         if (def.getUniverse() instanceof Abstract.PolyUniverseExpression) {
           userSorts = visitor.sortMax((Abstract.PolyUniverseExpression)def.getUniverse());
         } else if (def.getUniverse() instanceof Abstract.UniverseExpression) {
-          CheckTypeVisitor.Result result = visitor.checkType(def.getUniverse(), Universe());
+          CheckTypeVisitor.Result result = visitor.checkType(def.getUniverse(), new PiTypeOmega(EmptyDependentLink.getInstance()));
           if (result != null) {
             userSorts = new SortMax(result.getExpression().toUniverse().getSort());
           }

@@ -332,11 +332,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         ExprSubstitution exprSubst = new ExprSubstitution();
         allArgs = DependentLink.Helper.toList(DependentLink.Helper.mergeList(allArgs, exprSubst));
 
-        //LevelSubstitution levelSubst = myEquations.solve(type);
-        //ExprSubstitution subst = new ExprSubstitution();
-        //allArgs = DependentLink.Helper.subst(allArgs, subst, levelSubst);
-        //exprSubst = subst.compose(exprSubst); // exprSubst.compose(subst);
-        LocalErrorReporterCounter counter = new LocalErrorReporterCounter(myErrorReporter);
         return codomain.subst(exprSubst, new LevelSubstitution()).fromPiParameters(allArgs);
       }
     } else if (type instanceof Abstract.PolyUniverseExpression) {
@@ -347,7 +342,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     } else if (type instanceof Abstract.TypeOmegaExpression) {
       return new PiTypeOmega(EmptyDependentLink.getInstance());
     }
-    Result result = checkType(type, new PiTypeOmega(EmptyDependentLink.getInstance()));
+    Result result = typeCheck(type, new PiTypeOmega(EmptyDependentLink.getInstance()));
     if (result == null) return null;
     return result.getExpression();
   }
