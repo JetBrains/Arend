@@ -183,6 +183,7 @@ public class TypecheckingOrdering {
     if (result instanceof OKResult) {
       for (Map.Entry<Abstract.Definition, Abstract.ClassDefinition> entry : ((OKResult) result).order.entrySet()) {
         Abstract.Definition def = entry.getKey();
+        if (state.getTypechecked(def) != null) continue;
         CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
         DefinitionCheckTypeVisitor.typeCheck(state, staticNsProvider, dynamicNsProvider, entry.getValue() == null ? null : (ClassDefinition) state.getTypechecked(entry.getValue()), def, new ProxyErrorReporter(def, new CompositeErrorReporter(errorReporter, countingErrorReporter)), isPrelude);
         if (countingErrorReporter.getErrorsNumber() > 0) {
