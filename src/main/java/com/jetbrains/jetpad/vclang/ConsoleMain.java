@@ -31,17 +31,20 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
 public class ConsoleMain {
-  public static void main(String[] args) {
-    Options cmdOptions = new Options();
+  private static Options cmdOptions = new Options();
+
+  static {
     cmdOptions.addOption("h", "help", false, "print this message");
     cmdOptions.addOption(Option.builder("s").longOpt("source").hasArg().argName("dir").desc("source directory").build());
     //cmdOptions.addOption(Option.builder("o").longOpt("output").hasArg().argName("dir").desc("output directory").build());
     //cmdOptions.addOption(Option.builder("L").hasArg().argName("dir").desc("add <dir> to the list of directories searched for libraries").build());
     cmdOptions.addOption(Option.builder().longOpt("recompile").desc("recompile files").build());
-    CommandLineParser cmdParser = new DefaultParser();
-    CommandLine cmdLine;
+  }
+
+  public static void main(String[] args) {
+    final CommandLine cmdLine;
     try {
-      cmdLine = cmdParser.parse(cmdOptions, args);
+      cmdLine = new DefaultParser().parse(cmdOptions, args);
     } catch (ParseException e) {
       System.err.println(e.getMessage());
       return;
