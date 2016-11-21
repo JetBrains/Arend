@@ -36,4 +36,16 @@ public class TypeOmega extends TypeCheckingTestCase {
          "\\function f {lp : Lvl} {lh : CNat} (A : \\Type (lp,lh)) => A\n" +
          "\\function g (A : \\Type) => f A");
   }
+
+  @Test
+  public void typeOmegaResult() {
+    typeCheckClass("\\function f {lp : Lvl} {lh : CNat} (A : \\Type (lp,lh)) : \\Type => A");
+  }
+
+  @Test
+  public void callNonPolyFromOmega() {
+    typeCheckClass(
+        "\\function f (A : \\Type0) => 0\n" +
+        "\\function g (A : \\Type) => f A", 1);
+  }
 }
