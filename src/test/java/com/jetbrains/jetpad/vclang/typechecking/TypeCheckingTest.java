@@ -88,14 +88,16 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   @Test
   public void testTransport1() {
     typeCheckDef("\\function transport {A : \\Type1} (B : A -> \\Type1) {a a' : A} (p : a = a') (b : B a) : B a' =>\n" +
-        "coe (\\lam i => B ((@) {_} {_} {\\lam _ => A} {a} {a'} p i)) b right");
+        "coe (\\lam i => B ((@) {\\lam _ => A} {a} {a'} p i)) b right");
   }
 
+  // TODO: Remove or modify the obsolete test below!
+  /*
   @Test
   public void testTransport1Error() {
     typeCheckDef("\\function transport {A : \\Type1} (B : A -> \\Type1) {a a' : A} (p : a = a') (b : B a) : B a' =>\n" +
         "coe (\\lam i => B ((@) {zero} {inf} {\\lam _ => A} {a} {a'} p i)) b right", 1);
-  }
+  } /**/
 
   @Test
   public void testAt() {

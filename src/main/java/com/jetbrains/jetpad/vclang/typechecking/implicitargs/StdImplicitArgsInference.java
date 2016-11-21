@@ -82,26 +82,29 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       }
     } else {
       DefCallExpression defCall = result.getExpression().toDefCall();
-      int numLevelArgs = result.getLevels().size();
-      if (defCall != null && numLevelArgs < defCall.getDefinition().getPolyParams().size()) {
-        Binding param = defCall.getDefinition().getPolyParams().get(numLevelArgs);
-        Level level = null;
-        if (!(arg instanceof Abstract.InferHoleExpression)) {
-          level = myVisitor.typeCheckLevel(arg, null, param.getType().toExpression().toDefCall().getDefinition() == Prelude.CNAT ? -1 : 0);
-          if (level == null) {
-            return null;
+      if (defCall != null) {
+        List<Integer> userPolyParams = Binding.Helper.getSublistOfUserBindings(defCall.getDefinition().getPolyParams());
+        int numLevelArgs = result.getLevels().size();
+        if (numLevelArgs < userPolyParams.size()) {
+          Binding param = defCall.getDefinition().getPolyParams().get(userPolyParams.get(numLevelArgs));
+          Level level = null;
+          if (!(arg instanceof Abstract.InferHoleExpression)) {
+            level = myVisitor.typeCheckLevel(arg, null, param.getType().toExpression().toDefCall().getDefinition() == Prelude.CNAT ? -1 : 0);
+            if (level == null) {
+              return null;
+            }
           }
-        }
-        result.applyLevels(Collections.singletonList(level));
-        if (level != null) {
-          Level oldValue = defCall.getPolyArguments().getLevels().get(numLevelArgs);
-          if (oldValue == null) {
-            assert false;
-            return null;
+          result.applyLevels(Collections.singletonList(level));
+          if (level != null) {
+            Level oldValue = defCall.getPolyArguments().getLevels().get(userPolyParams.get(numLevelArgs));
+            if (oldValue == null) {
+              assert false;
+              return null;
+            }
+            myVisitor.getEquations().add(oldValue, level, Equations.CMP.EQ, fun);
           }
-          myVisitor.getEquations().add(oldValue, level, Equations.CMP.EQ, fun);
+          return result;
         }
-        return result;
       }
     }
 

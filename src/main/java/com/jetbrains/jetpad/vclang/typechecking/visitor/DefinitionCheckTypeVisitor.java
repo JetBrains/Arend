@@ -129,8 +129,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     TypedBinding lhParam;
 
     if (polyParams.isEmpty()) {
-      lpParam = new TypedBinding("lp-gen", Lvl());
-      lhParam = new TypedBinding("lh-gen", CNat());
+      lpParam = new TypedBinding("\\lp-gen", Lvl());
+      lhParam = new TypedBinding("\\lh-gen", CNat());
       polyParams.add(lpParam);
       polyParams.add(lhParam);
     } else {
@@ -247,14 +247,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     Type expectedTypeErased = null;
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
-      expectedType = visitor.checkFunOrDataType(resultType); //visitor.checkType(resultType, Universe());
+      expectedType = visitor.checkFunOrDataType(resultType);
       if (expectedType != null) {
         if (expectedType.toExpression() != null) {
           expectedTypeErased = expectedType.toExpression();
         } else if (expectedType instanceof PiTypeOmega) {
+          expectedTypeErased = (Type) expectedType;
           expectedType = typeOmegaToUniverse((PiTypeOmega) expectedType, generatedPolyParams);
           generatedExpectedType = true;
-          expectedTypeErased = (Expression) expectedType;
         } else {
           expectedTypeErased = PiTypeOmega.toPiTypeOmega(expectedType);
         }
