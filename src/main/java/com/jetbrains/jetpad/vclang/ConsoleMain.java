@@ -62,7 +62,7 @@ public class ConsoleMain {
     final OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(errorReporter, new ConcreteResolveListener(), moduleNsProvider, staticNsProvider, dynamicNsProvider);
     final OneshotSourceInfoCollector<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> srcInfoCollector = new OneshotSourceInfoCollector<>();
     final ErrorFormatter errf = new ErrorFormatter(srcInfoCollector.sourceInfoProvider);
-    final List<SourceId> loadedModules = new ArrayList<>();
+    final List<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> loadedModules = new ArrayList<>();
     final List<Abstract.Definition> modulesToTypeCheck = new ArrayList<>();
     final Map<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId, Map<String, Abstract.Definition>> definitionIds = new HashMap<>();
 
@@ -180,12 +180,14 @@ public class ConsoleMain {
       }
     }, false);
 
-    for (SourceId moduleID : loadedModules) {
+    for (CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId moduleId : loadedModules) {
       StringBuilder builder = new StringBuilder();
-      ModuleResult result = failedModules.get(moduleID);
-      builder.append("[").append(result == ModuleResult.ERRORS ? "✗" : result == ModuleResult.GOALS ? "o" : " ").append("]")
-             .append(" ").append(moduleID.getModulePath())
-             .append(" (").append(moduleID).append(")");
+      ModuleResult result = failedModules.get(moduleId);
+      builder.append("[").append(result == ModuleResult.ERRORS ? "✗" : result == ModuleResult.GOALS ? "o" : " ").append("]");
+      builder.append(" ").append(moduleId.getModulePath());
+      if (moduleId.source2 != null) {
+        builder.append(" (").append(moduleId.source2).append(")");
+      }
       System.out.println(builder);
     }
 
