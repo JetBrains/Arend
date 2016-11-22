@@ -74,11 +74,11 @@ public class ConsoleMain {
 
     sourceDirStr = cmdLine.getOptionValue("s");
     sourceDir = new File(sourceDirStr == null ? System.getProperty("user.dir") : sourceDirStr);
-    storage = createStorage(sourceDir, errorReporter);
+    storage = createStorage(sourceDir);
 
     boolean recompile = cmdLine.hasOption("recompile");
     ModuleLoadingListener moduleLoadingListener = new ModuleLoadingListener(srcInfoCollector);
-    moduleLoader = createModuleLoader(storage, moduleLoadingListener);
+    moduleLoader = createModuleLoader(storage, errorReporter, moduleLoadingListener);
 
     Namespace preludeNamespace = loadPrelude();
     moduleLoadingListener.setPreludeNamespace(preludeNamespace);
@@ -86,14 +86,14 @@ public class ConsoleMain {
     argFiles = cmdLine.getArgList();
   }
 
-  private static CompositeStorage<Prelude.SourceId, FileStorage.SourceId> createStorage(File sourceDir, ErrorReporter errorReporter) {
-    Prelude.PreludeStorage preludeStorage = new Prelude.PreludeStorage(errorReporter);
-    FileStorage fileStorage = new FileStorage(sourceDir, errorReporter);
+  private static CompositeStorage<Prelude.SourceId, FileStorage.SourceId> createStorage(File sourceDir) {
+    Prelude.PreludeStorage preludeStorage = new Prelude.PreludeStorage();
+    FileStorage fileStorage = new FileStorage(sourceDir);
     return new CompositeStorage<>(preludeStorage, fileStorage, preludeStorage, fileStorage);
   }
 
-  private static SourceModuleLoader<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> createModuleLoader(CompositeStorage<Prelude.SourceId, FileStorage.SourceId> storage, ModuleLoadingListener moduleLoadingListener) {
-    return new BaseModuleLoader<>(storage, moduleLoadingListener);
+  private static SourceModuleLoader<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> createModuleLoader(CompositeStorage<Prelude.SourceId, FileStorage.SourceId> storage, ErrorReporter errorReporter, ModuleLoadingListener moduleLoadingListener) {
+    return new BaseModuleLoader<>(storage, errorReporter, moduleLoadingListener);
   }
 
   private Namespace loadPrelude() {

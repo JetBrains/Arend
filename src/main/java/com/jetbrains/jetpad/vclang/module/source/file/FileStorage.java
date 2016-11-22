@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.caching.CacheStorageSupplier;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.io.*;
 import java.nio.file.Path;
@@ -16,11 +17,9 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
   public static final String SERIALIZED_EXTENSION = ".vcc";
 
   private final File myRoot;
-  private final ErrorReporter myErrorReporter;
 
-  public FileStorage(File root, ErrorReporter errorReporter) {
+  public FileStorage(File root) {
     myRoot = root;
-    myErrorReporter = errorReporter;
   }
 
   public static ModulePath modulePath(String pathString) {
@@ -49,14 +48,14 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
   }
 
   @Override
-  public Result loadSource(SourceId sourceId) throws IOException {
+  public Result loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
     if (sourceId.getStorage() != this) return null;
     File file = sourceId.getSourceFile();
     if (file.exists()) {
       try {
-        FileSource fileSource = new FileSource(sourceId, file, myErrorReporter);
-        ParseSource.ParseSourceResult parseResult = fileSource.load();
-        return new Result(getCurrentEtag(sourceId), parseResult.definition, parseResult.errorCount);
+        FileSource fileSource = new FileSource(sourceId, file);
+        Abstract.ClassDefinition definition = fileSource.load(errorReporter);
+        return new Result(getCurrentEtag(sourceId), definition);
       } catch (FileNotFoundException ignored) {
       }
     }
@@ -162,8 +161,8 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
   }
 
   private static class FileSource extends ParseSource {
-    FileSource(com.jetbrains.jetpad.vclang.module.source.SourceId sourceId, File file, ErrorReporter errorReporter) throws FileNotFoundException {
-      super(sourceId, new FileInputStream(file), errorReporter);
+    FileSource(com.jetbrains.jetpad.vclang.module.source.SourceId sourceId, File file) throws FileNotFoundException {
+      super(sourceId, new FileInputStream(file));
     }
   }
 }

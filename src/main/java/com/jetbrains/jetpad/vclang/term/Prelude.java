@@ -122,11 +122,6 @@ public class Prelude extends SimpleNamespace {
     public final SourceId preludeSourceId = new SourceId();
 
     private final byte[] myPreludeEtag = new byte[0];
-    private final ErrorReporter myErrorReporter;
-
-    public PreludeStorage(ErrorReporter myErrorReporter) {
-      this.myErrorReporter = myErrorReporter;
-    }
 
     @Override
     public InputStream getCacheInputStream(SourceId sourceId) {
@@ -156,11 +151,11 @@ public class Prelude extends SimpleNamespace {
     }
 
     @Override
-    public Result loadSource(SourceId sourceId) throws IOException {
+    public Result loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
       if (sourceId != preludeSourceId) return null;
       InputStream stream = new FileInputStream(new File("lib/Prelude.vc"));
-      ParseSource.ParseSourceResult parseResult = new ParseSource(preludeSourceId, stream, myErrorReporter) {}.load();
-      return new Result(myPreludeEtag, parseResult.definition, parseResult.errorCount);
+      Abstract.ClassDefinition prelude = new ParseSource(preludeSourceId, stream) {}.load(errorReporter);
+      return new Result(myPreludeEtag, prelude);
     }
   }
 

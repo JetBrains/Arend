@@ -41,8 +41,8 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
     if (LOADED_PRELUDE == null) {
       ListErrorReporter internalErrorReporter = new ListErrorReporter();
-      Prelude.PreludeStorage preludeStorage = new Prelude.PreludeStorage(internalErrorReporter);
-      LOADED_PRELUDE = new BaseModuleLoader<>(preludeStorage, new BaseModuleLoader.ModuleLoadingListener()).load(preludeStorage.preludeSourceId).definition;
+      Prelude.PreludeStorage preludeStorage = new Prelude.PreludeStorage();
+      LOADED_PRELUDE = new BaseModuleLoader<>(preludeStorage, internalErrorReporter, new BaseModuleLoader.ModuleLoadingListener<Prelude.SourceId>()).load(preludeStorage.preludeSourceId).definition;
       assertThat("Failed loading Prelude", internalErrorReporter.getErrorList(), containsErrors(0));
 
       OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(internalErrorReporter, new ConcreteResolveListener(), moduleNsProvider, staticNsProvider, dynamicNsProvider);
