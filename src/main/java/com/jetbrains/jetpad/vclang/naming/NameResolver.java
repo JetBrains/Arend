@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.naming.error.WrongDefinition;
 import com.jetbrains.jetpad.vclang.naming.namespace.*;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 
 import java.util.List;
 
@@ -33,31 +32,6 @@ public class NameResolver {
     return ns;
   }
 
-  public ModuleNamespace resolveModuleNamespace(final Abstract.DefCallExpression moduleCall) {
-    if (moduleCall.getReferent() != null) {
-      if (moduleCall.getReferent() instanceof Abstract.ClassDefinition) {
-        return myModuleNamespaceProvider.forModule((Abstract.ClassDefinition) moduleCall.getReferent());
-      } else if (moduleCall.getReferent() instanceof ClassDefinition) {
-        return myModuleNamespaceProvider.forModule((ClassDefinition) moduleCall.getReferent());
-      } else {
-        return null;
-      }
-    }
-    if (moduleCall.getName() == null) {
-      throw new IllegalArgumentException();
-    }
-
-    final ModuleNamespace parentNs;
-    if (moduleCall.getExpression() == null) {
-      parentNs = myModuleNamespaceProvider.root();
-    } else if (moduleCall.getExpression() instanceof Abstract.DefCallExpression) {
-      parentNs = resolveModuleNamespace((Abstract.DefCallExpression) moduleCall.getExpression());
-    } else {
-      parentNs = null;
-    }
-    return parentNs != null ? parentNs.getSubmoduleNamespace(moduleCall.getName()) : null;
-  }
-
   public Abstract.Definition resolveDefinition(final Scope currentScope, final List<String> path) {
     if (path.isEmpty()) {
       throw new IllegalArgumentException();
@@ -69,7 +43,7 @@ public class NameResolver {
         if (ref == null) {
           return null;
         }
-        scope = staticNamespaceFor(ref);
+        scope = myStaticNamespaceProvider.forDefinition(ref);
       }
       return ref;
     }
@@ -89,7 +63,7 @@ public class NameResolver {
       Abstract.Definition exprTarget = resolveDefCall(currentScope, (Abstract.DefCallExpression) defCall.getExpression());
       final Namespace ns;
       if (exprTarget != null) {
-        ns = staticNamespaceFor(exprTarget);
+        ns = myStaticNamespaceProvider.forDefinition(exprTarget);
       } else {
         // TODO: implement this coherently
         // ns = resolveModuleNamespace((Abstract.DefCallExpression) defCall.getExpression());
@@ -113,20 +87,16 @@ public class NameResolver {
     if (moduleCall.getModule() != null) {
       return moduleCall.getModule();
     }
+
     if (moduleCall.getPath() == null) {
       throw new IllegalArgumentException();
     }
-
-    ModuleNamespace ns = myModuleNamespaceProvider.root();
-    for (String name : moduleCall.getPath()) {
-      ns = ns.getSubmoduleNamespace(name);
-      if (ns == null) return null;
-    }
-    return ns.getRegisteredClass();
+    ModuleNamespace ns = resolveModuleNamespace(moduleCall.getPath());
+    return ns == null ? null : ns.getRegisteredClass();
   }
 
   public Abstract.ClassField resolveClassField(Abstract.ClassDefinition classDefinition, String name, ErrorReporter errorReporter, Abstract.SourceNode cause) {
-    Abstract.Definition resolvedRef = dynamicNamespaceFor(classDefinition).resolveName(name);
+    Abstract.Definition resolvedRef = myDynamicNamespaceProvider.forClass(classDefinition).resolveName(name);
     if (resolvedRef instanceof Abstract.ClassField) {
       return (Abstract.ClassField) resolvedRef;
     } else {
@@ -149,11 +119,4 @@ public class NameResolver {
     return null;
   }
 
-  public Namespace staticNamespaceFor(Abstract.Definition ref) {
-    return myStaticNamespaceProvider.forDefinition(ref);
-  }
-
-  public Namespace dynamicNamespaceFor(Abstract.ClassDefinition ref) {
-    return myDynamicNamespaceProvider.forClass(ref);
-  }
 }

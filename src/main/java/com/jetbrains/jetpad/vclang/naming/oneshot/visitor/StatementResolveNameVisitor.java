@@ -67,7 +67,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
         if (stat.getPath().isEmpty()) {
           referredClass = moduleNamespace.getRegisteredClass();
         } else {
-          referredClass = myNameResolver.resolveDefinition(myNameResolver.staticNamespaceFor(moduleClass), stat.getPath());
+          referredClass = myNameResolver.resolveDefinition(myStaticNsProvider.forDefinition(moduleClass), stat.getPath());
         }
       }
 
@@ -79,7 +79,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
     }
 
     if (stat.getKind().equals(Abstract.NamespaceCommandStatement.Kind.OPEN)) {
-      Scope scope = myNameResolver.staticNamespaceFor(stat.getResolvedClass());
+      Scope scope = myStaticNsProvider.forDefinition(stat.getResolvedClass());
       if (stat.getNames() != null) {
         scope = new FilteredScope(scope, new HashSet<>(stat.getNames()), !stat.isHiding());
       }
