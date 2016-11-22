@@ -85,5 +85,10 @@ public class CompositeSourceSupplier<SourceId1T extends SourceId, SourceId2T ext
     public int hashCode() {
       return Objects.hash(getSourceSupplier(), source1, source2);
     }
+
+    @Override
+    public String toString() {
+      return getActualSourceId().toString();
+    }
   }
 }
