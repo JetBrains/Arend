@@ -51,11 +51,12 @@ public class BaseModuleLoader<SourceIdT extends SourceId> extends SourceModuleLo
         assert result.definition != null;
         myLoadedModules.put(sourceId, result);
         myListener.loadingSucceeded(sourceId, result.definition);
+        return result;
       } else {
         ModuleLoadingError error = new ModuleLoadingError(sourceId, "Module  contains " + errorCount + (errorCount == 1 ? " error" : " errors"));
         myListener.loadingError(sourceId, error);
+        return null;
       }
-      return result;
     } catch (IOException e) {
       myListener.loadingError(sourceId, new ModuleLoadingError(sourceId, GeneralError.ioError(e)));
     }
