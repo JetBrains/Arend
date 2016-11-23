@@ -1,6 +1,8 @@
 package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.module.ModuleLoader;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.error.WrongDefinition;
 import com.jetbrains.jetpad.vclang.naming.namespace.*;
@@ -13,20 +15,36 @@ public class NameResolver {
   private final ModuleNamespaceProvider myModuleNamespaceProvider;
   private final StaticNamespaceProvider myStaticNamespaceProvider;
   private final DynamicNamespaceProvider myDynamicNamespaceProvider;
+  private ModuleLoader myModuleLoader;
 
-  public NameResolver(ModuleNamespaceProvider myModuleNamespaceProvider, StaticNamespaceProvider myStaticNamespaceProvider,
-      DynamicNamespaceProvider myDynamicNamespaceProvider) {
+  public NameResolver(ModuleNamespaceProvider myModuleNamespaceProvider, StaticNamespaceProvider myStaticNamespaceProvider, DynamicNamespaceProvider myDynamicNamespaceProvider) {
     this.myModuleNamespaceProvider = myModuleNamespaceProvider;
     this.myStaticNamespaceProvider = myStaticNamespaceProvider;
     this.myDynamicNamespaceProvider = myDynamicNamespaceProvider;
   }
 
-  public ModuleNamespace resolveModuleNamespace(final List<String> path) {
+  public void setModuleLoader(ModuleLoader moduleLoader) {
+    assert myModuleLoader == null;
+    myModuleLoader = moduleLoader;
+  }
+
+  public ModuleNamespace resolveModuleNamespace(final ModulePath modulePath) {
+    ModuleNamespace ns = resolveModuleNamespace_(modulePath);
+    if (myModuleLoader != null && (ns == null || ns.getRegisteredClass() == null)) {
+      Abstract.ClassDefinition loadedClass = myModuleLoader.load(modulePath);
+      if (ns == null && loadedClass != null) {
+        ns = resolveModuleNamespace_(modulePath);
+      }
+    }
+    return ns;
+  }
+
+  private ModuleNamespace resolveModuleNamespace_(final ModulePath path) {
     ModuleNamespace ns = myModuleNamespaceProvider.root();
-    for (String name : path) {
+    for (String name : path.list()) {
       ns = ns.getSubmoduleNamespace(name);
       if (ns == null) {
-        return null;
+        break;
       }
     }
     return ns;
@@ -91,7 +109,7 @@ public class NameResolver {
     if (moduleCall.getPath() == null) {
       throw new IllegalArgumentException();
     }
-    ModuleNamespace ns = resolveModuleNamespace(moduleCall.getPath());
+    ModuleNamespace ns = resolveModuleNamespace(new ModulePath(moduleCall.getPath()));
     return ns == null ? null : ns.getRegisteredClass();
   }
 

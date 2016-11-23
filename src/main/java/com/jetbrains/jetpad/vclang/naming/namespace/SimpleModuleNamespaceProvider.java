@@ -14,14 +14,14 @@ public class SimpleModuleNamespaceProvider extends BaseModuleNamespaceProvider {
   }
 
   public ModuleNamespace registerModule(ModulePath modulePath, Abstract.ClassDefinition module) {
-    ModuleNamespace ns = registerModuleNs(modulePath, module);
+    SimpleModuleNamespace ns = registerModuleNs(modulePath, module);
     ns.registerClass(module);
     return ns;
   }
 
-  private ModuleNamespace registerModuleNs(ModulePath modulePath, Abstract.ClassDefinition module) {
+  private SimpleModuleNamespace registerModuleNs(ModulePath modulePath, Abstract.ClassDefinition module) {
     if (myMap.get(module) != null) throw new IllegalStateException();
-    ModuleNamespace ns = ensureModuleNamespace(root(), modulePath);
+    SimpleModuleNamespace ns = ensureModuleNamespace(root(), modulePath);
     myMap.put(module, ns);
     return ns;
   }

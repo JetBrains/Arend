@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.naming.oneshot.visitor;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
@@ -58,7 +59,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
         }
         referredClass = myNameResolver.resolveDefinition(myScope, stat.getPath());
       } else {
-        ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(stat.getModulePath());
+        ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(new ModulePath(stat.getModulePath()));
         Abstract.ClassDefinition moduleClass = moduleNamespace != null ? moduleNamespace.getRegisteredClass() : null;
         if (moduleClass == null) {
           myErrorReporter.report(new GeneralError("Module not found: " + stat.getModulePath(), stat));

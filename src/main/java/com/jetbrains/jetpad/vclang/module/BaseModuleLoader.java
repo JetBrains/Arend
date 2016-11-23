@@ -10,14 +10,11 @@ import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 public class BaseModuleLoader<SourceIdT extends SourceId> extends SourceModuleLoader<SourceIdT> {
   private final SourceSupplier<SourceIdT> mySourceSupplier;
   private final ErrorReporter myErrorReporter;
   private final ModuleLoadingListener<SourceIdT> myListener;
-  private final Map<SourceIdT, SourceSupplier.Result> myLoadedModules = new HashMap<>();
 
   public BaseModuleLoader(SourceSupplier<SourceIdT> sourceSupplier, ErrorReporter errorReporter, ModuleLoadingListener<SourceIdT> listener) {
     mySourceSupplier = sourceSupplier;
@@ -33,11 +30,6 @@ public class BaseModuleLoader<SourceIdT extends SourceId> extends SourceModuleLo
 
   @Override
   public SourceSupplier.Result load(SourceIdT sourceId) {
-    SourceSupplier.Result loaded = myLoadedModules.get(sourceId);
-    if (loaded != null) {
-      return loaded;
-    }
-
     try {
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter(Error.Level.ERROR);
       SourceSupplier.Result result = mySourceSupplier.loadSource(sourceId, new CompositeErrorReporter(myErrorReporter, countingErrorReporter));
@@ -49,7 +41,6 @@ public class BaseModuleLoader<SourceIdT extends SourceId> extends SourceModuleLo
       int errorCount = countingErrorReporter.getErrorsNumber();
       if (errorCount == 0) {
         assert result.definition != null;
-        myLoadedModules.put(sourceId, result);
         myListener.loadingSucceeded(sourceId, result.definition);
         return result;
       } else {
@@ -66,9 +57,9 @@ public class BaseModuleLoader<SourceIdT extends SourceId> extends SourceModuleLo
 
 
   public static class ModuleLoadingListener<SourceIdT extends SourceId> {
-    protected void loadingSucceeded(SourceIdT module, Abstract.ClassDefinition abstractDefinition) {
+    public void loadingSucceeded(SourceIdT module, Abstract.ClassDefinition abstractDefinition) {
     }
-    protected void loadingError(SourceIdT module, ModuleLoadingError loadingError) {
+    public void loadingError(SourceIdT module, ModuleLoadingError loadingError) {
     }
   }
 }

@@ -3,18 +3,18 @@ package com.jetbrains.jetpad.vclang.naming.namespace;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 
 public abstract class BaseModuleNamespaceProvider implements ModuleNamespaceProvider {
-  private final ModuleNamespace myRoot = new ModuleNamespace();
+  private final SimpleModuleNamespace myRoot = new SimpleModuleNamespace();
 
   @Override
-  public ModuleNamespace root() {
+  public SimpleModuleNamespace root() {
     return myRoot;
   }
 
-  protected static ModuleNamespace ensureModuleNamespace(ModuleNamespace rootNamespace, ModulePath modulePath) {
+  protected static SimpleModuleNamespace ensureModuleNamespace(SimpleModuleNamespace rootNamespace, ModulePath modulePath) {
     if (modulePath.list().length == 0) {
       return rootNamespace;
     }
-    ModuleNamespace parentNs = ensureModuleNamespace(rootNamespace, modulePath.getParent());
+    SimpleModuleNamespace parentNs = ensureModuleNamespace(rootNamespace, modulePath.getParent());
     return parentNs.ensureSubmoduleNamespace(modulePath.getName());
   }
 }

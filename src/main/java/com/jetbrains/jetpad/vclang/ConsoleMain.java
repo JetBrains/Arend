@@ -5,13 +5,11 @@ import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.module.BaseModuleLoader;
 import com.jetbrains.jetpad.vclang.module.source.CompositeSourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.CompositeStorage;
-import com.jetbrains.jetpad.vclang.module.source.SourceModuleLoader;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.file.FileStorage;
-import com.jetbrains.jetpad.vclang.module.utils.LoadModulesRecursively;
 import com.jetbrains.jetpad.vclang.naming.namespace.*;
-import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotNameResolver;
 import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotSourceInfoCollector;
+import com.jetbrains.jetpad.vclang.naming.oneshot.ResolvingModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.ConcreteResolveListener;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -52,11 +50,10 @@ public class ConsoleMain {
   private final CompositeStorage<Prelude.SourceId, FileStorage.SourceId> storage;
 
   // Modules
-  private final SourceModuleLoader<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> moduleLoader;
+  private final ResolvingModuleLoader<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> moduleLoader;
   private final Map<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId, Map<String, Abstract.Definition>> definitionIds = new HashMap<>();
 
   // Name resolving
-  private final SimpleModuleNamespaceProvider moduleNsProvider  = new SimpleModuleNamespaceProvider();
   private final SimpleStaticNamespaceProvider staticNsProvider  = new SimpleStaticNamespaceProvider();
   private final DynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
 
@@ -78,10 +75,10 @@ public class ConsoleMain {
 
     boolean recompile = cmdLine.hasOption("recompile");
     ModuleLoadingListener moduleLoadingListener = new ModuleLoadingListener(srcInfoCollector);
-    moduleLoader = createModuleLoader(storage, errorReporter, moduleLoadingListener);
+    moduleLoader = createModuleLoader(storage, errorReporter, moduleLoadingListener, staticNsProvider, dynamicNsProvider);
 
     Namespace preludeNamespace = loadPrelude();
-    moduleLoadingListener.setPreludeNamespace(preludeNamespace);
+    moduleLoader.setPreludeNamespace(preludeNamespace);
 
     argFiles = cmdLine.getArgList();
   }
@@ -92,8 +89,8 @@ public class ConsoleMain {
     return new CompositeStorage<>(preludeStorage, fileStorage, preludeStorage, fileStorage);
   }
 
-  private static SourceModuleLoader<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> createModuleLoader(CompositeStorage<Prelude.SourceId, FileStorage.SourceId> storage, ErrorReporter errorReporter, ModuleLoadingListener moduleLoadingListener) {
-    return new BaseModuleLoader<>(storage, errorReporter, moduleLoadingListener);
+  private static ResolvingModuleLoader<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> createModuleLoader(CompositeStorage<Prelude.SourceId, FileStorage.SourceId> storage, ErrorReporter errorReporter, ModuleLoadingListener moduleLoadingListener, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider) {
+    return new ResolvingModuleLoader<>(storage, moduleLoadingListener, staticNsProvider, dynamicNsProvider, new ConcreteResolveListener(), errorReporter);
   }
 
   private Namespace loadPrelude() {
@@ -185,13 +182,17 @@ public class ConsoleMain {
 
     final Set<Abstract.ClassDefinition> modulesToTypeCheck = new LinkedHashSet<>();
     for (CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId source : sources) {
-      SourceSupplier.Result loadingResult = moduleLoader.load(source);
-      flushErrors();
-      if (loadingResult == null || loadingResult.definition == null) {
+      Abstract.ClassDefinition definition = moduleLoader.getLoadedModule(source.getModulePath());
+      if (definition == null){
+        SourceSupplier.Result loadingResult = moduleLoader.load(source);
+        flushErrors();
+        definition = loadingResult != null ? loadingResult.definition : null;
+      }
+      if (definition == null) {
         results.put(source, ModuleResult.NOT_LOADED);
         continue;
       }
-      modulesToTypeCheck.add(loadingResult.definition);
+      modulesToTypeCheck.add(definition);
     }
 
     System.out.println("--- Checking ---");
@@ -243,31 +244,19 @@ public class ConsoleMain {
   private enum ModuleResult { UNKNOWN, OK, GOALS, NOT_LOADED, ERRORS }
 
   class ModuleLoadingListener extends BaseModuleLoader.ModuleLoadingListener<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> {
-    private final OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(errorReporter, new ConcreteResolveListener(), moduleNsProvider, staticNsProvider, dynamicNsProvider);
     private final OneshotSourceInfoCollector<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> mySrcInfoCollector;
-    private Namespace preludeNamespace = new EmptyNamespace();
 
     ModuleLoadingListener(OneshotSourceInfoCollector<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> srcInfoCollector) {
       mySrcInfoCollector = srcInfoCollector;
     }
 
-    void setPreludeNamespace(Namespace preludeNamespace) {
-      this.preludeNamespace = preludeNamespace;
-    }
-
     @Override
     public void loadingSucceeded(CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId module, Abstract.ClassDefinition abstractDefinition) {
-      if (abstractDefinition != null) {
-        if (!definitionIds.containsKey(module)) {
-          definitionIds.put(module, new HashMap<String, Abstract.Definition>());
-        }
-
-        new LoadModulesRecursively(moduleLoader).visitClass(abstractDefinition, null);
-
-        oneshotNameResolver.visitModule(abstractDefinition, preludeNamespace);
-        mySrcInfoCollector.visitModule(module, abstractDefinition);
+      assert abstractDefinition != null;
+      if (!definitionIds.containsKey(module)) {
+        definitionIds.put(module, new HashMap<String, Abstract.Definition>());
       }
-      moduleNsProvider.registerModule(module.getModulePath(), abstractDefinition);
+      mySrcInfoCollector.visitModule(module, abstractDefinition);
       System.out.println("[Loaded] " + displaySource(module, false));
     }
   }

@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming.oneshot;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespaceProvider;
@@ -27,5 +28,9 @@ public class OneshotNameResolver {
   public void visitModule(Abstract.ClassDefinition module, Scope globalScope) {
     DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, globalScope, myNameResolver, myErrorReporter, myResolveListener);
     visitor.visitClass(module, null);
+  }
+
+  public void setModuleLoader(ModuleLoader moduleLoader) {
+    myNameResolver.setModuleLoader(moduleLoader);
   }
 }
