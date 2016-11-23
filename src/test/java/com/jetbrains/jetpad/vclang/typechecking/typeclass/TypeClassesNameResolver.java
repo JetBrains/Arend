@@ -5,6 +5,11 @@ import org.junit.Test;
 
 public class TypeClassesNameResolver extends NameResolverTestCase {
   @Test
+  public void classNotInScope() {
+    resolveNamesClass("\\view Foo \\on X \\by X { }", 1);
+  }
+
+  @Test
   public void resolveNames() {
     resolveNamesClass(
         "\\class X {\n" +

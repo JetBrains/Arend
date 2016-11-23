@@ -5,11 +5,6 @@ import org.junit.Test;
 
 public class TypeClassesTypeChecking extends TypeCheckingTestCase {
   @Test
-  public void classNotInScope() {
-    typeCheckClass("\\view Foo \\on X \\by X { }", 1, 0);
-  }
-
-  @Test
   public void classViewFieldNotInScope() {
     typeCheckClass(
         "\\class X {\n" +

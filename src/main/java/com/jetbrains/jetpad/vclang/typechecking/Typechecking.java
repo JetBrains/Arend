@@ -29,6 +29,7 @@ public class Typechecking {
         cycle.add(unit.definition);
       }
       errorReporter.report(new TypeCheckingError(cycle.get(0), new CycleError(cycle)));
+      throw new SCCException();
     } else {
       SCC.TypecheckingUnit unit = scc.getUnits().iterator().next();
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
@@ -49,9 +50,11 @@ public class Typechecking {
       }
     });
 
-    for (Abstract.Definition definition : definitions) {
-      ordering.doOrder(definition);
-    }
+    try {
+      for (Abstract.Definition definition : definitions) {
+        ordering.doOrder(definition);
+      }
+    } catch (SCCException ignored) { }
   }
 
   private static class OrderDefinitionVisitor implements AbstractDefinitionVisitor<Void, Void>, AbstractStatementVisitor<Void, Void> {
@@ -90,7 +93,7 @@ public class Typechecking {
         statement.accept(this, null);
       }
       for (Abstract.Definition definition : def.getInstanceDefinitions()) {
-        definition.accept(this, null);
+        orderDefinition(definition);
       }
       return null;
     }
@@ -140,8 +143,12 @@ public class Typechecking {
       }
     });
 
-    for (Abstract.ClassDefinition classDef : classDefs) {
-      new OrderDefinitionVisitor(ordering).orderDefinition(classDef);
-    }
+    try {
+      for (Abstract.ClassDefinition classDef : classDefs) {
+        new OrderDefinitionVisitor(ordering).orderDefinition(classDef);
+      }
+    } catch (SCCException ignored) { }
   }
+
+  private static class SCCException extends RuntimeException { }
 }

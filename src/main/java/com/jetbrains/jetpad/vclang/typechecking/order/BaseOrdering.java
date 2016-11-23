@@ -40,16 +40,28 @@ public class BaseOrdering {
     return getEnclosingClass(parent);
   }
 
-  private Set<Abstract.Definition> getTypecheckable(Abstract.Definition referable) {
+  private Set<Abstract.Definition> getTypecheckable(Abstract.Definition referable, Abstract.ClassDefinition enclosingClass) {
     if (referable instanceof Abstract.ClassField) {
       return Collections.singleton(referable.getParent());
     }
+
     if (referable instanceof Abstract.Constructor) {
       return Collections.<Abstract.Definition>singleton(((Abstract.Constructor) referable).getDataType());
     }
+
     if (referable instanceof Abstract.ClassView) {
       return Collections.emptySet();
     }
+
+    if (referable instanceof Abstract.ClassDefinition && !referable.equals(enclosingClass)) {
+      Set<Abstract.Definition> result = new HashSet<>();
+      result.add(referable);
+      for (Abstract.Definition definition : ((Abstract.ClassDefinition) referable).getInstanceDefinitions()) {
+        result.add(definition);
+      }
+      return result;
+    }
+
     return Collections.singleton(referable);
   }
 
@@ -73,7 +85,7 @@ public class BaseOrdering {
 
     definition.accept(new DefinitionGetDepsVisitor(dependencies), null);
     for (Abstract.Definition referable : dependencies) {
-      for (Abstract.Definition dependency : getTypecheckable(referable)) {
+      for (Abstract.Definition dependency : getTypecheckable(referable, enclosingClass)) {
         dependsOn(definition, dependency);
         DefState state = myVertices.get(dependency);
         if (state == null) {
