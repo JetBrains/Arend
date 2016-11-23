@@ -805,53 +805,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
   public ClassField visitClassField(Abstract.ClassField def, ClassDefinition enclosingClass) {
     if (enclosingClass == null) throw new IllegalStateException();
 
-    List<? extends Abstract.Argument> arguments = def.getArguments();
-    Expression typedResultType;
     DependentLink thisParameter = createThisParam(enclosingClass);
     List<Binding> context = new ArrayList<>();
     context.add(thisParameter);
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, myStaticNsProvider, myDynamicNsProvider, context, myErrorReporter).instancePool(EmptyInstancePool.INSTANCE).thisClass(enclosingClass, Reference(thisParameter)).build();
     ClassField typedDef = new ClassField(def, Error(null, null), enclosingClass, thisParameter);
     myState.record(def, typedDef);
-
-    Map<String, TypedBinding> polyParams = new HashMap<>();
-    int index = 0;
-    LinkList list = new LinkList();
-    for (Abstract.Argument argument : arguments) {
-      if (argument instanceof Abstract.TypeArgument) {
-        Abstract.TypeArgument typeArgument = (Abstract.TypeArgument) argument;
-
-        if (isPolyParam(typeArgument)) {
-          Binding levelParam = visitPolyParam(typeArgument, polyParams, def);
-          if (levelParam == null) {
-            return typedDef;
-          }
-          context.add(levelParam);
-          ++index;
-          continue;
-        }
-
-        CheckTypeVisitor.Result result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), new PiTypeOmega(EmptyDependentLink.getInstance()));
-        if (result == null) {
-          return typedDef;
-        }
-
-        DependentLink param;
-        if (argument instanceof Abstract.TelescopeArgument) {
-          List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
-          param = param(argument.getExplicit(), names, result.getExpression());
-          index += names.size();
-        } else {
-          param = param(argument.getExplicit(), (String) null, result.getExpression());
-          index++;
-        }
-        list.append(param);
-        context.addAll(toContext(param));
-      } else {
-        myErrorReporter.report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, new Expression[0]));
-        return typedDef;
-      }
-    }
 
     Abstract.Expression resultType = def.getResultType();
     if (resultType == null) {
@@ -861,10 +820,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     if (typeResult == null) {
       return typedDef;
     }
-    typedResultType = typeResult.getExpression();
 
-    typedDef.setPolyParams(new ArrayList<>(polyParams.values()));
-    typedDef.setBaseType(list.isEmpty() ? typedResultType : Pi(list.getFirst(), typedResultType));
+    typedDef.setBaseType(typeResult.getExpression());
     typedDef.setThisClass(enclosingClass);
     return typedDef;
   }

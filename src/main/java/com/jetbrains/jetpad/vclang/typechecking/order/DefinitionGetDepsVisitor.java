@@ -38,19 +38,10 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Void,
 
   @Override
   public Void visitClassField(Abstract.ClassField def, Void params) {
-    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myDependencies);
-
-    for (Abstract.Argument arg : def.getArguments()) {
-      if (arg instanceof Abstract.TypeArgument) {
-        ((Abstract.TypeArgument) arg).getType().accept(visitor, null);
-      }
-    }
-
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
-      resultType.accept(visitor, null);
+      resultType.accept(new CollectDefCallsVisitor(myDependencies), null);
     }
-
     return null;
   }
 

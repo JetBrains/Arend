@@ -95,8 +95,6 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
 
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myParentScope, myContext, myNameResolver, myErrorReporter, myResolveListener);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      visitArguments(def.getArguments(), exprVisitor);
-
       Abstract.Expression resultType = def.getResultType();
       if (resultType != null) {
         resultType.accept(exprVisitor, null);

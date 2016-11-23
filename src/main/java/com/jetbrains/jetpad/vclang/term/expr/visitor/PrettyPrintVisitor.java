@@ -663,7 +663,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitClassField(Abstract.ClassField def, Void params) {
     myBuilder.append("\\field ");
     prettyPrintNameWithPrecedence(def);
-    prettyPrintArguments(def.getArguments(), Abstract.DefCallExpression.PREC);
 
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {

@@ -287,7 +287,6 @@ public final class Abstract {
   }
 
   public interface ClassField extends Definition {
-    List<? extends Argument> getArguments();
     Expression getResultType();
   }
 
