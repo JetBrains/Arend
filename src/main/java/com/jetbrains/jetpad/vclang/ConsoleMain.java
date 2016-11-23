@@ -137,14 +137,22 @@ public class ConsoleMain {
     flushErrors();
 
     // Output nice per-module typechecking results
+    int numWithErrors = 0;
     for (Map.Entry<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId, ModuleResult> entry : typeCheckResults.entrySet()) {
       if (!requestedSources.contains(entry.getKey())) {
         ModuleResult result = entry.getValue();
         reportTypeCheckResult(entry.getKey(), result == ModuleResult.OK ? ModuleResult.UNKNOWN : result);
+        if (result == ModuleResult.ERRORS) numWithErrors += 1;
       }
     }
     for (CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId source : requestedSources) {
-      reportTypeCheckResult(source, typeCheckResults.get(source));
+      ModuleResult result = typeCheckResults.get(source);
+      reportTypeCheckResult(source, result);
+      if (result == ModuleResult.ERRORS) numWithErrors += 1;
+    }
+    System.out.println("--- Done ---");
+    if (numWithErrors > 0) {
+      System.out.println("Number of modules with errors: " + numWithErrors);
     }
 
     // TODO: Serialize typechecked modules
@@ -209,7 +217,7 @@ public class ConsoleMain {
           }
         }
         assert errors || goals;
-        results.put(source, errors ? ModuleResult.ERRORS : ModuleResult.GOALS);
+        updateModuleResult(source, errors ? ModuleResult.ERRORS : ModuleResult.GOALS);
 
         flushErrors();
       }
