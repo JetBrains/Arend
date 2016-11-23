@@ -729,7 +729,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
           continue;
         }
 
-        ClassCallExpression typeCheckedSuperClass = result.getExpression().toClassCall();
+        ClassCallExpression typeCheckedSuperClass = result.getExpression().normalize(NormalizeVisitor.Mode.WHNF).toClassCall();
         if (typeCheckedSuperClass == null) {
           myErrorReporter.report(new LocalTypeCheckingError("Parent must be a class", aSuperClass.getSuperClass()));
           classOk = false;

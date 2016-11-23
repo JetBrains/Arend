@@ -2,7 +2,7 @@ grammar Vcgrammar;
 
 statements : statement*;
 
-statement : definition                                              # statDef
+statement : definition                                                        # statDef
           | nsCmd nsCmdRoot fieldAcc* (hidingOpt '(' name (',' name)* ')')?   # statCmd
           ;
 
@@ -16,7 +16,7 @@ definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?  
             | '\\field' precedence name ':' expr                                                          # defAbstract
             | '\\implement' name '=>' expr                                                                # defImplement
             | '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef?                    # defData
-            | '\\class' ID ('\\extends' atomFieldsAcc (',' atomFieldsAcc)*)? ('{' statements '}')? where? # defClass
+            | '\\class' ID ('\\extends' expr (',' expr)*)? ('{' statements '}')? where?                   # defClass
             | '\\view' ID '\\on' expr '\\by' name '{' classViewField* '}'                                 # defClassView
             | defaultInst '\\instance' ID tele* '=>' expr                                                 # defInstance
             ;

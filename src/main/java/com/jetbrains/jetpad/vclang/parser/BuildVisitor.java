@@ -527,7 +527,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.ClassDefinition visitDefClass(DefClassContext ctx) {
     if (ctx == null) return null;
 
-    List<Concrete.SuperClass> superClasses = new ArrayList<>(ctx.atomFieldsAcc().size());
+    List<Concrete.SuperClass> superClasses = new ArrayList<>(ctx.expr().size());
     List<Concrete.ClassField> fields = new ArrayList<>();
     List<Concrete.Implementation> implementations = new ArrayList<>();
     List<Concrete.Statement> globalStatements = visitWhere(ctx.where());
@@ -535,10 +535,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         ctx.statements() == null || ctx.statements().statement() == null ?
         Collections.<Concrete.Definition>emptyList() :
         visitInstanceStatements(ctx.statements().statement(), fields, implementations);
-    for (AtomFieldsAccContext atomFieldsCtx : ctx.atomFieldsAcc()) {
-      Concrete.Expression superExpr = visitAtomFieldsAcc(atomFieldsCtx);
+    for (ExprContext exprCtx : ctx.expr()) {
+      Concrete.Expression superExpr = visitExpr(exprCtx);
       if (superExpr != null) {
-        superClasses.add(new Concrete.SuperClass(tokenPosition(atomFieldsCtx.getStart()), superExpr));
+        superClasses.add(new Concrete.SuperClass(tokenPosition(exprCtx.getStart()), superExpr));
       }
     }
 

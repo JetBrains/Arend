@@ -154,7 +154,6 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "\\function g => \\new D { A => Nat | b => 3 | c => 3 | p => path (\\lam _ => 3)}");
   }
 
-  @Ignore
   @Test
   public void superClassExpression() {
     typeCheckClass(
@@ -224,7 +223,6 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "\\class D \\extends B, C\n");
   }
 
-  @Ignore
   @Test
   public void multipleDynamicInheritanceSameParent() {
     typeCheckClass(
