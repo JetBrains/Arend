@@ -75,7 +75,7 @@ public class ConsoleMain {
 
     boolean recompile = cmdLine.hasOption("recompile");
     ModuleLoadingListener moduleLoadingListener = new ModuleLoadingListener(srcInfoCollector);
-    moduleLoader = createModuleLoader(storage, errorReporter, moduleLoadingListener, staticNsProvider, dynamicNsProvider);
+    moduleLoader = createResolvingModuleLoader(storage, errorReporter, moduleLoadingListener, staticNsProvider, dynamicNsProvider);
 
     Namespace preludeNamespace = loadPrelude();
     moduleLoader.setPreludeNamespace(preludeNamespace);
@@ -89,7 +89,7 @@ public class ConsoleMain {
     return new CompositeStorage<>(preludeStorage, fileStorage, preludeStorage, fileStorage);
   }
 
-  private static ResolvingModuleLoader<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> createModuleLoader(CompositeStorage<Prelude.SourceId, FileStorage.SourceId> storage, ErrorReporter errorReporter, ModuleLoadingListener moduleLoadingListener, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider) {
+  private static ResolvingModuleLoader<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> createResolvingModuleLoader(CompositeStorage<Prelude.SourceId, FileStorage.SourceId> storage, ErrorReporter errorReporter, ModuleLoadingListener moduleLoadingListener, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider) {
     return new ResolvingModuleLoader<>(storage, moduleLoadingListener, staticNsProvider, dynamicNsProvider, new ConcreteResolveListener(), errorReporter);
   }
 
