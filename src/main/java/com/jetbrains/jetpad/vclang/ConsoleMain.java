@@ -19,7 +19,7 @@ import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.typechecking.SimpleTypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.order.TypecheckingOrdering;
+import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 import org.apache.commons.cli.*;
 
 import java.io.File;
@@ -98,7 +98,7 @@ public class ConsoleMain {
 
   private Namespace loadPrelude() {
     Abstract.ClassDefinition prelude = moduleLoader.load(Prelude.PreludeStorage.PRELUDE_MODULE_PATH);
-    TypecheckingOrdering.typecheck(state, staticNsProvider, dynamicNsProvider, Collections.singletonList(prelude), new DummyErrorReporter(), true);
+    Typechecking.typecheckModules(state, staticNsProvider, dynamicNsProvider, Collections.singletonList(prelude), new DummyErrorReporter(), new TypecheckedReporter.Dummy(), true);
     assert errorReporter.getErrorList().isEmpty();
     return staticNsProvider.forDefinition(prelude);
   }
@@ -188,7 +188,7 @@ public class ConsoleMain {
 
     System.out.println("--- Checking ---");
 
-    TypecheckingOrdering.typecheck(state, staticNsProvider, dynamicNsProvider, new ArrayList<>(modulesToTypeCheck), errorReporter, new TypecheckedReporter() {
+    Typechecking.typecheckModules(state, staticNsProvider, dynamicNsProvider, modulesToTypeCheck, errorReporter, new TypecheckedReporter() {
       @Override
       public void typecheckingSucceeded(Abstract.Definition definition) {
         CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId source = srcInfoProvider.sourceOf(definition);

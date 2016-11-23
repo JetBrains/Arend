@@ -15,7 +15,6 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
-import com.jetbrains.jetpad.vclang.typechecking.order.TypecheckingOrdering;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.DefinitionCheckTypeVisitor;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -28,7 +27,6 @@ import java.util.List;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 public class TypeCheckingTestCase extends NameResolverTestCase {
   @SuppressWarnings("StaticNonFinalField")
@@ -48,7 +46,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     if (PRELUDE_TYPECHECKER_STATE == null) {
       ListErrorReporter internalErrorReporter = new ListErrorReporter();
       PRELUDE_TYPECHECKER_STATE = new SimpleTypecheckerState();
-      assertTrue(TypecheckingOrdering.typecheck(PRELUDE_TYPECHECKER_STATE, staticNsProvider, dynamicNsProvider, Collections.singletonList(prelude), internalErrorReporter, true));
+      Typechecking.typecheckModules(PRELUDE_TYPECHECKER_STATE, staticNsProvider, dynamicNsProvider, Collections.singletonList(prelude), internalErrorReporter, new TypecheckedReporter.Dummy(), true);
       //assertThat(internalErrorReporter.getErrorList(), is(empty()));  // does not type-check by design
     }
 
@@ -112,7 +110,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   private TypecheckerState typeCheckClass(Concrete.ClassDefinition classDefinition, int errors) {
-    TypecheckingOrdering.typecheck(state, staticNsProvider, dynamicNsProvider, classDefinition, localErrorReporter);
+    Typechecking.typecheckModules(state, staticNsProvider, dynamicNsProvider, Collections.singletonList(classDefinition), localErrorReporter, new TypecheckedReporter.Dummy(), false);
     assertThat(errorList, containsErrors(errors));
     return state;
   }

@@ -4,192 +4,138 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CollectDefCallsVisitor;
 
-import java.util.*;
+import java.util.Set;
 
-public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boolean, Set<Abstract.Definition>> {
-  private final Queue<Abstract.Definition> myOthers;
-  private final Map<Abstract.Definition, List<Abstract.Definition>> myClassToNonStatics;
+public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Void, Void> {
+  private final Set<Abstract.Definition> myDependencies;
 
-  public DefinitionGetDepsVisitor(Queue<Abstract.Definition> myOthers, Map<Abstract.Definition, List<Abstract.Definition>> classToNonStatics) {
-    this.myOthers = myOthers;
-    myClassToNonStatics = classToNonStatics;
+  public DefinitionGetDepsVisitor(Set<Abstract.Definition> dependencies) {
+    myDependencies = dependencies;
   }
 
   @Override
-  public Set<Abstract.Definition> visitFunction(Abstract.FunctionDefinition def, Boolean isStatic) {
-    Set<Abstract.Definition> result = new HashSet<>();
-    // TODO: This statements might not be global.
-    visitGlobalStatements(result, def.getStatements(), isStatic);
-    if (isStatic) {
-      return result;
-    }
+  public Void visitFunction(Abstract.FunctionDefinition def, Void params) {
+    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myDependencies);
 
     for (Abstract.Argument arg : def.getArguments()) {
       if (arg instanceof Abstract.TypeArgument) {
-        ((Abstract.TypeArgument) arg).getType().accept(new CollectDefCallsVisitor(result), null);
+        ((Abstract.TypeArgument) arg).getType().accept(visitor, null);
       }
     }
 
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
-      resultType.accept(new CollectDefCallsVisitor(result), null);
+      resultType.accept(visitor, null);
     }
 
     Abstract.Expression term = def.getTerm();
     if (term != null) {
-      term.accept(new CollectDefCallsVisitor(result), null);
+      term.accept(visitor, null);
     }
 
-    return result;
+    return null;
   }
 
   @Override
-  public Set<Abstract.Definition> visitClassField(Abstract.ClassField def, Boolean params) {
-    throw new IllegalStateException();
-  }
+  public Void visitClassField(Abstract.ClassField def, Void params) {
+    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myDependencies);
 
-  private void visitClassField(Set<Abstract.Definition> result, Abstract.ClassField def) {
     for (Abstract.Argument arg : def.getArguments()) {
       if (arg instanceof Abstract.TypeArgument) {
-        ((Abstract.TypeArgument) arg).getType().accept(new CollectDefCallsVisitor(result), null);
+        ((Abstract.TypeArgument) arg).getType().accept(visitor, null);
       }
     }
 
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
-      resultType.accept(new CollectDefCallsVisitor(result), null);
+      resultType.accept(visitor, null);
     }
+
+    return null;
   }
 
   @Override
-  public Set<Abstract.Definition> visitData(Abstract.DataDefinition def, Boolean isStatic) {
-    if (isStatic)
-      return Collections.emptySet();
-
-    Set<Abstract.Definition> result = new HashSet<>();
+  public Void visitData(Abstract.DataDefinition def, Void params) {
+    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myDependencies);
 
     for (Abstract.TypeArgument param : def.getParameters()) {
-      param.getType().accept(new CollectDefCallsVisitor(result), null);
+      param.getType().accept(visitor, null);
     }
 
     for (Abstract.Constructor constructor : def.getConstructors()) {
-      visitConstructor(result, constructor);
+      visitConstructor(constructor, null);
     }
 
-    return result;
+    if (def.getConditions() != null) {
+      for (Abstract.Condition cond : def.getConditions()) {
+        cond.getTerm().accept(visitor, null);
+      }
+    }
+
+    return null;
   }
 
   @Override
-  public Set<Abstract.Definition> visitConstructor(Abstract.Constructor def, Boolean isStatic) {
-    throw new IllegalStateException();
-  }
+  public Void visitConstructor(Abstract.Constructor def, Void params) {
+    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myDependencies);
 
-  private void visitConstructor(Set<Abstract.Definition> result,  Abstract.Constructor def) {
     for (Abstract.TypeArgument arg : def.getArguments()) {
-      arg.getType().accept(new CollectDefCallsVisitor(result), null);
+      arg.getType().accept(visitor, null);
     }
-    if (def.getDataType().getConditions() != null) {
-      for (Abstract.Condition cond : def.getDataType().getConditions()) {
-        if (cond.getConstructorName().equals(def.getName())) {
-          cond.getTerm().accept(new CollectDefCallsVisitor(result), null);
-        }
-      }
-    }
-  }
 
-  public void visitGlobalStatements(Set<Abstract.Definition> result, Collection<? extends Abstract.Statement> statements, boolean isStatic) {
-    for (Abstract.Statement statement : statements) {
-      if (statement instanceof Abstract.DefineStatement) {
-        Abstract.DefineStatement defineStatement = (Abstract.DefineStatement) statement;
-        if (isStatic) {
-          result.add(defineStatement.getDefinition());
-          result.addAll(defineStatement.getDefinition().accept(new DefinitionGetDepsVisitor(myOthers, null), true));
-        } else {
-          if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.ClassView) {
-            // TODO: I'm not sure what to do here.
-            ((Abstract.ClassView) ((Abstract.DefineStatement) statement).getDefinition()).getUnderlyingClassDefCall().accept(new CollectDefCallsVisitor(result), null);
-          } else {
-            myOthers.add(defineStatement.getDefinition());
-          }
-        }
-      }
-    }
-  }
-
-  public void visitInstanceDefinitions(Set<Abstract.Definition> result, Abstract.Definition parent, Collection<? extends Abstract.Definition> definitions, boolean isStatic) {
-    Set<Abstract.Definition> nonStatic = !isStatic && parent instanceof Abstract.ClassDefinition ? new HashSet<Abstract.Definition>() : null;
-    for (Abstract.Definition definition : definitions) {
-      if (isStatic) {
-        if (parent instanceof Abstract.FunctionDefinition) {
-          result.add(definition);
-          result.addAll(definition.accept(new DefinitionGetDepsVisitor(myOthers, null), true));
-        }
-      } else {
-        myOthers.add(definition);
-        if (parent instanceof Abstract.ClassDefinition) {
-          nonStatic.add(definition);
-          nonStatic.addAll(definition.accept(new DefinitionGetDepsVisitor(myOthers, null), true));
-        }
-      }
-    }
-    if (nonStatic != null) {
-      myClassToNonStatics.put(parent, new ArrayList<>(nonStatic));
-    }
+    return null;
   }
 
   @Override
-  public Set<Abstract.Definition> visitClass(Abstract.ClassDefinition def, Boolean isStatic) {
-    Set<Abstract.Definition> result = new HashSet<>();
+  public Void visitClass(Abstract.ClassDefinition def, Void params) {
+    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myDependencies);
+
     for (Abstract.SuperClass superClass : def.getSuperClasses()) {
-      superClass.getSuperClass().accept(new CollectDefCallsVisitor(result), null);
+      superClass.getSuperClass().accept(visitor, null);
     }
-    if (!isStatic) {
-      for (Abstract.ClassField field : def.getFields()) {
-        visitClassField(result, field);
-      }
-      for (Abstract.Implementation implementation : def.getImplementations()) {
-        visitImplement(result, implementation);
-      }
+
+    for (Abstract.ClassField field : def.getFields()) {
+      visitClassField(field, null);
     }
-    visitGlobalStatements(result, def.getGlobalStatements(), isStatic);
-    visitInstanceDefinitions(result, def, def.getInstanceDefinitions(), isStatic);
-    return result;
-  }
 
-  @Override
-  public Set<Abstract.Definition> visitImplement(Abstract.Implementation def, Boolean isStatic) {
-    throw new IllegalStateException();
-  }
+    for (Abstract.Implementation implementation : def.getImplementations()) {
+      visitImplement(implementation, null);
+    }
 
-  @Override
-  public Set<Abstract.Definition> visitClassView(Abstract.ClassView def, Boolean params) {
     return null;
   }
 
   @Override
-  public Set<Abstract.Definition> visitClassViewField(Abstract.ClassViewField def, Boolean params) {
+  public Void visitImplement(Abstract.Implementation def, Void params) {
+    def.getImplementation().accept(new CollectDefCallsVisitor(myDependencies), null);
     return null;
   }
 
   @Override
-  public Set<Abstract.Definition> visitClassViewInstance(Abstract.ClassViewInstance def, Boolean params) {
-    Set<Abstract.Definition> result = new HashSet<>();
+  public Void visitClassView(Abstract.ClassView def, Void params) {
+    return null;
+  }
+
+  @Override
+  public Void visitClassViewField(Abstract.ClassViewField def, Void params) {
+    return null;
+  }
+
+  @Override
+  public Void visitClassViewInstance(Abstract.ClassViewInstance def, Void params) {
+    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myDependencies);
 
     for (Abstract.Argument arg : def.getArguments()) {
       if (arg instanceof Abstract.TypeArgument) {
-        ((Abstract.TypeArgument) arg).getType().accept(new CollectDefCallsVisitor(result), null);
+        ((Abstract.TypeArgument) arg).getType().accept(visitor, null);
       }
     }
 
     Abstract.Expression term = def.getTerm();
     if (term != null) {
-      term.accept(new CollectDefCallsVisitor(result), null);
+      term.accept(visitor, null);
     }
 
-    return result;
-  }
-
-  private void visitImplement(Set<Abstract.Definition> result, Abstract.Implementation def) {
-    def.getImplementation().accept(new CollectDefCallsVisitor(result), null);
+    return null;
   }
 }
