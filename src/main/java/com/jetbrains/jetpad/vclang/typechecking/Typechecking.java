@@ -26,18 +26,22 @@ public class Typechecking {
     if (scc.getUnits().size() > 1) {
       List<Abstract.Definition> cycle = new ArrayList<>(scc.getUnits().size());
       for (SCC.TypecheckingUnit unit : scc.getUnits()) {
-        cycle.add(unit.definition);
+        cycle.add(unit.typecheckable.definition);
       }
       errorReporter.report(new TypeCheckingError(cycle.get(0), new CycleError(cycle)));
       throw new SCCException();
     } else {
       SCC.TypecheckingUnit unit = scc.getUnits().iterator().next();
+      if (unit.typecheckable.isHeader) {
+        return;
+      }
+
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
-      DefinitionCheckTypeVisitor.typeCheck(state, staticNsProvider, dynamicNsProvider, unit.enclosingClass == null ? null : (ClassDefinition) state.getTypechecked(unit.enclosingClass), unit.definition, new ProxyErrorReporter(unit.definition, new CompositeErrorReporter(errorReporter, countingErrorReporter)));
+      DefinitionCheckTypeVisitor.typeCheck(state, staticNsProvider, dynamicNsProvider, unit.enclosingClass == null ? null : (ClassDefinition) state.getTypechecked(unit.enclosingClass), unit.typecheckable.definition, new ProxyErrorReporter(unit.typecheckable.definition, new CompositeErrorReporter(errorReporter, countingErrorReporter)));
       if (countingErrorReporter.getErrorsNumber() > 0) {
-        typecheckedReporter.typecheckingFailed(unit.definition);
+        typecheckedReporter.typecheckingFailed(unit.typecheckable.definition);
       } else {
-        typecheckedReporter.typecheckingSucceeded(unit.definition);
+        typecheckedReporter.typecheckingSucceeded(unit.typecheckable.definition);
       }
     }
   }

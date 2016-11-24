@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.order;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.typechecking.Typecheckable;
 
 import java.util.*;
 
@@ -18,14 +19,14 @@ public class BaseOrdering {
 
   private int myIndex = 0;
   private final Stack<SCC.TypecheckingUnit> myStack = new Stack<>();
-  private final Map<Abstract.Definition, DefState> myVertices = new HashMap<>();
+  private final Map<Typecheckable, DefState> myVertices = new HashMap<>();
   private final SCCListener myListener;
 
   public BaseOrdering(SCCListener listener) {
     myListener = listener;
   }
 
-  protected void dependsOn(Abstract.Definition def1, Abstract.Definition def2) {
+  protected void dependsOn(Typecheckable unit, Abstract.Definition def) {
 
   }
 
@@ -65,46 +66,57 @@ public class BaseOrdering {
     return Collections.singleton(referable);
   }
 
-  public void doOrder(final Abstract.Definition definition) {
-    if (!myVertices.containsKey(definition)) {
-      doOrderRecursively(definition);
+  public void doOrder(Abstract.Definition definition) {
+    Typecheckable typecheckable = new Typecheckable(definition, false);
+    if (!myVertices.containsKey(typecheckable)) {
+      doOrderRecursively(typecheckable);
     }
   }
 
-  private void doOrderRecursively(final Abstract.Definition definition) {
+  private void updateState(DefState currentState, Typecheckable dependency) {
+    DefState state = myVertices.get(dependency);
+    if (state == null) {
+      doOrderRecursively(dependency);
+      currentState.lowLink = Math.min(currentState.lowLink, myVertices.get(dependency).lowLink);
+    } else if (state.onStack) {
+      currentState.lowLink = Math.min(currentState.lowLink, state.index);
+    }
+  }
+
+  private void doOrderRecursively(Typecheckable typecheckable) {
+    Abstract.Definition definition = typecheckable.definition;
     Abstract.ClassDefinition enclosingClass = getEnclosingClass(definition);
+    SCC.TypecheckingUnit unit = new SCC.TypecheckingUnit(typecheckable, enclosingClass);
     DefState currentState = new DefState(myIndex);
-    myVertices.put(definition, currentState);
+    myVertices.put(typecheckable, currentState);
     myIndex++;
-    myStack.push(new SCC.TypecheckingUnit(definition, enclosingClass));
+    myStack.push(unit);
 
     Set<Abstract.Definition> dependencies = new HashSet<>();
     if (enclosingClass != null) {
       dependencies.add(enclosingClass);
     }
+    if (!typecheckable.isHeader && Typecheckable.hasHeader(definition)) {
+      updateState(currentState, new Typecheckable(definition, true));
+    }
 
-    definition.accept(new DefinitionGetDepsVisitor(dependencies), null);
+    definition.accept(new DefinitionGetDepsVisitor(dependencies), typecheckable.isHeader);
     for (Abstract.Definition referable : dependencies) {
       for (Abstract.Definition dependency : getTypecheckable(referable, enclosingClass)) {
-        dependsOn(definition, dependency);
-        DefState state = myVertices.get(dependency);
-        if (state == null) {
-          doOrderRecursively(dependency);
-          currentState.lowLink = Math.min(currentState.lowLink, myVertices.get(definition).lowLink);
-        } else if (state.onStack) {
-          currentState.lowLink = Math.min(currentState.lowLink, state.index);
+        if (!dependency.equals(definition)) {
+          dependsOn(unit.typecheckable, dependency);
+          updateState(currentState, new Typecheckable(dependency, false));
         }
       }
     }
 
     if (currentState.lowLink == currentState.index) {
       SCC scc = new SCC();
-      SCC.TypecheckingUnit unit;
       do {
         unit = myStack.pop();
-        myVertices.get(unit.definition).onStack = false;
+        myVertices.get(unit.typecheckable).onStack = false;
         scc.add(unit);
-      } while (!unit.definition.equals(definition));
+      } while (!unit.typecheckable.definition.equals(definition));
       myListener.sccFound(scc);
     }
   }

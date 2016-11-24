@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CollectDefCallsVisitor;
 
 import java.util.Set;
 
-public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Void, Void> {
+public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boolean, Void> {
   private final Set<Abstract.Definition> myDependencies;
 
   public DefinitionGetDepsVisitor(Set<Abstract.Definition> dependencies) {
@@ -14,7 +14,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Void,
   }
 
   @Override
-  public Void visitFunction(Abstract.FunctionDefinition def, Void params) {
+  public Void visitFunction(Abstract.FunctionDefinition def, Boolean isHeader) {
     CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myDependencies);
 
     for (Abstract.Argument arg : def.getArguments()) {
@@ -23,21 +23,23 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Void,
       }
     }
 
-    Abstract.Expression resultType = def.getResultType();
-    if (resultType != null) {
-      resultType.accept(visitor, null);
-    }
-
-    Abstract.Expression term = def.getTerm();
-    if (term != null) {
-      term.accept(visitor, null);
+    if (isHeader) {
+      Abstract.Expression resultType = def.getResultType();
+      if (resultType != null) {
+        resultType.accept(visitor, null);
+      }
+    } else {
+      Abstract.Expression term = def.getTerm();
+      if (term != null) {
+        term.accept(visitor, null);
+      }
     }
 
     return null;
   }
 
   @Override
-  public Void visitClassField(Abstract.ClassField def, Void params) {
+  public Void visitClassField(Abstract.ClassField def, Boolean params) {
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
       resultType.accept(new CollectDefCallsVisitor(myDependencies), null);
@@ -46,20 +48,27 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Void,
   }
 
   @Override
-  public Void visitData(Abstract.DataDefinition def, Void params) {
+  public Void visitData(Abstract.DataDefinition def, Boolean isHeader) {
     CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myDependencies);
 
-    for (Abstract.TypeArgument param : def.getParameters()) {
-      param.getType().accept(visitor, null);
-    }
+    if (isHeader) {
+      for (Abstract.TypeArgument param : def.getParameters()) {
+        param.getType().accept(visitor, null);
+      }
 
-    for (Abstract.Constructor constructor : def.getConstructors()) {
-      visitConstructor(constructor, null);
-    }
+      Abstract.Expression universe = def.getUniverse();
+      if (universe != null) {
+        universe.accept(visitor, null);
+      }
+    } else {
+      for (Abstract.Constructor constructor : def.getConstructors()) {
+        visitConstructor(constructor, null);
+      }
 
-    if (def.getConditions() != null) {
-      for (Abstract.Condition cond : def.getConditions()) {
-        cond.getTerm().accept(visitor, null);
+      if (def.getConditions() != null) {
+        for (Abstract.Condition cond : def.getConditions()) {
+          cond.getTerm().accept(visitor, null);
+        }
       }
     }
 
@@ -67,7 +76,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Void,
   }
 
   @Override
-  public Void visitConstructor(Abstract.Constructor def, Void params) {
+  public Void visitConstructor(Abstract.Constructor def, Boolean params) {
     CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myDependencies);
 
     for (Abstract.TypeArgument arg : def.getArguments()) {
@@ -78,7 +87,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Void,
   }
 
   @Override
-  public Void visitClass(Abstract.ClassDefinition def, Void params) {
+  public Void visitClass(Abstract.ClassDefinition def, Boolean params) {
     CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myDependencies);
 
     for (Abstract.SuperClass superClass : def.getSuperClasses()) {
@@ -97,23 +106,23 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Void,
   }
 
   @Override
-  public Void visitImplement(Abstract.Implementation def, Void params) {
+  public Void visitImplement(Abstract.Implementation def, Boolean params) {
     def.getImplementation().accept(new CollectDefCallsVisitor(myDependencies), null);
     return null;
   }
 
   @Override
-  public Void visitClassView(Abstract.ClassView def, Void params) {
+  public Void visitClassView(Abstract.ClassView def, Boolean params) {
     return null;
   }
 
   @Override
-  public Void visitClassViewField(Abstract.ClassViewField def, Void params) {
+  public Void visitClassViewField(Abstract.ClassViewField def, Boolean params) {
     return null;
   }
 
   @Override
-  public Void visitClassViewInstance(Abstract.ClassViewInstance def, Void params) {
+  public Void visitClassViewInstance(Abstract.ClassViewInstance def, Boolean params) {
     CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myDependencies);
 
     for (Abstract.Argument arg : def.getArguments()) {
