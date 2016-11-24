@@ -8,5 +8,4 @@ import java.io.OutputStream;
 public interface CacheStorageSupplier<SourceIdT extends SourceId> {
   InputStream getCacheInputStream(SourceIdT sourceId);
   OutputStream getCacheOutputStream(SourceIdT sourceId);
-  byte[] getCurrentEtag(SourceIdT sourceId);
 }

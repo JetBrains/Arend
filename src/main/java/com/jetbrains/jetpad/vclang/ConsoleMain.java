@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.module.BaseModuleLoader;
 import com.jetbrains.jetpad.vclang.module.source.CompositeSourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.CompositeStorage;
-import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.file.FileStorage;
 import com.jetbrains.jetpad.vclang.naming.namespace.*;
 import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotSourceInfoCollector;
@@ -184,9 +183,8 @@ public class ConsoleMain {
     for (CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId source : sources) {
       Abstract.ClassDefinition definition = moduleLoader.getLoadedModule(source.getModulePath());
       if (definition == null){
-        SourceSupplier.Result loadingResult = moduleLoader.load(source);
+        definition = moduleLoader.load(source);
         flushErrors();
-        definition = loadingResult != null ? loadingResult.definition : null;
       }
       if (definition == null) {
         results.put(source, ModuleResult.NOT_LOADED);

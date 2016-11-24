@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.module.source;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -31,7 +32,17 @@ public class CompositeSourceSupplier<SourceId1T extends SourceId, SourceId2T ext
   }
 
   @Override
-  public Result loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
+  public boolean isAvailable(SourceId sourceId) {
+    if (sourceId.getSourceSupplier() != this) return false;
+    if (sourceId.source1 != null) {
+      return mySup1.isAvailable(sourceId.source1);
+    } else {
+      return mySup2.isAvailable(sourceId.source2);
+    }
+  }
+
+  @Override
+  public Abstract.ClassDefinition loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
     if (sourceId.getSourceSupplier() != this) return null;
     if (sourceId.source1 != null) {
       return mySup1.loadSource(sourceId.source1, errorReporter);

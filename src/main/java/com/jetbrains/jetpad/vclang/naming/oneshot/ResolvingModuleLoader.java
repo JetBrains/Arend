@@ -28,13 +28,13 @@ public class ResolvingModuleLoader<SourceIdT extends SourceId> extends BaseModul
   }
 
   @Override
-  public SourceSupplier.Result load(SourceIdT sourceId) {
+  public Abstract.ClassDefinition load(SourceIdT sourceId) {
     if (myLoadedModules.containsKey(sourceId.getModulePath())) {
       throw new IllegalStateException("This path is already loaded");
     }
-    SourceSupplier.Result result = super.load(sourceId);
+    Abstract.ClassDefinition result = super.load(sourceId);
     if (result != null) {
-      myLoadedModules.put(sourceId.getModulePath(), result.definition);
+      myLoadedModules.put(sourceId.getModulePath(), result);
     }
     return result;
   }

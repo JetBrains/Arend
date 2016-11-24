@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheStorageSupplier<FileStorage.SourceId> {
   public static final String EXTENSION = ".vc";
@@ -38,24 +39,49 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
     return new ModulePath(names);
   }
 
+  private File baseFileFromPath(ModulePath modulePath) {
+    File file = myRoot;
+    for (String s : modulePath.list()) {
+      file = new File(file, s);
+    }
+    return file;
+  }
+
+  private File sourceFileFromPath(ModulePath modulePath) {
+    return new File(baseFileFromPath(modulePath).toPath() + EXTENSION);
+  }
+
+  private File cacheFileFromPath(ModulePath modulePath, long mtime) {
+    return new File(baseFileFromPath(modulePath).toPath() + SERIALIZED_EXTENSION + "-" + mtime);
+  }
+
   @Override
   public SourceId locateModule(ModulePath modulePath) {
-    return new SourceId(modulePath);
-  }
-
-  public SourceId locatePath(String pathString) {
-    return locateModule(modulePath(pathString));
+    File file = sourceFileFromPath(modulePath);
+    if (file.exists()) {
+      return new SourceId(modulePath, file.lastModified());
+    } else {
+      return null;
+    }
   }
 
   @Override
-  public Result loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
+  public boolean isAvailable(SourceId sourceId) {
+    if (sourceId.getStorage() != this) return false;
+    File file = sourceFileFromPath(sourceId.myModulePath);
+    return file.exists() && file.lastModified() == sourceId.myMtime;
+  }
+
+  @Override
+  public Abstract.ClassDefinition loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
     if (sourceId.getStorage() != this) return null;
-    File file = sourceId.getSourceFile();
+    File file = sourceFileFromPath(sourceId.myModulePath);
     if (file.exists()) {
       try {
         FileSource fileSource = new FileSource(sourceId, file);
         Abstract.ClassDefinition definition = fileSource.load(errorReporter);
-        return new Result(getCurrentEtag(sourceId), definition);
+        // Make sure we loaded the right revision
+        return file.lastModified() == sourceId.myMtime ? definition : null;
       } catch (FileNotFoundException ignored) {
       }
     }
@@ -65,7 +91,7 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
   @Override
   public InputStream getCacheInputStream(SourceId sourceId) {
     if (sourceId.getStorage() != this) return null;
-    File file = sourceId.getCacheFile();
+    File file = cacheFileFromPath(sourceId.myModulePath, sourceId.myMtime);
     if (file.exists()) {
       try {
         return new FileInputStream(file);
@@ -78,7 +104,7 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
   @Override
   public OutputStream getCacheOutputStream(SourceId sourceId) {
     if (sourceId.getStorage() != this) return null;
-    File file = sourceId.getCacheFile();
+    File file = cacheFileFromPath(sourceId.myModulePath, sourceId.myMtime);
     try {
       //noinspection ResultOfMethodCallIgnored
       file.createNewFile();
@@ -90,25 +116,14 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
     return null;
   }
 
-  @Override
-  public byte[] getCurrentEtag(SourceId sourceId) {
-    if (sourceId.getStorage() != this) return null;
-    int long_bytes = Long.SIZE / Byte.SIZE;
-    byte[] etag = new byte[long_bytes];
-    long mtime = sourceId.getSourceFile().lastModified();
-    for (int i = 0; i < long_bytes; ++i) {
-      etag[i] = (byte) (mtime >> i);
-    }
-    return etag;
-  }
 
-
-  // TODO: make private or package-local or I dunno
   public class SourceId implements com.jetbrains.jetpad.vclang.module.source.SourceId {
     private final ModulePath myModulePath;
+    private final long myMtime;
 
-    private SourceId(ModulePath modulePath) {
+    private SourceId(ModulePath modulePath, long mtime) {
       myModulePath = modulePath;
+      myMtime = mtime;
     }
 
     private FileStorage getStorage() {
@@ -120,43 +135,27 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
       return myModulePath;
     }
 
+    public Path getFilePath() {
+      return myRoot.toPath().relativize(baseFileFromPath(myModulePath).toPath());
+    }
+
     @Override
     public boolean equals(Object o) {
-      return o == this || o instanceof SourceId && getStorage().equals(((SourceId) o).getStorage()) && ((SourceId) o).myModulePath.equals(myModulePath);
+      return o == this ||
+             o instanceof SourceId &&
+             getStorage().equals(((SourceId) o).getStorage()) &&
+             myModulePath.equals(((SourceId) o).myModulePath) &&
+             myMtime == ((SourceId) o).myMtime;
     }
 
     @Override
     public int hashCode() {
-      return myModulePath.hashCode();
+      return Objects.hash(getStorage(), myModulePath, myMtime);
     }
 
     @Override
     public String toString() {
-      return getFile(EXTENSION).toString();
-    }
-
-    private File fileFromPath() {
-      File file = myRoot;
-      for (String s : myModulePath.list()) {
-        file = new File(file, s);
-      }
-      return file;
-    }
-
-    File getFile(String ext) {
-      return new File(fileFromPath().toPath() + ext);
-    }
-
-    File getSourceFile() {
-      return getFile(EXTENSION);
-    }
-
-    File getCacheFile() {
-      return getFile(SERIALIZED_EXTENSION);
-    }
-
-    public Path getPath() {
-      return myRoot.toPath().relativize(fileFromPath().toPath());
+      return sourceFileFromPath(myModulePath).toString();
     }
   }
 

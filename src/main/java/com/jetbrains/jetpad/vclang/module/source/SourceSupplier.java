@@ -8,15 +8,6 @@ import java.io.IOException;
 
 public interface SourceSupplier<SourceIdT extends SourceId> {
   SourceIdT locateModule(ModulePath modulePath);
-  Result loadSource(SourceIdT moduleSourceId, ErrorReporter errorReporter) throws IOException;
-
-  class Result {
-    public final byte[] etag;
-    public final Abstract.ClassDefinition definition;
-
-    public Result(byte[] etag, Abstract.ClassDefinition definition) {
-      this.etag = etag;
-      this.definition = definition;
-    }
-  }
+  boolean isAvailable(SourceIdT sourceId);
+  Abstract.ClassDefinition loadSource(SourceIdT sourceId, ErrorReporter errorReporter) throws IOException;
 }
