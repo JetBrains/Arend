@@ -29,7 +29,6 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
     TypeMax type = expr.getDefinition().getTypeWithParams(defParams, expr.getPolyArguments());
     assert expr.getDefCallArguments().size() == defParams.size();
     return type.subst(DependentLink.Helper.toSubstitution(defParams, expr.getDefCallArguments()), new LevelSubstitution());
-    // return expr.getDefinition().getType(expr.getPolyParamsSubst()).applyExpressions(expr.getDefCallArguments());
   }
 
   @Override
@@ -41,7 +40,6 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
     defParams = defParams.subList(expr.getDataTypeArguments().size(), defParams.size());
     subst.add(DependentLink.Helper.toSubstitution(defParams, expr.getDefCallArguments()));
     return type.subst(subst, new LevelSubstitution());
-    //return expr.getDefinition().getType(expr.getPolyParamsSubst()).applyExpressions(expr.getDataTypeArguments()).applyExpressions(expr.getDefCallArguments());
   }
 
   @Override
@@ -51,14 +49,12 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
 
   @Override
   public TypeMax visitReference(ReferenceExpression expr, Void params) {
-    return expr.getBinding().getType(); //TODO: do we need this copying .accept(new SubstVisitor(new ExprSubstitution(), new LevelSubstitution()), null);
+    return expr.getBinding().getType().subst(new ExprSubstitution(), new LevelSubstitution());
   }
 
   @Override
   public TypeMax visitInferenceReference(InferenceReferenceExpression expr, Void params) {
     return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : expr.getVariable().getType();
-    //TODO: do we need this copying
-    //.accept(new SubstVisitor(new ExprSubstitution(), new LevelSubstitution()), null);
   }
 
   @Override

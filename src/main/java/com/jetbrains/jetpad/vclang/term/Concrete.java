@@ -925,6 +925,11 @@ public final class Concrete {
     }
 
     @Override
+    public ClassDefinition getParent() {
+      return (ClassDefinition) super.getParent();
+    }
+
+    @Override
     public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitClassField(this, params);
     }

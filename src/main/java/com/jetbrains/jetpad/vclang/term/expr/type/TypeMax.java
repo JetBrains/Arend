@@ -29,7 +29,7 @@ public interface TypeMax extends PrettyPrintable {
   DependentLink getPiParameters();
   TypeMax getPiCodomain();
   TypeMax normalize(NormalizeVisitor.Mode mode);
-  TypeMax strip(Set<Binding> bounds, LocalErrorReporter errorReporter); // FIXME: wtf? Why LocalErrorReporter here??
+  TypeMax strip(Set<Binding> bounds, LocalErrorReporter errorReporter);
   Expression toExpression();
   boolean findBinding(Referable binding);
 }

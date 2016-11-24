@@ -288,6 +288,9 @@ public final class Abstract {
 
   public interface ClassField extends Definition {
     Expression getResultType();
+
+    @Override
+    ClassDefinition getParent();
   }
 
   public interface Implementation extends Definition {

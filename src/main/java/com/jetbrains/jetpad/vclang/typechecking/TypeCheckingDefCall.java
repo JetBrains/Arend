@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.naming.scope.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -144,7 +143,6 @@ public class TypeCheckingDefCall {
 
         if (thisExpr == null) {
           if (resolvedDefinition instanceof Abstract.ClassViewField) {
-            // TODO: if typeCheckedDefinition.getThisClass() is dynamic, then we should apply it to some this expression
             thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable(typeCheckedDefinition.getThisClass().getName() + "-inst", ClassCall(typeCheckedDefinition.getThisClass()), ((Abstract.ClassViewField) resolvedDefinition).getOwnView(), true, expr), myVisitor.getEquations());
           } else {
             LocalTypeCheckingError error;

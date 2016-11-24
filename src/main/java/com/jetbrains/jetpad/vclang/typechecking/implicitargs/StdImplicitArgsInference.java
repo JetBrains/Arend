@@ -30,7 +30,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     super(visitor);
   }
 
-  protected boolean fixImplicitArgs(CheckTypeVisitor.PreResult result, int numParams, Abstract.Expression expr) {
+  protected void fixImplicitArgs(CheckTypeVisitor.PreResult result, int numParams, Abstract.Expression expr) {
     ExprSubstitution substitution = new ExprSubstitution();
     for (int i = 0; i < numParams; i++) {
       DependentLink parameter = result.getParameters().get(0);
@@ -46,7 +46,6 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       result.applyExpressions(Collections.singletonList(binding));
       substitution.add(parameter, binding);
     }
-    return true;
   }
 
   protected CheckTypeVisitor.PreResult inferArg(CheckTypeVisitor.PreResult result, Abstract.Expression arg, boolean isExplicit, Abstract.Expression fun) {
@@ -75,11 +74,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         return result;
       }
 
-      List<DependentLink> params = new ArrayList<>();
-      result.getImplicitParameters(params);
-      if (!fixImplicitArgs(result, params.size(), fun)) {
-        return null;
-      }
+      fixImplicitArgs(result, result.getNumberOfImplicitParameters(), fun);
     } else {
       DefCallExpression defCall = result.getExpression().toDefCall();
       if (defCall != null) {
@@ -198,23 +193,18 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
   @Override
   public CheckTypeVisitor.Result inferTail(CheckTypeVisitor.Result result, Type expectedType, Abstract.Expression expr) {
-    List<DependentLink> actualParams = new ArrayList<>();
-    List<DependentLink> expectedParams = new ArrayList<>(actualParams.size());
-    Type expectedType1 = expectedType.getPiParameters(expectedParams, true, true);
-    result.getImplicitParameters(actualParams);
-    if (expectedParams.size() > actualParams.size()) {
-      LocalTypeCheckingError error = new TypeMismatchError(expectedType1.fromPiParameters(expectedParams), result.getType(), expr);
+    int actualParams = result.getNumberOfImplicitParameters();
+    List<DependentLink> expectedParams = new ArrayList<>(actualParams);
+    expectedType.getPiParameters(expectedParams, true, true);
+    if (expectedParams.size() > actualParams) {
+      LocalTypeCheckingError error = new TypeMismatchError(expectedType, result.getType(), expr);
       expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.getExpression(), error));
       myVisitor.getErrorReporter().report(error);
       return null;
     }
 
-    if (expectedParams.size() != actualParams.size()) {
-      int argsNumber = actualParams.size() - expectedParams.size();
-      if (!fixImplicitArgs(result, argsNumber, expr)) {
-        return null;
-      }
-      expectedType = expectedType1.fromPiParameters(expectedParams); // TODO: do we need this line?
+    if (expectedParams.size() != actualParams) {
+      fixImplicitArgs(result, actualParams - expectedParams.size(), expr);
     }
 
     return myVisitor.checkResult(expectedType, result, expr);

@@ -118,10 +118,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       this.parameters = result.parameters;
     }
 
-    public void getImplicitParameters(List<DependentLink> params) {
-      for (int i = 0; i < parameters.size() && !parameters.get(i).isExplicit(); ++i) {
-        params.add(parameters.get(i));
+    public int getNumberOfImplicitParameters() {
+      int number = 0;
+      for (DependentLink param : parameters) {
+        if (param.isExplicit()) {
+          break;
+        }
+        number++;
       }
+      return number;
     }
 
     public void applyThis(Expression thisExpr) {
