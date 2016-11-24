@@ -3,13 +3,21 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 public class Typecheckable {
-  public Abstract.Definition definition;
-  public boolean isHeader;
+  private final Abstract.Definition myDefinition;
+  private final boolean myHeader;
 
   public Typecheckable(Abstract.Definition definition, boolean isHeader) {
     assert !isHeader || hasHeader(definition);
-    this.definition = definition;
-    this.isHeader = isHeader;
+    this.myDefinition = definition;
+    this.myHeader = isHeader;
+  }
+
+  public Abstract.Definition getDefinition() {
+    return myDefinition;
+  }
+
+  public boolean isHeader() {
+    return myHeader;
   }
 
   public static boolean hasHeader(Abstract.Definition definition) {
@@ -23,14 +31,14 @@ public class Typecheckable {
 
     Typecheckable that = (Typecheckable) o;
 
-    if (isHeader != that.isHeader) return false;
-    return definition.equals(that.definition);
+    if (myHeader != that.myHeader) return false;
+    return myDefinition.equals(that.myDefinition);
   }
 
   @Override
   public int hashCode() {
-    int result = definition.hashCode();
-    result = 31 * result + (isHeader ? 1 : 0);
+    int result = myDefinition.hashCode();
+    result = 31 * result + (myHeader ? 1 : 0);
     return result;
   }
 }

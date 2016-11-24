@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking.order;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.Typecheckable;
+import com.jetbrains.jetpad.vclang.typechecking.TypecheckingUnit;
 
 import java.util.*;
 
@@ -18,7 +19,7 @@ public class BaseOrdering {
   }
 
   private int myIndex = 0;
-  private final Stack<SCC.TypecheckingUnit> myStack = new Stack<>();
+  private final Stack<TypecheckingUnit> myStack = new Stack<>();
   private final Map<Typecheckable, DefState> myVertices = new HashMap<>();
   private final SCCListener myListener;
 
@@ -84,9 +85,9 @@ public class BaseOrdering {
   }
 
   private void doOrderRecursively(Typecheckable typecheckable) {
-    Abstract.Definition definition = typecheckable.definition;
+    Abstract.Definition definition = typecheckable.getDefinition();
     Abstract.ClassDefinition enclosingClass = getEnclosingClass(definition);
-    SCC.TypecheckingUnit unit = new SCC.TypecheckingUnit(typecheckable, enclosingClass);
+    TypecheckingUnit unit = new TypecheckingUnit(typecheckable, enclosingClass);
     DefState currentState = new DefState(myIndex);
     myVertices.put(typecheckable, currentState);
     myIndex++;
@@ -96,15 +97,15 @@ public class BaseOrdering {
     if (enclosingClass != null) {
       dependencies.add(enclosingClass);
     }
-    if (!typecheckable.isHeader && Typecheckable.hasHeader(definition)) {
+    if (!typecheckable.isHeader() && Typecheckable.hasHeader(definition)) {
       updateState(currentState, new Typecheckable(definition, true));
     }
 
-    definition.accept(new DefinitionGetDepsVisitor(dependencies), typecheckable.isHeader);
+    definition.accept(new DefinitionGetDepsVisitor(dependencies), typecheckable.isHeader());
     for (Abstract.Definition referable : dependencies) {
       for (Abstract.Definition dependency : getTypecheckable(referable, enclosingClass)) {
         if (!dependency.equals(definition)) {
-          dependsOn(unit.typecheckable, dependency);
+          dependsOn(unit.getTypecheckable(), dependency);
           updateState(currentState, new Typecheckable(dependency, false));
         }
       }
@@ -114,9 +115,9 @@ public class BaseOrdering {
       SCC scc = new SCC();
       do {
         unit = myStack.pop();
-        myVertices.get(unit.typecheckable).onStack = false;
+        myVertices.get(unit.getTypecheckable()).onStack = false;
         scc.add(unit);
-      } while (!unit.typecheckable.definition.equals(definition));
+      } while (!unit.getDefinition().equals(definition));
       myListener.sccFound(scc);
     }
   }

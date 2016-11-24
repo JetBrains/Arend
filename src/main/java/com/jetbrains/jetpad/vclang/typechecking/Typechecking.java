@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
@@ -25,23 +24,23 @@ public class Typechecking {
   private static void typecheck(SCC scc, TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
     if (scc.getUnits().size() > 1) {
       List<Abstract.Definition> cycle = new ArrayList<>(scc.getUnits().size());
-      for (SCC.TypecheckingUnit unit : scc.getUnits()) {
-        cycle.add(unit.typecheckable.definition);
+      for (TypecheckingUnit unit : scc.getUnits()) {
+        cycle.add(unit.getDefinition());
       }
       errorReporter.report(new TypeCheckingError(cycle.get(0), new CycleError(cycle)));
       throw new SCCException();
     } else {
-      SCC.TypecheckingUnit unit = scc.getUnits().iterator().next();
-      if (unit.typecheckable.isHeader) {
+      TypecheckingUnit unit = scc.getUnits().iterator().next();
+      if (unit.isHeader()) {
         return;
       }
 
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
-      DefinitionCheckTypeVisitor.typeCheck(state, staticNsProvider, dynamicNsProvider, unit.enclosingClass == null ? null : (ClassDefinition) state.getTypechecked(unit.enclosingClass), unit.typecheckable.definition, new ProxyErrorReporter(unit.typecheckable.definition, new CompositeErrorReporter(errorReporter, countingErrorReporter)));
+      DefinitionCheckTypeVisitor.typeCheck(state, staticNsProvider, dynamicNsProvider, unit, new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(errorReporter, countingErrorReporter)));
       if (countingErrorReporter.getErrorsNumber() > 0) {
-        typecheckedReporter.typecheckingFailed(unit.typecheckable.definition);
+        typecheckedReporter.typecheckingFailed(unit.getDefinition());
       } else {
-        typecheckedReporter.typecheckingSucceeded(unit.typecheckable.definition);
+        typecheckedReporter.typecheckingSucceeded(unit.getDefinition());
       }
     }
   }

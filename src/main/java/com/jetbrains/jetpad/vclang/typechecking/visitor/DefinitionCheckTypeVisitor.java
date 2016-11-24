@@ -40,6 +40,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.PatternsToElimTreeConversion;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingElim;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
+import com.jetbrains.jetpad.vclang.typechecking.TypecheckingUnit;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
@@ -72,9 +73,25 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     myErrorReporter = errorReporter;
   }
 
-  public static void typeCheck(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ClassDefinition enclosingClass, Abstract.Definition definition, LocalErrorReporter errorReporter) {
-    if (state.getTypechecked(definition) == null) {
-      definition.accept(new DefinitionCheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, errorReporter), enclosingClass);
+  public static void typeCheck(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckingUnit unit, LocalErrorReporter errorReporter) {
+    Definition typechecked = state.getTypechecked(unit.getDefinition());
+    if (!(typechecked == null || typechecked.hasErrors() == Definition.TypeCheckingStatus.TYPE_CHECKING && !unit.isHeader())) {
+      return;
+    }
+
+    DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, errorReporter);
+    ClassDefinition enclosingClass = unit.getEnclosingClass() == null ? null : (ClassDefinition) state.getTypechecked(unit.getEnclosingClass());
+    if (typechecked != null) {
+      if (typechecked instanceof FunctionDefinition) {
+        visitor.typeCheckFunctionBody((FunctionDefinition) typechecked, enclosingClass);
+      } else
+      if (typechecked instanceof DataDefinition) {
+        visitor.typeCheckDataBody((DataDefinition) typechecked, enclosingClass);
+      } else {
+        throw new IllegalStateException();
+      }
+    } else {
+      unit.getDefinition().accept(visitor, enclosingClass);
     }
   }
 
@@ -222,13 +239,16 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     return ok;
   }
 
-  @Override
-  public FunctionDefinition visitFunction(final Abstract.FunctionDefinition def, ClassDefinition enclosingClass) {
-    final FunctionDefinition typedDef = new FunctionDefinition(def);
-    myState.record(def, typedDef);
-    // TODO[scopes] Fill namespace
+  private void typeCheckFunctionBody(FunctionDefinition def, ClassDefinition enclosingClass) {
 
-    final List<Binding> context = new ArrayList<>();
+  }
+
+  @Override
+  public FunctionDefinition visitFunction(Abstract.FunctionDefinition def, ClassDefinition enclosingClass) {
+    FunctionDefinition typedDef = new FunctionDefinition(def);
+    myState.record(def, typedDef);
+
+    List<Binding> context = new ArrayList<>();
     List<TypedBinding> polyParamsList = new ArrayList<>();
     List<TypedBinding> generatedPolyParams = new ArrayList<>();
     LinkList list = new LinkList();
@@ -321,7 +341,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     }
 
     typedDef.hasErrors(typedDef.getElimTree() != null ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.HAS_ERRORS);
+
     return typedDef;
+  }
+
+  private void typeCheckDataBody(DataDefinition def, ClassDefinition enclosingClass) {
+
   }
 
   @Override
@@ -475,9 +500,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     }
     for (Constructor constructor : condMap.keySet()) {
       try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
-        final List<List<Pattern>> patterns = new ArrayList<>();
-        final List<Expression> expressions = new ArrayList<>();
-        final List<Abstract.Definition.Arrow> arrows = new ArrayList<>();
+        List<List<Pattern>> patterns = new ArrayList<>();
+        List<Expression> expressions = new ArrayList<>();
+        List<Abstract.Definition.Arrow> arrows = new ArrayList<>();
         visitor.getContext().addAll(toContext(constructor.getDataTypeParameters()));
 
         for (Abstract.Condition cond : condMap.get(constructor)) {
@@ -543,7 +568,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         Set<Abstract.Definition> dependencies = new HashSet<>();
         condition.getTerm().accept(new CollectDefCallsVisitor(dependencies), null);
         for (Abstract.Definition def : dependencies) {
-          final Definition typeCheckedDef = myState.getTypechecked(def);
+          Definition typeCheckedDef = myState.getTypechecked(def);
           if (typeCheckedDef != null && typeCheckedDef != constructor && typeCheckedDef instanceof Constructor && ((Constructor) typeCheckedDef).getDataType().equals(constructor.getDataType())) {
             List<Constructor> cycle = searchConditionCycle(condMap, (Constructor) typeCheckedDef, visited, visiting);
             if (cycle != null)
@@ -855,7 +880,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     FunctionDefinition typedDef = new FunctionDefinition(def);
     myState.record(def, typedDef);
 
-    final List<Binding> context = new ArrayList<>();
+    List<Binding> context = new ArrayList<>();
     LinkList list = new LinkList();
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, myStaticNsProvider, myDynamicNsProvider, context, myErrorReporter).build();
 
