@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
@@ -216,8 +217,16 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   private Abstract.Expression visitVariable(Variable var) {
     String name = var.getName() == null ? "_" : var.getName();
+    if (var instanceof InferenceLevelVariable && name.charAt(0) == '\\') {
+      name = name.substring(1);
+    }
+
     String name1 = myNames.get(name);
-    return myFactory.makeVar((var instanceof InferenceVariable ? "?" : "") + (name1 != null ? name1 : name));
+    if (name1 == null) {
+      name1 = name;
+    }
+
+    return myFactory.makeVar((var instanceof InferenceVariable || var instanceof InferenceLevelVariable ? "?" : "") + name1);
   }
 
   @Override
@@ -365,7 +374,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       return myFactory.makeNumericalLiteral(level.getConstant() + add);
     }
 
-    Abstract.Expression result = myFactory.makeVar(level.getVar().getName());
+    Abstract.Expression result = visitVariable(level.getVar());
     for (int i = 0; i < level.getConstant() + add; i++) {
       result = myFactory.makeApp(myFactory.makeVar("suc"), true, result);
     }
@@ -502,7 +511,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       }
       List<Abstract.Expression> exprs = new ArrayList<>();
       for (DependentLink link = params; link.hasNext(); link = link.getNext()) {
-        exprs.add(myFactory.makeVar(link.getName()));
+        exprs.add(visitVariable(link));
       }
       return myFactory.makeElim(exprs, Collections.<Abstract.Clause>emptyList());
     }

@@ -133,8 +133,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     TypedBinding lhParam;
 
     if (polyParams.isEmpty()) {
-      lpParam = new TypedBinding("\\lp-gen", Lvl());
-      lhParam = new TypedBinding("\\lh-gen", CNat());
+      lpParam = new TypedBinding("\\lp", Lvl());
+      lhParam = new TypedBinding("\\lh", CNat());
       polyParams.add(lpParam);
       polyParams.add(lhParam);
     } else {
@@ -383,7 +383,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     boolean dataOk = true;
     for (Abstract.Constructor constructor : def.getConstructors()) {
       visitor.getContext().clear();
-      Constructor typedConstructor = visitConstructor(constructor, dataDefinition, visitor, inferredSorts, generatedPolyParams);
+      Constructor typedConstructor = visitConstructor(constructor, dataDefinition, visitor, inferredSorts);
       myState.record(constructor, typedConstructor);
       if (typedConstructor.typeHasErrors()) {
         dataOk = false;
@@ -553,7 +553,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     throw new IllegalStateException();
   }
 
-  private Constructor visitConstructor(Abstract.Constructor def, DataDefinition dataDefinition, CheckTypeVisitor visitor, SortMax sorts, List<TypedBinding> generatedPolyParams) {
+  private Constructor visitConstructor(Abstract.Constructor def, DataDefinition dataDefinition, CheckTypeVisitor visitor, SortMax sorts) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(visitor.getContext())) {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
       String name = def.getName();
@@ -585,27 +585,18 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
       LinkList list = new LinkList();
       for (Abstract.TypeArgument argument : arguments) {
-        Type paramType = visitor.checkParamType(argument.getType());
-        if (paramType == null) {
+        CheckTypeVisitor.Result paramResult = visitor.checkType(argument.getType(), new PiTypeOmega(EmptyDependentLink.getInstance()));
+        if (paramResult == null) {
           return constructor;
         }
-//        paramType = paramType.strip(new HashSet<>(visitor.getContext()), visitor.getErrorReporter());
 
-        if (paramType instanceof PiTypeOmega) {
-          boolean firstTime = generatedPolyParams.isEmpty();
-          paramType = typeOmegaToUniverse((PiTypeOmega) paramType, generatedPolyParams);
-          if (firstTime) {
-            visitor.getContext().addAll(generatedPolyParams);
-          }
-        }
-
-        sorts.add(paramType.toExpression() != null ? paramType.toExpression().getType().toSorts() : SortMax.OMEGA);
+        sorts.add(paramResult.getType().toSorts());
 
         DependentLink param;
         if (argument instanceof Abstract.TelescopeArgument) {
-          param = param(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), paramType);
+          param = param(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), paramResult.getExpression());
         } else {
-          param = param(argument.getExplicit(), (String) null, paramType);
+          param = param(argument.getExplicit(), (String) null, paramResult.getExpression());
         }
         list.append(param);
         visitor.getContext().addAll(toContext(param));
