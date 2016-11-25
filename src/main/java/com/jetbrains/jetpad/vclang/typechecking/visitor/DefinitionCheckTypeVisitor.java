@@ -177,8 +177,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
           }
         }
 
-        // paramType = paramType.strip(new HashSet<>(visitor.getContext()), visitor.getErrorReporter());
-
         Abstract.ClassView classView = Abstract.getUnderlyingClassView(typeArgument.getType());
         if (classView != null) {
           paramType = new ClassViewCallExpression(paramType.toExpression().toClassCall().getDefinition(), paramType.toExpression().toClassCall().getPolyArguments(), paramType.toExpression().toClassCall().getFieldSet(), classView);
@@ -195,12 +193,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         }
 
         paramType = paramType.normalize(NormalizeVisitor.Mode.WHNF);
-        for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
-          if (localInstancePool != null && paramType.toExpression() != null) {
-            Expression type = paramType.toExpression();
-            if (type instanceof ClassViewCallExpression) {
-              Abstract.ClassView classView1 = ((ClassViewCallExpression) type).getClassView();
-              if (classView1.getClassifyingField() != null) {
+        if (localInstancePool != null && paramType.toExpression() != null) {
+          Expression type = paramType.toExpression();
+          if (type instanceof ClassViewCallExpression) {
+            Abstract.ClassView classView1 = ((ClassViewCallExpression) type).getClassView();
+            if (classView1.getClassifyingField() != null) {
+              for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
                 ReferenceExpression reference = new ReferenceExpression(link);
                 if (!localInstancePool.addInstance(FieldCall((ClassField) myState.getTypechecked(((ClassViewCallExpression) type).getClassView().getClassifyingField()), reference).normalize(NormalizeVisitor.Mode.NF), classView1, reference)) {
                   myErrorReporter.report(new LocalTypeCheckingError(Error.Level.WARNING, "Duplicate instance", argument)); // FIXME[error] better error message
@@ -723,7 +721,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       typedDef.setThisClass(enclosingClass);
 
       for (Abstract.SuperClass aSuperClass : def.getSuperClasses()) {
-        CheckTypeVisitor.Result result = aSuperClass.getSuperClass().accept(visitor, Universe());
+        CheckTypeVisitor.Result result = visitor.checkType(aSuperClass.getSuperClass(), null);
         if (result == null) {
           classOk = false;
           continue;
