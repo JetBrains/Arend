@@ -421,4 +421,11 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
         "  | zero => zero\n" +
         "  | suc n => foo $ unsuc x");
   }
+
+  @Test
+  public void severalPolyParamsTest() {
+    typeCheckClass(
+        "\\function f {lp : Lvl} {lp' : Lvl} {lh : CNat} (A : \\Type (lp, lh)) (B : \\Type (lp', lh)) (C : \\Type) => \\Sigma (A) (B -> C)\n"+
+        "\\function g => f (\\Prop) (\\Set1) (\\1-Type0)");
+  }
 }

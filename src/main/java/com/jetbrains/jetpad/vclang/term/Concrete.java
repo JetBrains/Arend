@@ -868,14 +868,16 @@ public final class Concrete {
   }
 
   public static class ClassDefinition extends Definition implements Abstract.ClassDefinition {
+    private final List<TypeArgument> myPolyParameters;
     private final List<SuperClass> mySuperClasses;
     private final List<ClassField> myFields;
     private final List<Implementation> myImplementations;
     private final List<Statement> myGlobalStatements;
     private final List<Definition> myInstanceDefinitions;
 
-    public ClassDefinition(Position position, String name, List<SuperClass> superClasses, List<ClassField> fields, List<Implementation> implementations, List<Statement> globalStatements, List<Definition> instanceDefinitions) {
+    public ClassDefinition(Position position, String name, List<TypeArgument> polyParams, List<SuperClass> superClasses, List<ClassField> fields, List<Implementation> implementations, List<Statement> globalStatements, List<Definition> instanceDefinitions) {
       super(position, name, Precedence.DEFAULT);
+      myPolyParameters = polyParams;
       mySuperClasses = superClasses;
       myFields = fields;
       myImplementations = implementations;
@@ -884,12 +886,17 @@ public final class Concrete {
     }
 
     public ClassDefinition(Position position, String name, List<Statement> globalStatements) {
-      this(position, name, Collections.<SuperClass>emptyList(), Collections.<ClassField>emptyList(), Collections.<Implementation>emptyList(), globalStatements, Collections.<Definition>emptyList());
+      this(position, name, Collections.<TypeArgument>emptyList(), Collections.<SuperClass>emptyList(), Collections.<ClassField>emptyList(), Collections.<Implementation>emptyList(), globalStatements, Collections.<Definition>emptyList());
     }
 
     @Override
     public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitClass(this, params);
+    }
+
+    @Override
+    public List<TypeArgument> getPolyParameters() {
+      return myPolyParameters;
     }
 
     @Override

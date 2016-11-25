@@ -585,4 +585,18 @@ public class ClassesTest extends TypeCheckingTestCase {
         "}\n" +
         "\\function y (a : A) : a.B.C.d.E.f = 0 => path (\\lam _ => 0)");
   }
+
+  @Test
+  public void classPolyParams() {
+    typeCheckClass(
+        "\\class A {p : Lvl} {\n" +
+        "   \\field X : \\Type (p, 0)\n" +
+        "   \\function f (x : \\Type (p, 0)) => x\n" +
+        "   \\data D (x : \\Type (p, 0))\n" +
+        "   \\class B {\n" +
+        "       \\field Y : X -> \\Type (p, 0)\n" +
+        "       \\function g : \\Type (p, 0) => X\n" +
+        "   }\n" +
+        "}");
+  }
 }

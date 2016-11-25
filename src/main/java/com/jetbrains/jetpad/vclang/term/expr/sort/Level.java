@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -120,5 +121,13 @@ public class Level implements PrettyPrintable {
 
   public boolean isLessOrEquals(Level level) {
     return compare(this, level, Equations.CMP.LE, DummyEquations.getInstance(), null);
+  }
+
+  public static List<Level> map(List<? extends Variable> variables) {
+    List<Level> levels = new ArrayList<>();
+    for (Variable var : variables) {
+      levels.add(new Level(var));
+    }
+    return levels;
   }
 }

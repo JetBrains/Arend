@@ -317,6 +317,7 @@ public final class Abstract {
   }
 
   public interface ClassDefinition extends Definition {
+    List<? extends TypeArgument> getPolyParameters();
     Collection<? extends SuperClass> getSuperClasses();
     Collection<? extends ClassField> getFields();
     Collection<? extends Implementation> getImplementations();

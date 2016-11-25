@@ -527,6 +527,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.ClassDefinition visitDefClass(DefClassContext ctx) {
     if (ctx == null) return null;
 
+    List<Concrete.TypeArgument> polyParameters = visitTeles(ctx.tele());
     List<Concrete.SuperClass> superClasses = new ArrayList<>(ctx.expr().size());
     List<Concrete.ClassField> fields = new ArrayList<>();
     List<Concrete.Implementation> implementations = new ArrayList<>();
@@ -542,7 +543,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
     }
 
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), superClasses, fields, implementations, globalStatements, instanceDefinitions);
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), polyParameters, superClasses, fields, implementations, globalStatements, instanceDefinitions);
     for (Concrete.ClassField field : fields) {
       field.setParent(classDefinition);
     }

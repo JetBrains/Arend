@@ -189,16 +189,25 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
         statement.accept(stVisitor, null);
       }
 
-      Scope dynamicScope = new DynamicClassScope(myParentScope, staticNamespace, myDynamicNsProvider.forClass(def), myErrorReporter);
-      DefinitionResolveNameVisitor dyVisitor = new DefinitionResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, dynamicScope, myNameResolver, myErrorReporter, myResolveListener);
-      for (Abstract.ClassField field : def.getFields()) {
-        field.accept(dyVisitor, false);
-      }
-      for (Abstract.Implementation implementation : def.getImplementations()) {
-        implementation.accept(dyVisitor, false);
-      }
-      for (Abstract.Definition definition : def.getInstanceDefinitions()) {
-        definition.accept(dyVisitor, false);
+      try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
+        for (Abstract.TypeArgument polyParam : def.getPolyParameters()) {
+          if (polyParam instanceof Abstract.TelescopeArgument) {
+            myContext.addAll(((Abstract.TelescopeArgument) polyParam).getNames());
+          }
+        }
+
+        Scope dynamicScope = new DynamicClassScope(myParentScope, staticNamespace, myDynamicNsProvider.forClass(def), myErrorReporter);
+        DefinitionResolveNameVisitor dyVisitor = new DefinitionResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, dynamicScope, myContext, myNameResolver, myErrorReporter, myResolveListener);
+
+        for (Abstract.ClassField field : def.getFields()) {
+          field.accept(dyVisitor, false);
+        }
+        for (Abstract.Implementation implementation : def.getImplementations()) {
+          implementation.accept(dyVisitor, false);
+        }
+        for (Abstract.Definition definition : def.getInstanceDefinitions()) {
+          definition.accept(dyVisitor, false);
+        }
       }
     } catch (Namespace.InvalidNamespaceException e) {
       myErrorReporter.report(e.toError());

@@ -1,8 +1,13 @@
 package com.jetbrains.jetpad.vclang.term.expr.subst;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
+import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.*;
 
@@ -42,6 +47,16 @@ public class LevelArguments {
     List<Level> levels = new ArrayList<>(myLevels);
     for (int i = 0; i < levels.size(); i++) {
       levels.set(i, levels.get(i).subst(subst));
+    }
+    return new LevelArguments(levels);
+  }
+
+  public static LevelArguments generateInferVars(List<TypedBinding> polyParams, Equations equations, Abstract.Expression expr) {
+    List<Level> levels = new ArrayList<>(polyParams.size());
+    for (Binding polyVar : polyParams) {
+      InferenceLevelVariable l = new InferenceLevelVariable(polyVar.getName(), polyVar.getType().toExpression(), expr);
+      levels.add(new Level(l));
+      equations.addVariable(l);
     }
     return new LevelArguments(levels);
   }

@@ -21,7 +21,9 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
+import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
+import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiTypeOmega;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
@@ -81,9 +83,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     typeCheck(state, staticNsProvider, dynamicNsProvider, enclosingClass, definition, errorReporter, false);
   }
 
-  private DependentLink createThisParam(ClassDefinition enclosingClass) {
+  private DependentLink createThisParam(ClassDefinition enclosingClass, LevelArguments polyArgs) {
     assert enclosingClass != null;
-    return param("\\this", ClassCall(enclosingClass));
+    return param("\\this", ClassCall(enclosingClass, polyArgs));
   }
 
   private static boolean isPolyParam(Abstract.TypeArgument arg) {
@@ -103,7 +105,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     return null;
   }
 
-  private TypedBinding visitPolyParam(Abstract.TypeArgument typeArgument, Map<String, TypedBinding> polyParams, Abstract.SourceNode node) {
+  private TypedBinding visitPolyParam(Abstract.TypeArgument typeArgument, Abstract.SourceNode node) {
     assert (typeArgument.getType() instanceof Abstract.DefCallExpression);
     String typeName = ((Abstract.DefCallExpression) typeArgument.getType()).getName();
     if (!(typeArgument instanceof Abstract.TelescopeArgument)) {
@@ -111,17 +113,17 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       return null;
     }
     Abstract.TelescopeArgument teleArgument = (Abstract.TelescopeArgument)typeArgument;
-    if (teleArgument.getNames().size() > 1 || polyParams.containsKey(typeName)) {
-      myErrorReporter.report(new LocalTypeCheckingError("Function definition must have at most one polymorphic variable of type " + typeName, node));
-      return null;
-    }
+    //if (teleArgument.getNames().size() > 1 || polyParams.containsKey(typeName)) {
+    //  myErrorReporter.report(new LocalTypeCheckingError("Function definition must have at most one polymorphic variable of type " + typeName, node));
+    //  return null;
+   // }
     if (teleArgument.getExplicit()) {
       myErrorReporter.report(new LocalTypeCheckingError("Polymorphic variables must be implicit", node));
       return null;
     }
-    TypedBinding levelParam = new TypedBinding(((Abstract.TelescopeArgument) typeArgument).getNames().get(0), levelTypeByName(typeName));
-    polyParams.put(typeName, levelParam);
-    return levelParam;
+    return new TypedBinding(((Abstract.TelescopeArgument) typeArgument).getNames().get(0), levelTypeByName(typeName));
+    // polyParams.put(typeName, levelParam);
+    // return levelParam;
   }
 
   private Expression typeOmegaToUniverse(PiTypeOmega type, List<TypedBinding> polyParams) {
@@ -144,7 +146,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
   private boolean visitParameters(List<? extends Abstract.Argument> arguments, Abstract.SourceNode node, List<Binding> context, List<TypedBinding> polyParamsList, List<TypedBinding> generatedPolyParams, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
     boolean ok = true;
-    Map<String, TypedBinding> polyParamsMap = new HashMap<>();
+    boolean polyParamsAllowed = true;
     int index = 0;
 
     for (Abstract.Argument argument : arguments) {
@@ -152,7 +154,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         Abstract.TypeArgument typeArgument = (Abstract.TypeArgument)argument;
 
         if (isPolyParam(typeArgument)) {
-          TypedBinding levelParam = visitPolyParam(typeArgument, polyParamsMap, node);
+          if (!polyParamsAllowed) {
+            myErrorReporter.report(new LocalTypeCheckingError(Error.Level.ERROR, "Poly parameters must be declared in the beginning of a definition", argument));
+            ok = false;
+            continue;
+          }
+          TypedBinding levelParam = visitPolyParam(typeArgument, node);
           if (levelParam == null) {
             ok = false;
             continue;
@@ -161,6 +168,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
           polyParamsList.add(levelParam);
           ++index;
           continue;
+        } else {
+          polyParamsAllowed = false;
         }
 
         Type paramType = visitor.checkParamType(typeArgument.getType());
@@ -176,8 +185,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
             context.addAll(generatedPolyParams);
           }
         }
-
-        // paramType = paramType.strip(new HashSet<>(visitor.getContext()), visitor.getErrorReporter());
 
         Abstract.ClassView classView = Abstract.getUnderlyingClassView(typeArgument.getType());
         if (classView != null) {
@@ -227,19 +234,26 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     // TODO[scopes] Fill namespace
 
     final List<Binding> context = new ArrayList<>();
+    List<TypedBinding> polyParamsList = new ArrayList<>();
+    LevelSubstitution enclClassToDefSubst = new LevelSubstitution();
+    List<TypedBinding> generatedPolyParams = new ArrayList<>();
     LinkList list = new LinkList();
     LocalInstancePool localInstancePool = new LocalInstancePool();
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, myStaticNsProvider, myDynamicNsProvider, context, myErrorReporter).instancePool(new CompositeInstancePool(localInstancePool, myState.getInstancePool())).build();
     if (enclosingClass != null) {
-      DependentLink thisParam = createThisParam(enclosingClass);
+      for (Binding param : enclosingClass.getPolyParams()) {
+        TypedBinding defParam = new TypedBinding("\\" + param.getName(), param.getType());
+        polyParamsList.add(defParam);
+        enclClassToDefSubst.add(param, new Level(defParam));
+      }
+      DependentLink thisParam = createThisParam(enclosingClass, new LevelArguments(Level.map(polyParamsList)));
       context.add(thisParam);
+      context.addAll(enclosingClass.getPolyParams());
       list.append(thisParam);
       visitor.setThisClass(enclosingClass, Reference(thisParam));
       typedDef.setThisClass(enclosingClass);
     }
 
-    List<TypedBinding> polyParamsList = new ArrayList<>();
-    List<TypedBinding> generatedPolyParams = new ArrayList<>();
     boolean paramsOk = visitParameters(def.getArguments(), def, context, polyParamsList, generatedPolyParams, list, visitor, localInstancePool);
 
     TypeMax expectedType = null;
@@ -318,6 +332,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     }
 
     typedDef.hasErrors(typedDef.getElimTree() != null ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.HAS_ERRORS);
+    if (typedDef.hasErrors() != Definition.TypeCheckingStatus.HAS_ERRORS) {
+      ExprSubstitution subst = new ExprSubstitution();
+      typedDef.setParameters(DependentLink.Helper.subst(typedDef.getParameters(), subst, enclClassToDefSubst));
+      typedDef.setResultType(typedDef.getResultType().subst(subst, enclClassToDefSubst));
+      typedDef.setElimTree(typedDef.getElimTree().subst(subst, enclClassToDefSubst));
+    }
     return typedDef;
   }
 
@@ -330,8 +350,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     List<TypedBinding> polyParamsList = new ArrayList<>();
     List<TypedBinding> generatedPolyParams = new ArrayList<>();
     if (enclosingClass != null) {
-      DependentLink thisParam = createThisParam(enclosingClass);
+      for (Binding param : polyParamsList) {
+        polyParamsList.add(new TypedBinding(param.getName(), param.getType()));
+      }
+      DependentLink thisParam = createThisParam(enclosingClass, new LevelArguments(Level.map(polyParamsList)));
       context.add(thisParam);
+      context.addAll(polyParamsList);
       list.append(thisParam);
       visitor.setThisClass(enclosingClass, Reference(thisParam));
     }
@@ -710,17 +734,29 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     List<Binding> context = new ArrayList<>();
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, myStaticNsProvider, myDynamicNsProvider, context, myErrorReporter).instancePool(EmptyInstancePool.INSTANCE).build();
 
-    if (enclosingClass != null) {
-      DependentLink thisParam = createThisParam(enclosingClass);
-      context.add(thisParam);
-      visitor.setThisClass(enclosingClass, Reference(thisParam));
-    }
-
     FieldSet fieldSet = new FieldSet();
     Set<ClassDefinition> superClasses = new HashSet<>();
     try {
       ClassDefinition typedDef = new ClassDefinition(def, fieldSet, superClasses);
+      List<TypedBinding> polyParams = new ArrayList<>();
+      for (Abstract.TypeArgument polyArgument : def.getPolyParameters()) {
+        if (!isPolyParam(polyArgument)) {
+          myErrorReporter.report(new LocalTypeCheckingError("Classes can only have level parameters", polyArgument));
+          classOk = false;
+          continue;
+        }
+        TypedBinding param = visitPolyParam(polyArgument, def);
+        polyParams.add(param);
+        context.add(param);
+      }
+      typedDef.setPolyParams(polyParams);
       typedDef.setThisClass(enclosingClass);
+      if (enclosingClass != null) {
+        DependentLink thisParam = createThisParam(enclosingClass, new LevelArguments(Level.map(typedDef.getEnclosingPolyParams())));
+        context.add(thisParam);
+        context.addAll(typedDef.getPolyParams());
+        visitor.setThisClass(enclosingClass, Reference(thisParam));
+      }
 
       for (Abstract.SuperClass aSuperClass : def.getSuperClasses()) {
         CheckTypeVisitor.Result result = aSuperClass.getSuperClass().accept(visitor, Universe());
@@ -750,12 +786,13 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         }
       }
 
-      if (enclosingClass != null) {
+      /* if (enclosingClass != null) {
         assert context.size() == 1;
         context.remove(0);
       } else {
         assert context.size() == 0;
-      }
+      } /**/
+      context.clear();
 
       for (Abstract.ClassField field : def.getFields()) {
         fieldSet.addField(visitClassField(field, typedDef));
@@ -775,7 +812,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
           continue;
         }
 
-        DependentLink thisParameter = createThisParam(typedDef);
+        DependentLink thisParameter = createThisParam(typedDef, new LevelArguments(Level.map(typedDef.getPolyParams())));
         try (Utils.ContextSaver saver = new Utils.ContextSaver(context)) {
           context.add(thisParameter);
           visitor.setThisClass(typedDef, Reference(thisParameter));
@@ -805,9 +842,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
   public ClassField visitClassField(Abstract.ClassField def, ClassDefinition enclosingClass) {
     if (enclosingClass == null) throw new IllegalStateException();
 
-    DependentLink thisParameter = createThisParam(enclosingClass);
+    DependentLink thisParameter = createThisParam(enclosingClass, new LevelArguments(Level.map(enclosingClass.getPolyParams())));
     List<Binding> context = new ArrayList<>();
     context.add(thisParameter);
+    context.addAll(enclosingClass.getPolyParams());
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, myStaticNsProvider, myDynamicNsProvider, context, myErrorReporter).instancePool(EmptyInstancePool.INSTANCE).thisClass(enclosingClass, Reference(thisParameter)).build();
     ClassField typedDef = new ClassField(def, Error(null, null), enclosingClass, thisParameter);
     myState.record(def, typedDef);

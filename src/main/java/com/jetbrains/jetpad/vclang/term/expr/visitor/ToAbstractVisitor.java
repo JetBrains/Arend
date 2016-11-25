@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -22,7 +23,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVis
 import java.util.*;
 
 public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expression> implements ElimTreeNodeVisitor<Void, Abstract.Expression> {
-  public enum Flag { SHOW_CON_DATA_TYPE, SHOW_CON_PARAMS, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS }
+  public enum Flag { SHOW_CON_DATA_TYPE, SHOW_CON_PARAMS, SHOW_IMPLICIT_ARGS, SHOW_LEVEL_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS }
   public static final EnumSet<Flag> DEFAULT = EnumSet.of(Flag.SHOW_IMPLICIT_ARGS, Flag.SHOW_CON_PARAMS);
 
   private final AbstractExpressionFactory myFactory;
@@ -142,7 +143,13 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return arg != null ? myFactory.makeApp(function, isExplicit, arg) : function;
   }
 
-  private Abstract.Expression visitArguments(Abstract.Expression expr, DefCallExpression defCall) {
+  private Abstract.Expression visitArguments(Abstract.Expression expr, DefCallExpression defCall, boolean withLevelArgs) {
+    if (withLevelArgs && myFlags.contains(Flag.SHOW_LEVEL_ARGS)) {
+      List<Integer> userPolyParams = Binding.Helper.getSublistOfUserBindings(defCall.getDefinition().getPolyParams());
+      for (Integer paramInd : userPolyParams) {
+        expr = myFactory.makeApp(expr, false, visitLevel(defCall.getPolyArguments().getLevels().get(paramInd), 0));
+      }
+    }
     DependentLink link = defCall.getDefinition().getParameters();
     for (Expression arg : defCall.getDefCallArguments()) {
       expr = myFactory.makeApp(expr, link.isExplicit(), arg.accept(this, null));
@@ -153,7 +160,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitDefCall(DefCallExpression expr, Void params) {
-    return visitArguments(myFactory.makeDefCall(null, expr.getDefinition().getAbstractDefinition(), expr.getDefinition()), expr);
+    return visitArguments(myFactory.makeDefCall(null, expr.getDefinition().getAbstractDefinition(), expr.getDefinition()), expr, true);
   }
 
   @Override
@@ -190,7 +197,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       }
       conParams = expr.getDefinition().getDataTypeExpression(substitution, expr.getPolyArguments()).accept(this, null);
     }
-    return visitArguments(myFactory.makeDefCall(conParams, expr.getDefinition().getAbstractDefinition(), expr.getDefinition()), expr);
+    return visitArguments(myFactory.makeDefCall(conParams, expr.getDefinition().getAbstractDefinition(), expr.getDefinition()), expr, false);
   }
 
   @Override

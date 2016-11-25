@@ -10,7 +10,6 @@ import com.jetbrains.jetpad.vclang.term.context.binding.inference.TypeClassInfer
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
@@ -57,59 +56,6 @@ public class TypeCheckingDefCall {
     }
   }
 
-  /*
-  public CheckTypeVisitor.PreResult typeCheckDefCall(Abstract.ApplyLevelExpression expr) {
-    List<Abstract.Expression> levelExprs = new ArrayList<>();
-    Abstract.Expression app_expr = expr;
-
-    while (app_expr instanceof Abstract.ApplyLevelExpression) {
-      levelExprs.add(((Abstract.ApplyLevelExpression)app_expr).getLevel());
-      app_expr = ((Abstract.ApplyLevelExpression)app_expr).getFunction();
-    }
-
-    CheckTypeVisitor.PreResult result = typeCheckDefCall((Abstract.DefCallExpression)app_expr);
-    if (result == null) {
-      return null;
-    }
-
-    DefCallExpression defCall = result.getExpression().getFunction().toDefCall();
-    if (defCall == null) {
-      LocalTypeCheckingError error = new LocalTypeCheckingError("Level can only be assigned to a definition", expr);
-      expr.setWellTyped(myVisitor.getContext(), Error(result.getExpression(), error));
-      myVisitor.getErrorReporter().report(error);
-      return null;
-    }
-
-    Collections.reverse(levelExprs);
-
-    List<TypedBinding> polyParams = defCall.getDefinition().getPolyParams();
-
-    if (levelExprs.size() > polyParams.size()) {
-      LocalTypeCheckingError error = new LocalTypeCheckingError("Too many level assignments", expr);
-      expr.setWellTyped(myVisitor.getContext(), Error(result.getExpression(), error));
-      myVisitor.getErrorReporter().report(error);
-      return null;
-    }
-
-    for (int i = 0; i < levelExprs.size(); ++i) {
-      Binding param = polyParams.get(i);
-      Level level = myVisitor.typeCheckLevel(levelExprs.get(i), null, param.getType().toExpression().toDefCall().getDefinition() == Prelude.CNAT ? -1 : 0);
-      if (level == null) {
-        return null;
-      }
-      Level value = defCall.getPolyArguments().getLevels().get(i);
-      if (value == null) {
-        assert false;
-        return null;
-      }
-      //if (value.isBinding() && value.getUnitBinding() instanceof LevelInferenceBinding) {
-      myVisitor.getEquations().add(value, level, Equations.CMP.EQ, expr);
-      //}
-    }
-
-    return result;
-  } /**/
-
   public CheckTypeVisitor.PreResult typeCheckDefCall(Abstract.DefCallExpression expr) {
     Abstract.Expression left = expr.getExpression();
     Abstract.Definition resolvedDefinition = expr.getReferent();
@@ -143,7 +89,8 @@ public class TypeCheckingDefCall {
 
         if (thisExpr == null) {
           if (resolvedDefinition instanceof Abstract.ClassViewField) {
-            thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable(typeCheckedDefinition.getThisClass().getName() + "-inst", ClassCall(typeCheckedDefinition.getThisClass()), ((Abstract.ClassViewField) resolvedDefinition).getOwnView(), true, expr), myVisitor.getEquations());
+            ClassCallExpression classCall = ClassCall(typeCheckedDefinition.getThisClass(), LevelArguments.generateInferVars(typeCheckedDefinition.getThisClass().getPolyParams(), myVisitor.getEquations(), expr));
+            thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable(typeCheckedDefinition.getThisClass().getName() + "-inst", classCall, ((Abstract.ClassViewField) resolvedDefinition).getOwnView(), true, expr), myVisitor.getEquations());
           } else {
             LocalTypeCheckingError error;
             if (myThisClass != null) {
@@ -198,7 +145,8 @@ public class TypeCheckingDefCall {
           return null;
         }
         if (!classDefinition.isSubClassOf(typeCheckedDefinition.getThisClass())) {
-          LocalTypeCheckingError error = new TypeMismatchError(ClassCall(typeCheckedDefinition.getThisClass()), type, left);
+          ClassCallExpression classCall = ClassCall(typeCheckedDefinition.getThisClass(), LevelArguments.generateInferVars(typeCheckedDefinition.getThisClass().getPolyParams(), myVisitor.getEquations(), expr));
+          LocalTypeCheckingError error = new TypeMismatchError(classCall, type, left);
           expr.setWellTyped(myVisitor.getContext(), Error(null, error));
           myVisitor.getErrorReporter().report(error);
           return null;
@@ -307,14 +255,7 @@ public class TypeCheckingDefCall {
   }
 
   private CheckTypeVisitor.PreResult makeResult(Definition definition, Abstract.ClassView classView, Expression thisExpr, Abstract.Expression expr) {
-    List<Level> levels = new ArrayList<>(definition.getPolyParams().size());
-    for (Binding polyVar : definition.getPolyParams()) {
-      InferenceLevelVariable l = new InferenceLevelVariable(polyVar.getName(), polyVar.getType().toExpression(), expr);
-      levels.add(new Level(l));
-      myVisitor.getEquations().addVariable(l);
-    }
-    LevelArguments polyArgs = new LevelArguments(levels);
-
+    LevelArguments polyArgs = LevelArguments.generateInferVars(definition.getPolyParams(), myVisitor.getEquations(), expr);
     DefCallExpression defCall;
     if (classView != null) {
       defCall = new ClassViewCallExpression((ClassDefinition) definition, polyArgs, classView);
