@@ -1,6 +1,10 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
-import com.jetbrains.jetpad.vclang.term.*;
+import com.jetbrains.jetpad.vclang.parser.prettyprint.StringPrettyPrintable;
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.FunctionInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;

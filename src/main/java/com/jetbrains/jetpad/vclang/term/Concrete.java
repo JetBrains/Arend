@@ -2,10 +2,10 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.parser.Precedence;
+import com.jetbrains.jetpad.vclang.parser.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractCompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
 
 import java.util.Collections;

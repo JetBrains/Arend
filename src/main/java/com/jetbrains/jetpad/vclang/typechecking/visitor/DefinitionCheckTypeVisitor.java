@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
+import com.jetbrains.jetpad.vclang.parser.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
@@ -25,7 +26,10 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiTypeOmega;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.CollectDefCallsVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.TerminationCheckVisitor;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
@@ -282,11 +286,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
             myErrorReporter.report(new TypeMismatchError(expectedType, termResult.getType(), term));
           } else {
             typedDef.setElimTree(top(list.getFirst(), leaf(def.getArrow(), termResult.getExpression())));
-            if (generatedExpectedType && expectedType != null) {
-              typedDef.setResultType(expectedType.toSorts().max(termResult.getType().toSorts()).toType());
-            } else if (expectedType == null) {
-              typedDef.setResultType(termResult.getType());
-            }
+            typedDef.setResultType(termResult.getType());
             typedDef.typeHasErrors(!paramsOk || typedDef.getResultType() == null);
           }
         }
@@ -339,7 +339,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     boolean paramsOk;
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
       paramsOk = visitParameters(def.getParameters(), def, context, polyParamsList, generatedPolyParams, list, visitor, localInstancePool);
-      // polyParamsList.addAll(generatedPolyParams);
 
       if (def.getUniverse() != null) {
         if (def.getUniverse() instanceof Abstract.PolyUniverseExpression) {
@@ -355,6 +354,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         }
       }
     }
+
+    /*
+    if (def.getUniverse() != null && !(def.getUniverse() instanceof Abstract.TypeOmegaExpression)) {
+      myErrorReporter.report(new ExpressionMismatchError(new PiTypeOmega(EmptyDependentLink.getInstance()), new AbstractExpressionPP(def.getUniverse()), def.getUniverse()));
+    }
+    */
 
     DataDefinition dataDefinition = new DataDefinition(def, inferredSorts, list.getFirst());
     dataDefinition.setThisClass(enclosingClass);

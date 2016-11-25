@@ -1,4 +1,6 @@
-package com.jetbrains.jetpad.vclang.term;
+package com.jetbrains.jetpad.vclang.parser.prettyprint;
+
+import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
 import java.util.List;
