@@ -87,6 +87,7 @@ public class FunctionDefinition extends Definition implements Function {
     return myHasErrors;
   }
 
+  @Override
   public void hasErrors(TypeCheckingStatus status) {
     myHasErrors = status;
   }

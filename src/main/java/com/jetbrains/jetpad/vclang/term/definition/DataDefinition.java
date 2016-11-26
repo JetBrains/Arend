@@ -167,6 +167,7 @@ public class DataDefinition extends Definition {
     return myHasErrors;
   }
 
+  @Override
   public void hasErrors(TypeCheckingStatus status) {
     myHasErrors = status;
   }

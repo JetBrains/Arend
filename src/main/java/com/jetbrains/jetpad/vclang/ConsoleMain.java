@@ -1,19 +1,26 @@
 package com.jetbrains.jetpad.vclang;
 
-import com.jetbrains.jetpad.vclang.error.*;
+import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.Error;
+import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.module.BaseModuleLoader;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.module.caching.CachePersistenceException;
+import com.jetbrains.jetpad.vclang.module.caching.CachingModuleLoader;
+import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.CompositeSourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.CompositeStorage;
 import com.jetbrains.jetpad.vclang.module.source.file.FileStorage;
-import com.jetbrains.jetpad.vclang.naming.namespace.*;
+import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
+import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotSourceInfoCollector;
 import com.jetbrains.jetpad.vclang.naming.oneshot.ResolvingModuleLoader;
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.ConcreteResolveListener;
-import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
-import com.jetbrains.jetpad.vclang.typechecking.SimpleTypecheckerState;
+import com.jetbrains.jetpad.vclang.term.*;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
@@ -21,6 +28,10 @@ import org.apache.commons.cli.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -46,10 +57,12 @@ public class ConsoleMain {
   // Storage
   private final String sourceDirStr;
   private final File sourceDir;
+  private final FileStorage fileStorage;
   private final CompositeStorage<Prelude.SourceId, FileStorage.SourceId> storage;
 
   // Modules
-  private final ResolvingModuleLoader<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> moduleLoader;
+  private final ResolvingModuleLoader<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> resolvingModuleLoader;
+  private final CachingModuleLoader<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> moduleLoader;
   private final Map<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId, Map<String, Abstract.Definition>> definitionIds = new HashMap<>();
 
   // Name resolving
@@ -59,7 +72,7 @@ public class ConsoleMain {
   private final SourceInfoProvider<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> srcInfoProvider;
 
   // Typechecking
-  private final TypecheckerState state = new SimpleTypecheckerState();
+  private final TypecheckerState state;
   private final Set<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> requestedSources = new LinkedHashSet<>();
 
 
@@ -68,28 +81,32 @@ public class ConsoleMain {
     srcInfoProvider = srcInfoCollector.sourceInfoProvider;
     errf = new ErrorFormatter(srcInfoProvider);
 
+    Prelude.PreludeStorage preludeStorage = new Prelude.PreludeStorage();
     sourceDirStr = cmdLine.getOptionValue("s");
     sourceDir = new File(sourceDirStr == null ? System.getProperty("user.dir") : sourceDirStr);
-    storage = createStorage(sourceDir);
+    fileStorage = new FileStorage(sourceDir);
+    storage = new CompositeStorage<>(preludeStorage, fileStorage, preludeStorage, fileStorage);
 
     boolean recompile = cmdLine.hasOption("recompile");
     ModuleLoadingListener moduleLoadingListener = new ModuleLoadingListener(srcInfoCollector);
-    moduleLoader = createResolvingModuleLoader(storage, errorReporter, moduleLoadingListener, staticNsProvider, dynamicNsProvider);
+    resolvingModuleLoader = createResolvingModuleLoader(moduleLoadingListener);
+    moduleLoader = createCachingModuleLoader(recompile);
+    state = moduleLoader.getTypecheckerState();
 
     Namespace preludeNamespace = loadPrelude();
-    moduleLoader.setPreludeNamespace(preludeNamespace);
+    resolvingModuleLoader.setPreludeNamespace(preludeNamespace);
 
     argFiles = cmdLine.getArgList();
   }
 
-  private static CompositeStorage<Prelude.SourceId, FileStorage.SourceId> createStorage(File sourceDir) {
-    Prelude.PreludeStorage preludeStorage = new Prelude.PreludeStorage();
-    FileStorage fileStorage = new FileStorage(sourceDir);
-    return new CompositeStorage<>(preludeStorage, fileStorage, preludeStorage, fileStorage);
+  private ResolvingModuleLoader<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> createResolvingModuleLoader(ModuleLoadingListener moduleLoadingListener) {
+    return new ResolvingModuleLoader<>(storage, moduleLoadingListener, staticNsProvider, dynamicNsProvider, new ConcreteResolveListener(), errorReporter);
   }
 
-  private static ResolvingModuleLoader<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> createResolvingModuleLoader(CompositeStorage<Prelude.SourceId, FileStorage.SourceId> storage, ErrorReporter errorReporter, ModuleLoadingListener moduleLoadingListener, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider) {
-    return new ResolvingModuleLoader<>(storage, moduleLoadingListener, staticNsProvider, dynamicNsProvider, new ConcreteResolveListener(), errorReporter);
+  private CachingModuleLoader<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> createCachingModuleLoader(boolean recompile) {
+    CachingModuleLoader<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> moduleLoader = new CachingModuleLoader<>(resolvingModuleLoader, new MyPersistenceProvider(), storage, srcInfoProvider, !recompile);
+    resolvingModuleLoader.overrideModuleLoader(moduleLoader);
+    return moduleLoader;
   }
 
   private Namespace loadPrelude() {
@@ -143,7 +160,7 @@ public class ConsoleMain {
     }
     for (CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId source : requestedSources) {
       ModuleResult result = typeCheckResults.get(source);
-      reportTypeCheckResult(source, result);
+      reportTypeCheckResult(source, result == null ? ModuleResult.OK : result);
       if (result == ModuleResult.ERRORS) numWithErrors += 1;
     }
     System.out.println("--- Done ---");
@@ -151,7 +168,14 @@ public class ConsoleMain {
       System.out.println("Number of modules with errors: " + numWithErrors);
     }
 
-    // TODO: Serialize typechecked modules
+    // Persist cache
+    for (CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId module : moduleLoader.getCachedModules()) {
+      try {
+        moduleLoader.persistModule(module);
+      } catch (IOException | CachePersistenceException e) {
+        e.printStackTrace();
+      }
+    }
   }
 
   private void reportTypeCheckResult(CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId source, ModuleResult result) {
@@ -181,9 +205,13 @@ public class ConsoleMain {
 
     final Set<Abstract.ClassDefinition> modulesToTypeCheck = new LinkedHashSet<>();
     for (CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId source : sources) {
-      Abstract.ClassDefinition definition = moduleLoader.getLoadedModule(source.getModulePath());
+      Abstract.ClassDefinition definition = resolvingModuleLoader.getLoadedModule(source.getModulePath());
       if (definition == null){
-        definition = moduleLoader.load(source);
+        CachingModuleLoader.Result result = moduleLoader.loadWithResult(source);
+        if (result.exception != null) {
+          System.err.println("Error loading cache: " + result.exception);
+        }
+        definition = result.definition;
         flushErrors();
       }
       if (definition == null) {
@@ -243,6 +271,7 @@ public class ConsoleMain {
 
   class ModuleLoadingListener extends BaseModuleLoader.ModuleLoadingListener<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> {
     private final OneshotSourceInfoCollector<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> mySrcInfoCollector;
+    private final DefinitionIdsCollector defIdCollector = new DefinitionIdsCollector();
 
     ModuleLoadingListener(OneshotSourceInfoCollector<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> srcInfoCollector) {
       mySrcInfoCollector = srcInfoCollector;
@@ -254,6 +283,7 @@ public class ConsoleMain {
       if (!definitionIds.containsKey(module)) {
         definitionIds.put(module, new HashMap<String, Abstract.Definition>());
       }
+      defIdCollector.visitClass(abstractDefinition, definitionIds.get(module));
       mySrcInfoCollector.visitModule(module, abstractDefinition);
       System.out.println("[Loaded] " + displaySource(module, false));
     }
@@ -281,6 +311,162 @@ public class ConsoleMain {
     }
   }
 
+  class MyPersistenceProvider implements PersistenceProvider<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> {
+    @Override
+    public URL getUrl(CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId sourceId) {
+      try {
+        final String root;
+        final String path;
+        final String query;
+        if (sourceId.source1 != null) {
+          root = "prelude";
+          path = "Prelude";
+          query = null;
+        } else {
+          root = "";
+          path = sourceId.source2.getFilePath().toString();
+          query = "" + sourceId.source2.getLastModified();
+        }
+        return new URI("file", root, "/" + path, query, null).toURL();
+      } catch (URISyntaxException | MalformedURLException e) {
+        throw new IllegalStateException();
+      }
+    }
+
+    @Override
+    public CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId getModuleId(URL sourceUrl) {
+      if (sourceUrl.getAuthority() != null && sourceUrl.getAuthority().equals("prelude")) {
+        return storage.locateModule(Prelude.PreludeStorage.PRELUDE_MODULE_PATH);
+      } else if (sourceUrl.getAuthority() == null) {
+        ModulePath modulePath = FileStorage.modulePath(sourceUrl.getPath().substring(1));
+        if (sourceUrl.getQuery() != null) {
+          return storage.locateModule(modulePath);
+        } else {
+          try {
+            long mtime = Long.parseLong(sourceUrl.getQuery());
+            FileStorage.SourceId fileSourceId = fileStorage.locateModule(modulePath, mtime);
+            return fileSourceId != null ? storage.idFromSecond(fileSourceId) : null;
+          } catch (NumberFormatException ignored) {
+            return null;
+          }
+        }
+      } else {
+        return null;
+      }
+    }
+
+    @Override
+    public String getIdFor(Abstract.Definition definition) {
+      if (definition instanceof Concrete.Definition) {
+        Concrete.Position pos = ((Concrete.Definition) definition).getPosition();
+        if (pos != null) {
+          return pos.line + ";" + pos.column;
+        }
+      }
+      return null;
+    }
+
+    @Override
+    public Abstract.Definition getFromId(CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId sourceId, String id) {
+      Map<String, Abstract.Definition> sourceMap = definitionIds.get(sourceId);
+      if (sourceMap == null) {
+        return null;
+      } else {
+        return sourceMap.get(id);
+      }
+    }
+  }
+
+  static class DefinitionIdsCollector implements AbstractDefinitionVisitor<Map<String, Abstract.Definition>, Void>, AbstractStatementVisitor<Map<String, Abstract.Definition>, Void> {
+    @Override
+    public Void visitDefine(Abstract.DefineStatement stat, Map<String, Abstract.Definition> params) {
+      Abstract.Definition definition = stat.getDefinition();
+      return definition.accept(this, params);
+    }
+
+    @Override
+    public Void visitNamespaceCommand(Abstract.NamespaceCommandStatement stat, Map<String, Abstract.Definition> params) {
+      return null;
+    }
+
+    @Override
+    public Void visitFunction(Abstract.FunctionDefinition def, Map<String, Abstract.Definition> params) {
+      params.put(getIdFor(def), def);
+      for (Abstract.Statement statement : def.getStatements()) {
+        statement.accept(this, params);
+      }
+      return null;
+    }
+
+    @Override
+    public Void visitClassField(Abstract.ClassField def, Map<String, Abstract.Definition> params) {
+      params.put(getIdFor(def), def);
+      return null;
+    }
+
+    @Override
+    public Void visitData(Abstract.DataDefinition def, Map<String, Abstract.Definition> params) {
+      params.put(getIdFor(def), def);
+      for (Abstract.Constructor constructor : def.getConstructors()) {
+        constructor.accept(this, params);
+      }
+      return null;
+    }
+
+    @Override
+    public Void visitConstructor(Abstract.Constructor def, Map<String, Abstract.Definition> params) {
+      params.put(getIdFor(def), def);
+      return null;
+    }
+
+    @Override
+    public Void visitClass(Abstract.ClassDefinition def, Map<String, Abstract.Definition> params) {
+      params.put(getIdFor(def), def);
+      for (Abstract.Statement statement : def.getGlobalStatements()) {
+        statement.accept(this, params);
+      }
+      for (Abstract.Definition definition : def.getInstanceDefinitions()) {
+        definition.accept(this, params);
+      }
+      for (Abstract.ClassField field : def.getFields()) {
+        field.accept(this, params);
+      }
+
+      return null;
+    }
+
+    @Override
+    public Void visitImplement(Abstract.Implementation def, Map<String, Abstract.Definition> params) {
+      return null;
+    }
+
+    @Override
+    public Void visitClassView(Abstract.ClassView def, Map<String, Abstract.Definition> params) {
+      return null;
+    }
+
+    @Override
+    public Void visitClassViewField(Abstract.ClassViewField def, Map<String, Abstract.Definition> params) {
+      return null;
+    }
+
+    @Override
+    public Void visitClassViewInstance(Abstract.ClassViewInstance def, Map<String, Abstract.Definition> params) {
+      return null;
+    }
+
+
+    static String getIdFor(Abstract.Definition definition) {
+      if (definition instanceof Concrete.Definition) {
+        Concrete.Position pos = ((Concrete.Definition) definition).getPosition();
+        if (pos != null) {
+          return pos.line + ";" + pos.column;
+        }
+      }
+      return null;
+    }
+  }
+
 
   public static void main(String[] args) {
     try {
@@ -299,5 +485,4 @@ public class ConsoleMain {
   private static void printHelp() {
     new HelpFormatter().printHelp("vclang [FILES]", cmdOptions);
   }
-
 }

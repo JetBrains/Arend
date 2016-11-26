@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package vclang.compiled;
+option java_package = "com.jetbrains.jetpad.vclang.module.caching.serialization";
+option java_outer_classname = "LevelProtos";
+
+
+message Level {
+    int32 constant = 1;
+    int32 binding_ref = 2;
+}
+message LevelMax {
+    repeated Level level = 1;
+}
+
+message Sort {
+    Level p_level = 1;
+    Level h_level = 2;
+}
+message SortMax {
+    LevelMax p_level = 1;
+    LevelMax h_level = 2;
+}

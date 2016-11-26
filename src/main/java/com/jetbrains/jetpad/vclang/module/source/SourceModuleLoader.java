@@ -9,6 +9,7 @@ public abstract class SourceModuleLoader<SourceIdT extends SourceId> implements 
   abstract public Abstract.ClassDefinition load(SourceIdT sourceId);
 
   final public Abstract.ClassDefinition load(ModulePath modulePath) {
-    return load(locateModule(modulePath));
+    SourceIdT sourceId = locateModule(modulePath);
+    return sourceId != null ? load(sourceId) : null;
   }
 }
