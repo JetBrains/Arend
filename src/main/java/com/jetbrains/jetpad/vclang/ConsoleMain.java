@@ -206,7 +206,11 @@ public class ConsoleMain {
     for (CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId source : sources) {
       Abstract.ClassDefinition definition = resolvingModuleLoader.getLoadedModule(source.getModulePath());
       if (definition == null){
-        definition = moduleLoader.load(source);
+        CachingModuleLoader.Result result = moduleLoader.loadWithResult(source);
+        if (result.exception != null) {
+          System.err.println("Error loading cache: " + result.exception);
+        }
+        definition = result.definition;
         flushErrors();
       }
       if (definition == null) {

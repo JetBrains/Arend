@@ -162,5 +162,10 @@ public class Prelude extends SimpleNamespace {
     public ModulePath getModulePath() {
       return PreludeStorage.PRELUDE_MODULE_PATH;
     }
+
+    @Override
+    public String toString() {
+      return "PRELUDE";
+    }
   }
 }

@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
@@ -42,10 +43,14 @@ public class CachingModuleLoader<SourceIdT extends SourceId> extends SourceModul
 
   @Override
   public Abstract.ClassDefinition load(SourceIdT sourceId) {
-    return load(sourceId, myUseCache);
+    return loadWithResult(sourceId).definition;
   }
 
-  protected Abstract.ClassDefinition load(SourceIdT sourceId, boolean useCache) {
+  public Result loadWithResult(SourceIdT sourceIdT) {
+    return load(sourceIdT, myUseCache);
+  }
+
+  public Result load(SourceIdT sourceId, boolean useCache) {
     Abstract.ClassDefinition result = myAbstractLoaded.get(sourceId);
     if (result == null) {
       result = mySourceLoader.load(sourceId);
@@ -55,13 +60,18 @@ public class CachingModuleLoader<SourceIdT extends SourceId> extends SourceModul
     }
 
     if (result != null && useCache) {
-      LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState localState = loadCache(sourceId);
-      if (localState != null) {
-        myTcState.useCache(sourceId, localState);
+      try {
+        boolean cacheLoaded = loadCache(sourceId);
+        return Result.Cache(result, cacheLoaded);
+      } catch (CacheLoadingException e) {
+        // TODO: TC state is now potentially corrupted, clean it up properly
+        myStubsLoaded.remove(sourceId);
+        myTcState.wipe(sourceId);
+        return Result.CacheError(result, e);
       }
+    } else {
+      return Result.NoCache(result);
     }
-
-    return result;
   }
 
   public TypecheckerState getTypecheckerState() {
@@ -104,33 +114,56 @@ public class CachingModuleLoader<SourceIdT extends SourceId> extends SourceModul
     return out.build();
   }
 
-  private LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState loadCache(SourceIdT sourceId) {
-    LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState localState = myTcState.getLocal(sourceId);
-    if (!localState.getTypecheckedDefinitions().isEmpty()) {
-      // TODO: properly assert that current state and new state are compatible
-      return null;
+  private boolean loadCache(SourceIdT sourceId) throws CacheLoadingException {
+    if (sourceId.getModulePath().equals(Prelude.PreludeStorage.PRELUDE_MODULE_PATH)) {
+      return true;  // TODO: HACK
     }
     InputStream cacheStream = myCacheSupplier.getCacheInputStream(sourceId);
     if (cacheStream == null) {
-      // TODO[report]: report that loading/loaded smth from cache
-      return null;
+      return false;
     }
     try {
+      LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState localState = myTcState.getLocal(sourceId);
       ModuleProtos.Module moduleProto = ModuleProtos.Module.parseFrom(cacheStream);
-      loadCachedModule(sourceId, moduleProto, localState);
-      return localState;
+      loadCachedState(sourceId, localState, moduleProto);
+      return true;
     } catch (IOException e) {
-      return null;
+      throw new CacheLoadingException(sourceId, e);
     }
   }
 
-  private boolean loadCachedModule(SourceIdT sourceId, ModuleProtos.Module moduleProto, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) {
+  private void loadCachedState(SourceIdT sourceId, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState localState, ModuleProtos.Module moduleProto) throws CacheLoadingException {
     DefinitionStateDeserialization<SourceIdT> defStateDeserialization = new DefinitionStateDeserialization<>(sourceId, myPersistenceProvider);
-    defStateDeserialization.readStubs(moduleProto.getDefinitionState(), state);
-    myStubsLoaded.add(sourceId);
-    ReadCalltargets calltargets = new ReadCalltargets(sourceId, moduleProto.getReferredDefinitionList());
-    defStateDeserialization.fillInDefinitions(moduleProto.getDefinitionState(), state, calltargets);
-    return true;
+    try {
+      defStateDeserialization.readStubs(moduleProto.getDefinitionState(), localState);
+      myStubsLoaded.add(sourceId);
+      ReadCalltargets calltargets = new ReadCalltargets(sourceId, moduleProto.getReferredDefinitionList());
+      defStateDeserialization.fillInDefinitions(moduleProto.getDefinitionState(), localState, calltargets);
+    } catch (DeserializationError deserializationError) {
+      throw new CacheLoadingException(sourceId, deserializationError);
+    }
+  }
+
+  public static class Result {
+    public final Abstract.ClassDefinition definition;
+    public final boolean cacheLoaded;
+    public final CacheLoadingException exception;
+
+    private Result(Abstract.ClassDefinition definition, boolean cacheLoaded, CacheLoadingException exception) {
+      this.definition = definition;
+      this.cacheLoaded = cacheLoaded;
+      this.exception = exception;
+    }
+
+    private static Result NoCache(Abstract.ClassDefinition definition) {
+      return new Result(definition, false, null);
+    }
+    private static Result Cache(Abstract.ClassDefinition definition, boolean cacheLoaded) {
+      return new Result(definition, cacheLoaded, null);
+    }
+    private static Result CacheError(Abstract.ClassDefinition definition, CacheLoadingException e) {
+      return new Result(definition, false, e);
+    }
   }
 
 
@@ -178,18 +211,25 @@ public class CachingModuleLoader<SourceIdT extends SourceId> extends SourceModul
   class ReadCalltargets extends CalltargetProvider.BaseCalltargetProvider implements CalltargetProvider {
     private final List<Definition> myCalltargets = new ArrayList<>();
 
-    ReadCalltargets(SourceIdT sourceId, List<ModuleProtos.Module.DefinitionReference> refDefProtos) {
+    ReadCalltargets(SourceIdT sourceId, List<ModuleProtos.Module.DefinitionReference> refDefProtos) throws CacheLoadingException {
       for (ModuleProtos.Module.DefinitionReference proto : refDefProtos) {
-        try {
           final SourceIdT targetSourceId;
           if (!proto.getSourceUrl().isEmpty()) {
-            URL url = new URL(proto.getSourceUrl());
-            targetSourceId = myPersistenceProvider.getModuleId(url);
-            if (targetSourceId == null) {
-              throw new IllegalStateException();  // TODO[serial]: report
-            }
-            if (!myStubsLoaded.contains(targetSourceId)) {
-              load(targetSourceId);
+            try {
+              URL url = new URL(proto.getSourceUrl());
+              targetSourceId = myPersistenceProvider.getModuleId(url);
+              if (targetSourceId == null) {
+                throw new CacheLoadingException(sourceId, "Unresolvable source URL: " + url);
+              }
+              if (!myStubsLoaded.contains(targetSourceId)) {
+                Result result = load(targetSourceId, true);
+                if (!result.cacheLoaded) {
+                  String reason = result.exception == null ? "no cache for " + targetSourceId : "" + result.exception;
+                  throw new CacheLoadingException(sourceId, "can’t load dependency cache: " + reason);
+                }
+              }
+            } catch (MalformedURLException e) {
+              throw new CacheLoadingException(sourceId, "Malformed source URL (" + e.getMessage() + "): " + proto.getSourceUrl());
             }
           } else {
             targetSourceId = sourceId;
@@ -197,12 +237,9 @@ public class CachingModuleLoader<SourceIdT extends SourceId> extends SourceModul
           Abstract.Definition absDef = myPersistenceProvider.getFromId(targetSourceId, proto.getDefinitionId());
           Definition typechecked = myTcState.getLocal(targetSourceId).getTypechecked(absDef);
           if (typechecked == null) {
-            throw new IllegalStateException();
+            throw new CacheLoadingException(sourceId, "Referred definition was not in cache");
           }
           myCalltargets.add(typechecked);
-        } catch (MalformedURLException e) {
-          throw new IllegalStateException();  // TODO[serial]: report
-        }
       }
     }
 

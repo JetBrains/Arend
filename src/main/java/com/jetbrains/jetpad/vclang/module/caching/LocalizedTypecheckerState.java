@@ -35,10 +35,6 @@ public class LocalizedTypecheckerState<SourceIdT extends SourceId> implements Ty
     return myInstancePool;
   }
 
-  public void useCache(SourceIdT sourceId, LocalTypecheckerState localState) {
-    return;
-  }
-
   public Set<SourceIdT> getCachedModules() {
     return myStates.keySet();
   }
@@ -55,6 +51,10 @@ public class LocalizedTypecheckerState<SourceIdT extends SourceId> implements Ty
 
   private LocalTypecheckerState getLocal(Abstract.Definition def) {
     return getLocal(myDefLocator.sourceOf(def));
+  }
+
+  public void wipe(SourceIdT sourceId) {
+    myStates.remove(sourceId);
   }
 
 

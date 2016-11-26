@@ -18,7 +18,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
     myPersistenceProvider = persistenceProvider;
   }
 
-  public void readStubs(ModuleProtos.Module.DefinitionState in, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) {
+  public void readStubs(ModuleProtos.Module.DefinitionState in, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
     for (Map.Entry<String, DefinitionProtos.Definition> entry : in.getDefinitionMap().entrySet()) {
       String id = entry.getKey();
       DefinitionProtos.Definition defProto = entry.getValue();
@@ -45,13 +45,13 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
           def = new FunctionDefinition(getAbstract(id));
           break;
         default:
-          throw new IllegalStateException();  // TODO[serial]: report properly
+          throw new DeserializationError("Unknown Definition kind: " + defProto.getDefinitionDataCase());
       }
       state.record(abstractDef, def);
     }
   }
 
-  public void fillInDefinitions(ModuleProtos.Module.DefinitionState in, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state, CalltargetProvider calltargetProvider) {
+  public void fillInDefinitions(ModuleProtos.Module.DefinitionState in, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state, CalltargetProvider calltargetProvider) throws DeserializationError {
     for (Map.Entry<String, DefinitionProtos.Definition> entry : in.getDefinitionMap().entrySet()) {
       String id = entry.getKey();
       DefinitionProtos.Definition defProto = entry.getValue();
@@ -83,7 +83,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
           fillInFunctionDefinition(defDeserializer, defProto.getFunction(), functionDef);
           break;
         default:
-          throw new IllegalStateException();  // TODO[serial]: report properly
+          throw new DeserializationError("Unknown Definition kind: " + defProto.getDefinitionDataCase());
       }
 
       def.hasErrors(defProto.getHasErrors() ? Definition.TypeCheckingStatus.HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS);
@@ -95,7 +95,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
     }
   }
 
-  private void fillInClassDefinition(DefinitionDeserialization defDeserializer, CalltargetProvider calltargetProvider, DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) {
+  private void fillInClassDefinition(DefinitionDeserialization defDeserializer, CalltargetProvider calltargetProvider, DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
     classDef.setFieldSet(defDeserializer.readFieldSet(classProto.getFieldSet()));
 
     Set<ClassDefinition> superClasses = new HashSet<>();
@@ -113,7 +113,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
     }
   }
 
-  private void fillInDataDefinition(DefinitionDeserialization defDeserializer, CalltargetProvider calltargetProvider, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) {
+  private void fillInDataDefinition(DefinitionDeserialization defDeserializer, CalltargetProvider calltargetProvider, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
     dataDef.setParameters(defDeserializer.readParameters(dataProto.getParamList()));
 
     for (Map.Entry<String, DefinitionProtos.Definition.DataData.Constructor> entry : dataProto.getConstructorsMap().entrySet()) {
@@ -138,7 +138,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
     }
   }
 
-  private void fillInFunctionDefinition(DefinitionDeserialization defDeserializer, DefinitionProtos.Definition.FunctionData functionProto, FunctionDefinition functionDef) {
+  private void fillInFunctionDefinition(DefinitionDeserialization defDeserializer, DefinitionProtos.Definition.FunctionData functionProto, FunctionDefinition functionDef) throws DeserializationError {
     functionDef.setParameters(defDeserializer.readParameters(functionProto.getParamList()));
     functionDef.setResultType(defDeserializer.readTypeMax(functionProto.getType()));
     if (functionProto.hasElimTree()) {
@@ -151,12 +151,12 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
     return myPersistenceProvider.getFromId(mySourceId, id);
   }
 
-  private <DefinitionT extends Definition> DefinitionT getTypechecked(LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state, String id) {
+  private <DefinitionT extends Definition> DefinitionT getTypechecked(LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state, String id) throws DeserializationError {
     try {
       //noinspection unchecked
       return (DefinitionT) state.getTypechecked(getAbstract(id));
     } catch (ClassCastException ignored) {
-      throw new IllegalStateException();  // TODO[serial]: report properly
+      throw new DeserializationError("Stored Definition data does not match its kind");
     }
   }
 }

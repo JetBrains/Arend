@@ -10,11 +10,12 @@ public interface CalltargetProvider {
 
     @Override
     public <DefinitionT extends Definition> DefinitionT getCalltarget(int index) {
+      // TODO[serial]: this code is bogus
       try {
         //noinspection unchecked
         return (DefinitionT) getDef(index);
       } catch (ClassCastException ignored) {
-        throw new IllegalStateException();  // TODO[serial]: report properly
+        throw new IllegalStateException();
       }
     }
   }
