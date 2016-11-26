@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.module.BaseModuleLoader;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.module.caching.CachePersistenceException;
 import com.jetbrains.jetpad.vclang.module.caching.CachingModuleLoader;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.CompositeSourceSupplier;
@@ -171,7 +172,7 @@ public class ConsoleMain {
     for (CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId module : moduleLoader.getCachedModules()) {
       try {
         moduleLoader.persistModule(module);
-      } catch (IOException e) {
+      } catch (IOException | CachePersistenceException e) {
         e.printStackTrace();
       }
     }

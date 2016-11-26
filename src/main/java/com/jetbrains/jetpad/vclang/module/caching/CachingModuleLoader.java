@@ -82,7 +82,7 @@ public class CachingModuleLoader<SourceIdT extends SourceId> extends SourceModul
     return myTcState.getCachedModules();
   }
 
-  public boolean persistModule(SourceIdT sourceId) throws IOException {
+  public boolean persistModule(SourceIdT sourceId) throws IOException, CachePersistenceException {
     LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState localState = myTcState.getLocal(sourceId);
     if (!localState.isOutOfSync()) {
       return true;
@@ -103,7 +103,7 @@ public class CachingModuleLoader<SourceIdT extends SourceId> extends SourceModul
     return true;
   }
 
-  private ModuleProtos.Module writeModule(SourceIdT sourceId, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState localState) {
+  private ModuleProtos.Module writeModule(SourceIdT sourceId, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState localState) throws CachePersistenceException {
     ModuleProtos.Module.Builder out = ModuleProtos.Module.newBuilder();
     final WriteCalltargets calltargets = new WriteCalltargets(sourceId);
     // Serialize the module first to populate the call-target registry
@@ -185,7 +185,7 @@ public class CachingModuleLoader<SourceIdT extends SourceId> extends SourceModul
       return index;
     }
 
-    private List<ModuleProtos.Module.DefinitionReference> write() {
+    private List<ModuleProtos.Module.DefinitionReference> write() throws CachePersistenceException {
       List<ModuleProtos.Module.DefinitionReference> out = new ArrayList<>();
       for (Definition calltarget : myCalltargets.keySet()) {
         ModuleProtos.Module.DefinitionReference.Builder entry = ModuleProtos.Module.DefinitionReference.newBuilder();
@@ -194,10 +194,11 @@ public class CachingModuleLoader<SourceIdT extends SourceId> extends SourceModul
           boolean targetPersisted = false;
           try {
             targetPersisted = persistModule(targetSourceId);
-          } catch (IOException ignored) {
+          } catch (IOException e) {
+            throw new CachePersistenceException(mySourceId, e);
           }
           if (!targetPersisted) {
-            throw new IllegalStateException("Can't persist a referred module");  // TODO[serial]: report proper error
+            throw new CachePersistenceException(mySourceId, "Dependency cannot be persisted: " + targetSourceId);
           }
           entry.setSourceUrl(myPersistenceProvider.getUrl(targetSourceId).toString());
         }
