@@ -17,6 +17,10 @@ public class ClassField extends Definition {
   private DependentLink myThisParameter;
   private Expression myType;
 
+  public ClassField(Abstract.ClassField abstractDef, ClassDefinition thisClass) {
+    this(abstractDef, null, thisClass, null);
+  }
+
   public ClassField(Abstract.ClassField abstractDef, Expression type, ClassDefinition thisClass, DependentLink thisParameter) {
     super(abstractDef);
     myThisParameter = thisParameter;
@@ -43,6 +47,11 @@ public class ClassField extends Definition {
     return myThisParameter;
   }
 
+  public void setThisParameter(DependentLink thisParameter) {
+    assert myThisParameter == null;
+    myThisParameter = thisParameter;
+  }
+
   public Expression getBaseType() {
     return myType;
   }
@@ -55,6 +64,11 @@ public class ClassField extends Definition {
   @Override
   public TypeCheckingStatus hasErrors() {
     return myType == null || myType.toError() != null ? TypeCheckingStatus.HAS_ERRORS : TypeCheckingStatus.NO_ERRORS;
+  }
+
+  @Override
+  public void hasErrors(TypeCheckingStatus status) {
+    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -77,6 +91,7 @@ public class ClassField extends Definition {
   }
 
   public void setBaseType(Expression type) {
+    assert myType == null;
     myType = type;
   }
 }

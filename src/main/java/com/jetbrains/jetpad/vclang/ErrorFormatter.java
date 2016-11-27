@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.module.error.ModuleCycleError;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.parser.ParserError;
+import com.jetbrains.jetpad.vclang.parser.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
@@ -11,7 +12,6 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equation;
@@ -103,9 +103,16 @@ public class ErrorFormatter {
       String text = "Expected type: ";
       builder.append(text);
       ((TypeMismatchError) error).expected.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, text.length());
-      builder.append('\n');
-      builder.append("  Actual type: ");
+      builder.append('\n')
+        .append("  Actual type: ");
       ((TypeMismatchError) error).actual.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, text.length());
+    } else if (error instanceof ExpressionMismatchError) {
+      String text = "Expected: ";
+      builder.append(text);
+      ((ExpressionMismatchError) error).expected.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, text.length());
+      builder.append('\n')
+        .append("  Actual: ");
+      ((ExpressionMismatchError) error).actual.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, text.length());
     } else if (error instanceof SolveEquationError) {
       String text = "1st expression: ";
       builder.append(text);
@@ -113,10 +120,6 @@ public class ErrorFormatter {
       builder.append('\n')
           .append("2nd expression: ");
       ((SolveEquationError) error).expr2.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, text.length());
-      if (((SolveEquationError) error).binding != null) {
-        builder.append('\n')
-            .append("Since '").append(((SolveEquationError) error).binding).append("' is free in these expressions");
-      }
     } else if (error instanceof SolveEquationsError) {
       boolean first = true;
       for (Equation equation : ((SolveEquationsError) error).equations) {

@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
+import com.jetbrains.jetpad.vclang.parser.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
@@ -27,7 +28,10 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiTypeOmega;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.CollectDefCallsVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.TerminationCheckVisitor;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
@@ -131,8 +135,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     TypedBinding lhParam;
 
     if (polyParams.isEmpty()) {
-      lpParam = new TypedBinding("\\lp-gen", Lvl());
-      lhParam = new TypedBinding("\\lh-gen", CNat());
+      lpParam = new TypedBinding("\\lp", Lvl());
+      lhParam = new TypedBinding("\\lh", CNat());
       polyParams.add(lpParam);
       polyParams.add(lhParam);
     } else {
@@ -202,12 +206,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         }
 
         paramType = paramType.normalize(NormalizeVisitor.Mode.WHNF);
-        for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
-          if (localInstancePool != null && paramType.toExpression() != null) {
-            Expression type = paramType.toExpression();
-            if (type instanceof ClassViewCallExpression) {
-              Abstract.ClassView classView1 = ((ClassViewCallExpression) type).getClassView();
-              if (classView1.getClassifyingField() != null) {
+        if (localInstancePool != null && paramType.toExpression() != null) {
+          Expression type = paramType.toExpression();
+          if (type instanceof ClassViewCallExpression) {
+            Abstract.ClassView classView1 = ((ClassViewCallExpression) type).getClassView();
+            if (classView1.getClassifyingField() != null) {
+              for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
                 ReferenceExpression reference = new ReferenceExpression(link);
                 if (!localInstancePool.addInstance(FieldCall((ClassField) myState.getTypechecked(((ClassViewCallExpression) type).getClassView().getClassifyingField()), reference).normalize(NormalizeVisitor.Mode.NF), classView1, reference)) {
                   myErrorReporter.report(new LocalTypeCheckingError(Error.Level.WARNING, "Duplicate instance", argument)); // FIXME[error] better error message
@@ -298,11 +302,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
             myErrorReporter.report(new TypeMismatchError(expectedType, termResult.getType(), term));
           } else {
             typedDef.setElimTree(top(list.getFirst(), leaf(def.getArrow(), termResult.getExpression())));
-            if (generatedExpectedType && expectedType != null) {
-              typedDef.setResultType(expectedType.toSorts().max(termResult.getType().toSorts()).toType());
-            } else if (expectedType == null) {
-              typedDef.setResultType(termResult.getType());
-            }
+            typedDef.setResultType(termResult.getType());
             typedDef.typeHasErrors(!paramsOk || typedDef.getResultType() == null);
           }
         }
@@ -365,7 +365,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     boolean paramsOk;
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
       paramsOk = visitParameters(def.getParameters(), def, context, polyParamsList, generatedPolyParams, list, visitor, localInstancePool);
-      // polyParamsList.addAll(generatedPolyParams);
 
       if (def.getUniverse() != null) {
         if (def.getUniverse() instanceof Abstract.PolyUniverseExpression) {
@@ -381,6 +380,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         }
       }
     }
+
+    /*
+    if (def.getUniverse() != null && !(def.getUniverse() instanceof Abstract.TypeOmegaExpression)) {
+      myErrorReporter.report(new ExpressionMismatchError(new PiTypeOmega(EmptyDependentLink.getInstance()), new AbstractExpressionPP(def.getUniverse()), def.getUniverse()));
+    }
+    */
 
     DataDefinition dataDefinition = new DataDefinition(def, inferredSorts, list.getFirst());
     dataDefinition.setThisClass(enclosingClass);
@@ -404,7 +409,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     boolean dataOk = true;
     for (Abstract.Constructor constructor : def.getConstructors()) {
       visitor.getContext().clear();
-      Constructor typedConstructor = visitConstructor(constructor, dataDefinition, visitor, inferredSorts, generatedPolyParams);
+      Constructor typedConstructor = visitConstructor(constructor, dataDefinition, visitor, inferredSorts);
       myState.record(constructor, typedConstructor);
       if (typedConstructor.typeHasErrors()) {
         dataOk = false;
@@ -574,7 +579,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     throw new IllegalStateException();
   }
 
-  private Constructor visitConstructor(Abstract.Constructor def, DataDefinition dataDefinition, CheckTypeVisitor visitor, SortMax sorts, List<TypedBinding> generatedPolyParams) {
+  private Constructor visitConstructor(Abstract.Constructor def, DataDefinition dataDefinition, CheckTypeVisitor visitor, SortMax sorts) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(visitor.getContext())) {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
       String name = def.getName();
@@ -606,27 +611,18 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
       LinkList list = new LinkList();
       for (Abstract.TypeArgument argument : arguments) {
-        Type paramType = visitor.checkParamType(argument.getType());
-        if (paramType == null) {
+        CheckTypeVisitor.Result paramResult = visitor.checkType(argument.getType(), new PiTypeOmega(EmptyDependentLink.getInstance()));
+        if (paramResult == null) {
           return constructor;
         }
-//        paramType = paramType.strip(new HashSet<>(visitor.getContext()), visitor.getErrorReporter());
 
-        if (paramType instanceof PiTypeOmega) {
-          boolean firstTime = generatedPolyParams.isEmpty();
-          paramType = typeOmegaToUniverse((PiTypeOmega) paramType, generatedPolyParams);
-          if (firstTime) {
-            visitor.getContext().addAll(generatedPolyParams);
-          }
-        }
-
-        sorts.add(paramType.toExpression() != null ? paramType.toExpression().getType().toSorts() : SortMax.OMEGA);
+        sorts.add(paramResult.getType().toSorts());
 
         DependentLink param;
         if (argument instanceof Abstract.TelescopeArgument) {
-          param = param(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), paramType);
+          param = param(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), paramResult.getExpression());
         } else {
-          param = param(argument.getExplicit(), (String) null, paramType);
+          param = param(argument.getExplicit(), (String) null, paramResult.getExpression());
         }
         list.append(param);
         visitor.getContext().addAll(toContext(param));
@@ -759,7 +755,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       }
 
       for (Abstract.SuperClass aSuperClass : def.getSuperClasses()) {
-        CheckTypeVisitor.Result result = aSuperClass.getSuperClass().accept(visitor, Universe());
+        CheckTypeVisitor.Result result = visitor.checkType(aSuperClass.getSuperClass(), null);
         if (result == null) {
           classOk = false;
           continue;
@@ -824,7 +820,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       }
 
       myState.record(def, typedDef);
-      typedDef.hasErrors(!classOk);
+      typedDef.hasErrors(classOk ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.HAS_ERRORS);
       return typedDef;
     } catch (Namespace.InvalidNamespaceException e) {
       myErrorReporter.report(e.toError());

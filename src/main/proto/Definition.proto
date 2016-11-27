@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package vclang.compiled;
+option java_package = "com.jetbrains.jetpad.vclang.module.caching.serialization";
+option java_outer_classname = "DefinitionProtos";
+
+import "Expression.proto";
+
+
+message Definition {
+    bool has_errors = 1;
+    bool type_has_errors = 2;
+    int32 this_class_ref = 3;
+    repeated Binding.TypedBinding poly_param = 4;
+    oneof definition_data {
+        ClassData class = 5;
+        DataData data = 6;
+        FunctionData function = 7;
+    }
+
+    message ClassData {
+        FieldSet field_set = 3;
+        repeated int32 super_class_ref = 4;
+        map<string, Field> fields = 5;
+
+        message Field {
+            SingleParameter this_param = 1;
+            Expression type = 2;
+        }
+    }
+    message DataData {
+        repeated Telescope param = 2;
+        map<string, Constructor> constructors = 3;
+        map<int32, ElimTreeNode> conditions = 4;
+        bool matches_on_interval = 5;
+
+        message Constructor {
+            Patterns patterns = 1;
+            repeated Telescope param = 2;
+            bool type_has_errors = 3;
+            bool has_errors = 4;
+
+            message Patterns {
+                repeated PatternArgument pattern_argument = 1;
+            }
+            message PatternArgument {
+                bool not_explicit = 1;
+                bool hidden = 2;
+                Pattern pattern = 3;
+            }
+            message Pattern {
+                oneof kind {
+                    Name name = 1;
+                    ConstructorRef constructor = 2;
+                    AnyConstructor any_constructor = 3;
+                }
+
+                message Name {
+                    SingleParameter var = 1;
+                }
+                message ConstructorRef {
+                    int32 constructor_ref = 1;
+                    Patterns patterns = 2;
+                }
+                message AnyConstructor {
+                    SingleParameter var = 1;
+                }
+            }
+        }
+    }
+    message FunctionData {
+        repeated Telescope param = 2;
+        Type type = 3;
+        ElimTreeNode elim_tree = 4;
+    }
+}

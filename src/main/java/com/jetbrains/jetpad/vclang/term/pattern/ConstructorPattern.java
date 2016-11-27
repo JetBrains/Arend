@@ -35,6 +35,10 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
     return myConstructor.getName();
   }
 
+  public Patterns getPatterns() {
+    return myArguments;
+  }
+
   @Override
   public List<PatternArgument> getArguments() {
     return myArguments.getPatterns();

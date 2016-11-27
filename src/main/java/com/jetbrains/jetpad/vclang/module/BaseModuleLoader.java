@@ -29,10 +29,10 @@ public class BaseModuleLoader<SourceIdT extends SourceId> extends SourceModuleLo
   }
 
   @Override
-  public SourceSupplier.Result load(SourceIdT sourceId) {
+  public Abstract.ClassDefinition load(SourceIdT sourceId) {
     try {
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter(Error.Level.ERROR);
-      SourceSupplier.Result result = mySourceSupplier.loadSource(sourceId, new CompositeErrorReporter(myErrorReporter, countingErrorReporter));
+      Abstract.ClassDefinition result = mySourceSupplier.loadSource(sourceId, new CompositeErrorReporter(myErrorReporter, countingErrorReporter));
       if (result == null) {
         myListener.loadingError(sourceId, new ModuleNotFoundError(sourceId));
         return null;
@@ -40,8 +40,7 @@ public class BaseModuleLoader<SourceIdT extends SourceId> extends SourceModuleLo
 
       int errorCount = countingErrorReporter.getErrorsNumber();
       if (errorCount == 0) {
-        assert result.definition != null;
-        myListener.loadingSucceeded(sourceId, result.definition);
+        myListener.loadingSucceeded(sourceId, result);
         return result;
       } else {
         ModuleLoadingError error = new ModuleLoadingError(sourceId, "Module  contains " + errorCount + (errorCount == 1 ? " error" : " errors"));

@@ -42,6 +42,11 @@ public class DataDefinition extends Definition {
     myHasErrors = myTypeHasErrors ? TypeCheckingStatus.HAS_ERRORS : TypeCheckingStatus.TYPE_CHECKING;
   }
 
+  @Override
+  public Abstract.DataDefinition getAbstractDefinition() {
+    return (Abstract.DataDefinition) super.getAbstractDefinition();
+  }
+
   public SortMax getSorts() {
     return mySorts;
   }
@@ -162,6 +167,7 @@ public class DataDefinition extends Definition {
     return myHasErrors;
   }
 
+  @Override
   public void hasErrors(TypeCheckingStatus status) {
     myHasErrors = status;
   }

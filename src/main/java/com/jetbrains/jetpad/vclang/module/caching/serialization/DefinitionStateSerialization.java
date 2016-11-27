@@ -1,0 +1,119 @@
+package com.jetbrains.jetpad.vclang.module.caching.serialization;
+
+import com.jetbrains.jetpad.vclang.module.caching.LocalizedTypecheckerState;
+import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
+import com.jetbrains.jetpad.vclang.module.source.SourceId;
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
+import com.jetbrains.jetpad.vclang.term.definition.*;
+
+public class DefinitionStateSerialization {
+  private final PersistenceProvider<? extends SourceId> myPersistenceProvider;
+  private final CalltargetIndexProvider myCalltargetIndexProvider;
+
+  public DefinitionStateSerialization(PersistenceProvider<? extends SourceId> persistenceProvider, CalltargetIndexProvider calltargetIndexProvider) {
+    myPersistenceProvider = persistenceProvider;
+    myCalltargetIndexProvider = calltargetIndexProvider;
+  }
+
+  public ModuleProtos.Module.DefinitionState writeDefinitionState(LocalizedTypecheckerState<? extends SourceId>.LocalTypecheckerState state) {
+    ModuleProtos.Module.DefinitionState.Builder builder = ModuleProtos.Module.DefinitionState.newBuilder();
+    for (Abstract.Definition definition : state.getTypecheckedDefinitions()) {
+      Definition typechecked = state.getTypechecked(definition);
+      if (typechecked instanceof Constructor || typechecked instanceof ClassField) continue;
+      if (!typechecked.hasErrors().equals(Definition.TypeCheckingStatus.NO_ERRORS)) continue;
+      builder.putDefinition(myPersistenceProvider.getIdFor(definition), writeDefinition(typechecked, state));
+    }
+    return builder.build();
+  }
+
+  // TODO: HACK. Second parameter should not be needed
+  private DefinitionProtos.Definition writeDefinition(Definition definition, LocalizedTypecheckerState<? extends SourceId>.LocalTypecheckerState state) {
+    final DefinitionProtos.Definition.Builder out = DefinitionProtos.Definition.newBuilder();
+
+    if (definition.getThisClass() != null) {
+      out.setThisClassRef(myCalltargetIndexProvider.getDefIndex(definition.getThisClass()));
+    }
+
+    final DefinitionSerialization defSerializer = new DefinitionSerialization(myCalltargetIndexProvider);
+    for (TypedBinding polyVar : definition.getPolyParams()) {
+      out.addPolyParam(defSerializer.createTypedBinding(polyVar));
+    }
+
+    out.setHasErrors(com.jetbrains.jetpad.vclang.term.definition.Definition.TypeCheckingStatus.HAS_ERRORS.equals(definition.hasErrors()));
+
+    if (definition instanceof ClassDefinition) {
+      // type cannot possibly have errors
+      out.setClass_(writeClassDefinition(defSerializer, (ClassDefinition) definition, state));
+    } else if (definition instanceof DataDefinition) {
+      out.setTypeHasErrors(definition.typeHasErrors());
+      out.setData(writeDataDefinition(defSerializer, (DataDefinition) definition));
+    } else if (definition instanceof FunctionDefinition) {
+      out.setTypeHasErrors(definition.typeHasErrors());
+      out.setFunction(writeFunctionDefinition(defSerializer, (FunctionDefinition) definition));
+    } else {
+      throw new IllegalStateException();
+    }
+
+    return out.build();
+  }
+
+  // TODO: HACK. State should not be needed as class fields are not individually typecheckable
+  private DefinitionProtos.Definition.ClassData writeClassDefinition(DefinitionSerialization defSerializer, ClassDefinition definition, LocalizedTypecheckerState<? extends SourceId>.LocalTypecheckerState state) {
+    DefinitionProtos.Definition.ClassData.Builder builder = DefinitionProtos.Definition.ClassData.newBuilder();
+
+    for (Abstract.ClassField abstractField : definition.getAbstractDefinition().getFields()) {
+      ClassField field = (ClassField) state.getTypechecked(abstractField);
+      DefinitionProtos.Definition.ClassData.Field.Builder fBuilder = DefinitionProtos.Definition.ClassData.Field.newBuilder();
+      fBuilder.setThisParam(defSerializer.writeParameter(field.getThisParameter()));
+      fBuilder.setType(defSerializer.writeExpr(field.getBaseType()));
+      builder.putFields(myPersistenceProvider.getIdFor(abstractField), fBuilder.build());
+    }
+
+    builder.setFieldSet(defSerializer.writeFieldSet(definition.getFieldSet()));
+
+    for (ClassDefinition classDefinition : definition.getSuperClasses()) {
+      builder.addSuperClassRef(myCalltargetIndexProvider.getDefIndex(classDefinition));
+    }
+
+    return builder.build();
+  }
+
+  private DefinitionProtos.Definition.DataData writeDataDefinition(DefinitionSerialization defSerializer, DataDefinition definition) {
+    DefinitionProtos.Definition.DataData.Builder builder = DefinitionProtos.Definition.DataData.newBuilder();
+
+    builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
+
+    for (Constructor constructor : definition.getConstructors()) {
+      DefinitionProtos.Definition.DataData.Constructor.Builder cBuilder = DefinitionProtos.Definition.DataData.Constructor.newBuilder();
+      if (constructor.getPatterns() != null) {
+        cBuilder.setPatterns(defSerializer.writePatterns(constructor.getPatterns()));
+      }
+      cBuilder.addAllParam(defSerializer.writeParameters(constructor.getParameters()));
+      cBuilder.setTypeHasErrors(constructor.typeHasErrors());
+      cBuilder.setHasErrors(Definition.TypeCheckingStatus.HAS_ERRORS.equals(constructor.hasErrors()));
+
+      builder.putConstructors(myPersistenceProvider.getIdFor(constructor.getAbstractDefinition()), cBuilder.build());
+    }
+
+    for (Condition condition : definition.getConditions()) {
+      builder.putConditions(myCalltargetIndexProvider.getDefIndex(condition.getConstructor()), defSerializer.writeElimTree(condition.getElimTree()));
+    }
+
+    builder.setMatchesOnInterval(definition.matchesOnInterval());
+
+    return builder.build();
+  }
+
+  private DefinitionProtos.Definition.FunctionData writeFunctionDefinition(DefinitionSerialization defSerializer, FunctionDefinition definition) {
+    DefinitionProtos.Definition.FunctionData.Builder builder = DefinitionProtos.Definition.FunctionData.newBuilder();
+
+    builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
+    builder.setType(defSerializer.writeType(definition.getResultType()));
+    if (definition.getElimTree() != null) {
+      builder.setElimTree(defSerializer.writeElimTree(definition.getElimTree()));
+    }
+
+    return builder.build();
+  }
+}

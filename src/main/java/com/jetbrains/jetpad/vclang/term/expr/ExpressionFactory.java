@@ -260,11 +260,6 @@ public class ExpressionFactory {
     return DataCall(Prelude.CNAT, new LevelArguments(), Collections.<Expression>emptyList());
   }
 
-  @Deprecated
-  public static UniverseExpression Universe() {
-    return new UniverseExpression(new Sort(Sort.ANY_LEVEL, Sort.ANY_LEVEL));
-  }
-
   public static UniverseExpression Universe(int pLevel) {
     return new UniverseExpression(new Sort(pLevel, Sort.NOT_TRUNCATED));
   }

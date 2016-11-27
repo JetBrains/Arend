@@ -6,10 +6,10 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 
 public abstract class SourceModuleLoader<SourceIdT extends SourceId> implements ModuleLoader {
   abstract public SourceIdT locateModule(ModulePath modulePath);
-  abstract public SourceSupplier.Result load(SourceIdT sourceId);
+  abstract public Abstract.ClassDefinition load(SourceIdT sourceId);
 
   final public Abstract.ClassDefinition load(ModulePath modulePath) {
-    SourceSupplier.Result result = load(locateModule(modulePath));
-    return result != null ? result.definition : null;
+    SourceIdT sourceId = locateModule(modulePath);
+    return sourceId != null ? load(sourceId) : null;
   }
 }

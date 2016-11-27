@@ -34,14 +34,4 @@ public class CompositeStorage<SourceId1T extends SourceId, SourceId2T extends So
       return mySup2.getCacheOutputStream(sourceId.source2);
     }
   }
-
-  @Override
-  public byte[] getCurrentEtag(SourceId sourceId) {
-    if (sourceId.getSourceSupplier() != this) return null;
-    if (sourceId.source1 != null) {
-      return mySup1.getCurrentEtag(sourceId.source1);
-    } else {
-      return mySup2.getCurrentEtag(sourceId.source2);
-    }
-  }
 }

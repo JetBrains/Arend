@@ -3,9 +3,9 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
+import com.jetbrains.jetpad.vclang.parser.prettyprint.StringPrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.StringPrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
@@ -379,7 +379,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   private boolean compareExpressions(PreResult result, Expression expected, Expression actual, Abstract.Expression expr) {
     if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, expected.normalize(NormalizeVisitor.Mode.NF), actual.normalize(NormalizeVisitor.Mode.NF), expr)) {
-      LocalTypeCheckingError error = new SolveEquationError<>(expected.normalize(NormalizeVisitor.Mode.HUMAN_NF), actual.normalize(NormalizeVisitor.Mode.HUMAN_NF), null, expr);
+      LocalTypeCheckingError error = new ExpressionMismatchError(expected.normalize(NormalizeVisitor.Mode.HUMAN_NF), actual.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
       expr.setWellTyped(myContext, Error(result.getExpression(), error));
       myErrorReporter.report(error);
       return false;
@@ -680,6 +680,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     myErrorReporter.report(new LocalTypeCheckingError("\\Type can only be used in a definition as codomain in either its own type or the type of its parameter", expr));
     return null;
   }
+
   @Override
   public Result visitError(Abstract.ErrorExpression expr, Type expectedType) {
     LocalTypeCheckingError error = new GoalError(myContext, expectedType == null ? null : expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
@@ -780,8 +781,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       }
     }
 
-    //if (!list.getFirst().hasNext()) return codomainResult == null ? null : codomainResult;
-    //return codomainResult == null ? Sigma(list.getFirst()) : new PiUniverseType(list.getFirst(), codomainResult.getPiCodomain().toSorts());
     return list.getFirst();
   }
 
@@ -868,7 +867,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     Result exprResult = typeCheck(expr1, null);
     if (exprResult == null) return null;
     SigmaExpression sigmaType = null;
-    //exprResult.type = exprResult.type.normalize(NormalizeVisitor.Mode.WHNF);
     exprResult.reset(exprResult.getExpression(), exprResult.getType().normalize(NormalizeVisitor.Mode.WHNF));
     if (exprResult.getType() instanceof Expression) {
       sigmaType = ((Expression) exprResult.getType()).toSigma();

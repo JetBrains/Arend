@@ -121,8 +121,6 @@ public class Prelude extends SimpleNamespace {
     public static ModulePath PRELUDE_MODULE_PATH = new ModulePath("Prelude");
     public final SourceId preludeSourceId = new SourceId();
 
-    private final byte[] myPreludeEtag = new byte[0];
-
     @Override
     public InputStream getCacheInputStream(SourceId sourceId) {
       if (sourceId != preludeSourceId) return null;
@@ -136,12 +134,6 @@ public class Prelude extends SimpleNamespace {
     }
 
     @Override
-    public byte[] getCurrentEtag(SourceId sourceId) {
-      if (sourceId != preludeSourceId) return null;
-      return myPreludeEtag;
-    }
-
-    @Override
     public SourceId locateModule(ModulePath modulePath) {
       if (modulePath.getParent().list().length == 0 && modulePath.getName().equals("Prelude")) {
         return preludeSourceId;
@@ -151,11 +143,15 @@ public class Prelude extends SimpleNamespace {
     }
 
     @Override
-    public Result loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
+    public boolean isAvailable(SourceId sourceId) {
+      return sourceId == preludeSourceId;
+    }
+
+    @Override
+    public Abstract.ClassDefinition loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
       if (sourceId != preludeSourceId) return null;
       InputStream stream = new FileInputStream(new File("lib/Prelude.vc"));
-      Abstract.ClassDefinition prelude = new ParseSource(preludeSourceId, stream) {}.load(errorReporter);
-      return new Result(myPreludeEtag, prelude);
+      return new ParseSource(preludeSourceId, stream) {}.load(errorReporter);
     }
   }
 
@@ -165,6 +161,11 @@ public class Prelude extends SimpleNamespace {
     @Override
     public ModulePath getModulePath() {
       return PreludeStorage.PRELUDE_MODULE_PATH;
+    }
+
+    @Override
+    public String toString() {
+      return "PRELUDE";
     }
   }
 }

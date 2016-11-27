@@ -69,4 +69,5 @@ public abstract class Definition implements Referable {
   // typeHasErrors should imply hasErrors == HAS_ERRORS
   public abstract boolean typeHasErrors();
   public abstract TypeCheckingStatus hasErrors();
+  public abstract void hasErrors(TypeCheckingStatus status);
 }

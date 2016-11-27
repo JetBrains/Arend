@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.sort;
 
+import com.jetbrains.jetpad.vclang.parser.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
@@ -8,7 +9,6 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiTypeOmega;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 

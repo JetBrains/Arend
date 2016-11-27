@@ -87,13 +87,13 @@ public class BranchElimTreeNode extends ElimTreeNode {
     return myOtherwiseClause;
   }
 
-  void addClause(Constructor constructor, DependentLink constructorParams, List<TypedBinding> constructorPolyParams, List<TypedBinding> tailBindings, ElimTreeNode child) {
+  public void addClause(Constructor constructor, DependentLink constructorParams, List<TypedBinding> constructorPolyParams, List<TypedBinding> tailBindings, ElimTreeNode child) {
     ConstructorClause clause = new ConstructorClause(constructor, constructorParams, constructorPolyParams, tailBindings, this);
     myClauses.put(constructor, clause);
     clause.setChild(child);
   }
 
-  void addOtherwiseClause(ElimTreeNode child) {
+  public void addOtherwiseClause(ElimTreeNode child) {
     myOtherwiseClause = new OtherwiseClause(this);
     myOtherwiseClause.setChild(child);
   }
