@@ -843,19 +843,11 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     context.add(thisParameter);
     context.addAll(enclosingClass.getPolyParams());
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, myStaticNsProvider, myDynamicNsProvider, context, myErrorReporter).instancePool(EmptyInstancePool.INSTANCE).thisClass(enclosingClass, Reference(thisParameter)).build();
-    ClassField typedDef = new ClassField(def, Error(null, null), enclosingClass, thisParameter);
+    ClassField typedDef = new ClassField(def, null, enclosingClass, thisParameter);
     myState.record(def, typedDef);
 
-    Abstract.Expression resultType = def.getResultType();
-    if (resultType == null) {
-      return typedDef;
-    }
-    CheckTypeVisitor.Result typeResult = visitor.checkType(resultType, new PiTypeOmega(EmptyDependentLink.getInstance()));
-    if (typeResult == null) {
-      return typedDef;
-    }
-
-    typedDef.setBaseType(typeResult.getExpression());
+    CheckTypeVisitor.Result typeResult = visitor.checkType(def.getResultType(), new PiTypeOmega(EmptyDependentLink.getInstance()));
+    typedDef.setBaseType(typeResult == null ? Error(null, null) : typeResult.getExpression());
     typedDef.setThisClass(enclosingClass);
     return typedDef;
   }
