@@ -91,7 +91,7 @@ public class ClassField extends Definition {
   }
 
   public void setBaseType(Expression type) {
-    assert myType == null;
+    assert myType != null;
     myType = type;
   }
 }

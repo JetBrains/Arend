@@ -111,4 +111,11 @@ public class InferLevelTest extends TypeCheckingTestCase {
       "\\function g (X : \\Set10) (P : X -> \\Prop) : \\Prop => f X P"
     );
   }
+
+  @Test
+  public void doubleLowerBound() {
+    typeCheckClass(
+      "\\function g {lp : Lvl} {lh : CNat} (A B : \\Type (lp,lh)) => A\n" +
+        "\\function f {lp lp' : Lvl} {lh lh' : CNat} (A : \\Type (lp,lh)) (B : \\Type (lp',lh')) => g A B");
+  }
 }
