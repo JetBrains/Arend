@@ -239,16 +239,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
     final List<Binding> context = new ArrayList<>();
     List<TypedBinding> polyParamsList = new ArrayList<>();
-    LevelSubstitution enclClassToDefSubst = new LevelSubstitution();
     List<TypedBinding> generatedPolyParams = new ArrayList<>();
     LinkList list = new LinkList();
     LocalInstancePool localInstancePool = new LocalInstancePool();
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, myStaticNsProvider, myDynamicNsProvider, context, myErrorReporter).instancePool(new CompositeInstancePool(localInstancePool, myState.getInstancePool())).build();
     if (enclosingClass != null) {
       for (Binding param : enclosingClass.getPolyParams()) {
-        TypedBinding defParam = new TypedBinding("\\" + param.getName(), param.getType());
+        TypedBinding defParam = new TypedBinding(param.getName(), param.getType());
         polyParamsList.add(defParam);
-        enclClassToDefSubst.add(param, new Level(defParam));
       }
       DependentLink thisParam = createThisParam(enclosingClass, new LevelArguments(Level.map(polyParamsList)));
       context.add(thisParam);
@@ -332,12 +330,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     }
 
     typedDef.hasErrors(typedDef.getElimTree() != null ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.HAS_ERRORS);
-    if (typedDef.hasErrors() != Definition.TypeCheckingStatus.HAS_ERRORS) {
-      ExprSubstitution subst = new ExprSubstitution();
-      typedDef.setParameters(DependentLink.Helper.subst(typedDef.getParameters(), subst, enclClassToDefSubst));
-      typedDef.setResultType(typedDef.getResultType().subst(subst, enclClassToDefSubst));
-      typedDef.setElimTree(typedDef.getElimTree().subst(subst, enclClassToDefSubst));
-    }
     return typedDef;
   }
 
@@ -350,7 +342,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     List<TypedBinding> polyParamsList = new ArrayList<>();
     List<TypedBinding> generatedPolyParams = new ArrayList<>();
     if (enclosingClass != null) {
-      for (Binding param : polyParamsList) {
+      for (Binding param : enclosingClass.getPolyParams()) {
         polyParamsList.add(new TypedBinding(param.getName(), param.getType()));
       }
       DependentLink thisParam = createThisParam(enclosingClass, new LevelArguments(Level.map(polyParamsList)));
