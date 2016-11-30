@@ -253,10 +253,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     if (expr.getPLevel() == null) {
       myBuilder.append("_");
     } else {
-      expr.getPLevel().accept(this, (byte) (Abstract.AppExpression.PREC + 1));
+      expr.getPLevel().accept(this, Abstract.Expression.PREC);
     }
-    myBuilder.append(",");
-    expr.getHLevel().accept(this, (byte) (Abstract.AppExpression.PREC + 1));
+    myBuilder.append(", ");
+    expr.getHLevel().accept(this, Abstract.Expression.PREC);
     myBuilder.append(")");
     return null;
   }

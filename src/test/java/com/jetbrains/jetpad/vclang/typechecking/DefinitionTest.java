@@ -1,27 +1,17 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.context.LinkList;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
-import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor.Result;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static org.hamcrest.Matchers.is;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Nat;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 import static org.junit.Assert.*;
 
 public class DefinitionTest extends TypeCheckingTestCase {
@@ -48,139 +38,6 @@ public class DefinitionTest extends TypeCheckingTestCase {
     List<DependentLink> params = new ArrayList<>();
     TypeMax type = typedDef.getTypeWithParams(params, new LevelArguments());
     assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), type.fromPiParameters(params));
-  }
-
-  @Test
-  public void dataType() {
-    DataDefinition typedDef = (DataDefinition) typeCheckDef("\\data D {A B : \\Type0} (I : A -> B -> \\Type0) (a : A) (b : B) | con1 (x : A) (I x b) | con2 {y : B} (I a y)");
-    List<DependentLink> params = new ArrayList<>();
-    TypeMax type = typedDef.getTypeWithParams(params, new LevelArguments());
-
-    LinkList parameters = new LinkList();
-    parameters.append(param(false, vars("A", "B"), Universe(0)));
-    DependentLink A = parameters.getFirst();
-    DependentLink B = A.getNext();
-    parameters.append(param("I", Pi(Reference(A), Pi(Reference(B), Universe(0)))));
-    DependentLink I = B.getNext();
-    parameters.append(param("a", Reference(A)));
-    parameters.append(param("b", Reference(B)));
-    DependentLink a = I.getNext();
-    DependentLink b = a.getNext();
-
-    LinkList parameters1 = new LinkList();
-    parameters1.append(param("x", Reference(A)));
-    parameters1.append(param(Apps(Reference(I), Reference(parameters1.getFirst()), Reference(b))));
-
-    LinkList parameters2 = new LinkList();
-    parameters2.append(param(false, "y", Reference(B)));
-    parameters2.append(param(Apps(Reference(I), Reference(a), Reference(parameters2.getFirst()))));
-
-    assertNotNull(typedDef);
-    assertTrue(typedDef.hasErrors() == Definition.TypeCheckingStatus.NO_ERRORS);
-    assertEquals(Pi(parameters.getFirst(), Universe(0)), type.fromPiParameters(params).toExpression());
-    assertEquals(2, typedDef.getConstructors().size());
-
-    ExprSubstitution substitution = new ExprSubstitution();
-    DependentLink link = typedDef.getParameters();
-    substitution.add(link, Reference(A));
-    link = link.getNext();
-    substitution.add(link, Reference(B));
-    link = link.getNext();
-    substitution.add(link, Reference(I));
-    link = link.getNext();
-    substitution.add(link, Reference(a));
-    link = link.getNext();
-    substitution.add(link, Reference(b));
-    List<DependentLink> con1Params = new ArrayList<>();
-    Type con1Type = typedDef.getConstructors().get(0).getTypeWithParams(con1Params, new LevelArguments());
-    assertEquals(Pi(parameters.getFirst(), Pi(parameters1.getFirst(), DataCall(typedDef, new LevelArguments(),
-        Reference(A),
-        Reference(B),
-        Reference(I),
-        Reference(a),
-        Reference(b)))), con1Type.fromPiParameters(con1Params));
-    List<DependentLink> con2Params = new ArrayList<>();
-    Type con2Type = typedDef.getConstructors().get(1).getTypeWithParams(con2Params, new LevelArguments());
-    assertEquals(Pi(parameters.getFirst(), Pi(parameters2.getFirst(), DataCall(typedDef, new LevelArguments(),
-        Reference(A),
-        Reference(B),
-        Reference(I),
-        Reference(a),
-        Reference(b)))), con2Type.fromPiParameters(con2Params));
-  }
-
-  @Test
-  public void dataType2() {
-    DataDefinition typedDef = (DataDefinition) typeCheckDef("\\data D (A : \\7-Type2) | con1 (X : \\1-Type5) X | con2 (Y : \\2-Type3) A Y");
-    DependentLink A = typedDef.getParameters();
-    List<DependentLink> params = new ArrayList<>();
-    TypeMax type = typedDef.getTypeWithParams(params, new LevelArguments());
-    List<DependentLink> con1Params = new ArrayList<>();
-    Type con1Type = typedDef.getConstructors().get(0).getTypeWithParams(con1Params, new LevelArguments());
-    List<DependentLink> con2Params = new ArrayList<>();
-    Type con2Type = typedDef.getConstructors().get(1).getTypeWithParams(con2Params, new LevelArguments());
-
-    LinkList parameters1 = new LinkList();
-    parameters1.append(param("X", Universe(5, 1)));
-    parameters1.append(param(Reference(parameters1.getFirst())));
-
-    LinkList parameters2 = new LinkList();
-    parameters2.append(param("Y", Universe(3, 2)));
-    parameters2.append(param(Reference(A)));
-    parameters2.append(param(Reference(parameters2.getFirst())));
-
-    assertNotNull(typedDef);
-    assertTrue(typedDef.hasErrors() == Definition.TypeCheckingStatus.NO_ERRORS);
-    assertEquals(Pi(A, Universe(6, 7)), type.fromPiParameters(params).toExpression());
-    assertEquals(2, typedDef.getConstructors().size());
-
-    assertEquals(Pi(A, Pi(parameters1.getFirst(), DataCall(typedDef, new LevelArguments(), Reference(A)))), con1Type.fromPiParameters(con1Params));
-    assertEquals(Pi(A, Pi(parameters2.getFirst(), DataCall(typedDef, new LevelArguments(), Reference(A)))), con2Type.fromPiParameters(con2Params));
-  }
-
-  /* Not valid test anymore since we don't have explicit universes for data
-  @Test
-  public void dataExplicitUniverse() {
-    typeCheckDef("\\data Either {lp : Lvl} {lh : CNat} (A B : \\Type (lp,lh)) : \\Type (lp, max lh 1)\n" +
-            "    | inl A\n" +
-            "    | inr B");
-  } /**/
-
-  @Test
-  public void constructor() {
-    DataDefinition def = (DataDefinition) typeCheckDef("\\data D (A : \\Type0) | con (B : \\Type1) A B");
-
-    Constructor con = def.getConstructor("con");
-    Concrete.Expression expr = cApps(cDefCall(null, con.getAbstractDefinition()), cNat(), cZero(), cZero());
-
-    Result result = typeCheckExpr(expr, null);
-    assertThat(result.getType(), is((TypeMax) DataCall(def, new LevelArguments(), Nat())));
-  }
-
-  @Test
-  public void constructorInfer() {
-    DataDefinition def = (DataDefinition) typeCheckDef("\\data D (A : \\Type0) | con (B : \\Type1) A B");
-
-    Constructor con = def.getConstructor("con");
-    Concrete.Expression expr = cApps(cVar("f"), cApps(cDefCall(null, con.getAbstractDefinition()), cNat(), cLam("x", cVar("x")), cZero()));
-    List<Binding> localContext = new ArrayList<>(1);
-    localContext.add(new TypedBinding("f", Pi(DataCall(def, new LevelArguments(), Pi(Nat(), Nat())), Nat())));
-
-    Result result = typeCheckExpr(localContext, expr, null);
-    assertThat(result.getType(), is((TypeMax) Nat()));
-  }
-
-  @Test
-  public void constructorConst() {
-    DataDefinition def = (DataDefinition) typeCheckDef("\\data D (A : \\Type0) | con A");
-
-    Constructor con = def.getConstructor("con");
-    Concrete.Expression expr = cApps(cVar("f"), cDefCall(null, con.getAbstractDefinition()));
-    List<Binding> localContext = new ArrayList<>(1);
-    localContext.add(new TypedBinding("f", Pi(Pi(Nat(), DataCall(def, new LevelArguments(), Nat())), Pi(Nat(), Nat()))));
-
-    Result result = typeCheckExpr(localContext, expr, null);
-    assertThat(result.getType(), is((TypeMax) Pi(Nat(), Nat())));
   }
 
   @Test
@@ -331,15 +188,6 @@ public class DefinitionTest extends TypeCheckingTestCase {
         "\\function f (x : Nat -> Nat) => x 0\n" +
         "\\data Test (A : \\Set0)\n" +
         "  | Test (suc n) => foo (f n)", 1);
-  }
-
-
-  @Test
-  public void constructorTest() {
-    typeCheckClass(
-        "\\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f 0 = n)\n" +
-        "\\function f (x : Nat) : D x (\\lam y => y) => con1 (path (\\lam _ => x))\n" +
-        "\\function g : D 0 (\\lam y => y) => con2 (path (\\lam _ => 0))");
   }
 
   @Test
