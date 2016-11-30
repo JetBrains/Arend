@@ -47,8 +47,15 @@ public class DataPolyTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void dataWithTypeOmegaExplicitSet() {
+    DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Set0 | con1 (n = n) | con2 Nat");
+    assertThat(dataDefinition.getPolyParams(), is(empty()));
+    assertEquals(Sort.SetOfLevel(0), dataDefinition.getSorts().toSort());
+  }
+
+  @Test
   public void dataWithTypeOmegaExplicitError() {
-    typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Set0 | con1 (n = n) | con2 Nat", 1);
+    typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Set1 | con1 (n = n) | con2 \\Set0", 1);
   }
 
   @Test

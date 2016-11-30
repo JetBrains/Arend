@@ -47,8 +47,15 @@ public class FunctionPolyTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void funWithTypeOmegaExplicitSet() {
+    FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) : \\Set0 => \\Sigma (n = n) Nat");
+    assertThat(funDefinition.getPolyParams(), is(empty()));
+    assertEquals(Sort.SetOfLevel(0), funDefinition.getResultType().toSorts().toSort());
+  }
+
+  @Test
   public void funWithTypeOmegaExplicitError() {
-    typeCheckDef("\\function f (A : \\Type) : \\Set0 => Nat", 1);
+    typeCheckDef("\\function f (A : \\Type) : \\Set1 => \\Set0", 1);
   }
 
   @Test

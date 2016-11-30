@@ -182,29 +182,29 @@ public final class Abstract {
     byte PREC = 12;
 
     class Universe {
-      public int myPLevel;
-      public int myHLevel;
+      public int pLevel;
+      public int hLevel;
 
       public static final int NOT_TRUNCATED = -20;
       public static final int PROP = -1;
       public static final int SET = 0;
 
-      public Universe(int PLevel, int HLevel) {
-        myPLevel = PLevel;
-        myHLevel = HLevel;
+      public Universe(int pLevel, int hLevel) {
+        this.pLevel = pLevel;
+        this.hLevel = hLevel;
       }
 
       public boolean equals(Object obj) {
         if (obj.getClass() != this.getClass()) return false;
         Universe u = (Universe)obj;
-        return myPLevel == u.myPLevel && myHLevel == u.myHLevel;
+        return pLevel == u.pLevel && hLevel == u.hLevel;
       }
 
       @Override
       public String toString() {
-        if (myHLevel == PROP) return "\\Prop";
-        if (myHLevel == SET) return "\\Set" + myPLevel;
-        return "\\" + (myHLevel == NOT_TRUNCATED ? "" : myHLevel + "-") + "Type" + myPLevel;
+        if (hLevel == PROP) return "\\Prop";
+        if (hLevel == SET) return "\\Set" + pLevel;
+        return "\\" + (hLevel == NOT_TRUNCATED ? "" : hLevel + "-") + "Type" + pLevel;
       }
     }
 

@@ -599,8 +599,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   @Override
   public Result visitUniverse(Abstract.UniverseExpression expr, Type expectedType) {
-    int hlevel = expr.getUniverse().myHLevel == Abstract.UniverseExpression.Universe.NOT_TRUNCATED ? Sort.NOT_TRUNCATED : expr.getUniverse().myHLevel;
-    UniverseExpression universe = Universe(expr.getUniverse().myPLevel, hlevel);
+    int hlevel = expr.getUniverse().hLevel == Abstract.UniverseExpression.Universe.NOT_TRUNCATED ? Sort.NOT_TRUNCATED : expr.getUniverse().hLevel;
+    UniverseExpression universe = Universe(expr.getUniverse().pLevel, hlevel);
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getSort().succ())), expr);
   }
 
