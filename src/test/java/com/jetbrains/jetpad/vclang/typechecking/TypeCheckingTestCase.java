@@ -16,7 +16,6 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
-import com.jetbrains.jetpad.vclang.typechecking.visitor.DefinitionCheckTypeVisitor;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
@@ -95,10 +94,9 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   private Definition typeCheckDef(Concrete.Definition definition, int errors) {
-    DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, localErrorReporter);
-    Definition result = definition.accept(visitor, null);
+    Typechecking.typecheckDefinitions(state, staticNsProvider, dynamicNsProvider, Collections.singletonList(definition), errorReporter, new TypecheckedReporter.Dummy());
     assertThat(errorList, containsErrors(errors));
-    return result;
+    return state.getTypechecked(definition);
   }
 
   protected Definition typeCheckDef(String text, int errors) {
