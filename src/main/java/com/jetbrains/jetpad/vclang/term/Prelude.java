@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.caching.CacheStorageSupplier;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
+import com.jetbrains.jetpad.vclang.module.source.file.FileStorage;
 import com.jetbrains.jetpad.vclang.module.source.file.ParseSource;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -17,7 +18,9 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
@@ -118,18 +121,20 @@ public class Prelude extends SimpleNamespace {
 
 
   public static class PreludeStorage implements SourceSupplier<SourceId>, CacheStorageSupplier<SourceId> {
+    public static String SOURCE_RESOURCE_PATH = "/lib/Prelude";
     public static ModulePath PRELUDE_MODULE_PATH = new ModulePath("Prelude");
     public final SourceId preludeSourceId = new SourceId();
 
     @Override
     public InputStream getCacheInputStream(SourceId sourceId) {
       if (sourceId != preludeSourceId) return null;
-      return null;
+      return Prelude.class.getResourceAsStream(SOURCE_RESOURCE_PATH + FileStorage.SERIALIZED_EXTENSION);
     }
 
     @Override
     public OutputStream getCacheOutputStream(SourceId sourceId) {
-      if (sourceId != preludeSourceId) return null;
+      // Prelude cache is generated during build and stored as a resource,
+      // therefore PreludeStorage does not support serialization of Prelude in runtime.
       return null;
     }
 
@@ -150,7 +155,7 @@ public class Prelude extends SimpleNamespace {
     @Override
     public Abstract.ClassDefinition loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
       if (sourceId != preludeSourceId) return null;
-      InputStream stream = new FileInputStream(new File("lib/Prelude.vc"));
+      InputStream stream = Prelude.class.getResourceAsStream(SOURCE_RESOURCE_PATH + FileStorage.EXTENSION);
       return new ParseSource(preludeSourceId, stream) {}.load(errorReporter);
     }
   }
@@ -168,4 +173,6 @@ public class Prelude extends SimpleNamespace {
       return "PRELUDE";
     }
   }
+
+
 }

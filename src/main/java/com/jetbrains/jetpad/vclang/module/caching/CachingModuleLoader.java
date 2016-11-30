@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
@@ -82,13 +81,15 @@ public class CachingModuleLoader<SourceIdT extends SourceId> extends SourceModul
     return myTcState.getCachedModules();
   }
 
+  @Deprecated
+  public void hackForceModuleSync(SourceIdT sourceId) {
+    myTcState.getLocal(sourceId).sync();
+  }
+
   public boolean persistModule(SourceIdT sourceId) throws IOException, CachePersistenceException {
     LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState localState = myTcState.getLocal(sourceId);
     if (!localState.isOutOfSync()) {
       return true;
-    }
-    if (sourceId.getModulePath().getName().equals("Prelude")) {
-      return true; // FIXME: hack
     }
 
     OutputStream cacheStream = myCacheSupplier.getCacheOutputStream(sourceId);
@@ -115,9 +116,6 @@ public class CachingModuleLoader<SourceIdT extends SourceId> extends SourceModul
   }
 
   private boolean loadCache(SourceIdT sourceId) throws CacheLoadingException {
-    if (sourceId.getModulePath().equals(Prelude.PreludeStorage.PRELUDE_MODULE_PATH)) {
-      return true;  // TODO: HACK
-    }
     InputStream cacheStream = myCacheSupplier.getCacheInputStream(sourceId);
     if (cacheStream == null) {
       return false;
