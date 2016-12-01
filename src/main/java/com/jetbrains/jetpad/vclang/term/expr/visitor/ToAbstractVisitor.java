@@ -161,7 +161,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitDefCall(DefCallExpression expr, Void params) {
-    return visitArguments(myFactory.makeDefCall(null, expr.getDefinition().getAbstractDefinition(), expr.getDefinition()), expr, true);
+    return visitArguments(myFactory.makeDefCall(null, expr.getDefinition().getAbstractDefinition(), expr.getDefinition().getAbstractDefinition()), expr, true);
   }
 
   @Override
@@ -179,7 +179,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
         }
       }
     }
-    return myFactory.makeDefCall(expr.getExpression().accept(this, null), definition, expr.getDefinition());
+    return myFactory.makeDefCall(expr.getExpression().accept(this, null), definition, expr.getDefinition().getAbstractDefinition());
   }
 
   @Override
@@ -198,7 +198,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       }
       conParams = expr.getDefinition().getDataTypeExpression(substitution, expr.getPolyArguments()).accept(this, null);
     }
-    return visitArguments(myFactory.makeDefCall(conParams, expr.getDefinition().getAbstractDefinition(), expr.getDefinition()), expr, false);
+    return visitArguments(myFactory.makeDefCall(conParams, expr.getDefinition().getAbstractDefinition(), expr.getDefinition().getAbstractDefinition()), expr, false);
   }
 
   @Override
@@ -214,7 +214,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       }
     }
 
-    Abstract.Expression defCallExpr = myFactory.makeDefCall(enclExpr, expr.getDefinition().getAbstractDefinition(), expr.getDefinition());
+    Abstract.Expression defCallExpr = myFactory.makeDefCall(enclExpr, expr.getDefinition().getAbstractDefinition(), expr.getDefinition().getAbstractDefinition());
     if (statements.isEmpty()) {
       return defCallExpr;
     } else {

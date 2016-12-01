@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.term.expr.factory;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
 
 import java.util.List;
 
@@ -21,7 +20,7 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.Expression makeDefCall(Abstract.Expression expr, Abstract.ReferableSourceNode alias, Definition definition) {
+  public Abstract.Expression makeDefCall(Abstract.Expression expr, Abstract.ReferableSourceNode alias, Abstract.Definition definition) {
     return cDefCall((Concrete.Expression) expr, definition, alias == null ? "\\this" : alias.getName());
   }
 

@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
 
 import java.util.Arrays;
 import java.util.List;
@@ -26,13 +25,13 @@ public class ConcreteExpressionFactory {
     return new Concrete.DefCallExpression(POSITION, null, name == null ? "_" : name);
   }
 
-  public static Concrete.DefCallExpression cDefCall(Concrete.Expression expr, Definition definition, String name) {
+  public static Concrete.DefCallExpression cDefCall(Concrete.Expression expr, Abstract.Definition definition, String name) {
     Concrete.DefCallExpression result = new Concrete.DefCallExpression(POSITION, expr, name);
-    result.setResolvedDefinition(definition.getAbstractDefinition());
+    result.setResolvedDefinition(definition);
     return result;
   }
 
-  public static Concrete.DefCallExpression cDefCall(Concrete.Expression expr, Definition definition) {
+  public static Concrete.DefCallExpression cDefCall(Concrete.Expression expr, Abstract.Definition definition) {
     return cDefCall(expr, definition, definition.getName());
   }
 
@@ -56,15 +55,15 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.DefCallExpression cNat() {
-    return new Concrete.DefCallExpression(POSITION, Prelude.NAT);
+    return new Concrete.DefCallExpression(POSITION, Prelude.NAT.getAbstractDefinition());
   }
 
   public static Concrete.DefCallExpression cZero() {
-    return new Concrete.DefCallExpression(POSITION, Prelude.ZERO);
+    return new Concrete.DefCallExpression(POSITION, Prelude.ZERO.getAbstractDefinition());
   }
 
   public static Concrete.DefCallExpression cSuc() {
-    return new Concrete.DefCallExpression(POSITION, Prelude.SUC);
+    return new Concrete.DefCallExpression(POSITION, Prelude.SUC.getAbstractDefinition());
   }
 
   public static Concrete.Expression cSuc(Concrete.Expression expr) {

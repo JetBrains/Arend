@@ -151,7 +151,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     DataDefinition def = (DataDefinition) typeCheckDef("\\data D (A : \\Type0) | con (B : \\Type1) A B");
 
     Constructor con = def.getConstructor("con");
-    Concrete.Expression expr = cApps(cDefCall(null, con), cNat(), cZero(), cZero());
+    Concrete.Expression expr = cApps(cDefCall(null, con.getAbstractDefinition()), cNat(), cZero(), cZero());
 
     Result result = typeCheckExpr(expr, null);
     assertThat(result.getType(), is((TypeMax) DataCall(def, new LevelArguments(), Nat())));
@@ -162,7 +162,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     DataDefinition def = (DataDefinition) typeCheckDef("\\data D (A : \\Type0) | con (B : \\Type1) A B");
 
     Constructor con = def.getConstructor("con");
-    Concrete.Expression expr = cApps(cVar("f"), cApps(cDefCall(null, con), cNat(), cLam("x", cVar("x")), cZero()));
+    Concrete.Expression expr = cApps(cVar("f"), cApps(cDefCall(null, con.getAbstractDefinition()), cNat(), cLam("x", cVar("x")), cZero()));
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(DataCall(def, new LevelArguments(), Pi(Nat(), Nat())), Nat())));
 
@@ -175,7 +175,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     DataDefinition def = (DataDefinition) typeCheckDef("\\data D (A : \\Type0) | con A");
 
     Constructor con = def.getConstructor("con");
-    Concrete.Expression expr = cApps(cVar("f"), cDefCall(null, con));
+    Concrete.Expression expr = cApps(cVar("f"), cDefCall(null, con.getAbstractDefinition()));
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(Pi(Nat(), DataCall(def, new LevelArguments(), Nat())), Pi(Nat(), Nat()))));
 

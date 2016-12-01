@@ -281,13 +281,6 @@ public final class Concrete {
       myDefinition = definition;
     }
 
-    public DefCallExpression(Position position, com.jetbrains.jetpad.vclang.term.definition.Definition definition) {
-      super(position);
-      myExpression = null;
-      myName = definition.getName();
-      myDefinition = definition.getAbstractDefinition();
-    }
-
     @Override
     public Expression getExpression() {
       return myExpression;
