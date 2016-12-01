@@ -161,7 +161,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     // return levelParam;
   }
 
-  private static Expression typeOmegaToUniverse(PiTypeOmega type, List<TypedBinding> polyParams) {
+  private static Expression typeOmegaToUniverse(DependentLink params, List<TypedBinding> polyParams) {
     TypedBinding lpParam;
     TypedBinding lhParam;
 
@@ -176,10 +176,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     }
 
     Expression cod = Universe(new Level(lpParam), new Level(lhParam));
-    return type.getPiParameters().hasNext() ? Pi(type.getPiParameters(), cod) : cod;
+    return params.hasNext() ? Pi(params, cod) : cod;
   }
 
-  private static boolean visitParameters(List<? extends Abstract.Argument> arguments, Abstract.SourceNode node, List<Binding> context, List<TypedBinding> polyParamsList, List<TypedBinding> generatedPolyParams, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
+  private static boolean visitParameters(List<? extends Abstract.Argument> arguments, Abstract.SourceNode node, List<Binding> context, List<TypedBinding> polyParamsList, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
     boolean ok = true;
     boolean polyParamsAllowed = true;
     int index = 0;
@@ -211,14 +211,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         if (paramType == null) {
           ok = false;
           continue;
-        }
-
-        if (paramType instanceof PiTypeOmega) {
-          boolean firstTime = generatedPolyParams.isEmpty();
-          paramType = typeOmegaToUniverse((PiTypeOmega) paramType, generatedPolyParams);
-          if (firstTime) {
-            context.addAll(generatedPolyParams);
-          }
         }
 
         Abstract.ClassView classView = Abstract.getUnderlyingClassView(typeArgument.getType());
@@ -273,7 +265,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
     List<Binding> context = new ArrayList<>();
     List<TypedBinding> polyParamsList = new ArrayList<>();
-    List<TypedBinding> generatedPolyParams = new ArrayList<>();
     LinkList list = new LinkList();
     LocalInstancePool localInstancePool = new LocalInstancePool();
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, myStaticNsProvider, myDynamicNsProvider, context, myErrorReporter).instancePool(new CompositeInstancePool(localInstancePool, myState.getInstancePool())).build();
@@ -290,7 +281,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       typedDef.setThisClass(enclosingClass);
     }
 
-    boolean paramsOk = visitParameters(def.getArguments(), def, context, polyParamsList, generatedPolyParams, list, visitor, localInstancePool);
+    boolean paramsOk = visitParameters(def.getArguments(), def, context, polyParamsList, list, visitor, localInstancePool);
+    List<TypedBinding> generatedPolyParams = new ArrayList<>();
 
     TypeMax expectedType = null;
     boolean generatedExpectedType = false;
@@ -303,11 +295,18 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
           expectedTypeErased = expectedType.toExpression();
         } else if (expectedType instanceof PiTypeOmega) {
           expectedTypeErased = (Type) expectedType;
-          expectedType = typeOmegaToUniverse((PiTypeOmega) expectedType, generatedPolyParams);
+          expectedType = typeOmegaToUniverse(expectedType.getPiParameters(), generatedPolyParams);
           generatedExpectedType = true;
         } else {
           expectedTypeErased = PiTypeOmega.toPiTypeOmega(expectedType);
         }
+      }
+    }
+
+    for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext()) {
+      link = link.getNextTyped(null);
+      if (link.getType() instanceof PiTypeOmega) {
+        link.setType(typeOmegaToUniverse(link.getType().getPiParameters(), generatedPolyParams));
       }
     }
 
@@ -371,7 +370,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
   private static DataDefinition typeCheckDataHeader(Abstract.DataDefinition def, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
     LinkList list = new LinkList();
     List<TypedBinding> polyParamsList = new ArrayList<>();
-    List<TypedBinding> generatedPolyParams = new ArrayList<>();
     if (enclosingClass != null) {
       for (Binding param : enclosingClass.getPolyParams()) {
         polyParamsList.add(new TypedBinding(param.getName(), param.getType()));
@@ -383,39 +381,26 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       visitor.setThisClass(enclosingClass, Reference(thisParam));
     }
 
-    SortMax userSorts = null;
+    SortMax userSorts = SortMax.OMEGA;
     boolean paramsOk;
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
-      paramsOk = visitParameters(def.getParameters(), def, visitor.getContext(), polyParamsList, generatedPolyParams, list, visitor, localInstancePool);
+      paramsOk = visitParameters(def.getParameters(), def, visitor.getContext(), polyParamsList, list, visitor, localInstancePool);
 
       if (def.getUniverse() != null) {
         if (def.getUniverse() instanceof Abstract.PolyUniverseExpression) {
           userSorts = visitor.sortMax((Abstract.PolyUniverseExpression)def.getUniverse());
-        } else if (def.getUniverse() instanceof Abstract.UniverseExpression) {
+        } else
+        if (def.getUniverse() instanceof Abstract.UniverseExpression) {
           CheckTypeVisitor.Result result = visitor.checkType(def.getUniverse(), new PiTypeOmega(EmptyDependentLink.getInstance()));
           if (result != null) {
             userSorts = new SortMax(result.getExpression().toUniverse().getSort());
           }
-        } else {
+        } else
+        if (!(def.getUniverse() instanceof Abstract.TypeOmegaExpression)) {
           String msg = "Specified type " + PrettyPrintVisitor.prettyPrint(def.getUniverse(), 0) + " of '" + def.getName() + "' is not a universe";
           visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, def.getUniverse()));
         }
       }
-    }
-
-    if (!generatedPolyParams.isEmpty()) {
-      generatedPolyParams.addAll(polyParamsList);
-      polyParamsList = generatedPolyParams;
-    }
-
-    /*
-    if (def.getUniverse() != null && !(def.getUniverse() instanceof Abstract.TypeOmegaExpression)) {
-      myErrorReporter.report(new ExpressionMismatchError(new PiTypeOmega(EmptyDependentLink.getInstance()), new AbstractExpressionPP(def.getUniverse()), def.getUniverse()));
-    }
-    */
-
-    if (userSorts == null) {
-      userSorts = SortMax.OMEGA;
     }
 
     DataDefinition dataDefinition = new DataDefinition(def, userSorts, list.getFirst());
@@ -508,6 +493,24 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, def.getUniverse()));
       }
     }
+
+    List<TypedBinding> polyParams = new ArrayList<>();
+    if (inferredSorts.isOmega()) {
+      inferredSorts = new SortMax(typeOmegaToUniverse(EmptyDependentLink.getInstance(), polyParams).toUniverse().getSort());
+
+      for (DependentLink link = dataDefinition.getParameters(); link.hasNext(); link = link.getNext()) {
+        link = link.getNextTyped(null);
+        if (link.getType() instanceof PiTypeOmega) {
+          link.setType(typeOmegaToUniverse(link.getType().getPiParameters(), polyParams));
+        }
+      }
+
+      if (!polyParams.isEmpty()) {
+        polyParams.addAll(dataDefinition.getPolyParams());
+        dataDefinition.setPolyParams(polyParams);
+      }
+    }
+
     dataDefinition.setSorts(inferredSorts);
   }
 
@@ -923,9 +926,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, myStaticNsProvider, myDynamicNsProvider, context, myErrorReporter).build();
 
     List<TypedBinding> polyParamsList = new ArrayList<>();
-    List<TypedBinding> generatedPolyParams = new ArrayList<>();
-    boolean paramsOk = visitParameters(def.getArguments(), def, context, polyParamsList, generatedPolyParams, list, visitor, null);
-    polyParamsList.addAll(generatedPolyParams);
+    boolean paramsOk = visitParameters(def.getArguments(), def, context, polyParamsList, list, visitor, null);
     typedDef.setPolyParams(polyParamsList);
     typedDef.setParameters(list.getFirst());
 

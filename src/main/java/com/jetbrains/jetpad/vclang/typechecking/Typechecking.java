@@ -53,10 +53,13 @@ public class Typechecking {
       } else {
         DefinitionCheckTypeVisitor.typeCheck(state, staticNsProvider, dynamicNsProvider, unit, localErrorReporter);
       }
-      if (countingErrorReporter.getErrorsNumber() > 0) {
-        typecheckedReporter.typecheckingFailed(unit.getDefinition());
-      } else {
-        typecheckedReporter.typecheckingSucceeded(unit.getDefinition());
+
+      if (!unit.isHeader()) {
+        if (countingErrorReporter.getErrorsNumber() > 0) {
+          typecheckedReporter.typecheckingFailed(unit.getDefinition());
+        } else {
+          typecheckedReporter.typecheckingSucceeded(unit.getDefinition());
+        }
       }
     }
   }
