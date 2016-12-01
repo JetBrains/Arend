@@ -22,7 +22,7 @@ import java.util.Collection;
 import java.util.List;
 
 public class Typechecking {
-  private static void typecheck(SCC scc, TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, boolean isPrelude) {
+  private static void typecheck(SCC scc, TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
     if (scc.getUnits().size() > 1) {
       List<Abstract.Definition> cycle = new ArrayList<>(scc.getUnits().size());
       for (SCC.TypecheckingUnit unit : scc.getUnits()) {
@@ -33,7 +33,7 @@ public class Typechecking {
     } else {
       SCC.TypecheckingUnit unit = scc.getUnits().iterator().next();
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
-      DefinitionCheckTypeVisitor.typeCheck(state, staticNsProvider, dynamicNsProvider, unit.enclosingClass == null ? null : (ClassDefinition) state.getTypechecked(unit.enclosingClass), unit.definition, new ProxyErrorReporter(unit.definition, new CompositeErrorReporter(errorReporter, countingErrorReporter)), isPrelude);
+      DefinitionCheckTypeVisitor.typeCheck(state, staticNsProvider, dynamicNsProvider, unit.enclosingClass == null ? null : (ClassDefinition) state.getTypechecked(unit.enclosingClass), unit.definition, new ProxyErrorReporter(unit.definition, new CompositeErrorReporter(errorReporter, countingErrorReporter)));
       if (countingErrorReporter.getErrorsNumber() > 0) {
         typecheckedReporter.typecheckingFailed(unit.definition);
       } else {
@@ -46,7 +46,7 @@ public class Typechecking {
     BaseOrdering ordering = new BaseOrdering(new SCCListener() {
       @Override
       public void sccFound(SCC scc) {
-        typecheck(scc, state, staticNsProvider, dynamicNsProvider, errorReporter, typecheckedReporter, false);
+        typecheck(scc, state, staticNsProvider, dynamicNsProvider, errorReporter, typecheckedReporter);
       }
     });
 
@@ -135,11 +135,11 @@ public class Typechecking {
     }
   }
 
-  public static void typecheckModules(final TypecheckerState state, final StaticNamespaceProvider staticNsProvider, final DynamicNamespaceProvider dynamicNsProvider, final Collection<? extends Abstract.ClassDefinition> classDefs, final ErrorReporter errorReporter, final TypecheckedReporter typecheckedReporter, final boolean isPrelude) {
+  public static void typecheckModules(final TypecheckerState state, final StaticNamespaceProvider staticNsProvider, final DynamicNamespaceProvider dynamicNsProvider, final Collection<? extends Abstract.ClassDefinition> classDefs, final ErrorReporter errorReporter, final TypecheckedReporter typecheckedReporter) {
     final BaseOrdering ordering = new BaseOrdering(new SCCListener() {
       @Override
       public void sccFound(SCC scc) {
-        typecheck(scc, state, staticNsProvider, dynamicNsProvider, errorReporter, typecheckedReporter, isPrelude);
+        typecheck(scc, state, staticNsProvider, dynamicNsProvider, errorReporter, typecheckedReporter);
       }
     });
 

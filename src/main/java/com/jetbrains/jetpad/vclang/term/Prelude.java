@@ -17,6 +17,8 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
+import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
+import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -116,6 +118,24 @@ public class Prelude extends SimpleNamespace {
       SET_TRUNC = (DataDefinition) definition;
       SET_TRUNC.setSorts(new SortMax(Sort.SetOfLevel(new Level(SET_TRUNC.getPolyParams().get(0)))));
       SET_TRUNC_PATH_CON = SET_TRUNC.getConstructor("truncS");
+    }
+  }
+
+  public static class UpdatePreludeReporter implements TypecheckedReporter {
+    private final TypecheckerState state;
+
+    public UpdatePreludeReporter(TypecheckerState state) {
+      this.state = state;
+    }
+
+    @Override
+    public void typecheckingSucceeded(Abstract.Definition definition) {
+      update(definition, state.getTypechecked(definition));
+    }
+
+    @Override
+    public void typecheckingFailed(Abstract.Definition definition) {
+      update(definition, state.getTypechecked(definition));
     }
   }
 

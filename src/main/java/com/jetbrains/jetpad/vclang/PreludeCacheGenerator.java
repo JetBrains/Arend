@@ -13,7 +13,6 @@ import com.jetbrains.jetpad.vclang.naming.namespace.SimpleStaticNamespaceProvide
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.oneshot.ResolvingModuleLoader;
 import com.jetbrains.jetpad.vclang.term.*;
-import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 
 import java.io.*;
@@ -94,7 +93,7 @@ public class PreludeCacheGenerator {
     CachingModuleLoader<Prelude.SourceId> moduleLoader = new CachingModuleLoader<>(baseModuleLoader, new PreludePersistenceProvider(), new PreludeBuildCacheSupplier(args[0]), new PreludeDefLocator(storage.preludeSourceId), false);
     Abstract.ClassDefinition prelude = moduleLoader.load(storage.preludeSourceId);
     if (!errorReporter.getErrorList().isEmpty()) throw new IllegalStateException();
-    Typechecking.typecheckModules(moduleLoader.getTypecheckerState(), statisNsProvider, dynamicNsProvider, Collections.singleton(prelude), errorReporter, new TypecheckedReporter.Dummy(), true);
+    Typechecking.typecheckModules(moduleLoader.getTypecheckerState(), statisNsProvider, dynamicNsProvider, Collections.singleton(prelude), errorReporter, new Prelude.UpdatePreludeReporter(moduleLoader.getTypecheckerState()));
     try {
       moduleLoader.persistModule(storage.preludeSourceId);
     } catch (IOException | CachePersistenceException e) {

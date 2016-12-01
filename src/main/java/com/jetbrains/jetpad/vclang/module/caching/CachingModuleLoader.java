@@ -84,11 +84,6 @@ public class CachingModuleLoader<SourceIdT extends SourceId> extends SourceModul
     return myTcState.getCachedModules();
   }
 
-  @Deprecated
-  public void hackForceModuleSync(SourceIdT sourceId) {
-    myTcState.getLocal(sourceId).sync();
-  }
-
   public boolean persistModule(SourceIdT sourceId) throws IOException, CachePersistenceException {
     LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState localState = myTcState.getLocal(sourceId);
     if (!localState.isOutOfSync()) {

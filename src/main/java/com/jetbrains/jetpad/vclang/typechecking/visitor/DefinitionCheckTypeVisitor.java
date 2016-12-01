@@ -22,9 +22,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
-import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiTypeOmega;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
@@ -74,17 +72,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     myErrorReporter = errorReporter;
   }
 
-  public static void typeCheck(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ClassDefinition enclosingClass, Abstract.Definition definition, LocalErrorReporter errorReporter, boolean isPrelude) {
+  public static void typeCheck(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ClassDefinition enclosingClass, Abstract.Definition definition, LocalErrorReporter errorReporter) {
     if (state.getTypechecked(definition) == null) {
       definition.accept(new DefinitionCheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, errorReporter), enclosingClass);
-      if (isPrelude) {
-        Prelude.update(definition, state.getTypechecked(definition));
-      }
     }
-  }
-
-  public static void typeCheck(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ClassDefinition enclosingClass, Abstract.Definition definition, LocalErrorReporter errorReporter) {
-    typeCheck(state, staticNsProvider, dynamicNsProvider, enclosingClass, definition, errorReporter, false);
   }
 
   private DependentLink createThisParam(ClassDefinition enclosingClass, LevelArguments polyArgs) {
