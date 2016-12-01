@@ -61,6 +61,9 @@ public class CachingModuleLoader<SourceIdT extends SourceId> extends SourceModul
     if (result != null && useCache) {
       try {
         boolean cacheLoaded = loadCache(sourceId);
+        if (cacheLoaded) {
+          myTcState.getLocal(sourceId).sync();
+        }
         return Result.Cache(result, cacheLoaded);
       } catch (CacheLoadingException e) {
         // TODO: TC state is now potentially corrupted, clean it up properly
