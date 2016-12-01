@@ -15,6 +15,8 @@ import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 public class CachingModuleLoader<SourceIdT extends SourceId> extends SourceModuleLoader<SourceIdT> {
   private final SourceModuleLoader<SourceIdT> mySourceLoader;
@@ -95,9 +97,10 @@ public class CachingModuleLoader<SourceIdT extends SourceId> extends SourceModul
       return false;
     }
 
-    writeModule(sourceId, localState).writeTo(cacheStream);
+    GZIPOutputStream compressedCacheStream = new GZIPOutputStream(cacheStream);
+    writeModule(sourceId, localState).writeTo(compressedCacheStream);
 
-    cacheStream.close();
+    compressedCacheStream.close();
     localState.sync();
     return true;
   }
@@ -119,9 +122,11 @@ public class CachingModuleLoader<SourceIdT extends SourceId> extends SourceModul
       return false;
     }
     try {
+      GZIPInputStream compressedCacheStream = new GZIPInputStream(cacheStream);
       LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState localState = myTcState.getLocal(sourceId);
-      ModuleProtos.Module moduleProto = ModuleProtos.Module.parseFrom(cacheStream);
+      ModuleProtos.Module moduleProto = ModuleProtos.Module.parseFrom(compressedCacheStream);
       loadCachedState(sourceId, localState, moduleProto);
+      compressedCacheStream.close();
       return true;
     } catch (IOException e) {
       throw new CacheLoadingException(sourceId, e);
