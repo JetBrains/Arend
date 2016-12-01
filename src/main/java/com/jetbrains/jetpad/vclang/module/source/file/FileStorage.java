@@ -52,7 +52,7 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
   }
 
   private File cacheFileFromPath(ModulePath modulePath, long mtime) {
-    return new File(baseFileFromPath(modulePath).toPath() + SERIALIZED_EXTENSION + "-" + mtime);
+    return new File(baseFileFromPath(modulePath).toPath() + "." + mtime + SERIALIZED_EXTENSION);
   }
 
   @Override
