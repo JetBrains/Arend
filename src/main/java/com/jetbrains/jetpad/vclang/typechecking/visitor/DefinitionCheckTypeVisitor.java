@@ -414,13 +414,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     }
     */
 
-    if (def.getConstructors().size() > 1 && userSorts != null && userSorts.getHLevel().isMinimum()) {
-      String msg = "Actual universe is not compatible with expected universe \\Prop";
-      visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, def.getUniverse()));
-      userSorts = null;
-    }
     if (userSorts == null) {
-      userSorts = def.getConstructors().size() > 1 ? new SortMax(new Sort(new Level(0), Sort.SET.getHLevel())) : new SortMax();
+      userSorts = SortMax.OMEGA;
     }
 
     DataDefinition dataDefinition = new DataDefinition(def, userSorts, list.getFirst());
@@ -444,24 +439,25 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
   private static void typeCheckDataBody(DataDefinition dataDefinition, CheckTypeVisitor visitor) {
     Abstract.DataDefinition def = dataDefinition.getAbstractDefinition();
     SortMax userSorts = def.getUniverse() != null ? dataDefinition.getSorts() : null;
-    SortMax inferredSorts = def.getUniverse() != null ? null : dataDefinition.getSorts();
+    SortMax inferredSorts = def.getConstructors().size() > 1 ? new SortMax(new Sort(new Level(0), Sort.SET.getHLevel())) : new SortMax();
+    dataDefinition.setSorts(inferredSorts);
 
     boolean dataOk = true;
     boolean universeOk = true;
     for (Abstract.Constructor constructor : def.getConstructors()) {
       visitor.getContext().clear();
-      SortMax conSorts = inferredSorts != null ? inferredSorts : new SortMax();
+      SortMax conSorts = new SortMax();
       Constructor typedConstructor = visitConstructor(constructor, dataDefinition, visitor, conSorts);
       visitor.getTypecheckingState().record(constructor, typedConstructor);
       if (typedConstructor.typeHasErrors()) {
         dataOk = false;
       }
 
+      inferredSorts.add(conSorts);
       if (userSorts != null) {
         if (!conSorts.isLessOrEquals(userSorts)) {
           String msg = "Universe " + conSorts + " of constructor '" + constructor.getName() + "' is not compatible with expected universe " + userSorts;
           visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, constructor));
-          dataDefinition.setSorts(dataDefinition.getSorts().max(conSorts));
           universeOk = false;
         }
       }
@@ -494,18 +490,25 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         }
       }
       dataDefinition.getConditions().removeAll(failedConditions);
+
       for (Condition condition : dataDefinition.getConditions()) {
         if (condition.getElimTree().accept(new FindMatchOnIntervalVisitor(), null)) {
           dataDefinition.setMatchesOnInterval();
-          dataDefinition.setSorts(new SortMax(dataDefinition.getSorts().getPLevel(), LevelMax.INFINITY));
-          if (universeOk && userSorts != null && !dataDefinition.getSorts().isLessOrEquals(userSorts)) {
-            String msg = "Actual universe " + dataDefinition.getSorts() + " is not compatible with expected universe " + userSorts;
-            visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, def.getUniverse()));
-          }
+          inferredSorts = new SortMax(inferredSorts.getPLevel(), LevelMax.INFINITY);
           break;
         }
       }
     }
+
+    if (universeOk && userSorts != null) {
+      if (inferredSorts.isLessOrEquals(userSorts)) {
+        inferredSorts = userSorts;
+      } else {
+        String msg = "Actual universe " + inferredSorts + " is not compatible with expected universe " + userSorts;
+        visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, def.getUniverse()));
+      }
+    }
+    dataDefinition.setSorts(inferredSorts);
   }
 
   @Override

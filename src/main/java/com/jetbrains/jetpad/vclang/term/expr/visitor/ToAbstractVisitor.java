@@ -370,6 +370,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     if (sort.isOmega()) {
       return myFactory.makeUniverse();
     }
+    // TODO: generate ordinary universe when levels are constants
     return myFactory.makeUniverse(visitLevelMax(sort.getPLevel(), 0), visitLevelMax(sort.getHLevel(), -1));
   }
 
