@@ -18,7 +18,6 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.order.BaseOrdering;
 import com.jetbrains.jetpad.vclang.typechecking.order.SCC;
 import com.jetbrains.jetpad.vclang.typechecking.order.SCCListener;
-import com.jetbrains.jetpad.vclang.typechecking.visitor.DefinitionCheckTypeVisitor;
 
 import java.util.*;
 
@@ -52,7 +51,7 @@ public class Typechecking {
             countingErrorReporter = new CountingErrorReporter();
             LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(errorReporter, countingErrorReporter));
             CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(state, staticNsProvider, dynamicNsProvider, new ArrayList<Binding>(), localErrorReporter).build();
-            Definition typechecked = DefinitionCheckTypeVisitor.typeCheckHeader(visitor, unit.getDefinition(), unit.getEnclosingClass());
+            Definition typechecked = DefinitionCheckType.typeCheckHeader(visitor, unit.getDefinition(), unit.getEnclosingClass());
             if (typechecked.hasErrors() == Definition.TypeCheckingStatus.TYPE_CHECKING) {
               suspensions.put(unit.getDefinition(), new Suspension(visitor, countingErrorReporter));
               doReport = false;
@@ -65,7 +64,7 @@ public class Typechecking {
         } else {
           Suspension suspension = suspensions.get(unit.getDefinition());
           if (suspension != null) {
-            DefinitionCheckTypeVisitor.typeCheckBody(state.getTypechecked(unit.getDefinition()), suspension.visitor);
+            DefinitionCheckType.typeCheckBody(state.getTypechecked(unit.getDefinition()), suspension.visitor);
             countingErrorReporter = suspension.countingErrorReporter;
             suspensions.remove(unit.getDefinition());
             doReport = true;
@@ -78,7 +77,7 @@ public class Typechecking {
         if (state.getTypechecked(unit.getDefinition()) == null) {
           countingErrorReporter = new CountingErrorReporter();
           LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(errorReporter, countingErrorReporter));
-          DefinitionCheckTypeVisitor.typeCheck(state, staticNsProvider, dynamicNsProvider, unit, localErrorReporter);
+          DefinitionCheckType.typeCheck(state, staticNsProvider, dynamicNsProvider, unit, localErrorReporter);
         }
       }
 

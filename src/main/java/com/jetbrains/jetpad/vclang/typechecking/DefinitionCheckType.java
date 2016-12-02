@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.typechecking.visitor;
+package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
@@ -15,7 +15,6 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.FindMatchOnIntervalVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
@@ -38,16 +37,12 @@ import com.jetbrains.jetpad.vclang.term.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.PatternsToElimTreeConversion;
-import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingElim;
-import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.TypecheckingUnit;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.CompositeInstancePool;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.EmptyInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.LocalInstancePool;
 
 import java.util.*;
@@ -60,19 +55,7 @@ import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.toPatterns;
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.typeOfFunctionArg;
 
-public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<ClassDefinition, Definition> {
-  private final TypecheckerState myState;
-  private final StaticNamespaceProvider myStaticNsProvider;
-  private final DynamicNamespaceProvider myDynamicNsProvider;
-  private final LocalErrorReporter myErrorReporter;
-
-  public DefinitionCheckTypeVisitor(TypecheckerState state, StaticNamespaceProvider staticNamespaceProvider, DynamicNamespaceProvider dynamicNsProvider, LocalErrorReporter errorReporter) {
-    myState = state;
-    myStaticNsProvider = staticNamespaceProvider;
-    myDynamicNsProvider = dynamicNsProvider;
-    myErrorReporter = errorReporter;
-  }
-
+public class DefinitionCheckType {
   public static Definition typeCheckHeader(CheckTypeVisitor visitor, Abstract.Definition definition, Abstract.ClassDefinition enclosingClass) {
     LocalInstancePool localInstancePool = new LocalInstancePool();
     visitor.setClassViewInstancePool(new CompositeInstancePool(localInstancePool, visitor.getTypecheckingState().getInstancePool()));
@@ -100,12 +83,17 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
   }
 
   public static void typeCheck(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckingUnit unit, LocalErrorReporter errorReporter) {
-    assert !(unit.getDefinition() instanceof Abstract.DataDefinition);
-    assert !(unit.getDefinition() instanceof Abstract.FunctionDefinition);
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(state, staticNsProvider, dynamicNsProvider, new ArrayList<Binding>(), errorReporter).instancePool(state.getInstancePool()).build();
 
-    DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, errorReporter);
-    ClassDefinition enclosingClass = unit.getEnclosingClass() == null ? null : (ClassDefinition) state.getTypechecked(unit.getEnclosingClass());
-    unit.getDefinition().accept(visitor, enclosingClass);
+    if (unit.getDefinition() instanceof Abstract.ClassDefinition) {
+      ClassDefinition enclosingClass = unit.getEnclosingClass() == null ? null : (ClassDefinition) state.getTypechecked(unit.getEnclosingClass());
+      typeCheckClass((Abstract.ClassDefinition) unit.getDefinition(), enclosingClass, visitor);
+    } else
+    if (unit.getDefinition() instanceof Abstract.ClassViewInstance) {
+      typeCheckClassViewInstance((Abstract.ClassViewInstance) unit.getDefinition(), visitor);
+    } else {
+      throw new IllegalStateException();
+    }
   }
 
   private static DependentLink createThisParam(ClassDefinition enclosingClass, LevelArguments polyArgs) {
@@ -131,7 +119,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     return null;
   }
 
-  private static TypedBinding visitPolyParam(Abstract.TypeArgument typeArgument, Abstract.SourceNode node, LocalErrorReporter errorReporter) {
+  private static TypedBinding typeCheckPolyParam(Abstract.TypeArgument typeArgument, Abstract.SourceNode node, LocalErrorReporter errorReporter) {
     assert (typeArgument.getType() instanceof Abstract.DefCallExpression);
     String typeName = ((Abstract.DefCallExpression) typeArgument.getType()).getName();
     if (!(typeArgument instanceof Abstract.TelescopeArgument)) {
@@ -169,7 +157,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     return new Sort(new Level(lpParam), new Level(lhParam));
   }
 
-  private static boolean visitParameters(List<? extends Abstract.Argument> arguments, Abstract.SourceNode node, List<Binding> context, List<TypedBinding> polyParamsList, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
+  private static boolean typeCheckParameters(List<? extends Abstract.Argument> arguments, Abstract.SourceNode node, List<Binding> context, List<TypedBinding> polyParamsList, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
     boolean ok = true;
     boolean polyParamsAllowed = true;
     int index = 0;
@@ -184,7 +172,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
             ok = false;
             continue;
           }
-          TypedBinding levelParam = visitPolyParam(typeArgument, node, visitor.getErrorReporter());
+          TypedBinding levelParam = typeCheckPolyParam(typeArgument, node, visitor.getErrorReporter());
           if (levelParam == null) {
             ok = false;
             continue;
@@ -263,7 +251,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       typedDef.setThisClass(enclosingClass);
     }
 
-    boolean paramsOk = visitParameters(def.getArguments(), def, visitor.getContext(), polyParamsList, list, visitor, localInstancePool);
+    boolean paramsOk = typeCheckParameters(def.getArguments(), def, visitor.getContext(), polyParamsList, list, visitor, localInstancePool);
     TypeMax expectedType = null;
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
@@ -348,11 +336,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     typedDef.hasErrors(typedDef.getElimTree() != null ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.HAS_ERRORS);
   }
 
-  @Override
-  public FunctionDefinition visitFunction(Abstract.FunctionDefinition def, ClassDefinition enclosingClass) {
-    throw new IllegalStateException();
-  }
-
   private static DataDefinition typeCheckDataHeader(Abstract.DataDefinition def, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
     LinkList list = new LinkList();
     List<TypedBinding> polyParamsList = new ArrayList<>();
@@ -370,7 +353,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     SortMax userSorts = SortMax.OMEGA;
     boolean paramsOk;
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
-      paramsOk = visitParameters(def.getParameters(), def, visitor.getContext(), polyParamsList, list, visitor, localInstancePool);
+      paramsOk = typeCheckParameters(def.getParameters(), def, visitor.getContext(), polyParamsList, list, visitor, localInstancePool);
 
       if (def.getUniverse() != null) {
         if (def.getUniverse() instanceof Abstract.PolyUniverseExpression) {
@@ -430,7 +413,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     for (Abstract.Constructor constructor : def.getConstructors()) {
       visitor.getContext().clear();
       SortMax conSorts = new SortMax();
-      Constructor typedConstructor = visitConstructor(constructor, dataDefinition, visitor, conSorts);
+      Constructor typedConstructor = typeCheckConstructor(constructor, dataDefinition, visitor, conSorts);
       visitor.getTypecheckingState().record(constructor, typedConstructor);
       if (typedConstructor.typeHasErrors()) {
         dataOk = false;
@@ -495,11 +478,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     }
 
     dataDefinition.setSorts(inferredSorts);
-  }
-
-  @Override
-  public DataDefinition visitData(Abstract.DataDefinition def, ClassDefinition enclosingClass) {
-    throw new IllegalStateException();
   }
 
   private static List<Constructor> typeCheckConditions(CheckTypeVisitor visitor, DataDefinition dataDefinition, Abstract.DataDefinition def) {
@@ -606,12 +584,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     return null;
   }
 
-  @Override
-  public Definition visitConstructor(Abstract.Constructor def, ClassDefinition enclosingClass) {
-    throw new IllegalStateException();
-  }
-
-  private static Constructor visitConstructor(Abstract.Constructor def, DataDefinition dataDefinition, CheckTypeVisitor visitor, SortMax sorts) {
+  private static Constructor typeCheckConstructor(Abstract.Constructor def, DataDefinition dataDefinition, CheckTypeVisitor visitor, SortMax sorts) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(visitor.getContext())) {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
       String name = def.getName();
@@ -756,11 +729,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     return processedPatterns;
   }
 
-  @Override
-  public ClassDefinition visitClass(Abstract.ClassDefinition def, ClassDefinition enclosingClass) {
+  private static ClassDefinition typeCheckClass(Abstract.ClassDefinition def, ClassDefinition enclosingClass, CheckTypeVisitor visitor) {
+    LocalErrorReporter errorReporter = visitor.getErrorReporter();
+    List<Binding> context = visitor.getContext();
     boolean classOk = true;
-    List<Binding> context = new ArrayList<>();
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, myStaticNsProvider, myDynamicNsProvider, context, myErrorReporter).instancePool(EmptyInstancePool.INSTANCE).build();
 
     FieldSet fieldSet = new FieldSet();
     Set<ClassDefinition> superClasses = new HashSet<>();
@@ -769,11 +741,11 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       List<TypedBinding> polyParams = new ArrayList<>();
       for (Abstract.TypeArgument polyArgument : def.getPolyParameters()) {
         if (!isPolyParam(polyArgument)) {
-          myErrorReporter.report(new LocalTypeCheckingError("Classes can only have level parameters", polyArgument));
+          visitor.getErrorReporter().report(new LocalTypeCheckingError("Classes can only have level parameters", polyArgument));
           classOk = false;
           continue;
         }
-        TypedBinding param = visitPolyParam(polyArgument, def, myErrorReporter);
+        TypedBinding param = typeCheckPolyParam(polyArgument, def, errorReporter);
         polyParams.add(param);
         context.add(param);
       }
@@ -795,7 +767,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
         ClassCallExpression typeCheckedSuperClass = result.getExpression().normalize(NormalizeVisitor.Mode.WHNF).toClassCall();
         if (typeCheckedSuperClass == null) {
-          myErrorReporter.report(new LocalTypeCheckingError("Parent must be a class", aSuperClass.getSuperClass()));
+          errorReporter.report(new LocalTypeCheckingError("Parent must be a class", aSuperClass.getSuperClass()));
           classOk = false;
           continue;
         }
@@ -809,7 +781,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
             fieldSet.implementField(entry.getKey(), entry.getValue());
           } else {
             classOk = false;
-            myErrorReporter.report(new LocalTypeCheckingError("Implementations of '" + entry.getKey().getName() + "' differ", aSuperClass.getSuperClass()));
+            errorReporter.report(new LocalTypeCheckingError("Implementations of '" + entry.getKey().getName() + "' differ", aSuperClass.getSuperClass()));
           }
         }
       }
@@ -823,20 +795,20 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       context.clear();
 
       for (Abstract.ClassField field : def.getFields()) {
-        fieldSet.addField(visitClassField(field, typedDef));
+        fieldSet.addField(typeCheckClassField(field, typedDef, visitor));
       }
 
       for (Abstract.Implementation implementation : def.getImplementations()) {
-        Definition implementedDef = myState.getTypechecked(implementation.getImplementedField());
+        Definition implementedDef = visitor.getTypecheckingState().getTypechecked(implementation.getImplementedField());
         if (!(implementedDef instanceof ClassField)) {
           classOk = false;
-          myErrorReporter.report(new LocalTypeCheckingError("'" + implementedDef.getName() + "' is not a field", implementation));
+          errorReporter.report(new LocalTypeCheckingError("'" + implementedDef.getName() + "' is not a field", implementation));
           continue;
         }
         ClassField field = (ClassField) implementedDef;
         if (fieldSet.isImplemented(field)) {
           classOk = false;
-          myErrorReporter.report(new LocalTypeCheckingError("Field '" + field.getName() + "' is already implemented", implementation));
+          errorReporter.report(new LocalTypeCheckingError("Field '" + field.getName() + "' is already implemented", implementation));
           continue;
         }
 
@@ -851,72 +823,52 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         }
       }
 
-      myState.record(def, typedDef);
+      visitor.getTypecheckingState().record(def, typedDef);
       typedDef.hasErrors(classOk ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.HAS_ERRORS);
       return typedDef;
     } catch (Namespace.InvalidNamespaceException e) {
-      myErrorReporter.report(e.toError());
+      errorReporter.report(e.toError());
     }
     return null;
   }
 
-  private CheckTypeVisitor.Result implementField(FieldSet fieldSet, ClassField field, Abstract.Expression implBody, CheckTypeVisitor visitor, DependentLink thisParam) {
+  private static CheckTypeVisitor.Result implementField(FieldSet fieldSet, ClassField field, Abstract.Expression implBody, CheckTypeVisitor visitor, DependentLink thisParam) {
     CheckTypeVisitor.Result result = visitor.checkType(implBody, field.getBaseType().subst(field.getThisParameter(), Reference(thisParam)));
     fieldSet.implementField(field, new FieldSet.Implementation(thisParam, result != null ? result.getExpression() : Error(null, null)));
     return result;
   }
 
-  @Override
-  public ClassField visitClassField(Abstract.ClassField def, ClassDefinition enclosingClass) {
-    if (enclosingClass == null) throw new IllegalStateException();
-
+  private static ClassField typeCheckClassField(Abstract.ClassField def, ClassDefinition enclosingClass, CheckTypeVisitor visitor) {
     DependentLink thisParameter = createThisParam(enclosingClass, new LevelArguments(Level.map(enclosingClass.getPolyParams())));
-    List<Binding> context = new ArrayList<>();
-    context.add(thisParameter);
-    context.addAll(enclosingClass.getPolyParams());
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, myStaticNsProvider, myDynamicNsProvider, context, myErrorReporter).instancePool(EmptyInstancePool.INSTANCE).thisClass(enclosingClass, Reference(thisParameter)).build();
-    ClassField typedDef = new ClassField(def, null, enclosingClass, thisParameter);
-    myState.record(def, typedDef);
+    visitor.setThisClass(enclosingClass, Reference(thisParameter));
+    CheckTypeVisitor.Result typeResult;
+    try (Utils.ContextSaver saver = new Utils.ContextSaver(visitor.getContext())) {
+      visitor.getContext().add(thisParameter);
+      visitor.getContext().addAll(enclosingClass.getPolyParams());
+      typeResult = visitor.checkType(def.getResultType(), new PiTypeOmega(EmptyDependentLink.getInstance()));
+    }
 
-    CheckTypeVisitor.Result typeResult = visitor.checkType(def.getResultType(), new PiTypeOmega(EmptyDependentLink.getInstance()));
-    typedDef.setBaseType(typeResult == null ? Error(null, null) : typeResult.getExpression());
-    typedDef.setThisClass(enclosingClass);
+    ClassField typedDef = new ClassField(def, typeResult == null ? Error(null, null) : typeResult.getExpression(), enclosingClass, thisParameter);
+    visitor.getTypecheckingState().record(def, typedDef);
     return typedDef;
   }
 
-  @Override
-  public Definition visitImplement(Abstract.Implementation def, ClassDefinition params) {
-    throw new IllegalStateException();
-  }
-
-  @Override
-  public Definition visitClassView(Abstract.ClassView def, ClassDefinition params) {
-    throw new IllegalStateException();
-  }
-
-  @Override
-  public Definition visitClassViewField(Abstract.ClassViewField def, ClassDefinition params) {
-    throw new IllegalStateException();
-  }
-
-  @Override
-  public Definition visitClassViewInstance(Abstract.ClassViewInstance def, ClassDefinition enclosingClass) {
+  private static Definition typeCheckClassViewInstance(Abstract.ClassViewInstance def, CheckTypeVisitor visitor) {
+    LocalErrorReporter errorReporter = visitor.getErrorReporter();
+    TypecheckerState state = visitor.getTypecheckingState();
     FunctionDefinition typedDef = new FunctionDefinition(def);
-    myState.record(def, typedDef);
+    state.record(def, typedDef);
 
-    List<Binding> context = new ArrayList<>();
     LinkList list = new LinkList();
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, myStaticNsProvider, myDynamicNsProvider, context, myErrorReporter).build();
-
     List<TypedBinding> polyParamsList = new ArrayList<>();
-    boolean paramsOk = visitParameters(def.getArguments(), def, context, polyParamsList, list, visitor, null);
+    boolean paramsOk = typeCheckParameters(def.getArguments(), def, visitor.getContext(), polyParamsList, list, visitor, null);
     typedDef.setPolyParams(polyParamsList);
     typedDef.setParameters(list.getFirst());
 
     Abstract.Expression term = def.getTerm();
     if (term != null) {
       if (term instanceof Abstract.ElimExpression) {
-        myErrorReporter.report(new LocalTypeCheckingError("\\elim is not allowed in \\instance", def));
+        errorReporter.report(new LocalTypeCheckingError("\\elim is not allowed in \\instance", def));
       } else {
         CheckTypeVisitor.Result termResult = visitor.checkType(term, null);
         if (termResult != null) {
@@ -930,7 +882,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       if (typedDef.getElimTree() != null) {
         if (!typedDef.getElimTree().accept(new TerminationCheckVisitor(typedDef, typedDef.getParameters()), null)) {
           // FIXME[errorformat]
-          myErrorReporter.report(new LocalTypeCheckingError("Termination check failed", term));
+          errorReporter.report(new LocalTypeCheckingError("Termination check failed", term));
           typedDef.setElimTree(null);
           typedDef.hasErrors(Definition.TypeCheckingStatus.HAS_ERRORS);
         }
@@ -945,31 +897,31 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
         expr = expr.normalize(NormalizeVisitor.Mode.WHNF);
       }
       if (expr == null || expr.toClassCall() == null || !(expr.toClassCall() instanceof ClassViewCallExpression)) {
-        myErrorReporter.report(new LocalTypeCheckingError("Expected an expression of a class view type", term));
+        errorReporter.report(new LocalTypeCheckingError("Expected an expression of a class view type", term));
         return typedDef;
       }
 
       Abstract.ClassView classView = ((ClassViewCallExpression) expr.toClassCall()).getClassView();
-      FieldSet.Implementation impl = expr.toClassCall().getFieldSet().getImplementation((ClassField) myState.getTypechecked(classView.getClassifyingField()));
+      FieldSet.Implementation impl = expr.toClassCall().getFieldSet().getImplementation((ClassField) state.getTypechecked(classView.getClassifyingField()));
       if (impl == null) {
-        myErrorReporter.report(new LocalTypeCheckingError("Classifying field is not implemented", term));
+        errorReporter.report(new LocalTypeCheckingError("Classifying field is not implemented", term));
         return typedDef;
       }
       DefCallExpression defCall = impl.term.normalize(NormalizeVisitor.Mode.WHNF).toDefCall();
       if (defCall == null || !defCall.getDefCallArguments().isEmpty()) {
-        myErrorReporter.report(new LocalTypeCheckingError("Expected a definition in the classifying field", term));
+        errorReporter.report(new LocalTypeCheckingError("Expected a definition in the classifying field", term));
         return typedDef;
       }
-      if (myState.getInstancePool().getInstance(defCall.getDefinition(), classView) != null) {
-        myErrorReporter.report(new LocalTypeCheckingError("Instance of '" + classView.getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", term));
+      if (state.getInstancePool().getInstance(defCall.getDefinition(), classView) != null) {
+        errorReporter.report(new LocalTypeCheckingError("Instance of '" + classView.getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", term));
       } else {
         Expression instance = FunCall(typedDef, new LevelArguments(), Collections.<Expression>emptyList());
-        myState.getInstancePool().addInstance(defCall.getDefinition(), classView, instance);
+        state.getInstancePool().addInstance(defCall.getDefinition(), classView, instance);
         if (def.isDefault()) {
-          if (myState.getInstancePool().getInstance(defCall.getDefinition(), null) != null) {
-            myErrorReporter.report(new LocalTypeCheckingError("Default instance of '" + classView.getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", term));
+          if (state.getInstancePool().getInstance(defCall.getDefinition(), null) != null) {
+            errorReporter.report(new LocalTypeCheckingError("Default instance of '" + classView.getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", term));
           } else {
-            myState.getInstancePool().addInstance(defCall.getDefinition(), null, instance);
+            state.getInstancePool().addInstance(defCall.getDefinition(), null, instance);
           }
         }
       }

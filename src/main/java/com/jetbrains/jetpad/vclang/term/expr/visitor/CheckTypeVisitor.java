@@ -60,8 +60,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   private final DynamicNamespaceProvider myDynamicNsProvider;
   private ClassDefinition myThisClass;
   private Expression myThisExpr;
-  private LocalErrorReporter myErrorReporter;
   private final List<Binding> myContext;
+  private final LocalErrorReporter myErrorReporter;
   private final TypeCheckingDefCall myTypeCheckingDefCall;
   private final TypeCheckingElim myTypeCheckingElim;
   private final ImplicitArgsInference myArgsInference;
@@ -266,10 +266,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   public LocalErrorReporter getErrorReporter() {
     return myErrorReporter;
-  }
-
-  public void setErrorReporter(LocalErrorReporter errorReporter) {
-    myErrorReporter = errorReporter;
   }
 
   public Equations getEquations() {
