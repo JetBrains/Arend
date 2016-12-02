@@ -17,6 +17,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
+import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
@@ -107,6 +108,7 @@ public class Prelude extends SimpleNamespace {
       ISO.setElimTree(top(ISO.getParameters(), branch(ISO.getParameters().getNext().getNext().getNext().getNext().getNext().getNext(), tail(),
         clause(LEFT, EmptyDependentLink.getInstance(), Reference(ISO.getParameters())),
         clause(RIGHT, EmptyDependentLink.getInstance(), Reference(ISO.getParameters().getNext())))));
+      ISO.setResultType(new PiUniverseType(EmptyDependentLink.getInstance(), new SortMax(new Sort(new Level(ISO.getPolyParams().get(0)), new Level(ISO.getPolyParams().get(1))))));
       ISO.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
     } else
     if (abstractDef.getName().equals("TrP")) {
