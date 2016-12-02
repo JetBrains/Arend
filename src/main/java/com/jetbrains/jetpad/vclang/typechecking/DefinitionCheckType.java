@@ -23,6 +23,7 @@ import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiTypeOmega;
+import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
@@ -35,8 +36,8 @@ import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.PatternsToElimTreeConversion;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
@@ -289,7 +290,35 @@ public class DefinitionCheckType {
         ElimTreeNode elimTree = visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, def.getArrow() == Abstract.Definition.Arrow.LEFT ? typedDef.getParameters() : null, expectedType, false, true);
         if (elimTree != null) {
           typedDef.setElimTree(elimTree);
-          actualType = userType; // TODO: Calculate the correct type
+          if (userType instanceof PiTypeOmega) {
+            final SortMax sorts = new SortMax();
+            elimTree.accept(new ElimTreeNodeVisitor<Void, Void>() {
+              @Override
+              public Void visitBranch(BranchElimTreeNode branchNode, Void params) {
+                for (ConstructorClause clause : branchNode.getConstructorClauses()) {
+                  clause.getChild().accept(this, null);
+                }
+                if (branchNode.getOtherwiseClause() != null) {
+                  branchNode.getOtherwiseClause().getChild().accept(this, null);
+                }
+                return null;
+              }
+
+              @Override
+              public Void visitLeaf(LeafElimTreeNode leafNode, Void params) {
+                sorts.add(leafNode.getExpression().getType().getPiCodomain().toSorts());
+                return null;
+              }
+
+              @Override
+              public Void visitEmpty(EmptyElimTreeNode emptyNode, Void params) {
+                return null;
+              }
+            }, null);
+            actualType = new PiUniverseType(userType.getPiParameters(), sorts);
+          } else {
+            actualType = userType;
+          }
         }
       } else {
         CheckTypeVisitor.Result termResult = visitor.checkType(term, expectedType);
