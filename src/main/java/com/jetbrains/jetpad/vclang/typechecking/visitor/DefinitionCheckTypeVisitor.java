@@ -424,7 +424,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
   private static void typeCheckDataBody(DataDefinition dataDefinition, CheckTypeVisitor visitor) {
     Abstract.DataDefinition def = dataDefinition.getAbstractDefinition();
     SortMax userSorts = def.getUniverse() != null ? dataDefinition.getSorts() : null;
-    SortMax inferredSorts = def.getConstructors().size() > 1 ? new SortMax(new Sort(new Level(0), Sort.SET.getHLevel())) : new SortMax();
+    SortMax inferredSorts = def.getConstructors().size() > 1 ? new SortMax(Sort.SET0) : new SortMax();
     dataDefinition.setSorts(inferredSorts);
 
     boolean dataOk = true;

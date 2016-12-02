@@ -102,9 +102,6 @@ public class SortMax {
     if (myHLevel.isMinimum()) {
       return true;
     }
-  //  if (sort.getHLevel().isMinimum()) {
-  //    return false;
-  //  }
     return myPLevel.isLessOrEquals(sort.getPLevel()) && myHLevel.isLessOrEquals(sort.getHLevel());
   }
 
@@ -112,9 +109,6 @@ public class SortMax {
     if (myHLevel.isMinimum()) {
       return true;
     }
- //   if (sort.getHLevel().isMinimum()) {
- //     return false;
-  //  }
     return myPLevel.isLessOrEquals(sort.getPLevel(), equations, sourceNode) && myHLevel.isLessOrEquals(sort.getHLevel(), equations, sourceNode);
   }
 

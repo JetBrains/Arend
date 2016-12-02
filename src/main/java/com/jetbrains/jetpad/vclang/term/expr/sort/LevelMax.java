@@ -88,8 +88,9 @@ public class LevelMax implements PrettyPrintable {
   private void add(Map<Variable, Integer> result, Variable var, int constant) {
     Integer sucs = myVars.get(var);
     if (sucs != null) {
-      result.put(var, Math.max(constant, sucs));
-    } else {
+      constant = Math.max(constant, sucs);
+    }
+    if (var != null || constant != 0) {
       result.put(var, constant);
     }
   }

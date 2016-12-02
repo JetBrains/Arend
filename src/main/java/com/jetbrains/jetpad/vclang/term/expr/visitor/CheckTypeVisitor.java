@@ -599,8 +599,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   @Override
   public Result visitUniverse(Abstract.UniverseExpression expr, Type expectedType) {
-    int hlevel = expr.getUniverse().hLevel == Abstract.UniverseExpression.Universe.NOT_TRUNCATED ? Sort.NOT_TRUNCATED : expr.getUniverse().hLevel;
-    UniverseExpression universe = Universe(expr.getUniverse().pLevel, hlevel);
+    int pLevel = expr.getUniverse().pLevel;
+    int hLevel = expr.getUniverse().hLevel;
+    UniverseExpression universe = hLevel == Abstract.UniverseExpression.Universe.NOT_TRUNCATED ? Universe(pLevel) : Universe(pLevel, hLevel);
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getSort().succ())), expr);
   }
 
@@ -668,10 +669,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   @Override
   public Result visitPolyUniverse(Abstract.PolyUniverseExpression expr, Type expectedType) {
-    Level levelP = typeCheckLevel(expr.getPLevel(), Lvl(), 0);
-    Level levelH = typeCheckLevel(expr.getHLevel(), CNat(), -1);
-    if (levelP == null || levelH == null) return null;
-    UniverseExpression universe = Universe(new Sort(levelP, levelH));
+    Level pLevel = typeCheckLevel(expr.getPLevel(), Lvl(), 0);
+    Level hLevel = typeCheckLevel(expr.getHLevel(), CNat(), -1);
+    if (pLevel == null || hLevel == null) return null;
+    UniverseExpression universe = Universe(new Sort(pLevel, hLevel));
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getSort().succ())), expr);
   }
 

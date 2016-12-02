@@ -14,37 +14,31 @@ public class Sort {
   private final Level myPLevel;
   private final Level myHLevel;
 
-  public static final int ANY_LEVEL = -10;
-  public static final int NOT_TRUNCATED = -10;
-  public static final Sort PROP = new Sort(0, -1);
-  public static final Sort SET = new Sort(ANY_LEVEL, 0);
+  public static final Sort PROP = new Sort(null, new Level(0));
+  public static final Sort SET0 = new Sort(new Level(0), new Level(1));
+  public static final Sort SET = new Sort(Level.INFINITY, new Level(1));
 
   public static Sort SetOfLevel(int level) {
     return new Sort(level, 0);
   }
 
   public static Sort SetOfLevel(Level level) {
-    return new Sort(level, SET.getHLevel());
+    return new Sort(level, new Level(1));
   }
 
-  public Sort(int plevel, int hlevel) {
-    if (hlevel == -1) {
-      plevel = 0;
-    }
-    if (plevel != ANY_LEVEL) {
-      myPLevel = new Level(plevel);
-    } else {
-      myPLevel = Level.INFINITY;
-    }
-    if (hlevel != NOT_TRUNCATED)
-      myHLevel = new Level(hlevel + 1);
-    else {
-      myHLevel = Level.INFINITY;
-    }
+  public static Sort TypeOfLevel(int level) {
+    return new Sort(new Level(level), Level.INFINITY);
+  }
+
+  public Sort(int pLevel, int hLevel) {
+    assert pLevel >= 0;
+    assert hLevel >= 0;
+    myPLevel = new Level(pLevel);
+    myHLevel = new Level(hLevel + 1);
   }
 
   public Sort(Level plevel, Level hlevel) {
-    myPLevel = hlevel.isZero() ? new Level(0) : plevel;
+    myPLevel = hlevel.isMinimum() ? new Level(0) : plevel;
     myHLevel = hlevel;
   }
 
@@ -61,7 +55,7 @@ public class Sort {
   }
 
   public Sort succ() {
-    return isProp() ? SetOfLevel(0) : new Sort(getPLevel().add(1), getHLevel().add(1));
+    return isProp() ? SET0 : new Sort(getPLevel().add(1), getHLevel().add(1));
   }
 
   public boolean isProp() {

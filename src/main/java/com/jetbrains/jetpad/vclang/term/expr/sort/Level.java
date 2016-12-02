@@ -47,10 +47,6 @@ public class Level implements PrettyPrintable {
     return myConstant == -1;
   }
 
-  public boolean isZero() {
-    return myConstant == 0 && myVar == null;
-  }
-
   public boolean isClosed() {
     return myVar == null;
   }

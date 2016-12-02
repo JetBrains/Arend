@@ -161,8 +161,8 @@ public class RecordsTest extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\class Point { \\field x : Nat \\field y : Nat }\n" +
         "\\function C => Point { x => 0 }");
-    assertEquals(new SortMax(Sort.SetOfLevel(0)), ((ClassDefinition) result.getDefinition("Point")).getSorts());
-    assertEquals(Universe(Sort.SetOfLevel(0)), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), new LevelArguments()).toExpression());
+    assertEquals(new SortMax(Sort.SET0), ((ClassDefinition) result.getDefinition("Point")).getSorts());
+    assertEquals(Universe(Sort.SET0), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), new LevelArguments()).toExpression());
   }
 
   @Test
@@ -170,7 +170,7 @@ public class RecordsTest extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\class Point { \\field x : Nat \\field y : Nat }\n" +
         "\\function C => Point { x => 0 | y => 1 }");
-    assertEquals(new SortMax(Sort.SetOfLevel(0)), ((ClassDefinition) result.getDefinition("Point")).getSorts());
+    assertEquals(new SortMax(Sort.SET0), ((ClassDefinition) result.getDefinition("Point")).getSorts());
     assertEquals(Universe(Sort.PROP), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), new LevelArguments()).toExpression());
   }
 
@@ -179,8 +179,8 @@ public class RecordsTest extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\class Point { \\field x : \\Type3 \\field y : \\Type1 }\n" +
         "\\function C => Point { x => Nat }");
-    assertEquals(new SortMax(new Sort(4, Sort.NOT_TRUNCATED)), ((ClassDefinition) result.getDefinition("Point")).getSorts());
-    assertEquals(Universe(new Sort(2, Sort.NOT_TRUNCATED)), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), new LevelArguments()).toExpression());
+    assertEquals(new SortMax(Sort.TypeOfLevel(4)), ((ClassDefinition) result.getDefinition("Point")).getSorts());
+    assertEquals(Universe(Sort.TypeOfLevel(2)), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), new LevelArguments()).toExpression());
   }
 
   @Test

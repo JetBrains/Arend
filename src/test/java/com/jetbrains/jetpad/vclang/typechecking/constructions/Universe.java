@@ -69,8 +69,8 @@ public class Universe extends TypeCheckingTestCase {
     CheckTypeVisitor.Result result = typeCheckExpr("\\Prop", null);
     assertNotNull(result);
     assertEquals(ExpressionFactory.Universe(3, -1), result.getExpression());
-    assertEquals(ExpressionFactory.Universe(Sort.SetOfLevel(0)), result.getType());
-    assertEquals(ExpressionFactory.Universe(Sort.SetOfLevel(0)), result.getExpression().getType());
+    assertEquals(ExpressionFactory.Universe(Sort.SET0), result.getType());
+    assertEquals(ExpressionFactory.Universe(Sort.SET0), result.getExpression().getType());
   }
 
   @Test
@@ -78,7 +78,7 @@ public class Universe extends TypeCheckingTestCase {
     CheckTypeVisitor.Result result = typeCheckExpr("\\Prop", ExpressionFactory.Universe(8, 9));
     assertNotNull(result);
     assertEquals(ExpressionFactory.Universe(3, -1), result.getExpression());
-    assertEquals(ExpressionFactory.Universe(Sort.SetOfLevel(0)), result.getExpression().getType());
+    assertEquals(ExpressionFactory.Universe(Sort.SET0), result.getExpression().getType());
   }
 
   @Test

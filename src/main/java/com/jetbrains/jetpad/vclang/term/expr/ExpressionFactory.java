@@ -261,11 +261,11 @@ public class ExpressionFactory {
   }
 
   public static UniverseExpression Universe(int pLevel) {
-    return new UniverseExpression(new Sort(pLevel, Sort.NOT_TRUNCATED));
+    return new UniverseExpression(Sort.TypeOfLevel(pLevel));
   }
 
   public static UniverseExpression Universe(int pLevel, int hLevel) {
-    return new UniverseExpression(new Sort(pLevel, hLevel));
+    return new UniverseExpression(hLevel == -1 ? Sort.PROP : new Sort(pLevel, hLevel));
   }
 
   public static UniverseExpression Universe(Level pLevel, Level hLevel) {
