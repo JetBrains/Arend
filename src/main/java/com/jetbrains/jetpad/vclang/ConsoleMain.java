@@ -110,7 +110,7 @@ public class ConsoleMain {
   }
 
   private Namespace loadPrelude() {
-    Abstract.ClassDefinition prelude = moduleLoader.load(Prelude.PreludeStorage.PRELUDE_MODULE_PATH);
+    Abstract.ClassDefinition prelude = moduleLoader.load(moduleLoader.locateModule(Prelude.PreludeStorage.PRELUDE_MODULE_PATH), true).definition;
     Typechecking.typecheckModules(state, staticNsProvider, dynamicNsProvider, Collections.singletonList(prelude), new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(state));
     assert errorReporter.getErrorList().isEmpty();
     return staticNsProvider.forDefinition(prelude);
