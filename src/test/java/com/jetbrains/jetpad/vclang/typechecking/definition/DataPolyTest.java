@@ -76,27 +76,39 @@ public class DataPolyTest extends TypeCheckingTestCase {
   public void dataOmegaProp() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) | con1 A | con2 (n = n)");
     assertThat(dataDefinition.getPolyParams(), hasSize(2));
-    assertEquals(new SortMax(new LevelMax(new Level(dataDefinition.getPolyParams().get(0))), new LevelMax(new Level(dataDefinition.getPolyParams().get(1))).max(new Level(1))), dataDefinition.getSorts());
+    assertEquals(new SortMax(
+        new LevelMax(new Level(dataDefinition.getPolyParams().get(0))),
+        new LevelMax(new Level(dataDefinition.getPolyParams().get(1))).max(new Level(1))), /* \Type (\lp, max \lh 0) */
+      dataDefinition.getSorts());
   }
 
   @Test
   public void dataOmegaPropExplicit() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Type | con1 (n = n) | con2 A");
     assertThat(dataDefinition.getPolyParams(), hasSize(2));
-    assertEquals(new SortMax(new LevelMax(new Level(dataDefinition.getPolyParams().get(0))), new LevelMax(new Level(dataDefinition.getPolyParams().get(1))).max(new Level(1))), dataDefinition.getSorts());
+    assertEquals(new SortMax(
+        new LevelMax(new Level(dataDefinition.getPolyParams().get(0))),
+        new LevelMax(new Level(dataDefinition.getPolyParams().get(1))).max(new Level(1))), /* \Type (\lp, max \lh 0) */
+      dataDefinition.getSorts());
   }
 
   @Test
   public void dataOmegaSet() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) | con1 (n = n) | con2 A | con3 Nat");
     assertThat(dataDefinition.getPolyParams(), hasSize(2));
-    assertEquals(new SortMax(new LevelMax(new Level(dataDefinition.getPolyParams().get(0))), new LevelMax(new Level(dataDefinition.getPolyParams().get(1))).max(new Level(1))), dataDefinition.getSorts());
+    assertEquals(new SortMax(
+        new LevelMax(new Level(dataDefinition.getPolyParams().get(0))),
+        new LevelMax(new Level(dataDefinition.getPolyParams().get(1))).max(new Level(1))), /* \Type (\lp, max \lh 0) */
+      dataDefinition.getSorts());
   }
 
   @Test
   public void dataOmegaSetExplicit() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Type | con1 (n = n) | con2 A | con3 Nat");
     assertThat(dataDefinition.getPolyParams(), hasSize(2));
-    assertEquals(new SortMax(new LevelMax(new Level(dataDefinition.getPolyParams().get(0))), new LevelMax(new Level(dataDefinition.getPolyParams().get(1))).max(new Level(1))), dataDefinition.getSorts());
+    assertEquals(new SortMax(
+        new LevelMax(new Level(dataDefinition.getPolyParams().get(0))),
+        new LevelMax(new Level(dataDefinition.getPolyParams().get(1))).max(new Level(1))), /* \Type (\lp, max \lh 0) */
+      dataDefinition.getSorts());
   }
 }

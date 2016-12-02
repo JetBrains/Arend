@@ -79,9 +79,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(state, staticNsProvider, dynamicNsProvider, new ArrayList<Binding>(), errorReporter).instancePool(new CompositeInstancePool(localInstancePool, state.getInstancePool())).build();
       ClassDefinition typedEnclosingClass = enclosingClass == null ? null : (ClassDefinition) state.getTypechecked(enclosingClass);
 
-      // if (definition instanceof Abstract.FunctionDefinition) {
-      //
-      // } else
+      if (definition instanceof Abstract.FunctionDefinition) {
+        Definition typechecked = typeCheckFunctionHeader((Abstract.FunctionDefinition) definition, typedEnclosingClass, visitor, localInstancePool);
+        return typechecked.hasErrors() == Definition.TypeCheckingStatus.TYPE_CHECKING ? visitor : null;
+      } else
       if (definition instanceof Abstract.DataDefinition) {
         Definition typechecked = typeCheckDataHeader((Abstract.DataDefinition) definition, typedEnclosingClass, visitor, localInstancePool);
         return typechecked.hasErrors() == Definition.TypeCheckingStatus.TYPE_CHECKING ? visitor : null;
@@ -93,9 +94,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
   }
 
   public static void typeCheckBody(Definition definition, CheckTypeVisitor exprVisitor) {
-    // if (definition instanceof FunctionDefinition) {
-    //   visitor.typeCheckFunctionBody((FunctionDefinition) definition);
-    // } else
+    if (definition instanceof FunctionDefinition) {
+      typeCheckFunctionBody((FunctionDefinition) definition, exprVisitor);
+    } else
     if (definition instanceof DataDefinition) {
       typeCheckDataBody((DataDefinition) definition, exprVisitor);
     } else {
@@ -105,7 +106,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
   public static void typeCheck(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckingUnit unit, LocalErrorReporter errorReporter) {
     assert !(unit.getDefinition() instanceof Abstract.DataDefinition);
-    // assert !(unit.getDefinition() instanceof Abstract.FunctionDefinition);
+    assert !(unit.getDefinition() instanceof Abstract.FunctionDefinition);
     Definition typechecked = state.getTypechecked(unit.getDefinition());
     if (typechecked != null) {
       assert typechecked.hasErrors() != Definition.TypeCheckingStatus.TYPE_CHECKING;
@@ -114,7 +115,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
     DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, errorReporter);
     ClassDefinition enclosingClass = unit.getEnclosingClass() == null ? null : (ClassDefinition) state.getTypechecked(unit.getEnclosingClass());
-    typechecked = unit.getDefinition().accept(visitor, enclosingClass);
+    unit.getDefinition().accept(visitor, enclosingClass);
   }
 
   private static DependentLink createThisParam(ClassDefinition enclosingClass, LevelArguments polyArgs) {
@@ -253,117 +254,113 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     return ok;
   }
 
-  private void typeCheckFunctionBody(FunctionDefinition def) {
-
-  }
-
-  @Override
-  public FunctionDefinition visitFunction(Abstract.FunctionDefinition def, ClassDefinition enclosingClass) {
+  private static FunctionDefinition typeCheckFunctionHeader(Abstract.FunctionDefinition def, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
     FunctionDefinition typedDef = new FunctionDefinition(def);
-    myState.record(def, typedDef);
+    visitor.getTypecheckingState().record(def, typedDef);
 
-    List<Binding> context = new ArrayList<>();
     List<TypedBinding> polyParamsList = new ArrayList<>();
     LinkList list = new LinkList();
-    LocalInstancePool localInstancePool = new LocalInstancePool();
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, myStaticNsProvider, myDynamicNsProvider, context, myErrorReporter).instancePool(new CompositeInstancePool(localInstancePool, myState.getInstancePool())).build();
     if (enclosingClass != null) {
       for (Binding param : enclosingClass.getPolyParams()) {
         TypedBinding defParam = new TypedBinding(param.getName(), param.getType());
         polyParamsList.add(defParam);
       }
       DependentLink thisParam = createThisParam(enclosingClass, new LevelArguments(Level.map(polyParamsList)));
-      context.add(thisParam);
-      context.addAll(enclosingClass.getPolyParams());
+      visitor.getContext().add(thisParam);
+      visitor.getContext().addAll(enclosingClass.getPolyParams());
       list.append(thisParam);
       visitor.setThisClass(enclosingClass, Reference(thisParam));
       typedDef.setThisClass(enclosingClass);
     }
 
-    boolean paramsOk = visitParameters(def.getArguments(), def, context, polyParamsList, list, visitor, localInstancePool);
-    List<TypedBinding> generatedPolyParams = new ArrayList<>();
-
+    boolean paramsOk = visitParameters(def.getArguments(), def, visitor.getContext(), polyParamsList, list, visitor, localInstancePool);
     TypeMax expectedType = null;
-    boolean generatedExpectedType = false;
-    Type expectedTypeErased = null;
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
       expectedType = visitor.checkFunOrDataType(resultType);
-      if (expectedType != null) {
-        if (expectedType.toExpression() != null) {
-          expectedTypeErased = expectedType.toExpression();
-        } else if (expectedType instanceof PiTypeOmega) {
-          expectedTypeErased = (Type) expectedType;
-          expectedType = Pi(expectedType.getPiParameters(), typeOmegaToUniverse(generatedPolyParams));
-          generatedExpectedType = true;
-        } else {
-          expectedTypeErased = PiTypeOmega.toPiTypeOmega(expectedType);
-        }
-      }
     }
 
+    List<TypedBinding> generatedPolyParams = new ArrayList<>();
     for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
       if (link.getType() instanceof PiTypeOmega) {
         link.setType(Pi(link.getType().getPiParameters(), typeOmegaToUniverse(generatedPolyParams)));
       }
     }
+    polyParamsList.addAll(generatedPolyParams);
 
     typedDef.setParameters(list.getFirst());
     typedDef.setResultType(expectedType);
-    polyParamsList.addAll(generatedPolyParams);
     typedDef.setPolyParams(polyParamsList);
     typedDef.typeHasErrors(!paramsOk || expectedType == null);
-    typedDef.hasErrors(Definition.TypeCheckingStatus.TYPE_CHECKING);
+    typedDef.hasErrors(paramsOk ? Definition.TypeCheckingStatus.TYPE_CHECKING : Definition.TypeCheckingStatus.HAS_ERRORS);
+    return typedDef;
+  }
+
+  private static void typeCheckFunctionBody(FunctionDefinition typedDef, CheckTypeVisitor visitor) {
+    Abstract.FunctionDefinition def = (Abstract.FunctionDefinition) typedDef.getAbstractDefinition();
+
+    TypeMax userType = typedDef.getResultType();
+    Type expectedType = userType == null ? null : userType instanceof Type ? (Type) userType : PiTypeOmega.toPiTypeOmega(userType);
 
     Abstract.Expression term = def.getTerm();
+    TypeMax actualType = null;
     if (term != null) {
       if (term instanceof Abstract.ElimExpression) {
-        context.subList(context.size() - size(list.getFirst()), context.size()).clear();
-        ElimTreeNode elimTree = visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, def.getArrow() == Abstract.Definition.Arrow.LEFT ? list.getFirst() : null, expectedTypeErased, false, true);
+        visitor.getContext().subList(visitor.getContext().size() - size(typedDef.getParameters()), visitor.getContext().size()).clear();
+        ElimTreeNode elimTree = visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, def.getArrow() == Abstract.Definition.Arrow.LEFT ? typedDef.getParameters() : null, expectedType, false, true);
         if (elimTree != null) {
           typedDef.setElimTree(elimTree);
-          typedDef.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
+          actualType = userType; // TODO: Calculate the correct type
         }
       } else {
-        CheckTypeVisitor.Result termResult = visitor.checkType(term, expectedTypeErased);
+        CheckTypeVisitor.Result termResult = visitor.checkType(term, expectedType);
         if (termResult != null) {
-          if (!generatedExpectedType && expectedType != null && termResult.getType().toSorts() != null && !termResult.getType().toSorts().isLessOrEquals(expectedType.toSorts())) {
-            myErrorReporter.report(new TypeMismatchError(expectedType, termResult.getType(), term));
-          } else {
-            typedDef.setElimTree(top(list.getFirst(), leaf(def.getArrow(), termResult.getExpression())));
-            typedDef.setResultType(termResult.getType());
-            typedDef.typeHasErrors(!paramsOk || typedDef.getResultType() == null);
-          }
+          typedDef.setElimTree(top(typedDef.getParameters(), leaf(def.getArrow(), termResult.getExpression())));
+          actualType = termResult.getType();
         }
       }
 
+      if (actualType != null) {
+        typedDef.setResultType(actualType);
+        typedDef.typeHasErrors(false);
+
+        if (userType != null && !(userType instanceof Type) && !actualType.getPiCodomain().toSorts().isLessOrEquals(userType.getPiCodomain().toSorts())) {
+          visitor.getErrorReporter().report(new TypeMismatchError(userType, actualType, term));
+        }
+      }
+
+      typedDef.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
+
       if (typedDef.getElimTree() != null) {
         if (!typedDef.getElimTree().accept(new TerminationCheckVisitor(typedDef, typedDef.getParameters()), null)) {
-          myErrorReporter.report(new LocalTypeCheckingError("Termination check failed", term));
+          visitor.getErrorReporter().report(new LocalTypeCheckingError("Termination check failed", term));
           typedDef.setElimTree(null);
         }
       }
 
       if (typedDef.getElimTree() != null) {
-        LocalTypeCheckingError error = TypeCheckingElim.checkCoverage(def, list.getFirst(), typedDef.getElimTree(), expectedTypeErased);
+        LocalTypeCheckingError error = TypeCheckingElim.checkCoverage(def, typedDef.getParameters(), typedDef.getElimTree(), expectedType);
         if (error != null) {
-          myErrorReporter.report(error);
+          visitor.getErrorReporter().report(error);
         }
       }
 
       if (typedDef.getElimTree() != null) {
-        LocalTypeCheckingError error = TypeCheckingElim.checkConditions(def, list.getFirst(), typedDef.getElimTree());
+        LocalTypeCheckingError error = TypeCheckingElim.checkConditions(def, typedDef.getParameters(), typedDef.getElimTree());
         if (error != null) {
-          myErrorReporter.report(error);
+          visitor.getErrorReporter().report(error);
           typedDef.setElimTree(null);
         }
       }
     }
 
     typedDef.hasErrors(typedDef.getElimTree() != null ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.HAS_ERRORS);
+  }
 
-    return typedDef;
+  @Override
+  public FunctionDefinition visitFunction(Abstract.FunctionDefinition def, ClassDefinition enclosingClass) {
+    throw new IllegalStateException();
   }
 
   private static DataDefinition typeCheckDataHeader(Abstract.DataDefinition def, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {

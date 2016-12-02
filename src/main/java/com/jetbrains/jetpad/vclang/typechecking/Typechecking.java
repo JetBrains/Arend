@@ -31,13 +31,10 @@ public class Typechecking {
       throw new SCCException();
     } else {
       TypecheckingUnit unit = scc.getUnits().iterator().next();
-      if (unit.getDefinition() instanceof Abstract.FunctionDefinition && unit.isHeader()) {
-        return;
-      }
-
+      boolean ok = true;
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
       LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(errorReporter, countingErrorReporter));
-      if (unit.getDefinition() instanceof Abstract.DataDefinition) {
+      if (unit.getDefinition() instanceof Abstract.DataDefinition || unit.getDefinition() instanceof Abstract.FunctionDefinition) {
         if (unit.isHeader()) {
           CheckTypeVisitor visitor = DefinitionCheckTypeVisitor.typeCheckHeader(state, staticNsProvider, dynamicNsProvider, unit.getDefinition(), unit.getEnclosingClass(), localErrorReporter);
           if (visitor != null) {
@@ -46,8 +43,11 @@ public class Typechecking {
         } else {
           CheckTypeVisitor visitor = suspension.get(unit.getDefinition());
           if (visitor != null) {
+            visitor.setErrorReporter(localErrorReporter);
             DefinitionCheckTypeVisitor.typeCheckBody(state.getTypechecked(unit.getDefinition()), visitor);
             suspension.remove(unit.getDefinition());
+          } else {
+            ok = false;
           }
         }
       } else {
@@ -55,10 +55,10 @@ public class Typechecking {
       }
 
       if (!unit.isHeader()) {
-        if (countingErrorReporter.getErrorsNumber() > 0) {
-          typecheckedReporter.typecheckingFailed(unit.getDefinition());
-        } else {
+        if (ok && countingErrorReporter.getErrorsNumber() == 0) {
           typecheckedReporter.typecheckingSucceeded(unit.getDefinition());
+        } else {
+          typecheckedReporter.typecheckingFailed(unit.getDefinition());
         }
       }
     }

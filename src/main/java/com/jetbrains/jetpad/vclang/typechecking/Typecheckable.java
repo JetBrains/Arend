@@ -21,7 +21,7 @@ public class Typecheckable {
   }
 
   public static boolean hasHeader(Abstract.Definition definition) {
-    return definition instanceof Abstract.FunctionDefinition && ((Abstract.FunctionDefinition) definition).getResultType() != null || definition instanceof Abstract.DataDefinition;
+    return definition instanceof Abstract.FunctionDefinition || definition instanceof Abstract.DataDefinition;
   }
 
   @Override

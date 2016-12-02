@@ -54,6 +54,16 @@ public class FunctionPolyTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void funWithTypeOmegaResultRecursive() {
+    FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) : \\Type <= \\elim n | zero => \\Set0 | suc n => A");
+    assertThat(funDefinition.getPolyParams(), hasSize(2));
+    assertEquals(new SortMax(
+        new LevelMax(new Level(funDefinition.getPolyParams().get(0))).max(new LevelMax(new Level(1))),
+        new LevelMax(new Level(funDefinition.getPolyParams().get(1))).max(new LevelMax(new Level(2)))), /* \Type (max \lp 1, max \lh 1) */
+      funDefinition.getResultType().toSorts());
+  }
+
+  @Test
   public void funWithTypeOmegaExplicitSet() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) : \\Set0 => \\Sigma (n = n) Nat");
     assertThat(funDefinition.getPolyParams(), hasSize(2));
@@ -97,13 +107,19 @@ public class FunctionPolyTest extends TypeCheckingTestCase {
   public void funOmegaSet() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) => \\Sigma (n = n) A Nat");
     assertThat(funDefinition.getPolyParams(), hasSize(2));
-    assertEquals(new SortMax(new LevelMax(new Level(funDefinition.getPolyParams().get(0))), new LevelMax(new Level(funDefinition.getPolyParams().get(1))).max(new Level(1))), funDefinition.getResultType().toSorts());
+    assertEquals(new SortMax(
+        new LevelMax(new Level(funDefinition.getPolyParams().get(0))),
+        new LevelMax(new Level(funDefinition.getPolyParams().get(1))).max(new Level(1))), /* \Type (\lp, max \lh 0) */
+      funDefinition.getResultType().toSorts());
   }
 
   @Test
   public void funOmegaSetExplicit() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) : \\Type => \\Sigma (n = n) A Nat");
     assertThat(funDefinition.getPolyParams(), hasSize(2));
-    assertEquals(new SortMax(new LevelMax(new Level(funDefinition.getPolyParams().get(0))), new LevelMax(new Level(funDefinition.getPolyParams().get(1))).max(new Level(1))), funDefinition.getResultType().toSorts());
+    assertEquals(new SortMax(
+        new LevelMax(new Level(funDefinition.getPolyParams().get(0))),
+        new LevelMax(new Level(funDefinition.getPolyParams().get(1))).max(new Level(1))), /* \Type (\lp, max \lh 0) */
+      funDefinition.getResultType().toSorts());
   }
 }

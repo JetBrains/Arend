@@ -66,7 +66,7 @@ public abstract class Definition implements Referable {
 
   public enum TypeCheckingStatus { HAS_ERRORS, NO_ERRORS, TYPE_CHECKING }
 
-  // typeHasErrors should imply hasErrors == HAS_ERRORS
+  // typeHasErrors should imply hasErrors != NO_ERRORS
   public abstract boolean typeHasErrors();
   public abstract TypeCheckingStatus hasErrors();
   public abstract void hasErrors(TypeCheckingStatus status);
