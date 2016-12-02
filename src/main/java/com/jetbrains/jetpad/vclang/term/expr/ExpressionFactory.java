@@ -220,6 +220,11 @@ public class ExpressionFactory {
     return new PiExpression(domain, codomain);
   }
 
+  public static Expression Pi(DependentLink domain, Sort codomain) {
+    Expression codomainExpr = Universe(codomain);
+    return domain.hasNext() ? new PiExpression(domain, codomainExpr) : codomainExpr;
+  }
+
   public static PiExpression Pi(Expression domain, Expression codomain) {
     return new PiExpression(param(domain), codomain);
   }

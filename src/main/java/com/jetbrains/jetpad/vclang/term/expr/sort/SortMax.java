@@ -51,6 +51,10 @@ public class SortMax {
     return new SortMax(myPLevel.max(sort.getPLevel()), myHLevel.max(sort.getHLevel()));
   }
 
+  public SortMax max(Sort sort) {
+    return new SortMax(myPLevel.max(sort.getPLevel()), myHLevel.max(sort.getHLevel()));
+  }
+
   public Sort toSort() {
     if (myHLevel.isMinimum()) {
       return Sort.PROP;
@@ -69,6 +73,11 @@ public class SortMax {
   public void add(SortMax sorts) {
     myPLevel.add(sorts.myPLevel);
     myHLevel.add(sorts.myHLevel);
+  }
+
+  public void add(Sort sort) {
+    myPLevel.add(sort.getPLevel());
+    myHLevel.add(sort.getHLevel());
   }
 
   public TypeMax toType() {

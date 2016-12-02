@@ -161,7 +161,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     // return levelParam;
   }
 
-  private static Expression typeOmegaToUniverse(DependentLink params, List<TypedBinding> polyParams) {
+  private static Sort typeOmegaToUniverse(List<TypedBinding> polyParams) {
     TypedBinding lpParam;
     TypedBinding lhParam;
 
@@ -175,8 +175,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
       lhParam = polyParams.get(1);
     }
 
-    Expression cod = Universe(new Level(lpParam), new Level(lhParam));
-    return params.hasNext() ? Pi(params, cod) : cod;
+    return new Sort(new Level(lpParam), new Level(lhParam));
   }
 
   private static boolean visitParameters(List<? extends Abstract.Argument> arguments, Abstract.SourceNode node, List<Binding> context, List<TypedBinding> polyParamsList, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
@@ -295,7 +294,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
           expectedTypeErased = expectedType.toExpression();
         } else if (expectedType instanceof PiTypeOmega) {
           expectedTypeErased = (Type) expectedType;
-          expectedType = typeOmegaToUniverse(expectedType.getPiParameters(), generatedPolyParams);
+          expectedType = Pi(expectedType.getPiParameters(), typeOmegaToUniverse(generatedPolyParams));
           generatedExpectedType = true;
         } else {
           expectedTypeErased = PiTypeOmega.toPiTypeOmega(expectedType);
@@ -306,7 +305,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
       if (link.getType() instanceof PiTypeOmega) {
-        link.setType(typeOmegaToUniverse(link.getType().getPiParameters(), generatedPolyParams));
+        link.setType(Pi(link.getType().getPiParameters(), typeOmegaToUniverse(generatedPolyParams)));
       }
     }
 
@@ -427,6 +426,18 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     SortMax inferredSorts = def.getConstructors().size() > 1 ? new SortMax(Sort.SET0) : new SortMax();
     dataDefinition.setSorts(inferredSorts);
 
+    List<TypedBinding> polyParams = new ArrayList<>(2);
+    for (DependentLink link = dataDefinition.getParameters(); link.hasNext(); link = link.getNext()) {
+      link = link.getNextTyped(null);
+      if (link.getType() instanceof PiTypeOmega) {
+        link.setType(Pi(link.getType().getPiParameters(), typeOmegaToUniverse(polyParams)));
+      }
+    }
+
+    if (!polyParams.isEmpty()) {
+      dataDefinition.getPolyParams().addAll(polyParams);
+    }
+
     boolean dataOk = true;
     boolean universeOk = true;
     for (Abstract.Constructor constructor : def.getConstructors()) {
@@ -487,27 +498,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
 
     if (universeOk && userSorts != null) {
       if (inferredSorts.isLessOrEquals(userSorts)) {
-        inferredSorts = userSorts;
+        if (!userSorts.isOmega()) {
+          inferredSorts = userSorts;
+        }
       } else {
         String msg = "Actual universe " + inferredSorts + " is not compatible with expected universe " + userSorts;
         visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, def.getUniverse()));
-      }
-    }
-
-    List<TypedBinding> polyParams = new ArrayList<>();
-    if (inferredSorts.isOmega()) {
-      inferredSorts = new SortMax(typeOmegaToUniverse(EmptyDependentLink.getInstance(), polyParams).toUniverse().getSort());
-
-      for (DependentLink link = dataDefinition.getParameters(); link.hasNext(); link = link.getNext()) {
-        link = link.getNextTyped(null);
-        if (link.getType() instanceof PiTypeOmega) {
-          link.setType(typeOmegaToUniverse(link.getType().getPiParameters(), polyParams));
-        }
-      }
-
-      if (!polyParams.isEmpty()) {
-        polyParams.addAll(dataDefinition.getPolyParams());
-        dataDefinition.setPolyParams(polyParams);
       }
     }
 
