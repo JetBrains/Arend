@@ -243,8 +243,7 @@ public class ConsoleMain {
             errors = true;
           }
         }
-        assert errors || goals;
-        updateModuleResult(source, errors ? ModuleResult.ERRORS : ModuleResult.GOALS);
+        updateModuleResult(source, errors ? ModuleResult.ERRORS : goals ? ModuleResult.GOALS : ModuleResult.OK);
 
         flushErrors();
       }

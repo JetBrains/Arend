@@ -73,24 +73,19 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
     myErrorReporter = errorReporter;
   }
 
-  public static CheckTypeVisitor typeCheckHeader(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, Abstract.Definition definition, Abstract.ClassDefinition enclosingClass, LocalErrorReporter errorReporter) {
-    if (state.getTypechecked(definition) == null) {
-      LocalInstancePool localInstancePool = new LocalInstancePool();
-      CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(state, staticNsProvider, dynamicNsProvider, new ArrayList<Binding>(), errorReporter).instancePool(new CompositeInstancePool(localInstancePool, state.getInstancePool())).build();
-      ClassDefinition typedEnclosingClass = enclosingClass == null ? null : (ClassDefinition) state.getTypechecked(enclosingClass);
+  public static Definition typeCheckHeader(CheckTypeVisitor visitor, Abstract.Definition definition, Abstract.ClassDefinition enclosingClass) {
+    LocalInstancePool localInstancePool = new LocalInstancePool();
+    visitor.setClassViewInstancePool(new CompositeInstancePool(localInstancePool, visitor.getTypecheckingState().getInstancePool()));
+    ClassDefinition typedEnclosingClass = enclosingClass == null ? null : (ClassDefinition) visitor.getTypecheckingState().getTypechecked(enclosingClass);
 
-      if (definition instanceof Abstract.FunctionDefinition) {
-        Definition typechecked = typeCheckFunctionHeader((Abstract.FunctionDefinition) definition, typedEnclosingClass, visitor, localInstancePool);
-        return typechecked.hasErrors() == Definition.TypeCheckingStatus.TYPE_CHECKING ? visitor : null;
-      } else
-      if (definition instanceof Abstract.DataDefinition) {
-        Definition typechecked = typeCheckDataHeader((Abstract.DataDefinition) definition, typedEnclosingClass, visitor, localInstancePool);
-        return typechecked.hasErrors() == Definition.TypeCheckingStatus.TYPE_CHECKING ? visitor : null;
-      } else {
-        throw new IllegalStateException();
-      }
+    if (definition instanceof Abstract.FunctionDefinition) {
+      return typeCheckFunctionHeader((Abstract.FunctionDefinition) definition, typedEnclosingClass, visitor, localInstancePool);
+    } else
+    if (definition instanceof Abstract.DataDefinition) {
+      return typeCheckDataHeader((Abstract.DataDefinition) definition, typedEnclosingClass, visitor, localInstancePool);
+    } else {
+      throw new IllegalStateException();
     }
-    return null;
   }
 
   public static void typeCheckBody(Definition definition, CheckTypeVisitor exprVisitor) {
@@ -107,11 +102,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Cla
   public static void typeCheck(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckingUnit unit, LocalErrorReporter errorReporter) {
     assert !(unit.getDefinition() instanceof Abstract.DataDefinition);
     assert !(unit.getDefinition() instanceof Abstract.FunctionDefinition);
-    Definition typechecked = state.getTypechecked(unit.getDefinition());
-    if (typechecked != null) {
-      assert typechecked.hasErrors() != Definition.TypeCheckingStatus.TYPE_CHECKING;
-      return;
-    }
 
     DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, errorReporter);
     ClassDefinition enclosingClass = unit.getEnclosingClass() == null ? null : (ClassDefinition) state.getTypechecked(unit.getEnclosingClass());

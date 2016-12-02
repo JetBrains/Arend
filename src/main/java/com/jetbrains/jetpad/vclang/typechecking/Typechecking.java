@@ -6,6 +6,8 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
@@ -21,7 +23,17 @@ import com.jetbrains.jetpad.vclang.typechecking.visitor.DefinitionCheckTypeVisit
 import java.util.*;
 
 public class Typechecking {
-  private static void typecheck(Map<Abstract.Definition, CheckTypeVisitor> suspension, SCC scc, TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
+  private static class Suspension {
+    public CheckTypeVisitor visitor;
+    public CountingErrorReporter countingErrorReporter;
+
+    public Suspension(CheckTypeVisitor visitor, CountingErrorReporter countingErrorReporter) {
+      this.visitor = visitor;
+      this.countingErrorReporter = countingErrorReporter;
+    }
+  }
+
+  private static void typecheck(Map<Abstract.Definition, Suspension> suspensions, SCC scc, TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
     if (scc.getUnits().size() > 1) {
       List<Abstract.Definition> cycle = new ArrayList<>(scc.getUnits().size());
       for (TypecheckingUnit unit : scc.getUnits()) {
@@ -31,31 +43,47 @@ public class Typechecking {
       throw new SCCException();
     } else {
       TypecheckingUnit unit = scc.getUnits().iterator().next();
-      boolean ok = true;
-      CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
-      LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(errorReporter, countingErrorReporter));
-      if (unit.getDefinition() instanceof Abstract.DataDefinition || unit.getDefinition() instanceof Abstract.FunctionDefinition) {
+      CountingErrorReporter countingErrorReporter = null;
+      boolean doReport;
+
+      if (Typecheckable.hasHeader(unit.getDefinition())) {
         if (unit.isHeader()) {
-          CheckTypeVisitor visitor = DefinitionCheckTypeVisitor.typeCheckHeader(state, staticNsProvider, dynamicNsProvider, unit.getDefinition(), unit.getEnclosingClass(), localErrorReporter);
-          if (visitor != null) {
-            suspension.put(unit.getDefinition(), visitor);
+          if (state.getTypechecked(unit.getDefinition()) == null) {
+            countingErrorReporter = new CountingErrorReporter();
+            LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(errorReporter, countingErrorReporter));
+            CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(state, staticNsProvider, dynamicNsProvider, new ArrayList<Binding>(), localErrorReporter).build();
+            Definition typechecked = DefinitionCheckTypeVisitor.typeCheckHeader(visitor, unit.getDefinition(), unit.getEnclosingClass());
+            if (typechecked.hasErrors() == Definition.TypeCheckingStatus.TYPE_CHECKING) {
+              suspensions.put(unit.getDefinition(), new Suspension(visitor, countingErrorReporter));
+              doReport = false;
+            } else {
+              doReport = true;
+            }
+          } else {
+            doReport = true;
           }
         } else {
-          CheckTypeVisitor visitor = suspension.get(unit.getDefinition());
-          if (visitor != null) {
-            visitor.setErrorReporter(localErrorReporter);
-            DefinitionCheckTypeVisitor.typeCheckBody(state.getTypechecked(unit.getDefinition()), visitor);
-            suspension.remove(unit.getDefinition());
+          Suspension suspension = suspensions.get(unit.getDefinition());
+          if (suspension != null) {
+            DefinitionCheckTypeVisitor.typeCheckBody(state.getTypechecked(unit.getDefinition()), suspension.visitor);
+            countingErrorReporter = suspension.countingErrorReporter;
+            suspensions.remove(unit.getDefinition());
+            doReport = true;
           } else {
-            ok = false;
+            doReport = false;
           }
         }
       } else {
-        DefinitionCheckTypeVisitor.typeCheck(state, staticNsProvider, dynamicNsProvider, unit, localErrorReporter);
+        doReport = true;
+        if (state.getTypechecked(unit.getDefinition()) == null) {
+          countingErrorReporter = new CountingErrorReporter();
+          LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(errorReporter, countingErrorReporter));
+          DefinitionCheckTypeVisitor.typeCheck(state, staticNsProvider, dynamicNsProvider, unit, localErrorReporter);
+        }
       }
 
-      if (!unit.isHeader()) {
-        if (ok && countingErrorReporter.getErrorsNumber() == 0) {
+      if (doReport) {
+        if (countingErrorReporter == null || countingErrorReporter.getErrorsNumber() == 0) {
           typecheckedReporter.typecheckingSucceeded(unit.getDefinition());
         } else {
           typecheckedReporter.typecheckingFailed(unit.getDefinition());
@@ -65,11 +93,11 @@ public class Typechecking {
   }
 
   public static void typecheckDefinitions(final TypecheckerState state, final StaticNamespaceProvider staticNsProvider, final DynamicNamespaceProvider dynamicNsProvider, final Collection<? extends Abstract.Definition> definitions, final ErrorReporter errorReporter, final TypecheckedReporter typecheckedReporter) {
-    final Map<Abstract.Definition, CheckTypeVisitor> suspension = new HashMap<>();
+    final Map<Abstract.Definition, Suspension> suspensions = new HashMap<>();
     BaseOrdering ordering = new BaseOrdering(new SCCListener() {
       @Override
       public void sccFound(SCC scc) {
-        typecheck(suspension, scc, state, staticNsProvider, dynamicNsProvider, errorReporter, typecheckedReporter);
+        typecheck(suspensions, scc, state, staticNsProvider, dynamicNsProvider, errorReporter, typecheckedReporter);
       }
     });
 
@@ -159,11 +187,11 @@ public class Typechecking {
   }
 
   public static void typecheckModules(final TypecheckerState state, final StaticNamespaceProvider staticNsProvider, final DynamicNamespaceProvider dynamicNsProvider, final Collection<? extends Abstract.ClassDefinition> classDefs, final ErrorReporter errorReporter, final TypecheckedReporter typecheckedReporter) {
-    final Map<Abstract.Definition, CheckTypeVisitor> suspension = new HashMap<>();
+    final Map<Abstract.Definition, Suspension> suspensions = new HashMap<>();
     final BaseOrdering ordering = new BaseOrdering(new SCCListener() {
       @Override
       public void sccFound(SCC scc) {
-        typecheck(suspension, scc, state, staticNsProvider, dynamicNsProvider, errorReporter, typecheckedReporter);
+        typecheck(suspensions, scc, state, staticNsProvider, dynamicNsProvider, errorReporter, typecheckedReporter);
       }
     });
 

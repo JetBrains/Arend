@@ -66,7 +66,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   private final TypeCheckingElim myTypeCheckingElim;
   private final ImplicitArgsInference myArgsInference;
   private final Equations myEquations;
-  private final ClassViewInstancePool myClassViewInstancePool;
+  private ClassViewInstancePool myClassViewInstancePool;
 
   public static class PreResult {
     private Expression expression;
@@ -246,6 +246,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   public ClassViewInstancePool getClassViewInstancePool() {
     return myClassViewInstancePool;
+  }
+
+  public void setClassViewInstancePool(ClassViewInstancePool pool) {
+    myClassViewInstancePool = pool;
   }
 
   public ImplicitArgsInference getImplicitArgsInference() {
