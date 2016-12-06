@@ -53,6 +53,7 @@ public class ConsoleMain {
   // Storage
   private final String sourceDirStr;
   private final Path sourceDir;
+  private final Prelude.PreludeStorage preludeStorage;
   private final FileStorage fileStorage;
   private final CompositeStorage<Prelude.SourceId, FileStorage.SourceId> storage;
 
@@ -77,7 +78,7 @@ public class ConsoleMain {
     srcInfoProvider = srcInfoCollector.sourceInfoProvider;
     errf = new ErrorFormatter(srcInfoProvider);
 
-    Prelude.PreludeStorage preludeStorage = new Prelude.PreludeStorage();
+    preludeStorage = new Prelude.PreludeStorage();
     sourceDirStr = cmdLine.getOptionValue("s");
     sourceDir = Paths.get(sourceDirStr == null ? System.getProperty("user.dir") : sourceDirStr);
     fileStorage = new FileStorage(sourceDir);
@@ -295,6 +296,10 @@ public class ConsoleMain {
   }
 
   private void requestFileTypechecking(Path path) {
+    String fileName = path.getFileName().toString();
+    if (!fileName.endsWith(FileStorage.EXTENSION)) return;
+    path = path.resolveSibling(fileName.substring(0, fileName.length() - FileStorage.EXTENSION.length()));
+
     ModulePath modulePath = FileStorage.modulePath(path);
     if (modulePath == null) {
       System.err.println(path  + ": illegal file name");
@@ -313,18 +318,18 @@ public class ConsoleMain {
     public URL getUrl(CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId sourceId) {
       try {
         final String root;
-        final String path;
+        final Path relPath;
         final String query;
         if (sourceId.source1 != null) {
           root = "prelude";
-          path = "Prelude";
+          relPath = Paths.get("");
           query = null;
         } else {
           root = "";
-          path = sourceId.source2.getRelativeFilePath().toString();
+          relPath = sourceId.source2.getRelativeFilePath();
           query = "" + sourceId.source2.getLastModified();
         }
-        return new URI("file", root, "/" + path, query, null).toURL();
+        return new URI("file", root, Paths.get("/").resolve(relPath).toUri().getPath(), query, null).toURL();
       } catch (URISyntaxException | MalformedURLException e) {
         throw new IllegalStateException();
       }
@@ -333,21 +338,27 @@ public class ConsoleMain {
     @Override
     public CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId getModuleId(URL sourceUrl) {
       if (sourceUrl.getAuthority() != null && sourceUrl.getAuthority().equals("prelude")) {
-        return storage.locateModule(Prelude.PreludeStorage.PRELUDE_MODULE_PATH);
-      } else if (sourceUrl.getAuthority() == null) {
-        ModulePath modulePath = FileStorage.modulePath(Paths.get(sourceUrl.getPath().substring(1)));
-        if (modulePath == null) return null;
-
-        if (sourceUrl.getQuery() != null) {
-          return storage.locateModule(modulePath);
+        if (sourceUrl.getPath().equals("/")) {
+          return storage.idFromFirst(preludeStorage.preludeSourceId);
         } else {
-          try {
+          return null;
+        }
+      } else if (sourceUrl.getAuthority() == null) {
+        try {
+          Path path = Paths.get(new URI(sourceUrl.getProtocol(), null, sourceUrl.getPath(), null));
+          ModulePath modulePath = FileStorage.modulePath(path);
+          if (modulePath == null) return null;
+
+          final FileStorage.SourceId fileSourceId;
+          if (sourceUrl.getQuery() == null) {
+            fileSourceId = fileStorage.locateModule(modulePath);
+          } else {
             long mtime = Long.parseLong(sourceUrl.getQuery());
-            FileStorage.SourceId fileSourceId = fileStorage.locateModule(modulePath, mtime);
-            return fileSourceId != null ? storage.idFromSecond(fileSourceId) : null;
-          } catch (NumberFormatException ignored) {
-            return null;
+            fileSourceId = fileStorage.locateModule(modulePath, mtime);
           }
+          return fileSourceId != null ? storage.idFromSecond(fileSourceId) : null;
+        } catch (URISyntaxException | NumberFormatException e) {
+          return null;
         }
       } else {
         return null;

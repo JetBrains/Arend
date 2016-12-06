@@ -29,10 +29,6 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
   }
 
   public static ModulePath modulePath(Path path) {
-    String fileName = path.getFileName().toString();
-    if (!fileName.endsWith(EXTENSION)) return null;
-    path = path.resolveSibling(fileName.substring(0, fileName.length() - EXTENSION.length()));
-
     List<String> names = new ArrayList<>();
     for (Path elem : path) {
       String name = elem.toString();
