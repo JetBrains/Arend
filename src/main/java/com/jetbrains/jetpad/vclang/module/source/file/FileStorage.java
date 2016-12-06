@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -170,7 +171,7 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
 
   private static class FileSource extends ParseSource {
     FileSource(com.jetbrains.jetpad.vclang.module.source.SourceId sourceId, Path file) throws IOException {
-      super(sourceId, Files.newInputStream(file));
+      super(sourceId, Files.newBufferedReader(file, StandardCharsets.UTF_8));
     }
   }
 }

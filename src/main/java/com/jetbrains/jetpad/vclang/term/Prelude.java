@@ -21,9 +21,8 @@ import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
@@ -178,7 +177,7 @@ public class Prelude extends SimpleNamespace {
     public Abstract.ClassDefinition loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
       if (sourceId != preludeSourceId) return null;
       InputStream stream = Prelude.class.getResourceAsStream(SOURCE_RESOURCE_PATH + FileStorage.EXTENSION);
-      return new ParseSource(preludeSourceId, stream) {}.load(errorReporter);
+      return new ParseSource(preludeSourceId, new InputStreamReader(stream, StandardCharsets.UTF_8)) {}.load(errorReporter);
     }
   }
 
