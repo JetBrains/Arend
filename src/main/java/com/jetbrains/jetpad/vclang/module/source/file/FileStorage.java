@@ -6,9 +6,13 @@ import com.jetbrains.jetpad.vclang.module.caching.CacheStorageSupplier;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -17,9 +21,9 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
   public static final String EXTENSION = ".vc";
   public static final String SERIALIZED_EXTENSION = ".vcc";
 
-  private final File myRoot;
+  private final Path myRoot;
 
-  public FileStorage(File root) {
+  public FileStorage(Path root) {
     myRoot = root;
   }
 
@@ -39,67 +43,67 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
     return new ModulePath(names);
   }
 
-  private File baseFileFromPath(ModulePath modulePath) {
-    File file = myRoot;
-    for (String s : modulePath.list()) {
-      file = new File(file, s);
-    }
-    return file;
+  private Path baseFileForModule(ModulePath modulePath) {
+    return myRoot.resolve(Paths.get("", modulePath.list()));
   }
 
-  private File sourceFileFromPath(ModulePath modulePath) {
-    return new File(baseFileFromPath(modulePath).toPath() + EXTENSION);
+  private Path sourceFileForModule(ModulePath modulePath) {
+    Path base = baseFileForModule(modulePath);
+    return base.resolveSibling(base.getFileName() + EXTENSION);
   }
 
-  private File cacheFileFromPath(ModulePath modulePath, long mtime) {
-    return new File(baseFileFromPath(modulePath).toPath() + "." + mtime + SERIALIZED_EXTENSION);
+  private Path cacheFileForSource(SourceId sourceId) {
+    Path base = baseFileForModule(sourceId.getModulePath());
+    return base.resolveSibling(base.getFileName() + "." + sourceId.myMtime.toMillis() + SERIALIZED_EXTENSION);
   }
 
   @Override
   public SourceId locateModule(ModulePath modulePath) {
-    File file = sourceFileFromPath(modulePath);
-    if (file.exists()) {
-      return new SourceId(modulePath, file.lastModified());
-    } else {
-      return null;
+    Path file = sourceFileForModule(modulePath);
+    try {
+      if (Files.exists(file)) {
+          return new SourceId(modulePath, Files.getLastModifiedTime(file));
+      }
+    } catch (IOException ignored) {
     }
+    return null;
   }
 
   public SourceId locateModule(ModulePath modulePath, long mtime) {
-    return new SourceId(modulePath, mtime);
+    return new SourceId(modulePath, FileTime.fromMillis(mtime));
   }
 
   @Override
   public boolean isAvailable(SourceId sourceId) {
     if (sourceId.getStorage() != this) return false;
-    File file = sourceFileFromPath(sourceId.myModulePath);
-    return file.exists() && file.lastModified() == sourceId.myMtime;
+    Path file = sourceFileForModule(sourceId.myModulePath);
+    try {
+      return Files.exists(file) && Files.getLastModifiedTime(file).equals(sourceId.myMtime);
+    } catch (IOException ignored) {
+    }
+    return false;
   }
 
   @Override
   public Abstract.ClassDefinition loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
     if (sourceId.getStorage() != this) return null;
-    File file = sourceFileFromPath(sourceId.myModulePath);
-    if (file.exists()) {
-      try {
-        FileSource fileSource = new FileSource(sourceId, file);
-        Abstract.ClassDefinition definition = fileSource.load(errorReporter);
-        // Make sure we loaded the right revision
-        return file.lastModified() == sourceId.myMtime ? definition : null;
-      } catch (FileNotFoundException ignored) {
-      }
-    }
-    return null;
+    if (!isAvailable(sourceId)) return null;
+
+    Path file = sourceFileForModule(sourceId.myModulePath);
+    FileSource fileSource = new FileSource(sourceId, file);
+    Abstract.ClassDefinition definition = fileSource.load(errorReporter);
+    // Make sure we loaded the right revision
+    return Files.getLastModifiedTime(file).equals(sourceId.myMtime) ? definition : null;
   }
 
   @Override
   public InputStream getCacheInputStream(SourceId sourceId) {
     if (sourceId.getStorage() != this) return null;
-    File file = cacheFileFromPath(sourceId.myModulePath, sourceId.myMtime);
-    if (file.exists()) {
+    Path file = cacheFileForSource(sourceId);
+    if (Files.isReadable(file)) {
       try {
-        return new FileInputStream(file);
-      } catch (FileNotFoundException ignored) {
+        return Files.newInputStream(file);
+      } catch (IOException ignored) {
       }
     }
     return null;
@@ -108,13 +112,10 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
   @Override
   public OutputStream getCacheOutputStream(SourceId sourceId) {
     if (sourceId.getStorage() != this) return null;
-    File file = cacheFileFromPath(sourceId.myModulePath, sourceId.myMtime);
+    Path file = cacheFileForSource(sourceId);
     try {
-      //noinspection ResultOfMethodCallIgnored
-      file.createNewFile();
-      if (file.canWrite()) {
-          return new FileOutputStream(file);
-      }
+      Files.createDirectories(file.getParent());
+      return Files.newOutputStream(file);
     } catch (IOException ignored) {
     }
     return null;
@@ -123,9 +124,9 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
 
   public class SourceId implements com.jetbrains.jetpad.vclang.module.source.SourceId {
     private final ModulePath myModulePath;
-    private final long myMtime;
+    private final FileTime myMtime;
 
-    private SourceId(ModulePath modulePath, long mtime) {
+    private SourceId(ModulePath modulePath, FileTime mtime) {
       myModulePath = modulePath;
       myMtime = mtime;
     }
@@ -139,12 +140,12 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
       return myModulePath;
     }
 
-    public Path getFilePath() {
-      return myRoot.toPath().relativize(baseFileFromPath(myModulePath).toPath());
+    public Path getRelativeFilePath() {
+      return Paths.get("", myModulePath.list());
     }
 
     public long getLastModified() {
-      return myMtime;
+      return myMtime.toMillis();
     }
 
     @Override
@@ -153,7 +154,7 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
              o instanceof SourceId &&
              getStorage().equals(((SourceId) o).getStorage()) &&
              myModulePath.equals(((SourceId) o).myModulePath) &&
-             myMtime == ((SourceId) o).myMtime;
+             myMtime.equals(((SourceId) o).myMtime);
     }
 
     @Override
@@ -163,13 +164,13 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
 
     @Override
     public String toString() {
-      return sourceFileFromPath(myModulePath).toString();
+      return sourceFileForModule(myModulePath).toString();
     }
   }
 
   private static class FileSource extends ParseSource {
-    FileSource(com.jetbrains.jetpad.vclang.module.source.SourceId sourceId, File file) throws FileNotFoundException {
-      super(sourceId, new FileInputStream(file));
+    FileSource(com.jetbrains.jetpad.vclang.module.source.SourceId sourceId, Path file) throws IOException {
+      super(sourceId, Files.newInputStream(file));
     }
   }
 }

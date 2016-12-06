@@ -84,7 +84,7 @@ public class ConsoleMain {
     Prelude.PreludeStorage preludeStorage = new Prelude.PreludeStorage();
     sourceDirStr = cmdLine.getOptionValue("s");
     sourceDir = new File(sourceDirStr == null ? System.getProperty("user.dir") : sourceDirStr);
-    fileStorage = new FileStorage(sourceDir);
+    fileStorage = new FileStorage(sourceDir.toPath());
     storage = new CompositeStorage<>(preludeStorage, fileStorage, preludeStorage, fileStorage);
 
     boolean recompile = cmdLine.hasOption("recompile");
@@ -323,7 +323,7 @@ public class ConsoleMain {
           query = null;
         } else {
           root = "";
-          path = sourceId.source2.getFilePath().toString();
+          path = sourceId.source2.getRelativeFilePath().toString();
           query = "" + sourceId.source2.getLastModified();
         }
         return new URI("file", root, "/" + path, query, null).toURL();
