@@ -338,6 +338,8 @@ public class ConsoleMain {
         return storage.locateModule(Prelude.PreludeStorage.PRELUDE_MODULE_PATH);
       } else if (sourceUrl.getAuthority() == null) {
         ModulePath modulePath = FileStorage.modulePath(sourceUrl.getPath().substring(1));
+        if (modulePath == null) return null;
+
         if (sourceUrl.getQuery() != null) {
           return storage.locateModule(modulePath);
         } else {
