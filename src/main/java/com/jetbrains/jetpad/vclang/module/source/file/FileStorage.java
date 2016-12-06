@@ -28,19 +28,18 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
     myRoot = root;
   }
 
-  public static ModulePath modulePath(String pathString) {
-    Path path = Paths.get(pathString);
-    int nameCount = path.getNameCount();
-    if (nameCount < 1) return null;
-    List<String> names = new ArrayList<>(nameCount);
-    for (int i = 0; i < nameCount; ++i) {
-      String name = path.getName(i).toString();
-      if (name.length() == 0 || !(Character.isLetterOrDigit(name.charAt(0)) || name.charAt(0) == '_')) return null;
-      for (int j = 1; j < name.length(); ++j) {
-        if (!(Character.isLetterOrDigit(name.charAt(j)) || name.charAt(j) == '_' || name.charAt(j) == '-' || name.charAt(j) == '\'')) return null;
-      }
+  public static ModulePath modulePath(Path path) {
+    String fileName = path.getFileName().toString();
+    if (!fileName.endsWith(EXTENSION)) return null;
+    path = path.resolveSibling(fileName.substring(0, fileName.length() - EXTENSION.length()));
+
+    List<String> names = new ArrayList<>();
+    for (Path elem : path) {
+      String name = elem.toString();
+      if (!name.matches("[a-zA-Z_][a-zA-Z0-9_']*")) return null;
       names.add(name);
     }
+
     return new ModulePath(names);
   }
 

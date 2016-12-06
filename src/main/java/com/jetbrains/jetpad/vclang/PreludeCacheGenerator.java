@@ -15,8 +15,13 @@ import com.jetbrains.jetpad.vclang.naming.oneshot.ResolvingModuleLoader;
 import com.jetbrains.jetpad.vclang.term.*;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 
 public class PreludeCacheGenerator {
@@ -34,14 +39,12 @@ public class PreludeCacheGenerator {
 
     @Override
     public OutputStream getCacheOutputStream(Prelude.SourceId sourceId) {
-      String path = targetPath + Prelude.PreludeStorage.SOURCE_RESOURCE_PATH + FileStorage.SERIALIZED_EXTENSION;
-      File file = new File(path);
-      //noinspection ResultOfMethodCallIgnored
-      file.getParentFile().mkdirs();
+      Path path = Paths.get(targetPath, Prelude.PreludeStorage.SOURCE_RESOURCE_PATH + FileStorage.SERIALIZED_EXTENSION);
       try {
-        return new FileOutputStream(file);
-      } catch (FileNotFoundException e) {
-        throw new IllegalStateException();
+        Files.createDirectories(path.getParent());
+        return Files.newOutputStream(path);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
       }
     }
   }

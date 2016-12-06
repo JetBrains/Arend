@@ -21,8 +21,13 @@ import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
@@ -142,7 +147,7 @@ public class Prelude extends SimpleNamespace {
 
 
   public static class PreludeStorage implements SourceSupplier<SourceId>, CacheStorageSupplier<SourceId> {
-    public static String SOURCE_RESOURCE_PATH = "/lib/Prelude";
+    public static Path SOURCE_RESOURCE_PATH = Paths.get("/","lib", "Prelude");
     public static ModulePath PRELUDE_MODULE_PATH = new ModulePath("Prelude");
     public final SourceId preludeSourceId = new SourceId();
 
