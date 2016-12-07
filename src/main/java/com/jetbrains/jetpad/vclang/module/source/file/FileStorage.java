@@ -29,6 +29,7 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
   }
 
   public static ModulePath modulePath(Path path) {
+    assert !path.isAbsolute();
     List<String> names = new ArrayList<>();
     for (Path elem : path) {
       String name = elem.toString();
@@ -39,23 +40,29 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
     return new ModulePath(names);
   }
 
-  private Path baseFileForModule(ModulePath modulePath) {
-    return myRoot.resolve(Paths.get("", modulePath.list()));
-  }
-
-  private Path sourceFileForModule(ModulePath modulePath) {
-    Path base = baseFileForModule(modulePath);
+  public static Path sourceFile(Path base) {
     return base.resolveSibling(base.getFileName() + EXTENSION);
   }
 
+  public static Path cacheFile(Path base, long mtime) {
+    return base.resolveSibling(base.getFileName() + "." + mtime + SERIALIZED_EXTENSION);
+  }
+
+  private Path sourceFileForSource(SourceId sourceId) {
+    return sourceFile(baseFile(sourceId.getModulePath()));
+  }
+
   private Path cacheFileForSource(SourceId sourceId) {
-    Path base = baseFileForModule(sourceId.getModulePath());
-    return base.resolveSibling(base.getFileName() + "." + sourceId.myMtime.toMillis() + SERIALIZED_EXTENSION);
+    return cacheFile(baseFile(sourceId.getModulePath()), sourceId.myMtime.toMillis());
+  }
+
+  private Path baseFile(ModulePath modulePath) {
+    return myRoot.resolve(Paths.get("", modulePath.list()));
   }
 
   @Override
   public SourceId locateModule(ModulePath modulePath) {
-    Path file = sourceFileForModule(modulePath);
+    Path file = sourceFile(baseFile(modulePath));
     try {
       if (Files.exists(file)) {
           return new SourceId(modulePath, Files.getLastModifiedTime(file));
@@ -72,7 +79,7 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
   @Override
   public boolean isAvailable(SourceId sourceId) {
     if (sourceId.getStorage() != this) return false;
-    Path file = sourceFileForModule(sourceId.myModulePath);
+    Path file = sourceFileForSource(sourceId);
     try {
       return Files.exists(file) && Files.getLastModifiedTime(file).equals(sourceId.myMtime);
     } catch (IOException ignored) {
@@ -85,7 +92,7 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
     if (sourceId.getStorage() != this) return null;
     if (!isAvailable(sourceId)) return null;
 
-    Path file = sourceFileForModule(sourceId.myModulePath);
+    Path file = sourceFileForSource(sourceId);
     FileSource fileSource = new FileSource(sourceId, file);
     Abstract.ClassDefinition definition = fileSource.load(errorReporter);
     // Make sure we loaded the right revision
@@ -160,7 +167,7 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
 
     @Override
     public String toString() {
-      return sourceFileForModule(myModulePath).toString();
+      return sourceFile(baseFile(myModulePath)).toString();
     }
   }
 

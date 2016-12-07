@@ -346,7 +346,7 @@ public class ConsoleMain {
       } else if (sourceUrl.getAuthority() == null) {
         try {
           Path path = Paths.get(new URI(sourceUrl.getProtocol(), null, sourceUrl.getPath(), null));
-          ModulePath modulePath = FileStorage.modulePath(path);
+          ModulePath modulePath = FileStorage.modulePath(path.getRoot().relativize(path));
           if (modulePath == null) return null;
 
           final FileStorage.SourceId fileSourceId;

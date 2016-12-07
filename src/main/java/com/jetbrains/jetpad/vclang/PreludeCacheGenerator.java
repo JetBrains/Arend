@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.module.caching.CachePersistenceException;
 import com.jetbrains.jetpad.vclang.module.caching.CacheStorageSupplier;
 import com.jetbrains.jetpad.vclang.module.caching.CachingModuleLoader;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
-import com.jetbrains.jetpad.vclang.module.source.file.FileStorage;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleStaticNamespaceProvider;
@@ -26,9 +25,9 @@ import java.util.Collections;
 
 public class PreludeCacheGenerator {
   private static class PreludeBuildCacheSupplier implements CacheStorageSupplier<Prelude.SourceId> {
-    private final String targetPath;
+    private final Path targetPath;
 
-    private PreludeBuildCacheSupplier(String targetPath) {
+    private PreludeBuildCacheSupplier(Path targetPath) {
       this.targetPath = targetPath;
     }
 
@@ -39,7 +38,7 @@ public class PreludeCacheGenerator {
 
     @Override
     public OutputStream getCacheOutputStream(Prelude.SourceId sourceId) {
-      Path path = Paths.get(targetPath, Prelude.PreludeStorage.SOURCE_RESOURCE_PATH + FileStorage.SERIALIZED_EXTENSION);
+      Path path = targetPath.resolve(Prelude.PreludeStorage.CACHE_RESOURCE_PATH.getRoot().relativize(Prelude.PreludeStorage.CACHE_RESOURCE_PATH));
       try {
         Files.createDirectories(path.getParent());
         return Files.newOutputStream(path);
@@ -93,7 +92,7 @@ public class PreludeCacheGenerator {
     final ListErrorReporter errorReporter = new ListErrorReporter();
     Prelude.PreludeStorage storage = new Prelude.PreludeStorage();
     ResolvingModuleLoader<Prelude.SourceId> baseModuleLoader = new ResolvingModuleLoader<>(storage, new BaseModuleLoader.ModuleLoadingListener<Prelude.SourceId>(), statisNsProvider, dynamicNsProvider, new ConcreteResolveListener(), errorReporter);
-    CachingModuleLoader<Prelude.SourceId> moduleLoader = new CachingModuleLoader<>(baseModuleLoader, new PreludePersistenceProvider(), new PreludeBuildCacheSupplier(args[0]), new PreludeDefLocator(storage.preludeSourceId), false);
+    CachingModuleLoader<Prelude.SourceId> moduleLoader = new CachingModuleLoader<>(baseModuleLoader, new PreludePersistenceProvider(), new PreludeBuildCacheSupplier(Paths.get(args[0])), new PreludeDefLocator(storage.preludeSourceId), false);
     Abstract.ClassDefinition prelude = moduleLoader.load(storage.preludeSourceId);
     if (!errorReporter.getErrorList().isEmpty()) throw new IllegalStateException();
     Typechecking.typecheckModules(moduleLoader.getTypecheckerState(), statisNsProvider, dynamicNsProvider, Collections.singleton(prelude), errorReporter, new Prelude.UpdatePreludeReporter(moduleLoader.getTypecheckerState()));

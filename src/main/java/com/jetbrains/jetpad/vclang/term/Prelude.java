@@ -147,14 +147,16 @@ public class Prelude extends SimpleNamespace {
 
 
   public static class PreludeStorage implements SourceSupplier<SourceId>, CacheStorageSupplier<SourceId> {
-    public static Path SOURCE_RESOURCE_PATH = Paths.get("/","lib", "Prelude");
+    private static Path BASE_RESOURCE_PATH = Paths.get("/", "lib", "Prelude");
+    public static Path SOURCE_RESOURCE_PATH = FileStorage.sourceFile(BASE_RESOURCE_PATH);
+    public static Path CACHE_RESOURCE_PATH = FileStorage.cacheFile(BASE_RESOURCE_PATH, 0);
     public static ModulePath PRELUDE_MODULE_PATH = new ModulePath("Prelude");
     public final SourceId preludeSourceId = new SourceId();
 
     @Override
     public InputStream getCacheInputStream(SourceId sourceId) {
       if (sourceId != preludeSourceId) return null;
-      return Prelude.class.getResourceAsStream(SOURCE_RESOURCE_PATH + FileStorage.SERIALIZED_EXTENSION);
+      return Prelude.class.getResourceAsStream(CACHE_RESOURCE_PATH.toString());
     }
 
     @Override
@@ -181,7 +183,7 @@ public class Prelude extends SimpleNamespace {
     @Override
     public Abstract.ClassDefinition loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
       if (sourceId != preludeSourceId) return null;
-      InputStream stream = Prelude.class.getResourceAsStream(SOURCE_RESOURCE_PATH + FileStorage.EXTENSION);
+      InputStream stream = Prelude.class.getResourceAsStream(SOURCE_RESOURCE_PATH.toString());
       return new ParseSource(preludeSourceId, new InputStreamReader(stream, StandardCharsets.UTF_8)) {}.load(errorReporter);
     }
   }
