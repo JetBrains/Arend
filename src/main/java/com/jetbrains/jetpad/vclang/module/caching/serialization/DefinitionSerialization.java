@@ -1,8 +1,7 @@
 package com.jetbrains.jetpad.vclang.module.caching.serialization;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.*;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
@@ -29,6 +28,8 @@ class DefinitionSerialization {
   private final CalltargetIndexProvider myCalltargetIndexProvider;
   private final List<Binding> myBindings = new ArrayList<>();  // de Bruijn indices
   private final Map<Binding, Integer> myBindingsMap = new HashMap<>();
+  private final List<LevelBinding> myLvlBindings = new ArrayList<>();  // de Bruijn indices for level bindings
+  private final Map<LevelBinding, Integer> myLvlBindingsMap = new HashMap<>();
   private final SerializeVisitor myVisitor = new SerializeVisitor();
 
   DefinitionSerialization(CalltargetIndexProvider calltargetIndexProvider) {
@@ -39,20 +40,25 @@ class DefinitionSerialization {
   // Bindings
 
   private RollbackBindings checkpointBindings() {
-    return new RollbackBindings(myBindings.size());
+    return new RollbackBindings(myBindings.size(), myLvlBindings.size());
   }
 
   private class RollbackBindings implements AutoCloseable {
     private final int myTargetSize;
+    private final int myLvlTargetSize;
 
-    private RollbackBindings(int targetSize) {
+    private RollbackBindings(int targetSize, int lvlTargetSize) {
       myTargetSize = targetSize;
+      myLvlTargetSize = lvlTargetSize;
     }
 
     @Override
     public void close() {
       for (int i = myBindings.size() - 1; i >= myTargetSize; i--) {
         myBindingsMap.remove(myBindings.remove(i));
+      }
+      for (int i = myLvlBindings.size() - 1; i >= myLvlTargetSize; i--) {
+        myLvlBindingsMap.remove(myLvlBindings.remove(i));
       }
     }
   }
@@ -61,6 +67,13 @@ class DefinitionSerialization {
     int index = myBindings.size();
     myBindings.add(binding);
     myBindingsMap.put(binding, index);
+    return index;
+  }
+
+  private int registerLevelBinding(LevelBinding binding) {
+    int index = myLvlBindings.size();
+    myLvlBindings.add(binding);
+    myLvlBindingsMap.put(binding, index);
     return index;
   }
 
@@ -74,11 +87,21 @@ class DefinitionSerialization {
     return builder.build();
   }
 
-  private int writeBindingRef(Binding binding) {
+  ExpressionProtos.Binding.LevelBinding createLevelBinding(LevelBinding binding) {
+    ExpressionProtos.Binding.LevelBinding.Builder builder = ExpressionProtos.Binding.LevelBinding.newBuilder();
+    if (binding.getName() != null) {
+      builder.setName(binding.getName());
+    }
+    builder.setType(binding.getType() == LevelVariable.LvlType.PLVL ? ExpressionProtos.Binding.LevelBinding.LvlType.PLVL : ExpressionProtos.Binding.LevelBinding.LvlType.HLVL);
+    registerLevelBinding(binding);
+    return builder.build();
+  }
+
+  private int writeBindingRef(Variable binding) {
     if (binding == null) {
       return 0;
     } else {
-      Integer index = myBindingsMap.get(binding);
+      Integer index = binding instanceof Binding ? myBindingsMap.get(binding) : myLvlBindingsMap.get(binding);
       return index + 1;  // zero is reserved for null
     }
   }
@@ -127,8 +150,8 @@ class DefinitionSerialization {
   private LevelProtos.Level writeLevel(Level level) {
     // Level.INFINITY should be read with great care
     LevelProtos.Level.Builder builder = LevelProtos.Level.newBuilder();
-    if (level.getVar() == null || level.getVar() instanceof Binding) {
-      builder.setBindingRef(writeBindingRef((Binding) level.getVar()));
+    if (level.getVar() == null || level.getVar() instanceof LevelBinding) {
+      builder.setBindingRef(writeBindingRef(level.getVar()));
     } else {
       throw new IllegalStateException();
     }
@@ -438,8 +461,8 @@ class DefinitionSerialization {
       for (ConstructorClause clause : branchNode.getConstructorClauses()) {
         ExpressionProtos.ElimTreeNode.ConstructorClause.Builder ccBuilder = ExpressionProtos.ElimTreeNode.ConstructorClause.newBuilder();
 
-        for (TypedBinding polyVar : clause.getPolyParams()) {
-          ccBuilder.addPolyParam(createTypedBinding(polyVar));
+        for (LevelBinding polyVar : clause.getPolyParams()) {
+          ccBuilder.addPolyParam(createLevelBinding(polyVar));
         }
         ccBuilder.addAllParam(writeParameters(clause.getParameters()));
         for (TypedBinding binding : clause.getTailBindings()) {

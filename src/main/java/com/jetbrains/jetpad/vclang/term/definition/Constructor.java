@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
@@ -75,7 +75,7 @@ public class Constructor extends Definition implements Function {
   }
 
   @Override
-  public List<TypedBinding> getPolyParams() {
+  public List<LevelBinding> getPolyParams() {
     return myDataType.getPolyParams();
   }
 

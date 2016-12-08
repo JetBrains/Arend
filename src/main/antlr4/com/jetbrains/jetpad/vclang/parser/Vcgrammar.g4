@@ -78,7 +78,7 @@ expr  : (binOpLeft+ | ) maybeNew atomFieldsAcc argument*    # binOp
       | <assoc=right> expr '->' expr                        # arr
       | '\\Pi' tele+ '->' expr                              # pi
       | '\\Sigma' tele+                                     # sigma
-      | '\\Type' ('(' expr ',' expr ')')?                   # polyUniverse
+      | '\\Type' ('(' expr (',' expr ')')?)?                # polyUniverse
       | '\\lam' tele+ '=>' expr                             # lam
       | '\\let' '|'? letClause ('|' letClause)* '\\in' expr # let
       | elimCase expr (',' expr)* clause* ';'?              # exprElim

@@ -9,6 +9,9 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelVariable;
+import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.ExpressionInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
@@ -61,6 +64,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   private ClassDefinition myThisClass;
   private Expression myThisExpr;
   private final List<Binding> myContext;
+  private final List<LevelBinding> myLvlContext;
   private final LocalErrorReporter myErrorReporter;
   private final TypeCheckingDefCall myTypeCheckingDefCall;
   private final TypeCheckingElim myTypeCheckingElim;
@@ -173,11 +177,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
   }
 
-  private CheckTypeVisitor(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ClassDefinition thisClass, Expression thisExpr, List<Binding> localContext, LocalErrorReporter errorReporter, ClassViewInstancePool pool) {
+  private CheckTypeVisitor(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ClassDefinition thisClass, Expression thisExpr, List<Binding> localContext, List<LevelBinding> lvlContext, LocalErrorReporter errorReporter, ClassViewInstancePool pool) {
     myState = state;
     myStaticNsProvider = staticNsProvider;
     myDynamicNsProvider = dynamicNsProvider;
     myContext = localContext;
+    myLvlContext = lvlContext;
     myErrorReporter = errorReporter;
     myTypeCheckingDefCall = new TypeCheckingDefCall(this);
     myTypeCheckingElim = new TypeCheckingElim(this);
@@ -196,6 +201,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   public static class Builder {
     private final TypecheckerState myTypecheckerState;
     private final List<Binding> myLocalContext;
+    private final List<LevelBinding> myLvlContext;
     private final LocalErrorReporter myErrorReporter;
     private ClassViewInstancePool myPool;
     private ClassDefinition myThisClass;
@@ -203,11 +209,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     private StaticNamespaceProvider myStaticNsProvider;
     private DynamicNamespaceProvider myDynamicNsProvider;
 
-    public Builder(TypecheckerState typecheckerState, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, List<Binding> localContext, LocalErrorReporter errorReporter) {
+    public Builder(TypecheckerState typecheckerState, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, List<Binding> localContext, List<LevelBinding> lvlContext, LocalErrorReporter errorReporter) {
       this.myTypecheckerState = typecheckerState;
       myStaticNsProvider = staticNsProvider;
       myDynamicNsProvider = dynamicNsProvider;
       myLocalContext = localContext;
+      myLvlContext = lvlContext;
       myErrorReporter = errorReporter;
       myPool = EmptyInstancePool.INSTANCE;
     }
@@ -224,7 +231,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
 
     public CheckTypeVisitor build() {
-      return new CheckTypeVisitor(myTypecheckerState, myStaticNsProvider, myDynamicNsProvider, myThisClass, myThisExpr, myLocalContext, myErrorReporter, myPool);
+      return new CheckTypeVisitor(myTypecheckerState, myStaticNsProvider, myDynamicNsProvider, myThisClass, myThisExpr, myLocalContext, myLvlContext, myErrorReporter, myPool);
     }
   }
 
@@ -262,6 +269,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   public List<Binding> getContext() {
     return myContext;
+  }
+
+  public List<LevelBinding> getLevelContext() {
+    return myLvlContext;
   }
 
   public LocalErrorReporter getErrorReporter() {
@@ -434,8 +445,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     int argIndex = 0;
     for (DependentLink link = absParams; link.hasNext() && argIndex < numAbsParams; link = link.getNext(), ++argIndex) {
       if (link.getType().toExpression() == null) {
-        InferenceLevelVariable pLvl = new InferenceLevelVariable("plvl-of-" + link.getName(), Lvl(), expr);
-        InferenceLevelVariable hLvl = new InferenceLevelVariable("hlvl-of-" + link.getName(), CNat(), expr);
+        InferenceLevelVariable pLvl = new InferenceLevelVariable("plvl-of-" + link.getName(), LevelVariable.LvlType.PLVL, expr);
+        InferenceLevelVariable hLvl = new InferenceLevelVariable("hlvl-of-" + link.getName(), LevelVariable.LvlType.HLVL, expr);
         myEquations.addVariable(pLvl);
         myEquations.addVariable(hLvl);
         Expression type = Universe(new Level(pLvl), new Level(hLvl));
@@ -550,8 +561,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
             piLamSubst.add(piLink, Reference(link));
           } else {
             if (argType == null) {
-              InferenceLevelVariable pLvl = new InferenceLevelVariable("plvl-of-" + name, Lvl(), expr);
-              InferenceLevelVariable hLvl = new InferenceLevelVariable("hlvl-of-" + name, CNat(), expr);
+              InferenceLevelVariable pLvl = new InferenceLevelVariable("plvl-of-" + name, LevelVariable.LvlType.PLVL, expr);
+              InferenceLevelVariable hLvl = new InferenceLevelVariable("hlvl-of-" + name, LevelVariable.LvlType.HLVL, expr);
               myEquations.addVariable(pLvl);
               myEquations.addVariable(hLvl);
               InferenceVariable inferenceVariable = new LambdaInferenceVariable("type-of-" + name, Universe(new Level(pLvl), new Level(hLvl)), argIndex, expr, false);
@@ -609,7 +620,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getSort().succ())), expr);
   }
 
-  public Level typeCheckLevel(Abstract.Expression expr, Expression expectedType, int minValue) {
+  public Level typeCheckLevel(Abstract.Expression expr, LevelVariable.LvlType expectedType, int minValue) {
     int num_sucs = 0;
     LocalTypeCheckingError error = null;
 
@@ -632,12 +643,17 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       if (expr instanceof Abstract.NumericLiteral) {
         int val = ((Abstract.NumericLiteral) expr).getNumber();
         return new Level(val + num_sucs - minValue);
-      }
-      Result refResult = typeCheck(expr, expectedType);
-      if (refResult != null) {
-        ReferenceExpression ref = refResult.getExpression().toReference();
-        if (ref != null) {
-          return new Level(ref.getBinding(), num_sucs);
+      } else if (expr instanceof Abstract.DefCallExpression) {
+        String name = ((Abstract.DefCallExpression)expr).getName();
+        if (name.equals("inf")) {
+          return Level.INFINITY;
+        }
+        if (!name.equals("suc")) {
+          Variable var = new TypeCheckingDefCall(this).getLocalVar((Abstract.DefCallExpression) expr, myLvlContext);
+          if (var == null) {
+            return null;
+          }
+          return new Level((LevelBinding) var, num_sucs);
         }
       }
       error = new LocalTypeCheckingError("Invalid level expression", expr);
@@ -647,7 +663,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     return null;
   }
 
-  public LevelMax typeCheckLevelMax(Abstract.Expression expr, Expression expectedType, int minValue) {
+  public LevelMax typeCheckLevelMax(Abstract.Expression expr, LevelVariable.LvlType expectedType, int minValue) {
     LevelMax result = new LevelMax();
     List<Abstract.ArgumentExpression> args = new ArrayList<>();
     Abstract.Expression max = Abstract.getFunction(expr, args);
@@ -665,16 +681,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
 
   public SortMax sortMax(Abstract.PolyUniverseExpression expr) {
-    LevelMax levelP = typeCheckLevelMax(expr.getPLevel(), Lvl(), 0);
-    LevelMax levelH = typeCheckLevelMax(expr.getHLevel(), CNat(), -1);
+    LevelMax levelP = typeCheckLevelMax(expr.getPLevel(), LevelVariable.LvlType.PLVL, 0);
+    LevelMax levelH = typeCheckLevelMax(expr.getHLevel(), LevelVariable.LvlType.HLVL, -1);
     if (levelP == null || levelH == null) return null;
     return new SortMax(levelP, levelH);
   }
 
   @Override
   public Result visitPolyUniverse(Abstract.PolyUniverseExpression expr, Type expectedType) {
-    Level pLevel = typeCheckLevel(expr.getPLevel(), Lvl(), 0);
-    Level hLevel = typeCheckLevel(expr.getHLevel(), CNat(), -1);
+    Level pLevel = typeCheckLevel(expr.getPLevel(), LevelVariable.LvlType.PLVL, 0);
+    Level hLevel = expr.getHLevel() != null ? typeCheckLevel(expr.getHLevel(), LevelVariable.LvlType.HLVL, -1) : Level.INFINITY;
     if (pLevel == null || hLevel == null) return null;
     UniverseExpression universe = Universe(new Sort(pLevel, hLevel));
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getSort().succ())), expr);

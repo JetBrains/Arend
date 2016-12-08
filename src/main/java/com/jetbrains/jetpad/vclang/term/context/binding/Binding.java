@@ -1,22 +1,12 @@
 package com.jetbrains.jetpad.vclang.term.context.binding;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.jetbrains.jetpad.vclang.term.expr.type.Type;
 
 public interface Binding extends Variable {
+  Type getType();
   class Helper {
     public static String toString(Binding binding) {
       return (binding.getName() == null ? "_" : binding.getName()) + (binding.getType() == null ? "" : " : " + binding.getType());
-    }
-
-    public static List<Integer> getSublistOfUserBindings(List<? extends Binding> bindings) {
-      List<Integer> userBindings = new ArrayList<>();
-      for (int i = 0; i < bindings.size(); ++i) {
-        if (!bindings.get(i).getName().startsWith("\\")) {
-          userBindings.add(i);
-        }
-      }
-      return userBindings;
     }
   }
 }

@@ -11,7 +11,7 @@ message Definition {
     bool has_errors = 1;
     bool type_has_errors = 2;
     int32 this_class_ref = 3;
-    repeated Binding.TypedBinding poly_param = 4;
+    repeated Binding.LevelBinding poly_param = 4;
     oneof definition_data {
         ClassData class = 5;
         DataData data = 6;

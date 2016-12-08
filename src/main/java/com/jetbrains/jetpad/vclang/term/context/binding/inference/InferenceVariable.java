@@ -54,7 +54,6 @@ public abstract class InferenceVariable implements Variable {
     return mySourceNode;
   }
 
-  @Override
   public Type getType() {
     return myType;
   }

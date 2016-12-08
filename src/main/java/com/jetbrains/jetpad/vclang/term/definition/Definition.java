@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class Definition implements Referable {
-  protected List<TypedBinding> myPolyParams = new ArrayList<>();
+  protected List<LevelBinding> myPolyParams = new ArrayList<>();
   private ClassDefinition myThisClass;
   private Abstract.Definition myAbstractDefinition;
 
@@ -47,21 +47,12 @@ public abstract class Definition implements Referable {
     myThisClass = enclosingClass;
   }
 
-  public void setPolyParams(List<TypedBinding> params) {
+  public void setPolyParams(List<LevelBinding> params) {
     myPolyParams = params;
   }
 
-  public List<TypedBinding> getPolyParams() {
+  public List<LevelBinding> getPolyParams() {
     return myPolyParams;
-  }
-
-  public TypedBinding getPolyParamByType(Definition typeDef) {
-    for (TypedBinding binding : myPolyParams) {
-      if (binding.getType().toExpression().toDefCall().getDefinition() == typeDef) {
-        return binding;
-      }
-    }
-    return null;
   }
 
   public enum TypeCheckingStatus { HAS_ERRORS, NO_ERRORS, TYPE_CHECKING }

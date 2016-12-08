@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr.sort;
 import com.jetbrains.jetpad.vclang.parser.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.parser.prettyprint.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ToAbstractVisitor;
@@ -12,9 +12,9 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 import java.util.*;
 
 public class LevelMax implements PrettyPrintable {
-  private Map<Variable, Integer> myVars;
+  private Map<LevelVariable, Integer> myVars;
 
-  public static final LevelMax INFINITY = new LevelMax((Map<Variable, Integer>) null);
+  public static final LevelMax INFINITY = new LevelMax((Map<LevelVariable, Integer>) null);
 
   public LevelMax() {
     myVars = new HashMap<>();
@@ -29,7 +29,7 @@ public class LevelMax implements PrettyPrintable {
     }
   }
 
-  private LevelMax(Map<Variable, Integer> vars) {
+  private LevelMax(Map<LevelVariable, Integer> vars) {
     myVars = vars;
   }
 
@@ -68,7 +68,7 @@ public class LevelMax implements PrettyPrintable {
     if (level.isInfinity() || isInfinity()) {
       myVars = null;
     } else {
-      for (Map.Entry<Variable, Integer> entry : level.myVars.entrySet()) {
+      for (Map.Entry<LevelVariable, Integer> entry : level.myVars.entrySet()) {
         add(myVars, entry.getKey(), entry.getValue());
       }
     }
@@ -85,7 +85,7 @@ public class LevelMax implements PrettyPrintable {
     }
   }
 
-  private void add(Map<Variable, Integer> result, Variable var, int constant) {
+  private void add(Map<LevelVariable, Integer> result, LevelVariable var, int constant) {
     Integer sucs = myVars.get(var);
     if (sucs != null) {
       constant = Math.max(constant, sucs);
@@ -103,7 +103,7 @@ public class LevelMax implements PrettyPrintable {
       return false;
     }
 
-    for (Map.Entry<Variable, Integer> entry : myVars.entrySet()) {
+    for (Map.Entry<LevelVariable, Integer> entry : myVars.entrySet()) {
       if (!new Level(entry.getKey(), entry.getValue()).isLessOrEquals(level)) {
         return false;
       }
@@ -120,8 +120,8 @@ public class LevelMax implements PrettyPrintable {
     }
 
     loop:
-    for (Map.Entry<Variable, Integer> entry : myVars.entrySet()) {
-      for (Map.Entry<Variable, Integer> entry1 : levels.myVars.entrySet()) {
+    for (Map.Entry<LevelVariable, Integer> entry : myVars.entrySet()) {
+      for (Map.Entry<LevelVariable, Integer> entry1 : levels.myVars.entrySet()) {
         if (new Level(entry.getKey(), entry.getValue()).isLessOrEquals(new Level(entry1.getKey(), entry1.getValue()))) {
           continue loop;
         }
@@ -139,7 +139,7 @@ public class LevelMax implements PrettyPrintable {
       return !level.isClosed() && equations.add(level, Level.INFINITY, Equations.CMP.EQ, sourceNode);
     }
 
-    for (Map.Entry<Variable, Integer> entry : myVars.entrySet()) {
+    for (Map.Entry<LevelVariable, Integer> entry : myVars.entrySet()) {
       if (!Level.compare(new Level(entry.getKey(), entry.getValue()), level, Equations.CMP.LE, equations, sourceNode)) {
         return false;
       }
@@ -152,8 +152,8 @@ public class LevelMax implements PrettyPrintable {
       return this;
     }
 
-    Map<Variable, Integer> vars = new HashMap<>();
-    for (Map.Entry<Variable, Integer> entry : myVars.entrySet()) {
+    Map<LevelVariable, Integer> vars = new HashMap<>();
+    for (Map.Entry<LevelVariable, Integer> entry : myVars.entrySet()) {
       Level level = subst.get(entry.getKey());
       if (level == null) {
         vars.put(entry.getKey(), entry.getValue());
@@ -172,7 +172,7 @@ public class LevelMax implements PrettyPrintable {
       return new Level(0);
     }
     if (myVars.size() == 1) {
-      Map.Entry<Variable, Integer> entry = myVars.entrySet().iterator().next();
+      Map.Entry<LevelVariable, Integer> entry = myVars.entrySet().iterator().next();
       return new Level(entry.getKey(), entry.getValue());
     }
     return null;
@@ -184,7 +184,7 @@ public class LevelMax implements PrettyPrintable {
     }
 
     List<Level> result = new ArrayList<>(myVars.size());
-    for (Map.Entry<Variable, Integer> var : myVars.entrySet()) {
+    for (Map.Entry<LevelVariable, Integer> var : myVars.entrySet()) {
       result.add(new Level(var.getKey(), var.getValue()));
     }
     return result;

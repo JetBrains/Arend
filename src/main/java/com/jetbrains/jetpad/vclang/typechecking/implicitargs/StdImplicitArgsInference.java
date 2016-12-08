@@ -5,7 +5,8 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.FunctionInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.TypeClassInferenceVariable;
@@ -82,13 +83,13 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     } else {
       DefCallExpression defCall = result.getExpression().toDefCall();
       if (defCall != null) {
-        List<Integer> userPolyParams = Binding.Helper.getSublistOfUserBindings(defCall.getDefinition().getPolyParams());
+        List<Integer> userPolyParams = LevelBinding.getSublistOfUserBindings(defCall.getDefinition().getPolyParams());
         int numLevelArgs = result.getLevels().size();
         if (numLevelArgs < userPolyParams.size()) {
-          Binding param = defCall.getDefinition().getPolyParams().get(userPolyParams.get(numLevelArgs));
+          LevelBinding param = defCall.getDefinition().getPolyParams().get(userPolyParams.get(numLevelArgs));
           Level level = null;
           if (!(arg instanceof Abstract.InferHoleExpression)) {
-            level = myVisitor.typeCheckLevel(arg, null, param.getType().toExpression().toDefCall().getDefinition() == Prelude.CNAT ? -1 : 0);
+            level = myVisitor.typeCheckLevel(arg, null, param.getType() == LevelVariable.LvlType.HLVL ? -1 : 0);
             if (level == null) {
               return null;
             }

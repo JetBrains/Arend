@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceLevelVariable;
+import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
@@ -292,19 +292,27 @@ public class TypeCheckingDefCall {
     return findParent(parentField.getBaseType().toClassCall().getDefinition(), definition, FieldCall(parentField, result));
   }
 
-  public CheckTypeVisitor.Result getLocalVar(Abstract.DefCallExpression expr) {
+  public Variable getLocalVar(Abstract.DefCallExpression expr, List<? extends Variable> context) {
     String name = expr.getName();
-    ListIterator<Binding> it = myVisitor.getContext().listIterator(myVisitor.getContext().size());
+    ListIterator<? extends Variable> it = context.listIterator(context.size());
     while (it.hasPrevious()) {
-      Binding def = it.previous();
+      Variable def = it.previous();
       if (name.equals(def.getName())) {
-        return new CheckTypeVisitor.Result(Reference(def), def.getType());
+        return def;
       }
     }
 
     LocalTypeCheckingError error = new NotInScopeError(expr, name);
     expr.setWellTyped(myVisitor.getContext(), Error(null, error));
     myVisitor.getErrorReporter().report(error);
+    return null;
+  }
+
+  public CheckTypeVisitor.Result getLocalVar(Abstract.DefCallExpression expr) {
+    Variable def = getLocalVar(expr, myVisitor.getContext());
+    if (def != null) {
+      return new CheckTypeVisitor.Result(Reference((Binding)def), ((Binding)def).getType());
+    }
     return null;
   }
 }

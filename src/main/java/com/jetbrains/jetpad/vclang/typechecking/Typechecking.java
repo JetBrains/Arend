@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
@@ -50,7 +51,7 @@ public class Typechecking {
           if (state.getTypechecked(unit.getDefinition()) == null) {
             countingErrorReporter = new CountingErrorReporter();
             LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(errorReporter, countingErrorReporter));
-            CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(state, staticNsProvider, dynamicNsProvider, new ArrayList<Binding>(), localErrorReporter).build();
+            CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(state, staticNsProvider, dynamicNsProvider, new ArrayList<Binding>(), new ArrayList<LevelBinding>(), localErrorReporter).build();
             Definition typechecked = DefinitionCheckType.typeCheckHeader(visitor, unit.getDefinition(), unit.getEnclosingClass());
             if (typechecked.hasErrors() == Definition.TypeCheckingStatus.TYPE_CHECKING) {
               suspensions.put(unit.getDefinition(), new Suspension(visitor, countingErrorReporter));

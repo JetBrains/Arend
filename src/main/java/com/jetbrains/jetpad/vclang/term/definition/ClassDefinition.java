@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
@@ -13,11 +13,7 @@ import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ClassCall;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.param;
@@ -92,10 +88,10 @@ public class ClassDefinition extends Definition {
     return new ClassCallExpression(this, polyArguments, myFieldSet);
   }
 
-  public List<TypedBinding> getEnclosingPolyParams() {
+  public List<LevelBinding> getEnclosingPolyParams() {
     assert myEnclosingThisField != null;
     int numEnclosingParams = myEnclosingThisField.getBaseType().toClassCall().getDefinition().getPolyParams().size();
-    List<TypedBinding> enclosingParams = new ArrayList<>();
+    List<LevelBinding> enclosingParams = new ArrayList<>();
     for (int i = myPolyParams.size() - numEnclosingParams; i < myPolyParams.size(); ++i) {
       enclosingParams.add(myPolyParams.get(i));
     }
@@ -107,8 +103,8 @@ public class ClassDefinition extends Definition {
     assert myEnclosingThisField == null;
     super.setThisClass(enclosingClass);
     if (enclosingClass != null) {
-      for (TypedBinding param : enclosingClass.getPolyParams()) {
-        myPolyParams.add(new TypedBinding(param.getName(), param.getType()));
+      for (LevelBinding param : enclosingClass.getPolyParams()) {
+        myPolyParams.add(new LevelBinding(param.getName(), param.getType()));
       }
 
       List<Level> enclosingArgs = new ArrayList<>();

@@ -1,11 +1,10 @@
 package com.jetbrains.jetpad.vclang.term.expr.subst;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
-import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
@@ -32,7 +31,7 @@ public class LevelArguments {
 
   public LevelSubstitution toLevelSubstitution(Definition definition) {
     assert definition.getPolyParams().size() == myLevels.size();
-    Map<Variable, Level> polySubst = new HashMap<>();
+    Map<Referable, Level> polySubst = new HashMap<>();
     for (int i = 0; i < myLevels.size(); i++) {
       polySubst.put(definition.getPolyParams().get(i), myLevels.get(i));
     }
@@ -51,10 +50,10 @@ public class LevelArguments {
     return new LevelArguments(levels);
   }
 
-  public static LevelArguments generateInferVars(List<TypedBinding> polyParams, Equations equations, Abstract.Expression expr) {
+  public static LevelArguments generateInferVars(List<LevelBinding> polyParams, Equations equations, Abstract.Expression expr) {
     List<Level> levels = new ArrayList<>(polyParams.size());
-    for (Binding polyVar : polyParams) {
-      InferenceLevelVariable l = new InferenceLevelVariable(polyVar.getName(), polyVar.getType().toExpression(), expr);
+    for (LevelBinding polyVar : polyParams) {
+      InferenceLevelVariable l = new InferenceLevelVariable(polyVar.getName(), polyVar.getType(), expr);
       levels.add(new Level(l));
       equations.addVariable(l);
     }

@@ -2,7 +2,9 @@ package com.jetbrains.jetpad.vclang.module.caching.serialization;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
@@ -24,11 +26,14 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 class DefinitionDeserialization {
   private final CalltargetProvider myCalltargetProvider;
   private final List<Binding> myBindings = new ArrayList<>();  // de Bruijn indices
+  private final List<LevelBinding> myLvlBindings = new ArrayList<>();  // de Bruijn indices for level bindings
 
   DefinitionDeserialization(CalltargetProvider calltargetProvider) {
     myCalltargetProvider = calltargetProvider;
@@ -38,20 +43,25 @@ class DefinitionDeserialization {
   // Bindings
 
   private RollbackBindings checkpointBindings() {
-    return new RollbackBindings(myBindings.size());
+    return new RollbackBindings(myBindings.size(), myLvlBindings.size());
   }
 
   private class RollbackBindings implements AutoCloseable {
     private final int myTargetSize;
+    private final int myLvlTargetSize;
 
-    private RollbackBindings(int targetSize) {
+    private RollbackBindings(int targetSize, int lvlTargetSize) {
       myTargetSize = targetSize;
+      myLvlTargetSize = lvlTargetSize;
     }
 
     @Override
     public void close() {
       for (int i = myBindings.size() - 1; i >= myTargetSize; i--) {
         myBindings.remove(i);
+      }
+      for (int i = myLvlBindings.size() - 1; i >= myLvlTargetSize; i--) {
+        myLvlBindings.remove(i);
       }
     }
   }
@@ -66,11 +76,11 @@ class DefinitionDeserialization {
     return typedBinding;
   }
 
-  private Binding readBindingRef(int index) throws DeserializationError {
+  private Variable readBindingRef(int index, boolean isLevel) throws DeserializationError {
     if (index == 0) {
       return null;
     } else {
-      Binding binding = myBindings.get(index - 1);
+      Variable binding = isLevel ? myBindings.get(index - 1) : myLvlBindings.get(index - 1);
       if (binding == null) {
         throw new DeserializationError("Trying to read a reference to an unregistered binding");
       }
@@ -117,12 +127,12 @@ class DefinitionDeserialization {
   // Sorts and levels
 
   private Level readLevel(LevelProtos.Level proto) throws DeserializationError {
-    Binding var = readBindingRef(proto.getBindingRef());
+    Variable var = readBindingRef(proto.getBindingRef(), true);
     int constant = proto.getConstant();
     if (var == null && constant == -1) {
       return Level.INFINITY;
     } else {
-      return new Level(var, constant);
+      return new Level((LevelBinding)var, constant);
     }
   }
 
@@ -314,7 +324,7 @@ class DefinitionDeserialization {
   }
 
   private ReferenceExpression readReference(ExpressionProtos.Expression.Reference proto) throws DeserializationError {
-    return new ReferenceExpression(readBindingRef(proto.getBindingRef()));
+    return new ReferenceExpression((Binding)readBindingRef(proto.getBindingRef(), false));
   }
 
   private LamExpression readLam(ExpressionProtos.Expression.Lam proto) throws DeserializationError {

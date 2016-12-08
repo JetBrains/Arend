@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr.sort;
 import com.jetbrains.jetpad.vclang.parser.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.parser.prettyprint.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
@@ -16,16 +17,16 @@ import java.util.List;
 
 public class Level implements PrettyPrintable {
   private final int myConstant;
-  private final Variable myVar;
+  private final LevelVariable myVar;
 
   public static final Level INFINITY = new Level(null, -1);
 
-  public Level(Variable var, int constant) {
+  public Level(LevelVariable var, int constant) {
     myConstant = constant;
     myVar = var;
   }
 
-  public Level(Variable var) {
+  public Level(LevelVariable var) {
     myConstant = 0;
     myVar = var;
   }
@@ -35,7 +36,7 @@ public class Level implements PrettyPrintable {
     myVar = null;
   }
 
-  public Variable getVar() {
+  public LevelVariable getVar() {
     return myVar;
   }
 
@@ -119,9 +120,9 @@ public class Level implements PrettyPrintable {
     return compare(this, level, Equations.CMP.LE, DummyEquations.getInstance(), null);
   }
 
-  public static List<Level> map(List<? extends Variable> variables) {
+  public static List<Level> map(List<? extends LevelVariable> variables) {
     List<Level> levels = new ArrayList<>();
-    for (Variable var : variables) {
+    for (LevelVariable var : variables) {
       levels.add(new Level(var));
     }
     return levels;

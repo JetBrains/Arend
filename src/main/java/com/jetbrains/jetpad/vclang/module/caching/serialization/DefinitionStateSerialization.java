@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.module.caching.LocalizedTypecheckerState;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 
 public class DefinitionStateSerialization {
@@ -36,8 +36,8 @@ public class DefinitionStateSerialization {
     }
 
     final DefinitionSerialization defSerializer = new DefinitionSerialization(myCalltargetIndexProvider);
-    for (TypedBinding polyVar : definition.getPolyParams()) {
-      out.addPolyParam(defSerializer.createTypedBinding(polyVar));
+    for (LevelBinding polyVar : definition.getPolyParams()) {
+      out.addPolyParam(defSerializer.createLevelBinding(polyVar));
     }
 
     out.setHasErrors(com.jetbrains.jetpad.vclang.term.definition.Definition.TypeCheckingStatus.HAS_ERRORS.equals(definition.hasErrors()));

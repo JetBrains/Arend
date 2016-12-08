@@ -135,6 +135,15 @@ message Binding {
         string name = 1;
         Type type = 2;
     }
+
+    message LevelBinding {
+        enum LvlType {
+            PLVL = 0;
+            HLVL = 1;
+        }
+        string name = 1;
+        LvlType type = 2;
+    }
 }
 
 message ElimTreeNode {
@@ -160,7 +169,7 @@ message ElimTreeNode {
 
     message ConstructorClause {
         repeated Telescope param = 1;
-        repeated Binding.TypedBinding poly_param = 2;
+        repeated Binding.LevelBinding poly_param = 2;
         ElimTreeNode child = 3;
         repeated Binding.TypedBinding tail_binding = 4;
     }

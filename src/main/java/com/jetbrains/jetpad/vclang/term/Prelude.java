@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.file.FileStorage;
 import com.jetbrains.jetpad.vclang.module.source.file.ParseSource;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
@@ -14,7 +15,6 @@ import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
-import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
@@ -24,6 +24,7 @@ import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
@@ -80,11 +81,15 @@ public class Prelude extends SimpleNamespace {
     } else
     if (abstractDef.getName().equals("Path")) {
       PATH = (DataDefinition) definition;
-      PATH.setSorts(new SortMax(new LevelMax(new Level(PATH.getPolyParamByType(LVL))), new LevelMax(new Level(PATH.getPolyParamByType(CNAT)))));
+      List<LevelBinding> pathPolyParams = PATH.getPolyParams();
+      PATH.getParameters().setType(Pi(Interval(), Universe(new Sort(new Level(pathPolyParams.get(0)), new Level(pathPolyParams.get(1), 1)))));
+      //PATH.setSorts(new SortMax(new LevelMax(new Level(PATH.getPolyParamByType(LVL))), new LevelMax(new Level(PATH.getPolyParamByType(CNAT)))));
       PATH_CON = PATH.getConstructor("path");
     } else
     if (abstractDef.getName().equals("=")) {
       PATH_INFIX = (FunctionDefinition) definition;
+      List<LevelBinding> infixPolyParams = PATH_INFIX.getPolyParams();
+      PATH_INFIX.getParameters().setType(Universe(new Sort(new Level(infixPolyParams.get(0)), new Level(infixPolyParams.get(1), 1))));
     } else
     if (abstractDef.getName().equals("@")) {
       AT = (FunctionDefinition) definition;

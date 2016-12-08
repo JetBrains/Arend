@@ -797,6 +797,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   private void prettyPrintClassDefinitionHeader(Abstract.ClassDefinition def) {
     myBuilder.append("\\class ").append(def.getName());
+    prettyPrintArguments(def.getPolyParameters(), Abstract.DefCallExpression.PREC);
     if (def.getSuperClasses() != null && !def.getSuperClasses().isEmpty()) {
       myBuilder.append(" \\extends");
       int i = def.getSuperClasses().size();

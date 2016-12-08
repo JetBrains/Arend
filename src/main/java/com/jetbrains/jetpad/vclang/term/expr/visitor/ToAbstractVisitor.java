@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.term.context.binding.inference.InferenceVariable;
@@ -146,7 +146,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   private Abstract.Expression visitArguments(Abstract.Expression expr, DefCallExpression defCall, boolean withLevelArgs) {
     if (withLevelArgs && myFlags.contains(Flag.SHOW_LEVEL_ARGS)) {
-      List<Integer> userPolyParams = Binding.Helper.getSublistOfUserBindings(defCall.getDefinition().getPolyParams());
+      List<Integer> userPolyParams = LevelBinding.getSublistOfUserBindings(defCall.getDefinition().getPolyParams());
       for (Integer paramInd : userPolyParams) {
         expr = myFactory.makeApp(expr, false, visitLevel(defCall.getPolyArguments().getLevels().get(paramInd), 0));
       }
@@ -351,6 +351,13 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return null;
   }
 
+  private Level eliminateGenParam(Level expr) {
+    if (expr.getVar() == null || !expr.getVar().getName().startsWith("\\")) {
+      return expr;
+    }
+    return Level.INFINITY;
+  }
+
   @Override
   public Abstract.Expression visitUniverse(UniverseExpression expr, Void params) {
     return visitSort(expr.getSort());
@@ -362,7 +369,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     if (pNum != null && hNum != null) {
       return myFactory.makeUniverse(pNum, hNum);
     } else {
-      return myFactory.makeUniverse(visitLevel(sort.getPLevel(), 0), visitLevel(sort.getHLevel(), -1));
+      Level plevel = eliminateGenParam(sort.getPLevel());
+      Level hlevel = eliminateGenParam(sort.getHLevel());
+      if (plevel.isInfinity()) {
+        return myFactory.makeUniverse();
+      }
+      return myFactory.makeUniverse(visitLevel(plevel, 0), visitLevel(hlevel, -1));
     }
   }
 

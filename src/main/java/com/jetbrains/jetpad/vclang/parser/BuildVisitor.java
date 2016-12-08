@@ -696,7 +696,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return new Concrete.TypeOmegaExpression(tokenPosition(ctx.getStart()));
     }
     Concrete.Expression plevel = visitExpr(ctx.expr(0));
-    Concrete.Expression hlevel = visitExpr(ctx.expr(1));
+    Concrete.Expression hlevel = ctx.expr().size() > 1 ? visitExpr(ctx.expr(1)) : null;
     return new Concrete.PolyUniverseExpression(tokenPosition(ctx.getStart()), plevel, hlevel);
   }
 

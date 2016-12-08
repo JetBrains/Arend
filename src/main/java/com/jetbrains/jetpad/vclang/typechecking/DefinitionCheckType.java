@@ -10,7 +10,8 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
@@ -84,7 +85,7 @@ public class DefinitionCheckType {
   }
 
   public static void typeCheck(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckingUnit unit, LocalErrorReporter errorReporter) {
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(state, staticNsProvider, dynamicNsProvider, new ArrayList<Binding>(), errorReporter).instancePool(state.getInstancePool()).build();
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(state, staticNsProvider, dynamicNsProvider, new ArrayList<Binding>(), new ArrayList<LevelBinding>(), errorReporter).instancePool(state.getInstancePool()).build();
 
     if (unit.getDefinition() instanceof Abstract.ClassDefinition) {
       ClassDefinition enclosingClass = unit.getEnclosingClass() == null ? null : (ClassDefinition) state.getTypechecked(unit.getEnclosingClass());
@@ -111,18 +112,20 @@ public class DefinitionCheckType {
     return false;
   }
 
-  private static DefCallExpression levelTypeByName(String typeName) {
+  /*
+  private static LevelVariable.LvlType levelTypeByName(String typeName) {
     if (typeName.equals("Lvl")) {
-      return Lvl();
+      return LevelVariable.LvlType.PLVL;
     } else if (typeName.equals("CNat")) {
-      return CNat();
+      return LevelVariable.LvlType.HLVL;
     }
     return null;
-  }
+  } /**/
 
-  private static TypedBinding typeCheckPolyParam(Abstract.TypeArgument typeArgument, Abstract.SourceNode node, LocalErrorReporter errorReporter) {
+  private static LevelBinding typeCheckPolyParam(Abstract.TypeArgument typeArgument, Abstract.SourceNode node, LocalErrorReporter errorReporter) {
     assert (typeArgument.getType() instanceof Abstract.DefCallExpression);
     String typeName = ((Abstract.DefCallExpression) typeArgument.getType()).getName();
+    assert typeName.equals("Lvl");
     if (!(typeArgument instanceof Abstract.TelescopeArgument)) {
       errorReporter.report(new LocalTypeCheckingError("Parameter of type " + typeName + " must have name", node));
       return null;
@@ -136,18 +139,18 @@ public class DefinitionCheckType {
       errorReporter.report(new LocalTypeCheckingError("Polymorphic variables must be implicit", node));
       return null;
     }
-    return new TypedBinding(((Abstract.TelescopeArgument) typeArgument).getNames().get(0), levelTypeByName(typeName));
+    return new LevelBinding(((Abstract.TelescopeArgument) typeArgument).getNames().get(0), LevelVariable.LvlType.PLVL);
     // polyParams.put(typeName, levelParam);
     // return levelParam;
   }
 
-  private static Sort typeOmegaToUniverse(List<TypedBinding> polyParams) {
-    TypedBinding lpParam;
-    TypedBinding lhParam;
+  private static Sort typeOmegaToUniverse(List<LevelBinding> polyParams) {
+    LevelBinding lpParam;
+    LevelBinding lhParam;
 
     if (polyParams.isEmpty()) {
-      lpParam = new TypedBinding("\\lp", Lvl());
-      lhParam = new TypedBinding("\\lh", CNat());
+      lpParam = new LevelBinding("\\lp", LevelVariable.LvlType.PLVL);
+      lhParam = new LevelBinding("\\lh", LevelVariable.LvlType.HLVL);
       polyParams.add(lpParam);
       polyParams.add(lhParam);
     } else {
@@ -158,7 +161,7 @@ public class DefinitionCheckType {
     return new Sort(new Level(lpParam), new Level(lhParam));
   }
 
-  private static boolean typeCheckParameters(List<? extends Abstract.Argument> arguments, Abstract.SourceNode node, List<Binding> context, List<TypedBinding> polyParamsList, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
+  private static boolean typeCheckParameters(List<? extends Abstract.Argument> arguments, Abstract.SourceNode node, List<Binding> context, List<LevelBinding> lvlContext, List<LevelBinding> polyParamsList, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
     boolean ok = true;
     boolean polyParamsAllowed = true;
     int index = 0;
@@ -173,12 +176,12 @@ public class DefinitionCheckType {
             ok = false;
             continue;
           }
-          TypedBinding levelParam = typeCheckPolyParam(typeArgument, node, visitor.getErrorReporter());
+          LevelBinding levelParam = typeCheckPolyParam(typeArgument, node, visitor.getErrorReporter());
           if (levelParam == null) {
             ok = false;
             continue;
           }
-          context.add(levelParam);
+          lvlContext.add(levelParam);
           polyParamsList.add(levelParam);
           ++index;
           continue;
@@ -237,29 +240,29 @@ public class DefinitionCheckType {
     FunctionDefinition typedDef = new FunctionDefinition(def);
     visitor.getTypecheckingState().record(def, typedDef);
 
-    List<TypedBinding> polyParamsList = new ArrayList<>();
+    List<LevelBinding> polyParamsList = new ArrayList<>();
     LinkList list = new LinkList();
     if (enclosingClass != null) {
-      for (Binding param : enclosingClass.getPolyParams()) {
-        TypedBinding defParam = new TypedBinding(param.getName(), param.getType());
+      for (LevelBinding param : enclosingClass.getPolyParams()) {
+        LevelBinding defParam = new LevelBinding(param.getName(), param.getType());
         polyParamsList.add(defParam);
       }
       DependentLink thisParam = createThisParam(enclosingClass, new LevelArguments(Level.map(polyParamsList)));
       visitor.getContext().add(thisParam);
-      visitor.getContext().addAll(enclosingClass.getPolyParams());
+      visitor.getLevelContext().addAll(enclosingClass.getPolyParams());
       list.append(thisParam);
       visitor.setThisClass(enclosingClass, Reference(thisParam));
       typedDef.setThisClass(enclosingClass);
     }
 
-    boolean paramsOk = typeCheckParameters(def.getArguments(), def, visitor.getContext(), polyParamsList, list, visitor, localInstancePool);
+    boolean paramsOk = typeCheckParameters(def.getArguments(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, list, visitor, localInstancePool);
     TypeMax expectedType = null;
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
       expectedType = visitor.checkFunOrDataType(resultType);
     }
 
-    List<TypedBinding> generatedPolyParams = new ArrayList<>();
+    List<LevelBinding> generatedPolyParams = new ArrayList<>();
     for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
       if (link.getType() instanceof PiTypeOmega) {
@@ -367,14 +370,14 @@ public class DefinitionCheckType {
 
   private static DataDefinition typeCheckDataHeader(Abstract.DataDefinition def, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
     LinkList list = new LinkList();
-    List<TypedBinding> polyParamsList = new ArrayList<>();
+    List<LevelBinding> polyParamsList = new ArrayList<>();
     if (enclosingClass != null) {
-      for (Binding param : enclosingClass.getPolyParams()) {
-        polyParamsList.add(new TypedBinding(param.getName(), param.getType()));
+      for (LevelBinding param : enclosingClass.getPolyParams()) {
+        polyParamsList.add(new LevelBinding(param.getName(), param.getType()));
       }
       DependentLink thisParam = createThisParam(enclosingClass, new LevelArguments(Level.map(polyParamsList)));
       visitor.getContext().add(thisParam);
-      visitor.getContext().addAll(polyParamsList);
+      visitor.getLevelContext().addAll(polyParamsList);
       list.append(thisParam);
       visitor.setThisClass(enclosingClass, Reference(thisParam));
     }
@@ -382,7 +385,7 @@ public class DefinitionCheckType {
     SortMax userSorts = SortMax.OMEGA;
     boolean paramsOk;
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
-      paramsOk = typeCheckParameters(def.getParameters(), def, visitor.getContext(), polyParamsList, list, visitor, localInstancePool);
+      paramsOk = typeCheckParameters(def.getParameters(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, list, visitor, localInstancePool);
 
       if (def.getUniverse() != null) {
         if (def.getUniverse() instanceof Abstract.PolyUniverseExpression) {
@@ -425,7 +428,7 @@ public class DefinitionCheckType {
     SortMax inferredSorts = def.getConstructors().size() > 1 ? new SortMax(Sort.SET0) : new SortMax();
     dataDefinition.setSorts(inferredSorts);
 
-    List<TypedBinding> polyParams = new ArrayList<>(2);
+    List<LevelBinding> polyParams = new ArrayList<>(2);
     for (DependentLink link = dataDefinition.getParameters(); link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
       if (link.getType() instanceof PiTypeOmega) {
@@ -761,29 +764,30 @@ public class DefinitionCheckType {
   private static ClassDefinition typeCheckClass(Abstract.ClassDefinition def, ClassDefinition enclosingClass, CheckTypeVisitor visitor) {
     LocalErrorReporter errorReporter = visitor.getErrorReporter();
     List<Binding> context = visitor.getContext();
+    List<LevelBinding> lvlContext = visitor.getLevelContext();
     boolean classOk = true;
 
     FieldSet fieldSet = new FieldSet();
     Set<ClassDefinition> superClasses = new HashSet<>();
     try {
       ClassDefinition typedDef = new ClassDefinition(def, fieldSet, superClasses);
-      List<TypedBinding> polyParams = new ArrayList<>();
+      List<LevelBinding> polyParams = new ArrayList<>();
       for (Abstract.TypeArgument polyArgument : def.getPolyParameters()) {
         if (!isPolyParam(polyArgument)) {
           visitor.getErrorReporter().report(new LocalTypeCheckingError("Classes can only have level parameters", polyArgument));
           classOk = false;
           continue;
         }
-        TypedBinding param = typeCheckPolyParam(polyArgument, def, errorReporter);
+        LevelBinding param = typeCheckPolyParam(polyArgument, def, errorReporter);
         polyParams.add(param);
-        context.add(param);
+        lvlContext.add(param);
       }
       typedDef.setPolyParams(polyParams);
       typedDef.setThisClass(enclosingClass);
       if (enclosingClass != null) {
         DependentLink thisParam = createThisParam(enclosingClass, new LevelArguments(Level.map(typedDef.getEnclosingPolyParams())));
         context.add(thisParam);
-        context.addAll(typedDef.getPolyParams());
+        lvlContext.addAll(typedDef.getPolyParams());
         visitor.setThisClass(enclosingClass, Reference(thisParam));
       }
 
@@ -873,7 +877,7 @@ public class DefinitionCheckType {
     CheckTypeVisitor.Result typeResult;
     try (Utils.ContextSaver saver = new Utils.ContextSaver(visitor.getContext())) {
       visitor.getContext().add(thisParameter);
-      visitor.getContext().addAll(enclosingClass.getPolyParams());
+      visitor.getLevelContext().addAll(enclosingClass.getPolyParams());
       typeResult = visitor.checkType(def.getResultType(), new PiTypeOmega(EmptyDependentLink.getInstance()));
     }
 
@@ -889,8 +893,8 @@ public class DefinitionCheckType {
     state.record(def, typedDef);
 
     LinkList list = new LinkList();
-    List<TypedBinding> polyParamsList = new ArrayList<>();
-    boolean paramsOk = typeCheckParameters(def.getArguments(), def, visitor.getContext(), polyParamsList, list, visitor, null);
+    List<LevelBinding> polyParamsList = new ArrayList<>();
+    boolean paramsOk = typeCheckParameters(def.getArguments(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, list, visitor, null);
     typedDef.setPolyParams(polyParamsList);
     typedDef.setParameters(list.getFirst());
 
