@@ -105,7 +105,7 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
 
     @Test
     public void test312_2(){
-        typeCheckClass("\\function h (x y : Nat) : Nat <= \\elim x, y\n" +
+        typeCheckClass("\\function h (x y : Nat) : Nat => \\elim x, y\n" +
           "| zero, zero => zero\n" +
           "| zero, suc y' => h zero y'\n" +
           "| suc x', y' => h x' y';\n" +
@@ -116,7 +116,13 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
           "\\function g (x y : Nat) : Nat => \\elim x, y\n" +
           "| zero, zero => zero\n" +
           "| suc x', zero => zero\n" +
-          "| suc x', suc y' => h (f (suc x') (suc y')) (g x' (suc suc y'));", 0);
+          "| suc x', suc y' => h (f (suc x') (suc y')) (g x' (suc suc y'));", 1);
+    }
+
+    @Test
+    public void header_cycle(){
+        typeCheckClass("\\function he1 : he2 = he2 => path (\\lam _ => he2)\n" +
+                       "\\function he2 : he1 = he1 => path (\\lam _ => he1)\n", 1);
     }
 
     @Test

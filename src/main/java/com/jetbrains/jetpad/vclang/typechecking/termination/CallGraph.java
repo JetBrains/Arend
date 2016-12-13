@@ -149,13 +149,14 @@ public class CallGraph {
         }
 
         public RecursiveBehaviors(Set<BaseCallMatrix> callMatrices) {
-            for (BaseCallMatrix m : callMatrices) myBehaviors.add(new RecursiveBehavior(m));
-            if (!myBehaviors.isEmpty()) {
-                Iterator<RecursiveBehavior> i = myBehaviors.iterator();
-                myLength = i.next().getLength();
-                while (i.hasNext()) if (myLength != i.next().getLength()) throw new IllegalArgumentException();
-
-            }
+            if (callMatrices != null)
+              for (BaseCallMatrix m : callMatrices)
+                myBehaviors.add(new RecursiveBehavior(m));
+                if (!myBehaviors.isEmpty()) {
+                  Iterator<RecursiveBehavior> i = myBehaviors.iterator();
+                  myLength = i.next().getLength();
+                  while (i.hasNext()) if (myLength != i.next().getLength()) throw new IllegalArgumentException();
+              }
         }
 
         private RecursiveBehaviors() {
@@ -214,7 +215,8 @@ public class CallGraph {
         public List<String> findTerminationOrderAnnotated() {
             List<Integer> to = findTerminationOrder();
             if (to == null) return null;
-            if (myBehaviors.isEmpty()) throw new IllegalStateException();
+            if (myBehaviors.isEmpty())
+                 throw new IllegalStateException();
             RecursiveBehavior rb = myBehaviors.iterator().next();
             List<String> result = new ArrayList<>();
             for (Integer i : to) result.add(rb.myLabels.get(i));

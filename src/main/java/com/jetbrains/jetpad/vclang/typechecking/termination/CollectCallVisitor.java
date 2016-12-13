@@ -125,10 +125,13 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
 
   @Override
   public Void visitConCall(ConCallExpression expression, ParameterVector vector) {
+    // Cycles consisting of constructors are currently unsupported
+    /*
     Constructor constructor = expression.getDefinition();
     if (constructor.getDataType().getCondition(constructor) != null) {
       collectCall(expression, vector);
     }
+    */
     for (Expression argument : expression.getDefCallArguments()) {
       argument.accept(this, vector);
     }
