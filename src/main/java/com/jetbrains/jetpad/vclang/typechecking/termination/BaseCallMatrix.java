@@ -4,7 +4,7 @@ package com.jetbrains.jetpad.vclang.typechecking.termination;
 
 import java.util.HashMap;
 
-public abstract class BaseCallMatrix {
+public abstract class BaseCallMatrix<T> {
   public enum R {
     Unknown(),
     Equal(),
@@ -55,17 +55,17 @@ public abstract class BaseCallMatrix {
     myHeight = height;
   }
 
-  public BaseCallMatrix(BaseCallMatrix m) {
+  public BaseCallMatrix(BaseCallMatrix<T> m) {
     // copy constructor 
     myWidth = m.myWidth;
     myHeight = m.myHeight;
-    for (Integer i : m.myMatrixMap.keySet()) {
-      BaseCallMatrix.CallMatrixEntry cme = m.myMatrixMap.get(i);
-      myMatrixMap.put(i, new BaseCallMatrix.CallMatrixEntry(cme.myIndex, cme.myRel));
+    for (Integer j : m.myMatrixMap.keySet()) {
+      BaseCallMatrix.CallMatrixEntry cme = m.myMatrixMap.get(j);
+      myMatrixMap.put(j, new BaseCallMatrix.CallMatrixEntry(cme.myIndex, cme.myRel));
     }
   }
 
-  public BaseCallMatrix(BaseCallMatrix m1, BaseCallMatrix m2) {
+  public BaseCallMatrix(BaseCallMatrix<T> m1, BaseCallMatrix<T> m2) {
     // multiplication constructor 
     if (m1.myWidth != m2.myHeight) {
       throw new IllegalArgumentException();
@@ -73,12 +73,12 @@ public abstract class BaseCallMatrix {
     myHeight = m1.myHeight;
     myWidth = m2.myWidth;
 
-    for (int i = 0; i < myHeight; i++) {
-      BaseCallMatrix.CallMatrixEntry cme = m1.myMatrixMap.get(i);
-      if (cme != null) {
-        BaseCallMatrix.CallMatrixEntry cme2 = m2.myMatrixMap.get(cme.myIndex);
-        if (cme2 != null) {
-          myMatrixMap.put(i, new BaseCallMatrix.CallMatrixEntry(cme.myIndex, rmul(cme.myRel, cme2.myRel)));
+    for (int j = 0; j < myWidth; j++) {
+      BaseCallMatrix.CallMatrixEntry cme2 = m2.myMatrixMap.get(j);
+      if (cme2 != null) {
+        BaseCallMatrix.CallMatrixEntry cme = m1.myMatrixMap.get(cme2.myIndex);
+        if (cme != null) {
+          myMatrixMap.put(j, new BaseCallMatrix.CallMatrixEntry(cme.myIndex, rmul(cme.myRel, cme2.myRel)));
         }
       }
     }
@@ -93,31 +93,32 @@ public abstract class BaseCallMatrix {
     return myWidth;
   }
 
-  public abstract Object getCodomain();
+  public abstract T getCodomain();
 
-  public abstract Object getDomain();
+  public abstract T getDomain();
 
+  public abstract int getCompositeLength();
 
   public void set(int i, int j, BaseCallMatrix.R v) {
     if (v != BaseCallMatrix.R.Unknown) {
-      BaseCallMatrix.CallMatrixEntry cme = new BaseCallMatrix.CallMatrixEntry(j, v);
-      if (myMatrixMap.get(i) != null && !((cme.equals(myMatrixMap.get(i))))) {
+      BaseCallMatrix.CallMatrixEntry cme = new BaseCallMatrix.CallMatrixEntry(i, v);
+      if (myMatrixMap.get(j) != null && !((cme.equals(myMatrixMap.get(j))))) {
         throw new IllegalStateException("Call matrix is assumed to be monomial");
       }
-      myMatrixMap.put(i, cme);
+      myMatrixMap.put(j, cme);
     }
   }
 
   public BaseCallMatrix.R getValue(int i, int j) {
-    BaseCallMatrix.CallMatrixEntry cme = myMatrixMap.get(i);
+    BaseCallMatrix.CallMatrixEntry cme = myMatrixMap.get(j);
     BaseCallMatrix.R result2 = BaseCallMatrix.R.Unknown;
-    if (cme != null && cme.myIndex == j) {
+    if (cme != null && cme.myIndex == i) {
       result2 = cme.myRel;
     }
     return result2;
   }
 
-  public final boolean leq(BaseCallMatrix cm) {
+  public final boolean leq(BaseCallMatrix<T> cm) {
     if (getCodomain() != cm.getCodomain() || getDomain() != cm.getDomain()) {
       return false;
     }

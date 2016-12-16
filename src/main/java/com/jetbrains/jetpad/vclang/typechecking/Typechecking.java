@@ -17,12 +17,14 @@ import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.CycleError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.TerminationCheckError;
 import com.jetbrains.jetpad.vclang.typechecking.order.BaseOrdering;
 import com.jetbrains.jetpad.vclang.typechecking.order.SCC;
 import com.jetbrains.jetpad.vclang.typechecking.order.SCCListener;
 import com.jetbrains.jetpad.vclang.typechecking.termination.BaseCallMatrix;
-import com.jetbrains.jetpad.vclang.typechecking.termination.CallGraph;
+import com.jetbrains.jetpad.vclang.typechecking.termination.BaseCallGraph;
 import com.jetbrains.jetpad.vclang.typechecking.termination.CollectCallVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.termination.DefinitionCallGraph;
 
 import java.util.*;
 
@@ -54,7 +56,7 @@ public class Typechecking {
       }
     }
 
-    Set<FunctionDefinition> cycleDefs = new HashSet<>();
+    Set<Definition> cycleDefs = new HashSet<>();
     for (TypecheckingUnit unit : scc.getUnits()) {
       CountingErrorReporter countingErrorReporter = null;
       boolean doReport;
@@ -109,15 +111,15 @@ public class Typechecking {
     }
 
     if (!cycleDefs.isEmpty()) {
-      Set<BaseCallMatrix> cms = new HashSet<>();
-      for (FunctionDefinition fDef : cycleDefs) {
-        CollectCallVisitor ccv = new CollectCallVisitor(fDef);
-        cms.addAll(ccv.getResult());
-      }
-      CallGraph callCategory = CallGraph.calculateClosure(new CallGraph(cms));
-      //TODO: Improve handling of errors
+      DefinitionCallGraph definitionCallGraph = new DefinitionCallGraph();
+      for (Definition fDef : cycleDefs) definitionCallGraph.add(fDef);
+      DefinitionCallGraph callCategory = new DefinitionCallGraph(definitionCallGraph);
       if (!callCategory.checkTermination()) {
-        errorReporter.report(new GeneralError("Dependency cycle", null));
+        for (Definition fDef : cycleDefs) {
+          fDef.hasErrors(Definition.TypeCheckingStatus.HAS_ERRORS);
+        }
+        for (Definition d : callCategory.myErrorInfo.keySet())
+           errorReporter.report(new TerminationCheckError(d, callCategory.myErrorInfo.get(d)));
       }
     }
   }

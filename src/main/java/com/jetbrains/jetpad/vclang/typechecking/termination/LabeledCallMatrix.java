@@ -33,7 +33,7 @@ public abstract class LabeledCallMatrix extends BaseCallMatrix {
 
   @Override
   protected String[] getRowLabels() {
-    String[] result = new String[getWidth()];
+    String[] result = new String[getHeight()];
     DependentLink arg = getDomain().getParameters();
     for (int j = 0; j < getHeight(); j++) {
       result[j] = arg.getName();

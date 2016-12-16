@@ -32,7 +32,12 @@ public class CallMatrix extends LabeledCallMatrix {
   }
 
   @Override
+  public int getCompositeLength() {
+    return 1;
+  }
+
+  @Override
   protected String getMatrixLabel() {
-    return myCallExpression.toString();
+    return myCallExpression.toString() + " inside the body of " + myEnclosingDefinition.getName();
   }
 }

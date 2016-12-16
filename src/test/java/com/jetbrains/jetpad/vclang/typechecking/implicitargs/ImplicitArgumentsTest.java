@@ -419,7 +419,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
         "  | suc n, fsuc x => fsuc (unsuc x)\n" +
         "\\function foo {n : Nat} (x : Fin n) : Nat <= \\elim n\n" +
         "  | zero => zero\n" +
-        "  | suc n => foo $ unsuc x");
+        "  | suc n' => foo $ unsuc x");
   }
 
   @Test
