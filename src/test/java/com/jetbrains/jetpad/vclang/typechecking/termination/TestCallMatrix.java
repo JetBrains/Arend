@@ -67,7 +67,7 @@ class TestCallMatrix extends BaseCallMatrix<TestVertex> {
     }
 
     @Override
-    protected String getMatrixLabel() {
+    public String getMatrixLabel() {
         return myLabel;
     }
 

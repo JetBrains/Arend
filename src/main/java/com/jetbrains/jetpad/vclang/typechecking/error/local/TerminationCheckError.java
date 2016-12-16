@@ -23,7 +23,7 @@ public class TerminationCheckError extends GeneralError {
 
     public static<T> String formErrorMessage(Definition def, Set<RecursiveBehavior<T>> behaviors) {
         String result = "Termination check failed for function "+def.getName()+". Recursive calls that cause the problem:\n";
-        for (RecursiveBehavior rb : behaviors) result += printBehavior(rb) + "\n";
+        for (RecursiveBehavior rb : behaviors) result += printBehavior(rb);
         return result;
     }
 
@@ -36,7 +36,7 @@ public class TerminationCheckError extends GeneralError {
         } else {
             result += "Recursive call: ";
         }
-        result += rb.myInitialCallMatrix.getMatrixLabel() + brace + "\n";
+        result += rb.myInitialCallMatrix.getMatrixLabel() + brace;
 
         String unknown = "";
         int unknownCount = 0;
@@ -52,9 +52,9 @@ public class TerminationCheckError extends GeneralError {
             }
         }
         if (unknown.length() > 0)
-            result += "Unknown recursive behavior for argument"+(unknownCount > 1 ? "s" : "")+": "+unknown+"\n";
+            result += "\nUnknown recursive behavior for argument"+(unknownCount > 1 ? "s" : "")+": "+unknown;
         if (equal.length() > 0)
-            result += "Does not strictly decrease on argument"+(equalCount > 1 ? "s" : "")+": "+equal + "\n";
+            result += "\nDoes not strictly decrease on argument"+(equalCount > 1 ? "s" : "")+": "+equal;
 
         return result;
     }
