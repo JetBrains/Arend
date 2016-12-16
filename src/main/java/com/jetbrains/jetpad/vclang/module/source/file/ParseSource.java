@@ -11,14 +11,14 @@ import com.jetbrains.jetpad.vclang.term.Concrete;
 import org.antlr.v4.runtime.*;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.Reader;
 import java.util.List;
 
 public abstract class ParseSource {
   private final SourceId mySourceId;
-  private final InputStream myStream;
+  private final Reader myStream;
 
-  public ParseSource(SourceId sourceId, InputStream stream) {
+  public ParseSource(SourceId sourceId, Reader stream) {
     mySourceId = sourceId;
     myStream = stream;
   }

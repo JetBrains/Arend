@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.module.source.file.ParseSource;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,7 +39,7 @@ public class MemoryStorage implements SourceSupplier<MemoryStorage.SourceId>, Ca
 
   @Override
   public Abstract.ClassDefinition loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
-    return isAvailable(sourceId) ? new ParseSource(sourceId, new ByteArrayInputStream(sourceId.myData.getBytes(StandardCharsets.UTF_8))) {}.load(errorReporter) : null;
+    return isAvailable(sourceId) ? new ParseSource(sourceId, new StringReader(sourceId.myData)) {}.load(errorReporter) : null;
   }
 
   @Override

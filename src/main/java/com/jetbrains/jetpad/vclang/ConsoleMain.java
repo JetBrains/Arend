@@ -26,16 +26,12 @@ import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 import org.apache.commons.cli.*;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
@@ -56,7 +52,8 @@ public class ConsoleMain {
 
   // Storage
   private final String sourceDirStr;
-  private final File sourceDir;
+  private final Path sourceDir;
+  private final Prelude.PreludeStorage preludeStorage;
   private final FileStorage fileStorage;
   private final CompositeStorage<Prelude.SourceId, FileStorage.SourceId> storage;
 
@@ -81,9 +78,9 @@ public class ConsoleMain {
     srcInfoProvider = srcInfoCollector.sourceInfoProvider;
     errf = new ErrorFormatter(srcInfoProvider);
 
-    Prelude.PreludeStorage preludeStorage = new Prelude.PreludeStorage();
+    preludeStorage = new Prelude.PreludeStorage();
     sourceDirStr = cmdLine.getOptionValue("s");
-    sourceDir = new File(sourceDirStr == null ? System.getProperty("user.dir") : sourceDirStr);
+    sourceDir = Paths.get(sourceDirStr == null ? System.getProperty("user.dir") : sourceDirStr);
     fileStorage = new FileStorage(sourceDir);
     storage = new CompositeStorage<>(preludeStorage, fileStorage, preludeStorage, fileStorage);
 
@@ -118,14 +115,15 @@ public class ConsoleMain {
 
   private void run() {
     // Collect sources for which typechecking was requested
-    final Path sourceDirPath = sourceDir.toPath();
     if (argFiles.isEmpty()) {
       if (sourceDirStr == null) return;
       try {
-        Files.walkFileTree(sourceDirPath, new SimpleFileVisitor<Path>() {
+        Files.walkFileTree(sourceDir, new SimpleFileVisitor<Path>() {
           @Override
           public FileVisitResult visitFile(Path path, BasicFileAttributes basicFileAttributes) throws IOException {
-            requestFileTypechecking(sourceDirPath.relativize(path).toFile());
+            if (path.getFileName().toString().endsWith(FileStorage.EXTENSION)) {
+              requestFileTypechecking(sourceDir.relativize(path));
+            }
             return FileVisitResult.CONTINUE;
           }
 
@@ -140,7 +138,7 @@ public class ConsoleMain {
       }
     } else {
       for (String fileName : argFiles) {
-        requestFileTypechecking(new File(fileName));
+        requestFileTypechecking(Paths.get(fileName));
       }
     }
 
@@ -297,17 +295,22 @@ public class ConsoleMain {
     return builder.toString();
   }
 
-  private void requestFileTypechecking(File file) {
-    if (!file.getName().endsWith(FileStorage.EXTENSION)) return;
-    String fileName = file.toString();
-    fileName = fileName.substring(0, fileName.length() - FileStorage.EXTENSION.length());
+  private void requestFileTypechecking(Path path) {
+    String fileName = path.getFileName().toString();
+    if (!fileName.endsWith(FileStorage.EXTENSION)) return;
+    path = path.resolveSibling(fileName.substring(0, fileName.length() - FileStorage.EXTENSION.length()));
 
-    CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId sourceId = storage.locateModule(FileStorage.modulePath(fileName));
-    if (sourceId == null) {
-      System.err.println(file + ": incorrect file name");
-    } else {
-      requestedSources.add(sourceId);
+    ModulePath modulePath = FileStorage.modulePath(path);
+    if (modulePath == null) {
+      System.err.println(path  + ": illegal file name");
+      return;
     }
+    CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId sourceId = storage.locateModule(modulePath);
+    if (sourceId == null || !storage.isAvailable(sourceId)) {
+      System.err.println(path  + ": source is not available");
+      return;
+    }
+    requestedSources.add(sourceId);
   }
 
   class MyPersistenceProvider implements PersistenceProvider<CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId> {
@@ -315,18 +318,18 @@ public class ConsoleMain {
     public URL getUrl(CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId sourceId) {
       try {
         final String root;
-        final String path;
+        final Path relPath;
         final String query;
         if (sourceId.source1 != null) {
           root = "prelude";
-          path = "Prelude";
+          relPath = Paths.get("");
           query = null;
         } else {
           root = "";
-          path = sourceId.source2.getFilePath().toString();
+          relPath = sourceId.source2.getRelativeFilePath();
           query = "" + sourceId.source2.getLastModified();
         }
-        return new URI("file", root, "/" + path, query, null).toURL();
+        return new URI("file", root, Paths.get("/").resolve(relPath).toUri().getPath(), query, null).toURL();
       } catch (URISyntaxException | MalformedURLException e) {
         throw new IllegalStateException();
       }
@@ -335,19 +338,27 @@ public class ConsoleMain {
     @Override
     public CompositeSourceSupplier<Prelude.SourceId, FileStorage.SourceId>.SourceId getModuleId(URL sourceUrl) {
       if (sourceUrl.getAuthority() != null && sourceUrl.getAuthority().equals("prelude")) {
-        return storage.locateModule(Prelude.PreludeStorage.PRELUDE_MODULE_PATH);
-      } else if (sourceUrl.getAuthority() == null) {
-        ModulePath modulePath = FileStorage.modulePath(sourceUrl.getPath().substring(1));
-        if (sourceUrl.getQuery() != null) {
-          return storage.locateModule(modulePath);
+        if (sourceUrl.getPath().equals("/")) {
+          return storage.idFromFirst(preludeStorage.preludeSourceId);
         } else {
-          try {
+          return null;
+        }
+      } else if (sourceUrl.getAuthority() == null) {
+        try {
+          Path path = Paths.get(new URI(sourceUrl.getProtocol(), null, sourceUrl.getPath(), null));
+          ModulePath modulePath = FileStorage.modulePath(path.getRoot().relativize(path));
+          if (modulePath == null) return null;
+
+          final FileStorage.SourceId fileSourceId;
+          if (sourceUrl.getQuery() == null) {
+            fileSourceId = fileStorage.locateModule(modulePath);
+          } else {
             long mtime = Long.parseLong(sourceUrl.getQuery());
-            FileStorage.SourceId fileSourceId = fileStorage.locateModule(modulePath, mtime);
-            return fileSourceId != null ? storage.idFromSecond(fileSourceId) : null;
-          } catch (NumberFormatException ignored) {
-            return null;
+            fileSourceId = fileStorage.locateModule(modulePath, mtime);
           }
+          return fileSourceId != null ? storage.idFromSecond(fileSourceId) : null;
+        } catch (URISyntaxException | NumberFormatException e) {
+          return null;
         }
       } else {
         return null;
