@@ -4,17 +4,17 @@ package com.jetbrains.jetpad.vclang.typechecking.termination;
 
 
 public class CompositeCallMatrix<T> extends BaseCallMatrix<T> {
-  protected BaseCallMatrix<T> myM1;
-  protected BaseCallMatrix<T> myM2;
+  private BaseCallMatrix<T> myM1;
+  private BaseCallMatrix<T> myM2;
 
-  public CompositeCallMatrix(BaseCallMatrix<T> m1, BaseCallMatrix<T> m2) {
+  CompositeCallMatrix(BaseCallMatrix<T> m1, BaseCallMatrix<T> m2) {
     super(m1, m2);
     myM1 = m1;
     myM2 = m2;
   }
 
   @Override
-  protected String getMatrixLabel() {
+  public String getMatrixLabel() {
     return myM1.getMatrixLabel() + ",\n " + myM2.getMatrixLabel();
   }
 

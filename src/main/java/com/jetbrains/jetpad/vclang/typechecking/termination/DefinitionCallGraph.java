@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking.termination;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 
@@ -12,13 +11,13 @@ import java.util.Set;
  * Created by user on 12/16/16.
  */
 public class DefinitionCallGraph extends BaseCallGraph<Definition> {
-    public Map<Definition, Set<RecursiveBehaviors.RecursiveBehavior<Definition>>> myErrorInfo = new HashMap<>();
+    public Map<Definition, Set<RecursiveBehavior<Definition>>> myErrorInfo = new HashMap<>();
 
     protected String getLabel(Definition vertex) {
         return vertex.getName();
     }
 
-    protected void formErrorMessage(Definition vertex, Set<RecursiveBehaviors.RecursiveBehavior<Definition>> behavior) {
+    protected void formErrorMessage(Definition vertex, Set<RecursiveBehavior<Definition>> behavior) {
         myErrorInfo.put(vertex, behavior);
     }
 

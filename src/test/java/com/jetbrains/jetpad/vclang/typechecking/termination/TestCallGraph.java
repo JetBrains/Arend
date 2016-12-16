@@ -1,8 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking.termination;
 
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.TerminationCheckError;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -11,7 +8,7 @@ import java.util.Set;
  * Created by user on 12/16/16.
  */
 public class TestCallGraph extends BaseCallGraph<TestVertex> {
-    public Map<TestVertex, Set<RecursiveBehaviors.RecursiveBehavior<TestVertex>>> myErrorInfo = new HashMap<>();
+    public Map<TestVertex, Set<RecursiveBehavior<TestVertex>>> myErrorInfo = new HashMap<>();
 
     public TestCallGraph(Set<BaseCallMatrix<TestVertex>> graph) {
         add(graph);
@@ -27,7 +24,7 @@ public class TestCallGraph extends BaseCallGraph<TestVertex> {
     }
 
     @Override
-    protected void formErrorMessage(TestVertex vertex, Set<RecursiveBehaviors.RecursiveBehavior<TestVertex>> behavior) {
+    protected void formErrorMessage(TestVertex vertex, Set<RecursiveBehavior<TestVertex>> behavior) {
         myErrorInfo.put(vertex, behavior);
     }
 

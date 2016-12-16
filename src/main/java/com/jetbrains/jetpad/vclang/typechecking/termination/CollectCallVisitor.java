@@ -20,7 +20,6 @@ import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.FunCallExpression;
-import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ConstructorClause;
 import com.jetbrains.jetpad.vclang.term.expr.LetExpression;
@@ -49,7 +48,7 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
   private Set<BaseCallMatrix<Definition>> myCollectedCalls = new HashSet<>();
   private FunctionDefinition myDefinition;
 
-  public CollectCallVisitor(FunctionDefinition def) {
+  CollectCallVisitor(FunctionDefinition def) {
     myDefinition = def;
     ParameterVector pv = new ParameterVector(def);
     if (def.getElimTree() != null) {
@@ -282,7 +281,7 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
   public static class ParameterVector {
     private Expression[] myParts;
 
-    public ParameterVector(FunctionDefinition def) {
+    ParameterVector(FunctionDefinition def) {
       int paramCount = def.getNumberOfRequiredArguments();
       myParts = new Expression[paramCount];
 
@@ -296,14 +295,14 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
       }
     }
 
-    public ParameterVector(ParameterVector pv, SubstVisitor sv) {
+    ParameterVector(ParameterVector pv, SubstVisitor sv) {
       myParts = new Expression[pv.myParts.length];
       for (int i = 0; i < pv.myParts.length; i++) {
         myParts[i] = pv.myParts[i].accept(sv, null);
       }
     }
 
-    public ParameterVector(ParameterVector pv, Clause c) {
+    ParameterVector(ParameterVector pv, Clause c) {
       this(pv, new SubstVisitor(c.getSubst(), new LevelSubstitution()));
     }
 
@@ -314,7 +313,6 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
     int getHeight() {
       return myParts.length;
     }
-
   }
 
 }

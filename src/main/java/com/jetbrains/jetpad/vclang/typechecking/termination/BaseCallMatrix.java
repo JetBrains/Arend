@@ -11,7 +11,7 @@ public abstract class BaseCallMatrix<T> {
     LessThan()
   }
 
-  public static BaseCallMatrix.R rmul(BaseCallMatrix.R a, BaseCallMatrix.R b) {
+  private static BaseCallMatrix.R rmul(BaseCallMatrix.R a, BaseCallMatrix.R b) {
     switch (a) {
       case Equal:
         switch (b) {
@@ -35,7 +35,7 @@ public abstract class BaseCallMatrix<T> {
     }
   }
 
-  public static boolean rleq(BaseCallMatrix.R a, BaseCallMatrix.R b) {
+  static boolean rleq(BaseCallMatrix.R a, BaseCallMatrix.R b) {
     switch (a) {
       case LessThan:
         return (b == BaseCallMatrix.R.LessThan);
@@ -46,16 +46,16 @@ public abstract class BaseCallMatrix<T> {
     }
   }
 
-  private HashMap<Integer, BaseCallMatrix.CallMatrixEntry> myMatrixMap = new HashMap<Integer, BaseCallMatrix.CallMatrixEntry>();
+  private HashMap<Integer, BaseCallMatrix.CallMatrixEntry> myMatrixMap = new HashMap<>();
   private int myWidth;
   private int myHeight;
 
-  public BaseCallMatrix(int width, int height) {
+  BaseCallMatrix(int width, int height) {
     myWidth = width;
     myHeight = height;
   }
 
-  public BaseCallMatrix(BaseCallMatrix<T> m) {
+  BaseCallMatrix(BaseCallMatrix<T> m) {
     // copy constructor 
     myWidth = m.myWidth;
     myHeight = m.myHeight;
@@ -65,7 +65,7 @@ public abstract class BaseCallMatrix<T> {
     }
   }
 
-  public BaseCallMatrix(BaseCallMatrix<T> m1, BaseCallMatrix<T> m2) {
+  BaseCallMatrix(BaseCallMatrix<T> m1, BaseCallMatrix<T> m2) {
     // multiplication constructor 
     if (m1.myWidth != m2.myHeight) {
       throw new IllegalArgumentException();
@@ -85,11 +85,11 @@ public abstract class BaseCallMatrix<T> {
 
   }
 
-  public int getHeight() {
+  int getHeight() {
     return myHeight;
   }
 
-  public int getWidth() {
+  int getWidth() {
     return myWidth;
   }
 
@@ -136,10 +136,7 @@ public abstract class BaseCallMatrix<T> {
   public final boolean equals(Object object) {
     if (object instanceof BaseCallMatrix) {
       BaseCallMatrix cm = (BaseCallMatrix) object;
-      if (getCodomain() != cm.getCodomain() || getDomain() != cm.getDomain()) {
-        return false;
-      }
-      return myMatrixMap.equals(cm.myMatrixMap);
+      return !(getCodomain() != cm.getCodomain() || getDomain() != cm.getDomain()) && myMatrixMap.equals(cm.myMatrixMap);
     } else {
       return false;
     }
@@ -167,11 +164,11 @@ public abstract class BaseCallMatrix<T> {
     return result;
   }
 
-  protected String getMatrixLabel() {
+  public String getMatrixLabel() {
     return "";
   }
 
-  public static char rToChar(R r) {
+  static char rToChar(R r) {
     switch (r) {
       case Equal:
         return '=';
@@ -210,11 +207,11 @@ public abstract class BaseCallMatrix<T> {
     return result;
   }
 
-  protected static class CallMatrixEntry {
-    public int myIndex;
-    public BaseCallMatrix.R myRel;
+  private static class CallMatrixEntry {
+    int myIndex;
+    BaseCallMatrix.R myRel;
 
-    public CallMatrixEntry(int index, BaseCallMatrix.R rel) {
+    CallMatrixEntry(int index, BaseCallMatrix.R rel) {
       myIndex = index;
       myRel = rel;
     }

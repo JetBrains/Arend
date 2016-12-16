@@ -4,16 +4,13 @@ package com.jetbrains.jetpad.vclang.typechecking.termination;
 
 import java.util.*;
 
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-
 public abstract class BaseCallGraph<T> {
-    protected HashMap<T, HashMap<T, HashSet<BaseCallMatrix<T>>>> myGraph = new HashMap<>();
+    private HashMap<T, HashMap<T, HashSet<BaseCallMatrix<T>>>> myGraph = new HashMap<>();
     private boolean isCompositionClosed = false;
 
-    public BaseCallGraph() {}
+    BaseCallGraph() {}
 
-    protected BaseCallGraph(BaseCallGraph<T> g) {
+    BaseCallGraph(BaseCallGraph<T> g) {
         HashMap<T, HashMap<T, HashSet<BaseCallMatrix<T>>>> newGraph;
         HashMap<T, HashMap<T, HashSet<BaseCallMatrix<T>>>> oldGraph = g.myGraph;
         int myNewEdges;
@@ -39,7 +36,7 @@ public abstract class BaseCallGraph<T> {
                         if (outboundEdges2 != null) {
                             for (HashSet<BaseCallMatrix<T>> edgesSheaf : outboundEdges2.values()) {
                                 for (BaseCallMatrix<T> edge2 : edgesSheaf) {
-                                    if (append(new CompositeCallMatrix<T>(edge, edge2), newGraph)) {
+                                    if (append(new CompositeCallMatrix<>(edge, edge2), newGraph)) {
                                         myNewEdges++;
                                     }
                                 }
@@ -56,14 +53,14 @@ public abstract class BaseCallGraph<T> {
     }
 
     public void add(Set<BaseCallMatrix<T>> set) {
-        for (BaseCallMatrix cm : set) {
+        for (BaseCallMatrix<T> cm : set) {
             append(cm, myGraph);
         }
     }
 
     protected abstract String getLabel(T vertex);
 
-    protected abstract void formErrorMessage(T vertex, Set<RecursiveBehaviors.RecursiveBehavior<T>> behavior);
+    protected abstract void formErrorMessage(T vertex, Set<RecursiveBehavior<T>> behavior);
 
     @Override
     public String toString() {
@@ -118,11 +115,11 @@ public abstract class BaseCallGraph<T> {
     public boolean checkTermination() {
         boolean result = true;
         for (T v : myGraph.keySet()) {
-            RecursiveBehaviors<T> rbs = new RecursiveBehaviors<T>(this, v);
+            RecursiveBehaviors<T> rbs = new RecursiveBehaviors<>(this, v);
             List<String> order = rbs.findTerminationOrderAnnotated();
             if (order == null) {
                 result = false;
-                HashSet<RecursiveBehaviors.RecursiveBehavior<T>> rbs2 = new HashSet<>();
+                HashSet<RecursiveBehavior<T>> rbs2 = new HashSet<>();
                 rbs2.addAll(rbs.myBestRbAttained.onlyMinimalElements());
                 formErrorMessage(v, rbs2);
             }
@@ -130,21 +127,21 @@ public abstract class BaseCallGraph<T> {
         return result;
     }
 
-    public static class RecursiveBehaviors<T> {
+    private static class RecursiveBehaviors<T> {
         private T myBasepoint = null;
         private Set<RecursiveBehavior<T>> myBehaviors = new HashSet<>();
         private int myLength = -1;
         private RecursiveBehaviors<T> myBestRbAttained = null;
 
-        public RecursiveBehaviors(BaseCallGraph<T> graph, T v) {
+        private RecursiveBehaviors(BaseCallGraph<T> graph, T v) {
             this(graph.myGraph.get(v).get(v));
             if (!graph.isCompositionClosed) throw new IllegalArgumentException();
             myBasepoint = v;
         }
 
-        public RecursiveBehaviors(Set<BaseCallMatrix<T>> callMatrices) {
+        private RecursiveBehaviors(Set<BaseCallMatrix<T>> callMatrices) {
             if (callMatrices != null)
-                for (BaseCallMatrix m : callMatrices) myBehaviors.add(new RecursiveBehavior(m));
+                for (BaseCallMatrix<T> m : callMatrices) myBehaviors.add(new RecursiveBehavior<>(m));
             if (!myBehaviors.isEmpty()) {
                 Iterator<RecursiveBehavior<T>> i = myBehaviors.iterator();
                 myLength = i.next().getLength();
@@ -155,14 +152,14 @@ public abstract class BaseCallGraph<T> {
         private RecursiveBehaviors() {
         }
 
-        public RecursiveBehaviors createShorterBehavior(int i) {
-            RecursiveBehaviors result = new RecursiveBehaviors();
+        private RecursiveBehaviors<T> createShorterBehavior(int i) {
+            RecursiveBehaviors<T> result = new RecursiveBehaviors<>();
             for (RecursiveBehavior<T> rb : myBehaviors) {
                 switch (rb.myBehavior.get(i)) {
                     case LessThan:
                         continue;
                     case Equal:
-                        result.myBehaviors.add(new RecursiveBehavior(rb, i));
+                        result.myBehaviors.add(new RecursiveBehavior<>(rb, i));
                         continue;
                     case Unknown:
                         return null;
@@ -173,7 +170,7 @@ public abstract class BaseCallGraph<T> {
             return result;
         }
 
-        private List<Integer> findTerminationOrder(RecursiveBehaviors recBehaviors, List<Integer> indices) {
+        private List<Integer> findTerminationOrder(RecursiveBehaviors<T> recBehaviors, List<Integer> indices) {
             if (recBehaviors == null) throw new IllegalArgumentException();
 
             if (recBehaviors.myBehaviors.isEmpty()) return indices;
@@ -183,7 +180,7 @@ public abstract class BaseCallGraph<T> {
                 myBestRbAttained = recBehaviors;
 
             for (int i = 0; i < recBehaviors.myLength; i++) {
-                RecursiveBehaviors shorterBehavior = recBehaviors.createShorterBehavior(i);
+                RecursiveBehaviors<T> shorterBehavior = recBehaviors.createShorterBehavior(i);
                 if (shorterBehavior != null) {
                     List<Integer> shorterIndices = new LinkedList<>(indices);
                     shorterIndices.remove(i);
@@ -198,13 +195,13 @@ public abstract class BaseCallGraph<T> {
             return null;
         }
 
-        public List<Integer> findTerminationOrder() {
+        private List<Integer> findTerminationOrder() {
             List<Integer> indices = new LinkedList<>();
             for (int i = 0; i < myLength; i++) indices.add(i);
             return findTerminationOrder(this, indices);
         }
 
-        public List<String> findTerminationOrderAnnotated() {
+        private List<String> findTerminationOrderAnnotated() {
             List<Integer> to = findTerminationOrder();
             if (to == null) return null;
             if (!myBehaviors.isEmpty()) {
@@ -213,10 +210,10 @@ public abstract class BaseCallGraph<T> {
                 for (Integer i : to) result.add(rb.myLabels.get(i));
                 return result;
             }
-            return new ArrayList<String>(); // recursive behaviors set is empty -- there were no recursive call at all
+            return new ArrayList<>(); // recursive behaviors set is empty -- there were no recursive call at all
         }
 
-        public Set<RecursiveBehavior<T>> onlyMinimalElements() {
+        private Set<RecursiveBehavior<T>> onlyMinimalElements() {
             Set<RecursiveBehavior<T>> result = new HashSet<>();
             for (RecursiveBehavior<T> rb : myBehaviors) {
                 boolean containsSmaller = false;
@@ -232,97 +229,6 @@ public abstract class BaseCallGraph<T> {
                 if (!containsSmaller) result.add(rb);
             }
             return result;
-        }
-
-        public static class RecursiveBehavior<T> {
-            List<BaseCallMatrix.R> myBehavior;
-            List<String> myLabels;
-            BaseCallMatrix<T> myInitialCallMatrix;
-
-            private RecursiveBehavior(BaseCallMatrix<T> callMatrix) {
-                myBehavior = new LinkedList<>();
-                for (int i = 0; i < callMatrix.getHeight(); i++) myBehavior.add(callMatrix.getValue(i, i));
-                myLabels = new LinkedList<>(Arrays.asList(callMatrix.getRowLabels()));
-                if (myLabels.size() != myBehavior.size())
-                    throw new IllegalArgumentException();
-                myInitialCallMatrix = callMatrix;
-            }
-
-            public RecursiveBehavior(RecursiveBehavior<T> rb, int i) {
-                if (i < 0 || i >= rb.getLength()) throw new IllegalArgumentException();
-                myBehavior = new LinkedList<>(rb.myBehavior);
-                myLabels = new LinkedList<>(rb.myLabels);
-                myBehavior.remove(i);
-                myLabels.remove(i);
-                myInitialCallMatrix = rb.myInitialCallMatrix;
-            }
-
-            int getLength() {
-                return myBehavior.size();
-            }
-
-            @Override
-            public boolean equals(Object o) {
-                if (o instanceof RecursiveBehavior) {
-                    RecursiveBehavior rb2 = (RecursiveBehavior) o;
-                    return myBehavior.equals(rb2.myBehavior) && myLabels.equals(rb2.myLabels);
-                }
-                return false;
-            }
-
-            boolean leq (RecursiveBehavior<T> r) {
-                if (getLength() != r.getLength()) throw new IllegalArgumentException();
-                boolean result = true;
-                for (int i = 0; i < getLength(); i++)
-                    if (!CallMatrix.rleq(myBehavior.get(i), r.myBehavior.get(i)))
-                        return false;
-                return !this.equals(r) || myInitialCallMatrix.getCompositeLength() <= r.myInitialCallMatrix.getCompositeLength();
-            }
-
-            @Override
-            public String toString() {
-                String result = "";
-                String brace = "";
-                if (myInitialCallMatrix instanceof CompositeCallMatrix) {
-                    result += "Composite recursive call: {\n ";
-                    brace = "}";
-                } else {
-                    result += "Recursive call: ";
-                }
-                result += myInitialCallMatrix.getMatrixLabel() + brace + "\n";
-
-                String unknown = "";
-                int unknownCount = 0;
-                String equal = "";
-                int equalCount = 0;
-                for (int i = 0; i < getLength(); i++) {
-                    if (myBehavior.get(i) == BaseCallMatrix.R.Unknown) {
-                        unknown += (unknown.length() > 0 ? ", " : "") + myLabels.get(i);
-                        unknownCount++;
-                    } else if (myBehavior.get(i) == BaseCallMatrix.R.Equal) {
-                        equal += (equal.length() > 0 ? ", " : "") + myLabels.get(i);
-                        equalCount++;
-                    }
-                }
-                if (unknown.length() > 0)
-                    result += "Unknown recursive behavior for argument"+(unknownCount > 1 ? "s" : "")+": "+unknown+"\n";
-                if (equal.length() > 0)
-                    result += "Does not strictly decrease on argument"+(equalCount > 1 ? "s" : "")+": "+equal + "\n";
-
-                return result;
-            }
-
-            public String getTable() {
-                String valueLine = "";
-                String result = "";
-                for (int i = 0; i < getLength(); i++) {
-                    String label = myLabels.get(i);
-                    CallMatrix.R r = myBehavior.get(i);
-                    valueLine += String.format("%" + (label.length() + 1) + "s", CallMatrix.rToChar(r));
-                    result += " " + label;
-                }
-                return result + "\n" + valueLine;
-            }
         }
 
     }
