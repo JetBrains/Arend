@@ -399,13 +399,13 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   @Test
   public void differentLevels() {
     typeCheckClass(
-        "\\function F {lp : Lvl} (X : \\Type (lp,inf)) (B : X -> \\Type (lp,inf)) => zero\n" +
-        "\\function g {lp : Lvl} (X : \\Type (lp,inf)) => F X (\\lam _ => (=) X X)");
+        "\\function F {lp : Lvl} (X : \\Type (lp)) (B : X -> \\Type (lp)) => zero\n" +
+        "\\function g {lp : Lvl} (X : \\Type (lp)) => F X (\\lam _ => (=) X X)");
   }
 
   @Test
   public void piTest() {
-    typeCheckDef("\\function f {lp : Lvl} {lh : CNat} (A : \\Type (lp,lh)) (B : A -> \\Type (lp,lh)) (f g : \\Pi (x : A) -> B x) => f = g");
+    typeCheckDef("\\function f {lp : Lvl} (A : \\Type (lp)) (B : A -> \\Type (lp)) (f g : \\Pi (x : A) -> B x) => f = g");
   }
 
   @Test
@@ -425,7 +425,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   @Test
   public void severalPolyParamsTest() {
     typeCheckClass(
-        "\\function f {lp : Lvl} {lp' : Lvl} {lh : CNat} (A : \\Type (lp, lh)) (B : \\Type (lp', lh)) (C : \\Type) => \\Sigma (A) (B -> C)\n"+
+        "\\function f {lp : Lvl} {lp' : Lvl} (A : \\Type (lp)) (B : \\Type (lp')) (C : \\Type) => \\Sigma (A) (B -> C)\n"+
         "\\function g => f (\\Prop) (\\Set1) (\\1-Type0)");
   }
 }

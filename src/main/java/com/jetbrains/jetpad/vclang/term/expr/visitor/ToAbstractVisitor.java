@@ -371,19 +371,29 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     } else {
       Level plevel = eliminateGenParam(sort.getPLevel());
       Level hlevel = eliminateGenParam(sort.getHLevel());
-      if (plevel.isInfinity()) {
-        return myFactory.makeUniverse();
+      int hlevelAbs;
+      //TODO: decide what to do in case there's a variable in hlevel
+      if (sort.getHLevel().isInfinity() || !hlevel.isClosed()) {
+        hlevelAbs = Abstract.UniverseExpression.Universe.NOT_TRUNCATED;
+      } else {
+        hlevelAbs = hlevel.getConstant() - 1;
       }
-      return myFactory.makeUniverse(visitLevel(plevel, 0), visitLevel(hlevel, -1));
+      return myFactory.makeUniverse(plevel.isInfinity() ? null : visitLevel(plevel, 0), hlevelAbs);
     }
   }
 
   public Abstract.Expression visitSortMax(SortMax sort) {
-    if (sort.isOmega()) {
-      return myFactory.makeUniverse();
+    if (sort.toSort() != null) {
+      return visitSort(sort.toSort());
     }
-    // TODO: generate ordinary universe when levels are constants
-    return myFactory.makeUniverse(visitLevelMax(sort.getPLevel(), 0), visitLevelMax(sort.getHLevel(), -1));
+    int hlevel;
+    //TODO: decide what to do in case there's a variable in sort.getHLevel()
+    if (sort.getHLevel().isInfinity() || sort.getHLevel().toLevel() == null || !sort.getHLevel().toLevel().isClosed()) {
+      hlevel = Abstract.UniverseExpression.Universe.NOT_TRUNCATED;
+    } else {
+      hlevel = sort.getHLevel().toLevel().getConstant() - 1;
+    }
+    return myFactory.makeUniverse(visitLevelMax(sort.getPLevel(), 0), hlevel);
   }
 
   public Abstract.Expression visitLevel(Level level, int add) {
@@ -403,7 +413,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   public Abstract.Expression visitLevelMax(LevelMax levelMax, int add) {
     if (levelMax.isInfinity()) {
-      return myFactory.makeVar("inf");
+      // return myFactory.makeVar("inf");
+      return null;
     }
 
     List<Level> levels = levelMax.toListOfLevels();

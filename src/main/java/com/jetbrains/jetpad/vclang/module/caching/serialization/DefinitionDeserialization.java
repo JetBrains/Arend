@@ -1,10 +1,7 @@
 package com.jetbrains.jetpad.vclang.module.caching.serialization;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.LevelBinding;
-import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
-import com.jetbrains.jetpad.vclang.term.context.binding.Variable;
+import com.jetbrains.jetpad.vclang.term.context.binding.*;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
@@ -70,10 +67,20 @@ class DefinitionDeserialization {
     myBindings.add(binding);
   }
 
+  private void registerLevelBinding(LevelBinding binding) {
+    myLvlBindings.add(binding);
+  }
+
   TypedBinding readTypedBinding(ExpressionProtos.Binding.TypedBinding proto) throws DeserializationError {
     TypedBinding typedBinding = new TypedBinding(proto.getName(), readType(proto.getType()));
     registerBinding(typedBinding);
     return typedBinding;
+  }
+
+  LevelBinding readLevelBinding(ExpressionProtos.Binding.LevelBinding proto) throws DeserializationError {
+    LevelBinding lvlBinding = new LevelBinding(proto.getName(), proto.getType() == ExpressionProtos.Binding.LevelBinding.LvlType.PLVL ? LevelVariable.LvlType.PLVL : LevelVariable.LvlType.HLVL);
+    registerLevelBinding(lvlBinding);
+    return lvlBinding;
   }
 
   private Variable readBindingRef(int index, boolean isLevel) throws DeserializationError {
@@ -383,14 +390,14 @@ class DefinitionDeserialization {
   private BranchElimTreeNode readBranch(ExpressionProtos.ElimTreeNode.Branch proto) throws DeserializationError {
     List<Binding> contextTail = new ArrayList<>();
     for (int ref : proto.getContextTailItemRefList()) {
-      contextTail.add(readBindingRef(ref));
+      contextTail.add((TypedBinding)readBindingRef(ref, false));
     }
-    BranchElimTreeNode result = new BranchElimTreeNode(readBindingRef(proto.getReferenceRef()), contextTail);
+    BranchElimTreeNode result = new BranchElimTreeNode((TypedBinding)readBindingRef(proto.getReferenceRef(), false), contextTail);
     for (Map.Entry<Integer, ExpressionProtos.ElimTreeNode.ConstructorClause> entry : proto.getConstructorClausesMap().entrySet()) {
       ExpressionProtos.ElimTreeNode.ConstructorClause cProto = entry.getValue();
-      List<TypedBinding> polyParams = new ArrayList<>();
-      for (ExpressionProtos.Binding.TypedBinding typedBinding : cProto.getPolyParamList()) {
-        polyParams.add(readTypedBinding(typedBinding));
+      List<LevelBinding> polyParams = new ArrayList<>();
+      for (ExpressionProtos.Binding.LevelBinding levelBinding : cProto.getPolyParamList()) {
+        polyParams.add(readLevelBinding(levelBinding));
       }
       DependentLink constructorParams = readParameters(cProto.getParamList());
       List<TypedBinding> tailBindings = new ArrayList<>();
@@ -408,7 +415,7 @@ class DefinitionDeserialization {
   private LeafElimTreeNode readLeaf(ExpressionProtos.ElimTreeNode.Leaf proto) throws DeserializationError {
     List<Binding> context = new ArrayList<>();
     for (int ref : proto.getMatchedRefList()) {
-      context.add(readBindingRef(ref));
+      context.add((TypedBinding)readBindingRef(ref, false));
     }
     LeafElimTreeNode result = new LeafElimTreeNode(proto.getArrowLeft() ? Abstract.Definition.Arrow.LEFT : Abstract.Definition.Arrow.RIGHT, readExpr(proto.getExpr()));
     result.setMatched(context);

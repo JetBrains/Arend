@@ -44,7 +44,7 @@ public class SortMax {
   }
 
   public boolean isOmega() {
-    return myPLevel.isInfinity();
+    return myPLevel.isInfinity() && myHLevel.toLevel() != null;
   }
 
   public SortMax max(SortMax sort) {
@@ -82,7 +82,7 @@ public class SortMax {
 
   public TypeMax toType() {
     if (isOmega()) {
-      return new PiTypeOmega(EmptyDependentLink.getInstance());
+      return new PiTypeOmega(EmptyDependentLink.getInstance(), myHLevel.toLevel());
     }
     if (toSort() != null) {
       return new UniverseExpression(toSort());

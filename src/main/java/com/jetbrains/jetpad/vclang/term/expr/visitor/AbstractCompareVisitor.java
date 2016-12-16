@@ -64,13 +64,10 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
 
   @Override
   public Boolean visitPolyUniverse(Abstract.PolyUniverseExpression expr1, Abstract.Expression expr2) {
-    return expr2 instanceof Abstract.PolyUniverseExpression && expr1.getPLevel().accept(this, ((Abstract.PolyUniverseExpression) expr2).getPLevel()) &&
-            expr1.getHLevel().accept(this, ((Abstract.PolyUniverseExpression) expr2).getHLevel());
-  }
-
-  @Override
-  public Boolean visitTypeOmega(Abstract.TypeOmegaExpression expr1, Abstract.Expression expr2) {
-    return expr2 instanceof Abstract.TypeOmegaExpression;
+    return expr2 instanceof Abstract.PolyUniverseExpression &&
+      (expr1.getPLevel() != null || ((Abstract.PolyUniverseExpression) expr2).getPLevel() == null) &&
+      expr1.getPLevel().accept(this, ((Abstract.PolyUniverseExpression) expr2).getPLevel()) &&
+            expr1.getHLevel() == ((Abstract.PolyUniverseExpression) expr2).getHLevel();
   }
 
   @Override

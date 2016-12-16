@@ -89,7 +89,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           LevelBinding param = defCall.getDefinition().getPolyParams().get(userPolyParams.get(numLevelArgs));
           Level level = null;
           if (!(arg instanceof Abstract.InferHoleExpression)) {
-            level = myVisitor.typeCheckLevel(arg, null, param.getType() == LevelVariable.LvlType.HLVL ? -1 : 0);
+            level = myVisitor.typeCheckLevel(arg, param.getType() == LevelVariable.LvlType.HLVL ? -1 : 0);
             if (level == null) {
               return null;
             }

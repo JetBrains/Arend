@@ -107,7 +107,7 @@ public class DefinitionCheckType {
     if (arg.getType() instanceof Abstract.DefCallExpression) {
       String typeName = ((Abstract.DefCallExpression) arg.getType()).getName();
       // TODO: WTF ???
-      return typeName.equals(Prelude.LVL.getName()) || typeName.equals(Prelude.CNAT.getName());
+      return typeName.equals("Lvl");
     }
     return false;
   }
@@ -122,7 +122,7 @@ public class DefinitionCheckType {
     return null;
   } /**/
 
-  private static LevelBinding typeCheckPolyParam(Abstract.TypeArgument typeArgument, Abstract.SourceNode node, LocalErrorReporter errorReporter) {
+  private static List<LevelBinding> typeCheckPolyParam(Abstract.TypeArgument typeArgument, Abstract.SourceNode node, LocalErrorReporter errorReporter) {
     assert (typeArgument.getType() instanceof Abstract.DefCallExpression);
     String typeName = ((Abstract.DefCallExpression) typeArgument.getType()).getName();
     assert typeName.equals("Lvl");
@@ -131,17 +131,15 @@ public class DefinitionCheckType {
       return null;
     }
     Abstract.TelescopeArgument teleArgument = (Abstract.TelescopeArgument)typeArgument;
-    //if (teleArgument.getNames().size() > 1 || polyParams.containsKey(typeName)) {
-    //  myErrorReporter.report(new LocalTypeCheckingError("Function definition must have at most one polymorphic variable of type " + typeName, node));
-    //  return null;
-   // }
     if (teleArgument.getExplicit()) {
       errorReporter.report(new LocalTypeCheckingError("Polymorphic variables must be implicit", node));
       return null;
     }
-    return new LevelBinding(((Abstract.TelescopeArgument) typeArgument).getNames().get(0), LevelVariable.LvlType.PLVL);
-    // polyParams.put(typeName, levelParam);
-    // return levelParam;
+    List<LevelBinding> levels = new ArrayList<>();
+    for (String name : teleArgument.getNames()) {
+      levels.add(new LevelBinding(name, LevelVariable.LvlType.PLVL));
+    }
+    return levels;
   }
 
   private static Sort typeOmegaToUniverse(List<LevelBinding> polyParams) {
@@ -176,13 +174,13 @@ public class DefinitionCheckType {
             ok = false;
             continue;
           }
-          LevelBinding levelParam = typeCheckPolyParam(typeArgument, node, visitor.getErrorReporter());
-          if (levelParam == null) {
+          List<LevelBinding> levelTeleParam = typeCheckPolyParam(typeArgument, node, visitor.getErrorReporter());
+          if (levelTeleParam == null) {
             ok = false;
             continue;
           }
-          lvlContext.add(levelParam);
-          polyParamsList.add(levelParam);
+          lvlContext.addAll(levelTeleParam);
+          polyParamsList.addAll(levelTeleParam);
           ++index;
           continue;
         } else {
@@ -396,8 +394,7 @@ public class DefinitionCheckType {
           if (result != null) {
             userSorts = new SortMax(result.getExpression().toUniverse().getSort());
           }
-        } else
-        if (!(def.getUniverse() instanceof Abstract.TypeOmegaExpression)) {
+        } else {
           String msg = "Specified type " + PrettyPrintVisitor.prettyPrint(def.getUniverse(), 0) + " of '" + def.getName() + "' is not a universe";
           visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, def.getUniverse()));
         }
@@ -778,9 +775,13 @@ public class DefinitionCheckType {
           classOk = false;
           continue;
         }
-        LevelBinding param = typeCheckPolyParam(polyArgument, def, errorReporter);
-        polyParams.add(param);
-        lvlContext.add(param);
+        List<LevelBinding> teleParam = typeCheckPolyParam(polyArgument, def, errorReporter);
+        if (teleParam == null) {
+          classOk = false;
+          continue;
+        }
+        polyParams.addAll(teleParam);
+        lvlContext.addAll(teleParam);
       }
       typedDef.setPolyParams(polyParams);
       typedDef.setThisClass(enclosingClass);

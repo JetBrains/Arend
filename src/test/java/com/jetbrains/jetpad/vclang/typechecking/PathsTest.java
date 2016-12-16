@@ -69,15 +69,15 @@ public class PathsTest extends TypeCheckingTestCase {
   @Test
   public void invTest() {
     typeCheckClass(
-        "\\function idp {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a : A} => path (\\lam _ => a)\n" +
-        "\\function transport {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} (B : A -> \\Type (lp, lh)) {a a' : A} (p : a = a') (b : B a) <= coe (\\lam i => B (p @ i)) b right\n" +
-        "\\function inv {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a a' : A} (p : a = a') <= transport (\\lam a'' => a'' = a) p idp\n" +
+        "\\function idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
+        "\\function transport {A : \\Type} (B : A -> \\Type) {a a' : A} (p : a = a') (b : B a) <= coe (\\lam i => B (p @ i)) b right\n" +
+        "\\function inv {A : \\Type} {a a' : A} (p : a = a') <= transport (\\lam a'' => a'' = a) p idp\n" +
         "\\function squeeze1 (i j : I) : I <= coe (\\lam x => left = x) (path (\\lam _ => left)) j @ i\n" +
         "\\function squeeze (i j : I) <= coe (\\lam i => Path (\\lam j => left = squeeze1 i j) (path (\\lam _ => left)) (path (\\lam j => squeeze1 i j))) (path (\\lam _ => path (\\lam _ => left))) right @ i @ j\n" +
-        "\\function psqueeze {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a a' : A} (p : a = a') (i : I) : a = p @ i => path (\\lam j => p @ squeeze i j)\n" +
-        "\\function Jl {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a : A} (B : \\Pi (a' : A) -> a = a' -> \\Type (lp, lh)) (b : B a idp) {a' : A} (p : a = a') : B a' p\n" +
+        "\\function psqueeze {A : \\Type} {a a' : A} (p : a = a') (i : I) : a = p @ i => path (\\lam j => p @ squeeze i j)\n" +
+        "\\function Jl {A : \\Type} {a : A} (B : \\Pi (a' : A) -> a = a' -> \\Type) (b : B a idp) {a' : A} (p : a = a') : B a' p\n" +
         "  <= coe (\\lam i => B (p @ i) (psqueeze p i)) b right\n" +
-        "\\function inv-inv {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a a' : A} (p : a = a') : inv (inv p) = p <= Jl (\\lam _ p => inv (inv p) = p) idp p\n" +
-        "\\function path-sym {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} (a a' : A) : (a = a') = (a' = a) => path (iso inv inv inv-inv inv-inv)");
+        "\\function inv-inv {A : \\Type} {a a' : A} (p : a = a') : inv (inv p) = p <= Jl (\\lam _ p => inv (inv p) = p) idp p\n" +
+        "\\function path-sym {A : \\Type} (a a' : A) : (a = a') = (a' = a) => path (iso inv inv inv-inv inv-inv)");
   }
 }

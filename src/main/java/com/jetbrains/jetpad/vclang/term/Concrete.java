@@ -610,9 +610,9 @@ public final class Concrete {
 
   public static class PolyUniverseExpression extends Expression implements Abstract.PolyUniverseExpression {
     private final Expression myPLevel;
-    private final Expression myHLevel;
+    private final int myHLevel;
 
-    public PolyUniverseExpression(Position position, Expression pLevel, Expression hLevel) {
+    public PolyUniverseExpression(Position position, Expression pLevel, int hLevel) {
       super(position);
       myPLevel = pLevel;
       myHLevel = hLevel;
@@ -624,24 +624,13 @@ public final class Concrete {
     }
 
     @Override
-    public Expression getHLevel() {
+    public int getHLevel() {
       return myHLevel;
     }
 
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitPolyUniverse(this, params);
-    }
-  }
-
-  public static class TypeOmegaExpression extends Expression implements Abstract.TypeOmegaExpression {
-    public TypeOmegaExpression(Position position) {
-      super(position);
-    }
-
-    @Override
-    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitTypeOmega(this, params);
     }
   }
 

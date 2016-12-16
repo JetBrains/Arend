@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
@@ -320,8 +321,8 @@ public class NormalizationTest extends TypeCheckingTestCase {
 
   @Test
   public void testIsoRight() {
-    Binding lp = Prelude.PATH.getPolyParamByType(Prelude.LVL);
-    Binding lh = Prelude.PATH.getPolyParamByType(Prelude.CNAT);
+    LevelBinding lp = Prelude.PATH.getPolyParams().get(0);
+    LevelBinding lh = Prelude.PATH.getPolyParams().get(1);
     DependentLink A = param("A", Universe(new Level(lp), new Level(lh)));
     DependentLink B = param("B", Universe(new Level(lp), new Level(lh)));
     DependentLink f = param("f", Pi(param(Reference(A)), Reference(B)));

@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
@@ -55,7 +56,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
-    CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(state, staticNsProvider, dynamicNsProvider, context, localErrorReporter).build().checkType(expression, expectedType);
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(state, staticNsProvider, dynamicNsProvider, context, new ArrayList<LevelBinding>(), localErrorReporter).build().checkType(expression, expectedType);
     assertThat(errorList, containsErrors(errors));
     if (errors == 0) {
       assertThat(result, is(notNullValue()));

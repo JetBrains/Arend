@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
@@ -31,7 +32,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   public void typeCheckConstructor1() {
     typeCheckClass(
         "\\data D (n : Nat) {k : Nat} (m : Nat) | con\n" +
-        "\\function idp {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a : A} => path (\\lam _ => a)\n" +
+        "\\function idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
         "\\function f : con {1} {2} {3} = (D 1 {2} 3).con => idp");
   }
 
@@ -39,7 +40,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   public void typeCheckConstructor1d() {
     typeCheckClass(
         "\\data D (n : Nat) {k : Nat} (m : Nat) | con\n" +
-        "\\function idp {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a : A} => path (\\lam _ => a)\n" +
+        "\\function idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
         "\\function f : con {1} {2} {3} = (D 1 {2} 3).con => idp");
   }
 
@@ -47,7 +48,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   public void typeCheckConstructor2() {
     typeCheckClass(
         "\\data D (n : Nat) {k : Nat} (m : Nat) | con (k = m)\n" +
-        "\\function idp {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a : A} => path (\\lam _ => a)\n" +
+        "\\function idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
         "\\function f : con {0} (path (\\lam _ => 1)) = (D 0).con idp => idp");
   }
 
@@ -55,7 +56,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   public void typeCheckConstructor2d() {
     typeCheckClass(
         "\\data D (n : Nat) {k : Nat} (m : Nat) | con (k = m)\n" +
-        "\\function idp {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a : A} => path (\\lam _ => a)\n" +
+        "\\function idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
         "\\function f : con {0} (path (\\lam _ => 1)) = (D 0).con idp => idp");
   }
 
@@ -105,19 +106,21 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
     assertNotNull(result.getExpression().getType());
   }
 
+  // There's no way to test this property now as values cannot be explicitly assigned for generated poly parameters
+  @Ignore
   @Test
   public void compareData() {
     typeCheckClass(
-        "\\data D {lp : Lvl} {lh : CNat} | con\n" +
-        "\\function f {l : Lvl} (d : D {l} {0}) => d\n" +
-        "\\function g {l : Lvl} (d : D {l} {inf}) => f d");
+        "\\data D (A : \\Type) | con\n" +
+        "\\function f {l : Lvl} (d : D {l} {0} (Nat)) => d\n" +
+        "\\function g {l : Lvl} (d : D {l} {inf} (Nat)) => f d");
   }
 
   @Test
   public void universeInference() {
     typeCheckClass(
         "\\function\n" +
-        "transport {lp : Lvl} {lh : CNat} {A : \\Type (lp,lh)} (B : A -> \\Type (lp,lh)) {a a' : A} (p : a = a') (b : B a)\n" +
+        "transport {A : \\Type} (B : A -> \\Type) {a a' : A} (p : a = a') (b : B a)\n" +
         "  <= coe (\\lam i => B (p @ i)) b right\n" +
         "\n" +
         "\\function\n" +

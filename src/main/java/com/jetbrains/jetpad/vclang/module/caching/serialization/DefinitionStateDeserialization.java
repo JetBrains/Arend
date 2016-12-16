@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.module.caching.LocalizedTypecheckerState;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 
 import java.util.*;
@@ -60,9 +60,9 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
 
       final DefinitionDeserialization defDeserializer = new DefinitionDeserialization(calltargetProvider);
 
-      List<TypedBinding> polyParams = new ArrayList<>();
-      for (ExpressionProtos.Binding.TypedBinding typedBinding : defProto.getPolyParamList()) {
-        polyParams.add(defDeserializer.readTypedBinding(typedBinding));
+      List<LevelBinding> polyParams = new ArrayList<>();
+      for (ExpressionProtos.Binding.LevelBinding lvlBinding : defProto.getPolyParamList()) {
+        polyParams.add(defDeserializer.readLevelBinding(lvlBinding));
       }
 
       def.setPolyParams(polyParams);

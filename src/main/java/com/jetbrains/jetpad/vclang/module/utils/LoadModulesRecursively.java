@@ -61,12 +61,6 @@ public class LoadModulesRecursively implements AbstractStatementVisitor<Void, Vo
   @Override
   public Void visitPolyUniverse(Abstract.PolyUniverseExpression expr, Void params) {
     expr.getPLevel().accept(this, null);
-    expr.getHLevel().accept(this, null);
-    return null;
-  }
-
-  @Override
-  public Void visitTypeOmega(Abstract.TypeOmegaExpression expr, Void params) {
     return null;
   }
 

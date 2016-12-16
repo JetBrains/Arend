@@ -112,12 +112,9 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
 
   @Override
   public Void visitPolyUniverse(Abstract.PolyUniverseExpression expr, Void params) {
-    expr.getPLevel().accept(this, null);
-    return expr.getHLevel().accept(this, null);
-  }
-
-  @Override
-  public Void visitTypeOmega(Abstract.TypeOmegaExpression expr, Void params) {
+    if (expr.getPLevel() != null) {
+      expr.getPLevel().accept(this, null);
+    }
     return null;
   }
 

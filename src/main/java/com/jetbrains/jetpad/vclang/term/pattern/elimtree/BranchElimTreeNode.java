@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
@@ -61,7 +62,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
 
     dataTypeArguments = constructor.matchDataTypeArguments(new ArrayList<>(dataTypeArguments));
     LevelSubstitution polySubst = new LevelSubstitution();
-    List<TypedBinding> constructorPolyParams = LevelSubstitution.clone(constructor.getPolyParams(), polySubst);
+    List<LevelBinding> constructorPolyParams = LevelSubstitution.clone(constructor.getPolyParams(), polySubst);
     DependentLink constructorArgs = DependentLink.Helper.subst(constructor.getParameters(), toSubstitution(constructor.getDataTypeParameters(), dataTypeArguments), polySubst);
     if (names != null) {
       constructorArgs = DependentLink.Helper.subst(constructorArgs, new ExprSubstitution());
@@ -87,7 +88,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
     return myOtherwiseClause;
   }
 
-  public void addClause(Constructor constructor, DependentLink constructorParams, List<TypedBinding> constructorPolyParams, List<TypedBinding> tailBindings, ElimTreeNode child) {
+  public void addClause(Constructor constructor, DependentLink constructorParams, List<LevelBinding> constructorPolyParams, List<TypedBinding> tailBindings, ElimTreeNode child) {
     ConstructorClause clause = new ConstructorClause(constructor, constructorParams, constructorPolyParams, tailBindings, this);
     myClauses.put(constructor, clause);
     clause.setChild(child);

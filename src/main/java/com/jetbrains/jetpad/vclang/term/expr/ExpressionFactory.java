@@ -257,14 +257,6 @@ public class ExpressionFactory {
     return ConCall(Prelude.SUC, new LevelArguments(), Collections.<Expression>emptyList(), Collections.singletonList(expr));
   }
 
-  public static DataCallExpression Lvl() {
-    return DataCall(Prelude.LVL, new LevelArguments(), Collections.<Expression>emptyList());
-  }
-
-  public static DataCallExpression CNat() {
-    return DataCall(Prelude.CNAT, new LevelArguments(), Collections.<Expression>emptyList());
-  }
-
   public static UniverseExpression Universe(int pLevel) {
     return new UniverseExpression(Sort.TypeOfLevel(pLevel));
   }

@@ -2,7 +2,9 @@ package com.jetbrains.jetpad.vclang.term.expr.type;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
 import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.expr.subst.ExprSubstitution;
@@ -17,6 +19,14 @@ import java.util.Set;
 public class PiTypeOmega extends PiUniverseType implements Type {
   public PiTypeOmega(DependentLink parameters) {
     super(parameters, new SortMax(LevelMax.INFINITY, LevelMax.INFINITY));
+  }
+
+  public PiTypeOmega() {
+    this(EmptyDependentLink.getInstance());
+  }
+
+  public PiTypeOmega(DependentLink parameters, Level hlevel) {
+    super(parameters, new SortMax(LevelMax.INFINITY, new LevelMax(hlevel)));
   }
 
   public static PiTypeOmega toPiTypeOmega(TypeMax type) {

@@ -2,15 +2,14 @@
     | zero
     | suc Nat
 
-\data Lvl
-
-\data CNat
-    | inf
-    | fin Nat
-
 \data I
     | left
     | right
+
+\data Lvl
+    | zeroL
+    | sucL Lvl
+    | inf
 
 \data Path (A : I -> \Type) (a : A left) (a' : A right)
     | path (\Pi (i : I) -> A i)

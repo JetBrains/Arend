@@ -55,7 +55,7 @@ public class InferenceTest extends TypeCheckingTestCase {
   public void inferConstructor1b() {
     typeCheckClass(
         "\\data D (n : Nat) {k : Nat} (m : Nat) | con (n = k) (k = m)\n" +
-        "\\function idp {lp : Lvl} {lh : CNat} {A : \\Type (lp ,lh)} {a : A} => path (\\lam _ => a)\n" +
+        "\\function idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
         "\\function f => con {0} idp idp");
   }
 
@@ -70,7 +70,7 @@ public class InferenceTest extends TypeCheckingTestCase {
   public void inferConstructor2b() {
     typeCheckClass(
         "\\data D (n : Nat) {k : Nat} (m : Nat) | con (n = k) (k = m)\n" +
-        "\\function idp {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a : A} => path (\\lam _ => a)\n" +
+        "\\function idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
         "\\function f => (D 0).con idp idp");
   }
 

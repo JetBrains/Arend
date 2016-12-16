@@ -360,10 +360,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       if (sort == null) return null;
       if (onlyOmegaAllowed && sort.toSort() == null) return null;
       return sort.toType();
-    } else if (type instanceof Abstract.TypeOmegaExpression) {
-      return new PiTypeOmega(EmptyDependentLink.getInstance());
     }
-    Result result = typeCheck(type, new PiTypeOmega(EmptyDependentLink.getInstance()));
+    Result result = typeCheck(type, new PiTypeOmega());
     if (result == null) return null;
     return result.getExpression();
   }
@@ -620,7 +618,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getSort().succ())), expr);
   }
 
-  public Level typeCheckLevel(Abstract.Expression expr, LevelVariable.LvlType expectedType, int minValue) {
+  public Level typeCheckLevel(Abstract.Expression expr, int minValue) {
     int num_sucs = 0;
     LocalTypeCheckingError error = null;
 
@@ -670,36 +668,30 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
     if (max instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) max).getName().equals("max")) {
       for (Abstract.ArgumentExpression arg : args) {
-        result = result.max(typeCheckLevel(arg.getExpression(), expectedType, minValue));
+        result = result.max(typeCheckLevel(arg.getExpression(), minValue));
       }
       return result;
     }
-    Level level = typeCheckLevel(expr, expectedType, minValue);
+    Level level = typeCheckLevel(expr, minValue);
     if (level == null) return null;
     return new LevelMax(level);
   }
 
 
   public SortMax sortMax(Abstract.PolyUniverseExpression expr) {
-    LevelMax levelP = typeCheckLevelMax(expr.getPLevel(), LevelVariable.LvlType.PLVL, 0);
-    LevelMax levelH = typeCheckLevelMax(expr.getHLevel(), LevelVariable.LvlType.HLVL, -1);
-    if (levelP == null || levelH == null) return null;
+    LevelMax levelP = expr.getPLevel() == null ? LevelMax.INFINITY : typeCheckLevelMax(expr.getPLevel(), LevelVariable.LvlType.PLVL, 0);
+    LevelMax levelH = expr.getHLevel() != Abstract.UniverseExpression.Universe.NOT_TRUNCATED ? new LevelMax(new Level(expr.getHLevel() + 1)) : LevelMax.INFINITY;
+    if (levelP == null) return null;
     return new SortMax(levelP, levelH);
   }
 
   @Override
   public Result visitPolyUniverse(Abstract.PolyUniverseExpression expr, Type expectedType) {
-    Level pLevel = typeCheckLevel(expr.getPLevel(), LevelVariable.LvlType.PLVL, 0);
-    Level hLevel = expr.getHLevel() != null ? typeCheckLevel(expr.getHLevel(), LevelVariable.LvlType.HLVL, -1) : Level.INFINITY;
-    if (pLevel == null || hLevel == null) return null;
+    Level pLevel = typeCheckLevel(expr.getPLevel(), 0);
+    Level hLevel = expr.getHLevel() != Abstract.UniverseExpression.Universe.NOT_TRUNCATED ? new Level(expr.getHLevel() + 1) : Level.INFINITY;
+    if (pLevel == null) return null;
     UniverseExpression universe = Universe(new Sort(pLevel, hLevel));
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getSort().succ())), expr);
-  }
-
-  @Override
-  public Result visitTypeOmega(Abstract.TypeOmegaExpression expr, Type expectedType) {
-    myErrorReporter.report(new LocalTypeCheckingError("\\Type can only be used in a definition as codomain in either its own type or the type of its parameter", expr));
-    return null;
   }
 
   @Override

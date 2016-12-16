@@ -22,6 +22,11 @@ public class LevelBinding implements LevelVariable {
     return myType;
   }
 
+  @Override
+  public String toString() {
+    return myName;
+  }
+
   public static List<Integer> getSublistOfUserBindings(List<LevelBinding> bindings) {
     List<Integer> userBindings = new ArrayList<>();
     for (int i = 0; i < bindings.size(); ++i) {

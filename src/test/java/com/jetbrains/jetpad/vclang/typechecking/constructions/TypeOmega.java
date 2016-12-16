@@ -9,8 +9,8 @@ public class TypeOmega extends TypeCheckingTestCase {
   public void dataExpansion() {
     typeCheckClass(
       "\\data D (A : \\Type) (a : A) | d (B : A -> \\Type2)\n" +
-      "\\function f {lp : Lvl} {lh : CNat} : \\Pi {A : \\Type (lp, lh)} {a : A} -> (A -> \\Type1) -> D A a => d\n" +
-      "\\function test => f {_} {_} {\\Set0} {\\Prop} (\\lam _ => \\Type0)");
+      "\\function f {lp : Lvl} : \\Pi {A : \\Type (lp)} {a : A} -> (A -> \\Type1) -> D A a => d\n" +
+      "\\function test => f {_} {\\Set0} {\\Prop} (\\lam _ => \\Type0)");
   }
 
   @Test
@@ -33,13 +33,13 @@ public class TypeOmega extends TypeCheckingTestCase {
   @Test
   public void callPolyFromOmega() {
      typeCheckClass(
-         "\\function f {lp : Lvl} {lh : CNat} (A : \\Type (lp,lh)) => A\n" +
+         "\\function f {lp : Lvl} (A : \\Type (lp)) => A\n" +
          "\\function g (A : \\Type) => f A");
   }
 
   @Test
   public void typeOmegaResult() {
-    typeCheckClass("\\function f {lp : Lvl} {lh : CNat} (A : \\Type (lp,lh)) : \\Type => A");
+    typeCheckClass("\\function f {lp : Lvl} (A : \\Type (lp)) : \\Type => A");
   }
 
   @Test

@@ -65,12 +65,9 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, V
 
   @Override
   public Void visitPolyUniverse(Abstract.PolyUniverseExpression expr, Void ignore) {
-    expr.getPLevel().accept(this, null);
-    return expr.getHLevel().accept(this, null);
-  }
-
-  @Override
-  public Void visitTypeOmega(Abstract.TypeOmegaExpression expr, Void params) {
+    if (expr.getPLevel() != null) {
+      expr.getPLevel().accept(this, null);
+    }
     return null;
   }
 

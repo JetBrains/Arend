@@ -35,11 +35,6 @@ public class Prelude extends SimpleNamespace {
   public static DataDefinition NAT;
   public static Constructor ZERO, SUC;
 
-  public static DataDefinition CNAT;
-  public static Constructor FIN, INF;
-
-  public static DataDefinition LVL;
-
   public static FunctionDefinition COERCE;
 
   public static DataDefinition PATH;
@@ -64,14 +59,6 @@ public class Prelude extends SimpleNamespace {
       ZERO = NAT.getConstructor("zero");
       SUC = NAT.getConstructor("suc");
     } else
-    if (abstractDef.getName().equals("Lvl")) {
-      LVL = (DataDefinition) definition;
-    } else
-    if (abstractDef.getName().equals("CNat")) {
-      CNAT = (DataDefinition) definition;
-      INF = CNAT.getConstructor("inf");
-      FIN = CNAT.getConstructor("fin");
-    } else
     if (abstractDef.getName().equals("I")) {
       INTERVAL = (DataDefinition) definition;
       INTERVAL.setSorts(new SortMax(Sort.PROP));
@@ -83,7 +70,6 @@ public class Prelude extends SimpleNamespace {
       PATH = (DataDefinition) definition;
       List<LevelBinding> pathPolyParams = PATH.getPolyParams();
       PATH.getParameters().setType(Pi(Interval(), Universe(new Sort(new Level(pathPolyParams.get(0)), new Level(pathPolyParams.get(1), 1)))));
-      //PATH.setSorts(new SortMax(new LevelMax(new Level(PATH.getPolyParamByType(LVL))), new LevelMax(new Level(PATH.getPolyParamByType(CNAT)))));
       PATH_CON = PATH.getConstructor("path");
     } else
     if (abstractDef.getName().equals("=")) {

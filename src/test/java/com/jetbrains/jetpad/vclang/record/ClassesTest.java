@@ -590,12 +590,12 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void classPolyParams() {
     typeCheckClass(
         "\\class A {p : Lvl} {\n" +
-        "   \\field X : \\Type (p, 0)\n" +
-        "   \\function f (x : \\Type (p, 0)) => x\n" +
-        "   \\data D (x : \\Type (p, 0))\n" +
+        "   \\field X : \\0-Type (p)\n" +
+        "   \\function f (x : \\0-Type (p)) => x\n" +
+        "   \\data D (x : \\0-Type (p))\n" +
         "   \\class B {\n" +
-        "       \\field Y : X -> \\Type (p, 0)\n" +
-        "       \\function g : \\Type (p, 0) => X\n" +
+        "       \\field Y : X -> \\0-Type (p)\n" +
+        "       \\function g : \\0-Type (p) => X\n" +
         "   }\n" +
         "}");
   }
