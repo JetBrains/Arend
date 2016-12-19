@@ -138,16 +138,21 @@ public class Prelude extends SimpleNamespace {
 
 
   public static class PreludeStorage implements SourceSupplier<SourceId>, CacheStorageSupplier<SourceId> {
-    private static Path BASE_RESOURCE_PATH = Paths.get("/", "lib", "Prelude");
-    public static Path SOURCE_RESOURCE_PATH = FileStorage.sourceFile(BASE_RESOURCE_PATH);
-    public static Path CACHE_RESOURCE_PATH = FileStorage.cacheFile(BASE_RESOURCE_PATH, 0);
+    // It is difficult to handle this in a uniform way due to differences in OS file systems
+    // (and bugs in JDK), therefore all that is left is to be careful in keeping all these paths synced.
+    private static Path BASE_PATH = Paths.get("lib", "Prelude");
+    public static Path SOURCE_PATH = FileStorage.sourceFile(BASE_PATH);
+    public static Path CACHE_PATH = FileStorage.cacheFile(BASE_PATH, 0);
+    private static String SOURCE_RESOURCE_PATH = "/lib/" + SOURCE_PATH.getFileName();
+    private static String CACHE_RESOURCE_PATH = "/lib/" + CACHE_PATH.getFileName();
+
     public static ModulePath PRELUDE_MODULE_PATH = new ModulePath("Prelude");
     public final SourceId preludeSourceId = new SourceId();
 
     @Override
     public InputStream getCacheInputStream(SourceId sourceId) {
       if (sourceId != preludeSourceId) return null;
-      return Prelude.class.getResourceAsStream(CACHE_RESOURCE_PATH.toString());
+      return Prelude.class.getResourceAsStream(CACHE_RESOURCE_PATH);
     }
 
     @Override
@@ -174,7 +179,7 @@ public class Prelude extends SimpleNamespace {
     @Override
     public Abstract.ClassDefinition loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
       if (sourceId != preludeSourceId) return null;
-      InputStream stream = Prelude.class.getResourceAsStream(SOURCE_RESOURCE_PATH.toString());
+      InputStream stream = Prelude.class.getResourceAsStream(SOURCE_RESOURCE_PATH);
       return new ParseSource(preludeSourceId, new InputStreamReader(stream, StandardCharsets.UTF_8)) {}.load(errorReporter);
     }
   }
