@@ -38,7 +38,7 @@ public class PreludeCacheGenerator {
 
     @Override
     public OutputStream getCacheOutputStream(Prelude.SourceId sourceId) {
-      Path path = targetPath.resolve(Prelude.PreludeStorage.CACHE_RESOURCE_PATH.getRoot().relativize(Prelude.PreludeStorage.CACHE_RESOURCE_PATH));
+      Path path = targetPath.resolve(Prelude.PreludeStorage.CACHE_PATH);
       try {
         Files.createDirectories(path.getParent());
         return Files.newOutputStream(path);
