@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.parser;
 
 import com.jetbrains.jetpad.vclang.VclangTestCase;
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -9,8 +8,6 @@ import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractCompareVisitor;
 import org.antlr.v4.runtime.*;
-
-import java.util.List;
 
 import static org.junit.Assert.assertThat;
 
@@ -26,7 +23,7 @@ public abstract class ParserTestCase extends VclangTestCase {
     }
   };
 
-  private static VcgrammarParser _parse(final ErrorReporter errorReporter, String text) {
+  private VcgrammarParser _parse(String text) {
     ANTLRInputStream input = new ANTLRInputStream(text);
     VcgrammarLexer lexer = new VcgrammarLexer(input);
     lexer.removeErrorListeners();
@@ -51,10 +48,10 @@ public abstract class ParserTestCase extends VclangTestCase {
 
 
   Concrete.Expression parseExpr(String text, int errors) {
-    VcgrammarParser.ExprContext exprContext = _parse(errorReporter, text).expr();
-    Concrete.Expression result = new BuildVisitor(SOURCE_ID, errorReporter).visitExpr(exprContext);
+    VcgrammarParser.ExprContext ctx = _parse(text).expr();
+    Concrete.Expression expr = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitExpr(ctx) : null;
     assertThat(errorList, containsErrors(errors));
-    return result;
+    return expr;
   }
 
   protected Concrete.Expression parseExpr(String text) {
@@ -62,7 +59,8 @@ public abstract class ParserTestCase extends VclangTestCase {
   }
 
   Concrete.Definition parseDef(String text, int errors) {
-    Concrete.Definition definition = new BuildVisitor(SOURCE_ID, errorReporter).visitDefinition(_parse(errorReporter, text).definition());
+    VcgrammarParser.DefinitionContext ctx = _parse(text).definition();
+    Concrete.Definition definition = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitDefinition(ctx) : null;
     assertThat(errorList, containsErrors(errors));
     return definition;
   }
@@ -72,9 +70,8 @@ public abstract class ParserTestCase extends VclangTestCase {
   }
 
   Concrete.ClassDefinition parseClass(String name, String text, int errors) {
-    VcgrammarParser.StatementsContext tree = _parse(errorReporter, text).statements();
-    List<Concrete.Statement> statements = new BuildVisitor(SOURCE_ID, errorReporter).visitStatements(tree);
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(ConcreteExpressionFactory.POSITION, name, statements);
+    VcgrammarParser.StatementsContext tree = _parse(text).statements();
+    Concrete.ClassDefinition classDefinition = errorList.isEmpty() ? new Concrete.ClassDefinition(ConcreteExpressionFactory.POSITION, name, new BuildVisitor(SOURCE_ID, errorReporter).visitStatements(tree)) : null;
     assertThat(errorList, containsErrors(errors));
     // classDefinition.accept(new DefinitionResolveStaticModVisitor(new ConcreteStaticModListener()), null);
     return classDefinition;

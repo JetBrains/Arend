@@ -1,5 +1,7 @@
 package com.jetbrains.jetpad.vclang.module.source.file;
 
+import com.jetbrains.jetpad.vclang.error.CompositeErrorReporter;
+import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.parser.BuildVisitor;
@@ -27,13 +29,16 @@ public abstract class ParseSource {
     return mySourceId;
   }
 
-  public Abstract.ClassDefinition load(final ErrorReporter errorReporter) throws IOException {
+  public Abstract.ClassDefinition load(ErrorReporter errorReporter) throws IOException {
+    CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
+    final CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
+
     VcgrammarLexer lexer = new VcgrammarLexer(new ANTLRInputStream(myStream));
     lexer.removeErrorListeners();
     lexer.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(new Concrete.Position(mySourceId, line, pos), msg));
+        compositeErrorReporter.report(new ParserError(new Concrete.Position(mySourceId, line, pos), msg));
       }
     });
 
@@ -42,12 +47,12 @@ public abstract class ParseSource {
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(new Concrete.Position(mySourceId, line, pos), msg));
+        compositeErrorReporter.report(new ParserError(new Concrete.Position(mySourceId, line, pos), msg));
       }
     });
 
     VcgrammarParser.StatementsContext tree = parser.statements();
-    if (tree == null) {
+    if (tree == null || countingErrorReporter.getErrorsNumber() > 0) {
       return null;
     }
 

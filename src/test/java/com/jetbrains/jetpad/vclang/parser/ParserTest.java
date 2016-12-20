@@ -135,4 +135,9 @@ public class ParserTest extends ParserTestCase {
         "      \\implement x => 1\n" +
         "}", 1);
   }
+
+  @Test
+  public void incorrectDefinitionName() {
+    parseDef("\\function (|) => \\Prop", 1);
+  }
 }
