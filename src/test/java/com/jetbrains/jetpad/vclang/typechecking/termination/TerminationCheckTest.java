@@ -126,6 +126,16 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
     }
 
     @Test
+    public void nonmonomial_callmatrix_test(){
+        typeCheckClass("\\data Int : \\Set0 | pos Nat | neg Nat \\with neg zero => pos zero\n" +
+          "\\function \\infixl 6 (+$) (n m : Int) : Int <= \\elim n\n" +
+          "  | pos zero => m\n" +
+          "  | pos (suc n) => (pos n) +$ m\n" +
+          "  | neg zero => m\n" +
+          "  | neg (suc n) => (neg n) +$ m\n", 0);
+    }
+
+    @Test
     public void test34() {
         TestVertex ack = new TestVertex("ack", "x", "y");
         Set<BaseCallMatrix<TestVertex>> cms = new HashSet<>();
