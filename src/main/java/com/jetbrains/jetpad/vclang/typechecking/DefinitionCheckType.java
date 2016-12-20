@@ -159,7 +159,7 @@ public class DefinitionCheckType {
     return new Sort(new Level(lpParam), new Level(lhParam));
   }
 
-  private static boolean typeCheckParameters(List<? extends Abstract.Argument> arguments, Abstract.SourceNode node, List<Binding> context, List<LevelBinding> lvlContext, List<LevelBinding> polyParamsList, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
+  private static boolean typeCheckParameters(List<? extends Abstract.Argument> arguments, Abstract.SourceNode node, List<Binding> context, List<LevelBinding> lvlContext, List<LevelBinding> polyParamsList, List<LevelBinding> genParamsList, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
     boolean ok = true;
     boolean polyParamsAllowed = true;
     int index = 0;
@@ -191,6 +191,10 @@ public class DefinitionCheckType {
         if (paramType == null) {
           ok = false;
           continue;
+        }
+
+        if (paramType instanceof PiTypeOmega) {
+          paramType = Pi(paramType.getPiParameters(), typeOmegaToUniverse(genParamsList));
         }
 
         Abstract.ClassView classView = Abstract.getUnderlyingClassView(typeArgument.getType());
@@ -239,6 +243,7 @@ public class DefinitionCheckType {
     visitor.getTypecheckingState().record(def, typedDef);
 
     List<LevelBinding> polyParamsList = new ArrayList<>();
+    List<LevelBinding> generatedPolyParams = new ArrayList<>();
     LinkList list = new LinkList();
     if (enclosingClass != null) {
       for (LevelBinding param : enclosingClass.getPolyParams()) {
@@ -253,20 +258,19 @@ public class DefinitionCheckType {
       typedDef.setThisClass(enclosingClass);
     }
 
-    boolean paramsOk = typeCheckParameters(def.getArguments(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, list, visitor, localInstancePool);
+    boolean paramsOk = typeCheckParameters(def.getArguments(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, generatedPolyParams, list, visitor, localInstancePool);
     TypeMax expectedType = null;
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
       expectedType = visitor.checkFunOrDataType(resultType);
     }
 
-    List<LevelBinding> generatedPolyParams = new ArrayList<>();
-    for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext()) {
+    /*for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
       if (link.getType() instanceof PiTypeOmega) {
         link.setType(Pi(link.getType().getPiParameters(), typeOmegaToUniverse(generatedPolyParams)));
       }
-    }
+    } /**/
     polyParamsList.addAll(generatedPolyParams);
 
     typedDef.setParameters(list.getFirst());
@@ -369,6 +373,7 @@ public class DefinitionCheckType {
   private static DataDefinition typeCheckDataHeader(Abstract.DataDefinition def, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
     LinkList list = new LinkList();
     List<LevelBinding> polyParamsList = new ArrayList<>();
+    List<LevelBinding> genParamsList = new ArrayList<>();
     if (enclosingClass != null) {
       for (LevelBinding param : enclosingClass.getPolyParams()) {
         polyParamsList.add(new LevelBinding(param.getName(), param.getType()));
@@ -383,7 +388,7 @@ public class DefinitionCheckType {
     SortMax userSorts = SortMax.OMEGA;
     boolean paramsOk;
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
-      paramsOk = typeCheckParameters(def.getParameters(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, list, visitor, localInstancePool);
+      paramsOk = typeCheckParameters(def.getParameters(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, genParamsList, list, visitor, localInstancePool);
 
       if (def.getUniverse() != null) {
         if (def.getUniverse() instanceof Abstract.PolyUniverseExpression) {
@@ -403,6 +408,7 @@ public class DefinitionCheckType {
 
     DataDefinition dataDefinition = new DataDefinition(def, userSorts, list.getFirst());
     dataDefinition.setThisClass(enclosingClass);
+    polyParamsList.addAll(genParamsList);
     dataDefinition.setPolyParams(polyParamsList);
     visitor.getTypecheckingState().record(def, dataDefinition);
 
@@ -425,7 +431,7 @@ public class DefinitionCheckType {
     SortMax inferredSorts = def.getConstructors().size() > 1 ? new SortMax(Sort.SET0) : new SortMax();
     dataDefinition.setSorts(inferredSorts);
 
-    List<LevelBinding> polyParams = new ArrayList<>(2);
+    /*List<LevelBinding> polyParams = new ArrayList<>(2);
     for (DependentLink link = dataDefinition.getParameters(); link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
       if (link.getType() instanceof PiTypeOmega) {
@@ -435,7 +441,7 @@ public class DefinitionCheckType {
 
     if (!polyParams.isEmpty()) {
       dataDefinition.getPolyParams().addAll(polyParams);
-    }
+    } /**/
 
     boolean dataOk = true;
     boolean universeOk = true;
@@ -895,7 +901,7 @@ public class DefinitionCheckType {
 
     LinkList list = new LinkList();
     List<LevelBinding> polyParamsList = new ArrayList<>();
-    boolean paramsOk = typeCheckParameters(def.getArguments(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, list, visitor, null);
+    boolean paramsOk = typeCheckParameters(def.getArguments(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, new ArrayList<LevelBinding>(), list, visitor, null);
     typedDef.setPolyParams(polyParamsList);
     typedDef.setParameters(list.getFirst());
 

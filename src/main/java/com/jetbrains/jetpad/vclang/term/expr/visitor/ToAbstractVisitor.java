@@ -345,7 +345,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   }
 
   private Integer getPNum(Level expr) {
-    if (expr.isClosed()) {
+    if (expr.isClosed() && !expr.isInfinity()) {
       return expr.getConstant();
     }
     return null;
@@ -373,7 +373,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       Level hlevel = eliminateGenParam(sort.getHLevel());
       int hlevelAbs;
       //TODO: decide what to do in case there's a variable in hlevel
-      if (sort.getHLevel().isInfinity() || !hlevel.isClosed()) {
+      if (hlevel.isInfinity() || !hlevel.isClosed()) {
         hlevelAbs = Abstract.UniverseExpression.Universe.NOT_TRUNCATED;
       } else {
         hlevelAbs = hlevel.getConstant() - 1;

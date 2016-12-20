@@ -7,6 +7,7 @@ public class UniverseExpression extends Expression {
   private final Sort mySort;
 
   public UniverseExpression(Sort sort) {
+    assert !sort.isOmega();
     mySort = sort;
   }
 

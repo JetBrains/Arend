@@ -701,7 +701,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.Expression visitPolySet(PolySetContext ctx) {
     Concrete.Expression plevel = ctx.expr() != null ? visitExpr(ctx.expr()) : null;
     return new Concrete.PolyUniverseExpression(tokenPosition(ctx.getStart()), plevel, 0);
-  }
+  }/**/
 
   @Override
   public Concrete.UniverseExpression visitUniverse(UniverseContext ctx) {

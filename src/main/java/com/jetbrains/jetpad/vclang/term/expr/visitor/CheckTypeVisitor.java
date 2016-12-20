@@ -527,7 +527,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         } else if (argument instanceof Abstract.TypeArgument) {
           names = argument instanceof Abstract.TelescopeArgument ? ((Abstract.TelescopeArgument) argument).getNames() : Collections.<String>singletonList(null);
           argAbsType = ((Abstract.TypeArgument) argument).getType();
-          Result argResult = typeCheck(argAbsType, new PiTypeOmega(EmptyDependentLink.getInstance()));
+          Result argResult = typeCheck(argAbsType, new PiTypeOmega());
           if (argResult == null) return null;
           argType = argResult.getExpression();
         } else {
@@ -603,7 +603,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     if (args == null || !args.hasNext()) return null;
     try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
       myContext.addAll(DependentLink.Helper.toContext(args));
-      Result result = typeCheck(expr.getCodomain(), new PiTypeOmega(EmptyDependentLink.getInstance()));
+      Result result = typeCheck(expr.getCodomain(), new PiTypeOmega());
       if (result == null) return null;
       Expression piExpr = Pi(args, result.getExpression());
       return checkResult(expectedType, new Result(piExpr, piExpr.getType()), expr);
@@ -687,9 +687,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   @Override
   public Result visitPolyUniverse(Abstract.PolyUniverseExpression expr, Type expectedType) {
-    Level pLevel = typeCheckLevel(expr.getPLevel(), 0);
+    Level pLevel = expr.getPLevel() == null ? Level.INFINITY : typeCheckLevel(expr.getPLevel(), 0);
     Level hLevel = expr.getHLevel() != Abstract.UniverseExpression.Universe.NOT_TRUNCATED ? new Level(expr.getHLevel() + 1) : Level.INFINITY;
     if (pLevel == null) return null;
+    if (pLevel.isInfinity()) {
+      myErrorReporter.report(new LocalTypeCheckingError("\\Type can only used as Pi codomain in definition parameters or result type", expr));
+      return null;
+    }
     UniverseExpression universe = Universe(new Sort(pLevel, hLevel));
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getSort().succ())), expr);
   }
@@ -776,7 +780,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
     try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
       for (Abstract.TypeArgument arg : arguments) {
-        Result result = typeCheck(arg.getType(), new PiTypeOmega(EmptyDependentLink.<Expression>getInstance()));
+        Result result = typeCheck(arg.getType(), new PiTypeOmega());
         if (result == null) return null;
 
         Expression paramType = result.getExpression();
