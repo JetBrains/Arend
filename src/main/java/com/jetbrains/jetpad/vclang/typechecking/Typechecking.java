@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.error.CompositeErrorReporter;
 import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -21,9 +20,6 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.TerminationCheckErro
 import com.jetbrains.jetpad.vclang.typechecking.order.BaseOrdering;
 import com.jetbrains.jetpad.vclang.typechecking.order.SCC;
 import com.jetbrains.jetpad.vclang.typechecking.order.SCCListener;
-import com.jetbrains.jetpad.vclang.typechecking.termination.BaseCallMatrix;
-import com.jetbrains.jetpad.vclang.typechecking.termination.BaseCallGraph;
-import com.jetbrains.jetpad.vclang.typechecking.termination.CollectCallVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.termination.DefinitionCallGraph;
 
 import java.util.*;
@@ -83,7 +79,7 @@ public class Typechecking {
             Definition def = state.getTypechecked(unit.getDefinition());
             DefinitionCheckType.typeCheckBody(def, suspension.visitor);
             if (def instanceof FunctionDefinition) {
-              cycleDefs.add((FunctionDefinition) def);
+              cycleDefs.add(def);
             }
             countingErrorReporter = suspension.countingErrorReporter;
             suspensions.remove(unit.getDefinition());
@@ -112,7 +108,7 @@ public class Typechecking {
 
     if (!cycleDefs.isEmpty()) {
       DefinitionCallGraph definitionCallGraph = new DefinitionCallGraph();
-      for (Definition fDef : cycleDefs) definitionCallGraph.add(fDef);
+      for (Definition fDef : cycleDefs) definitionCallGraph.add(fDef, cycleDefs);
       DefinitionCallGraph callCategory = new DefinitionCallGraph(definitionCallGraph);
       if (!callCategory.checkTermination()) {
         for (Definition fDef : cycleDefs) {

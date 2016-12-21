@@ -28,8 +28,12 @@ public class DefinitionCallGraph extends BaseCallGraph<Definition> {
     }
 
     public void add(Definition def) {
+        add(def, null);
+    }
+
+    public void add(Definition def, Set<Definition> cycle) {
         if (def instanceof FunctionDefinition)
-          add(new CollectCallVisitor((FunctionDefinition) def).getResult()); else {
+            add(new CollectCallVisitor((FunctionDefinition) def, cycle).getResult()); else {
             throw new IllegalStateException();
         }
     }

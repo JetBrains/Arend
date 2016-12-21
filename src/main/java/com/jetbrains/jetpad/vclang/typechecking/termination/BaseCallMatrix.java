@@ -122,15 +122,17 @@ public abstract class BaseCallMatrix<T> {
 
   public void set(int i, int j, BaseCallMatrix.R v) {
     if (myMatrixMap != null) {
-      BaseCallMatrix.CallMatrixEntry cme2 = myMatrixMap.get(j);
-      BaseCallMatrix.CallMatrixEntry cme = new BaseCallMatrix.CallMatrixEntry(i, v);
-      if (cme2 != null && !cme.equals(cme2)) {
-        enterFallBackMode();
-        fallbackMatrix[i][j] = v;
-        return;
+      BaseCallMatrix.CallMatrixEntry cm = myMatrixMap.get(j);
+      if (cm != null) {
+        if (cm.myIndex != i && v != R.Unknown) {
+          enterFallBackMode();
+          fallbackMatrix[i][j] = v;
+        } else if (cm.myIndex == i) {
+          if (v == R.Unknown) myMatrixMap.put(j, null); else cm.myRel = v;
+        }
+      } else if (v != R.Unknown) {
+        myMatrixMap.put(j, new BaseCallMatrix.CallMatrixEntry(i, v));
       }
-      myMatrixMap.put(j, cme);
-
     } else {
       fallbackMatrix[i][j] = v;
     }

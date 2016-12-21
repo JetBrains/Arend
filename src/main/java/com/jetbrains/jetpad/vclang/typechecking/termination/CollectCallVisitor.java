@@ -46,9 +46,11 @@ import com.jetbrains.jetpad.vclang.typechecking.termination.CollectCallVisitor.P
 public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, Void>, ExpressionVisitor<ParameterVector, Void> {
   private Set<BaseCallMatrix<Definition>> myCollectedCalls = new HashSet<>();
   private FunctionDefinition myDefinition;
+  private Set<Definition> myCycle;
 
-  CollectCallVisitor(FunctionDefinition def) {
+  CollectCallVisitor(FunctionDefinition def, Set<Definition> cycle) {
     myDefinition = def;
+    myCycle = cycle;
     ParameterVector pv = new ParameterVector(def);
     if (def.getElimTree() != null) {
       def.getElimTree().accept(this, pv);
@@ -82,10 +84,6 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
   }
 
   private BaseCallMatrix.R compare(Expression argument, Expression sample) {
-    /*HashMap<Expression, BaseCallMatrix.R> parts = new HashMap<>();
-    collectParts(sample, parts, BaseCallMatrix.R.Equal);
-    BaseCallMatrix.R result;*/
-
     // strip currentExpression of App & Proj calls
     boolean f;
     do {
@@ -100,37 +98,12 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
       }
     } while (f);
 
-
-    /* result = BaseCallMatrix.R.Unknown;
-    for (Expression part : parts.keySet()) {
-      if (part.equals(argument)) {
-        result = parts.get(part);
-        break;
-      }
-    }
-     if (result != isLess(argument, sample)) {
-      System.err.println("Current: "+result +"; Valis: " + result2);
-      System.err.println("Argument: "+argument + "; Sample: "+sample+"\n\n");
-    } */
-
     return isLess(argument, sample);
   }
 
-  /* private void collectParts(Expression e, Map<Expression, BaseCallMatrix.R> parts, BaseCallMatrix.R r) throws IllegalStateException {
-    if (e instanceof ConCallExpression) {
-      parts.put(e, r);
-      ConCallExpression cce = (ConCallExpression) e;
-      for (Expression dca : cce.getDefCallArguments()) {
-        collectParts(dca, parts, BaseCallMatrix.R.LessThan);
-      }
-    } else if (e instanceof ReferenceExpression) {
-      parts.put(e, r);
-    } else {
-      throw new IllegalStateException("Implementation of termination checker assumes that expressions collected from patterns consist of constructors and references to variables");
-    }
-  } */
-
   private void collectCall(DefCallExpression expression, ParameterVector vector) {
+    if (myCycle != null && !myCycle.contains(expression.getDefinition())) return;
+
     BaseCallMatrix<Definition> cm = new CallMatrix(myDefinition, expression);
     assert (cm.getHeight() == vector.getHeight());
     for (int i = 0; i < vector.getHeight(); i++) {
