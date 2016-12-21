@@ -87,7 +87,7 @@ class DefinitionDeserialization {
     if (index == 0) {
       return null;
     } else {
-      Variable binding = isLevel ? myBindings.get(index - 1) : myLvlBindings.get(index - 1);
+      Variable binding = isLevel ? myLvlBindings.get(index - 1) : myBindings.get(index - 1);
       if (binding == null) {
         throw new DeserializationError("Trying to read a reference to an unregistered binding");
       }
@@ -390,9 +390,9 @@ class DefinitionDeserialization {
   private BranchElimTreeNode readBranch(ExpressionProtos.ElimTreeNode.Branch proto) throws DeserializationError {
     List<Binding> contextTail = new ArrayList<>();
     for (int ref : proto.getContextTailItemRefList()) {
-      contextTail.add((TypedBinding)readBindingRef(ref, false));
+      contextTail.add((DependentLink)readBindingRef(ref, false));
     }
-    BranchElimTreeNode result = new BranchElimTreeNode((TypedBinding)readBindingRef(proto.getReferenceRef(), false), contextTail);
+    BranchElimTreeNode result = new BranchElimTreeNode((DependentLink)readBindingRef(proto.getReferenceRef(), false), contextTail);
     for (Map.Entry<Integer, ExpressionProtos.ElimTreeNode.ConstructorClause> entry : proto.getConstructorClausesMap().entrySet()) {
       ExpressionProtos.ElimTreeNode.ConstructorClause cProto = entry.getValue();
       List<LevelBinding> polyParams = new ArrayList<>();
@@ -415,7 +415,7 @@ class DefinitionDeserialization {
   private LeafElimTreeNode readLeaf(ExpressionProtos.ElimTreeNode.Leaf proto) throws DeserializationError {
     List<Binding> context = new ArrayList<>();
     for (int ref : proto.getMatchedRefList()) {
-      context.add((TypedBinding)readBindingRef(ref, false));
+      context.add((Binding)readBindingRef(ref, false));
     }
     LeafElimTreeNode result = new LeafElimTreeNode(proto.getArrowLeft() ? Abstract.Definition.Arrow.LEFT : Abstract.Definition.Arrow.RIGHT, readExpr(proto.getExpr()));
     result.setMatched(context);
