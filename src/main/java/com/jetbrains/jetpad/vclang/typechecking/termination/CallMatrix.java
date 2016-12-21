@@ -7,11 +7,11 @@ import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 
-public class CallMatrix extends LabeledCallMatrix {
-  protected DefCallExpression myCallExpression;
-  protected FunctionDefinition myEnclosingDefinition;
+class CallMatrix extends LabeledCallMatrix {
+  private DefCallExpression myCallExpression;
+  private FunctionDefinition myEnclosingDefinition;
 
-  public CallMatrix(FunctionDefinition enclosingDefinition, DefCallExpression call) {
+  CallMatrix(FunctionDefinition enclosingDefinition, DefCallExpression call) {
     super(DependentLink.Helper.size(call.getDefinition().getParameters()), enclosingDefinition.getNumberOfRequiredArguments());
     myCallExpression = call;
     myEnclosingDefinition = enclosingDefinition;
@@ -32,7 +32,12 @@ public class CallMatrix extends LabeledCallMatrix {
   }
 
   @Override
-  protected String getMatrixLabel() {
-    return myCallExpression.toString();
+  public int getCompositeLength() {
+    return 1;
+  }
+
+  @Override
+  public String getMatrixLabel() {
+    return "In "+myEnclosingDefinition.getName() +": " + myCallExpression.toString();
   }
 }

@@ -344,12 +344,14 @@ public class DefinitionCheckType {
 
       typedDef.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
 
+      /*TODO: Purge all usages of TerminationCheckVisitor
       if (typedDef.getElimTree() != null) {
         if (!typedDef.getElimTree().accept(new TerminationCheckVisitor(typedDef, typedDef.getParameters()), null)) {
           visitor.getErrorReporter().report(new LocalTypeCheckingError("Termination check failed", term));
           typedDef.setElimTree(null);
         }
       }
+      */
 
       if (typedDef.getElimTree() != null) {
         LocalTypeCheckingError error = TypeCheckingElim.checkCoverage(def, typedDef.getParameters(), typedDef.getElimTree(), expectedType);
@@ -920,7 +922,7 @@ public class DefinitionCheckType {
       }
 
       if (typedDef.getElimTree() != null) {
-        if (!typedDef.getElimTree().accept(new TerminationCheckVisitor(typedDef, typedDef.getParameters()), null)) {
+         if (!typedDef.getElimTree().accept(new TerminationCheckVisitor(typedDef, typedDef.getParameters()), null)) {
           // FIXME[errorformat]
           errorReporter.report(new LocalTypeCheckingError("Termination check failed", term));
           typedDef.setElimTree(null);

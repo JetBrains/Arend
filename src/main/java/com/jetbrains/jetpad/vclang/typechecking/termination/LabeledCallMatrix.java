@@ -5,13 +5,13 @@ package com.jetbrains.jetpad.vclang.typechecking.termination;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 
-public abstract class LabeledCallMatrix extends BaseCallMatrix {
+abstract class LabeledCallMatrix extends BaseCallMatrix<Definition> {
 
-  public LabeledCallMatrix(LabeledCallMatrix m) {
+  LabeledCallMatrix(LabeledCallMatrix m) {
     super(m);
   }
 
-  public LabeledCallMatrix(int w, int h) {
+  LabeledCallMatrix(int w, int h) {
     super(w, h);
   }
 
@@ -33,7 +33,7 @@ public abstract class LabeledCallMatrix extends BaseCallMatrix {
 
   @Override
   protected String[] getRowLabels() {
-    String[] result = new String[getWidth()];
+    String[] result = new String[getHeight()];
     DependentLink arg = getDomain().getParameters();
     for (int j = 0; j < getHeight(); j++) {
       result[j] = arg.getName();

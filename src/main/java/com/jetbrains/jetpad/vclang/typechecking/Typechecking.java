@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
@@ -16,9 +17,11 @@ import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.CycleError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.TerminationCheckError;
 import com.jetbrains.jetpad.vclang.typechecking.order.BaseOrdering;
 import com.jetbrains.jetpad.vclang.typechecking.order.SCC;
 import com.jetbrains.jetpad.vclang.typechecking.order.SCCListener;
+import com.jetbrains.jetpad.vclang.typechecking.termination.DefinitionCallGraph;
 
 import java.util.*;
 
@@ -34,15 +37,24 @@ public class Typechecking {
   }
 
   private static void typecheck(Map<Abstract.Definition, Suspension> suspensions, SCC scc, TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
+    List<Abstract.Definition> cycle = new ArrayList<>(scc.getUnits().size());
     if (scc.getUnits().size() > 1) {
-      List<Abstract.Definition> cycle = new ArrayList<>(scc.getUnits().size());
+      boolean supportedScc = true;
       for (TypecheckingUnit unit : scc.getUnits()) {
         cycle.add(unit.getDefinition());
+        if (unit.isHeader() || !(unit.getDefinition() instanceof Abstract.FunctionDefinition)) {
+          supportedScc = false;
+
+        }
       }
-      errorReporter.report(new TypeCheckingError(cycle.get(0), new CycleError(cycle)));
-      throw new SCCException();
-    } else {
-      TypecheckingUnit unit = scc.getUnits().iterator().next();
+      if (!supportedScc) {
+        errorReporter.report(new TypeCheckingError(cycle.get(0), new CycleError(cycle)));
+        throw new SCCException();
+      }
+    }
+
+    Set<Definition> cycleDefs = new HashSet<>();
+    for (TypecheckingUnit unit : scc.getUnits()) {
       CountingErrorReporter countingErrorReporter = null;
       boolean doReport;
 
@@ -65,7 +77,11 @@ public class Typechecking {
         } else {
           Suspension suspension = suspensions.get(unit.getDefinition());
           if (suspension != null) {
-            DefinitionCheckType.typeCheckBody(state.getTypechecked(unit.getDefinition()), suspension.visitor);
+            Definition def = state.getTypechecked(unit.getDefinition());
+            DefinitionCheckType.typeCheckBody(def, suspension.visitor);
+            if (def instanceof FunctionDefinition) {
+              cycleDefs.add(def);
+            }
             countingErrorReporter = suspension.countingErrorReporter;
             suspensions.remove(unit.getDefinition());
             doReport = true;
@@ -88,6 +104,19 @@ public class Typechecking {
         } else {
           typecheckedReporter.typecheckingFailed(unit.getDefinition());
         }
+      }
+    }
+
+    if (!cycleDefs.isEmpty()) {
+      DefinitionCallGraph definitionCallGraph = new DefinitionCallGraph();
+      for (Definition fDef : cycleDefs) definitionCallGraph.add(fDef, cycleDefs);
+      DefinitionCallGraph callCategory = new DefinitionCallGraph(definitionCallGraph);
+      if (!callCategory.checkTermination()) {
+        for (Definition fDef : cycleDefs) {
+          fDef.hasErrors(Definition.TypeCheckingStatus.HAS_ERRORS);
+        }
+        for (Definition d : callCategory.myErrorInfo.keySet())
+           errorReporter.report(new TerminationCheckError(d, callCategory.myErrorInfo.get(d)));
       }
     }
   }
