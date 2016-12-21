@@ -17,6 +17,7 @@ import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheStorageSupplier<FileStorage.SourceId> {
   public static final String EXTENSION = ".vc";
@@ -131,7 +132,7 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
 
     private SourceId(ModulePath modulePath, FileTime mtime) {
       myModulePath = modulePath;
-      myMtime = mtime;
+      myMtime = FileTime.from(mtime.toMillis(), TimeUnit.MILLISECONDS);
     }
 
     private FileStorage getStorage() {
