@@ -22,7 +22,7 @@ public class TerminationCheckError extends GeneralError {
     }
 
     public static<T> String formErrorMessage(Definition def, Set<RecursiveBehavior<T>> behaviors) {
-        String result = "Termination check failed for function "+def.getName()+". Recursive calls that cause the problem:\n";
+        String result = "Termination check failed for function "+def.getName()+".\n";
         for (RecursiveBehavior rb : behaviors) result += printBehavior(rb);
         return result;
     }

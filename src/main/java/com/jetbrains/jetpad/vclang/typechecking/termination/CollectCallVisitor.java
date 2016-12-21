@@ -8,14 +8,13 @@ import com.jetbrains.jetpad.vclang.term.expr.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.SubstVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.Clause;
-import java.util.Set;
-import java.util.HashSet;
+
+import java.util.*;
+
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import java.util.HashMap;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.ProjExpression;
-import java.util.Map;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
@@ -60,11 +59,34 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
     return myCollectedCalls;
   }
 
+  private static BaseCallMatrix.R isLess(Expression expr1, Expression expr2) {
+    if (expr2.toConCall() == null) {
+      return expr1.equals(expr2) ? BaseCallMatrix.R.Equal : BaseCallMatrix.R.Unknown;
+    }
+    if (expr1.toConCall() != null && expr1.toConCall().getDefinition() == expr2.toConCall().getDefinition()) {
+      BaseCallMatrix.R ord = isLess(expr1.toConCall().getDefCallArguments(), expr2.toConCall().getDefCallArguments());
+      if (ord != BaseCallMatrix.R.Unknown) return ord;
+    }
+    for (Expression arg : expr2.toConCall().getDefCallArguments()) {
+      if (isLess(expr1, arg) != BaseCallMatrix.R.Unknown) return BaseCallMatrix.R.LessThan;
+    }
+    return BaseCallMatrix.R.Unknown;
+  }
+
+  private static BaseCallMatrix.R isLess(List<? extends Expression> exprs1, List<? extends Expression> exprs2) {
+    for (int i = 0; i < Math.min(exprs1.size(), exprs2.size()); i++) {
+      BaseCallMatrix.R ord = isLess(exprs1.get(i), exprs2.get(i));
+      if (ord != BaseCallMatrix.R.Equal) return ord;
+    }
+    return exprs1.size() >= exprs2.size() ? BaseCallMatrix.R.Equal : BaseCallMatrix.R.Unknown;
+  }
+
   private BaseCallMatrix.R compare(Expression argument, Expression sample) {
-    // collect parts 
-    HashMap<Expression, BaseCallMatrix.R> parts = new HashMap<>();
+    /*HashMap<Expression, BaseCallMatrix.R> parts = new HashMap<>();
     collectParts(sample, parts, BaseCallMatrix.R.Equal);
-    // strip currentExpression of App & Proj calls 
+    BaseCallMatrix.R result;*/
+
+    // strip currentExpression of App & Proj calls
     boolean f;
     do {
       f = false;
@@ -78,17 +100,23 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
       }
     } while (f);
 
-    // now try to find argument among parts 
+
+    /* result = BaseCallMatrix.R.Unknown;
     for (Expression part : parts.keySet()) {
       if (part.equals(argument)) {
-        return parts.get(part);
+        result = parts.get(part);
+        break;
       }
     }
+     if (result != isLess(argument, sample)) {
+      System.err.println("Current: "+result +"; Valis: " + result2);
+      System.err.println("Argument: "+argument + "; Sample: "+sample+"\n\n");
+    } */
 
-    return BaseCallMatrix.R.Unknown;
+    return isLess(argument, sample);
   }
 
-  private void collectParts(Expression e, Map<Expression, BaseCallMatrix.R> parts, BaseCallMatrix.R r) throws IllegalStateException {
+  /* private void collectParts(Expression e, Map<Expression, BaseCallMatrix.R> parts, BaseCallMatrix.R r) throws IllegalStateException {
     if (e instanceof ConCallExpression) {
       parts.put(e, r);
       ConCallExpression cce = (ConCallExpression) e;
@@ -100,10 +128,10 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
     } else {
       throw new IllegalStateException("Implementation of termination checker assumes that expressions collected from patterns consist of constructors and references to variables");
     }
-  }
+  } */
 
   private void collectCall(DefCallExpression expression, ParameterVector vector) {
-    BaseCallMatrix cm = new CallMatrix(myDefinition, expression);
+    BaseCallMatrix<Definition> cm = new CallMatrix(myDefinition, expression);
     assert (cm.getHeight() == vector.getHeight());
     for (int i = 0; i < vector.getHeight(); i++) {
       for (int j = 0; j < expression.getDefCallArguments().size(); j++) {

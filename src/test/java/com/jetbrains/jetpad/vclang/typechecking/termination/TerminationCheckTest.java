@@ -16,6 +16,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.termination;
 
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashSet;
@@ -68,7 +69,7 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
         typeCheckClass(list + "\\function flatten {A : \\Type0} (l : List (List A)) : List A <= \\elim l\n" +
           "| nil => nil\n" +
           "| (:-:) (nil) xs => flatten xs\n" +
-          "| (:-:) ((:-:) y ys) xs => y :-: flatten (ys :-: xs);", 1);
+          "| (:-:) ((:-:) y ys) xs => y :-: flatten (ys :-: xs);", 0);
     }
 
     @Test

@@ -38,6 +38,6 @@ class CallMatrix extends LabeledCallMatrix {
 
   @Override
   public String getMatrixLabel() {
-    return myCallExpression.toString() + " inside the body of " + myEnclosingDefinition.getName();
+    return "In "+myEnclosingDefinition.getName() +": " + myCallExpression.toString();
   }
 }
