@@ -390,9 +390,9 @@ class DefinitionDeserialization {
   private BranchElimTreeNode readBranch(ExpressionProtos.ElimTreeNode.Branch proto) throws DeserializationError {
     List<Binding> contextTail = new ArrayList<>();
     for (int ref : proto.getContextTailItemRefList()) {
-      contextTail.add((DependentLink)readBindingRef(ref, false));
+      contextTail.add((Binding)readBindingRef(ref, false));
     }
-    BranchElimTreeNode result = new BranchElimTreeNode((DependentLink)readBindingRef(proto.getReferenceRef(), false), contextTail);
+    BranchElimTreeNode result = new BranchElimTreeNode((Binding)readBindingRef(proto.getReferenceRef(), false), contextTail);
     for (Map.Entry<Integer, ExpressionProtos.ElimTreeNode.ConstructorClause> entry : proto.getConstructorClausesMap().entrySet()) {
       ExpressionProtos.ElimTreeNode.ConstructorClause cProto = entry.getValue();
       List<LevelBinding> polyParams = new ArrayList<>();
