@@ -112,16 +112,6 @@ public class DefinitionCheckType {
     return false;
   }
 
-  /*
-  private static LevelVariable.LvlType levelTypeByName(String typeName) {
-    if (typeName.equals("Lvl")) {
-      return LevelVariable.LvlType.PLVL;
-    } else if (typeName.equals("CNat")) {
-      return LevelVariable.LvlType.HLVL;
-    }
-    return null;
-  } /**/
-
   private static List<LevelBinding> typeCheckPolyParam(Abstract.TypeArgument typeArgument, Abstract.SourceNode node, LocalErrorReporter errorReporter) {
     assert (typeArgument.getType() instanceof Abstract.DefCallExpression);
     String typeName = ((Abstract.DefCallExpression) typeArgument.getType()).getName();
@@ -159,9 +149,10 @@ public class DefinitionCheckType {
     return new Sort(new Level(lpParam), new Level(lhParam));
   }
 
-  private static boolean typeCheckParameters(List<? extends Abstract.Argument> arguments, Abstract.SourceNode node, List<Binding> context, List<LevelBinding> lvlContext, List<LevelBinding> polyParamsList, List<LevelBinding> genParamsList, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
+  private static boolean typeCheckParameters(List<? extends Abstract.Argument> arguments, Abstract.SourceNode node, List<Binding> context, List<LevelBinding> lvlContext, List<LevelBinding> polyParamsList, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
     boolean ok = true;
     boolean polyParamsAllowed = true;
+    List<LevelBinding> genParamsList = new ArrayList<>(2);
     int index = 0;
 
     for (Abstract.Argument argument : arguments) {
@@ -235,6 +226,8 @@ public class DefinitionCheckType {
         ok = false;
       }
     }
+
+    polyParamsList.addAll(genParamsList);
     return ok;
   }
 
@@ -243,12 +236,10 @@ public class DefinitionCheckType {
     visitor.getTypecheckingState().record(def, typedDef);
 
     List<LevelBinding> polyParamsList = new ArrayList<>();
-    List<LevelBinding> generatedPolyParams = new ArrayList<>();
     LinkList list = new LinkList();
     if (enclosingClass != null) {
       for (LevelBinding param : enclosingClass.getPolyParams()) {
-        LevelBinding defParam = new LevelBinding(param.getName(), param.getType());
-        polyParamsList.add(defParam);
+        polyParamsList.add(new LevelBinding(param.getName(), param.getType()));
       }
       DependentLink thisParam = createThisParam(enclosingClass, new LevelArguments(Level.map(polyParamsList)));
       visitor.getContext().add(thisParam);
@@ -258,20 +249,12 @@ public class DefinitionCheckType {
       typedDef.setThisClass(enclosingClass);
     }
 
-    boolean paramsOk = typeCheckParameters(def.getArguments(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, generatedPolyParams, list, visitor, localInstancePool);
+    boolean paramsOk = typeCheckParameters(def.getArguments(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, list, visitor, localInstancePool);
     TypeMax expectedType = null;
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
       expectedType = visitor.checkFunOrDataType(resultType);
     }
-
-    /*for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext()) {
-      link = link.getNextTyped(null);
-      if (link.getType() instanceof PiTypeOmega) {
-        link.setType(Pi(link.getType().getPiParameters(), typeOmegaToUniverse(generatedPolyParams)));
-      }
-    } /**/
-    polyParamsList.addAll(generatedPolyParams);
 
     typedDef.setParameters(list.getFirst());
     typedDef.setResultType(expectedType);
@@ -344,15 +327,6 @@ public class DefinitionCheckType {
 
       typedDef.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
 
-      /*TODO: Purge all usages of TerminationCheckVisitor
-      if (typedDef.getElimTree() != null) {
-        if (!typedDef.getElimTree().accept(new TerminationCheckVisitor(typedDef, typedDef.getParameters()), null)) {
-          visitor.getErrorReporter().report(new LocalTypeCheckingError("Termination check failed", term));
-          typedDef.setElimTree(null);
-        }
-      }
-      */
-
       if (typedDef.getElimTree() != null) {
         LocalTypeCheckingError error = TypeCheckingElim.checkCoverage(def, typedDef.getParameters(), typedDef.getElimTree(), expectedType);
         if (error != null) {
@@ -375,7 +349,6 @@ public class DefinitionCheckType {
   private static DataDefinition typeCheckDataHeader(Abstract.DataDefinition def, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
     LinkList list = new LinkList();
     List<LevelBinding> polyParamsList = new ArrayList<>();
-    List<LevelBinding> genParamsList = new ArrayList<>();
     if (enclosingClass != null) {
       for (LevelBinding param : enclosingClass.getPolyParams()) {
         polyParamsList.add(new LevelBinding(param.getName(), param.getType()));
@@ -390,7 +363,7 @@ public class DefinitionCheckType {
     SortMax userSorts = SortMax.OMEGA;
     boolean paramsOk;
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
-      paramsOk = typeCheckParameters(def.getParameters(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, genParamsList, list, visitor, localInstancePool);
+      paramsOk = typeCheckParameters(def.getParameters(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, list, visitor, localInstancePool);
 
       if (def.getUniverse() != null) {
         if (def.getUniverse() instanceof Abstract.PolyUniverseExpression) {
@@ -410,7 +383,6 @@ public class DefinitionCheckType {
 
     DataDefinition dataDefinition = new DataDefinition(def, userSorts, list.getFirst());
     dataDefinition.setThisClass(enclosingClass);
-    polyParamsList.addAll(genParamsList);
     dataDefinition.setPolyParams(polyParamsList);
     visitor.getTypecheckingState().record(def, dataDefinition);
 
@@ -432,18 +404,6 @@ public class DefinitionCheckType {
     SortMax userSorts = def.getUniverse() != null ? dataDefinition.getSorts() : null;
     SortMax inferredSorts = def.getConstructors().size() > 1 ? new SortMax(Sort.SET0) : new SortMax();
     dataDefinition.setSorts(inferredSorts);
-
-    /*List<LevelBinding> polyParams = new ArrayList<>(2);
-    for (DependentLink link = dataDefinition.getParameters(); link.hasNext(); link = link.getNext()) {
-      link = link.getNextTyped(null);
-      if (link.getType() instanceof PiTypeOmega) {
-        link.setType(Pi(link.getType().getPiParameters(), typeOmegaToUniverse(polyParams)));
-      }
-    }
-
-    if (!polyParams.isEmpty()) {
-      dataDefinition.getPolyParams().addAll(polyParams);
-    } /**/
 
     boolean dataOk = true;
     boolean universeOk = true;
@@ -903,7 +863,7 @@ public class DefinitionCheckType {
 
     LinkList list = new LinkList();
     List<LevelBinding> polyParamsList = new ArrayList<>();
-    boolean paramsOk = typeCheckParameters(def.getArguments(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, new ArrayList<LevelBinding>(), list, visitor, null);
+    boolean paramsOk = typeCheckParameters(def.getArguments(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, list, visitor, null);
     typedDef.setPolyParams(polyParamsList);
     typedDef.setParameters(list.getFirst());
 
@@ -918,18 +878,9 @@ public class DefinitionCheckType {
           typedDef.typeHasErrors(!paramsOk || termResult.getType() == null);
           typedDef.setElimTree(top(list.getFirst(), leaf(Abstract.Definition.Arrow.RIGHT, termResult.getExpression())));
           typedDef.hasErrors(paramsOk ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.HAS_ERRORS);
-        }
-      }
-
-      if (typedDef.getElimTree() != null) {
-         if (!typedDef.getElimTree().accept(new TerminationCheckVisitor(typedDef, typedDef.getParameters()), null)) {
-          // FIXME[errorformat]
-          errorReporter.report(new LocalTypeCheckingError("Termination check failed", term));
-          typedDef.setElimTree(null);
+        } else {
           typedDef.hasErrors(Definition.TypeCheckingStatus.HAS_ERRORS);
         }
-      } else {
-        typedDef.hasErrors(Definition.TypeCheckingStatus.HAS_ERRORS);
       }
     }
 
