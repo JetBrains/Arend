@@ -180,6 +180,9 @@ public class Prelude extends SimpleNamespace {
     public Abstract.ClassDefinition loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
       if (sourceId != preludeSourceId) return null;
       InputStream stream = Prelude.class.getResourceAsStream(SOURCE_RESOURCE_PATH);
+      if (stream == null) {
+        throw new IllegalStateException("Prelude source resource not found");
+      }
       return new ParseSource(preludeSourceId, new InputStreamReader(stream, StandardCharsets.UTF_8)) {}.load(errorReporter);
     }
   }

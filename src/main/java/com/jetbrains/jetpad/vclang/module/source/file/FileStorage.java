@@ -13,11 +13,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheStorageSupplier<FileStorage.SourceId> {
   public static final String EXTENSION = ".vc";
@@ -49,12 +47,16 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
     return base.resolveSibling(base.getFileName() + "." + mtime + SERIALIZED_EXTENSION);
   }
 
+  private static long getLastModifiedTime(Path file) throws IOException {
+    return Files.getLastModifiedTime(file).toMillis();
+  }
+
   private Path sourceFileForSource(SourceId sourceId) {
     return sourceFile(baseFile(sourceId.getModulePath()));
   }
 
   private Path cacheFileForSource(SourceId sourceId) {
-    return cacheFile(baseFile(sourceId.getModulePath()), sourceId.myMtime.toMillis());
+    return cacheFile(baseFile(sourceId.getModulePath()), sourceId.myMtime);
   }
 
   private Path baseFile(ModulePath modulePath) {
@@ -66,7 +68,7 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
     Path file = sourceFile(baseFile(modulePath));
     try {
       if (Files.exists(file)) {
-          return new SourceId(modulePath, Files.getLastModifiedTime(file));
+          return new SourceId(modulePath, getLastModifiedTime(file));
       }
     } catch (IOException ignored) {
     }
@@ -74,7 +76,7 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
   }
 
   public SourceId locateModule(ModulePath modulePath, long mtime) {
-    return new SourceId(modulePath, FileTime.fromMillis(mtime));
+    return new SourceId(modulePath, mtime);
   }
 
   @Override
@@ -82,7 +84,7 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
     if (sourceId.getStorage() != this) return false;
     Path file = sourceFileForSource(sourceId);
     try {
-      return Files.exists(file) && Files.getLastModifiedTime(file).equals(sourceId.myMtime);
+      return Files.exists(file) && getLastModifiedTime(file) == sourceId.myMtime;
     } catch (IOException ignored) {
     }
     return false;
@@ -97,7 +99,7 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
     FileSource fileSource = new FileSource(sourceId, file);
     Abstract.ClassDefinition definition = fileSource.load(errorReporter);
     // Make sure we loaded the right revision
-    return Files.getLastModifiedTime(file).equals(sourceId.myMtime) ? definition : null;
+    return getLastModifiedTime(file) == sourceId.myMtime ? definition : null;
   }
 
   @Override
@@ -128,11 +130,11 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
 
   public class SourceId implements com.jetbrains.jetpad.vclang.module.source.SourceId {
     private final ModulePath myModulePath;
-    private final FileTime myMtime;
+    private final long myMtime;
 
-    private SourceId(ModulePath modulePath, FileTime mtime) {
+    private SourceId(ModulePath modulePath, long mtime) {
       myModulePath = modulePath;
-      myMtime = FileTime.from(mtime.toMillis(), TimeUnit.MILLISECONDS);
+      myMtime = mtime;
     }
 
     private FileStorage getStorage() {
@@ -149,7 +151,7 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
     }
 
     public long getLastModified() {
-      return myMtime.toMillis();
+      return myMtime;
     }
 
     @Override
@@ -158,7 +160,7 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
              o instanceof SourceId &&
              getStorage().equals(((SourceId) o).getStorage()) &&
              myModulePath.equals(((SourceId) o).myModulePath) &&
-             myMtime.equals(((SourceId) o).myMtime);
+             myMtime == ((SourceId) o).myMtime;
     }
 
     @Override
