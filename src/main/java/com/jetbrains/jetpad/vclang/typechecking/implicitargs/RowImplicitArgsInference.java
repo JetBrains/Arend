@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.frontend.Concrete;
+import com.jetbrains.jetpad.vclang.core.expr.type.Type;
+import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,10 +13,10 @@ public abstract class RowImplicitArgsInference extends BaseImplicitArgsInference
     super(visitor);
   }
 
-  abstract CheckTypeVisitor.Result inferRow(CheckTypeVisitor.Result fun, List<Abstract.ArgumentExpression> args, Abstract.Expression funExpr, Abstract.Expression expr);
+  abstract CheckTypeVisitor.Result inferRow(CheckTypeVisitor.PreResult fun, List<Abstract.ArgumentExpression> args, Abstract.Expression funExpr, Abstract.Expression expr);
 
-  private CheckTypeVisitor.Result typeCheckFunctionApps(Abstract.Expression fun, List<Abstract.ArgumentExpression> args, Abstract.Expression expression) {
-    CheckTypeVisitor.Result function;
+  private CheckTypeVisitor.PreResult typeCheckFunctionApps(Abstract.Expression fun, List<Abstract.ArgumentExpression> args, Abstract.Expression expression) {
+    CheckTypeVisitor.PreResult function;
     if (fun instanceof Abstract.DefCallExpression) {
       function = myVisitor.getTypeCheckingDefCall().typeCheckDefCall((Abstract.DefCallExpression) fun);
     } else {
@@ -33,13 +33,13 @@ public abstract class RowImplicitArgsInference extends BaseImplicitArgsInference
   }
 
   @Override
-  public CheckTypeVisitor.Result infer(Abstract.AppExpression expr, Expression expectedType) {
+  public CheckTypeVisitor.PreResult infer(Abstract.AppExpression expr, Type expectedType) {
     List<Abstract.ArgumentExpression> args = new ArrayList<>();
     return typeCheckFunctionApps(Abstract.getFunction(expr, args), args, expr);
   }
 
   @Override
-  public CheckTypeVisitor.Result infer(Abstract.BinOpExpression expr, Expression expectedType) {
+  public CheckTypeVisitor.PreResult infer(Abstract.BinOpExpression expr, Type expectedType) {
     class AbstractArgumentExpression implements Abstract.ArgumentExpression {
       Abstract.Expression expression;
 
@@ -72,7 +72,7 @@ public abstract class RowImplicitArgsInference extends BaseImplicitArgsInference
   }
 
   @Override
-  public CheckTypeVisitor.Result inferTail(CheckTypeVisitor.Result fun, Expression expectedType, Abstract.Expression expr) {
+  public CheckTypeVisitor.Result inferTail(CheckTypeVisitor.Result fun, Type expectedType, Abstract.Expression expr) {
     return myVisitor.checkResult(expectedType, inferRow(fun, new ArrayList<Abstract.ArgumentExpression>(0), expr, expr), expr);
   }
 }

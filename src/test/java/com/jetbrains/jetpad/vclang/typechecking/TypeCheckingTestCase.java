@@ -1,120 +1,228 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.module.NameModuleID;
-import com.jetbrains.jetpad.vclang.module.Root;
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
-import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.frontend.Concrete;
+import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseClass;
-import static com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolverTestCase.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertThat;
 
-public class TypeCheckingTestCase {
-  public static CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, Concrete.Expression expression, Expression expectedType, ErrorReporter errorReporter) {
-    return new CheckTypeVisitor.Builder(context, errorReporter).build().checkType(expression, expectedType);
+public class TypeCheckingTestCase extends NameResolverTestCase {
+  @SuppressWarnings("StaticNonFinalField")
+  private static SimpleTypecheckerState PRELUDE_TYPECHECKER_STATE = null;
+
+  private TypecheckerState state = new SimpleTypecheckerState();
+
+  protected LocalErrorReporter localErrorReporter = new ProxyErrorReporter(null, errorReporter);
+
+  public TypeCheckingTestCase() {
+    typeCheckPrelude();
   }
 
-  public static CheckTypeVisitor.Result typeCheckExpr(Concrete.Expression expression, Expression expectedType, ErrorReporter errorReporter) {
-    return typeCheckExpr(new ArrayList<Binding>(), expression, expectedType, errorReporter);
+  private void typeCheckPrelude() {
+    loadPrelude();
+
+    if (PRELUDE_TYPECHECKER_STATE == null) {
+      ListErrorReporter internalErrorReporter = new ListErrorReporter();
+      PRELUDE_TYPECHECKER_STATE = new SimpleTypecheckerState();
+      Typechecking.typecheckModules(PRELUDE_TYPECHECKER_STATE, staticNsProvider, dynamicNsProvider, Collections.singletonList(prelude), internalErrorReporter, new Prelude.UpdatePreludeReporter(PRELUDE_TYPECHECKER_STATE));
+      //assertThat(internalErrorReporter.getErrorList(), is(empty()));  // does not type-check by design
+    }
+
+    state = new SimpleTypecheckerState(PRELUDE_TYPECHECKER_STATE);
   }
 
-  public static CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
-    ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.Result result = typeCheckExpr(context, expression, expectedType, errorReporter);
-    if (errors >= 0) {
-      assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
-    } else {
-      assertFalse(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());
+
+  CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(state, staticNsProvider, dynamicNsProvider, context, new ArrayList<LevelBinding>(), localErrorReporter).build().checkType(expression, expectedType);
+    assertThat(errorList, containsErrors(errors));
+    if (errors == 0) {
+      assertThat(result, is(notNullValue()));
     }
     return result;
   }
 
-  public static CheckTypeVisitor.Result typeCheckExpr(Concrete.Expression expression, Expression expectedType, int errors) {
+  CheckTypeVisitor.Result typeCheckExpr(Concrete.Expression expression, Expression expectedType, int errors) {
     return typeCheckExpr(new ArrayList<Binding>(), expression, expectedType, errors);
   }
 
-  public static CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, String text, Expression expectedType, ErrorReporter errorReporter) {
-    return typeCheckExpr(context, resolveNamesExpr(text), expectedType, errorReporter);
+  protected CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, Concrete.Expression expression, Expression expectedType) {
+    return typeCheckExpr(context, expression, expectedType, 0);
   }
 
-  public static CheckTypeVisitor.Result typeCheckExpr(String text, Expression expectedType, ErrorReporter errorReporter) {
-    return typeCheckExpr(resolveNamesExpr(text), expectedType, errorReporter);
+  protected CheckTypeVisitor.Result typeCheckExpr(Concrete.Expression expression, Expression expectedType) {
+    return typeCheckExpr(new ArrayList<Binding>(), expression, expectedType, 0);
   }
 
-  public static CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, String text, Expression expectedType, int errors) {
-    return typeCheckExpr(context, resolveNamesExpr(text), expectedType, errors);
+
+  protected CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, String text, Expression expectedType, int errors) {
+    return typeCheckExpr(context, resolveNamesExpr(context, text), expectedType, errors);
   }
 
-  public static CheckTypeVisitor.Result typeCheckExpr(String text, Expression expectedType, int errors) {
+  protected CheckTypeVisitor.Result typeCheckExpr(String text, Expression expectedType, int errors) {
     return typeCheckExpr(resolveNamesExpr(text), expectedType, errors);
   }
 
-  public static CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, String text, Expression expectedType) {
-    return typeCheckExpr(context, resolveNamesExpr(text), expectedType, 0);
+  protected CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, String text, Expression expectedType) {
+    return typeCheckExpr(context, resolveNamesExpr(context, text), expectedType, 0);
   }
 
-  public static CheckTypeVisitor.Result typeCheckExpr(String text, Expression expectedType) {
+  protected CheckTypeVisitor.Result typeCheckExpr(String text, Expression expectedType) {
     return typeCheckExpr(resolveNamesExpr(text), expectedType, 0);
   }
 
-  public static Definition typeCheckDef(Concrete.Definition definition, int errors) {
-    ListErrorReporter errorReporter = new ListErrorReporter();
-    DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(errorReporter);
-    visitor.setNamespaceMember(Root.getModule(new NameModuleID("test")).namespace.getMember(definition.getName()));
-    Definition result = definition.accept(visitor, null);
-    if (errors >= 0) {
-      assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
-    } else {
-      assertFalse(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());
-    }
-    return result;
+
+  private Definition typeCheckDef(Concrete.Definition definition, int errors) {
+    Typechecking.typecheckDefinitions(state, staticNsProvider, dynamicNsProvider, Collections.singletonList(definition), errorReporter, new TypecheckedReporter.Dummy());
+    assertThat(errorList, containsErrors(errors));
+    return state.getTypechecked(definition);
   }
 
-  public static Definition typeCheckDef(String text, int errors) {
+  protected Definition typeCheckDef(String text, int errors) {
     return typeCheckDef(resolveNamesDef(text), errors);
   }
 
-  public static Definition typeCheckDef(String text) {
+  protected Definition typeCheckDef(String text) {
     return typeCheckDef(text, 0);
   }
 
-  public static NamespaceMember typeCheckClass(Concrete.ClassDefinition classDefinition, int errors) {
-    ListErrorReporter errorReporter = new ListErrorReporter();
-    TypecheckingOrdering.typecheck(classDefinition, errorReporter);
-    if (errors >= 0) {
-      assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
-    } else {
-      assertFalse(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());
+
+  private TypecheckerState typeCheckClass(Concrete.ClassDefinition classDefinition, int errors) {
+    Typechecking.typecheckModules(state, staticNsProvider, dynamicNsProvider, Collections.singletonList(classDefinition), localErrorReporter, new TypecheckedReporter.Dummy());
+    assertThat(errorList, containsErrors(errors));
+    return state;
+  }
+
+
+  protected class TypeCheckClassResult {
+    public final TypecheckerState typecheckerState;
+    public final Concrete.ClassDefinition classDefinition;
+
+    public TypeCheckClassResult(TypecheckerState typecheckerState, Concrete.ClassDefinition classDefinition) {
+      this.typecheckerState = typecheckerState;
+      this.classDefinition = classDefinition;
     }
-    return Root.getModule(new NameModuleID(classDefinition.getName()));
+
+    public Definition getDefinition(String path) {
+      Abstract.Definition ref = get(classDefinition, path);
+      return ref != null ? typecheckerState.getTypechecked(ref) : null;
+    }
   }
 
-  public static NamespaceMember typeCheckClass(String name, String text, int errors) {
-    Concrete.ClassDefinition classDefinition = parseClass(name, text);
-    resolveNamesClass(classDefinition, 0);
-    return typeCheckClass(classDefinition, errors);
+  protected TypeCheckClassResult typeCheckClass(Concrete.ClassDefinition classDefinition) {
+    TypecheckerState state = typeCheckClass(classDefinition, 0);
+    return new TypeCheckClassResult(state, classDefinition);
   }
 
-  public static NamespaceMember typeCheckClass(String name, String text) {
-    return typeCheckClass(name, text, 0);
+  protected TypeCheckClassResult typeCheckClass(String text, int nameErrors, int tcErrors) {
+    Concrete.ClassDefinition classDefinition = resolveNamesClass(text, nameErrors);
+    TypecheckerState state = typeCheckClass(classDefinition, nameErrors + tcErrors);
+    return new TypeCheckClassResult(state, classDefinition);
   }
 
-  public static NamespaceMember typeCheckClass(String text) {
-    return typeCheckClass("test", text, 0);
+  protected TypeCheckClassResult typeCheckClass(String text, int tcErrors) {
+    return typeCheckClass(text, 0, tcErrors);
   }
 
-  public static NamespaceMember typeCheckClass(String text, int errors) {
-    return typeCheckClass("test", text, errors);
+  protected TypeCheckClassResult typeCheckClass(String text) {
+    return typeCheckClass(text, 0, 0);
+  }
+
+  protected TypeCheckClassResult typeCheckClass(String instance, String global, int errors) {
+    Concrete.ClassDefinition def = (Concrete.ClassDefinition) resolveNamesDef("\\class Test {\n" + instance + (global.isEmpty() ? "" : "\n} \\where {\n" + global) + "\n}");
+    return new TypeCheckClassResult(typeCheckClass(def, errors), def);
+  }
+
+  protected TypeCheckClassResult typeCheckClass(String instance, String global) {
+    return typeCheckClass(instance, global, 0);
+  }
+
+
+  protected abstract static class TypeCheckingErrorMatcher extends TypeSafeDiagnosingMatcher<GeneralError> {
+    @Override
+    protected boolean matchesSafely(GeneralError generalError, Description description) {
+      if (generalError instanceof TypeCheckingError) {
+        description.appendText("TC error ");
+        return matchesTypeCheckingError(((TypeCheckingError) generalError).localError, description);
+      } else {
+        description.appendText("not a TC error");
+        return false;
+      }
+    }
+
+    protected abstract boolean matchesTypeCheckingError(LocalTypeCheckingError error, Description description);
+  }
+
+  protected static Matcher<? super GeneralError> typeMismatchError() {
+    return new TypeCheckingErrorMatcher() {
+      @Override
+      protected boolean matchesTypeCheckingError(LocalTypeCheckingError error, Description description) {
+          if (error instanceof TypeMismatchError) {
+            description.appendText("type mismatch");
+            return true;
+          } else {
+            description.appendText("not a type mismatch");
+            return false;
+          }
+      }
+
+      @Override
+      public void describeTo(Description description) {
+        description.appendText("should be a type mismatch");
+      }
+    };
+  }
+
+  protected static Matcher<GeneralError> goal(final int expectedSize) {
+    return new TypeCheckingErrorMatcher() {
+      @Override
+      protected boolean matchesTypeCheckingError(LocalTypeCheckingError error, Description description) {
+        if (error instanceof GoalError) {
+          description.appendText("goal with ");
+          int size = ((GoalError) error).context.size();
+          if (size == 0) {
+            description.appendText("empty context");
+          } else {
+            description.appendText("context of size ").appendValue(size);
+          }
+          return size == expectedSize;
+        } else {
+          description.appendText("not a goal");
+          return false;
+        }
+      }
+
+      @Override
+      public void describeTo(Description description) {
+        description.appendText("should be a goal with ");
+        if (expectedSize == 0) {
+          description.appendText("empty context");
+        } else {
+          description.appendText("context of size ").appendValue(expectedSize);
+        }
+      }
+    };
   }
 }

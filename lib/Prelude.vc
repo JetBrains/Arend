@@ -1,0 +1,50 @@
+\data Nat
+    | zero
+    | suc Nat
+
+\data I
+    | left
+    | right
+
+\data Lvl
+    | zeroL
+    | sucL Lvl
+    | inf
+
+\data Path (A : I -> \Type) (a : A left) (a' : A right)
+    | path (\Pi (i : I) -> A i)
+
+\function \infix 1
+(=) {A : \Type} (a a' : A) => Path (\lam _ => A) a a'
+
+\function \infixl 9
+(@) {A : I -> \Type} {a : A left} {a' : A right} (p : Path A a a') (i : I) : A i <= \elim i
+    | left => a
+    | right => a'
+    | _ <= \elim p
+        | path f => f i
+
+\function
+coe (A : I -> \Type) (a : A left) (i : I) : A i <= \elim i
+    | left => a
+
+\function
+iso {A B : \Type} (f : A -> B) (g : B -> A) (p : \Pi (x : A) -> g (f x) = x) (q : \Pi (y : B) -> f (g y) = y) (i : I) : \Type <= \elim i
+    | left => A
+    | right => B
+
+\data TrP (A : \Type)
+    | inP A
+    | truncP (a a' : TrP A) I
+  \with
+    | truncP a _  left  => a
+    | truncP _ a' right => a'
+
+\data TrS (A : \Type)
+    | inS A
+    | truncS (a a' : TrS A) (p p' : TrS A) I I
+  \with
+    | truncS _ _ p _  i left  => p @ i
+    | truncS _ _ _ p' i right => p' @ i
+    | truncS a _ _ _  left  _ => a
+    | truncS _ a' _ _ right _ => a'

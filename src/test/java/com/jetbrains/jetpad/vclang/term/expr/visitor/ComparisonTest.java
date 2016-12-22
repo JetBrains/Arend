@@ -1,26 +1,26 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.Preprelude;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
-import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.LetClause;
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
+import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
+import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.LetClause;
+import com.jetbrains.jetpad.vclang.core.sort.Level;
+import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckExpr;
+import static com.jetbrains.jetpad.vclang.core.expr.Expression.compare;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static org.junit.Assert.*;
 
-public class ComparisonTest {
-
+public class ComparisonTest extends TypeCheckingTestCase {
   @Test
   public void lambdas() {
     DependentLink x = param("x", Nat());
@@ -198,22 +198,29 @@ public class ComparisonTest {
 
   @Test
   public void etaLam() {
-    Expression type = Pi(param(Nat()), Apps(DataCall(Prelude.PATH), ZeroLvl(), Fin(Suc(Zero())), Lam(param("i", DataCall(Preprelude.INTERVAL)), Nat()), Zero(), Zero()));
+    Expression type = Pi(param(Nat()), DataCall(Prelude.PATH, new LevelArguments(),
+            Lam(param("i", Interval()), Nat()), Zero(), Zero()));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(param(type), type));
-    assertNotNull(result1);
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(param(type), type));
-    assertNotNull(result2);
-    assertEquals(result2.expression, result1.expression);
+    assertEquals(result2.getExpression(), result1.getExpression());
+  }
+
+  @Test
+  public void etaLamBody() {
+    Expression type = Pi(param(Nat()), DataCall(Prelude.PATH, new LevelArguments(),
+      Lam(param("i", Interval()), Nat()), Zero(), Zero()));
+    CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(param(type), type));
+    CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => \\lam x => a x", Pi(param(type), type));
+    assertEquals(result2.getExpression(), result1.getExpression());
   }
 
   @Test
   public void etaPath() {
     DependentLink x = param("x", Nat());
-    Expression type = Apps(DataCall(Prelude.PATH), ZeroLvl(), Fin(Suc(Zero())), Lam(param(DataCall(Preprelude.INTERVAL)), Pi(param(Nat()), Nat())), Lam(x, Reference(x)), Lam(x, Reference(x)));
+    Expression type = DataCall(Prelude.PATH, new Level(0), new Level(1),
+            Lam(param("i", Interval()), Pi(param(Nat()), Nat())), Lam(x, Reference(x)), Lam(x, Reference(x)));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a => path (\\lam i x => (a @ i) x)", Pi(param(type), type));
-    assertNotNull(result1);
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(param(type), type));
-    assertNotNull(result2);
-    assertEquals(result2.expression, result1.expression);
+    assertEquals(result2.getExpression(), result1.getExpression());
   }
 }

@@ -1,23 +1,21 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
-
-import java.util.Set;
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.sort.Level;
+import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 
 public interface Equations {
-  boolean add(Equations equations);
-  boolean add(Expression expr1, Expression expr2, CMP cmp, Abstract.SourceNode sourceNode);
-  void clear();
-  boolean isEmpty();
-  void abstractBinding(Binding binding);
-  Equations newInstance();
-  Substitution getInferenceVariables(Set<InferenceBinding> binding, boolean onlyPreciseSolutions);
-  void reportErrors(ErrorReporter errorReporter);
+  boolean add(Expression expr1, Expression expr2, CMP cmp, Abstract.SourceNode sourceNode, InferenceVariable stuckVar);
+  boolean solve(TypeMax type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode);
+  boolean add(Level level1, Level level2, CMP cmp, Abstract.SourceNode sourceNode);
+  boolean add(TypeMax type, Expression expr, Abstract.SourceNode sourceNode, InferenceVariable stuckVar);
+  boolean addVariable(InferenceLevelVariable var);
+  void remove(Equation equation);
+  LevelSubstitution solve(Abstract.SourceNode sourceNode);
 
   enum CMP {
     LE, EQ, GE;

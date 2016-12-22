@@ -1,12 +1,12 @@
 package com.jetbrains.jetpad.vclang.typechecking.constructions;
 
-import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckExpr;
 import static org.junit.Assert.assertNotNull;
 
-public class Application {
+public class Application extends TypeCheckingTestCase {
   @Test
   public void idWithoutResultType() {
     CheckTypeVisitor.Result result = typeCheckExpr("\\lam (f : (Nat -> Nat) -> Nat) => f (\\lam x => x)", null);

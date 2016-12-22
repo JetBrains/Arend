@@ -1,26 +1,29 @@
 package com.jetbrains.jetpad.vclang.typechecking.normalization;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
+import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.Function;
+import com.jetbrains.jetpad.vclang.core.expr.*;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.Preprelude;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
-import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.Function;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 
 public class EvalNormalizer implements Normalizer {
   @Override
-  public Expression normalize(LamExpression fun, List<? extends Expression> arguments, List<? extends EnumSet<AppExpression.Flag>> flags, NormalizeVisitor.Mode mode) {
+  public Expression normalize(LamExpression fun, List<? extends Expression> arguments, NormalizeVisitor.Mode mode) {
     int i = 0;
     DependentLink link = fun.getParameters();
-    Substitution subst = new Substitution();
+    ExprSubstitution subst = new ExprSubstitution();
     while (link.hasNext() && i < arguments.size()) {
       subst.add(link, arguments.get(i++));
       link = link.getNext();
@@ -32,46 +35,45 @@ public class EvalNormalizer implements Normalizer {
     }
     result = result.subst(subst);
     if (result != fun.getBody()) {
-      result = result.addArguments(arguments.subList(i, arguments.size()), flags.subList(i, flags.size()));
+      result = result.addArguments(arguments.subList(i, arguments.size()));
     } else {
-      result = Apps(result, arguments.subList(i, arguments.size()), flags.subList(i, flags.size()));
+      result = Apps(result, arguments.subList(i, arguments.size()));
     }
     return result.normalize(mode);
   }
 
   @Override
-  public Expression normalize(Function fun, DependentLink params, List<? extends Expression> paramArgs, List<? extends Expression> arguments, List<? extends Expression> otherArguments, List<? extends EnumSet<AppExpression.Flag>> otherFlags, NormalizeVisitor.Mode mode) {
+  public Expression normalize(Function fun, LevelSubstitution polySubst, DependentLink params, List<? extends Expression> paramArgs, List<? extends Expression> arguments, List<? extends Expression> otherArguments, NormalizeVisitor.Mode mode) {
     assert fun.getNumberOfRequiredArguments() == arguments.size();
 
-    if (fun instanceof FunctionDefinition && Prelude.isCoe((FunctionDefinition) fun)) {
+    if (fun == Prelude.COERCE) {
       Expression result = null;
 
-      Binding binding = new TypedBinding("i", DataCall(Preprelude.INTERVAL));
-      Expression normExpr = Apps(arguments.get(2), Reference(binding)).normalize(NormalizeVisitor.Mode.NF);
+      Binding binding = new TypedBinding("i", Interval());
+      Expression normExpr = arguments.get(0).addArgument(Reference(binding)).normalize(NormalizeVisitor.Mode.NF);
       if (!normExpr.findBinding(binding)) {
-        result = arguments.get(3);
+        result = arguments.get(1);
       } else {
-        FunCallExpression mbIsoFun = normExpr.getFunction().toFunCall();
-        List<? extends Expression> mbIsoArgs = normExpr.getArguments();
-        if (mbIsoFun != null && Prelude.isIso(mbIsoFun.getDefinition()) && mbIsoArgs.size() == 9) {
+        if (normExpr.toFunCall() != null && normExpr.toFunCall().getDefinition() == Prelude.ISO) {
+          List<? extends Expression> isoArgs = normExpr.toFunCall().getDefCallArguments();
           boolean noFreeVar = true;
-          for (int i = 0; i < mbIsoArgs.size() - 1; i++) {
-            if (mbIsoArgs.get(i).findBinding(binding)) {
+          for (int i = 0; i < isoArgs.size() - 1; i++) {
+            if (isoArgs.get(i).findBinding(binding)) {
               noFreeVar = false;
               break;
             }
           }
           if (noFreeVar) {
-            ConCallExpression normedPtCon = arguments.get(4).normalize(NormalizeVisitor.Mode.NF).toConCall();
-            if (normedPtCon != null && normedPtCon.getDefinition() == Preprelude.RIGHT) {
-              result = Apps(mbIsoArgs.get(4), arguments.get(3));
+            ConCallExpression normedPtCon = arguments.get(2).normalize(NormalizeVisitor.Mode.NF).toConCall();
+            if (normedPtCon != null && normedPtCon.getDefinition() == Prelude.RIGHT) {
+              result = isoArgs.get(2).addArgument(arguments.get(1));
             }
           }
         }
       }
 
       if (result != null) {
-        return Apps(result, otherArguments, otherFlags).normalize(mode);
+        return Apps(result.subst(polySubst), otherArguments).normalize(mode);
       }
     }
 
@@ -81,12 +83,12 @@ public class EvalNormalizer implements Normalizer {
       return null;
     }
 
-    Substitution subst = leaf.matchedToSubst(matchedArguments);
+    ExprSubstitution subst = leaf.matchedToSubst(matchedArguments);
     for (Expression argument : paramArgs) {
       subst.add(params, argument);
       params = params.getNext();
     }
-    return Apps(leaf.getExpression().subst(subst), otherArguments, otherFlags).normalize(mode);
+    return Apps(leaf.getExpression().subst(subst, polySubst), otherArguments).normalize(mode);
   }
 
   @Override

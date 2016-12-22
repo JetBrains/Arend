@@ -1,83 +1,84 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
+import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.*;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.sort.Level;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.expr.type.Type;
+import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
+import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
-import java.util.EnumSet;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 
-public class GetTypeTest {
+public class GetTypeTest extends TypeCheckingTestCase {
+  private static void testType(Expression expected, TypeCheckClassResult result) {
+    assertEquals(expected, ((FunctionDefinition) result.getDefinition("test")).getResultType().toExpression());
+    assertEquals(expected, ((LeafElimTreeNode) ((FunctionDefinition) result.getDefinition("test")).getElimTree()).getExpression().getType().toExpression());
+  }
+
   @Test
   public void constructorTest() {
-    NamespaceMember member = typeCheckClass("\\static \\data List (A : \\Type0) | nil | cons A (List A) \\static \\function test => cons 0 nil");
-    Expression list = Apps(DataCall((DataDefinition) member.namespace.getDefinition("List")), Nat());
-    assertEquals(list, member.namespace.getDefinition("test").getType());
-    assertEquals(list, ((LeafElimTreeNode) ((FunctionDefinition) member.namespace.getDefinition("test")).getElimTree()).getExpression().getType());
+    TypeCheckClassResult result = typeCheckClass("\\data List (A : \\Type0) | nil | cons A (List A) \\function test => cons 0 nil");
+    testType(DataCall((DataDefinition) result.getDefinition("List"), new LevelArguments(), Nat()), result);
   }
 
   @Test
   public void nilConstructorTest() {
-    NamespaceMember member = typeCheckClass("\\static \\data List (A : \\Type0) | nil | cons A (List A) \\static \\function test => (List Nat).nil");
-    Expression list = Apps(DataCall((DataDefinition) member.namespace.getDefinition("List")), Nat());
-    assertEquals(list, member.namespace.getDefinition("test").getType());
-    assertEquals(list, ((LeafElimTreeNode) ((FunctionDefinition) member.namespace.getDefinition("test")).getElimTree()).getExpression().getType());
+    TypeCheckClassResult result = typeCheckClass("\\data List (A : \\Type0) | nil | cons A (List A) \\function test => (List Nat).nil");
+    testType(DataCall((DataDefinition) result.getDefinition("List"), new LevelArguments(), Nat()), result);
   }
 
   @Test
   public void classExtTest() {
-    NamespaceMember member = typeCheckClass("\\static \\class Test { \\abstract A : \\Type0 \\abstract a : A } \\static \\function test => Test { A => Nat }");
-    assertEquals(Universe(1), member.namespace.getDefinition("Test").getType());
-    assertEquals(Universe(TypeUniverse.SetOfLevel(0)), member.namespace.getDefinition("test").getType());
-    assertEquals(Universe(TypeUniverse.SetOfLevel(0)), ((LeafElimTreeNode) ((FunctionDefinition) member.namespace.getDefinition("test")).getElimTree()).getExpression().getType());
-    assertEquals(Universe(TypeUniverse.SetOfLevel(0)), ((FunctionDefinition) member.namespace.getDefinition("test")).getResultType());
+    TypeCheckClassResult result = typeCheckClass("\\class Test { \\field A : \\Type0 \\field a : A } \\function test => Test { A => Nat }");
+    assertEquals(Universe(1), result.getDefinition("Test").getTypeWithParams(new ArrayList<DependentLink>(), new LevelArguments()).toExpression());
+    assertEquals(Universe(Sort.SET0), result.getDefinition("test").getTypeWithParams(new ArrayList<DependentLink>(), new LevelArguments()).toExpression());
+    testType(Universe(Sort.SET0), result);
   }
 
   @Test
   public void lambdaTest() {
-    Definition def = typeCheckDef("\\function test => \\lam (f : Nat -> Nat) => f 0");
-    assertEquals(Pi(Pi(Nat(), Nat()), Nat()), def.getType());
-    assertEquals(Pi(Pi(Nat(), Nat()), Nat()), ((LeafElimTreeNode) ((FunctionDefinition) def).getElimTree()).getExpression().getType());
+    TypeCheckClassResult result = typeCheckClass("\\function test => \\lam (f : Nat -> Nat) => f 0");
+    testType(Pi(Pi(Nat(), Nat()), Nat()), result);
   }
 
   @Test
   public void lambdaTest2() {
-    Definition def = typeCheckDef("\\function test => \\lam (A : \\Type0) (x : A) => x");
+    TypeCheckClassResult result = typeCheckClass("\\function test => \\lam (A : \\Type0) (x : A) => x");
     DependentLink A = param("A", Universe(0));
     Expression expectedType = Pi(params(A, param("x", Reference(A))), Reference(A));
-    assertEquals(expectedType, def.getType());
-    assertEquals(expectedType, ((LeafElimTreeNode) ((FunctionDefinition) def).getElimTree()).getExpression().getType());
+    testType(expectedType, result);
   }
 
   @Test
   public void fieldAccTest() {
-    NamespaceMember member = typeCheckClass("\\static \\class C { \\abstract x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
-    DependentLink p = param("p", Pi(Nat(), ClassCall((ClassDefinition) member.namespace.getDefinition("C"))));
-    Expression type = FunCall(Prelude.PATH_INFIX)
-      .addArgument(ZeroLvl(), EnumSet.noneOf(AppExpression.Flag.class))
-      .addArgument(Fin(Suc(Zero())), EnumSet.noneOf(AppExpression.Flag.class))
-      .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class))
-      .addArgument(Zero(), AppExpression.DEFAULT)
-      .addArgument(Apps(FieldCall((ClassField) member.namespace.getMember("C").namespace.getDefinition("x")), Apps(Reference(p), Zero())), AppExpression.DEFAULT);
-    assertEquals(Pi(p, Pi(type, type)).normalize(NormalizeVisitor.Mode.NF), member.namespace.getDefinition("test").getType().normalize(NormalizeVisitor.Mode.NF));
+    TypeCheckClassResult result = typeCheckClass("\\class C { \\field x : Nat \\function f (p : 0 = x) => p } \\function test (p : Nat -> C) => (p 0).f");
+    DependentLink p = param("p", Pi(Nat(), ClassCall((ClassDefinition) result.getDefinition("C"), new LevelArguments())));
+    Expression type = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(1),
+        Nat(),
+        Zero(),
+        FieldCall((ClassField) result.getDefinition("C.x"), Apps(Reference(p), Zero())));
+    List<DependentLink> testParams = new ArrayList<>();
+    TypeMax testType = result.getDefinition("test").getTypeWithParams(testParams, new LevelArguments());
+    assertEquals(Pi(p, Pi(type, type)).normalize(NormalizeVisitor.Mode.NF), testType.fromPiParameters(testParams).normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void tupleTest() {
-    Definition def = typeCheckDef("\\function test : \\Sigma (x y : Nat) (x = y) => (0, 0, path (\\lam _ => 0))");
+    TypeCheckClassResult result = typeCheckClass("\\function test : \\Sigma (x y : Nat) (x = y) => (0, 0, path (\\lam _ => 0))");
     DependentLink xy = param(true, vars("x", "y"), Nat());
-    assertEquals(Sigma(params(xy, param(Apps(FunCall(Prelude.PATH_INFIX).addArgument(ZeroLvl(), EnumSet.noneOf(AppExpression.Flag.class))
-        .addArgument(Fin(Suc(Zero())), EnumSet.noneOf(AppExpression.Flag.class))
-        .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class)), Reference(xy), Reference(xy.getNext()))))),
-        ((LeafElimTreeNode)((FunctionDefinition) def).getElimTree()).getExpression().getType());
+    testType(Sigma(params(xy, param(FunCall(Prelude.PATH_INFIX, new LevelArguments(), Nat(), Reference(xy), Reference(xy.getNext()))))), result);
   }
 
   @Test
@@ -86,68 +87,82 @@ public class GetTypeTest {
     DependentLink F = param("F", Pi(Nat(), Universe(0)));
     DependentLink x = param("x", Nat());
     DependentLink f = param("f", Pi(x, Apps(Reference(F), Reference(x))));
-    assertEquals(Pi(params(F, f), Apps(Reference(F), Zero())), ((LeafElimTreeNode) ((FunctionDefinition) def).getElimTree()).getExpression().getType().normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Pi(params(F, f), Apps(Reference(F), Zero())), ((Expression) ((LeafElimTreeNode) ((FunctionDefinition) def).getElimTree()).getExpression().getType()).normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void patternConstructor1() {
-    NamespaceMember member = typeCheckClass(
-        "\\static \\data C (n : Nat) | C (zero) => c1 | C (suc n) => c2 Nat");
-    DataDefinition data = (DataDefinition) member.namespace.getMember("C").definition;
-    assertEquals(Apps(DataCall(data), Zero()), data.getConstructor("c1").getType());
+    TypeCheckClassResult result = typeCheckClass(
+        "\\data C (n : Nat) | C (zero) => c1 | C (suc n) => c2 Nat");
+    DataDefinition data = (DataDefinition) result.getDefinition("C");
+    List<DependentLink> c1Params = new ArrayList<>();
+    Type c1Type = data.getConstructor("c1").getTypeWithParams(c1Params, new LevelArguments());
+    assertEquals(DataCall(data, new LevelArguments(), Zero()), c1Type);
+    List<DependentLink> c2Params = new ArrayList<>();
+    Type c2Type = data.getConstructor("c2").getTypeWithParams(c2Params, new LevelArguments());
     DependentLink params = data.getConstructor("c2").getDataTypeParameters();
     assertEquals(
-        Pi(params, Pi(param(Nat()), Apps(DataCall(data), Suc(Reference(params))))),
-        data.getConstructor("c2").getType()
+        Pi(params, Pi(param(Nat()), DataCall(data, new LevelArguments(), Suc(Reference(params))))),
+        c2Type.fromPiParameters(c2Params)
     );
   }
 
   @Test
   public void patternConstructor2() {
-    NamespaceMember member = typeCheckClass(
-        "\\static \\data Vec \\Type0 Nat | Vec A zero => Nil | Vec A (suc n) => Cons A (Vec A n)" +
-        "\\static \\data D (n : Nat) (Vec Nat n) | D zero _ => dzero | D (suc n) _ => done");
-    DataDefinition vec = (DataDefinition) member.namespace.getMember("Vec").definition;
-    DataDefinition d = (DataDefinition) member.namespace.getMember("D").definition;
+    TypeCheckClassResult result = typeCheckClass(
+        "\\data Vec \\Type0 Nat | Vec A zero => Nil | Vec A (suc n) => Cons A (Vec A n)" +
+        "\\data D (n : Nat) (Vec Nat n) | D zero _ => dzero | D (suc n) _ => done");
+    DataDefinition vec = (DataDefinition) result.getDefinition("Vec");
+    DataDefinition d = (DataDefinition) result.getDefinition("D");
+    List<DependentLink> dzeroParams = new ArrayList<>();
+    Type dzeroType = d.getConstructor("dzero").getTypeWithParams(dzeroParams, new LevelArguments());
     assertEquals(
-        Pi(d.getConstructor("dzero").getDataTypeParameters(), Apps(DataCall(d), Zero(), Reference(d.getConstructor("dzero").getDataTypeParameters()))),
-        d.getConstructor("dzero").getType()
+        Pi(d.getConstructor("dzero").getDataTypeParameters(), DataCall(d, new LevelArguments(), Zero(), Reference(d.getConstructor("dzero").getDataTypeParameters()))),
+        dzeroType.fromPiParameters(dzeroParams)
     );
+    List<DependentLink> doneAllParams = new ArrayList<>();
+    Type doneType = d.getConstructor("done").getTypeWithParams(doneAllParams, new LevelArguments());
     DependentLink doneParams = d.getConstructor("done").getDataTypeParameters();
     assertEquals(
-        Pi(d.getConstructor("done").getDataTypeParameters(), Apps(DataCall(d), Suc(Reference(doneParams)), Reference(doneParams.getNext()))),
-        d.getConstructor("done").getType()
+        Pi(d.getConstructor("done").getDataTypeParameters(), DataCall(d, new LevelArguments(), Suc(Reference(doneParams)), Reference(doneParams.getNext()))),
+        doneType.fromPiParameters(doneAllParams)
     );
+    List<DependentLink> consAllParams = new ArrayList<>();
+    Type consType = vec.getConstructor("Cons").getTypeWithParams(consAllParams, new LevelArguments());
     DependentLink consParams = vec.getConstructor("Cons").getDataTypeParameters();
     assertEquals(
-        Pi(consParams, Pi(Reference(consParams), Pi(Apps(DataCall(vec), Reference(consParams), Reference(consParams.getNext())), Apps(DataCall(vec), Reference(consParams), Suc(Reference(consParams.getNext())))))),
-        vec.getConstructor("Cons").getType()
+        Pi(consParams, Pi(Reference(consParams), Pi(DataCall(vec, new LevelArguments(), Reference(consParams), Reference(consParams.getNext())), DataCall(vec, new LevelArguments(), Reference(consParams), Suc(Reference(consParams.getNext())))))),
+        consType.fromPiParameters(consAllParams)
     );
   }
 
   @Test
   public void patternConstructor3() {
-    NamespaceMember member = typeCheckClass(
-        "\\static \\data D | d \\Type0\n" +
-        "\\static \\data C D | C (d A) => c A");
-    DataDefinition d = (DataDefinition) member.namespace.getMember("D").definition;
-    DataDefinition c = (DataDefinition) member.namespace.getMember("C").definition;
+    TypeCheckClassResult result = typeCheckClass(
+        "\\data D | d \\Type0\n" +
+        "\\data C D | C (d A) => c A");
+    DataDefinition d = (DataDefinition) result.getDefinition("D");
+    DataDefinition c = (DataDefinition) result.getDefinition("C");
     DependentLink A = c.getConstructor("c").getDataTypeParameters();
+    List<DependentLink> cParams = new ArrayList<>();
+    Type cType = c.getConstructor("c").getTypeWithParams(cParams, new LevelArguments());
     assertEquals(
-        Pi(c.getConstructor("c").getDataTypeParameters(), Pi(Reference(A), Apps(DataCall(c), Apps(ConCall(d.getConstructor("d")), Reference(A))))),
-        c.getConstructor("c").getType()
+        Pi(c.getConstructor("c").getDataTypeParameters(), Pi(Reference(A), DataCall(c, new LevelArguments(), ConCall(d.getConstructor("d"), new LevelArguments(), Collections.<Expression>emptyList(), Reference(A))))),
+        cType.fromPiParameters(cParams)
     );
   }
 
   @Test
   public void patternConstructorDep() {
-    NamespaceMember member = typeCheckClass(
-        "\\static \\data Box (n : Nat) | box\n" +
-        "\\static \\data D (n : Nat) (Box n) | D (zero) _ => d");
-    DataDefinition d = (DataDefinition) member.namespace.getMember("D").definition;
+    TypeCheckClassResult result = typeCheckClass(
+        "\\data Box (n : Nat) | box\n" +
+        "\\data D (n : Nat) (Box n) | D (zero) _ => d");
+    DataDefinition d = (DataDefinition) result.getDefinition("D");
+    List<DependentLink> dParams = new ArrayList<>();
+    Type dType = d.getConstructor("d").getTypeWithParams(dParams, new LevelArguments());
     assertEquals(
-        Pi(d.getConstructor("d").getDataTypeParameters(), Apps(DataCall(d), Zero(), Reference(d.getConstructor("d").getDataTypeParameters()))),
-        d.getConstructor("d").getType()
+        Pi(d.getConstructor("d").getDataTypeParameters(), DataCall(d, new LevelArguments(), Zero(), Reference(d.getConstructor("d").getDataTypeParameters()))),
+        dType.fromPiParameters(dParams)
     );
   }
 }

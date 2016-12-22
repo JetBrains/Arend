@@ -1,10 +1,7 @@
 package com.jetbrains.jetpad.vclang.term;
 
-import com.jetbrains.jetpad.vclang.module.ModuleID;
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
-import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -15,11 +12,7 @@ public final class Abstract {
 
   public interface SourceNode {}
 
-  public interface Expression extends SourceNode {
-    byte PREC = -12;
-    <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
-    void setWellTyped(List<com.jetbrains.jetpad.vclang.term.context.binding.Binding> context, com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped);
-  }
+  // Arguments
 
   public interface Argument extends SourceNode {
     boolean getExplicit();
@@ -35,6 +28,14 @@ public final class Abstract {
 
   public interface TelescopeArgument extends TypeArgument {
     List<String> getNames();
+  }
+
+  // Expressions
+
+  public interface Expression extends SourceNode {
+    byte PREC = -12;
+    <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
+    void setWellTyped(List<Binding> context, com.jetbrains.jetpad.vclang.core.expr.Expression wellTyped);
   }
 
   public interface ArgumentExpression extends SourceNode {
@@ -60,26 +61,60 @@ public final class Abstract {
 
   public interface ModuleCallExpression extends Expression {
     byte PREC = 12;
-    List<String> getPath();
-    Referable getModule();
+    ModulePath getPath();
+    Definition getModule();
   }
 
   public interface DefCallExpression extends Expression {
     byte PREC = 12;
     String getName();
     Expression getExpression();
-    Referable getReferent();
+    Definition getReferent();
   }
 
   public interface ClassExtExpression extends Expression {
     byte PREC = 12;
     Expression getBaseClassExpression();
-    Collection<? extends ImplementStatement> getStatements();
+    Collection<? extends ClassFieldImpl> getStatements();
   }
 
-  public interface ImplementStatement extends SourceNode {
-    String getName();
-    Expression getExpression();
+  public interface ClassFieldImpl extends SourceNode {
+    String getImplementedFieldName();
+    Definition getImplementedField();
+    Expression getImplementation();
+  }
+
+  public static ClassDefinition getUnderlyingClassDef(Expression expr) {
+    if (expr instanceof DefCallExpression) {
+      Definition definition = ((DefCallExpression) expr).getReferent();
+      if (definition instanceof ClassDefinition) {
+        return (ClassDefinition) definition;
+      }
+      if (definition instanceof ClassView) {
+        return (ClassDefinition) ((ClassView) definition).getUnderlyingClassDefCall().getReferent();
+      }
+    }
+
+    if (expr instanceof ClassExtExpression) {
+      return getUnderlyingClassDef(((ClassExtExpression) expr).getBaseClassExpression());
+    } else {
+      return null;
+    }
+  }
+
+  public static ClassView getUnderlyingClassView(Expression expr) {
+    if (expr instanceof DefCallExpression) {
+      Definition definition = ((DefCallExpression) expr).getReferent();
+      if (definition instanceof ClassView) {
+        return (ClassView) definition;
+      }
+    }
+
+    if (expr instanceof ClassExtExpression) {
+      return getUnderlyingClassView(((ClassExtExpression) expr).getBaseClassExpression());
+    } else {
+      return null;
+    }
   }
 
   public interface NewExpression extends Expression {
@@ -120,7 +155,7 @@ public final class Abstract {
   }
 
   public interface BinOpExpression extends Expression {
-    Referable getResolvedBinOp();
+    Definition getResolvedBinOp();
     Expression getLeft();
     Expression getRight();
   }
@@ -145,29 +180,29 @@ public final class Abstract {
     byte PREC = 12;
 
     class Universe {
-      public int myPLevel;
-      public int myHLevel;
+      public int pLevel;
+      public int hLevel;
 
       public static final int NOT_TRUNCATED = -20;
       public static final int PROP = -1;
       public static final int SET = 0;
 
-      public Universe(int PLevel, int HLevel) {
-        myPLevel = PLevel;
-        myHLevel = HLevel;
+      public Universe(int pLevel, int hLevel) {
+        this.pLevel = pLevel;
+        this.hLevel = hLevel;
       }
 
       public boolean equals(Object obj) {
         if (obj.getClass() != this.getClass()) return false;
         Universe u = (Universe)obj;
-        return myPLevel == u.myPLevel && myHLevel == u.myHLevel;
+        return pLevel == u.pLevel && hLevel == u.hLevel;
       }
 
       @Override
       public String toString() {
-        if (myHLevel == PROP) return "\\Prop";
-        if (myHLevel == SET) return "\\Set" + myPLevel;
-        return "\\" + (myHLevel == NOT_TRUNCATED ? "" : myHLevel + "-") + "Type" + myPLevel;
+        if (hLevel == PROP) return "\\Prop";
+        if (hLevel == SET) return "\\Set" + pLevel;
+        return "\\" + (hLevel == NOT_TRUNCATED ? "" : hLevel + "-") + "Type" + pLevel;
       }
     }
 
@@ -178,7 +213,7 @@ public final class Abstract {
     byte PREC = 12;
 
     Expression getPLevel();
-    Expression getHLevel();
+    int getHLevel();
   }
 
   public interface InferHoleExpression extends Expression {
@@ -223,77 +258,43 @@ public final class Abstract {
     int getNumber();
   }
 
-  public interface Binding extends SourceNode {
-    enum Associativity { LEFT_ASSOC, RIGHT_ASSOC, NON_ASSOC }
+  // Definitions
 
-    class Precedence {
-      public final Associativity associativity;
-      public final byte priority;
-
-      public Precedence(Associativity associativity, byte priority) {
-        this.associativity = associativity;
-        this.priority = priority;
-      }
-
-      @Override
-      public String toString() {
-        String result = "infix";
-        if (associativity == Associativity.LEFT_ASSOC) {
-          result += "l";
-        }
-        if (associativity == Associativity.RIGHT_ASSOC) {
-          result += "r";
-        }
-        return result + " " + priority;
-      }
-
-      @Override
-      public boolean equals(Object obj) {
-        return this == obj || obj instanceof Precedence && associativity == ((Precedence) obj).associativity && priority == ((Precedence) obj).priority;
-      }
-    }
-    Precedence DEFAULT_PRECEDENCE = new Precedence(Associativity.RIGHT_ASSOC, (byte) 10);
-
+  public interface ReferableSourceNode extends SourceNode {
     String getName();
-    Precedence getPrecedence();
   }
 
-  public interface Statement extends SourceNode {
-    <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params);
-  }
-
-  public interface DefineStatement extends Statement {
-    enum StaticMod { STATIC, DYNAMIC, DEFAULT }
-
-    //boolean isStatic();
-    StaticMod getStaticMod();
-    Definition getParentDefinition();
-    Definition getDefinition();
-  }
-
-  public interface Definition extends Referable, SourceNode {
+  public interface Definition extends ReferableSourceNode {
     enum Arrow { LEFT, RIGHT }
-
-    DefineStatement getParentStatement();
+    Precedence getPrecedence();
+    Definition getParent();
+    boolean isStatic();
     <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params);
   }
 
-  public interface Function extends Binding {
+  public interface Function extends ReferableSourceNode {
     Definition.Arrow getArrow();
     Expression getTerm();
     List<? extends Argument> getArguments();
     Expression getResultType();
   }
 
-  public interface AbstractDefinition extends Definition {
-    List<? extends Argument> getArguments();
+  public interface ClassField extends Definition {
     Expression getResultType();
+
+    @Override
+    ClassDefinition getParent();
+  }
+
+  public interface Implementation extends Definition {
+    Definition getImplementedField();
+    Expression getImplementation();
+
+    @Override
+    ClassDefinition getParent();
   }
 
   public interface FunctionDefinition extends Definition, Function {
-    boolean isAbstract();
-    boolean isOverridden();
-    String getOriginalName();
     Collection<? extends Statement> getStatements();
   }
 
@@ -304,15 +305,65 @@ public final class Abstract {
     Expression getUniverse();
   }
 
+  public interface SuperClass extends SourceNode {
+    Expression getSuperClass();
+  }
+
   public interface ClassDefinition extends Definition {
-    enum Kind { Module, Class }
+    List<? extends TypeArgument> getPolyParameters();
+    Collection<? extends SuperClass> getSuperClasses();
+    Collection<? extends ClassField> getFields();
+    Collection<? extends Implementation> getImplementations();
+
+    Collection<? extends Statement> getGlobalStatements();
+    Collection<? extends Definition> getInstanceDefinitions();
+  }
+
+  // ClassViews
+
+  public interface ClassView extends Definition {
+    DefCallExpression getUnderlyingClassDefCall();
+    String getClassifyingFieldName();
+    ClassField getClassifyingField();
+    List<? extends ClassViewField> getFields();
+  }
+
+  public interface ClassViewField extends Definition {
+    String getUnderlyingFieldName();
+    ClassField getUnderlyingField();
+    ClassView getOwnView();
+  }
+
+  public interface ClassViewInstance extends Definition {
+    boolean isDefault();
+    List<? extends Argument> getArguments();
+    Expression getTerm();
+  }
+
+  // Statements
+
+  public interface Statement extends SourceNode {
+    <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params);
+  }
+
+  public interface DefineStatement extends Statement {
+    Definition getDefinition();
+  }
+
+  public interface NamespaceCommandStatement extends Statement {
+    enum Kind { OPEN, EXPORT }
 
     Kind getKind();
-    Collection<? extends Referable> getSuperClasses();
-    String getSuperClassName(int index);
-    Collection<? extends Statement> getStatements();
-    ModuleID getModuleID();
+    ModulePath getModulePath();
+    List<String> getPath();
+
+    Definition getResolvedClass();
+
+    boolean isHiding();
+    List<String> getNames();
   }
+
+  // Patterns
 
   public interface PatternArgument extends SourceNode {
     boolean isHidden();
@@ -321,7 +372,7 @@ public final class Abstract {
   }
 
   public interface Pattern extends SourceNode {
-    void setWellTyped(com.jetbrains.jetpad.vclang.term.pattern.Pattern pattern);
+    void setWellTyped(com.jetbrains.jetpad.vclang.core.pattern.Pattern pattern);
   }
 
   public interface NamePattern extends Pattern {
@@ -345,22 +396,46 @@ public final class Abstract {
     List<? extends PatternArgument> getPatterns();
     String getConstructorName();
     Expression getTerm();
-    void setWellTyped(com.jetbrains.jetpad.vclang.term.definition.Condition condition);
+    void setWellTyped(com.jetbrains.jetpad.vclang.core.definition.Condition condition);
   }
 
-  public interface NamespaceCommandStatement extends Statement {
-    enum Kind { OPEN, CLOSE, EXPORT }
 
-    Kind getKind();
-    List<String> getModulePath();
-    List<String> getPath();
+  public static class Precedence {
+    public enum Associativity { LEFT_ASSOC, RIGHT_ASSOC, NON_ASSOC }
 
-    Referable getResolvedClass();
+    public static Precedence DEFAULT = new Precedence(Associativity.RIGHT_ASSOC, (byte) 10);
 
-    List<String> getNames();
-  }
+    public final Associativity associativity;
+    public final byte priority;
 
-  public interface DefaultStaticStatement extends Statement {
-    boolean isStatic();
+    public Precedence(Associativity associativity, byte priority) {
+      this.associativity = associativity;
+      this.priority = priority;
+    }
+
+    @Override
+    public String toString() {
+      String result = "infix";
+      if (associativity == Associativity.LEFT_ASSOC) {
+        result += "l";
+      }
+      if (associativity == Associativity.RIGHT_ASSOC) {
+        result += "r";
+      }
+      return result + " " + priority;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      Precedence that = (Precedence) o;
+      return priority == that.priority && associativity == that.associativity;
+    }
+
+    @Override
+    public int hashCode() {
+      return  31 * associativity.hashCode() + (int) priority;
+    }
   }
 }

@@ -1,15 +1,17 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.expr.*;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Apps;
 
 public class EtaNormalization {
   public static Expression normalize(Expression expression) {
@@ -17,9 +19,9 @@ public class EtaNormalization {
     if (lam != null) {
       return normalizeLam(lam);
     }
-    AppExpression app = expression.toApp();
-    if (app != null) {
-      return normalizePath(app);
+    ConCallExpression conCall = expression.toConCall();
+    if (conCall != null) {
+      return normalizePath(conCall);
     }
     TupleExpression tuple = expression.toTuple();
     if (tuple != null) {
@@ -48,28 +50,32 @@ public class EtaNormalization {
     }
 
     if (index == 0) {
-      return expression;
+      return new LamExpression(expression.getParameters(), body);
     }
 
-    body = Apps(body.getFunction(), args.subList(0, args.size() - index), body.toApp().getFlags().subList(0, args.size() - index));
+    body = Apps(body.getFunction(), args.subList(0, args.size() - index));
     if (index == params.size()) {
       return body;
     }
 
-    Substitution substitution = new Substitution();
-    DependentLink newParams = expression.getParameters().subst(substitution, params.size() - index);
+    ExprSubstitution substitution = new ExprSubstitution();
+    DependentLink newParams = expression.getParameters().subst(substitution, new LevelSubstitution(), params.size() - index);
     return new LamExpression(newParams, body.subst(substitution));
   }
 
-  public static Expression normalizePath(AppExpression expr) {
-    List<? extends Expression> args = expr.getArguments();
-    ConCallExpression fun = expr.getFunction().toConCall();
-    if (fun != null && Prelude.isPathCon(fun.getDefinition())) {
-      Expression arg = normalize(args.get(args.size() - 1));
-      List<? extends Expression> argArgs = arg.getArguments();
-      FunCallExpression argFun = arg.getFunction().toFunCall();
-      if (argArgs.size() > 0 && argFun != null && Prelude.isAt(argFun.getDefinition())) {
-        return normalize(argArgs.get(argArgs.size() - 1));
+  public static Expression normalizePath(ConCallExpression expr) {
+    if (expr.getDefinition() == Prelude.PATH_CON) {
+      Expression arg = normalize(expr.getDefCallArguments().get(0));
+      if (arg.toLam() != null && !arg.toLam().getParameters().getNext().hasNext() && arg.toLam().getBody().toFunCall() != null && arg.toLam().getBody().toFunCall().getDefinition() == Prelude.AT) {
+        List<? extends Expression> args = arg.toLam().getBody().toFunCall().getDefCallArguments();
+        if (args.get(4).toReference() != null && args.get(4).toReference().getBinding() == arg.toLam().getParameters()) {
+          for (int i = 0; i < 4; i++) {
+            if (args.get(i).findBinding(arg.toLam().getParameters())) {
+              return expr;
+            }
+          }
+          return normalize(args.get(3));
+        }
       }
     }
     return expr;

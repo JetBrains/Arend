@@ -1,13 +1,12 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
-
-import java.util.Set;
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.sort.Level;
+import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 
 public class DummyEquations implements Equations {
   private static final DummyEquations INSTANCE = new DummyEquations();
@@ -19,46 +18,37 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public boolean add(Equations equations) {
-    return equations.isEmpty();
-  }
-
-  @Override
-  public boolean add(Expression expr1, Expression expr2, CMP cmp, Abstract.SourceNode sourceNode) {
+  public boolean add(Expression expr1, Expression expr2, CMP cmp, Abstract.SourceNode sourceNode, InferenceVariable stuckVar) {
     return false;
   }
 
   @Override
-  public void clear() {
+  public boolean solve(TypeMax type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode) {
+    return false;
+  }
+
+  @Override
+  public boolean add(Level expr1, Level expr2, CMP cmp, Abstract.SourceNode sourceNode) {
+    return false;
+  }
+
+  @Override
+  public boolean add(TypeMax type, Expression expr, Abstract.SourceNode sourceNode, InferenceVariable stuckVar) {
+    return false;
+  }
+
+  @Override
+  public boolean addVariable(InferenceLevelVariable var) {
+    return false;
+  }
+
+  @Override
+  public void remove(Equation equation) {
 
   }
 
   @Override
-  public boolean isEmpty() {
-    return true;
-  }
-
-  @Override
-  public void abstractBinding(Binding binding) {
-
-  }
-
-  @Override
-  public DummyEquations newInstance() {
-    return this;
-  }
-
-  @Override
-  public Substitution getInferenceVariables(Set<InferenceBinding> binding, boolean onlyPreciseSolutions) {
-    throw new Exception();
-  }
-
-  @Override
-  public void reportErrors(ErrorReporter errorReporter) {
-
-  }
-
-  public static class Exception extends RuntimeException {
-
+  public LevelSubstitution solve(Abstract.SourceNode sourceNode) {
+    return new LevelSubstitution();
   }
 }

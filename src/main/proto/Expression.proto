@@ -1,0 +1,186 @@
+syntax = "proto3";
+
+package vclang.compiled;
+option java_package = "com.jetbrains.jetpad.vclang.module.caching.serialization";
+option java_outer_classname = "ExpressionProtos";
+
+import "Level.proto";
+
+
+message Expression {
+    oneof kind {
+        App app = 1;
+        ClassCall class_call = 2;
+        ClassViewCall class_view_call = 3;
+        ConCall con_call = 4;
+        DataCall data_call = 5;
+        Error error = 6;
+        FieldCall field_call = 7;
+        FunCall fun_call = 8;
+        Lam lam = 9;
+        Let let = 10;
+        New new = 11;
+        Pi pi = 13;
+        Proj proj = 14;
+        Reference reference = 15;
+        Sigma sigma = 16;
+        Tuple tuple = 17;
+        Universe universe = 18;
+    }
+
+    message App {
+        Expression function = 1;
+        repeated Expression argument = 2;
+    }
+    message ClassCall {
+        int32 class_ref = 1;
+        repeated Level poly_arguments = 2;
+        FieldSet field_set = 3;
+    }
+    message ClassViewCall {
+        // TODO: ?
+    }
+    message ConCall {
+        int32 constructor_ref = 1;
+        repeated Level poly_arguments = 2;
+        repeated Expression datatype_argument = 3;
+        repeated Expression argument = 4;
+    }
+    message DataCall {
+        int32 data_ref = 1;
+        repeated Level poly_arguments = 2;
+        repeated Expression argument = 3;
+    }
+    message Error {
+        Expression expression = 1;
+        // TODO: myError?
+    }
+    message FieldCall {
+        int32 field_ref = 1;
+        repeated Level poly_arguments = 2;
+        Expression expression = 3;
+    }
+    message FunCall {
+        int32 fun_ref = 1;
+        repeated Level poly_arguments = 2;
+        repeated Expression argument = 3;
+    }
+    message Lam {
+        repeated Telescope param = 1;
+        Expression body = 2;
+    }
+    message Let {
+        repeated Clause clause = 1;
+        Expression expression = 2;
+
+        message Clause {
+            string name = 1;
+            repeated Telescope param = 2;
+            ElimTreeNode elim_tree = 3;
+            Expression result_type = 4;
+        }
+    }
+    message New {
+        ClassCall class_call = 1;
+    }
+    message Pi {
+        repeated Telescope param = 1;
+        Expression codomain = 2;
+    }
+    message Proj {
+        Expression expression = 1;
+        int32 field = 2;
+    }
+    message Reference {
+        int32 binding_ref = 1;
+    }
+    message Sigma {
+        repeated Telescope param = 1;
+    }
+    message Tuple {
+        repeated Expression field = 1;
+        Sigma type = 2;
+    }
+    message Universe {
+        Sort sort = 1;
+    }
+}
+
+message Type {
+    oneof kind {
+        Expression expr = 1;
+        PiUniverse pi_universe = 2;
+    }
+
+    message PiUniverse {
+        repeated Telescope param = 1;
+        SortMax sorts = 2;
+    }
+}
+
+message SingleParameter {
+    string name = 1;
+    bool is_not_explicit = 2;
+    Type type = 3;
+}
+
+message Telescope {
+    repeated string name = 1;
+    bool is_not_explicit = 2;
+    Type type = 3;
+}
+
+message Binding {
+    message TypedBinding {
+        string name = 1;
+        Type type = 2;
+    }
+
+    message LevelBinding {
+        enum LvlType {
+            PLVL = 0;
+            HLVL = 1;
+        }
+        string name = 1;
+        LvlType type = 2;
+    }
+}
+
+message ElimTreeNode {
+    oneof kind {
+        Empty empty = 1;
+        Leaf leaf = 2;
+        Branch branch = 3;
+    }
+
+    message Empty {
+    }
+    message Leaf {
+        repeated int32 matched_ref = 1;
+        bool arrow_left = 2;
+        Expression expr = 3;
+    }
+    message Branch {
+        int32 reference_ref = 1;
+        map<int32, ConstructorClause> constructor_clauses = 2;
+        ElimTreeNode otherwise_clause = 3;
+        repeated int32 context_tail_item_ref = 4;
+    }
+
+    message ConstructorClause {
+        repeated Telescope param = 1;
+        repeated Binding.LevelBinding poly_param = 2;
+        ElimTreeNode child = 3;
+        repeated Binding.TypedBinding tail_binding = 4;
+    }
+}
+
+message FieldSet {
+    repeated int32 class_field_ref = 1;
+    map<int32, Implementation> implementations = 2;
+
+    message Implementation {
+        SingleParameter this_param = 1;
+        Expression term = 2;
+    }
+}

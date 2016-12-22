@@ -1,11 +1,9 @@
 package com.jetbrains.jetpad.vclang.module.error;
 
-import com.jetbrains.jetpad.vclang.module.ModuleID;
-import com.jetbrains.jetpad.vclang.naming.ModuleResolvedName;
-import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
+import com.jetbrains.jetpad.vclang.module.source.SourceId;
 
-public class ModuleNotFoundError extends GeneralError {
-  public ModuleNotFoundError(ModuleID module) {
-    super(new ModuleResolvedName(module), "cannot find module '" + module + "'");
+public class ModuleNotFoundError extends ModuleLoadingError {
+  public ModuleNotFoundError(SourceId module) {
+    super(module, "Module not found");
   }
 }

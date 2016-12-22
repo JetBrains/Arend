@@ -9,7 +9,7 @@ public class ModulePath {
   private final List<String> myPath;
 
   public ModulePath(List<String> myPath) {
-    this.myPath = myPath;
+    this.myPath = new ArrayList<>(myPath);
   }
 
   public ModulePath(String name) {
@@ -33,8 +33,12 @@ public class ModulePath {
     return myPath.isEmpty() ? null : new ModulePath(myPath.subList(0, myPath.size() - 1));
   }
 
-  public String[] list() {
+  public String[] toArray() {
     return myPath.toArray(new String[myPath.size()]);
+  }
+
+  public List<String> toList() {
+    return Collections.unmodifiableList(myPath);
   }
 
   @Override
