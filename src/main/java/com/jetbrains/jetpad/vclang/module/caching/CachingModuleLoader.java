@@ -43,6 +43,11 @@ public class CachingModuleLoader<SourceIdT extends SourceId> extends SourceModul
   }
 
   @Override
+  public boolean isAvailable(SourceIdT sourceId) {
+    return mySourceLoader.isAvailable(sourceId);
+  }
+
+  @Override
   public Abstract.ClassDefinition load(SourceIdT sourceId) {
     return loadWithResult(sourceId).definition;
   }
@@ -224,6 +229,9 @@ public class CachingModuleLoader<SourceIdT extends SourceId> extends SourceModul
                 throw new CacheLoadingException(sourceId, "Unresolvable source URL: " + url);
               }
               if (!myStubsLoaded.contains(targetSourceId)) {
+                if (!isAvailable(targetSourceId)) {
+                  throw new CacheLoadingException(sourceId, "source is not available: " + targetSourceId);
+                }
                 Result result = load(targetSourceId, true);
                 if (!result.cacheLoaded) {
                   String reason = result.exception == null ? "no cache for " + targetSourceId : "" + result.exception;

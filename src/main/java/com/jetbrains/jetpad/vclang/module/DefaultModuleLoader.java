@@ -29,6 +29,11 @@ public class DefaultModuleLoader<SourceIdT extends SourceId> extends SourceModul
   }
 
   @Override
+  public boolean isAvailable(SourceIdT sourceId) {
+    return mySourceSupplier.isAvailable(sourceId);
+  }
+
+  @Override
   public Abstract.ClassDefinition load(SourceIdT sourceId) {
     try {
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter(Error.Level.ERROR);

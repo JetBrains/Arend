@@ -171,7 +171,7 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
 
     @Override
     public String toString() {
-      return sourceFile(baseFile(myModulePath)).toString();
+      return sourceFile(baseFile(myModulePath)) + "@" + myMtime;
     }
   }
 
