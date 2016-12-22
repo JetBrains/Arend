@@ -1,16 +1,11 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.expr.ClassViewCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FieldCall;
 
 public class LocalInstancePool implements ClassViewInstancePool {
   static private class Pair {

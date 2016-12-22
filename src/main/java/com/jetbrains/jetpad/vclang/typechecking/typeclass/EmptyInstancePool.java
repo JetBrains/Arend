@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
 
 public class EmptyInstancePool implements ClassViewInstancePool {
   public static EmptyInstancePool INSTANCE = new EmptyInstancePool();

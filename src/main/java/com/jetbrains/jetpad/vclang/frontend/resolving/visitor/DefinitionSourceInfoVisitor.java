@@ -4,8 +4,8 @@ import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.FullName;
 import com.jetbrains.jetpad.vclang.frontend.resolving.SimpleSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
-import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
+import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.AbstractStatementVisitor;
 
 public class DefinitionSourceInfoVisitor implements AbstractDefinitionVisitor<FullName, Void>, AbstractStatementVisitor<FullName, Void> {
   private final SimpleSourceInfoProvider myProvider;

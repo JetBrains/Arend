@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.typechecking.constructions;
 
-import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 

@@ -1,14 +1,14 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.prettyprint.PrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory;
-import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.LetClause;
-import com.jetbrains.jetpad.vclang.term.expr.LetExpression;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
+import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.LetClause;
+import com.jetbrains.jetpad.vclang.core.expr.LetExpression;
+import com.jetbrains.jetpad.vclang.core.pattern.elimtree.EmptyElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -17,7 +17,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertNotNull;
 
 public class PrettyPrintingTest extends TypeCheckingTestCase {

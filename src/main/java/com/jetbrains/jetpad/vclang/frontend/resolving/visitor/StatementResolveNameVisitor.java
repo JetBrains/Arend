@@ -11,7 +11,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.FilteredScope;
 import com.jetbrains.jetpad.vclang.naming.scope.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
+import com.jetbrains.jetpad.vclang.term.AbstractStatementVisitor;
 
 import java.util.HashSet;
 import java.util.List;

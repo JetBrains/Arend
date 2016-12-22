@@ -1,10 +1,9 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.InferenceReferenceExpression;
-import com.jetbrains.jetpad.vclang.term.expr.type.Type;
-import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.InferenceReferenceExpression;
+import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 
 public class Equation implements InferenceVariableListener {
   public TypeMax type;

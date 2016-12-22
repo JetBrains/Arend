@@ -1,23 +1,19 @@
 package com.jetbrains.jetpad.vclang.module.caching.serialization;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.*;
+import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.ClassField;
+import com.jetbrains.jetpad.vclang.core.expr.*;
+import com.jetbrains.jetpad.vclang.core.expr.type.PiUniverseType;
+import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
+import com.jetbrains.jetpad.vclang.core.pattern.*;
+import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
+import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
+import com.jetbrains.jetpad.vclang.core.sort.*;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.*;
-import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
-import com.jetbrains.jetpad.vclang.term.expr.sort.LevelMax;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
-import com.jetbrains.jetpad.vclang.term.expr.subst.LevelArguments;
-import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
-import com.jetbrains.jetpad.vclang.term.expr.type.TypeMax;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
-import com.jetbrains.jetpad.vclang.term.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.term.pattern.*;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.ArrayList;
 import java.util.HashMap;

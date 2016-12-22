@@ -1,23 +1,24 @@
 package com.jetbrains.jetpad.vclang.term;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
+import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.Constructor;
+import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
+import com.jetbrains.jetpad.vclang.core.sort.Level;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.core.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
-import com.jetbrains.jetpad.vclang.term.context.binding.LevelBinding;
-import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Level;
-import com.jetbrains.jetpad.vclang.term.expr.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.expr.sort.SortMax;
-import com.jetbrains.jetpad.vclang.term.expr.type.PiUniverseType;
+import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
+import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 
 public class Prelude extends SimpleNamespace {
   public static DataDefinition INTERVAL;
@@ -60,36 +61,36 @@ public class Prelude extends SimpleNamespace {
     if (abstractDef.getName().equals("Path")) {
       PATH = (DataDefinition) definition;
       List<LevelBinding> pathPolyParams = PATH.getPolyParams();
-      PATH.getParameters().setType(Pi(Interval(), Universe(new Sort(new Level(pathPolyParams.get(0)), new Level(pathPolyParams.get(1), 1)))));
+      PATH.getParameters().setType(Pi(ExpressionFactory.Interval(), ExpressionFactory.Universe(new Sort(new Level(pathPolyParams.get(0)), new Level(pathPolyParams.get(1), 1)))));
       PATH_CON = PATH.getConstructor("path");
     } else
     if (abstractDef.getName().equals("=")) {
       PATH_INFIX = (FunctionDefinition) definition;
       List<LevelBinding> infixPolyParams = PATH_INFIX.getPolyParams();
-      PATH_INFIX.getParameters().setType(Universe(new Sort(new Level(infixPolyParams.get(0)), new Level(infixPolyParams.get(1), 1))));
+      PATH_INFIX.getParameters().setType(ExpressionFactory.Universe(new Sort(new Level(infixPolyParams.get(0)), new Level(infixPolyParams.get(1), 1))));
     } else
     if (abstractDef.getName().equals("@")) {
       AT = (FunctionDefinition) definition;
       DependentLink param4 = AT.getParameters().getNext().getNext().getNext();
-      DependentLink atPath = param("f", PATH_CON.getParameters().getType());
-      AT.setElimTree(top(AT.getParameters(), branch(param4.getNext(), tail(),
-        clause(LEFT, EmptyDependentLink.getInstance(), Reference(AT.getParameters().getNext())),
-        clause(RIGHT, EmptyDependentLink.getInstance(), Reference(AT.getParameters().getNext().getNext())),
-        clause(branch(param4, tail(param4.getNext()),
-            clause(PATH_CON, atPath, Apps(Reference(atPath), Reference(param4.getNext()))))))));
+      DependentLink atPath = ExpressionFactory.param("f", PATH_CON.getParameters().getType());
+      AT.setElimTree(ExpressionFactory.top(AT.getParameters(), ExpressionFactory.branch(param4.getNext(), ExpressionFactory.tail(),
+        clause(LEFT, EmptyDependentLink.getInstance(), ExpressionFactory.Reference(AT.getParameters().getNext())),
+        clause(RIGHT, EmptyDependentLink.getInstance(), ExpressionFactory.Reference(AT.getParameters().getNext().getNext())),
+        ExpressionFactory.clause(ExpressionFactory.branch(param4, ExpressionFactory.tail(param4.getNext()),
+            ExpressionFactory.clause(PATH_CON, atPath, ExpressionFactory.Apps(ExpressionFactory.Reference(atPath), ExpressionFactory.Reference(param4.getNext()))))))));
       AT.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
     } else
     if (abstractDef.getName().equals("coe")) {
       COERCE = (FunctionDefinition) definition;
-      COERCE.setElimTree(top(COERCE.getParameters(), branch(COERCE.getParameters().getNext().getNext(), tail(),
-        clause(LEFT, EmptyDependentLink.getInstance(), Abstract.Definition.Arrow.RIGHT, Reference(COERCE.getParameters().getNext())))));
+      COERCE.setElimTree(ExpressionFactory.top(COERCE.getParameters(), ExpressionFactory.branch(COERCE.getParameters().getNext().getNext(), ExpressionFactory.tail(),
+        ExpressionFactory.clause(LEFT, EmptyDependentLink.getInstance(), Abstract.Definition.Arrow.RIGHT, ExpressionFactory.Reference(COERCE.getParameters().getNext())))));
       COERCE.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
     } else
     if (abstractDef.getName().equals("iso")) {
       ISO = (FunctionDefinition) definition;
-      ISO.setElimTree(top(ISO.getParameters(), branch(ISO.getParameters().getNext().getNext().getNext().getNext().getNext().getNext(), tail(),
-        clause(LEFT, EmptyDependentLink.getInstance(), Reference(ISO.getParameters())),
-        clause(RIGHT, EmptyDependentLink.getInstance(), Reference(ISO.getParameters().getNext())))));
+      ISO.setElimTree(ExpressionFactory.top(ISO.getParameters(), ExpressionFactory.branch(ISO.getParameters().getNext().getNext().getNext().getNext().getNext().getNext(), ExpressionFactory.tail(),
+        clause(LEFT, EmptyDependentLink.getInstance(), ExpressionFactory.Reference(ISO.getParameters())),
+        clause(RIGHT, EmptyDependentLink.getInstance(), ExpressionFactory.Reference(ISO.getParameters().getNext())))));
       ISO.setResultType(new PiUniverseType(EmptyDependentLink.getInstance(), new SortMax(new Sort(new Level(ISO.getPolyParams().get(0)), new Level(ISO.getPolyParams().get(1))))));
       ISO.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
     } else

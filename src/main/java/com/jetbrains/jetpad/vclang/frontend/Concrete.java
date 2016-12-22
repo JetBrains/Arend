@@ -1,13 +1,13 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.prettyprint.PrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractCompareVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
-import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
+import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.AbstractStatementVisitor;
 
 import java.util.Collections;
 import java.util.List;
@@ -118,7 +118,7 @@ public final class Concrete {
     }
 
     @Override
-    public void setWellTyped(List<com.jetbrains.jetpad.vclang.term.context.binding.Binding> context, com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped) {
+    public void setWellTyped(List<Binding> context, com.jetbrains.jetpad.vclang.core.expr.Expression wellTyped) {
     }
 
     @Override
@@ -1094,7 +1094,7 @@ public final class Concrete {
     }
 
     @Override
-    public void setWellTyped(com.jetbrains.jetpad.vclang.term.definition.Condition condition) {
+    public void setWellTyped(com.jetbrains.jetpad.vclang.core.definition.Condition condition) {
 
     }
   }
@@ -1338,7 +1338,7 @@ public final class Concrete {
     }
 
     @Override
-    public void setWellTyped(com.jetbrains.jetpad.vclang.term.pattern.Pattern pattern) {
+    public void setWellTyped(com.jetbrains.jetpad.vclang.core.pattern.Pattern pattern) {
 
     }
 

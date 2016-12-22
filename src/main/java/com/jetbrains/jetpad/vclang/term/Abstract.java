@@ -1,9 +1,7 @@
 package com.jetbrains.jetpad.vclang.term;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
-import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -37,7 +35,7 @@ public final class Abstract {
   public interface Expression extends SourceNode {
     byte PREC = -12;
     <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
-    void setWellTyped(List<com.jetbrains.jetpad.vclang.term.context.binding.Binding> context, com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped);
+    void setWellTyped(List<Binding> context, com.jetbrains.jetpad.vclang.core.expr.Expression wellTyped);
   }
 
   public interface ArgumentExpression extends SourceNode {
@@ -374,7 +372,7 @@ public final class Abstract {
   }
 
   public interface Pattern extends SourceNode {
-    void setWellTyped(com.jetbrains.jetpad.vclang.term.pattern.Pattern pattern);
+    void setWellTyped(com.jetbrains.jetpad.vclang.core.pattern.Pattern pattern);
   }
 
   public interface NamePattern extends Pattern {
@@ -398,7 +396,7 @@ public final class Abstract {
     List<? extends PatternArgument> getPatterns();
     String getConstructorName();
     Expression getTerm();
-    void setWellTyped(com.jetbrains.jetpad.vclang.term.definition.Condition condition);
+    void setWellTyped(com.jetbrains.jetpad.vclang.core.definition.Condition condition);
   }
 
 

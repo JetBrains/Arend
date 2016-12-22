@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.typechecking.termination.BaseCallMatrix;
 import com.jetbrains.jetpad.vclang.typechecking.termination.CompositeCallMatrix;
 import com.jetbrains.jetpad.vclang.typechecking.termination.RecursiveBehavior;

@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.termination;
 
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
+import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 
 import java.util.HashMap;
 import java.util.Map;

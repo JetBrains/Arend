@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
 
 public class ClassViewInstanceKey<T> {
   public final Definition definition;

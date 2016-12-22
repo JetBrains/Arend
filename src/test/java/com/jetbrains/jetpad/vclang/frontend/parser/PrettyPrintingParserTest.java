@@ -1,12 +1,12 @@
 package com.jetbrains.jetpad.vclang.frontend.parser;
 
-import com.jetbrains.jetpad.vclang.prettyprint.PrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
-import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.ToAbstractVisitor;
+import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
@@ -16,7 +16,7 @@ import java.util.EnumSet;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static org.junit.Assert.*;
 
 public class PrettyPrintingParserTest extends ParserTestCase {

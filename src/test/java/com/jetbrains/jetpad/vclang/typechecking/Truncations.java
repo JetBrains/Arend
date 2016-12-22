@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;

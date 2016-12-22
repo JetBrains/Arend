@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractCompareVisitor;
+import com.jetbrains.jetpad.vclang.frontend.AbstractCompareVisitor;
 import org.antlr.v4.runtime.*;
 
 import static org.junit.Assert.assertThat;

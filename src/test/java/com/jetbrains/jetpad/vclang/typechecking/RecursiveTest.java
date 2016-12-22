@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;

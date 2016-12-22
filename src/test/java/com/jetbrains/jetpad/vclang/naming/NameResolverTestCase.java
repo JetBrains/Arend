@@ -17,8 +17,8 @@ import com.jetbrains.jetpad.vclang.frontend.parser.ParserTestCase;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteResolveListener;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 
 import java.util.ArrayList;
 import java.util.List;

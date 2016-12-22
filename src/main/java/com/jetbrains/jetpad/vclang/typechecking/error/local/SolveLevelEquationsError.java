@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.LevelVariable;
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.LevelEquation;
 
 import java.util.List;

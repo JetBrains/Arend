@@ -1,12 +1,12 @@
 package com.jetbrains.jetpad.vclang.typechecking.constructions;
 
-import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Universe;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Pi;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Universe;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 

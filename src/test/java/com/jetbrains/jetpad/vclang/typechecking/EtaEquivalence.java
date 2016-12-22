@@ -1,13 +1,13 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
+import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
+import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Reference;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 

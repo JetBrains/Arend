@@ -1,11 +1,11 @@
 package com.jetbrains.jetpad.vclang.module.caching.serialization;
 
+import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.module.caching.LocalizedTypecheckerState;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.LevelBinding;
-import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 
 public class DefinitionStateSerialization {
   private final PersistenceProvider<? extends SourceId> myPersistenceProvider;
@@ -40,7 +40,7 @@ public class DefinitionStateSerialization {
       out.addPolyParam(defSerializer.createLevelBinding(polyVar));
     }
 
-    out.setHasErrors(com.jetbrains.jetpad.vclang.term.definition.Definition.TypeCheckingStatus.HAS_ERRORS.equals(definition.hasErrors()));
+    out.setHasErrors(Definition.TypeCheckingStatus.HAS_ERRORS.equals(definition.hasErrors()));
 
     if (definition instanceof ClassDefinition) {
       // type cannot possibly have errors

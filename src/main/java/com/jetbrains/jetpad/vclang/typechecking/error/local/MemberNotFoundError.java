@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
 
 public class MemberNotFoundError extends LocalTypeCheckingError {
   public final Definition targetDefinition;
