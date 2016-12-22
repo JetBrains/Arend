@@ -1,13 +1,9 @@
-package com.jetbrains.jetpad.vclang.module.source.file;
+package com.jetbrains.jetpad.vclang.parser;
 
 import com.jetbrains.jetpad.vclang.error.CompositeErrorReporter;
 import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.parser.BuildVisitor;
-import com.jetbrains.jetpad.vclang.parser.ParserError;
-import com.jetbrains.jetpad.vclang.parser.VcgrammarLexer;
-import com.jetbrains.jetpad.vclang.parser.VcgrammarParser;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import org.antlr.v4.runtime.*;

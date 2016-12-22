@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.module;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.caching.CacheStorageSupplier;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
-import com.jetbrains.jetpad.vclang.module.source.file.ParseSource;
+import com.jetbrains.jetpad.vclang.parser.ParseSource;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.io.*;

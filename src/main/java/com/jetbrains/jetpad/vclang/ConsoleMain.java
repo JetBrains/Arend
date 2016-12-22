@@ -11,7 +11,7 @@ import com.jetbrains.jetpad.vclang.module.caching.CachingModuleLoader;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.CompositeSourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.CompositeStorage;
-import com.jetbrains.jetpad.vclang.module.source.file.FileStorage;
+import com.jetbrains.jetpad.vclang.module.source.FileStorage;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
