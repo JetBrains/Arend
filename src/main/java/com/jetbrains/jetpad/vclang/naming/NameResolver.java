@@ -40,7 +40,7 @@ public class NameResolver {
 
   private ModuleNamespace resolveModuleNamespace_(final ModulePath path) {
     ModuleNamespace ns = myModuleNamespaceProvider.root();
-    for (String name : path.list()) {
+    for (String name : path.toList()) {
       ns = ns.getSubmoduleNamespace(name);
       if (ns == null) {
         break;
@@ -108,7 +108,7 @@ public class NameResolver {
     if (moduleCall.getPath() == null) {
       throw new IllegalArgumentException();
     }
-    ModuleNamespace ns = resolveModuleNamespace(new ModulePath(moduleCall.getPath()));
+    ModuleNamespace ns = resolveModuleNamespace(moduleCall.getPath());
     return ns == null ? null : ns.getRegisteredClass();
   }
 

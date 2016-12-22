@@ -11,7 +11,7 @@ public abstract class BaseModuleNamespaceProvider implements ModuleNamespaceProv
   }
 
   protected static SimpleModuleNamespace ensureModuleNamespace(SimpleModuleNamespace rootNamespace, ModulePath modulePath) {
-    if (modulePath.list().length == 0) {
+    if (modulePath.toList().isEmpty()) {
       return rootNamespace;
     }
     SimpleModuleNamespace parentNs = ensureModuleNamespace(rootNamespace, modulePath.getParent());

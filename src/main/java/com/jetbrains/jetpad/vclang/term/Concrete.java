@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term;
 
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.parser.Precedence;
 import com.jetbrains.jetpad.vclang.parser.prettyprint.PrettyPrintVisitor;
@@ -307,16 +308,16 @@ public final class Concrete {
   }
 
   public static class ModuleCallExpression extends Expression implements Abstract.ModuleCallExpression {
-    private final List<String> myPath;
+    private final ModulePath myPath;
     private Abstract.Definition myModule;
 
     public ModuleCallExpression(Position position, List<String> path) {
       super(position);
-      this.myPath = path;
+      this.myPath = new ModulePath(path);
     }
 
     @Override
-    public List<String> getPath() {
+    public ModulePath getPath() {
       return myPath;
     }
 
@@ -1242,7 +1243,7 @@ public final class Concrete {
   public static class NamespaceCommandStatement extends Statement implements Abstract.NamespaceCommandStatement {
     private final Kind myKind;
     private Abstract.Definition myDefinition;
-    private final List<String> myModulePath;
+    private final ModulePath myModulePath;
     private final List<String> myPath;
     private final boolean myHiding;
     private final List<String> myNames;
@@ -1251,7 +1252,7 @@ public final class Concrete {
       super(position);
       myKind = kind;
       myDefinition = null;
-      myModulePath = modulePath;
+      myModulePath = new ModulePath(modulePath);
       myPath = path;
       myHiding = isHiding;
       myNames = names;
@@ -1263,7 +1264,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<String> getModulePath() {
+    public ModulePath getModulePath() {
       return myModulePath;
     }
 

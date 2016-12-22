@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.parser.prettyprint;
 
-import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.parser.Precedence;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
@@ -123,7 +122,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitModuleCall(Abstract.ModuleCallExpression expr, Byte prec) {
-    myBuilder.append(new ModulePath(expr.getPath()));
+    myBuilder.append(expr.getPath());
     return null;
   }
 
@@ -1091,9 +1090,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
 
     if (stat.getModulePath() != null) {
-      for (int i = 0; i < stat.getModulePath().size(); i++) {
-        myBuilder.append("::").append(stat.getModulePath().get(i));
-      }
+      myBuilder.append(stat.getModulePath());
     }
 
     if (!stat.getPath().isEmpty()){

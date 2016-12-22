@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.parser.prettyprint.StringPrettyPrintable;
@@ -486,7 +485,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   @Override
   public Result visitModuleCall(Abstract.ModuleCallExpression expr, Type expectedType) {
     if (expr.getModule() == null) {
-      LocalTypeCheckingError error = new UnresolvedReferenceError(expr, new ModulePath(expr.getPath()).toString());
+      LocalTypeCheckingError error = new UnresolvedReferenceError(expr, expr.getPath().toString());
       expr.setWellTyped(myContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
@@ -494,7 +493,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     Definition typeChecked = myState.getTypechecked(expr.getModule());
     if (typeChecked == null) {
       assert false;
-      LocalTypeCheckingError error = new LocalTypeCheckingError("Internal error: module '" + new ModulePath(expr.getPath()) + "' is not available yet", expr);
+      LocalTypeCheckingError error = new LocalTypeCheckingError("Internal error: module '" + expr.getPath() + "' is not available yet", expr);
       expr.setWellTyped(myContext, Error(null, error));
       myErrorReporter.report(error);
       return null;

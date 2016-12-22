@@ -60,7 +60,7 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
   }
 
   private Path baseFile(ModulePath modulePath) {
-    return myRoot.resolve(Paths.get("", modulePath.list()));
+    return myRoot.resolve(Paths.get("", modulePath.toArray()));
   }
 
   @Override
@@ -147,7 +147,7 @@ public class FileStorage implements SourceSupplier<FileStorage.SourceId>, CacheS
     }
 
     public Path getRelativeFilePath() {
-      return Paths.get("", myModulePath.list());
+      return Paths.get("", myModulePath.toArray());
     }
 
     public long getLastModified() {

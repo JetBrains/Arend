@@ -164,7 +164,7 @@ public class Prelude extends SimpleNamespace {
 
     @Override
     public SourceId locateModule(ModulePath modulePath) {
-      if (modulePath.getParent().list().length == 0 && modulePath.getName().equals("Prelude")) {
+      if (modulePath.getParent().toList().isEmpty() && modulePath.getName().equals("Prelude")) {
         return preludeSourceId;
       } else {
         return null;

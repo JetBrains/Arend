@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term;
 
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.parser.Precedence;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
@@ -63,7 +64,7 @@ public final class Abstract {
 
   public interface ModuleCallExpression extends Expression {
     byte PREC = 12;
-    List<String> getPath();
+    ModulePath getPath();
     Definition getModule();
   }
 
@@ -356,7 +357,7 @@ public final class Abstract {
     enum Kind { OPEN, EXPORT }
 
     Kind getKind();
-    List<String> getModulePath();
+    ModulePath getModulePath();
     List<String> getPath();
 
     Definition getResolvedClass();
