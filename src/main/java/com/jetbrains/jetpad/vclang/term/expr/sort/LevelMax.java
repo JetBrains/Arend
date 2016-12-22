@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.sort;
 
-import com.jetbrains.jetpad.vclang.parser.prettyprint.PrettyPrintVisitor;
-import com.jetbrains.jetpad.vclang.parser.prettyprint.PrettyPrintable;
+import com.jetbrains.jetpad.vclang.prettyprint.PrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.prettyprint.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;

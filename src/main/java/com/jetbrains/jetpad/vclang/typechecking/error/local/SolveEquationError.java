@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
-import com.jetbrains.jetpad.vclang.parser.prettyprint.PrettyPrintable;
+import com.jetbrains.jetpad.vclang.prettyprint.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 public class SolveEquationError<E extends PrettyPrintable> extends LocalTypeCheckingError {

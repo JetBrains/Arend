@@ -1,12 +1,12 @@
 package com.jetbrains.jetpad.vclang.term.expr.factory;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 
 public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   @Override

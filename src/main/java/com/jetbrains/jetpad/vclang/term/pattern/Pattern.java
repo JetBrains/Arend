@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.pattern;
 
-import com.jetbrains.jetpad.vclang.parser.prettyprint.PrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;

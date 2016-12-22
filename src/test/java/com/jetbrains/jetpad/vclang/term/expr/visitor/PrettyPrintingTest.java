@@ -1,10 +1,9 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.parser.Precedence;
-import com.jetbrains.jetpad.vclang.parser.prettyprint.PrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory;
+import com.jetbrains.jetpad.vclang.frontend.Concrete;
+import com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.LetClause;
@@ -17,7 +16,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertNotNull;
 
@@ -68,7 +67,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     List<Concrete.Argument> arguments = new ArrayList<>(2);
     arguments.add(cTele(cvars("X"), cUniverse(0)));
     arguments.add(cTele(cvars("x"), cVar("X")));
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(ConcreteExpressionFactory.POSITION, "f", Precedence.DEFAULT, arguments, cVar("X"), Abstract.Definition.Arrow.RIGHT, cLam("X", cLam("x", cVar("x"))), Collections.<Concrete.Statement>emptyList());
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(ConcreteExpressionFactory.POSITION, "f", Abstract.Precedence.DEFAULT, arguments, cVar("X"), Abstract.Definition.Arrow.RIGHT, cLam("X", cLam("x", cVar("x"))), Collections.<Concrete.Statement>emptyList());
     def.accept(new PrettyPrintVisitor(new StringBuilder(), 0), null);
   }
 

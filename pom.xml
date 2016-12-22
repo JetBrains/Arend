@@ -96,7 +96,7 @@
             </goals>
             <phase>process-classes</phase>
             <configuration>
-              <mainClass>${project.groupId}.${project.artifactId}.PreludeCacheGenerator</mainClass>
+              <mainClass>${project.groupId}.${project.artifactId}.frontend.PreludeCacheGenerator</mainClass>
               <arguments>
                 <argument>${project.build.outputDirectory}</argument>
               </arguments>

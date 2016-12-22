@@ -1,19 +1,22 @@
 package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.frontend.PreludeStorage;
+import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
+import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
+import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.module.DefaultModuleLoader;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.namespace.*;
-import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotNameResolver;
-import com.jetbrains.jetpad.vclang.naming.oneshot.visitor.DefinitionResolveNameVisitor;
-import com.jetbrains.jetpad.vclang.naming.oneshot.visitor.ExpressionResolveNameVisitor;
+import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotNameResolver;
+import com.jetbrains.jetpad.vclang.frontend.resolving.visitor.DefinitionResolveNameVisitor;
+import com.jetbrains.jetpad.vclang.frontend.resolving.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
-import com.jetbrains.jetpad.vclang.parser.ParserTestCase;
+import com.jetbrains.jetpad.vclang.frontend.parser.ParserTestCase;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.ConcreteResolveListener;
-import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.frontend.Concrete;
+import com.jetbrains.jetpad.vclang.frontend.ConcreteResolveListener;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 
@@ -28,8 +31,8 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   @SuppressWarnings("StaticNonFinalField")
   private static Abstract.ClassDefinition LOADED_PRELUDE = null;
 
-  private   final SimpleModuleNamespaceProvider  moduleNsProvider  = new SimpleModuleNamespaceProvider();
-  protected final SimpleStaticNamespaceProvider  staticNsProvider  = new SimpleStaticNamespaceProvider();
+  private   final SimpleModuleNamespaceProvider moduleNsProvider  = new SimpleModuleNamespaceProvider();
+  protected final SimpleStaticNamespaceProvider staticNsProvider  = new SimpleStaticNamespaceProvider();
   protected final SimpleDynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
   private   final NameResolver nameResolver = new NameResolver(moduleNsProvider, staticNsProvider, dynamicNsProvider);
 
@@ -41,8 +44,8 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
     if (LOADED_PRELUDE == null) {
       ListErrorReporter internalErrorReporter = new ListErrorReporter();
-      Prelude.PreludeStorage preludeStorage = new Prelude.PreludeStorage();
-      LOADED_PRELUDE = new DefaultModuleLoader<>(preludeStorage, internalErrorReporter, new DefaultModuleLoader.ModuleLoadingListener<Prelude.SourceId>()).load(preludeStorage.preludeSourceId);
+      PreludeStorage preludeStorage = new PreludeStorage();
+      LOADED_PRELUDE = new DefaultModuleLoader<>(preludeStorage, internalErrorReporter, new DefaultModuleLoader.ModuleLoadingListener<PreludeStorage.SourceId>()).load(preludeStorage.preludeSourceId);
       assertThat("Failed loading Prelude", internalErrorReporter.getErrorList(), containsErrors(0));
 
       OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(internalErrorReporter, new ConcreteResolveListener(), moduleNsProvider, staticNsProvider, dynamicNsProvider);

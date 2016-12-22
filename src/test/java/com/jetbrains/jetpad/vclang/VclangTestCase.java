@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.frontend.ErrorFormatter;
 import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;

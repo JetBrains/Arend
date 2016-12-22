@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.type;
 
-import com.jetbrains.jetpad.vclang.parser.prettyprint.PrettyPrintable;
+import com.jetbrains.jetpad.vclang.prettyprint.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;

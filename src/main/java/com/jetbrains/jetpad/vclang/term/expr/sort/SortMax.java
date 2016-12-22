@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.sort;
 
-import com.jetbrains.jetpad.vclang.parser.prettyprint.PrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
