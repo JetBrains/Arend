@@ -17,7 +17,7 @@ import static com.jetbrains.jetpad.vclang.module.ModulePath.moduleName;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 
-public class BaseModuleLoaderTest extends VclangTestCase {
+public class DefaultModuleLoaderTest extends VclangTestCase {
   private MemoryStorage storage;
   private Map<MemoryStorage.SourceId, Abstract.ClassDefinition> loadedModules;
   private SourceModuleLoader<MemoryStorage.SourceId> moduleLoader;
@@ -28,7 +28,7 @@ public class BaseModuleLoaderTest extends VclangTestCase {
     storage = new MemoryStorage();
     loadedModules = new HashMap<>();
     loadingErrors = new ArrayList<>();
-    moduleLoader = new BaseModuleLoader<>(storage, errorReporter, new BaseModuleLoader.ModuleLoadingListener<MemoryStorage.SourceId>() {
+    moduleLoader = new DefaultModuleLoader<>(storage, errorReporter, new DefaultModuleLoader.ModuleLoadingListener<MemoryStorage.SourceId>() {
       @Override
       public void loadingError(MemoryStorage.SourceId module, ModuleLoadingError loadingError) {
         loadingErrors.add(loadingError);

@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming.oneshot;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.module.BaseModuleLoader;
+import com.jetbrains.jetpad.vclang.module.DefaultModuleLoader;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.error.ModuleLoadingError;
@@ -13,7 +13,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ResolvingModuleLoader<SourceIdT extends SourceId> extends BaseModuleLoader<SourceIdT> {
+public class ResolvingModuleLoader<SourceIdT extends SourceId> extends DefaultModuleLoader<SourceIdT> {
   private final ResolvingModuleLoadingListener<SourceIdT> myResolvingModuleListener;
   private final Map<ModulePath, Abstract.ClassDefinition> myLoadedModules = new HashMap<>();
 

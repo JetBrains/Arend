@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
-import com.jetbrains.jetpad.vclang.module.BaseModuleLoader;
+import com.jetbrains.jetpad.vclang.module.DefaultModuleLoader;
 import com.jetbrains.jetpad.vclang.module.caching.CachePersistenceException;
 import com.jetbrains.jetpad.vclang.module.caching.CacheStorageSupplier;
 import com.jetbrains.jetpad.vclang.module.caching.CachingModuleLoader;
@@ -91,7 +91,7 @@ public class PreludeCacheGenerator {
     final DynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
     final ListErrorReporter errorReporter = new ListErrorReporter();
     Prelude.PreludeStorage storage = new Prelude.PreludeStorage();
-    ResolvingModuleLoader<Prelude.SourceId> baseModuleLoader = new ResolvingModuleLoader<>(storage, new BaseModuleLoader.ModuleLoadingListener<Prelude.SourceId>(), statisNsProvider, dynamicNsProvider, new ConcreteResolveListener(), errorReporter);
+    ResolvingModuleLoader<Prelude.SourceId> baseModuleLoader = new ResolvingModuleLoader<>(storage, new DefaultModuleLoader.ModuleLoadingListener<Prelude.SourceId>(), statisNsProvider, dynamicNsProvider, new ConcreteResolveListener(), errorReporter);
     CachingModuleLoader<Prelude.SourceId> moduleLoader = new CachingModuleLoader<>(baseModuleLoader, new PreludePersistenceProvider(), new PreludeBuildCacheSupplier(Paths.get(args[0])), new PreludeDefLocator(storage.preludeSourceId), false);
     Abstract.ClassDefinition prelude = moduleLoader.load(storage.preludeSourceId);
     if (!errorReporter.getErrorList().isEmpty()) throw new IllegalStateException();

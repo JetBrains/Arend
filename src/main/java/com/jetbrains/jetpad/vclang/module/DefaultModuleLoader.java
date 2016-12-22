@@ -11,12 +11,12 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.io.IOException;
 
-public class BaseModuleLoader<SourceIdT extends SourceId> extends SourceModuleLoader<SourceIdT> {
+public class DefaultModuleLoader<SourceIdT extends SourceId> extends SourceModuleLoader<SourceIdT> {
   private final SourceSupplier<SourceIdT> mySourceSupplier;
   private final ErrorReporter myErrorReporter;
   private final ModuleLoadingListener<SourceIdT> myListener;
 
-  public BaseModuleLoader(SourceSupplier<SourceIdT> sourceSupplier, ErrorReporter errorReporter, ModuleLoadingListener<SourceIdT> listener) {
+  public DefaultModuleLoader(SourceSupplier<SourceIdT> sourceSupplier, ErrorReporter errorReporter, ModuleLoadingListener<SourceIdT> listener) {
     mySourceSupplier = sourceSupplier;
     myErrorReporter = errorReporter;
     myListener = listener;
