@@ -1262,7 +1262,7 @@ public final class Concrete {
       super(position);
       myKind = kind;
       myDefinition = null;
-      myModulePath = new ModulePath(modulePath);
+      myModulePath = modulePath != null ? new ModulePath(modulePath) : null;
       myPath = path;
       myHiding = isHiding;
       myNames = names;
