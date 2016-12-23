@@ -154,8 +154,7 @@ public final class Abstract {
     Expression getCodomain();
   }
 
-  public interface BinOpExpression extends Expression {
-    Definition getResolvedBinOp();
+  public interface BinOpExpression extends DefCallExpression {
     Expression getLeft();
     Expression getRight();
   }

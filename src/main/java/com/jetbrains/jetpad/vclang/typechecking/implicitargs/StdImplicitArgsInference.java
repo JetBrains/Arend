@@ -13,8 +13,6 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
-import com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.prettyprint.StringPrettyPrintable;
@@ -140,9 +138,6 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     } else {
       if (fun instanceof Abstract.DefCallExpression) {
         result = myVisitor.getTypeCheckingDefCall().typeCheckDefCall((Abstract.DefCallExpression) fun);
-        //  if (result != null) {
-        //    fun.setWellTyped(myVisitor.getContext(), result.getExpression());
-        //  }
       } else {
         result = myVisitor.typeCheck(fun, null);
       }
@@ -192,8 +187,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
   @Override
   public CheckTypeVisitor.PreResult infer(Abstract.BinOpExpression expr, Type expectedType) {
-    Concrete.Position position = expr instanceof Concrete.Expression ? ((Concrete.Expression) expr).getPosition() : ConcreteExpressionFactory.POSITION;
-    return inferArg(inferArg(new Concrete.DefCallExpression(position, expr.getResolvedBinOp()), expr.getLeft(), true, null), expr.getRight(), true, expr);
+    return inferArg(inferArg(expr, expr.getLeft(), true, null), expr.getRight(), true, expr);
   }
 
   @Override

@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
+import com.jetbrains.jetpad.vclang.frontend.Concrete;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.ArrayList;
@@ -68,7 +68,7 @@ public abstract class RowImplicitArgsInference extends BaseImplicitArgsInference
     args.add(new AbstractArgumentExpression(expr.getRight()));
 
     Concrete.Position position = expr instanceof Concrete.Expression ? ((Concrete.Expression) expr).getPosition() : null;
-    return typeCheckFunctionApps(new Concrete.DefCallExpression(position, expr.getResolvedBinOp()), args, expr);
+    return typeCheckFunctionApps(new Concrete.DefCallExpression(position, expr.getReferent()), args, expr);
   }
 
   @Override

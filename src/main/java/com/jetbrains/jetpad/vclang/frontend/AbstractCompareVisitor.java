@@ -106,7 +106,7 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
     }
     if (!(expr2 instanceof Abstract.BinOpExpression)) return false;
     Abstract.BinOpExpression binOpExpr2 = (Abstract.BinOpExpression) expr2;
-    return expr1.getLeft().accept(this, binOpExpr2.getLeft()) && expr1.getRight().accept(this, binOpExpr2.getRight()) && expr1.getResolvedBinOp().equals(((Abstract.BinOpExpression) expr2).getResolvedBinOp());
+    return expr1.getLeft().accept(this, binOpExpr2.getLeft()) && expr1.getRight().accept(this, binOpExpr2.getRight()) && expr1.getReferent().equals(((Abstract.BinOpExpression) expr2).getReferent());
   }
 
   @Override

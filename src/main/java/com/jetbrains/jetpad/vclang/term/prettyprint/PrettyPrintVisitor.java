@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.prettyprint;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.core.definition.Name;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.AbstractStatementVisitor;
@@ -317,26 +317,26 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     new BinOpLayout() {
       @Override
       void printLeft(PrettyPrintVisitor pp) {
-        if (prec > expr.getResolvedBinOp().getPrecedence().priority) pp.myBuilder.append('(');
-        expr.getLeft().accept(pp, (byte) (expr.getResolvedBinOp().getPrecedence().priority + (expr.getResolvedBinOp().getPrecedence().associativity == Abstract.Precedence.Associativity.LEFT_ASSOC ? 0 : 1)));
+        if (prec > expr.getReferent().getPrecedence().priority) pp.myBuilder.append('(');
+        expr.getLeft().accept(pp, (byte) (expr.getReferent().getPrecedence().priority + (expr.getReferent().getPrecedence().associativity == Abstract.Precedence.Associativity.LEFT_ASSOC ? 0 : 1)));
       }
 
       @Override
       void printRight(PrettyPrintVisitor pp) {
-        expr.getRight().accept(pp, (byte) (expr.getResolvedBinOp().getPrecedence().priority + (expr.getResolvedBinOp().getPrecedence().associativity == Abstract.Precedence.Associativity.RIGHT_ASSOC ? 0 : 1)));
-        if (prec > expr.getResolvedBinOp().getPrecedence().priority) pp.myBuilder.append(')');
+        expr.getRight().accept(pp, (byte) (expr.getReferent().getPrecedence().priority + (expr.getReferent().getPrecedence().associativity == Abstract.Precedence.Associativity.RIGHT_ASSOC ? 0 : 1)));
+        if (prec > expr.getReferent().getPrecedence().priority) pp.myBuilder.append(')');
       }
 
       @Override
       String getOpText() {
-        return new Name(expr.getResolvedBinOp().getName()).getInfixName();
+        return new Name(expr.getReferent().getName()).getInfixName();
       }
 
       @Override
       boolean increaseIndent(List<String> right_strings) {
         Abstract.Expression r = expr.getRight();
         if (r instanceof Abstract.BinOpExpression) {
-          Abstract.Definition referable = ((Abstract.BinOpExpression) r).getResolvedBinOp();
+          Abstract.Definition referable = ((Abstract.BinOpExpression) r).getReferent();
           if (referable!=null) {
             if (prec <= referable.getPrecedence().priority) return false; // no bracket drawn
           }

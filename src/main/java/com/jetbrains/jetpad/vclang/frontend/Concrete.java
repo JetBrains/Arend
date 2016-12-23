@@ -3,11 +3,11 @@ package com.jetbrains.jetpad.vclang.frontend;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.AbstractStatementVisitor;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 
 import java.util.Collections;
 import java.util.List;
@@ -243,7 +243,17 @@ public final class Concrete {
     }
 
     @Override
-    public Abstract.Definition getResolvedBinOp() {
+    public String getName() {
+      return myBinOp.getName();
+    }
+
+    @Override
+    public Abstract.Expression getExpression() {
+      return null;
+    }
+
+    @Override
+    public Abstract.Definition getReferent() {
       return myBinOp;
     }
 
