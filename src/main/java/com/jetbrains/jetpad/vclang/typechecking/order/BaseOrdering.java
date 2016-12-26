@@ -43,6 +43,10 @@ public class BaseOrdering {
   }
 
   private Set<Abstract.Definition> getTypecheckable(Abstract.Definition referable, Abstract.ClassDefinition enclosingClass) {
+    if (referable instanceof Abstract.ClassViewField) {
+      referable = ((Abstract.ClassViewField) referable).getUnderlyingField();
+    }
+
     if (referable instanceof Abstract.ClassField) {
       return Collections.singleton(referable.getParent());
     }
@@ -68,9 +72,11 @@ public class BaseOrdering {
   }
 
   public void doOrder(Abstract.Definition definition) {
-    Typecheckable typecheckable = new Typecheckable(definition, false);
-    if (!myVertices.containsKey(typecheckable)) {
-      doOrderRecursively(typecheckable);
+    if (!(definition instanceof Abstract.ClassView) && !(definition instanceof Abstract.ClassViewField)) {
+      Typecheckable typecheckable = new Typecheckable(definition, false);
+      if (!myVertices.containsKey(typecheckable)) {
+        doOrderRecursively(typecheckable);
+      }
     }
   }
 

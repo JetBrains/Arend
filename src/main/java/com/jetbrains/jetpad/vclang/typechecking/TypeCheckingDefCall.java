@@ -39,6 +39,12 @@ public class TypeCheckingDefCall {
   }
 
   private Definition getTypeCheckedDefinition(Abstract.Definition definition, Abstract.Expression expr) {
+    while (definition instanceof Abstract.ClassView) {
+      definition = ((Abstract.ClassView) definition).getUnderlyingClassDefCall().getReferent();
+    }
+    if (definition instanceof Abstract.ClassViewField) {
+      definition = ((Abstract.ClassViewField) definition).getUnderlyingField();
+    }
     Definition typeCheckedDefinition = myVisitor.getTypecheckingState().getTypechecked(definition);
     if (typeCheckedDefinition == null) {
       throw new IllegalStateException("Internal error: definition " + definition + " was not type checked");

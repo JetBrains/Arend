@@ -6,7 +6,7 @@ public interface ResolveListener {
   void nameResolved(Abstract.DefCallExpression defCallExpression, Abstract.Definition definition);
   void moduleResolved(Abstract.ModuleCallExpression moduleCallExpression, Abstract.Definition definition);
   void nsCmdResolved(Abstract.NamespaceCommandStatement nsCmdStatement, Abstract.Definition definition);
-  void implementResolved(Abstract.Implementation identifier, Abstract.Definition definition);
+  void implementResolved(Abstract.Implementation identifier, Abstract.ClassField definition);
   void implementResolved(Abstract.ClassFieldImpl identifier, Abstract.Definition definition);
   void classViewResolved(Abstract.ClassView classView, Abstract.ClassField classifyingField);
   void classViewFieldResolved(Abstract.ClassViewField field, Abstract.ClassField definition);

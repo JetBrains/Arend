@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.GlobalInstancePool;
 
 import java.util.HashMap;
@@ -27,17 +27,7 @@ public class SimpleTypecheckerState implements TypecheckerState {
   @Override
   public Definition getTypechecked(Abstract.Definition def) {
     assert def != null;
-    Abstract.Definition definition = def;
-    while (definition instanceof Abstract.ClassView) {
-      definition = ((Abstract.ClassView) definition).getUnderlyingClassDefCall().getReferent();
-    }
-    if (definition instanceof Abstract.ClassViewField) {
-      definition = ((Abstract.ClassViewField) definition).getUnderlyingField();
-    }
-    if (definition == null) {
-      throw new IllegalStateException("Internal error: " + def + " was not resolved");
-    }
-    return myTypechecked.get(definition);
+    return myTypechecked.get(def);
   }
 
   @Override

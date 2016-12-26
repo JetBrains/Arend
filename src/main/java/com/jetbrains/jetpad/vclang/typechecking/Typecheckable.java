@@ -7,6 +7,7 @@ public class Typecheckable {
   private final boolean myHeader;
 
   public Typecheckable(Abstract.Definition definition, boolean isHeader) {
+    assert !(definition instanceof Abstract.ClassView) && !(definition instanceof Abstract.ClassViewField);
     assert !isHeader || hasHeader(definition);
     this.myDefinition = definition;
     this.myHeader = isHeader;

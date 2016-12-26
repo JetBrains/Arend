@@ -936,7 +936,7 @@ public final class Concrete {
   }
 
   public static class Implementation extends Definition implements Abstract.Implementation {
-    private Abstract.Definition myImplemented;
+    private Abstract.ClassField myImplemented;
     private final Expression myExpression;
 
     public Implementation(Position position, String name, Expression expression) {
@@ -946,11 +946,11 @@ public final class Concrete {
     }
 
     @Override
-    public Abstract.Definition getImplementedField() {
+    public Abstract.ClassField getImplementedField() {
       return myImplemented;
     }
 
-    public void setImplemented(Abstract.Definition implemented) {
+    public void setImplemented(Abstract.ClassField implemented) {
       myImplemented = implemented;
     }
 

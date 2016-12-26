@@ -1,16 +1,16 @@
 package com.jetbrains.jetpad.vclang.frontend.resolving.visitor;
 
+import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.error.WrongDefinition;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
-import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.scope.*;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 
 import java.util.ArrayList;
@@ -222,7 +222,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       return null;
     }
 
-    Abstract.Definition referable = myNameResolver.resolveClassField(def.getParent(), def.getName(), myErrorReporter, def);
+    Abstract.ClassField referable = myNameResolver.resolveClassField(def.getParent(), def.getName(), myErrorReporter, def);
     if (referable != null) {
       myResolveListener.implementResolved(def, referable);
     }

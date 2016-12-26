@@ -286,7 +286,7 @@ public final class Abstract {
   }
 
   public interface Implementation extends Definition {
-    Definition getImplementedField();
+    ClassField getImplementedField();
     Expression getImplementation();
 
     @Override

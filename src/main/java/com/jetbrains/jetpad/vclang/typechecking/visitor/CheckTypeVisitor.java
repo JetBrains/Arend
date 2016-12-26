@@ -16,13 +16,6 @@ import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.sort.Level;
-import com.jetbrains.jetpad.vclang.core.sort.LevelMax;
-import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.core.sort.SortMax;
-import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
-import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.expr.type.PiTypeOmega;
 import com.jetbrains.jetpad.vclang.core.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
@@ -31,6 +24,9 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
+import com.jetbrains.jetpad.vclang.core.sort.*;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -950,7 +946,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     Map<ClassField, Abstract.ClassFieldImpl> classFieldMap = new HashMap<>();
 
     for (Abstract.ClassFieldImpl statement : statements) {
-      Definition implementedDef = myState.getTypechecked(statement.getImplementedField());
+      Abstract.Definition implField = statement.getImplementedField();
+      if (implField instanceof Abstract.ClassViewField) {
+        implField = ((Abstract.ClassViewField) implField).getUnderlyingField();
+      }
+      Definition implementedDef = myState.getTypechecked(implField);
       if (!(implementedDef instanceof ClassField)) {
         LocalTypeCheckingError error = new LocalTypeCheckingError("'" + implementedDef.getName() + "' is not a field", statement);
         if (resultExpr instanceof ClassCallExpression) {

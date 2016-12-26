@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.module.caching;
 
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
-import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.GlobalInstancePool;
 
@@ -58,37 +58,19 @@ public class LocalizedTypecheckerState<SourceIdT extends SourceId> implements Ty
   }
 
 
-  public class LocalTypecheckerState implements TypecheckerState {
+  public class LocalTypecheckerState {
     private boolean myIsOutOfSync = false;
     private final Map<Abstract.Definition, Definition> myDefinitions = new HashMap<>();
 
-    @Override
     public void record(Abstract.Definition def, Definition res) {
       if (myDefinitions.put(def, res) != res) {
         myIsOutOfSync = true;
       }
     }
 
-    // FIXME: DRY
-    @Override
     public Definition getTypechecked(Abstract.Definition def) {
       assert def != null;
-      Abstract.Definition definition = def;
-      while (definition instanceof Abstract.ClassView) {
-        definition = ((Abstract.ClassView) definition).getUnderlyingClassDefCall().getReferent();
-      }
-      if (definition instanceof Abstract.ClassViewField) {
-        definition = ((Abstract.ClassViewField) definition).getUnderlyingField();
-      }
-      if (definition == null) {
-        throw new IllegalStateException("Internal error: " + def + " was not resolved");
-      }
-      return myDefinitions.get(definition);
-    }
-
-    @Override
-    public GlobalInstancePool getInstancePool() {
-      throw new UnsupportedOperationException();
+      return myDefinitions.get(def);
     }
 
     public Set<Abstract.Definition> getTypecheckedDefinitions() {
