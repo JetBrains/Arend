@@ -1,17 +1,16 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
+import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.error.CompositeErrorReporter;
 import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
-import com.jetbrains.jetpad.vclang.core.definition.Definition;
-import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.AbstractStatementVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
@@ -22,6 +21,7 @@ import com.jetbrains.jetpad.vclang.typechecking.order.BaseOrdering;
 import com.jetbrains.jetpad.vclang.typechecking.order.SCC;
 import com.jetbrains.jetpad.vclang.typechecking.order.SCCListener;
 import com.jetbrains.jetpad.vclang.typechecking.termination.DefinitionCallGraph;
+import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.*;
 
@@ -37,19 +37,11 @@ public class Typechecking {
   }
 
   private static void typecheck(Map<Abstract.Definition, Suspension> suspensions, SCC scc, TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
-    List<Abstract.Definition> cycle = new ArrayList<>(scc.getUnits().size());
     if (scc.getUnits().size() > 1) {
-      boolean supportedScc = true;
       for (TypecheckingUnit unit : scc.getUnits()) {
-        cycle.add(unit.getDefinition());
         if (unit.isHeader() || !(unit.getDefinition() instanceof Abstract.FunctionDefinition)) {
-          supportedScc = false;
-
+          throw new BaseOrdering.SCCException(scc);
         }
-      }
-      if (!supportedScc) {
-        errorReporter.report(new TypeCheckingError(cycle.get(0), new CycleError(cycle)));
-        throw new SCCException();
       }
     }
 
@@ -134,7 +126,7 @@ public class Typechecking {
       for (Abstract.Definition definition : definitions) {
         ordering.doOrder(definition);
       }
-    } catch (SCCException ignored) { }
+    } catch (BaseOrdering.SCCException ignored) { }
   }
 
   private static class OrderDefinitionVisitor implements AbstractDefinitionVisitor<Void, Void>, AbstractStatementVisitor<Void, Void> {
@@ -228,8 +220,12 @@ public class Typechecking {
       for (Abstract.ClassDefinition classDef : classDefs) {
         new OrderDefinitionVisitor(ordering).orderDefinition(classDef);
       }
-    } catch (SCCException ignored) { }
+    } catch (BaseOrdering.SCCException e) {
+      List<Abstract.Definition> cycle = new ArrayList<>(e.scc.getUnits().size());
+      for (TypecheckingUnit unit : e.scc.getUnits()) {
+        cycle.add(unit.getDefinition());
+      }
+      errorReporter.report(new TypeCheckingError(cycle.get(0), new CycleError(cycle)));
+    }
   }
-
-  private static class SCCException extends RuntimeException { }
 }

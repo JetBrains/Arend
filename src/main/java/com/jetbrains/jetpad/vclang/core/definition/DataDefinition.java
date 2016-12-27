@@ -1,28 +1,27 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
-import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.core.expr.type.PiUniverseType;
-import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
-import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
+import com.jetbrains.jetpad.vclang.core.expr.type.PiUniverseType;
+import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
+import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
+import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
+import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.ConCall;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.DataCall;
 
 public class DataDefinition extends Definition {
   private List<Constructor> myConstructors;
-  private DependentLink myParameters;
+  private DefParameters myDefParameters;
   private Map<Constructor, Condition> myConditions;
   private SortMax mySorts;
   private boolean myMatchesOnInterval;
@@ -36,10 +35,10 @@ public class DataDefinition extends Definition {
   public DataDefinition(Abstract.DataDefinition abstractDef, SortMax sorts, DependentLink parameters) {
     super(abstractDef);
     myConstructors = new ArrayList<>();
-    myParameters = parameters;
+    myDefParameters = new DefParameters(parameters);
     mySorts = sorts;
     myMatchesOnInterval = false;
-    myTypeHasErrors = myParameters != null;
+    myTypeHasErrors = parameters != null;
     myHasErrors = myTypeHasErrors ? TypeCheckingStatus.HAS_ERRORS : TypeCheckingStatus.TYPE_CHECKING;
   }
 
@@ -59,12 +58,16 @@ public class DataDefinition extends Definition {
   @Override
   public DependentLink getParameters() {
     assert !typeHasErrors();
-    return myParameters;
+    return myDefParameters.getParameters();
   }
 
-  public void setParameters(DependentLink parameters) {
+  public DefParameters getDefParameters() {
+    return myDefParameters;
+  }
+
+  public void setDefParameters(DefParameters parameters) {
     assert parameters != null;
-    myParameters = parameters;
+    myDefParameters = parameters;
   }
 
   public List<Constructor> getConstructors() {
@@ -137,7 +140,7 @@ public class DataDefinition extends Definition {
 
     ExprSubstitution subst = new ExprSubstitution();
     LevelSubstitution polySubst = polyArguments.toLevelSubstitution(this);
-    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, subst, polySubst)));
+    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myDefParameters.getParameters(), subst, polySubst)));
     return new PiUniverseType(EmptyDependentLink.getInstance(), mySorts).subst(subst, polySubst);
   }
 

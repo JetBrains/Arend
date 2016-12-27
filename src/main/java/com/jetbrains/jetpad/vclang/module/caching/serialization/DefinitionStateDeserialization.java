@@ -1,11 +1,11 @@
 package com.jetbrains.jetpad.vclang.module.caching.serialization;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.module.caching.LocalizedTypecheckerState;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 
 import java.util.*;
 
@@ -116,7 +116,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
   }
 
   private void fillInDataDefinition(DefinitionDeserialization defDeserializer, CalltargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
-    dataDef.setParameters(defDeserializer.readParameters(dataProto.getParamList()));
+    dataDef.setDefParameters(new DefParameters(defDeserializer.readParameters(dataProto.getParamList())));
 
     for (Map.Entry<String, DefinitionProtos.Definition.DataData.Constructor> entry : dataProto.getConstructorsMap().entrySet()) {
       DefinitionProtos.Definition.DataData.Constructor constructorProto = entry.getValue();
@@ -141,7 +141,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
   }
 
   private void fillInFunctionDefinition(DefinitionDeserialization defDeserializer, DefinitionProtos.Definition.FunctionData functionProto, FunctionDefinition functionDef) throws DeserializationError {
-    functionDef.setParameters(defDeserializer.readParameters(functionProto.getParamList()));
+    functionDef.setDefParameters(new DefParameters(defDeserializer.readParameters(functionProto.getParamList())));
     functionDef.setResultType(defDeserializer.readTypeMax(functionProto.getType()));
     if (functionProto.hasElimTree()) {
       functionDef.setElimTree(defDeserializer.readElimTree(functionProto.getElimTree()));

@@ -1,16 +1,15 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.FunCallExpression;
-import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
-import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
+import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +17,7 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FunCall;
 
 public class FunctionDefinition extends Definition implements Function {
-  private DependentLink myParameters;
+  private DefParameters myDefParameters;
   private TypeMax myResultType;
   private ElimTreeNode myElimTree;
   private boolean myTypeHasErrors;
@@ -28,13 +27,13 @@ public class FunctionDefinition extends Definition implements Function {
     super(abstractDef);
     myTypeHasErrors = true;
     myHasErrors = TypeCheckingStatus.TYPE_CHECKING;
-    myParameters = EmptyDependentLink.getInstance();
+    myDefParameters = new DefParameters(EmptyDependentLink.getInstance());
   }
 
-  public FunctionDefinition(Abstract.Definition abstractDef, DependentLink parameters, Type resultType, ElimTreeNode elimTree) {
+  public FunctionDefinition(Abstract.Definition abstractDef, DependentLink parameters, TypeMax resultType, ElimTreeNode elimTree) {
     super(abstractDef);
     assert parameters != null;
-    myParameters = parameters;
+    myDefParameters = new DefParameters(parameters);
     myResultType = resultType;
     myElimTree = elimTree;
     myTypeHasErrors = resultType == null;
@@ -52,12 +51,16 @@ public class FunctionDefinition extends Definition implements Function {
 
   @Override
   public DependentLink getParameters() {
-    return myParameters;
+    return myDefParameters.getParameters();
   }
 
-  public void setParameters(DependentLink parameters) {
+  public DefParameters getDefParameters() {
+    return myDefParameters;
+  }
+
+  public void setDefParameters(DefParameters parameters) {
     assert parameters != null;
-    myParameters = parameters;
+    myDefParameters = parameters;
   }
 
   public TypeMax getResultType() {
@@ -66,7 +69,7 @@ public class FunctionDefinition extends Definition implements Function {
 
   @Override
   public int getNumberOfRequiredArguments() {
-    return DependentLink.Helper.size(myParameters);
+    return DependentLink.Helper.size(myDefParameters.getParameters());
   }
 
   public void setResultType(TypeMax resultType) {
@@ -99,7 +102,7 @@ public class FunctionDefinition extends Definition implements Function {
     }
     ExprSubstitution subst = new ExprSubstitution();
     LevelSubstitution polySubst = polyArguments.toLevelSubstitution(this);
-    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, subst, polySubst)));
+    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myDefParameters.getParameters(), subst, polySubst)));
     return myResultType.subst(subst, polySubst);
   }
 

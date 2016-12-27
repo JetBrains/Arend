@@ -10,16 +10,10 @@ import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.sort.Level;
-import com.jetbrains.jetpad.vclang.core.sort.LevelMax;
-import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.core.sort.SortMax;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.expr.type.PiTypeOmega;
 import com.jetbrains.jetpad.vclang.core.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
-import com.jetbrains.jetpad.vclang.typechecking.visitor.CollectDefCallsVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.NamePattern;
@@ -29,6 +23,7 @@ import com.jetbrains.jetpad.vclang.core.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.core.pattern.Utils.ProcessImplicitResult;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
+import com.jetbrains.jetpad.vclang.core.sort.*;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
@@ -44,6 +39,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.CompositeInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.LocalInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.visitor.CollectDefCallsVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.FindMatchOnIntervalVisitor;
 
 import java.util.*;
@@ -224,9 +220,6 @@ public class DefinitionCheckType {
   }
 
   private static FunctionDefinition typeCheckFunctionHeader(Abstract.FunctionDefinition def, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
-    FunctionDefinition typedDef = new FunctionDefinition(def);
-    visitor.getTypecheckingState().record(def, typedDef);
-
     List<LevelBinding> polyParamsList = new ArrayList<>();
     LinkList list = new LinkList();
     if (enclosingClass != null) {
@@ -238,7 +231,6 @@ public class DefinitionCheckType {
       visitor.getLevelContext().addAll(enclosingClass.getPolyParams());
       list.append(thisParam);
       visitor.setThisClass(enclosingClass, Reference(thisParam));
-      typedDef.setThisClass(enclosingClass);
     }
 
     boolean paramsOk = typeCheckParameters(def.getArguments(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, list, visitor, localInstancePool);
@@ -248,8 +240,9 @@ public class DefinitionCheckType {
       expectedType = visitor.checkFunOrDataType(resultType);
     }
 
-    typedDef.setParameters(list.getFirst());
-    typedDef.setResultType(expectedType);
+    FunctionDefinition typedDef = new FunctionDefinition(def, list.getFirst(), expectedType, null);
+    visitor.getTypecheckingState().record(def, typedDef);
+    typedDef.setThisClass(enclosingClass);
     typedDef.setPolyParams(polyParamsList);
     typedDef.typeHasErrors(!paramsOk || expectedType == null);
     typedDef.hasErrors(paramsOk ? Definition.TypeCheckingStatus.TYPE_CHECKING : Definition.TypeCheckingStatus.HAS_ERRORS);
@@ -844,64 +837,58 @@ public class DefinitionCheckType {
   private static Definition typeCheckClassViewInstance(Abstract.ClassViewInstance def, CheckTypeVisitor visitor) {
     LocalErrorReporter errorReporter = visitor.getErrorReporter();
     TypecheckerState state = visitor.getTypecheckingState();
-    FunctionDefinition typedDef = new FunctionDefinition(def);
-    state.record(def, typedDef);
 
     LinkList list = new LinkList();
     List<LevelBinding> polyParamsList = new ArrayList<>();
     boolean paramsOk = typeCheckParameters(def.getArguments(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, list, visitor, null);
-    typedDef.setPolyParams(polyParamsList);
-    typedDef.setParameters(list.getFirst());
-
-    Abstract.Expression term = def.getTerm();
-    if (term != null) {
-      if (term instanceof Abstract.ElimExpression) {
-        errorReporter.report(new LocalTypeCheckingError("\\elim is not allowed in \\instance", def));
-      } else {
-        CheckTypeVisitor.Result termResult = visitor.checkType(term, null);
-        if (termResult != null) {
-          typedDef.setResultType(termResult.getType());
-          typedDef.typeHasErrors(!paramsOk || termResult.getType() == null);
-          typedDef.setElimTree(top(list.getFirst(), leaf(Abstract.Definition.Arrow.RIGHT, termResult.getExpression())));
-          typedDef.hasErrors(paramsOk ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.HAS_ERRORS);
-        } else {
-          typedDef.hasErrors(Definition.TypeCheckingStatus.HAS_ERRORS);
-        }
-      }
+    if (!paramsOk) {
+      return null;
     }
 
-    if (typedDef.hasErrors() == Definition.TypeCheckingStatus.NO_ERRORS) {
-      Expression expr = typedDef.getResultType().toExpression();
-      if (expr != null) {
-        expr = expr.normalize(NormalizeVisitor.Mode.WHNF);
-      }
-      if (expr == null || expr.toClassCall() == null || !(expr.toClassCall() instanceof ClassViewCallExpression)) {
-        errorReporter.report(new LocalTypeCheckingError("Expected an expression of a class view type", term));
-        return typedDef;
-      }
+    Abstract.Expression term = def.getTerm();
+    if (term instanceof Abstract.ElimExpression) {
+      errorReporter.report(new LocalTypeCheckingError("\\elim is not allowed in \\instance", def));
+      return null;
+    }
+    CheckTypeVisitor.Result termResult = visitor.checkType(term, null);
+    if (termResult == null || termResult.getType() == null) {
+      return null;
+    }
 
-      Abstract.ClassView classView = ((ClassViewCallExpression) expr.toClassCall()).getClassView();
-      FieldSet.Implementation impl = expr.toClassCall().getFieldSet().getImplementation((ClassField) state.getTypechecked(classView.getClassifyingField()));
-      if (impl == null) {
-        errorReporter.report(new LocalTypeCheckingError("Classifying field is not implemented", term));
-        return typedDef;
-      }
-      DefCallExpression defCall = impl.term.normalize(NormalizeVisitor.Mode.WHNF).toDefCall();
-      if (defCall == null || !defCall.getDefCallArguments().isEmpty()) {
-        errorReporter.report(new LocalTypeCheckingError("Expected a definition in the classifying field", term));
-        return typedDef;
-      }
-      if (state.getInstancePool().getInstance(defCall.getDefinition(), classView) != null) {
-        errorReporter.report(new LocalTypeCheckingError("Instance of '" + classView.getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", term));
-      } else {
-        Expression instance = FunCall(typedDef, new LevelArguments(), Collections.<Expression>emptyList());
-        state.getInstancePool().addInstance(defCall.getDefinition(), classView, instance);
-        if (def.isDefault()) {
-          if (state.getInstancePool().getInstance(defCall.getDefinition(), null) != null) {
-            errorReporter.report(new LocalTypeCheckingError("Default instance of '" + classView.getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", term));
-          } else {
-            state.getInstancePool().addInstance(defCall.getDefinition(), null, instance);
-          }
+    FunctionDefinition typedDef = new FunctionDefinition(def, list.getFirst(), termResult.getType(), top(list.getFirst(), leaf(Abstract.Definition.Arrow.RIGHT, termResult.getExpression())));
+    typedDef.setPolyParams(polyParamsList);
+    state.record(def, typedDef);
+
+    Expression expr = typedDef.getResultType().toExpression();
+    if (expr != null) {
+      expr = expr.normalize(NormalizeVisitor.Mode.WHNF);
+    }
+    if (expr == null || expr.toClassCall() == null || !(expr.toClassCall() instanceof ClassViewCallExpression)) {
+      errorReporter.report(new LocalTypeCheckingError("Expected an expression of a class view type", term));
+      return typedDef;
+    }
+
+    Abstract.ClassView classView = ((ClassViewCallExpression) expr.toClassCall()).getClassView();
+    FieldSet.Implementation impl = expr.toClassCall().getFieldSet().getImplementation((ClassField) state.getTypechecked(classView.getClassifyingField()));
+    if (impl == null) {
+      errorReporter.report(new LocalTypeCheckingError("Classifying field is not implemented", term));
+      return typedDef;
+    }
+    DefCallExpression defCall = impl.term.normalize(NormalizeVisitor.Mode.WHNF).toDefCall();
+    if (defCall == null || !defCall.getDefCallArguments().isEmpty()) {
+      errorReporter.report(new LocalTypeCheckingError("Expected a definition in the classifying field", term));
+      return typedDef;
+    }
+    if (state.getInstancePool().getInstance(defCall.getDefinition(), classView) != null) {
+      errorReporter.report(new LocalTypeCheckingError("Instance of '" + classView.getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", term));
+    } else {
+      Expression instance = FunCall(typedDef, new LevelArguments(), Collections.<Expression>emptyList());
+      state.getInstancePool().addInstance(defCall.getDefinition(), classView, instance);
+      if (def.isDefault()) {
+        if (state.getInstancePool().getInstance(defCall.getDefinition(), null) != null) {
+          errorReporter.report(new LocalTypeCheckingError("Default instance of '" + classView.getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", term));
+        } else {
+          state.getInstancePool().addInstance(defCall.getDefinition(), null, instance);
         }
       }
     }

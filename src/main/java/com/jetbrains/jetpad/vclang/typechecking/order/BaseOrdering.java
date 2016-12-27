@@ -23,6 +23,14 @@ public class BaseOrdering {
   private final Map<Typecheckable, DefState> myVertices = new HashMap<>();
   private final SCCListener myListener;
 
+  public static class SCCException extends RuntimeException {
+    public SCC scc;
+
+    public SCCException(SCC scc) {
+      this.scc = scc;
+    }
+  }
+
   public BaseOrdering(SCCListener listener) {
     myListener = listener;
   }
@@ -110,8 +118,14 @@ public class BaseOrdering {
     definition.accept(new DefinitionGetDepsVisitor(dependencies), typecheckable.isHeader());
     for (Abstract.Definition referable : dependencies) {
       for (Abstract.Definition dependency : getTypecheckable(referable, enclosingClass)) {
-        if (!dependency.equals(definition)) {
-          dependsOn(unit.getTypecheckable(), dependency);
+        if (dependency.equals(definition)) {
+          if (typecheckable.isHeader()) {
+            SCC scc = new SCC();
+            scc.add(unit);
+            throw new SCCException(scc);
+          }
+        } else {
+          dependsOn(typecheckable, dependency);
           updateState(currentState, new Typecheckable(dependency, false));
         }
       }

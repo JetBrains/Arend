@@ -8,8 +8,7 @@ public class CycleError extends LocalTypeCheckingError {
   public final List<Abstract.Definition> cycle;
 
   public CycleError(List<Abstract.Definition> cycle) {
-    // FIXME[error]: record some reasonable cause
-    super("Dependency cycle", null);
+    super("Dependency cycle", cycle.get(0));
     this.cycle = cycle;
   }
 }
