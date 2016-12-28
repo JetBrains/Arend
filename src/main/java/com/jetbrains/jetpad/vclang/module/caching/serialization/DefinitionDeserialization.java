@@ -24,11 +24,11 @@ import java.util.List;
 import java.util.Map;
 
 class DefinitionDeserialization {
-  private final CalltargetProvider myCalltargetProvider;
+  private final CalltargetProvider.Typed myCalltargetProvider;
   private final List<Binding> myBindings = new ArrayList<>();  // de Bruijn indices
   private final List<LevelBinding> myLvlBindings = new ArrayList<>();  // de Bruijn indices for level bindings
 
-  DefinitionDeserialization(CalltargetProvider calltargetProvider) {
+  DefinitionDeserialization(CalltargetProvider.Typed calltargetProvider) {
     myCalltargetProvider = calltargetProvider;
   }
 
@@ -119,7 +119,7 @@ class DefinitionDeserialization {
         prev[0] = param1;
         return new AnyConstructorPattern(param1);
       case CONSTRUCTOR:
-        return new ConstructorPattern(myCalltargetProvider.<Constructor>getCalltarget(proto.getConstructor().getConstructorRef()), readPatterns(proto.getConstructor().getPatterns(), prev));
+        return new ConstructorPattern(myCalltargetProvider.getCalltarget(proto.getConstructor().getConstructorRef(), Constructor.class), readPatterns(proto.getConstructor().getPatterns(), prev));
       default:
         throw new DeserializationError("Unknown Pattern kind: " + proto.getKindCase());
     }
@@ -200,7 +200,7 @@ class DefinitionDeserialization {
   FieldSet readFieldSet(ExpressionProtos.FieldSet proto) throws DeserializationError {
     FieldSet result = new FieldSet();
     for (int classFieldRef : proto.getClassFieldRefList()) {
-      result.addField(myCalltargetProvider.<ClassField>getCalltarget(classFieldRef));
+      result.addField(myCalltargetProvider.getCalltarget(classFieldRef, ClassField.class));
     }
     for (Map.Entry<Integer, ExpressionProtos.FieldSet.Implementation> entry : proto.getImplementationsMap().entrySet()) {
       final DependentLink thisParam;
@@ -210,7 +210,7 @@ class DefinitionDeserialization {
         thisParam = null;
       }
       FieldSet.Implementation impl = new FieldSet.Implementation(thisParam, readExpr(entry.getValue().getTerm()));
-      result.implementField(myCalltargetProvider.<ClassField>getCalltarget(entry.getKey()), impl);
+      result.implementField(myCalltargetProvider.getCalltarget(entry.getKey(), ClassField.class), impl);
     }
     return result;
   }
@@ -310,20 +310,20 @@ class DefinitionDeserialization {
   }
 
   private FunCallExpression readFunCall(ExpressionProtos.Expression.FunCall proto) throws DeserializationError {
-    return new FunCallExpression(myCalltargetProvider.<FunctionDefinition>getCalltarget(proto.getFunRef()), readPolyArguments(proto.getPolyArgumentsList()), readExprList(proto.getArgumentList()));
+    return new FunCallExpression(myCalltargetProvider.getCalltarget(proto.getFunRef(), FunctionDefinition.class), readPolyArguments(proto.getPolyArgumentsList()), readExprList(proto.getArgumentList()));
   }
 
   private ConCallExpression readConCall(ExpressionProtos.Expression.ConCall proto) throws DeserializationError {
-    return new ConCallExpression(myCalltargetProvider.<Constructor>getCalltarget(proto.getConstructorRef()), readPolyArguments(proto.getPolyArgumentsList()),
+    return new ConCallExpression(myCalltargetProvider.getCalltarget(proto.getConstructorRef(), Constructor.class), readPolyArguments(proto.getPolyArgumentsList()),
         readExprList(proto.getDatatypeArgumentList()), readExprList(proto.getArgumentList()));
   }
 
   private DataCallExpression readDataCall(ExpressionProtos.Expression.DataCall proto) throws DeserializationError {
-    return new DataCallExpression(myCalltargetProvider.<DataDefinition>getCalltarget(proto.getDataRef()), readPolyArguments(proto.getPolyArgumentsList()), readExprList(proto.getArgumentList()));
+    return new DataCallExpression(myCalltargetProvider.getCalltarget(proto.getDataRef(), DataDefinition.class), readPolyArguments(proto.getPolyArgumentsList()), readExprList(proto.getArgumentList()));
   }
 
   private ClassCallExpression readClassCall(ExpressionProtos.Expression.ClassCall proto) throws DeserializationError {
-    return new ClassCallExpression(myCalltargetProvider.<ClassDefinition>getCalltarget(proto.getClassRef()), readPolyArguments(proto.getPolyArgumentsList()), readFieldSet(proto.getFieldSet()));
+    return new ClassCallExpression(myCalltargetProvider.getCalltarget(proto.getClassRef(), ClassDefinition.class), readPolyArguments(proto.getPolyArgumentsList()), readFieldSet(proto.getFieldSet()));
   }
 
   private ReferenceExpression readReference(ExpressionProtos.Expression.Reference proto) throws DeserializationError {
@@ -379,7 +379,7 @@ class DefinitionDeserialization {
   }
 
   private FieldCallExpression readFieldCall(ExpressionProtos.Expression.FieldCall proto) throws DeserializationError {
-    return new FieldCallExpression(myCalltargetProvider.<ClassField>getCalltarget(proto.getFieldRef()), readExpr(proto.getExpression()));
+    return new FieldCallExpression(myCalltargetProvider.getCalltarget(proto.getFieldRef(), ClassField.class), readExpr(proto.getExpression()));
   }
 
 
@@ -400,7 +400,7 @@ class DefinitionDeserialization {
       for (ExpressionProtos.Binding.TypedBinding bProto : cProto.getTailBindingList()) {
         tailBindings.add(readTypedBinding(bProto));
       }
-      result.addClause(myCalltargetProvider.<Constructor>getCalltarget(entry.getKey()), constructorParams, polyParams, tailBindings, readElimTree(cProto.getChild()));
+      result.addClause(myCalltargetProvider.getCalltarget(entry.getKey(), Constructor.class), constructorParams, polyParams, tailBindings, readElimTree(cProto.getChild()));
     }
     if (proto.hasOtherwiseClause()) {
       result.addOtherwiseClause(readElimTree(proto.getOtherwiseClause()));

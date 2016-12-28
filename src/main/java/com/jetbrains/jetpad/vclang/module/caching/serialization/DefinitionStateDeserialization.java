@@ -52,13 +52,15 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
   }
 
   public void fillInDefinitions(ModuleProtos.Module.DefinitionState in, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state, CalltargetProvider calltargetProvider) throws DeserializationError {
+    CalltargetProvider.Typed typedCalltargetProvider = new CalltargetProvider.Typed(calltargetProvider);
+
     for (Map.Entry<String, DefinitionProtos.Definition> entry : in.getDefinitionMap().entrySet()) {
       String id = entry.getKey();
       DefinitionProtos.Definition defProto = entry.getValue();
 
       final Definition def = getTypechecked(state, id);
 
-      final DefinitionDeserialization defDeserializer = new DefinitionDeserialization(calltargetProvider);
+      final DefinitionDeserialization defDeserializer = new DefinitionDeserialization(typedCalltargetProvider);
 
       List<LevelBinding> polyParams = new ArrayList<>();
       for (ExpressionProtos.Binding.LevelBinding lvlBinding : defProto.getPolyParamList()) {
@@ -70,12 +72,12 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
       switch (defProto.getDefinitionDataCase()) {
         case CLASS:
           ClassDefinition classDef = (ClassDefinition) def;
-          fillInClassDefinition(defDeserializer, calltargetProvider, defProto.getClass_(), classDef, state);
+          fillInClassDefinition(defDeserializer, typedCalltargetProvider, defProto.getClass_(), classDef, state);
           break;
         case DATA:
           DataDefinition dataDef = (DataDefinition) def;
           dataDef.typeHasErrors(defProto.getTypeHasErrors());
-          fillInDataDefinition(defDeserializer, calltargetProvider, defProto.getData(), dataDef, state);
+          fillInDataDefinition(defDeserializer, typedCalltargetProvider, defProto.getData(), dataDef, state);
           break;
         case FUNCTION:
           FunctionDefinition functionDef = (FunctionDefinition) def;
@@ -89,18 +91,18 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
       def.hasErrors(defProto.getHasErrors() ? Definition.TypeCheckingStatus.HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS);
 
       if (defProto.getThisClassRef() != 0) {
-        ClassDefinition thisClass = calltargetProvider.getCalltarget(defProto.getThisClassRef());
+        ClassDefinition thisClass = typedCalltargetProvider.getCalltarget(defProto.getThisClassRef(), ClassDefinition.class);
         def.setThisClass(thisClass);
       }
     }
   }
 
-  private void fillInClassDefinition(DefinitionDeserialization defDeserializer, CalltargetProvider calltargetProvider, DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
+  private void fillInClassDefinition(DefinitionDeserialization defDeserializer, CalltargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
     classDef.setFieldSet(defDeserializer.readFieldSet(classProto.getFieldSet()));
 
     Set<ClassDefinition> superClasses = new HashSet<>();
     for (int superClassRef : classProto.getSuperClassRefList()) {
-      ClassDefinition superClass = calltargetProvider.getCalltarget(superClassRef);
+      ClassDefinition superClass = calltargetProvider.getCalltarget(superClassRef, ClassDefinition.class);
       superClasses.add(superClass);
     }
     classDef.setSuperClasses(superClasses);
@@ -113,7 +115,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
     }
   }
 
-  private void fillInDataDefinition(DefinitionDeserialization defDeserializer, CalltargetProvider calltargetProvider, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
+  private void fillInDataDefinition(DefinitionDeserialization defDeserializer, CalltargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
     dataDef.setParameters(defDeserializer.readParameters(dataProto.getParamList()));
 
     for (Map.Entry<String, DefinitionProtos.Definition.DataData.Constructor> entry : dataProto.getConstructorsMap().entrySet()) {
@@ -129,7 +131,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
     }
 
     for (Map.Entry<Integer, ExpressionProtos.ElimTreeNode> entry : dataProto.getConditionsMap().entrySet()) {
-      Constructor targetConstructor = calltargetProvider.getCalltarget(entry.getKey());
+      Constructor targetConstructor = calltargetProvider.getCalltarget(entry.getKey(), Constructor.class);
       dataDef.addCondition(new Condition(targetConstructor, defDeserializer.readElimTree(entry.getValue())));
     }
 

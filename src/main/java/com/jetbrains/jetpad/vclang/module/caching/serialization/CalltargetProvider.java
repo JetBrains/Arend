@@ -3,20 +3,19 @@ package com.jetbrains.jetpad.vclang.module.caching.serialization;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 
 public interface CalltargetProvider {
-  <DefinitionT extends Definition> DefinitionT getCalltarget(int index);
+  Definition getCalltarget(int index);
 
-  abstract class BaseCalltargetProvider implements CalltargetProvider {
-    protected abstract Definition getDef(int index);
+  class Typed {
+    private final CalltargetProvider myProvider;
 
-    @Override
-    public <DefinitionT extends Definition> DefinitionT getCalltarget(int index) {
-      // TODO[serial]: this code is bogus
-      try {
-        //noinspection unchecked
-        return (DefinitionT) getDef(index);
-      } catch (ClassCastException ignored) {
-        throw new IllegalStateException();
-      }
+    public Typed(CalltargetProvider provider) {
+      myProvider = provider;
+    }
+
+    public <DefinitionT extends Definition> DefinitionT getCalltarget(int index, Class<DefinitionT> cls) throws DeserializationError {
+      Definition def = myProvider.getCalltarget(index);
+      if (!cls.isInstance(def)) throw new DeserializationError("Class mismatch");
+      return cls.cast(def);
     }
   }
 }

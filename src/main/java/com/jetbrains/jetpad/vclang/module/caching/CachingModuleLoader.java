@@ -215,7 +215,7 @@ public class CachingModuleLoader<SourceIdT extends SourceId> extends SourceModul
     }
   }
 
-  class ReadCalltargets extends CalltargetProvider.BaseCalltargetProvider implements CalltargetProvider {
+  class ReadCalltargets implements CalltargetProvider {
     private final List<Definition> myCalltargets = new ArrayList<>();
 
     ReadCalltargets(SourceIdT sourceId, List<ModuleProtos.Module.DefinitionReference> refDefProtos) throws CacheLoadingException {
@@ -254,7 +254,7 @@ public class CachingModuleLoader<SourceIdT extends SourceId> extends SourceModul
     }
 
     @Override
-    protected Definition getDef(int index) {
+    public Definition getCalltarget(int index) {
       return myCalltargets.get(index);
     }
   }
