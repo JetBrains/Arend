@@ -1,11 +1,15 @@
 package com.jetbrains.jetpad.vclang.module.caching.serialization;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
+import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.module.caching.LocalizedTypecheckerState;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class DefinitionStateSerialization {
   private final PersistenceProvider<? extends SourceId> myPersistenceProvider;
@@ -83,6 +87,7 @@ public class DefinitionStateSerialization {
     DefinitionProtos.Definition.DataData.Builder builder = DefinitionProtos.Definition.DataData.newBuilder();
 
     builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
+    builder.addAllClassifyingField(writeClassifyingFields(definition.getDefParameters()));
 
     for (Constructor constructor : definition.getConstructors()) {
       DefinitionProtos.Definition.DataData.Constructor.Builder cBuilder = DefinitionProtos.Definition.DataData.Constructor.newBuilder();
@@ -109,11 +114,25 @@ public class DefinitionStateSerialization {
     DefinitionProtos.Definition.FunctionData.Builder builder = DefinitionProtos.Definition.FunctionData.newBuilder();
 
     builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
+    builder.addAllClassifyingField(writeClassifyingFields(definition.getDefParameters()));
     builder.setType(defSerializer.writeType(definition.getResultType()));
     if (definition.getElimTree() != null) {
       builder.setElimTree(defSerializer.writeElimTree(definition.getElimTree()));
     }
 
     return builder.build();
+  }
+
+  private List<DefinitionProtos.Definition.ClassifyingFields> writeClassifyingFields(DefParameters parameters) {
+    List<DefinitionProtos.Definition.ClassifyingFields> refs = new ArrayList<>();
+    for (DependentLink link = parameters.getParameters(); link.hasNext(); link = link.getNext()) {
+      DefinitionProtos.Definition.ClassifyingFields.Builder refBuilder = DefinitionProtos.Definition.ClassifyingFields.newBuilder();
+      ClassField field = parameters.getClassifyingField(link);
+      if (field != null) {
+        refBuilder.addFieldRef(myCalltargetIndexProvider.getDefIndex(field));
+      }
+      refs.add(refBuilder.build());
+    }
+    return refs;
   }
 }

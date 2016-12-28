@@ -59,8 +59,8 @@ public class TwoStageEquations implements Equations {
         if (expr1.toFieldCall() != null && expr1.toFieldCall().getExpression().toInferenceReference() != null) {
           variable = expr1.toFieldCall().getExpression().toInferenceReference().getVariable();
           // expr1 == view field call
-          if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassView().getClassifyingField() == expr1.toFieldCall().getDefinition().getAbstractDefinition()) {
-            result = myVisitor.getClassViewInstancePool().getInstance(expr, ((TypeClassInferenceVariable) variable).isExactClassView() ? ((TypeClassInferenceVariable) variable).getClassView() : null);
+          if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassifyingField() == expr1.toFieldCall().getDefinition()) {
+            result = myVisitor.getClassViewInstancePool().getInstance(expr, ((TypeClassInferenceVariable) variable).getClassView());
           }
         }
 
@@ -68,8 +68,8 @@ public class TwoStageEquations implements Equations {
         if (variable == null && expr.toFieldCall() != null && expr.toFieldCall().getExpression().toInferenceReference() != null) {
           variable = expr.toFieldCall().getExpression().toInferenceReference().getVariable();
           // expr2 == view field call
-          if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassView().getClassifyingField() == expr.toFieldCall().getDefinition().getAbstractDefinition()) {
-            result = myVisitor.getClassViewInstancePool().getInstance(expr1, ((TypeClassInferenceVariable) variable).isExactClassView() ? ((TypeClassInferenceVariable) variable).getClassView() : null);
+          if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassifyingField() == expr.toFieldCall().getDefinition()) {
+            result = myVisitor.getClassViewInstancePool().getInstance(expr1, ((TypeClassInferenceVariable) variable).getClassView());
           }
         }
 

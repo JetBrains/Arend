@@ -1,28 +1,30 @@
 package com.jetbrains.jetpad.vclang.core.context.binding.inference;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
 public class TypeClassInferenceVariable extends InferenceVariable {
   private final Abstract.ClassView myClassView;
-  private final boolean myExactClassView;
+  private final ClassField myClassifyingField;
 
-  public TypeClassInferenceVariable(String name, Expression type, Abstract.ClassView classView, boolean isExactClassView, Abstract.SourceNode sourceNode) {
+  public TypeClassInferenceVariable(String name, Expression type, Abstract.ClassView classView, ClassField classifyingField, Abstract.SourceNode sourceNode) {
     super(name, type, sourceNode);
+    assert classifyingField != null;
     myClassView = classView;
-    myExactClassView = isExactClassView;
+    myClassifyingField = classifyingField;
+  }
+
+  public ClassField getClassifyingField() {
+    return myClassifyingField;
   }
 
   public Abstract.ClassView getClassView() {
     return myClassView;
-  }
-
-  public boolean isExactClassView() {
-    return myExactClassView;
   }
 
   @Override

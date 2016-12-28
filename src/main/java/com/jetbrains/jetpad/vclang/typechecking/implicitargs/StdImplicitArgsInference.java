@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVaria
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
@@ -41,7 +42,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       Expression typeExpr = type.toExpression();
       InferenceVariable infVar;
       if (typeExpr != null && typeExpr.toClassCall() != null && typeExpr.toClassCall() instanceof ClassViewCallExpression) {
-        infVar = new TypeClassInferenceVariable(parameter.getName(), typeExpr, ((ClassViewCallExpression) typeExpr.toClassCall()).getClassView(), false, expr);
+        infVar = new TypeClassInferenceVariable(parameter.getName(), typeExpr, null, (ClassField) myVisitor.getTypecheckingState().getTypechecked(((ClassViewCallExpression) typeExpr.toClassCall()).getClassView().getClassifyingField()), expr);
       } else {
         infVar = new FunctionInferenceVariable(parameter.getName(), type, i + 1, expr);
       }

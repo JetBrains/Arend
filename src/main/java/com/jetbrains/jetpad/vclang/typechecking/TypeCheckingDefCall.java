@@ -95,8 +95,10 @@ public class TypeCheckingDefCall {
 
         if (thisExpr == null) {
           if (resolvedDefinition instanceof Abstract.ClassViewField) {
+            assert typeCheckedDefinition instanceof ClassField;
+            Abstract.ClassView ownClassView = ((Abstract.ClassViewField) resolvedDefinition).getOwnView();
             ClassCallExpression classCall = ClassCall(typeCheckedDefinition.getThisClass(), LevelArguments.generateInferVars(typeCheckedDefinition.getThisClass().getPolyParams(), myVisitor.getEquations(), expr));
-            thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable(typeCheckedDefinition.getThisClass().getName() + "-inst", classCall, ((Abstract.ClassViewField) resolvedDefinition).getOwnView(), true, expr), myVisitor.getEquations());
+            thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable(typeCheckedDefinition.getThisClass().getName() + "-inst", classCall, ownClassView, (ClassField) myVisitor.getTypecheckingState().getTypechecked(ownClassView.getClassifyingField()), expr), myVisitor.getEquations());
           } else {
             LocalTypeCheckingError error;
             if (myThisClass != null) {
