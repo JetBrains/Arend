@@ -374,7 +374,7 @@ public final class Concrete {
 
   public static class ClassFieldImpl extends SourceNode implements Abstract.ClassFieldImpl {
     private final String myName;
-    private Abstract.Definition myImplementedField;
+    private Abstract.ClassField myImplementedField;
     private final Expression myExpression;
 
     public ClassFieldImpl(Position position, String identifier, Expression expression) {
@@ -389,11 +389,11 @@ public final class Concrete {
     }
 
     @Override
-    public Abstract.Definition getImplementedField() {
+    public Abstract.ClassField getImplementedField() {
       return myImplementedField;
     }
 
-    public void setImplementedField(Abstract.Definition newImplementedField) {
+    public void setImplementedField(Abstract.ClassField newImplementedField) {
       myImplementedField = newImplementedField;
     }
 

@@ -925,7 +925,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
 
     FieldSet fieldSet = new FieldSet();
-    Expression resultExpr = classCallExpr instanceof ClassViewCallExpression ? new ClassViewCallExpression(baseClass, classCallExpr.getPolyArguments(), fieldSet, ((ClassViewCallExpression) classCallExpr).getClassView()) : ExpressionFactory.ClassCall(baseClass, classCallExpr.getPolyArguments(), fieldSet);
+    Expression resultExpr = ExpressionFactory.ClassCall(baseClass, classCallExpr.getPolyArguments(), fieldSet);
 
     fieldSet.addFieldsFrom(classCallExpr.getFieldSet());
     for (Map.Entry<ClassField, FieldSet.Implementation> entry : classCallExpr.getFieldSet().getImplemented()) {
@@ -937,21 +937,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     Map<ClassField, Abstract.ClassFieldImpl> classFieldMap = new HashMap<>();
 
     for (Abstract.ClassFieldImpl statement : statements) {
-      Abstract.Definition implField = statement.getImplementedField();
-      if (implField instanceof Abstract.ClassViewField) {
-        implField = ((Abstract.ClassViewField) implField).getUnderlyingField();
-      }
-      Definition implementedDef = myState.getTypechecked(implField);
-      if (!(implementedDef instanceof ClassField)) {
-        LocalTypeCheckingError error = new LocalTypeCheckingError("'" + implementedDef.getName() + "' is not a field", statement);
-        if (resultExpr instanceof ClassCallExpression) {
-          resultExpr = ExpressionFactory.Error(resultExpr, error);
-        }
-        myErrorReporter.report(error);
-        continue;
-      }
-
-      ClassField field = (ClassField) implementedDef;
+      ClassField field = (ClassField) myState.getTypechecked(statement.getImplementedField());
       if (fieldSet.isImplemented(field) || classFieldMap.containsKey(field)) {
         LocalTypeCheckingError error = new LocalTypeCheckingError("Field '" + field.getName() + "' is already implemented", statement);
         if (resultExpr instanceof ClassCallExpression) {
@@ -1023,16 +1009,23 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       }
     }
 
-    int remaining = classCallExpr.getFieldSet().getFields().size() - classCallExpr.getFieldSet().getImplemented().size();
-
-    if (remaining == 0) {
+    if (checkAllImplemented(classCallExpr, expr)) {
       exprResult.reset(ExpressionFactory.New(classCallExpr), normExpr);
       return checkResult(expectedType, exprResult, expr);
     } else {
-      LocalTypeCheckingError error = new LocalTypeCheckingError("Class '" + classCallExpr.getDefinition().getName() + "' has " + remaining + " not implemented fields", expr);
+      return null;
+    }
+  }
+
+  public boolean checkAllImplemented(ClassCallExpression classCall, Abstract.Expression expr) {
+    int remaining = classCall.getFieldSet().getFields().size() - classCall.getFieldSet().getImplemented().size();
+    if (remaining == 0) {
+      return true;
+    } else {
+      LocalTypeCheckingError error = new LocalTypeCheckingError("Class '" + classCall.getDefinition().getName() + "' has " + remaining + " not implemented fields", expr);
       expr.setWellTyped(myContext, ExpressionFactory.Error(null, error));
       myErrorReporter.report(error);
-      return null;
+      return false;
     }
   }
 

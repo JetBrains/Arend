@@ -846,8 +846,9 @@ public class DefinitionCheckType {
     }
 
     Abstract.Expression term = def.getTerm();
-    if (term instanceof Abstract.ElimExpression) {
-      errorReporter.report(new LocalTypeCheckingError("\\elim is not allowed in \\instance", def));
+    Abstract.ClassView classView = term instanceof Abstract.NewExpression ? Abstract.getUnderlyingClassView(((Abstract.NewExpression) term).getExpression()) : null;
+    if (classView == null) {
+      errorReporter.report(new LocalTypeCheckingError("Expected an instance of a class view", def));
       return null;
     }
     CheckTypeVisitor.Result termResult = visitor.checkType(term, null);
@@ -859,17 +860,7 @@ public class DefinitionCheckType {
     typedDef.setPolyParams(polyParamsList);
     state.record(def, typedDef);
 
-    Expression expr = typedDef.getResultType().toExpression();
-    if (expr != null) {
-      expr = expr.normalize(NormalizeVisitor.Mode.WHNF);
-    }
-    if (expr == null || expr.toClassCall() == null || !(expr.toClassCall() instanceof ClassViewCallExpression)) {
-      errorReporter.report(new LocalTypeCheckingError("Expected an expression of a class view type", term));
-      return typedDef;
-    }
-
-    Abstract.ClassView classView = ((ClassViewCallExpression) expr.toClassCall()).getClassView();
-    FieldSet.Implementation impl = expr.toClassCall().getFieldSet().getImplementation((ClassField) state.getTypechecked(classView.getClassifyingField()));
+    FieldSet.Implementation impl = typedDef.getResultType().toExpression().toClassCall().getFieldSet().getImplementation((ClassField) state.getTypechecked(classView.getClassifyingField()));
     if (impl == null) {
       errorReporter.report(new LocalTypeCheckingError("Classifying field is not implemented", term));
       return typedDef;

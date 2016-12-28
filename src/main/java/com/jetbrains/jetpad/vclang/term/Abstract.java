@@ -80,7 +80,7 @@ public final class Abstract {
 
   public interface ClassFieldImpl extends SourceNode {
     String getImplementedFieldName();
-    Definition getImplementedField();
+    ClassField getImplementedField();
     Expression getImplementation();
   }
 

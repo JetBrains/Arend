@@ -24,7 +24,7 @@ public class BaseResolveListener implements ResolveListener {
   }
 
   @Override
-  public void implementResolved(Abstract.ClassFieldImpl identifier, Abstract.Definition definition) {
+  public void implementResolved(Abstract.ClassFieldImpl identifier, Abstract.ClassField definition) {
 
   }
 

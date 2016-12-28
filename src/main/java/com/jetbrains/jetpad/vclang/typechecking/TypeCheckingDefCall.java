@@ -66,14 +66,10 @@ public class TypeCheckingDefCall {
     Abstract.Expression left = expr.getExpression();
     Abstract.Definition resolvedDefinition = expr.getReferent();
     Definition typeCheckedDefinition = null;
-    Abstract.ClassView classView = null;
     if (resolvedDefinition != null) {
       typeCheckedDefinition = getTypeCheckedDefinition(resolvedDefinition, expr);
       if (typeCheckedDefinition == null) {
         return null;
-      }
-      if (resolvedDefinition instanceof Abstract.ClassView && typeCheckedDefinition instanceof ClassDefinition) {
-        classView = (Abstract.ClassView) resolvedDefinition;
       }
     }
 
@@ -113,7 +109,7 @@ public class TypeCheckingDefCall {
         }
       }
 
-      return makeResult(typeCheckedDefinition, classView, thisExpr, expr);
+      return makeResult(typeCheckedDefinition, thisExpr, expr);
     }
 
     if (left == null) {
@@ -160,7 +156,7 @@ public class TypeCheckingDefCall {
           return null;
         }
 
-        return makeResult(typeCheckedDefinition, null, result.getExpression(), expr);
+        return makeResult(typeCheckedDefinition, result.getExpression(), expr);
       }
     }
 
@@ -259,17 +255,12 @@ public class TypeCheckingDefCall {
       }
     }
 
-    return makeResult(typeCheckedDefinition, classView, thisExpr, expr);
+    return makeResult(typeCheckedDefinition, thisExpr, expr);
   }
 
-  private CheckTypeVisitor.PreResult makeResult(Definition definition, Abstract.ClassView classView, Expression thisExpr, Abstract.Expression expr) {
+  private CheckTypeVisitor.PreResult makeResult(Definition definition, Expression thisExpr, Abstract.Expression expr) {
     LevelArguments polyArgs = LevelArguments.generateInferVars(definition.getPolyParams(), myVisitor.getEquations(), expr);
-    DefCallExpression defCall;
-    if (classView != null) {
-      defCall = new ClassViewCallExpression((ClassDefinition) definition, polyArgs, classView);
-    } else {
-      defCall = definition.getDefCall(polyArgs);
-    }
+    DefCallExpression defCall = definition.getDefCall(polyArgs);
 
     if (thisExpr == null && definition instanceof ClassField) {
       LocalTypeCheckingError error = new LocalTypeCheckingError("Field call without a class instance", expr);

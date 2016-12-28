@@ -32,4 +32,17 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
         "\\view X' \\on X \\by A { B }\n" +
         "\\instance Nat-X => \\new X { A => Nat | B => \\lam _ => Nat }", 1);
   }
+
+  @Test
+  public void classViewExt() {
+    typeCheckClass(
+        "\\class X {\n" +
+        "  \\field A : \\Type0\n" +
+        "  \\field B : A -> \\Type0\n" +
+        "}\n" +
+        "\\view X' \\on X \\by A { B => C }\n" +
+        "\\function f => \\new X  { A => Nat | B => \\lam _ => Nat }\n" +
+        "\\function g => \\new X' { A => Nat | C => \\lam _ => Nat }\n" +
+        "\\function p : f = g => path (\\lam _ => f)");
+  }
 }
