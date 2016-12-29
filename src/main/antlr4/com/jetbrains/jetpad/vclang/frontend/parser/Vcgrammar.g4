@@ -74,12 +74,10 @@ name  : ID                              # nameId
       | '(' BIN_OP ')'               # nameBinOp
       ;
 
-expr  : (binOpLeft+ | ) maybeNew atomFieldsAcc argument*    # binOp
+expr  : (binOpLeft+ | ) binOpArg                            # binOp
       | <assoc=right> expr '->' expr                        # arr
       | '\\Pi' tele+ '->' expr                              # pi
       | '\\Sigma' tele+                                     # sigma
-      | '\\' (NUMBER'-Type' | 'Type') ('(' expr ')')?       # polyUniverse
-      | '\\Set' ('(' expr ')')?                             # polySet
       | '\\lam' tele+ '=>' expr                             # lam
       | '\\let' '|'? letClause ('|' letClause)* '\\in' expr # let
       | elimCase expr (',' expr)* clause* ';'?              # exprElim
@@ -95,7 +93,12 @@ elimCase : '\\elim'                     # elim
          | '\\case'                     # case
          ;
 
-binOpLeft : maybeNew atomFieldsAcc argument* infix;
+binOpArg : maybeNew atomFieldsAcc argument*                                          # binOpArgument
+      |  (TRUNCATED_UNIVERSE_PREFIX | UNIVERSE_PREFIX) (atom | '(max' '(' expr (',' expr)* ') )')? # polyUniverse
+      | SET_PREFIX (atom | '(max' '(' expr (',' expr)* ') )')?                             # polySet
+      ;
+
+binOpLeft : binOpArg infix;
 
 maybeNew :                              # noNew
          | '\\new'                      # withNew
@@ -127,11 +130,15 @@ argument : atomFieldsAcc                # argumentExplicit
          | '{' expr '}'                 # argumentImplicit
          ;
 
-literal : UNIVERSE                      # universe
-        | TRUNCATED_UNIVERSE            # truncatedUniverse
-        | PROP                          # prop
-        | SET                           # set
-        | name                          # id
+literal : name                          # id
+        | UNIVERSE                         # universe
+        | TRUNCATED_UNIVERSE               # truncatedUniverse
+ //       | UNIVERSE_PREFIX                  # universePref
+ //       | TRUNCATED_UNIVERSE_PREFIX        # truncatedUniversePref
+//        | SET_PREFIX                       # setPref
+        | SET                              # set
+        | '\\Prop'                                                                     # prop
+        | 'Lvl'                         # lvl
         | '_'                           # unknown
         | '{?}'                         # hole
         ;
@@ -147,11 +154,13 @@ typedExpr : expr                        # notTyped
 
 
 NUMBER : [0-9]+;
-UNIVERSE : '\\Type' [0-9]+;
-TRUNCATED_UNIVERSE : '\\' [0-9]+ '-Type' [0-9]+;
-PROP : '\\Prop';
-SET : '\\Set' [0-9]+;
 LAMBDA : '\\lam';
+TRUNCATED_UNIVERSE_PREFIX : '\\'[0-9]+'-Type';
+UNIVERSE_PREFIX : '\\Type';
+SET_PREFIX : '\\Set';
+UNIVERSE : UNIVERSE_PREFIX[0-9]+;
+TRUNCATED_UNIVERSE : TRUNCATED_UNIVERSE_PREFIX[0-9]+;
+SET : SET_PREFIX[0-9]+;
 COLON : ':';
 ARROW : '->';
 WS : [ \t\r\n]+ -> skip;

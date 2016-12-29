@@ -173,6 +173,23 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
   }
 
+  public void prettyPrintMaxExpression(List<? extends Abstract.Expression> maxArgs, byte prec) {
+    if (maxArgs.size() == 1 && maxArgs.get(0) instanceof Abstract.NumericLiteral) {
+      maxArgs.get(0).accept(this, Abstract.Expression.PREC);
+      return;
+    }
+    if (maxArgs.size() > 1) {
+      myBuilder.append("max");
+    }
+    myBuilder.append(" (");
+    maxArgs.get(0).accept(this, Abstract.Expression.PREC);
+    for (int i = 1; i < maxArgs.size(); ++i) {
+      myBuilder.append(", ");
+      maxArgs.get(i).accept(this, Abstract.Expression.PREC);
+    }
+    myBuilder.append(")");
+  }
+
   @Override
   public Void visitLam(final Abstract.LamExpression expr, Byte prec) {
     if (prec > Abstract.LamExpression.PREC) myBuilder.append("(");
@@ -240,8 +257,8 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   @Override
-  public Void visitUniverse(Abstract.UniverseExpression expr, Byte prec) {
-    myBuilder.append(expr.getUniverse());
+  public Void visitLvl(Abstract.LvlExpression expr, Byte params) {
+    myBuilder.append("Lvl");
     return null;
   }
 
@@ -252,15 +269,13 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       return null;
     } else if (expr.getHLevel() == 0) {
       myBuilder.append("\\Set");
-    } else if (expr.getHLevel() == Abstract.UniverseExpression.Universe.NOT_TRUNCATED) {
+    } else if (expr.getHLevel() == Abstract.PolyUniverseExpression.NOT_TRUNCATED) {
       myBuilder.append("\\Type");
     } else {
       myBuilder.append("\\").append(expr.getHLevel()).append("-Type");
     }
     if (expr.getPLevel() != null) {
-      myBuilder.append(" (");
-      expr.getPLevel().accept(this, Abstract.Expression.PREC);
-      myBuilder.append(")");
+      prettyPrintMaxExpression(expr.getPLevel(), Abstract.Expression.PREC);
     }
     return null;
   }

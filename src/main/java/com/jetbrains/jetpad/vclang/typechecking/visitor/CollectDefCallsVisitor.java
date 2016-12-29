@@ -60,14 +60,16 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, V
   }
 
   @Override
-  public Void visitUniverse(Abstract.UniverseExpression expr, Void ignore) {
+  public Void visitLvl(Abstract.LvlExpression expr, Void params) {
     return null;
   }
 
   @Override
   public Void visitPolyUniverse(Abstract.PolyUniverseExpression expr, Void ignore) {
     if (expr.getPLevel() != null) {
-      expr.getPLevel().accept(this, null);
+      for (Abstract.Expression maxArg : expr.getPLevel()) {
+        maxArg.accept(this, null);
+      }
     }
     return null;
   }

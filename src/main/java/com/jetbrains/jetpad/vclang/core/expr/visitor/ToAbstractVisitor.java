@@ -345,7 +345,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   private Integer getHNum(Level expr) {
     if (expr.isClosed()) {
       if (expr.isInfinity()) {
-        return Abstract.UniverseExpression.Universe.NOT_TRUNCATED;
+        return Abstract.PolyUniverseExpression.NOT_TRUNCATED;
       }
       return expr.getConstant() - 1;
     }
@@ -382,11 +382,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       int hlevelAbs;
       //TODO: decide what to do in case there's a variable in hlevel
       if (hlevel.isInfinity() || !hlevel.isClosed()) {
-        hlevelAbs = Abstract.UniverseExpression.Universe.NOT_TRUNCATED;
+        hlevelAbs = Abstract.PolyUniverseExpression.NOT_TRUNCATED;
       } else {
         hlevelAbs = hlevel.getConstant() - 1;
       }
-      return myFactory.makeUniverse(plevel.isInfinity() ? null : visitLevel(plevel, 0), hlevelAbs);
+      return myFactory.makeUniverse(plevel.isInfinity() ? null : Collections.singletonList(visitLevel(plevel, 0)), hlevelAbs);
     }
   }
 
@@ -397,7 +397,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     int hlevel;
     //TODO: decide what to do in case there's a variable in sort.getHLevel()
     if (sort.getHLevel().isInfinity() || sort.getHLevel().toLevel() == null || !sort.getHLevel().toLevel().isClosed()) {
-      hlevel = Abstract.UniverseExpression.Universe.NOT_TRUNCATED;
+      hlevel = Abstract.PolyUniverseExpression.NOT_TRUNCATED;
     } else {
       hlevel = sort.getHLevel().toLevel().getConstant() - 1;
     }
@@ -419,7 +419,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return result;
   }
 
-  public Abstract.Expression visitLevelMax(LevelMax levelMax, int add) {
+  public List<Abstract.Expression> visitLevelMax(LevelMax levelMax, int add) {
     if (levelMax.isInfinity()) {
       // return myFactory.makeVar("inf");
       return null;
@@ -427,18 +427,18 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
     List<Level> levels = levelMax.toListOfLevels();
     if (levels.isEmpty()) {
-      return myFactory.makeNumericalLiteral(add);
+      return Collections.singletonList(myFactory.makeNumericalLiteral(add));
     }
     if (levels.size() == 1) {
-      return visitLevel(levels.get(0), add);
+      return Collections.singletonList(visitLevel(levels.get(0), add));
     }
 
-    Abstract.Expression result = myFactory.makeVar("max");
+    List<Abstract.Expression> maxArgs = new ArrayList<>();
     for (Level level : levels) {
-      result = myFactory.makeApp(result, true, visitLevel(level, add));
+      maxArgs.add(visitLevel(level, add));
     }
 
-    return result;
+    return maxArgs;
   }
 
   public Abstract.Expression visitTypeMax(TypeMax type) {

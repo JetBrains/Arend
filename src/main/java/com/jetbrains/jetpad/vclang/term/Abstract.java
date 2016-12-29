@@ -175,43 +175,18 @@ public final class Abstract {
     List<BinOpSequenceElem> getSequence();
   }
 
-  public interface UniverseExpression extends Expression {
+  public interface LvlExpression extends Expression {
     byte PREC = 12;
-
-    class Universe {
-      public int pLevel;
-      public int hLevel;
-
-      public static final int NOT_TRUNCATED = -20;
-      public static final int PROP = -1;
-      public static final int SET = 0;
-
-      public Universe(int pLevel, int hLevel) {
-        this.pLevel = pLevel;
-        this.hLevel = hLevel;
-      }
-
-      public boolean equals(Object obj) {
-        if (obj.getClass() != this.getClass()) return false;
-        Universe u = (Universe)obj;
-        return pLevel == u.pLevel && hLevel == u.hLevel;
-      }
-
-      @Override
-      public String toString() {
-        if (hLevel == PROP) return "\\Prop";
-        if (hLevel == SET) return "\\Set" + pLevel;
-        return "\\" + (hLevel == NOT_TRUNCATED ? "" : hLevel + "-") + "Type" + pLevel;
-      }
-    }
-
-    Universe getUniverse();
   }
 
   public interface PolyUniverseExpression extends Expression {
     byte PREC = 12;
 
-    Expression getPLevel();
+    int NOT_TRUNCATED = -20;
+    int PROP = -1;
+    int SET = 0;
+
+    List<? extends Expression> getPLevel();
     int getHLevel();
   }
 

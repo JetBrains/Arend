@@ -192,7 +192,7 @@ public class LevelMax implements PrettyPrintable {
 
   @Override
   public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent) {
-    new ToAbstractVisitor(new ConcreteExpressionFactory(), names).visitLevelMax(this, 0).accept(new PrettyPrintVisitor(builder, indent), prec);
+    new PrettyPrintVisitor(builder, indent).prettyPrintMaxExpression(new ToAbstractVisitor(new ConcreteExpressionFactory(), names).visitLevelMax(this, 0), prec);
   }
 
   @Override

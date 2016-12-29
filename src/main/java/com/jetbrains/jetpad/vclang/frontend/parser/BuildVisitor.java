@@ -7,10 +7,7 @@ import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.frontend.parser.VcgrammarParser.*;
 
@@ -38,17 +35,17 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private List<Concrete.NameArgument> getVarsNull(ExprContext expr) {
-    if (!(expr instanceof BinOpContext && ((BinOpContext) expr).binOpLeft().isEmpty())) {
+    if (!(expr instanceof BinOpContext && ((BinOpContext) expr).binOpLeft().isEmpty() && ((BinOpContext) expr).binOpArg() instanceof BinOpArgumentContext)) {
       return null;
     }
-    Concrete.NameArgument firstArg = getVar(((BinOpContext) expr).atomFieldsAcc());
+    Concrete.NameArgument firstArg = getVar(((BinOpArgumentContext)((BinOpContext) expr).binOpArg()).atomFieldsAcc());
     if (firstArg == null) {
       return null;
     }
 
     List<Concrete.NameArgument> result = new ArrayList<>();
     result.add(firstArg);
-    for (ArgumentContext argument : ((BinOpContext) expr).argument()) {
+    for (ArgumentContext argument : ((BinOpArgumentContext)((BinOpContext) expr).binOpArg()).argument()) {
       if (argument instanceof ArgumentExplicitContext) {
         Concrete.NameArgument arg = getVar(((ArgumentExplicitContext) argument).atomFieldsAcc());
         if (arg == null) {
@@ -601,40 +598,96 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return new Concrete.DefCallExpression(tokenPosition(ctx.name().getStart()), null, visitName(ctx.name()));
   }
 
+  private List<Concrete.Expression> visitMaxArgs(List<ExprContext> exprList) {
+    if (exprList == null || exprList.size() == 0) {
+      return null;
+    }
+    List<Concrete.Expression> pLevels = new ArrayList<>();
+    for (ExprContext expr : exprList) {
+      pLevels.add(visitExpr(expr));
+    }
+    return pLevels;
+  }
+
+  @Override
+  public Concrete.Expression visitBinOpArgument(BinOpArgumentContext ctx) {
+    Concrete.Expression expr = visitAtoms(visitAtomFieldsAcc(ctx.atomFieldsAcc()), ctx.argument());
+    if (ctx.maybeNew() instanceof WithNewContext) {
+      return new Concrete.NewExpression(tokenPosition(ctx.getStart()), expr);
+    }
+    return expr;
+  }
+
   @Override
   public Concrete.Expression visitPolyUniverse(PolyUniverseContext ctx) {
-    Concrete.Expression pLevel = ctx.expr() != null ? visitExpr(ctx.expr()) : null;
-    int hLevel = ctx.NUMBER() != null ? Integer.parseInt(ctx.NUMBER().getText()) : Abstract.UniverseExpression.Universe.NOT_TRUNCATED;
-    return new Concrete.PolyUniverseExpression(tokenPosition(ctx.getStart()), pLevel, hLevel);
+    //int hLevel = ctx.TRUNCATED_UNIVERSE() != null ? Integer.parseInt(ctx.NUMBER().getText()) : Abstract.PolyUniverseExpression.NOT_TRUNCATED;
+    int hLevel = Abstract.PolyUniverseExpression.NOT_TRUNCATED;
+    if (ctx.TRUNCATED_UNIVERSE_PREFIX() != null) {
+      String text = ctx.TRUNCATED_UNIVERSE_PREFIX().getText();
+      int indexOfMinusSign = text.indexOf('-');
+      hLevel = Integer.valueOf(text.substring(1, indexOfMinusSign));
+    }
+    return new Concrete.PolyUniverseExpression(tokenPosition(ctx.getStart()), ctx.atom() != null ? Collections.singletonList((Concrete.Expression)visit(ctx.atom())) : visitMaxArgs(ctx.expr()), hLevel);
   }
 
   @Override
   public Concrete.Expression visitPolySet(PolySetContext ctx) {
-    Concrete.Expression pLevel = ctx.expr() != null ? visitExpr(ctx.expr()) : null;
-    return new Concrete.PolyUniverseExpression(tokenPosition(ctx.getStart()), pLevel, 0);
+    return new Concrete.PolyUniverseExpression(tokenPosition(ctx.getStart()), ctx.atom() != null ? Collections.singletonList((Concrete.Expression)visit(ctx.atom())) : visitMaxArgs(ctx.expr()), Abstract.PolyUniverseExpression.SET);
   }
 
   @Override
-  public Concrete.UniverseExpression visitUniverse(UniverseContext ctx) {
-    Abstract.UniverseExpression.Universe universe = new Abstract.UniverseExpression.Universe(Integer.valueOf(ctx.UNIVERSE().getText().substring("\\Type".length())), Abstract.UniverseExpression.Universe.NOT_TRUNCATED);
-    return new Concrete.UniverseExpression(tokenPosition(ctx.UNIVERSE().getSymbol()), universe);
+  public Concrete.PolyUniverseExpression visitUniverse(UniverseContext ctx) {
+    int plevel = Integer.valueOf(ctx.UNIVERSE().getText().substring("\\Type".length()));
+    Concrete.Position pos = tokenPosition(ctx.UNIVERSE().getSymbol());
+    return new Concrete.PolyUniverseExpression(pos, Collections.singletonList(new Concrete.NumericLiteral(pos, plevel)), Abstract.PolyUniverseExpression.NOT_TRUNCATED);
   }
 
   @Override
-  public Concrete.UniverseExpression visitTruncatedUniverse(TruncatedUniverseContext ctx) {
+  public Concrete.PolyUniverseExpression visitTruncatedUniverse(TruncatedUniverseContext ctx) {
     String text = ctx.TRUNCATED_UNIVERSE().getText();
     int indexOfMinusSign = text.indexOf('-');
-    return new Concrete.UniverseExpression(tokenPosition(ctx.TRUNCATED_UNIVERSE().getSymbol()), new Abstract.UniverseExpression.Universe(Integer.valueOf(text.substring(indexOfMinusSign + "-Type".length())), Integer.valueOf(text.substring(1, indexOfMinusSign))));
+    int plevel = Integer.valueOf(text.substring(indexOfMinusSign + "-Type".length()));
+    int hlevel = Integer.valueOf(text.substring(1, indexOfMinusSign));
+    Concrete.Position pos = tokenPosition(ctx.TRUNCATED_UNIVERSE().getSymbol());
+    return new Concrete.PolyUniverseExpression(pos, Collections.singletonList(new Concrete.NumericLiteral(pos, plevel)), hlevel);
   }
 
   @Override
-  public Concrete.UniverseExpression visitProp(PropContext ctx) {
-    return new Concrete.UniverseExpression(tokenPosition(ctx.PROP().getSymbol()), new Abstract.UniverseExpression.Universe(0, Abstract.UniverseExpression.Universe.PROP));
+  public Concrete.PolyUniverseExpression visitSet(SetContext ctx) {
+    int plevel = Integer.valueOf(ctx.SET().getText().substring("\\Set".length()));
+    Concrete.Position pos = tokenPosition(ctx.SET().getSymbol());
+    return new Concrete.PolyUniverseExpression(pos, Collections.singletonList(new Concrete.NumericLiteral(pos, plevel)), Abstract.PolyUniverseExpression.SET);
+  }
+
+  /*
+  @Override
+  public Concrete.PolyUniverseExpression visitUniversePref(UniversePrefContext ctx) {
+    return new Concrete.PolyUniverseExpression(tokenPosition(ctx.UNIVERSE_PREFIX().getSymbol()), null, Abstract.PolyUniverseExpression.NOT_TRUNCATED);
   }
 
   @Override
-  public Concrete.UniverseExpression visitSet(SetContext ctx) {
-    return new Concrete.UniverseExpression(tokenPosition(ctx.SET().getSymbol()), new Abstract.UniverseExpression.Universe(Integer.valueOf(ctx.SET().getText().substring("\\Set".length())), Abstract.UniverseExpression.Universe.SET));
+  public Concrete.PolyUniverseExpression visitTruncatedUniversePref(TruncatedUniversePrefContext ctx) {
+    String text = ctx.TRUNCATED_UNIVERSE_PREFIX().getText();
+    int indexOfMinusSign = text.indexOf('-');
+    int hlevel = Integer.valueOf(text.substring(1, indexOfMinusSign));
+    return new Concrete.PolyUniverseExpression(tokenPosition(ctx.TRUNCATED_UNIVERSE_PREFIX().getSymbol()), null, hlevel);
+  }
+
+  @Override
+  public Concrete.PolyUniverseExpression visitSetPref(SetPrefContext ctx) {
+    return new Concrete.PolyUniverseExpression(tokenPosition(ctx.SET_PREFIX().getSymbol()), null, Abstract.PolyUniverseExpression.SET);
+  }
+  /**/
+
+  @Override
+  public Concrete.LvlExpression visitLvl(LvlContext ctx) {
+    return new Concrete.LvlExpression(tokenPosition(ctx.getStart()));
+  }
+
+  @Override
+  public Concrete.PolyUniverseExpression visitProp(PropContext ctx) {
+    Concrete.Position pos = tokenPosition(ctx.getStart());
+    return new Concrete.PolyUniverseExpression(pos, Collections.singletonList(new Concrete.NumericLiteral(pos, 0)), Abstract.PolyUniverseExpression.PROP);
   }
 
   private List<Concrete.TypeArgument> visitTeles(List<TeleContext> teles) {
@@ -717,10 +770,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     for (BinOpLeftContext leftContext : ctx.binOpLeft()) {
       String name = (String) visit(leftContext.infix());
-      Concrete.Expression expr = visitAtoms(visitAtomFieldsAcc(leftContext.atomFieldsAcc()), leftContext.argument());
-      if (leftContext.maybeNew() instanceof WithNewContext) {
-        expr = new Concrete.NewExpression(tokenPosition(leftContext.getStart()), expr);
-      }
+      Concrete.Expression expr = (Concrete.Expression)visit(leftContext.binOpArg());
 
       if (left == null) {
         left = expr;
@@ -730,10 +780,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       binOp = new Concrete.DefCallExpression(tokenPosition(leftContext.infix().getStart()), null, name);
     }
 
-    Concrete.Expression expr = visitAtoms(visitAtomFieldsAcc(ctx.atomFieldsAcc()), ctx.argument());
-    if (ctx.maybeNew() instanceof WithNewContext) {
-      expr = new Concrete.NewExpression(tokenPosition(ctx.getStart()), expr);
-    }
+    Concrete.Expression expr = (Concrete.Expression)visit(ctx.binOpArg());
 
     if (left == null) {
       return expr;

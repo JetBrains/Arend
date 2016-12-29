@@ -58,17 +58,27 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
   }
 
   @Override
-  public Boolean visitUniverse(Abstract.UniverseExpression expr1, Abstract.Expression expr2) {
-    //return expr2 instanceof Abstract.UniverseExpression && expr1.getUniverse().compare(((Abstract.UniverseExpression) expr2).getUniverse()) == UniverseOld.Cmp.EQUALS;
-    return expr2 instanceof Abstract.UniverseExpression && expr1.getUniverse().equals(((Abstract.UniverseExpression) expr2).getUniverse());
+  public Boolean visitLvl(Abstract.LvlExpression expr1, Abstract.Expression expr2) {
+    return expr2 instanceof Abstract.LvlExpression;
   }
 
   @Override
   public Boolean visitPolyUniverse(Abstract.PolyUniverseExpression expr1, Abstract.Expression expr2) {
-    return expr2 instanceof Abstract.PolyUniverseExpression &&
-      (expr1.getPLevel() != null || ((Abstract.PolyUniverseExpression) expr2).getPLevel() == null) &&
-      expr1.getPLevel().accept(this, ((Abstract.PolyUniverseExpression) expr2).getPLevel()) &&
-            expr1.getHLevel() == ((Abstract.PolyUniverseExpression) expr2).getHLevel();
+    if(!(expr2 instanceof Abstract.PolyUniverseExpression)) {
+      return false;
+    }
+    if (expr1.getPLevel() == null) {
+      return ((Abstract.PolyUniverseExpression) expr2).getPLevel() == null;
+    }
+    if (expr1.getPLevel().size() != ((Abstract.PolyUniverseExpression) expr2).getPLevel().size()) {
+      return false;
+    }
+    for (int i = 0; i < expr1.getPLevel().size(); ++i) {
+      if (!expr1.getPLevel().get(i).accept(this, ((Abstract.PolyUniverseExpression) expr2).getPLevel().get(i))) {
+        return false;
+      }
+    }
+    return true;
   }
 
   @Override

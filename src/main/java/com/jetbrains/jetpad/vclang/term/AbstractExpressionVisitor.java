@@ -6,7 +6,7 @@ public interface AbstractExpressionVisitor<P, R> {
   R visitModuleCall(Abstract.ModuleCallExpression expr, P params);
   R visitLam(Abstract.LamExpression expr, P params);
   R visitPi(Abstract.PiExpression expr, P params);
-  R visitUniverse(Abstract.UniverseExpression expr, P params);
+  R visitLvl(Abstract.LvlExpression expr, P params);
   R visitPolyUniverse(Abstract.PolyUniverseExpression expr, P params);
   R visitInferHole(Abstract.InferHoleExpression expr, P params);
   R visitError(Abstract.ErrorExpression expr, P params);

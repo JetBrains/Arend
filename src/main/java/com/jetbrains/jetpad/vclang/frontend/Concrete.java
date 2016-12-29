@@ -600,37 +600,29 @@ public final class Concrete {
     }
   }
 
-  public static class UniverseExpression extends Expression implements Abstract.UniverseExpression {
-    private final Universe myUniverse;
-
-    public UniverseExpression(Position position, Universe universe) {
+  public static class LvlExpression extends Expression implements Abstract.LvlExpression {
+    public LvlExpression(Position position) {
       super(position);
-      myUniverse = universe;
-    }
-
-    @Override
-    public Universe getUniverse() {
-      return myUniverse;
     }
 
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitUniverse(this, params);
+      return visitor.visitLvl(this, params);
     }
   }
 
   public static class PolyUniverseExpression extends Expression implements Abstract.PolyUniverseExpression {
-    private final Expression myPLevel;
+    private final List<? extends Abstract.Expression> myPLevel;
     private final int myHLevel;
 
-    public PolyUniverseExpression(Position position, Expression pLevel, int hLevel) {
+    public PolyUniverseExpression(Position position, List<? extends Abstract.Expression> pLevel, int hLevel) {
       super(position);
       myPLevel = pLevel;
       myHLevel = hLevel;
     }
 
     @Override
-    public Expression getPLevel() {
+    public List<? extends Abstract.Expression> getPLevel() {
       return myPLevel;
     }
 

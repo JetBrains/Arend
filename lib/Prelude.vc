@@ -6,11 +6,6 @@
     | left
     | right
 
-\data Lvl
-    | zeroL
-    | sucL Lvl
-    | inf
-
 \data Path (A : I -> \Type) (a : A left) (a' : A right)
     | path (\Pi (i : I) -> A i)
 

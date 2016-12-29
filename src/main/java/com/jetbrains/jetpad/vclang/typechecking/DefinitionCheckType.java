@@ -103,20 +103,13 @@ public class DefinitionCheckType {
   }
 
   private static boolean isPolyParam(Abstract.TypeArgument arg) {
-    if (arg.getType() instanceof Abstract.DefCallExpression) {
-      String typeName = ((Abstract.DefCallExpression) arg.getType()).getName();
-      // TODO: WTF ???
-      return typeName.equals("Lvl");
-    }
-    return false;
+    return arg.getType() instanceof Abstract.LvlExpression;
   }
 
   private static List<LevelBinding> typeCheckPolyParam(Abstract.TypeArgument typeArgument, Abstract.SourceNode node, LocalErrorReporter errorReporter) {
-    assert (typeArgument.getType() instanceof Abstract.DefCallExpression);
-    String typeName = ((Abstract.DefCallExpression) typeArgument.getType()).getName();
-    assert typeName.equals("Lvl");
+    assert (typeArgument.getType() instanceof Abstract.LvlExpression);
     if (!(typeArgument instanceof Abstract.TelescopeArgument)) {
-      errorReporter.report(new LocalTypeCheckingError("Parameter of type " + typeName + " must have name", node));
+      errorReporter.report(new LocalTypeCheckingError("Parameter of type Lvl must have name", node));
       return null;
     }
     Abstract.TelescopeArgument teleArgument = (Abstract.TelescopeArgument)typeArgument;
@@ -367,12 +360,6 @@ public class DefinitionCheckType {
       if (def.getUniverse() != null) {
         if (def.getUniverse() instanceof Abstract.PolyUniverseExpression) {
           userSorts = visitor.sortMax((Abstract.PolyUniverseExpression)def.getUniverse());
-        } else
-        if (def.getUniverse() instanceof Abstract.UniverseExpression) {
-          CheckTypeVisitor.Result result = visitor.checkType(def.getUniverse(), new PiTypeOmega(EmptyDependentLink.getInstance()));
-          if (result != null) {
-            userSorts = new SortMax(result.getExpression().toUniverse().getSort());
-          }
         } else {
           String msg = "Specified type " + PrettyPrintVisitor.prettyPrint(def.getUniverse(), 0) + " of '" + def.getName() + "' is not a universe";
           visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, def.getUniverse()));

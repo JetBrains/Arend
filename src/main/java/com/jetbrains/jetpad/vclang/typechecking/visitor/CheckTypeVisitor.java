@@ -607,11 +607,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   }
 
   @Override
-  public Result visitUniverse(Abstract.UniverseExpression expr, Type expectedType) {
-    int pLevel = expr.getUniverse().pLevel;
-    int hLevel = expr.getUniverse().hLevel;
-    UniverseExpression universe = hLevel == Abstract.UniverseExpression.Universe.NOT_TRUNCATED ? ExpressionFactory.Universe(pLevel) : ExpressionFactory.Universe(pLevel, hLevel);
-    return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getSort().succ())), expr);
+  public Result visitLvl(Abstract.LvlExpression expr, Type params) {
+    throw new IllegalStateException();
   }
 
   public Level typeCheckLevel(Abstract.Expression expr, int minValue) {
@@ -657,34 +654,28 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     return null;
   }
 
-  public LevelMax typeCheckLevelMax(Abstract.Expression expr, LevelVariable.LvlType expectedType, int minValue) {
-    LevelMax result = new LevelMax();
-    List<Abstract.ArgumentExpression> args = new ArrayList<>();
-    Abstract.Expression max = Abstract.getFunction(expr, args);
-
-    if (max instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) max).getName().equals("max")) {
-      for (Abstract.ArgumentExpression arg : args) {
-        result = result.max(typeCheckLevel(arg.getExpression(), minValue));
-      }
-      return result;
-    }
-    Level level = typeCheckLevel(expr, minValue);
-    if (level == null) return null;
-    return new LevelMax(level);
-  }
-
-
   public SortMax sortMax(Abstract.PolyUniverseExpression expr) {
-    LevelMax levelP = expr.getPLevel() == null ? LevelMax.INFINITY : typeCheckLevelMax(expr.getPLevel(), LevelVariable.LvlType.PLVL, 0);
-    LevelMax levelH = expr.getHLevel() != Abstract.UniverseExpression.Universe.NOT_TRUNCATED ? new LevelMax(new Level(expr.getHLevel() + 1)) : LevelMax.INFINITY;
+    LevelMax levelP = expr.getPLevel() == null ? LevelMax.INFINITY : new LevelMax();
+    if (expr.getPLevel() != null) {
+      for (Abstract.Expression maxArgExpr : expr.getPLevel()) {
+        Level maxArg = typeCheckLevel(maxArgExpr, 0);
+        if (maxArg == null) return null;
+        levelP = levelP.max(maxArg);
+      }
+    }
+    LevelMax levelH = expr.getHLevel() != Abstract.PolyUniverseExpression.NOT_TRUNCATED ? new LevelMax(new Level(expr.getHLevel() + 1)) : LevelMax.INFINITY;
     if (levelP == null) return null;
     return new SortMax(levelP, levelH);
   }
 
   @Override
   public Result visitPolyUniverse(Abstract.PolyUniverseExpression expr, Type expectedType) {
-    Level pLevel = expr.getPLevel() == null ? Level.INFINITY : typeCheckLevel(expr.getPLevel(), 0);
-    Level hLevel = expr.getHLevel() != Abstract.UniverseExpression.Universe.NOT_TRUNCATED ? new Level(expr.getHLevel() + 1) : Level.INFINITY;
+    if (expr.getPLevel() != null && expr.getPLevel().size() != 1) {
+      myErrorReporter.report(new LocalTypeCheckingError("\'max\' can only be used in a result type", expr));
+      return null;
+    }
+    Level pLevel = expr.getPLevel() == null ? Level.INFINITY : typeCheckLevel(expr.getPLevel().get(0), 0);
+    Level hLevel = expr.getHLevel() != Abstract.PolyUniverseExpression.NOT_TRUNCATED ? new Level(expr.getHLevel() + 1) : Level.INFINITY;
     if (pLevel == null) return null;
     if (pLevel.isInfinity()) {
       myErrorReporter.report(new LocalTypeCheckingError("\\Type can only used as Pi codomain in definition parameters or result type", expr));
