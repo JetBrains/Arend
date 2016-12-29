@@ -19,7 +19,6 @@ import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Error;
@@ -187,8 +186,6 @@ public class TypeCheckingDefCall {
       }
 
       if (constructor != null) {
-        //result.expression = ConCall(constructor, dataCall.getPolyParamsSubst(), new ArrayList<>(args), new ArrayList<Expression>());
-        //result.type = result.expression.getType();
         Expression conCall = ConCall(constructor, dataCall.getPolyArguments(), new ArrayList<Expression>(), new ArrayList<Expression>());
         List<DependentLink> conParams = new ArrayList<>();
         Expression conType = constructor.getTypeWithParams(conParams, dataCall.getPolyArguments());
@@ -273,8 +270,6 @@ public class TypeCheckingDefCall {
     TypeMax type = definition.getTypeWithParams(params, polyArgs);
     CheckTypeVisitor.PreResult result = new CheckTypeVisitor.PreResult(defCall, type, params);
     if (thisExpr != null) {
-      //result.expression = defCall.applyThis(thisExpr);
-      //result.type = result.type.applyExpressions(Collections.singletonList(thisExpr));
       result.applyThis(thisExpr);
     }
     return result;
@@ -293,9 +288,8 @@ public class TypeCheckingDefCall {
 
   public Variable getLocalVar(Abstract.DefCallExpression expr, List<? extends Variable> context) {
     String name = expr.getName();
-    ListIterator<? extends Variable> it = context.listIterator(context.size());
-    while (it.hasPrevious()) {
-      Variable def = it.previous();
+    for (int i = context.size() - 1; i >= 0; i--) {
+      Variable def = context.get(i);
       if (name.equals(def.getName())) {
         return def;
       }
@@ -309,9 +303,6 @@ public class TypeCheckingDefCall {
 
   public CheckTypeVisitor.Result getLocalVar(Abstract.DefCallExpression expr) {
     Variable def = getLocalVar(expr, myVisitor.getContext());
-    if (def != null) {
-      return new CheckTypeVisitor.Result(Reference((Binding)def), ((Binding)def).getType());
-    }
-    return null;
+    return def == null ? null : new CheckTypeVisitor.Result(Reference((Binding)def), ((Binding)def).getType());
   }
 }

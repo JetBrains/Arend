@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.FunctionInfere
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
@@ -107,14 +106,14 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       }
     }
 
-    DependentLink param = result.getParameters().isEmpty() ? EmptyDependentLink.getInstance() : result.getParameters().get(0);
-    if (!param.hasNext()) {
+    if (result.getParameters().isEmpty()) {
       LocalTypeCheckingError error = new TypeMismatchError(new StringPrettyPrintable("A pi type"), result.getAtomicType(), fun);
       fun.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.getExpression(), error));
       myVisitor.getErrorReporter().report(error);
       return null;
     }
 
+    DependentLink param = result.getParameters().get(0);
     CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, param.getType());
     if (argResult == null) {
       return null;

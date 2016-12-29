@@ -1,11 +1,11 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.sort.Level;
-import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.core.sort.Level;
+import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -79,5 +79,12 @@ public class PathsTest extends TypeCheckingTestCase {
         "  <= coe (\\lam i => B (p @ i) (psqueeze p i)) b right\n" +
         "\\function inv-inv {A : \\Type} {a a' : A} (p : a = a') : inv (inv p) = p <= Jl (\\lam _ p => inv (inv p) = p) idp p\n" +
         "\\function path-sym {A : \\Type} (a a' : A) : (a = a') = (a' = a) => path (iso inv inv inv-inv inv-inv)");
+  }
+
+  @Test
+  public void idpTypeTest() {
+    typeCheckClass(
+      "\\function idp {A : \\Type} {a : A} : a = a => path (\\lam _ => a)\n" +
+      "\\function f : 3 = 3 => idp");
   }
 }

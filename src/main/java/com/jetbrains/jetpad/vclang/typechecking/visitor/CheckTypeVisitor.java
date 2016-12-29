@@ -296,10 +296,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   public boolean compare(Result result, Type expectedType, Abstract.Expression expr) {
     if (result.getType().isLessOrEquals(expectedType.normalize(NormalizeVisitor.Mode.NF), myEquations, expr)) {
-        if (expectedType instanceof Expression) {
-      //    Expression exprType = (Expression)expectedType;
-          result.reset(new OfTypeExpression(result.getExpression(), expectedType), expectedType);
-        }
+      if (expectedType instanceof Expression) {
+        result.reset(new OfTypeExpression(result.getExpression(), expectedType), expectedType);
+      }
       return true;
     }
 
@@ -640,7 +639,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
           return Level.INFINITY;
         }
         if (!name.equals("suc")) {
-          Variable var = new TypeCheckingDefCall(this).getLocalVar((Abstract.DefCallExpression) expr, myLvlContext);
+          Variable var = myTypeCheckingDefCall.getLocalVar((Abstract.DefCallExpression) expr, myLvlContext);
           if (var == null) {
             return null;
           }
@@ -769,9 +768,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       for (Abstract.TypeArgument arg : arguments) {
         Result result = typeCheck(arg.getType(), new PiTypeOmega());
         if (result == null) return null;
-
-        Expression paramType = result.getExpression();
-        result.reset(paramType, paramType.getType());
 
         if (arg instanceof Abstract.TelescopeArgument) {
           DependentLink link = param(arg.getExplicit(), ((Abstract.TelescopeArgument) arg).getNames(), result.getExpression());
