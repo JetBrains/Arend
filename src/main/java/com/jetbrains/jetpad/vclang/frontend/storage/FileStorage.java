@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.frontend;
+package com.jetbrains.jetpad.vclang.frontend.storage;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
