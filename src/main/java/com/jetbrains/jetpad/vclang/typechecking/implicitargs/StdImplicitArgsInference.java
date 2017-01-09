@@ -137,7 +137,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       result = checkBinOpInferArg(((Abstract.AppExpression) fun).getFunction(), argument.getExpression(), argument.isExplicit(), expectedType);
     } else {
       if (fun instanceof Abstract.DefCallExpression) {
-        result = myVisitor.getTypeCheckingDefCall().typeCheckDefCall((Abstract.DefCallExpression) fun);
+        Abstract.DefCallExpression defCall = (Abstract.DefCallExpression) fun;
+        result = defCall.getExpression() == null && defCall.getReferent() == null ? myVisitor.getLocalVar(defCall) : myVisitor.getTypeCheckingDefCall().typeCheckDefCall(defCall);
       } else {
         result = myVisitor.typeCheck(fun, null);
       }

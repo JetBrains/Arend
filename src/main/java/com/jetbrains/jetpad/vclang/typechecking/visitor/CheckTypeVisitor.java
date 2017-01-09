@@ -49,6 +49,7 @@ import com.jetbrains.jetpad.vclang.typechecking.typeclass.EmptyInstancePool;
 
 import java.util.*;
 
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.expression;
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.ordinal;
@@ -168,7 +169,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   }
 
   public static class Result extends DefCallResult {
-    public Result(Expression expression, TypeMax type) {
+    private Result(Expression expression, TypeMax type) {
       super(expression, type);
     }
   }
@@ -461,9 +462,29 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     return checkResult(expectedType, defCallResultToResult(expectedType, result, expr), expr);
   }
 
+  private Variable getLocalVar(Abstract.DefCallExpression expr, List<? extends Variable> context) {
+    String name = expr.getName();
+    for (int i = context.size() - 1; i >= 0; i--) {
+      Variable def = context.get(i);
+      if (name.equals(def.getName())) {
+        return def;
+      }
+    }
+
+    LocalTypeCheckingError error = new NotInScopeError(expr, name);
+    expr.setWellTyped(myContext, Error(null, error));
+    myErrorReporter.report(error);
+    return null;
+  }
+
+  public CheckTypeVisitor.Result getLocalVar(Abstract.DefCallExpression expr) {
+    Variable def = getLocalVar(expr, myContext);
+    return def == null ? null : new CheckTypeVisitor.Result(Reference((Binding)def), ((Binding)def).getType());
+  }
+
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Type expectedType) {
-    DefCallResult result = myTypeCheckingDefCall.typeCheckDefCall(expr);
+    DefCallResult result = expr.getExpression() == null && expr.getReferent() == null ? getLocalVar(expr) : myTypeCheckingDefCall.typeCheckDefCall(expr);
     if (result == null || !checkPath(result, expr)) {
       return null;
     }
@@ -632,7 +653,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
           return Level.INFINITY;
         }
         if (!name.equals("suc")) {
-          Variable var = myTypeCheckingDefCall.getLocalVar((Abstract.DefCallExpression) expr, myLvlContext);
+          Variable var = getLocalVar((Abstract.DefCallExpression) expr, myLvlContext);
           if (var == null) {
             return null;
           }

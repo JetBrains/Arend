@@ -1,7 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
@@ -14,7 +12,10 @@ import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.naming.scope.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.HasErrors;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.MemberNotFoundError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.ArrayList;
@@ -112,7 +113,8 @@ public class TypeCheckingDefCall {
     }
 
     if (left == null) {
-      return getLocalVar(expr);
+      // TODO: Create a separate expression for local variables
+      throw new IllegalStateException();
     }
 
     String name = expr.getName();
@@ -284,25 +286,5 @@ public class TypeCheckingDefCall {
       return null;
     }
     return findParent(parentField.getBaseType().toClassCall().getDefinition(), definition, FieldCall(parentField, result));
-  }
-
-  public Variable getLocalVar(Abstract.DefCallExpression expr, List<? extends Variable> context) {
-    String name = expr.getName();
-    for (int i = context.size() - 1; i >= 0; i--) {
-      Variable def = context.get(i);
-      if (name.equals(def.getName())) {
-        return def;
-      }
-    }
-
-    LocalTypeCheckingError error = new NotInScopeError(expr, name);
-    expr.setWellTyped(myVisitor.getContext(), Error(null, error));
-    myVisitor.getErrorReporter().report(error);
-    return null;
-  }
-
-  public CheckTypeVisitor.Result getLocalVar(Abstract.DefCallExpression expr) {
-    Variable def = getLocalVar(expr, myVisitor.getContext());
-    return def == null ? null : new CheckTypeVisitor.Result(Reference((Binding)def), ((Binding)def).getType());
   }
 }
