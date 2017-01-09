@@ -33,7 +33,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     super(visitor);
   }
 
-  protected void fixImplicitArgs(CheckTypeVisitor.PreResult result, int numParams, Abstract.Expression expr) {
+  protected void fixImplicitArgs(CheckTypeVisitor.DefCallResult result, int numParams, Abstract.Expression expr) {
     ExprSubstitution substitution = new ExprSubstitution();
     for (int i = 0; i < numParams; i++) {
       DependentLink parameter = result.getParameters().get(0);
@@ -51,7 +51,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
   }
 
-  protected CheckTypeVisitor.PreResult inferArg(CheckTypeVisitor.PreResult result, Abstract.Expression arg, boolean isExplicit, Abstract.Expression fun) {
+  protected CheckTypeVisitor.DefCallResult inferArg(CheckTypeVisitor.DefCallResult result, Abstract.Expression arg, boolean isExplicit, Abstract.Expression fun) {
     if (result == null) {
       return null;
     }
@@ -130,8 +130,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     return result;
   }
 
-  protected CheckTypeVisitor.PreResult inferArg(Abstract.Expression fun, Abstract.Expression arg, boolean isExplicit, Type expectedType) {
-    CheckTypeVisitor.PreResult result;
+  protected CheckTypeVisitor.DefCallResult inferArg(Abstract.Expression fun, Abstract.Expression arg, boolean isExplicit, Type expectedType) {
+    CheckTypeVisitor.DefCallResult result;
     if (fun instanceof Abstract.AppExpression) {
       Abstract.ArgumentExpression argument = ((Abstract.AppExpression) fun).getArgument();
       result = checkBinOpInferArg(((Abstract.AppExpression) fun).getFunction(), argument.getExpression(), argument.isExplicit(), expectedType);
@@ -161,7 +161,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
                 Expression conCallUpdated = ConCall(conCall.getDefinition(), conCall.getPolyArguments(), new ArrayList<Expression>(), new ArrayList<Expression>());
                 List<DependentLink> params = new ArrayList<>();
                 Expression type = conCall.getDefinition().getTypeWithParams(params, conCall.getPolyArguments());
-                result = new CheckTypeVisitor.PreResult(conCallUpdated, type, params);
+                result = new CheckTypeVisitor.DefCallResult(conCallUpdated, type, params);
                 result.applyExpressions(args1);
               }
               return inferArg(result, arg, true, fun);
@@ -179,7 +179,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     return inferArg(result, arg, isExplicit, fun);
   }
 
-  private CheckTypeVisitor.PreResult checkBinOpInferArg(Abstract.Expression fun, Abstract.Expression arg, boolean isExplicit, Type expectedType) {
+  private CheckTypeVisitor.DefCallResult checkBinOpInferArg(Abstract.Expression fun, Abstract.Expression arg, boolean isExplicit, Type expectedType) {
     if (fun instanceof Abstract.BinOpExpression) {
       return inferArg(inferArg(inferArg(fun, ((Abstract.BinOpExpression) fun).getLeft(), true, null), ((Abstract.BinOpExpression) fun).getRight(), true, fun), arg, isExplicit, fun);
     } else {
@@ -188,18 +188,18 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
   }
 
   @Override
-  public CheckTypeVisitor.PreResult infer(Abstract.AppExpression expr, Type expectedType) {
+  public CheckTypeVisitor.DefCallResult infer(Abstract.AppExpression expr, Type expectedType) {
     Abstract.ArgumentExpression arg = expr.getArgument();
     return checkBinOpInferArg(expr.getFunction(), arg.getExpression(), arg.isExplicit(), expectedType);
   }
 
   @Override
-  public CheckTypeVisitor.PreResult infer(Abstract.BinOpExpression expr, Type expectedType) {
+  public CheckTypeVisitor.DefCallResult infer(Abstract.BinOpExpression expr, Type expectedType) {
     return inferArg(inferArg(expr, expr.getLeft(), true, null), expr.getRight(), true, expr);
   }
 
   @Override
-  public CheckTypeVisitor.Result inferTail(CheckTypeVisitor.Result result, Type expectedType, Abstract.Expression expr) {
+  public CheckTypeVisitor.DefCallResult inferTail(CheckTypeVisitor.DefCallResult result, Type expectedType, Abstract.Expression expr) {
     int actualParams = result.getNumberOfImplicitParameters();
     List<DependentLink> expectedParams = new ArrayList<>(actualParams);
     expectedType.getPiParameters(expectedParams, true, true);
@@ -214,6 +214,6 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       fixImplicitArgs(result, actualParams - expectedParams.size(), expr);
     }
 
-    return myVisitor.checkResult(expectedType, result, expr);
+    return result;
   }
 }

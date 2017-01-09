@@ -61,7 +61,7 @@ public class TypeCheckingDefCall {
     }
   }
 
-  public CheckTypeVisitor.PreResult typeCheckDefCall(Abstract.DefCallExpression expr) {
+  public CheckTypeVisitor.DefCallResult typeCheckDefCall(Abstract.DefCallExpression expr) {
     Abstract.Expression left = expr.getExpression();
     Abstract.Definition resolvedDefinition = expr.getReferent();
     Definition typeCheckedDefinition = null;
@@ -189,7 +189,7 @@ public class TypeCheckingDefCall {
         Expression conCall = ConCall(constructor, dataCall.getPolyArguments(), new ArrayList<Expression>(), new ArrayList<Expression>());
         List<DependentLink> conParams = new ArrayList<>();
         Expression conType = constructor.getTypeWithParams(conParams, dataCall.getPolyArguments());
-        CheckTypeVisitor.PreResult conResult = new CheckTypeVisitor.PreResult(conCall, conType, conParams);
+        CheckTypeVisitor.DefCallResult conResult = new CheckTypeVisitor.DefCallResult(conCall, conType, conParams);
         conResult.applyExpressions(args);
         return conResult;
       }
@@ -255,7 +255,7 @@ public class TypeCheckingDefCall {
     return makeResult(typeCheckedDefinition, thisExpr, expr);
   }
 
-  private CheckTypeVisitor.PreResult makeResult(Definition definition, Expression thisExpr, Abstract.Expression expr) {
+  private CheckTypeVisitor.DefCallResult makeResult(Definition definition, Expression thisExpr, Abstract.Expression expr) {
     LevelArguments polyArgs = LevelArguments.generateInferVars(definition.getPolyParams(), myVisitor.getEquations(), expr);
     DefCallExpression defCall = definition.getDefCall(polyArgs);
 
@@ -268,7 +268,7 @@ public class TypeCheckingDefCall {
 
     List<DependentLink> params = new ArrayList<>();
     TypeMax type = definition.getTypeWithParams(params, polyArgs);
-    CheckTypeVisitor.PreResult result = new CheckTypeVisitor.PreResult(defCall, type, params);
+    CheckTypeVisitor.DefCallResult result = new CheckTypeVisitor.DefCallResult(defCall, type, params);
     if (thisExpr != null) {
       result.applyThis(thisExpr);
     }

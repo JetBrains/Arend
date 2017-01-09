@@ -68,13 +68,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   private final Equations myEquations;
   private ClassViewInstancePool myClassViewInstancePool;
 
-  public static class PreResult {
+  public static class DefCallResult {
     private Expression expression;
     private TypeMax type;
     private List<DependentLink> parameters = new ArrayList<>();
     private List<Level> levels = new ArrayList<>();
 
-    public PreResult(Expression expression, TypeMax type) {
+    public DefCallResult(Expression expression, TypeMax type) {
       this.expression = expression;
       if (type != null) {
         List<DependentLink> params = new ArrayList<>();
@@ -83,14 +83,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       }
     }
 
-    public PreResult(Expression expression, TypeMax type, List<DependentLink> parameters) {
+    public DefCallResult(Expression expression, TypeMax type, List<DependentLink> parameters) {
       this(expression, type);
       List<DependentLink> params = new ArrayList<>(parameters);
       params.addAll(this.parameters);
       this.parameters = params;
     }
 
-    public PreResult(Expression expression, TypeMax type, DependentLink parameters) {
+    public DefCallResult(Expression expression, TypeMax type, DependentLink parameters) {
       this(expression, type, DependentLink.Helper.toList(parameters));
     }
 
@@ -113,7 +113,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
 
     public void reset(Expression expression, TypeMax type) {
-      PreResult result = new PreResult(expression, type);
+      DefCallResult result = new DefCallResult(expression, type);
       this.expression = result.expression;
       this.type = result.type;
       this.parameters = result.parameters;
@@ -157,19 +157,19 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       parameters.addAll(newParams);
     }
 
-    public PreResult subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
+    public TypeMax getType() {
+      return getAtomicType().fromPiParameters(getParameters());
+    }
+
+    public DefCallResult subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
       List<DependentLink> params = DependentLink.Helper.subst(parameters, exprSubst, levelSubst);
-      return new PreResult(expression.subst(exprSubst, levelSubst), type.subst(exprSubst, levelSubst), params);
+      return new DefCallResult(expression.subst(exprSubst, levelSubst), type.subst(exprSubst, levelSubst), params);
     }
   }
 
-  public static class Result extends PreResult {
+  public static class Result extends DefCallResult {
     public Result(Expression expression, TypeMax type) {
       super(expression, type);
-    }
-
-    public TypeMax getType() {
-      return getAtomicType().fromPiParameters(getParameters());
     }
   }
 
@@ -308,13 +308,50 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     return false;
   }
 
-  public Result checkResultImplicit(Type expectedType, Result result, Abstract.Expression expression) {
+  public Result defCallResultToResult(Type expectedType, DefCallResult result, Abstract.Expression expr) {
     if (result == null) return null;
     if (expectedType == null) {
-      expression.setWellTyped(myContext, result.getExpression());
-      return result;
+      expr.setWellTyped(myContext, result.getExpression());
+    } else {
+      result = myArgsInference.inferTail(result, expectedType, expr);
     }
-    return myArgsInference.inferTail(result, expectedType, expression);
+
+    if (result.getExpression().toDefCall() == null || result.getParameters().isEmpty()) {
+      return new Result(result.getExpression(), result.getAtomicType().fromPiParameters(result.getParameters()));
+    }
+
+    Expression expression = result.getExpression();
+    ExprSubstitution allSubst = new ExprSubstitution();
+    ExprSubstitution absSubst = new ExprSubstitution();
+    List<DependentLink> defParams = new ArrayList<>();
+    result.getExpression().toDefCall().getDefinition().getTypeWithParams(defParams, result.getExpression().toDefCall().getPolyArguments());
+    int numDefCallParameters = defParams.size();
+    int numDefCallArguments = expression.toDefCall().getDefCallArguments().size() + (expression.toConCall() != null ? expression.toConCall().getDataTypeArguments().size() : 0);
+    int numAbsParams = numDefCallParameters - numDefCallArguments;
+    assert result.getParameters().size() >= numAbsParams;
+    DependentLink absParams = numAbsParams > 0 ? DependentLink.Helper.mergeList(result.getParameters().subList(0, numAbsParams), absSubst) : EmptyDependentLink.getInstance();
+    DependentLink allParams = DependentLink.Helper.mergeList(result.getParameters(), allSubst);
+
+    int argIndex = 0;
+    for (DependentLink link = absParams; link.hasNext() && argIndex < numAbsParams; link = link.getNext(), ++argIndex) {
+      if (link.getType().toExpression() == null) {
+        InferenceLevelVariable pLvl = new InferenceLevelVariable("plvl-of-" + link.getName(), LevelVariable.LvlType.PLVL, expr);
+        InferenceLevelVariable hLvl = new InferenceLevelVariable("hlvl-of-" + link.getName(), LevelVariable.LvlType.HLVL, expr);
+        myEquations.addVariable(pLvl);
+        myEquations.addVariable(hLvl);
+        Expression type = ExpressionFactory.Universe(new Level(pLvl), new Level(hLvl));
+        if (link.getType().getPiParameters().hasNext()) {
+          type = Pi(link.getType().getPiParameters(), type);
+        }
+        link.setType(type);
+      }
+      expression = expression.addArgument(ExpressionFactory.Reference(link));
+    }
+    if (absParams.hasNext()) {
+      expression = ExpressionFactory.Lam(absParams, expression.subst(absSubst));
+    }
+
+    return new Result(expression, result.getAtomicType().subst(allSubst, new LevelSubstitution()).fromPiParameters(DependentLink.Helper.toList(allParams)));
   }
 
   public TypeMax checkFunOrDataType(Abstract.Expression typeExpr) {
@@ -385,7 +422,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     return result;
   }
 
-  private boolean compareExpressions(PreResult result, Expression expected, Expression actual, Abstract.Expression expr) {
+  private boolean compareExpressions(DefCallResult result, Expression expected, Expression actual, Abstract.Expression expr) {
     if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, expected.normalize(NormalizeVisitor.Mode.NF), actual.normalize(NormalizeVisitor.Mode.NF), expr)) {
       LocalTypeCheckingError error = new ExpressionMismatchError(expected.normalize(NormalizeVisitor.Mode.HUMAN_NF), actual.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
       expr.setWellTyped(myContext, ExpressionFactory.Error(result.getExpression(), error));
@@ -395,7 +432,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     return true;
   }
 
-  private boolean checkPath(PreResult result, Abstract.Expression expr) {
+  private boolean checkPath(DefCallResult result, Abstract.Expression expr) {
     ConCallExpression conExpr = result.getExpression().toConCall();
     if (conExpr != null && conExpr.getDefinition() == Prelude.PATH_CON) {
       if (conExpr.getDefCallArguments().isEmpty()) {
@@ -414,68 +451,24 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     return true;
   }
 
-  private Result checkDefCall(PreResult result, Abstract.Expression expr) {
-    if (result == null) {
-      return null;
-    }
-
-    if (result.getExpression().toDefCall() == null || result.getParameters().isEmpty()) {
-      return new Result(result.getExpression(), result.getAtomicType().fromPiParameters(result.getParameters()));
-    }
-
-    Expression expression = result.getExpression();
-    ExprSubstitution allSubst = new ExprSubstitution();
-    ExprSubstitution absSubst = new ExprSubstitution();
-    List<DependentLink> defParams = new ArrayList<>();
-    result.getExpression().toDefCall().getDefinition().getTypeWithParams(defParams, result.getExpression().toDefCall().getPolyArguments());
-    int numDefCallParameters = defParams.size();
-    int numDefCallArguments = expression.toDefCall().getDefCallArguments().size() + (expression.toConCall() != null ? expression.toConCall().getDataTypeArguments().size() : 0);
-    int numAbsParams = numDefCallParameters - numDefCallArguments;
-    assert result.getParameters().size() >= numAbsParams;
-    DependentLink absParams = numAbsParams > 0 ? DependentLink.Helper.mergeList(result.getParameters().subList(0, numAbsParams), absSubst) : EmptyDependentLink.getInstance();
-    DependentLink allParams = DependentLink.Helper.mergeList(result.getParameters(), allSubst);
-
-    int argIndex = 0;
-    for (DependentLink link = absParams; link.hasNext() && argIndex < numAbsParams; link = link.getNext(), ++argIndex) {
-      if (link.getType().toExpression() == null) {
-        InferenceLevelVariable pLvl = new InferenceLevelVariable("plvl-of-" + link.getName(), LevelVariable.LvlType.PLVL, expr);
-        InferenceLevelVariable hLvl = new InferenceLevelVariable("hlvl-of-" + link.getName(), LevelVariable.LvlType.HLVL, expr);
-        myEquations.addVariable(pLvl);
-        myEquations.addVariable(hLvl);
-        Expression type = ExpressionFactory.Universe(new Level(pLvl), new Level(hLvl));
-        if (link.getType().getPiParameters().hasNext()) {
-          type = Pi(link.getType().getPiParameters(), type);
-        }
-        link.setType(type);
-      }
-      expression = expression.addArgument(ExpressionFactory.Reference(link));
-    }
-    if (absParams.hasNext()) {
-      expression = ExpressionFactory.Lam(absParams, expression.subst(absSubst));
-    }
-
-    return new Result(expression, result.getAtomicType().subst(allSubst, new LevelSubstitution()).fromPiParameters(DependentLink.Helper.toList(allParams)));
-  }
-
   @Override
   public Result visitApp(Abstract.AppExpression expr, Type expectedType) {
-    PreResult result = myArgsInference.infer(expr, expectedType);
+    DefCallResult result = myArgsInference.infer(expr, expectedType);
     if (result == null || !checkPath(result, expr)) {
       return null;
     }
 
-    return checkResultImplicit(expectedType, checkDefCall(result, expr), expr);
+    return checkResult(expectedType, defCallResultToResult(expectedType, result, expr), expr);
   }
 
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Type expectedType) {
-    PreResult result = myTypeCheckingDefCall.typeCheckDefCall(expr);
-
+    DefCallResult result = myTypeCheckingDefCall.typeCheckDefCall(expr);
     if (result == null || !checkPath(result, expr)) {
       return null;
     }
 
-    return checkResultImplicit(expectedType, checkDefCall(result, expr), expr);
+    return checkResult(expectedType, defCallResultToResult(expectedType, result, expr), expr);
   }
 
   @Override
@@ -794,11 +787,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   @Override
   public Result visitBinOp(Abstract.BinOpExpression expr, Type expectedType) {
-    PreResult result = myArgsInference.infer(expr, expectedType);
-    if (result == null) {
-      return null;
-    }
-    return checkResultImplicit(expectedType, checkDefCall(result, expr), expr);
+    DefCallResult result = myArgsInference.infer(expr, expectedType);
+    return checkResult(expectedType, defCallResultToResult(expectedType, result, expr), expr);
   }
 
   @Override
