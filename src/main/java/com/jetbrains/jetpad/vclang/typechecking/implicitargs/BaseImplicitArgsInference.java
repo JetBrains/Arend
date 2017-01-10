@@ -12,17 +12,17 @@ public class BaseImplicitArgsInference implements ImplicitArgsInference {
   }
 
   @Override
-  public CheckTypeVisitor.DefCallResult infer(Abstract.AppExpression expr, Type expectedType) {
+  public CheckTypeVisitor.TResult infer(Abstract.AppExpression expr, Type expectedType) {
     return null;
   }
 
   @Override
-  public CheckTypeVisitor.DefCallResult infer(Abstract.BinOpExpression expr, Type expectedType) {
+  public CheckTypeVisitor.TResult infer(Abstract.BinOpExpression expr, Type expectedType) {
     return null;
   }
 
   @Override
-  public CheckTypeVisitor.DefCallResult inferTail(CheckTypeVisitor.DefCallResult fun, Type expectedType, Abstract.Expression expr) {
-    return null;
+  public boolean inferTail(CheckTypeVisitor.TResult fun, Type expectedType, Abstract.Expression expr) {
+    return false;
   }
 }

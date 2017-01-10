@@ -69,11 +69,21 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   private final Equations myEquations;
   private ClassViewInstancePool myClassViewInstancePool;
 
-  public static class DefCallResult {
+  public interface TResult {
+    Expression getExpression();
+    TypeMax getType();
+    DependentLink getParameter();
+    void applyExpressions(List<? extends Expression> expressions);
+    int getNumberOfImplicitParameters();
+    int getNumberOfLevels();
+    void applyLevels(Level... levels);
+  }
+
+  public static class DefCallResult implements TResult {
     private Expression expression;
-    private TypeMax type;
-    private List<DependentLink> parameters = new ArrayList<>();
     private List<Level> levels = new ArrayList<>();
+    public TypeMax type;
+    public List<DependentLink> parameters = new ArrayList<>();
 
     public DefCallResult(Expression expression, TypeMax type) {
       this.expression = expression;
@@ -95,31 +105,37 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       this(expression, type, DependentLink.Helper.toList(parameters));
     }
 
+    @Override
     public Expression getExpression() {
       return expression;
     }
 
-    public TypeMax getAtomicType() {
-      return type;
+    @Override
+    public TypeMax getType() {
+      return type.fromPiParameters(parameters);
     }
 
-    public List<DependentLink> getParameters() {
-      return parameters;
+    @Override
+    public DependentLink getParameter() {
+      return parameters.isEmpty() ? EmptyDependentLink.getInstance() : parameters.get(0);
     }
 
-    public List<Level> getLevels() { return levels; }
-
-    public void reset(Expression expression) {
-      this.expression = expression;
+    @Override
+    public void applyExpressions(List<? extends Expression> expressions) {
+      expression = expression.addArguments(expressions);
+      ExprSubstitution subst = new ExprSubstitution();
+      int size = Math.min(expressions.size(), parameters.size());
+      for (int i = 0; i < size; i++) {
+        subst.add(parameters.get(i), expressions.get(i));
+      }
+      parameters = DependentLink.Helper.subst(parameters.subList(size, parameters.size()), subst, new LevelSubstitution());
+      type = type.subst(subst, new LevelSubstitution());
+      List<DependentLink> newParams = new ArrayList<>();
+      type = type.getPiParameters(newParams, true, false);
+      parameters.addAll(newParams);
     }
 
-    public void reset(Expression expression, TypeMax type) {
-      DefCallResult result = new DefCallResult(expression, type);
-      this.expression = result.expression;
-      this.type = result.type;
-      this.parameters = result.parameters;
-    }
-
+    @Override
     public int getNumberOfImplicitParameters() {
       int number = 0;
       for (DependentLink param : parameters) {
@@ -131,6 +147,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       return number;
     }
 
+    @Override
+    public int getNumberOfLevels() {
+      return levels.size();
+    }
+
+    @Override
+    public void applyLevels(Level... levels) {
+      Collections.addAll(this.levels, levels);
+    }
+
     public void applyThis(Expression thisExpr) {
       assert expression.toDefCall() != null && !parameters.isEmpty();
       expression = expression.toDefCall().applyThis(thisExpr);
@@ -139,38 +165,99 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       type = type.subst(subst, new LevelSubstitution());
     }
 
-    public void applyLevels(List<Level> levels) {
-      this.levels.addAll(levels);
-    }
-
-    public void applyExpressions(List<? extends Expression> expressions) {
-      expression = expression.addArguments(expressions);
-      ExprSubstitution subst = new ExprSubstitution();
-      int size = Math.min(expressions.size(), parameters.size());
-      int i = 0;
-      for (; i < size; ++i) {
-        subst.add(parameters.get(i), expressions.get(i));
-      }
-      parameters = DependentLink.Helper.subst(parameters.subList(i, parameters.size()), subst, new LevelSubstitution());
-      type = type.subst(subst, new LevelSubstitution());
-      List<DependentLink> newParams = new ArrayList<>();
-      type = type.getPiParameters(newParams, true, false);
-      parameters.addAll(newParams);
-    }
-
-    public TypeMax getType() {
-      return getAtomicType().fromPiParameters(getParameters());
-    }
-
     public DefCallResult subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
       List<DependentLink> params = DependentLink.Helper.subst(parameters, exprSubst, levelSubst);
       return new DefCallResult(expression.subst(exprSubst, levelSubst), type.subst(exprSubst, levelSubst), params);
     }
   }
 
-  public static class Result extends DefCallResult {
-    private Result(Expression expression, TypeMax type) {
-      super(expression, type);
+  public static class Result implements TResult {
+    private Expression expression;
+    private List<Level> levels = new ArrayList<>();
+    public TypeMax type;
+    public List<DependentLink> parameters = new ArrayList<>();
+
+    public Result(Expression expression, TypeMax type) {
+      this.expression = expression;
+      if (type != null) {
+        List<DependentLink> params = new ArrayList<>();
+        this.type = type.getPiParameters(params, true, false);
+        this.parameters.addAll(params);
+      }
+    }
+
+    public Result(Expression expression, TypeMax type, List<DependentLink> parameters) {
+      this(expression, type);
+      List<DependentLink> params = new ArrayList<>(parameters);
+      params.addAll(this.parameters);
+      this.parameters = params;
+    }
+
+    public Result(Expression expression, TypeMax type, DependentLink parameters) {
+      this(expression, type, DependentLink.Helper.toList(parameters));
+    }
+
+    @Override
+    public Expression getExpression() {
+      return expression;
+    }
+
+    @Override
+    public TypeMax getType() {
+      return type.fromPiParameters(parameters);
+    }
+
+    @Override
+    public DependentLink getParameter() {
+      return parameters.isEmpty() ? EmptyDependentLink.getInstance() : parameters.get(0);
+    }
+
+    @Override
+    public void applyExpressions(List<? extends Expression> expressions) {
+      expression = expression.addArguments(expressions);
+      ExprSubstitution subst = new ExprSubstitution();
+      int size = Math.min(expressions.size(), parameters.size());
+      for (int i = 0; i < size; i++) {
+        subst.add(parameters.get(i), expressions.get(i));
+      }
+      parameters = DependentLink.Helper.subst(parameters.subList(size, parameters.size()), subst, new LevelSubstitution());
+      type = type.subst(subst, new LevelSubstitution());
+      List<DependentLink> newParams = new ArrayList<>();
+      type = type.getPiParameters(newParams, true, false);
+      parameters.addAll(newParams);
+    }
+
+    @Override
+    public int getNumberOfImplicitParameters() {
+      int number = 0;
+      for (DependentLink param : parameters) {
+        if (param.isExplicit()) {
+          break;
+        }
+        number++;
+      }
+      return number;
+    }
+
+    @Override
+    public int getNumberOfLevels() {
+      return levels.size();
+    }
+
+    @Override
+    public void applyLevels(Level... levels) {
+      Collections.addAll(this.levels, levels);
+    }
+
+    public void reset(Expression expression) {
+      this.expression = expression;
+    }
+
+    public void reset(Expression expression, TypeMax type) {
+      DefCallResult result = new DefCallResult(expression, type);
+      this.expression = result.expression;
+      this.type = result.type;
+      this.parameters = result.parameters;
     }
   }
 
@@ -309,16 +396,23 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     return false;
   }
 
-  public Result defCallResultToResult(Type expectedType, DefCallResult result, Abstract.Expression expr) {
+  private Result TResultToResult(Type expectedType, TResult result, Abstract.Expression expr) {
     if (result == null) return null;
     if (expectedType == null) {
       expr.setWellTyped(myContext, result.getExpression());
     } else {
-      result = myArgsInference.inferTail(result, expectedType, expr);
+      if (!myArgsInference.inferTail(result, expectedType, expr)) {
+        return null;
+      }
     }
 
-    if (result.getExpression().toDefCall() == null || result.getParameters().isEmpty()) {
-      return new Result(result.getExpression(), result.getAtomicType().fromPiParameters(result.getParameters()));
+    if (result instanceof Result) {
+      return (Result) result;
+    }
+
+    DefCallResult defCallResult = (DefCallResult) result;
+    if (result.getExpression().toDefCall() == null || defCallResult.parameters.isEmpty()) {
+      return new Result(result.getExpression(), result.getType());
     }
 
     Expression expression = result.getExpression();
@@ -329,9 +423,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     int numDefCallParameters = defParams.size();
     int numDefCallArguments = expression.toDefCall().getDefCallArguments().size() + (expression.toConCall() != null ? expression.toConCall().getDataTypeArguments().size() : 0);
     int numAbsParams = numDefCallParameters - numDefCallArguments;
-    assert result.getParameters().size() >= numAbsParams;
-    DependentLink absParams = numAbsParams > 0 ? DependentLink.Helper.mergeList(result.getParameters().subList(0, numAbsParams), absSubst) : EmptyDependentLink.getInstance();
-    DependentLink allParams = DependentLink.Helper.mergeList(result.getParameters(), allSubst);
+    assert defCallResult.parameters.size() >= numAbsParams;
+    DependentLink absParams = numAbsParams > 0 ? DependentLink.Helper.mergeList(defCallResult.parameters.subList(0, numAbsParams), absSubst) : EmptyDependentLink.getInstance();
+    DependentLink allParams = DependentLink.Helper.mergeList(defCallResult.parameters, allSubst);
 
     int argIndex = 0;
     for (DependentLink link = absParams; link.hasNext() && argIndex < numAbsParams; link = link.getNext(), ++argIndex) {
@@ -352,7 +446,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       expression = ExpressionFactory.Lam(absParams, expression.subst(absSubst));
     }
 
-    return new Result(expression, result.getAtomicType().subst(allSubst, new LevelSubstitution()).fromPiParameters(DependentLink.Helper.toList(allParams)));
+    return new Result(expression, defCallResult.type.subst(allSubst, new LevelSubstitution()).fromPiParameters(DependentLink.Helper.toList(allParams)));
   }
 
   public TypeMax checkFunOrDataType(Abstract.Expression typeExpr) {
@@ -454,12 +548,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   @Override
   public Result visitApp(Abstract.AppExpression expr, Type expectedType) {
-    DefCallResult result = myArgsInference.infer(expr, expectedType);
-    if (result == null || !checkPath(result, expr)) {
+    TResult result = myArgsInference.infer(expr, expectedType);
+    if (result == null || result instanceof DefCallResult && !checkPath((DefCallResult) result, expr)) {
       return null;
     }
 
-    return checkResult(expectedType, defCallResultToResult(expectedType, result, expr), expr);
+    return checkResult(expectedType, TResultToResult(expectedType, result, expr), expr);
   }
 
   private Variable getLocalVar(Abstract.DefCallExpression expr, List<? extends Variable> context) {
@@ -484,12 +578,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Type expectedType) {
-    DefCallResult result = expr.getExpression() == null && expr.getReferent() == null ? getLocalVar(expr) : myTypeCheckingDefCall.typeCheckDefCall(expr);
-    if (result == null || !checkPath(result, expr)) {
+    TResult result = expr.getExpression() == null && expr.getReferent() == null ? getLocalVar(expr) : myTypeCheckingDefCall.typeCheckDefCall(expr);
+    if (result == null || result instanceof DefCallResult && !checkPath((DefCallResult) result, expr)) {
       return null;
     }
 
-    return checkResult(expectedType, defCallResultToResult(expectedType, result, expr), expr);
+    return checkResult(expectedType, TResultToResult(expectedType, result, expr), expr);
   }
 
   @Override
@@ -808,8 +902,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   @Override
   public Result visitBinOp(Abstract.BinOpExpression expr, Type expectedType) {
-    DefCallResult result = myArgsInference.infer(expr, expectedType);
-    return checkResult(expectedType, defCallResultToResult(expectedType, result, expr), expr);
+    TResult result = myArgsInference.infer(expr, expectedType);
+    return checkResult(expectedType, TResultToResult(expectedType, result, expr), expr);
   }
 
   @Override
