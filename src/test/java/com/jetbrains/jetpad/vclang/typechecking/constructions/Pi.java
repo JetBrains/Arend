@@ -2,8 +2,8 @@ package com.jetbrains.jetpad.vclang.typechecking.constructions;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
-import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
+import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -21,7 +21,7 @@ public class Pi extends TypeCheckingTestCase {
     context.add(new TypedBinding("A", Universe(3, 7)));
     context.add(new TypedBinding("B", Universe(4, 6)));
     CheckTypeVisitor.Result result = typeCheckExpr(context, "A -> B", null);
-    assertEquals(Universe(4, 6), result.getType().toExpression());
+    assertEquals(Universe(4, 6), result.type.toExpression());
   }
 
   @Test
@@ -30,13 +30,13 @@ public class Pi extends TypeCheckingTestCase {
     context.add(new TypedBinding("A", Universe(4, 6)));
     context.add(new TypedBinding("B", Pi(Reference(context.get(0)), Universe(2, 8))));
     CheckTypeVisitor.Result result = typeCheckExpr(context, "\\Pi {x : A} -> B x", null);
-    assertEquals(Universe(4, 8), result.getType().toExpression());
+    assertEquals(Universe(4, 8), result.type.toExpression());
   }
 
   @Test
   public void piTest() {
     CheckTypeVisitor.Result result = typeCheckExpr("\\Pi (x y : Nat) {z : \\4-Type3} -> \\Pi (w : \\5-Type2) -> Nat", null);
-    assertEquals(Universe(4, 0), result.getType().toExpression());
+    assertEquals(Universe(4, 0), result.type.toExpression());
   }
 
   @Test
@@ -45,7 +45,7 @@ public class Pi extends TypeCheckingTestCase {
     context.add(new TypedBinding("A", Universe(3, 7)));
     context.add(new TypedBinding("B", Pi(Reference(context.get(0)), Universe(4, -1))));
     CheckTypeVisitor.Result result = typeCheckExpr(context, "\\Pi (x : A) -> B x", null);
-    assertEquals(Universe(0, -1), result.getType().toExpression());
+    assertEquals(Universe(0, -1), result.type.toExpression());
   }
 
   @Test
@@ -54,6 +54,6 @@ public class Pi extends TypeCheckingTestCase {
     context.add(new TypedBinding("A", Universe(4, -1)));
     context.add(new TypedBinding("B", Universe(2, 6)));
     CheckTypeVisitor.Result result = typeCheckExpr(context, "A -> B", null);
-    assertEquals(Universe(2, 6), result.getType().toExpression());
+    assertEquals(Universe(2, 6), result.type.toExpression());
   }
 }

@@ -1,21 +1,21 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
-import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.frontend.Concrete;
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
+import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -23,8 +23,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
@@ -104,7 +104,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
           "-> (\\Pi (z : (Nat -> Nat) -> Nat) -> Y (z (\\lam _ => 0)) (f (\\lam x => z (\\lam _ => x)))) " +
           "-> Y 0 (f (\\lam x => x))", null);
     assertNotNull(typeResult);
-    CheckTypeVisitor.Result result = typeCheckExpr(context, "\\lam f h => h (\\lam k => k 1)", typeResult.getExpression());
+    CheckTypeVisitor.Result result = typeCheckExpr(context, "\\lam f h => h (\\lam k => k 1)", typeResult.expression);
     assertNotNull(result);
   }
 
@@ -112,7 +112,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
   public void typeCheckingInferPiIndex() {
     // (X : Type1) -> X -> X : Type2
     Concrete.Expression expr = cPi("X", cUniverse(1), cPi(cVar("X"), cVar("X")));
-    assertThat(typeCheckExpr(expr, null).getType().toExpression(), is((Expression) Universe(2)));
+    assertThat(typeCheckExpr(expr, null).type.toExpression(), is((Expression) Universe(2)));
   }
 
   @Test
@@ -136,7 +136,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
   public void typedLambda() {
     // \x:Nat. x : Nat -> Nat
     Concrete.Expression expr = cLam(cargs(cTele(true, cvars("x"), cNat())), cVar("x"));
-    assertThat(typeCheckExpr(expr, null).getType(), is((TypeMax) Pi(Nat(), Nat())));
+    assertThat(typeCheckExpr(expr, null).type, is((TypeMax) Pi(Nat(), Nat())));
   }
 
   @Test
@@ -198,7 +198,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
             cTele(cvars("f"), cPi(ctypeArgs(cTele(false, cvars("A"), cUniverse(0)), cTele(cvars("x"), cVar("A"))), cApps(cVar("F"), cVar("x"))))),
         cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cNat(), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar("f"), cVar("x"))));
     CheckTypeVisitor.Result result = typeCheckExpr(expr, null);
-    Expression typeCodom = ((Expression) result.getType()).getPiParameters(new ArrayList<DependentLink>(), true, false);
+    Expression typeCodom = ((Expression) result.type).getPiParameters(new ArrayList<DependentLink>(), true, false);
     assertThat(typeCodom.toLet(), is(notNullValue()));
   }
 
@@ -207,7 +207,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     // \let | x (y : Nat) => Zero \in x : Nat -> Nat
     Concrete.Expression expr = cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cZero())), cVar("x"));
     CheckTypeVisitor.Result result = typeCheckExpr(expr, null);
-    assertThat(result.getType().normalize(NormalizeVisitor.Mode.WHNF), is((TypeMax) Pi(Nat(), Nat())));
+    assertThat(result.type.normalize(NormalizeVisitor.Mode.WHNF), is((TypeMax) Pi(Nat(), Nat())));
   }
 
   @Test

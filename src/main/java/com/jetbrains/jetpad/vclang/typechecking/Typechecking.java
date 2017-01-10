@@ -55,7 +55,7 @@ public class Typechecking {
           if (state.getTypechecked(unit.getDefinition()) == null) {
             countingErrorReporter = new CountingErrorReporter();
             LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(errorReporter, countingErrorReporter));
-            CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(state, staticNsProvider, dynamicNsProvider, new ArrayList<Binding>(), new ArrayList<LevelBinding>(), localErrorReporter).build();
+            CheckTypeVisitor visitor = new CheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, null, null, new ArrayList<Binding>(), new ArrayList<LevelBinding>(), localErrorReporter, null);
             Definition typechecked = DefinitionCheckType.typeCheckHeader(visitor, unit.getDefinition(), unit.getEnclosingClass());
             if (typechecked.hasErrors() == Definition.TypeCheckingStatus.TYPE_CHECKING) {
               suspensions.put(unit.getDefinition(), new Suspension(visitor, countingErrorReporter));

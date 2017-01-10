@@ -45,7 +45,6 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.StdImplicitArgsInfe
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.TwoStageEquations;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.ClassViewInstancePool;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.EmptyInstancePool;
 
 import java.util.*;
 
@@ -58,8 +57,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   private final TypecheckerState myState;
   private final StaticNamespaceProvider myStaticNsProvider;
   private final DynamicNamespaceProvider myDynamicNsProvider;
-  private ClassDefinition myThisClass;
-  private Expression myThisExpr;
   private final List<Binding> myContext;
   private final List<LevelBinding> myLvlContext;
   private final LocalErrorReporter myErrorReporter;
@@ -187,7 +184,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
   }
 
-  private CheckTypeVisitor(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ClassDefinition thisClass, Expression thisExpr, List<Binding> localContext, List<LevelBinding> lvlContext, LocalErrorReporter errorReporter, ClassViewInstancePool pool) {
+  public CheckTypeVisitor(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ClassDefinition thisClass, Expression thisExpr, List<Binding> localContext, List<LevelBinding> lvlContext, LocalErrorReporter errorReporter, ClassViewInstancePool pool) {
     myState = state;
     myStaticNsProvider = staticNsProvider;
     myDynamicNsProvider = dynamicNsProvider;
@@ -203,46 +200,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   }
 
   public void setThisClass(ClassDefinition thisClass, Expression thisExpr) {
-    myThisClass = thisClass;
-    myThisExpr = thisExpr;
     myTypeCheckingDefCall.setThisClass(thisClass, thisExpr);
-  }
-
-  public static class Builder {
-    private final TypecheckerState myTypecheckerState;
-    private final List<Binding> myLocalContext;
-    private final List<LevelBinding> myLvlContext;
-    private final LocalErrorReporter myErrorReporter;
-    private ClassViewInstancePool myPool;
-    private ClassDefinition myThisClass;
-    private Expression myThisExpr;
-    private StaticNamespaceProvider myStaticNsProvider;
-    private DynamicNamespaceProvider myDynamicNsProvider;
-
-    public Builder(TypecheckerState typecheckerState, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, List<Binding> localContext, List<LevelBinding> lvlContext, LocalErrorReporter errorReporter) {
-      this.myTypecheckerState = typecheckerState;
-      myStaticNsProvider = staticNsProvider;
-      myDynamicNsProvider = dynamicNsProvider;
-      myLocalContext = localContext;
-      myLvlContext = lvlContext;
-      myErrorReporter = errorReporter;
-      myPool = EmptyInstancePool.INSTANCE;
-    }
-
-    public Builder thisClass(ClassDefinition thisClass, Expression thisExpr) {
-      myThisClass = thisClass;
-      myThisExpr = thisExpr;
-      return this;
-    }
-
-    public Builder instancePool(ClassViewInstancePool pool) {
-      myPool = pool;
-      return this;
-    }
-
-    public CheckTypeVisitor build() {
-      return new CheckTypeVisitor(myTypecheckerState, myStaticNsProvider, myDynamicNsProvider, myThisClass, myThisExpr, myLocalContext, myLvlContext, myErrorReporter, myPool);
-    }
   }
 
   public TypecheckerState getTypecheckingState() {

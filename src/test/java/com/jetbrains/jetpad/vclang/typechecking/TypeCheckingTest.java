@@ -103,7 +103,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   @Test
   public void testAt() {
     CheckTypeVisitor.Result result = typeCheckExpr("\\lam (p : suc = suc) => (p @ left) 0", null);
-    assertNotNull(result.getExpression().getType());
+    assertNotNull(result.expression.getType());
   }
 
   // There's no way to test this property now as values cannot be explicitly assigned for generated poly parameters

@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.constructions;
 
-import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
+import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
@@ -70,6 +70,6 @@ public class Lambda extends TypeCheckingTestCase {
   @Test
   public void lambdaUniverse() {
     CheckTypeVisitor.Result result = typeCheckExpr("\\lam (x : \\Type1 -> \\Type2) (y : \\Type0) => x y", null);
-    assertEquals(result.getType(), Pi(params(param(Pi(Universe(1), Universe(2))), param(Universe(0))), Universe(2)));
+    assertEquals(result.type, Pi(params(param(Pi(Universe(1), Universe(2))), param(Universe(0))), Universe(2)));
   }
 }

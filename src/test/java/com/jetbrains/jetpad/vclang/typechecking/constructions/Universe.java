@@ -2,8 +2,8 @@ package com.jetbrains.jetpad.vclang.typechecking.constructions;
 
 import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
+import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -14,17 +14,17 @@ public class Universe extends TypeCheckingTestCase {
   public void universe() {
     CheckTypeVisitor.Result result = typeCheckExpr("\\Type5", null);
     assertNotNull(result);
-    assertEquals(ExpressionFactory.Universe(5), result.getExpression());
-    assertEquals(ExpressionFactory.Universe(6), result.getType());
-    assertEquals(ExpressionFactory.Universe(6), result.getExpression().getType());
+    assertEquals(ExpressionFactory.Universe(5), result.expression);
+    assertEquals(ExpressionFactory.Universe(6), result.type);
+    assertEquals(ExpressionFactory.Universe(6), result.expression.getType());
   }
 
   @Test
   public void universeExpected() {
     CheckTypeVisitor.Result result = typeCheckExpr("\\Type5", ExpressionFactory.Universe(8));
     assertNotNull(result);
-    assertEquals(ExpressionFactory.Universe(5), result.getExpression());
-    assertEquals(ExpressionFactory.Universe(6), result.getExpression().getType());
+    assertEquals(ExpressionFactory.Universe(5), result.expression);
+    assertEquals(ExpressionFactory.Universe(6), result.expression.getType());
   }
 
   @Test
@@ -41,17 +41,17 @@ public class Universe extends TypeCheckingTestCase {
   public void truncated() {
     CheckTypeVisitor.Result result = typeCheckExpr("\\3-Type5", null);
     assertNotNull(result);
-    assertEquals(ExpressionFactory.Universe(5, 3), result.getExpression());
-    assertEquals(ExpressionFactory.Universe(6, 4), result.getType());
-    assertEquals(ExpressionFactory.Universe(6, 4), result.getExpression().getType());
+    assertEquals(ExpressionFactory.Universe(5, 3), result.expression);
+    assertEquals(ExpressionFactory.Universe(6, 4), result.type);
+    assertEquals(ExpressionFactory.Universe(6, 4), result.expression.getType());
   }
 
   @Test
   public void truncatedExpected() {
     CheckTypeVisitor.Result result = typeCheckExpr("\\3-Type5", ExpressionFactory.Universe(8, 9));
     assertNotNull(result);
-    assertEquals(ExpressionFactory.Universe(5, 3), result.getExpression());
-    assertEquals(ExpressionFactory.Universe(6, 4), result.getExpression().getType());
+    assertEquals(ExpressionFactory.Universe(5, 3), result.expression);
+    assertEquals(ExpressionFactory.Universe(6, 4), result.expression.getType());
   }
 
   @Test
@@ -68,17 +68,17 @@ public class Universe extends TypeCheckingTestCase {
   public void prop() {
     CheckTypeVisitor.Result result = typeCheckExpr("\\Prop", null);
     assertNotNull(result);
-    assertEquals(ExpressionFactory.Universe(3, -1), result.getExpression());
-    assertEquals(ExpressionFactory.Universe(Sort.SET0), result.getType());
-    assertEquals(ExpressionFactory.Universe(Sort.SET0), result.getExpression().getType());
+    assertEquals(ExpressionFactory.Universe(3, -1), result.expression);
+    assertEquals(ExpressionFactory.Universe(Sort.SET0), result.type);
+    assertEquals(ExpressionFactory.Universe(Sort.SET0), result.expression.getType());
   }
 
   @Test
   public void propExpected() {
     CheckTypeVisitor.Result result = typeCheckExpr("\\Prop", ExpressionFactory.Universe(8, 9));
     assertNotNull(result);
-    assertEquals(ExpressionFactory.Universe(3, -1), result.getExpression());
-    assertEquals(ExpressionFactory.Universe(Sort.SET0), result.getExpression().getType());
+    assertEquals(ExpressionFactory.Universe(3, -1), result.expression);
+    assertEquals(ExpressionFactory.Universe(Sort.SET0), result.expression.getType());
   }
 
   @Test
@@ -90,17 +90,17 @@ public class Universe extends TypeCheckingTestCase {
   public void set() {
     CheckTypeVisitor.Result result = typeCheckExpr("\\Set7", null);
     assertNotNull(result);
-    assertEquals(ExpressionFactory.Universe(Sort.SetOfLevel(7)), result.getExpression());
-    assertEquals(ExpressionFactory.Universe(8, 1), result.getType());
-    assertEquals(ExpressionFactory.Universe(8, 1), result.getExpression().getType());
+    assertEquals(ExpressionFactory.Universe(Sort.SetOfLevel(7)), result.expression);
+    assertEquals(ExpressionFactory.Universe(8, 1), result.type);
+    assertEquals(ExpressionFactory.Universe(8, 1), result.expression.getType());
   }
 
   @Test
   public void setExpected() {
     CheckTypeVisitor.Result result = typeCheckExpr("\\Set7", ExpressionFactory.Universe(11, 4));
     assertNotNull(result);
-    assertEquals(ExpressionFactory.Universe(Sort.SetOfLevel(7)), result.getExpression());
-    assertEquals(ExpressionFactory.Universe(8, 1), result.getExpression().getType());
+    assertEquals(ExpressionFactory.Universe(Sort.SetOfLevel(7)), result.expression);
+    assertEquals(ExpressionFactory.Universe(8, 1), result.expression.getType());
   }
 
   @Test

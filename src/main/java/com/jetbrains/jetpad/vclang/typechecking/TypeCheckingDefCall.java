@@ -119,8 +119,8 @@ public class TypeCheckingDefCall {
     String name = expr.getName();
 
     // Field call
-    if (result.getType() instanceof Expression) {
-      Expression type = ((Expression) result.getType()).normalize(NormalizeVisitor.Mode.WHNF);
+    if (result.type instanceof Expression) {
+      Expression type = ((Expression) result.type).normalize(NormalizeVisitor.Mode.WHNF);
       if (type.toClassCall() != null) {
         ClassDefinition classDefinition = type.toClassCall().getDefinition();
 
@@ -156,17 +156,17 @@ public class TypeCheckingDefCall {
           return null;
         }
 
-        return makeResult(typeCheckedDefinition, result.getExpression(), expr);
+        return makeResult(typeCheckedDefinition, result.expression, expr);
       }
     }
 
     // Constructor call
-    DataCallExpression dataCall = result.getExpression().toLam() != null ? result.getExpression().toLam().getBody().toDataCall() : result.getExpression().toDataCall();
+    DataCallExpression dataCall = result.expression.toLam() != null ? result.expression.toLam().getBody().toDataCall() : result.expression.toDataCall();
     if (dataCall != null) {
       DataDefinition dataDefinition = dataCall.getDefinition();
       List<? extends Expression> args = dataCall.getDefCallArguments();
-      if (result.getExpression().toLam() != null) {
-        args = args.subList(0, args.size() - DependentLink.Helper.size(result.getExpression().toLam().getParameters()));
+      if (result.expression.toLam() != null) {
+        args = args.subList(0, args.size() - DependentLink.Helper.size(result.expression.toLam().getParameters()));
       }
 
       Constructor constructor;
@@ -206,7 +206,7 @@ public class TypeCheckingDefCall {
     Expression thisExpr = null;
     final Definition leftDefinition;
     Abstract.Definition member = null;
-    ClassCallExpression classCall = result.getExpression().toClassCall();
+    ClassCallExpression classCall = result.expression.toClassCall();
     if (classCall != null) {
       // Static call
       leftDefinition = classCall.getDefinition();
@@ -228,12 +228,12 @@ public class TypeCheckingDefCall {
       }
     } else {
       // Dynamic call
-      if (result.getExpression().toDefCall() != null) {
-        thisExpr = result.getExpression().toDefCall().getDefCallArguments().size() == 1 ? result.getExpression().toDefCall().getDefCallArguments().get(0) : null;
-        leftDefinition = result.getExpression().toDefCall().getDefinition();
+      if (result.expression.toDefCall() != null) {
+        thisExpr = result.expression.toDefCall().getDefCallArguments().size() == 1 ? result.expression.toDefCall().getDefCallArguments().get(0) : null;
+        leftDefinition = result.expression.toDefCall().getDefinition();
       } else {
         LocalTypeCheckingError error = new LocalTypeCheckingError("Expected a definition", expr);
-        expr.setWellTyped(myVisitor.getContext(), Error(result.getExpression(), error));
+        expr.setWellTyped(myVisitor.getContext(), Error(result.expression, error));
         myVisitor.getErrorReporter().report(error);
         return null;
       }

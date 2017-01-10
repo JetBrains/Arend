@@ -4,11 +4,11 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
+import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -32,8 +32,8 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     Expression expr = Reference(context.get(0))
       .addArgument(Nat())
       .addArgument(Zero());
-    assertEquals(expr, result.getExpression());
-    assertEquals(Nat(), result.getType());
+    assertEquals(expr, result.expression);
+    assertEquals(Nat(), result.type);
   }
 
   @Test
@@ -77,8 +77,8 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     Expression expr = Reference(context.get(0))
       .addArgument(Nat())
       .addArgument(Lam(g, Apps(Reference(g), Zero())));
-    assertEquals(expr, result.getExpression());
-    assertEquals(Nat(), result.getType());
+    assertEquals(expr, result.expression);
+    assertEquals(Nat(), result.type);
   }
 
   @Test
@@ -93,8 +93,8 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     Expression expr = Reference(context.get(1))
       .addArgument(Nat())
       .addArgument(Reference(context.get(0)));
-    assertEquals(expr, result.getExpression());
-    assertEquals(Nat(), result.getType());
+    assertEquals(expr, result.expression);
+    assertEquals(Nat(), result.type);
   }
 
   @Test
@@ -109,8 +109,8 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     Expression expr = Reference(context.get(0))
       .addArgument(Pi(Nat(), Nat()))
       .addArgument(Lam(xy, Suc(Reference(xy.getNext()))));
-    assertEquals(expr, result.getExpression());
-    assertEquals(Pi(Nat(), Nat()), result.getType());
+    assertEquals(expr, result.expression);
+    assertEquals(Pi(Nat(), Nat()), result.type);
   }
 
   @Test
@@ -126,8 +126,8 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     Expression expr = Reference(context.get(0))
       .addArgument(Pi(Pi(Nat(), Nat()), Nat()))
       .addArgument(arg);
-    assertEquals(expr, result.getExpression());
-    assertEquals(Pi(Pi(Nat(), Nat()), Nat()), result.getType());
+    assertEquals(expr, result.expression);
+    assertEquals(Pi(Pi(Nat(), Nat()), Nat()), result.type);
   }
 
   @Test
@@ -143,8 +143,8 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
       .addArgument(Nat())
       .addArgument(Lam(x, Reference(x)))
       .addArgument(Lam(x, Reference(x)));
-    assertEquals(expr, result.getExpression());
-    assertEquals(Nat(), result.getType());
+    assertEquals(expr, result.expression);
+    assertEquals(Nat(), result.type);
   }
 
   @Test
@@ -160,8 +160,8 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
         .addArgument(Nat())
         .addArgument(Lam(x, Reference(x)))
         .addArgument(Lam(x, Reference(x)));
-    assertEquals(expr, result.getExpression());
-    assertEquals(Nat(), result.getType());
+    assertEquals(expr, result.expression);
+    assertEquals(Nat(), result.type);
   }
 
   @Test
@@ -175,8 +175,8 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     Expression expr = Reference(context.get(0))
         .addArgument(Nat())
         .addArgument(Zero());
-    assertEquals(expr, result.getExpression());
-    assertEquals(Pi(Nat(), Nat()), result.getType());
+    assertEquals(expr, result.expression);
+    assertEquals(Pi(Nat(), Nat()), result.type);
   }
 
   @Test
@@ -213,8 +213,8 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     CheckTypeVisitor.Result result = typeCheckExpr(context, "i", type);
     Expression expr = Reference(context.get(1))
         .addArgument(Suc(Zero()));
-    assertEquals(expr, result.getExpression());
-    assertEquals(type, result.getType());
+    assertEquals(expr, result.expression);
+    assertEquals(type, result.type);
   }
 
   @Test
@@ -227,8 +227,8 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     context.add(new TypedBinding("i", type));
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "i", type);
-    assertEquals(Reference(context.get(1)), result.getExpression());
-    assertEquals(type, result.getType());
+    assertEquals(Reference(context.get(1)), result.expression);
+    assertEquals(type, result.type);
   }
 
   @Test
@@ -255,7 +255,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
         "  | z (x : Nat) => x\n" +
         "\\in x z";
     CheckTypeVisitor.Result result = typeCheckExpr(context, term, null);
-    assertEquals(Pi(Nat(), Nat()), result.getType().normalize(NormalizeVisitor.Mode.WHNF));
+    assertEquals(Pi(Nat(), Nat()), result.type.normalize(NormalizeVisitor.Mode.WHNF));
   }
 
   @Test
@@ -279,7 +279,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     context.add(new TypedBinding("f", type));
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "\\lam x1 x2 x3 => f x1 x2 x3", null);
-    assertEquals(type, result.getType());
+    assertEquals(type, result.type);
   }
 
   @Test

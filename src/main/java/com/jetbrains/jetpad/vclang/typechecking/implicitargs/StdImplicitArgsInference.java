@@ -71,9 +71,9 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           return false;
         }
 
-        Expression expr1 = argResult.getExpression().addArgument(Left());
-        Expression expr2 = argResult.getExpression().addArgument(Right());
-        result.applyExpressions(Arrays.asList(expr1, expr2, argResult.getExpression()));
+        Expression expr1 = argResult.expression.addArgument(Left());
+        Expression expr2 = argResult.expression.addArgument(Right());
+        result.applyExpressions(Arrays.asList(expr1, expr2, argResult.expression));
         return true;
       }
 
@@ -122,12 +122,12 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
     if (param.isExplicit() != isExplicit) {
       LocalTypeCheckingError error = new LocalTypeCheckingError("Expected an " + (param.isExplicit() ? "explicit" : "implicit") + " argument", arg);
-      arg.setWellTyped(myVisitor.getContext(), new ErrorExpression(argResult.getExpression(), error));
+      arg.setWellTyped(myVisitor.getContext(), new ErrorExpression(argResult.expression, error));
       myVisitor.getErrorReporter().report(error);
       return false;
     }
 
-    result.applyExpressions(Collections.singletonList(argResult.getExpression()));
+    result.applyExpressions(Collections.singletonList(argResult.expression));
     return true;
   }
 

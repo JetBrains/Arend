@@ -208,7 +208,7 @@ public class TypeCheckingElim {
           }
           //TODO: call of normalize() below fixes ImplicitArgumentsTests.etaExpansionTest
           //TODO: but it could lead to performance problems in the future
-          expressions.add(clauseResult.getExpression().normalize(NormalizeVisitor.Mode.NF));
+          expressions.add(clauseResult.expression.normalize(NormalizeVisitor.Mode.NF));
         } else {
           expressions.add(null);
         }
@@ -252,7 +252,7 @@ public class TypeCheckingElim {
       CheckTypeVisitor.Result exprResult = myVisitor.getLocalVar((Abstract.DefCallExpression) expression);
       if (exprResult == null)
         return null;
-      return exprResult.getExpression().toReference();
+      return exprResult.expression.toReference();
     } else {
       LocalTypeCheckingError error = new LocalTypeCheckingError("\\elim can be applied only to a local variable", expression);
       myVisitor.getErrorReporter().report(error);
