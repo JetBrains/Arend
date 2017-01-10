@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInfer
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
@@ -179,6 +178,15 @@ public class TypeCheckingDefCall {
           myVisitor.getErrorReporter().report(error);
           return null;
         }
+        if (constructor != null && constructor.typeHasErrors()) {
+          LocalTypeCheckingError error = new HasErrors(constructor.getAbstractDefinition(), expr);
+          expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+          myVisitor.getErrorReporter().report(error);
+          return null;
+        }
+        if (constructor != null && constructor.hasErrors() == Definition.TypeCheckingStatus.HAS_ERRORS) {
+          myVisitor.getErrorReporter().report(new HasErrors(Error.Level.WARNING, constructor.getAbstractDefinition(), expr));
+        }
       } else {
         if (typeCheckedDefinition instanceof Constructor && dataDefinition.getConstructors().contains(typeCheckedDefinition)) {
           constructor = (Constructor) typeCheckedDefinition;
@@ -188,10 +196,8 @@ public class TypeCheckingDefCall {
       }
 
       if (constructor != null) {
-        Expression conCall = ConCall(constructor, dataCall.getPolyArguments(), new ArrayList<Expression>(), new ArrayList<Expression>());
-        List<DependentLink> conParams = new ArrayList<>();
-        Expression conType = constructor.getTypeWithParams(conParams, dataCall.getPolyArguments());
-        CheckTypeVisitor.DefCallResult conResult = new CheckTypeVisitor.DefCallResult(conCall, conType, conParams);
+        ConCallExpression conCall = ConCall(constructor, dataCall.getPolyArguments(), new ArrayList<Expression>(), new ArrayList<Expression>());
+        CheckTypeVisitor.DefCallResult conResult = new CheckTypeVisitor.DefCallResult(conCall, dataCall.getPolyArguments());
         conResult.applyExpressions(args);
         return conResult;
       }
@@ -268,9 +274,7 @@ public class TypeCheckingDefCall {
       return null;
     }
 
-    List<DependentLink> params = new ArrayList<>();
-    TypeMax type = definition.getTypeWithParams(params, polyArgs);
-    CheckTypeVisitor.DefCallResult result = new CheckTypeVisitor.DefCallResult(defCall, type, params);
+    CheckTypeVisitor.DefCallResult result = new CheckTypeVisitor.DefCallResult(defCall, polyArgs);
     if (thisExpr != null) {
       result.applyThis(thisExpr);
     }
