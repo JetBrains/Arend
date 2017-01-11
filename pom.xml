@@ -45,6 +45,12 @@
       <artifactId>protobuf-java</artifactId>
       <version>${protobuf.version}</version>
     </dependency>
+
+    <dependency>
+      <groupId>net.harawata</groupId>
+      <artifactId>appdirs</artifactId>
+      <version>1.0.0</version>
+    </dependency>
   </dependencies>
 
   <build>
