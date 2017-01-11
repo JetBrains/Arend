@@ -36,7 +36,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeSourceSupplier<Prelude
   }
 
   private ConsoleMain(PreludeStorage preludeStorage, FileStorage fileStorage, boolean recompile) {
-    this(preludeStorage, fileStorage, new CompositeStorage<>(preludeStorage, fileStorage, preludeStorage, fileStorage), recompile);
+    this(preludeStorage, fileStorage, createStorage(preludeStorage, fileStorage), recompile);
   }
 
   private ConsoleMain(PreludeStorage preludeStorage, FileStorage fileStorage, CompositeStorage<PreludeStorage.SourceId, FileStorage.SourceId> storage, boolean recompile) {
@@ -44,6 +44,10 @@ public class ConsoleMain extends BaseCliFrontend<CompositeSourceSupplier<Prelude
     this.preludeStorage = preludeStorage;
     this.fileStorage = fileStorage;
     this.compositeStorage = storage;
+  }
+
+  private static CompositeStorage<PreludeStorage.SourceId, FileStorage.SourceId> createStorage(PreludeStorage preludeStorage, FileStorage fileStorage) {
+    return new CompositeStorage<>(preludeStorage, fileStorage);
   }
 
   @Override

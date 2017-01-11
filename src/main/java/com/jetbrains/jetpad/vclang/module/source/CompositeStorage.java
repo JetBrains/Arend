@@ -15,6 +15,10 @@ public class CompositeStorage<SourceId1T extends SourceId, SourceId2T extends So
     mySup2 = csSupplier2;
   }
 
+  public CompositeStorage(Storage<SourceId1T> storage1, Storage<SourceId2T> storage2) {
+    this(storage1, storage2, storage1, storage2);
+  }
+
   @Override
   public InputStream getCacheInputStream(SourceId sourceId) {
     if (sourceId.getSourceSupplier() != this) return null;
