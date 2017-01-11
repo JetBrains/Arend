@@ -3,7 +3,10 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
-import com.jetbrains.jetpad.vclang.core.expr.*;
+import com.jetbrains.jetpad.vclang.core.expr.ClassCallExpression;
+import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.InferenceReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
@@ -17,7 +20,6 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.MemberNotFoundError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
@@ -61,7 +63,7 @@ public class TypeCheckingDefCall {
     }
   }
 
-  public CheckTypeVisitor.DefCallResult typeCheckDefCall(Abstract.DefCallExpression expr) {
+  public CheckTypeVisitor.TResult typeCheckDefCall(Abstract.DefCallExpression expr) {
     Abstract.Expression left = expr.getExpression();
     Abstract.Definition resolvedDefinition = expr.getReferent();
     Definition typeCheckedDefinition = null;
@@ -196,10 +198,7 @@ public class TypeCheckingDefCall {
       }
 
       if (constructor != null) {
-        ConCallExpression conCall = ConCall(constructor, dataCall.getPolyArguments(), new ArrayList<Expression>(), new ArrayList<Expression>());
-        CheckTypeVisitor.DefCallResult conResult = new CheckTypeVisitor.DefCallResult(conCall, dataCall.getPolyArguments());
-        conResult.applyExpressions(args);
-        return conResult;
+        return CheckTypeVisitor.DefCallResult.makeTResult(constructor, dataCall.getPolyArguments(), null).applyExpressions(args);
       }
     }
 
@@ -263,22 +262,17 @@ public class TypeCheckingDefCall {
     return makeResult(typeCheckedDefinition, thisExpr, expr);
   }
 
-  private CheckTypeVisitor.DefCallResult makeResult(Definition definition, Expression thisExpr, Abstract.Expression expr) {
+  private CheckTypeVisitor.TResult makeResult(Definition definition, Expression thisExpr, Abstract.Expression expr) {
     LevelArguments polyArgs = LevelArguments.generateInferVars(definition.getPolyParams(), myVisitor.getEquations(), expr);
-    DefCallExpression defCall = definition.getDefCall(polyArgs);
 
     if (thisExpr == null && definition instanceof ClassField) {
       LocalTypeCheckingError error = new LocalTypeCheckingError("Field call without a class instance", expr);
-      expr.setWellTyped(myVisitor.getContext(), Error(defCall, error));
+      expr.setWellTyped(myVisitor.getContext(), Error(null, error));
       myVisitor.getErrorReporter().report(error);
       return null;
     }
 
-    CheckTypeVisitor.DefCallResult result = new CheckTypeVisitor.DefCallResult(defCall, polyArgs);
-    if (thisExpr != null) {
-      result.applyThis(thisExpr);
-    }
-    return result;
+    return CheckTypeVisitor.DefCallResult.makeTResult(definition, polyArgs, thisExpr);
   }
 
   private Expression findParent(ClassDefinition classDefinition, Definition definition, Expression result) {

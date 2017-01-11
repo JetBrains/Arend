@@ -1,22 +1,22 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
-import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.core.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.core.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
-import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.EmptyElimTreeNode;
+import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -173,7 +173,11 @@ public class Constructor extends Definition implements Function {
       }
       params.addAll(DependentLink.Helper.toList(parameters));
     }
-    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, substitution, polySubst)));
+    DependentLink conParams = DependentLink.Helper.subst(myParameters, substitution, polySubst);
+    if (!params.isEmpty()) {
+      params.get(params.size() - 1).setNext(conParams);
+    }
+    params.addAll(DependentLink.Helper.toList(conParams));
     resultType = resultType.subst(substitution, polySubst);
     return resultType;
   }

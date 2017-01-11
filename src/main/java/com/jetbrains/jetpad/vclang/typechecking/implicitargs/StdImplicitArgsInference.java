@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVaria
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
+import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
@@ -33,7 +34,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     super(visitor);
   }
 
-  protected void fixImplicitArgs(CheckTypeVisitor.TResult result, List<DependentLink> implicitParameters, Abstract.Expression expr) {
+  protected CheckTypeVisitor.TResult fixImplicitArgs(CheckTypeVisitor.TResult result, List<DependentLink> implicitParameters, Abstract.Expression expr) {
     ExprSubstitution substitution = new ExprSubstitution();
     int i = 1;
     for (DependentLink parameter : implicitParameters) {
@@ -46,89 +47,88 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         infVar = new FunctionInferenceVariable(parameter.getName(), type, i, expr);
       }
       Expression binding = new InferenceReferenceExpression(infVar, myVisitor.getEquations());
-      result.applyExpressions(Collections.singletonList(binding));
+      result = result.applyExpressions(Collections.singletonList(binding));
       substitution.add(parameter, binding);
       i++;
     }
+    return result;
   }
 
-  protected boolean inferArg(CheckTypeVisitor.TResult result, Abstract.Expression arg, boolean isExplicit, Abstract.Expression fun) {
+  protected CheckTypeVisitor.TResult inferArg(CheckTypeVisitor.TResult result, Abstract.Expression arg, boolean isExplicit, Abstract.Expression fun) {
     if (result == null) {
-      return false;
+      return null;
     }
 
     if (isExplicit) {
-      ConCallExpression conCall = result.getExpression().toConCall();
-      if (conCall != null && conCall.getDefinition() == Prelude.PATH_CON && conCall.getDataTypeArguments().isEmpty()) {
-        List<DependentLink> pathParams = new ArrayList<>();
-        Prelude.PATH_CON.getTypeWithParams(pathParams, conCall.getPolyArguments());
-        DependentLink lamParam = param("i", Interval());
-        Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", pathParams.get(0).getType().getPiCodomain(), 1, fun), myVisitor.getEquations());
-        result.applyExpressions(Collections.singletonList(Lam(lamParam, binding)));
+      if (result instanceof CheckTypeVisitor.DefCallResult) {
+        CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
+        if (defCallResult.getDefinition() == Prelude.PATH_CON && defCallResult.getArguments().isEmpty()) {
+          List<DependentLink> pathParams = new ArrayList<>();
+          Prelude.PATH_CON.getTypeWithParams(pathParams, defCallResult.getPolyArguments());
+          DependentLink lamParam = param("i", Interval());
+          Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", pathParams.get(0).getType().getPiCodomain(), 1, fun), myVisitor.getEquations());
+          result = result.applyExpressions(Collections.singletonList(Lam(lamParam, binding)));
 
-        CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, Pi(lamParam, binding));
-        if (argResult == null) {
-          return false;
+          CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, Pi(lamParam, binding));
+          if (argResult == null) {
+            return null;
+          }
+
+          Expression expr1 = argResult.expression.addArgument(Left());
+          Expression expr2 = argResult.expression.addArgument(Right());
+          return result.applyExpressions(Arrays.asList(expr1, expr2, argResult.expression));
         }
-
-        Expression expr1 = argResult.expression.addArgument(Left());
-        Expression expr2 = argResult.expression.addArgument(Right());
-        result.applyExpressions(Arrays.asList(expr1, expr2, argResult.expression));
-        return true;
       }
 
-      fixImplicitArgs(result, result.getImplicitParameters(), fun);
-    } else {
-      DefCallExpression defCall = result.getExpression().toDefCall();
-      if (result instanceof CheckTypeVisitor.DefCallResult && defCall != null) {
-        CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
-        List<Integer> userPolyParams = LevelBinding.getSublistOfUserBindings(defCall.getDefinition().getPolyParams());
-        int numLevelArgs = defCallResult.getNumberOfLevels();
-        if (numLevelArgs < userPolyParams.size()) {
-          LevelBinding param = defCall.getDefinition().getPolyParams().get(userPolyParams.get(numLevelArgs));
-          Level level = null;
-          if (!(arg instanceof Abstract.InferHoleExpression)) {
-            level = myVisitor.typeCheckLevel(arg, param.getType() == LevelVariable.LvlType.HLVL ? -1 : 0);
-            if (level == null) {
-              return false;
-            }
+      result = fixImplicitArgs(result, result.getImplicitParameters(), fun);
+    } else if (result instanceof CheckTypeVisitor.DefCallResult) {
+      CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
+      List<Integer> userPolyParams = LevelBinding.getSublistOfUserBindings(defCallResult.getDefinition().getPolyParams());
+      int numLevelArgs = defCallResult.getNumberOfLevels();
+      if (numLevelArgs < userPolyParams.size()) {
+        LevelBinding param = defCallResult.getDefinition().getPolyParams().get(userPolyParams.get(numLevelArgs));
+        Level level = null;
+        if (!(arg instanceof Abstract.InferHoleExpression)) {
+          level = myVisitor.typeCheckLevel(arg, param.getType() == LevelVariable.LvlType.HLVL ? -1 : 0);
+          if (level == null) {
+            return null;
           }
-          defCallResult.applyLevels(level);
-          if (level != null) {
-            Level oldValue = defCall.getPolyArguments().getLevels().get(userPolyParams.get(numLevelArgs));
-            if (oldValue == null) {
-              assert false;
-              return false;
-            }
-            myVisitor.getEquations().add(oldValue, level, Equations.CMP.EQ, fun);
-          }
-          return true;
         }
+        defCallResult.applyLevels(level);
+        if (level != null) {
+          Level oldValue = defCallResult.getPolyArguments().getLevels().get(userPolyParams.get(numLevelArgs));
+          if (oldValue == null) {
+            assert false;
+            return null;
+          }
+          myVisitor.getEquations().add(oldValue, level, Equations.CMP.EQ, fun);
+        }
+        return result;
       }
     }
 
     DependentLink param = result.getParameter();
     if (!param.hasNext()) {
-      LocalTypeCheckingError error = new TypeMismatchError(new StringPrettyPrintable("A pi type"), result.getType(), fun);
-      fun.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.getExpression(), error));
+      CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations(), fun);
+      LocalTypeCheckingError error = new TypeMismatchError(new StringPrettyPrintable("A pi type"), result1.type, fun);
+      fun.setWellTyped(myVisitor.getContext(), new ErrorExpression(result1.expression, error));
       myVisitor.getErrorReporter().report(error);
-      return false;
+      return null;
     }
 
     CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, param.getType());
     if (argResult == null) {
-      return false;
+      return null;
     }
 
     if (param.isExplicit() != isExplicit) {
       LocalTypeCheckingError error = new LocalTypeCheckingError("Expected an " + (param.isExplicit() ? "explicit" : "implicit") + " argument", arg);
       arg.setWellTyped(myVisitor.getContext(), new ErrorExpression(argResult.expression, error));
       myVisitor.getErrorReporter().report(error);
-      return false;
+      return null;
     }
 
-    result.applyExpressions(Collections.singletonList(argResult.expression));
-    return true;
+    return result.applyExpressions(Collections.singletonList(argResult.expression));
   }
 
   protected CheckTypeVisitor.TResult inferArg(Abstract.Expression fun, Abstract.Expression arg, boolean isExplicit, Type expectedType) {
@@ -144,31 +144,24 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         result = myVisitor.typeCheck(fun, null);
       }
 
-      if (result != null) {
-        if (isExplicit) {
-          ConCallExpression conCall = result.getExpression().toConCall();
-          if (conCall != null &&
-            conCall.getDataTypeArguments().size() < DependentLink.Helper.size(conCall.getDefinition().getDataTypeParameters()) &&
-            expectedType != null &&
-            !conCall.getDefinition().typeHasErrors()) {
-            Expression exprExpType = expectedType.toExpression();
-            DataCallExpression dataCall = exprExpType == null ? null : exprExpType.normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
-            if (dataCall != null) {
-              List<? extends Expression> args = dataCall.getDefCallArguments();
-              List<Expression> args1 = new ArrayList<>(args.size());
-              args1.addAll(conCall.getDataTypeArguments());
-              args1.addAll(args.subList(conCall.getDataTypeArguments().size(), args.size()));
-              args1 = conCall.getDefinition().matchDataTypeArguments(args1);
-              if (args1 != null && !args1.isEmpty()) {
-                ConCallExpression conCallUpdated = ConCall(conCall.getDefinition(), conCall.getPolyArguments(), new ArrayList<Expression>(), new ArrayList<Expression>());
-                result = new CheckTypeVisitor.DefCallResult(conCallUpdated, conCall.getPolyArguments());
-                result.applyExpressions(args1);
-              }
-              return inferArg(result, arg, true, fun) ? result : null;
+      if (result instanceof CheckTypeVisitor.DefCallResult && isExplicit && expectedType != null) {
+        CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
+        if (defCallResult.getDefinition() instanceof Constructor && defCallResult.getArguments().size() < DependentLink.Helper.size(((Constructor) defCallResult.getDefinition()).getDataTypeParameters())) {
+          Expression exprExpType = expectedType.toExpression();
+          DataCallExpression dataCall = exprExpType == null ? null : exprExpType.normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
+          if (dataCall != null) {
+            List<? extends Expression> args = dataCall.getDefCallArguments();
+            List<Expression> args1 = new ArrayList<>(args.size());
+            args1.addAll(defCallResult.getArguments());
+            args1.addAll(args.subList(defCallResult.getArguments().size(), args.size()));
+            args1 = ((Constructor) defCallResult.getDefinition()).matchDataTypeArguments(args1);
+            if (args1 != null && !args1.isEmpty()) {
+              // TODO: Report an error
+              result = CheckTypeVisitor.DefCallResult.makeTResult(defCallResult.getDefinition(), defCallResult.getPolyArguments(), null).applyExpressions(args1);
             }
+            return inferArg(result, arg, true, fun);
           }
         }
-
       }
     }
 
@@ -176,13 +169,12 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       myVisitor.typeCheck(arg, null);
       return null;
     }
-    return inferArg(result, arg, isExplicit, fun) ? result : null;
+    return inferArg(result, arg, isExplicit, fun);
   }
 
   private CheckTypeVisitor.TResult checkBinOpInferArg(Abstract.Expression fun, Abstract.Expression arg, boolean isExplicit, Type expectedType) {
     if (fun instanceof Abstract.BinOpExpression) {
-      CheckTypeVisitor.TResult result = inferArg(fun, ((Abstract.BinOpExpression) fun).getLeft(), true, null);
-      return inferArg(result, ((Abstract.BinOpExpression) fun).getRight(), true, fun) && inferArg(result, arg, isExplicit, fun) ? result : null;
+      return inferArg(inferArg(inferArg(fun, ((Abstract.BinOpExpression) fun).getLeft(), true, null), ((Abstract.BinOpExpression) fun).getRight(), true, fun), arg, isExplicit, fun);
     } else {
       return inferArg(fun, arg, isExplicit, expectedType);
     }
@@ -196,26 +188,26 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
   @Override
   public CheckTypeVisitor.TResult infer(Abstract.BinOpExpression expr, Type expectedType) {
-    CheckTypeVisitor.TResult result = inferArg(expr, expr.getLeft(), true, null);
-    return inferArg(result, expr.getRight(), true, expr) ? result : null;
+    return inferArg(inferArg(expr, expr.getLeft(), true, null), expr.getRight(), true, expr);
   }
 
   @Override
-  public boolean inferTail(CheckTypeVisitor.TResult result, Type expectedType, Abstract.Expression expr) {
+  public CheckTypeVisitor.TResult inferTail(CheckTypeVisitor.TResult result, Type expectedType, Abstract.Expression expr) {
     List<DependentLink> actualParams = result.getImplicitParameters();
     List<DependentLink> expectedParams = new ArrayList<>(actualParams.size());
     expectedType.getPiParameters(expectedParams, true, true);
     if (expectedParams.size() > actualParams.size()) {
-      LocalTypeCheckingError error = new TypeMismatchError(expectedType, result.getType(), expr);
-      expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.getExpression(), error));
+      CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations(), expr);
+      LocalTypeCheckingError error = new TypeMismatchError(expectedType, result1.type, expr);
+      expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result1.expression, error));
       myVisitor.getErrorReporter().report(error);
-      return false;
+      return null;
     }
 
     if (expectedParams.size() != actualParams.size()) {
-      fixImplicitArgs(result, actualParams.subList(0, actualParams.size() - expectedParams.size()), expr);
+      result = fixImplicitArgs(result, actualParams.subList(0, actualParams.size() - expectedParams.size()), expr);
     }
 
-    return true;
+    return result;
   }
 }

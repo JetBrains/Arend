@@ -1,17 +1,17 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.sort.Level;
-import com.jetbrains.jetpad.vclang.core.sort.SortMax;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
+import com.jetbrains.jetpad.vclang.core.sort.Level;
+import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.sort.SortMax;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.*;
 
@@ -71,11 +71,10 @@ public class ClassDefinition extends Definition {
 
   @Override
   public TypeMax getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
-    DependentLink link = EmptyDependentLink.getInstance();
     if (getThisClass() != null) {
-      link = param(ClassCall(getThisClass(), polyArguments));
+      params.add(param(ClassCall(getThisClass(), polyArguments)));
     }
-    return new PiUniverseType(link, getSorts().subst(polyArguments.toLevelSubstitution(this)));
+    return new PiUniverseType(EmptyDependentLink.getInstance(), getSorts().subst(polyArguments.toLevelSubstitution(this)));
   }
 
   @Override

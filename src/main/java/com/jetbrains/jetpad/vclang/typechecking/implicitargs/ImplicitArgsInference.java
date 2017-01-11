@@ -7,5 +7,5 @@ import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 public interface ImplicitArgsInference {
   CheckTypeVisitor.TResult infer(Abstract.AppExpression expr, Type expectedType);
   CheckTypeVisitor.TResult infer(Abstract.BinOpExpression expr, Type expectedType);
-  boolean inferTail(CheckTypeVisitor.TResult fun, Type expectedType, Abstract.Expression expr);
+  CheckTypeVisitor.TResult inferTail(CheckTypeVisitor.TResult fun, Type expectedType, Abstract.Expression expr);
 }

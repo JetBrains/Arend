@@ -1,13 +1,13 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
-import com.jetbrains.jetpad.vclang.core.expr.FieldCallExpression;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.core.expr.FieldCallExpression;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.List;
 
@@ -73,10 +73,14 @@ public class ClassField extends Definition {
 
   @Override
   public Expression getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
+    if (myType == null) {
+      return null;
+    }
+
     ExprSubstitution subst = new ExprSubstitution();
     LevelSubstitution polySubst = polyArguments.toLevelSubstitution(this);
     params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myThisParameter, subst, polySubst)));
-    return myType == null ? null : myType.subst(subst, polySubst);
+    return myType.subst(subst, polySubst);
   }
 
   @Override
