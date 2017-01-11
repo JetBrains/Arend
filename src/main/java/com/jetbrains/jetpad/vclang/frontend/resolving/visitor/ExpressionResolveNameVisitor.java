@@ -1,14 +1,14 @@
 package com.jetbrains.jetpad.vclang.frontend.resolving.visitor;
 
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
-import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
-import com.jetbrains.jetpad.vclang.naming.scope.Scope;
-import com.jetbrains.jetpad.vclang.frontend.parser.BinOpParser;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.frontend.parser.BinOpParser;
+import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
+import com.jetbrains.jetpad.vclang.naming.NameResolver;
+import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
 
 import java.util.ArrayList;
@@ -166,17 +166,21 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
     } else {
       BinOpParser parser = new BinOpParser(myErrorReporter, expr, myResolveListener);
       List<Abstract.BinOpSequenceElem> sequence = expr.getSequence();
-      List<BinOpParser.StackElem> stack = new ArrayList<>(sequence.size());
-      Abstract.Expression expression = expr.getLeft();
-      expression.accept(this, null);
-      NotInScopeError error = null;
+
+      expr.getLeft().accept(this, null);
       for (Abstract.BinOpSequenceElem elem : sequence) {
+        elem.argument.accept(this, null);
+      }
+
+      NotInScopeError error = null;
+      Abstract.Expression expression = expr.getLeft();
+      List<BinOpParser.StackElem> stack = new ArrayList<>(sequence.size());
+      for (Abstract.BinOpSequenceElem elem : expr.getSequence()) {
         String name = elem.binOp.getName();
         Abstract.Definition ref = myParentScope.resolveName(name);
         if (ref != null) {
           parser.pushOnStack(stack, expression, ref, ref.getPrecedence(), elem.binOp);
           expression = elem.argument;
-          expression.accept(this, null);
         } else {
           error = new NotInScopeError(elem.binOp, name);
           myErrorReporter.report(error);
