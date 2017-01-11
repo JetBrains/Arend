@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.module.caching.CacheStorageSupplier;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public class CompositeStorage<SourceId1T extends SourceId, SourceId2T extends SourceId> extends CompositeSourceSupplier<SourceId1T, SourceId2T> implements CacheStorageSupplier<CompositeSourceSupplier<SourceId1T, SourceId2T>.SourceId> {
+public class CompositeStorage<SourceId1T extends SourceId, SourceId2T extends SourceId> extends CompositeSourceSupplier<SourceId1T, SourceId2T> implements Storage<CompositeSourceSupplier<SourceId1T, SourceId2T>.SourceId> {
   private final CacheStorageSupplier<SourceId1T> mySup1;
   private final CacheStorageSupplier<SourceId2T> mySup2;
 

@@ -3,8 +3,7 @@ package com.jetbrains.jetpad.vclang.frontend.storage;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.parser.ParseSource;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.module.caching.CacheStorageSupplier;
-import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
+import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 
@@ -16,7 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class PreludeStorage implements SourceSupplier<PreludeStorage.SourceId>, CacheStorageSupplier<PreludeStorage.SourceId> {
+public class PreludeStorage implements Storage<PreludeStorage.SourceId> {
   // It is difficult to handle this in a uniform way due to differences in OS file systems
   // (and bugs in JDK), therefore all that is left is to be careful in keeping all these paths synced.
   private static Path BASE_PATH = Paths.get("lib", "Prelude");
