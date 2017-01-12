@@ -23,15 +23,15 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
   static {
     cmdOptions.addOption("h", "help", false, "print this message");
     cmdOptions.addOption(Option.builder("L").longOpt("libs").hasArg().argName("libdir").desc("directory containing libraries").build());
-    cmdOptions.addOption(Option.builder("s").longOpt("source").hasArg().argName("srcdir").desc("source directory").build());
-    //cmdOptions.addOption(Option.builder("o").longOpt("output").hasArg().argName("dir").desc("output directory").build());
+    cmdOptions.addOption(Option.builder("s").longOpt("source").hasArg().argName("srcdir").desc("project source directory").build());
+    cmdOptions.addOption(Option.builder("c").longOpt("cache").hasArg().argName("cachedir").desc("directory for project-specific cache files (relative to srcdir)").build());
     cmdOptions.addOption(Option.builder().longOpt("recompile").desc("recompile files").build());
   }
 
   private final StorageManager storageManager;
 
-  public ConsoleMain(Path libDir, Path sourceDir, boolean recompile) throws IOException {
-    this(new StorageManager(libDir, sourceDir), recompile);
+  public ConsoleMain(Path libDir, Path sourceDir, Path cacheDir, boolean recompile) throws IOException {
+    this(new StorageManager(libDir, sourceDir, cacheDir), recompile);
   }
 
   private ConsoleMain(StorageManager storageManager, boolean recompile) {
@@ -66,8 +66,8 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
     private final CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId> nonProjectCompositeStorage;
     public final CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId> storage;
 
-    StorageManager(Path libDir, Path projectDir) throws IOException {
-      projectStorage = new FileStorage(projectDir);
+    StorageManager(Path libDir, Path projectDir, Path cacheDir) throws IOException {
+      projectStorage = new FileStorage(projectDir, cacheDir);
       libStorage = libDir != null ? new LibStorage(libDir) : null;
       preludeStorage = new PreludeStorage();
 
@@ -200,9 +200,12 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
         String sourceDirStr = cmdLine.getOptionValue("s");
         Path sourceDir = Paths.get(sourceDirStr == null ? System.getProperty("user.dir") : sourceDirStr);
 
+        String cacheDirStr = cmdLine.getOptionValue("c");
+        Path cacheDir = sourceDir.resolve(cacheDirStr != null ? cacheDirStr : ".cache");
+
         boolean recompile = cmdLine.hasOption("recompile");
 
-        new ConsoleMain(libDir, sourceDir, recompile).run(sourceDir, cmdLine.getArgList());
+        new ConsoleMain(libDir, sourceDir, cacheDir, recompile).run(sourceDir, cmdLine.getArgList());
       }
     } catch (ParseException e) {
       System.err.println(e.getMessage());
