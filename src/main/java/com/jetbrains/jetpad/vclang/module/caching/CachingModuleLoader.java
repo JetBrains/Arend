@@ -1,19 +1,18 @@
 package com.jetbrains.jetpad.vclang.module.caching;
 
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.caching.serialization.*;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
-import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -206,7 +205,7 @@ public class CachingModuleLoader<SourceIdT extends SourceId> extends SourceModul
           if (!targetPersisted) {
             throw new CachePersistenceException(mySourceId, "Dependency cannot be persisted: " + targetSourceId);
           }
-          entry.setSourceUrl(myPersistenceProvider.getUrl(targetSourceId).toString());
+          entry.setSourceUrl(myPersistenceProvider.getUri(targetSourceId).toString());
         }
         entry.setDefinitionId(myPersistenceProvider.getIdFor(calltarget.getAbstractDefinition()));
         out.add(entry.build());
@@ -222,24 +221,20 @@ public class CachingModuleLoader<SourceIdT extends SourceId> extends SourceModul
       for (ModuleProtos.Module.DefinitionReference proto : refDefProtos) {
           final SourceIdT targetSourceId;
           if (!proto.getSourceUrl().isEmpty()) {
-            try {
-              URL url = new URL(proto.getSourceUrl());
-              targetSourceId = myPersistenceProvider.getModuleId(url);
-              if (targetSourceId == null) {
-                throw new CacheLoadingException(sourceId, "Unresolvable source URL: " + url);
+            URI uri = URI.create(proto.getSourceUrl());
+            targetSourceId = myPersistenceProvider.getModuleId(uri);
+            if (targetSourceId == null) {
+              throw new CacheLoadingException(sourceId, "Unresolvable source URI: " + uri);
+            }
+            if (!myStubsLoaded.contains(targetSourceId)) {
+              if (!isAvailable(targetSourceId)) {
+                throw new CacheLoadingException(sourceId, "source is not available: " + targetSourceId);
               }
-              if (!myStubsLoaded.contains(targetSourceId)) {
-                if (!isAvailable(targetSourceId)) {
-                  throw new CacheLoadingException(sourceId, "source is not available: " + targetSourceId);
-                }
-                Result result = load(targetSourceId, true);
-                if (!result.cacheLoaded) {
-                  String reason = result.exception == null ? "no cache for " + targetSourceId : "" + result.exception;
-                  throw new CacheLoadingException(sourceId, "can’t load dependency cache: " + reason);
-                }
+              Result result = load(targetSourceId, true);
+              if (!result.cacheLoaded) {
+                String reason = result.exception == null ? "no cache for " + targetSourceId : "" + result.exception;
+                throw new CacheLoadingException(sourceId, "can’t load dependency cache: " + reason);
               }
-            } catch (MalformedURLException e) {
-              throw new CacheLoadingException(sourceId, "Malformed source URL (" + e.getMessage() + "): " + proto.getSourceUrl());
             }
           } else {
             targetSourceId = sourceId;

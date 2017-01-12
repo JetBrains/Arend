@@ -9,10 +9,8 @@ import com.jetbrains.jetpad.vclang.module.source.CompositeStorage;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import org.apache.commons.cli.*;
 
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -67,7 +65,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeSourceSupplier<Prelude
 
   class MyPersistenceProvider implements PersistenceProvider<CompositeSourceSupplier<PreludeStorage.SourceId, FileStorage.SourceId>.SourceId> {
     @Override
-    public URL getUrl(CompositeSourceSupplier<PreludeStorage.SourceId, FileStorage.SourceId>.SourceId sourceId) {
+    public URI getUri(CompositeSourceSupplier<PreludeStorage.SourceId, FileStorage.SourceId>.SourceId sourceId) {
       try {
         final String root;
         final Path relPath;
@@ -81,31 +79,31 @@ public class ConsoleMain extends BaseCliFrontend<CompositeSourceSupplier<Prelude
           relPath = sourceId.source2.getRelativeFilePath();
           query = "" + sourceId.source2.getLastModified();
         }
-        return new URI("file", root, Paths.get("/").resolve(relPath).toUri().getPath(), query, null).toURL();
-      } catch (URISyntaxException | MalformedURLException e) {
+        return new URI("file", root, Paths.get("/").resolve(relPath).toUri().getPath(), query, null);
+      } catch (URISyntaxException e) {
         throw new IllegalStateException();
       }
     }
 
     @Override
-    public CompositeSourceSupplier<PreludeStorage.SourceId, FileStorage.SourceId>.SourceId getModuleId(URL sourceUrl) {
-      if (sourceUrl.getAuthority() != null && sourceUrl.getAuthority().equals("prelude")) {
-        if (sourceUrl.getPath().equals("/")) {
+    public CompositeSourceSupplier<PreludeStorage.SourceId, FileStorage.SourceId>.SourceId getModuleId(URI sourceUri) {
+      if (sourceUri.getAuthority() != null && sourceUri.getAuthority().equals("prelude")) {
+        if (sourceUri.getPath().equals("/")) {
           return compositeStorage.idFromFirst(preludeStorage.preludeSourceId);
         } else {
           return null;
         }
-      } else if (sourceUrl.getAuthority() == null) {
+      } else if (sourceUri.getAuthority() == null) {
         try {
-          Path path = Paths.get(new URI(sourceUrl.getProtocol(), null, sourceUrl.getPath(), null));
+          Path path = Paths.get(new URI(sourceUri.getScheme(), null, sourceUri.getPath(), null));
           ModulePath modulePath = FileStorage.modulePath(path.getRoot().relativize(path));
           if (modulePath == null) return null;
 
           final FileStorage.SourceId fileSourceId;
-          if (sourceUrl.getQuery() == null) {
+          if (sourceUri.getQuery() == null) {
             fileSourceId = fileStorage.locateModule(modulePath);
           } else {
-            long mtime = Long.parseLong(sourceUrl.getQuery());
+            long mtime = Long.parseLong(sourceUri.getQuery());
             fileSourceId = fileStorage.locateModule(modulePath, mtime);
           }
           return fileSourceId != null ? compositeStorage.idFromSecond(fileSourceId) : null;

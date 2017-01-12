@@ -20,7 +20,7 @@ import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URL;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -66,12 +66,12 @@ public class PreludeCacheGenerator {
 
   static class PreludePersistenceProvider implements PersistenceProvider<PreludeStorage.SourceId> {
     @Override
-    public URL getUrl(PreludeStorage.SourceId sourceId) {
+    public URI getUri(PreludeStorage.SourceId sourceId) {
       throw new IllegalStateException();
     }
 
     @Override
-    public PreludeStorage.SourceId getModuleId(URL sourceUrl) {
+    public PreludeStorage.SourceId getModuleId(URI sourceUrl) {
       throw new IllegalStateException();
     }
 
