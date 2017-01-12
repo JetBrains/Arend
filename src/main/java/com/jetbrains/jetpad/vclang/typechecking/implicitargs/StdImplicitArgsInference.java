@@ -155,11 +155,9 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
             args1.addAll(defCallResult.getArguments());
             args1.addAll(args.subList(defCallResult.getArguments().size(), args.size()));
             args1 = ((Constructor) defCallResult.getDefinition()).matchDataTypeArguments(args1);
-            if (args1 != null && !args1.isEmpty()) {
-              // TODO: Report an error
+            if (args1 != null) {
               result = CheckTypeVisitor.DefCallResult.makeTResult(defCallResult.getDefinition(), defCallResult.getPolyArguments(), null).applyExpressions(args1);
             }
-            return inferArg(result, arg, true, fun);
           }
         }
       }
