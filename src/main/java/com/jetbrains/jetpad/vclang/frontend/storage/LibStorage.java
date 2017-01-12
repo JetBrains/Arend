@@ -13,12 +13,10 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class LibStorage implements Storage<LibStorage.SourceId> {
-  private final List<FileStorage> myLibStorages;
+  private final Map<String, FileStorage> myLibStorages;
 
   private static Path findCacheDir() throws IOException {
     return Files.createDirectories(Paths.get(AppDirsFactory.getInstance().getUserCacheDir("vclang", null, "JetBrains")));
@@ -33,11 +31,11 @@ public class LibStorage implements Storage<LibStorage.SourceId> {
       throw new IllegalStateException("Cache directory is not writable");
     }
 
-    myLibStorages = new ArrayList<>(libs.size());
+    myLibStorages = new HashMap<>(libs.size());
     for (String lib : libs) {
       Path sourcePath = libdir.resolve(lib);
       Path cachePath = cacheDir.resolve(lib);
-      myLibStorages.add(new FileStorage(sourcePath, cachePath));
+      myLibStorages.put(lib, new FileStorage(sourcePath, cachePath));
     }
   }
 
@@ -49,7 +47,9 @@ public class LibStorage implements Storage<LibStorage.SourceId> {
     List<String> files = new ArrayList<>();
     try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(libdir)) {
       for (Path dir : dirStream) {
-        files.add(libdir.relativize(dir).toString());
+        if (Files.isDirectory(dir)) {
+          files.add(libdir.relativize(dir).toString());
+        }
       }
 
       return files;
@@ -59,11 +59,11 @@ public class LibStorage implements Storage<LibStorage.SourceId> {
   @Override
   public SourceId locateModule(ModulePath modulePath) {
     LibStorage.SourceId result = null;
-    for (FileStorage storage : myLibStorages) {
-      FileStorage.SourceId sourceId = storage.locateModule(modulePath);
+    for (Map.Entry<String, FileStorage> entry : myLibStorages.entrySet()) {
+      FileStorage.SourceId sourceId = entry.getValue().locateModule(modulePath);
       if (sourceId == null) continue;
       if (result == null) {
-        result = new SourceId(storage, sourceId);
+        result = new SourceId(entry.getKey(), entry.getValue(), sourceId);
       } else {
         throw new IllegalArgumentException("Multiple libraries provide module " + modulePath);  // FIXME[error]
       }
@@ -71,38 +71,46 @@ public class LibStorage implements Storage<LibStorage.SourceId> {
     return result;
   }
 
+  public SourceId locateModule(String libName, ModulePath modulePath, long mtime) {
+    FileStorage fileStorage = myLibStorages.get(libName);
+    if (fileStorage == null) return null;
+    return new SourceId(libName, fileStorage, fileStorage.locateModule(modulePath, mtime));
+  }
+
   @Override
   public boolean isAvailable(SourceId sourceId) {
     if (sourceId.getLibStorage() != this) return false;
-    return sourceId.myStorage.isAvailable(sourceId.mySourceId);
+    return sourceId.myFileStorage.isAvailable(sourceId.fileSourceId);
   }
 
   @Override
   public Abstract.ClassDefinition loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
     if (sourceId.getLibStorage() != this) return null;
-    return sourceId.myStorage.loadSource(sourceId.mySourceId, errorReporter);
+    return sourceId.myFileStorage.loadSource(sourceId.fileSourceId, errorReporter);
   }
 
   @Override
   public InputStream getCacheInputStream(SourceId sourceId) {
     if (sourceId.getLibStorage() != this) return null;
-    return sourceId.myStorage.getCacheInputStream(sourceId.mySourceId);
+    return sourceId.myFileStorage.getCacheInputStream(sourceId.fileSourceId);
   }
 
   @Override
   public OutputStream getCacheOutputStream(SourceId sourceId) {
     if (sourceId.getLibStorage() != this) return null;
-    return sourceId.myStorage.getCacheOutputStream(sourceId.mySourceId);
+    return sourceId.myFileStorage.getCacheOutputStream(sourceId.fileSourceId);
   }
 
 
   public class SourceId implements com.jetbrains.jetpad.vclang.module.source.SourceId {
-    private final FileStorage myStorage;
-    private final FileStorage.SourceId mySourceId;
+    private final String myLibraryName;
+    private final FileStorage myFileStorage;
+    public final FileStorage.SourceId fileSourceId;
 
-    public SourceId(FileStorage storage, FileStorage.SourceId sourceId) {
-      myStorage = storage;
-      mySourceId = sourceId;
+    public SourceId(String libraryName, FileStorage storage, FileStorage.SourceId sourceId) {
+      myLibraryName = libraryName;
+      myFileStorage = storage;
+      fileSourceId = sourceId;
     }
 
     private LibStorage getLibStorage() {
@@ -111,7 +119,11 @@ public class LibStorage implements Storage<LibStorage.SourceId> {
 
     @Override
     public ModulePath getModulePath() {
-      return mySourceId.getModulePath();
+      return fileSourceId.getModulePath();
+    }
+
+    public String getLibraryName() {
+      return myLibraryName;
     }
 
     @Override
@@ -119,17 +131,17 @@ public class LibStorage implements Storage<LibStorage.SourceId> {
       return o == this ||
              o instanceof SourceId &&
              getLibStorage().equals(((SourceId) o).getLibStorage()) &&
-             mySourceId.equals(((SourceId) o).mySourceId);
+             fileSourceId.equals(((SourceId) o).fileSourceId);
     }
 
     @Override
     public int hashCode() {
-      return mySourceId.hashCode();
+      return fileSourceId.hashCode();
     }
 
     @Override
     public String toString() {
-      return mySourceId.toString();
+      return fileSourceId.toString();
     }
   }
 }
