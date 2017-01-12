@@ -22,7 +22,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
   private static final Options cmdOptions = new Options();
   static {
     cmdOptions.addOption("h", "help", false, "print this message");
-    cmdOptions.addOption(Option.builder("L").hasArg().argName("libdir").desc("directory containing libraries").build());
+    cmdOptions.addOption(Option.builder("L").longOpt("libs").hasArg().argName("libdir").desc("directory containing libraries").build());
     cmdOptions.addOption(Option.builder("s").longOpt("source").hasArg().argName("srcdir").desc("source directory").build());
     //cmdOptions.addOption(Option.builder("o").longOpt("output").hasArg().argName("dir").desc("output directory").build());
     cmdOptions.addOption(Option.builder().longOpt("recompile").desc("recompile files").build());
