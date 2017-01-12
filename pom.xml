@@ -162,7 +162,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>${project.groupId}.${project.artifactId}.ConsoleMain</mainClass>
+              <mainClass>${project.groupId}.${project.artifactId}.frontend.ConsoleMain</mainClass>
             </manifest>
           </archive>
           <descriptorRefs>
