@@ -44,6 +44,8 @@ public class DefinitionStateSerialization {
       out.addPolyParam(defSerializer.createLevelBinding(polyVar));
     }
 
+    out.addAllClassifyingField(writeClassifyingFields(definition));
+
     out.setHasErrors(Definition.TypeCheckingStatus.HAS_ERRORS.equals(definition.hasErrors()));
 
     if (definition instanceof ClassDefinition) {
@@ -87,7 +89,6 @@ public class DefinitionStateSerialization {
     DefinitionProtos.Definition.DataData.Builder builder = DefinitionProtos.Definition.DataData.newBuilder();
 
     builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
-    builder.addAllClassifyingField(writeClassifyingFields(definition.getDefParameters()));
 
     for (Constructor constructor : definition.getConstructors()) {
       DefinitionProtos.Definition.DataData.Constructor.Builder cBuilder = DefinitionProtos.Definition.DataData.Constructor.newBuilder();
@@ -114,7 +115,6 @@ public class DefinitionStateSerialization {
     DefinitionProtos.Definition.FunctionData.Builder builder = DefinitionProtos.Definition.FunctionData.newBuilder();
 
     builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
-    builder.addAllClassifyingField(writeClassifyingFields(definition.getDefParameters()));
     builder.setType(defSerializer.writeType(definition.getResultType()));
     if (definition.getElimTree() != null) {
       builder.setElimTree(defSerializer.writeElimTree(definition.getElimTree()));
@@ -123,11 +123,12 @@ public class DefinitionStateSerialization {
     return builder.build();
   }
 
-  private List<DefinitionProtos.Definition.ClassifyingFields> writeClassifyingFields(DefParameters parameters) {
+  private List<DefinitionProtos.Definition.ClassifyingFields> writeClassifyingFields(Definition definition) {
     List<DefinitionProtos.Definition.ClassifyingFields> refs = new ArrayList<>();
-    for (DependentLink link = parameters.getParameters(); link.hasNext(); link = link.getNext()) {
+    int index = 0;
+    for (DependentLink link = definition.getParameters(); link.hasNext(); link = link.getNext()) {
       DefinitionProtos.Definition.ClassifyingFields.Builder refBuilder = DefinitionProtos.Definition.ClassifyingFields.newBuilder();
-      ClassField field = parameters.getClassifyingField(link);
+      ClassField field = definition.getClassifyingFieldOfParameter(index++);
       if (field != null) {
         refBuilder.addFieldRef(myCalltargetIndexProvider.getDefIndex(field));
       }

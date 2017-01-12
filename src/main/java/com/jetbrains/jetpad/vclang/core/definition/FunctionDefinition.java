@@ -17,7 +17,7 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FunCall;
 
 public class FunctionDefinition extends Definition implements Function {
-  private DefParameters myDefParameters;
+  private DependentLink myParameters;
   private TypeMax myResultType;
   private ElimTreeNode myElimTree;
   private boolean myTypeHasErrors;
@@ -27,13 +27,13 @@ public class FunctionDefinition extends Definition implements Function {
     super(abstractDef);
     myTypeHasErrors = true;
     myHasErrors = TypeCheckingStatus.TYPE_CHECKING;
-    myDefParameters = new DefParameters(EmptyDependentLink.getInstance());
+    myParameters = EmptyDependentLink.getInstance();
   }
 
   public FunctionDefinition(Abstract.Definition abstractDef, DependentLink parameters, TypeMax resultType, ElimTreeNode elimTree) {
     super(abstractDef);
     assert parameters != null;
-    myDefParameters = new DefParameters(parameters);
+    myParameters = parameters;
     myResultType = resultType;
     myElimTree = elimTree;
     myTypeHasErrors = resultType == null;
@@ -51,16 +51,11 @@ public class FunctionDefinition extends Definition implements Function {
 
   @Override
   public DependentLink getParameters() {
-    return myDefParameters.getParameters();
+    return myParameters;
   }
 
-  public DefParameters getDefParameters() {
-    return myDefParameters;
-  }
-
-  public void setDefParameters(DefParameters parameters) {
-    assert parameters != null;
-    myDefParameters = parameters;
+  public void setParameters(DependentLink parameters) {
+    myParameters = parameters;
   }
 
   public TypeMax getResultType() {
@@ -69,7 +64,7 @@ public class FunctionDefinition extends Definition implements Function {
 
   @Override
   public int getNumberOfRequiredArguments() {
-    return DependentLink.Helper.size(myDefParameters.getParameters());
+    return DependentLink.Helper.size(myParameters);
   }
 
   public void setResultType(TypeMax resultType) {
@@ -102,7 +97,7 @@ public class FunctionDefinition extends Definition implements Function {
     }
     ExprSubstitution subst = new ExprSubstitution();
     LevelSubstitution polySubst = polyArguments.toLevelSubstitution(this);
-    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myDefParameters.getParameters(), subst, polySubst)));
+    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, subst, polySubst)));
     return myResultType.subst(subst, polySubst);
   }
 

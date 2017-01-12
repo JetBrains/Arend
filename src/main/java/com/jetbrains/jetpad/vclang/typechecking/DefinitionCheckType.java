@@ -137,7 +137,7 @@ public class DefinitionCheckType {
     return new Sort(new Level(lpParam), new Level(lhParam));
   }
 
-  private static boolean typeCheckParameters(List<? extends Abstract.Argument> arguments, Abstract.SourceNode node, List<Binding> context, List<LevelBinding> lvlContext, List<LevelBinding> polyParamsList, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
+  private static boolean typeCheckParameters(List<? extends Abstract.Argument> arguments, Abstract.SourceNode node, List<Binding> context, List<LevelBinding> lvlContext, List<LevelBinding> polyParamsList, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool, Map<Integer, ClassField> classifyingFields) {
     boolean ok = true;
     boolean polyParamsAllowed = true;
     List<LevelBinding> genParamsList = new ArrayList<>(2);
@@ -176,11 +176,6 @@ public class DefinitionCheckType {
           paramType = Pi(paramType.getPiParameters(), typeOmegaToUniverse(genParamsList));
         }
 
-        Abstract.ClassView classView = Abstract.getUnderlyingClassView(typeArgument.getType());
-        if (classView != null) {
-          paramType = new ClassViewCallExpression(paramType.toExpression().toClassCall().getDefinition(), paramType.toExpression().toClassCall().getPolyArguments(), paramType.toExpression().toClassCall().getFieldSet(), classView);
-        }
-
         DependentLink param;
         if (argument instanceof Abstract.TelescopeArgument) {
           List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
@@ -191,17 +186,15 @@ public class DefinitionCheckType {
           index++;
         }
 
-        paramType = paramType.normalize(NormalizeVisitor.Mode.WHNF);
-        if (localInstancePool != null && paramType.toExpression() != null) {
-          Expression type = paramType.toExpression();
-          if (type instanceof ClassViewCallExpression) {
-            Abstract.ClassView classView1 = ((ClassViewCallExpression) type).getClassView();
-            if (classView1.getClassifyingField() != null) {
-              for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
-                ReferenceExpression reference = new ReferenceExpression(link);
-                if (!localInstancePool.addInstance(FieldCall((ClassField) visitor.getTypecheckingState().getTypechecked(((ClassViewCallExpression) type).getClassView().getClassifyingField()), reference).normalize(NormalizeVisitor.Mode.NF), classView1, reference)) {
-                  visitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, "Duplicate instance", argument)); // FIXME[error] better error message
-                }
+        if (classifyingFields != null && localInstancePool != null) {
+          Abstract.ClassView classView = Abstract.getUnderlyingClassView(typeArgument.getType());
+          if (classView != null && classView.getClassifyingField() != null) {
+            ClassField classifyingField = (ClassField) visitor.getTypecheckingState().getTypechecked(classView.getClassifyingField());
+            classifyingFields.put(index - 1, classifyingField);
+            for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
+              ReferenceExpression reference = new ReferenceExpression(link);
+              if (!localInstancePool.addInstance(FieldCall(classifyingField, reference).normalize(NormalizeVisitor.Mode.NF), classView, reference)) {
+                visitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, "Duplicate instance", argument)); // FIXME[error] better error message
               }
             }
           }
@@ -233,7 +226,8 @@ public class DefinitionCheckType {
       visitor.setThisClass(enclosingClass, Reference(thisParam));
     }
 
-    boolean paramsOk = typeCheckParameters(def.getArguments(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, list, visitor, localInstancePool);
+    Map<Integer, ClassField> classifyingFields = new HashMap<>();
+    boolean paramsOk = typeCheckParameters(def.getArguments(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, list, visitor, localInstancePool, classifyingFields);
     TypeMax expectedType = null;
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
@@ -242,6 +236,7 @@ public class DefinitionCheckType {
 
     FunctionDefinition typedDef = new FunctionDefinition(def, list.getFirst(), expectedType, null);
     visitor.getTypecheckingState().record(def, typedDef);
+    typedDef.setClassifyingFieldsOfParameters(classifyingFields);
     typedDef.setThisClass(enclosingClass);
     typedDef.setPolyParams(polyParamsList);
     typedDef.typeHasErrors(!paramsOk || expectedType == null);
@@ -345,10 +340,11 @@ public class DefinitionCheckType {
       visitor.setThisClass(enclosingClass, Reference(thisParam));
     }
 
+    Map<Integer, ClassField> classifyingFields = new HashMap<>();
     SortMax userSorts = SortMax.OMEGA;
     boolean paramsOk;
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
-      paramsOk = typeCheckParameters(def.getParameters(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, list, visitor, localInstancePool);
+      paramsOk = typeCheckParameters(def.getParameters(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, list, visitor, localInstancePool, classifyingFields);
 
       if (def.getUniverse() != null) {
         if (def.getUniverse() instanceof Abstract.PolyUniverseExpression) {
@@ -361,6 +357,7 @@ public class DefinitionCheckType {
     }
 
     DataDefinition dataDefinition = new DataDefinition(def, userSorts, list.getFirst());
+    dataDefinition.setClassifyingFieldsOfParameters(classifyingFields);
     dataDefinition.setThisClass(enclosingClass);
     dataDefinition.setPolyParams(polyParamsList);
     visitor.getTypecheckingState().record(def, dataDefinition);
@@ -840,7 +837,7 @@ public class DefinitionCheckType {
 
     LinkList list = new LinkList();
     List<LevelBinding> polyParamsList = new ArrayList<>();
-    boolean paramsOk = typeCheckParameters(def.getArguments(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, list, visitor, null);
+    boolean paramsOk = typeCheckParameters(def.getArguments(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, list, visitor, null, null);
     if (!paramsOk) {
       return null;
     }

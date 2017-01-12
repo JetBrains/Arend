@@ -168,20 +168,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    TypeMax type = expr.getExpression().getType();
-    Abstract.Definition definition = expr.getDefinition().getAbstractDefinition();
-    if (type instanceof Expression) {
-      ClassCallExpression classCall = ((Expression) type).normalize(NormalizeVisitor.Mode.WHNF).toClassCall();
-      if (classCall instanceof ClassViewCallExpression) {
-        for (Abstract.ClassViewField viewField : ((ClassViewCallExpression) classCall).getClassView().getFields()) {
-          if (viewField.getUnderlyingField() == expr.getDefinition().getAbstractDefinition()) {
-            definition = viewField;
-            break;
-          }
-        }
-      }
-    }
-    return myFactory.makeDefCall(expr.getExpression().accept(this, null), definition, expr.getDefinition().getAbstractDefinition());
+    return myFactory.makeDefCall(expr.getExpression().accept(this, null), expr.getDefinition().getAbstractDefinition(), expr.getDefinition().getAbstractDefinition());
   }
 
   @Override

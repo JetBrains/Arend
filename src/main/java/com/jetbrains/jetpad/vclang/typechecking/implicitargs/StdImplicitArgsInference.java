@@ -8,7 +8,10 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInfer
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.expr.*;
+import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
+import com.jetbrains.jetpad.vclang.core.expr.ErrorExpression;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.InferenceReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
@@ -40,10 +43,15 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     for (DependentLink parameter : implicitParameters) {
       Type type = parameter.getType().subst(substitution, new LevelSubstitution()).normalize(NormalizeVisitor.Mode.WHNF);
       Expression typeExpr = type.toExpression();
-      InferenceVariable infVar;
-      if (typeExpr != null && typeExpr.toClassCall() != null && typeExpr.toClassCall() instanceof ClassViewCallExpression) {
-        infVar = new TypeClassInferenceVariable(parameter.getName(), typeExpr, null, (ClassField) myVisitor.getTypecheckingState().getTypechecked(((ClassViewCallExpression) typeExpr.toClassCall()).getClassView().getClassifyingField()), expr);
-      } else {
+      InferenceVariable infVar = null;
+      if (result instanceof CheckTypeVisitor.DefCallResult) {
+        CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
+        ClassField classifyingField = defCallResult.getDefinition().getClassifyingFieldOfParameter(defCallResult.getArguments().size());
+        if (classifyingField != null) {
+          infVar = new TypeClassInferenceVariable(parameter.getName(), typeExpr, null, classifyingField, expr);
+        }
+      }
+      if (infVar == null) {
         infVar = new FunctionInferenceVariable(parameter.getName(), type, i, expr);
       }
       Expression binding = new InferenceReferenceExpression(infVar, myVisitor.getEquations());

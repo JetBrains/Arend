@@ -1,21 +1,21 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
+import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public abstract class Definition implements Referable {
   protected List<LevelBinding> myPolyParams = new ArrayList<>();
   private ClassDefinition myThisClass;
   private Abstract.Definition myAbstractDefinition;
+  private Map<Integer, ClassField> myClassifyingFields = Collections.emptyMap();
 
   public Definition(Abstract.Definition abstractDef) {
     myAbstractDefinition = abstractDef;
@@ -31,6 +31,21 @@ public abstract class Definition implements Referable {
 
   public DependentLink getParameters() {
     return EmptyDependentLink.getInstance();
+  }
+
+  public ClassField getClassifyingFieldOfParameter(Integer param) {
+    return myClassifyingFields.get(param);
+  }
+
+  public void setClassifyingFieldOfParameter(Integer param, ClassField field) {
+    if (myClassifyingFields.isEmpty()) {
+      myClassifyingFields = new HashMap<>();
+    }
+    myClassifyingFields.put(param, field);
+  }
+
+  public void setClassifyingFieldsOfParameters(Map<Integer, ClassField> fields) {
+    myClassifyingFields = fields.isEmpty() ? Collections.<Integer, ClassField>emptyMap() : fields;
   }
 
   public abstract TypeMax getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments);

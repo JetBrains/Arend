@@ -2,10 +2,10 @@ package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
-import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
+import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -79,7 +79,7 @@ public class ClassCallExpression extends DefCallExpression {
         newFieldSet.implementField(entry.getKey(), new FieldSet.Implementation(entry.getValue().thisParam, entry.getValue().term.accept(visitor, arg)));
       }
     }
-    return this instanceof ClassViewCallExpression ? new ClassViewCallExpression(getDefinition(), getPolyArguments(), newFieldSet, ((ClassViewCallExpression) this).getClassView()) : ClassCall(getDefinition(), getPolyArguments(), newFieldSet);
+    return ClassCall(getDefinition(), getPolyArguments(), newFieldSet);
   }
 
   @Override

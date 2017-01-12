@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.module.caching.serialization;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
-import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.module.caching.LocalizedTypecheckerState;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
@@ -70,6 +69,8 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
 
       def.setPolyParams(polyParams);
 
+      readClassifyingFields(def, typedCalltargetProvider, defProto.getClassifyingFieldList());
+
       switch (defProto.getDefinitionDataCase()) {
         case CLASS:
           ClassDefinition classDef = (ClassDefinition) def;
@@ -83,7 +84,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
         case FUNCTION:
           FunctionDefinition functionDef = (FunctionDefinition) def;
           functionDef.typeHasErrors(defProto.getTypeHasErrors());
-          fillInFunctionDefinition(defDeserializer, typedCalltargetProvider, defProto.getFunction(), functionDef);
+          fillInFunctionDefinition(defDeserializer, defProto.getFunction(), functionDef);
           break;
         default:
           throw new DeserializationError("Unknown Definition kind: " + defProto.getDefinitionDataCase());
@@ -117,9 +118,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
   }
 
   private void fillInDataDefinition(DefinitionDeserialization defDeserializer, CalltargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
-    DefParameters parameters = new DefParameters(defDeserializer.readParameters(dataProto.getParamList()));
-    readClassifyingFields(parameters, calltargetProvider, dataProto.getClassifyingFieldList());
-    dataDef.setDefParameters(parameters);
+    dataDef.setParameters(defDeserializer.readParameters(dataProto.getParamList()));
 
     for (Map.Entry<String, DefinitionProtos.Definition.DataData.Constructor> entry : dataProto.getConstructorsMap().entrySet()) {
       DefinitionProtos.Definition.DataData.Constructor constructorProto = entry.getValue();
@@ -143,27 +142,21 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
     }
   }
 
-  private void fillInFunctionDefinition(DefinitionDeserialization defDeserializer, CalltargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.FunctionData functionProto, FunctionDefinition functionDef) throws DeserializationError {
-    DefParameters parameters = new DefParameters(defDeserializer.readParameters(functionProto.getParamList()));
-    readClassifyingFields(parameters, calltargetProvider, functionProto.getClassifyingFieldList());
-    functionDef.setDefParameters(parameters);
+  private void fillInFunctionDefinition(DefinitionDeserialization defDeserializer, DefinitionProtos.Definition.FunctionData functionProto, FunctionDefinition functionDef) throws DeserializationError {
+    functionDef.setParameters(defDeserializer.readParameters(functionProto.getParamList()));
     functionDef.setResultType(defDeserializer.readTypeMax(functionProto.getType()));
     if (functionProto.hasElimTree()) {
       functionDef.setElimTree(defDeserializer.readElimTree(functionProto.getElimTree()));
     }
   }
 
-  private void readClassifyingFields(DefParameters parameters, CalltargetProvider.Typed calltargetProvider, List<DefinitionProtos.Definition.ClassifyingFields> classifyingFields) throws DeserializationError {
-    DependentLink link = parameters.getParameters();
+  private void readClassifyingFields(Definition definition, CalltargetProvider.Typed calltargetProvider, List<DefinitionProtos.Definition.ClassifyingFields> classifyingFields) throws DeserializationError {
+    int index = 0;
     for (DefinitionProtos.Definition.ClassifyingFields ref : classifyingFields) {
       if (ref.getFieldRefCount() > 0) {
-        parameters.addClassifyingField(link, calltargetProvider.getCalltarget(ref.getFieldRef(0), ClassField.class));
+        definition.setClassifyingFieldOfParameter(index, calltargetProvider.getCalltarget(ref.getFieldRef(0), ClassField.class));
       }
-
-      if (!link.hasNext()) {
-        throw new DeserializationError("Too many classifying field references: " + classifyingFields.size() + ", expected: " + DependentLink.Helper.size(parameters.getParameters()));
-      }
-      link = link.getNext();
+      index++;
     }
   }
 

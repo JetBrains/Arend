@@ -1,10 +1,10 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
+import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
@@ -29,7 +29,7 @@ public class InferenceReferenceExpression extends Expression {
             equations.add(new FieldCallExpression(field, this), impl.term, Equations.CMP.EQ, myVar.getSourceNode(), myVar);
           }
         }
-        type = classCall instanceof ClassViewCallExpression ? new ClassViewCallExpression(classCall.getDefinition(), classCall.getPolyArguments(), ((ClassViewCallExpression) classCall).getClassView()) : new ClassCallExpression(classCall.getDefinition(), classCall.getPolyArguments());
+        type = new ClassCallExpression(classCall.getDefinition(), classCall.getPolyArguments());
       }
     }
     myVar.setType(type);

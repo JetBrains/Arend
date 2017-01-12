@@ -12,6 +12,7 @@ message Definition {
     bool type_has_errors = 2;
     int32 this_class_ref = 3;
     repeated Binding.LevelBinding poly_param = 4;
+    repeated ClassifyingFields classifying_field = 8;
     oneof definition_data {
         ClassData class = 5;
         DataData data = 6;
@@ -33,7 +34,6 @@ message Definition {
     }
     message DataData {
         repeated Telescope param = 2;
-        repeated ClassifyingFields classifying_field = 6;
         map<string, Constructor> constructors = 3;
         map<int32, ElimTreeNode> conditions = 4;
         bool matches_on_interval = 5;
@@ -74,7 +74,6 @@ message Definition {
     }
     message FunctionData {
         repeated Telescope param = 2;
-        repeated ClassifyingFields classifying_field = 5;
         Type type = 3;
         ElimTreeNode elim_tree = 4;
     }

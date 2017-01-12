@@ -21,7 +21,7 @@ import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.ConCall;
 
 public class DataDefinition extends Definition {
   private List<Constructor> myConstructors;
-  private DefParameters myDefParameters;
+  private DependentLink myParameters;
   private Map<Constructor, Condition> myConditions;
   private SortMax mySorts;
   private boolean myMatchesOnInterval;
@@ -35,7 +35,7 @@ public class DataDefinition extends Definition {
   public DataDefinition(Abstract.DataDefinition abstractDef, SortMax sorts, DependentLink parameters) {
     super(abstractDef);
     myConstructors = new ArrayList<>();
-    myDefParameters = new DefParameters(parameters);
+    myParameters = parameters;
     mySorts = sorts;
     myMatchesOnInterval = false;
     myTypeHasErrors = parameters != null;
@@ -58,16 +58,11 @@ public class DataDefinition extends Definition {
   @Override
   public DependentLink getParameters() {
     assert !typeHasErrors();
-    return myDefParameters.getParameters();
+    return myParameters;
   }
 
-  public DefParameters getDefParameters() {
-    return myDefParameters;
-  }
-
-  public void setDefParameters(DefParameters parameters) {
-    assert parameters != null;
-    myDefParameters = parameters;
+  public void setParameters(DependentLink parameters) {
+    myParameters = parameters;
   }
 
   public List<Constructor> getConstructors() {
@@ -140,7 +135,7 @@ public class DataDefinition extends Definition {
 
     ExprSubstitution subst = new ExprSubstitution();
     LevelSubstitution polySubst = polyArguments.toLevelSubstitution(this);
-    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myDefParameters.getParameters(), subst, polySubst)));
+    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, subst, polySubst)));
     return new PiUniverseType(EmptyDependentLink.getInstance(), mySorts).subst(subst, polySubst);
   }
 
