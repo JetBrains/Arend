@@ -17,9 +17,9 @@ import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.CycleError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TerminationCheckError;
-import com.jetbrains.jetpad.vclang.typechecking.order.BaseOrdering;
+import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
+import com.jetbrains.jetpad.vclang.typechecking.order.Ordering;
 import com.jetbrains.jetpad.vclang.typechecking.order.SCC;
-import com.jetbrains.jetpad.vclang.typechecking.order.SCCListener;
 import com.jetbrains.jetpad.vclang.typechecking.termination.DefinitionCallGraph;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
@@ -40,7 +40,7 @@ public class Typechecking {
     if (scc.getUnits().size() > 1) {
       for (TypecheckingUnit unit : scc.getUnits()) {
         if (unit.isHeader() || !(unit.getDefinition() instanceof Abstract.FunctionDefinition)) {
-          throw new BaseOrdering.SCCException(scc);
+          throw new Ordering.SCCException(scc);
         }
       }
     }
@@ -113,12 +113,18 @@ public class Typechecking {
     }
   }
 
-  public static void typecheckDefinitions(final TypecheckerState state, final StaticNamespaceProvider staticNsProvider, final DynamicNamespaceProvider dynamicNsProvider, final Collection<? extends Abstract.Definition> definitions, final ErrorReporter errorReporter, final TypecheckedReporter typecheckedReporter) {
+  public static void typecheckDefinitions(final TypecheckerState state, final StaticNamespaceProvider staticNsProvider, final DynamicNamespaceProvider dynamicNsProvider, final Collection<? extends Abstract.Definition> definitions, final ErrorReporter errorReporter, final TypecheckedReporter typecheckedReporter, final DependencyListener dependencyListener) {
     final Map<Abstract.Definition, Suspension> suspensions = new HashMap<>();
-    BaseOrdering ordering = new BaseOrdering(new SCCListener() {
+    Ordering ordering = new Ordering(new DependencyListener() {
       @Override
       public void sccFound(SCC scc) {
         typecheck(suspensions, scc, state, staticNsProvider, dynamicNsProvider, errorReporter, typecheckedReporter);
+        dependencyListener.sccFound(scc);
+      }
+
+      @Override
+      public void dependsOn(Typecheckable unit, Abstract.Definition def) {
+        dependencyListener.dependsOn(unit, def);
       }
     });
 
@@ -126,13 +132,13 @@ public class Typechecking {
       for (Abstract.Definition definition : definitions) {
         ordering.doOrder(definition);
       }
-    } catch (BaseOrdering.SCCException ignored) { }
+    } catch (Ordering.SCCException ignored) { }
   }
 
   private static class OrderDefinitionVisitor implements AbstractDefinitionVisitor<Void, Void>, AbstractStatementVisitor<Void, Void> {
-    public final BaseOrdering ordering;
+    public final Ordering ordering;
 
-    private OrderDefinitionVisitor(BaseOrdering ordering) {
+    private OrderDefinitionVisitor(Ordering ordering) {
       this.ordering = ordering;
     }
 
@@ -207,12 +213,18 @@ public class Typechecking {
     }
   }
 
-  public static void typecheckModules(final TypecheckerState state, final StaticNamespaceProvider staticNsProvider, final DynamicNamespaceProvider dynamicNsProvider, final Collection<? extends Abstract.ClassDefinition> classDefs, final ErrorReporter errorReporter, final TypecheckedReporter typecheckedReporter) {
+  public static void typecheckModules(final TypecheckerState state, final StaticNamespaceProvider staticNsProvider, final DynamicNamespaceProvider dynamicNsProvider, final Collection<? extends Abstract.ClassDefinition> classDefs, final ErrorReporter errorReporter, final TypecheckedReporter typecheckedReporter, final DependencyListener dependencyListener) {
     final Map<Abstract.Definition, Suspension> suspensions = new HashMap<>();
-    final BaseOrdering ordering = new BaseOrdering(new SCCListener() {
+    final Ordering ordering = new Ordering(new DependencyListener() {
       @Override
       public void sccFound(SCC scc) {
         typecheck(suspensions, scc, state, staticNsProvider, dynamicNsProvider, errorReporter, typecheckedReporter);
+        dependencyListener.sccFound(scc);
+      }
+
+      @Override
+      public void dependsOn(Typecheckable unit, Abstract.Definition def) {
+        dependencyListener.dependsOn(unit, def);
       }
     });
 
@@ -220,7 +232,7 @@ public class Typechecking {
       for (Abstract.ClassDefinition classDef : classDefs) {
         new OrderDefinitionVisitor(ordering).orderDefinition(classDef);
       }
-    } catch (BaseOrdering.SCCException e) {
+    } catch (Ordering.SCCException e) {
       List<Abstract.Definition> cycle = new ArrayList<>(e.scc.getUnits().size());
       for (TypecheckingUnit unit : e.scc.getUnits()) {
         cycle.add(unit.getDefinition());

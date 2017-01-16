@@ -24,6 +24,7 @@ import com.jetbrains.jetpad.vclang.term.*;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
+import com.jetbrains.jetpad.vclang.typechecking.order.BaseDependencyListener;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -186,7 +187,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
   private Namespace loadPrelude() {
     Abstract.ClassDefinition prelude = moduleLoader.load(moduleLoader.locateModule(PreludeStorage.PRELUDE_MODULE_PATH), true).definition;
-    Typechecking.typecheckModules(state, staticNsProvider, dynamicNsProvider, Collections.singletonList(prelude), new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(state));
+    Typechecking.typecheckModules(state, staticNsProvider, dynamicNsProvider, Collections.singletonList(prelude), new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(state), new BaseDependencyListener());
     assert errorReporter.getErrorList().isEmpty();
     return staticNsProvider.forDefinition(prelude);
   }
@@ -340,7 +341,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
           results.put(source, result);
         }
       }
-    });
+    }, new BaseDependencyListener());
 
     return results;
   }

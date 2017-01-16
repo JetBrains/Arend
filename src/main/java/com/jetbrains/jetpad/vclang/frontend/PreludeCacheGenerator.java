@@ -17,6 +17,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
+import com.jetbrains.jetpad.vclang.typechecking.order.BaseDependencyListener;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -101,7 +102,7 @@ public class PreludeCacheGenerator {
     nameResolver.setModuleLoader(moduleLoader);
     Abstract.ClassDefinition prelude = moduleLoader.load(storage.preludeSourceId);
     if (!errorReporter.getErrorList().isEmpty()) throw new IllegalStateException();
-    Typechecking.typecheckModules(moduleLoader.getTypecheckerState(), statisNsProvider, dynamicNsProvider, Collections.singleton(prelude), errorReporter, new Prelude.UpdatePreludeReporter(moduleLoader.getTypecheckerState()));
+    Typechecking.typecheckModules(moduleLoader.getTypecheckerState(), statisNsProvider, dynamicNsProvider, Collections.singleton(prelude), errorReporter, new Prelude.UpdatePreludeReporter(moduleLoader.getTypecheckerState()), new BaseDependencyListener());
     try {
       moduleLoader.persistModule(storage.preludeSourceId);
     } catch (IOException | CachePersistenceException e) {

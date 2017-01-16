@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.typechecking.TypecheckingUnit;
 
 import java.util.*;
 
-public class BaseOrdering {
+public class Ordering {
   private static class DefState {
     int index, lowLink;
     boolean onStack;
@@ -21,7 +21,7 @@ public class BaseOrdering {
   private int myIndex = 0;
   private final Stack<TypecheckingUnit> myStack = new Stack<>();
   private final Map<Typecheckable, DefState> myVertices = new HashMap<>();
-  private final SCCListener myListener;
+  private final DependencyListener myListener;
 
   public static class SCCException extends RuntimeException {
     public SCC scc;
@@ -31,12 +31,8 @@ public class BaseOrdering {
     }
   }
 
-  public BaseOrdering(SCCListener listener) {
+  public Ordering(DependencyListener listener) {
     myListener = listener;
-  }
-
-  protected void dependsOn(Typecheckable unit, Abstract.Definition def) {
-
   }
 
   private Abstract.ClassDefinition getEnclosingClass(Abstract.Definition definition) {
@@ -125,7 +121,7 @@ public class BaseOrdering {
             throw new SCCException(scc);
           }
         } else {
-          dependsOn(typecheckable, dependency);
+          myListener.dependsOn(typecheckable, dependency);
           updateState(currentState, new Typecheckable(dependency, false));
         }
       }

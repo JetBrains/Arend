@@ -16,6 +16,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
+import com.jetbrains.jetpad.vclang.typechecking.order.BaseDependencyListener;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -47,7 +48,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     if (PRELUDE_TYPECHECKER_STATE == null) {
       ListErrorReporter internalErrorReporter = new ListErrorReporter();
       PRELUDE_TYPECHECKER_STATE = new SimpleTypecheckerState();
-      Typechecking.typecheckModules(PRELUDE_TYPECHECKER_STATE, staticNsProvider, dynamicNsProvider, Collections.singletonList(prelude), internalErrorReporter, new Prelude.UpdatePreludeReporter(PRELUDE_TYPECHECKER_STATE));
+      Typechecking.typecheckModules(PRELUDE_TYPECHECKER_STATE, staticNsProvider, dynamicNsProvider, Collections.singletonList(prelude), internalErrorReporter, new Prelude.UpdatePreludeReporter(PRELUDE_TYPECHECKER_STATE), new BaseDependencyListener());
       //assertThat(internalErrorReporter.getErrorList(), is(empty()));  // does not type-check by design
     }
 
@@ -95,7 +96,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   private Definition typeCheckDef(Concrete.Definition definition, int errors) {
-    Typechecking.typecheckDefinitions(state, staticNsProvider, dynamicNsProvider, Collections.singletonList(definition), errorReporter, new TypecheckedReporter.Dummy());
+    Typechecking.typecheckDefinitions(state, staticNsProvider, dynamicNsProvider, Collections.singletonList(definition), errorReporter, new TypecheckedReporter.Dummy(), new BaseDependencyListener());
     assertThat(errorList, containsErrors(errors));
     return state.getTypechecked(definition);
   }
@@ -110,7 +111,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   private TypecheckerState typeCheckClass(Concrete.ClassDefinition classDefinition, int errors) {
-    Typechecking.typecheckModules(state, staticNsProvider, dynamicNsProvider, Collections.singletonList(classDefinition), localErrorReporter, new TypecheckedReporter.Dummy());
+    Typechecking.typecheckModules(state, staticNsProvider, dynamicNsProvider, Collections.singletonList(classDefinition), localErrorReporter, new TypecheckedReporter.Dummy(), new BaseDependencyListener());
     assertThat(errorList, containsErrors(errors));
     return state;
   }
