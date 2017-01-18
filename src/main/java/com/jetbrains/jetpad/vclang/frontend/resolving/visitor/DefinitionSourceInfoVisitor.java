@@ -7,11 +7,11 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.AbstractStatementVisitor;
 
-public class DefinitionSourceInfoVisitor implements AbstractDefinitionVisitor<FullName, Void>, AbstractStatementVisitor<FullName, Void> {
-  private final SimpleSourceInfoProvider myProvider;
-  private final SourceId mySourceId;
+public class DefinitionSourceInfoVisitor<SourceIdT extends SourceId> implements AbstractDefinitionVisitor<FullName, Void>, AbstractStatementVisitor<FullName, Void> {
+  private final SimpleSourceInfoProvider<SourceIdT> myProvider;
+  private final SourceIdT mySourceId;
 
-  public DefinitionSourceInfoVisitor(SimpleSourceInfoProvider provider, SourceId sourceId) {
+  public DefinitionSourceInfoVisitor(SimpleSourceInfoProvider<SourceIdT> provider, SourceIdT sourceId) {
     myProvider = provider;
     mySourceId = sourceId;
   }
