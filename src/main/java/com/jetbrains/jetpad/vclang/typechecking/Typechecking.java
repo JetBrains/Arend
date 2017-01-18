@@ -21,6 +21,7 @@ import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import com.jetbrains.jetpad.vclang.typechecking.order.Ordering;
 import com.jetbrains.jetpad.vclang.typechecking.order.SCC;
 import com.jetbrains.jetpad.vclang.typechecking.termination.DefinitionCallGraph;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.ClassViewInstanceProvider;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.*;
@@ -113,9 +114,9 @@ public class Typechecking {
     }
   }
 
-  public static void typecheckDefinitions(final TypecheckerState state, final StaticNamespaceProvider staticNsProvider, final DynamicNamespaceProvider dynamicNsProvider, final Collection<? extends Abstract.Definition> definitions, final ErrorReporter errorReporter, final TypecheckedReporter typecheckedReporter, final DependencyListener dependencyListener) {
+  public static void typecheckDefinitions(final TypecheckerState state, final StaticNamespaceProvider staticNsProvider, final DynamicNamespaceProvider dynamicNsProvider, ClassViewInstanceProvider instanceProvider, final Collection<? extends Abstract.Definition> definitions, final ErrorReporter errorReporter, final TypecheckedReporter typecheckedReporter, final DependencyListener dependencyListener) {
     final Map<Abstract.Definition, Suspension> suspensions = new HashMap<>();
-    Ordering ordering = new Ordering(new DependencyListener() {
+    Ordering ordering = new Ordering(instanceProvider, new DependencyListener() {
       @Override
       public void sccFound(SCC scc) {
         typecheck(suspensions, scc, state, staticNsProvider, dynamicNsProvider, errorReporter, typecheckedReporter);
@@ -213,9 +214,9 @@ public class Typechecking {
     }
   }
 
-  public static void typecheckModules(final TypecheckerState state, final StaticNamespaceProvider staticNsProvider, final DynamicNamespaceProvider dynamicNsProvider, final Collection<? extends Abstract.ClassDefinition> classDefs, final ErrorReporter errorReporter, final TypecheckedReporter typecheckedReporter, final DependencyListener dependencyListener) {
+  public static void typecheckModules(final TypecheckerState state, final StaticNamespaceProvider staticNsProvider, final DynamicNamespaceProvider dynamicNsProvider, ClassViewInstanceProvider instanceProvider, final Collection<? extends Abstract.ClassDefinition> classDefs, final ErrorReporter errorReporter, final TypecheckedReporter typecheckedReporter, final DependencyListener dependencyListener) {
     final Map<Abstract.Definition, Suspension> suspensions = new HashMap<>();
-    final Ordering ordering = new Ordering(new DependencyListener() {
+    final Ordering ordering = new Ordering(instanceProvider, new DependencyListener() {
       @Override
       public void sccFound(SCC scc) {
         typecheck(suspensions, scc, state, staticNsProvider, dynamicNsProvider, errorReporter, typecheckedReporter);

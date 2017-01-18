@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.order;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.Typecheckable;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckingUnit;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.ClassViewInstanceProvider;
 
 import java.util.*;
 
@@ -21,6 +22,7 @@ public class Ordering {
   private int myIndex = 0;
   private final Stack<TypecheckingUnit> myStack = new Stack<>();
   private final Map<Typecheckable, DefState> myVertices = new HashMap<>();
+  private final ClassViewInstanceProvider myInstanceProvider;
   private final DependencyListener myListener;
 
   public static class SCCException extends RuntimeException {
@@ -31,7 +33,8 @@ public class Ordering {
     }
   }
 
-  public Ordering(DependencyListener listener) {
+  public Ordering(ClassViewInstanceProvider instanceProvider, DependencyListener listener) {
+    myInstanceProvider = instanceProvider;
     myListener = listener;
   }
 
@@ -46,33 +49,32 @@ public class Ordering {
     return getEnclosingClass(parent);
   }
 
-  private Set<Abstract.Definition> getTypecheckable(Abstract.Definition referable, Abstract.ClassDefinition enclosingClass) {
+  private Collection<? extends Abstract.Definition> getTypecheckable(Abstract.Definition referable, Abstract.Definition typecheckingDefinition, Abstract.ClassDefinition enclosingClass) {
     if (referable instanceof Abstract.ClassViewField) {
       referable = ((Abstract.ClassViewField) referable).getUnderlyingField();
     }
 
     if (referable instanceof Abstract.ClassField) {
-      return Collections.singleton(referable.getParent());
+      return Collections.singletonList(referable.getParent());
     }
 
     if (referable instanceof Abstract.Constructor) {
-      return Collections.<Abstract.Definition>singleton(((Abstract.Constructor) referable).getDataType());
+      return Collections.<Abstract.Definition>singletonList(((Abstract.Constructor) referable).getDataType());
     }
 
     if (referable instanceof Abstract.ClassView) {
-      return Collections.emptySet();
+      return myInstanceProvider.getInstances(typecheckingDefinition, (Abstract.ClassView) referable);
     }
 
     if (referable instanceof Abstract.ClassDefinition && !referable.equals(enclosingClass)) {
-      Set<Abstract.Definition> result = new HashSet<>();
+      Collection<? extends Abstract.Definition> instanceDefinitions = ((Abstract.ClassDefinition) referable).getInstanceDefinitions();
+      List<Abstract.Definition> result = new ArrayList<>(instanceDefinitions.size() + 1);
       result.add(referable);
-      for (Abstract.Definition definition : ((Abstract.ClassDefinition) referable).getInstanceDefinitions()) {
-        result.add(definition);
-      }
+      result.addAll(instanceDefinitions);
       return result;
     }
 
-    return Collections.singleton(referable);
+    return Collections.singletonList(referable);
   }
 
   public void doOrder(Abstract.Definition definition) {
@@ -113,7 +115,7 @@ public class Ordering {
 
     definition.accept(new DefinitionGetDepsVisitor(dependencies), typecheckable.isHeader());
     for (Abstract.Definition referable : dependencies) {
-      for (Abstract.Definition dependency : getTypecheckable(referable, enclosingClass)) {
+      for (Abstract.Definition dependency : getTypecheckable(referable, definition, enclosingClass)) {
         if (dependency.equals(definition)) {
           if (typecheckable.isHeader()) {
             SCC scc = new SCC();

@@ -25,6 +25,8 @@ import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 import com.jetbrains.jetpad.vclang.typechecking.order.BaseDependencyListener;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.EmptyClassViewInstanceProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.SimpleClassViewInstanceProvider;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -187,7 +189,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
   private Namespace loadPrelude() {
     Abstract.ClassDefinition prelude = moduleLoader.load(moduleLoader.locateModule(PreludeStorage.PRELUDE_MODULE_PATH), true).definition;
-    Typechecking.typecheckModules(state, staticNsProvider, dynamicNsProvider, Collections.singletonList(prelude), new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(state), new BaseDependencyListener());
+    Typechecking.typecheckModules(state, staticNsProvider, dynamicNsProvider, EmptyClassViewInstanceProvider.getInstance(), Collections.singletonList(prelude), new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(state), new BaseDependencyListener());
     assert errorReporter.getErrorList().isEmpty();
     return staticNsProvider.forDefinition(prelude);
   }
@@ -310,7 +312,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     System.out.println("--- Checking ---");
 
-    Typechecking.typecheckModules(state, staticNsProvider, dynamicNsProvider, modulesToTypeCheck, errorReporter, new TypecheckedReporter() {
+    Typechecking.typecheckModules(state, staticNsProvider, dynamicNsProvider, new SimpleClassViewInstanceProvider(), modulesToTypeCheck, errorReporter, new TypecheckedReporter() {
       @Override
       public void typecheckingSucceeded(Abstract.Definition definition) {
         SourceIdT source = srcInfoProvider.sourceOf(definition);
