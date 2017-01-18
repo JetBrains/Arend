@@ -5,15 +5,15 @@ import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.expr.type.PiTypeOmega;
 import com.jetbrains.jetpad.vclang.core.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
+import com.jetbrains.jetpad.vclang.core.expr.type.TypeOmega;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.NamePattern;
@@ -120,23 +120,6 @@ public class DefinitionCheckType {
     return levels;
   }
 
-  private static Sort typeOmegaToUniverse(List<LevelBinding> polyParams) {
-    LevelBinding lpParam;
-    LevelBinding lhParam;
-
-    if (polyParams.isEmpty()) {
-      lpParam = new LevelBinding("\\lp", LevelVariable.LvlType.PLVL);
-      lhParam = new LevelBinding("\\lh", LevelVariable.LvlType.HLVL);
-      polyParams.add(lpParam);
-      polyParams.add(lhParam);
-    } else {
-      lpParam = polyParams.get(0);
-      lhParam = polyParams.get(1);
-    }
-
-    return new Sort(new Level(lpParam), new Level(lhParam));
-  }
-
   private static boolean typeCheckParameters(List<? extends Abstract.Argument> arguments, Abstract.SourceNode node, List<Binding> context, List<LevelBinding> lvlContext, List<LevelBinding> polyParamsList, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool, Map<Integer, ClassField> classifyingFields) {
     boolean ok = true;
     boolean polyParamsAllowed = true;
@@ -166,14 +149,10 @@ public class DefinitionCheckType {
           polyParamsAllowed = false;
         }
 
-        Type paramType = visitor.checkParamType(typeArgument.getType());
+        Type paramType = visitor.checkParamType(typeArgument.getType(), genParamsList);
         if (paramType == null) {
           ok = false;
           continue;
-        }
-
-        if (paramType instanceof PiTypeOmega) {
-          paramType = Pi(paramType.getPiParameters(), typeOmegaToUniverse(genParamsList));
         }
 
         DependentLink param;
@@ -248,7 +227,30 @@ public class DefinitionCheckType {
     Abstract.FunctionDefinition def = (Abstract.FunctionDefinition) typedDef.getAbstractDefinition();
 
     TypeMax userType = typedDef.getResultType();
-    Type expectedType = userType == null ? null : userType instanceof Type ? (Type) userType : PiTypeOmega.toPiTypeOmega(userType);
+    Type expectedType = null; //userType == null ? null : userType instanceof Type ? (Type) userType : TypeOmega.getInstance();
+
+    if (userType != null) {
+      if (userType instanceof Type) {
+        expectedType = (Type) userType;
+      } else {
+        Level expPlevel = userType.getPiCodomain().toSorts().getPLevel().toLevel();
+        Level expHlevel = userType.getPiCodomain().toSorts().getHLevel().toLevel();
+
+        if (expPlevel == null || expPlevel.isInfinity()) {
+          InferenceLevelVariable lpVar = new InferenceLevelVariable("\\expLP", LevelVariable.LvlType.PLVL, def);
+          visitor.getEquations().addVariable(lpVar);
+          expPlevel = new Level(lpVar);
+        }
+        if (expHlevel == null || expHlevel.isInfinity()) {
+          InferenceLevelVariable lhVar = new InferenceLevelVariable("\\expLH", LevelVariable.LvlType.HLVL, def);
+          visitor.getEquations().addVariable(lhVar);
+          expHlevel = new Level(lhVar);
+        }
+        UniverseExpression universe = Universe(expPlevel, expHlevel);
+        expectedType = userType.getPiParameters().hasNext() ? Pi(userType.getPiParameters(), universe) : universe;
+        typedDef.setResultType(Universe(Sort.PROP));
+      }
+    }
 
     Abstract.Expression term = def.getTerm();
     TypeMax actualType = null;
@@ -258,7 +260,7 @@ public class DefinitionCheckType {
         ElimTreeNode elimTree = visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, def.getArrow() == Abstract.Definition.Arrow.LEFT ? typedDef.getParameters() : null, expectedType, false, true);
         if (elimTree != null) {
           typedDef.setElimTree(elimTree);
-          if (userType instanceof PiTypeOmega) {
+          if (userType != null && !(userType instanceof Type)) {
             final SortMax sorts = new SortMax();
             elimTree.accept(new ElimTreeNodeVisitor<Void, Void>() {
               @Override
@@ -348,7 +350,8 @@ public class DefinitionCheckType {
 
       if (def.getUniverse() != null) {
         if (def.getUniverse() instanceof Abstract.PolyUniverseExpression) {
-          userSorts = visitor.sortMax((Abstract.PolyUniverseExpression)def.getUniverse());
+          TypeMax userType = visitor.checkFunOrDataType(def.getUniverse());
+          userSorts = userType == null ? SortMax.OMEGA : userType.toSorts();
         } else {
           String msg = "Specified type " + PrettyPrintVisitor.prettyPrint(def.getUniverse(), 0) + " of '" + def.getName() + "' is not a universe";
           visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, def.getUniverse()));
@@ -482,7 +485,7 @@ public class DefinitionCheckType {
 
         for (Abstract.Condition cond : condMap.get(constructor)) {
           try (Utils.ContextSaver saver = new Utils.ContextSaver(visitor.getContext())) {
-            List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getDataTypeExpression(new LevelArguments())));
+            List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getDataTypeExpression(null)));
             DependentLink params = constructor.getParameters();
             List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(cond, params, cond.getPatterns(), visitor.getErrorReporter());
             if (processedPatterns == null)
@@ -589,7 +592,7 @@ public class DefinitionCheckType {
 
       LinkList list = new LinkList();
       for (Abstract.TypeArgument argument : arguments) {
-        CheckTypeVisitor.Result paramResult = visitor.checkType(argument.getType(), new PiTypeOmega(EmptyDependentLink.getInstance()));
+        CheckTypeVisitor.Result paramResult = visitor.checkType(argument.getType(), TypeOmega.getInstance());
         if (paramResult == null) {
           return constructor;
         }
@@ -823,7 +826,7 @@ public class DefinitionCheckType {
     try (Utils.ContextSaver saver = new Utils.ContextSaver(visitor.getContext())) {
       visitor.getContext().add(thisParameter);
       visitor.getLevelContext().addAll(enclosingClass.getPolyParams());
-      typeResult = visitor.checkType(def.getResultType(), new PiTypeOmega(EmptyDependentLink.getInstance()));
+      typeResult = visitor.checkType(def.getResultType(), TypeOmega.getInstance());
     }
 
     ClassField typedDef = new ClassField(def, typeResult == null ? Error(null, null) : typeResult.expression, enclosingClass, thisParameter);

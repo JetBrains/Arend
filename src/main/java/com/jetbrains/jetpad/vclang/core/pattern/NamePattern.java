@@ -1,11 +1,10 @@
 package com.jetbrains.jetpad.vclang.core.pattern;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.Collections;
 
@@ -23,7 +22,7 @@ public class NamePattern extends Pattern implements Abstract.NamePattern {
   }
 
   @Override
-  public Expression toExpression(ExprSubstitution subst, LevelArguments polyParams) {
+  public Expression toExpression(ExprSubstitution subst) {
     Expression result = subst.get(myLink);
     return result == null ? new ReferenceExpression(myLink) : result;
   }

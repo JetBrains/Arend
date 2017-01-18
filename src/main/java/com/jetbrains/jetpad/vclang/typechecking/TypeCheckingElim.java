@@ -441,7 +441,8 @@ public class TypeCheckingElim {
       }
       List<Abstract.PatternArgument> patterns = implicitResult.patterns;
 
-      DependentLink constructorArgs = DependentLink.Helper.subst(constructor.getParameters(), toSubstitution(constructor.getDataTypeParameters(), matchedParameters));
+      DependentLink constructorArgs = DependentLink.Helper.subst(constructor.getParameters(), toSubstitution(constructor.getDataTypeParameters(), matchedParameters),
+        new LevelSubstitution(constructor.getPolyParams(), type.toDataCall().getPolyArguments().getLevels()));
 
       List<PatternArgument> resultPatterns = new ArrayList<>();
       DependentLink tailArgs = constructorArgs;

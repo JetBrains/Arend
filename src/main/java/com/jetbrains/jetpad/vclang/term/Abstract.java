@@ -154,6 +154,18 @@ public final class Abstract {
     Expression getCodomain();
   }
 
+  public static Expression getCodomain(Expression expr, List<TypeArgument> arguments) {
+    Expression codomain = expr;
+
+    while (codomain instanceof PiExpression) {
+      PiExpression pi = (PiExpression)codomain;
+      codomain = pi.getCodomain();
+      arguments.addAll(pi.getArguments());
+    }
+
+    return codomain;
+  }
+
   public interface BinOpExpression extends DefCallExpression {
     Expression getLeft();
     Expression getRight();

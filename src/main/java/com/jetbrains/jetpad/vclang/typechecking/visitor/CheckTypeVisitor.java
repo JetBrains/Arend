@@ -16,10 +16,10 @@ import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.expr.type.PiTypeOmega;
 import com.jetbrains.jetpad.vclang.core.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
+import com.jetbrains.jetpad.vclang.core.expr.type.TypeOmega;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
@@ -341,45 +341,73 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   }
 
   public TypeMax checkFunOrDataType(Abstract.Expression typeExpr) {
-    TypeMax type = typeMax(typeExpr, false);
+    TypeMax type = typeMax(typeExpr, null, true);
     if (type == null) return null;
     LevelSubstitution levelSubst = myEquations.solve(typeExpr);
     LocalErrorReporterCounter counter = new LocalErrorReporterCounter(myErrorReporter);
     return type.subst(new ExprSubstitution(), levelSubst).strip(new HashSet<>(myContext), counter);
   }
 
-  public Type checkParamType(Abstract.Expression typeExpr) {
-    Type type = (Type)typeMax(typeExpr, true);
+  public Type checkParamType(Abstract.Expression typeExpr, List<LevelBinding> genPolyParams) {
+    Type type = (Type)typeMax(typeExpr, genPolyParams, false);
     if (type == null) return null;
     LevelSubstitution levelSubst = myEquations.solve(typeExpr);
     LocalErrorReporterCounter counter = new LocalErrorReporterCounter(myErrorReporter);
     return type.subst(new ExprSubstitution(), levelSubst).strip(new HashSet<>(myContext), counter);
   }
 
-  private TypeMax typeMax(Abstract.Expression type, boolean onlyOmegaAllowed) {
-    if (type instanceof Abstract.PiExpression) {
-      Abstract.PiExpression piType = (Abstract.PiExpression) type;
-      DependentLink args = visitArguments(piType.getArguments(), type);
+  private TypeMax typeMax(Abstract.Expression type, List<LevelBinding> genPolyParams, boolean maxAllowed) {
+    List<Abstract.TypeArgument> arguments = new ArrayList<>();
+    Abstract.Expression cod = Abstract.getCodomain(type, arguments);
+    if (cod instanceof Abstract.PolyUniverseExpression) {
+      DependentLink args = visitArguments(arguments);
+      Abstract.PolyUniverseExpression uni = (Abstract.PolyUniverseExpression)cod;
       if (args == null) return null;
-      try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
-        myContext.addAll(DependentLink.Helper.toContext(args));
-
-        List<DependentLink> allArgs = DependentLink.Helper.toList(args);
-        TypeMax codomain = typeMax(piType.getCodomain(), onlyOmegaAllowed);
-        if (codomain == null) return null;
-        codomain = codomain.getPiParameters(allArgs, true, false);
-        ExprSubstitution exprSubst = new ExprSubstitution();
-        allArgs = DependentLink.Helper.toList(DependentLink.Helper.mergeList(allArgs, exprSubst));
-
-        return codomain.subst(exprSubst, new LevelSubstitution()).fromPiParameters(allArgs);
+      LevelBinding lpParam = null;
+      LevelBinding lhParam = null;
+      if (genPolyParams != null) {
+        if (uni.getPLevel() == null) {
+          if (genPolyParams.size() > 0 && genPolyParams.get(0).getType() == LevelVariable.LvlType.PLVL) {
+            lpParam = genPolyParams.get(0);
+          } else if (genPolyParams.size() > 1 && genPolyParams.get(1).getType() == LevelVariable.LvlType.PLVL) {
+            lpParam = genPolyParams.get(1);
+          } else {
+            lpParam = new LevelBinding("\\lp", LevelVariable.LvlType.PLVL);
+            genPolyParams.add(lpParam);
+          }
+        }
+        if (uni.getHLevel() == Abstract.PolyUniverseExpression.NOT_TRUNCATED) {
+          if (genPolyParams.size() > 0 && genPolyParams.get(0).getType() == LevelVariable.LvlType.HLVL) {
+            lhParam = genPolyParams.get(0);
+          } else if (genPolyParams.size() > 1 && genPolyParams.get(1).getType() == LevelVariable.LvlType.HLVL) {
+            lhParam = genPolyParams.get(1);
+          } else {
+            lhParam = new LevelBinding("\\lh", LevelVariable.LvlType.HLVL);
+            genPolyParams.add(lhParam);
+          }
+        }
       }
-    } else if (type instanceof Abstract.PolyUniverseExpression) {
-      SortMax sort = sortMax((Abstract.PolyUniverseExpression)type);
-      if (sort == null) return null;
-      if (onlyOmegaAllowed && sort.toSort() == null) return null;
-      return sort.toType();
+      Level hlevel = lhParam != null ? new Level(lhParam) :
+        uni.getHLevel() == Abstract.PolyUniverseExpression.NOT_TRUNCATED ? Level.INFINITY : new Level(uni.getHLevel() + 1);
+      if (maxAllowed) {
+        LevelMax plevel = lpParam != null ? new LevelMax(new Level(lpParam)) : typeCheckLevelMax(uni.getPLevel(), 0);
+        return new PiUniverseType(args, new SortMax(plevel, new LevelMax(hlevel)));
+      }
+      Level plevel = null;
+      if (lpParam != null) {
+        plevel = new Level(lpParam);
+      } else if (uni.getPLevel() != null) {
+        if (uni.getPLevel().size() != 1) {
+          // TODO: create special class for this error
+          myErrorReporter.report(new LocalTypeCheckingError("\'max\' can only be used in a result type", uni));
+          return null;
+        }
+        plevel = typeCheckLevel(uni.getPLevel().get(0), 0);
+      }
+      UniverseExpression universe = Universe(plevel, hlevel);
+      return !args.hasNext() ? universe :  Pi(args, universe);
     }
-    Result result = typeCheck(type, new PiTypeOmega());
+    Result result = typeCheck(type, TypeOmega.getInstance());
     if (result == null) return null;
     return result.expression;
   }
@@ -521,7 +549,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         } else if (argument instanceof Abstract.TypeArgument) {
           names = argument instanceof Abstract.TelescopeArgument ? ((Abstract.TelescopeArgument) argument).getNames() : Collections.<String>singletonList(null);
           argAbsType = ((Abstract.TypeArgument) argument).getType();
-          Result argResult = typeCheck(argAbsType, new PiTypeOmega());
+          Result argResult = typeCheck(argAbsType, TypeOmega.getInstance());
           if (argResult == null) return null;
           argType = argResult.expression;
         } else {
@@ -593,11 +621,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   @Override
   public Result visitPi(Abstract.PiExpression expr, Type expectedType) {
-    DependentLink args = visitArguments(expr.getArguments(), expr);
+    DependentLink args = visitArguments(expr.getArguments());
     if (args == null || !args.hasNext()) return null;
     try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
       myContext.addAll(DependentLink.Helper.toContext(args));
-      Result result = typeCheck(expr.getCodomain(), new PiTypeOmega());
+      Result result = typeCheck(expr.getCodomain(), TypeOmega.getInstance());
       if (result == null) return null;
       Expression piExpr = ExpressionFactory.Pi(args, result.expression);
       return checkResult(expectedType, new Result(piExpr, piExpr.getType()), expr);
@@ -652,7 +680,20 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     return null;
   }
 
-  public SortMax sortMax(Abstract.PolyUniverseExpression expr) {
+  public LevelMax typeCheckLevelMax(List<? extends Abstract.Expression> maxArgs, int minVal) {
+    LevelMax level = new LevelMax();
+    if (maxArgs == null) {
+      return LevelMax.INFINITY;
+    }
+    for (Abstract.Expression maxArgExpr : maxArgs) {
+      Level maxArg = typeCheckLevel(maxArgExpr, minVal);
+      if (maxArg == null) return null;
+      level = level.max(maxArg);
+    }
+    return level;
+  }
+
+  /*public SortMax sortMax(Abstract.PolyUniverseExpression expr) {
     LevelMax levelP = expr.getPLevel() == null ? LevelMax.INFINITY : new LevelMax();
     if (expr.getPLevel() != null) {
       for (Abstract.Expression maxArgExpr : expr.getPLevel()) {
@@ -664,7 +705,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     LevelMax levelH = expr.getHLevel() != Abstract.PolyUniverseExpression.NOT_TRUNCATED ? new LevelMax(new Level(expr.getHLevel() + 1)) : LevelMax.INFINITY;
     if (levelP == null) return null;
     return new SortMax(levelP, levelH);
-  }
+  }/**/
 
   @Override
   public Result visitPolyUniverse(Abstract.PolyUniverseExpression expr, Type expectedType) {
@@ -760,12 +801,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     return tupleResult;
   }
 
-  public DependentLink visitArguments(List<? extends Abstract.TypeArgument> arguments, Abstract.Expression expr) {
+  public DependentLink visitArguments(List<? extends Abstract.TypeArgument> arguments) {
     LinkList list = new LinkList();
 
     try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
       for (Abstract.TypeArgument arg : arguments) {
-        Result result = typeCheck(arg.getType(), new PiTypeOmega());
+        Result result = typeCheck(arg.getType(), TypeOmega.getInstance());
         if (result == null) return null;
 
         if (arg instanceof Abstract.TelescopeArgument) {
@@ -785,7 +826,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   @Override
   public Result visitSigma(Abstract.SigmaExpression expr, Type expectedType) {
-    DependentLink args = visitArguments(expr.getArguments(), expr);
+    DependentLink args = visitArguments(expr.getArguments());
     if (args == null || !args.hasNext()) return null;
     Expression sigmaExpr = ExpressionFactory.Sigma(args);
     return checkResult(expectedType, new Result(sigmaExpr, sigmaExpr.getType()), expr);
@@ -1033,7 +1074,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       for (Abstract.Argument arg : clause.getArguments()) {
         if (arg instanceof Abstract.TelescopeArgument) {
           Abstract.TelescopeArgument teleArg = (Abstract.TelescopeArgument) arg;
-          Result result = typeCheck(teleArg.getType(), new PiTypeOmega(EmptyDependentLink.getInstance()));
+          Result result = typeCheck(teleArg.getType(), TypeOmega.getInstance());
           if (result == null) return null;
           Expression argType = result.expression;
           links.append(param(teleArg.getExplicit(), teleArg.getNames(), argType));

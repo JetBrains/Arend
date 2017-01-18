@@ -103,6 +103,18 @@ public class Level implements PrettyPrintable {
       }
     }
 
+    if (level1.getVar() == null && cmp == Equations.CMP.LE) {
+      if (level1.getConstant() <= level2.getConstant()) {
+        return true;
+      }
+    }
+
+    if (level2.getVar() == null && cmp == Equations.CMP.GE) {
+      if (level1.getConstant() >= level2.getConstant()) {
+        return true;
+      }
+    }
+
     if (level1.getVar() == level2.getVar()) {
       if (cmp == Equations.CMP.LE) {
         return level1.getConstant() <= level2.getConstant();

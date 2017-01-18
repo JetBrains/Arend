@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.expr.type.PiTypeOmega;
 import com.jetbrains.jetpad.vclang.core.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
@@ -223,11 +222,7 @@ class DefinitionDeserialization {
       case PI_UNIVERSE:
         DependentLink parameters = readParameters(proto.getPiUniverse().getParamList());
         SortMax sorts = readSortMax(proto.getPiUniverse().getSorts());
-        if (sorts.isOmega()) {
-          return new PiTypeOmega(parameters);
-        } else {
-          return new PiUniverseType(parameters, sorts);
-        }
+        return new PiUniverseType(parameters, sorts);
       case EXPR:
         return readExpr(proto.getExpr());
       default:

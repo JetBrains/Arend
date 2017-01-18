@@ -1,8 +1,11 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
+import com.jetbrains.jetpad.vclang.core.sort.Level;
+import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -12,7 +15,15 @@ public abstract class DefCallExpression extends Expression {
 
   public DefCallExpression(Definition definition, LevelArguments polyParams) {
     myDefinition = definition;
-    myPolyArguments = polyParams;
+    if (polyParams == null) {
+      List<Level> args = new ArrayList<>();
+      for (LevelBinding param : definition.getPolyParams()) {
+        args.add(new Level(param));
+      }
+      myPolyArguments = new LevelArguments(args);
+    } else {
+      myPolyArguments = polyParams;
+    }
   }
 
   public List<? extends Expression> getDefCallArguments() {

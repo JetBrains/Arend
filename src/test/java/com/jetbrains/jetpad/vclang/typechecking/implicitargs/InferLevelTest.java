@@ -37,7 +37,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // ?l <= c
     // error: cannot infer ?l
     typeCheckClass(
-        "\\function A {l : Lvl} => \\Type (l)\n" +
+        "\\function A {l : Lvl} => \\Type l \n" +
         "\\function f {c : Lvl} : \\Type (suc c) => A");
   }
 
@@ -46,8 +46,8 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // ?l + 1 <= c
     // error: cannot infer ?l
     typeCheckClass(
-        "\\function A {l : Lvl} => \\Type (l)\n" +
-        "\\function f {c : Lvl} : \\Type (c) => A", 1);
+        "\\function A {l : Lvl} => \\Type l \n" +
+        "\\function f {c : Lvl} : \\Type c => A", 1);
   }
 
   @Test
@@ -55,8 +55,8 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // 0 <= ?l, 0 <= c
     // ok: ?l = 0
     typeCheckClass(
-        "\\function f {l : Lvl} (A : \\Type (l)) => A\n" +
-        "\\function g {c : Lvl} : \\Type (c) => f Nat");
+        "\\function f {l : Lvl} (A : \\Type l) => A\n" +
+        "\\function g {c : Lvl} : \\Type c => f Nat");
   }
 
   @Test
@@ -64,8 +64,8 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // 1 <= ?l, 1 <= c
     // error: cannot solve 1 <= c
     typeCheckClass(
-        "\\function f {l : Lvl} (A : \\Type (l)) => A\n" +
-        "\\function g {c : Lvl} : \\Type (c) => f \\Type0", 1);
+        "\\function f {l : Lvl} (A : \\Type l) => A\n" +
+        "\\function g {c : Lvl} : \\Type c => f \\Type0", 1);
   }
 
   @Test

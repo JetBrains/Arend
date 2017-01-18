@@ -2,11 +2,9 @@ package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
-import com.jetbrains.jetpad.vclang.core.sort.Level;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class DataCallExpression extends DefCallExpression {
@@ -16,9 +14,9 @@ public class DataCallExpression extends DefCallExpression {
     super(definition, polyParams);
     myArguments = arguments;
 
-    if (polyParams.getLevels().size() < definition.getPolyParams().size()) {
-      List<Level> extendedPolyParams = new ArrayList<>(polyParams.getLevels());
-      for (int i = polyParams.getLevels().size(); i < definition.getPolyParams().size(); ++i) {
+    /*if (getPolyArguments().getLevels().size() < definition.getPolyParams().size()) {
+      List<Level> extendedPolyParams = new ArrayList<>(getPolyArguments().getLevels());
+      for (int i = getPolyArguments().getLevels().size(); i < definition.getPolyParams().size(); ++i) {
         extendedPolyParams.add(Level.INFINITY);
       }
       setPolyParamsSubst(new LevelArguments(extendedPolyParams));

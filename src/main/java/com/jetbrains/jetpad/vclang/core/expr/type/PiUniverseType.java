@@ -170,6 +170,18 @@ public class PiUniverseType implements TypeMax {
 
     List<DependentLink> params = new ArrayList<>();
     Type cod = type.getPiParameters(params, false, false);
+    PiUniverseType normalized = normalize(NormalizeVisitor.Mode.NF);
+
+    if (!CompareVisitor.compare(equations, DependentLink.Helper.toList(normalized.getPiParameters()), params, sourceNode)) {
+      return false;
+    }
+
+    if (cod.toExpression() != null) {
+      InferenceVariable binding = CompareVisitor.checkIsInferVar(cod.toExpression());
+      if (binding != null) {
+        return equations.add(getPiCodomain(), cod.toExpression(), sourceNode, binding);
+      }
+    }
 
     if (cod.toSorts() == null) {
       return false;
@@ -177,13 +189,7 @@ public class PiUniverseType implements TypeMax {
 
     Sort sortCod = cod.toSorts().toSort();
 
-    if (sortCod == null) {
-      return false;
-    }
-
-    PiUniverseType normalized = normalize(NormalizeVisitor.Mode.NF);
-
-    return CompareVisitor.compare(equations, DependentLink.Helper.toList(normalized.getPiParameters()), params, sourceNode) && mySorts.isLessOrEquals(sortCod, equations, sourceNode);
+    return  sortCod != null && mySorts.isLessOrEquals(sortCod, equations, sourceNode);
   }
 
   @Override

@@ -271,14 +271,23 @@ public class TwoStageEquations implements Equations {
     Map<InferenceLevelVariable, Integer> solution = new HashMap<>();
     List<LevelEquation<InferenceLevelVariable>> cycle = myLevelEquations.solve(solution);
     if (cycle != null) {
+      List<LevelEquation<LevelVariable>> basedCycle = new ArrayList<>();
+      for (LevelEquation<InferenceLevelVariable> equation : cycle) {
+        if (equation.isInfinity() || equation.getVariable1() != null) {
+          basedCycle.add(new LevelEquation<LevelVariable>(equation.getVariable1(), equation.getVariable2(), equation.getConstant()));
+        } else {
+          basedCycle.add(new LevelEquation<>(myBases.get(equation.getVariable2()), equation.getVariable2(), equation.getConstant()));
+        }
+      }
       LevelEquation<InferenceLevelVariable> lastEquation = cycle.get(cycle.size() - 1);
       InferenceLevelVariable var = lastEquation.getVariable1() != null ? lastEquation.getVariable1() : lastEquation.getVariable2();
-      myVisitor.getErrorReporter().report(new SolveLevelEquationsError(new ArrayList<LevelEquation<? extends LevelVariable>>(cycle), var.getSourceNode()));
+      myVisitor.getErrorReporter().report(new SolveLevelEquationsError(new ArrayList<LevelEquation<? extends LevelVariable>>(basedCycle), var.getSourceNode()));
     }
 
     Map<Referable, Level> result = new HashMap<>();
     for (Map.Entry<InferenceLevelVariable, Integer> entry : solution.entrySet()) {
       Integer constant = entry.getValue();
+      assert constant != null || entry.getKey().getType() == LevelVariable.LvlType.HLVL;
       result.put(entry.getKey(), constant == null ? Level.INFINITY : new Level(myBases.get(entry.getKey()), -constant));
     }
 

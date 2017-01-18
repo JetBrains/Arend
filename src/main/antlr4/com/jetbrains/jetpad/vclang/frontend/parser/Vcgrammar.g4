@@ -133,9 +133,6 @@ argument : atomFieldsAcc                # argumentExplicit
 literal : name                          # id
         | UNIVERSE                         # universe
         | TRUNCATED_UNIVERSE               # truncatedUniverse
- //       | UNIVERSE_PREFIX                  # universePref
- //       | TRUNCATED_UNIVERSE_PREFIX        # truncatedUniversePref
-//        | SET_PREFIX                       # setPref
         | SET                              # set
         | '\\Prop'                                                                     # prop
         | 'Lvl'                         # lvl

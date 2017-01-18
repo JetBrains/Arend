@@ -1,11 +1,10 @@
 package com.jetbrains.jetpad.vclang.core.pattern;
 
-import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 
 import java.util.List;
 
@@ -53,7 +52,7 @@ public abstract class Pattern implements Abstract.Pattern {
   }
 
   public abstract DependentLink getParameters();
-  public abstract Expression toExpression(ExprSubstitution subst, LevelArguments polyParams);
+  public abstract Expression toExpression(ExprSubstitution subst);
   public MatchResult match(Expression expr) {
     return match(expr, true);
   }

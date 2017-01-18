@@ -27,15 +27,15 @@ import static org.junit.Assert.*;
 public class DataTest extends TypeCheckingTestCase {
   @Test
   public void dataType() {
-    DataDefinition typedDef = (DataDefinition) typeCheckDef("\\data D {A B : \\Type0} (I : A -> B -> \\Type0) (a : A) (b : B) | con1 (x : A) (I x b) | con2 {y : B} (I a y)");
+    DataDefinition typedDef = (DataDefinition) typeCheckDef("\\data D {A B : \\Set0} (I : A -> B -> \\Set0) (a : A) (b : B) | con1 (x : A) (I x b) | con2 {y : B} (I a y)");
     List<DependentLink> params = new ArrayList<>();
     TypeMax type = typedDef.getTypeWithParams(params, new LevelArguments());
 
     LinkList parameters = new LinkList();
-    parameters.append(param(false, vars("A", "B"), Universe(0)));
+    parameters.append(param(false, vars("A", "B"), Universe(0, 0)));
     DependentLink A = parameters.getFirst();
     DependentLink B = A.getNext();
-    parameters.append(param("I", Pi(Reference(A), Pi(Reference(B), Universe(0)))));
+    parameters.append(param("I", Pi(Reference(A), Pi(Reference(B), Universe(0, 0)))));
     DependentLink I = B.getNext();
     parameters.append(param("a", Reference(A)));
     parameters.append(param("b", Reference(B)));
@@ -52,7 +52,7 @@ public class DataTest extends TypeCheckingTestCase {
 
     assertNotNull(typedDef);
     assertEquals(Definition.TypeCheckingStatus.NO_ERRORS, typedDef.hasErrors());
-    assertEquals(Pi(parameters.getFirst(), Universe(0)), type.fromPiParameters(params).toExpression());
+    assertEquals(Pi(parameters.getFirst(), Universe(0, 0)), type.fromPiParameters(params).toExpression());
     assertEquals(2, typedDef.getConstructors().size());
 
     ExprSubstitution substitution = new ExprSubstitution();

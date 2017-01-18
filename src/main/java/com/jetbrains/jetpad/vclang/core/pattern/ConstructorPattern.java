@@ -1,14 +1,14 @@
 package com.jetbrains.jetpad.vclang.core.pattern;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.Referable;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +50,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
   }
 
   @Override
-  public Expression toExpression(ExprSubstitution subst, LevelArguments polyParams) {
+  public Expression toExpression(ExprSubstitution subst) {
     List<Expression> params = new ArrayList<>();
     for (DependentLink link = myConstructor.getDataTypeParameters(); link.hasNext(); link = link.getNext()) {
       Expression param = subst.get(link);
@@ -62,18 +62,19 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
     List<Expression> arguments = new ArrayList<>();
     for (PatternArgument patternArgument : myArguments.getPatterns()) {
       assert link.hasNext();
-      LevelArguments polyParams1 = null;
+      //LevelArguments polyParams1 = null;
+      LevelSubstitution levelSubst = new LevelSubstitution();
       if (patternArgument.getPattern() instanceof ConstructorPattern) {
         assert link.getType().toExpression() != null;
         Expression type = link.getType().toExpression().subst(subst).normalize(NormalizeVisitor.Mode.WHNF);
         assert type.toDataCall() != null && type.toDataCall().getDefinition() == ((ConstructorPattern) patternArgument.getPattern()).getConstructor().getDataType();
         ExprSubstitution subSubst = ((ConstructorPattern) patternArgument.getPattern()).getMatchedArguments(new ArrayList<>(type.toDataCall().getDefCallArguments()));
-        polyParams1 = type.toDataCall().getPolyArguments();
+        levelSubst.add(new LevelSubstitution(type.toDataCall().getDefinition().getPolyParams(), type.toDataCall().getPolyArguments().getLevels()));
         for (Referable binding : subSubst.getDomain()) {
           subst.add(binding, subSubst.get(binding));
         }
       }
-      Expression param = patternArgument.getPattern().toExpression(subst, polyParams1);
+      Expression param = patternArgument.getPattern().toExpression(subst).subst(levelSubst);
       if (patternArgument.getPattern() instanceof ConstructorPattern) {
         DependentLink.Helper.freeSubsts(getParameters(), subst);
       }
@@ -83,7 +84,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
       link = link.getNext();
     }
     DependentLink.Helper.freeSubsts(constructorParameters, subst);
-    return ConCall(myConstructor, polyParams, params, arguments);
+    return ConCall(myConstructor, null, params, arguments);
   }
 
   public ExprSubstitution getMatchedArguments(List<Expression> dataTypeArguments) {

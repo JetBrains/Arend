@@ -20,6 +20,15 @@ public class LevelSubstitution {
     myLevels = levels;
   }
 
+  public LevelSubstitution(List<? extends Referable> vars, List<? extends Level> exprs) {
+    assert vars.size() == exprs.size();
+    LevelSubstitution subst = new LevelSubstitution();
+    myLevels = new HashMap<>();
+    for (int i = 0; i < vars.size(); ++i) {
+      myLevels.put(vars.get(i), exprs.get(i));
+    }
+  }
+
   public boolean isEmpty() {
     return myLevels.isEmpty();
   }
@@ -30,6 +39,10 @@ public class LevelSubstitution {
 
   public void add(Referable variable, Level level) {
     myLevels.put(variable, level);
+  }
+
+  public void add(LevelSubstitution subst) {
+    myLevels.putAll(subst.myLevels);
   }
 
   public static List<LevelBinding> clone(List<LevelBinding> params, LevelSubstitution subst) {

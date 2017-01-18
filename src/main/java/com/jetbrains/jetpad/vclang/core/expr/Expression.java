@@ -5,9 +5,9 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Referable;
 import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
-import com.jetbrains.jetpad.vclang.core.expr.type.PiTypeOmega;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
+import com.jetbrains.jetpad.vclang.core.expr.type.TypeOmega;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.sort.SortMax;
@@ -56,10 +56,8 @@ public abstract class Expression implements PrettyPrintable, Type {
 
   @Override
   public boolean isLessOrEquals(Type type, Equations equations, Abstract.SourceNode sourceNode) {
-    if (type instanceof PiTypeOmega) {
-      List<DependentLink> params = new ArrayList<>();
-      Expression cod = getPiParameters(params, true, false).toUniverse();
-      return cod != null && (params.isEmpty() || CompareVisitor.compare(equations, params, DependentLink.Helper.toList(type.getPiParameters()), sourceNode));
+    if (type instanceof TypeOmega) {
+      return true;
     }
     Expression typeExpr = type.toExpression();
     assert typeExpr != null;

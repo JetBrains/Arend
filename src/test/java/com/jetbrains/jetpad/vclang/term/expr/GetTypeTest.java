@@ -110,7 +110,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
   @Test
   public void patternConstructor2() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\data Vec \\Type0 Nat | Vec A zero => Nil | Vec A (suc n) => Cons A (Vec A n)" +
+        "\\data Vec \\Set0 Nat | Vec A zero => Nil | Vec A (suc n) => Cons A (Vec A n)" +
         "\\data D (n : Nat) (Vec Nat n) | D zero _ => dzero | D (suc n) _ => done");
     DataDefinition vec = (DataDefinition) result.getDefinition("Vec");
     DataDefinition d = (DataDefinition) result.getDefinition("D");
