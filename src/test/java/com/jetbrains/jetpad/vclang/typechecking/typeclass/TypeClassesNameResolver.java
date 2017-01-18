@@ -152,4 +152,25 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
   public void cyclicView() {
     resolveNamesClass("\\view X \\on X \\by X { }", 1);
   }
+
+  @Test
+  public void instanceWithoutView() {
+    resolveNamesClass(
+      "\\class X {\n" +
+        "  \\field A : \\Type0\n" +
+        "  \\field B : A -> \\Type0\n" +
+        "}\n" +
+        "\\instance Nat-X => \\new X { A => Nat | B => \\lam n => Nat }", 1);
+  }
+
+  @Test
+  public void instanceNotView() {
+    resolveNamesClass(
+      "\\class X {\n" +
+        "  \\field A : \\Type0\n" +
+        "  \\field B : A -> \\Type0\n" +
+        "}\n" +
+        "\\view X' \\on X \\by A { B }\n" +
+        "\\instance Nat-X => \\new X { A => Nat | B => \\lam _ => Nat }", 1);
+  }
 }

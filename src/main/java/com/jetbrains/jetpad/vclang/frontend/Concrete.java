@@ -274,8 +274,8 @@ public final class Concrete {
   }
 
   public static class DefCallExpression extends Expression implements Abstract.DefCallExpression {
-    private Expression myExpression;
-    private String myName;
+    private final Expression myExpression;
+    private final String myName;
     private Abstract.Definition myDefinition;
 
     public DefCallExpression(Position position, Expression expression, String name) {
@@ -1111,7 +1111,7 @@ public final class Concrete {
   // ClassViews
 
   public static class ClassView extends Definition implements Abstract.ClassView {
-    private DefCallExpression myUnderlyingClass;
+    private final DefCallExpression myUnderlyingClass;
     private final String myClassifyingFieldName;
     private Abstract.ClassField myClassifyingField;
     private final List<ClassViewField> myFields;
@@ -1192,13 +1192,15 @@ public final class Concrete {
   public static class ClassViewInstance extends Definition implements Abstract.ClassViewInstance {
     private final boolean myDefault;
     private final List<Argument> myArguments;
-    private final Expression myTerm;
+    private final DefCallExpression myClassView;
+    private final List<ClassFieldImpl> myClassFieldImpls;
 
-    public ClassViewInstance(Position position, boolean isDefault, String name, Abstract.Precedence precedence, List<Argument> arguments, Expression term) {
+    public ClassViewInstance(Position position, boolean isDefault, String name, Abstract.Precedence precedence, List<Argument> arguments, DefCallExpression classView, List<ClassFieldImpl> classFieldImpls) {
       super(position, name, precedence);
       myDefault = isDefault;
       myArguments = arguments;
-      myTerm = term;
+      myClassView = classView;
+      myClassFieldImpls = classFieldImpls;
     }
 
     @Override
@@ -1212,8 +1214,13 @@ public final class Concrete {
     }
 
     @Override
-    public Expression getTerm() {
-      return myTerm;
+    public DefCallExpression getClassView() {
+      return myClassView;
+    }
+
+    @Override
+    public List<ClassFieldImpl> getClassFieldImpls() {
+      return myClassFieldImpls;
     }
 
     @Override

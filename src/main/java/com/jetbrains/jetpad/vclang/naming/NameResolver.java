@@ -116,7 +116,7 @@ public class NameResolver {
     if (resolvedRef instanceof Abstract.ClassField) {
       return (Abstract.ClassField) resolvedRef;
     } else {
-      errorReporter.report(resolvedRef != null ? new WrongDefinition("Expected a class field", cause) : new NotInScopeError(cause, name));
+      errorReporter.report(resolvedRef != null ? new WrongDefinition("Expected a class field", resolvedRef, cause) : new NotInScopeError(cause, name));
       return null;
     }
   }

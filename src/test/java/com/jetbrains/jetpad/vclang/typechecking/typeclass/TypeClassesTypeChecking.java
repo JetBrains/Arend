@@ -23,17 +23,6 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
   }
 
   @Test
-  public void instanceNotView() {
-    typeCheckClass(
-        "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> \\Type0\n" +
-        "}\n" +
-        "\\view X' \\on X \\by A { B }\n" +
-        "\\instance Nat-X => \\new X { A => Nat | B => \\lam _ => Nat }", 1);
-  }
-
-  @Test
   public void classViewExt() {
     typeCheckClass(
         "\\class X {\n" +
@@ -44,5 +33,16 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
         "\\function f => \\new X  { A => Nat | B => \\lam _ => Nat }\n" +
         "\\function g => \\new X' { A => Nat | C => \\lam _ => Nat }\n" +
         "\\function p : f = g => path (\\lam _ => f)");
+  }
+
+  @Test
+  public void notImplementedField() {
+    typeCheckClass(
+        "\\class X {\n" +
+        "  \\field A : \\Type0\n" +
+        "  \\field B : A -> \\Type0\n" +
+        "}\n" +
+        "\\view X' \\on X \\by A { B }\n" +
+        "\\instance x => \\new X' { A => Nat }", 1);
   }
 }

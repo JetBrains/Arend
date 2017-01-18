@@ -475,9 +475,16 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitClassExt(Abstract.ClassExtExpression expr, Byte prec) {
     if (prec > Abstract.ClassExtExpression.PREC) myBuilder.append('(');
     expr.getBaseClassExpression().accept(this, (byte) -Abstract.ClassExtExpression.PREC);
-    myBuilder.append(" {\n");
+    myBuilder.append(" ");
+    visitClassFieldImpls(expr.getStatements());
+    if (prec > Abstract.ClassExtExpression.PREC) myBuilder.append(')');
+    return null;
+  }
+
+  private void visitClassFieldImpls(Collection<? extends Abstract.ClassFieldImpl> classFieldImpls) {
+    myBuilder.append("{\n");
     myIndent += INDENT;
-    for (Abstract.ClassFieldImpl statement : expr.getStatements()) {
+    for (Abstract.ClassFieldImpl statement : classFieldImpls) {
       printIndent();
       myBuilder.append("| ").append(new Name(statement.getImplementedFieldName()).getPrefixName()).append(" => ");
       statement.getImplementation().accept(this, Abstract.Expression.PREC);
@@ -486,8 +493,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myIndent -= INDENT;
     printIndent();
     myBuilder.append("}");
-    if (prec > Abstract.ClassExtExpression.PREC) myBuilder.append(')');
-    return null;
   }
 
   @Override
@@ -941,11 +946,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     prettyPrintNameWithPrecedence(def);
     prettyPrintArguments(def.getArguments(), Abstract.DefCallExpression.PREC);
 
-    Abstract.Expression term = def.getTerm();
-    if (term != null) {
-      myBuilder.append(" => ");
-      term.accept(new PrettyPrintVisitor(myBuilder, myIndent), Abstract.Expression.PREC);
-    }
+    myBuilder.append(" => \\new ");
+    def.getClassView().accept(this, null);
+    myBuilder.append(" ");
+    visitClassFieldImpls(def.getClassFieldImpls());
 
     return null;
   }

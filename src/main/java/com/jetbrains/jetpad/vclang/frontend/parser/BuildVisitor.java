@@ -1,13 +1,16 @@
 package com.jetbrains.jetpad.vclang.frontend.parser;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.frontend.parser.VcgrammarParser.*;
 
@@ -307,7 +310,18 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.ClassViewInstance visitDefInstance(DefInstanceContext ctx) {
     List<Concrete.Argument> arguments = visitFunctionArguments(ctx.tele());
     Concrete.Expression term = visitExpr(ctx.expr());
-    return new Concrete.ClassViewInstance(tokenPosition(ctx.getStart()), ctx.defaultInst() instanceof WithDefaultContext, ctx.ID().getText(), Abstract.Precedence.DEFAULT, arguments, term);
+    if (term instanceof Concrete.NewExpression) {
+      Concrete.Expression type = ((Concrete.NewExpression) term).getExpression();
+      if (type instanceof Concrete.ClassExtExpression) {
+        Concrete.ClassExtExpression classExt = (Concrete.ClassExtExpression) type;
+        if (classExt.getBaseClassExpression() instanceof Concrete.DefCallExpression) {
+          return new Concrete.ClassViewInstance(tokenPosition(ctx.getStart()), ctx.defaultInst() instanceof WithDefaultContext, ctx.ID().getText(), Abstract.Precedence.DEFAULT, arguments, (Concrete.DefCallExpression) classExt.getBaseClassExpression(), classExt.getStatements());
+        }
+      }
+    }
+
+    myErrorReporter.report(new ParserError(tokenPosition(ctx.expr().getStart()), "Expected a class view extension"));
+    throw new ParseException();
   }
 
   @Override

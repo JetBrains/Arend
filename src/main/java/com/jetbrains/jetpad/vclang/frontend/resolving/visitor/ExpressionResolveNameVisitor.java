@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<Void, Void> {
@@ -262,18 +263,20 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   @Override
   public Void visitClassExt(Abstract.ClassExtExpression expr, Void params) {
     expr.getBaseClassExpression().accept(this, null);
-
     Abstract.ClassView classView = Abstract.getUnderlyingClassView(expr);
-    Abstract.ClassDefinition classDef = Abstract.getUnderlyingClassDef(expr);
-    for (Abstract.ClassFieldImpl statement : expr.getStatements()) {
+    Abstract.ClassDefinition classDef = classView == null ? Abstract.getUnderlyingClassDef(expr) : null;
+    visitClassFieldImpls(expr.getStatements(), classView, classDef);
+    return null;
+  }
+
+  public void visitClassFieldImpls(Collection<? extends Abstract.ClassFieldImpl> classFieldImpls, Abstract.ClassView classView, Abstract.ClassDefinition classDef) {
+    for (Abstract.ClassFieldImpl statement : classFieldImpls) {
       Abstract.ClassField resolvedRef = classView != null ? myNameResolver.resolveClassFieldByView(classView, statement.getImplementedFieldName(), myErrorReporter, statement) : classDef != null ? myNameResolver.resolveClassField(classDef, statement.getImplementedFieldName(), myNsProviders.dynamics, myErrorReporter, statement) : null;
       if (resolvedRef != null) {
         myResolveListener.implementResolved(statement, resolvedRef);
       }
       statement.getImplementation().accept(this, null);
     }
-
-    return null;
   }
 
   @Override

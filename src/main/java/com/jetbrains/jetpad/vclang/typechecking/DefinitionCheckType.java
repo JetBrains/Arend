@@ -859,39 +859,51 @@ public class DefinitionCheckType {
       return null;
     }
 
-    Abstract.Expression term = def.getTerm();
-    Abstract.ClassView classView = term instanceof Abstract.NewExpression ? Abstract.getUnderlyingClassView(((Abstract.NewExpression) term).getExpression()) : null;
-    if (classView == null) {
-      errorReporter.report(new LocalTypeCheckingError("Expected an instance of a class view", def));
-      return null;
+    Abstract.ClassView classView = (Abstract.ClassView) def.getClassView().getReferent();
+    Map<ClassField, Abstract.ClassFieldImpl> classFieldMap = new HashMap<>();
+    for (Abstract.ClassFieldImpl classFieldImpl : def.getClassFieldImpls()) {
+      ClassField field = (ClassField) visitor.getTypecheckingState().getTypechecked(classFieldImpl.getImplementedField());
+      if (classFieldMap.containsKey(field)) {
+        visitor.getErrorReporter().report(new LocalTypeCheckingError("Field '" + field.getName() + "' is already implemented", classFieldImpl));
+      } else {
+        classFieldMap.put(field, classFieldImpl);
+      }
     }
-    CheckTypeVisitor.Result termResult = visitor.checkType(term, null);
-    if (termResult == null || termResult.type == null) {
+
+    FieldSet fieldSet = new FieldSet();
+    ClassDefinition classDef = (ClassDefinition) visitor.getTypecheckingState().getTypechecked(classView.getUnderlyingClassDefCall().getReferent());
+    fieldSet.addFieldsFrom(classDef.getFieldSet());
+    ClassCallExpression term = ExpressionFactory.ClassCall(classDef, new LevelArguments(), fieldSet);
+    for (ClassField field : classDef.getFieldSet().getFields()) {
+      Abstract.ClassFieldImpl impl = classFieldMap.get(field);
+      if (impl != null) {
+        visitor.implementField(fieldSet, field, impl.getImplementation(), term);
+        classFieldMap.remove(field);
+      } else {
+        visitor.getErrorReporter().report(new LocalTypeCheckingError("Field '" + field.getName() + "' is not implemented", def));
+        return null;
+      }
+    }
+
+    FieldSet.Implementation impl = fieldSet.getImplementation((ClassField) state.getTypechecked(classView.getClassifyingField()));
+    DefCallExpression defCall = impl.term.normalize(NormalizeVisitor.Mode.WHNF).toDefCall();
+    if (defCall == null || !defCall.getDefCallArguments().isEmpty()) {
+      errorReporter.report(new LocalTypeCheckingError("Expected a definition in the classifying field", def));
       return null;
     }
 
-    FunctionDefinition typedDef = new FunctionDefinition(def, list.getFirst(), termResult.type, top(list.getFirst(), leaf(Abstract.Definition.Arrow.RIGHT, termResult.expression)));
+    FunctionDefinition typedDef = new FunctionDefinition(def, list.getFirst(), term, top(list.getFirst(), leaf(Abstract.Definition.Arrow.RIGHT, New(term))));
     typedDef.setPolyParams(polyParamsList);
     state.record(def, typedDef);
 
-    FieldSet.Implementation impl = typedDef.getResultType().toExpression().toClassCall().getFieldSet().getImplementation((ClassField) state.getTypechecked(classView.getClassifyingField()));
-    if (impl == null) {
-      errorReporter.report(new LocalTypeCheckingError("Classifying field is not implemented", term));
-      return typedDef;
-    }
-    DefCallExpression defCall = impl.term.normalize(NormalizeVisitor.Mode.WHNF).toDefCall();
-    if (defCall == null || !defCall.getDefCallArguments().isEmpty()) {
-      errorReporter.report(new LocalTypeCheckingError("Expected a definition in the classifying field", term));
-      return typedDef;
-    }
     if (state.getInstancePool().getInstance(defCall.getDefinition(), classView) != null) {
-      errorReporter.report(new LocalTypeCheckingError("Instance of '" + classView.getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", term));
+      errorReporter.report(new LocalTypeCheckingError("Instance of '" + classView.getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", def));
     } else {
       Expression instance = FunCall(typedDef, new LevelArguments(), Collections.<Expression>emptyList());
       state.getInstancePool().addInstance(defCall.getDefinition(), classView, instance);
       if (def.isDefault()) {
         if (state.getInstancePool().getInstance(defCall.getDefinition(), null) != null) {
-          errorReporter.report(new LocalTypeCheckingError("Default instance of '" + classView.getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", term));
+          errorReporter.report(new LocalTypeCheckingError("Default instance of '" + classView.getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", def));
         } else {
           state.getInstancePool().addInstance(defCall.getDefinition(), null, instance);
         }

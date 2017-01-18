@@ -236,7 +236,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
     Abstract.Definition resolvedUnderlyingClass = def.getUnderlyingClassDefCall().getReferent();
     if (!(resolvedUnderlyingClass instanceof Abstract.ClassDefinition)) {
       if (resolvedUnderlyingClass != null) {
-        myErrorReporter.report(new WrongDefinition("Expected a class", def));
+        myErrorReporter.report(new WrongDefinition("Expected a class", resolvedUnderlyingClass, def));
       }
       return null;
     }
@@ -244,7 +244,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
     Namespace dynamicNamespace = nsProviders.dynamics.forClass((Abstract.ClassDefinition) resolvedUnderlyingClass);
     Abstract.Definition resolvedClassifyingField = dynamicNamespace.resolveName(def.getClassifyingFieldName());
     if (!(resolvedClassifyingField instanceof Abstract.ClassField)) {
-      myErrorReporter.report(resolvedClassifyingField != null ? new WrongDefinition("Expected a class field", def) : new NotInScopeError(def, def.getClassifyingFieldName()));
+      myErrorReporter.report(resolvedClassifyingField != null ? new WrongDefinition("Expected a class field", resolvedClassifyingField, def) : new NotInScopeError(def, def.getClassifyingFieldName()));
       return null;
     }
 
@@ -273,10 +273,11 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(nsProviders, myParentScope, myContext, myNameResolver, myErrorReporter, myResolveListener);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       visitArguments(def.getArguments(), exprVisitor);
-
-      Abstract.Expression term = def.getTerm();
-      if (term != null) {
-        term.accept(exprVisitor, null);
+      exprVisitor.visitDefCall(def.getClassView(), null);
+      if (def.getClassView().getReferent() instanceof Abstract.ClassView) {
+        exprVisitor.visitClassFieldImpls(def.getClassFieldImpls(), (Abstract.ClassView) def.getClassView().getReferent(), null);
+      } else {
+        myErrorReporter.report(new WrongDefinition("Expected a class view", def.getClassView().getReferent(), def));
       }
     }
 

@@ -29,16 +29,6 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
   }
 
   @Test
-  public void instanceWithoutView() {
-    typeCheckClass(
-        "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> \\Type0\n" +
-        "}\n" +
-        "\\instance Nat-X => \\new X { A => Nat | B => \\lam n => Nat }", 1);
-  }
-
-  @Test
   public void incorrectInstance() {
     typeCheckClass(
         "\\class X {\n" +

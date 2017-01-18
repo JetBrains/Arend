@@ -131,9 +131,9 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
       }
     }
 
-    Abstract.Expression term = def.getTerm();
-    if (term != null) {
-      term.accept(visitor, null);
+    def.getClassView().accept(visitor, null);
+    for (Abstract.ClassFieldImpl classFieldImpl : def.getClassFieldImpls()) {
+      classFieldImpl.getImplementation().accept(visitor, null);
     }
 
     return null;

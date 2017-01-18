@@ -974,24 +974,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     for (Abstract.ClassFieldImpl statement : statements) {
       ClassField field = (ClassField) myState.getTypechecked(statement.getImplementedField());
       if (fieldSet.isImplemented(field) || classFieldMap.containsKey(field)) {
-        LocalTypeCheckingError error = new LocalTypeCheckingError("Field '" + field.getName() + "' is already implemented", statement);
-        if (resultExpr instanceof ClassCallExpression) {
-          resultExpr = ExpressionFactory.Error(resultExpr, error);
-        }
-        myErrorReporter.report(error);
-        continue;
+        myErrorReporter.report(new LocalTypeCheckingError("Field '" + field.getName() + "' is already implemented", statement));
+      } else {
+        classFieldMap.put(field, statement);
       }
-
-      classFieldMap.put(field, statement);
-    }
-
-    if (!(resultExpr instanceof ClassCallExpression)) {
-      return checkResult(expectedType, new Result(resultExpr, new PiUniverseType(EmptyDependentLink.getInstance(), new SortMax())), expr);
     }
 
     if (!classFieldMap.isEmpty()) {
-      Set<? extends ClassField> fields = baseClass.getFieldSet().getFields();
-      for (ClassField field : fields) {
+      for (ClassField field : baseClass.getFieldSet().getFields()) {
         if (fieldSet.isImplemented(field)) {
           continue;
         }
@@ -999,7 +989,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         Abstract.ClassFieldImpl impl = classFieldMap.get(field);
         if (impl != null) {
           if (resultExpr instanceof ClassCallExpression) {
-            implementField(fieldSet, field, impl.getImplementation(), this, (ClassCallExpression) resultExpr);
+            implementField(fieldSet, field, impl.getImplementation(), (ClassCallExpression) resultExpr);
           }
           classFieldMap.remove(field);
           if (classFieldMap.isEmpty()) {
@@ -1015,12 +1005,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       }
     }
 
-    Result result = new Result(resultExpr, new PiUniverseType(EmptyDependentLink.getInstance(), resultExpr instanceof ClassCallExpression ? ((ClassCallExpression) resultExpr).getSorts() : new SortMax()));
-    return checkResult(expectedType, result, expr);
+    return checkResult(expectedType, new Result(resultExpr, new PiUniverseType(EmptyDependentLink.getInstance(), resultExpr instanceof ClassCallExpression ? ((ClassCallExpression) resultExpr).getSorts() : new SortMax())), expr);
   }
 
-  private CheckTypeVisitor.Result implementField(FieldSet fieldSet, ClassField field, Abstract.Expression implBody, CheckTypeVisitor visitor, ClassCallExpression fieldSetClass) {
-    CheckTypeVisitor.Result result = visitor.typeCheck(implBody, field.getBaseType().subst(field.getThisParameter(), ExpressionFactory.New(fieldSetClass)));
+  public CheckTypeVisitor.Result implementField(FieldSet fieldSet, ClassField field, Abstract.Expression implBody, ClassCallExpression fieldSetClass) {
+    CheckTypeVisitor.Result result = typeCheck(implBody, field.getBaseType().subst(field.getThisParameter(), ExpressionFactory.New(fieldSetClass)));
     fieldSet.implementField(field, new FieldSet.Implementation(null, result != null ? result.expression : ExpressionFactory.Error(null, null)));
     return result;
   }
