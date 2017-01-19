@@ -21,10 +21,6 @@ public abstract class ParseSource {
     myStream = stream;
   }
 
-  protected SourceId getId() {
-    return mySourceId;
-  }
-
   public Abstract.ClassDefinition load(ErrorReporter errorReporter) throws IOException {
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
     final CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
