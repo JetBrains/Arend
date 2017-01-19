@@ -125,6 +125,7 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
 
     @Override
     public InputStream getCacheInputStream(SourceId sourceId) {
+      if (myRoot == null) return null;
       if (sourceId.getStorage() != FileStorage.this) return null;
       Path file = cacheFileForSource(sourceId);
       if (Files.isReadable(file)) {
@@ -138,6 +139,7 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
 
     @Override
     public OutputStream getCacheOutputStream(SourceId sourceId) {
+      if (myRoot == null) return null;
       if (sourceId.getStorage() != FileStorage.this) return null;
       Path file = cacheFileForSource(sourceId);
       try {
