@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.module.caching.CachePersistenceException;
 import com.jetbrains.jetpad.vclang.module.caching.CacheStorageSupplier;
 import com.jetbrains.jetpad.vclang.module.caching.CachingModuleLoader;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
+import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -90,12 +91,14 @@ public class PreludeCacheGenerator {
   }
 
   public static void main(String[] args) {
+    final NameResolver nameResolver = new NameResolver();
     final StaticNamespaceProvider statisNsProvider = new SimpleStaticNamespaceProvider();
     final DynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
     final ListErrorReporter errorReporter = new ListErrorReporter();
     PreludeStorage storage = new PreludeStorage();
-    ResolvingModuleLoader<PreludeStorage.SourceId> baseModuleLoader = new ResolvingModuleLoader<>(storage, new DefaultModuleLoader.ModuleLoadingListener<PreludeStorage.SourceId>(), statisNsProvider, dynamicNsProvider, new ConcreteResolveListener(), errorReporter);
+    ResolvingModuleLoader<PreludeStorage.SourceId> baseModuleLoader = new ResolvingModuleLoader<>(storage, new DefaultModuleLoader.ModuleLoadingListener<PreludeStorage.SourceId>(), nameResolver, statisNsProvider, dynamicNsProvider, new ConcreteResolveListener(), errorReporter);
     CachingModuleLoader<PreludeStorage.SourceId> moduleLoader = new CachingModuleLoader<>(baseModuleLoader, new PreludePersistenceProvider(), new PreludeBuildCacheSupplier(Paths.get(args[0])), new PreludeDefLocator(storage.preludeSourceId), false);
+    nameResolver.setModuleLoader(moduleLoader);
     Abstract.ClassDefinition prelude = moduleLoader.load(storage.preludeSourceId);
     if (!errorReporter.getErrorList().isEmpty()) throw new IllegalStateException();
     Typechecking.typecheckModules(moduleLoader.getTypecheckerState(), statisNsProvider, dynamicNsProvider, Collections.singleton(prelude), errorReporter, new Prelude.UpdatePreludeReporter(moduleLoader.getTypecheckerState()));

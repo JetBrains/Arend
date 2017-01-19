@@ -17,6 +17,7 @@ import com.jetbrains.jetpad.vclang.module.caching.CachingModuleLoader;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
+import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.term.*;
@@ -42,6 +43,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   private final CachingModuleLoader<SourceIdT> moduleLoader;
 
   // Name resolving
+  private final NameResolver nameResolver = new NameResolver();
   private final SimpleStaticNamespaceProvider staticNsProvider  = new SimpleStaticNamespaceProvider();
   private final DynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
 
@@ -190,12 +192,12 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   }
 
   private ResolvingModuleLoader<SourceIdT> createResolvingModuleLoader(ModuleLoadingListener moduleLoadingListener) {
-    return new ResolvingModuleLoader<>(storage, moduleLoadingListener, staticNsProvider, dynamicNsProvider, new ConcreteResolveListener(), errorReporter);
+    return new ResolvingModuleLoader<>(storage, moduleLoadingListener, nameResolver, staticNsProvider, dynamicNsProvider, new ConcreteResolveListener(), errorReporter);
   }
 
   private CachingModuleLoader<SourceIdT> createCachingModuleLoader(boolean recompile) {
     CachingModuleLoader<SourceIdT> moduleLoader = new CachingModuleLoader<>(resolvingModuleLoader, createPersistenceProvider(), storage, srcInfoProvider, !recompile);
-    resolvingModuleLoader.overrideModuleLoader(moduleLoader);
+    nameResolver.setModuleLoader(moduleLoader);
     return moduleLoader;
   }
 

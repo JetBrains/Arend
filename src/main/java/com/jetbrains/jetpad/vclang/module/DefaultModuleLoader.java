@@ -13,7 +13,7 @@ import java.io.IOException;
 
 public class DefaultModuleLoader<SourceIdT extends SourceId> extends SourceModuleLoader<SourceIdT> {
   private final SourceSupplier<SourceIdT> mySourceSupplier;
-  private final ErrorReporter myErrorReporter;
+  protected final ErrorReporter myErrorReporter;
   private final ModuleLoadingListener<SourceIdT> myListener;
 
   public DefaultModuleLoader(SourceSupplier<SourceIdT> sourceSupplier, ErrorReporter errorReporter, ModuleLoadingListener<SourceIdT> listener) {

@@ -12,34 +12,33 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import java.util.List;
 
 public class NameResolver {
-  private final ModuleNamespaceProvider myModuleNamespaceProvider;
-  private final StaticNamespaceProvider myStaticNamespaceProvider;
-  private final DynamicNamespaceProvider myDynamicNamespaceProvider;
   private ModuleLoader myModuleLoader;
 
-  public NameResolver(ModuleNamespaceProvider myModuleNamespaceProvider, StaticNamespaceProvider myStaticNamespaceProvider, DynamicNamespaceProvider myDynamicNamespaceProvider) {
-    this.myModuleNamespaceProvider = myModuleNamespaceProvider;
-    this.myStaticNamespaceProvider = myStaticNamespaceProvider;
-    this.myDynamicNamespaceProvider = myDynamicNamespaceProvider;
+  public NameResolver() {
+    this(null);
+  }
+
+  public NameResolver(ModuleLoader moduleLoader) {
+    myModuleLoader = moduleLoader;
   }
 
   public void setModuleLoader(ModuleLoader moduleLoader) {
     myModuleLoader = moduleLoader;
   }
 
-  public ModuleNamespace resolveModuleNamespace(final ModulePath modulePath) {
-    ModuleNamespace ns = resolveModuleNamespace_(modulePath);
+  public ModuleNamespace resolveModuleNamespace(final ModulePath modulePath, ModuleNamespaceProvider moduleNsProvider) {
+    ModuleNamespace ns = resolveModuleNamespace_(modulePath, moduleNsProvider);
     if (myModuleLoader != null && (ns == null || ns.getRegisteredClass() == null)) {
       Abstract.ClassDefinition loadedClass = myModuleLoader.load(modulePath);
       if (ns == null && loadedClass != null) {
-        ns = resolveModuleNamespace_(modulePath);
+        ns = resolveModuleNamespace_(modulePath, moduleNsProvider);
       }
     }
     return ns;
   }
 
-  private ModuleNamespace resolveModuleNamespace_(final ModulePath path) {
-    ModuleNamespace ns = myModuleNamespaceProvider.root();
+  private ModuleNamespace resolveModuleNamespace_(final ModulePath path, ModuleNamespaceProvider moduleNsProvider) {
+    ModuleNamespace ns = moduleNsProvider.root();
     for (String name : path.toList()) {
       ns = ns.getSubmoduleNamespace(name);
       if (ns == null) {
@@ -49,7 +48,7 @@ public class NameResolver {
     return ns;
   }
 
-  public Abstract.Definition resolveDefinition(final Scope currentScope, final List<String> path) {
+  public Abstract.Definition resolveDefinition(final Scope currentScope, final List<String> path, StaticNamespaceProvider staticNsProvider) {
     if (path.isEmpty()) {
       throw new IllegalArgumentException();
     } else {
@@ -60,13 +59,13 @@ public class NameResolver {
         if (ref == null) {
           return null;
         }
-        scope = myStaticNamespaceProvider.forDefinition(ref);
+        scope = staticNsProvider.forDefinition(ref);
       }
       return ref;
     }
   }
 
-  public Abstract.Definition resolveDefCall(final Scope currentScope, final Abstract.DefCallExpression defCall) {
+  public Abstract.Definition resolveDefCall(final Scope currentScope, final Abstract.DefCallExpression defCall, ModuleNamespaceProvider moduleNsProvider, StaticNamespaceProvider staticNsProvider) {
     if (defCall.getReferent() != null) {
       return defCall.getReferent();
     }
@@ -77,10 +76,10 @@ public class NameResolver {
     if (defCall.getExpression() == null) {
       return currentScope.resolveName(defCall.getName());
     } else if (defCall.getExpression() instanceof Abstract.DefCallExpression) {
-      Abstract.Definition exprTarget = resolveDefCall(currentScope, (Abstract.DefCallExpression) defCall.getExpression());
+      Abstract.Definition exprTarget = resolveDefCall(currentScope, (Abstract.DefCallExpression) defCall.getExpression(), moduleNsProvider, staticNsProvider);
       final Namespace ns;
       if (exprTarget != null) {
-        ns = myStaticNamespaceProvider.forDefinition(exprTarget);
+        ns = staticNsProvider.forDefinition(exprTarget);
       } else {
         // TODO: implement this coherently
         // ns = resolveModuleNamespace((Abstract.DefCallExpression) defCall.getExpression());
@@ -89,9 +88,9 @@ public class NameResolver {
       // TODO: throw MemberNotFoundError
       return ns != null ? ns.resolveName(defCall.getName()) : null;
     } else if (defCall.getExpression() instanceof Abstract.ModuleCallExpression) {
-      Abstract.Definition module = resolveModuleCall(currentScope, (Abstract.ModuleCallExpression) defCall.getExpression());
+      Abstract.Definition module = resolveModuleCall(currentScope, (Abstract.ModuleCallExpression) defCall.getExpression(), moduleNsProvider);
       if (module instanceof Abstract.ClassDefinition) {
-        ModuleNamespace moduleNamespace = myModuleNamespaceProvider.forModule((Abstract.ClassDefinition) module);
+        ModuleNamespace moduleNamespace = moduleNsProvider.forModule((Abstract.ClassDefinition) module);
         return moduleNamespace.resolveName(defCall.getName());
       }
       return null;
@@ -100,7 +99,7 @@ public class NameResolver {
     }
   }
 
-  public Abstract.Definition resolveModuleCall(final Scope currentScope, final Abstract.ModuleCallExpression moduleCall) {
+  public Abstract.Definition resolveModuleCall(final Scope currentScope, final Abstract.ModuleCallExpression moduleCall, ModuleNamespaceProvider moduleNsProvider) {
     if (moduleCall.getModule() != null) {
       return moduleCall.getModule();
     }
@@ -108,12 +107,12 @@ public class NameResolver {
     if (moduleCall.getPath() == null) {
       throw new IllegalArgumentException();
     }
-    ModuleNamespace ns = resolveModuleNamespace(moduleCall.getPath());
+    ModuleNamespace ns = resolveModuleNamespace(moduleCall.getPath(), moduleNsProvider);
     return ns == null ? null : ns.getRegisteredClass();
   }
 
-  public Abstract.ClassField resolveClassField(Abstract.ClassDefinition classDefinition, String name, ErrorReporter errorReporter, Abstract.SourceNode cause) {
-    Abstract.Definition resolvedRef = myDynamicNamespaceProvider.forClass(classDefinition).resolveName(name);
+  public Abstract.ClassField resolveClassField(Abstract.ClassDefinition classDefinition, String name, DynamicNamespaceProvider dynamicNsProvider, ErrorReporter errorReporter, Abstract.SourceNode cause) {
+    Abstract.Definition resolvedRef = dynamicNsProvider.forClass(classDefinition).resolveName(name);
     if (resolvedRef instanceof Abstract.ClassField) {
       return (Abstract.ClassField) resolvedRef;
     } else {

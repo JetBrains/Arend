@@ -2,10 +2,9 @@ package com.jetbrains.jetpad.vclang.frontend.resolving.visitor;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.frontend.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
-import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.scope.FilteredScope;
 import com.jetbrains.jetpad.vclang.naming.scope.OverridingScope;
@@ -17,17 +16,15 @@ import java.util.HashSet;
 import java.util.List;
 
 public class StatementResolveNameVisitor implements AbstractStatementVisitor<DefinitionResolveNameVisitor.Flag, Object> {
-  private final StaticNamespaceProvider myStaticNsProvider;
-  private final DynamicNamespaceProvider myDynamicNsProvider;
+  private final NamespaceProviders myNsProviders;
   private final List<String> myContext;
   private final NameResolver myNameResolver;
   private final ErrorReporter myErrorReporter;
   private final ResolveListener myResolveListener;
   private Scope myScope;
 
-  public StatementResolveNameVisitor(StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, NameResolver nameResolver, ErrorReporter errorReporter, Scope parentScope, List<String> context, ResolveListener resolveListener) {
-    myStaticNsProvider = staticNsProvider;
-    myDynamicNsProvider = dynamicNsProvider;
+  public StatementResolveNameVisitor(NamespaceProviders nsProviders, NameResolver nameResolver, ErrorReporter errorReporter, Scope parentScope, List<String> context, ResolveListener resolveListener) {
+    myNsProviders = nsProviders;
     myNameResolver = nameResolver;
     myErrorReporter = errorReporter;
     myScope = parentScope;
@@ -37,7 +34,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
 
   @Override
   public Void visitDefine(Abstract.DefineStatement stat, DefinitionResolveNameVisitor.Flag flag) {
-    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, myScope, myContext, myNameResolver, myErrorReporter, myResolveListener);
+    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(myNsProviders, myScope, myContext, myNameResolver, myErrorReporter, myResolveListener);
     stat.getDefinition().accept(visitor, true);
     return null;
   }
@@ -56,9 +53,9 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
           myErrorReporter.report(new GeneralError("Structure error: empty namespace command", stat));
           return null;
         }
-        referredClass = myNameResolver.resolveDefinition(myScope, stat.getPath());
+        referredClass = myNameResolver.resolveDefinition(myScope, stat.getPath(), myNsProviders.statics);
       } else {
-        ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(stat.getModulePath());
+        ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(stat.getModulePath(), myNsProviders.modules);
         Abstract.ClassDefinition moduleClass = moduleNamespace != null ? moduleNamespace.getRegisteredClass() : null;
         if (moduleClass == null) {
           myErrorReporter.report(new GeneralError("Module not found: " + stat.getModulePath(), stat));
@@ -67,7 +64,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
         if (stat.getPath().isEmpty()) {
           referredClass = moduleNamespace.getRegisteredClass();
         } else {
-          referredClass = myNameResolver.resolveDefinition(myStaticNsProvider.forDefinition(moduleClass), stat.getPath());
+          referredClass = myNameResolver.resolveDefinition(myNsProviders.statics.forDefinition(moduleClass), stat.getPath(), myNsProviders.statics);
         }
       }
 
@@ -79,7 +76,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
     }
 
     if (stat.getKind().equals(Abstract.NamespaceCommandStatement.Kind.OPEN)) {
-      Scope scope = myStaticNsProvider.forDefinition(stat.getResolvedClass());
+      Scope scope = myNsProviders.statics.forDefinition(stat.getResolvedClass());
       if (stat.getNames() != null) {
         scope = new FilteredScope(scope, new HashSet<>(stat.getNames()), !stat.isHiding());
       }

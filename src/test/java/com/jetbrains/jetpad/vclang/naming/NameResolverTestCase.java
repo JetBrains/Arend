@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.frontend.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
@@ -34,7 +35,8 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   private   final SimpleModuleNamespaceProvider moduleNsProvider  = new SimpleModuleNamespaceProvider();
   protected final SimpleStaticNamespaceProvider staticNsProvider  = new SimpleStaticNamespaceProvider();
   protected final SimpleDynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
-  private   final NameResolver nameResolver = new NameResolver(moduleNsProvider, staticNsProvider, dynamicNsProvider);
+  private final NamespaceProviders nsProviders = new NamespaceProviders(moduleNsProvider, staticNsProvider, dynamicNsProvider);
+  private   final NameResolver nameResolver = new NameResolver();
 
   protected Abstract.ClassDefinition prelude = null;
   private Scope globalScope = new EmptyNamespace();
@@ -48,8 +50,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
       LOADED_PRELUDE = new DefaultModuleLoader<>(preludeStorage, internalErrorReporter, new DefaultModuleLoader.ModuleLoadingListener<PreludeStorage.SourceId>()).load(preludeStorage.preludeSourceId);
       assertThat("Failed loading Prelude", internalErrorReporter.getErrorList(), containsErrors(0));
 
-      OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(internalErrorReporter, new ConcreteResolveListener(), moduleNsProvider, staticNsProvider, dynamicNsProvider);
-      oneshotNameResolver.visitModule(LOADED_PRELUDE, globalScope);
+      OneshotNameResolver.visitModule(LOADED_PRELUDE, globalScope, nameResolver, nsProviders, new ConcreteResolveListener(), errorReporter);
       assertThat("Failed resolving names in Prelude", internalErrorReporter.getErrorList(), containsErrors(0));
     }
 
@@ -61,8 +62,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
   protected final void loadModule(ModulePath modulePath, Abstract.ClassDefinition module) {
     ListErrorReporter internalErrorReporter = new ListErrorReporter();
-    OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(internalErrorReporter, new ConcreteResolveListener(), moduleNsProvider, staticNsProvider, dynamicNsProvider);
-    oneshotNameResolver.visitModule(module, globalScope);
+    OneshotNameResolver.visitModule(module, globalScope, nameResolver, nsProviders, new ConcreteResolveListener(), errorReporter);
     assertThat("Failed loading helper module", internalErrorReporter.getErrorList(), containsErrors(0));
 
     moduleNsProvider.registerModule(modulePath, module);
@@ -73,7 +73,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     Concrete.Expression expression = parseExpr(text);
     assertThat(expression, is(notNullValue()));
 
-    expression.accept(new ExpressionResolveNameVisitor(parentScope, context, nameResolver, errorReporter, new ConcreteResolveListener()), null);
+    expression.accept(new ExpressionResolveNameVisitor(nsProviders, parentScope, context, nameResolver, errorReporter, new ConcreteResolveListener()), null);
     assertThat(errorList, containsErrors(errors));
     return expression;
   }
@@ -100,8 +100,8 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
 
   private void resolveNamesDef(Concrete.Definition definition, int errors) {
-    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(staticNsProvider, dynamicNsProvider,
-        new OverridingScope(globalScope, new SimpleNamespace(definition)), nameResolver, errorReporter, new ConcreteResolveListener());
+    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(
+        nsProviders, new OverridingScope(globalScope, new SimpleNamespace(definition)), nameResolver, errorReporter, new ConcreteResolveListener());
     definition.accept(visitor, null);
     assertThat(errorList, containsErrors(errors));
   }
