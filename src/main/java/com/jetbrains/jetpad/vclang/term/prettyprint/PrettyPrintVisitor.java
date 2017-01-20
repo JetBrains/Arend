@@ -174,6 +174,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   public void prettyPrintMaxExpression(List<? extends Abstract.Expression> maxArgs, byte prec) {
+    if (maxArgs == null) {
+      myBuilder.append("inf");
+      return;
+    }
     if (maxArgs.size() == 1 && maxArgs.get(0) instanceof Abstract.NumericLiteral) {
       maxArgs.get(0).accept(this, Abstract.Expression.PREC);
       return;

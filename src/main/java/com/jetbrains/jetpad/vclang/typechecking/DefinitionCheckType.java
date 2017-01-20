@@ -248,6 +248,7 @@ public class DefinitionCheckType {
         }
         UniverseExpression universe = Universe(expPlevel, expHlevel);
         expectedType = userType.getPiParameters().hasNext() ? Pi(userType.getPiParameters(), universe) : universe;
+        // TODO: result type should be set to expectedType at this point
         typedDef.setResultType(Universe(Sort.PROP));
       }
     }

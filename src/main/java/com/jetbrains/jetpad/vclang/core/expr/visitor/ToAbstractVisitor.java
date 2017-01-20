@@ -24,7 +24,7 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import java.util.*;
 
 public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expression> implements ElimTreeNodeVisitor<Void, Abstract.Expression> {
-  public enum Flag { SHOW_CON_DATA_TYPE, SHOW_CON_PARAMS, SHOW_IMPLICIT_ARGS, SHOW_LEVEL_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS }
+  public enum Flag { SHOW_CON_DATA_TYPE, SHOW_CON_PARAMS, SHOW_IMPLICIT_ARGS, SHOW_LEVEL_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS, SHOW_GEN_PARAMS }
   public static final EnumSet<Flag> DEFAULT = EnumSet.of(Flag.SHOW_IMPLICIT_ARGS, Flag.SHOW_CON_PARAMS);
 
   private final AbstractExpressionFactory myFactory;
@@ -353,6 +353,15 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return Level.INFINITY;
   }
 
+  private LevelMax eliminateGenParams(LevelMax expr) {
+    if (expr.isInfinity()) return LevelMax.INFINITY;
+    LevelMax result = new LevelMax();
+    for (Level arg : expr.toListOfLevels()) {
+      result.add(eliminateGenParam(arg));
+    }
+    return result;
+  }
+
   @Override
   public Abstract.Expression visitUniverse(UniverseExpression expr, Void params) {
     return visitSort(expr.getSort());
@@ -364,8 +373,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     if (pNum != null && hNum != null) {
       return myFactory.makeUniverse(pNum, hNum);
     } else {
-      Level plevel = eliminateGenParam(sort.getPLevel());
-      Level hlevel = eliminateGenParam(sort.getHLevel());
+      Level plevel = sort.getPLevel();
+      Level hlevel = sort.getHLevel();
+      if (!myFlags.contains(Flag.SHOW_GEN_PARAMS)) {
+        plevel = eliminateGenParam(plevel);
+        hlevel = eliminateGenParam(hlevel);
+      }
       int hlevelAbs;
       //TODO: decide what to do in case there's a variable in hlevel
       if (hlevel.isInfinity() || !hlevel.isClosed()) {
@@ -407,8 +420,10 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   }
 
   public List<Abstract.Expression> visitLevelMax(LevelMax levelMax, int add) {
+    if (!myFlags.contains(Flag.SHOW_GEN_PARAMS)) {
+      levelMax = eliminateGenParams(levelMax);
+    }
     if (levelMax.isInfinity()) {
-      // return myFactory.makeVar("inf");
       return null;
     }
 
