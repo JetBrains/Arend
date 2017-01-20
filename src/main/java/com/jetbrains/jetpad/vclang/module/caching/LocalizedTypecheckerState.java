@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.GlobalInstancePool;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,7 +13,6 @@ import java.util.Set;
 public class LocalizedTypecheckerState<SourceIdT extends SourceId> implements TypecheckerState {
   private final DefinitionLocator<SourceIdT> myDefLocator;
   private final Map<SourceIdT, LocalTypecheckerState> myStates = new HashMap<>();
-  private final GlobalInstancePool myInstancePool = new GlobalInstancePool();
 
   public LocalizedTypecheckerState(DefinitionLocator<SourceIdT> defLocator) {
     myDefLocator = defLocator;
@@ -28,11 +26,6 @@ public class LocalizedTypecheckerState<SourceIdT extends SourceId> implements Ty
   @Override
   public Definition getTypechecked(Abstract.Definition def) {
     return getLocal(def).getTypechecked(def);
-  }
-
-  @Override
-  public GlobalInstancePool getInstancePool() {
-    return myInstancePool;
   }
 
   public Set<SourceIdT> getCachedModules() {

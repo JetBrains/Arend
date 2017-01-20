@@ -37,6 +37,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingErr
 import com.jetbrains.jetpad.vclang.typechecking.error.local.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.CompositeInstancePool;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.GlobalInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.LocalInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CollectDefCallsVisitor;
@@ -53,9 +54,9 @@ import static com.jetbrains.jetpad.vclang.core.pattern.Utils.toPatterns;
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.typeOfFunctionArg;
 
 public class DefinitionCheckType {
-  public static Definition typeCheckHeader(CheckTypeVisitor visitor, Abstract.Definition definition, Abstract.ClassDefinition enclosingClass) {
+  public static Definition typeCheckHeader(CheckTypeVisitor visitor, GlobalInstancePool instancePool, Abstract.Definition definition, Abstract.ClassDefinition enclosingClass) {
     LocalInstancePool localInstancePool = new LocalInstancePool();
-    visitor.setClassViewInstancePool(new CompositeInstancePool(localInstancePool, visitor.getTypecheckingState().getInstancePool()));
+    visitor.setClassViewInstancePool(new CompositeInstancePool(localInstancePool, instancePool));
     ClassDefinition typedEnclosingClass = enclosingClass == null ? null : (ClassDefinition) visitor.getTypecheckingState().getTypechecked(enclosingClass);
 
     if (definition instanceof Abstract.FunctionDefinition) {
@@ -79,15 +80,15 @@ public class DefinitionCheckType {
     }
   }
 
-  public static void typeCheck(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckingUnit unit, LocalErrorReporter errorReporter) {
-    CheckTypeVisitor visitor = new CheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, null, null, new ArrayList<Binding>(), new ArrayList<LevelBinding>(), errorReporter, state.getInstancePool());
+  public static void typeCheck(TypecheckerState state, GlobalInstancePool instancePool, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckingUnit unit, LocalErrorReporter errorReporter) {
+    CheckTypeVisitor visitor = new CheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, null, null, new ArrayList<Binding>(), new ArrayList<LevelBinding>(), errorReporter, instancePool);
 
     if (unit.getDefinition() instanceof Abstract.ClassDefinition) {
       ClassDefinition enclosingClass = unit.getEnclosingClass() == null ? null : (ClassDefinition) state.getTypechecked(unit.getEnclosingClass());
       typeCheckClass((Abstract.ClassDefinition) unit.getDefinition(), enclosingClass, visitor);
     } else
     if (unit.getDefinition() instanceof Abstract.ClassViewInstance) {
-      typeCheckClassViewInstance((Abstract.ClassViewInstance) unit.getDefinition(), visitor);
+      typeCheckClassViewInstance((Abstract.ClassViewInstance) unit.getDefinition(), visitor, instancePool);
     } else {
       throw new IllegalStateException();
     }
@@ -848,7 +849,7 @@ public class DefinitionCheckType {
     return typedDef;
   }
 
-  private static Definition typeCheckClassViewInstance(Abstract.ClassViewInstance def, CheckTypeVisitor visitor) {
+  private static Definition typeCheckClassViewInstance(Abstract.ClassViewInstance def, CheckTypeVisitor visitor, GlobalInstancePool instancePool) {
     LocalErrorReporter errorReporter = visitor.getErrorReporter();
     TypecheckerState state = visitor.getTypecheckingState();
 
@@ -896,16 +897,16 @@ public class DefinitionCheckType {
     typedDef.setPolyParams(polyParamsList);
     state.record(def, typedDef);
 
-    if (state.getInstancePool().getInstance(defCall.getDefinition(), classView) != null) {
+    if (instancePool.getInstance(defCall.getDefinition(), classView) != null) {
       errorReporter.report(new LocalTypeCheckingError("Instance of '" + classView.getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", def));
     } else {
       Expression instance = FunCall(typedDef, new LevelArguments(), Collections.<Expression>emptyList());
-      state.getInstancePool().addInstance(defCall.getDefinition(), classView, instance);
+      instancePool.addInstance(defCall.getDefinition(), classView, instance);
       if (def.isDefault()) {
-        if (state.getInstancePool().getInstance(defCall.getDefinition(), null) != null) {
+        if (instancePool.getInstance(defCall.getDefinition(), null) != null) {
           errorReporter.report(new LocalTypeCheckingError("Default instance of '" + classView.getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", def));
         } else {
-          state.getInstancePool().addInstance(defCall.getDefinition(), null, instance);
+          instancePool.addInstance(defCall.getDefinition(), null, instance);
         }
       }
     }

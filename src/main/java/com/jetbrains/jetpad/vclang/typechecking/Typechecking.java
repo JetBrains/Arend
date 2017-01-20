@@ -22,6 +22,7 @@ import com.jetbrains.jetpad.vclang.typechecking.order.Ordering;
 import com.jetbrains.jetpad.vclang.typechecking.order.SCC;
 import com.jetbrains.jetpad.vclang.typechecking.termination.DefinitionCallGraph;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.ClassViewInstanceProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.GlobalInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.*;
@@ -37,7 +38,7 @@ public class Typechecking {
     }
   }
 
-  private static void typecheck(Map<Abstract.Definition, Suspension> suspensions, SCC scc, TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
+  private static void typecheck(Map<Abstract.Definition, Suspension> suspensions, SCC scc, TypecheckerState state, GlobalInstancePool instancePool, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
     if (scc.getUnits().size() > 1) {
       for (TypecheckingUnit unit : scc.getUnits()) {
         if (unit.isHeader() || !(unit.getDefinition() instanceof Abstract.FunctionDefinition)) {
@@ -57,7 +58,7 @@ public class Typechecking {
             countingErrorReporter = new CountingErrorReporter();
             LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(errorReporter, countingErrorReporter));
             CheckTypeVisitor visitor = new CheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, null, null, new ArrayList<Binding>(), new ArrayList<LevelBinding>(), localErrorReporter, null);
-            Definition typechecked = DefinitionCheckType.typeCheckHeader(visitor, unit.getDefinition(), unit.getEnclosingClass());
+            Definition typechecked = DefinitionCheckType.typeCheckHeader(visitor, instancePool, unit.getDefinition(), unit.getEnclosingClass());
             if (typechecked.hasErrors() == Definition.TypeCheckingStatus.TYPE_CHECKING) {
               suspensions.put(unit.getDefinition(), new Suspension(visitor, countingErrorReporter));
               doReport = false;
@@ -87,7 +88,7 @@ public class Typechecking {
         if (state.getTypechecked(unit.getDefinition()) == null) {
           countingErrorReporter = new CountingErrorReporter();
           LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(errorReporter, countingErrorReporter));
-          DefinitionCheckType.typeCheck(state, staticNsProvider, dynamicNsProvider, unit, localErrorReporter);
+          DefinitionCheckType.typeCheck(state, instancePool, staticNsProvider, dynamicNsProvider, unit, localErrorReporter);
         }
       }
 
@@ -115,11 +116,12 @@ public class Typechecking {
   }
 
   public static void typecheckDefinitions(final TypecheckerState state, final StaticNamespaceProvider staticNsProvider, final DynamicNamespaceProvider dynamicNsProvider, ClassViewInstanceProvider instanceProvider, final Collection<? extends Abstract.Definition> definitions, final ErrorReporter errorReporter, final TypecheckedReporter typecheckedReporter, final DependencyListener dependencyListener) {
+    final GlobalInstancePool instancePool = new GlobalInstancePool();
     final Map<Abstract.Definition, Suspension> suspensions = new HashMap<>();
     Ordering ordering = new Ordering(instanceProvider, new DependencyListener() {
       @Override
       public void sccFound(SCC scc) {
-        typecheck(suspensions, scc, state, staticNsProvider, dynamicNsProvider, errorReporter, typecheckedReporter);
+        typecheck(suspensions, scc, state, instancePool, staticNsProvider, dynamicNsProvider, errorReporter, typecheckedReporter);
         dependencyListener.sccFound(scc);
       }
 
@@ -215,11 +217,12 @@ public class Typechecking {
   }
 
   public static void typecheckModules(final TypecheckerState state, final StaticNamespaceProvider staticNsProvider, final DynamicNamespaceProvider dynamicNsProvider, ClassViewInstanceProvider instanceProvider, final Collection<? extends Abstract.ClassDefinition> classDefs, final ErrorReporter errorReporter, final TypecheckedReporter typecheckedReporter, final DependencyListener dependencyListener) {
+    final GlobalInstancePool instancePool = new GlobalInstancePool();
     final Map<Abstract.Definition, Suspension> suspensions = new HashMap<>();
     final Ordering ordering = new Ordering(instanceProvider, new DependencyListener() {
       @Override
       public void sccFound(SCC scc) {
-        typecheck(suspensions, scc, state, staticNsProvider, dynamicNsProvider, errorReporter, typecheckedReporter);
+        typecheck(suspensions, scc, state, instancePool, staticNsProvider, dynamicNsProvider, errorReporter, typecheckedReporter);
         dependencyListener.sccFound(scc);
       }
 

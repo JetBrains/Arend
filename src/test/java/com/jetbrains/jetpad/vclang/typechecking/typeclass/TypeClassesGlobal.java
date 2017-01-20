@@ -162,4 +162,23 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
         "\\function f {A : \\Type0} {z : Z { A => A } } (a : A) => C a\n" +
         "\\function g : f 1 = 1 => path (\\lam _ => 1)");
   }
+
+  @Test
+  public void twoDefaults() {
+    typeCheckClass(
+        "\\class X1 {\n" +
+        "  \\field A : \\Type0\n" +
+        "  \\field B1 : A -> Nat\n" +
+        "}\n" +
+        "\\class X2 {\n" +
+        "  \\field A : \\Type0\n" +
+        "  \\field B2 : A -> Nat\n" +
+        "}\n" +
+        "\\view Y1 \\on X1 \\by A { B1 }\n" +
+        "\\view Y2 \\on X2 \\by A { B2 }\n" +
+        "\\default \\instance Nat-Y1 => \\new Y1 { A => Nat | B1 => \\lam n => n }\n" +
+        "\\default \\instance Nat-Y2 => \\new Y2 { A => Nat | B2 => \\lam n => 0 }\n" +
+        "\\function f {A : \\Type0} {z : Y1 { A => A } } (a : A) => B1 a\n" +
+        "\\function g : f 1 = 1 => path (\\lam _ => 1)");
+  }
 }
