@@ -1,8 +1,17 @@
 package com.jetbrains.jetpad.vclang.frontend.resolving;
 
+import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 public class BaseResolveListener implements ResolveListener {
+  private final ErrorReporter myErrorReporter;
+
+  public BaseResolveListener(ErrorReporter errorReporter) {
+    myErrorReporter = errorReporter != null ? errorReporter : new DummyErrorReporter();
+  }
+
   @Override
   public void nameResolved(Abstract.DefCallExpression defCallExpression, Abstract.Definition resolvedDefinition) {
 
@@ -61,5 +70,10 @@ public class BaseResolveListener implements ResolveListener {
   @Override
   public void replaceWithConstructor(Abstract.PatternContainer container, int index) {
 
+  }
+
+  @Override
+  public void report(GeneralError error) {
+    myErrorReporter.report(error);
   }
 }

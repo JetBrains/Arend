@@ -1,9 +1,17 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 public class ConcreteResolveListener implements ResolveListener {
+  private final ErrorReporter myErrorReporter;
+
+  public ConcreteResolveListener(ErrorReporter errorReporter) {
+    myErrorReporter = errorReporter;
+  }
+
   @Override
   public void nameResolved(Abstract.DefCallExpression defCallExpression, Abstract.Definition definition) {
     ((Concrete.DefCallExpression) defCallExpression).setResolvedDefinition(definition);
@@ -62,5 +70,10 @@ public class ConcreteResolveListener implements ResolveListener {
   @Override
   public void replaceWithConstructor(Abstract.PatternContainer container, int index) {
     ((Concrete.PatternContainer) container).replaceWithConstructor(index);
+  }
+
+  @Override
+  public void report(GeneralError error) {
+    myErrorReporter.report(error);
   }
 }

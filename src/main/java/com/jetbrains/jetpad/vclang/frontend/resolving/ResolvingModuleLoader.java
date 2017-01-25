@@ -68,7 +68,7 @@ public class ResolvingModuleLoader<SourceIdT extends SourceId> extends DefaultMo
     @Override
     public void loadingSucceeded(SourceIdT module, Abstract.ClassDefinition abstractDefinition) {
       myModuleNsProvider.registerModule(module.getModulePath(), abstractDefinition);
-      OneshotNameResolver.visitModule(abstractDefinition, myPreludeNamespace, myNameResolver, myNsProviders, myResolveListener, myErrorReporter);
+      OneshotNameResolver.visitModule(abstractDefinition, myPreludeNamespace, myNameResolver, myNsProviders, myResolveListener);
       myOriginalLoadingListener.loadingSucceeded(module, abstractDefinition);
     }
 

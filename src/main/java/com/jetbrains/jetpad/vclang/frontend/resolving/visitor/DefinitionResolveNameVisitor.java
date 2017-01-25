@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.frontend.resolving.visitor;
 
 import com.jetbrains.jetpad.vclang.core.context.Utils;
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
@@ -20,21 +19,19 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
   private final Scope myParentScope;
   private List<String> myContext;
   private final NameResolver myNameResolver;
-  private final ErrorReporter myErrorReporter;
   private final ResolveListener myResolveListener;
 
   public DefinitionResolveNameVisitor(NamespaceProviders nsProviders, Scope parentScope,
-                                      NameResolver nameResolver, ErrorReporter errorReporter, ResolveListener resolveListener) {
-    this(nsProviders, parentScope, new ArrayList<String>(), nameResolver, errorReporter, resolveListener);
+                                      NameResolver nameResolver, ResolveListener resolveListener) {
+    this(nsProviders, parentScope, new ArrayList<String>(), nameResolver, resolveListener);
   }
 
   public DefinitionResolveNameVisitor(NamespaceProviders nsProviders, Scope parentScope, List<String> context,
-                                      NameResolver nameResolver, ErrorReporter errorReporter, ResolveListener resolveListener) {
+                                      NameResolver nameResolver, ResolveListener resolveListener) {
     this.nsProviders = nsProviders;
     myParentScope = parentScope;
     myContext = context;
     myNameResolver = nameResolver;
-    myErrorReporter = errorReporter;
     myResolveListener = resolveListener;
   }
 
@@ -45,12 +42,12 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
     }
     final FunctionScope scope = new FunctionScope(myParentScope, nsProviders.statics.forDefinition(def));
 
-    StatementResolveNameVisitor statementVisitor = new StatementResolveNameVisitor(nsProviders, myNameResolver, myErrorReporter, scope, myContext, myResolveListener);
+    StatementResolveNameVisitor statementVisitor = new StatementResolveNameVisitor(nsProviders, myNameResolver, scope, myContext, myResolveListener);
     for (Abstract.Statement statement : def.getStatements()) {
       statement.accept(statementVisitor, null);
     }
 
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(nsProviders, statementVisitor.getCurrentScope(), myContext, myNameResolver, myErrorReporter, myResolveListener);
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(nsProviders, statementVisitor.getCurrentScope(), myContext, myNameResolver, myResolveListener);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       visitArguments(def.getArguments(), exprVisitor);
 
@@ -88,7 +85,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       return null;
     }
 
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(nsProviders, myParentScope, myContext, myNameResolver, myErrorReporter, myResolveListener);
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(nsProviders, myParentScope, myContext, myNameResolver, myResolveListener);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       Abstract.Expression resultType = def.getResultType();
       if (resultType != null) {
@@ -106,7 +103,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
 
     Scope scope = new DataScope(myParentScope, nsProviders.statics.forDefinition(def));
 
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(nsProviders, scope, myContext, myNameResolver, myErrorReporter, myResolveListener);
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(nsProviders, scope, myContext, myNameResolver, myResolveListener);
     try (Utils.CompleteContextSaver<String> saver = new Utils.CompleteContextSaver<>(myContext)) {
       for (Abstract.TypeArgument parameter : def.getParameters()) {
         parameter.getType().accept(exprVisitor, null);
@@ -148,7 +145,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       return null;
     }
 
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(nsProviders, myParentScope, myContext, myNameResolver, myErrorReporter, myResolveListener);
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(nsProviders, myParentScope, myContext, myNameResolver, myResolveListener);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       if (def.getPatterns() != null) {
         for (Abstract.PatternArgument patternArg : def.getPatterns()) {
@@ -171,7 +168,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
 
   @Override
   public Void visitClass(Abstract.ClassDefinition def, Boolean isStatic) {
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(nsProviders, myParentScope, myContext, myNameResolver, myErrorReporter, myResolveListener);
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(nsProviders, myParentScope, myContext, myNameResolver, myResolveListener);
     for (Abstract.SuperClass superClass : def.getSuperClasses()) {
       superClass.getSuperClass().accept(exprVisitor, null);
     }
@@ -179,7 +176,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
     try {
       Namespace staticNamespace = nsProviders.statics.forDefinition(def);
       Scope staticScope = new StaticClassScope(myParentScope, staticNamespace);
-      StatementResolveNameVisitor stVisitor = new StatementResolveNameVisitor(nsProviders, myNameResolver, myErrorReporter, staticScope, myContext, myResolveListener);
+      StatementResolveNameVisitor stVisitor = new StatementResolveNameVisitor(nsProviders, myNameResolver, staticScope, myContext, myResolveListener);
       for (Abstract.Statement statement : def.getGlobalStatements()) {
         statement.accept(stVisitor, null);
       }
@@ -191,8 +188,8 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
           }
         }
 
-        Scope dynamicScope = new DynamicClassScope(myParentScope, staticNamespace, nsProviders.dynamics.forClass(def), myErrorReporter);
-        DefinitionResolveNameVisitor dyVisitor = new DefinitionResolveNameVisitor(nsProviders, dynamicScope, myContext, myNameResolver, myErrorReporter, myResolveListener);
+        Scope dynamicScope = new DynamicClassScope(myParentScope, staticNamespace, nsProviders.dynamics.forClass(def), myResolveListener);
+        DefinitionResolveNameVisitor dyVisitor = new DefinitionResolveNameVisitor(nsProviders, dynamicScope, myContext, myNameResolver, myResolveListener);
 
         for (Abstract.ClassField field : def.getFields()) {
           field.accept(dyVisitor, false);
@@ -205,7 +202,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
         }
       }
     } catch (Namespace.InvalidNamespaceException e) {
-      myErrorReporter.report(e.toError());
+      myResolveListener.report(e.toError());
     }
 
     return null;
@@ -217,12 +214,12 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       return null;
     }
 
-    Abstract.ClassField referable = myNameResolver.resolveClassField(def.getParent(), def.getName(), nsProviders.dynamics, myErrorReporter, def);
+    Abstract.ClassField referable = myNameResolver.resolveClassField(def.getParent(), def.getName(), nsProviders.dynamics, myResolveListener, def);
     if (referable != null) {
       myResolveListener.implementResolved(def, referable);
     }
 
-    def.getImplementation().accept(new ExpressionResolveNameVisitor(nsProviders, myParentScope, myContext, myNameResolver, myErrorReporter, myResolveListener), null);
+    def.getImplementation().accept(new ExpressionResolveNameVisitor(nsProviders, myParentScope, myContext, myNameResolver, myResolveListener), null);
     return null;
   }
 
@@ -232,11 +229,11 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       return null;
     }
 
-    def.getUnderlyingClassDefCall().accept(new ExpressionResolveNameVisitor(nsProviders, myParentScope, myContext, myNameResolver, myErrorReporter, myResolveListener), null);
+    def.getUnderlyingClassDefCall().accept(new ExpressionResolveNameVisitor(nsProviders, myParentScope, myContext, myNameResolver, myResolveListener), null);
     Abstract.Definition resolvedUnderlyingClass = def.getUnderlyingClassDefCall().getReferent();
     if (!(resolvedUnderlyingClass instanceof Abstract.ClassDefinition)) {
       if (resolvedUnderlyingClass != null) {
-        myErrorReporter.report(new WrongDefinition("Expected a class", def));
+        myResolveListener.report(new WrongDefinition("Expected a class", def));
       }
       return null;
     }
@@ -244,14 +241,14 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
     Namespace dynamicNamespace = nsProviders.dynamics.forClass((Abstract.ClassDefinition) resolvedUnderlyingClass);
     Abstract.Definition resolvedClassifyingField = dynamicNamespace.resolveName(def.getClassifyingFieldName());
     if (!(resolvedClassifyingField instanceof Abstract.ClassField)) {
-      myErrorReporter.report(resolvedClassifyingField != null ? new WrongDefinition("Expected a class field", def) : new NotInScopeError(def, def.getClassifyingFieldName()));
+      myResolveListener.report(resolvedClassifyingField != null ? new WrongDefinition("Expected a class field", def) : new NotInScopeError(def, def.getClassifyingFieldName()));
       return null;
     }
 
     myResolveListener.classViewResolved(def, (Abstract.ClassField) resolvedClassifyingField);
 
     for (Abstract.ClassViewField viewField : def.getFields()) {
-      Abstract.ClassField classField = myNameResolver.resolveClassField((Abstract.ClassDefinition) resolvedUnderlyingClass, viewField.getUnderlyingFieldName(), nsProviders.dynamics, myErrorReporter, viewField);
+      Abstract.ClassField classField = myNameResolver.resolveClassField((Abstract.ClassDefinition) resolvedUnderlyingClass, viewField.getUnderlyingFieldName(), nsProviders.dynamics, myResolveListener, viewField);
       if (classField != null) {
         myResolveListener.classViewFieldResolved(viewField, classField);
       }
@@ -270,7 +267,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       return null;
     }
 
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(nsProviders, myParentScope, myContext, myNameResolver, myErrorReporter, myResolveListener);
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(nsProviders, myParentScope, myContext, myNameResolver, myResolveListener);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       visitArguments(def.getArguments(), exprVisitor);
 

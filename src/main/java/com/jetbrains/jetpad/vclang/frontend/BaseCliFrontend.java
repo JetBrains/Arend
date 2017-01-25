@@ -194,7 +194,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   }
 
   private ResolvingModuleLoader<SourceIdT> createResolvingModuleLoader(ModuleLoadingListener moduleLoadingListener) {
-    return new ResolvingModuleLoader<>(storage, moduleLoadingListener, nameResolver, staticNsProvider, dynamicNsProvider, new ConcreteResolveListener(), errorReporter);
+    return new ResolvingModuleLoader<>(storage, moduleLoadingListener, nameResolver, staticNsProvider, dynamicNsProvider, new ConcreteResolveListener(errorReporter), errorReporter);
   }
 
   private CachingModuleLoader<SourceIdT> createCachingModuleLoader(boolean recompile) {

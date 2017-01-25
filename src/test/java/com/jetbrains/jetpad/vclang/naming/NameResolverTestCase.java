@@ -50,7 +50,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
       LOADED_PRELUDE = new DefaultModuleLoader<>(preludeStorage, internalErrorReporter, new DefaultModuleLoader.ModuleLoadingListener<PreludeStorage.SourceId>()).load(preludeStorage.preludeSourceId);
       assertThat("Failed loading Prelude", internalErrorReporter.getErrorList(), containsErrors(0));
 
-      OneshotNameResolver.visitModule(LOADED_PRELUDE, globalScope, nameResolver, nsProviders, new ConcreteResolveListener(), errorReporter);
+      OneshotNameResolver.visitModule(LOADED_PRELUDE, globalScope, nameResolver, nsProviders, new ConcreteResolveListener(errorReporter));
       assertThat("Failed resolving names in Prelude", internalErrorReporter.getErrorList(), containsErrors(0));
     }
 
@@ -62,7 +62,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
   protected final void loadModule(ModulePath modulePath, Abstract.ClassDefinition module) {
     ListErrorReporter internalErrorReporter = new ListErrorReporter();
-    OneshotNameResolver.visitModule(module, globalScope, nameResolver, nsProviders, new ConcreteResolveListener(), errorReporter);
+    OneshotNameResolver.visitModule(module, globalScope, nameResolver, nsProviders, new ConcreteResolveListener(errorReporter));
     assertThat("Failed loading helper module", internalErrorReporter.getErrorList(), containsErrors(0));
 
     moduleNsProvider.registerModule(modulePath, module);
@@ -73,7 +73,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     Concrete.Expression expression = parseExpr(text);
     assertThat(expression, is(notNullValue()));
 
-    expression.accept(new ExpressionResolveNameVisitor(nsProviders, parentScope, context, nameResolver, errorReporter, new ConcreteResolveListener()), null);
+    expression.accept(new ExpressionResolveNameVisitor(nsProviders, parentScope, context, nameResolver, new ConcreteResolveListener(errorReporter)), null);
     assertThat(errorList, containsErrors(errors));
     return expression;
   }
@@ -101,7 +101,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
   private void resolveNamesDef(Concrete.Definition definition, int errors) {
     DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(
-        nsProviders, new OverridingScope(globalScope, new SimpleNamespace(definition)), nameResolver, errorReporter, new ConcreteResolveListener());
+        nsProviders, new OverridingScope(globalScope, new SimpleNamespace(definition)), nameResolver, new ConcreteResolveListener(errorReporter));
     definition.accept(visitor, null);
     assertThat(errorList, containsErrors(errors));
   }

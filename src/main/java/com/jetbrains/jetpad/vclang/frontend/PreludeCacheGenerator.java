@@ -96,7 +96,7 @@ public class PreludeCacheGenerator {
     final DynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
     final ListErrorReporter errorReporter = new ListErrorReporter();
     PreludeStorage storage = new PreludeStorage();
-    ResolvingModuleLoader<PreludeStorage.SourceId> baseModuleLoader = new ResolvingModuleLoader<>(storage, new DefaultModuleLoader.ModuleLoadingListener<PreludeStorage.SourceId>(), nameResolver, statisNsProvider, dynamicNsProvider, new ConcreteResolveListener(), errorReporter);
+    ResolvingModuleLoader<PreludeStorage.SourceId> baseModuleLoader = new ResolvingModuleLoader<>(storage, new DefaultModuleLoader.ModuleLoadingListener<PreludeStorage.SourceId>(), nameResolver, statisNsProvider, dynamicNsProvider, new ConcreteResolveListener(errorReporter), errorReporter);
     CachingModuleLoader<PreludeStorage.SourceId> moduleLoader = new CachingModuleLoader<>(baseModuleLoader, new PreludePersistenceProvider(), new PreludeBuildCacheSupplier(Paths.get(args[0])), new PreludeDefLocator(storage.preludeSourceId), false);
     nameResolver.setModuleLoader(moduleLoader);
     Abstract.ClassDefinition prelude = moduleLoader.load(storage.preludeSourceId);
