@@ -325,6 +325,7 @@ public final class Abstract {
     boolean isDefault();
     List<? extends Argument> getArguments();
     DefCallExpression getClassView();
+    Definition getClassifyingDefinition();
     Collection<? extends ClassFieldImpl> getClassFieldImpls();
   }
 

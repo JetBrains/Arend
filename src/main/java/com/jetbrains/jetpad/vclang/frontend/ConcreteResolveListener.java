@@ -40,6 +40,11 @@ public class ConcreteResolveListener implements ResolveListener {
   }
 
   @Override
+  public void classViewInstanceResolved(Abstract.ClassViewInstance instance, Abstract.Definition classifyingDefinition) {
+    ((Concrete.ClassViewInstance) instance).setClassifyingDefinition(classifyingDefinition);
+  }
+
+  @Override
   public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Abstract.Definition binOp, Abstract.DefCallExpression var, Abstract.Expression right) {
     return ((Concrete.BinOpSequenceExpression) binOpExpr).makeBinOp(left, binOp, var, right);
   }

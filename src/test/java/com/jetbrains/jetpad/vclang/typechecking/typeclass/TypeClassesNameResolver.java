@@ -157,20 +157,51 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
   public void instanceWithoutView() {
     resolveNamesClass(
       "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> \\Type0\n" +
-        "}\n" +
-        "\\instance Nat-X => \\new X { A => Nat | B => \\lam n => Nat }", 1);
+      "  \\field A : \\Type0\n" +
+      "  \\field B : A -> \\Type0\n" +
+      "}\n" +
+      "\\data D\n" +
+      "\\instance D-X => \\new X { A => D | B => \\lam n => D }", 1);
   }
 
   @Test
   public void instanceNotView() {
     resolveNamesClass(
       "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> \\Type0\n" +
-        "}\n" +
-        "\\view X' \\on X \\by A { B }\n" +
-        "\\instance Nat-X => \\new X { A => Nat | B => \\lam _ => Nat }", 1);
+      "  \\field A : \\Type0\n" +
+      "  \\field B : A -> \\Type0\n" +
+      "}\n" +
+      "\\view X' \\on X \\by A { B }\n" +
+      "\\data D\n" +
+      "\\instance D-X => \\new X { A => D | B => \\lam _ => D }", 1);
+  }
+
+  @Test
+  public void duplicateInstance() {
+    resolveNamesClass(
+      "\\class X {\n" +
+      "  \\field A : \\Type0\n" +
+      "  \\field B : A -> \\Type0\n" +
+      "}\n" +
+      "\\view Y \\on X \\by A { B }\n" +
+      "\\data D\n" +
+      "\\instance D-X => \\new Y { A => D | B => \\lam n => D }\n" +
+      "\\instance D-Y => \\new Y { A => D | B => \\lam n => D -> D }", 1);
+  }
+
+  @Test
+  public void duplicateDefaultInstance() {
+    resolveNamesClass(
+      "\\class X {\n" +
+      "  \\field A : \\Type0\n" +
+      "  \\field B : A -> \\Type0\n" +
+      "}\n" +
+      "\\view Y \\on X \\by A { B }\n" +
+      "\\view Z \\on X \\by A { B => C }\n" +
+      "\\data D\n" +
+      "\\default \\instance D-Y => \\new Y { A => D | B => \\lam n => D -> D }\n" +
+      "\\default \\instance D-Z => \\new Z { A => D | C => \\lam n => D -> D }\n" +
+      "\\function f {A : \\Type0} {y : Y { A => A } } (a : A) => B a\n" +
+      "\\function g => f 0", 1);
   }
 }

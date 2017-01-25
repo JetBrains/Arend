@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.frontend.resolving.visitor;
 
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.frontend.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
@@ -184,6 +185,9 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
         statement.accept(stVisitor, null);
       }
 
+      // The second pass is needed for class view instances
+      nsProviders.statics.forDefinition(def);
+
       try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
         for (Abstract.TypeArgument polyParam : def.getPolyParameters()) {
           if (polyParam instanceof Abstract.TelescopeArgument) {
@@ -276,6 +280,24 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       exprVisitor.visitDefCall(def.getClassView(), null);
       if (def.getClassView().getReferent() instanceof Abstract.ClassView) {
         exprVisitor.visitClassFieldImpls(def.getClassFieldImpls(), (Abstract.ClassView) def.getClassView().getReferent(), null);
+        boolean ok = false;
+        for (Abstract.ClassFieldImpl impl : def.getClassFieldImpls()) {
+          if (impl.getImplementedField() == ((Abstract.ClassView) def.getClassView().getReferent()).getClassifyingField()) {
+            ok = true;
+            Abstract.Expression expr = impl.getImplementation();
+            while (expr instanceof Abstract.AppExpression) {
+              expr = ((Abstract.AppExpression) expr).getFunction();
+            }
+            if (expr instanceof Abstract.DefCallExpression) {
+              myResolveListener.classViewInstanceResolved(def, ((Abstract.DefCallExpression) expr).getReferent());
+            } else {
+              myErrorReporter.report(new GeneralError("Expected a definition applied to arguments", impl.getImplementation()));
+            }
+          }
+        }
+        if (!ok) {
+          myErrorReporter.report(new GeneralError("Classifying field is not implemented", def));
+        }
       } else {
         myErrorReporter.report(new WrongDefinition("Expected a class view", def.getClassView().getReferent(), def));
       }

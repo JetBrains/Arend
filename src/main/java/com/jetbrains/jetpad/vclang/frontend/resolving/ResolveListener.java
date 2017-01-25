@@ -10,6 +10,7 @@ public interface ResolveListener {
   void implementResolved(Abstract.ClassFieldImpl identifier, Abstract.ClassField definition);
   void classViewResolved(Abstract.ClassView classView, Abstract.ClassField classifyingField);
   void classViewFieldResolved(Abstract.ClassViewField field, Abstract.ClassField definition);
+  void classViewInstanceResolved(Abstract.ClassViewInstance instance, Abstract.Definition classifyingDefinition);
 
   Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Abstract.Definition binOp, Abstract.DefCallExpression var, Abstract.Expression right);
   Abstract.Expression makeError(Abstract.BinOpSequenceExpression binOpExpr, Abstract.SourceNode node);

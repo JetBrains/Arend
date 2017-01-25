@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateDefinitionError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -22,11 +23,7 @@ public class MergeScope implements Scope {
     return names;
   }
 
-  @Override
-  public Abstract.Definition resolveName(String name) {
-    final Abstract.Definition ref1 = myScope1.resolveName(name);
-    final Abstract.Definition ref2 = myScope2.resolveName(name);
-
+  private <T extends Abstract.Definition> T choose(final T ref1, final T ref2) {
     if (ref1 == null) return ref2;
     if (ref2 == null) return ref1;
 
@@ -36,5 +33,27 @@ public class MergeScope implements Scope {
         return new DuplicateDefinitionError(ref1, ref2);
       }
     };
+  }
+
+  @Override
+  public Abstract.Definition resolveName(String name) {
+    return choose(myScope1.resolveName(name), myScope2.resolveName(name));
+  }
+
+  @Override
+  public Collection<? extends Abstract.ClassViewInstance> getInstances() {
+    Set<Abstract.ClassViewInstance> instances = new HashSet<>(myScope1.getInstances());
+    instances.addAll(myScope2.getInstances());
+    return instances;
+  }
+
+  @Override
+  public Abstract.ClassViewInstance resolveInstance(Abstract.ClassView classView, Abstract.Definition classifyingDefinition) {
+    return choose(myScope1.resolveInstance(classView, classifyingDefinition), myScope2.resolveInstance(classView, classifyingDefinition));
+  }
+
+  @Override
+  public Abstract.ClassViewInstance resolveInstance(Abstract.ClassDefinition classDefinition, Abstract.Definition classifyingDefinition) {
+    return choose(myScope1.resolveInstance(classDefinition, classifyingDefinition), myScope2.resolveInstance(classDefinition, classifyingDefinition));
   }
 }

@@ -897,17 +897,11 @@ public class DefinitionCheckType {
     typedDef.setPolyParams(polyParamsList);
     state.record(def, typedDef);
 
-    if (instancePool.getInstance(defCall.getDefinition(), classView) != null) {
-      errorReporter.report(new LocalTypeCheckingError("Instance of '" + classView.getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", def));
-    } else {
-      Expression instance = FunCall(typedDef, new LevelArguments(), Collections.<Expression>emptyList());
-      instancePool.addInstance(defCall.getDefinition(), classView, instance);
-      if (def.isDefault()) {
-        if (instancePool.getInstance(defCall.getDefinition(), null) != null) {
-          errorReporter.report(new LocalTypeCheckingError("Default instance of '" + classView.getName() + "' for '" + defCall.getDefinition().getName() + "' is already defined", def));
-        } else {
-          instancePool.addInstance(defCall.getDefinition(), null, instance);
-        }
+    Expression instance = FunCall(typedDef, new LevelArguments(), Collections.<Expression>emptyList());
+    instancePool.addInstance(defCall.getDefinition(), classView, instance);
+    if (def.isDefault()) {
+      if (instancePool.getInstance(defCall.getDefinition(), null) == null) {
+        instancePool.addInstance(defCall.getDefinition(), null, instance);
       }
     }
 

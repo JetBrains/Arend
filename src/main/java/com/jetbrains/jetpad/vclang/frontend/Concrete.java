@@ -1194,6 +1194,7 @@ public final class Concrete {
     private final List<Argument> myArguments;
     private final DefCallExpression myClassView;
     private final List<ClassFieldImpl> myClassFieldImpls;
+    private Abstract.Definition myClassifyingDefinition;
 
     public ClassViewInstance(Position position, boolean isDefault, String name, Abstract.Precedence precedence, List<Argument> arguments, DefCallExpression classView, List<ClassFieldImpl> classFieldImpls) {
       super(position, name, precedence);
@@ -1216,6 +1217,15 @@ public final class Concrete {
     @Override
     public DefCallExpression getClassView() {
       return myClassView;
+    }
+
+    @Override
+    public Abstract.Definition getClassifyingDefinition() {
+      return myClassifyingDefinition;
+    }
+
+    public void setClassifyingDefinition(Abstract.Definition classifyingDefinition) {
+      myClassifyingDefinition = classifyingDefinition;
     }
 
     @Override

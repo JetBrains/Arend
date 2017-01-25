@@ -41,18 +41,6 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
   }
 
   @Test
-  public void duplicateInstance() {
-    typeCheckClass(
-        "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> \\Type0\n" +
-        "}\n" +
-        "\\view Y \\on X \\by A { B }\n" +
-        "\\instance Nat-X => \\new Y { A => Nat | B => \\lam n => Nat }\n" +
-        "\\instance Nat-Y => \\new Y { A => Nat | B => \\lam n => Nat -> Nat }", 1);
-  }
-
-  @Test
   public void differentViews() {
     typeCheckClass(
         "\\class X {\n" +
@@ -131,21 +119,6 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
         "\\instance Nat-Z => \\new Z { A => Nat | C => \\lam n => Nat -> Nat }\n" +
         "\\function f {A : \\Type0} {y : Y { A => A } } (a : A) => B a\n" +
         "\\function g => f 0", 2);
-  }
-
-  @Test
-  public void transitiveDuplicateDefault() {
-    typeCheckClass(
-        "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> \\Type0\n" +
-        "}\n" +
-        "\\view Y \\on X \\by A { B }\n" +
-        "\\view Z \\on X \\by A { B => C }\n" +
-        "\\default \\instance Nat-Y => \\new Y { A => Nat | B => \\lam n => Nat -> Nat }\n" +
-        "\\default \\instance Nat-Z => \\new Z { A => Nat | C => \\lam n => Nat -> Nat }\n" +
-        "\\function f {A : \\Type0} {y : Y { A => A } } (a : A) => B a\n" +
-        "\\function g => f 0", 1);
   }
 
   @Test
