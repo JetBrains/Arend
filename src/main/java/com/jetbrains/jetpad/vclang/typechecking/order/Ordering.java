@@ -49,7 +49,7 @@ public class Ordering {
     return getEnclosingClass(parent);
   }
 
-  private Collection<? extends Abstract.Definition> getTypecheckable(Abstract.Definition referable, Abstract.Definition typecheckingDefinition, Abstract.ClassDefinition enclosingClass) {
+  private Collection<? extends Abstract.Definition> getTypecheckable(Abstract.Definition referable, Abstract.ClassDefinition enclosingClass) {
     if (referable instanceof Abstract.ClassViewField) {
       referable = ((Abstract.ClassViewField) referable).getUnderlyingField();
     }
@@ -59,11 +59,11 @@ public class Ordering {
     }
 
     if (referable instanceof Abstract.Constructor) {
-      return Collections.<Abstract.Definition>singletonList(((Abstract.Constructor) referable).getDataType());
+      return Collections.singletonList(((Abstract.Constructor) referable).getDataType());
     }
 
     if (referable instanceof Abstract.ClassView) {
-      return myInstanceProvider.getInstances(typecheckingDefinition, (Abstract.ClassView) referable);
+      return Collections.singletonList(((Abstract.ClassView) referable).getUnderlyingClassDefCall().getReferent());
     }
 
     if (referable instanceof Abstract.ClassDefinition && !referable.equals(enclosingClass)) {
@@ -115,7 +115,7 @@ public class Ordering {
 
     definition.accept(new DefinitionGetDepsVisitor(dependencies), typecheckable.isHeader());
     for (Abstract.Definition referable : dependencies) {
-      for (Abstract.Definition dependency : getTypecheckable(referable, definition, enclosingClass)) {
+      for (Abstract.Definition dependency : getTypecheckable(referable, enclosingClass)) {
         if (dependency.equals(definition)) {
           if (typecheckable.isHeader()) {
             SCC scc = new SCC();

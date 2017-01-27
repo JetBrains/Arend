@@ -67,7 +67,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "  \\field B : A -> Nat\n" +
         "}\n" +
         "\\view Y \\on X \\by A { B }\n" +
-        "\\function f (x : X) (a : x.A) => B a", 2);
+        "\\function f (x : X) (a : x.A) => B a", 1);
   }
 
   @Test
@@ -78,7 +78,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "  \\field B : A -> Nat\n" +
         "}\n" +
         "\\view Y \\on X \\by A { B }\n" +
-        "\\function f (A' : \\Type0) (x : X { A => A' }) (a : A') => B a", 2);
+        "\\function f (A' : \\Type0) (x : X { A => A' }) (a : A') => B a", 1);
   }
 
   @Test

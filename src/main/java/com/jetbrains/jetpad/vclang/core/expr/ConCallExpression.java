@@ -1,9 +1,13 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.Condition;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.core.pattern.elimtree.BranchElimTreeNode;
+import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 
 import java.util.Collection;
 import java.util.List;
@@ -64,5 +68,22 @@ public class ConCallExpression extends DefCallExpression {
   public void addDefCallArguments(Collection<? extends Expression> arguments) {
     myArguments.addAll(arguments);
     assert myArguments.size() <= DependentLink.Helper.size(getDefinition().getParameters());
+  }
+
+  @Override
+  public Variable getStuckVariable() {
+    Condition condition = getDefinition().getDataType().getCondition(getDefinition());
+    if (condition == null || !(condition.getElimTree() instanceof BranchElimTreeNode)) {
+      return null;
+    }
+    Binding binding = ((BranchElimTreeNode) condition.getElimTree()).getReference();
+    int i = 0;
+    for (DependentLink param = getDefinition().getParameters(); param.hasNext(); param = param.getNext()) {
+      if (param == binding) {
+        return myArguments.get(i).getStuckVariable();
+      }
+      i++;
+    }
+    return null;
   }
 }

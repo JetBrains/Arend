@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
@@ -164,5 +165,10 @@ public class InferenceReferenceExpression extends Expression {
   @Override
   public UniverseExpression toUniverse() {
     return mySubstExpression != null ? mySubstExpression.toUniverse() : null;
+  }
+
+  @Override
+  public Variable getStuckVariable() {
+    return myVar;
   }
 }

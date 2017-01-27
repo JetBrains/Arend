@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 
 public class ProjExpression extends Expression {
@@ -27,5 +28,10 @@ public class ProjExpression extends Expression {
   @Override
   public ProjExpression toProj() {
     return this;
+  }
+
+  @Override
+  public Variable getStuckVariable() {
+    return myExpression.getStuckVariable();
   }
 }

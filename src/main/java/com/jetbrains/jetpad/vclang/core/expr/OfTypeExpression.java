@@ -1,7 +1,8 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
-import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 
 import java.util.List;
 
@@ -131,5 +132,10 @@ public class OfTypeExpression extends Expression {
   @Override
   public UniverseExpression toUniverse() {
     return myExpression.toUniverse();
+  }
+
+  @Override
+  public Variable getStuckVariable() {
+    return myExpression.getStuckVariable();
   }
 }

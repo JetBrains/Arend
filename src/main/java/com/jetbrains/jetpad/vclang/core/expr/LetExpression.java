@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
@@ -71,5 +72,10 @@ public class LetExpression extends Expression {
       }
       return type;
     }
+  }
+
+  @Override
+  public Variable getStuckVariable() {
+    return myExpression.getStuckVariable();
   }
 }

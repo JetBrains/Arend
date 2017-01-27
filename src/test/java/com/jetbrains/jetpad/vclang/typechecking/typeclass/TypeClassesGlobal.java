@@ -118,7 +118,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
         "\\instance Nat-Y => \\new Y { A => Nat | B => \\lam n => Nat -> Nat }\n" +
         "\\instance Nat-Z => \\new Z { A => Nat | C => \\lam n => Nat -> Nat }\n" +
         "\\function f {A : \\Type0} {y : Y { A => A } } (a : A) => B a\n" +
-        "\\function g => f 0", 2);
+        "\\function g => f 0", 1);
   }
 
   @Test

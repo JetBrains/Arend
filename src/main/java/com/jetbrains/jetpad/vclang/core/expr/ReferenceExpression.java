@@ -1,10 +1,11 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 
 public class ReferenceExpression extends Expression {
   protected Binding myBinding;
@@ -28,5 +29,10 @@ public class ReferenceExpression extends Expression {
   @Override
   public ReferenceExpression toReference() {
     return this;
+  }
+
+  @Override
+  public Variable getStuckVariable() {
+    return myBinding;
   }
 }

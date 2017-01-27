@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
+import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.DerivedInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
@@ -180,7 +181,7 @@ public class TwoStageEquations implements Equations {
       return;
     }
 
-    // ?x <= ?y + c, x <= ?y +- c
+    // ?x <= ?y +- c, x <= ?y +- c
     if (var1 != null && var2 instanceof InferenceLevelVariable) {
       LevelVariable base = var1 instanceof InferenceLevelVariable ? myBases.get(var1) : var1;
       if (base != null) {
@@ -291,6 +292,19 @@ public class TwoStageEquations implements Equations {
       result.put(entry.getKey(), constant == null ? Level.INFINITY : new Level(myBases.get(entry.getKey()), -constant));
     }
 
+    for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
+      Equation equation = iterator.next();
+      Variable variable = equation.expr.getStuckVariable();
+      if (variable instanceof InferenceVariable) {
+        iterator.remove();
+      } else
+      if (equation.type instanceof Expression) {
+        variable = ((Expression) equation.type).getStuckVariable();
+        if (variable instanceof InferenceVariable) {
+          iterator.remove();
+        }
+      }
+    }
     if (!myEquations.isEmpty()) {
       myVisitor.getErrorReporter().report(new SolveEquationsError(new ArrayList<>(myEquations), sourceNode));
     }
