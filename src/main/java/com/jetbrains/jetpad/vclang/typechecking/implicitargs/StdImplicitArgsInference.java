@@ -52,7 +52,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         }
       }
       if (infVar == null) {
-        infVar = new FunctionInferenceVariable(parameter.getName(), type, i, expr);
+        infVar = new FunctionInferenceVariable(parameter.getName(), type, i, result instanceof CheckTypeVisitor.DefCallResult ? ((CheckTypeVisitor.DefCallResult) result).getDefinition() : null, expr);
       }
       Expression binding = new InferenceReferenceExpression(infVar, myVisitor.getEquations());
       result = result.applyExpressions(Collections.singletonList(binding));
@@ -74,7 +74,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           List<DependentLink> pathParams = new ArrayList<>();
           Prelude.PATH_CON.getTypeWithParams(pathParams, defCallResult.getPolyArguments());
           DependentLink lamParam = param("i", Interval());
-          Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", pathParams.get(0).getType().getPiCodomain(), 1, fun), myVisitor.getEquations());
+          Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", pathParams.get(0).getType().getPiCodomain(), 1, Prelude.PATH_CON, fun), myVisitor.getEquations());
           result = result.applyExpressions(Collections.singletonList(Lam(lamParam, binding)));
 
           CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, Pi(lamParam, binding));

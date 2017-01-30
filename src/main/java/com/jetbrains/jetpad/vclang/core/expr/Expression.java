@@ -31,7 +31,10 @@ public abstract class Expression implements PrettyPrintable, Type {
   public String toString() {
     StringBuilder builder = new StringBuilder();
     ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory());
-    visitor.addFlags(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM);
+    visitor
+      .addFlags(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS)
+      .addFlags(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM)
+      .addFlags(ToAbstractVisitor.Flag.SHOW_CON_PARAMS);
     accept(visitor, null).accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
     return builder.toString();
   }

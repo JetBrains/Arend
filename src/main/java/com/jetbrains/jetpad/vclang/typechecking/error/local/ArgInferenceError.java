@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 
 public class ArgInferenceError extends LocalTypeCheckingError {
   public final Expression[] candidates;
@@ -25,8 +25,8 @@ public class ArgInferenceError extends LocalTypeCheckingError {
     this.actual = actual;
   }
 
-  public static String functionArg(int index) {
-    return "Cannot infer the " + ordinal(index) + " argument to function";
+  public static String functionArg(int index, String function) {
+    return "Cannot infer the " + ordinal(index) + " argument to function" + (function != null ? " " + function : "");
   }
 
   public static String typeOfFunctionArg(int index) {
