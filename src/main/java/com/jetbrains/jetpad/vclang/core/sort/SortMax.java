@@ -2,16 +2,11 @@ package com.jetbrains.jetpad.vclang.core.sort;
 
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.UniverseExpression;
-import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
-import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
-
-import java.util.Collections;
 
 public class SortMax {
   private LevelMax myPLevel;
@@ -119,8 +114,30 @@ public class SortMax {
 
   @Override
   public String toString() {
+    if (toSort()!= null && toSort().isProp()) {
+      return "\\Prop";
+    }
     StringBuilder builder = new StringBuilder();
-    new ToAbstractVisitor(new ConcreteExpressionFactory(), Collections.<String>emptyList()).visitSortMax(this).accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
+    boolean hlevelIsConstant = !myHLevel.isInfinity() && myHLevel.toLevel() != null && myHLevel.toLevel().isClosed();
+    if (hlevelIsConstant) {
+      if (myHLevel.toLevel().getConstant() == 1) {
+        builder.append("\\Set");
+      } else {
+        builder.append("\\").append(myHLevel).append("-Type");
+      }
+    } else {
+      builder.append("\\Type");
+    }
+
+    if (hlevelIsConstant) {
+      if (myPLevel.toLevel() == null || !myPLevel.toLevel().isClosed()) {
+        builder.append(" ");
+      }
+      builder.append(myPLevel);
+    } else {
+      builder.append(" (").append(myPLevel).append(", ").append(myHLevel).append(")");
+    }
+
     return builder.toString();
   }
 

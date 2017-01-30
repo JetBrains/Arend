@@ -37,7 +37,7 @@ iso {A B : \Type} (f : A -> B) (g : B -> A) (p : \Pi (x : A) -> g (f x) = x) (q 
 
 \data TrS (A : \Type)
     | inS A
-    | truncS (a a' : TrS A) (p p' : TrS A) I I
+    | truncS (a a' : TrS A) (p p' : a = a') I I
   \with
     | truncS _ _ p _  i left  => p @ i
     | truncS _ _ _ p' i right => p' @ i

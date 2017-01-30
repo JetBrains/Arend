@@ -41,7 +41,8 @@ public class CoverageChecker implements ElimTreeNodeVisitor<ExprSubstitution, Bo
     for (ConCallExpression conCall : type.toDataCall().getDefinition().getMatchedConstructors(type.toDataCall())) {
       if (myResultType.toExpression() != null) {
         if (myResultType.toExpression().getType().toSorts().isLessOrEquals(Sort.PROP)) {
-          if (conCall.getDefinition() == Prelude.PROP_TRUNC_PATH_CON) {
+          if (conCall.getDefinition() == Prelude.PROP_TRUNC_PATH_CON ||
+            conCall.getDefinition() == Prelude.SET_TRUNC_PATH_CON) {
             continue;
           }
         } else if (myResultType.toExpression().getType().toSorts().isLessOrEquals(Sort.SET)) {

@@ -1,14 +1,9 @@
 package com.jetbrains.jetpad.vclang.core.sort;
 
-import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
-
-import java.util.Collections;
 
 public class Sort {
   private final Level myPLevel;
@@ -93,8 +88,29 @@ public class Sort {
 
   @Override
   public String toString() {
+    if (isProp()) {
+      return "\\Prop";
+    }
     StringBuilder builder = new StringBuilder();
-    new ToAbstractVisitor(new ConcreteExpressionFactory(), Collections.<String>emptyList()).visitSort(this).accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
+    boolean hlevelIsConstant = !myHLevel.isInfinity() && myHLevel.isClosed();
+    if (hlevelIsConstant) {
+      if (myHLevel.getConstant() == 1) {
+        builder.append("\\Set");
+      }
+      builder.append("\\").append(myHLevel).append("-Type");
+    } else {
+      builder.append("\\Type");
+    }
+
+    if (hlevelIsConstant) {
+      if (!myPLevel.isClosed()) {
+        builder.append(" ");
+      }
+      builder.append(myPLevel);
+    } else {
+      builder.append("(").append(myPLevel).append(", ").append(myHLevel).append(")");
+    }
+
     return builder.toString();
   }
 }

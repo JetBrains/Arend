@@ -12,6 +12,16 @@ public class Truncations extends TypeCheckingTestCase {
   }
 
   @Test
+  public void elimInSet1() {
+    typeCheckDef("\\function inS-inv (A : \\Set) (x : TrS A) : A <= \\elim x | inS x => x");
+  }
+
+  @Test
+  public void elimInSet2() {
+    typeCheckDef("\\function trSToNat (A : \\Type) (x : TrS A) : Nat <= \\elim x | inS x => 0");
+  }
+
+  @Test
   public void truncPEval() {
     typeCheckClass(
         "\\function inP-inv (P : \\Prop) (p : TrP P) : P <= \\elim p | inP p => p\n" +

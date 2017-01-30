@@ -183,15 +183,16 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       return;
     }
     if (maxArgs.size() > 1) {
-      myBuilder.append("max");
+      myBuilder.append("max (");
     }
-    myBuilder.append(" (");
     maxArgs.get(0).accept(this, Abstract.Expression.PREC);
     for (int i = 1; i < maxArgs.size(); ++i) {
       myBuilder.append(", ");
       maxArgs.get(i).accept(this, Abstract.Expression.PREC);
     }
-    myBuilder.append(")");
+    if (maxArgs.size() > 1) {
+      myBuilder.append(")");
+    }
   }
 
   @Override
