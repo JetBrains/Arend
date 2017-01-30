@@ -370,6 +370,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitBinOpSequence(Abstract.BinOpSequenceExpression expr, Byte prec) {
+    if (expr.getSequence().isEmpty()) {
+      expr.getLeft().accept(this, prec);
+      return null;
+    }
     if (prec > Abstract.BinOpSequenceExpression.PREC) myBuilder.append('(');
     expr.getLeft().accept(this, (byte) 10);
     for (Abstract.BinOpSequenceElem elem : expr.getSequence()) {

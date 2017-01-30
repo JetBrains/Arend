@@ -300,11 +300,12 @@ public class DefinitionCheckType {
       }
 
       if (actualType != null) {
-        typedDef.setResultType(actualType);
         typedDef.typeHasErrors(false);
-
-        if (userType != null && !(userType instanceof Type) && !actualType.getPiCodomain().toSorts().isLessOrEquals(userType.getPiCodomain().toSorts())) {
-          visitor.getErrorReporter().report(new TypeMismatchError(userType, actualType, term));
+        if (!(actualType instanceof ErrorExpression)) {
+          typedDef.setResultType(actualType);
+          if (userType != null && !(userType instanceof Type) && !actualType.getPiCodomain().toSorts().isLessOrEquals(userType.getPiCodomain().toSorts())) {
+            visitor.getErrorReporter().report(new TypeMismatchError(userType, actualType, term));
+          }
         }
       }
 
