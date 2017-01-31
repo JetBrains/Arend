@@ -29,4 +29,9 @@ public class ErrorExpression extends Expression {
   public ErrorExpression toError() {
     return this;
   }
+
+  @Override
+  public Expression getStuckExpression() {
+    return this;
+  }
 }

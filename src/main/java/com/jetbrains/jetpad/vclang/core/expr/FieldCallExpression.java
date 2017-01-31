@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
@@ -49,7 +48,7 @@ public class FieldCallExpression extends DefCallExpression {
   }
 
   @Override
-  public Variable getStuckVariable() {
-    return myExpression.getStuckVariable();
+  public Expression getStuckExpression() {
+    return myExpression.getStuckExpression();
   }
 }

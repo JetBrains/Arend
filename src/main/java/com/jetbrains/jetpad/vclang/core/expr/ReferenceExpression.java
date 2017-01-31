@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
@@ -32,7 +31,7 @@ public class ReferenceExpression extends Expression {
   }
 
   @Override
-  public Variable getStuckVariable() {
-    return myBinding;
+  public Expression getStuckExpression() {
+    return this;
   }
 }

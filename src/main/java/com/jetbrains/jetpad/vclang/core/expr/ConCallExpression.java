@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Condition;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
@@ -71,7 +70,7 @@ public class ConCallExpression extends DefCallExpression {
   }
 
   @Override
-  public Variable getStuckVariable() {
+  public Expression getStuckExpression() {
     Condition condition = getDefinition().getDataType().getCondition(getDefinition());
     if (condition == null || !(condition.getElimTree() instanceof BranchElimTreeNode)) {
       return null;
@@ -80,7 +79,7 @@ public class ConCallExpression extends DefCallExpression {
     int i = 0;
     for (DependentLink param = getDefinition().getParameters(); param.hasNext(); param = param.getNext()) {
       if (param == binding) {
-        return myArguments.get(i).getStuckVariable();
+        return myArguments.get(i).getStuckExpression();
       }
       i++;
     }

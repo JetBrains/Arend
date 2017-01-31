@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Referable;
@@ -329,7 +328,7 @@ public abstract class Expression implements PrettyPrintable, Type {
     return false;
   }
 
-  public Variable getStuckVariable() {
+  public Expression getStuckExpression() {
     return null;
   }
 }

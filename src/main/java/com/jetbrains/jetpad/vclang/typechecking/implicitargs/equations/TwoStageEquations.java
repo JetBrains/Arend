@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
-import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.DerivedInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
@@ -294,13 +293,13 @@ public class TwoStageEquations implements Equations {
 
     for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
       Equation equation = iterator.next();
-      Variable variable = equation.expr.getStuckVariable();
-      if (variable instanceof InferenceVariable) {
+      Expression stuckExpr = equation.expr.getStuckExpression();
+      if (stuckExpr instanceof InferenceReferenceExpression || stuckExpr instanceof ErrorExpression) {
         iterator.remove();
       } else
       if (equation.type instanceof Expression) {
-        variable = ((Expression) equation.type).getStuckVariable();
-        if (variable instanceof InferenceVariable) {
+        stuckExpr = ((Expression) equation.type).getStuckExpression();
+        if (stuckExpr instanceof InferenceReferenceExpression || stuckExpr instanceof ErrorExpression) {
           iterator.remove();
         }
       }

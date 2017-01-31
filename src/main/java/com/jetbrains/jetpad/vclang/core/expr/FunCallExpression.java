@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
@@ -55,7 +54,7 @@ public class FunCallExpression extends DefCallExpression {
   }
 
   @Override
-  public Variable getStuckVariable() {
+  public Expression getStuckExpression() {
     if (!(getDefinition().getElimTree() instanceof BranchElimTreeNode)) {
       return null;
     }
@@ -63,7 +62,7 @@ public class FunCallExpression extends DefCallExpression {
     int i = 0;
     for (DependentLink param = getDefinition().getParameters(); param.hasNext(); param = param.getNext()) {
       if (param == binding) {
-        return myArguments.get(i).getStuckVariable();
+        return myArguments.get(i).getStuckExpression();
       }
       i++;
     }
