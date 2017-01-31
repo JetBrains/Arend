@@ -628,7 +628,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       Result result = typeCheck(expr.getCodomain(), TypeOmega.getInstance());
       if (result == null) return null;
       Expression piExpr = ExpressionFactory.Pi(args, result.expression);
-      return checkResult(expectedType, new Result(piExpr, piExpr.getType()), expr);
+      TypeMax type = piExpr.getType();
+      return type == null ? null : checkResult(expectedType, new Result(piExpr, type), expr);
     }
   }
 
@@ -829,7 +830,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     DependentLink args = visitArguments(expr.getArguments());
     if (args == null || !args.hasNext()) return null;
     Expression sigmaExpr = ExpressionFactory.Sigma(args);
-    return checkResult(expectedType, new Result(sigmaExpr, sigmaExpr.getType()), expr);
+    TypeMax type = sigmaExpr.getType();
+    return type == null ? null : checkResult(expectedType, new Result(sigmaExpr, type), expr);
   }
 
   @Override

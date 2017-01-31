@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.Function;
 import com.jetbrains.jetpad.vclang.core.expr.*;
+import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
@@ -104,12 +105,15 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
     if (defCallExpr instanceof FieldCallExpression) {
       Expression thisExpr = ((FieldCallExpression) defCallExpr).getExpression().normalize(Mode.WHNF);
-      ClassCallExpression classCall = ((Expression) thisExpr.getType()).normalize(Mode.WHNF).toClassCall();
-      if (classCall != null) {
-        FieldSet.Implementation impl = classCall.getFieldSet().getImplementation((ClassField) defCallExpr.getDefinition());
-        if (impl != null) {
-          Expression result = Apps(impl.substThisParam(thisExpr), expr.getArguments());
-          return mode == Mode.TOP ? result : result.accept(this, mode);
+      TypeMax type = thisExpr.getType();
+      if (type instanceof Expression) {
+        ClassCallExpression classCall = ((Expression) type).normalize(Mode.WHNF).toClassCall();
+        if (classCall != null) {
+          FieldSet.Implementation impl = classCall.getFieldSet().getImplementation((ClassField) defCallExpr.getDefinition());
+          if (impl != null) {
+            Expression result = Apps(impl.substThisParam(thisExpr), expr.getArguments());
+            return mode == Mode.TOP ? result : result.accept(this, mode);
+          }
         }
       }
     }

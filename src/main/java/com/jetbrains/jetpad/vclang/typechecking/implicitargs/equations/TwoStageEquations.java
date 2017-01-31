@@ -399,15 +399,16 @@ public class TwoStageEquations implements Equations {
 
     Type expectedType = var.getType();
     TypeMax actualType = expr.getType();
-    if (!actualType.isLessOrEquals(expectedType.normalize(NormalizeVisitor.Mode.NF), this, var.getSourceNode())) {
+    if (actualType == null || actualType.isLessOrEquals(expectedType.normalize(NormalizeVisitor.Mode.NF), this, var.getSourceNode())) {
+      // TODO: if actualType == null then add equation type_of(var) == type_of(expr)
+      var.solve(this, new OfTypeExpression(expr, expectedType));
+      return true;
+    } else {
       actualType = actualType.normalize(NormalizeVisitor.Mode.HUMAN_NF);
       LocalTypeCheckingError error = var.getErrorMismatch(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), actualType, expr);
       myVisitor.getErrorReporter().report(error);
       var.solve(this, new ErrorExpression(expr, error));
       return false;
-    } else {
-      var.solve(this, new OfTypeExpression(expr, expectedType));
-      return true;
     }
   }
 }

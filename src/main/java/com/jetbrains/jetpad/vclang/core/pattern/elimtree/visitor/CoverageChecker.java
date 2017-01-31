@@ -6,11 +6,12 @@ import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
-import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.core.sort.SortMax;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 
 import java.util.ArrayList;
@@ -40,14 +41,17 @@ public class CoverageChecker implements ElimTreeNodeVisitor<ExprSubstitution, Bo
     boolean result = true;
     for (ConCallExpression conCall : type.toDataCall().getDefinition().getMatchedConstructors(type.toDataCall())) {
       if (myResultType.toExpression() != null) {
-        if (myResultType.toExpression().getType().toSorts().isLessOrEquals(Sort.PROP)) {
-          if (conCall.getDefinition() == Prelude.PROP_TRUNC_PATH_CON ||
-            conCall.getDefinition() == Prelude.SET_TRUNC_PATH_CON) {
-            continue;
-          }
-        } else if (myResultType.toExpression().getType().toSorts().isLessOrEquals(Sort.SET)) {
-          if (conCall.getDefinition() == Prelude.SET_TRUNC_PATH_CON) {
-            continue;
+        SortMax sorts = myResultType.toExpression().getType().toSorts();
+        if (sorts != null) {
+          if (sorts.isLessOrEquals(Sort.PROP)) {
+            if (conCall.getDefinition() == Prelude.PROP_TRUNC_PATH_CON ||
+              conCall.getDefinition() == Prelude.SET_TRUNC_PATH_CON) {
+              continue;
+            }
+          } else if (sorts.isLessOrEquals(Sort.SET)) {
+            if (conCall.getDefinition() == Prelude.SET_TRUNC_PATH_CON) {
+              continue;
+            }
           }
         }
       }

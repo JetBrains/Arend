@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.*;
+import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
@@ -420,13 +421,21 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     return result;
   }
 
+  // TODO: WTF is this? Eta equivalence?
   private boolean compareNew(NewExpression expr1, Expression expr2) {
     ClassCallExpression classCall = expr1.getExpression().toClassCall();
     if (classCall == null) {
       return false;
     }
 
-    ClassCallExpression classCall2 = ((Expression) expr2.getType()).normalize(NormalizeVisitor.Mode.WHNF).toClassCall();
+    TypeMax type2 = expr2.getType();
+    if (!(type2 instanceof Expression)) {
+      return false;
+    }
+    ClassCallExpression classCall2 = ((Expression) type2).normalize(NormalizeVisitor.Mode.WHNF).toClassCall();
+    if (classCall2 == null) {
+      return false;
+    }
 
     for (Map.Entry<ClassField, FieldSet.Implementation> entry : classCall.getFieldSet().getImplemented()) {
       FieldSet.Implementation impl2 = classCall2.getFieldSet().getImplementation(entry.getKey());

@@ -20,7 +20,11 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
   @Override
   public TypeMax visitApp(AppExpression expr, Void params) {
     TypeMax functionType = expr.getFunction().accept(this, null);
-    return functionType != null ? functionType.applyExpressions(expr.getArguments()) : null;
+    if (functionType == null) {
+      return null;
+    }
+    functionType = functionType.normalize(NormalizeVisitor.Mode.WHNF);
+    return functionType instanceof ErrorExpression ? functionType : functionType.applyExpressions(expr.getArguments());
   }
 
   @Override
@@ -88,7 +92,11 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
   private TypeMax visitDependentType(DependentTypeExpression expr) {
     SortMax codomain = null;
     if (expr instanceof PiExpression) {
-      codomain = getSorts(((PiExpression) expr).getCodomain().accept(this, null));
+      Expression codomainExpr = ((PiExpression) expr).getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
+      if (codomainExpr instanceof ErrorExpression) {
+        return codomainExpr;
+      }
+      codomain = getSorts(codomainExpr.accept(this, null));
       if (codomain == null) {
         return null;
       }
@@ -101,7 +109,15 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
     SortMax sorts = new SortMax();
     for (DependentLink link = expr.getParameters(); link.hasNext(); link = link.getNext()) {
       if (!(link instanceof UntypedDependentLink)) {
-        SortMax sorts1 = getSorts(link.getType().toExpression().accept(this, null));
+        Expression typeExpr = link.getType().toExpression();
+        if (typeExpr == null) {
+          return null;
+        }
+        typeExpr = typeExpr.normalize(NormalizeVisitor.Mode.WHNF);
+        if (typeExpr instanceof ErrorExpression) {
+          return typeExpr;
+        }
+        SortMax sorts1 = getSorts(typeExpr.accept(this, null));
         if (sorts1 == null) {
           return null;
         }
@@ -155,7 +171,12 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
       return null;
     }
 
-    SigmaExpression sigma = ((Expression) type).normalize(NormalizeVisitor.Mode.WHNF).toSigma();
+    type = type.normalize(NormalizeVisitor.Mode.WHNF);
+    if (type instanceof ErrorExpression) {
+      return type;
+    }
+
+    SigmaExpression sigma = ((Expression) type).toSigma();
     if (sigma == null) return null;
     DependentLink params = sigma.getParameters();
     if (expr.getField() == 0) {
@@ -180,7 +201,15 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
 
   @Override
   public TypeMax visitLet(LetExpression expr, Void params) {
-    return expr.getType(expr.getExpression().accept(this, null));
+    TypeMax type = expr.getExpression().accept(this, null);
+    if (type == null) {
+      return null;
+    }
+    type = type.normalize(NormalizeVisitor.Mode.WHNF);
+    if (type instanceof ErrorExpression) {
+      return type;
+    }
+    return expr.getType(type);
   }
 
   @Override

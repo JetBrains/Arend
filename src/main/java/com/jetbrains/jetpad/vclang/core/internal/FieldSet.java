@@ -5,12 +5,13 @@ import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
-import com.jetbrains.jetpad.vclang.core.sort.SortMax;
+import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 
 import java.util.*;
 
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.param;
 
 public class FieldSet {
   public static class Implementation {
@@ -107,14 +108,21 @@ public class FieldSet {
     Expression expr1 = baseType.subst(field.getThisParameter(), ExpressionFactory.Reference(thisParam)).normalize(NormalizeVisitor.Mode.WHNF);
     SortMax sorts = null;
     if (expr1.toOfType() != null) {
-      sorts = expr1.toOfType().getExpression().getType().toSorts();
+      TypeMax type = expr1.toOfType().getExpression().getType();
+      if (type != null) {
+        sorts = type.toSorts();
+      }
     }
     if (sorts == null) {
-      sorts = expr1.getType().toSorts();
+      TypeMax type = expr1.getType();
+      if (type != null) {
+        sorts = type.toSorts();
+      }
     }
 
-    assert sorts != null;
-    mySorts.add(sorts);
+    if (sorts != null) {
+      mySorts.add(sorts);
+    }
   }
 
   @Override

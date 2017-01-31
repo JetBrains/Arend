@@ -277,7 +277,10 @@ public class DefinitionCheckType {
 
               @Override
               public Void visitLeaf(LeafElimTreeNode leafNode, Void params) {
-                sorts.add(leafNode.getExpression().getType().getPiCodomain().toSorts());
+                SortMax sorts1 = leafNode.getExpression().getType().getPiCodomain().toSorts();
+                if (sorts1 != null) {
+                  sorts.add(sorts1);
+                }
                 return null;
               }
 
