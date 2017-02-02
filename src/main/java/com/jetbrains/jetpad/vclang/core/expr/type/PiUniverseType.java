@@ -89,6 +89,11 @@ public class PiUniverseType implements TypeMax {
   }
 
   @Override
+  public TypeMax getType() {
+    return new PiUniverseType(DependentLink.Helper.clone(myParameters), mySorts.succ());
+  }
+
+  @Override
   public boolean findBinding(Referable binding) {
     return DependentLink.Helper.findBinding(myParameters, binding);
   }
@@ -159,7 +164,7 @@ public class PiUniverseType implements TypeMax {
   }
 
   @Override
-  public boolean isLessOrEquals(Type type, Equations equations, Abstract.SourceNode sourceNode) {
+  public boolean isLessOrEquals(TypeMax type, Equations equations, Abstract.SourceNode sourceNode) {
     if (type instanceof Expression) {
       Expression exprType = (Expression)type;
       InferenceVariable binding = CompareVisitor.checkIsInferVar(exprType);
@@ -169,7 +174,7 @@ public class PiUniverseType implements TypeMax {
     }
 
     List<DependentLink> params = new ArrayList<>();
-    Type cod = type.getPiParameters(params, false, false);
+    TypeMax cod = type.getPiParameters(params, false, false);
     PiUniverseType normalized = normalize(NormalizeVisitor.Mode.NF);
 
     if (!CompareVisitor.compare(equations, DependentLink.Helper.toList(normalized.getPiParameters()), params, sourceNode)) {

@@ -9,11 +9,14 @@ import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.Referable;
+import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
+import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.StripVisitor;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.*;
 import com.jetbrains.jetpad.vclang.core.pattern.Utils.ProcessImplicitResult;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
@@ -156,6 +159,20 @@ public class TypeCheckingElim {
     if (elimExprs == null) return null;
 
     boolean wasError = false;
+
+    for (ReferenceExpression elimExpr : elimExprs) {
+      DataCallExpression dataCall = elimExpr.getBinding().getType().toExpression().toDataCall();
+      if (dataCall != null && dataCall.getDefinition().isTruncated()) {
+        if (!expectedType.getType().isLessOrEquals(dataCall.getType(), myVisitor.getEquations(), expr)) {
+          error = new LocalTypeCheckingError("Data " + dataCall.getDefinition().getName() + " is truncated to universe "
+            + new ToAbstractVisitor(new ConcreteExpressionFactory()).visitTypeMax(dataCall.getType()) + " and must be not less than the universe " +
+            new ToAbstractVisitor(new ConcreteExpressionFactory()).visitTypeMax(expectedType) + " of type of eliminator", expr);
+          expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+          myVisitor.getErrorReporter().report(error);
+          wasError = true;
+        }
+      }
+    }
 
     DependentLink origEliminatingArgs = eliminatingArgs;
     List<Pattern> dummyPatterns = new ArrayList<>();

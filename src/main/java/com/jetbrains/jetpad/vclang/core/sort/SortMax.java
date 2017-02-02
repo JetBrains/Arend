@@ -69,6 +69,14 @@ public class SortMax {
     myHLevel.add(sorts.myHLevel);
   }
 
+  public SortMax succ() {
+    LevelMax sucP = new LevelMax(myPLevel);
+    LevelMax sucH = new LevelMax(myHLevel);
+    sucP.add(new Level(1));
+    sucH.add(new Level(1));
+    return toSort() != null ? new SortMax(toSort().succ()) : new SortMax(sucP, sucH);
+  }
+
   public void add(Sort sort) {
     myPLevel.add(sort.getPLevel());
     myHLevel.add(sort.getHLevel());

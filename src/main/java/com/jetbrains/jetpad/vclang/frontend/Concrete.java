@@ -999,13 +999,15 @@ public final class Concrete {
     private final List<Constructor> myConstructors;
     private final List<TypeArgument> myParameters;
     private final List<Condition> myConditions;
+    private final boolean myIsTruncated;
     private final Expression myUniverse;
 
-    public DataDefinition(Position position, String name, Abstract.Precedence precedence, List<TypeArgument> parameters, Expression universe, List<Concrete.Constructor> constructors, List<Condition> conditions) {
+    public DataDefinition(Position position, String name, Abstract.Precedence precedence, List<TypeArgument> parameters, boolean isTruncated, Expression universe, List<Concrete.Constructor> constructors, List<Condition> conditions) {
       super(position, name, precedence);
       myParameters = parameters;
       myConstructors = constructors;
       myConditions = conditions;
+      myIsTruncated = isTruncated;
       myUniverse = universe;
     }
 
@@ -1022,6 +1024,11 @@ public final class Concrete {
     @Override
     public List<? extends Abstract.Condition> getConditions() {
       return myConditions;
+    }
+
+    @Override
+    public boolean isTruncated() {
+      return myIsTruncated;
     }
 
     @Override

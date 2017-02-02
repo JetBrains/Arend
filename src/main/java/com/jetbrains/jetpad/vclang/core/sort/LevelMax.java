@@ -29,6 +29,11 @@ public class LevelMax implements PrettyPrintable {
     }
   }
 
+  public LevelMax(LevelMax level) {
+    myVars = new HashMap<>();
+    myVars.putAll(level.myVars);
+  }
+
   private LevelMax(Map<LevelVariable, Integer> vars) {
     myVars = vars;
   }

@@ -15,10 +15,14 @@ nsCmdRoot : modulePath | name;
 definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?                            # defFunction
             | '\\field' precedence name ':' expr                                                          # defAbstract
             | '\\implement' name '=>' expr                                                                # defImplement
-            | '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef?                    # defData
+            | isTruncated '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef?        # defData
             | '\\class' ID tele* ('\\extends' expr (',' expr)*)? ('{' statements '}')? where?             # defClass
             | '\\view' ID '\\on' expr '\\by' name '{' classViewField* '}'                                 # defClassView
             | defaultInst '\\instance' ID tele* '=>' expr                                                 # defInstance
+            ;
+
+isTruncated : '\\truncated' # truncated
+            |               # notTruncated
             ;
 
 defaultInst :             # noDefault

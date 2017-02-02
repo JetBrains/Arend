@@ -288,6 +288,7 @@ public final class Abstract {
     List<? extends TypeArgument> getParameters();
     List<? extends Constructor> getConstructors();
     Collection<? extends Condition> getConditions();
+    boolean isTruncated();
     Expression getUniverse();
   }
 

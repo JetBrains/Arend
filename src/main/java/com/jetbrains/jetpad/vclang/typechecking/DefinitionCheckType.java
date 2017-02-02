@@ -448,9 +448,11 @@ public class DefinitionCheckType {
     }
 
     if (universeOk && userSorts != null) {
-      if (inferredSorts.isLessOrEquals(userSorts)) {
+      boolean shouldBeTruncated = !inferredSorts.isLessOrEquals(userSorts);
+      if (!shouldBeTruncated || def.isTruncated()) {
         if (!userSorts.isOmega()) {
           inferredSorts = userSorts;
+          dataDefinition.isTruncated(shouldBeTruncated);
         }
       } else {
         String msg = "Actual universe " + inferredSorts + " is not compatible with expected universe " + userSorts;

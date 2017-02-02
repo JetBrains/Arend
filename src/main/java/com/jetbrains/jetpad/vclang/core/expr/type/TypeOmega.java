@@ -42,7 +42,7 @@ public class TypeOmega implements Type {
   }
 
   @Override
-  public boolean isLessOrEquals(Type type, Equations equations, Abstract.SourceNode sourceNode) {
+  public boolean isLessOrEquals(TypeMax type, Equations equations, Abstract.SourceNode sourceNode) {
     return false;
   }
 
@@ -89,6 +89,11 @@ public class TypeOmega implements Type {
   @Override
   public Expression toExpression() {
     return null;
+  }
+
+  @Override
+  public TypeMax getType() {
+    throw new IllegalStateException();
   }
 
   @Override

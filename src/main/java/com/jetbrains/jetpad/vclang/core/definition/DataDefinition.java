@@ -25,6 +25,7 @@ public class DataDefinition extends Definition {
   private Map<Constructor, Condition> myConditions;
   private SortMax mySorts;
   private boolean myMatchesOnInterval;
+  private boolean myIsTruncated;
   private boolean myTypeHasErrors;
   private TypeCheckingStatus myHasErrors;
 
@@ -38,6 +39,7 @@ public class DataDefinition extends Definition {
     myParameters = parameters;
     mySorts = sorts;
     myMatchesOnInterval = false;
+    myIsTruncated = false;
     myTypeHasErrors = parameters != null;
     myHasErrors = myTypeHasErrors ? TypeCheckingStatus.HAS_ERRORS : TypeCheckingStatus.TYPE_CHECKING;
   }
@@ -53,6 +55,14 @@ public class DataDefinition extends Definition {
 
   public void setSorts(SortMax sorts) {
     mySorts = sorts;
+  }
+
+  public boolean isTruncated() {
+    return myIsTruncated;
+  }
+
+  public void isTruncated(boolean value) {
+    myIsTruncated = value;
   }
 
   @Override

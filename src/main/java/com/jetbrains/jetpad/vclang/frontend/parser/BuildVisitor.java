@@ -367,7 +367,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Concrete.Expression universe = ctx.expr() == null ? null : (Concrete.Expression) visit(ctx.expr());
     List<Concrete.Constructor> constructors = new ArrayList<>(ctx.constructorDef().size());
     List<Concrete.Condition> conditions = ctx.conditionDef() != null ? visitConditionDef(ctx.conditionDef()) : null;
-    Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(tokenPosition(ctx.getStart()), visitName(ctx.name()), visitPrecedence(ctx.precedence()), visitTeles(ctx.tele()), universe, constructors, conditions);
+    Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(tokenPosition(ctx.getStart()), visitName(ctx.name()), visitPrecedence(ctx.precedence()), visitTeles(ctx.tele()), ctx.isTruncated() instanceof TruncatedContext, universe, constructors, conditions);
     for (ConstructorDefContext constructorDefContext : ctx.constructorDef()) {
       try {
         visitConstructorDef(constructorDefContext, dataDefinition);
