@@ -4,9 +4,7 @@ import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateDefinitionError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class MergeScope implements Scope {
   private final Scope myScope1, myScope2;
@@ -42,18 +40,8 @@ public class MergeScope implements Scope {
 
   @Override
   public Collection<? extends Abstract.ClassViewInstance> getInstances() {
-    Set<Abstract.ClassViewInstance> instances = new HashSet<>(myScope1.getInstances());
+    List<Abstract.ClassViewInstance> instances = new ArrayList<>(myScope1.getInstances());
     instances.addAll(myScope2.getInstances());
     return instances;
-  }
-
-  @Override
-  public Abstract.ClassViewInstance resolveInstance(Abstract.ClassView classView, Abstract.Definition classifyingDefinition) {
-    return choose(myScope1.resolveInstance(classView, classifyingDefinition), myScope2.resolveInstance(classView, classifyingDefinition));
-  }
-
-  @Override
-  public Abstract.ClassViewInstance resolveInstance(Abstract.ClassDefinition classDefinition, Abstract.Definition classifyingDefinition) {
-    return choose(myScope1.resolveInstance(classDefinition, classifyingDefinition), myScope2.resolveInstance(classDefinition, classifyingDefinition));
   }
 }

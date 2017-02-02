@@ -36,16 +36,6 @@ public class SimpleModuleNamespace implements ModuleNamespace {
   }
 
   @Override
-  public Abstract.ClassViewInstance resolveInstance(Abstract.ClassView classView, Abstract.Definition classifyingDefinition) {
-    return myClassNamespace == null ? null : myClassNamespace.resolveInstance(classView, classifyingDefinition);
-  }
-
-  @Override
-  public Abstract.ClassViewInstance resolveInstance(Abstract.ClassDefinition classDefinition, Abstract.Definition classifyingDefinition) {
-    return myClassNamespace == null ? null : myClassNamespace.resolveInstance(classDefinition, classifyingDefinition);
-  }
-
-  @Override
   public SimpleModuleNamespace getSubmoduleNamespace(String submodule) {
     return mySubmoduleNamespaces.get(submodule);
   }

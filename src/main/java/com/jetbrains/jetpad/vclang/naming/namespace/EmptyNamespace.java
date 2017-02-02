@@ -19,16 +19,6 @@ public class EmptyNamespace implements Namespace {
 
   @Override
   public Collection<? extends Abstract.ClassViewInstance> getInstances() {
-    return Collections.emptySet();
-  }
-
-  @Override
-  public Abstract.ClassViewInstance resolveInstance(Abstract.ClassView classView, Abstract.Definition classifyingDefinition) {
-    return null;
-  }
-
-  @Override
-  public Abstract.ClassViewInstance resolveInstance(Abstract.ClassDefinition classDefinition, Abstract.Definition classifyingDefinition) {
-    return null;
+    return Collections.emptyList();
   }
 }

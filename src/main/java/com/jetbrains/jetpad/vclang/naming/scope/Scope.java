@@ -11,8 +11,6 @@ public interface Scope {
   Abstract.Definition resolveName(String name);
 
   Collection<? extends Abstract.ClassViewInstance> getInstances();
-  Abstract.ClassViewInstance resolveInstance(Abstract.ClassView classView, Abstract.Definition classifyingDefinition);
-  Abstract.ClassViewInstance resolveInstance(Abstract.ClassDefinition classDefinition, Abstract.Definition classifyingDefinition);
 
   abstract class InvalidScopeException extends ReportableRuntimeException {}
 }

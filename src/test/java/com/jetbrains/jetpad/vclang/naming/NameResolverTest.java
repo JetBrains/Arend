@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.naming;
 
+import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -116,6 +116,11 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void openTest() {
     resolveNamesClass("\\class A \\where { \\function x => 0 } \\open A \\function y => x");
+  }
+
+  @Test
+  public void openTest2() {
+    resolveNamesClass("\\class A \\where { \\function x => 0 } \\function y => x \\open A");
   }
 
   @Ignore

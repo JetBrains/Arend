@@ -2,13 +2,10 @@ package com.jetbrains.jetpad.vclang.naming.scope;
 
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.naming.error.DuplicateDefinitionError;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateInstanceError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class OverridingScope implements Scope {
   private final Scope myParent;
@@ -19,19 +16,7 @@ public class OverridingScope implements Scope {
     myChild = child;
   }
 
-  public static OverridingScope merge(Scope parent, Scope child, ErrorReporter errorReporter) {
-    Set<String> parentNames = parent.getNames();
-    if (!parentNames.isEmpty()) {
-      Set<String> childNames = child.getNames();
-      if (!childNames.isEmpty()) {
-        for (String name : parentNames) {
-          if (childNames.contains(name)) {
-            errorReporter.report(new DuplicateDefinitionError(Error.Level.WARNING, parent.resolveName(name), child.resolveName(name)));
-          }
-        }
-      }
-    }
-
+  public static OverridingScope mergeInstances(Scope parent, Scope child, ErrorReporter errorReporter) {
     Collection<? extends Abstract.ClassViewInstance> parentInstances = parent.getInstances();
     if (!parentInstances.isEmpty()) {
       Collection<? extends Abstract.ClassViewInstance> childInstances = child.getInstances();
@@ -64,20 +49,8 @@ public class OverridingScope implements Scope {
 
   @Override
   public Collection<? extends Abstract.ClassViewInstance> getInstances() {
-    Set<Abstract.ClassViewInstance> instances = new HashSet<>(myParent.getInstances());
+    List<Abstract.ClassViewInstance> instances = new ArrayList<>(myParent.getInstances());
     instances.addAll(myChild.getInstances());
     return instances;
-  }
-
-  @Override
-  public Abstract.ClassViewInstance resolveInstance(Abstract.ClassView classView, Abstract.Definition classifyingDefinition) {
-    Abstract.ClassViewInstance instance = myChild.resolveInstance(classView, classifyingDefinition);
-    return instance != null ? instance : myParent.resolveInstance(classView, classifyingDefinition);
-  }
-
-  @Override
-  public Abstract.ClassViewInstance resolveInstance(Abstract.ClassDefinition classDefinition, Abstract.Definition classifyingDefinition) {
-    Abstract.ClassViewInstance instance = myChild.resolveInstance(classDefinition, classifyingDefinition);
-    return instance != null ? instance : myParent.resolveInstance(classDefinition, classifyingDefinition);
   }
 }

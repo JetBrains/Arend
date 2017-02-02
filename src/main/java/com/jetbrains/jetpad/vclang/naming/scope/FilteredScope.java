@@ -2,9 +2,7 @@ package com.jetbrains.jetpad.vclang.naming.scope;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class FilteredScope implements Scope {
   private final Scope myScope;
@@ -39,16 +37,13 @@ public class FilteredScope implements Scope {
 
   @Override
   public Collection<? extends Abstract.ClassViewInstance> getInstances() {
-    return myScope.getInstances();
-  }
-
-  @Override
-  public Abstract.ClassViewInstance resolveInstance(Abstract.ClassView classView, Abstract.Definition classifyingDefinition) {
-    return myScope.resolveInstance(classView, classifyingDefinition);
-  }
-
-  @Override
-  public Abstract.ClassViewInstance resolveInstance(Abstract.ClassDefinition classDefinition, Abstract.Definition classifyingDefinition) {
-    return myScope.resolveInstance(classDefinition, classifyingDefinition);
+    Collection<? extends Abstract.ClassViewInstance> instances = myScope.getInstances();
+    List<Abstract.ClassViewInstance> filteredInstances = new ArrayList<>(instances.size());
+    for (Abstract.ClassViewInstance instance : instances) {
+      if (myInclude && myNames.contains(instance.getName()) || !myInclude && !myNames.contains(instance.getName())) {
+        filteredInstances.add(instance);
+      }
+    }
+    return filteredInstances;
   }
 }

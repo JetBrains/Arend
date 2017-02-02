@@ -2,15 +2,13 @@ package com.jetbrains.jetpad.vclang.naming.namespace;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateDefinitionError;
-import com.jetbrains.jetpad.vclang.naming.error.DuplicateInstanceError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
 
 public class SimpleNamespace implements Namespace {
   private final Map<String, Abstract.Definition> myNames = new HashMap<>();
-  private Map<Pair<Abstract.Definition, Abstract.Definition>, Abstract.ClassViewInstance> myInstances = Collections.emptyMap();
+  private List<Abstract.ClassViewInstance> myInstances = Collections.emptyList();
 
   public SimpleNamespace() {
   }
@@ -41,34 +39,21 @@ public class SimpleNamespace implements Namespace {
   }
 
   public void addInstance(Abstract.ClassViewInstance instance) {
-    Abstract.Definition classView = instance.getClassView().getReferent();
-    addInstance(new Pair<>(classView, instance.getClassifyingDefinition()), instance);
-    if (instance.isDefault()) {
-      addInstance(new Pair<>(((Abstract.ClassView) classView).getUnderlyingClassDefCall().getReferent(), instance.getClassifyingDefinition()), instance);
-    }
-  }
-
-  private void addInstance(Pair<Abstract.Definition, Abstract.Definition> pair, final Abstract.ClassViewInstance instance) {
     if (myInstances.isEmpty()) {
-      myInstances = new HashMap<>();
+      myInstances = new ArrayList<>();
     }
-    final Abstract.ClassViewInstance prev = myInstances.put(pair, instance);
-    if (!(prev == null || prev == instance)) {
-      throw new InvalidNamespaceException() {
-        @Override
-        public GeneralError toError() {
-          return new DuplicateInstanceError(prev, instance);
-        }
-      };
-    }
+    myInstances.add(instance);
   }
 
   public void addAll(SimpleNamespace other) {
     for (Map.Entry<String, Abstract.Definition> entry : other.myNames.entrySet()) {
       addDefinition(entry.getKey(), entry.getValue());
     }
-    for (Map.Entry<Pair<Abstract.Definition, Abstract.Definition>, Abstract.ClassViewInstance> entry : other.myInstances.entrySet()) {
-      addInstance(entry.getKey(), entry.getValue());
+    if (!other.myInstances.isEmpty() && myInstances.isEmpty()) {
+      myInstances = new ArrayList<>();
+    }
+    for (Abstract.ClassViewInstance instance : other.myInstances) {
+      myInstances.add(instance);
     }
   }
 
@@ -88,16 +73,6 @@ public class SimpleNamespace implements Namespace {
 
   @Override
   public Collection<? extends Abstract.ClassViewInstance> getInstances() {
-    return myInstances.values();
-  }
-
-  @Override
-  public Abstract.ClassViewInstance resolveInstance(Abstract.ClassView classView, Abstract.Definition classifyingDefinition) {
-    return myInstances.get(new Pair<Abstract.Definition, Abstract.Definition>(classView, classifyingDefinition));
-  }
-
-  @Override
-  public Abstract.ClassViewInstance resolveInstance(Abstract.ClassDefinition classDefinition, Abstract.Definition classifyingDefinition) {
-    return myInstances.get(new Pair<Abstract.Definition, Abstract.Definition>(classDefinition, classifyingDefinition));
+    return myInstances;
   }
 }

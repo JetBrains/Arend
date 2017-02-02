@@ -291,6 +291,7 @@ public class TwoStageEquations implements Equations {
       result.put(entry.getKey(), constant == null ? Level.INFINITY : new Level(myBases.get(entry.getKey()), -constant));
     }
 
+    // TODO: Do not add equations with expressions that stuck on errors, i.e. check this in CompareVisitor
     for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
       Equation equation = iterator.next();
       Expression stuckExpr = equation.expr.getStuckExpression();
