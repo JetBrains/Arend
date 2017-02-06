@@ -60,7 +60,8 @@ public abstract class Expression implements PrettyPrintable, Type {
   @Override
   public boolean isLessOrEquals(TypeMax type, Equations equations, Abstract.SourceNode sourceNode) {
     if (type instanceof TypeOmega) {
-      return true;
+      // TODO: if this expression is stuck, add an equation
+      return toSorts() != null;
     }
     Expression typeExpr = type.toExpression();
     assert typeExpr != null;

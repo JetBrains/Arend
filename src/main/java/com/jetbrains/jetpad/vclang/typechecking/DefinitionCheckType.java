@@ -306,8 +306,11 @@ public class DefinitionCheckType {
         typedDef.typeHasErrors(false);
         if (!(actualType instanceof ErrorExpression)) {
           typedDef.setResultType(actualType);
-          if (userType != null && !(userType instanceof Type) && !actualType.getPiCodomain().toSorts().isLessOrEquals(userType.getPiCodomain().toSorts())) {
-            visitor.getErrorReporter().report(new TypeMismatchError(userType, actualType, term));
+          if (userType != null && !(userType instanceof Type)) {
+            SortMax actualSorts = actualType.getPiCodomain().toSorts();
+            if (actualSorts == null || !actualSorts.isLessOrEquals(userType.getPiCodomain().toSorts())) {
+              visitor.getErrorReporter().report(new TypeMismatchError(userType, actualType, term));
+            }
           }
         }
       }
@@ -348,7 +351,7 @@ public class DefinitionCheckType {
     }
 
     Map<Integer, ClassField> classifyingFields = new HashMap<>();
-    SortMax userSorts = SortMax.OMEGA;
+    SortMax userSorts = null;
     boolean paramsOk;
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
       paramsOk = typeCheckParameters(def.getParameters(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, list, visitor, localInstancePool, classifyingFields);
@@ -357,11 +360,15 @@ public class DefinitionCheckType {
         if (def.getUniverse() instanceof Abstract.PolyUniverseExpression) {
           TypeMax userType = visitor.checkFunOrDataType(def.getUniverse());
           userSorts = userType == null ? SortMax.OMEGA : userType.toSorts();
-        } else {
+        }
+        if (userSorts == null) {
           String msg = "Specified type " + PrettyPrintVisitor.prettyPrint(def.getUniverse(), 0) + " of '" + def.getName() + "' is not a universe";
           visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, def.getUniverse()));
         }
       }
+    }
+    if (userSorts == null) {
+      userSorts = SortMax.OMEGA;
     }
 
     DataDefinition dataDefinition = new DataDefinition(def, userSorts, list.getFirst());

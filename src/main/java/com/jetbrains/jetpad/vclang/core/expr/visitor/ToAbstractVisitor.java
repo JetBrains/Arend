@@ -400,18 +400,19 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     }
   }
 
-  public Abstract.Expression visitSortMax(SortMax sort) {
-    if (sort.toSort() != null) {
-      return visitSort(sort.toSort());
+  public Abstract.Expression visitSortMax(SortMax sorts) {
+    Sort sort = sorts.toSort();
+    if (sort != null) {
+      return visitSort(sort);
     }
-    int hlevel;
-    //TODO: decide what to do in case there's a variable in sort.getHLevel()
-    if (sort.getHLevel().isInfinity() || sort.getHLevel().toLevel() == null || !sort.getHLevel().toLevel().isClosed()) {
-      hlevel = Abstract.PolyUniverseExpression.NOT_TRUNCATED;
+    int hLevel;
+    //TODO: decide what to do in case there's a variable in sorts.getHLevel()
+    if (sorts.getHLevel().isInfinity() || sorts.getHLevel().toLevel() == null || !sorts.getHLevel().toLevel().isClosed()) {
+      hLevel = Abstract.PolyUniverseExpression.NOT_TRUNCATED;
     } else {
-      hlevel = sort.getHLevel().toLevel().getConstant() - 1;
+      hLevel = sorts.getHLevel().toLevel().getConstant() - 1;
     }
-    return myFactory.makeUniverse(visitLevelMax(sort.getPLevel(), 0), hlevel);
+    return myFactory.makeUniverse(visitLevelMax(sorts.getPLevel(), 0), hLevel);
   }
 
   public Abstract.Expression visitLevel(Level level, int add) {

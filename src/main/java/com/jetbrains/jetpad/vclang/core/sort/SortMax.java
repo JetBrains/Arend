@@ -9,8 +9,8 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 public class SortMax {
-  private LevelMax myPLevel;
-  private LevelMax myHLevel;
+  private final LevelMax myPLevel;
+  private final LevelMax myHLevel;
 
   public static SortMax OMEGA = new SortMax(LevelMax.INFINITY, LevelMax.INFINITY);
 
@@ -70,11 +70,16 @@ public class SortMax {
   }
 
   public SortMax succ() {
+    Sort sort = toSort();
+    if (sort != null) {
+      return new SortMax(sort.succ());
+    }
+
     LevelMax sucP = new LevelMax(myPLevel);
     LevelMax sucH = new LevelMax(myHLevel);
     sucP.add(new Level(1));
     sucH.add(new Level(1));
-    return toSort() != null ? new SortMax(toSort().succ()) : new SortMax(sucP, sucH);
+    return new SortMax(sucP, sucH);
   }
 
   public void add(Sort sort) {
@@ -83,8 +88,9 @@ public class SortMax {
   }
 
   public TypeMax toType() {
-    if (toSort() != null) {
-      return new UniverseExpression(toSort());
+    Sort sort = toSort();
+    if (sort != null) {
+      return new UniverseExpression(sort);
     }
     return new PiUniverseType(EmptyDependentLink.getInstance(), this);
   }
@@ -122,7 +128,8 @@ public class SortMax {
 
   @Override
   public String toString() {
-    if (toSort()!= null && toSort().isProp()) {
+    Sort sort = toSort();
+    if (sort != null && sort.isProp()) {
       return "\\Prop";
     }
     StringBuilder builder = new StringBuilder();
