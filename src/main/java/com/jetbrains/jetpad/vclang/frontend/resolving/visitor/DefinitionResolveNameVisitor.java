@@ -46,12 +46,12 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
   public Void visitFunction(Abstract.FunctionDefinition def, Scope parentScope) {
     Scope scope = new FunctionScope(parentScope, myNsProviders.statics.forDefinition(def));
 
-    for (Abstract.Statement statement : def.getStatements()) {
+    for (Abstract.Statement statement : def.getGlobalStatements()) {
       if (statement instanceof Abstract.NamespaceCommandStatement) {
         scope = statement.accept(this, scope);
       }
     }
-    for (Abstract.Statement statement : def.getStatements()) {
+    for (Abstract.Statement statement : def.getGlobalStatements()) {
       if (!(statement instanceof Abstract.NamespaceCommandStatement)) {
         scope = statement.accept(this, scope);
       }

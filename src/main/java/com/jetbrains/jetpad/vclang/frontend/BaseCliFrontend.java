@@ -86,7 +86,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     @Override
     public Void visitFunction(Abstract.FunctionDefinition def, Map<String, Abstract.Definition> params) {
       params.put(getIdFor(def), def);
-      for (Abstract.Statement statement : def.getStatements()) {
+      for (Abstract.Statement statement : def.getGlobalStatements()) {
         statement.accept(this, params);
       }
       return null;

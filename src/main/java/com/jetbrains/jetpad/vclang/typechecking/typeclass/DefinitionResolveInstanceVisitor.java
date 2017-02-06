@@ -4,36 +4,37 @@ import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateInstanceError;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
-import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.scope.*;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.AbstractStatementVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.SimpleClassViewInstanceProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.scope.InstanceScopeProvider;
 
 import java.util.Collection;
 import java.util.HashSet;
 
 public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisitor<Scope, Void>, AbstractStatementVisitor<Scope, Scope> {
-  private final StaticNamespaceProvider myNsProvider;
+  private final InstanceScopeProvider myScopeProvider;
   private final SimpleClassViewInstanceProvider myInstanceProvider;
   private final ErrorReporter myErrorReporter;
 
-  public DefinitionResolveInstanceVisitor(StaticNamespaceProvider nsProvider, SimpleClassViewInstanceProvider instanceProvider, ErrorReporter errorReporter) {
-    myNsProvider = nsProvider;
+  public DefinitionResolveInstanceVisitor(InstanceScopeProvider scopeProvider, SimpleClassViewInstanceProvider instanceProvider, ErrorReporter errorReporter) {
+    myScopeProvider = scopeProvider;
     myInstanceProvider = instanceProvider;
     myErrorReporter = errorReporter;
   }
 
   @Override
   public Void visitFunction(Abstract.FunctionDefinition def, Scope parentScope) {
-    Scope scope = new FunctionScope(parentScope, myNsProvider.forDefinition(def));
+    Scope scope = new FunctionScope(parentScope, myScopeProvider.forDefinition(def));
 
-    for (Abstract.Statement statement : def.getStatements()) {
+    for (Abstract.Statement statement : def.getGlobalStatements()) {
       if (statement instanceof Abstract.NamespaceCommandStatement) {
         scope = statement.accept(this, scope);
       }
     }
-    for (Abstract.Statement statement : def.getStatements()) {
+    for (Abstract.Statement statement : def.getGlobalStatements()) {
       if (!(statement instanceof Abstract.NamespaceCommandStatement)) {
         scope = statement.accept(this, scope);
       }
@@ -74,7 +75,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
     }
 
     if (def.getConditions() != null) {
-      Scope scope = new DataScope(parentScope, myNsProvider.forDefinition(def));
+      Scope scope = new DataScope(parentScope, myScopeProvider.forDefinition(def));
       exprVisitor = new ExpressionResolveInstanceVisitor(scope, myInstanceProvider);
       for (Abstract.Condition cond : def.getConditions()) {
         cond.getTerm().accept(exprVisitor, null);
@@ -98,7 +99,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
     }
 
     try {
-      Scope scope = new StaticClassScope(parentScope, myNsProvider.forDefinition(def));
+      Scope scope = new StaticClassScope(parentScope, myScopeProvider.forDefinition(def));
       for (Abstract.Statement statement : def.getGlobalStatements()) {
         if (statement instanceof Abstract.NamespaceCommandStatement) {
           scope = statement.accept(this, scope);
@@ -165,7 +166,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
   @Override
   public Scope visitNamespaceCommand(Abstract.NamespaceCommandStatement stat, Scope parentScope) {
     if (stat.getKind().equals(Abstract.NamespaceCommandStatement.Kind.OPEN)) {
-      Scope scope = myNsProvider.forDefinition(stat.getResolvedClass());
+      Scope scope = myScopeProvider.forDefinition(stat.getResolvedClass());
       if (stat.getNames() != null) {
         scope = new FilteredScope(scope, new HashSet<>(stat.getNames()), !stat.isHiding());
       }

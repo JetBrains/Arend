@@ -21,10 +21,11 @@ import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import com.jetbrains.jetpad.vclang.typechecking.order.Ordering;
 import com.jetbrains.jetpad.vclang.typechecking.order.SCC;
 import com.jetbrains.jetpad.vclang.typechecking.termination.DefinitionCallGraph;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.ClassViewInstanceProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.DefinitionResolveInstanceVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.GlobalInstancePool;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.SimpleClassViewInstanceProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.GlobalInstancePool;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.ClassViewInstanceProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.SimpleClassViewInstanceProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.scope.InstanceScopeProvider;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.*;
@@ -33,6 +34,7 @@ public class Typechecking {
   private final TypecheckerState myState;
   private final StaticNamespaceProvider myStaticNsProvider;
   private final DynamicNamespaceProvider myDynamicNsProvider;
+  private final InstanceScopeProvider myScopeProvider = new InstanceScopeProvider();
   private final ErrorReporter myErrorReporter;
   private final TypecheckedReporter myTypecheckedReporter;
   private final DependencyListener myDependencyListener;
@@ -180,14 +182,14 @@ public class Typechecking {
   public void typecheckDefinitions(final Collection<? extends Abstract.Definition> definitions) {
     SimpleClassViewInstanceProvider instanceProvider = new SimpleClassViewInstanceProvider();
     for (Abstract.Definition definition : definitions) {
-      definition.accept(new DefinitionResolveInstanceVisitor(myStaticNsProvider, instanceProvider, myErrorReporter), getDefinitionScope(definition));
+      definition.accept(new DefinitionResolveInstanceVisitor(myScopeProvider, instanceProvider, myErrorReporter), getDefinitionScope(definition));
     }
     typecheckDefinitions(definitions, instanceProvider);
   }
 
   public void typecheckDefinitions(final Collection<? extends Abstract.Definition> definitions, Scope scope) {
     SimpleClassViewInstanceProvider instanceProvider = new SimpleClassViewInstanceProvider();
-    DefinitionResolveInstanceVisitor visitor = new DefinitionResolveInstanceVisitor(myStaticNsProvider, instanceProvider, myErrorReporter);
+    DefinitionResolveInstanceVisitor visitor = new DefinitionResolveInstanceVisitor(myScopeProvider, instanceProvider, myErrorReporter);
     for (Abstract.Definition definition : definitions) {
       definition.accept(visitor, scope);
     }
@@ -197,7 +199,7 @@ public class Typechecking {
   public void typecheckModules(final Collection<? extends Abstract.ClassDefinition> classDefs) {
     SimpleClassViewInstanceProvider instanceProvider = new SimpleClassViewInstanceProvider();
     for (Abstract.ClassDefinition classDef : classDefs) {
-      classDef.accept(new DefinitionResolveInstanceVisitor(myStaticNsProvider, instanceProvider, myErrorReporter), new EmptyScope());
+      classDef.accept(new DefinitionResolveInstanceVisitor(myScopeProvider, instanceProvider, myErrorReporter), new EmptyScope());
     }
 
     Ordering ordering = new Ordering(instanceProvider, new TypecheckingDependencyListener(instanceProvider));
@@ -238,7 +240,7 @@ public class Typechecking {
 
     @Override
     public Void visitFunction(Abstract.FunctionDefinition def, Void params) {
-      for (Abstract.Statement statement : def.getStatements()) {
+      for (Abstract.Statement statement : def.getGlobalStatements()) {
         statement.accept(this, null);
       }
       return null;

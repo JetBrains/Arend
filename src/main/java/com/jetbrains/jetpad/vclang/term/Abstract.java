@@ -280,8 +280,11 @@ public final class Abstract {
     ClassDefinition getParent();
   }
 
-  public interface FunctionDefinition extends Definition, Function {
-    Collection<? extends Statement> getStatements();
+  public interface StatementCollection {
+    Collection<? extends Statement> getGlobalStatements();
+  }
+
+  public interface FunctionDefinition extends Definition, Function, StatementCollection {
   }
 
   public interface DataDefinition extends Definition {
@@ -296,13 +299,11 @@ public final class Abstract {
     Expression getSuperClass();
   }
 
-  public interface ClassDefinition extends Definition {
+  public interface ClassDefinition extends Definition, StatementCollection {
     List<? extends TypeArgument> getPolyParameters();
     Collection<? extends SuperClass> getSuperClasses();
     Collection<? extends ClassField> getFields();
     Collection<? extends Implementation> getImplementations();
-
-    Collection<? extends Statement> getGlobalStatements();
     Collection<? extends Definition> getInstanceDefinitions();
   }
 

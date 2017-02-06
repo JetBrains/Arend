@@ -44,7 +44,7 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.ImplicitArgsInferen
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.StdImplicitArgsInference;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.TwoStageEquations;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.ClassViewInstancePool;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.ClassViewInstancePool;
 
 import java.util.*;
 

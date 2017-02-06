@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.frontend.resolving.visitor;
 
+import com.jetbrains.jetpad.vclang.frontend.resolving.SimpleSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.FullName;
-import com.jetbrains.jetpad.vclang.frontend.resolving.SimpleSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.AbstractStatementVisitor;
@@ -18,7 +18,7 @@ public class DefinitionSourceInfoVisitor<SourceIdT extends SourceId> implements 
 
   @Override
   public Void visitFunction(Abstract.FunctionDefinition def, FullName fullName) {
-    for (Abstract.Statement statement : def.getStatements()) {
+    for (Abstract.Statement statement : def.getGlobalStatements()) {
       statement.accept(this, fullName);
     }
     return null;

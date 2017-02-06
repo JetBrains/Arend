@@ -8,7 +8,6 @@ import java.util.*;
 
 public class SimpleNamespace implements Namespace {
   private final Map<String, Abstract.Definition> myNames = new HashMap<>();
-  private List<Abstract.ClassViewInstance> myInstances = Collections.emptyList();
 
   public SimpleNamespace() {
   }
@@ -38,22 +37,9 @@ public class SimpleNamespace implements Namespace {
     }
   }
 
-  public void addInstance(Abstract.ClassViewInstance instance) {
-    if (myInstances.isEmpty()) {
-      myInstances = new ArrayList<>();
-    }
-    myInstances.add(instance);
-  }
-
   public void addAll(SimpleNamespace other) {
     for (Map.Entry<String, Abstract.Definition> entry : other.myNames.entrySet()) {
       addDefinition(entry.getKey(), entry.getValue());
-    }
-    if (!other.myInstances.isEmpty() && myInstances.isEmpty()) {
-      myInstances = new ArrayList<>();
-    }
-    for (Abstract.ClassViewInstance instance : other.myInstances) {
-      myInstances.add(instance);
     }
   }
 
@@ -73,6 +59,6 @@ public class SimpleNamespace implements Namespace {
 
   @Override
   public Collection<? extends Abstract.ClassViewInstance> getInstances() {
-    return myInstances;
+    return Collections.emptyList();
   }
 }

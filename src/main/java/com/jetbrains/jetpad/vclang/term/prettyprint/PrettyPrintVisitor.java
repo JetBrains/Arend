@@ -679,10 +679,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
     r.doPrettyPrint(this);
 
-    if (!def.getStatements().isEmpty()) {
+    if (!def.getGlobalStatements().isEmpty()) {
       myBuilder.append("\n");
       printIndent();
-      visitWhere(def.getStatements());
+      visitWhere(def.getGlobalStatements());
     }
     return null;
   }

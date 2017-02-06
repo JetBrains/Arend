@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.order;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.Typecheckable;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckingUnit;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.ClassViewInstanceProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.ClassViewInstanceProvider;
 
 import java.util.*;
 

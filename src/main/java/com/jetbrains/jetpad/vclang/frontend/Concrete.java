@@ -980,7 +980,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<Statement> getStatements() {
+    public List<Statement> getGlobalStatements() {
       return myStatements;
     }
 

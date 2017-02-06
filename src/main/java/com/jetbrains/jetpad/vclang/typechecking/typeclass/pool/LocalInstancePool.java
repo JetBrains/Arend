@@ -1,8 +1,8 @@
-package com.jetbrains.jetpad.vclang.typechecking.typeclass;
+package com.jetbrains.jetpad.vclang.typechecking.typeclass.pool;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
 import java.util.List;

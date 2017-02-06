@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.SimpleClassViewInstanceProvider;
 
 import java.util.Collection;
 import java.util.List;
