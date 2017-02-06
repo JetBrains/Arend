@@ -8,7 +8,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 
 public class OneshotNameResolver {
   public static void visitModule(Abstract.ClassDefinition module, Scope globalScope, NameResolver nameResolver, NamespaceProviders nsProviders, ResolveListener resolveListener, ErrorReporter errorReporter) {
-    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(nsProviders, globalScope, nameResolver, errorReporter, resolveListener);
-    visitor.visitClass(module, null);
+    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(nsProviders, nameResolver, errorReporter, resolveListener);
+    visitor.visitClass(module, globalScope);
   }
 }

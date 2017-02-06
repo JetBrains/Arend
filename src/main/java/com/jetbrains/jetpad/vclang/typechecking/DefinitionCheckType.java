@@ -88,7 +88,7 @@ public class DefinitionCheckType {
       typeCheckClass((Abstract.ClassDefinition) unit.getDefinition(), enclosingClass, visitor);
     } else
     if (unit.getDefinition() instanceof Abstract.ClassViewInstance) {
-      typeCheckClassViewInstance((Abstract.ClassViewInstance) unit.getDefinition(), visitor, instancePool);
+      typeCheckClassViewInstance((Abstract.ClassViewInstance) unit.getDefinition(), visitor);
     } else {
       throw new IllegalStateException();
     }
@@ -849,15 +849,18 @@ public class DefinitionCheckType {
     return typedDef;
   }
 
-  private static Definition typeCheckClassViewInstance(Abstract.ClassViewInstance def, CheckTypeVisitor visitor, GlobalInstancePool instancePool) {
+  private static void typeCheckClassViewInstance(Abstract.ClassViewInstance def, CheckTypeVisitor visitor) {
     LocalErrorReporter errorReporter = visitor.getErrorReporter();
     TypecheckerState state = visitor.getTypecheckingState();
 
     LinkList list = new LinkList();
     List<LevelBinding> polyParamsList = new ArrayList<>();
     boolean paramsOk = typeCheckParameters(def.getArguments(), def, visitor.getContext(), visitor.getLevelContext(), polyParamsList, list, visitor, null, null);
+    FunctionDefinition typedDef = new FunctionDefinition(def, list.getFirst(), null, null);
+    typedDef.setPolyParams(polyParamsList);
+    state.record(def, typedDef);
     if (!paramsOk) {
-      return null;
+      return;
     }
 
     Abstract.ClassView classView = (Abstract.ClassView) def.getClassView().getReferent();
@@ -882,7 +885,7 @@ public class DefinitionCheckType {
         classFieldMap.remove(field);
       } else {
         visitor.getErrorReporter().report(new LocalTypeCheckingError("Field '" + field.getName() + "' is not implemented", def));
-        return null;
+        return;
       }
     }
 
@@ -890,21 +893,12 @@ public class DefinitionCheckType {
     DefCallExpression defCall = impl.term.normalize(NormalizeVisitor.Mode.WHNF).toDefCall();
     if (defCall == null || !defCall.getDefCallArguments().isEmpty()) {
       errorReporter.report(new LocalTypeCheckingError("Expected a definition in the classifying field", def));
-      return null;
+      return;
     }
 
-    FunctionDefinition typedDef = new FunctionDefinition(def, list.getFirst(), term, top(list.getFirst(), leaf(Abstract.Definition.Arrow.RIGHT, New(term))));
-    typedDef.setPolyParams(polyParamsList);
-    state.record(def, typedDef);
-
-    Expression instance = FunCall(typedDef, new LevelArguments(), Collections.<Expression>emptyList());
-    instancePool.addInstance(defCall.getDefinition(), classView, instance);
-    if (def.isDefault()) {
-      if (instancePool.getInstance(defCall.getDefinition(), null) == null) {
-        instancePool.addInstance(defCall.getDefinition(), null, instance);
-      }
-    }
-
-    return typedDef;
+    typedDef.setResultType(term);
+    typedDef.setElimTree(top(list.getFirst(), leaf(Abstract.Definition.Arrow.RIGHT, New(term))));
+    typedDef.typeHasErrors(false);
+    typedDef.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
   }
 }

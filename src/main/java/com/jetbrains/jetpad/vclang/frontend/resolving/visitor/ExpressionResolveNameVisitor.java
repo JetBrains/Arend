@@ -77,7 +77,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
     return null;
   }
 
-  private void visitArguments(List<? extends Abstract.Argument> arguments) {
+  public void visitArguments(List<? extends Abstract.Argument> arguments) {
     for (Abstract.Argument argument : arguments) {
       if (argument instanceof Abstract.TypeArgument) {
         ((Abstract.TypeArgument) argument).getType().accept(this, null);

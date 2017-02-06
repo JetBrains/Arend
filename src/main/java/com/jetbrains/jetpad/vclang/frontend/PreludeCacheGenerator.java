@@ -18,7 +18,6 @@ import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 import com.jetbrains.jetpad.vclang.typechecking.order.BaseDependencyListener;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.EmptyClassViewInstanceProvider;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -94,16 +93,16 @@ public class PreludeCacheGenerator {
 
   public static void main(String[] args) {
     final NameResolver nameResolver = new NameResolver();
-    final StaticNamespaceProvider statisNsProvider = new SimpleStaticNamespaceProvider();
+    final StaticNamespaceProvider staticNsProvider = new SimpleStaticNamespaceProvider();
     final DynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
     final ListErrorReporter errorReporter = new ListErrorReporter();
     PreludeStorage storage = new PreludeStorage();
-    ResolvingModuleLoader<PreludeStorage.SourceId> baseModuleLoader = new ResolvingModuleLoader<>(storage, new DefaultModuleLoader.ModuleLoadingListener<PreludeStorage.SourceId>(), nameResolver, statisNsProvider, dynamicNsProvider, new ConcreteResolveListener(), errorReporter);
+    ResolvingModuleLoader<PreludeStorage.SourceId> baseModuleLoader = new ResolvingModuleLoader<>(storage, new DefaultModuleLoader.ModuleLoadingListener<PreludeStorage.SourceId>(), nameResolver, staticNsProvider, dynamicNsProvider, new ConcreteResolveListener(), errorReporter);
     CachingModuleLoader<PreludeStorage.SourceId> moduleLoader = new CachingModuleLoader<>(baseModuleLoader, new PreludePersistenceProvider(), new PreludeBuildCacheSupplier(Paths.get(args[0])), new PreludeDefLocator(storage.preludeSourceId), false);
     nameResolver.setModuleLoader(moduleLoader);
     Abstract.ClassDefinition prelude = moduleLoader.load(storage.preludeSourceId);
     if (!errorReporter.getErrorList().isEmpty()) throw new IllegalStateException();
-    Typechecking.typecheckModules(moduleLoader.getTypecheckerState(), statisNsProvider, dynamicNsProvider, EmptyClassViewInstanceProvider.getInstance(), Collections.singleton(prelude), errorReporter, new Prelude.UpdatePreludeReporter(moduleLoader.getTypecheckerState()), new BaseDependencyListener());
+    new Typechecking(moduleLoader.getTypecheckerState(), staticNsProvider, dynamicNsProvider, errorReporter, new Prelude.UpdatePreludeReporter(moduleLoader.getTypecheckerState()), new BaseDependencyListener()).typecheckModules(Collections.singleton(prelude));
     try {
       moduleLoader.persistModule(storage.preludeSourceId);
     } catch (IOException | CachePersistenceException e) {

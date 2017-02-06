@@ -1,8 +1,5 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
-import com.jetbrains.jetpad.vclang.error.Error;
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.naming.error.DuplicateInstanceError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.*;
@@ -14,24 +11,6 @@ public class OverridingScope implements Scope {
   public OverridingScope(Scope parent, Scope child) {
     myParent = parent;
     myChild = child;
-  }
-
-  public static OverridingScope mergeInstances(Scope parent, Scope child, ErrorReporter errorReporter) {
-    Collection<? extends Abstract.ClassViewInstance> parentInstances = parent.getInstances();
-    if (!parentInstances.isEmpty()) {
-      Collection<? extends Abstract.ClassViewInstance> childInstances = child.getInstances();
-      if (!childInstances.isEmpty()) {
-        for (Abstract.ClassViewInstance instance : parentInstances) {
-          for (Abstract.ClassViewInstance childInstance : childInstances) {
-            if (instance.getClassView().getReferent() == childInstance.getClassView().getReferent() && instance.getClassifyingDefinition() == childInstance.getClassifyingDefinition()) {
-              errorReporter.report(new DuplicateInstanceError(Error.Level.WARNING, instance, childInstance));
-            }
-          }
-        }
-      }
-    }
-
-    return new OverridingScope(parent, child);
   }
 
   @Override

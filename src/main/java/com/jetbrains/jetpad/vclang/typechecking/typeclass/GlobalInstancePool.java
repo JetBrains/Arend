@@ -11,7 +11,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class GlobalInstancePool implements ClassViewInstancePool {
+  private final ClassViewInstanceProvider myInstanceProvider;
   private final Map<Pair<Definition, Abstract.ClassView>, Expression> myViewPool = new HashMap<>();
+
+  public GlobalInstancePool(ClassViewInstanceProvider instanceProvider) {
+    myInstanceProvider = instanceProvider;
+  }
 
   @Override
   public Expression getInstance(Expression classifyingExpression, Abstract.ClassView classView) {
@@ -20,13 +25,5 @@ public class GlobalInstancePool implements ClassViewInstancePool {
       return null;
     }
     return myViewPool.get(new Pair<>(defCall.getDefinition(), classView));
-  }
-
-  public Expression getInstance(Definition definition, Abstract.ClassView classView) {
-    return myViewPool.get(new Pair<>(definition, classView));
-  }
-
-  public void addInstance(Definition classifyingDefinition, Abstract.ClassView classView, Expression instance) {
-    myViewPool.put(new Pair<>(classifyingDefinition, classView), instance);
   }
 }

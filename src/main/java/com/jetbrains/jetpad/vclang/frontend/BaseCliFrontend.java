@@ -25,8 +25,6 @@ import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 import com.jetbrains.jetpad.vclang.typechecking.order.BaseDependencyListener;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.EmptyClassViewInstanceProvider;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.SimpleClassViewInstanceProvider;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -148,6 +146,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     @Override
     public Void visitClassViewInstance(Abstract.ClassViewInstance def, Map<String, Abstract.Definition> params) {
+      params.put(getIdFor(def), def);
       return null;
     }
 
@@ -189,7 +188,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
   private Namespace loadPrelude() {
     Abstract.ClassDefinition prelude = moduleLoader.load(moduleLoader.locateModule(PreludeStorage.PRELUDE_MODULE_PATH), true).definition;
-    Typechecking.typecheckModules(state, staticNsProvider, dynamicNsProvider, EmptyClassViewInstanceProvider.getInstance(), Collections.singletonList(prelude), new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(state), new BaseDependencyListener());
+    new Typechecking(state, staticNsProvider, dynamicNsProvider, new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(state), new BaseDependencyListener()).typecheckModules(Collections.singletonList(prelude));
     assert errorReporter.getErrorList().isEmpty();
     return staticNsProvider.forDefinition(prelude);
   }
@@ -312,7 +311,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     System.out.println("--- Checking ---");
 
-    Typechecking.typecheckModules(state, staticNsProvider, dynamicNsProvider, new SimpleClassViewInstanceProvider(), modulesToTypeCheck, errorReporter, new TypecheckedReporter() {
+    new Typechecking(state, staticNsProvider, dynamicNsProvider, errorReporter, new TypecheckedReporter() {
       @Override
       public void typecheckingSucceeded(Abstract.Definition definition) {
         SourceIdT source = srcInfoProvider.sourceOf(definition);
@@ -343,7 +342,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
           results.put(source, result);
         }
       }
-    }, new BaseDependencyListener());
+    }, new BaseDependencyListener()).typecheckModules(modulesToTypeCheck);
 
     return results;
   }
