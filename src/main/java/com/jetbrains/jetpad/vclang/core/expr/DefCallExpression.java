@@ -23,6 +23,7 @@ public abstract class DefCallExpression extends Expression {
       myPolyArguments = new LevelArguments(args);
     } else {
       myPolyArguments = polyParams;
+      assert polyParams.getLevels().size() == myDefinition.getPolyParams().size();
     }
   }
 

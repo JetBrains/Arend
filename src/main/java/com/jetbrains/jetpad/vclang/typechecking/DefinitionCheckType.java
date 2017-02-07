@@ -123,8 +123,11 @@ public class DefinitionCheckType {
   private static boolean typeCheckParameters(List<? extends Abstract.Argument> arguments, Abstract.SourceNode node, List<Binding> context, List<LevelBinding> lvlContext, List<LevelBinding> polyParamsList, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool, Map<Integer, ClassField> classifyingFields) {
     boolean ok = true;
     boolean polyParamsAllowed = true;
-    List<LevelBinding> genParamsList = new ArrayList<>(2);
+    List<LevelBinding> genPolyParams = new ArrayList<>();
     int index = 0;
+
+    genPolyParams.add(null);
+    genPolyParams.add(null);
 
     for (Abstract.Argument argument : arguments) {
       if (argument instanceof Abstract.TypeArgument) {
@@ -149,7 +152,7 @@ public class DefinitionCheckType {
           polyParamsAllowed = false;
         }
 
-        Type paramType = visitor.checkParamType(typeArgument.getType(), genParamsList);
+        Type paramType = visitor.checkParamType(typeArgument.getType(), genPolyParams);
         if (paramType == null) {
           ok = false;
           continue;
@@ -187,7 +190,12 @@ public class DefinitionCheckType {
       }
     }
 
-    polyParamsList.addAll(genParamsList);
+    if (genPolyParams.get(0) != null) {
+      polyParamsList.add(genPolyParams.get(0));
+    }
+    if (genPolyParams.get(1) != null) {
+      polyParamsList.add(genPolyParams.get(1));
+    }
     return ok;
   }
 

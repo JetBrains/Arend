@@ -279,7 +279,11 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     } else {
       myBuilder.append("\\").append(expr.getHLevel()).append("-Type");
     }
+
     if (expr.getPLevel() != null) {
+      if (expr.getPLevel().size() != 1 || !(expr.getPLevel().get(0) instanceof Abstract.NumericLiteral)) {
+        myBuilder.append(" ");
+      }
       prettyPrintMaxExpression(expr.getPLevel(), Abstract.Expression.PREC);
     }
     return null;

@@ -15,6 +15,7 @@ import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -29,13 +30,13 @@ public class GetTypeTest extends TypeCheckingTestCase {
 
   @Test
   public void constructorTest() {
-    TypeCheckClassResult result = typeCheckClass("\\data List (A : \\Type0) | nil | cons A (List A) \\function test => cons 0 nil");
+    TypeCheckClassResult result = typeCheckClass("\\data List (A : \\1-Type0) | nil | cons A (List A) \\function test => cons 0 nil");
     testType(DataCall((DataDefinition) result.getDefinition("List"), new LevelArguments(), Nat()), result);
   }
 
   @Test
   public void nilConstructorTest() {
-    TypeCheckClassResult result = typeCheckClass("\\data List (A : \\Type0) | nil | cons A (List A) \\function test => (List Nat).nil");
+    TypeCheckClassResult result = typeCheckClass("\\data List (A : \\1-Type0) | nil | cons A (List A) \\function test => (List Nat).nil");
     testType(DataCall((DataDefinition) result.getDefinition("List"), new LevelArguments(), Nat()), result);
   }
 
@@ -78,7 +79,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
   public void tupleTest() {
     TypeCheckClassResult result = typeCheckClass("\\function test : \\Sigma (x y : Nat) (x = y) => (0, 0, path (\\lam _ => 0))");
     DependentLink xy = param(true, vars("x", "y"), Nat());
-    testType(Sigma(params(xy, param(FunCall(Prelude.PATH_INFIX, new LevelArguments(), Nat(), Reference(xy), Reference(xy.getNext()))))), result);
+    testType(Sigma(params(xy, param(FunCall(Prelude.PATH_INFIX, new LevelArguments(Arrays.asList(new Level(0), new Level(1))), Nat(), Reference(xy), Reference(xy.getNext()))))), result);
   }
 
   @Test

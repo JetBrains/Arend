@@ -7,6 +7,9 @@ public class LevelBinding implements LevelVariable {
   private final String myName;
   private final LvlType myType;
 
+  public final static LevelBinding PLVL_BND = new LevelBinding("\\lp", LvlType.PLVL);
+  public final static LevelBinding HLVL_BND = new LevelBinding("\\lh", LvlType.HLVL);
+
   public LevelBinding(String name, LvlType type) {
     myName = name;
     myType = type;
