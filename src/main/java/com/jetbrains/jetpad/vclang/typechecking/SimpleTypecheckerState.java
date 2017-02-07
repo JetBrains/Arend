@@ -27,4 +27,8 @@ public class SimpleTypecheckerState implements TypecheckerState {
     assert def != null;
     return myTypechecked.get(def);
   }
+
+  public void clear() {
+    myTypechecked.clear();
+  }
 }

@@ -14,12 +14,12 @@ import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
 public class ResolvingModuleLoader<SourceIdT extends SourceId> extends DefaultModuleLoader<SourceIdT> {
   private final ResolvingModuleLoadingListener<SourceIdT> myResolvingModuleListener;
-  private final Map<ModulePath, Abstract.ClassDefinition> myLoadedModules = new HashMap<>();
+  private final Set<ModulePath> myLoadedModules = new HashSet<>();
 
   public ResolvingModuleLoader(SourceSupplier<SourceIdT> sourceSupplier, ModuleLoadingListener<SourceIdT> loadingListener, NameResolver nameResolver, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ResolveListener resolveListener, ErrorReporter errorReporter) {
     this(sourceSupplier, errorReporter, new ResolvingModuleLoadingListener<>(nameResolver, staticNsProvider, dynamicNsProvider, loadingListener, resolveListener, errorReporter), nameResolver);
@@ -33,22 +33,18 @@ public class ResolvingModuleLoader<SourceIdT extends SourceId> extends DefaultMo
 
   @Override
   public Abstract.ClassDefinition load(SourceIdT sourceId) {
-    if (myLoadedModules.containsKey(sourceId.getModulePath())) {
+    if (myLoadedModules.contains(sourceId.getModulePath())) {
       throw new IllegalStateException("This path is already loaded");
     }
     Abstract.ClassDefinition result = super.load(sourceId);
     if (result != null) {
-      myLoadedModules.put(sourceId.getModulePath(), result);
+      myLoadedModules.add(sourceId.getModulePath());
     }
     return result;
   }
 
   public void setPreludeNamespace(Namespace namespace) {
     myResolvingModuleListener.setPreludeNamespace(namespace);
-  }
-
-  public Abstract.ClassDefinition getLoadedModule(ModulePath modulePath) {
-    return myLoadedModules.get(modulePath);
   }
 
 
@@ -72,7 +68,7 @@ public class ResolvingModuleLoader<SourceIdT extends SourceId> extends DefaultMo
     @Override
     public void loadingSucceeded(SourceIdT module, Abstract.ClassDefinition abstractDefinition) {
       myModuleNsProvider.registerModule(module.getModulePath(), abstractDefinition);
-      OneshotNameResolver.visitModule(abstractDefinition, myPreludeNamespace, myNameResolver, myNsProviders, myResolveListener, myErrorReporter);
+      OneshotNameResolver.visitModule(abstractDefinition, myPreludeNamespace, myNameResolver, myNsProviders, myResolveListener);
       myOriginalLoadingListener.loadingSucceeded(module, abstractDefinition);
     }
 

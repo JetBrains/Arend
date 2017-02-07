@@ -1,8 +1,9 @@
 package com.jetbrains.jetpad.vclang.frontend.resolving;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
-public interface ResolveListener {
+public interface ResolveListener extends ErrorReporter {
   void nameResolved(Abstract.DefCallExpression defCallExpression, Abstract.Definition definition);
   void moduleResolved(Abstract.ModuleCallExpression moduleCallExpression, Abstract.Definition definition);
   void nsCmdResolved(Abstract.NamespaceCommandStatement nsCmdStatement, Abstract.Definition definition);

@@ -27,4 +27,8 @@ public class GlobalInstancePool implements ClassViewInstancePool {
     }
     return myViewPool.get(new Pair<>(defCall.getDefinition(), classView));
   }
+
+  public void clear() {
+    myViewPool.clear();
+  }
 }

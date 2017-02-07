@@ -135,10 +135,10 @@ argument : atomFieldsAcc                # argumentExplicit
          ;
 
 literal : name                          # id
-        | UNIVERSE                         # universe
-        | TRUNCATED_UNIVERSE               # truncatedUniverse
-        | SET                              # set
-        | '\\Prop'                                                                     # prop
+        | UNIVERSE                      # universe
+        | TRUNCATED_UNIVERSE            # truncatedUniverse
+        | SET                           # set
+        | '\\Prop'                      # prop
         | 'Lvl'                         # lvl
         | '_'                           # unknown
         | '{?}'                         # hole

@@ -164,9 +164,9 @@ public class TypeCheckingElim {
       DataCallExpression dataCall = elimExpr.getBinding().getType().toExpression().toDataCall();
       if (dataCall != null && dataCall.getDefinition().isTruncated()) {
         if (!expectedType.getType().isLessOrEquals(dataCall.getType(), myVisitor.getEquations(), expr)) {
-          error = new LocalTypeCheckingError("Data " + dataCall.getDefinition().getName() + " is truncated to universe "
-            + new ToAbstractVisitor(new ConcreteExpressionFactory()).visitTypeMax(dataCall.getType()) + " and must be not less than the universe " +
-            new ToAbstractVisitor(new ConcreteExpressionFactory()).visitTypeMax(expectedType) + " of type of eliminator", expr);
+          error = new LocalTypeCheckingError("Data " + dataCall.getDefinition().getName() + " is truncated to the universe "
+            + new ToAbstractVisitor(new ConcreteExpressionFactory()).visitTypeMax(dataCall.getType()) + " which must be not less than the universe of " +
+            new ToAbstractVisitor(new ConcreteExpressionFactory()).visitTypeMax(expectedType) + " - the type of eliminator", expr);
           expr.setWellTyped(myVisitor.getContext(), Error(null, error));
           myVisitor.getErrorReporter().report(error);
           wasError = true;

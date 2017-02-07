@@ -176,6 +176,26 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     protected abstract boolean matchesTypeCheckingError(LocalTypeCheckingError error, Description description);
   }
 
+  protected static Matcher<? super GeneralError> typecheckingError(final Class<? extends LocalTypeCheckingError> type) {
+    return new TypeCheckingErrorMatcher() {
+      @Override
+      protected boolean matchesTypeCheckingError(LocalTypeCheckingError error, Description description) {
+        if (type.isInstance(error)) {
+          description.appendText(type.getName());
+          return true;
+        } else {
+          description.appendText("not a " + type.getName());
+          return false;
+        }
+      }
+
+      @Override
+      public void describeTo(Description description) {
+        description.appendText("should be a " + type.getName());
+      }
+    };
+  }
+
   protected static Matcher<? super GeneralError> typeMismatchError() {
     return new TypeCheckingErrorMatcher() {
       @Override

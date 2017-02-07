@@ -9,7 +9,7 @@ public class TypeOmega extends TypeCheckingTestCase {
   public void dataExpansion() {
     typeCheckClass(
       "\\data D (A : \\Type) (a : A) | d (B : A -> \\Type2)\n" +
-      "\\function f {lp : Lvl} : \\Pi {A : \\Type (lp)} {a : A} -> (A -> \\Type1) -> D A a => d\n" +
+      "\\function f {lp : Lvl} : \\Pi {A : \\Type lp} {a : A} -> (A -> \\Type1) -> D A a => d\n" +
       "\\function test => f {_} {\\Set0} {\\Prop} (\\lam _ => \\Type0)");
   }
 

@@ -363,7 +363,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       DependentLink args = visitArguments(arguments);
       Abstract.PolyUniverseExpression uni = (Abstract.PolyUniverseExpression)cod;
       if (args == null) return null;
-      LevelBinding lpParam = null;
+      /*LevelBinding lpParam = null;
       LevelBinding lhParam = null;
       if (genPolyParams != null) {
         if (uni.getPLevel() == null) {
@@ -386,16 +386,27 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
             genPolyParams.add(lhParam);
           }
         }
+      } /**/
+
+      if (genPolyParams != null) {
+        assert genPolyParams.size() == 2;
+        if (uni.getPLevel() == null) {
+          genPolyParams.set(0, LevelBinding.PLVL_BND);
+        }
+        if (uni.getHLevel() == Abstract.PolyUniverseExpression.NOT_TRUNCATED) {
+          genPolyParams.set(1, LevelBinding.HLVL_BND);
+        }
       }
-      Level hlevel = lhParam != null ? new Level(lhParam) :
-        uni.getHLevel() == Abstract.PolyUniverseExpression.NOT_TRUNCATED ? Level.INFINITY : new Level(uni.getHLevel() + 1);
+
+      Level hlevel = uni.getHLevel() == Abstract.PolyUniverseExpression.NOT_TRUNCATED ?
+              genPolyParams != null ? new Level(LevelBinding.HLVL_BND) : Level.INFINITY : new Level(uni.getHLevel() + 1);
       if (maxAllowed) {
-        LevelMax plevel = lpParam != null ? new LevelMax(new Level(lpParam)) : typeCheckLevelMax(uni.getPLevel(), 0);
+        LevelMax plevel = genPolyParams != null && uni.getPLevel() == null ? new LevelMax(new Level(LevelBinding.PLVL_BND)) : typeCheckLevelMax(uni.getPLevel(), 0);
         return new PiUniverseType(args, new SortMax(plevel, new LevelMax(hlevel)));
       }
       Level plevel = null;
-      if (lpParam != null) {
-        plevel = new Level(lpParam);
+      if (genPolyParams != null && uni.getPLevel() == null) {
+        plevel = new Level(LevelBinding.PLVL_BND);
       } else if (uni.getPLevel() != null) {
         if (uni.getPLevel().size() != 1) {
           // TODO: create special class for this error
@@ -662,16 +673,24 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         int val = ((Abstract.NumericLiteral) expr).getNumber();
         return new Level(val + num_sucs - minValue);
       } else if (expr instanceof Abstract.DefCallExpression) {
-        String name = ((Abstract.DefCallExpression)expr).getName();
+        Abstract.DefCallExpression defCall = (Abstract.DefCallExpression)expr;
+        String name = defCall.getName();
         if (name.equals("inf")) {
           return Level.INFINITY;
         }
         if (!name.equals("suc")) {
-          Variable var = getLocalVar((Abstract.DefCallExpression) expr, myLvlContext);
+          LevelBinding var;
+          if (name.equals(LevelBinding.PLVL_BND.getName())) {
+            var = LevelBinding.PLVL_BND;
+          } else if (name.equals(LevelBinding.HLVL_BND.getName())) {
+            var = LevelBinding.HLVL_BND;
+          } else {
+            var = (LevelBinding) getLocalVar(defCall, myLvlContext);
+          }
           if (var == null) {
             return null;
           }
-          return new Level((LevelBinding) var, num_sucs);
+          return new Level(var, num_sucs);
         }
       }
       error = new LocalTypeCheckingError("Invalid level expression", expr);
@@ -693,20 +712,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
     return level;
   }
-
-  /*public SortMax sortMax(Abstract.PolyUniverseExpression expr) {
-    LevelMax levelP = expr.getPLevel() == null ? LevelMax.INFINITY : new LevelMax();
-    if (expr.getPLevel() != null) {
-      for (Abstract.Expression maxArgExpr : expr.getPLevel()) {
-        Level maxArg = typeCheckLevel(maxArgExpr, 0);
-        if (maxArg == null) return null;
-        levelP = levelP.max(maxArg);
-      }
-    }
-    LevelMax levelH = expr.getHLevel() != Abstract.PolyUniverseExpression.NOT_TRUNCATED ? new LevelMax(new Level(expr.getHLevel() + 1)) : LevelMax.INFINITY;
-    if (levelP == null) return null;
-    return new SortMax(levelP, levelH);
-  }/**/
 
   @Override
   public Result visitPolyUniverse(Abstract.PolyUniverseExpression expr, Type expectedType) {

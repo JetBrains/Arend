@@ -42,10 +42,11 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   // Modules
   private final ResolvingModuleLoader<SourceIdT> resolvingModuleLoader;
   private final CachingModuleLoader<SourceIdT> moduleLoader;
+  private final Map<SourceIdT, Abstract.ClassDefinition> loadedSources = new HashMap<>();
 
   // Name resolving
   private final NameResolver nameResolver = new NameResolver();
-  private final SimpleStaticNamespaceProvider staticNsProvider  = new SimpleStaticNamespaceProvider();
+  private final SimpleStaticNamespaceProvider staticNsProvider = new SimpleStaticNamespaceProvider();
   private final DynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
 
   private final SourceInfoProvider<SourceIdT> srcInfoProvider;
@@ -178,6 +179,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
       }
       defIdCollector.visitClass(abstractDefinition, definitionIds.get(module));
       mySrcInfoCollector.visitModule(module, abstractDefinition);
+      loadedSources.put(module, abstractDefinition);
       System.out.println("[Loaded] " + displaySource(module, false));
     }
   }
@@ -194,7 +196,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   }
 
   private ResolvingModuleLoader<SourceIdT> createResolvingModuleLoader(ModuleLoadingListener moduleLoadingListener) {
-    return new ResolvingModuleLoader<>(storage, moduleLoadingListener, nameResolver, staticNsProvider, dynamicNsProvider, new ConcreteResolveListener(), errorReporter);
+    return new ResolvingModuleLoader<>(storage, moduleLoadingListener, nameResolver, staticNsProvider, dynamicNsProvider, new ConcreteResolveListener(errorReporter), errorReporter);
   }
 
   private CachingModuleLoader<SourceIdT> createCachingModuleLoader(boolean recompile) {
@@ -293,7 +295,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     final Set<Abstract.ClassDefinition> modulesToTypeCheck = new LinkedHashSet<>();
     for (SourceIdT source : sources) {
-      Abstract.ClassDefinition definition = resolvingModuleLoader.getLoadedModule(source.getModulePath());
+      Abstract.ClassDefinition definition = loadedSources.get(source);
       if (definition == null){
         CachingModuleLoader.Result result = moduleLoader.loadWithResult(source);
         if (result.exception != null) {

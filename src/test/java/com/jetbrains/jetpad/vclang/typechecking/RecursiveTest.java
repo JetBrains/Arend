@@ -1,8 +1,10 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.TerminationCheckError;
 import org.junit.Test;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -49,5 +51,17 @@ public class RecursiveTest extends TypeCheckingTestCase {
   @Test
   public void functionPartiallyApplied() {
     assertTrue(typeCheckDef("\\function foo (z : (Nat -> Nat) -> Nat) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' => z (foo z x')").hasErrors() == Definition.TypeCheckingStatus.NO_ERRORS);
+  }
+
+  @Test
+  public void withType() {
+    typeCheckDef("\\function f : Nat => f", 1);
+    assertThatErrorsAre(instanceOf(TerminationCheckError.class));
+  }
+
+  @Test
+  public void withoutType() {
+    typeCheckDef("\\function f => f", 1);
+    assertThatErrorsAre(instanceOf(TerminationCheckError.class));
   }
 }

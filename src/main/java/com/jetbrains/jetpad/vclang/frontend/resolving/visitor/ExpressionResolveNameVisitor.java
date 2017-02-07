@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.frontend.resolving.visitor;
 
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.parser.BinOpParser;
 import com.jetbrains.jetpad.vclang.frontend.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
@@ -22,14 +21,12 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   private final List<String> myContext;
   private final NameResolver myNameResolver;
   private final ResolveListener myResolveListener;
-  private final ErrorReporter myErrorReporter;
 
-  public ExpressionResolveNameVisitor(NamespaceProviders namespaceProviders, Scope parentScope, List<String> context, NameResolver nameResolver, ErrorReporter errorReporter, ResolveListener resolveListener) {
+  public ExpressionResolveNameVisitor(NamespaceProviders namespaceProviders, Scope parentScope, List<String> context, NameResolver nameResolver, ResolveListener resolveListener) {
     myNsProviders = namespaceProviders;
     myParentScope = parentScope;
     myContext = context;
     myNameResolver = nameResolver;
-    myErrorReporter = errorReporter;
     myResolveListener = resolveListener;
   }
 
@@ -59,7 +56,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
               (((Abstract.DefCallExpression) expression).getReferent() instanceof Abstract.ClassDefinition
               || ((Abstract.DefCallExpression) expression).getReferent() instanceof Abstract.DataDefinition
               || ((Abstract.DefCallExpression) expression).getReferent() instanceof Abstract.ClassView)) {
-          myErrorReporter.report(new NotInScopeError(expr, expr.getName()));
+          myResolveListener.report(new NotInScopeError(expr, expr.getName()));
         }
       }
     }
@@ -168,7 +165,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
       left.accept(this, null);
       myResolveListener.replaceBinOp(expr, left);
     } else {
-      BinOpParser parser = new BinOpParser(myErrorReporter, expr, myResolveListener);
+      BinOpParser parser = new BinOpParser(myResolveListener, expr, myResolveListener);
       List<Abstract.BinOpSequenceElem> sequence = expr.getSequence();
 
       expr.getLeft().accept(this, null);
@@ -187,7 +184,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
           expression = elem.argument;
         } else {
           error = new NotInScopeError(elem.binOp, name);
-          myErrorReporter.report(error);
+          myResolveListener.report(error);
         }
       }
       if (error == null) {
@@ -271,7 +268,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
 
   public void visitClassFieldImpls(Collection<? extends Abstract.ClassFieldImpl> classFieldImpls, Abstract.ClassView classView, Abstract.ClassDefinition classDef) {
     for (Abstract.ClassFieldImpl statement : classFieldImpls) {
-      Abstract.ClassField resolvedRef = classView != null ? myNameResolver.resolveClassFieldByView(classView, statement.getImplementedFieldName(), myErrorReporter, statement) : classDef != null ? myNameResolver.resolveClassField(classDef, statement.getImplementedFieldName(), myNsProviders.dynamics, myErrorReporter, statement) : null;
+      Abstract.ClassField resolvedRef = classView != null ? myNameResolver.resolveClassFieldByView(classView, statement.getImplementedFieldName(), myResolveListener, statement) : classDef != null ? myNameResolver.resolveClassField(classDef, statement.getImplementedFieldName(), myNsProviders.dynamics, myResolveListener, statement) : null;
       if (resolvedRef != null) {
         myResolveListener.implementResolved(statement, resolvedRef);
       }
