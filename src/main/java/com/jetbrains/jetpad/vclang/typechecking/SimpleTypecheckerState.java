@@ -34,4 +34,9 @@ public class SimpleTypecheckerState implements TypecheckerState {
   public GlobalInstancePool getInstancePool() {
     return myInstancePool;
   }
+
+  public void clear() {
+    myTypechecked.clear();
+    myInstancePool.clear();
+  }
 }
