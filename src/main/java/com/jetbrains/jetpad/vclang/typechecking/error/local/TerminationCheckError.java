@@ -1,12 +1,13 @@
 package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
-import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
+import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.typechecking.termination.BaseCallMatrix;
 import com.jetbrains.jetpad.vclang.typechecking.termination.CompositeCallMatrix;
 import com.jetbrains.jetpad.vclang.typechecking.termination.RecursiveBehavior;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Created by user on 12/16/16.
@@ -22,9 +23,15 @@ public class TerminationCheckError extends GeneralError {
     }
 
     public static<T> String formErrorMessage(Definition def, Set<RecursiveBehavior<T>> behaviors) {
-        String result = "Termination check failed for function "+def.getName()+".\n";
-        for (RecursiveBehavior rb : behaviors) result += printBehavior(rb);
-        return result;
+        StringBuilder builder = new StringBuilder("Termination check failed for function ");
+        builder.append(def.getName());
+        if (!behaviors.isEmpty()) {
+            builder.append('\n');
+            for (RecursiveBehavior rb : behaviors) {
+                builder.append(printBehavior(rb));
+            }
+        }
+        return builder.toString();
     }
 
     private static String printBehavior(RecursiveBehavior rb) {

@@ -120,7 +120,9 @@ public abstract class BaseCallGraph<T> {
             if (order == null) {
                 result = false;
                 HashSet<RecursiveBehavior<T>> rbs2 = new HashSet<>();
-                rbs2.addAll(rbs.myBestRbAttained.onlyMinimalElements());
+                if (rbs.myBestRbAttained != null) {
+                    rbs2.addAll(rbs.myBestRbAttained.onlyMinimalElements());
+                }
                 formErrorMessage(v, rbs2);
             }
         }
