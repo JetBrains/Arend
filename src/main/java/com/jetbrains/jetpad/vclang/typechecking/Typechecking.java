@@ -75,17 +75,13 @@ public class Typechecking {
 
       if (Typecheckable.hasHeader(unit.getDefinition())) {
         if (unit.isHeader()) {
-          if (myState.getTypechecked(unit.getDefinition()) == null) {
-            countingErrorReporter = new CountingErrorReporter();
-            LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter));
-            CheckTypeVisitor visitor = new CheckTypeVisitor(myState, myStaticNsProvider, myDynamicNsProvider, null, null, new ArrayList<Binding>(), new ArrayList<LevelBinding>(), localErrorReporter, null);
-            Definition typechecked = DefinitionCheckType.typeCheckHeader(visitor, instancePool, unit.getDefinition(), unit.getEnclosingClass());
-            if (typechecked.hasErrors() == Definition.TypeCheckingStatus.TYPE_CHECKING) {
-              mySuspensions.put(unit.getDefinition(), new Suspension(visitor, countingErrorReporter));
-              doReport = false;
-            } else {
-              doReport = true;
-            }
+          countingErrorReporter = new CountingErrorReporter();
+          LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter));
+          CheckTypeVisitor visitor = new CheckTypeVisitor(myState, myStaticNsProvider, myDynamicNsProvider, null, null, new ArrayList<Binding>(), new ArrayList<LevelBinding>(), localErrorReporter, null);
+          Definition typechecked = DefinitionCheckType.typeCheckHeader(visitor, instancePool, unit.getDefinition(), unit.getEnclosingClass());
+          if (typechecked.hasErrors() == Definition.TypeCheckingStatus.TYPE_CHECKING) {
+            mySuspensions.put(unit.getDefinition(), new Suspension(visitor, countingErrorReporter));
+            doReport = false;
           } else {
             doReport = true;
           }
@@ -105,12 +101,10 @@ public class Typechecking {
           }
         }
       } else {
+        countingErrorReporter = new CountingErrorReporter();
+        LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter));
+        DefinitionCheckType.typeCheck(myState, instancePool, myStaticNsProvider, myDynamicNsProvider, unit, localErrorReporter);
         doReport = true;
-        if (myState.getTypechecked(unit.getDefinition()) == null) {
-          countingErrorReporter = new CountingErrorReporter();
-          LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter));
-          DefinitionCheckType.typeCheck(myState, instancePool, myStaticNsProvider, myDynamicNsProvider, unit, localErrorReporter);
-        }
       }
 
       if (doReport) {
@@ -146,7 +140,7 @@ public class Typechecking {
   }
 
   private void typecheckDefinitions(final Collection<? extends Abstract.Definition> definitions, ClassViewInstanceProvider instanceProvider) {
-    Ordering ordering = new Ordering(instanceProvider, new TypecheckingDependencyListener(instanceProvider));
+    Ordering ordering = new Ordering(instanceProvider, new TypecheckingDependencyListener(instanceProvider), myState);
     try {
       for (Abstract.Definition definition : definitions) {
         ordering.doOrder(definition);
@@ -202,7 +196,7 @@ public class Typechecking {
       classDef.accept(new DefinitionResolveInstanceVisitor(myScopeProvider, instanceProvider, myErrorReporter), new EmptyScope());
     }
 
-    Ordering ordering = new Ordering(instanceProvider, new TypecheckingDependencyListener(instanceProvider));
+    Ordering ordering = new Ordering(instanceProvider, new TypecheckingDependencyListener(instanceProvider), myState);
     try {
       for (Abstract.ClassDefinition classDef : classDefs) {
         new OrderDefinitionVisitor(ordering).orderDefinition(classDef);
@@ -216,13 +210,18 @@ public class Typechecking {
     private final GlobalInstancePool myInstancePool;
 
     private TypecheckingDependencyListener(ClassViewInstanceProvider instanceProvider) {
-      myInstancePool = new GlobalInstancePool(instanceProvider);
+      myInstancePool = new GlobalInstancePool(myState, instanceProvider);
     }
 
     @Override
     public void sccFound(SCC scc) {
       typecheck(scc, myInstancePool);
       myDependencyListener.sccFound(scc);
+    }
+
+    @Override
+    public void alreadyTypechecked(Definition definition) {
+      myTypecheckedReporter.typecheckingSucceeded(definition.getAbstractDefinition());
     }
 
     @Override

@@ -250,6 +250,19 @@ public final class Abstract {
     String getName();
   }
 
+  public static Collection<? extends Abstract.Argument> getArguments(Abstract.Definition definition) {
+    if (definition instanceof Abstract.FunctionDefinition) {
+      return ((FunctionDefinition) definition).getArguments();
+    }
+    if (definition instanceof Abstract.DataDefinition) {
+      return ((DataDefinition) definition).getParameters();
+    }
+    if (definition instanceof Abstract.Constructor) {
+      return ((Constructor) definition).getArguments();
+    }
+    return null;
+  }
+
   public interface Definition extends ReferableSourceNode {
     enum Arrow { LEFT, RIGHT }
     Precedence getPrecedence();

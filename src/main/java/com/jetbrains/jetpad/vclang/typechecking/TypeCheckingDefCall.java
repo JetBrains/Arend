@@ -95,7 +95,7 @@ public class TypeCheckingDefCall {
             assert typeCheckedDefinition instanceof ClassField;
             Abstract.ClassView ownClassView = ((Abstract.ClassViewField) resolvedDefinition).getOwnView();
             ClassCallExpression classCall = ClassCall(typeCheckedDefinition.getThisClass(), LevelArguments.generateInferVars(typeCheckedDefinition.getThisClass().getPolyParams(), myVisitor.getEquations(), expr));
-            thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable(typeCheckedDefinition.getThisClass().getName() + "-inst", classCall, ownClassView, (ClassField) myVisitor.getTypecheckingState().getTypechecked(ownClassView.getClassifyingField()), expr), myVisitor.getEquations());
+            thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable(typeCheckedDefinition.getThisClass().getName() + "-inst", classCall, expr, 0, ownClassView, (ClassField) myVisitor.getTypecheckingState().getTypechecked(ownClassView.getClassifyingField())), myVisitor.getEquations());
           } else {
             LocalTypeCheckingError error;
             if (myThisClass != null) {
@@ -198,7 +198,7 @@ public class TypeCheckingDefCall {
       }
 
       if (constructor != null) {
-        return CheckTypeVisitor.DefCallResult.makeTResult(constructor, dataCall.getPolyArguments(), null).applyExpressions(args);
+        return CheckTypeVisitor.DefCallResult.makeTResult(expr, constructor, dataCall.getPolyArguments(), null).applyExpressions(args);
       }
     }
 
@@ -262,7 +262,7 @@ public class TypeCheckingDefCall {
     return makeResult(typeCheckedDefinition, thisExpr, expr);
   }
 
-  private CheckTypeVisitor.TResult makeResult(Definition definition, Expression thisExpr, Abstract.Expression expr) {
+  private CheckTypeVisitor.TResult makeResult(Definition definition, Expression thisExpr, Abstract.DefCallExpression expr) {
     LevelArguments polyArgs = LevelArguments.generateInferVars(definition.getPolyParams(), myVisitor.getEquations(), expr);
 
     if (thisExpr == null && definition instanceof ClassField) {
@@ -272,7 +272,7 @@ public class TypeCheckingDefCall {
       return null;
     }
 
-    return CheckTypeVisitor.DefCallResult.makeTResult(definition, polyArgs, thisExpr);
+    return CheckTypeVisitor.DefCallResult.makeTResult(expr, definition, polyArgs, thisExpr);
   }
 
   private Expression findParent(ClassDefinition classDefinition, Definition definition, Expression result) {

@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.SimpleClassViewInstanceProvider;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -32,14 +33,21 @@ public class ExpressionResolveInstanceVisitor implements AbstractExpressionVisit
     }
 
     Abstract.Definition definition = expr.getReferent();
-    if (definition instanceof Abstract.FunctionDefinition) {
-      checkArguments(expr, ((Abstract.FunctionDefinition) definition).getArguments());
-    } else
-    if (definition instanceof Abstract.DataDefinition) {
-      checkArguments(expr, ((Abstract.DataDefinition) definition).getParameters());
-    } else
-    if (definition instanceof Abstract.Constructor) {
-      checkArguments(expr, ((Abstract.Constructor) definition).getArguments());
+    if (definition instanceof Abstract.ClassViewField) {
+      Abstract.ClassView classView = ((Abstract.ClassViewField) definition).getOwnView();
+      Collection<? extends Abstract.ClassViewInstance> instances = myParentScope.getInstances();
+      List<Abstract.ClassViewInstance> filteredInstances = new ArrayList<>();
+      for (Abstract.ClassViewInstance instance : instances) {
+        if (instance.getClassView().getReferent() == classView) {
+          filteredInstances.add(instance);
+        }
+      }
+      myInstanceProvider.addInstances(expr, 0, filteredInstances);
+    } else {
+      Collection<? extends Abstract.Argument> arguments = Abstract.getArguments(definition);
+      if (arguments != null) {
+        checkArguments(expr, arguments);
+      }
     }
     return null;
   }
@@ -51,12 +59,20 @@ public class ExpressionResolveInstanceVisitor implements AbstractExpressionVisit
         i++;
       } else
       if (arg instanceof Abstract.TypeArgument) {
-        int size = i + (arg instanceof Abstract.TelescopeArgument ? ((Abstract.TelescopeArgument) arg).getNames().size() : 1);
-        Abstract.Expression type = ((Abstract.TypeArgument) arg).getType();
-        // TODO: check that type is a class view call and filter instances appropriately
-        Collection<? extends Abstract.ClassViewInstance> instances = myParentScope.getInstances();
-        for (; i < size; i++) {
-          myInstanceProvider.addInstances(defCall, i, instances);
+        Abstract.ClassView classView = Abstract.getUnderlyingClassView(((Abstract.TypeArgument) arg).getType());
+        if (classView != null) {
+          Collection<? extends Abstract.ClassViewInstance> instances = myParentScope.getInstances();
+          List<Abstract.ClassViewInstance> filteredInstances = new ArrayList<>();
+          for (Abstract.ClassViewInstance instance : instances) {
+            if (((Abstract.ClassView) instance.getClassView().getReferent()).getUnderlyingClassDefCall().getReferent() == classView.getUnderlyingClassDefCall().getReferent()) {
+              filteredInstances.add(instance);
+            }
+          }
+
+          int size = i + (arg instanceof Abstract.TelescopeArgument ? ((Abstract.TelescopeArgument) arg).getNames().size() : 1);
+          for (; i < size; i++) {
+            myInstanceProvider.addInstances(defCall, i, filteredInstances);
+          }
         }
       } else {
         throw new IllegalStateException();

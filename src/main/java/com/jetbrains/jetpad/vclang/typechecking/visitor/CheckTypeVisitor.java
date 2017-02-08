@@ -74,6 +74,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   }
 
   public static class DefCallResult implements TResult {
+    private final Abstract.DefCallExpression myDefCall;
     private final Definition myDefinition;
     private final LevelArguments myLevelArguments;
     private final List<Expression> myArguments;
@@ -82,7 +83,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     private Expression myThisExpr;
     private int myLevels;
 
-    private DefCallResult(Definition definition, LevelArguments polyArgs, List<Expression> arguments, List<DependentLink> parameters, TypeMax resultType, Expression thisExpr) {
+    private DefCallResult(Abstract.DefCallExpression defCall, Definition definition, LevelArguments polyArgs, List<Expression> arguments, List<DependentLink> parameters, TypeMax resultType, Expression thisExpr) {
+      myDefCall = defCall;
       myDefinition = definition;
       myLevelArguments = polyArgs;
       myArguments = arguments;
@@ -91,7 +93,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       myThisExpr = thisExpr;
     }
 
-    public static TResult makeTResult(Definition definition, LevelArguments polyArgs, Expression thisExpr) {
+    public static TResult makeTResult(Abstract.DefCallExpression defCall, Definition definition, LevelArguments polyArgs, Expression thisExpr) {
       List<DependentLink> parameters = new ArrayList<>();
       TypeMax resultType = definition.getTypeWithParams(parameters, polyArgs);
       if (thisExpr != null) {
@@ -104,7 +106,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         DefCallExpression expression = definition.getDefCall(polyArgs);
         return new Result(thisExpr == null ? expression : expression.applyThis(thisExpr), resultType);
       } else {
-        return new DefCallResult(definition, polyArgs, new ArrayList<Expression>(), parameters, resultType, thisExpr);
+        return new DefCallResult(defCall, definition, polyArgs, new ArrayList<Expression>(), parameters, resultType, thisExpr);
       }
     }
 
@@ -179,6 +181,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         params.add(param);
       }
       return params;
+    }
+
+    public Abstract.DefCallExpression getDefCall() {
+      return myDefCall;
     }
 
     public Definition getDefinition() {

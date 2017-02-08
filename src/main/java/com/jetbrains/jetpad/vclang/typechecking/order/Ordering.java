@@ -1,7 +1,9 @@
 package com.jetbrains.jetpad.vclang.typechecking.order;
 
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.Typecheckable;
+import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckingUnit;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.ClassViewInstanceProvider;
 
@@ -24,6 +26,7 @@ public class Ordering {
   private final Map<Typecheckable, DefState> myVertices = new HashMap<>();
   private final ClassViewInstanceProvider myInstanceProvider;
   private final DependencyListener myListener;
+  private final TypecheckerState myTypecheckerState;
 
   public static class SCCException extends RuntimeException {
     public SCC scc;
@@ -33,9 +36,10 @@ public class Ordering {
     }
   }
 
-  public Ordering(ClassViewInstanceProvider instanceProvider, DependencyListener listener) {
+  public Ordering(ClassViewInstanceProvider instanceProvider, DependencyListener listener, TypecheckerState typecheckerState) {
     myInstanceProvider = instanceProvider;
     myListener = listener;
+    myTypecheckerState = typecheckerState;
   }
 
   private Abstract.ClassDefinition getEnclosingClass(Abstract.Definition definition) {
@@ -78,15 +82,27 @@ public class Ordering {
   }
 
   public void doOrder(Abstract.Definition definition) {
-    if (!(definition instanceof Abstract.ClassView) && !(definition instanceof Abstract.ClassViewField)) {
-      Typecheckable typecheckable = new Typecheckable(definition, false);
-      if (!myVertices.containsKey(typecheckable)) {
-        doOrderRecursively(typecheckable);
-      }
+    if (definition instanceof Abstract.ClassView || definition instanceof Abstract.ClassViewField) {
+      return;
+    }
+    Definition typechecked = myTypecheckerState.getTypechecked(definition);
+    if (typechecked != null) {
+      myListener.alreadyTypechecked(typechecked);
+      return;
+    }
+
+    Typecheckable typecheckable = new Typecheckable(definition, false);
+    if (!myVertices.containsKey(typecheckable)) {
+      doOrderRecursively(typecheckable);
     }
   }
 
   private void updateState(DefState currentState, Typecheckable dependency) {
+    Definition typechecked = myTypecheckerState.getTypechecked(dependency.getDefinition());
+    if (typechecked != null && typechecked.hasErrors() != Definition.TypeCheckingStatus.TYPE_CHECKING) {
+      return;
+    }
+
     DefState state = myVertices.get(dependency);
     if (state == null) {
       doOrderRecursively(dependency);
@@ -113,7 +129,7 @@ public class Ordering {
       updateState(currentState, new Typecheckable(definition, true));
     }
 
-    definition.accept(new DefinitionGetDepsVisitor(dependencies), typecheckable.isHeader());
+    definition.accept(new DefinitionGetDepsVisitor(myInstanceProvider, dependencies), typecheckable.isHeader());
     for (Abstract.Definition referable : dependencies) {
       for (Abstract.Definition dependency : getTypecheckable(referable, enclosingClass)) {
         if (dependency.equals(definition)) {

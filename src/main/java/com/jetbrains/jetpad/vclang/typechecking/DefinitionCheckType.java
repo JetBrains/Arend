@@ -567,7 +567,7 @@ public class DefinitionCheckType {
     if (condMap.containsKey(constructor)) {
       for (Abstract.Condition condition : condMap.get(constructor)) {
         Set<Abstract.Definition> dependencies = new HashSet<>();
-        condition.getTerm().accept(new CollectDefCallsVisitor(dependencies), null);
+        condition.getTerm().accept(new CollectDefCallsVisitor(null, dependencies), null);
         for (Abstract.Definition def : dependencies) {
           Definition typeCheckedDef = state.getTypechecked(def);
           if (typeCheckedDef != null && typeCheckedDef != constructor && typeCheckedDef instanceof Constructor && ((Constructor) typeCheckedDef).getDataType().equals(constructor.getDataType())) {

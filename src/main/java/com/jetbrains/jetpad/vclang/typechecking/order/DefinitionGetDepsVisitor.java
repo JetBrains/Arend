@@ -2,20 +2,23 @@ package com.jetbrains.jetpad.vclang.typechecking.order;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.ClassViewInstanceProvider;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CollectDefCallsVisitor;
 
 import java.util.Set;
 
 public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boolean, Void> {
+  private final ClassViewInstanceProvider myInstanceProvider;
   private final Set<Abstract.Definition> myDependencies;
 
-  public DefinitionGetDepsVisitor(Set<Abstract.Definition> dependencies) {
+  public DefinitionGetDepsVisitor(ClassViewInstanceProvider instanceProvider, Set<Abstract.Definition> dependencies) {
+    myInstanceProvider = instanceProvider;
     myDependencies = dependencies;
   }
 
   @Override
   public Void visitFunction(Abstract.FunctionDefinition def, Boolean isHeader) {
-    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myDependencies);
+    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myDependencies);
 
     for (Abstract.Argument arg : def.getArguments()) {
       if (arg instanceof Abstract.TypeArgument) {
@@ -42,14 +45,14 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   public Void visitClassField(Abstract.ClassField def, Boolean params) {
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
-      resultType.accept(new CollectDefCallsVisitor(myDependencies), null);
+      resultType.accept(new CollectDefCallsVisitor(myInstanceProvider, myDependencies), null);
     }
     return null;
   }
 
   @Override
   public Void visitData(Abstract.DataDefinition def, Boolean isHeader) {
-    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myDependencies);
+    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myDependencies);
 
     if (isHeader) {
       for (Abstract.TypeArgument param : def.getParameters()) {
@@ -77,7 +80,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
 
   @Override
   public Void visitConstructor(Abstract.Constructor def, Boolean params) {
-    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myDependencies);
+    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myDependencies);
 
     for (Abstract.TypeArgument arg : def.getArguments()) {
       arg.getType().accept(visitor, null);
@@ -88,7 +91,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
 
   @Override
   public Void visitClass(Abstract.ClassDefinition def, Boolean params) {
-    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myDependencies);
+    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myDependencies);
 
     for (Abstract.SuperClass superClass : def.getSuperClasses()) {
       superClass.getSuperClass().accept(visitor, null);
@@ -107,7 +110,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
 
   @Override
   public Void visitImplement(Abstract.Implementation def, Boolean params) {
-    def.getImplementation().accept(new CollectDefCallsVisitor(myDependencies), null);
+    def.getImplementation().accept(new CollectDefCallsVisitor(myInstanceProvider, myDependencies), null);
     return null;
   }
 
@@ -123,7 +126,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
 
   @Override
   public Void visitClassViewInstance(Abstract.ClassViewInstance def, Boolean params) {
-    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myDependencies);
+    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myDependencies);
 
     for (Abstract.Argument arg : def.getArguments()) {
       if (arg instanceof Abstract.TypeArgument) {

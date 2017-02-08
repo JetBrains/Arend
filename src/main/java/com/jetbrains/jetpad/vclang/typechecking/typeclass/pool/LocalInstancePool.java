@@ -22,11 +22,26 @@ public class LocalInstancePool implements ClassViewInstancePool {
 
   private final List<Pair> myPool = new ArrayList<>();
 
-  @Override
-  public Expression getInstance(Expression classifyingExpression, Abstract.ClassView classView) {
+  private Expression getInstance(Expression classifyingExpression, Abstract.ClassView classView) {
     Expression expr = classifyingExpression.normalize(NormalizeVisitor.Mode.NF);
     for (Pair pair : myPool) {
-      if (pair.key.equals(expr) && (classView == null || pair.classView == classView)) {
+      if (pair.key.equals(expr) && pair.classView == classView) {
+        return pair.value;
+      }
+    }
+    return null;
+  }
+
+  @Override
+  public Expression getInstance(Abstract.DefCallExpression defCall, Expression classifyingExpression, Abstract.ClassView classView) {
+    return getInstance(classifyingExpression, classView);
+  }
+
+  @Override
+  public Expression getInstance(Abstract.DefCallExpression defCall, int paramIndex, Expression classifyingExpression, Abstract.ClassDefinition classDefinition) {
+    Expression expr = classifyingExpression.normalize(NormalizeVisitor.Mode.NF);
+    for (Pair pair : myPool) {
+      if (pair.key.equals(expr) && pair.classView.getUnderlyingClassDefCall().getReferent() == classDefinition) {
         return pair.value;
       }
     }

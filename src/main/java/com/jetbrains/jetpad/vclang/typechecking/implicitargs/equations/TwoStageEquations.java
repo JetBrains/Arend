@@ -60,7 +60,7 @@ public class TwoStageEquations implements Equations {
           variable = expr1.toFieldCall().getExpression().toInferenceReference().getVariable();
           // expr1 == view field call
           if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassifyingField() == expr1.toFieldCall().getDefinition()) {
-            result = myVisitor.getClassViewInstancePool().getInstance(expr, ((TypeClassInferenceVariable) variable).getClassView());
+            result = ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getClassViewInstancePool(), expr);
           }
         }
 
@@ -69,7 +69,7 @@ public class TwoStageEquations implements Equations {
           variable = expr.toFieldCall().getExpression().toInferenceReference().getVariable();
           // expr2 == view field call
           if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassifyingField() == expr.toFieldCall().getDefinition()) {
-            result = myVisitor.getClassViewInstancePool().getInstance(expr1, ((TypeClassInferenceVariable) variable).getClassView());
+            result = ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getClassViewInstancePool(), expr1);
           }
         }
 

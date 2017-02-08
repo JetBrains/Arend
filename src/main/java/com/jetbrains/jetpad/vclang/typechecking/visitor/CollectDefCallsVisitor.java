@@ -2,14 +2,18 @@ package com.jetbrains.jetpad.vclang.typechecking.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.ClassViewInstanceProvider;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
 public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, Void> {
+  private final ClassViewInstanceProvider myInstanceProvider;
   private final Set<Abstract.Definition> myDependencies;
 
-  public CollectDefCallsVisitor(Set<Abstract.Definition> dependencies) {
+  public CollectDefCallsVisitor(ClassViewInstanceProvider instanceProvider, Set<Abstract.Definition> dependencies) {
+    myInstanceProvider = instanceProvider;
     myDependencies = dependencies;
   }
 
@@ -23,6 +27,24 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, V
   @Override
   public Void visitDefCall(Abstract.DefCallExpression expr, Void ignore) {
     if (expr.getReferent() != null) {
+      if (myInstanceProvider != null) {
+        if (expr.getReferent() instanceof Abstract.ClassViewField) {
+          myDependencies.addAll(myInstanceProvider.getInstances(expr, 0));
+        } else {
+          Collection<? extends Abstract.Argument> arguments = Abstract.getArguments(expr.getReferent());
+          if (arguments != null) {
+            int i = 0;
+            for (Abstract.Argument arg : arguments) {
+              myDependencies.addAll(myInstanceProvider.getInstances(expr, i));
+              if (arg instanceof Abstract.TelescopeArgument) {
+                i += ((Abstract.TelescopeArgument) arg).getNames().size();
+              } else {
+                i++;
+              }
+            }
+          }
+        }
+      }
       myDependencies.add(expr.getReferent());
     } else if (expr.getExpression() != null) {
       expr.getExpression().accept(this, null);

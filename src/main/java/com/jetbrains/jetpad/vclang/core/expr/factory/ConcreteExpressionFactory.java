@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.core.expr.factory;
 
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.List;
 
@@ -126,7 +126,7 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
 
   @Override
   public Abstract.Expression makeCase(List<? extends Abstract.Expression> expressions, List<? extends Abstract.Clause> clauses) {
-    return cElim((List<Concrete.Expression>) expressions, (List<Concrete.Clause>) clauses);
+    return cCase((List<Concrete.Expression>) expressions, (List<Concrete.Clause>) clauses);
   }
 
   @Override

@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,7 +13,8 @@ public class SimpleClassViewInstanceProvider implements ClassViewInstanceProvide
 
   @Override
   public Collection<? extends Abstract.ClassViewInstance> getInstances(Abstract.DefCallExpression defCall, int paramIndex) {
-    return myInstances.get(new Pair<>(defCall, paramIndex));
+    Collection<? extends Abstract.ClassViewInstance> instances = myInstances.get(new Pair<>(defCall, paramIndex));
+    return instances == null ? Collections.<Abstract.ClassViewInstance>emptyList() : instances;
   }
 
   public void addInstances(Abstract.DefCallExpression defCall, int paramIndex, Collection<? extends Abstract.ClassViewInstance> instances) {

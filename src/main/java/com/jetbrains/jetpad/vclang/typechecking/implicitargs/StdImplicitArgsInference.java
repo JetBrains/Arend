@@ -39,7 +39,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
   protected CheckTypeVisitor.TResult fixImplicitArgs(CheckTypeVisitor.TResult result, List<DependentLink> implicitParameters, Abstract.Expression expr) {
     ExprSubstitution substitution = new ExprSubstitution();
-    int i = 1;
+    int i = 0;
     for (DependentLink parameter : implicitParameters) {
       Type type = parameter.getType().subst(substitution, new LevelSubstitution()).normalize(NormalizeVisitor.Mode.WHNF);
       Expression typeExpr = type.toExpression();
@@ -48,11 +48,11 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
         ClassField classifyingField = defCallResult.getDefinition().getClassifyingFieldOfParameter(defCallResult.getArguments().size());
         if (classifyingField != null) {
-          infVar = new TypeClassInferenceVariable(parameter.getName(), typeExpr, null, classifyingField, expr);
+          infVar = new TypeClassInferenceVariable(parameter.getName(), typeExpr, defCallResult.getDefCall(), i, null, classifyingField);
         }
       }
       if (infVar == null) {
-        infVar = new FunctionInferenceVariable(parameter.getName(), type, i, result instanceof CheckTypeVisitor.DefCallResult ? ((CheckTypeVisitor.DefCallResult) result).getDefinition() : null, expr);
+        infVar = new FunctionInferenceVariable(parameter.getName(), type, i + 1, result instanceof CheckTypeVisitor.DefCallResult ? ((CheckTypeVisitor.DefCallResult) result).getDefinition() : null, expr);
       }
       Expression binding = new InferenceReferenceExpression(infVar, myVisitor.getEquations());
       result = result.applyExpressions(Collections.singletonList(binding));
@@ -164,7 +164,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
             args1.addAll(args.subList(defCallResult.getArguments().size(), args.size()));
             args1 = ((Constructor) defCallResult.getDefinition()).matchDataTypeArguments(args1);
             if (args1 != null) {
-              result = CheckTypeVisitor.DefCallResult.makeTResult(defCallResult.getDefinition(), defCallResult.getPolyArguments(), null).applyExpressions(args1);
+              result = CheckTypeVisitor.DefCallResult.makeTResult(defCallResult.getDefCall(), defCallResult.getDefinition(), defCallResult.getPolyArguments(), null).applyExpressions(args1);
             }
           }
         }
