@@ -207,7 +207,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
 
   @Override
   public Void visitImplement(Abstract.Implementation def, Scope parentScope) {
-    Abstract.ClassField referable = myNameResolver.resolveClassField(def.getParent(), def.getName(), myNsProviders.dynamics, myResolveListener, def);
+    Abstract.ClassField referable = myNameResolver.resolveClassField(def.getParentDefinition(), def.getName(), myNsProviders.dynamics, myResolveListener, def);
     if (referable != null) {
       myResolveListener.implementResolved(def, referable);
     }

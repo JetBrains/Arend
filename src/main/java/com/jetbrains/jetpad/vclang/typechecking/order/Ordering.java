@@ -43,7 +43,7 @@ public class Ordering {
   }
 
   private Abstract.ClassDefinition getEnclosingClass(Abstract.Definition definition) {
-    Abstract.Definition parent = definition.getParent();
+    Abstract.Definition parent = definition.getParentDefinition();
     if (parent == null) {
       return null;
     }
@@ -59,7 +59,7 @@ public class Ordering {
     }
 
     if (referable instanceof Abstract.ClassField) {
-      return Collections.singletonList(referable.getParent());
+      return Collections.singletonList(referable.getParentDefinition());
     }
 
     if (referable instanceof Abstract.Constructor) {

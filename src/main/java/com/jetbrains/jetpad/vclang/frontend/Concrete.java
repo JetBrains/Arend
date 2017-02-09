@@ -796,7 +796,7 @@ public final class Concrete {
     }
 
     @Override
-    public Definition getParent() {
+    public Definition getParentDefinition() {
       return myParent;
     }
 
@@ -917,8 +917,8 @@ public final class Concrete {
     }
 
     @Override
-    public ClassDefinition getParent() {
-      return (ClassDefinition) super.getParent();
+    public ClassDefinition getParentDefinition() {
+      return (ClassDefinition) super.getParentDefinition();
     }
 
     @Override
@@ -952,8 +952,8 @@ public final class Concrete {
     }
 
     @Override
-    public ClassDefinition getParent() {
-      return (ClassDefinition) super.getParent();
+    public ClassDefinition getParentDefinition() {
+      return (ClassDefinition) super.getParentDefinition();
     }
 
     @Override
