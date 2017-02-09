@@ -226,6 +226,7 @@ public class DefinitionCheckType {
     typedDef.setClassifyingFieldsOfParameters(classifyingFields);
     typedDef.setThisClass(enclosingClass);
     typedDef.setPolyParams(polyParamsList);
+    // TODO: We should remember whether there were errors in parameters.
     typedDef.typeHasErrors(!paramsOk || expectedType == null);
     typedDef.hasErrors(paramsOk ? Definition.TypeCheckingStatus.TYPE_CHECKING : Definition.TypeCheckingStatus.HAS_ERRORS);
     return typedDef;
@@ -310,15 +311,13 @@ public class DefinitionCheckType {
         }
       }
 
-      if (actualType != null) {
+      if (actualType != null && !(actualType instanceof ErrorExpression)) {
         typedDef.typeHasErrors(false);
-        if (!(actualType instanceof ErrorExpression)) {
-          typedDef.setResultType(actualType);
-          if (userType != null && !(userType instanceof Type)) {
-            SortMax actualSorts = actualType.getPiCodomain().toSorts();
-            if (actualSorts == null || !actualSorts.isLessOrEquals(userType.getPiCodomain().toSorts())) {
-              visitor.getErrorReporter().report(new TypeMismatchError(userType, actualType, term));
-            }
+        typedDef.setResultType(actualType);
+        if (userType != null && !(userType instanceof Type)) {
+          SortMax actualSorts = actualType.getPiCodomain().toSorts();
+          if (actualSorts == null || !actualSorts.isLessOrEquals(userType.getPiCodomain().toSorts())) {
+            visitor.getErrorReporter().report(new TypeMismatchError(userType, actualType, term));
           }
         }
       }
@@ -341,7 +340,12 @@ public class DefinitionCheckType {
       }
     }
 
-    typedDef.hasErrors(typedDef.getElimTree() != null ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.HAS_ERRORS);
+    if (typedDef.getResultType() == null) {
+      typedDef.typeHasErrors(true);
+      typedDef.hasErrors(Definition.TypeCheckingStatus.HAS_ERRORS);
+    } else {
+      typedDef.hasErrors(typedDef.getElimTree() != null ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.HAS_ERRORS);
+    }
   }
 
   private static DataDefinition typeCheckDataHeader(Abstract.DataDefinition def, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
