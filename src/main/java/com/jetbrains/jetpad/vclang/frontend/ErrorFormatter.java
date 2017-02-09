@@ -65,6 +65,13 @@ public class ErrorFormatter {
       }
       builder.append(((ModuleCycleError) error).cycle.get(0));
       return builder.toString();
+    } else if (error instanceof CycleError) {
+      List<Abstract.Definition> cycle = ((CycleError) error).cycle;
+      builder.append(cycle.get(cycle.size() - 1));
+      for (Abstract.Definition definition : cycle) {
+        builder.append(" - ");
+        builder.append(definition.getName());
+      }
     }
 
     return builder.toString();
@@ -166,12 +173,6 @@ public class ErrorFormatter {
       }
     } else if (error instanceof MemberNotFoundError) {
       builder.append(((MemberNotFoundError) error).name).append(" of ").append("some compiled definition called ").append(((MemberNotFoundError) error).targetDefinition.getName());
-    } else if (error instanceof CycleError) {
-      builder.append(((CycleError) error).cycle.get(0));
-      for (Abstract.Definition definition : ((CycleError) error).cycle) {
-        builder.append(" - ");
-        builder.append(definition.getName());
-      }
     }
   }
 

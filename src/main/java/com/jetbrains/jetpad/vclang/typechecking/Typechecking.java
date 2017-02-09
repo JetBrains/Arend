@@ -13,7 +13,6 @@ import com.jetbrains.jetpad.vclang.naming.scope.*;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.BaseAbstractVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.CycleError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TerminationCheckError;
@@ -34,7 +33,7 @@ public class Typechecking {
   private final TypecheckerState myState;
   private final StaticNamespaceProvider myStaticNsProvider;
   private final DynamicNamespaceProvider myDynamicNsProvider;
-  private final InstanceScopeProvider myScopeProvider = new InstanceScopeProvider();
+  private final InstanceScopeProvider myScopeProvider;
   private final ErrorReporter myErrorReporter;
   private final TypecheckedReporter myTypecheckedReporter;
   private final DependencyListener myDependencyListener;
@@ -44,6 +43,7 @@ public class Typechecking {
     myState = state;
     myStaticNsProvider = staticNsProvider;
     myDynamicNsProvider = dynamicNsProvider;
+    myScopeProvider = new InstanceScopeProvider(errorReporter);
     myErrorReporter = errorReporter;
     myTypecheckedReporter = typecheckedReporter;
     myDependencyListener = dependencyListener;
@@ -136,7 +136,7 @@ public class Typechecking {
     for (TypecheckingUnit unit : scc.getUnits()) {
       cycle.add(unit.getDefinition());
     }
-    myErrorReporter.report(new TypeCheckingError(cycle.get(0), new CycleError(cycle)));
+    myErrorReporter.report(new CycleError(cycle));
   }
 
   private void typecheckDefinitions(final Collection<? extends Abstract.Definition> definitions, ClassViewInstanceProvider instanceProvider) {

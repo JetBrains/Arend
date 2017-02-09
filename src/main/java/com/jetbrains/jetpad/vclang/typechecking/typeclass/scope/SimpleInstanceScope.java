@@ -1,26 +1,33 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass.scope;
 
+import com.jetbrains.jetpad.vclang.error.Error;
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.naming.error.DuplicateInstanceError;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
 
 public class SimpleInstanceScope implements Scope {
-  private List<Abstract.ClassViewInstance> myInstances = Collections.emptyList();
+  private final ErrorReporter myErrorReporter;
+  private Map<Pair<Abstract.Definition, Abstract.Definition>, Abstract.ClassViewInstance> myInstances = Collections.emptyMap();
+
+  public SimpleInstanceScope(ErrorReporter errorReporter) {
+    myErrorReporter = errorReporter;
+  }
 
   public void addInstance(Abstract.ClassViewInstance instance) {
     if (myInstances.isEmpty()) {
-      myInstances = new ArrayList<>();
+      myInstances = new HashMap<>();
     }
-    myInstances.add(instance);
-  }
-
-  public void addAll(SimpleInstanceScope other) {
-    if (!other.myInstances.isEmpty() && myInstances.isEmpty()) {
-      myInstances = new ArrayList<>();
-    }
-    for (Abstract.ClassViewInstance instance : other.myInstances) {
-      myInstances.add(instance);
+    Abstract.ClassView classView = (Abstract.ClassView) instance.getClassView().getReferent();
+    Pair<Abstract.Definition, Abstract.Definition> pair = new Pair<>(instance.isDefault() ? classView.getUnderlyingClassDefCall().getReferent() : classView, instance.getClassifyingDefinition());
+    Abstract.ClassViewInstance oldInstance = myInstances.get(pair);
+    if (oldInstance != null) {
+      myErrorReporter.report(new DuplicateInstanceError(Error.Level.ERROR, oldInstance, instance));
+    } else {
+      myInstances.put(pair, instance);
     }
   }
 
@@ -36,6 +43,6 @@ public class SimpleInstanceScope implements Scope {
 
   @Override
   public Collection<? extends Abstract.ClassViewInstance> getInstances() {
-    return myInstances;
+    return myInstances.values();
   }
 }

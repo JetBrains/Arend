@@ -4,9 +4,9 @@ public class Pair<T, S> {
   public final T proj1;
   public final S proj2;
 
-  public Pair(T definition, S classView) {
-    this.proj1 = definition;
-    this.proj2 = classView;
+  public Pair(T proj1, S proj2) {
+    this.proj1 = proj1;
+    this.proj2 = proj2;
   }
 
   @Override
@@ -26,5 +26,10 @@ public class Pair<T, S> {
     int result = proj1.hashCode();
     result = 31 * result + (proj2 != null ? proj2.hashCode() : 0);
     return result;
+  }
+
+  @Override
+  public String toString() {
+    return "(" + proj1 + ", " + proj2 + ')';
   }
 }

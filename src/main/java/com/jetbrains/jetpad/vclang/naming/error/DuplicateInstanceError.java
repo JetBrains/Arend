@@ -11,8 +11,4 @@ public class DuplicateInstanceError extends NamingError {
     this.instance1 = instance1;
     this.instance2 = instance2;
   }
-
-  public DuplicateInstanceError(Abstract.ClassViewInstance instance1, Abstract.ClassViewInstance instance2) {
-    this(Level.ERROR, instance1, instance2);
-  }
 }

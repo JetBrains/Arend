@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass.scope;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -10,6 +11,11 @@ import java.util.Map;
 
 public class InstanceScopeProvider {
   private final Map<Abstract.Definition, Scope> cache = new HashMap<>();
+  private final ErrorReporter myErrorReporter;
+
+  public InstanceScopeProvider(ErrorReporter errorReporter) {
+    myErrorReporter = errorReporter;
+  }
 
   private static void forStatements(Collection<? extends Abstract.Statement> statements, SimpleInstanceScope ns) {
     for (Abstract.Statement statement : statements) {
@@ -29,7 +35,7 @@ public class InstanceScopeProvider {
     Scope ns = cache.get(definition);
     if (ns != null) return ns;
 
-    SimpleInstanceScope sns = new SimpleInstanceScope();
+    SimpleInstanceScope sns = new SimpleInstanceScope(myErrorReporter);
     forStatements(((Abstract.StatementCollection) definition).getGlobalStatements(), sns);
     cache.put(definition, sns);
     return sns;

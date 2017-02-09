@@ -83,7 +83,7 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
         "  \\instance Nat-X => \\new X' { A => Nat | B => \\lam x => x }\n" +
         "  \\function T => B 0 = 0\n" +
         "}\n" +
-        "\\function f (t : M.T) => M.B 0", 2);
+        "\\function f (t : M.T) => M.B 0", 1);
   }
 
   @Test

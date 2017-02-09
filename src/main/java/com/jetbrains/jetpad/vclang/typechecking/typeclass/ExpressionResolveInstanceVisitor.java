@@ -59,20 +59,22 @@ public class ExpressionResolveInstanceVisitor implements AbstractExpressionVisit
         i++;
       } else
       if (arg instanceof Abstract.TypeArgument) {
+        int size = i + (arg instanceof Abstract.TelescopeArgument ? ((Abstract.TelescopeArgument) arg).getNames().size() : 1);
         Abstract.ClassView classView = Abstract.getUnderlyingClassView(((Abstract.TypeArgument) arg).getType());
         if (classView != null) {
           Collection<? extends Abstract.ClassViewInstance> instances = myParentScope.getInstances();
           List<Abstract.ClassViewInstance> filteredInstances = new ArrayList<>();
           for (Abstract.ClassViewInstance instance : instances) {
-            if (((Abstract.ClassView) instance.getClassView().getReferent()).getUnderlyingClassDefCall().getReferent() == classView.getUnderlyingClassDefCall().getReferent()) {
+            if (instance.isDefault() && ((Abstract.ClassView) instance.getClassView().getReferent()).getUnderlyingClassDefCall().getReferent() == classView.getUnderlyingClassDefCall().getReferent()) {
               filteredInstances.add(instance);
             }
           }
 
-          int size = i + (arg instanceof Abstract.TelescopeArgument ? ((Abstract.TelescopeArgument) arg).getNames().size() : 1);
           for (; i < size; i++) {
             myInstanceProvider.addInstances(defCall, i, filteredInstances);
           }
+        } else {
+          i += size;
         }
       } else {
         throw new IllegalStateException();
