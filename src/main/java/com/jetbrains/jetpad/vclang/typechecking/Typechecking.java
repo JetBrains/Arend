@@ -170,7 +170,7 @@ public class Typechecking {
       public Scope visitClass(Abstract.ClassDefinition def, Scope parentScope) {
         return new StaticClassScope(parentScope, myStaticNsProvider.forDefinition(def));
       }
-    }, getDefinitionScope(definition.getParent()));
+    }, getDefinitionScope(definition.getParentDefinition()));
   }
 
   public void typecheckDefinitions(final Collection<? extends Abstract.Definition> definitions) {
