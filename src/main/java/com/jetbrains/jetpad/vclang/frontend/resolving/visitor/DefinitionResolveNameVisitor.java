@@ -41,7 +41,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
 
   @Override
   public Void visitFunction(Abstract.FunctionDefinition def, Scope parentScope) {
-    Scope scope = new FunctionScope(parentScope, myNsProviders.statics.forDefinition(def));
+    Scope scope = new FunctionScope(parentScope, new NamespaceScope(myNsProviders.statics.forDefinition(def)));
 
     for (Abstract.Statement statement : def.getGlobalStatements()) {
       if (statement instanceof Abstract.NamespaceCommandStatement) {
@@ -105,7 +105,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
       }
 
       if (def.getConditions() != null) {
-        Scope scope = new DataScope(parentScope, myNsProviders.statics.forDefinition(def));
+        Scope scope = new DataScope(parentScope, new NamespaceScope(myNsProviders.statics.forDefinition(def)));
         exprVisitor = new ExpressionResolveNameVisitor(myNsProviders, scope, myContext, myNameResolver, myResolveListener);
         for (Abstract.Condition cond : def.getConditions()) {
           try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
@@ -163,7 +163,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     }
 
     try {
-      Namespace staticNamespace = myNsProviders.statics.forDefinition(def);
+      Scope staticNamespace = new NamespaceScope(myNsProviders.statics.forDefinition(def));
       Scope staticScope = new StaticClassScope(parentScope, staticNamespace);
       for (Abstract.Statement statement : def.getGlobalStatements()) {
         if (statement instanceof Abstract.NamespaceCommandStatement) {
@@ -184,7 +184,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
           }
         }
 
-        Scope child = myNsProviders.dynamics.forClass(def);
+        Scope child = new NamespaceScope(myNsProviders.dynamics.forClass(def));
         mergeNames(staticNamespace, child);
         Scope dynamicScope = new DynamicClassScope(staticScope, child);
 
@@ -310,7 +310,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
         if (stat.getPath().isEmpty()) {
           referredClass = moduleNamespace.getRegisteredClass();
         } else {
-          referredClass = myNameResolver.resolveDefinition(myNsProviders.statics.forDefinition(moduleClass), stat.getPath(), myNsProviders.statics);
+          referredClass = myNameResolver.resolveDefinition(new NamespaceScope(myNsProviders.statics.forDefinition(moduleClass)), stat.getPath(), myNsProviders.statics);
         }
       }
 
@@ -322,7 +322,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     }
 
     if (stat.getKind().equals(Abstract.NamespaceCommandStatement.Kind.OPEN)) {
-      Scope scope = myNsProviders.statics.forDefinition(stat.getResolvedClass());
+      Scope scope = new NamespaceScope(myNsProviders.statics.forDefinition(stat.getResolvedClass()));
       if (stat.getNames() != null) {
         scope = new FilteredScope(scope, new HashSet<>(stat.getNames()), !stat.isHiding());
       }

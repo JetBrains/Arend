@@ -4,7 +4,10 @@ import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class SimpleModuleNamespace implements ModuleNamespace {
   private final Map<String, SimpleModuleNamespace> mySubmoduleNamespaces = new HashMap<>();
@@ -28,11 +31,6 @@ public class SimpleModuleNamespace implements ModuleNamespace {
     else if (resolved == null) return submodule;
     // FIXME[error] proper exception
     else throw new IllegalStateException("Multiple declarations");
-  }
-
-  @Override
-  public Collection<? extends Abstract.ClassViewInstance> getInstances() {
-    return myClassNamespace == null ? Collections.<Abstract.ClassViewInstance>emptySet() : myClassNamespace.getInstances();
   }
 
   @Override

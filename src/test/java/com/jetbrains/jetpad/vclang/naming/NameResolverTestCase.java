@@ -16,8 +16,9 @@ import com.jetbrains.jetpad.vclang.frontend.resolving.visitor.ExpressionResolveN
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.DefaultModuleLoader;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.naming.namespace.EmptyNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
+import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
+import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -40,7 +41,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   private   final NameResolver nameResolver = new NameResolver();
 
   protected Abstract.ClassDefinition prelude = null;
-  private Scope globalScope = new EmptyNamespace();
+  private Scope globalScope = new EmptyScope();
 
   protected final void loadPrelude() {
     if (prelude != null) throw new IllegalStateException();
@@ -56,7 +57,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     }
 
     prelude = LOADED_PRELUDE;
-    globalScope = staticNsProvider.forDefinition(prelude);
+    globalScope = new NamespaceScope(staticNsProvider.forDefinition(prelude));
 
     moduleNsProvider.registerModule(new ModulePath("Prelude"), prelude);
   }
@@ -102,7 +103,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
   private void resolveNamesDef(Concrete.Definition definition, int errors) {
     DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(nsProviders, nameResolver, new ConcreteResolveListener(errorReporter));
-    definition.accept(visitor, new OverridingScope(globalScope, new SimpleNamespace(definition)));
+    definition.accept(visitor, new OverridingScope(globalScope, new NamespaceScope(new SimpleNamespace(definition))));
     assertThat(errorList, containsErrors(errors));
   }
 

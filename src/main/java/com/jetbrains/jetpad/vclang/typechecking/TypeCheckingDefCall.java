@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.error.Error;
+import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -238,9 +239,9 @@ public class TypeCheckingDefCall {
       }
 
       if (typeCheckedDefinition == null) {
-        Scope scope = myVisitor.getStaticNamespaceProvider().forDefinition(leftDefinition.getAbstractDefinition());
+        Scope scope = new NamespaceScope(myVisitor.getStaticNamespaceProvider().forDefinition(leftDefinition.getAbstractDefinition()));
         if (leftDefinition instanceof ClassDefinition) {
-          scope = new OverridingScope(scope, myVisitor.getDynamicNamespaceProvider().forClass(((ClassDefinition) leftDefinition).getAbstractDefinition()));
+          scope = new OverridingScope(scope, new NamespaceScope(myVisitor.getDynamicNamespaceProvider().forClass(((ClassDefinition) leftDefinition).getAbstractDefinition())));
         }
         member = scope.resolveName(name);
         if (member == null) {

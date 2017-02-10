@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.error.WrongDefinition;
 import com.jetbrains.jetpad.vclang.naming.namespace.*;
+import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
@@ -59,7 +60,7 @@ public class NameResolver {
         if (ref == null) {
           return null;
         }
-        scope = staticNsProvider.forDefinition(ref);
+        scope = new NamespaceScope(staticNsProvider.forDefinition(ref));
       }
       return ref;
     }

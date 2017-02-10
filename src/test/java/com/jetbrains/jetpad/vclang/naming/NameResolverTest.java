@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
+import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -22,7 +23,7 @@ public class NameResolverTest extends NameResolverTestCase {
     namespace.addDefinition(plus);
     namespace.addDefinition(mul);
 
-    Concrete.Expression result = resolveNamesExpr(namespace, "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)");
+    Concrete.Expression result = resolveNamesExpr(new NamespaceScope(namespace), "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)");
     assertNotNull(result);
     assertTrue(compareAbstract(cBinOp(cBinOp(cNum(0), plus, cBinOp(cNum(1), mul, cNum(2))), plus, cBinOp(cBinOp(cNum(3), mul, cBinOp(cNum(4), mul, cNum(5))), mul, cBinOp(cNum(6), plus, cNum(7)))), result));
   }
@@ -36,7 +37,7 @@ public class NameResolverTest extends NameResolverTestCase {
     namespace.addDefinition(plus);
     namespace.addDefinition(mul);
 
-    resolveNamesExpr(namespace, "11 + 2 * 3", 1);
+    resolveNamesExpr(new NamespaceScope(namespace), "11 + 2 * 3", 1);
   }
 
   @Test

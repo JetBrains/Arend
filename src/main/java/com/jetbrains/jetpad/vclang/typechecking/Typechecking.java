@@ -158,17 +158,17 @@ public class Typechecking {
     return definition.accept(new BaseAbstractVisitor<Scope, Scope>() {
       @Override
       public Scope visitFunction(Abstract.FunctionDefinition def, Scope parentScope) {
-        return new FunctionScope(parentScope, myStaticNsProvider.forDefinition(def));
+        return new FunctionScope(parentScope, new NamespaceScope(myStaticNsProvider.forDefinition(def)));
       }
 
       @Override
       public Scope visitData(Abstract.DataDefinition def, Scope parentScope) {
-        return new DataScope(parentScope, myStaticNsProvider.forDefinition(def));
+        return new DataScope(parentScope, new NamespaceScope(myStaticNsProvider.forDefinition(def)));
       }
 
       @Override
       public Scope visitClass(Abstract.ClassDefinition def, Scope parentScope) {
-        return new StaticClassScope(parentScope, myStaticNsProvider.forDefinition(def));
+        return new StaticClassScope(parentScope, new NamespaceScope(myStaticNsProvider.forDefinition(def)));
       }
     }, getDefinitionScope(definition.getParentDefinition()));
   }

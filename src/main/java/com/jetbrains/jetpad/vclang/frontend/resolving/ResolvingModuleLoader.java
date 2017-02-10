@@ -9,9 +9,11 @@ import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.naming.namespace.EmptyNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
+import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.HashSet;
@@ -22,7 +24,7 @@ public class ResolvingModuleLoader<SourceIdT extends SourceId> extends DefaultMo
   private final Set<ModulePath> myLoadedModules = new HashSet<>();
 
   public ResolvingModuleLoader(SourceSupplier<SourceIdT> sourceSupplier, ModuleLoadingListener<SourceIdT> loadingListener, NameResolver nameResolver, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ResolveListener resolveListener, ErrorReporter errorReporter) {
-    this(sourceSupplier, errorReporter, new ResolvingModuleLoadingListener<>(nameResolver, staticNsProvider, dynamicNsProvider, loadingListener, resolveListener, errorReporter), nameResolver);
+    this(sourceSupplier, errorReporter, new ResolvingModuleLoadingListener<>(nameResolver, staticNsProvider, dynamicNsProvider, loadingListener, resolveListener), nameResolver);
   }
 
   private ResolvingModuleLoader(SourceSupplier<SourceIdT> sourceSupplier, ErrorReporter errorReporter, ResolvingModuleLoadingListener<SourceIdT> resolvingModuleListener, NameResolver nameResolver) {
@@ -54,21 +56,19 @@ public class ResolvingModuleLoader<SourceIdT extends SourceId> extends DefaultMo
     private final NameResolver myNameResolver;
     private final NamespaceProviders myNsProviders;
     private final ResolveListener myResolveListener;
-    private final ErrorReporter myErrorReporter;
-    private Namespace myPreludeNamespace = new EmptyNamespace();
+    private Scope myPreludeScope = new EmptyScope();
 
-    private ResolvingModuleLoadingListener(NameResolver nameResolver, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ModuleLoadingListener<SourceIdT> loadingListener, ResolveListener resolveListener, ErrorReporter errorReporter) {
+    private ResolvingModuleLoadingListener(NameResolver nameResolver, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ModuleLoadingListener<SourceIdT> loadingListener, ResolveListener resolveListener) {
       myNameResolver = nameResolver;
       myOriginalLoadingListener = loadingListener;
       myNsProviders = new NamespaceProviders(myModuleNsProvider, staticNsProvider, dynamicNsProvider);
       myResolveListener = resolveListener;
-      myErrorReporter = errorReporter;
     }
 
     @Override
     public void loadingSucceeded(SourceIdT module, Abstract.ClassDefinition abstractDefinition) {
       myModuleNsProvider.registerModule(module.getModulePath(), abstractDefinition);
-      OneshotNameResolver.visitModule(abstractDefinition, myPreludeNamespace, myNameResolver, myNsProviders, myResolveListener);
+      OneshotNameResolver.visitModule(abstractDefinition, myPreludeScope, myNameResolver, myNsProviders, myResolveListener);
       myOriginalLoadingListener.loadingSucceeded(module, abstractDefinition);
     }
 
@@ -78,7 +78,7 @@ public class ResolvingModuleLoader<SourceIdT extends SourceId> extends DefaultMo
     }
 
     private void setPreludeNamespace(Namespace preludeNamespace) {
-      myPreludeNamespace = preludeNamespace;
+      myPreludeScope = new NamespaceScope(preludeNamespace);
     }
   }
 }

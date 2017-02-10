@@ -4,7 +4,9 @@ import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateDefinitionError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class SimpleNamespace implements Namespace {
   private final Map<String, Abstract.Definition> myNames = new HashMap<>();
@@ -55,10 +57,5 @@ public class SimpleNamespace implements Namespace {
   @Override
   public Abstract.Definition resolveName(String name) {
     return myNames.get(name);
-  }
-
-  @Override
-  public Collection<? extends Abstract.ClassViewInstance> getInstances() {
-    return Collections.emptyList();
   }
 }
