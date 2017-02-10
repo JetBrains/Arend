@@ -611,6 +611,28 @@ public final class Concrete {
     }
   }
 
+  public static class LPExpression extends Expression implements Abstract.LPExpression {
+    public LPExpression(Position position) {
+      super(position);
+    }
+
+    @Override
+    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitLP(this, params);
+    }
+  }
+
+  public static class LHExpression extends Expression implements Abstract.LHExpression {
+    public LHExpression(Position position) {
+      super(position);
+    }
+
+    @Override
+    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitLH(this, params);
+    }
+  }
+
   public static class PolyUniverseExpression extends Expression implements Abstract.PolyUniverseExpression {
     private final List<? extends Abstract.Expression> myPLevel;
     private final int myHLevel;

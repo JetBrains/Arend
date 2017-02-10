@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.prettyprint;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.definition.Name;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
@@ -264,6 +265,18 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   @Override
   public Void visitLvl(Abstract.LvlExpression expr, Byte params) {
     myBuilder.append("Lvl");
+    return null;
+  }
+
+  @Override
+  public Void visitLP(Abstract.LPExpression expr, Byte params) {
+    myBuilder.append(LevelBinding.PLVL_BND.getName());
+    return null;
+  }
+
+  @Override
+  public Void visitLH(Abstract.LHExpression expr, Byte params) {
+    myBuilder.append(LevelBinding.HLVL_BND.getName());
     return null;
   }
 

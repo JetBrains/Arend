@@ -97,9 +97,11 @@ elimCase : '\\elim'                     # elim
          | '\\case'                     # case
          ;
 
-binOpArg : maybeNew atomFieldsAcc argument*                                          # binOpArgument
-      |  (TRUNCATED_UNIVERSE_PREFIX | UNIVERSE_PREFIX) (atom | '(max' '(' expr (',' expr)* ') )')? # polyUniverse
-      | SET_PREFIX (atom | '(max' '(' expr (',' expr)* ') )')?                             # polySet
+levelMaxExpr : atom | '(max' '(' expr (',' expr)* ') )';
+
+binOpArg : maybeNew atomFieldsAcc argument*                            # binOpArgument
+      |  (TRUNCATED_UNIVERSE_PREFIX | UNIVERSE_PREFIX) (levelMaxExpr)? # polyUniverse
+      | SET_PREFIX (levelMaxExpr)?                                     # polySet
       ;
 
 binOpLeft : binOpArg infix;
@@ -140,6 +142,8 @@ literal : name                          # id
         | SET                           # set
         | '\\Prop'                      # prop
         | 'Lvl'                         # lvl
+        | '\\lp'                        # pParam
+        | '\\lh'                        # hParam
         | '_'                           # unknown
         | '{?}'                         # hole
         ;

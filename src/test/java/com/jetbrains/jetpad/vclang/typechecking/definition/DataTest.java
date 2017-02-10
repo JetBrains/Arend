@@ -161,7 +161,7 @@ public class DataTest extends TypeCheckingTestCase {
   @Test
   public void truncatedDataElimOk() {
     typeCheckClass(
-      "\\truncated \\data S : \\Set | base | loop I \\with loop left => base | loop right => base\n"+
+      "\\truncated \\data S : (\\Set \\lp) | base | loop I \\with loop left => base | loop right => base\n"+
         "\\function f (x : S) : Nat <= \\elim x | base => 0 | loop _ => 0");
   }
 

@@ -373,8 +373,7 @@ public class DefinitionCheckType {
         if (def.getUniverse() instanceof Abstract.PolyUniverseExpression) {
           TypeMax userType = visitor.checkFunOrDataType(def.getUniverse());
           userSorts = userType == null ? SortMax.OMEGA : userType.toSorts();
-        }
-        if (userSorts == null) {
+        } else {
           String msg = "Specified type " + PrettyPrintVisitor.prettyPrint(def.getUniverse(), 0) + " of '" + def.getName() + "' is not a universe";
           visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, def.getUniverse()));
         }
@@ -410,7 +409,7 @@ public class DefinitionCheckType {
     dataDefinition.setSorts(inferredSorts);
 
     boolean dataOk = true;
-    boolean universeOk = true;
+    boolean universeOk = userSorts == null || userSorts.getPLevel() != null;
     for (Abstract.Constructor constructor : def.getConstructors()) {
       visitor.getContext().clear();
       SortMax conSorts = new SortMax();

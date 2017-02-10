@@ -191,6 +191,14 @@ public final class Abstract {
     byte PREC = 12;
   }
 
+  public interface LPExpression extends Expression {
+    byte PREC = 12;
+  }
+
+  public interface LHExpression extends Expression {
+    byte PREC = 12;
+  }
+
   public interface PolyUniverseExpression extends Expression {
     byte PREC = 12;
 

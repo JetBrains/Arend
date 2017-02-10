@@ -655,6 +655,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     throw new IllegalStateException();
   }
 
+  @Override
+  public Result visitLP(Abstract.LPExpression expr, Type params) {
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public Result visitLH(Abstract.LHExpression expr, Type params) {
+    throw new IllegalStateException();
+  }
+
   public Level typeCheckLevel(Abstract.Expression expr, int minValue) {
     int num_sucs = 0;
     LocalTypeCheckingError error = null;
@@ -685,19 +695,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
           return Level.INFINITY;
         }
         if (!name.equals("suc")) {
-          LevelBinding var;
-          if (name.equals(LevelBinding.PLVL_BND.getName())) {
-            var = LevelBinding.PLVL_BND;
-          } else if (name.equals(LevelBinding.HLVL_BND.getName())) {
-            var = LevelBinding.HLVL_BND;
-          } else {
-            var = (LevelBinding) getLocalVar(defCall, myLvlContext);
-          }
+          LevelBinding var = (LevelBinding) getLocalVar(defCall, myLvlContext);
           if (var == null) {
             return null;
           }
           return new Level(var, num_sucs);
         }
+      } else if(expr instanceof Abstract.LPExpression) {
+        return new Level(LevelBinding.PLVL_BND, num_sucs);
+      } else if(expr instanceof Abstract.LHExpression) {
+        return new Level(LevelBinding.HLVL_BND, num_sucs);
       }
       error = new LocalTypeCheckingError("Invalid level expression", expr);
     }

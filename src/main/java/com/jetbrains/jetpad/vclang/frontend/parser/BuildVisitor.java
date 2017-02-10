@@ -612,17 +612,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return new Concrete.DefCallExpression(tokenPosition(ctx.name().getStart()), null, visitName(ctx.name()));
   }
 
-  private List<Concrete.Expression> visitMaxArgs(List<ExprContext> exprList) {
-    if (exprList == null || exprList.size() == 0) {
-      return null;
-    }
-    List<Concrete.Expression> pLevels = new ArrayList<>();
-    for (ExprContext expr : exprList) {
-      pLevels.add(visitExpr(expr));
-    }
-    return pLevels;
-  }
-
   @Override
   public Concrete.Expression visitBinOpArgument(BinOpArgumentContext ctx) {
     Concrete.Expression expr = visitAtoms(visitAtomFieldsAcc(ctx.atomFieldsAcc()), ctx.argument());
@@ -630,6 +619,25 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return new Concrete.NewExpression(tokenPosition(ctx.getStart()), expr);
     }
     return expr;
+  }
+
+  public List<Concrete.Expression> visitLevelMaxExpr(LevelMaxExprContext ctx) {
+    if (ctx == null) {
+      return null;
+    }
+
+    if (ctx.atom() != null) {
+      return Collections.singletonList((Concrete.Expression)visit(ctx.atom()));
+    }
+
+    if (ctx.expr() == null || ctx.expr().size() == 0) {
+      return null;
+    }
+    List<Concrete.Expression> pLevels = new ArrayList<>();
+    for (ExprContext expr : ctx.expr()) {
+      pLevels.add(visitExpr(expr));
+    }
+    return pLevels;
   }
 
   @Override
@@ -641,12 +649,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       int indexOfMinusSign = text.indexOf('-');
       hLevel = Integer.valueOf(text.substring(1, indexOfMinusSign));
     }
-    return new Concrete.PolyUniverseExpression(tokenPosition(ctx.getStart()), ctx.atom() != null ? Collections.singletonList((Concrete.Expression)visit(ctx.atom())) : visitMaxArgs(ctx.expr()), hLevel);
+    return new Concrete.PolyUniverseExpression(tokenPosition(ctx.getStart()), visitLevelMaxExpr(ctx.levelMaxExpr()), hLevel);
   }
 
   @Override
   public Concrete.Expression visitPolySet(PolySetContext ctx) {
-    return new Concrete.PolyUniverseExpression(tokenPosition(ctx.getStart()), ctx.atom() != null ? Collections.singletonList((Concrete.Expression)visit(ctx.atom())) : visitMaxArgs(ctx.expr()), Abstract.PolyUniverseExpression.SET);
+    return new Concrete.PolyUniverseExpression(tokenPosition(ctx.getStart()), visitLevelMaxExpr(ctx.levelMaxExpr()), Abstract.PolyUniverseExpression.SET);
   }
 
   @Override
@@ -673,29 +681,19 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return new Concrete.PolyUniverseExpression(pos, Collections.singletonList(new Concrete.NumericLiteral(pos, plevel)), Abstract.PolyUniverseExpression.SET);
   }
 
-  /*
-  @Override
-  public Concrete.PolyUniverseExpression visitUniversePref(UniversePrefContext ctx) {
-    return new Concrete.PolyUniverseExpression(tokenPosition(ctx.UNIVERSE_PREFIX().getSymbol()), null, Abstract.PolyUniverseExpression.NOT_TRUNCATED);
-  }
-
-  @Override
-  public Concrete.PolyUniverseExpression visitTruncatedUniversePref(TruncatedUniversePrefContext ctx) {
-    String text = ctx.TRUNCATED_UNIVERSE_PREFIX().getText();
-    int indexOfMinusSign = text.indexOf('-');
-    int hlevel = Integer.valueOf(text.substring(1, indexOfMinusSign));
-    return new Concrete.PolyUniverseExpression(tokenPosition(ctx.TRUNCATED_UNIVERSE_PREFIX().getSymbol()), null, hlevel);
-  }
-
-  @Override
-  public Concrete.PolyUniverseExpression visitSetPref(SetPrefContext ctx) {
-    return new Concrete.PolyUniverseExpression(tokenPosition(ctx.SET_PREFIX().getSymbol()), null, Abstract.PolyUniverseExpression.SET);
-  }
-  /**/
-
   @Override
   public Concrete.LvlExpression visitLvl(LvlContext ctx) {
     return new Concrete.LvlExpression(tokenPosition(ctx.getStart()));
+  }
+
+  @Override
+  public Concrete.LPExpression visitPParam(PParamContext ctx) {
+    return new Concrete.LPExpression(tokenPosition(ctx.getStart()));
+  }
+
+  @Override
+  public Concrete.LHExpression visitHParam(HParamContext ctx) {
+    return new Concrete.LHExpression(tokenPosition(ctx.getStart()));
   }
 
   @Override

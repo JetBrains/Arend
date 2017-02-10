@@ -135,4 +135,5 @@ public class Universe extends TypeCheckingTestCase {
       "\\data D : \\Set0 | d1 | d2 C \n" +
       "  \\with | d2 c1 => d1", 1);
   }
+
 }
