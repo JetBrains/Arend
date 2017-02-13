@@ -116,7 +116,6 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
   }
 
   private void fillInDataDefinition(DefinitionDeserialization defDeserializer, CalltargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
-    dataDef.typeHasErrors(false);
     dataDef.setParameters(defDeserializer.readParameters(dataProto.getParamList()));
 
     for (Map.Entry<String, DefinitionProtos.Definition.DataData.Constructor> entry : dataProto.getConstructorsMap().entrySet()) {
@@ -126,8 +125,6 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
         constructor.setPatterns(defDeserializer.readPatterns(constructorProto.getPatterns()));
       }
       constructor.setParameters(defDeserializer.readParameters(constructorProto.getParamList()));
-      constructor.typeHasErrors(constructorProto.getTypeHasErrors());
-      constructor.setStatus(constructorProto.getHasErrors() ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS);
       dataDef.addConstructor(constructor);
     }
 

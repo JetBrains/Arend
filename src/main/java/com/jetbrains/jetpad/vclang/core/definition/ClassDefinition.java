@@ -123,11 +123,6 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
-  public boolean typeHasErrors() {
-    return false;
-  }
-
-  @Override
   public TypeCheckingStatus status() {
     return myHasErrors ? TypeCheckingStatus.BODY_HAS_ERRORS : TypeCheckingStatus.NO_ERRORS;
   }

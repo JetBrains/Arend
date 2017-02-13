@@ -408,14 +408,12 @@ public class DefinitionCheckType {
     visitor.getTypecheckingState().record(def, dataDefinition);
 
     if (!paramsOk) {
-      dataDefinition.typeHasErrors(true);
-      dataDefinition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+      dataDefinition.setStatus(Definition.TypeCheckingStatus.TYPE_HAS_ERRORS);
       for (Abstract.Constructor constructor : def.getConstructors()) {
         visitor.getTypecheckingState().record(constructor, new Constructor(constructor, dataDefinition));
       }
       return dataDefinition;
     }
-    dataDefinition.typeHasErrors(false);
     dataDefinition.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
     return dataDefinition;
   }
@@ -433,7 +431,7 @@ public class DefinitionCheckType {
       SortMax conSorts = new SortMax();
       Constructor typedConstructor = typeCheckConstructor(constructor, dataDefinition, visitor, conSorts);
       visitor.getTypecheckingState().record(constructor, typedConstructor);
-      if (typedConstructor.typeHasErrors()) {
+      if (typedConstructor.status() == Definition.TypeCheckingStatus.TYPE_HAS_ERRORS) {
         dataOk = false;
       }
 
@@ -508,7 +506,7 @@ public class DefinitionCheckType {
         visitor.getErrorReporter().report(new NotInScopeError(def, cond.getConstructorName()));  // TODO: refer by reference
         continue;
       }
-      if (constructor.typeHasErrors()) {
+      if (constructor.status() == Definition.TypeCheckingStatus.TYPE_HAS_ERRORS) {
         continue;
       }
       if (!condMap.containsKey(constructor)) {
@@ -609,7 +607,7 @@ public class DefinitionCheckType {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
       String name = def.getName();
 
-      Constructor constructor = new Constructor(def, null, dataDefinition, null);
+      Constructor constructor = new Constructor(def, dataDefinition);
       List<? extends Abstract.PatternArgument> patterns = def.getPatterns();
       Patterns typedPatterns = null;
       if (patterns != null) {
@@ -698,7 +696,6 @@ public class DefinitionCheckType {
 
       constructor.setParameters(list.getFirst());
       constructor.setPatterns(typedPatterns);
-      constructor.typeHasErrors(false);
       constructor.setThisClass(dataDefinition.getThisClass());
       dataDefinition.addConstructor(constructor);
 

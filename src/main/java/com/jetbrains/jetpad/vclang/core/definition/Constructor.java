@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.core.definition;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
@@ -23,38 +22,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Constructor extends Definition implements Function {
-  private DataDefinition myDataType;
+  private final DataDefinition myDataType;
   private DependentLink myParameters;
   private Patterns myPatterns;
-  private boolean myTypeHasError;
 
   public Constructor(Abstract.Constructor abstractDef, DataDefinition dataType) {
     super(abstractDef);
     myDataType = dataType;
-    myParameters = EmptyDependentLink.getInstance();
+    myParameters = null;
     if (dataType != null) {
       setPolyParams(dataType.getPolyParams());
     }
-    myTypeHasError = true;
-  }
-
-  public Constructor(Abstract.Constructor abstractDef, DependentLink parameters, DataDefinition dataType, Patterns patterns) {
-    super(abstractDef);
-    myDataType = dataType;
-    myParameters = parameters;
-    myPatterns = patterns;
-    if (dataType != null) {
-      setPolyParams(dataType.getPolyParams());
-    }
-    myTypeHasError = myParameters == null;
-  }
-
-  public Constructor(Abstract.Constructor abstractDef, DependentLink parameters, DataDefinition dataType) {
-    this(abstractDef, parameters, dataType, null);
   }
 
   public Patterns getPatterns() {
-    assert !typeHasErrors();
+    assert myParameters != null;
     return myPatterns;
   }
 
@@ -70,7 +52,7 @@ public class Constructor extends Definition implements Function {
 
   @Override
   public DependentLink getParameters() {
-    assert !typeHasErrors();
+    assert myParameters != null;
     return myParameters;
   }
 
@@ -93,18 +75,13 @@ public class Constructor extends Definition implements Function {
     return myDataType;
   }
 
-  public void setDataType(DataDefinition dataType) {
-    myDataType = dataType;
-    setPolyParams(dataType.getPolyParams());
-  }
-
   public DependentLink getDataTypeParameters() {
-    assert !typeHasErrors() && !myDataType.typeHasErrors();
+    assert myParameters != null && myDataType.status() != TypeCheckingStatus.TYPE_HAS_ERRORS;
     return myPatterns == null ? myDataType.getParameters() : myPatterns.getParameters();
   }
 
   public List<Expression> matchDataTypeArguments(List<Expression> arguments) {
-    assert !typeHasErrors() && !myDataType.typeHasErrors();
+    assert myParameters != null && myDataType.status() != TypeCheckingStatus.TYPE_HAS_ERRORS;
     if (myPatterns == null) {
       return arguments;
     } else {
@@ -122,7 +99,7 @@ public class Constructor extends Definition implements Function {
   }
 
   public Expression getDataTypeExpression(ExprSubstitution substitution, LevelArguments polyParams) {
-    assert !typeHasErrors() && !myDataType.typeHasErrors();
+    assert myParameters != null && myDataType.status() != TypeCheckingStatus.TYPE_HAS_ERRORS;
 
     List<Expression> arguments;
     if (myPatterns == null) {
@@ -163,7 +140,7 @@ public class Constructor extends Definition implements Function {
 
   @Override
   public Expression getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
-    if (typeHasErrors()) {
+    if (myParameters == null) {
       return null;
     }
 
@@ -198,17 +175,8 @@ public class Constructor extends Definition implements Function {
   }
 
   @Override
-  public boolean typeHasErrors() {
-    return myTypeHasError;
-  }
-
-  public void typeHasErrors(boolean has) {
-    myTypeHasError = has;
-  }
-
-  @Override
   public TypeCheckingStatus status() {
-    return myTypeHasError ? TypeCheckingStatus.BODY_HAS_ERRORS : TypeCheckingStatus.NO_ERRORS;
+    return myParameters == null ? TypeCheckingStatus.TYPE_HAS_ERRORS : TypeCheckingStatus.NO_ERRORS;
   }
 
   @Override

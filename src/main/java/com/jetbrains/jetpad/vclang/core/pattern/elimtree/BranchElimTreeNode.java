@@ -1,23 +1,24 @@
 package com.jetbrains.jetpad.vclang.core.pattern.elimtree;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.Constructor;
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
-import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
-import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
-import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
+import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 
 import java.util.*;
 
@@ -55,7 +56,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
   }
 
   public ConstructorClause addClause(Constructor constructor, List<String> names) {
-    assert !constructor.typeHasErrors();
+    assert constructor.status() != Definition.TypeCheckingStatus.TYPE_HAS_ERRORS;
     DataCallExpression dataCall = myReference.getType().normalize(NormalizeVisitor.Mode.WHNF).toExpression().toDataCall();
     List<? extends Expression> dataTypeArguments = dataCall.getDefCallArguments();
 

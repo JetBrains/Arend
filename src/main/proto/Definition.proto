@@ -39,8 +39,6 @@ message Definition {
         message Constructor {
             Patterns patterns = 1;
             repeated Telescope param = 2;
-            bool type_has_errors = 3;
-            bool has_errors = 4;
 
             message Patterns {
                 repeated PatternArgument pattern_argument = 1;

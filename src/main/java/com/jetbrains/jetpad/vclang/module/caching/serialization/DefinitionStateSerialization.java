@@ -92,8 +92,6 @@ public class DefinitionStateSerialization {
         cBuilder.setPatterns(defSerializer.writePatterns(constructor.getPatterns()));
       }
       cBuilder.addAllParam(defSerializer.writeParameters(constructor.getParameters()));
-      cBuilder.setTypeHasErrors(constructor.typeHasErrors());
-      cBuilder.setHasErrors(Definition.TypeCheckingStatus.BODY_HAS_ERRORS.equals(constructor.status()));
 
       builder.putConstructors(myPersistenceProvider.getIdFor(constructor.getAbstractDefinition()), cBuilder.build());
     }

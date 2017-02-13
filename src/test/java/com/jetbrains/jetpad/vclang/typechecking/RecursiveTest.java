@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.TerminationCheckErro
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class RecursiveTest extends TypeCheckingTestCase {
@@ -17,15 +17,13 @@ public class RecursiveTest extends TypeCheckingTestCase {
   @Test
   public void dataLeftError() {
     Definition def = typeCheckDef("\\data List (A : \\Type0) | nil | cons (List A -> A)", 1);
-    assertTrue(def.status() == Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
-    assertFalse(def.typeHasErrors());
+    assertEquals(Definition.TypeCheckingStatus.BODY_HAS_ERRORS, def.status());
   }
 
   @Test
   public void dataRightError() {
     Definition def = typeCheckDef("\\data List (B : \\Type0 -> \\Type0) (A : \\Type0) | nil | cons (B (List B A))", 1);
-    assertTrue(def.status() == Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
-    assertFalse(def.typeHasErrors());
+    assertEquals(Definition.TypeCheckingStatus.BODY_HAS_ERRORS, def.status());
   }
 
   @Test

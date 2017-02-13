@@ -57,13 +57,8 @@ public class ClassField extends Definition {
   }
 
   @Override
-  public boolean typeHasErrors() {
-    return myType == null;
-  }
-
-  @Override
   public TypeCheckingStatus status() {
-    return myType == null || myType.toError() != null ? TypeCheckingStatus.BODY_HAS_ERRORS : TypeCheckingStatus.NO_ERRORS;
+    return myType == null ? TypeCheckingStatus.TYPE_HAS_ERRORS : myType.toError() != null ? TypeCheckingStatus.BODY_HAS_ERRORS : TypeCheckingStatus.NO_ERRORS;
   }
 
   @Override

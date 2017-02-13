@@ -37,7 +37,7 @@ public class FunctionDefinition extends Definition implements Function {
     myResultType = resultType;
     myElimTree = elimTree;
     myTypeHasErrors = resultType == null;
-    myHasErrors = myTypeHasErrors ? TypeCheckingStatus.BODY_HAS_ERRORS : myElimTree == null ? TypeCheckingStatus.TYPE_CHECKING : TypeCheckingStatus.NO_ERRORS;
+    myHasErrors = myTypeHasErrors ? TypeCheckingStatus.TYPE_HAS_ERRORS : myElimTree == null ? TypeCheckingStatus.TYPE_CHECKING : TypeCheckingStatus.NO_ERRORS;
   }
 
   @Override
@@ -69,11 +69,6 @@ public class FunctionDefinition extends Definition implements Function {
 
   public void setResultType(TypeMax resultType) {
     myResultType = resultType;
-  }
-
-  @Override
-  public boolean typeHasErrors() {
-    return myTypeHasErrors;
   }
 
   public void typeHasErrors(boolean has) {
