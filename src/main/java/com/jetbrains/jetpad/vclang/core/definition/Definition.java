@@ -76,4 +76,9 @@ public abstract class Definition implements Referable {
   public abstract boolean typeHasErrors();
   public abstract TypeCheckingStatus hasErrors();
   public abstract void hasErrors(TypeCheckingStatus status);
+
+  @Override
+  public String toString() {
+    return myAbstractDefinition.toString();
+  }
 }

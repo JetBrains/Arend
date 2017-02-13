@@ -80,15 +80,33 @@ public class DefinitionCheckType {
     }
   }
 
-  public static void typeCheck(TypecheckerState state, GlobalInstancePool instancePool, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckingUnit unit, LocalErrorReporter errorReporter) {
+  public static Definition typeCheck(TypecheckerState state, GlobalInstancePool instancePool, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckingUnit unit, LocalErrorReporter errorReporter) {
     CheckTypeVisitor visitor = new CheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, null, null, new ArrayList<Binding>(), new ArrayList<LevelBinding>(), errorReporter, instancePool);
+    ClassDefinition enclosingClass = unit.getEnclosingClass() == null ? null : (ClassDefinition) state.getTypechecked(unit.getEnclosingClass());
 
     if (unit.getDefinition() instanceof Abstract.ClassDefinition) {
-      ClassDefinition enclosingClass = unit.getEnclosingClass() == null ? null : (ClassDefinition) state.getTypechecked(unit.getEnclosingClass());
-      typeCheckClass((Abstract.ClassDefinition) unit.getDefinition(), enclosingClass, visitor);
+      return typeCheckClass((Abstract.ClassDefinition) unit.getDefinition(), enclosingClass, visitor);
     } else
     if (unit.getDefinition() instanceof Abstract.ClassViewInstance) {
-      typeCheckClassViewInstance((Abstract.ClassViewInstance) unit.getDefinition(), visitor);
+      return typeCheckClassViewInstance((Abstract.ClassViewInstance) unit.getDefinition(), visitor);
+    }
+
+    LocalInstancePool localInstancePool = new LocalInstancePool();
+    visitor.setClassViewInstancePool(new CompositeInstancePool(localInstancePool, instancePool));
+
+    if (unit.getDefinition() instanceof Abstract.FunctionDefinition) {
+      FunctionDefinition definition = typeCheckFunctionHeader((Abstract.FunctionDefinition) unit.getDefinition(), enclosingClass, visitor, localInstancePool);
+      if (definition.hasErrors() == Definition.TypeCheckingStatus.TYPE_CHECKING) {
+        typeCheckFunctionBody(definition, visitor);
+      }
+      return definition;
+    } else
+    if (unit.getDefinition() instanceof Abstract.DataDefinition) {
+      DataDefinition definition = typeCheckDataHeader((Abstract.DataDefinition) unit.getDefinition(), enclosingClass, visitor, localInstancePool);
+      if (definition.hasErrors() == Definition.TypeCheckingStatus.TYPE_CHECKING) {
+        typeCheckDataBody(definition, visitor);
+      }
+      return definition;
     } else {
       throw new IllegalStateException();
     }
@@ -860,7 +878,7 @@ public class DefinitionCheckType {
     return typedDef;
   }
 
-  private static void typeCheckClassViewInstance(Abstract.ClassViewInstance def, CheckTypeVisitor visitor) {
+  private static FunctionDefinition typeCheckClassViewInstance(Abstract.ClassViewInstance def, CheckTypeVisitor visitor) {
     LocalErrorReporter errorReporter = visitor.getErrorReporter();
     TypecheckerState state = visitor.getTypecheckingState();
 
@@ -871,7 +889,7 @@ public class DefinitionCheckType {
     typedDef.setPolyParams(polyParamsList);
     state.record(def, typedDef);
     if (!paramsOk) {
-      return;
+      return typedDef;
     }
 
     Abstract.ClassView classView = (Abstract.ClassView) def.getClassView().getReferent();
@@ -896,7 +914,7 @@ public class DefinitionCheckType {
         classFieldMap.remove(field);
       } else {
         visitor.getErrorReporter().report(new LocalTypeCheckingError("Field '" + field.getName() + "' is not implemented", def));
-        return;
+        return typedDef;
       }
     }
 
@@ -904,12 +922,13 @@ public class DefinitionCheckType {
     DefCallExpression defCall = impl.term.normalize(NormalizeVisitor.Mode.WHNF).toDefCall();
     if (defCall == null || !defCall.getDefCallArguments().isEmpty()) {
       errorReporter.report(new LocalTypeCheckingError("Expected a definition in the classifying field", def));
-      return;
+      return typedDef;
     }
 
     typedDef.setResultType(term);
     typedDef.setElimTree(top(list.getFirst(), leaf(Abstract.Definition.Arrow.RIGHT, New(term))));
     typedDef.typeHasErrors(false);
     typedDef.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
+    return typedDef;
   }
 }
