@@ -21,12 +21,12 @@ public class FunctionDefinition extends Definition implements Function {
   private TypeMax myResultType;
   private ElimTreeNode myElimTree;
   private boolean myTypeHasErrors;
-  private TypeCheckingStatus myHasErrors;
+  private TypeCheckingStatus myStatus;
 
   public FunctionDefinition(Abstract.Definition abstractDef) {
     super(abstractDef);
     myTypeHasErrors = true;
-    myHasErrors = TypeCheckingStatus.TYPE_CHECKING;
+    myStatus = TypeCheckingStatus.TYPE_CHECKING;
     myParameters = EmptyDependentLink.getInstance();
   }
 
@@ -37,7 +37,7 @@ public class FunctionDefinition extends Definition implements Function {
     myResultType = resultType;
     myElimTree = elimTree;
     myTypeHasErrors = resultType == null;
-    myHasErrors = myTypeHasErrors ? TypeCheckingStatus.TYPE_HAS_ERRORS : myElimTree == null ? TypeCheckingStatus.TYPE_CHECKING : TypeCheckingStatus.NO_ERRORS;
+    myStatus = myTypeHasErrors ? TypeCheckingStatus.TYPE_HAS_ERRORS : myElimTree == null ? TypeCheckingStatus.TYPE_CHECKING : TypeCheckingStatus.NO_ERRORS;
   }
 
   @Override
@@ -77,12 +77,11 @@ public class FunctionDefinition extends Definition implements Function {
 
   @Override
   public TypeCheckingStatus status() {
-    return myHasErrors;
+    return myStatus;
   }
 
-  @Override
   public void setStatus(TypeCheckingStatus status) {
-    myHasErrors = status;
+    myStatus = status;
   }
 
   @Override

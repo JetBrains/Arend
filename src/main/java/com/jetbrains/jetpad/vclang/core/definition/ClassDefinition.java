@@ -127,9 +127,8 @@ public class ClassDefinition extends Definition {
     return myHasErrors ? TypeCheckingStatus.BODY_HAS_ERRORS : TypeCheckingStatus.NO_ERRORS;
   }
 
-  @Override
-  public void setStatus(TypeCheckingStatus status) {
-    myHasErrors = !TypeCheckingStatus.NO_ERRORS.equals(status);
+  public void hasErrors() {
+    myHasErrors = true;
   }
 
   public ClassField getEnclosingThisField() {

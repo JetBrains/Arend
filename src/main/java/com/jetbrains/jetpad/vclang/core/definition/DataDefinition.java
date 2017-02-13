@@ -26,7 +26,7 @@ public class DataDefinition extends Definition {
   private SortMax mySorts;
   private boolean myMatchesOnInterval;
   private boolean myIsTruncated;
-  private TypeCheckingStatus myHasErrors;
+  private TypeCheckingStatus myStatus;
 
   public DataDefinition(Abstract.DataDefinition abstractDef) {
     this(abstractDef, new SortMax(), EmptyDependentLink.getInstance());
@@ -39,7 +39,7 @@ public class DataDefinition extends Definition {
     mySorts = sorts;
     myMatchesOnInterval = false;
     myIsTruncated = false;
-    myHasErrors = parameters == null ? TypeCheckingStatus.TYPE_HAS_ERRORS : TypeCheckingStatus.TYPE_CHECKING;
+    myStatus = TypeCheckingStatus.NO_ERRORS;
   }
 
   @Override
@@ -65,7 +65,7 @@ public class DataDefinition extends Definition {
 
   @Override
   public DependentLink getParameters() {
-    assert myHasErrors != TypeCheckingStatus.TYPE_HAS_ERRORS;
+    assert myStatus != TypeCheckingStatus.TYPE_HAS_ERRORS;
     return myParameters;
   }
 
@@ -137,7 +137,7 @@ public class DataDefinition extends Definition {
 
   @Override
   public TypeMax getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
-    if (myHasErrors == TypeCheckingStatus.TYPE_HAS_ERRORS) {
+    if (myStatus == TypeCheckingStatus.TYPE_HAS_ERRORS) {
       return null;
     }
 
@@ -159,11 +159,10 @@ public class DataDefinition extends Definition {
 
   @Override
   public TypeCheckingStatus status() {
-    return myHasErrors;
+    return myStatus;
   }
 
-  @Override
   public void setStatus(TypeCheckingStatus status) {
-    myHasErrors = status;
+    myStatus = status;
   }
 }

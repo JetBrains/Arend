@@ -412,9 +412,9 @@ public class DefinitionCheckType {
       for (Abstract.Constructor constructor : def.getConstructors()) {
         visitor.getTypecheckingState().record(constructor, new Constructor(constructor, dataDefinition));
       }
-      return dataDefinition;
+    } else {
+      dataDefinition.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
     }
-    dataDefinition.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
     return dataDefinition;
   }
 
@@ -846,7 +846,9 @@ public class DefinitionCheckType {
       }
 
       visitor.getTypecheckingState().record(def, typedDef);
-      typedDef.setStatus(classOk ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+      if (!classOk) {
+        typedDef.hasErrors();
+      }
       return typedDef;
     } catch (Namespace.InvalidNamespaceException e) {
       errorReporter.report(e.toError());

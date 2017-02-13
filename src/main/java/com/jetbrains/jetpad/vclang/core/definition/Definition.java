@@ -79,7 +79,6 @@ public abstract class Definition implements Referable {
   }
 
   public abstract TypeCheckingStatus status();
-  public abstract void setStatus(TypeCheckingStatus status);
 
   @Override
   public String toString() {

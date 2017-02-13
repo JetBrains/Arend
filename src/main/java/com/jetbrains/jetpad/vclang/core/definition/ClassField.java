@@ -62,11 +62,6 @@ public class ClassField extends Definition {
   }
 
   @Override
-  public void setStatus(TypeCheckingStatus status) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public Expression getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
     if (myType == null) {
       return null;

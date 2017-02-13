@@ -122,7 +122,7 @@ public class Typechecking {
       DefinitionCallGraph callCategory = new DefinitionCallGraph(definitionCallGraph);
       if (!callCategory.checkTermination()) {
         ok = false;
-        for (Definition fDef : cycleDefs) {
+        for (FunctionDefinition fDef : cycleDefs) {
           fDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
         }
         for (Map.Entry<Definition, Set<RecursiveBehavior<Definition>>> entry : callCategory.myErrorInfo.entrySet()) {
@@ -151,7 +151,7 @@ public class Typechecking {
       definitionCallGraph.add((FunctionDefinition) typechecked, Collections.singleton(typechecked));
       DefinitionCallGraph callCategory = new DefinitionCallGraph(definitionCallGraph);
       if (!callCategory.checkTermination()) {
-        typechecked.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+        ((FunctionDefinition) typechecked).setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
         for (Map.Entry<Definition, Set<RecursiveBehavior<Definition>>> entry : callCategory.myErrorInfo.entrySet()) {
           compositeErrorReporter.report(new TerminationCheckError(entry.getKey(), entry.getValue()));
         }

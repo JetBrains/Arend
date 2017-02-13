@@ -83,12 +83,11 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
         case FUNCTION:
           FunctionDefinition functionDef = (FunctionDefinition) def;
           fillInFunctionDefinition(defDeserializer, defProto.getFunction(), functionDef);
+          functionDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
           break;
         default:
           throw new DeserializationError("Unknown Definition kind: " + defProto.getDefinitionDataCase());
       }
-
-      def.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
       if (defProto.getThisClassRef() != 0) {
         ClassDefinition thisClass = typedCalltargetProvider.getCalltarget(defProto.getThisClassRef(), ClassDefinition.class);
