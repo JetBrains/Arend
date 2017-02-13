@@ -26,6 +26,7 @@ import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.ClassViewInst
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.SimpleClassViewInstanceProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.scope.InstanceScopeProvider;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
 
@@ -69,6 +70,7 @@ public class Typechecking {
     }
 
     Set<Definition> cycleDefs = new HashSet<>();
+    List<Pair<Abstract.Definition, Boolean>> results = new ArrayList<>(scc.getUnits().size());
     for (TypecheckingUnit unit : scc.getUnits()) {
       CountingErrorReporter countingErrorReporter = null;
       boolean doReport;
@@ -108,25 +110,31 @@ public class Typechecking {
       }
 
       if (doReport) {
-        if (countingErrorReporter == null || countingErrorReporter.getErrorsNumber() == 0) {
-          myTypecheckedReporter.typecheckingSucceeded(unit.getDefinition());
-        } else {
-          myTypecheckedReporter.typecheckingFailed(unit.getDefinition());
-        }
+        results.add(new Pair<>(unit.getDefinition(), countingErrorReporter == null || countingErrorReporter.getErrorsNumber() == 0));
       }
     }
 
+    boolean ok = true;
     if (!cycleDefs.isEmpty()) {
       DefinitionCallGraph definitionCallGraph = new DefinitionCallGraph();
       for (Definition fDef : cycleDefs) definitionCallGraph.add(fDef, cycleDefs);
       DefinitionCallGraph callCategory = new DefinitionCallGraph(definitionCallGraph);
       if (!callCategory.checkTermination()) {
+        ok = false;
         for (Definition fDef : cycleDefs) {
           fDef.hasErrors(Definition.TypeCheckingStatus.HAS_ERRORS);
         }
         for (Definition d : callCategory.myErrorInfo.keySet()) {
           myErrorReporter.report(new TerminationCheckError(d, callCategory.myErrorInfo.get(d)));
         }
+      }
+    }
+
+    for (Pair<Abstract.Definition, Boolean> result : results) {
+      if (ok && result.proj2) {
+        myTypecheckedReporter.typecheckingSucceeded(result.proj1);
+      } else {
+        myTypecheckedReporter.typecheckingFailed(result.proj1);
       }
     }
   }
