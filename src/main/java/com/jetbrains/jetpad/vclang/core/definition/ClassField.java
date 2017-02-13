@@ -57,11 +57,6 @@ public class ClassField extends Definition {
   }
 
   @Override
-  public TypeCheckingStatus status() {
-    return myType == null ? TypeCheckingStatus.TYPE_HAS_ERRORS : myType.toError() != null ? TypeCheckingStatus.BODY_HAS_ERRORS : TypeCheckingStatus.NO_ERRORS;
-  }
-
-  @Override
   public Expression getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
     if (myType == null) {
       return null;

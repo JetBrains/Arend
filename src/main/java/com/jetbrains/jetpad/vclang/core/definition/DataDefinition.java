@@ -26,7 +26,6 @@ public class DataDefinition extends Definition {
   private SortMax mySorts;
   private boolean myMatchesOnInterval;
   private boolean myIsTruncated;
-  private TypeCheckingStatus myStatus;
 
   public DataDefinition(Abstract.DataDefinition abstractDef) {
     this(abstractDef, new SortMax(), EmptyDependentLink.getInstance());
@@ -39,7 +38,6 @@ public class DataDefinition extends Definition {
     mySorts = sorts;
     myMatchesOnInterval = false;
     myIsTruncated = false;
-    myStatus = TypeCheckingStatus.NO_ERRORS;
   }
 
   @Override
@@ -65,7 +63,7 @@ public class DataDefinition extends Definition {
 
   @Override
   public DependentLink getParameters() {
-    assert myStatus != TypeCheckingStatus.TYPE_HAS_ERRORS;
+    assert status() != TypeCheckingStatus.TYPE_HAS_ERRORS;
     return myParameters;
   }
 
@@ -137,7 +135,7 @@ public class DataDefinition extends Definition {
 
   @Override
   public TypeMax getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
-    if (myStatus == TypeCheckingStatus.TYPE_HAS_ERRORS) {
+    if (status() == TypeCheckingStatus.TYPE_HAS_ERRORS) {
       return null;
     }
 
@@ -155,14 +153,5 @@ public class DataDefinition extends Definition {
   @Override
   public DataCallExpression getDefCall(LevelArguments polyArguments, List<Expression> args) {
     return new DataCallExpression(this, polyArguments, args);
-  }
-
-  @Override
-  public TypeCheckingStatus status() {
-    return myStatus;
-  }
-
-  public void setStatus(TypeCheckingStatus status) {
-    myStatus = status;
   }
 }

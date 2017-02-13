@@ -21,7 +21,6 @@ import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.param;
 public class ClassDefinition extends Definition {
   private FieldSet myFieldSet;
   private Set<ClassDefinition> mySuperClasses;
-  private boolean myHasErrors;
 
   private ClassField myEnclosingThisField = null;
 
@@ -33,7 +32,6 @@ public class ClassDefinition extends Definition {
     super(abstractDef);
     myFieldSet = fieldSet;
     mySuperClasses = superClasses;
-    myHasErrors = false;
   }
 
   @Override
@@ -120,15 +118,6 @@ public class ClassDefinition extends Definition {
       myEnclosingThisField.setThisClass(this);
       myFieldSet.addField(myEnclosingThisField);
     }
-  }
-
-  @Override
-  public TypeCheckingStatus status() {
-    return myHasErrors ? TypeCheckingStatus.BODY_HAS_ERRORS : TypeCheckingStatus.NO_ERRORS;
-  }
-
-  public void hasErrors() {
-    myHasErrors = true;
   }
 
   public ClassField getEnclosingThisField() {

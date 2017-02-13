@@ -60,6 +60,5 @@ public class RecursiveTest extends TypeCheckingTestCase {
   @Test
   public void withoutType() {
     typeCheckDef("\\function f => f", 1);
-    assertThatErrorsAre(instanceOf(TerminationCheckError.class));
   }
 }

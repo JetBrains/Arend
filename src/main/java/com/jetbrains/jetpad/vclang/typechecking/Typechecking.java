@@ -106,7 +106,7 @@ public class Typechecking {
       } else {
         countingErrorReporter = new CountingErrorReporter();
         LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter));
-        DefinitionCheckType.typeCheck(myState, instancePool, myStaticNsProvider, myDynamicNsProvider, unit, localErrorReporter);
+        DefinitionCheckType.typeCheck(myState, instancePool, myStaticNsProvider, myDynamicNsProvider, unit, true, localErrorReporter);
         doReport = true;
       }
 
@@ -135,6 +135,10 @@ public class Typechecking {
       if (ok && result.proj2) {
         myTypecheckedReporter.typecheckingSucceeded(result.proj1);
       } else {
+        Definition typechecked = myState.getTypechecked(result.proj1);
+        if (typechecked.status() == Definition.TypeCheckingStatus.NO_ERRORS) {
+          typechecked.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
+        }
         myTypecheckedReporter.typecheckingFailed(result.proj1);
       }
     }
@@ -144,14 +148,14 @@ public class Typechecking {
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
     CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(myErrorReporter, countingErrorReporter);
     LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), compositeErrorReporter);
-    Definition typechecked = DefinitionCheckType.typeCheck(myState, instancePool, myStaticNsProvider, myDynamicNsProvider, unit, localErrorReporter);
+    Definition typechecked = DefinitionCheckType.typeCheck(myState, instancePool, myStaticNsProvider, myDynamicNsProvider, unit, recursive, localErrorReporter);
 
     if (recursive && typechecked instanceof FunctionDefinition) {
       DefinitionCallGraph definitionCallGraph = new DefinitionCallGraph();
       definitionCallGraph.add((FunctionDefinition) typechecked, Collections.singleton(typechecked));
       DefinitionCallGraph callCategory = new DefinitionCallGraph(definitionCallGraph);
       if (!callCategory.checkTermination()) {
-        ((FunctionDefinition) typechecked).setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+        typechecked.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
         for (Map.Entry<Definition, Set<RecursiveBehavior<Definition>>> entry : callCategory.myErrorInfo.entrySet()) {
           compositeErrorReporter.report(new TerminationCheckError(entry.getKey(), entry.getValue()));
         }
@@ -161,6 +165,9 @@ public class Typechecking {
     if (countingErrorReporter.getErrorsNumber() == 0) {
       myTypecheckedReporter.typecheckingSucceeded(unit.getDefinition());
     } else {
+      if (typechecked.status() == Definition.TypeCheckingStatus.NO_ERRORS) {
+        typechecked.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
+      }
       myTypecheckedReporter.typecheckingFailed(unit.getDefinition());
     }
   }

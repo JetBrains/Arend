@@ -16,9 +16,11 @@ public abstract class Definition implements Referable {
   private ClassDefinition myThisClass;
   private Abstract.Definition myAbstractDefinition;
   private Map<Integer, ClassField> myClassifyingFields = Collections.emptyMap();
+  private TypeCheckingStatus myStatus;
 
   public Definition(Abstract.Definition abstractDef) {
     myAbstractDefinition = abstractDef;
+    myStatus = TypeCheckingStatus.NO_ERRORS;
   }
 
   public String getName() {
@@ -78,7 +80,13 @@ public abstract class Definition implements Referable {
     }
   }
 
-  public abstract TypeCheckingStatus status();
+  public TypeCheckingStatus status() {
+    return myStatus;
+  }
+
+  public void setStatus(TypeCheckingStatus status) {
+    myStatus = status;
+  }
 
   @Override
   public String toString() {

@@ -138,7 +138,6 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
   }
 
   private void fillInFunctionDefinition(DefinitionDeserialization defDeserializer, DefinitionProtos.Definition.FunctionData functionProto, FunctionDefinition functionDef) throws DeserializationError {
-    functionDef.typeHasErrors(false);
     functionDef.setParameters(defDeserializer.readParameters(functionProto.getParamList()));
     functionDef.setResultType(defDeserializer.readTypeMax(functionProto.getType()));
     if (functionProto.hasElimTree()) {
