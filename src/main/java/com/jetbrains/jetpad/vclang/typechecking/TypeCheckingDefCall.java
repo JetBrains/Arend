@@ -239,11 +239,13 @@ public class TypeCheckingDefCall {
       }
 
       if (typeCheckedDefinition == null) {
-        Scope scope = new NamespaceScope(myVisitor.getStaticNamespaceProvider().forDefinition(leftDefinition.getAbstractDefinition()));
-        if (leftDefinition instanceof ClassDefinition) {
-          scope = new OverridingScope(scope, new NamespaceScope(myVisitor.getDynamicNamespaceProvider().forClass(((ClassDefinition) leftDefinition).getAbstractDefinition())));
+        if (!(leftDefinition instanceof ClassField)) { // Some class fields do not have abstract definitions
+          Scope scope = new NamespaceScope(myVisitor.getStaticNamespaceProvider().forDefinition(leftDefinition.getAbstractDefinition()));
+          if (leftDefinition instanceof ClassDefinition) {
+            scope = new OverridingScope(scope, new NamespaceScope(myVisitor.getDynamicNamespaceProvider().forClass(((ClassDefinition) leftDefinition).getAbstractDefinition())));
+          }
+          member = scope.resolveName(name);
         }
-        member = scope.resolveName(name);
         if (member == null) {
           MemberNotFoundError error = new MemberNotFoundError(leftDefinition, name, expr);
           expr.setWellTyped(myVisitor.getContext(), Error(null, error));

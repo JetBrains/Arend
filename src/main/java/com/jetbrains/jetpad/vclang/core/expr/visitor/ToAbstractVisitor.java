@@ -80,7 +80,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     Expression fun = expr.getFunction();
     DefCallExpression defCall = fun.toDefCall();
 
-    if (!(defCall != null && new Name(defCall.getDefinition().getName()).fixity == Name.Fixity.INFIX)) {
+    if (defCall == null || new Name(defCall.getDefinition().getName()).fixity != Name.Fixity.INFIX) {
       return null;
     }
     boolean[] isExplicit = new boolean[defCall.getDefCallArguments().size() + expr.getArguments().size()];
@@ -168,12 +168,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     if (result != null) {
       return result;
     }
-    return visitArguments(myFactory.makeDefCall(null, expr.getDefinition().getAbstractDefinition(), expr.getDefinition().getAbstractDefinition()), expr, true);
+    return visitArguments(myFactory.makeDefCall(null, expr.getDefinition().getAbstractDefinition()), expr, true);
   }
 
   @Override
   public Abstract.Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    return myFactory.makeDefCall(expr.getExpression().accept(this, null), expr.getDefinition().getAbstractDefinition(), expr.getDefinition().getAbstractDefinition());
+    return myFactory.makeDefCall(expr.getExpression().accept(this, null), expr.getDefinition().getAbstractDefinition());
   }
 
   @Override
@@ -192,7 +192,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       }
       conParams = expr.getDefinition().getDataTypeExpression(substitution, expr.getPolyArguments()).accept(this, null);
     }
-    return visitArguments(myFactory.makeDefCall(conParams, expr.getDefinition().getAbstractDefinition(), expr.getDefinition().getAbstractDefinition()), expr, false);
+    return visitArguments(myFactory.makeDefCall(conParams, expr.getDefinition().getAbstractDefinition()), expr, false);
   }
 
   @Override
@@ -214,7 +214,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       }
     }
 
-    Abstract.Expression defCallExpr = myFactory.makeDefCall(enclExpr, expr.getDefinition().getAbstractDefinition(), expr.getDefinition().getAbstractDefinition());
+    Abstract.Expression defCallExpr = myFactory.makeDefCall(enclExpr, expr.getDefinition().getAbstractDefinition());
     if (statements.isEmpty()) {
       return defCallExpr;
     } else {

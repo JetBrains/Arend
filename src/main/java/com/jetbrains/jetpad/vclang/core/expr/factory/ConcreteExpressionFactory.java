@@ -20,8 +20,8 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.Expression makeDefCall(Abstract.Expression expr, Abstract.ReferableSourceNode alias, Abstract.Definition definition) {
-    return cDefCall((Concrete.Expression) expr, definition, alias == null ? "\\this" : alias.getName());
+  public Abstract.Expression makeDefCall(Abstract.Expression expr, Abstract.Definition definition) {
+    return cDefCall((Concrete.Expression) expr, definition, definition == null ? "\\this" : definition.getName());
   }
 
   @Override
