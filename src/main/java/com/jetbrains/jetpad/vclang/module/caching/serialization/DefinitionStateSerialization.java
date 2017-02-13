@@ -25,7 +25,7 @@ public class DefinitionStateSerialization {
     for (Abstract.Definition definition : state.getTypecheckedDefinitions()) {
       Definition typechecked = state.getTypechecked(definition);
       if (typechecked instanceof Constructor || typechecked instanceof ClassField) continue;
-      if (!typechecked.hasErrors().equals(Definition.TypeCheckingStatus.NO_ERRORS)) continue;
+      if (!typechecked.status().equals(Definition.TypeCheckingStatus.NO_ERRORS)) continue;
       builder.putDefinition(myPersistenceProvider.getIdFor(definition), writeDefinition(typechecked, state));
     }
     return builder.build();
@@ -46,16 +46,12 @@ public class DefinitionStateSerialization {
 
     out.addAllClassifyingField(writeClassifyingFields(definition));
 
-    out.setHasErrors(Definition.TypeCheckingStatus.HAS_ERRORS.equals(definition.hasErrors()));
-
     if (definition instanceof ClassDefinition) {
       // type cannot possibly have errors
       out.setClass_(writeClassDefinition(defSerializer, (ClassDefinition) definition, state));
     } else if (definition instanceof DataDefinition) {
-      out.setTypeHasErrors(definition.typeHasErrors());
       out.setData(writeDataDefinition(defSerializer, (DataDefinition) definition));
     } else if (definition instanceof FunctionDefinition) {
-      out.setTypeHasErrors(definition.typeHasErrors());
       out.setFunction(writeFunctionDefinition(defSerializer, (FunctionDefinition) definition));
     } else {
       throw new IllegalStateException();
@@ -97,7 +93,7 @@ public class DefinitionStateSerialization {
       }
       cBuilder.addAllParam(defSerializer.writeParameters(constructor.getParameters()));
       cBuilder.setTypeHasErrors(constructor.typeHasErrors());
-      cBuilder.setHasErrors(Definition.TypeCheckingStatus.HAS_ERRORS.equals(constructor.hasErrors()));
+      cBuilder.setHasErrors(Definition.TypeCheckingStatus.BODY_HAS_ERRORS.equals(constructor.status()));
 
       builder.putConstructors(myPersistenceProvider.getIdFor(constructor.getAbstractDefinition()), cBuilder.build());
     }

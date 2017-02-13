@@ -207,11 +207,11 @@ public class Constructor extends Definition implements Function {
   }
 
   @Override
-  public TypeCheckingStatus hasErrors() {
-    return myTypeHasError ? TypeCheckingStatus.HAS_ERRORS : TypeCheckingStatus.NO_ERRORS;
+  public TypeCheckingStatus status() {
+    return myTypeHasError ? TypeCheckingStatus.BODY_HAS_ERRORS : TypeCheckingStatus.NO_ERRORS;
   }
 
   @Override
-  public void hasErrors(TypeCheckingStatus status) {
+  public void setStatus(TypeCheckingStatus status) {
   }
 }

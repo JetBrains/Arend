@@ -96,14 +96,14 @@ public class DefinitionCheckType {
 
     if (unit.getDefinition() instanceof Abstract.FunctionDefinition) {
       FunctionDefinition definition = typeCheckFunctionHeader((Abstract.FunctionDefinition) unit.getDefinition(), enclosingClass, visitor, localInstancePool);
-      if (definition.hasErrors() == Definition.TypeCheckingStatus.TYPE_CHECKING) {
+      if (definition.status() == Definition.TypeCheckingStatus.TYPE_CHECKING) {
         typeCheckFunctionBody(definition, visitor);
       }
       return definition;
     } else
     if (unit.getDefinition() instanceof Abstract.DataDefinition) {
       DataDefinition definition = typeCheckDataHeader((Abstract.DataDefinition) unit.getDefinition(), enclosingClass, visitor, localInstancePool);
-      if (definition.hasErrors() == Definition.TypeCheckingStatus.TYPE_CHECKING) {
+      if (definition.status() == Definition.TypeCheckingStatus.TYPE_CHECKING) {
         typeCheckDataBody(definition, visitor);
       }
       return definition;
@@ -247,7 +247,7 @@ public class DefinitionCheckType {
     typedDef.setPolyParams(polyParamsList);
     // TODO: We should remember whether there were errors in parameters.
     typedDef.typeHasErrors(!paramsOk || expectedType == null);
-    typedDef.hasErrors(paramsOk ? Definition.TypeCheckingStatus.TYPE_CHECKING : Definition.TypeCheckingStatus.HAS_ERRORS);
+    typedDef.setStatus(paramsOk ? Definition.TypeCheckingStatus.TYPE_CHECKING : Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
     return typedDef;
   }
 
@@ -341,7 +341,7 @@ public class DefinitionCheckType {
         }
       }
 
-      typedDef.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
+      typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
       if (typedDef.getElimTree() != null) {
         LocalTypeCheckingError error = TypeCheckingElim.checkCoverage(def, typedDef.getParameters(), typedDef.getElimTree(), expectedType);
@@ -361,9 +361,9 @@ public class DefinitionCheckType {
 
     if (typedDef.getResultType() == null) {
       typedDef.typeHasErrors(true);
-      typedDef.hasErrors(Definition.TypeCheckingStatus.HAS_ERRORS);
+      typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
     } else {
-      typedDef.hasErrors(typedDef.getElimTree() != null ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.HAS_ERRORS);
+      typedDef.setStatus(typedDef.getElimTree() != null ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
     }
   }
 
@@ -409,14 +409,14 @@ public class DefinitionCheckType {
 
     if (!paramsOk) {
       dataDefinition.typeHasErrors(true);
-      dataDefinition.hasErrors(Definition.TypeCheckingStatus.HAS_ERRORS);
+      dataDefinition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
       for (Abstract.Constructor constructor : def.getConstructors()) {
         visitor.getTypecheckingState().record(constructor, new Constructor(constructor, dataDefinition));
       }
       return dataDefinition;
     }
     dataDefinition.typeHasErrors(false);
-    dataDefinition.hasErrors(Definition.TypeCheckingStatus.TYPE_CHECKING);
+    dataDefinition.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
     return dataDefinition;
   }
 
@@ -446,7 +446,7 @@ public class DefinitionCheckType {
         }
       }
     }
-    dataDefinition.hasErrors(dataOk ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.HAS_ERRORS);
+    dataDefinition.setStatus(dataOk ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
 
     visitor.getContext().clear();
     if (def.getConditions() != null) {
@@ -470,7 +470,7 @@ public class DefinitionCheckType {
         if (error != null) {
           visitor.getErrorReporter().report(error);
           failedConditions.add(condition);
-          dataDefinition.hasErrors(Definition.TypeCheckingStatus.HAS_ERRORS);
+          dataDefinition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
         }
       }
       dataDefinition.getConditions().removeAll(failedConditions);
@@ -849,7 +849,7 @@ public class DefinitionCheckType {
       }
 
       visitor.getTypecheckingState().record(def, typedDef);
-      typedDef.hasErrors(classOk ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.HAS_ERRORS);
+      typedDef.setStatus(classOk ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
       return typedDef;
     } catch (Namespace.InvalidNamespaceException e) {
       errorReporter.report(e.toError());
@@ -928,7 +928,7 @@ public class DefinitionCheckType {
     typedDef.setResultType(term);
     typedDef.setElimTree(top(list.getFirst(), leaf(Abstract.Definition.Arrow.RIGHT, New(term))));
     typedDef.typeHasErrors(false);
-    typedDef.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
+    typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     return typedDef;
   }
 }

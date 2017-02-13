@@ -37,7 +37,7 @@ public class FunctionDefinition extends Definition implements Function {
     myResultType = resultType;
     myElimTree = elimTree;
     myTypeHasErrors = resultType == null;
-    myHasErrors = myTypeHasErrors ? TypeCheckingStatus.HAS_ERRORS : myElimTree == null ? TypeCheckingStatus.TYPE_CHECKING : TypeCheckingStatus.NO_ERRORS;
+    myHasErrors = myTypeHasErrors ? TypeCheckingStatus.BODY_HAS_ERRORS : myElimTree == null ? TypeCheckingStatus.TYPE_CHECKING : TypeCheckingStatus.NO_ERRORS;
   }
 
   @Override
@@ -81,12 +81,12 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   @Override
-  public TypeCheckingStatus hasErrors() {
+  public TypeCheckingStatus status() {
     return myHasErrors;
   }
 
   @Override
-  public void hasErrors(TypeCheckingStatus status) {
+  public void setStatus(TypeCheckingStatus status) {
     myHasErrors = status;
   }
 

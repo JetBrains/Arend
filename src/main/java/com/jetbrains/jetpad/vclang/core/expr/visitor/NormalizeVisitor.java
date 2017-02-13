@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
-import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.Function;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
@@ -99,7 +98,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   private Expression visitDefCallExpr(Expression expr, Mode mode) {
     DefCallExpression defCallExpr = expr.getFunction().toDefCall();
-    if (defCallExpr.getDefinition().hasErrors() != Definition.TypeCheckingStatus.NO_ERRORS) {
+    if (!defCallExpr.getDefinition().status().bodyIsOK()) {
       return mode == Mode.TOP ? null : applyDefCall(expr, mode);
     }
 

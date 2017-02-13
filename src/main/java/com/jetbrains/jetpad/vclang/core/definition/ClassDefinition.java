@@ -128,12 +128,12 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
-  public TypeCheckingStatus hasErrors() {
-    return myHasErrors ? TypeCheckingStatus.HAS_ERRORS : TypeCheckingStatus.NO_ERRORS;
+  public TypeCheckingStatus status() {
+    return myHasErrors ? TypeCheckingStatus.BODY_HAS_ERRORS : TypeCheckingStatus.NO_ERRORS;
   }
 
   @Override
-  public void hasErrors(TypeCheckingStatus status) {
+  public void setStatus(TypeCheckingStatus status) {
     myHasErrors = !TypeCheckingStatus.NO_ERRORS.equals(status);
   }
 

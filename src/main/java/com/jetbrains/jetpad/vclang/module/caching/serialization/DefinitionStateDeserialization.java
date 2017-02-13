@@ -78,19 +78,17 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
           break;
         case DATA:
           DataDefinition dataDef = (DataDefinition) def;
-          dataDef.typeHasErrors(defProto.getTypeHasErrors());
           fillInDataDefinition(defDeserializer, typedCalltargetProvider, defProto.getData(), dataDef, state);
           break;
         case FUNCTION:
           FunctionDefinition functionDef = (FunctionDefinition) def;
-          functionDef.typeHasErrors(defProto.getTypeHasErrors());
           fillInFunctionDefinition(defDeserializer, defProto.getFunction(), functionDef);
           break;
         default:
           throw new DeserializationError("Unknown Definition kind: " + defProto.getDefinitionDataCase());
       }
 
-      def.hasErrors(defProto.getHasErrors() ? Definition.TypeCheckingStatus.HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS);
+      def.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
       if (defProto.getThisClassRef() != 0) {
         ClassDefinition thisClass = typedCalltargetProvider.getCalltarget(defProto.getThisClassRef(), ClassDefinition.class);
@@ -118,6 +116,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
   }
 
   private void fillInDataDefinition(DefinitionDeserialization defDeserializer, CalltargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
+    dataDef.typeHasErrors(false);
     dataDef.setParameters(defDeserializer.readParameters(dataProto.getParamList()));
 
     for (Map.Entry<String, DefinitionProtos.Definition.DataData.Constructor> entry : dataProto.getConstructorsMap().entrySet()) {
@@ -128,7 +127,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
       }
       constructor.setParameters(defDeserializer.readParameters(constructorProto.getParamList()));
       constructor.typeHasErrors(constructorProto.getTypeHasErrors());
-      constructor.hasErrors(constructorProto.getHasErrors() ? Definition.TypeCheckingStatus.HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS);
+      constructor.setStatus(constructorProto.getHasErrors() ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS);
       dataDef.addConstructor(constructor);
     }
 
@@ -143,6 +142,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
   }
 
   private void fillInFunctionDefinition(DefinitionDeserialization defDeserializer, DefinitionProtos.Definition.FunctionData functionProto, FunctionDefinition functionDef) throws DeserializationError {
+    functionDef.typeHasErrors(false);
     functionDef.setParameters(defDeserializer.readParameters(functionProto.getParamList()));
     functionDef.setResultType(defDeserializer.readTypeMax(functionProto.getType()));
     if (functionProto.hasElimTree()) {

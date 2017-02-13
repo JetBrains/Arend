@@ -100,7 +100,7 @@ public class Ordering {
   // updateState and doOrderRecursively return false only if the argument is a header and it was not reported as an SCC
   private boolean updateState(DefState currentState, Typecheckable dependency) {
     Definition typechecked = myTypecheckerState.getTypechecked(dependency.getDefinition());
-    if (typechecked != null && typechecked.hasErrors() != Definition.TypeCheckingStatus.TYPE_CHECKING) {
+    if (typechecked != null && typechecked.status() != Definition.TypeCheckingStatus.TYPE_CHECKING) {
       return true;
     }
 

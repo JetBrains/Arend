@@ -70,12 +70,18 @@ public abstract class Definition implements Referable {
     return myPolyParams;
   }
 
-  public enum TypeCheckingStatus { HAS_ERRORS, NO_ERRORS, TYPE_CHECKING }
+  public enum TypeCheckingStatus {
+    TYPE_HAS_ERRORS, BODY_HAS_ERRORS, HAS_ERRORS, NO_ERRORS, TYPE_CHECKING;
+
+    public boolean bodyIsOK() {
+      return this == HAS_ERRORS || this == NO_ERRORS;
+    }
+  }
 
   // typeHasErrors should imply hasErrors != NO_ERRORS
   public abstract boolean typeHasErrors();
-  public abstract TypeCheckingStatus hasErrors();
-  public abstract void hasErrors(TypeCheckingStatus status);
+  public abstract TypeCheckingStatus status();
+  public abstract void setStatus(TypeCheckingStatus status);
 
   @Override
   public String toString() {

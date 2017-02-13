@@ -82,7 +82,7 @@ public class Typechecking {
           LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter));
           CheckTypeVisitor visitor = new CheckTypeVisitor(myState, myStaticNsProvider, myDynamicNsProvider, null, null, new ArrayList<Binding>(), new ArrayList<LevelBinding>(), localErrorReporter, null);
           Definition typechecked = DefinitionCheckType.typeCheckHeader(visitor, instancePool, unit.getDefinition(), unit.getEnclosingClass());
-          if (typechecked.hasErrors() == Definition.TypeCheckingStatus.TYPE_CHECKING) {
+          if (typechecked.status() == Definition.TypeCheckingStatus.TYPE_CHECKING) {
             mySuspensions.put(unit.getDefinition(), new Suspension(visitor, countingErrorReporter));
             doReport = false;
           } else {
@@ -123,7 +123,7 @@ public class Typechecking {
       if (!callCategory.checkTermination()) {
         ok = false;
         for (Definition fDef : cycleDefs) {
-          fDef.hasErrors(Definition.TypeCheckingStatus.HAS_ERRORS);
+          fDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
         }
         for (Map.Entry<Definition, Set<RecursiveBehavior<Definition>>> entry : callCategory.myErrorInfo.entrySet()) {
           myErrorReporter.report(new TerminationCheckError(entry.getKey(), entry.getValue()));
@@ -151,7 +151,7 @@ public class Typechecking {
       definitionCallGraph.add((FunctionDefinition) typechecked, Collections.singleton(typechecked));
       DefinitionCallGraph callCategory = new DefinitionCallGraph(definitionCallGraph);
       if (!callCategory.checkTermination()) {
-        typechecked.hasErrors(Definition.TypeCheckingStatus.HAS_ERRORS);
+        typechecked.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
         for (Map.Entry<Definition, Set<RecursiveBehavior<Definition>>> entry : callCategory.myErrorInfo.entrySet()) {
           compositeErrorReporter.report(new TerminationCheckError(entry.getKey(), entry.getValue()));
         }

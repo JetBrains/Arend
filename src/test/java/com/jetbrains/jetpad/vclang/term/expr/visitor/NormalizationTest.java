@@ -58,7 +58,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Reference(yPlus)),
         clause(Prelude.SUC, xPlusMinusOne, Suc(FunCall(plus, new LevelArguments(), Reference(xPlusMinusOne), Reference(yPlus))))));
     plus.setElimTree(plusElimTree);
-    plus.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
+    plus.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
     DependentLink xMul = param("x", Nat());
     DependentLink yMul = param("y", Nat());
@@ -69,7 +69,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
         clause(Prelude.SUC, xMulMinusOne, FunCall(plus, new LevelArguments(), Reference(yMul), FunCall(mul, new LevelArguments(), Reference(xMulMinusOne), Reference(yMul))))
     ));
     mul.setElimTree(mulElimTree);
-    mul.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
+    mul.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
     DependentLink xFac = param("x", Nat());
     fac = new FunctionDefinition(null, xFac, Nat(), null);
@@ -79,7 +79,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
         clause(Prelude.SUC, xFacMinusOne, FunCall(mul, new LevelArguments(), Suc(Reference(xFacMinusOne)), FunCall(fac, new LevelArguments(), Reference(xFacMinusOne))))
     ));
     fac.setElimTree(facElimTree);
-    fac.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
+    fac.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
     DependentLink zNElim = param("z", Nat());
     DependentLink sNElim = param("s", Pi(param(Nat()), Pi(param(Nat()), Nat())));
@@ -91,7 +91,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
         clause(Prelude.SUC, xNElimMinusOne, Apps(Reference(sNElim), Reference(xNElimMinusOne), FunCall(nelim, new LevelArguments(), Reference(zNElim), Reference(sNElim), Reference(xNElimMinusOne))))
     ));
     nelim.setElimTree(nelimElimTree);
-    nelim.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
+    nelim.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
   }
 
   private void initializeBDList() {

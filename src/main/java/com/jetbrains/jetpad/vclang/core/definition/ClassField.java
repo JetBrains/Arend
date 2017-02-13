@@ -62,12 +62,12 @@ public class ClassField extends Definition {
   }
 
   @Override
-  public TypeCheckingStatus hasErrors() {
-    return myType == null || myType.toError() != null ? TypeCheckingStatus.HAS_ERRORS : TypeCheckingStatus.NO_ERRORS;
+  public TypeCheckingStatus status() {
+    return myType == null || myType.toError() != null ? TypeCheckingStatus.BODY_HAS_ERRORS : TypeCheckingStatus.NO_ERRORS;
   }
 
   @Override
-  public void hasErrors(TypeCheckingStatus status) {
+  public void setStatus(TypeCheckingStatus status) {
     throw new UnsupportedOperationException();
   }
 

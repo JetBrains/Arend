@@ -57,7 +57,7 @@ public class TypeCheckingDefCall {
       myVisitor.getErrorReporter().report(error);
       return null;
     } else {
-      if (typeCheckedDefinition.hasErrors() == Definition.TypeCheckingStatus.HAS_ERRORS) {
+      if (typeCheckedDefinition.status() == Definition.TypeCheckingStatus.BODY_HAS_ERRORS) {
         myVisitor.getErrorReporter().report(new HasErrors(Error.Level.WARNING, definition, expr));
       }
       return typeCheckedDefinition;
@@ -187,7 +187,7 @@ public class TypeCheckingDefCall {
           myVisitor.getErrorReporter().report(error);
           return null;
         }
-        if (constructor != null && constructor.hasErrors() == Definition.TypeCheckingStatus.HAS_ERRORS) {
+        if (constructor != null && constructor.status() == Definition.TypeCheckingStatus.BODY_HAS_ERRORS) {
           myVisitor.getErrorReporter().report(new HasErrors(Error.Level.WARNING, constructor.getAbstractDefinition(), expr));
         }
       } else {

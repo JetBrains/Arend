@@ -41,7 +41,7 @@ public class DataDefinition extends Definition {
     myMatchesOnInterval = false;
     myIsTruncated = false;
     myTypeHasErrors = parameters != null;
-    myHasErrors = myTypeHasErrors ? TypeCheckingStatus.HAS_ERRORS : TypeCheckingStatus.TYPE_CHECKING;
+    myHasErrors = myTypeHasErrors ? TypeCheckingStatus.BODY_HAS_ERRORS : TypeCheckingStatus.TYPE_CHECKING;
   }
 
   @Override
@@ -167,17 +167,17 @@ public class DataDefinition extends Definition {
   public void typeHasErrors(boolean has) {
     myTypeHasErrors = has;
     if (has) {
-      myHasErrors = TypeCheckingStatus.HAS_ERRORS;
+      myHasErrors = TypeCheckingStatus.BODY_HAS_ERRORS;
     }
   }
 
   @Override
-  public TypeCheckingStatus hasErrors() {
+  public TypeCheckingStatus status() {
     return myHasErrors;
   }
 
   @Override
-  public void hasErrors(TypeCheckingStatus status) {
+  public void setStatus(TypeCheckingStatus status) {
     myHasErrors = status;
   }
 }

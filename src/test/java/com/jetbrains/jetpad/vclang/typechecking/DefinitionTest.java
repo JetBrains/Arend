@@ -3,8 +3,8 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
+import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -19,14 +19,14 @@ public class DefinitionTest extends TypeCheckingTestCase {
   public void function() {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f : Nat => 0");
     assertNotNull(typedDef);
-    assertTrue(typedDef.hasErrors() == Definition.TypeCheckingStatus.NO_ERRORS);
+    assertTrue(typedDef.status() == Definition.TypeCheckingStatus.NO_ERRORS);
   }
 
   @Test
   public void functionUntyped() {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f => 0");
     assertNotNull(typedDef);
-    assertTrue(typedDef.hasErrors() == Definition.TypeCheckingStatus.NO_ERRORS);
+    assertTrue(typedDef.status() == Definition.TypeCheckingStatus.NO_ERRORS);
     assertEquals(Nat(), typedDef.getTypeWithParams(new ArrayList<DependentLink>(), new LevelArguments()));
   }
 
@@ -34,7 +34,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
   public void functionWithArgs() {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f (x : Nat) (y : Nat -> Nat) => y");
     assertNotNull(typedDef);
-    assertTrue(typedDef.hasErrors() == Definition.TypeCheckingStatus.NO_ERRORS);
+    assertTrue(typedDef.status() == Definition.TypeCheckingStatus.NO_ERRORS);
     List<DependentLink> params = new ArrayList<>();
     TypeMax type = typedDef.getTypeWithParams(params, new LevelArguments());
     assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), type.fromPiParameters(params));
