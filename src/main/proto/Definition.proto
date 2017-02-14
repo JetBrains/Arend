@@ -8,6 +8,10 @@ import "Expression.proto";
 import "Level.proto";
 
 
+message DefinitionStub {
+    Definition definition = 1;
+}
+
 message Definition {
     int32 this_class_ref = 3;
     repeated Binding.LevelBinding poly_param = 4;
