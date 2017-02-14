@@ -75,7 +75,7 @@ public abstract class BaseCallMatrix<T> {
       }
     } else {
       fallbackMatrix = new BaseCallMatrix.R[myHeight][myWidth];
-      for (int i=0; i<myHeight; i++) System.arraycopy(fallbackMatrix[i], 0, fallbackMatrix[i], 0, myWidth);
+      for (int i = 0; i < myHeight; i++) System.arraycopy(fallbackMatrix[i], 0, fallbackMatrix[i], 0, myWidth);
     }
   }
 
@@ -87,7 +87,7 @@ public abstract class BaseCallMatrix<T> {
     myHeight = m1.myHeight;
     myWidth = m2.myWidth;
 
-    if(m1.myMatrixMap != null && m2.myMatrixMap != null) {
+    if (m1.myMatrixMap != null && m2.myMatrixMap != null) {
       for (int j = 0; j < myWidth; j++) {
         BaseCallMatrix.CallMatrixEntry cme2 = m2.myMatrixMap.get(j);
         if (cme2 != null) {
@@ -98,11 +98,12 @@ public abstract class BaseCallMatrix<T> {
         }
       }
     } else {
-      for (int i = 0; i < myHeight; i++) for (int j = 0; j < myWidth; j++) {
-        BaseCallMatrix.R s = R.Unknown;
-        for (int k = 0; k < m1.myWidth; k++) s = radd(s, rmul(m1.getValue(i, k), m2.getValue(k, j)));
-        set(i, j, s);
-      }
+      for (int i = 0; i < myHeight; i++)
+        for (int j = 0; j < myWidth; j++) {
+          BaseCallMatrix.R s = R.Unknown;
+          for (int k = 0; k < m1.myWidth; k++) s = radd(s, rmul(m1.getValue(i, k), m2.getValue(k, j)));
+          set(i, j, s);
+        }
     }
   }
 
@@ -128,7 +129,8 @@ public abstract class BaseCallMatrix<T> {
           enterFallBackMode();
           fallbackMatrix[i][j] = v;
         } else if (cm.myIndex == i) {
-          if (v == R.Unknown) myMatrixMap.put(j, null); else cm.myRel = v;
+          if (v == R.Unknown) myMatrixMap.put(j, null);
+          else cm.myRel = v;
         }
       } else if (v != R.Unknown) {
         myMatrixMap.put(j, new BaseCallMatrix.CallMatrixEntry(i, v));
@@ -170,8 +172,9 @@ public abstract class BaseCallMatrix<T> {
         }
       }
     } else {
-      for (int i = 0; i < myHeight; i++) for (int j = 0; j < myWidth; j++)
-         if (!rleq(getValue(i, j), cm.getValue(i, j))) return false;
+      for (int i = 0; i < myHeight; i++)
+        for (int j = 0; j < myWidth; j++)
+          if (!rleq(getValue(i, j), cm.getValue(i, j))) return false;
     }
 
     return true;
@@ -182,9 +185,10 @@ public abstract class BaseCallMatrix<T> {
     if (object instanceof BaseCallMatrix) {
       BaseCallMatrix cm = (BaseCallMatrix) object;
       if (getCodomain() != cm.getCodomain() || getDomain() != cm.getDomain()) return false;
-        if (myMatrixMap != null && cm.myMatrixMap != null) return myMatrixMap.equals(cm.myMatrixMap);
-      for (int i = 0; i < myHeight; i++) for (int j = 0; j < myWidth; j++)
-        if (getValue(i, j) != cm.getValue(i, j)) return false;
+      if (myMatrixMap != null && cm.myMatrixMap != null) return myMatrixMap.equals(cm.myMatrixMap);
+      for (int i = 0; i < myHeight; i++)
+        for (int j = 0; j < myWidth; j++)
+          if (getValue(i, j) != cm.getValue(i, j)) return false;
       return true;
     } else {
       return false;

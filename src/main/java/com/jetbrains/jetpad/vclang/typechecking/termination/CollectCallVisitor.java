@@ -131,6 +131,7 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
     }
     return null;
   }
+
   @Override
   public Void visitBranch(BranchElimTreeNode node, ParameterVector vector) {
     for (ConstructorClause clause : node.getConstructorClauses()) {
