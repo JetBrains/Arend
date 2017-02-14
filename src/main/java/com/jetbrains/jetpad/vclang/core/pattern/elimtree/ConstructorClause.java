@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
@@ -24,7 +23,7 @@ public class ConstructorClause implements Clause {
   private final List<TypedBinding> myTailBindings;
 
   public ConstructorClause(Constructor constructor, DependentLink parameters, List<LevelBinding> polyParams, List<TypedBinding> tailBindings, BranchElimTreeNode parent) {
-    assert constructor.status() != Definition.TypeCheckingStatus.TYPE_HAS_ERRORS;
+    assert constructor.status().headerIsOK();
     myConstructor = constructor;
     myParameters = parameters;
     myPolyParams = polyParams;

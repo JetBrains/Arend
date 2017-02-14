@@ -62,7 +62,7 @@ public class DefinitionCheckType {
     if (definition instanceof Abstract.FunctionDefinition) {
       FunctionDefinition functionDef = typeCheckFunctionHeader((Abstract.FunctionDefinition) definition, typedEnclosingClass, visitor, localInstancePool);
       if (functionDef.getResultType() == null) {
-        functionDef.setStatus(Definition.TypeCheckingStatus.TYPE_HAS_ERRORS);
+        functionDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
       }
       return functionDef;
     } else
@@ -100,9 +100,9 @@ public class DefinitionCheckType {
 
     if (unit.getDefinition() instanceof Abstract.FunctionDefinition) {
       FunctionDefinition definition = typeCheckFunctionHeader((Abstract.FunctionDefinition) unit.getDefinition(), enclosingClass, visitor, localInstancePool);
-      if (definition.status() == Definition.TypeCheckingStatus.TYPE_CHECKING) {
+      if (definition.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
         if (definition.getResultType() == null) {
-          definition.setStatus(Definition.TypeCheckingStatus.TYPE_HAS_ERRORS);
+          definition.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
           if (recursive) {
             errorReporter.report(new LocalTypeCheckingError("Cannot infer the result type of a recursive function", unit.getDefinition()));
             return definition;
@@ -114,7 +114,7 @@ public class DefinitionCheckType {
     } else
     if (unit.getDefinition() instanceof Abstract.DataDefinition) {
       DataDefinition definition = typeCheckDataHeader((Abstract.DataDefinition) unit.getDefinition(), enclosingClass, visitor, localInstancePool);
-      if (definition.status() == Definition.TypeCheckingStatus.TYPE_CHECKING) {
+      if (definition.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
         typeCheckDataBody(definition, visitor);
       }
       return definition;
@@ -256,7 +256,7 @@ public class DefinitionCheckType {
     typedDef.setClassifyingFieldsOfParameters(classifyingFields);
     typedDef.setThisClass(enclosingClass);
     typedDef.setPolyParams(polyParamsList);
-    typedDef.setStatus(paramsOk ? Definition.TypeCheckingStatus.TYPE_CHECKING : Definition.TypeCheckingStatus.TYPE_HAS_ERRORS);
+    typedDef.setStatus(paramsOk ? Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING : Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
     return typedDef;
   }
 
@@ -365,7 +365,7 @@ public class DefinitionCheckType {
       }
     }
 
-    typedDef.setStatus(typedDef.getResultType() == null ? Definition.TypeCheckingStatus.TYPE_HAS_ERRORS : typedDef.getElimTree() == null ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS);
+    typedDef.setStatus(typedDef.getResultType() == null ? Definition.TypeCheckingStatus.HEADER_HAS_ERRORS : typedDef.getElimTree() == null ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS);
   }
 
   private static DataDefinition typeCheckDataHeader(Abstract.DataDefinition def, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
@@ -409,14 +409,12 @@ public class DefinitionCheckType {
     visitor.getTypecheckingState().record(def, dataDefinition);
 
     if (!paramsOk) {
-      dataDefinition.setStatus(Definition.TypeCheckingStatus.TYPE_HAS_ERRORS);
+      dataDefinition.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
       for (Abstract.Constructor constructor : def.getConstructors()) {
-        Constructor constructor1 = new Constructor(constructor, dataDefinition);
-        constructor1.setStatus(Definition.TypeCheckingStatus.TYPE_HAS_ERRORS);
-        visitor.getTypecheckingState().record(constructor, constructor1);
+        visitor.getTypecheckingState().record(constructor, new Constructor(constructor, dataDefinition));
       }
     } else {
-      dataDefinition.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
+      dataDefinition.setStatus(Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING);
     }
     return dataDefinition;
   }
@@ -434,7 +432,7 @@ public class DefinitionCheckType {
       SortMax conSorts = new SortMax();
       Constructor typedConstructor = typeCheckConstructor(constructor, dataDefinition, visitor, conSorts);
       visitor.getTypecheckingState().record(constructor, typedConstructor);
-      if (typedConstructor.status() == Definition.TypeCheckingStatus.TYPE_HAS_ERRORS) {
+      if (!typedConstructor.status().headerIsOK()) {
         dataOk = false;
       }
 
@@ -509,7 +507,7 @@ public class DefinitionCheckType {
         visitor.getErrorReporter().report(new NotInScopeError(def, cond.getConstructorName()));  // TODO: refer by reference
         continue;
       }
-      if (constructor.status() == Definition.TypeCheckingStatus.TYPE_HAS_ERRORS) {
+      if (!constructor.status().headerIsOK()) {
         continue;
       }
       if (!condMap.containsKey(constructor)) {
@@ -611,7 +609,6 @@ public class DefinitionCheckType {
       String name = def.getName();
 
       Constructor constructor = new Constructor(def, dataDefinition);
-      constructor.setStatus(Definition.TypeCheckingStatus.TYPE_HAS_ERRORS);
       List<? extends Abstract.PatternArgument> patterns = def.getPatterns();
       Patterns typedPatterns = null;
       if (patterns != null) {

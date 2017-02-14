@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
@@ -56,7 +55,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
   }
 
   public ConstructorClause addClause(Constructor constructor, List<String> names) {
-    assert constructor.status() != Definition.TypeCheckingStatus.TYPE_HAS_ERRORS;
+    assert constructor.status().headerIsOK();
     DataCallExpression dataCall = myReference.getType().normalize(NormalizeVisitor.Mode.WHNF).toExpression().toDataCall();
     List<? extends Expression> dataTypeArguments = dataCall.getDefCallArguments();
 

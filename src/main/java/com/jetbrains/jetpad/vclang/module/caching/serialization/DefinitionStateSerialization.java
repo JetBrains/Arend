@@ -85,6 +85,7 @@ public class DefinitionStateSerialization {
     DefinitionProtos.Definition.DataData.Builder builder = DefinitionProtos.Definition.DataData.newBuilder();
 
     builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
+    builder.setSorts(defSerializer.writeSortMax(definition.getSorts()));
 
     for (Constructor constructor : definition.getConstructors()) {
       DefinitionProtos.Definition.DataData.Constructor.Builder cBuilder = DefinitionProtos.Definition.DataData.Constructor.newBuilder();

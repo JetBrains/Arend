@@ -150,7 +150,7 @@ class DefinitionDeserialization {
     return new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel()));
   }
 
-  private SortMax readSortMax(LevelProtos.SortMax proto) throws DeserializationError {
+  SortMax readSortMax(LevelProtos.SortMax proto) throws DeserializationError {
     return new SortMax(readLevelMax(proto.getPLevel()), readLevelMax(proto.getHLevel()));
   }
 

@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
-import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.Referable;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
@@ -417,7 +416,7 @@ public class TypeCheckingElim {
         return new ExpandPatternErrorResult(error);
       }
 
-      if (constructor.status() == Definition.TypeCheckingStatus.TYPE_HAS_ERRORS) {
+      if (!constructor.status().headerIsOK()) {
         error = new HasErrors(constructor.getAbstractDefinition(), pattern);
         myVisitor.getErrorReporter().report(error);
         return new ExpandPatternErrorResult(error);

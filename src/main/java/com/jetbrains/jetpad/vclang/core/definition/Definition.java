@@ -18,9 +18,9 @@ public abstract class Definition implements Referable {
   private Map<Integer, ClassField> myClassifyingFields = Collections.emptyMap();
   private TypeCheckingStatus myStatus;
 
-  public Definition(Abstract.Definition abstractDef) {
+  public Definition(Abstract.Definition abstractDef, TypeCheckingStatus status) {
     myAbstractDefinition = abstractDef;
-    myStatus = TypeCheckingStatus.NO_ERRORS;
+    myStatus = status;
   }
 
   public String getName() {
@@ -73,10 +73,18 @@ public abstract class Definition implements Referable {
   }
 
   public enum TypeCheckingStatus {
-    TYPE_HAS_ERRORS, BODY_HAS_ERRORS, HAS_ERRORS, NO_ERRORS, TYPE_CHECKING;
+    HEADER_HAS_ERRORS, BODY_HAS_ERRORS, HEADER_NEEDS_TYPE_CHECKING, BODY_NEEDS_TYPE_CHECKING, HAS_ERRORS, NO_ERRORS;
 
     public boolean bodyIsOK() {
       return this == HAS_ERRORS || this == NO_ERRORS;
+    }
+
+    public boolean headerIsOK() {
+      return this != HEADER_HAS_ERRORS && this != HEADER_NEEDS_TYPE_CHECKING;
+    }
+
+    public boolean needsTypeChecking() {
+      return this == HEADER_NEEDS_TYPE_CHECKING || this == BODY_NEEDS_TYPE_CHECKING;
     }
   }
 

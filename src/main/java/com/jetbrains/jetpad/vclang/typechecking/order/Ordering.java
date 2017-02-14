@@ -86,7 +86,7 @@ public class Ordering {
       return;
     }
     Definition typechecked = myTypecheckerState.getTypechecked(definition);
-    if (typechecked != null) {
+    if (typechecked != null && !typechecked.status().needsTypeChecking()) {
       myListener.alreadyTypechecked(typechecked);
       return;
     }
@@ -100,7 +100,7 @@ public class Ordering {
   // updateState and doOrderRecursively return false only if the argument is a header and it was not reported as an SCC
   private boolean updateState(DefState currentState, Typecheckable dependency) {
     Definition typechecked = myTypecheckerState.getTypechecked(dependency.getDefinition());
-    if (typechecked != null && typechecked.status() != Definition.TypeCheckingStatus.TYPE_CHECKING) {
+    if (typechecked != null && !typechecked.status().needsTypeChecking()) {
       return true;
     }
 

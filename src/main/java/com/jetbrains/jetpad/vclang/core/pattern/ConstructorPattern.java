@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.core.pattern;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.Referable;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
@@ -22,7 +21,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
   private final Patterns myArguments;
 
   public ConstructorPattern(Constructor constructor, Patterns arguments) {
-    assert constructor.status() != Definition.TypeCheckingStatus.TYPE_HAS_ERRORS;
+    assert constructor.status().headerIsOK();
     myConstructor = constructor;
     myArguments = arguments;
   }

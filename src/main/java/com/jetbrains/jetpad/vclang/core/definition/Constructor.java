@@ -27,7 +27,7 @@ public class Constructor extends Definition implements Function {
   private Patterns myPatterns;
 
   public Constructor(Abstract.Constructor abstractDef, DataDefinition dataType) {
-    super(abstractDef);
+    super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
     myDataType = dataType;
     myParameters = null;
     if (dataType != null) {
@@ -76,12 +76,12 @@ public class Constructor extends Definition implements Function {
   }
 
   public DependentLink getDataTypeParameters() {
-    assert myParameters != null && myDataType.status() != TypeCheckingStatus.TYPE_HAS_ERRORS;
+    assert myParameters != null && myDataType.status().headerIsOK();
     return myPatterns == null ? myDataType.getParameters() : myPatterns.getParameters();
   }
 
   public List<Expression> matchDataTypeArguments(List<Expression> arguments) {
-    assert myParameters != null && myDataType.status() != TypeCheckingStatus.TYPE_HAS_ERRORS;
+    assert myParameters != null && myDataType.status().headerIsOK();
     if (myPatterns == null) {
       return arguments;
     } else {
@@ -99,7 +99,7 @@ public class Constructor extends Definition implements Function {
   }
 
   public Expression getDataTypeExpression(ExprSubstitution substitution, LevelArguments polyParams) {
-    assert myParameters != null && myDataType.status() != TypeCheckingStatus.TYPE_HAS_ERRORS;
+    assert myParameters != null && myDataType.status().headerIsOK();
 
     List<Expression> arguments;
     if (myPatterns == null) {
@@ -172,10 +172,5 @@ public class Constructor extends Definition implements Function {
   @Override
   public ConCallExpression getDefCall(LevelArguments polyArguments, List<Expression> args) {
     throw new IllegalStateException();
-  }
-
-  @Override
-  public TypeCheckingStatus status() {
-    return myParameters == null ? TypeCheckingStatus.TYPE_HAS_ERRORS : TypeCheckingStatus.NO_ERRORS;
   }
 }

@@ -13,7 +13,10 @@ import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.ClassCall;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.param;
@@ -25,11 +28,13 @@ public class ClassDefinition extends Definition {
   private ClassField myEnclosingThisField = null;
 
   public ClassDefinition(Abstract.ClassDefinition abstractDef) {
-    this(abstractDef, new FieldSet(), new HashSet<ClassDefinition>());
+    super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
+    myFieldSet = null;
+    mySuperClasses = null;
   }
 
   public ClassDefinition(Abstract.ClassDefinition abstractDef, FieldSet fieldSet, Set<ClassDefinition> superClasses) {
-    super(abstractDef);
+    super(abstractDef, TypeCheckingStatus.NO_ERRORS);
     myFieldSet = fieldSet;
     mySuperClasses = superClasses;
   }

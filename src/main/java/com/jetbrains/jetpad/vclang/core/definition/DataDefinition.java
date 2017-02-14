@@ -28,11 +28,12 @@ public class DataDefinition extends Definition {
   private boolean myIsTruncated;
 
   public DataDefinition(Abstract.DataDefinition abstractDef) {
-    this(abstractDef, new SortMax(), EmptyDependentLink.getInstance());
+    super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
+    myConstructors = new ArrayList<>();
   }
 
   public DataDefinition(Abstract.DataDefinition abstractDef, SortMax sorts, DependentLink parameters) {
-    super(abstractDef);
+    super(abstractDef, TypeCheckingStatus.NO_ERRORS);
     myConstructors = new ArrayList<>();
     myParameters = parameters;
     mySorts = sorts;
@@ -63,7 +64,7 @@ public class DataDefinition extends Definition {
 
   @Override
   public DependentLink getParameters() {
-    assert status() != TypeCheckingStatus.TYPE_HAS_ERRORS;
+    assert status().headerIsOK();
     return myParameters;
   }
 
@@ -78,7 +79,7 @@ public class DataDefinition extends Definition {
   public List<ConCallExpression> getMatchedConstructors(DataCallExpression dataCall) {
     List<ConCallExpression> result = new ArrayList<>();
     for (Constructor constructor : myConstructors) {
-      if (constructor.status() == TypeCheckingStatus.TYPE_HAS_ERRORS)
+      if (!constructor.status().headerIsOK())
         continue;
       List<? extends Expression> matchedParameters;
       if (constructor.getPatterns() != null) {
@@ -135,7 +136,7 @@ public class DataDefinition extends Definition {
 
   @Override
   public TypeMax getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
-    if (status() == TypeCheckingStatus.TYPE_HAS_ERRORS) {
+    if (!status().headerIsOK()) {
       return null;
     }
 

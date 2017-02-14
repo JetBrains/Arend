@@ -18,11 +18,12 @@ public class ClassField extends Definition {
   private Expression myType;
 
   public ClassField(Abstract.ClassField abstractDef, ClassDefinition thisClass) {
-    this(abstractDef, null, thisClass, null);
+    super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
+    setThisClass(thisClass);
   }
 
   public ClassField(Abstract.ClassField abstractDef, Expression type, ClassDefinition thisClass, DependentLink thisParameter) {
-    super(abstractDef);
+    super(abstractDef, TypeCheckingStatus.NO_ERRORS);
     myThisParameter = thisParameter;
     myType = type;
     setThisClass(thisClass);

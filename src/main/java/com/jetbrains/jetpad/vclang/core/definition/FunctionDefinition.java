@@ -20,21 +20,18 @@ public class FunctionDefinition extends Definition implements Function {
   private DependentLink myParameters;
   private TypeMax myResultType;
   private ElimTreeNode myElimTree;
-  private TypeCheckingStatus myStatus;
 
   public FunctionDefinition(Abstract.Definition abstractDef) {
-    super(abstractDef);
-    myStatus = TypeCheckingStatus.TYPE_HAS_ERRORS;
+    super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
     myParameters = EmptyDependentLink.getInstance();
   }
 
   public FunctionDefinition(Abstract.Definition abstractDef, DependentLink parameters, TypeMax resultType, ElimTreeNode elimTree) {
-    super(abstractDef);
+    super(abstractDef, resultType == null ? TypeCheckingStatus.HEADER_HAS_ERRORS : elimTree == null ? TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING : TypeCheckingStatus.NO_ERRORS);
     assert parameters != null;
     myParameters = parameters;
     myResultType = resultType;
     myElimTree = elimTree;
-    myStatus = resultType == null ? TypeCheckingStatus.TYPE_HAS_ERRORS : myElimTree == null ? TypeCheckingStatus.TYPE_CHECKING : TypeCheckingStatus.NO_ERRORS;
   }
 
   @Override
@@ -69,17 +66,8 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   @Override
-  public TypeCheckingStatus status() {
-    return myStatus;
-  }
-
-  public void setStatus(TypeCheckingStatus status) {
-    myStatus = status;
-  }
-
-  @Override
   public TypeMax getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
-    if (myStatus == TypeCheckingStatus.TYPE_HAS_ERRORS) {
+    if (!status().headerIsOK()) {
       return null;
     }
     ExprSubstitution subst = new ExprSubstitution();

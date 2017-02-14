@@ -51,7 +51,7 @@ public class TypeCheckingDefCall {
     if (typeCheckedDefinition == null) {
       throw new IllegalStateException("Internal error: definition " + definition + " was not type checked");
     }
-    if (typeCheckedDefinition.status() == Definition.TypeCheckingStatus.TYPE_HAS_ERRORS) {
+    if (!typeCheckedDefinition.status().headerIsOK()) {
       LocalTypeCheckingError error = new HasErrors(definition, expr);
       expr.setWellTyped(myVisitor.getContext(), Error(null, error));
       myVisitor.getErrorReporter().report(error);
@@ -181,7 +181,7 @@ public class TypeCheckingDefCall {
           myVisitor.getErrorReporter().report(error);
           return null;
         }
-        if (constructor != null && constructor.status() == Definition.TypeCheckingStatus.TYPE_HAS_ERRORS) {
+        if (constructor != null && !constructor.status().headerIsOK()) {
           LocalTypeCheckingError error = new HasErrors(constructor.getAbstractDefinition(), expr);
           expr.setWellTyped(myVisitor.getContext(), Error(null, error));
           myVisitor.getErrorReporter().report(error);

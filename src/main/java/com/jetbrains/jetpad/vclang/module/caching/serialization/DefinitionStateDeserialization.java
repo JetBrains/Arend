@@ -83,11 +83,12 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
         case FUNCTION:
           FunctionDefinition functionDef = (FunctionDefinition) def;
           fillInFunctionDefinition(defDeserializer, defProto.getFunction(), functionDef);
-          functionDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
           break;
         default:
           throw new DeserializationError("Unknown Definition kind: " + defProto.getDefinitionDataCase());
       }
+
+      def.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
       if (defProto.getThisClassRef() != 0) {
         ClassDefinition thisClass = typedCalltargetProvider.getCalltarget(defProto.getThisClassRef(), ClassDefinition.class);
@@ -111,11 +112,13 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
       ClassField field = getTypechecked(state, entry.getKey());
       field.setThisParameter(defDeserializer.readParameter(fieldProto.getThisParam()));
       field.setBaseType(defDeserializer.readExpr(fieldProto.getType()));
+      field.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     }
   }
 
   private void fillInDataDefinition(DefinitionDeserialization defDeserializer, CalltargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
     dataDef.setParameters(defDeserializer.readParameters(dataProto.getParamList()));
+    dataDef.setSorts(defDeserializer.readSortMax(dataProto.getSorts()));
 
     for (Map.Entry<String, DefinitionProtos.Definition.DataData.Constructor> entry : dataProto.getConstructorsMap().entrySet()) {
       DefinitionProtos.Definition.DataData.Constructor constructorProto = entry.getValue();
@@ -124,6 +127,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
         constructor.setPatterns(defDeserializer.readPatterns(constructorProto.getPatterns()));
       }
       constructor.setParameters(defDeserializer.readParameters(constructorProto.getParamList()));
+      constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
       dataDef.addConstructor(constructor);
     }
 
