@@ -1,5 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.termination;
 
+import com.jetbrains.jetpad.vclang.util.StringFormat;
+
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -53,14 +55,14 @@ public class RecursiveBehavior<T> {
 
   @Override
   public String toString() {
-    String valueLine = "";
-    String result = "";
+    StringBuilder labels = new StringBuilder();
+    StringBuilder values = new StringBuilder();
     for (int i = 0; i < getLength(); i++) {
       String label = myLabels.get(i);
+      labels.append(' ').append(label);
       CallMatrix.R r = myBehavior.get(i);
-      valueLine += String.format("%" + (label.length() + 1) + "s", CallMatrix.rToChar(r));
-      result += " " + label;
+      values.append(StringFormat.rightPad(label.length() + 1, CallMatrix.rToChar(r)));
     }
-    return result + "\n" + valueLine;
+    return labels.toString() + '\n' + values.toString();
   }
 }

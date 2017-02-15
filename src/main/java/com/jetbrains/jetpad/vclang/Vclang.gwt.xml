@@ -2,9 +2,7 @@
         "http://google-web-toolkit.googlecode.com/svn/releases/2.0/distro-source/core/src/gwt-module.dtd">
 <module>
     <source path="">
-        <exclude name="module" />
-        <exclude name="parser" />
-        <exclude name="serialization" />
-        <exclude name="ConsoleMain.java" />
+        <exclude name="module/caching" />
+        <exclude name="frontend/parser" />
     </source>
 </module>
