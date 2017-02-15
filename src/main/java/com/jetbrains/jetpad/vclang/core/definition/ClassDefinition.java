@@ -33,12 +33,6 @@ public class ClassDefinition extends Definition {
     mySuperClasses = null;
   }
 
-  public ClassDefinition(Abstract.ClassDefinition abstractDef, FieldSet fieldSet, Set<ClassDefinition> superClasses) {
-    super(abstractDef, TypeCheckingStatus.NO_ERRORS);
-    myFieldSet = fieldSet;
-    mySuperClasses = superClasses;
-  }
-
   @Override
   public Abstract.ClassDefinition getAbstractDefinition() {
     return (Abstract.ClassDefinition) super.getAbstractDefinition();

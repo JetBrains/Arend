@@ -32,15 +32,6 @@ public class DataDefinition extends Definition {
     myConstructors = new ArrayList<>();
   }
 
-  public DataDefinition(Abstract.DataDefinition abstractDef, SortMax sorts, DependentLink parameters) {
-    super(abstractDef, TypeCheckingStatus.NO_ERRORS);
-    myConstructors = new ArrayList<>();
-    myParameters = parameters;
-    mySorts = sorts;
-    myMatchesOnInterval = false;
-    myIsTruncated = false;
-  }
-
   @Override
   public Abstract.DataDefinition getAbstractDefinition() {
     return (Abstract.DataDefinition) super.getAbstractDefinition();

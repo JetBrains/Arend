@@ -713,8 +713,6 @@ public class DefinitionCheckType {
       constructor.setThisClass(dataDefinition.getThisClass());
       constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
       dataDefinition.addConstructor(constructor);
-
-      visitor.getTypecheckingState().record(def, constructor);
       return constructor;
     }
   }

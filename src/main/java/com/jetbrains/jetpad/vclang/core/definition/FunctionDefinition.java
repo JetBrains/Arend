@@ -26,14 +26,6 @@ public class FunctionDefinition extends Definition implements Function {
     myParameters = EmptyDependentLink.getInstance();
   }
 
-  public FunctionDefinition(Abstract.Definition abstractDef, DependentLink parameters, TypeMax resultType, ElimTreeNode elimTree) {
-    super(abstractDef, resultType == null ? TypeCheckingStatus.HEADER_HAS_ERRORS : elimTree == null ? TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING : TypeCheckingStatus.NO_ERRORS);
-    assert parameters != null;
-    myParameters = parameters;
-    myResultType = resultType;
-    myElimTree = elimTree;
-  }
-
   @Override
   public ElimTreeNode getElimTree() {
     return myElimTree;
