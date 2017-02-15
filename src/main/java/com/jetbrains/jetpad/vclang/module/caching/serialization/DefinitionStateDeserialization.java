@@ -51,15 +51,8 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
             throw new DeserializationError("Unknown Definition kind: " + defProto.getDefinitionDataCase());
         }
       } else {
-        if (abstractDef instanceof Abstract.ClassDefinition) {
-          def = new ClassDefinition((Abstract.ClassDefinition) abstractDef);
-        } else
-        if (abstractDef instanceof Abstract.DataDefinition) {
-          def = new DataDefinition((Abstract.DataDefinition) abstractDef);
-        } else
-        if (abstractDef instanceof Abstract.FunctionDefinition || abstractDef instanceof Abstract.ClassViewInstance) {
-          def = new FunctionDefinition(abstractDef);
-        } else {
+        def = Definition.newDefinition(abstractDef);
+        if (def == null) {
           throw new DeserializationError("Unknown Definition kind: " + abstractDef);
         }
         def.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);

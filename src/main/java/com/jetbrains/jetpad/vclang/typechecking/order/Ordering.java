@@ -97,14 +97,15 @@ public class Ordering {
     }
   }
 
-  // updateState and doOrderRecursively return false only if the argument is a header and it was not reported as an SCC
-  private boolean updateState(DefState currentState, Typecheckable dependency) {
+  private enum OrderResult { REPORTED, NOT_REPORTED, RECURSION_ERROR }
+
+  private OrderResult updateState(DefState currentState, Typecheckable dependency) {
     Definition typechecked = myTypecheckerState.getTypechecked(dependency.getDefinition());
     if (typechecked != null && !typechecked.status().needsTypeChecking()) {
-      return true;
+      return OrderResult.REPORTED;
     }
 
-    boolean ok = true;
+    OrderResult ok = OrderResult.REPORTED;
     DefState state = myVertices.get(dependency);
     if (state == null) {
       ok = doOrderRecursively(dependency);
@@ -115,7 +116,7 @@ public class Ordering {
     return ok;
   }
 
-  private boolean doOrderRecursively(Typecheckable typecheckable) {
+  private OrderResult doOrderRecursively(Typecheckable typecheckable) {
     Abstract.Definition definition = typecheckable.getDefinition();
     Abstract.ClassDefinition enclosingClass = getEnclosingClass(definition);
     TypecheckingUnit unit = new TypecheckingUnit(typecheckable, enclosingClass);
@@ -124,31 +125,40 @@ public class Ordering {
     myIndex++;
     myStack.push(unit);
 
+    Typecheckable header = null;
+    if (!typecheckable.isHeader() && Typecheckable.hasHeader(definition)) {
+      header = new Typecheckable(definition, true);
+      OrderResult result = updateState(currentState, header);
+
+      if (result == OrderResult.RECURSION_ERROR) {
+        myStack.pop();
+        currentState.onStack = false;
+        myListener.unitFound(unit, DependencyListener.Recursion.IN_HEADER);
+        return OrderResult.REPORTED;
+      }
+
+      if (result == OrderResult.REPORTED) {
+        header = null;
+      }
+    }
+
     Set<Abstract.Definition> dependencies = new HashSet<>();
     if (enclosingClass != null) {
       dependencies.add(enclosingClass);
     }
 
-    Typecheckable header = null;
-    if (!typecheckable.isHeader() && Typecheckable.hasHeader(definition)) {
-      header = new Typecheckable(definition, true);
-      if (updateState(currentState, header)) {
-        header = null;
-      }
+    DependencyListener.Recursion recursion = DependencyListener.Recursion.NO;
+    definition.accept(new DefinitionGetDepsVisitor(myInstanceProvider, dependencies), typecheckable.isHeader());
+    if (typecheckable.isHeader() && dependencies.contains(definition)) {
+      myStack.pop();
+      currentState.onStack = false;
+      return OrderResult.RECURSION_ERROR;
     }
 
-    boolean recursive = false;
-    definition.accept(new DefinitionGetDepsVisitor(myInstanceProvider, dependencies), typecheckable.isHeader());
     for (Abstract.Definition referable : dependencies) {
       for (Abstract.Definition dependency : getTypecheckable(referable, enclosingClass)) {
         if (dependency.equals(definition)) {
-          if (typecheckable.isHeader()) {
-            SCC scc = new SCC();
-            scc.add(unit);
-            throw new SCCException(scc);
-          } else {
-            recursive = true;
-          }
+          recursion = DependencyListener.Recursion.IN_BODY;
         } else {
           myListener.dependsOn(typecheckable, dependency);
           updateState(currentState, new Typecheckable(dependency, false));
@@ -166,11 +176,11 @@ public class Ordering {
       } while (!unit.getTypecheckable().equals(typecheckable));
 
       if (typecheckable.isHeader() && scc.getUnits().size() == 1) {
-        return false;
+        return OrderResult.NOT_REPORTED;
       }
       if (scc.getUnits().size() == 1) {
-        myListener.unitFound(unit, recursive);
-        return true;
+        myListener.unitFound(unit, recursion);
+        return OrderResult.REPORTED;
       }
     }
 
@@ -183,6 +193,6 @@ public class Ordering {
       myListener.sccFound(scc);
     }
 
-    return true;
+    return OrderResult.REPORTED;
   }
 }

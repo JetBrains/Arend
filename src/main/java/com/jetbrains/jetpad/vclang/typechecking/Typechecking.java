@@ -261,14 +261,22 @@ public class Typechecking {
     }
 
     @Override
-    public void unitFound(TypecheckingUnit unit, boolean recursive) {
-      typecheck(unit, recursive, myInstancePool);
-      myDependencyListener.unitFound(unit, recursive);
+    public void unitFound(TypecheckingUnit unit, Recursion recursion) {
+      if (recursion == Recursion.IN_HEADER) {
+        myState.record(unit.getDefinition(), Definition.newDefinition(unit.getDefinition()));
+        myErrorReporter.report(new CycleError(Collections.singletonList(unit.getDefinition())));
+        myTypecheckedReporter.typecheckingFailed(unit.getDefinition());
+      } else {
+        typecheck(unit, recursion == Recursion.IN_BODY, myInstancePool);
+      }
+
+      myDependencyListener.unitFound(unit, recursion);
     }
 
     @Override
     public void alreadyTypechecked(Definition definition) {
       myTypecheckedReporter.typecheckingSucceeded(definition.getAbstractDefinition());
+      myDependencyListener.alreadyTypechecked(definition);
     }
 
     @Override

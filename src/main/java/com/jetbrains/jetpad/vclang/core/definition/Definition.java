@@ -100,4 +100,17 @@ public abstract class Definition implements Referable {
   public String toString() {
     return myAbstractDefinition.toString();
   }
+
+  public static Definition newDefinition(Abstract.Definition definition) {
+    if (definition instanceof Abstract.DataDefinition) {
+      return new DataDefinition((Abstract.DataDefinition) definition);
+    }
+    if (definition instanceof Abstract.FunctionDefinition || definition instanceof Abstract.ClassViewInstance) {
+      return new FunctionDefinition(definition);
+    }
+    if (definition instanceof Abstract.ClassDefinition) {
+      return new ClassDefinition((Abstract.ClassDefinition) definition);
+    }
+    return null;
+  }
 }

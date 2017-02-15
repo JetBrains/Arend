@@ -7,8 +7,10 @@ import com.jetbrains.jetpad.vclang.typechecking.TypecheckingUnit;
 
 public interface DependencyListener {
   void sccFound(SCC scc);
-  void unitFound(TypecheckingUnit unit, boolean recursive);
+  void unitFound(TypecheckingUnit unit, Recursion recursion);
 
   void alreadyTypechecked(Definition definition);
   void dependsOn(Typecheckable unit, Abstract.Definition def);
+
+  enum Recursion { NO, IN_HEADER, IN_BODY }
 }

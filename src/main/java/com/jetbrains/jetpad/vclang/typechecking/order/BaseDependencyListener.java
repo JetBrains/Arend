@@ -12,7 +12,7 @@ public class BaseDependencyListener implements DependencyListener {
   }
 
   @Override
-  public void unitFound(TypecheckingUnit unit, boolean recursive) {
+  public void unitFound(TypecheckingUnit unit, Recursion recursion) {
 
   }
 
