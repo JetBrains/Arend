@@ -202,12 +202,11 @@ public final class Abstract {
   public interface PolyUniverseExpression extends Expression {
     byte PREC = 12;
 
-    int NOT_TRUNCATED = -20;
     int PROP = -1;
     int SET = 0;
 
     List<? extends Expression> getPLevel();
-    int getHLevel();
+    List<? extends Expression> getHLevel();
   }
 
   public interface InferHoleExpression extends Expression {

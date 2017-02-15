@@ -190,14 +190,14 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.PolyUniverseExpression cUniverse(int level) {
-    return cUniverse(level, Abstract.PolyUniverseExpression.NOT_TRUNCATED);
+    return cUniverse(level, null);
   }
 
-  public static Concrete.PolyUniverseExpression cUniverse(int level, int truncated) {
+  public static Concrete.PolyUniverseExpression cUniverse(Integer level, Integer truncated) {
     return cPolyUniverse(Collections.singletonList(cNum(level)), truncated);
   }
 
-  public static Concrete.PolyUniverseExpression cPolyUniverse(List<? extends Abstract.Expression> pLevel, int hLevel) {
+  public static Concrete.PolyUniverseExpression cPolyUniverse(List<? extends Abstract.Expression> pLevel, List<? extends Abstract.Expression> hLevel) {
     return new Concrete.PolyUniverseExpression(POSITION, pLevel, hLevel);
   }
 
