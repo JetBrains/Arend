@@ -115,7 +115,9 @@ public class DefinitionCheckType {
         if (definition.getResultType() == null) {
           definition.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
           if (recursive) {
-            errorReporter.report(new LocalTypeCheckingError("Cannot infer the result type of a recursive function", unit.getDefinition()));
+            if (((Abstract.FunctionDefinition) unit.getDefinition()).getResultType() == null) {
+              errorReporter.report(new LocalTypeCheckingError("Cannot infer the result type of a recursive function", unit.getDefinition()));
+            }
             return definition;
           }
         }

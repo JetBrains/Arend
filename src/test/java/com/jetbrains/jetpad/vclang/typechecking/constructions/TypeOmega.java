@@ -14,10 +14,13 @@ public class TypeOmega extends TypeCheckingTestCase {
   }
 
   @Test
-  public void notAllowedInTypeArgs() {
-    typeCheckClass(
-      "\\function f (A : \\Type -> \\Type) => 0\n" +
-      "\\function g : \\Type -> \\Type => \\lam X => X", 3);
+  public void notAllowedInArgs() {
+    typeCheckClass("\\function f (A : \\Type -> \\Type) => 0", 1);
+  }
+
+  @Test
+  public void notAllowedInResultType() {
+    typeCheckClass("\\function g : \\Type -> \\Type => \\lam X => X", 2);
   }
 
   @Test
