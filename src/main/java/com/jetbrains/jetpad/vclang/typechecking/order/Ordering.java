@@ -27,19 +27,13 @@ public class Ordering {
   private final ClassViewInstanceProvider myInstanceProvider;
   private final DependencyListener myListener;
   private final TypecheckerState myTypecheckerState;
+  private final boolean myRefToHeaders;
 
-  public static class SCCException extends RuntimeException {
-    public SCC scc;
-
-    public SCCException(SCC scc) {
-      this.scc = scc;
-    }
-  }
-
-  public Ordering(ClassViewInstanceProvider instanceProvider, DependencyListener listener, TypecheckerState typecheckerState) {
+  public Ordering(ClassViewInstanceProvider instanceProvider, DependencyListener listener, TypecheckerState typecheckerState, boolean refToHeaders) {
     myInstanceProvider = instanceProvider;
     myListener = listener;
     myTypecheckerState = typecheckerState;
+    myRefToHeaders = refToHeaders;
   }
 
   private Abstract.ClassDefinition getEnclosingClass(Abstract.Definition definition) {
@@ -91,7 +85,7 @@ public class Ordering {
       return;
     }
 
-    Typecheckable typecheckable = new Typecheckable(definition, false);
+    Typecheckable typecheckable = new Typecheckable(definition, myRefToHeaders);
     if (!myVertices.containsKey(typecheckable)) {
       doOrderRecursively(typecheckable);
     }
@@ -161,7 +155,7 @@ public class Ordering {
           recursion = DependencyListener.Recursion.IN_BODY;
         } else {
           myListener.dependsOn(typecheckable, dependency);
-          updateState(currentState, new Typecheckable(dependency, false));
+          updateState(currentState, new Typecheckable(dependency, myRefToHeaders));
         }
       }
     }
@@ -175,6 +169,10 @@ public class Ordering {
         scc.add(unit);
       } while (!unit.getTypecheckable().equals(typecheckable));
 
+      if (myRefToHeaders) {
+        myListener.sccFound(scc);
+        return OrderResult.REPORTED;
+      }
       if (typecheckable.isHeader() && scc.getUnits().size() == 1) {
         return OrderResult.NOT_REPORTED;
       }

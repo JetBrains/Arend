@@ -6,18 +6,14 @@ import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.scope.*;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.BaseAbstractVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.CycleError;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import com.jetbrains.jetpad.vclang.typechecking.order.Ordering;
-import com.jetbrains.jetpad.vclang.typechecking.order.SCC;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.DefinitionResolveInstanceVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.ClassViewInstanceProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.SimpleClassViewInstanceProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.scope.InstanceScopeProvider;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 public class Typechecking {
   private final InstanceScopeProvider myScopeProvider;
@@ -58,34 +54,18 @@ public class Typechecking {
     }
 
     myDependencyListener.setInstanceProvider(instanceProvider);
-    Ordering ordering = new Ordering(instanceProvider, myDependencyListener, myState);
-    try {
-      for (Abstract.ClassDefinition classDef : classDefs) {
-        new OrderDefinitionVisitor(ordering).orderDefinition(classDef);
-      }
-    } catch (Ordering.SCCException e) {
-      reportCycleError(e.scc);
+    Ordering ordering = new Ordering(instanceProvider, myDependencyListener, myState, false);
+    for (Abstract.ClassDefinition classDef : classDefs) {
+      new OrderDefinitionVisitor(ordering).orderDefinition(classDef);
     }
   }
 
-
-  private void reportCycleError(SCC scc) {
-    List<Abstract.Definition> cycle = new ArrayList<>(scc.getUnits().size());
-    for (TypecheckingUnit unit : scc.getUnits()) {
-      cycle.add(unit.getDefinition());
-    }
-    myErrorReporter.report(new CycleError(cycle));
-  }
 
   private void typecheckDefinitions(final Collection<? extends Abstract.Definition> definitions, ClassViewInstanceProvider instanceProvider) {
     myDependencyListener.setInstanceProvider(instanceProvider);
-    Ordering ordering = new Ordering(instanceProvider, myDependencyListener, myState);
-    try {
-      for (Abstract.Definition definition : definitions) {
-        ordering.doOrder(definition);
-      }
-    } catch (Ordering.SCCException e) {
-      reportCycleError(e.scc);
+    Ordering ordering = new Ordering(instanceProvider, myDependencyListener, myState, false);
+    for (Abstract.Definition definition : definitions) {
+      ordering.doOrder(definition);
     }
   }
 

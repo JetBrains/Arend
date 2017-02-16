@@ -72,7 +72,7 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
       "\\data D | c\n" +
       "\\default \\instance D-X => \\new X' { A => D | B => \\lam _ => f }\n" +
       "\\function g {x : X' { A => Nat }} => \\Prop\n" +
-      "\\function f => g\n" +
+      "\\function f : \\Set0 => g\n" +
       "\\class X {\n" +
       "  \\field A : \\Type0\n" +
       "  \\field B : A -> \\Type0\n" +

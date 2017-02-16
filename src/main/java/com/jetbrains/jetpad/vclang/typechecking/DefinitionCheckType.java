@@ -64,6 +64,7 @@ public class DefinitionCheckType {
       FunctionDefinition functionDef = typechecked != null ? (FunctionDefinition) typechecked : new FunctionDefinition(definition);
       typeCheckFunctionHeader(functionDef, typedEnclosingClass, visitor, localInstancePool);
       if (functionDef.getResultType() == null) {
+        visitor.getErrorReporter().report(new LocalTypeCheckingError("Cannot infer the result type of a recursive function", definition));
         functionDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
       }
       return functionDef;
