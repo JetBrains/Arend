@@ -16,14 +16,12 @@ public class FunctionPolyTest extends TypeCheckingTestCase {
   @Test
   public void funWithoutTypeOmega() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (n : Nat) => Nat");
-    assertThat(funDefinition.getPolyParams(), is(empty()));
     assertEquals(Sort.SET0, funDefinition.getResultType().toSorts().toSort());
   }
 
   @Test
   public void funWithoutTypeOmegaExplicit() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (n : Nat) : \\Set1 => Nat");
-    assertThat(funDefinition.getPolyParams(), is(empty()));
     assertEquals(Sort.SetOfLevel(1), funDefinition.getResultType().toSorts().toSort());
   }
 

@@ -194,7 +194,7 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.PolyUniverseExpression cUniverse(Integer level, Integer truncated) {
-    return cPolyUniverse(Collections.singletonList(cNum(level)), truncated);
+    return cPolyUniverse(level == null ? null : Collections.singletonList(cNum(level)), truncated == null ? null : Collections.singletonList(cNum(truncated)));
   }
 
   public static Concrete.PolyUniverseExpression cPolyUniverse(List<? extends Abstract.Expression> pLevel, List<? extends Abstract.Expression> hLevel) {

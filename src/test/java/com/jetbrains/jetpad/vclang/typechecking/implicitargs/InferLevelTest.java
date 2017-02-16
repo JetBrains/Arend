@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class InferLevelTest extends TypeCheckingTestCase {
@@ -111,13 +110,5 @@ public class InferLevelTest extends TypeCheckingTestCase {
       "\\function f (X : \\Set10) (P : X -> \\Type) => \\Pi (a : X) -> P a\n" +
       "\\function g (X : \\Set10) (P : X -> \\Prop) : \\Prop => f X P"
     );
-  }
-
-  @Ignore
-  @Test
-  public void doubleLowerBound() {
-    typeCheckClass(
-      "\\function g (A B : \\Type) => A\n" +
-        "\\function f {lp lp' : Lvl} (A : \\Type (lp)) (B : \\Type (lp')) => g A B");
   }
 }

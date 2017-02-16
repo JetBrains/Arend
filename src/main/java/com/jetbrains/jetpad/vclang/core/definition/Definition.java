@@ -21,6 +21,8 @@ public abstract class Definition implements Referable {
   public Definition(Abstract.Definition abstractDef, TypeCheckingStatus status) {
     myAbstractDefinition = abstractDef;
     myStatus = status;
+    myPolyParams.add(LevelBinding.PLVL_BND);
+    myPolyParams.add(LevelBinding.HLVL_BND);
   }
 
   public String getName() {
