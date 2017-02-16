@@ -342,7 +342,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   private Integer getHNum(Level expr) {
     if (expr.isClosed()) {
       if (expr.isInfinity()) {
-        return Abstract.PolyUniverseExpression.NOT_TRUNCATED;
+        return null;
       }
       return expr.getConstant() - 1;
     }
@@ -378,10 +378,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   }
 
   public Abstract.Expression visitSort(Sort sort) {
-    Integer pNum = getPNum(sort.getPLevel());
-    Integer hNum = getHNum(sort.getHLevel());
-    if (pNum != null && hNum != null) {
-      return myFactory.makeUniverse(pNum, hNum);
+    if (sort.getPLevel().isClosed() && sort.getHLevel().isClosed()) {
+      return myFactory.makeUniverse(getPNum(sort.getPLevel()), getHNum(sort.getHLevel()));
     } else {
       Level plevel = sort.getPLevel();
       Level hlevel = sort.getHLevel();
@@ -389,14 +387,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
         plevel = eliminateGenParam(plevel);
         hlevel = eliminateGenParam(hlevel);
       }
-      int hlevelAbs;
-      //TODO: decide what to do in case there's a variable in hlevel
-      if (hlevel.isInfinity() || !hlevel.isClosed()) {
-        hlevelAbs = Abstract.PolyUniverseExpression.NOT_TRUNCATED;
-      } else {
-        hlevelAbs = hlevel.getConstant() - 1;
-      }
-      return myFactory.makeUniverse(plevel.isInfinity() ? null : Collections.singletonList(visitLevel(plevel, 0)), hlevelAbs);
+      return myFactory.makeUniverse(plevel.isInfinity() ? null : Collections.singletonList(visitLevel(plevel, 0)), hlevel.isInfinity() ? null : Collections.singletonList(visitLevel(hlevel, -1)));
     }
   }
 
@@ -405,14 +396,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     if (sort != null) {
       return visitSort(sort);
     }
-    int hLevel;
-    //TODO: decide what to do in case there's a variable in sorts.getHLevel()
-    if (sorts.getHLevel().isInfinity() || sorts.getHLevel().toLevel() == null || !sorts.getHLevel().toLevel().isClosed()) {
-      hLevel = Abstract.PolyUniverseExpression.NOT_TRUNCATED;
-    } else {
-      hLevel = sorts.getHLevel().toLevel().getConstant() - 1;
-    }
-    return myFactory.makeUniverse(visitLevelMax(sorts.getPLevel(), 0), hLevel);
+    return myFactory.makeUniverse(visitLevelMax(sorts.getPLevel(), 0), visitLevelMax(sorts.getHLevel(), -1));
   }
 
   public Abstract.Expression visitLevel(Level level, int add) {

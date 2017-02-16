@@ -635,12 +635,18 @@ public final class Concrete {
 
   public static class PolyUniverseExpression extends Expression implements Abstract.PolyUniverseExpression {
     private final List<? extends Abstract.Expression> myPLevel;
-    private final int myHLevel;
+    private final List<? extends Abstract.Expression> myHLevel;
+
+    public PolyUniverseExpression(Position position, List<? extends Abstract.Expression> pLevel, List<? extends Abstract.Expression> hLevel) {
+      super(position);
+      myPLevel = pLevel;
+      myHLevel = hLevel;
+    }
 
     public PolyUniverseExpression(Position position, List<? extends Abstract.Expression> pLevel, int hLevel) {
       super(position);
       myPLevel = pLevel;
-      myHLevel = hLevel;
+      myHLevel = Collections.singletonList(new NumericLiteral(position, hLevel));
     }
 
     @Override
@@ -649,7 +655,7 @@ public final class Concrete {
     }
 
     @Override
-    public int getHLevel() {
+    public List<? extends Abstract.Expression> getHLevel() {
       return myHLevel;
     }
 

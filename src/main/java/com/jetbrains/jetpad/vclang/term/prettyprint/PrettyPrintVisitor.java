@@ -282,22 +282,39 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitPolyUniverse(Abstract.PolyUniverseExpression expr, Byte prec) {
-    if (expr.getHLevel() == -1) {
+    boolean containsLH = false;
+    if (expr.getHLevel() == null) {
+      myBuilder.append("\\Type");
+    } else if (expr.getHLevel().size() > 1) {
+      myBuilder.append("\\Type (");
+      containsLH = true;
+    } else if (expr.getHLevel().get(0) instanceof Abstract.NumericLiteral &&
+            ((Abstract.NumericLiteral) expr.getHLevel().get(0)).getNumber() == 0) {
+      myBuilder.append("\\Set");
+    } else if (expr.getHLevel().get(0) instanceof Abstract.NumericLiteral &&
+            ((Abstract.NumericLiteral) expr.getHLevel().get(0)).getNumber() == -1) {
       myBuilder.append("\\Prop");
       return null;
-    } else if (expr.getHLevel() == 0) {
-      myBuilder.append("\\Set");
-    } else if (expr.getHLevel() == Abstract.PolyUniverseExpression.NOT_TRUNCATED) {
-      myBuilder.append("\\Type");
-    } else {
+    } else if (expr.getHLevel().get(0) instanceof Abstract.NumericLiteral) {
       myBuilder.append("\\").append(expr.getHLevel()).append("-Type");
+    } else {
+      myBuilder.append("\\Type (");
+      containsLH = true;
     }
 
     if (expr.getPLevel() != null) {
-      if (expr.getPLevel().size() != 1 || !(expr.getPLevel().get(0) instanceof Abstract.NumericLiteral)) {
+      if (!containsLH && (expr.getPLevel().size() != 1 || !(expr.getPLevel().get(0) instanceof Abstract.NumericLiteral))) {
         myBuilder.append(" ");
       }
       prettyPrintMaxExpression(expr.getPLevel(), Abstract.Expression.PREC);
+    } else if (containsLH) {
+      prettyPrintMaxExpression(null, Abstract.Expression.PREC);
+    }
+
+    if (containsLH) {
+      myBuilder.append(", ");
+      prettyPrintMaxExpression(expr.getHLevel(), Abstract.Expression.PREC);
+      myBuilder.append(")");
     }
     return null;
   }

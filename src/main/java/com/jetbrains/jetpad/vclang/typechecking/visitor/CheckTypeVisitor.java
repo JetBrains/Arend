@@ -58,7 +58,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   private final StaticNamespaceProvider myStaticNsProvider;
   private final DynamicNamespaceProvider myDynamicNsProvider;
   private final List<Binding> myContext;
-  private final List<LevelBinding> myLvlContext;
   private final LocalErrorReporter myErrorReporter;
   private final TypeCheckingDefCall myTypeCheckingDefCall;
   private final TypeCheckingElim myTypeCheckingElim;
@@ -242,12 +241,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
   }
 
-  public CheckTypeVisitor(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ClassDefinition thisClass, Expression thisExpr, List<Binding> localContext, List<LevelBinding> lvlContext, LocalErrorReporter errorReporter, ClassViewInstancePool pool) {
+  public CheckTypeVisitor(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ClassDefinition thisClass, Expression thisExpr, List<Binding> localContext, LocalErrorReporter errorReporter, ClassViewInstancePool pool) {
     myState = state;
     myStaticNsProvider = staticNsProvider;
     myDynamicNsProvider = dynamicNsProvider;
     myContext = localContext;
-    myLvlContext = lvlContext;
     myErrorReporter = errorReporter;
     myTypeCheckingDefCall = new TypeCheckingDefCall(this);
     myTypeCheckingElim = new TypeCheckingElim(this);
@@ -297,10 +295,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     return myContext;
   }
 
-  public List<LevelBinding> getLevelContext() {
-    return myLvlContext;
-  }
-
   public LocalErrorReporter getErrorReporter() {
     return myErrorReporter;
   }
@@ -347,22 +341,22 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   }
 
   public TypeMax checkFunOrDataType(Abstract.Expression typeExpr) {
-    TypeMax type = typeMax(typeExpr, null, true);
+    TypeMax type = typeMax(typeExpr, false, true);
     if (type == null) return null;
     LevelSubstitution levelSubst = myEquations.solve(typeExpr);
     LocalErrorReporterCounter counter = new LocalErrorReporterCounter(myErrorReporter);
     return type.subst(new ExprSubstitution(), levelSubst).strip(new HashSet<>(myContext), counter);
   }
 
-  public Type checkParamType(Abstract.Expression typeExpr, List<LevelBinding> genPolyParams) {
-    Type type = (Type)typeMax(typeExpr, genPolyParams, false);
+  public Type checkParamType(Abstract.Expression typeExpr) {
+    Type type = (Type)typeMax(typeExpr, true, false);
     if (type == null) return null;
     LevelSubstitution levelSubst = myEquations.solve(typeExpr);
     LocalErrorReporterCounter counter = new LocalErrorReporterCounter(myErrorReporter);
     return type.subst(new ExprSubstitution(), levelSubst).strip(new HashSet<>(myContext), counter);
   }
 
-  private TypeMax typeMax(Abstract.Expression type, List<LevelBinding> genPolyParams, boolean maxAllowed) {
+  private TypeMax typeMax(Abstract.Expression type, boolean replaceInfinities, boolean maxAllowed) {
     List<Abstract.TypeArgument> arguments = new ArrayList<>();
     Abstract.Expression cod = Abstract.getCodomain(type, arguments);
     if (cod instanceof Abstract.PolyUniverseExpression) {
@@ -392,35 +386,47 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
             genPolyParams.add(lhParam);
           }
         }
-      } /**/
-
-      if (genPolyParams != null) {
+        if (genPolyParams != null) {
         assert genPolyParams.size() == 2;
         if (uni.getPLevel() == null) {
           genPolyParams.set(0, LevelBinding.PLVL_BND);
         }
-        if (uni.getHLevel() == Abstract.PolyUniverseExpression.NOT_TRUNCATED) {
+        if (uni.getHLevel() == null) {
           genPolyParams.set(1, LevelBinding.HLVL_BND);
         }
       }
+      } /**/
 
-      Level hlevel = uni.getHLevel() == Abstract.PolyUniverseExpression.NOT_TRUNCATED ?
-              genPolyParams != null ? new Level(LevelBinding.HLVL_BND) : Level.INFINITY : new Level(uni.getHLevel() + 1);
       if (maxAllowed) {
-        LevelMax plevel = genPolyParams != null && uni.getPLevel() == null ? new LevelMax(new Level(LevelBinding.PLVL_BND)) : typeCheckLevelMax(uni.getPLevel(), 0);
-        return new PiUniverseType(args, new SortMax(plevel, new LevelMax(hlevel)));
+        LevelMax plevel = replaceInfinities && uni.getPLevel() == null ? new LevelMax(new Level(LevelBinding.PLVL_BND)) : typeCheckLevelMax(uni.getPLevel(), 0);
+        LevelMax hlevel = uni.getHLevel() == null ?
+                replaceInfinities ? new LevelMax(new Level(LevelBinding.HLVL_BND)) : LevelMax.INFINITY : typeCheckLevelMax(uni.getHLevel(), -1);
+        return new PiUniverseType(args, new SortMax(plevel, hlevel));
       }
-      Level plevel = null;
-      if (genPolyParams != null && uni.getPLevel() == null) {
-        plevel = new Level(LevelBinding.PLVL_BND);
-      } else if (uni.getPLevel() != null) {
-        if (uni.getPLevel().size() != 1) {
-          // TODO: create special class for this error
-          myErrorReporter.report(new LocalTypeCheckingError("\'max\' can only be used in a result type", uni));
+      if ((uni.getPLevel() != null && uni.getPLevel().size() != 1) || (uni.getHLevel() != null && uni.getHLevel().size() != 1)) {
+        // TODO: create special class for this error
+        myErrorReporter.report(new LocalTypeCheckingError("\'max\' can only be used in a result type", uni));
+        return null;
+      }
+      Level plevel;
+      Level hlevel;
+
+      if (uni.getPLevel() == null) {
+        if (!replaceInfinities) {
+          myErrorReporter.report(new LocalTypeCheckingError("\\Type without level is not allowed in this context", uni));
           return null;
         }
+        plevel = new Level(LevelBinding.PLVL_BND);
+      } else {
         plevel = typeCheckLevel(uni.getPLevel().get(0), 0);
       }
+
+      if (uni.getHLevel() == null) {
+        hlevel = !replaceInfinities ? Level.INFINITY : new Level(LevelBinding.HLVL_BND);
+      } else {
+        hlevel = typeCheckLevel(uni.getHLevel().get(0), -1);
+      }
+
       UniverseExpression universe = Universe(plevel, hlevel);
       return !args.hasNext() ? universe :  Pi(args, universe);
     }
@@ -695,7 +701,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
           return Level.INFINITY;
         }
         if (!name.equals("suc")) {
-          LevelBinding var = (LevelBinding) getLocalVar(defCall, myLvlContext);
+          LevelBinding var = LevelBinding.bindingByName(name);
           if (var == null) {
             return null;
           }
@@ -733,7 +739,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       return null;
     }
     Level pLevel = expr.getPLevel() == null ? Level.INFINITY : typeCheckLevel(expr.getPLevel().get(0), 0);
-    Level hLevel = expr.getHLevel() != Abstract.PolyUniverseExpression.NOT_TRUNCATED ? new Level(expr.getHLevel() + 1) : Level.INFINITY;
+    Level hLevel = expr.getHLevel() != null ? typeCheckLevel(expr.getHLevel().get(0), -1) : Level.INFINITY;
     if (pLevel == null) return null;
     if (pLevel.isInfinity()) {
       myErrorReporter.report(new LocalTypeCheckingError("\\Type can only used as Pi codomain in definition parameters or result type", expr));

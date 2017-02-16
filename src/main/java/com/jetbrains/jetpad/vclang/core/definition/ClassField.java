@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
@@ -32,6 +33,11 @@ public class ClassField extends Definition {
   @Override
   public String getName() {
     return getAbstractDefinition() != null ? super.getName() : getThisClass().getName() + "::\\parent";
+  }
+
+  @Override
+  public List<LevelBinding> getPolyParams() {
+    return getThisClass().getPolyParams();
   }
 
   @Override

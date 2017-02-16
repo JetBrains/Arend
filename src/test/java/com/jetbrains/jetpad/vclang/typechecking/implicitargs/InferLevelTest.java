@@ -9,7 +9,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // no equations
     // error: cannot infer ?l
     typeCheckClass(
-        "\\function A {l : Lvl} => \\Type (l)\n" +
+        "\\function A => \\Type \\lp\n" +
         "\\function f => A");
   }
 
@@ -18,8 +18,8 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // ?l <= ?l'
     // error: cannot infer ?l, ?l'
     typeCheckClass(
-        "\\function A {l : Lvl} => \\Type (l)\n" +
-        "\\function f {l' : Lvl} (A : \\Type (l')) => A\n" +
+        "\\function A => \\Type \\lp\n" +
+        "\\function f (A : \\Type \\lp) => A\n" +
         "\\function g => f A");
   }
 
@@ -28,7 +28,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // ?l <= 10
     // error: cannot infer ?l
     typeCheckClass(
-        "\\function A {l : Lvl} => \\Type (l)\n" +
+        "\\function A => \\Type \\lp\n" +
         "\\function f : \\Type10 => A");
   }
 
@@ -37,8 +37,8 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // ?l <= c
     // error: cannot infer ?l
     typeCheckClass(
-        "\\function A {l : Lvl} => \\Type l \n" +
-        "\\function f {c : Lvl} : \\Type (suc c) => A");
+        "\\function A => \\Type \\lp \n" +
+        "\\function f : \\Type (suc \\lp) => A");
   }
 
   @Test
@@ -46,8 +46,8 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // ?l + 1 <= c
     // error: cannot infer ?l
     typeCheckClass(
-        "\\function A {l : Lvl} => \\Type l \n" +
-        "\\function f {c : Lvl} : \\Type c => A", 1);
+        "\\function A => \\Type \\lp \n" +
+        "\\function f : \\Type \\lp => A", 1);
   }
 
   @Test
@@ -55,8 +55,8 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // 0 <= ?l, 0 <= c
     // ok: ?l = 0
     typeCheckClass(
-        "\\function f {l : Lvl} (A : \\Type l) => A\n" +
-        "\\function g {c : Lvl} : \\Type c => f Nat");
+        "\\function f (A : \\Type \\lp) => A\n" +
+        "\\function g : \\Type \\lp => f Nat");
   }
 
   @Test
@@ -64,8 +64,8 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // 1 <= ?l, 1 <= c
     // error: cannot solve 1 <= c
     typeCheckClass(
-        "\\function f {l : Lvl} (A : \\Type l) => A\n" +
-        "\\function g {c : Lvl} : \\Type c => f \\Type0", 1);
+        "\\function f (A : \\Type \\lp) => A\n" +
+        "\\function g : \\Type \\lp => f \\Type0", 1);
   }
 
   @Test
@@ -73,7 +73,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // 0 <= ?l <= 10
     // ok: ?l = 0
     typeCheckClass(
-        "\\function f {l : Lvl} (A : \\Type (l)) => A\n" +
+        "\\function f (A : \\Type \\lp) => A\n" +
         "\\function g : \\Type10 => f Nat");
   }
 
@@ -82,7 +82,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // 1 <= ?l <= 10
     // ok: ?l = 1
     typeCheckClass(
-        "\\function f {l : Lvl} (A : \\Type (l)) => A\n" +
+        "\\function f (A : \\Type \\lp) => A\n" +
         "\\function g : \\Type10 => f \\Type0");
   }
 
@@ -91,7 +91,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // 0 <= ?l
     // ok: ?l = 0
     typeCheckClass(
-        "\\function f {l : Lvl} (A : \\Type (l)) => A\n" +
+        "\\function f (A : \\Type \\lp) => A\n" +
         "\\function g => f Nat");
   }
 
@@ -100,7 +100,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // 1 <= ?l
     // ok: ?l = 1
     typeCheckClass(
-        "\\function f {l : Lvl} (A : \\Type (l)) => A\n" +
+        "\\function f (A : \\Type \\lp) => A\n" +
         "\\function g => f \\Type0");
   }
 
@@ -110,12 +110,5 @@ public class InferLevelTest extends TypeCheckingTestCase {
       "\\function f (X : \\Set10) (P : X -> \\Type) => \\Pi (a : X) -> P a\n" +
       "\\function g (X : \\Set10) (P : X -> \\Prop) : \\Prop => f X P"
     );
-  }
-
-  @Test
-  public void doubleLowerBound() {
-    typeCheckClass(
-      "\\function g (A B : \\Type) => A\n" +
-        "\\function f {lp lp' : Lvl} (A : \\Type (lp)) (B : \\Type (lp')) => g A B");
   }
 }
