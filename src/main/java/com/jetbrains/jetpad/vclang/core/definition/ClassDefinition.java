@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -99,6 +98,7 @@ public class ClassDefinition extends Definition {
     assert myEnclosingThisField == null;
     super.setThisClass(enclosingClass);
     if (enclosingClass != null) {
+      /*
       for (LevelBinding param : enclosingClass.getPolyParams()) {
         myPolyParams.add(new LevelBinding(param.getName(), param.getType()));
       }
@@ -111,9 +111,9 @@ public class ClassDefinition extends Definition {
         if (i >= myPolyParams.size() - enclosingArgs.size()) {
           enclosingArgs.add(new Level(myPolyParams.get(i)));
         }
-      }
+      } /**/
 
-      myEnclosingThisField = new ClassField(null, ClassCall(enclosingClass, new LevelArguments(enclosingArgs)), this, param("\\this", ClassCall(this, new LevelArguments(thisArgs))));
+      myEnclosingThisField = new ClassField(null, ClassCall(enclosingClass, (LevelArguments) null), this, param("\\this", ClassCall(this, (LevelArguments) null)));
       myEnclosingThisField.setThisClass(this);
       myFieldSet.addField(myEnclosingThisField);
     }

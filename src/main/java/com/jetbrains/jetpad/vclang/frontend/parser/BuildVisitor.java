@@ -643,13 +643,19 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.Expression visitPolyUniverse(PolyUniverseContext ctx) {
     //int hLevel = ctx.TRUNCATED_UNIVERSE() != null ? Integer.parseInt(ctx.NUMBER().getText()) : Abstract.PolyUniverseExpression.NOT_TRUNCATED;
-    int hLevel = Abstract.PolyUniverseExpression.NOT_TRUNCATED;
     if (ctx.TRUNCATED_UNIVERSE_PREFIX() != null) {
+      int hLevel;
       String text = ctx.TRUNCATED_UNIVERSE_PREFIX().getText();
       int indexOfMinusSign = text.indexOf('-');
       hLevel = Integer.valueOf(text.substring(1, indexOfMinusSign));
+      return new Concrete.PolyUniverseExpression(tokenPosition(ctx.getStart()), visitLevelMaxExpr(ctx.levelMaxExpr()), hLevel);
     }
-    return new Concrete.PolyUniverseExpression(tokenPosition(ctx.getStart()), visitLevelMaxExpr(ctx.levelMaxExpr()), hLevel);
+    return new Concrete.PolyUniverseExpression(tokenPosition(ctx.getStart()), visitLevelMaxExpr(ctx.levelMaxExpr()), null);
+  }
+
+  @Override
+  public Concrete.Expression visitPolyUniverseWithLH(PolyUniverseWithLHContext ctx) {
+    return new Concrete.PolyUniverseExpression(tokenPosition(ctx.getStart()), visitLevelMaxExpr(ctx.levelMaxExpr(0)), visitLevelMaxExpr(ctx.levelMaxExpr(1)));
   }
 
   @Override
@@ -661,7 +667,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.PolyUniverseExpression visitUniverse(UniverseContext ctx) {
     int plevel = Integer.valueOf(ctx.UNIVERSE().getText().substring("\\Type".length()));
     Concrete.Position pos = tokenPosition(ctx.UNIVERSE().getSymbol());
-    return new Concrete.PolyUniverseExpression(pos, Collections.singletonList(new Concrete.NumericLiteral(pos, plevel)), Abstract.PolyUniverseExpression.NOT_TRUNCATED);
+    return new Concrete.PolyUniverseExpression(pos, Collections.singletonList(new Concrete.NumericLiteral(pos, plevel)), null);
   }
 
   @Override

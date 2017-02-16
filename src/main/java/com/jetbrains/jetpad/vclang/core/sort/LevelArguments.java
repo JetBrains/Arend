@@ -14,7 +14,12 @@ public class LevelArguments {
   private final List<Level> myLevels;
 
   public LevelArguments() {
-    myLevels = Collections.emptyList();
+    // myLevels = Collections.emptyList();
+    this (0, 0);
+  }
+
+  public LevelArguments(int plevel, int hlevel) {
+    myLevels = Arrays.asList(new Level(plevel), new Level(hlevel));
   }
 
   public LevelArguments(List<Level> levels) {

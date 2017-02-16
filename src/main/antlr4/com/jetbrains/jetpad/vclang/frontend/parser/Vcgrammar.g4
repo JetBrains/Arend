@@ -101,6 +101,7 @@ levelMaxExpr : atom | '(max' '(' expr (',' expr)* ') )';
 
 binOpArg : maybeNew atomFieldsAcc argument*                            # binOpArgument
       |  (TRUNCATED_UNIVERSE_PREFIX | UNIVERSE_PREFIX) (levelMaxExpr)? # polyUniverse
+      | UNIVERSE_PREFIX '(' levelMaxExpr ',' levelMaxExpr ')'          # polyUniverseWithLH
       | SET_PREFIX (levelMaxExpr)?                                     # polySet
       ;
 

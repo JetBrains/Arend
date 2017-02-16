@@ -103,6 +103,6 @@ public class TypeOmega implements Type {
 
   @Override
   public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent) {
-    ConcreteExpressionFactory.cPolyUniverse(null, Abstract.PolyUniverseExpression.NOT_TRUNCATED).accept(new PrettyPrintVisitor(builder, indent), prec);
+    ConcreteExpressionFactory.cPolyUniverse(null, null).accept(new PrettyPrintVisitor(builder, indent), prec);
   }
 }

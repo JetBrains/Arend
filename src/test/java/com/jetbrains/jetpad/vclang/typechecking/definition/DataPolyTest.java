@@ -16,14 +16,12 @@ public class DataPolyTest extends TypeCheckingTestCase {
   @Test
   public void dataWithoutTypeOmega() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (n : Nat) | con1 (n = n) | con2 Nat");
-    assertThat(dataDefinition.getPolyParams(), is(empty()));
     assertEquals(Sort.SET0, dataDefinition.getSorts().toSort());
   }
 
   @Test
   public void dataWithoutTypeOmegaExplicit() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (n : Nat) : \\Set1 | con1 (n = n) | con2 Nat");
-    assertThat(dataDefinition.getPolyParams(), is(empty()));
     assertEquals(Sort.SetOfLevel(1), dataDefinition.getSorts().toSort());
   }
 
