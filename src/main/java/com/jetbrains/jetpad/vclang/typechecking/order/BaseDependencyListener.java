@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking.order;
 
-import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.Typecheckable;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckingUnit;
@@ -17,7 +16,12 @@ public class BaseDependencyListener implements DependencyListener {
   }
 
   @Override
-  public void alreadyTypechecked(Definition definition) {
+  public boolean needsOrdering(Abstract.Definition definition) {
+    return true;
+  }
+
+  @Override
+  public void alreadyTypechecked(Abstract.Definition definition) {
 
   }
 

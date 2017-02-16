@@ -67,16 +67,16 @@ class TypecheckingDependencyListener implements DependencyListener {
       if (!Typecheckable.hasHeader(unit.getDefinition())) {
         List<Abstract.Definition> cycle = new ArrayList<>();
         for (TypecheckingUnit unit1 : scc.getUnits()) {
-          cycle.add(unit1.getDefinition());
-          boolean doReport = true;
-          if (!unit1.isHeader() && Typecheckable.hasHeader(unit1.getDefinition())) {
-            Suspension suspension = mySuspensions.remove(unit1.getDefinition());
-            if (suspension == null) {
-              doReport = false;
+          Abstract.Definition definition = unit1.getDefinition();
+          cycle.add(definition);
+          if (!unit1.isHeader()) {
+            if (Typecheckable.hasHeader(definition)) {
+              mySuspensions.remove(definition);
             }
+            myTypecheckedReporter.typecheckingFailed(definition);
           }
-          if (doReport) {
-            myTypecheckedReporter.typecheckingFailed(unit1.getDefinition());
+          if (myState.getTypechecked(definition) == null) {
+            myState.record(definition, Definition.newDefinition(definition));
           }
         }
         myErrorReporter.report(new CycleError(cycle));
@@ -104,8 +104,18 @@ class TypecheckingDependencyListener implements DependencyListener {
   }
 
   @Override
-  public void alreadyTypechecked(Definition definition) {
-    myTypecheckedReporter.typecheckingSucceeded(definition.getAbstractDefinition());
+  public boolean needsOrdering(Abstract.Definition definition) {
+    if (!myDependencyListener.needsOrdering(definition)) {
+      return false;
+    }
+
+    Definition typechecked = myState.getTypechecked(definition);
+    return typechecked == null || typechecked.status().needsTypeChecking();
+  }
+
+  @Override
+  public void alreadyTypechecked(Abstract.Definition definition) {
+    myTypecheckedReporter.typecheckingSucceeded(definition);
     myDependencyListener.alreadyTypechecked(definition);
   }
 
@@ -129,55 +139,47 @@ class TypecheckingDependencyListener implements DependencyListener {
       return true;
     }
 
-    if (numberOfHeaders > 1) {
-      if (myTypecheckingHeaders) {
-        List<Abstract.Definition> cycle = new ArrayList<>(scc.getUnits().size());
-        for (TypecheckingUnit unit1 : scc.getUnits()) {
-          cycle.add(unit1.getDefinition());
-        }
-
-        myErrorReporter.report(new CycleError(cycle));
-        for (Abstract.Definition definition : cycle) {
-          myState.record(definition, Definition.newDefinition(definition));
-          myTypecheckedReporter.typecheckingFailed(definition);
-        }
-        return false;
-      }
-
-      myTypecheckingHeaders = true;
-      Ordering ordering = new Ordering(myInstanceProvider, this, myState, true);
-      boolean ok = true;
-      for (TypecheckingUnit unit1 : scc.getUnits()) {
-        if (unit1.isHeader()) {
-          Abstract.Definition definition = unit1.getDefinition();
-          ordering.doOrder(definition);
-          if (ok && !myState.getTypechecked(definition).status().headerIsOK()) {
-            ok = false;
-          }
-        }
-      }
-      myTypecheckingHeaders = false;
-      return ok;
-    } else {
+    if (numberOfHeaders == 1) {
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
       LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter));
       CheckTypeVisitor visitor = new CheckTypeVisitor(myState, myStaticNsProvider, myDynamicNsProvider, null, null, new ArrayList<Binding>(), new ArrayList<LevelBinding>(), localErrorReporter, null);
       Definition typechecked = DefinitionCheckType.typeCheckHeader(visitor, new GlobalInstancePool(myState, myInstanceProvider), unit.getDefinition(), unit.getEnclosingClass());
       if (typechecked.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
         mySuspensions.put(unit.getDefinition(), new Suspension(visitor, countingErrorReporter));
-      } else {
-        if (countingErrorReporter.getErrorsNumber() == 0) {
-          myTypecheckedReporter.typecheckingSucceeded(unit.getDefinition());
-        } else {
-          myTypecheckedReporter.typecheckingFailed(unit.getDefinition());
-        }
       }
       return typechecked.status().headerIsOK();
     }
+
+    if (myTypecheckingHeaders) {
+      List<Abstract.Definition> cycle = new ArrayList<>(scc.getUnits().size());
+      for (TypecheckingUnit unit1 : scc.getUnits()) {
+        cycle.add(unit1.getDefinition());
+      }
+
+      myErrorReporter.report(new CycleError(cycle));
+      for (Abstract.Definition definition : cycle) {
+        myState.record(definition, Definition.newDefinition(definition));
+      }
+      return false;
+    }
+
+    myTypecheckingHeaders = true;
+    Ordering ordering = new Ordering(myInstanceProvider, this, true);
+    boolean ok = true;
+    for (TypecheckingUnit unit1 : scc.getUnits()) {
+      if (unit1.isHeader()) {
+        Abstract.Definition definition = unit1.getDefinition();
+        ordering.doOrder(definition);
+        if (ok && !myState.getTypechecked(definition).status().headerIsOK()) {
+          ok = false;
+        }
+      }
+    }
+    myTypecheckingHeaders = false;
+    return ok;
   }
 
   private void typecheckBodies(SCC scc, boolean headersAreOK) {
-    GlobalInstancePool instancePool = new GlobalInstancePool(myState, myInstanceProvider);
     Set<FunctionDefinition> cycleDefs = new HashSet<>();
     List<Pair<Abstract.Definition, Boolean>> results = new ArrayList<>(scc.getUnits().size());
     for (TypecheckingUnit unit : scc.getUnits()) {
@@ -185,33 +187,16 @@ class TypecheckingDependencyListener implements DependencyListener {
         continue;
       }
 
-      CountingErrorReporter countingErrorReporter = null;
-      boolean doReport = true;
-      if (Typecheckable.hasHeader(unit.getDefinition())) {
-        Suspension suspension = mySuspensions.remove(unit.getDefinition());
-        if (suspension != null) {
-          if (headersAreOK) {
-            Definition def = myState.getTypechecked(unit.getDefinition());
-            DefinitionCheckType.typeCheckBody(def, suspension.visitor);
-            if (def instanceof FunctionDefinition) {
-              cycleDefs.add((FunctionDefinition) def);
-            }
-            countingErrorReporter = suspension.countingErrorReporter;
-          }
-        } else {
-          doReport = false;
-        }
-      } else {
-        if (headersAreOK) {
-          countingErrorReporter = new CountingErrorReporter();
-          LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter));
-          DefinitionCheckType.typeCheck(myState, instancePool, myStaticNsProvider, myDynamicNsProvider, unit, true, localErrorReporter);
+      Suspension suspension = mySuspensions.remove(unit.getDefinition());
+      if (headersAreOK && suspension != null) {
+        Definition def = myState.getTypechecked(unit.getDefinition());
+        DefinitionCheckType.typeCheckBody(def, suspension.visitor);
+        if (def instanceof FunctionDefinition) {
+          cycleDefs.add((FunctionDefinition) def);
         }
       }
 
-      if (doReport) {
-        results.add(new Pair<>(unit.getDefinition(), countingErrorReporter == null || countingErrorReporter.getErrorsNumber() == 0));
-      }
+      results.add(new Pair<>(unit.getDefinition(), suspension != null && suspension.countingErrorReporter.getErrorsNumber() == 0));
     }
 
     boolean ok = true;

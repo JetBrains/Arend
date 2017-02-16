@@ -1,9 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.order;
 
-import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.Typecheckable;
-import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckingUnit;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.ClassViewInstanceProvider;
 
@@ -26,13 +24,11 @@ public class Ordering {
   private final Map<Typecheckable, DefState> myVertices = new HashMap<>();
   private final ClassViewInstanceProvider myInstanceProvider;
   private final DependencyListener myListener;
-  private final TypecheckerState myTypecheckerState;
   private final boolean myRefToHeaders;
 
-  public Ordering(ClassViewInstanceProvider instanceProvider, DependencyListener listener, TypecheckerState typecheckerState, boolean refToHeaders) {
+  public Ordering(ClassViewInstanceProvider instanceProvider, DependencyListener listener, boolean refToHeaders) {
     myInstanceProvider = instanceProvider;
     myListener = listener;
-    myTypecheckerState = typecheckerState;
     myRefToHeaders = refToHeaders;
   }
 
@@ -79,9 +75,8 @@ public class Ordering {
     if (definition instanceof Abstract.ClassView || definition instanceof Abstract.ClassViewField) {
       return;
     }
-    Definition typechecked = myTypecheckerState.getTypechecked(definition);
-    if (typechecked != null && !typechecked.status().needsTypeChecking()) {
-      myListener.alreadyTypechecked(typechecked);
+    if (!myListener.needsOrdering(definition)) {
+      myListener.alreadyTypechecked(definition);
       return;
     }
 
@@ -94,8 +89,7 @@ public class Ordering {
   private enum OrderResult { REPORTED, NOT_REPORTED, RECURSION_ERROR }
 
   private OrderResult updateState(DefState currentState, Typecheckable dependency) {
-    Definition typechecked = myTypecheckerState.getTypechecked(dependency.getDefinition());
-    if (typechecked != null && !typechecked.status().needsTypeChecking()) {
+    if (!myListener.needsOrdering(dependency.getDefinition())) {
       return OrderResult.REPORTED;
     }
 

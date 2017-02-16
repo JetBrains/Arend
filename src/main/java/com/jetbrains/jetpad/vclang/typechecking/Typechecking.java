@@ -18,14 +18,12 @@ import java.util.Collection;
 public class Typechecking {
   private final InstanceScopeProvider myScopeProvider;
   private final TypecheckingDependencyListener myDependencyListener;
-  private final TypecheckerState myState;
   private final StaticNamespaceProvider myStaticNsProvider;
   private final ErrorReporter myErrorReporter;
 
   public Typechecking(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, DependencyListener dependencyListener) {
     myDependencyListener = new TypecheckingDependencyListener(state, staticNsProvider, dynamicNsProvider, errorReporter, typecheckedReporter, dependencyListener);
     myScopeProvider = new InstanceScopeProvider(errorReporter);
-    myState = state;
     myStaticNsProvider = staticNsProvider;
     myErrorReporter = errorReporter;
   }
@@ -54,7 +52,7 @@ public class Typechecking {
     }
 
     myDependencyListener.setInstanceProvider(instanceProvider);
-    Ordering ordering = new Ordering(instanceProvider, myDependencyListener, myState, false);
+    Ordering ordering = new Ordering(instanceProvider, myDependencyListener, false);
     for (Abstract.ClassDefinition classDef : classDefs) {
       new OrderDefinitionVisitor(ordering).orderDefinition(classDef);
     }
@@ -63,7 +61,7 @@ public class Typechecking {
 
   private void typecheckDefinitions(final Collection<? extends Abstract.Definition> definitions, ClassViewInstanceProvider instanceProvider) {
     myDependencyListener.setInstanceProvider(instanceProvider);
-    Ordering ordering = new Ordering(instanceProvider, myDependencyListener, myState, false);
+    Ordering ordering = new Ordering(instanceProvider, myDependencyListener, false);
     for (Abstract.Definition definition : definitions) {
       ordering.doOrder(definition);
     }
