@@ -26,22 +26,10 @@ public class DataDefinition extends Definition {
   private SortMax mySorts;
   private boolean myMatchesOnInterval;
   private boolean myIsTruncated;
-  private boolean myTypeHasErrors;
-  private TypeCheckingStatus myHasErrors;
 
   public DataDefinition(Abstract.DataDefinition abstractDef) {
-    this(abstractDef, new SortMax(), EmptyDependentLink.getInstance());
-  }
-
-  public DataDefinition(Abstract.DataDefinition abstractDef, SortMax sorts, DependentLink parameters) {
-    super(abstractDef);
+    super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
     myConstructors = new ArrayList<>();
-    myParameters = parameters;
-    mySorts = sorts;
-    myMatchesOnInterval = false;
-    myIsTruncated = false;
-    myTypeHasErrors = parameters != null;
-    myHasErrors = myTypeHasErrors ? TypeCheckingStatus.HAS_ERRORS : TypeCheckingStatus.TYPE_CHECKING;
   }
 
   @Override
@@ -67,7 +55,7 @@ public class DataDefinition extends Definition {
 
   @Override
   public DependentLink getParameters() {
-    assert !typeHasErrors();
+    assert status().headerIsOK();
     return myParameters;
   }
 
@@ -82,7 +70,7 @@ public class DataDefinition extends Definition {
   public List<ConCallExpression> getMatchedConstructors(DataCallExpression dataCall) {
     List<ConCallExpression> result = new ArrayList<>();
     for (Constructor constructor : myConstructors) {
-      if (constructor.typeHasErrors())
+      if (!constructor.status().headerIsOK())
         continue;
       List<? extends Expression> matchedParameters;
       if (constructor.getPatterns() != null) {
@@ -139,7 +127,7 @@ public class DataDefinition extends Definition {
 
   @Override
   public TypeMax getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
-    if (typeHasErrors()) {
+    if (!status().headerIsOK()) {
       return null;
     }
 
@@ -157,27 +145,5 @@ public class DataDefinition extends Definition {
   @Override
   public DataCallExpression getDefCall(LevelArguments polyArguments, List<Expression> args) {
     return new DataCallExpression(this, polyArguments, args);
-  }
-
-  @Override
-  public boolean typeHasErrors() {
-    return myTypeHasErrors;
-  }
-
-  public void typeHasErrors(boolean has) {
-    myTypeHasErrors = has;
-    if (has) {
-      myHasErrors = TypeCheckingStatus.HAS_ERRORS;
-    }
-  }
-
-  @Override
-  public TypeCheckingStatus hasErrors() {
-    return myHasErrors;
-  }
-
-  @Override
-  public void hasErrors(TypeCheckingStatus status) {
-    myHasErrors = status;
   }
 }

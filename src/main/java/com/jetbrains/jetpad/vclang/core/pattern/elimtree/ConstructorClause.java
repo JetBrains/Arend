@@ -1,15 +1,15 @@
 package com.jetbrains.jetpad.vclang.core.pattern.elimtree;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
-import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +23,7 @@ public class ConstructorClause implements Clause {
   private final List<TypedBinding> myTailBindings;
 
   public ConstructorClause(Constructor constructor, DependentLink parameters, List<LevelBinding> polyParams, List<TypedBinding> tailBindings, BranchElimTreeNode parent) {
-    assert !constructor.typeHasErrors();
+    assert constructor.status().headerIsOK();
     myConstructor = constructor;
     myParameters = parameters;
     myPolyParams = polyParams;

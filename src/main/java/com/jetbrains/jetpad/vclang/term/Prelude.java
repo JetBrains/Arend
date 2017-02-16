@@ -78,13 +78,13 @@ public class Prelude {
         clause(RIGHT, EmptyDependentLink.getInstance(), ExpressionFactory.Reference(AT.getParameters().getNext().getNext())),
         ExpressionFactory.clause(ExpressionFactory.branch(param4, ExpressionFactory.tail(param4.getNext()),
             ExpressionFactory.clause(PATH_CON, atPath, ExpressionFactory.Apps(ExpressionFactory.Reference(atPath), ExpressionFactory.Reference(param4.getNext()))))))));
-      AT.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
+      AT.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     } else
     if (abstractDef.getName().equals("coe")) {
       COERCE = (FunctionDefinition) definition;
       COERCE.setElimTree(ExpressionFactory.top(COERCE.getParameters(), ExpressionFactory.branch(COERCE.getParameters().getNext().getNext(), ExpressionFactory.tail(),
         ExpressionFactory.clause(LEFT, EmptyDependentLink.getInstance(), Abstract.Definition.Arrow.RIGHT, ExpressionFactory.Reference(COERCE.getParameters().getNext())))));
-      COERCE.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
+      COERCE.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     } else
     if (abstractDef.getName().equals("iso")) {
       ISO = (FunctionDefinition) definition;
@@ -92,7 +92,7 @@ public class Prelude {
         clause(LEFT, EmptyDependentLink.getInstance(), ExpressionFactory.Reference(ISO.getParameters())),
         clause(RIGHT, EmptyDependentLink.getInstance(), ExpressionFactory.Reference(ISO.getParameters().getNext())))));
       ISO.setResultType(new PiUniverseType(EmptyDependentLink.getInstance(), new SortMax(new Sort(new Level(ISO.getPolyParams().get(0)), new Level(ISO.getPolyParams().get(1))))));
-      ISO.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
+      ISO.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     } else
     if (abstractDef.getName().equals("TrP")) {
       PROP_TRUNC = (DataDefinition) definition;

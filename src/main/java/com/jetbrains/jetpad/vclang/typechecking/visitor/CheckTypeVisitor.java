@@ -986,7 +986,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
 
     ClassDefinition baseClass = classCallExpr.getDefinition();
-    if (baseClass.hasErrors() == Definition.TypeCheckingStatus.HAS_ERRORS) {
+    if (!baseClass.status().bodyIsOK()) {
       LocalTypeCheckingError error = new HasErrors(baseClass.getAbstractDefinition(), expr);
       expr.setWellTyped(myContext, ExpressionFactory.Error(classCallExpr, error));
       myErrorReporter.report(error);

@@ -13,7 +13,10 @@ import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.ClassCall;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.param;
@@ -21,19 +24,13 @@ import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.param;
 public class ClassDefinition extends Definition {
   private FieldSet myFieldSet;
   private Set<ClassDefinition> mySuperClasses;
-  private boolean myHasErrors;
 
   private ClassField myEnclosingThisField = null;
 
   public ClassDefinition(Abstract.ClassDefinition abstractDef) {
-    this(abstractDef, new FieldSet(), new HashSet<ClassDefinition>());
-  }
-
-  public ClassDefinition(Abstract.ClassDefinition abstractDef, FieldSet fieldSet, Set<ClassDefinition> superClasses) {
-    super(abstractDef);
-    myFieldSet = fieldSet;
-    mySuperClasses = superClasses;
-    myHasErrors = false;
+    super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
+    myFieldSet = null;
+    mySuperClasses = null;
   }
 
   @Override
@@ -120,21 +117,6 @@ public class ClassDefinition extends Definition {
       myEnclosingThisField.setThisClass(this);
       myFieldSet.addField(myEnclosingThisField);
     }
-  }
-
-  @Override
-  public boolean typeHasErrors() {
-    return false;
-  }
-
-  @Override
-  public TypeCheckingStatus hasErrors() {
-    return myHasErrors ? TypeCheckingStatus.HAS_ERRORS : TypeCheckingStatus.NO_ERRORS;
-  }
-
-  @Override
-  public void hasErrors(TypeCheckingStatus status) {
-    myHasErrors = !TypeCheckingStatus.NO_ERRORS.equals(status);
   }
 
   public ClassField getEnclosingThisField() {

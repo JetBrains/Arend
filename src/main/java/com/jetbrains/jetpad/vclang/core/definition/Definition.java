@@ -16,9 +16,11 @@ public abstract class Definition implements Referable {
   private ClassDefinition myThisClass;
   private Abstract.Definition myAbstractDefinition;
   private Map<Integer, ClassField> myClassifyingFields = Collections.emptyMap();
+  private TypeCheckingStatus myStatus;
 
-  public Definition(Abstract.Definition abstractDef) {
+  public Definition(Abstract.Definition abstractDef, TypeCheckingStatus status) {
     myAbstractDefinition = abstractDef;
+    myStatus = status;
   }
 
   public String getName() {
@@ -70,10 +72,32 @@ public abstract class Definition implements Referable {
     return myPolyParams;
   }
 
-  public enum TypeCheckingStatus { HAS_ERRORS, NO_ERRORS, TYPE_CHECKING }
+  public enum TypeCheckingStatus {
+    HEADER_HAS_ERRORS, BODY_HAS_ERRORS, HEADER_NEEDS_TYPE_CHECKING, BODY_NEEDS_TYPE_CHECKING, HAS_ERRORS, NO_ERRORS;
 
-  // typeHasErrors should imply hasErrors != NO_ERRORS
-  public abstract boolean typeHasErrors();
-  public abstract TypeCheckingStatus hasErrors();
-  public abstract void hasErrors(TypeCheckingStatus status);
+    public boolean bodyIsOK() {
+      return this == HAS_ERRORS || this == NO_ERRORS;
+    }
+
+    public boolean headerIsOK() {
+      return this != HEADER_HAS_ERRORS && this != HEADER_NEEDS_TYPE_CHECKING;
+    }
+
+    public boolean needsTypeChecking() {
+      return this == HEADER_NEEDS_TYPE_CHECKING || this == BODY_NEEDS_TYPE_CHECKING;
+    }
+  }
+
+  public TypeCheckingStatus status() {
+    return myStatus;
+  }
+
+  public void setStatus(TypeCheckingStatus status) {
+    myStatus = status;
+  }
+
+  @Override
+  public String toString() {
+    return myAbstractDefinition.toString();
+  }
 }

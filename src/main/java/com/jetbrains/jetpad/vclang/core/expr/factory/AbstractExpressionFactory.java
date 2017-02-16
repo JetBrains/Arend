@@ -8,7 +8,7 @@ import java.util.List;
 public interface AbstractExpressionFactory {
   Abstract.Expression makeApp(Abstract.Expression fun, boolean explicit, Abstract.Expression arg);
   Abstract.Expression makeBinOp(Abstract.Expression left, Abstract.Definition defCall, Abstract.Expression right);
-  Abstract.Expression makeDefCall(Abstract.Expression expr, Abstract.ReferableSourceNode alias, Abstract.Definition definition);
+  Abstract.Expression makeDefCall(Abstract.Expression expr, Abstract.Definition definition);
   Abstract.Expression makeClassExt(Abstract.Expression expr, List<? extends Abstract.ClassFieldImpl> statements);
   Abstract.ClassFieldImpl makeImplementStatement(ClassField field, Abstract.Expression type, Abstract.Expression term);
   Abstract.Expression makeVar(String name);

@@ -51,47 +51,55 @@ public class NormalizationTest extends TypeCheckingTestCase {
   public NormalizationTest() throws IOException {
     DependentLink xPlus = param("x", Nat());
     DependentLink yPlus = param("y", Nat());
-    plus = new FunctionDefinition(null, params(xPlus, yPlus), Nat(), null);
+    plus = new FunctionDefinition(null);
+    plus.setParameters(params(xPlus, yPlus));
+    plus.setResultType(Nat());
 
     DependentLink xPlusMinusOne = param("x'", Nat());
     ElimTreeNode plusElimTree = top(xPlus, branch(xPlus, tail(yPlus),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Reference(yPlus)),
         clause(Prelude.SUC, xPlusMinusOne, Suc(FunCall(plus, new LevelArguments(), Reference(xPlusMinusOne), Reference(yPlus))))));
     plus.setElimTree(plusElimTree);
-    plus.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
+    plus.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
     DependentLink xMul = param("x", Nat());
     DependentLink yMul = param("y", Nat());
-    mul = new FunctionDefinition(null, params(xMul, yMul), Nat(), null);
+    mul = new FunctionDefinition(null);
+    mul.setParameters(params(xMul, yMul));
+    mul.setResultType(Nat());
     DependentLink xMulMinusOne = param("x'", Nat());
     ElimTreeNode mulElimTree = top(xMul, branch(xMul, tail(yMul),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Zero()),
         clause(Prelude.SUC, xMulMinusOne, FunCall(plus, new LevelArguments(), Reference(yMul), FunCall(mul, new LevelArguments(), Reference(xMulMinusOne), Reference(yMul))))
     ));
     mul.setElimTree(mulElimTree);
-    mul.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
+    mul.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
     DependentLink xFac = param("x", Nat());
-    fac = new FunctionDefinition(null, xFac, Nat(), null);
+    fac = new FunctionDefinition(null);
+    fac.setParameters(xFac);
+    fac.setResultType(Nat());
     DependentLink xFacMinusOne = param("x'", Nat());
     ElimTreeNode facElimTree = top(xFac, branch(xFac, tail(),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Suc(Zero())),
         clause(Prelude.SUC, xFacMinusOne, FunCall(mul, new LevelArguments(), Suc(Reference(xFacMinusOne)), FunCall(fac, new LevelArguments(), Reference(xFacMinusOne))))
     ));
     fac.setElimTree(facElimTree);
-    fac.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
+    fac.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
     DependentLink zNElim = param("z", Nat());
     DependentLink sNElim = param("s", Pi(param(Nat()), Pi(param(Nat()), Nat())));
     DependentLink xNElim = param("x", Nat());
-    nelim = new FunctionDefinition(null, params(zNElim, sNElim, xNElim), Nat(), null);
+    nelim = new FunctionDefinition(null);
+    nelim.setParameters(params(zNElim, sNElim, xNElim));
+    nelim.setResultType(Nat());
     DependentLink xNElimMinusOne = param("x'", Nat());
     ElimTreeNode nelimElimTree = top(zNElim, branch(xNElim, tail(),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Reference(zNElim)),
         clause(Prelude.SUC, xNElimMinusOne, Apps(Reference(sNElim), Reference(xNElimMinusOne), FunCall(nelim, new LevelArguments(), Reference(zNElim), Reference(sNElim), Reference(xNElimMinusOne))))
     ));
     nelim.setElimTree(nelimElimTree);
-    nelim.hasErrors(Definition.TypeCheckingStatus.NO_ERRORS);
+    nelim.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
   }
 
   private void initializeBDList() {

@@ -25,10 +25,17 @@ public class DefinitionStateSerialization {
     for (Abstract.Definition definition : state.getTypecheckedDefinitions()) {
       Definition typechecked = state.getTypechecked(definition);
       if (typechecked instanceof Constructor || typechecked instanceof ClassField) continue;
-      if (!typechecked.hasErrors().equals(Definition.TypeCheckingStatus.NO_ERRORS)) continue;
-      builder.putDefinition(myPersistenceProvider.getIdFor(definition), writeDefinition(typechecked, state));
+      builder.putDefinition(myPersistenceProvider.getIdFor(definition), writeDefinitionStub(typechecked, state));
     }
     return builder.build();
+  }
+
+  private DefinitionProtos.DefinitionStub writeDefinitionStub(Definition definition, LocalizedTypecheckerState<? extends SourceId>.LocalTypecheckerState state) {
+    DefinitionProtos.DefinitionStub.Builder out = DefinitionProtos.DefinitionStub.newBuilder();
+    if (definition.status() == Definition.TypeCheckingStatus.NO_ERRORS) {
+      out.setDefinition(writeDefinition(definition, state));
+    }
+    return out.build();
   }
 
   // TODO: HACK. Second parameter should not be needed
@@ -46,16 +53,12 @@ public class DefinitionStateSerialization {
 
     out.addAllClassifyingField(writeClassifyingFields(definition));
 
-    out.setHasErrors(Definition.TypeCheckingStatus.HAS_ERRORS.equals(definition.hasErrors()));
-
     if (definition instanceof ClassDefinition) {
       // type cannot possibly have errors
       out.setClass_(writeClassDefinition(defSerializer, (ClassDefinition) definition, state));
     } else if (definition instanceof DataDefinition) {
-      out.setTypeHasErrors(definition.typeHasErrors());
       out.setData(writeDataDefinition(defSerializer, (DataDefinition) definition));
     } else if (definition instanceof FunctionDefinition) {
-      out.setTypeHasErrors(definition.typeHasErrors());
       out.setFunction(writeFunctionDefinition(defSerializer, (FunctionDefinition) definition));
     } else {
       throw new IllegalStateException();
@@ -89,6 +92,7 @@ public class DefinitionStateSerialization {
     DefinitionProtos.Definition.DataData.Builder builder = DefinitionProtos.Definition.DataData.newBuilder();
 
     builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
+    builder.setSorts(defSerializer.writeSortMax(definition.getSorts()));
 
     for (Constructor constructor : definition.getConstructors()) {
       DefinitionProtos.Definition.DataData.Constructor.Builder cBuilder = DefinitionProtos.Definition.DataData.Constructor.newBuilder();
@@ -96,8 +100,6 @@ public class DefinitionStateSerialization {
         cBuilder.setPatterns(defSerializer.writePatterns(constructor.getPatterns()));
       }
       cBuilder.addAllParam(defSerializer.writeParameters(constructor.getParameters()));
-      cBuilder.setTypeHasErrors(constructor.typeHasErrors());
-      cBuilder.setHasErrors(Definition.TypeCheckingStatus.HAS_ERRORS.equals(constructor.hasErrors()));
 
       builder.putConstructors(myPersistenceProvider.getIdFor(constructor.getAbstractDefinition()), cBuilder.build());
     }

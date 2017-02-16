@@ -416,7 +416,7 @@ public class TypeCheckingElim {
         return new ExpandPatternErrorResult(error);
       }
 
-      if (constructor.typeHasErrors()) {
+      if (!constructor.status().headerIsOK()) {
         error = new HasErrors(constructor.getAbstractDefinition(), pattern);
         myVisitor.getErrorReporter().report(error);
         return new ExpandPatternErrorResult(error);

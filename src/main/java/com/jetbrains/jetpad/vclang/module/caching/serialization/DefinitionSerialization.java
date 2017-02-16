@@ -171,7 +171,7 @@ class DefinitionSerialization {
     return builder.build();
   }
 
-  private LevelProtos.SortMax writeSortMax(SortMax sort) {
+  LevelProtos.SortMax writeSortMax(SortMax sort) {
     LevelProtos.SortMax.Builder builder = LevelProtos.SortMax.newBuilder();
     builder.setPLevel(writeLevelMax(sort.getPLevel()));
     builder.setHLevel(writeLevelMax(sort.getHLevel()));

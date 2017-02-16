@@ -18,11 +18,12 @@ public class ClassField extends Definition {
   private Expression myType;
 
   public ClassField(Abstract.ClassField abstractDef, ClassDefinition thisClass) {
-    this(abstractDef, null, thisClass, null);
+    super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
+    setThisClass(thisClass);
   }
 
   public ClassField(Abstract.ClassField abstractDef, Expression type, ClassDefinition thisClass, DependentLink thisParameter) {
-    super(abstractDef);
+    super(abstractDef, TypeCheckingStatus.NO_ERRORS);
     myThisParameter = thisParameter;
     myType = type;
     setThisClass(thisClass);
@@ -54,21 +55,6 @@ public class ClassField extends Definition {
 
   public Expression getBaseType() {
     return myType;
-  }
-
-  @Override
-  public boolean typeHasErrors() {
-    return myType == null;
-  }
-
-  @Override
-  public TypeCheckingStatus hasErrors() {
-    return myType == null || myType.toError() != null ? TypeCheckingStatus.HAS_ERRORS : TypeCheckingStatus.NO_ERRORS;
-  }
-
-  @Override
-  public void hasErrors(TypeCheckingStatus status) {
-    throw new UnsupportedOperationException();
   }
 
   @Override

@@ -25,9 +25,9 @@ import java.util.Set;
 public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, Void>, ExpressionVisitor<ParameterVector, Void> {
   private Set<BaseCallMatrix<Definition>> myCollectedCalls = new HashSet<>();
   private FunctionDefinition myDefinition;
-  private Set<Definition> myCycle;
+  private Set<? extends Definition> myCycle;
 
-  CollectCallVisitor(FunctionDefinition def, Set<Definition> cycle) {
+  CollectCallVisitor(FunctionDefinition def, Set<? extends Definition> cycle) {
     myDefinition = def;
     myCycle = cycle;
     ParameterVector pv = new ParameterVector(def);
@@ -131,6 +131,7 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
     }
     return null;
   }
+
   @Override
   public Void visitBranch(BranchElimTreeNode node, ParameterVector vector) {
     for (ConstructorClause clause : node.getConstructorClauses()) {

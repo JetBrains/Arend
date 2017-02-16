@@ -86,7 +86,7 @@ public class Ordering {
       return;
     }
     Definition typechecked = myTypecheckerState.getTypechecked(definition);
-    if (typechecked != null) {
+    if (typechecked != null && !typechecked.status().needsTypeChecking()) {
       myListener.alreadyTypechecked(typechecked);
       return;
     }
@@ -97,22 +97,25 @@ public class Ordering {
     }
   }
 
-  private void updateState(DefState currentState, Typecheckable dependency) {
+  // updateState and doOrderRecursively return false only if the argument is a header and it was not reported as an SCC
+  private boolean updateState(DefState currentState, Typecheckable dependency) {
     Definition typechecked = myTypecheckerState.getTypechecked(dependency.getDefinition());
-    if (typechecked != null && typechecked.hasErrors() != Definition.TypeCheckingStatus.TYPE_CHECKING) {
-      return;
+    if (typechecked != null && !typechecked.status().needsTypeChecking()) {
+      return true;
     }
 
+    boolean ok = true;
     DefState state = myVertices.get(dependency);
     if (state == null) {
-      doOrderRecursively(dependency);
+      ok = doOrderRecursively(dependency);
       currentState.lowLink = Math.min(currentState.lowLink, myVertices.get(dependency).lowLink);
     } else if (state.onStack) {
       currentState.lowLink = Math.min(currentState.lowLink, state.index);
     }
+    return ok;
   }
 
-  private void doOrderRecursively(Typecheckable typecheckable) {
+  private boolean doOrderRecursively(Typecheckable typecheckable) {
     Abstract.Definition definition = typecheckable.getDefinition();
     Abstract.ClassDefinition enclosingClass = getEnclosingClass(definition);
     TypecheckingUnit unit = new TypecheckingUnit(typecheckable, enclosingClass);
@@ -125,10 +128,16 @@ public class Ordering {
     if (enclosingClass != null) {
       dependencies.add(enclosingClass);
     }
+
+    Typecheckable header = null;
     if (!typecheckable.isHeader() && Typecheckable.hasHeader(definition)) {
-      updateState(currentState, new Typecheckable(definition, true));
+      header = new Typecheckable(definition, true);
+      if (updateState(currentState, header)) {
+        header = null;
+      }
     }
 
+    boolean recursive = false;
     definition.accept(new DefinitionGetDepsVisitor(myInstanceProvider, dependencies), typecheckable.isHeader());
     for (Abstract.Definition referable : dependencies) {
       for (Abstract.Definition dependency : getTypecheckable(referable, enclosingClass)) {
@@ -137,6 +146,8 @@ public class Ordering {
             SCC scc = new SCC();
             scc.add(unit);
             throw new SCCException(scc);
+          } else {
+            recursive = true;
           }
         } else {
           myListener.dependsOn(typecheckable, dependency);
@@ -145,14 +156,33 @@ public class Ordering {
       }
     }
 
+    SCC scc = null;
     if (currentState.lowLink == currentState.index) {
-      SCC scc = new SCC();
+      scc = new SCC();
       do {
         unit = myStack.pop();
         myVertices.get(unit.getTypecheckable()).onStack = false;
         scc.add(unit);
-      } while (!unit.getDefinition().equals(definition));
+      } while (!unit.getTypecheckable().equals(typecheckable));
+
+      if (typecheckable.isHeader() && scc.getUnits().size() == 1) {
+        return false;
+      }
+      if (scc.getUnits().size() == 1) {
+        myListener.unitFound(unit, recursive);
+        return true;
+      }
+    }
+
+    if (header != null) {
+      SCC headerSCC = new SCC();
+      headerSCC.add(new TypecheckingUnit(header, enclosingClass));
+      myListener.sccFound(headerSCC);
+    }
+    if (scc != null) {
       myListener.sccFound(scc);
     }
+
+    return true;
   }
 }

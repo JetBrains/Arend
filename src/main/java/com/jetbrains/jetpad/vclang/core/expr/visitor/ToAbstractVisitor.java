@@ -79,7 +79,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     Expression fun = expr.getFunction();
     DefCallExpression defCall = fun.toDefCall();
 
-    if (!(defCall != null && new Name(defCall.getDefinition().getName()).fixity == Name.Fixity.INFIX)) {
+    if (defCall == null || new Name(defCall.getDefinition().getName()).fixity != Name.Fixity.INFIX) {
       return null;
     }
     boolean[] isExplicit = new boolean[defCall.getDefCallArguments().size() + expr.getArguments().size()];
@@ -167,12 +167,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     if (result != null) {
       return result;
     }
-    return visitArguments(myFactory.makeDefCall(null, expr.getDefinition().getAbstractDefinition(), expr.getDefinition().getAbstractDefinition()), expr, true);
+    return visitArguments(myFactory.makeDefCall(null, expr.getDefinition().getAbstractDefinition()), expr, true);
   }
 
   @Override
   public Abstract.Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    return myFactory.makeDefCall(expr.getExpression().accept(this, null), expr.getDefinition().getAbstractDefinition(), expr.getDefinition().getAbstractDefinition());
+    return myFactory.makeDefCall(expr.getExpression().accept(this, null), expr.getDefinition().getAbstractDefinition());
   }
 
   @Override
@@ -183,7 +183,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     }
 
     Abstract.Expression conParams = null;
-    if (!expr.getDefinition().typeHasErrors() && myFlags.contains(Flag.SHOW_CON_PARAMS) && (!expr.getDataTypeArguments().isEmpty() || myFlags.contains(Flag.SHOW_CON_DATA_TYPE))) {
+    if (expr.getDefinition().status().headerIsOK() && myFlags.contains(Flag.SHOW_CON_PARAMS) && (!expr.getDataTypeArguments().isEmpty() || myFlags.contains(Flag.SHOW_CON_DATA_TYPE))) {
       ExprSubstitution substitution = new ExprSubstitution();
       DependentLink link = expr.getDefinition().getDataTypeParameters();
       for (int i = 0; i < expr.getDataTypeArguments().size() && link.hasNext(); i++, link = link.getNext()) {
@@ -191,7 +191,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       }
       conParams = expr.getDefinition().getDataTypeExpression(substitution, expr.getPolyArguments()).accept(this, null);
     }
-    return visitArguments(myFactory.makeDefCall(conParams, expr.getDefinition().getAbstractDefinition(), expr.getDefinition().getAbstractDefinition()), expr, false);
+    return visitArguments(myFactory.makeDefCall(conParams, expr.getDefinition().getAbstractDefinition()), expr, false);
   }
 
   @Override
@@ -213,7 +213,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       }
     }
 
-    Abstract.Expression defCallExpr = myFactory.makeDefCall(enclExpr, expr.getDefinition().getAbstractDefinition(), expr.getDefinition().getAbstractDefinition());
+    Abstract.Expression defCallExpr = myFactory.makeDefCall(enclExpr, expr.getDefinition().getAbstractDefinition());
     if (statements.isEmpty()) {
       return defCallExpr;
     } else {

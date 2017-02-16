@@ -51,13 +51,13 @@ public class TypeCheckingDefCall {
     if (typeCheckedDefinition == null) {
       throw new IllegalStateException("Internal error: definition " + definition + " was not type checked");
     }
-    if (typeCheckedDefinition.typeHasErrors()) {
+    if (!typeCheckedDefinition.status().headerIsOK()) {
       LocalTypeCheckingError error = new HasErrors(definition, expr);
       expr.setWellTyped(myVisitor.getContext(), Error(null, error));
       myVisitor.getErrorReporter().report(error);
       return null;
     } else {
-      if (typeCheckedDefinition.hasErrors() == Definition.TypeCheckingStatus.HAS_ERRORS) {
+      if (typeCheckedDefinition.status() == Definition.TypeCheckingStatus.BODY_HAS_ERRORS) {
         myVisitor.getErrorReporter().report(new HasErrors(Error.Level.WARNING, definition, expr));
       }
       return typeCheckedDefinition;
@@ -181,13 +181,13 @@ public class TypeCheckingDefCall {
           myVisitor.getErrorReporter().report(error);
           return null;
         }
-        if (constructor != null && constructor.typeHasErrors()) {
+        if (constructor != null && !constructor.status().headerIsOK()) {
           LocalTypeCheckingError error = new HasErrors(constructor.getAbstractDefinition(), expr);
           expr.setWellTyped(myVisitor.getContext(), Error(null, error));
           myVisitor.getErrorReporter().report(error);
           return null;
         }
-        if (constructor != null && constructor.hasErrors() == Definition.TypeCheckingStatus.HAS_ERRORS) {
+        if (constructor != null && constructor.status() == Definition.TypeCheckingStatus.BODY_HAS_ERRORS) {
           myVisitor.getErrorReporter().report(new HasErrors(Error.Level.WARNING, constructor.getAbstractDefinition(), expr));
         }
       } else {
@@ -239,11 +239,13 @@ public class TypeCheckingDefCall {
       }
 
       if (typeCheckedDefinition == null) {
-        Scope scope = new NamespaceScope(myVisitor.getStaticNamespaceProvider().forDefinition(leftDefinition.getAbstractDefinition()));
-        if (leftDefinition instanceof ClassDefinition) {
-          scope = new OverridingScope(scope, new NamespaceScope(myVisitor.getDynamicNamespaceProvider().forClass(((ClassDefinition) leftDefinition).getAbstractDefinition())));
+        if (!(leftDefinition instanceof ClassField)) { // Some class fields do not have abstract definitions
+          Scope scope = new NamespaceScope(myVisitor.getStaticNamespaceProvider().forDefinition(leftDefinition.getAbstractDefinition()));
+          if (leftDefinition instanceof ClassDefinition) {
+            scope = new OverridingScope(scope, new NamespaceScope(myVisitor.getDynamicNamespaceProvider().forClass(((ClassDefinition) leftDefinition).getAbstractDefinition())));
+          }
+          member = scope.resolveName(name);
         }
-        member = scope.resolveName(name);
         if (member == null) {
           MemberNotFoundError error = new MemberNotFoundError(leftDefinition, name, expr);
           expr.setWellTyped(myVisitor.getContext(), Error(null, error));

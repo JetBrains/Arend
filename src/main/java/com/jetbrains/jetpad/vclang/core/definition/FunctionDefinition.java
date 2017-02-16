@@ -20,24 +20,10 @@ public class FunctionDefinition extends Definition implements Function {
   private DependentLink myParameters;
   private TypeMax myResultType;
   private ElimTreeNode myElimTree;
-  private boolean myTypeHasErrors;
-  private TypeCheckingStatus myHasErrors;
 
   public FunctionDefinition(Abstract.Definition abstractDef) {
-    super(abstractDef);
-    myTypeHasErrors = true;
-    myHasErrors = TypeCheckingStatus.TYPE_CHECKING;
+    super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
     myParameters = EmptyDependentLink.getInstance();
-  }
-
-  public FunctionDefinition(Abstract.Definition abstractDef, DependentLink parameters, TypeMax resultType, ElimTreeNode elimTree) {
-    super(abstractDef);
-    assert parameters != null;
-    myParameters = parameters;
-    myResultType = resultType;
-    myElimTree = elimTree;
-    myTypeHasErrors = resultType == null;
-    myHasErrors = myTypeHasErrors ? TypeCheckingStatus.HAS_ERRORS : myElimTree == null ? TypeCheckingStatus.TYPE_CHECKING : TypeCheckingStatus.NO_ERRORS;
   }
 
   @Override
@@ -72,27 +58,8 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   @Override
-  public boolean typeHasErrors() {
-    return myTypeHasErrors;
-  }
-
-  public void typeHasErrors(boolean has) {
-    myTypeHasErrors = has;
-  }
-
-  @Override
-  public TypeCheckingStatus hasErrors() {
-    return myHasErrors;
-  }
-
-  @Override
-  public void hasErrors(TypeCheckingStatus status) {
-    myHasErrors = status;
-  }
-
-  @Override
   public TypeMax getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
-    if (myTypeHasErrors) {
+    if (!status().headerIsOK()) {
       return null;
     }
     ExprSubstitution subst = new ExprSubstitution();

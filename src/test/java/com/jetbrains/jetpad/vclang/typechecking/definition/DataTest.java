@@ -51,7 +51,7 @@ public class DataTest extends TypeCheckingTestCase {
     parameters2.append(param(Apps(Reference(I), Reference(a), Reference(parameters2.getFirst()))));
 
     assertNotNull(typedDef);
-    assertEquals(Definition.TypeCheckingStatus.NO_ERRORS, typedDef.hasErrors());
+    assertEquals(Definition.TypeCheckingStatus.NO_ERRORS, typedDef.status());
     assertEquals(Pi(parameters.getFirst(), Universe(0, 0)), type.fromPiParameters(params).toExpression());
     assertEquals(2, typedDef.getConstructors().size());
 
@@ -105,7 +105,7 @@ public class DataTest extends TypeCheckingTestCase {
     parameters2.append(param(Reference(parameters2.getFirst())));
 
     assertNotNull(typedDef);
-    assertEquals(Definition.TypeCheckingStatus.NO_ERRORS, typedDef.hasErrors());
+    assertEquals(Definition.TypeCheckingStatus.NO_ERRORS, typedDef.status());
     assertEquals(Pi(A, Universe(6, 7)), type.fromPiParameters(params).toExpression());
     assertEquals(2, typedDef.getConstructors().size());
 
