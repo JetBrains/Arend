@@ -71,6 +71,10 @@ public class DefinitionCheckType {
     if (definition instanceof Abstract.DataDefinition) {
       DataDefinition dataDef = typechecked != null ? (DataDefinition) typechecked : new DataDefinition((Abstract.DataDefinition) definition);
       typeCheckDataHeader(dataDef, typedEnclosingClass, visitor, localInstancePool);
+      if (dataDef.getSorts() == null || dataDef.getSorts().getPLevel().isInfinity()) {
+        visitor.getErrorReporter().report(new LocalTypeCheckingError("Cannot infer the sort of a recursive data type", definition));
+        dataDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
+      }
       return dataDef;
     } else {
       throw new IllegalStateException();
@@ -82,7 +86,9 @@ public class DefinitionCheckType {
       typeCheckFunctionBody((FunctionDefinition) definition, exprVisitor);
     } else
     if (definition instanceof DataDefinition) {
-      typeCheckDataBody((DataDefinition) definition, exprVisitor);
+      if (!typeCheckDataBody((DataDefinition) definition, exprVisitor, false)) {
+        definition.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
+      }
     } else {
       throw new IllegalStateException();
     }
@@ -128,7 +134,7 @@ public class DefinitionCheckType {
       DataDefinition definition = typechecked != null ? (DataDefinition) typechecked : new DataDefinition((Abstract.DataDefinition) unit.getDefinition());
       typeCheckDataHeader(definition, enclosingClass, visitor, localInstancePool);
       if (definition.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
-        typeCheckDataBody(definition, visitor);
+        typeCheckDataBody(definition, visitor, true);
       }
       return definition;
     } else {
@@ -337,19 +343,18 @@ public class DefinitionCheckType {
     Abstract.DataDefinition def = dataDefinition.getAbstractDefinition();
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
       paramsOk = typeCheckParameters(def.getParameters(), def, visitor.getContext(), list, visitor, localInstancePool, classifyingFields);
-
-      if (def.getUniverse() != null) {
-        if (def.getUniverse() instanceof Abstract.UniverseExpression) {
-          TypeMax userType = visitor.checkFunOrDataType(def.getUniverse());
-          userSorts = userType == null ? SortMax.OMEGA : userType.toSorts();
-        } else {
-          String msg = "Specified type " + PrettyPrintVisitor.prettyPrint(def.getUniverse(), 0) + " of '" + def.getName() + "' is not a universe";
-          visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, def.getUniverse()));
-        }
-      }
     }
-    if (userSorts == null) {
-      userSorts = SortMax.OMEGA;
+
+    if (def.getUniverse() != null) {
+      if (def.getUniverse() instanceof Abstract.UniverseExpression) {
+        TypeMax userType = visitor.checkFunOrDataType(def.getUniverse());
+        if (userType != null) {
+          userSorts = userType.toSorts();
+        }
+      } else {
+        String msg = "Specified type " + PrettyPrintVisitor.prettyPrint(def.getUniverse(), 0) + " of '" + def.getName() + "' is not a universe";
+        visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, def.getUniverse()));
+      }
     }
 
     dataDefinition.setClassifyingFieldsOfParameters(classifyingFields);
@@ -368,14 +373,25 @@ public class DefinitionCheckType {
     }
   }
 
-  private static void typeCheckDataBody(DataDefinition dataDefinition, CheckTypeVisitor visitor) {
+  private static boolean typeCheckDataBody(DataDefinition dataDefinition, CheckTypeVisitor visitor, boolean polyHLevel) {
     Abstract.DataDefinition def = dataDefinition.getAbstractDefinition();
-    SortMax userSorts = def.getUniverse() != null ? dataDefinition.getSorts() : null;
-    SortMax inferredSorts = def.getConstructors().size() > 1 ? new SortMax(Sort.SET0) : new SortMax();
+    SortMax userSorts = dataDefinition.getSorts();
+    SortMax inferredSorts = new SortMax();
+    if (userSorts != null) {
+      if (!userSorts.getPLevel().isInfinity()) {
+        inferredSorts.addPLevel(userSorts.getPLevel());
+      }
+      if (!polyHLevel || !userSorts.getHLevel().isInfinity()) {
+        inferredSorts.addHLevel(userSorts.getHLevel());
+      }
+    }
     dataDefinition.setSorts(inferredSorts);
+    if (def.getConstructors().size() > 1) {
+      inferredSorts.add(Sort.SET0);
+    }
 
     boolean dataOk = true;
-    boolean universeOk = userSorts == null || userSorts.getPLevel() != null;
+    boolean universeOk = true;
     for (Abstract.Constructor constructor : def.getConstructors()) {
       visitor.getContext().clear();
       SortMax conSorts = new SortMax();
@@ -387,7 +403,7 @@ public class DefinitionCheckType {
 
       inferredSorts.add(conSorts);
       if (userSorts != null) {
-        if (!conSorts.isLessOrEquals(userSorts)) {
+        if (!def.isTruncated() && !conSorts.isLessOrEquals(userSorts)) {
           String msg = "Universe " + conSorts + " of constructor '" + constructor.getName() + "' is not compatible with expected universe " + userSorts;
           visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, constructor));
           universeOk = false;
@@ -426,26 +442,31 @@ public class DefinitionCheckType {
       for (Condition condition : dataDefinition.getConditions()) {
         if (condition.getElimTree().accept(new FindMatchOnIntervalVisitor(), null)) {
           dataDefinition.setMatchesOnInterval();
-          inferredSorts = new SortMax(inferredSorts.getPLevel(), LevelMax.INFINITY);
+          inferredSorts.addHLevel(LevelMax.INFINITY);
           break;
         }
       }
     }
 
-    if (universeOk && userSorts != null) {
-      boolean shouldBeTruncated = !inferredSorts.isLessOrEquals(userSorts);
-      if (!shouldBeTruncated || def.isTruncated()) {
-        if (!userSorts.isOmega()) {
-          inferredSorts = userSorts;
-          dataDefinition.isTruncated(shouldBeTruncated);
-        }
+    if (def.isTruncated()) {
+      if (userSorts == null) {
+        String msg = "The data type cannot be truncated since its universe is not specified";
+        visitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, msg, def));
       } else {
-        String msg = "Actual universe " + inferredSorts + " is not compatible with expected universe " + userSorts;
-        visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, def.getUniverse()));
+        if (inferredSorts.isLessOrEquals(userSorts)) {
+          String msg = "The data type will not be truncated since it already fits in the specified universe";
+          visitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, msg, def.getUniverse()));
+        } else {
+          dataDefinition.setIsTruncated(true);
+        }
       }
+    } else if (universeOk && userSorts != null && !inferredSorts.isLessOrEquals(userSorts)) {
+      String msg = "Actual universe " + inferredSorts + " is not compatible with expected universe " + userSorts;
+      visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, def.getUniverse()));
+      universeOk = false;
     }
 
-    dataDefinition.setSorts(inferredSorts);
+    return universeOk;
   }
 
   private static List<Constructor> typeCheckConditions(CheckTypeVisitor visitor, DataDefinition dataDefinition, Abstract.DataDefinition def) {

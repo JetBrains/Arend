@@ -362,39 +362,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       DependentLink args = visitArguments(arguments);
       Abstract.UniverseExpression uni = (Abstract.UniverseExpression)cod;
       if (args == null) return null;
-      /*LevelBinding lpParam = null;
-      LevelBinding lhParam = null;
-      if (genPolyParams != null) {
-        if (uni.getPLevel() == null) {
-          if (genPolyParams.size() > 0 && genPolyParams.get(0).getType() == LevelVariable.LvlType.PLVL) {
-            lpParam = genPolyParams.get(0);
-          } else if (genPolyParams.size() > 1 && genPolyParams.get(1).getType() == LevelVariable.LvlType.PLVL) {
-            lpParam = genPolyParams.get(1);
-          } else {
-            lpParam = new LevelBinding("\\lp", LevelVariable.LvlType.PLVL);
-            genPolyParams.add(lpParam);
-          }
-        }
-        if (uni.getHLevel() == Abstract.PolyUniverseExpression.NOT_TRUNCATED) {
-          if (genPolyParams.size() > 0 && genPolyParams.get(0).getType() == LevelVariable.LvlType.HLVL) {
-            lhParam = genPolyParams.get(0);
-          } else if (genPolyParams.size() > 1 && genPolyParams.get(1).getType() == LevelVariable.LvlType.HLVL) {
-            lhParam = genPolyParams.get(1);
-          } else {
-            lhParam = new LevelBinding("\\lh", LevelVariable.LvlType.HLVL);
-            genPolyParams.add(lhParam);
-          }
-        }
-        if (genPolyParams != null) {
-        assert genPolyParams.size() == 2;
-        if (uni.getPLevel() == null) {
-          genPolyParams.set(0, LevelBinding.PLVL_BND);
-        }
-        if (uni.getHLevel() == null) {
-          genPolyParams.set(1, LevelBinding.HLVL_BND);
-        }
-      }
-      } /**/
 
       if (maxAllowed) {
         LevelMax plevel = replaceInfinities && uni.getPLevel() == null ? new LevelMax(new Level(LevelBinding.PLVL_BND)) : typeCheckLevelMax(uni.getPLevel(), 0);
@@ -407,26 +374,26 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         myErrorReporter.report(new LocalTypeCheckingError("\'max\' can only be used in a result type", uni));
         return null;
       }
-      Level plevel;
-      Level hlevel;
+      Level pLevel;
+      Level hLevel;
 
       if (uni.getPLevel() == null) {
         if (!replaceInfinities) {
           myErrorReporter.report(new LocalTypeCheckingError("\\Type without level is not allowed in this context", uni));
           return null;
         }
-        plevel = new Level(LevelBinding.PLVL_BND);
+        pLevel = new Level(LevelBinding.PLVL_BND);
       } else {
-        plevel = typeCheckLevel(uni.getPLevel().get(0), 0);
+        pLevel = typeCheckLevel(uni.getPLevel().get(0), 0);
       }
 
       if (uni.getHLevel() == null) {
-        hlevel = !replaceInfinities ? Level.INFINITY : new Level(LevelBinding.HLVL_BND);
+        hLevel = !replaceInfinities ? Level.INFINITY : new Level(LevelBinding.HLVL_BND);
       } else {
-        hlevel = typeCheckLevel(uni.getHLevel().get(0), -1);
+        hLevel = typeCheckLevel(uni.getHLevel().get(0), -1);
       }
 
-      UniverseExpression universe = Universe(plevel, hlevel);
+      UniverseExpression universe = Universe(pLevel, hLevel);
       return !args.hasNext() ? universe :  Pi(args, universe);
     }
     Result result = typeCheck(type, TypeOmega.getInstance());
@@ -694,16 +661,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         if (name.equals("inf")) {
           return Level.INFINITY;
         }
-        if (!name.equals("suc")) {
-          LevelBinding var = LevelBinding.bindingByName(name);
-          if (var == null) {
-            return null;
-          }
-          return new Level(var, num_sucs);
-        }
-      } else if(expr instanceof Abstract.LPExpression) {
+      } else if (expr instanceof Abstract.LPExpression) {
         return new Level(LevelBinding.PLVL_BND, num_sucs);
-      } else if(expr instanceof Abstract.LHExpression) {
+      } else if (expr instanceof Abstract.LHExpression) {
         return new Level(LevelBinding.HLVL_BND, num_sucs);
       }
       error = new LocalTypeCheckingError("Invalid level expression", expr);
@@ -727,7 +687,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   }
 
   @Override
-  public Result visitPolyUniverse(Abstract.UniverseExpression expr, Type expectedType) {
+  public Result visitUniverse(Abstract.UniverseExpression expr, Type expectedType) {
     if (expr.getPLevel() != null && expr.getPLevel().size() != 1) {
       myErrorReporter.report(new LocalTypeCheckingError("\'max\' can only be used in a result type", expr));
       return null;

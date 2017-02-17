@@ -68,7 +68,7 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
   }
 
   @Override
-  public Boolean visitPolyUniverse(Abstract.UniverseExpression expr1, Abstract.Expression expr2) {
+  public Boolean visitUniverse(Abstract.UniverseExpression expr1, Abstract.Expression expr2) {
     if(!(expr2 instanceof Abstract.UniverseExpression)) {
       return false;
     }

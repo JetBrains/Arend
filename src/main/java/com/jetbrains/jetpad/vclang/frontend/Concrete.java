@@ -650,7 +650,7 @@ public final class Concrete {
 
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitPolyUniverse(this, params);
+      return visitor.visitUniverse(this, params);
     }
   }
 

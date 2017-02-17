@@ -37,10 +37,6 @@ public class SortMax {
     return myHLevel;
   }
 
-  public boolean isOmega() {
-    return myPLevel.isInfinity() && myHLevel.toLevel() != null;
-  }
-
   public SortMax max(SortMax sort) {
     return new SortMax(myPLevel.max(sort.getPLevel()), myHLevel.max(sort.getHLevel()));
   }
@@ -67,6 +63,14 @@ public class SortMax {
   public void add(SortMax sorts) {
     myPLevel.add(sorts.myPLevel);
     myHLevel.add(sorts.myHLevel);
+  }
+
+  public void addPLevel(LevelMax pLevel) {
+    myPLevel.add(pLevel);
+  }
+
+  public void addHLevel(LevelMax hLevel) {
+    myHLevel.add(hLevel);
   }
 
   public SortMax succ() {

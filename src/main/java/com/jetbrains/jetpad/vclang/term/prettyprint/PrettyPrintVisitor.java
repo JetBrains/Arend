@@ -47,7 +47,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       return true;
     }
     if (node instanceof Abstract.LetClause) {
-      prettyPrintLetClause((Abstract.LetClause) node);
+      prettyPrintLetClause((Abstract.LetClause) node, false);
       return true;
     }
     if (node instanceof Abstract.Condition) {
@@ -275,7 +275,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   @Override
-  public Void visitPolyUniverse(Abstract.UniverseExpression expr, Byte prec) {
+  public Void visitUniverse(Abstract.UniverseExpression expr, Byte prec) {
     boolean containsLH = false;
     if (expr.getHLevel() == null) {
       myBuilder.append("\\Type");
@@ -540,8 +540,11 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
   }
 
-  public void prettyPrintLetClause(final Abstract.LetClause letClause) {
-    myBuilder.append("| ").append(letClause.getName());
+  public void prettyPrintLetClause(final Abstract.LetClause letClause, boolean printPipe) {
+    if (printPipe) {
+      myBuilder.append("| ");
+    }
+    myBuilder.append(letClause.getName());
     for (Abstract.Argument arg : letClause.getArguments()) {
       myBuilder.append(" ");
       prettyPrintArgument(arg, Abstract.LetExpression.PREC);
@@ -583,7 +586,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     final int INDENT0 = let.length();
     myIndent += INDENT0;
     for (int i = 0; i < expr.getClauses().size(); ++i) {
-      prettyPrintLetClause(expr.getClauses().get(i));
+      prettyPrintLetClause(expr.getClauses().get(i), expr.getClauses().size() > 1);
       myBuilder.append("\n");
       if (i == expr.getClauses().size() - 1) {
         myIndent -= INDENT0;

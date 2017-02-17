@@ -49,7 +49,7 @@ public class DataDefinition extends Definition {
     return myIsTruncated;
   }
 
-  public void isTruncated(boolean value) {
+  public void setIsTruncated(boolean value) {
     myIsTruncated = value;
   }
 
