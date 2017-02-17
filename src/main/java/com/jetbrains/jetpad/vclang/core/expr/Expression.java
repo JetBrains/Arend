@@ -81,11 +81,11 @@ public abstract class Expression implements PrettyPrintable, Type {
 
   @Override
   public boolean findBinding(Referable binding) {
-    return this.<Void, Boolean>accept(new FindBindingVisitor(Collections.singleton(binding)), null);
+    return accept(new FindBindingVisitor(Collections.singleton(binding)), null) != null;
   }
 
-  public boolean findBinding(Set<? extends Referable> bindings) {
-    return this.<Void, Boolean>accept(new FindBindingVisitor(bindings), null);
+  public Referable findBinding(Set<? extends Referable> bindings) {
+    return this.accept(new FindBindingVisitor(bindings), null);
   }
 
   @Override

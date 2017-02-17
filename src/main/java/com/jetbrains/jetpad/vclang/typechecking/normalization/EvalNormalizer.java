@@ -98,6 +98,6 @@ public class EvalNormalizer implements Normalizer {
     for (LetClause clause : expression.getClauses()) {
       bindings.add(clause);
     }
-    return term.findBinding(bindings) ? Let(expression.getClauses(), term) : term;
+    return term.findBinding(bindings) != null ? Let(expression.getClauses(), term) : term;
   }
 }

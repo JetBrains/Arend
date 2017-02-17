@@ -81,12 +81,12 @@ public class DefinitionCheckType {
     }
   }
 
-  public static void typeCheckBody(Definition definition, CheckTypeVisitor exprVisitor) {
+  public static void typeCheckBody(Definition definition, CheckTypeVisitor exprVisitor, Set<DataDefinition> dataDefinitions) {
     if (definition instanceof FunctionDefinition) {
       typeCheckFunctionBody((FunctionDefinition) definition, exprVisitor);
     } else
     if (definition instanceof DataDefinition) {
-      if (!typeCheckDataBody((DataDefinition) definition, exprVisitor, false)) {
+      if (!typeCheckDataBody((DataDefinition) definition, exprVisitor, false, dataDefinitions)) {
         definition.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
       }
     } else {
@@ -134,7 +134,7 @@ public class DefinitionCheckType {
       DataDefinition definition = typechecked != null ? (DataDefinition) typechecked : new DataDefinition((Abstract.DataDefinition) unit.getDefinition());
       typeCheckDataHeader(definition, enclosingClass, visitor, localInstancePool);
       if (definition.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
-        typeCheckDataBody(definition, visitor, true);
+        typeCheckDataBody(definition, visitor, true, Collections.singleton(definition));
       }
       return definition;
     } else {
@@ -373,7 +373,7 @@ public class DefinitionCheckType {
     }
   }
 
-  private static boolean typeCheckDataBody(DataDefinition dataDefinition, CheckTypeVisitor visitor, boolean polyHLevel) {
+  private static boolean typeCheckDataBody(DataDefinition dataDefinition, CheckTypeVisitor visitor, boolean polyHLevel, Set<DataDefinition> dataDefinitions) {
     Abstract.DataDefinition def = dataDefinition.getAbstractDefinition();
     SortMax userSorts = dataDefinition.getSorts();
     SortMax inferredSorts = new SortMax();
@@ -395,7 +395,7 @@ public class DefinitionCheckType {
     for (Abstract.Constructor constructor : def.getConstructors()) {
       visitor.getContext().clear();
       SortMax conSorts = new SortMax();
-      Constructor typedConstructor = typeCheckConstructor(constructor, dataDefinition, visitor, conSorts);
+      Constructor typedConstructor = typeCheckConstructor(constructor, dataDefinition, visitor, conSorts, dataDefinitions);
       visitor.getTypecheckingState().record(constructor, typedConstructor);
       if (!typedConstructor.status().headerIsOK()) {
         dataOk = false;
@@ -573,7 +573,7 @@ public class DefinitionCheckType {
     return null;
   }
 
-  private static Constructor typeCheckConstructor(Abstract.Constructor def, DataDefinition dataDefinition, CheckTypeVisitor visitor, SortMax sorts) {
+  private static Constructor typeCheckConstructor(Abstract.Constructor def, DataDefinition dataDefinition, CheckTypeVisitor visitor, SortMax sorts, Set<DataDefinition> dataDefinitions) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(visitor.getContext())) {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
       String name = def.getName();
@@ -630,7 +630,7 @@ public class DefinitionCheckType {
           if (piParam instanceof UntypedDependentLink) {
             continue;
           }
-          if (!checkNonPositiveError(piParam.getType().toExpression(), dataDefinition, name, list.getFirst(), link, arguments, def, visitor.getErrorReporter())) {
+          if (!checkNonPositiveError(piParam.getType().toExpression(), name, list.getFirst(), link, arguments, def, visitor.getErrorReporter(), dataDefinitions)) {
             return constructor;
           }
         }
@@ -652,12 +652,12 @@ public class DefinitionCheckType {
               }
 
               for (Expression expr : exprs) {
-                if (!checkNonPositiveError(expr, dataDefinition, name, list.getFirst(), link, arguments, def, visitor.getErrorReporter())) {
+                if (!checkNonPositiveError(expr, name, list.getFirst(), link, arguments, def, visitor.getErrorReporter(), dataDefinitions)) {
                   return constructor;
                 }
               }
             } else {
-              if (!checkNonPositiveError(type.toExpression(), dataDefinition, name, list.getFirst(), link, arguments, def, visitor.getErrorReporter())) {
+              if (!checkNonPositiveError(type.toExpression(), name, list.getFirst(), link, arguments, def, visitor.getErrorReporter(), dataDefinitions)) {
                 return constructor;
               }
             }
@@ -674,8 +674,9 @@ public class DefinitionCheckType {
     }
   }
 
-  private static boolean checkNonPositiveError(Expression expr, DataDefinition dataDefinition, String name, DependentLink params, DependentLink param, List<? extends Abstract.Argument> args, Abstract.Constructor constructor, LocalErrorReporter errorReporter) {
-    if (!expr.findBinding(dataDefinition)) {
+  private static boolean checkNonPositiveError(Expression expr, String name, DependentLink params, DependentLink param, List<? extends Abstract.Argument> args, Abstract.Constructor constructor, LocalErrorReporter errorReporter, Set<DataDefinition> dataDefinitions) {
+    Referable def = expr.findBinding(dataDefinitions);
+    if (def == null) {
       return true;
     }
 
@@ -694,7 +695,7 @@ public class DefinitionCheckType {
       }
     }
 
-    String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + name;
+    String msg = "Non-positive recursive occurrence of data type " + ((DataDefinition) def).getName() + " in constructor " + name;
     errorReporter.report(new LocalTypeCheckingError(msg, argument == null ? constructor : argument));
     return false;
   }

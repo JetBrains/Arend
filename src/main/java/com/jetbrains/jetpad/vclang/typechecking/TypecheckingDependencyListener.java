@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.error.CompositeErrorReporter;
@@ -84,7 +85,13 @@ class TypecheckingDependencyListener implements DependencyListener {
     }
 
     boolean ok = typecheckHeaders(scc);
-    typecheckBodies(scc, ok);
+    List<Abstract.Definition> definitions = new ArrayList<>(scc.getUnits().size());
+    for (TypecheckingUnit unit : scc.getUnits()) {
+      if (!unit.isHeader()) {
+        definitions.add(unit.getDefinition());
+      }
+    }
+    typecheckBodies(definitions, ok);
 
     myDependencyListener.sccFound(scc);
   }
@@ -178,34 +185,38 @@ class TypecheckingDependencyListener implements DependencyListener {
     return ok;
   }
 
-  private void typecheckBodies(SCC scc, boolean headersAreOK) {
-    Set<FunctionDefinition> cycleDefs = new HashSet<>();
-    List<Pair<Abstract.Definition, Boolean>> results = new ArrayList<>(scc.getUnits().size());
-    for (TypecheckingUnit unit : scc.getUnits()) {
-      if (unit.isHeader()) {
-        continue;
+  private void typecheckBodies(List<Abstract.Definition> definitions, boolean headersAreOK) {
+    Set<FunctionDefinition> functionDefinitions = new HashSet<>();
+    Set<DataDefinition> dataDefinitions = new HashSet<>();
+    for (Abstract.Definition definition : definitions) {
+      Definition typechecked = myState.getTypechecked(definition);
+      if (typechecked instanceof DataDefinition) {
+        dataDefinitions.add((DataDefinition) typechecked);
       }
+    }
 
-      Suspension suspension = mySuspensions.remove(unit.getDefinition());
+    List<Pair<Abstract.Definition, Boolean>> results = new ArrayList<>(definitions.size());
+    for (Abstract.Definition definition : definitions) {
+      Suspension suspension = mySuspensions.remove(definition);
       if (headersAreOK && suspension != null) {
-        Definition def = myState.getTypechecked(unit.getDefinition());
-        DefinitionCheckType.typeCheckBody(def, suspension.visitor);
+        Definition def = myState.getTypechecked(definition);
+        DefinitionCheckType.typeCheckBody(def, suspension.visitor, dataDefinitions);
         if (def instanceof FunctionDefinition) {
-          cycleDefs.add((FunctionDefinition) def);
+          functionDefinitions.add((FunctionDefinition) def);
         }
       }
 
-      results.add(new Pair<>(unit.getDefinition(), suspension != null && suspension.countingErrorReporter.getErrorsNumber() == 0));
+      results.add(new Pair<>(definition, suspension != null && suspension.countingErrorReporter.getErrorsNumber() == 0));
     }
 
     boolean ok = true;
-    if (!cycleDefs.isEmpty()) {
+    if (!functionDefinitions.isEmpty()) {
       DefinitionCallGraph definitionCallGraph = new DefinitionCallGraph();
-      for (FunctionDefinition fDef : cycleDefs) definitionCallGraph.add(fDef, cycleDefs);
+      for (FunctionDefinition fDef : functionDefinitions) definitionCallGraph.add(fDef, functionDefinitions);
       DefinitionCallGraph callCategory = new DefinitionCallGraph(definitionCallGraph);
       if (!callCategory.checkTermination()) {
         ok = false;
-        for (FunctionDefinition fDef : cycleDefs) {
+        for (FunctionDefinition fDef : functionDefinitions) {
           fDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
         }
         for (Map.Entry<Definition, Set<RecursiveBehavior<Definition>>> entry : callCategory.myErrorInfo.entrySet()) {

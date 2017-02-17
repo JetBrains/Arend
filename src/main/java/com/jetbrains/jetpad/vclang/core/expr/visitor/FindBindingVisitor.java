@@ -15,7 +15,7 @@ import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVis
 import java.util.Map;
 import java.util.Set;
 
-public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> implements ElimTreeNodeVisitor<Void, Boolean> {
+public class FindBindingVisitor extends BaseExpressionVisitor<Void, Referable> implements ElimTreeNodeVisitor<Void, Referable> {
   private final Set<? extends Referable> myBindings;
 
   public FindBindingVisitor(Set<? extends Referable> binding) {
@@ -23,155 +23,184 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
   }
 
   @Override
-  public Boolean visitApp(AppExpression expr, Void params) {
-    if (expr.getFunction().<Void, Boolean>accept(this, null)) {
-      return true;
+  public Referable visitApp(AppExpression expr, Void params) {
+    Referable result = expr.getFunction().accept(this, null);
+    if (result != null) {
+      return result;
     }
     for (Expression argument : expr.getArguments()) {
-      if (argument.<Void, Boolean>accept(this, null)) {
-        return true;
+      result = argument.accept(this, null);
+      if (result != null) {
+        return result;
       }
     }
-    return false;
+    return null;
   }
 
   @Override
-  public Boolean visitDefCall(DefCallExpression expr, Void params) {
+  public Referable visitDefCall(DefCallExpression expr, Void params) {
     for (Expression arg : expr.getDefCallArguments()) {
-      if (arg.<Void, Boolean>accept(this, null)) {
-        return true;
+      Referable result = arg.accept(this, null);
+      if (result != null) {
+        return result;
       }
     }
-    return myBindings.contains(expr.getDefinition());
+    return myBindings.contains(expr.getDefinition()) ? expr.getDefinition() : null;
   }
 
   @Override
-  public Boolean visitConCall(ConCallExpression expr, Void params) {
+  public Referable visitConCall(ConCallExpression expr, Void params) {
     for (Expression arg : expr.getDataTypeArguments()) {
-      if (arg.<Void, Boolean>accept(this, null)) {
-        return true;
+      Referable result = arg.accept(this, null);
+      if (result != null) {
+        return result;
       }
     }
     return visitDefCall(expr, null);
   }
 
   @Override
-  public Boolean visitClassCall(ClassCallExpression expr, Void params) {
+  public Referable visitClassCall(ClassCallExpression expr, Void params) {
     for (Map.Entry<ClassField, FieldSet.Implementation> entry : expr.getImplementedHere()) {
-      if (entry.getValue().term.<Void, Boolean>accept(this, null)) return true;
+      Referable result = entry.getValue().term.accept(this, null);
+      if (result != null) {
+        return result;
+      }
     }
     return visitDefCall(expr, null);
   }
 
   @Override
-  public Boolean visitReference(ReferenceExpression expr, Void params) {
-    return myBindings.contains(expr.getBinding());
+  public Referable visitReference(ReferenceExpression expr, Void params) {
+    return myBindings.contains(expr.getBinding()) ? expr.getBinding() : null;
   }
 
   @Override
-  public Boolean visitInferenceReference(InferenceReferenceExpression expr, Void params) {
-    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : myBindings.contains(expr.getVariable());
+  public Referable visitInferenceReference(InferenceReferenceExpression expr, Void params) {
+    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : myBindings.contains(expr.getVariable()) ? expr.getVariable() : null;
   }
 
   @Override
-  public Boolean visitLam(LamExpression expr, Void params) {
-    return visitDependentLink(expr.getParameters()) || expr.getBody().accept(this, null);
+  public Referable visitLam(LamExpression expr, Void params) {
+    Referable result = visitDependentLink(expr.getParameters());
+    return result != null ? result : expr.getBody().accept(this, null);
   }
 
   @Override
-  public Boolean visitPi(PiExpression expr, Void params) {
-    return visitDependentLink(expr.getParameters()) || expr.getCodomain().accept(this, null);
+  public Referable visitPi(PiExpression expr, Void params) {
+    Referable result = visitDependentLink(expr.getParameters());
+    return result != null ? result : expr.getCodomain().accept(this, null);
   }
 
   @Override
-  public Boolean visitUniverse(UniverseExpression expr, Void params) {
-    return false;
+  public Referable visitUniverse(UniverseExpression expr, Void params) {
+    return null;
   }
 
   @Override
-  public Boolean visitError(ErrorExpression expr, Void params) {
-    return false;
+  public Referable visitError(ErrorExpression expr, Void params) {
+    return null;
   }
 
   @Override
-  public Boolean visitTuple(TupleExpression expr, Void params) {
+  public Referable visitTuple(TupleExpression expr, Void params) {
     for (Expression field : expr.getFields()) {
-      if (field.<Void, Boolean>accept(this, null)) return true;
+      Referable result = field.accept(this, null);
+      if (result != null) {
+        return result;
+      }
     }
-    return false;
+    return expr.getType().accept(this, null);
   }
 
   @Override
-  public Boolean visitSigma(SigmaExpression expr, Void params) {
+  public Referable visitSigma(SigmaExpression expr, Void params) {
     return visitDependentLink(expr.getParameters());
   }
 
   @Override
-  public Boolean visitProj(ProjExpression expr, Void params) {
+  public Referable visitProj(ProjExpression expr, Void params) {
     return expr.getExpression().accept(this, null);
   }
 
-  private boolean visitTypeExpression(Type type) {
+  private Referable visitTypeExpression(Type type) {
     if (type.toExpression() != null) {
-      return type.toExpression().<Void, Boolean>accept(this, null);
+      return type.toExpression().accept(this, null);
     }
     return visitDependentLink(type.getPiParameters());
   }
 
-  private boolean visitDependentLink(DependentLink link) {
+  private Referable visitDependentLink(DependentLink link) {
     for (; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
-      if (visitTypeExpression(link.getType())) {
-        return true;
+      Referable result = visitTypeExpression(link.getType());
+      if (result != null) {
+        return result;
       }
     }
-    return false;
+    return null;
   }
 
   @Override
-  public Boolean visitNew(NewExpression expr, Void params) {
+  public Referable visitNew(NewExpression expr, Void params) {
     return expr.getExpression().accept(this, null);
   }
 
   @Override
-  public Boolean visitLet(LetExpression letExpression, Void params) {
+  public Referable visitLet(LetExpression letExpression, Void params) {
     for (LetClause clause : letExpression.getClauses()) {
-      if (visitLetClause(clause)) return true;
+      Referable result = visitLetClause(clause);
+      if (result != null) {
+        return result;
+      }
     }
     return letExpression.getExpression().accept(this, null);
   }
 
   @Override
-  public Boolean visitOfType(OfTypeExpression expr, Void params) {
-    return expr.getExpression().accept(this, null) || visitTypeExpression(expr.getType());
+  public Referable visitOfType(OfTypeExpression expr, Void params) {
+    Referable result = expr.getExpression().accept(this, null);
+    return result != null ? result : visitTypeExpression(expr.getType());
   }
 
-  public boolean visitLetClause(LetClause clause) {
-    if (visitDependentLink(clause.getParameters())) return true;
-    if (clause.getResultType() != null && visitTypeExpression(clause.getResultType())) return true;
+  public Referable visitLetClause(LetClause clause) {
+    Referable result = visitDependentLink(clause.getParameters());
+    if (result != null) {
+      return result;
+    }
+    if (clause.getResultType() != null) {
+      result = visitTypeExpression(clause.getResultType());
+      if (result != null) {
+        return result;
+      }
+    }
     return clause.getElimTree().accept(this, null);
   }
 
   @Override
-  public Boolean visitBranch(BranchElimTreeNode branchNode, Void params) {
+  public Referable visitBranch(BranchElimTreeNode branchNode, Void params) {
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-      if (clause.getChild().<Void, Boolean>accept(this, null))
-        return true;
+      Referable result = clause.getChild().accept(this, null);
+      if (result != null) {
+        return result;
+      }
     }
     if (branchNode.getOtherwiseClause() != null) {
-      if (branchNode.getOtherwiseClause().getChild().accept(this, null))
-        return true;
+      Referable result = branchNode.getOtherwiseClause().getChild().accept(this, null);
+      if (result != null) {
+        return result;
+      }
     }
-    return false;
+    return null;
   }
 
   @Override
-  public Boolean visitLeaf(LeafElimTreeNode leafNode, Void params) {
+  public Referable visitLeaf(LeafElimTreeNode leafNode, Void params) {
     return leafNode.getExpression().accept(this, null);
   }
 
   @Override
-  public Boolean visitEmpty(EmptyElimTreeNode emptyNode, Void params) {
-    return false;
+  public Referable visitEmpty(EmptyElimTreeNode emptyNode, Void params) {
+    return null;
   }
 }
