@@ -142,7 +142,6 @@ literal : name                          # id
         | TRUNCATED_UNIVERSE            # truncatedUniverse
         | SET                           # set
         | '\\Prop'                      # prop
-        | 'Lvl'                         # lvl
         | '\\lp'                        # pParam
         | '\\lh'                        # hParam
         | '_'                           # unknown

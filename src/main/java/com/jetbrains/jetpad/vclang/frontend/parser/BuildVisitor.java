@@ -648,48 +648,43 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       String text = ctx.TRUNCATED_UNIVERSE_PREFIX().getText();
       int indexOfMinusSign = text.indexOf('-');
       hLevel = Integer.valueOf(text.substring(1, indexOfMinusSign));
-      return new Concrete.PolyUniverseExpression(tokenPosition(ctx.getStart()), visitLevelMaxExpr(ctx.levelMaxExpr()), hLevel);
+      return new Concrete.UniverseExpression(tokenPosition(ctx.getStart()), visitLevelMaxExpr(ctx.levelMaxExpr()), hLevel);
     }
-    return new Concrete.PolyUniverseExpression(tokenPosition(ctx.getStart()), visitLevelMaxExpr(ctx.levelMaxExpr()), null);
+    return new Concrete.UniverseExpression(tokenPosition(ctx.getStart()), visitLevelMaxExpr(ctx.levelMaxExpr()), null);
   }
 
   @Override
   public Concrete.Expression visitPolyUniverseWithLH(PolyUniverseWithLHContext ctx) {
-    return new Concrete.PolyUniverseExpression(tokenPosition(ctx.getStart()), visitLevelMaxExpr(ctx.levelMaxExpr(0)), visitLevelMaxExpr(ctx.levelMaxExpr(1)));
+    return new Concrete.UniverseExpression(tokenPosition(ctx.getStart()), visitLevelMaxExpr(ctx.levelMaxExpr(0)), visitLevelMaxExpr(ctx.levelMaxExpr(1)));
   }
 
   @Override
   public Concrete.Expression visitPolySet(PolySetContext ctx) {
-    return new Concrete.PolyUniverseExpression(tokenPosition(ctx.getStart()), visitLevelMaxExpr(ctx.levelMaxExpr()), Abstract.PolyUniverseExpression.SET);
+    return new Concrete.UniverseExpression(tokenPosition(ctx.getStart()), visitLevelMaxExpr(ctx.levelMaxExpr()), Abstract.UniverseExpression.SET);
   }
 
   @Override
-  public Concrete.PolyUniverseExpression visitUniverse(UniverseContext ctx) {
+  public Concrete.UniverseExpression visitUniverse(UniverseContext ctx) {
     int plevel = Integer.valueOf(ctx.UNIVERSE().getText().substring("\\Type".length()));
     Concrete.Position pos = tokenPosition(ctx.UNIVERSE().getSymbol());
-    return new Concrete.PolyUniverseExpression(pos, Collections.singletonList(new Concrete.NumericLiteral(pos, plevel)), null);
+    return new Concrete.UniverseExpression(pos, Collections.singletonList(new Concrete.NumericLiteral(pos, plevel)), null);
   }
 
   @Override
-  public Concrete.PolyUniverseExpression visitTruncatedUniverse(TruncatedUniverseContext ctx) {
+  public Concrete.UniverseExpression visitTruncatedUniverse(TruncatedUniverseContext ctx) {
     String text = ctx.TRUNCATED_UNIVERSE().getText();
     int indexOfMinusSign = text.indexOf('-');
     int plevel = Integer.valueOf(text.substring(indexOfMinusSign + "-Type".length()));
     int hlevel = Integer.valueOf(text.substring(1, indexOfMinusSign));
     Concrete.Position pos = tokenPosition(ctx.TRUNCATED_UNIVERSE().getSymbol());
-    return new Concrete.PolyUniverseExpression(pos, Collections.singletonList(new Concrete.NumericLiteral(pos, plevel)), hlevel);
+    return new Concrete.UniverseExpression(pos, Collections.singletonList(new Concrete.NumericLiteral(pos, plevel)), hlevel);
   }
 
   @Override
-  public Concrete.PolyUniverseExpression visitSet(SetContext ctx) {
+  public Concrete.UniverseExpression visitSet(SetContext ctx) {
     int plevel = Integer.valueOf(ctx.SET().getText().substring("\\Set".length()));
     Concrete.Position pos = tokenPosition(ctx.SET().getSymbol());
-    return new Concrete.PolyUniverseExpression(pos, Collections.singletonList(new Concrete.NumericLiteral(pos, plevel)), Abstract.PolyUniverseExpression.SET);
-  }
-
-  @Override
-  public Concrete.LvlExpression visitLvl(LvlContext ctx) {
-    return new Concrete.LvlExpression(tokenPosition(ctx.getStart()));
+    return new Concrete.UniverseExpression(pos, Collections.singletonList(new Concrete.NumericLiteral(pos, plevel)), Abstract.UniverseExpression.SET);
   }
 
   @Override
@@ -703,9 +698,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.PolyUniverseExpression visitProp(PropContext ctx) {
+  public Concrete.UniverseExpression visitProp(PropContext ctx) {
     Concrete.Position pos = tokenPosition(ctx.getStart());
-    return new Concrete.PolyUniverseExpression(pos, Collections.singletonList(new Concrete.NumericLiteral(pos, 0)), Abstract.PolyUniverseExpression.PROP);
+    return new Concrete.UniverseExpression(pos, Collections.singletonList(new Concrete.NumericLiteral(pos, 0)), Abstract.UniverseExpression.PROP);
   }
 
   private List<Concrete.TypeArgument> visitTeles(List<TeleContext> teles) {

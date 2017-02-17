@@ -189,16 +189,16 @@ public class ConcreteExpressionFactory {
     return new Concrete.Clause(POSITION, patterns, arrow, expr);
   }
 
-  public static Concrete.PolyUniverseExpression cUniverse(int level) {
+  public static Concrete.UniverseExpression cUniverse(int level) {
     return cUniverse(level, null);
   }
 
-  public static Concrete.PolyUniverseExpression cUniverse(Integer level, Integer truncated) {
+  public static Concrete.UniverseExpression cUniverse(Integer level, Integer truncated) {
     return cPolyUniverse(level == null ? null : Collections.singletonList(cNum(level)), truncated == null ? null : Collections.singletonList(cNum(truncated)));
   }
 
-  public static Concrete.PolyUniverseExpression cPolyUniverse(List<? extends Abstract.Expression> pLevel, List<? extends Abstract.Expression> hLevel) {
-    return new Concrete.PolyUniverseExpression(POSITION, pLevel, hLevel);
+  public static Concrete.UniverseExpression cPolyUniverse(List<? extends Abstract.Expression> pLevel, List<? extends Abstract.Expression> hLevel) {
+    return new Concrete.UniverseExpression(POSITION, pLevel, hLevel);
   }
 
   public static List<Concrete.Pattern> cPatterns(Concrete.Pattern... patterns) {

@@ -263,12 +263,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   @Override
-  public Void visitLvl(Abstract.LvlExpression expr, Byte params) {
-    myBuilder.append("Lvl");
-    return null;
-  }
-
-  @Override
   public Void visitLP(Abstract.LPExpression expr, Byte params) {
     myBuilder.append(LevelBinding.PLVL_BND.getName());
     return null;
@@ -281,7 +275,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   @Override
-  public Void visitPolyUniverse(Abstract.PolyUniverseExpression expr, Byte prec) {
+  public Void visitPolyUniverse(Abstract.UniverseExpression expr, Byte prec) {
     boolean containsLH = false;
     if (expr.getHLevel() == null) {
       myBuilder.append("\\Type");

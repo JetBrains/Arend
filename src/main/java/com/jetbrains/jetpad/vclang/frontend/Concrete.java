@@ -600,17 +600,6 @@ public final class Concrete {
     }
   }
 
-  public static class LvlExpression extends Expression implements Abstract.LvlExpression {
-    public LvlExpression(Position position) {
-      super(position);
-    }
-
-    @Override
-    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitLvl(this, params);
-    }
-  }
-
   public static class LPExpression extends Expression implements Abstract.LPExpression {
     public LPExpression(Position position) {
       super(position);
@@ -633,17 +622,17 @@ public final class Concrete {
     }
   }
 
-  public static class PolyUniverseExpression extends Expression implements Abstract.PolyUniverseExpression {
+  public static class UniverseExpression extends Expression implements Abstract.UniverseExpression {
     private final List<? extends Abstract.Expression> myPLevel;
     private final List<? extends Abstract.Expression> myHLevel;
 
-    public PolyUniverseExpression(Position position, List<? extends Abstract.Expression> pLevel, List<? extends Abstract.Expression> hLevel) {
+    public UniverseExpression(Position position, List<? extends Abstract.Expression> pLevel, List<? extends Abstract.Expression> hLevel) {
       super(position);
       myPLevel = pLevel;
       myHLevel = hLevel;
     }
 
-    public PolyUniverseExpression(Position position, List<? extends Abstract.Expression> pLevel, int hLevel) {
+    public UniverseExpression(Position position, List<? extends Abstract.Expression> pLevel, int hLevel) {
       super(position);
       myPLevel = pLevel;
       myHLevel = Collections.singletonList(new NumericLiteral(position, hLevel));

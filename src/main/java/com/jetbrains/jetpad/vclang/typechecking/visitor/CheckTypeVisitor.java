@@ -241,7 +241,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
   }
 
-  public CheckTypeVisitor(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ClassDefinition thisClass, Expression thisExpr, List<Binding> localContext, LocalErrorReporter errorReporter, ClassViewInstancePool pool) {
+  public CheckTypeVisitor(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, List<Binding> localContext, LocalErrorReporter errorReporter, ClassViewInstancePool pool) {
     myState = state;
     myStaticNsProvider = staticNsProvider;
     myDynamicNsProvider = dynamicNsProvider;
@@ -250,7 +250,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     myTypeCheckingDefCall = new TypeCheckingDefCall(this);
     myTypeCheckingElim = new TypeCheckingElim(this);
     myArgsInference = new StdImplicitArgsInference(this);
-    setThisClass(thisClass, thisExpr);
     myEquations = new TwoStageEquations(this);
     myClassViewInstancePool = pool;
   }
@@ -359,9 +358,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   private TypeMax typeMax(Abstract.Expression type, boolean replaceInfinities, boolean maxAllowed) {
     List<Abstract.TypeArgument> arguments = new ArrayList<>();
     Abstract.Expression cod = Abstract.getCodomain(type, arguments);
-    if (cod instanceof Abstract.PolyUniverseExpression) {
+    if (cod instanceof Abstract.UniverseExpression) {
       DependentLink args = visitArguments(arguments);
-      Abstract.PolyUniverseExpression uni = (Abstract.PolyUniverseExpression)cod;
+      Abstract.UniverseExpression uni = (Abstract.UniverseExpression)cod;
       if (args == null) return null;
       /*LevelBinding lpParam = null;
       LevelBinding lhParam = null;
@@ -657,11 +656,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   }
 
   @Override
-  public Result visitLvl(Abstract.LvlExpression expr, Type params) {
-    throw new IllegalStateException();
-  }
-
-  @Override
   public Result visitLP(Abstract.LPExpression expr, Type params) {
     throw new IllegalStateException();
   }
@@ -733,7 +727,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   }
 
   @Override
-  public Result visitPolyUniverse(Abstract.PolyUniverseExpression expr, Type expectedType) {
+  public Result visitPolyUniverse(Abstract.UniverseExpression expr, Type expectedType) {
     if (expr.getPLevel() != null && expr.getPLevel().size() != 1) {
       myErrorReporter.report(new LocalTypeCheckingError("\'max\' can only be used in a result type", expr));
       return null;

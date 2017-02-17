@@ -187,10 +187,6 @@ public final class Abstract {
     List<BinOpSequenceElem> getSequence();
   }
 
-  public interface LvlExpression extends Expression {
-    byte PREC = 12;
-  }
-
   public interface LPExpression extends Expression {
     byte PREC = 12;
   }
@@ -199,7 +195,7 @@ public final class Abstract {
     byte PREC = 12;
   }
 
-  public interface PolyUniverseExpression extends Expression {
+  public interface UniverseExpression extends Expression {
     byte PREC = 12;
 
     int PROP = -1;

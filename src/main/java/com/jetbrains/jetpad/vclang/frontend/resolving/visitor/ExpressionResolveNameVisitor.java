@@ -107,11 +107,6 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   }
 
   @Override
-  public Void visitLvl(Abstract.LvlExpression expr, Void params) {
-    return null;
-  }
-
-  @Override
   public Void visitLP(Abstract.LPExpression expr, Void params) {
     return null;
   }
@@ -122,7 +117,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   }
 
   @Override
-  public Void visitPolyUniverse(Abstract.PolyUniverseExpression expr, Void params) {
+  public Void visitPolyUniverse(Abstract.UniverseExpression expr, Void params) {
     if (expr.getPLevel() != null) {
       for (Abstract.Expression maxArg : expr.getPLevel()) {
         maxArg.accept(this, null);

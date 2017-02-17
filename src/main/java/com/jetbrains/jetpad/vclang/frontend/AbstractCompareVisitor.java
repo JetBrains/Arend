@@ -58,11 +58,6 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
   }
 
   @Override
-  public Boolean visitLvl(Abstract.LvlExpression expr1, Abstract.Expression expr2) {
-    return expr2 instanceof Abstract.LvlExpression;
-  }
-
-  @Override
   public Boolean visitLP(Abstract.LPExpression expr1, Abstract.Expression expr2) {
     return expr2 instanceof Abstract.LPExpression;
   }
@@ -73,18 +68,18 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
   }
 
   @Override
-  public Boolean visitPolyUniverse(Abstract.PolyUniverseExpression expr1, Abstract.Expression expr2) {
-    if(!(expr2 instanceof Abstract.PolyUniverseExpression)) {
+  public Boolean visitPolyUniverse(Abstract.UniverseExpression expr1, Abstract.Expression expr2) {
+    if(!(expr2 instanceof Abstract.UniverseExpression)) {
       return false;
     }
     if (expr1.getPLevel() == null) {
-      return ((Abstract.PolyUniverseExpression) expr2).getPLevel() == null;
+      return ((Abstract.UniverseExpression) expr2).getPLevel() == null;
     }
-    if (expr1.getPLevel().size() != ((Abstract.PolyUniverseExpression) expr2).getPLevel().size()) {
+    if (expr1.getPLevel().size() != ((Abstract.UniverseExpression) expr2).getPLevel().size()) {
       return false;
     }
     for (int i = 0; i < expr1.getPLevel().size(); ++i) {
-      if (!expr1.getPLevel().get(i).accept(this, ((Abstract.PolyUniverseExpression) expr2).getPLevel().get(i))) {
+      if (!expr1.getPLevel().get(i).accept(this, ((Abstract.UniverseExpression) expr2).getPLevel().get(i))) {
         return false;
       }
     }

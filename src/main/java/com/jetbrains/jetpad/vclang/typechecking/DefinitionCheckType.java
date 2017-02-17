@@ -89,7 +89,7 @@ public class DefinitionCheckType {
   }
 
   public static Definition typeCheck(TypecheckerState state, GlobalInstancePool instancePool, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckingUnit unit, boolean recursive, LocalErrorReporter errorReporter) {
-    CheckTypeVisitor visitor = new CheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, null, null, new ArrayList<Binding>(), errorReporter, instancePool);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, new ArrayList<Binding>(), errorReporter, instancePool);
     ClassDefinition enclosingClass = unit.getEnclosingClass() == null ? null : (ClassDefinition) state.getTypechecked(unit.getEnclosingClass());
     Definition typechecked = state.getTypechecked(unit.getDefinition());
 
@@ -141,52 +141,13 @@ public class DefinitionCheckType {
     return param("\\this", ClassCall(enclosingClass, (LevelArguments) null));
   }
 
-  /*
-  private static List<LevelBinding> typeCheckPolyParam(Abstract.TypeArgument typeArgument, Abstract.SourceNode node, LocalErrorReporter errorReporter) {
-    assert (typeArgument.getType() instanceof Abstract.LvlExpression);
-    if (!(typeArgument instanceof Abstract.TelescopeArgument)) {
-      errorReporter.report(new LocalTypeCheckingError("Parameter of type Lvl must have name", node));
-      return null;
-    }
-    Abstract.TelescopeArgument teleArgument = (Abstract.TelescopeArgument)typeArgument;
-    if (teleArgument.getExplicit()) {
-      errorReporter.report(new LocalTypeCheckingError("Polymorphic variables must be implicit", node));
-      return null;
-    }
-    List<LevelBinding> levels = new ArrayList<>();
-    for (String name : teleArgument.getNames()) {
-      levels.add(new LevelBinding(name, LevelVariable.LvlType.PLVL));
-    }
-    return levels;
-  } /**/
-
   private static boolean typeCheckParameters(List<? extends Abstract.Argument> arguments, Abstract.SourceNode node, List<Binding> context, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool, Map<Integer, ClassField> classifyingFields) {
     boolean ok = true;
     int index = 0;
 
     for (Abstract.Argument argument : arguments) {
       if (argument instanceof Abstract.TypeArgument) {
-        Abstract.TypeArgument typeArgument = (Abstract.TypeArgument)argument;
-
-        /* if (isPolyParam(typeArgument)) {
-          if (!polyParamsAllowed) {
-            visitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.ERROR, "Poly parameters must be declared in the beginning of a definition", argument));
-            ok = false;
-            continue;
-          }
-          List<LevelBinding> levelTeleParam = typeCheckPolyParam(typeArgument, node, visitor.getErrorReporter());
-          if (levelTeleParam == null) {
-            ok = false;
-            continue;
-          }
-          lvlContext.addAll(levelTeleParam);
-          polyParamsList.addAll(levelTeleParam);
-          ++index;
-          continue;
-        } else {
-          polyParamsAllowed = false;
-        } /**/
-
+        Abstract.TypeArgument typeArgument = (Abstract.TypeArgument) argument;
         Type paramType = visitor.checkParamType(typeArgument.getType());
         if (paramType == null) {
           ok = false;
@@ -228,7 +189,7 @@ public class DefinitionCheckType {
     return ok;
   }
 
-  private static void typeCheckFunctionHeader(FunctionDefinition typedDef, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
+  private static LinkList initializeThisParam(CheckTypeVisitor visitor, ClassDefinition enclosingClass) {
     LinkList list = new LinkList();
     if (enclosingClass != null) {
       DependentLink thisParam = createThisParam(enclosingClass);
@@ -236,6 +197,11 @@ public class DefinitionCheckType {
       list.append(thisParam);
       visitor.setThisClass(enclosingClass, Reference(thisParam));
     }
+    return list;
+  }
+
+  private static void typeCheckFunctionHeader(FunctionDefinition typedDef, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
+    LinkList list = initializeThisParam(visitor, enclosingClass);
 
     Map<Integer, ClassField> classifyingFields = new HashMap<>();
     Abstract.FunctionDefinition def = (Abstract.FunctionDefinition) typedDef.getAbstractDefinition();
@@ -363,13 +329,7 @@ public class DefinitionCheckType {
   }
 
   private static void typeCheckDataHeader(DataDefinition dataDefinition, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
-    LinkList list = new LinkList();
-    if (enclosingClass != null) {
-      DependentLink thisParam = createThisParam(enclosingClass);
-      visitor.getContext().add(thisParam);
-      list.append(thisParam);
-      visitor.setThisClass(enclosingClass, Reference(thisParam));
-    }
+    LinkList list = initializeThisParam(visitor, enclosingClass);
 
     Map<Integer, ClassField> classifyingFields = new HashMap<>();
     SortMax userSorts = null;
@@ -379,7 +339,7 @@ public class DefinitionCheckType {
       paramsOk = typeCheckParameters(def.getParameters(), def, visitor.getContext(), list, visitor, localInstancePool, classifyingFields);
 
       if (def.getUniverse() != null) {
-        if (def.getUniverse() instanceof Abstract.PolyUniverseExpression) {
+        if (def.getUniverse() instanceof Abstract.UniverseExpression) {
           TypeMax userType = visitor.checkFunOrDataType(def.getUniverse());
           userSorts = userType == null ? SortMax.OMEGA : userType.toSorts();
         } else {
