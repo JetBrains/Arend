@@ -156,30 +156,32 @@ public class Ordering {
 
     SCC scc = null;
     if (currentState.lowLink == currentState.index) {
-      scc = new SCC();
+      List<TypecheckingUnit> units = new ArrayList<>();
       do {
         unit = myStack.pop();
         myVertices.get(unit.getTypecheckable()).onStack = false;
-        scc.add(unit);
+        units.add(unit);
       } while (!unit.getTypecheckable().equals(typecheckable));
+      Collections.reverse(units);
+      scc = new SCC(units);
 
       if (myRefToHeaders) {
         myListener.sccFound(scc);
         return OrderResult.REPORTED;
       }
-      if (typecheckable.isHeader() && scc.getUnits().size() == 1) {
+
+      if (typecheckable.isHeader() && units.size() == 1) {
         return OrderResult.NOT_REPORTED;
       }
-      if (scc.getUnits().size() == 1) {
+
+      if (units.size() == 1) {
         myListener.unitFound(unit, recursion);
         return OrderResult.REPORTED;
       }
     }
 
     if (header != null) {
-      SCC headerSCC = new SCC();
-      headerSCC.add(new TypecheckingUnit(header, enclosingClass));
-      myListener.sccFound(headerSCC);
+      myListener.sccFound(new SCC(Collections.singletonList(new TypecheckingUnit(header, enclosingClass))));
     }
     if (scc != null) {
       myListener.sccFound(scc);

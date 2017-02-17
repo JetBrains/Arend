@@ -2,17 +2,17 @@ package com.jetbrains.jetpad.vclang.typechecking.order;
 
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckingUnit;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Collection;
+import java.util.List;
 
 public class SCC {
-  private final Set<TypecheckingUnit> myUnits = new HashSet<>();
+  private final List<TypecheckingUnit> myUnits;
 
-  public void add(TypecheckingUnit unit) {
-    myUnits.add(unit);
+  public SCC(List<TypecheckingUnit> units) {
+    myUnits = units;
   }
 
-  public Set<TypecheckingUnit> getUnits() {
+  public Collection<? extends TypecheckingUnit> getUnits() {
     return myUnits;
   }
 }
