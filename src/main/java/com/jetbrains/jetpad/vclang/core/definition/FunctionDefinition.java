@@ -63,7 +63,7 @@ public class FunctionDefinition extends Definition implements Function {
       return null;
     }
     ExprSubstitution subst = new ExprSubstitution();
-    LevelSubstitution polySubst = polyArguments.toLevelSubstitution(this);
+    LevelSubstitution polySubst = polyArguments.toLevelSubstitution();
     params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, subst, polySubst)));
     return myResultType.subst(subst, polySubst);
   }

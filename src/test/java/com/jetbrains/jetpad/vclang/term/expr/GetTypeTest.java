@@ -1,21 +1,20 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.sort.Level;
-import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
+import com.jetbrains.jetpad.vclang.core.sort.Level;
+import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -79,7 +78,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
   public void tupleTest() {
     TypeCheckClassResult result = typeCheckClass("\\function test : \\Sigma (x y : Nat) (x = y) => (0, 0, path (\\lam _ => 0))");
     DependentLink xy = param(true, vars("x", "y"), Nat());
-    testType(Sigma(params(xy, param(FunCall(Prelude.PATH_INFIX, new LevelArguments(Arrays.asList(new Level(0), new Level(1))), Nat(), Reference(xy), Reference(xy.getNext()))))), result);
+    testType(Sigma(params(xy, param(FunCall(Prelude.PATH_INFIX, new LevelArguments(new Level(0), new Level(1)), Nat(), Reference(xy), Reference(xy.getNext()))))), result);
   }
 
   @Test

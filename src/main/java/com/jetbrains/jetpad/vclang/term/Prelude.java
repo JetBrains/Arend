@@ -15,8 +15,6 @@ import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
-import java.util.List;
-
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Pi;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.clause;
 
@@ -60,14 +58,12 @@ public class Prelude {
     } else
     if (abstractDef.getName().equals("Path")) {
       PATH = (DataDefinition) definition;
-      List<LevelBinding> pathPolyParams = PATH.getPolyParams();
-      PATH.getParameters().setType(Pi(ExpressionFactory.Interval(), ExpressionFactory.Universe(new Sort(new Level(pathPolyParams.get(0)), new Level(pathPolyParams.get(1), 1)))));
+      PATH.getParameters().setType(Pi(ExpressionFactory.Interval(), ExpressionFactory.Universe(new Sort(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND, 1)))));
       PATH_CON = PATH.getConstructor("path");
     } else
     if (abstractDef.getName().equals("=")) {
       PATH_INFIX = (FunctionDefinition) definition;
-      List<LevelBinding> infixPolyParams = PATH_INFIX.getPolyParams();
-      PATH_INFIX.getParameters().setType(ExpressionFactory.Universe(new Sort(new Level(infixPolyParams.get(0)), new Level(infixPolyParams.get(1), 1))));
+      PATH_INFIX.getParameters().setType(ExpressionFactory.Universe(new Sort(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND, 1))));
     } else
     if (abstractDef.getName().equals("@")) {
       AT = (FunctionDefinition) definition;
@@ -91,7 +87,7 @@ public class Prelude {
       ISO.setElimTree(ExpressionFactory.top(ISO.getParameters(), ExpressionFactory.branch(ISO.getParameters().getNext().getNext().getNext().getNext().getNext().getNext(), ExpressionFactory.tail(),
         clause(LEFT, EmptyDependentLink.getInstance(), ExpressionFactory.Reference(ISO.getParameters())),
         clause(RIGHT, EmptyDependentLink.getInstance(), ExpressionFactory.Reference(ISO.getParameters().getNext())))));
-      ISO.setResultType(new PiUniverseType(EmptyDependentLink.getInstance(), new SortMax(new Sort(new Level(ISO.getPolyParams().get(0)), new Level(ISO.getPolyParams().get(1))))));
+      ISO.setResultType(new PiUniverseType(EmptyDependentLink.getInstance(), new SortMax(new Sort(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND)))));
       ISO.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     } else
     if (abstractDef.getName().equals("TrP")) {
@@ -101,7 +97,7 @@ public class Prelude {
     } else
     if (abstractDef.getName().equals("TrS")) {
       SET_TRUNC = (DataDefinition) definition;
-      SET_TRUNC.setSorts(new SortMax(Sort.SetOfLevel(new Level(SET_TRUNC.getPolyParams().get(0)))));
+      SET_TRUNC.setSorts(new SortMax(Sort.SetOfLevel(new Level(LevelBinding.PLVL_BND))));
       SET_TRUNC_PATH_CON = SET_TRUNC.getConstructor("truncS");
     }
   }

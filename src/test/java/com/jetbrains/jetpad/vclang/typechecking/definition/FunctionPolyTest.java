@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.definition;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.LevelMax;
@@ -8,9 +9,7 @@ import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
-import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 
 public class FunctionPolyTest extends TypeCheckingTestCase {
   @Test
@@ -33,38 +32,33 @@ public class FunctionPolyTest extends TypeCheckingTestCase {
   @Test
   public void funWithTypeOmega() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) => n = n");
-    assertThat(funDefinition.getPolyParams(), hasSize(2));
     assertEquals(Sort.PROP, funDefinition.getResultType().toSorts().toSort());
   }
 
   @Test
   public void funWithTypeOmegaExplicit() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) : \\Set0 => n = n");
-    assertThat(funDefinition.getPolyParams(), hasSize(2));
     assertEquals(Sort.SET0, funDefinition.getResultType().toSorts().toSort());
   }
 
   @Test
   public void funWithTypeOmegaExplicitRecursive() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) : \\Prop <= \\elim n | zero => 0 = 0 | suc n => f A n");
-    assertThat(funDefinition.getPolyParams(), hasSize(2));
     assertEquals(Sort.PROP, funDefinition.getResultType().toSorts().toSort());
   }
 
   @Test
   public void funWithTypeOmegaResultRecursive() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) : \\Type <= \\elim n | zero => \\Set0 | suc n => A");
-    assertThat(funDefinition.getPolyParams(), hasSize(2));
     assertEquals(new SortMax(
-        new LevelMax(new Level(funDefinition.getPolyParams().get(0))).max(new LevelMax(new Level(1))),
-        new LevelMax(new Level(funDefinition.getPolyParams().get(1))).max(new LevelMax(new Level(2)))), /* \Type (max \lp 1, max \lh 1) */
+        new LevelMax(new Level(LevelBinding.PLVL_BND)).max(new LevelMax(new Level(1))),
+        new LevelMax(new Level(LevelBinding.HLVL_BND)).max(new LevelMax(new Level(2)))), /* \Type (max \lp 1, max \lh 1) */
       funDefinition.getResultType().toSorts());
   }
 
   @Test
   public void funWithTypeOmegaExplicitSet() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) : \\Set0 => \\Sigma (n = n) Nat");
-    assertThat(funDefinition.getPolyParams(), hasSize(2));
     assertEquals(Sort.SET0, funDefinition.getResultType().toSorts().toSort());
   }
 
@@ -76,48 +70,42 @@ public class FunctionPolyTest extends TypeCheckingTestCase {
   @Test
   public void funOmega() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) => A");
-    assertThat(funDefinition.getPolyParams(), hasSize(2));
-    assertEquals(new SortMax(new Sort(new Level(funDefinition.getPolyParams().get(0)), new Level(funDefinition.getPolyParams().get(1)))), funDefinition.getResultType().toSorts());
+    assertEquals(new SortMax(new Sort(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND))), funDefinition.getResultType().toSorts());
   }
 
   @Test
   public void funOmegaExplicit() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) : \\Type => A");
-    assertThat(funDefinition.getPolyParams(), hasSize(2));
-    assertEquals(new SortMax(new Sort(new Level(funDefinition.getPolyParams().get(0)), new Level(funDefinition.getPolyParams().get(1)))), funDefinition.getResultType().toSorts());
+    assertEquals(new SortMax(new Sort(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND))), funDefinition.getResultType().toSorts());
   }
 
   @Test
   public void funOmegaProp() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) => \\Sigma A (n = n)");
-    assertThat(funDefinition.getPolyParams(), hasSize(2));
-    assertEquals(new SortMax(new Sort(new Level(funDefinition.getPolyParams().get(0)), new Level(funDefinition.getPolyParams().get(1)))), funDefinition.getResultType().toSorts());
+    assertEquals(new SortMax(new Sort(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND))), funDefinition.getResultType().toSorts());
   }
 
   @Test
   public void funOmegaPropExplicit() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) : \\Type => \\Sigma (n = n) A");
-    assertThat(funDefinition.getPolyParams(), hasSize(2));
-    assertEquals(new SortMax(new Sort(new Level(funDefinition.getPolyParams().get(0)), new Level(funDefinition.getPolyParams().get(1)))), funDefinition.getResultType().toSorts());
+    assertEquals(new SortMax(new Sort(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND))), funDefinition.getResultType().toSorts());
   }
 
   @Test
   public void funOmegaSet() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) => \\Sigma (n = n) A Nat");
-    assertThat(funDefinition.getPolyParams(), hasSize(2));
     assertEquals(new SortMax(
-        new LevelMax(new Level(funDefinition.getPolyParams().get(0))),
-        new LevelMax(new Level(funDefinition.getPolyParams().get(1))).max(new Level(1))), /* \Type (\lp, max \lh 0) */
+        new LevelMax(new Level(LevelBinding.PLVL_BND)),
+        new LevelMax(new Level(LevelBinding.HLVL_BND)).max(new Level(1))), /* \Type (\lp, max \lh 0) */
       funDefinition.getResultType().toSorts());
   }
 
   @Test
   public void funOmegaSetExplicit() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) : \\Type => \\Sigma (n = n) A Nat");
-    assertThat(funDefinition.getPolyParams(), hasSize(2));
     assertEquals(new SortMax(
-        new LevelMax(new Level(funDefinition.getPolyParams().get(0))),
-        new LevelMax(new Level(funDefinition.getPolyParams().get(1))).max(new Level(1))), /* \Type (\lp, max \lh 0) */
+        new LevelMax(new Level(LevelBinding.PLVL_BND)),
+        new LevelMax(new Level(LevelBinding.HLVL_BND)).max(new Level(1))), /* \Type (\lp, max \lh 0) */
       funDefinition.getResultType().toSorts());
   }
 }

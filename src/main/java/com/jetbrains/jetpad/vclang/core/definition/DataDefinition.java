@@ -132,7 +132,7 @@ public class DataDefinition extends Definition {
     }
 
     ExprSubstitution subst = new ExprSubstitution();
-    LevelSubstitution polySubst = polyArguments.toLevelSubstitution(this);
+    LevelSubstitution polySubst = polyArguments.toLevelSubstitution();
     params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, subst, polySubst)));
     return new PiUniverseType(EmptyDependentLink.getInstance(), mySorts).subst(subst, polySubst);
   }

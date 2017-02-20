@@ -1,27 +1,26 @@
 package com.jetbrains.jetpad.vclang.core.context.binding.inference;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 public class InferenceLevelVariable implements LevelVariable {
-  private final String myName;
+  private final LevelBinding myLevelBinding;
   private final Abstract.SourceNode mySourceNode;
-  private LvlType myType;
 
-  public InferenceLevelVariable(String name, LvlType type, Abstract.SourceNode sourceNode) {
-    myName = name;
-    myType = type;
+  public InferenceLevelVariable(LevelBinding lvl, Abstract.SourceNode sourceNode) {
+    myLevelBinding = lvl;
     mySourceNode = sourceNode;
   }
 
   @Override
   public String getName() {
-    return myName;
+    return myLevelBinding.getName();
   }
 
   @Override
   public LvlType getType() {
-    return myType;
+    return myLevelBinding.getType();
   }
 
   public Abstract.SourceNode getSourceNode() {
@@ -30,6 +29,6 @@ public class InferenceLevelVariable implements LevelVariable {
 
   @Override
   public String toString() {
-    return "?" + myName;
+    return "?" + myLevelBinding.getName().substring(1);
   }
 }

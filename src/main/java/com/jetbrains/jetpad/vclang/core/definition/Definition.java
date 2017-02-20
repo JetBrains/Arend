@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.DefCallExpression;
@@ -9,10 +8,12 @@ import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public abstract class Definition implements Referable {
-  protected List<LevelBinding> myPolyParams = new ArrayList<>();
   private ClassDefinition myThisClass;
   private Abstract.Definition myAbstractDefinition;
   private Map<Integer, ClassField> myClassifyingFields = Collections.emptyMap();
@@ -21,8 +22,6 @@ public abstract class Definition implements Referable {
   public Definition(Abstract.Definition abstractDef, TypeCheckingStatus status) {
     myAbstractDefinition = abstractDef;
     myStatus = status;
-    myPolyParams.add(LevelBinding.PLVL_BND);
-    myPolyParams.add(LevelBinding.HLVL_BND);
   }
 
   public String getName() {
@@ -64,14 +63,6 @@ public abstract class Definition implements Referable {
 
   public void setThisClass(ClassDefinition enclosingClass) {
     myThisClass = enclosingClass;
-  }
-
-  public void setPolyParams(List<LevelBinding> params) {
-    myPolyParams = params;
-  }
-
-  public List<LevelBinding> getPolyParams() {
-    return myPolyParams;
   }
 
   public enum TypeCheckingStatus {

@@ -8,11 +8,11 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
+import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -70,7 +70,7 @@ public class ClassDefinition extends Definition {
     if (getThisClass() != null) {
       params.add(param(ClassCall(getThisClass(), polyArguments)));
     }
-    return new PiUniverseType(EmptyDependentLink.getInstance(), getSorts().subst(polyArguments.toLevelSubstitution(this)));
+    return new PiUniverseType(EmptyDependentLink.getInstance(), getSorts().subst(polyArguments.toLevelSubstitution()));
   }
 
   @Override
@@ -83,37 +83,12 @@ public class ClassDefinition extends Definition {
     return new ClassCallExpression(this, polyArguments, myFieldSet);
   }
 
-  public List<LevelBinding> getEnclosingPolyParams() {
-    assert myEnclosingThisField != null;
-    int numEnclosingParams = myEnclosingThisField.getBaseType().toClassCall().getDefinition().getPolyParams().size();
-    List<LevelBinding> enclosingParams = new ArrayList<>();
-    for (int i = myPolyParams.size() - numEnclosingParams; i < myPolyParams.size(); ++i) {
-      enclosingParams.add(myPolyParams.get(i));
-    }
-    return enclosingParams;
-  }
-
   @Override
   public void setThisClass(ClassDefinition enclosingClass) {
     assert myEnclosingThisField == null;
     super.setThisClass(enclosingClass);
     if (enclosingClass != null) {
-      /*
-      for (LevelBinding param : enclosingClass.getPolyParams()) {
-        myPolyParams.add(new LevelBinding(param.getName(), param.getType()));
-      }
-
-      List<Level> enclosingArgs = new ArrayList<>();
-      List<Level> thisArgs = new ArrayList<>();
-
-      for (int i = 0; i < myPolyParams.size(); ++i) {
-        thisArgs.add(new Level(myPolyParams.get(i)));
-        if (i >= myPolyParams.size() - enclosingArgs.size()) {
-          enclosingArgs.add(new Level(myPolyParams.get(i)));
-        }
-      } /**/
-
-      myEnclosingThisField = new ClassField(null, ClassCall(enclosingClass, (LevelArguments) null), this, param("\\this", ClassCall(this, (LevelArguments) null)));
+      myEnclosingThisField = new ClassField(null, ClassCall(enclosingClass, new LevelArguments(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND))), this, param("\\this", ClassCall(this, new LevelArguments(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND)))));
       myEnclosingThisField.setThisClass(this);
       myFieldSet.addField(myEnclosingThisField);
     }

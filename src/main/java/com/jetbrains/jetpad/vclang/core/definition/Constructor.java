@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.core.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.core.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.EmptyElimTreeNode;
+import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
@@ -30,9 +31,6 @@ public class Constructor extends Definition implements Function {
     super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
     myDataType = dataType;
     myParameters = null;
-    if (dataType != null) {
-      setPolyParams(dataType.getPolyParams());
-    }
   }
 
   public Patterns getPatterns() {
@@ -54,11 +52,6 @@ public class Constructor extends Definition implements Function {
   public DependentLink getParameters() {
     assert myParameters != null;
     return myParameters;
-  }
-
-  @Override
-  public List<LevelBinding> getPolyParams() {
-    return myDataType.getPolyParams();
   }
 
   @Override
@@ -98,11 +91,12 @@ public class Constructor extends Definition implements Function {
     return getDataTypeExpression(null, polyParams);
   }
 
-  public Expression getDataTypeExpression(ExprSubstitution substitution, LevelArguments polyParams) {
+  public Expression getDataTypeExpression(ExprSubstitution substitution, LevelArguments polyArgs) {
     assert myParameters != null && myDataType.status().headerIsOK();
 
     List<Expression> arguments;
     if (myPatterns == null) {
+      // TODO: Why substitution is not applied?
       arguments = new ArrayList<>();
       for (DependentLink link = myDataType.getParameters(); link.hasNext(); link = link.getNext()) {
         arguments.add(ExpressionFactory.Reference(link));
@@ -111,7 +105,7 @@ public class Constructor extends Definition implements Function {
       ExprSubstitution subst = new ExprSubstitution();
 
       DependentLink dataTypeParams = myDataType.getParameters();
-      LevelSubstitution levelSubst = polyParams == null ? new LevelSubstitution() : new LevelSubstitution(myDataType.getPolyParams(), polyParams.getLevels());
+      LevelSubstitution levelSubst = polyArgs == null ? new LevelSubstitution() : polyArgs.toLevelSubstitution();
       arguments = new ArrayList<>(myPatterns.getPatterns().size());
       for (PatternArgument patternArg : myPatterns.getPatterns()) {
         ExprSubstitution innerSubst = new ExprSubstitution();
@@ -121,7 +115,8 @@ public class Constructor extends Definition implements Function {
           DataCallExpression dataCall = dataTypeParams.getType().toExpression().subst(subst).normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
           List<? extends Expression> argDataTypeParams = dataCall.getDefCallArguments();
           innerSubst = ((ConstructorPattern) patternArg.getPattern()).getMatchedArguments(new ArrayList<>(argDataTypeParams));
-          innerLevelSubst.add(new LevelSubstitution(((ConstructorPattern) patternArg.getPattern()).getConstructor().getPolyParams(), dataCall.getPolyArguments().getLevels()));
+          innerLevelSubst.add(LevelBinding.PLVL_BND, dataCall.getPolyArguments().getPLevel());
+          innerLevelSubst.add(LevelBinding.HLVL_BND, dataCall.getPolyArguments().getHLevel());
         }
 
         if (substitution != null) {
@@ -135,7 +130,11 @@ public class Constructor extends Definition implements Function {
       }
     }
 
-    return myDataType.getDefCall(polyParams, arguments);
+    if (polyArgs == null) {
+      polyArgs = new LevelArguments(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND));
+    }
+
+    return myDataType.getDefCall(polyArgs, arguments);
   }
 
   @Override
@@ -144,7 +143,7 @@ public class Constructor extends Definition implements Function {
       return null;
     }
 
-    LevelSubstitution polySubst = polyArguments.toLevelSubstitution(this);
+    LevelSubstitution polySubst = polyArguments.toLevelSubstitution();
     Expression resultType = getDataTypeExpression(polyArguments);
     DependentLink parameters = getDataTypeParameters();
     ExprSubstitution substitution = new ExprSubstitution();

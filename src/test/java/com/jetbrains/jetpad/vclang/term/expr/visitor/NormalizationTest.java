@@ -331,25 +331,23 @@ public class NormalizationTest extends TypeCheckingTestCase {
 
   @Test
   public void testIsoRight() {
-    LevelBinding lp = Prelude.PATH.getPolyParams().get(0);
-    LevelBinding lh = Prelude.PATH.getPolyParams().get(1);
-    DependentLink A = param("A", Universe(new Level(lp), new Level(lh)));
-    DependentLink B = param("B", Universe(new Level(lp), new Level(lh)));
+    DependentLink A = param("A", Universe(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND)));
+    DependentLink B = param("B", Universe(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND)));
     DependentLink f = param("f", Pi(param(Reference(A)), Reference(B)));
     DependentLink g = param("g", Pi(param(Reference(B)), Reference(A)));
     DependentLink a = param("a", Reference(A));
     DependentLink b = param("b", Reference(B));
-    Expression linvType = FunCall(Prelude.PATH_INFIX, new Level(lp), new Level(lh),
+    Expression linvType = FunCall(Prelude.PATH_INFIX, new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND),
         Reference(A),
         Apps(Reference(g), Apps(Reference(f), Reference(a))),
         Reference(a));
     DependentLink linv = param("linv", Pi(a, linvType));
-    Expression rinvType = FunCall(Prelude.PATH_INFIX, new Level(lp), new Level(lh),
+    Expression rinvType = FunCall(Prelude.PATH_INFIX, new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND),
         Reference(B),
         Apps(Reference(f), Apps(Reference(g), Reference(b))),
         Reference(b));
     DependentLink rinv = param("rinv", Pi(b, rinvType));
-    Expression iso_expr = FunCall(Prelude.ISO, new Level(lp), new Level(lh),
+    Expression iso_expr = FunCall(Prelude.ISO, new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND),
         Reference(A), Reference(B),
         Reference(f), Reference(g),
         Reference(linv), Reference(rinv),

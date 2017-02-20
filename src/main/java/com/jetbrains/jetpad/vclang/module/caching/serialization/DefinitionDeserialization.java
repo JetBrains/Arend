@@ -1,6 +1,9 @@
 package com.jetbrains.jetpad.vclang.module.caching.serialization;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.*;
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
+import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
+import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
@@ -25,7 +28,6 @@ import java.util.Map;
 class DefinitionDeserialization {
   private final CalltargetProvider.Typed myCalltargetProvider;
   private final List<Binding> myBindings = new ArrayList<>();  // de Bruijn indices
-  private final List<LevelBinding> myLvlBindings = new ArrayList<>();  // de Bruijn indices for level bindings
 
   DefinitionDeserialization(CalltargetProvider.Typed calltargetProvider) {
     myCalltargetProvider = calltargetProvider;
@@ -35,25 +37,20 @@ class DefinitionDeserialization {
   // Bindings
 
   private RollbackBindings checkpointBindings() {
-    return new RollbackBindings(myBindings.size(), myLvlBindings.size());
+    return new RollbackBindings(myBindings.size());
   }
 
   private class RollbackBindings implements AutoCloseable {
     private final int myTargetSize;
-    private final int myLvlTargetSize;
 
-    private RollbackBindings(int targetSize, int lvlTargetSize) {
+    private RollbackBindings(int targetSize) {
       myTargetSize = targetSize;
-      myLvlTargetSize = lvlTargetSize;
     }
 
     @Override
     public void close() {
       for (int i = myBindings.size() - 1; i >= myTargetSize; i--) {
         myBindings.remove(i);
-      }
-      for (int i = myLvlBindings.size() - 1; i >= myLvlTargetSize; i--) {
-        myLvlBindings.remove(i);
       }
     }
   }
@@ -62,27 +59,17 @@ class DefinitionDeserialization {
     myBindings.add(binding);
   }
 
-  private void registerLevelBinding(LevelBinding binding) {
-    myLvlBindings.add(binding);
-  }
-
   TypedBinding readTypedBinding(ExpressionProtos.Binding.TypedBinding proto) throws DeserializationError {
     TypedBinding typedBinding = new TypedBinding(proto.getName(), readType(proto.getType()));
     registerBinding(typedBinding);
     return typedBinding;
   }
 
-  LevelBinding readLevelBinding(ExpressionProtos.Binding.LevelBinding proto) throws DeserializationError {
-    LevelBinding lvlBinding = new LevelBinding(proto.getName(), proto.getType() == ExpressionProtos.Binding.LevelBinding.LvlType.PLVL ? LevelVariable.LvlType.PLVL : LevelVariable.LvlType.HLVL);
-    registerLevelBinding(lvlBinding);
-    return lvlBinding;
-  }
-
-  private Variable readBindingRef(int index, boolean isLevel) throws DeserializationError {
+  private Variable readBindingRef(int index) throws DeserializationError {
     if (index == 0) {
       return null;
     } else {
-      Variable binding = isLevel ? myLvlBindings.get(index - 1) : myBindings.get(index - 1);
+      Variable binding = myBindings.get(index - 1);
       if (binding == null) {
         throw new DeserializationError("Trying to read a reference to an unregistered binding");
       }
@@ -129,7 +116,20 @@ class DefinitionDeserialization {
   // Sorts and levels
 
   private Level readLevel(LevelProtos.Level proto) throws DeserializationError {
-    Variable var = readBindingRef(proto.getBindingRef(), true);
+    Variable var;
+    switch (proto.getVariable()) {
+      case NO_VAR:
+        var = null;
+        break;
+      case PLVL:
+        var = LevelBinding.PLVL_BND;
+        break;
+      case HLVL:
+        var = LevelBinding.HLVL_BND;
+        break;
+      default: throw new DeserializationError("Unrecognized level variable");
+    }
+
     int constant = proto.getConstant();
     if (var == null && constant == -1) {
       return Level.INFINITY;
@@ -154,12 +154,8 @@ class DefinitionDeserialization {
     return new SortMax(readLevelMax(proto.getPLevel()), readLevelMax(proto.getHLevel()));
   }
 
-  private LevelArguments readPolyArguments(List<LevelProtos.Level> protos) throws DeserializationError {
-    List<Level> levels = new ArrayList<>();
-    for (LevelProtos.Level proto : protos) {
-      levels.add(readLevel(proto));
-    }
-    return new LevelArguments(levels);
+  private LevelArguments readPolyArguments(LevelProtos.Level pProto, LevelProtos.Level hProto) throws DeserializationError {
+    return new LevelArguments(readLevel(pProto), readLevel(hProto));
   }
 
 
@@ -305,24 +301,24 @@ class DefinitionDeserialization {
   }
 
   private FunCallExpression readFunCall(ExpressionProtos.Expression.FunCall proto) throws DeserializationError {
-    return new FunCallExpression(myCalltargetProvider.getCalltarget(proto.getFunRef(), FunctionDefinition.class), readPolyArguments(proto.getPolyArgumentsList()), readExprList(proto.getArgumentList()));
+    return new FunCallExpression(myCalltargetProvider.getCalltarget(proto.getFunRef(), FunctionDefinition.class), new LevelArguments(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExprList(proto.getArgumentList()));
   }
 
   private ConCallExpression readConCall(ExpressionProtos.Expression.ConCall proto) throws DeserializationError {
-    return new ConCallExpression(myCalltargetProvider.getCalltarget(proto.getConstructorRef(), Constructor.class), readPolyArguments(proto.getPolyArgumentsList()),
+    return new ConCallExpression(myCalltargetProvider.getCalltarget(proto.getConstructorRef(), Constructor.class), new LevelArguments(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())),
         readExprList(proto.getDatatypeArgumentList()), readExprList(proto.getArgumentList()));
   }
 
   private DataCallExpression readDataCall(ExpressionProtos.Expression.DataCall proto) throws DeserializationError {
-    return new DataCallExpression(myCalltargetProvider.getCalltarget(proto.getDataRef(), DataDefinition.class), readPolyArguments(proto.getPolyArgumentsList()), readExprList(proto.getArgumentList()));
+    return new DataCallExpression(myCalltargetProvider.getCalltarget(proto.getDataRef(), DataDefinition.class), new LevelArguments(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExprList(proto.getArgumentList()));
   }
 
   private ClassCallExpression readClassCall(ExpressionProtos.Expression.ClassCall proto) throws DeserializationError {
-    return new ClassCallExpression(myCalltargetProvider.getCalltarget(proto.getClassRef(), ClassDefinition.class), readPolyArguments(proto.getPolyArgumentsList()), readFieldSet(proto.getFieldSet()));
+    return new ClassCallExpression(myCalltargetProvider.getCalltarget(proto.getClassRef(), ClassDefinition.class), new LevelArguments(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readFieldSet(proto.getFieldSet()));
   }
 
   private ReferenceExpression readReference(ExpressionProtos.Expression.Reference proto) throws DeserializationError {
-    return new ReferenceExpression((Binding)readBindingRef(proto.getBindingRef(), false));
+    return new ReferenceExpression((Binding)readBindingRef(proto.getBindingRef()));
   }
 
   private LamExpression readLam(ExpressionProtos.Expression.Lam proto) throws DeserializationError {
@@ -381,21 +377,17 @@ class DefinitionDeserialization {
   private BranchElimTreeNode readBranch(ExpressionProtos.ElimTreeNode.Branch proto) throws DeserializationError {
     List<Binding> contextTail = new ArrayList<>();
     for (int ref : proto.getContextTailItemRefList()) {
-      contextTail.add((Binding)readBindingRef(ref, false));
+      contextTail.add((Binding)readBindingRef(ref));
     }
-    BranchElimTreeNode result = new BranchElimTreeNode((Binding)readBindingRef(proto.getReferenceRef(), false), contextTail);
+    BranchElimTreeNode result = new BranchElimTreeNode((Binding)readBindingRef(proto.getReferenceRef()), contextTail);
     for (Map.Entry<Integer, ExpressionProtos.ElimTreeNode.ConstructorClause> entry : proto.getConstructorClausesMap().entrySet()) {
       ExpressionProtos.ElimTreeNode.ConstructorClause cProto = entry.getValue();
-      List<LevelBinding> polyParams = new ArrayList<>();
-      for (ExpressionProtos.Binding.LevelBinding levelBinding : cProto.getPolyParamList()) {
-        polyParams.add(readLevelBinding(levelBinding));
-      }
       DependentLink constructorParams = readParameters(cProto.getParamList());
       List<TypedBinding> tailBindings = new ArrayList<>();
       for (ExpressionProtos.Binding.TypedBinding bProto : cProto.getTailBindingList()) {
         tailBindings.add(readTypedBinding(bProto));
       }
-      result.addClause(myCalltargetProvider.getCalltarget(entry.getKey(), Constructor.class), constructorParams, polyParams, tailBindings, readElimTree(cProto.getChild()));
+      result.addClause(myCalltargetProvider.getCalltarget(entry.getKey(), Constructor.class), constructorParams, tailBindings, readElimTree(cProto.getChild()));
     }
     if (proto.hasOtherwiseClause()) {
       result.addOtherwiseClause(readElimTree(proto.getOtherwiseClause()));
@@ -406,7 +398,7 @@ class DefinitionDeserialization {
   private LeafElimTreeNode readLeaf(ExpressionProtos.ElimTreeNode.Leaf proto) throws DeserializationError {
     List<Binding> context = new ArrayList<>();
     for (int ref : proto.getMatchedRefList()) {
-      context.add((Binding)readBindingRef(ref, false));
+      context.add((Binding)readBindingRef(ref));
     }
     LeafElimTreeNode result = new LeafElimTreeNode(proto.getArrowLeft() ? Abstract.Definition.Arrow.LEFT : Abstract.Definition.Arrow.RIGHT, readExpr(proto.getExpr()));
     result.setMatched(context);

@@ -121,7 +121,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return visitConstructorCall(defCallExpr.toConCall(), mode);
     }
     if (defCallExpr.getDefinition() instanceof Function) {
-      return visitFunctionCall((Function) defCallExpr.getDefinition(), defCallExpr.getPolyArguments().toLevelSubstitution(defCallExpr.getDefinition()), expr, mode); //.subst(defCallExpr.getPolyParamsSubst());
+      return visitFunctionCall((Function) defCallExpr.getDefinition(), defCallExpr.getPolyArguments().toLevelSubstitution(), expr, mode); //.subst(defCallExpr.getPolyParamsSubst());
     }
 
     return mode == Mode.TOP ? null : applyDefCall(expr, mode);
@@ -142,7 +142,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       expr = ConCall(expr.getDefinition(), expr.getPolyArguments(), parameters, args.subList(take, args.size()));
     }
 
-    return visitFunctionCall(expr.getDefinition(), expr.getPolyArguments().toLevelSubstitution(expr.getDefinition()), expr, mode);
+    return visitFunctionCall(expr.getDefinition(), expr.getPolyArguments().toLevelSubstitution(), expr, mode);
   }
 
   private Expression visitFunctionCall(Function func, LevelSubstitution polySubst, Expression expr, Mode mode) {

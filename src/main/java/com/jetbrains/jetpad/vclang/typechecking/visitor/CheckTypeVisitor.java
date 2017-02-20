@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.LinkList;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.ExpressionInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
@@ -123,8 +122,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
       for (DependentLink parameter : myParameters) {
         if (parameter.getType().toExpression() == null) {
-          InferenceLevelVariable pLvl = new InferenceLevelVariable("plvl-of-" + parameter.getName(), LevelVariable.LvlType.PLVL, expr);
-          InferenceLevelVariable hLvl = new InferenceLevelVariable("hlvl-of-" + parameter.getName(), LevelVariable.LvlType.HLVL, expr);
+          InferenceLevelVariable pLvl = new InferenceLevelVariable(LevelBinding.PLVL_BND, expr);
+          InferenceLevelVariable hLvl = new InferenceLevelVariable(LevelBinding.HLVL_BND, expr);
           equations.addVariable(pLvl);
           equations.addVariable(hLvl);
           Expression type = ExpressionFactory.Universe(new Level(pLvl), new Level(hLvl));
@@ -570,8 +569,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
             piLamSubst.add(piLink, ExpressionFactory.Reference(link));
           } else {
             if (argType == null) {
-              InferenceLevelVariable pLvl = new InferenceLevelVariable("plvl-of-" + name, LevelVariable.LvlType.PLVL, expr);
-              InferenceLevelVariable hLvl = new InferenceLevelVariable("hlvl-of-" + name, LevelVariable.LvlType.HLVL, expr);
+              InferenceLevelVariable pLvl = new InferenceLevelVariable(LevelBinding.PLVL_BND, expr);
+              InferenceLevelVariable hLvl = new InferenceLevelVariable(LevelBinding.HLVL_BND, expr);
               myEquations.addVariable(pLvl);
               myEquations.addVariable(hLvl);
               InferenceVariable inferenceVariable = new LambdaInferenceVariable("type-of-" + name, ExpressionFactory.Universe(new Level(pLvl), new Level(hLvl)), argIndex, expr, false);

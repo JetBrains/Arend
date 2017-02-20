@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
@@ -36,11 +35,6 @@ public class ClassField extends Definition {
   }
 
   @Override
-  public List<LevelBinding> getPolyParams() {
-    return getThisClass().getPolyParams();
-  }
-
-  @Override
   public Abstract.ClassField getAbstractDefinition() {
     return (Abstract.ClassField) super.getAbstractDefinition();
   }
@@ -70,7 +64,7 @@ public class ClassField extends Definition {
     }
 
     ExprSubstitution subst = new ExprSubstitution();
-    LevelSubstitution polySubst = polyArguments.toLevelSubstitution(this);
+    LevelSubstitution polySubst = polyArguments.toLevelSubstitution();
     params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myThisParameter, subst, polySubst)));
     return myType.subst(subst, polySubst);
   }

@@ -1,23 +1,18 @@
 package com.jetbrains.jetpad.vclang.core.context.binding;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class LevelBinding implements LevelVariable {
-  private final String myName;
   private final LvlType myType;
 
-  public final static LevelBinding PLVL_BND = new LevelBinding("\\lp", LvlType.PLVL);
-  public final static LevelBinding HLVL_BND = new LevelBinding("\\lh", LvlType.HLVL);
+  public final static LevelBinding PLVL_BND = new LevelBinding(LvlType.PLVL);
+  public final static LevelBinding HLVL_BND = new LevelBinding(LvlType.HLVL);
 
-  public LevelBinding(String name, LvlType type) {
-    myName = name;
+  public LevelBinding(LvlType type) {
     myType = type;
   }
 
   @Override
   public String getName() {
-    return myName;
+    return myType == LvlType.PLVL ? "\\lp" : "\\lh";
   }
 
   @Override
@@ -27,16 +22,6 @@ public class LevelBinding implements LevelVariable {
 
   @Override
   public String toString() {
-    return myName;
-  }
-
-  public static List<Integer> getSublistOfUserBindings(List<LevelBinding> bindings) {
-    List<Integer> userBindings = new ArrayList<>();
-    for (int i = 0; i < bindings.size(); ++i) {
-      if (!bindings.get(i).getName().startsWith("\\")) {
-        userBindings.add(i);
-      }
-    }
-    return userBindings;
+    return getName();
   }
 }

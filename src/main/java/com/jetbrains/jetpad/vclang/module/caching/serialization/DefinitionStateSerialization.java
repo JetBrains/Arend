@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.module.caching.serialization;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.module.caching.LocalizedTypecheckerState;
@@ -47,9 +46,6 @@ public class DefinitionStateSerialization {
     }
 
     final DefinitionSerialization defSerializer = new DefinitionSerialization(myCalltargetIndexProvider);
-    for (LevelBinding polyVar : definition.getPolyParams()) {
-      out.addPolyParam(defSerializer.createLevelBinding(polyVar));
-    }
 
     out.addAllClassifyingField(writeClassifyingFields(definition));
 

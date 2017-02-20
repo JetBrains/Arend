@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.core.context.LinkList;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.UntypedDependentLink;
@@ -144,10 +144,10 @@ public class DefinitionCheckType {
 
   private static DependentLink createThisParam(ClassDefinition enclosingClass) {
     assert enclosingClass != null;
-    return param("\\this", ClassCall(enclosingClass, (LevelArguments) null));
+    return param("\\this", ClassCall(enclosingClass, new LevelArguments(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND))));
   }
 
-  private static boolean typeCheckParameters(List<? extends Abstract.Argument> arguments, Abstract.SourceNode node, List<Binding> context, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool, Map<Integer, ClassField> classifyingFields) {
+  private static boolean typeCheckParameters(List<? extends Abstract.Argument> arguments, List<Binding> context, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool, Map<Integer, ClassField> classifyingFields) {
     boolean ok = true;
     int index = 0;
 
@@ -211,7 +211,7 @@ public class DefinitionCheckType {
 
     Map<Integer, ClassField> classifyingFields = new HashMap<>();
     Abstract.FunctionDefinition def = (Abstract.FunctionDefinition) typedDef.getAbstractDefinition();
-    boolean paramsOk = typeCheckParameters(def.getArguments(), def, visitor.getContext(), list, visitor, localInstancePool, classifyingFields);
+    boolean paramsOk = typeCheckParameters(def.getArguments(), visitor.getContext(), list, visitor, localInstancePool, classifyingFields);
     TypeMax expectedType = null;
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
@@ -240,12 +240,12 @@ public class DefinitionCheckType {
         Level expHlevel = userType.getPiCodomain().toSorts().getHLevel().toLevel();
 
         if (expPlevel == null || expPlevel.isInfinity()) {
-          InferenceLevelVariable lpVar = new InferenceLevelVariable("\\expLP", LevelVariable.LvlType.PLVL, def);
+          InferenceLevelVariable lpVar = new InferenceLevelVariable(LevelBinding.PLVL_BND, def);
           visitor.getEquations().addVariable(lpVar);
           expPlevel = new Level(lpVar);
         }
         if (expHlevel == null || expHlevel.isInfinity()) {
-          InferenceLevelVariable lhVar = new InferenceLevelVariable("\\expLH", LevelVariable.LvlType.HLVL, def);
+          InferenceLevelVariable lhVar = new InferenceLevelVariable(LevelBinding.HLVL_BND, def);
           visitor.getEquations().addVariable(lhVar);
           expHlevel = new Level(lhVar);
         }
@@ -342,7 +342,7 @@ public class DefinitionCheckType {
     boolean paramsOk;
     Abstract.DataDefinition def = dataDefinition.getAbstractDefinition();
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
-      paramsOk = typeCheckParameters(def.getParameters(), def, visitor.getContext(), list, visitor, localInstancePool, classifyingFields);
+      paramsOk = typeCheckParameters(def.getParameters(), visitor.getContext(), list, visitor, localInstancePool, classifyingFields);
     }
 
     if (def.getUniverse() != null) {
@@ -854,7 +854,7 @@ public class DefinitionCheckType {
 
     LinkList list = new LinkList();
     Abstract.ClassViewInstance def = (Abstract.ClassViewInstance) typedDef.getAbstractDefinition();
-    boolean paramsOk = typeCheckParameters(def.getArguments(), def, visitor.getContext(), list, visitor, null, null);
+    boolean paramsOk = typeCheckParameters(def.getArguments(), visitor.getContext(), list, visitor, null, null);
     typedDef.setParameters(list.getFirst());
     typedDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
     state.record(def, typedDef);

@@ -95,7 +95,7 @@ public class TypeCheckingDefCall {
           if (resolvedDefinition instanceof Abstract.ClassViewField) {
             assert typeCheckedDefinition instanceof ClassField;
             Abstract.ClassView ownClassView = ((Abstract.ClassViewField) resolvedDefinition).getOwnView();
-            ClassCallExpression classCall = ClassCall(typeCheckedDefinition.getThisClass(), LevelArguments.generateInferVars(typeCheckedDefinition.getThisClass().getPolyParams(), myVisitor.getEquations(), expr));
+            ClassCallExpression classCall = ClassCall(typeCheckedDefinition.getThisClass(), LevelArguments.generateInferVars(myVisitor.getEquations(), expr));
             thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable(typeCheckedDefinition.getThisClass().getName() + "-inst", classCall, expr, 0, ownClassView, (ClassField) myVisitor.getTypecheckingState().getTypechecked(ownClassView.getClassifyingField())), myVisitor.getEquations());
           } else {
             LocalTypeCheckingError error;
@@ -152,7 +152,7 @@ public class TypeCheckingDefCall {
           return null;
         }
         if (!classDefinition.isSubClassOf(typeCheckedDefinition.getThisClass())) {
-          ClassCallExpression classCall = ClassCall(typeCheckedDefinition.getThisClass(), LevelArguments.generateInferVars(typeCheckedDefinition.getThisClass().getPolyParams(), myVisitor.getEquations(), expr));
+          ClassCallExpression classCall = ClassCall(typeCheckedDefinition.getThisClass(), LevelArguments.generateInferVars(myVisitor.getEquations(), expr));
           LocalTypeCheckingError error = new TypeMismatchError(classCall, type, left);
           expr.setWellTyped(myVisitor.getContext(), Error(null, error));
           myVisitor.getErrorReporter().report(error);
@@ -266,7 +266,7 @@ public class TypeCheckingDefCall {
   }
 
   private CheckTypeVisitor.TResult makeResult(Definition definition, Expression thisExpr, Abstract.DefCallExpression expr) {
-    LevelArguments polyArgs = LevelArguments.generateInferVars(definition.getPolyParams(), myVisitor.getEquations(), expr);
+    LevelArguments polyArgs = LevelArguments.generateInferVars(myVisitor.getEquations(), expr);
 
     if (thisExpr == null && definition instanceof ClassField) {
       LocalTypeCheckingError error = new LocalTypeCheckingError("Field call without a class instance", expr);

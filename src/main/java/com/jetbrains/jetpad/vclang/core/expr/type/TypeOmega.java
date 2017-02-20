@@ -26,6 +26,8 @@ public class TypeOmega implements Type {
     return INSTANCE;
   }
 
+  private TypeOmega() {}
+
   @Override
   public Type subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
     return this;

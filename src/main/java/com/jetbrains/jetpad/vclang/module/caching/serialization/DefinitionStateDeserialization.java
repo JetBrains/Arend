@@ -1,13 +1,15 @@
 package com.jetbrains.jetpad.vclang.module.caching.serialization;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.module.caching.LocalizedTypecheckerState;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
   private final PersistenceProvider<SourceIdT> myPersistenceProvider;
@@ -73,13 +75,6 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
         final DefinitionProtos.Definition defProto = defStubProto.getDefinition();
         final Definition def = getTypechecked(state, id);
         final DefinitionDeserialization defDeserializer = new DefinitionDeserialization(typedCalltargetProvider);
-
-        List<LevelBinding> polyParams = new ArrayList<>();
-        for (ExpressionProtos.Binding.LevelBinding lvlBinding : defProto.getPolyParamList()) {
-          polyParams.add(defDeserializer.readLevelBinding(lvlBinding));
-        }
-
-        def.setPolyParams(polyParams);
 
         readClassifyingFields(def, typedCalltargetProvider, defProto.getClassifyingFieldList());
 

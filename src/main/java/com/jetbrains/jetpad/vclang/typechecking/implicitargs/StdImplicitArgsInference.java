@@ -1,7 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.FunctionInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
@@ -14,7 +12,6 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.InferenceReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -22,7 +19,6 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.prettyprint.StringPrettyPrintable;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.ArrayList;
@@ -89,30 +85,6 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       }
 
       result = fixImplicitArgs(result, result.getImplicitParameters(), fun);
-    } else if (result instanceof CheckTypeVisitor.DefCallResult) {
-      CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
-      List<Integer> userPolyParams = LevelBinding.getSublistOfUserBindings(defCallResult.getDefinition().getPolyParams());
-      int numLevelArgs = defCallResult.getNumberOfLevels();
-      if (numLevelArgs < userPolyParams.size()) {
-        LevelBinding param = defCallResult.getDefinition().getPolyParams().get(userPolyParams.get(numLevelArgs));
-        Level level = null;
-        if (!(arg instanceof Abstract.InferHoleExpression)) {
-          level = myVisitor.typeCheckLevel(arg, param.getType() == LevelVariable.LvlType.HLVL ? -1 : 0);
-          if (level == null) {
-            return null;
-          }
-        }
-        defCallResult.applyLevels(level);
-        if (level != null) {
-          Level oldValue = defCallResult.getPolyArguments().getLevels().get(userPolyParams.get(numLevelArgs));
-          if (oldValue == null) {
-            assert false;
-            return null;
-          }
-          myVisitor.getEquations().add(oldValue, level, Equations.CMP.EQ, fun);
-        }
-        return result;
-      }
     }
 
     DependentLink param = result.getParameter();

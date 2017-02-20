@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.BaseExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
-import com.jetbrains.jetpad.vclang.core.sort.Level;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -131,9 +130,6 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
       ConstructorClause newClause = newNode.addClause(clause.getConstructor(), DependentLink.Helper.toNames(clause.getParameters()));
       for (DependentLink linkOld = clause.getParameters(), linkNew = newClause.getParameters(); linkOld.hasNext(); linkOld = linkOld.getNext(), linkNew = linkNew.getNext()) {
         myExprSubstitution.add(linkOld, ExpressionFactory.Reference(linkNew));
-      }
-      for (int i = 0; i < clause.getPolyParams().size(); ++i) {
-        myLevelSubstitution.add(clause.getPolyParams().get(i), new Level(clause.getPolyParams().get(i)));
       }
       for (int i = 0; i < clause.getTailBindings().size(); i++) {
         myExprSubstitution.add(clause.getTailBindings().get(i), ExpressionFactory.Reference(newClause.getTailBindings().get(i)));

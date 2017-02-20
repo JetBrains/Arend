@@ -40,12 +40,8 @@ public class ExpressionFactory {
     return FunCall(definition, polyParams, Arrays.asList(arguments));
   }
 
-  public static LevelArguments levelSubst(Level... levels) {
-    return new LevelArguments(new ArrayList<>(Arrays.asList(levels)));
-  }
-
   public static FunCallExpression FunCall(FunctionDefinition definition, Level lp, Level lh, List<Expression> arguments) {
-    return FunCall(definition, levelSubst(lp, lh), arguments);
+    return FunCall(definition, new LevelArguments(lp, lh), arguments);
   }
 
   public static FunCallExpression FunCall(FunctionDefinition definition, Level lp, Level lh, Expression... arguments) {
@@ -61,7 +57,7 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression DataCall(DataDefinition definition, Level lp, Level lh, List<Expression> arguments) {
-    return new DataCallExpression(definition, levelSubst(lp, lh), arguments);
+    return new DataCallExpression(definition, new LevelArguments(lp, lh), arguments);
   }
 
   public static DataCallExpression DataCall(DataDefinition definition, Level lp, Level lh, Expression... arguments) {
@@ -78,8 +74,8 @@ public class ExpressionFactory {
     }
   }
 
-  public static ClassCallExpression ClassCall(ClassDefinition definition, LevelArguments polyParams) {
-    return new ClassCallExpression(definition, polyParams);
+  public static ClassCallExpression ClassCall(ClassDefinition definition, LevelArguments polyArgs) {
+    return new ClassCallExpression(definition, polyArgs);
   }
 
   // TODO: This function is incorrect, it should be removed.
@@ -107,7 +103,7 @@ public class ExpressionFactory {
   }
 
   public static ConCallExpression ConCall(Constructor definition, Level lp, Level lh, List<Expression> dataTypeArguments, List<Expression> arguments) {
-    return new ConCallExpression(definition, levelSubst(lp, lh), dataTypeArguments, arguments);
+    return new ConCallExpression(definition, new LevelArguments(lp, lh), dataTypeArguments, arguments);
   }
 
   public static ConCallExpression ConCall(Constructor definition, Level lp, Level lh, List<Expression> dataTypeArguments, Expression... arguments) {

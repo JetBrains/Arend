@@ -32,7 +32,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
     List<DependentLink> defParams = new ArrayList<>();
     TypeMax type = expr.getDefinition().getTypeWithParams(defParams, expr.getPolyArguments());
     assert expr.getDefCallArguments().size() == defParams.size();
-    return type.subst(DependentLink.Helper.toSubstitution(defParams, expr.getDefCallArguments()), new LevelSubstitution(expr.getDefinition().getPolyParams(), expr.getPolyArguments().getLevels()));
+    return type.subst(DependentLink.Helper.toSubstitution(defParams, expr.getDefCallArguments()), expr.getPolyArguments().toLevelSubstitution());
   }
 
   @Override
@@ -48,7 +48,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
 
   @Override
   public TypeMax visitClassCall(ClassCallExpression expr, Void params) {
-    return expr.getSorts().toType().subst(new ExprSubstitution(), expr.getPolyArguments().toLevelSubstitution(expr.getDefinition()));
+    return expr.getSorts().toType().subst(new ExprSubstitution(), expr.getPolyArguments().toLevelSubstitution());
   }
 
   @Override

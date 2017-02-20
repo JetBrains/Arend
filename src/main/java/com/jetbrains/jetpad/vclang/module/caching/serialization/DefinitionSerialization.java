@@ -1,6 +1,8 @@
 package com.jetbrains.jetpad.vclang.module.caching.serialization;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.*;
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
+import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
@@ -12,7 +14,10 @@ import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
-import com.jetbrains.jetpad.vclang.core.sort.*;
+import com.jetbrains.jetpad.vclang.core.sort.Level;
+import com.jetbrains.jetpad.vclang.core.sort.LevelMax;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
@@ -24,8 +29,6 @@ class DefinitionSerialization {
   private final CalltargetIndexProvider myCalltargetIndexProvider;
   private final List<Binding> myBindings = new ArrayList<>();  // de Bruijn indices
   private final Map<Binding, Integer> myBindingsMap = new HashMap<>();
-  private final List<LevelBinding> myLvlBindings = new ArrayList<>();  // de Bruijn indices for level bindings
-  private final Map<LevelBinding, Integer> myLvlBindingsMap = new HashMap<>();
   private final SerializeVisitor myVisitor = new SerializeVisitor();
 
   DefinitionSerialization(CalltargetIndexProvider calltargetIndexProvider) {
@@ -36,25 +39,20 @@ class DefinitionSerialization {
   // Bindings
 
   private RollbackBindings checkpointBindings() {
-    return new RollbackBindings(myBindings.size(), myLvlBindings.size());
+    return new RollbackBindings(myBindings.size());
   }
 
   private class RollbackBindings implements AutoCloseable {
     private final int myTargetSize;
-    private final int myLvlTargetSize;
 
-    private RollbackBindings(int targetSize, int lvlTargetSize) {
+    private RollbackBindings(int targetSize) {
       myTargetSize = targetSize;
-      myLvlTargetSize = lvlTargetSize;
     }
 
     @Override
     public void close() {
       for (int i = myBindings.size() - 1; i >= myTargetSize; i--) {
         myBindingsMap.remove(myBindings.remove(i));
-      }
-      for (int i = myLvlBindings.size() - 1; i >= myLvlTargetSize; i--) {
-        myLvlBindingsMap.remove(myLvlBindings.remove(i));
       }
     }
   }
@@ -63,13 +61,6 @@ class DefinitionSerialization {
     int index = myBindings.size();
     myBindings.add(binding);
     myBindingsMap.put(binding, index);
-    return index;
-  }
-
-  private int registerLevelBinding(LevelBinding binding) {
-    int index = myLvlBindings.size();
-    myLvlBindings.add(binding);
-    myLvlBindingsMap.put(binding, index);
     return index;
   }
 
@@ -83,22 +74,11 @@ class DefinitionSerialization {
     return builder.build();
   }
 
-  ExpressionProtos.Binding.LevelBinding createLevelBinding(LevelBinding binding) {
-    ExpressionProtos.Binding.LevelBinding.Builder builder = ExpressionProtos.Binding.LevelBinding.newBuilder();
-    if (binding.getName() != null) {
-      builder.setName(binding.getName());
-    }
-    builder.setType(binding.getType() == LevelVariable.LvlType.PLVL ? ExpressionProtos.Binding.LevelBinding.LvlType.PLVL : ExpressionProtos.Binding.LevelBinding.LvlType.HLVL);
-    registerLevelBinding(binding);
-    return builder.build();
-  }
-
-  private int writeBindingRef(Variable binding) {
+  private int writeBindingRef(Binding binding) {
     if (binding == null) {
       return 0;
     } else {
-      Integer index = binding instanceof Binding ? myBindingsMap.get(binding) : myLvlBindingsMap.get(binding);
-      return index + 1;  // zero is reserved for null
+      return myBindingsMap.get(binding) + 1;  // zero is reserved for null
     }
   }
 
@@ -146,8 +126,12 @@ class DefinitionSerialization {
   private LevelProtos.Level writeLevel(Level level) {
     // Level.INFINITY should be read with great care
     LevelProtos.Level.Builder builder = LevelProtos.Level.newBuilder();
-    if (level.getVar() == null || level.getVar() instanceof LevelBinding) {
-      builder.setBindingRef(writeBindingRef(level.getVar()));
+    if (level.getVar() == null) {
+      builder.setVariable(LevelProtos.Level.Variable.NO_VAR);
+    } else if (level.getVar() == LevelBinding.PLVL_BND) {
+      builder.setVariable(LevelProtos.Level.Variable.PLVL);
+    } else if (level.getVar() == LevelBinding.HLVL_BND) {
+      builder.setVariable(LevelProtos.Level.Variable.HLVL);
     } else {
       throw new IllegalStateException();
     }
@@ -176,14 +160,6 @@ class DefinitionSerialization {
     builder.setPLevel(writeLevelMax(sort.getPLevel()));
     builder.setHLevel(writeLevelMax(sort.getHLevel()));
     return builder.build();
-  }
-
-  private List<LevelProtos.Level> writePolyArguments(LevelArguments args) {
-    List<LevelProtos.Level> out = new ArrayList<>();
-    for (Level level : args.getLevels()) {
-      out.add(writeLevel(level));
-    }
-    return out;
   }
 
 
@@ -290,7 +266,8 @@ class DefinitionSerialization {
     public ExpressionProtos.Expression visitFunCall(FunCallExpression expr, Void params) {
       ExpressionProtos.Expression.FunCall.Builder builder = ExpressionProtos.Expression.FunCall.newBuilder();
       builder.setFunRef(myCalltargetIndexProvider.getDefIndex(expr.getDefinition()));
-      builder.addAllPolyArguments(writePolyArguments(expr.getPolyArguments()));
+      builder.setPLevel(writeLevel(expr.getPolyArguments().getPLevel()));
+      builder.setHLevel(writeLevel(expr.getPolyArguments().getHLevel()));
       for (Expression arg : expr.getDefCallArguments()) {
         builder.addArgument(arg.accept(this, null));
       }
@@ -301,7 +278,8 @@ class DefinitionSerialization {
     public ExpressionProtos.Expression visitConCall(ConCallExpression expr, Void params) {
       ExpressionProtos.Expression.ConCall.Builder builder = ExpressionProtos.Expression.ConCall.newBuilder();
       builder.setConstructorRef(myCalltargetIndexProvider.getDefIndex(expr.getDefinition()));
-      builder.addAllPolyArguments(writePolyArguments(expr.getPolyArguments()));
+      builder.setPLevel(writeLevel(expr.getPolyArguments().getPLevel()));
+      builder.setHLevel(writeLevel(expr.getPolyArguments().getHLevel()));
       for (Expression arg : expr.getDataTypeArguments()) {
         builder.addDatatypeArgument(arg.accept(this, null));
       }
@@ -315,7 +293,8 @@ class DefinitionSerialization {
     public ExpressionProtos.Expression visitDataCall(DataCallExpression expr, Void params) {
       ExpressionProtos.Expression.DataCall.Builder builder = ExpressionProtos.Expression.DataCall.newBuilder();
       builder.setDataRef(myCalltargetIndexProvider.getDefIndex(expr.getDefinition()));
-      builder.addAllPolyArguments(writePolyArguments(expr.getPolyArguments()));
+      builder.setPLevel(writeLevel(expr.getPolyArguments().getPLevel()));
+      builder.setHLevel(writeLevel(expr.getPolyArguments().getHLevel()));
       for (Expression arg : expr.getDefCallArguments()) {
         builder.addArgument(arg.accept(this, null));
       }
@@ -325,7 +304,8 @@ class DefinitionSerialization {
     private ExpressionProtos.Expression.ClassCall writeClassCall(ClassCallExpression expr) {
       ExpressionProtos.Expression.ClassCall.Builder builder = ExpressionProtos.Expression.ClassCall.newBuilder();
       builder.setClassRef(myCalltargetIndexProvider.getDefIndex(expr.getDefinition()));
-      builder.addAllPolyArguments(writePolyArguments(expr.getPolyArguments()));
+      builder.setPLevel(writeLevel(expr.getPolyArguments().getPLevel()));
+      builder.setHLevel(writeLevel(expr.getPolyArguments().getHLevel()));
       builder.setFieldSet(writeFieldSet(expr.getFieldSet()));
       return builder.build();
     }
@@ -440,7 +420,8 @@ class DefinitionSerialization {
     public ExpressionProtos.Expression visitFieldCall(FieldCallExpression expr, Void params) {
       ExpressionProtos.Expression.FieldCall.Builder builder = ExpressionProtos.Expression.FieldCall.newBuilder();
       builder.setFieldRef(myCalltargetIndexProvider.getDefIndex(expr.getDefinition()));
-      builder.addAllPolyArguments(writePolyArguments(expr.getPolyArguments()));
+      builder.setPLevel(writeLevel(expr.getPolyArguments().getPLevel()));
+      builder.setHLevel(writeLevel(expr.getPolyArguments().getHLevel()));
       builder.setExpression(expr.getExpression().accept(this, null));
       return ExpressionProtos.Expression.newBuilder().setFieldCall(builder).build();
     }
@@ -457,9 +438,6 @@ class DefinitionSerialization {
       for (ConstructorClause clause : branchNode.getConstructorClauses()) {
         ExpressionProtos.ElimTreeNode.ConstructorClause.Builder ccBuilder = ExpressionProtos.ElimTreeNode.ConstructorClause.newBuilder();
 
-        for (LevelBinding polyVar : clause.getPolyParams()) {
-          ccBuilder.addPolyParam(createLevelBinding(polyVar));
-        }
         ccBuilder.addAllParam(writeParameters(clause.getParameters()));
         for (TypedBinding binding : clause.getTailBindings()) {
           ccBuilder.addTailBinding(createTypedBinding(binding));

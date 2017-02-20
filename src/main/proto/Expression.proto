@@ -11,7 +11,6 @@ message Expression {
     oneof kind {
         App app = 1;
         ClassCall class_call = 2;
-        ClassViewCall class_view_call = 3;
         ConCall con_call = 4;
         DataCall data_call = 5;
         Error error = 6;
@@ -34,35 +33,36 @@ message Expression {
     }
     message ClassCall {
         int32 class_ref = 1;
-        repeated Level poly_arguments = 2;
+        Level pLevel = 2;
+        Level hLevel = 4;
         FieldSet field_set = 3;
-    }
-    message ClassViewCall {
-        // TODO: ?
     }
     message ConCall {
         int32 constructor_ref = 1;
-        repeated Level poly_arguments = 2;
+        Level pLevel = 2;
+        Level hLevel = 5;
         repeated Expression datatype_argument = 3;
         repeated Expression argument = 4;
     }
     message DataCall {
         int32 data_ref = 1;
-        repeated Level poly_arguments = 2;
+        Level pLevel = 2;
+        Level hLevel = 4;
         repeated Expression argument = 3;
     }
     message Error {
         Expression expression = 1;
-        // TODO: myError?
     }
     message FieldCall {
         int32 field_ref = 1;
-        repeated Level poly_arguments = 2;
+        Level pLevel = 2;
+        Level hLevel = 4;
         Expression expression = 3;
     }
     message FunCall {
         int32 fun_ref = 1;
-        repeated Level poly_arguments = 2;
+        Level pLevel = 2;
+        Level hLevel = 4;
         repeated Expression argument = 3;
     }
     message Lam {
@@ -135,15 +135,6 @@ message Binding {
         string name = 1;
         Type type = 2;
     }
-
-    message LevelBinding {
-        enum LvlType {
-            PLVL = 0;
-            HLVL = 1;
-        }
-        string name = 1;
-        LvlType type = 2;
-    }
 }
 
 message ElimTreeNode {
@@ -169,7 +160,6 @@ message ElimTreeNode {
 
     message ConstructorClause {
         repeated Telescope param = 1;
-        repeated Binding.LevelBinding poly_param = 2;
         ElimTreeNode child = 3;
         repeated Binding.TypedBinding tail_binding = 4;
     }

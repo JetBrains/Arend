@@ -7,7 +7,12 @@ option java_outer_classname = "LevelProtos";
 
 message Level {
     int32 constant = 1;
-    int32 binding_ref = 2;
+    enum Variable {
+        NO_VAR = 0;
+        PLVL = 1;
+        HLVL = 2;
+    }
+    Variable variable = 2;
 }
 message LevelMax {
     repeated Level level = 1;

@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.core.pattern.elimtree;
 
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
@@ -61,7 +60,6 @@ public class BranchElimTreeNode extends ElimTreeNode {
 
     dataTypeArguments = constructor.matchDataTypeArguments(new ArrayList<>(dataTypeArguments));
     LevelSubstitution polySubst = new LevelSubstitution();
-    List<LevelBinding> constructorPolyParams = LevelSubstitution.clone(constructor.getPolyParams(), polySubst);
     DependentLink constructorArgs = DependentLink.Helper.subst(constructor.getParameters(), toSubstitution(constructor.getDataTypeParameters(), dataTypeArguments), polySubst);
     if (names != null) {
       constructorArgs = DependentLink.Helper.subst(constructorArgs, new ExprSubstitution());
@@ -77,7 +75,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
     }
 
     List<TypedBinding> tailBindings = new ExprSubstitution(myReference, ConCall(constructor, dataCall.getPolyArguments(), new ArrayList<>(dataTypeArguments), arguments)).extendBy(myContextTail);
-    ConstructorClause result = new ConstructorClause(constructor, constructorArgs, constructorPolyParams, tailBindings, this);
+    ConstructorClause result = new ConstructorClause(constructor, constructorArgs, tailBindings, this);
     myClauses.put(constructor, result);
     return result;
   }
@@ -87,8 +85,8 @@ public class BranchElimTreeNode extends ElimTreeNode {
     return myOtherwiseClause;
   }
 
-  public void addClause(Constructor constructor, DependentLink constructorParams, List<LevelBinding> constructorPolyParams, List<TypedBinding> tailBindings, ElimTreeNode child) {
-    ConstructorClause clause = new ConstructorClause(constructor, constructorParams, constructorPolyParams, tailBindings, this);
+  public void addClause(Constructor constructor, DependentLink constructorParams, List<TypedBinding> tailBindings, ElimTreeNode child) {
+    ConstructorClause clause = new ConstructorClause(constructor, constructorParams, tailBindings, this);
     myClauses.put(constructor, clause);
     clause.setChild(child);
   }

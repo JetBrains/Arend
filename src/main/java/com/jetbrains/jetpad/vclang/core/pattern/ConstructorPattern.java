@@ -1,11 +1,14 @@
 package com.jetbrains.jetpad.vclang.core.pattern;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.Referable;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.core.sort.Level;
+import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -62,14 +65,14 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
     List<Expression> arguments = new ArrayList<>();
     for (PatternArgument patternArgument : myArguments.getPatterns()) {
       assert link.hasNext();
-      //LevelArguments polyParams1 = null;
       LevelSubstitution levelSubst = new LevelSubstitution();
       if (patternArgument.getPattern() instanceof ConstructorPattern) {
         assert link.getType().toExpression() != null;
         Expression type = link.getType().toExpression().subst(subst).normalize(NormalizeVisitor.Mode.WHNF);
         assert type.toDataCall() != null && type.toDataCall().getDefinition() == ((ConstructorPattern) patternArgument.getPattern()).getConstructor().getDataType();
         ExprSubstitution subSubst = ((ConstructorPattern) patternArgument.getPattern()).getMatchedArguments(new ArrayList<>(type.toDataCall().getDefCallArguments()));
-        levelSubst.add(new LevelSubstitution(type.toDataCall().getDefinition().getPolyParams(), type.toDataCall().getPolyArguments().getLevels()));
+        levelSubst.add(LevelBinding.PLVL_BND, type.toDataCall().getPolyArguments().getPLevel());
+        levelSubst.add(LevelBinding.HLVL_BND, type.toDataCall().getPolyArguments().getHLevel());
         for (Referable binding : subSubst.getDomain()) {
           subst.add(binding, subSubst.get(binding));
         }
@@ -84,7 +87,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
       link = link.getNext();
     }
     DependentLink.Helper.freeSubsts(constructorParameters, subst);
-    return ConCall(myConstructor, null, params, arguments);
+    return ConCall(myConstructor, new LevelArguments(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND)), params, arguments);
   }
 
   public ExprSubstitution getMatchedArguments(List<Expression> dataTypeArguments) {

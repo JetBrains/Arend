@@ -1,67 +1,56 @@
 package com.jetbrains.jetpad.vclang.core.sort;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.definition.Referable;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
-import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class LevelArguments {
-  private final List<Level> myLevels;
+  private final Level myPLevel;
+  private final Level myHLevel;
 
   public LevelArguments() {
-    // myLevels = Collections.emptyList();
-    this (0, 0);
+    this(0, 0);
   }
 
-  public LevelArguments(int plevel, int hlevel) {
-    myLevels = Arrays.asList(new Level(plevel), new Level(hlevel));
+  public LevelArguments(int pLevel, int hLevel) {
+    this(new Level(pLevel), new Level(hLevel));
   }
 
-  public LevelArguments(List<Level> levels) {
-    myLevels = levels;
+  public LevelArguments(Level pLevel, Level hLevel) {
+    myPLevel = pLevel;
+    myHLevel = hLevel;
   }
 
-  public boolean isEmpty() {
-    return myLevels.isEmpty();
+  public Level getPLevel()  {
+    return myPLevel;
   }
 
-  public List<? extends Level> getLevels()  {
-    return myLevels;
+  public Level getHLevel()  {
+    return myHLevel;
   }
 
-  public LevelSubstitution toLevelSubstitution(Definition definition) {
-    assert definition.getPolyParams().size() == myLevels.size();
+  public LevelSubstitution toLevelSubstitution() {
     Map<Referable, Level> polySubst = new HashMap<>();
-    for (int i = 0; i < myLevels.size(); i++) {
-      polySubst.put(definition.getPolyParams().get(i), myLevels.get(i));
-    }
+    polySubst.put(LevelBinding.PLVL_BND, myPLevel);
+    polySubst.put(LevelBinding.HLVL_BND, myHLevel);
     return new LevelSubstitution(polySubst);
   }
 
   public LevelArguments subst(LevelSubstitution subst) {
-    if (subst.isEmpty()) {
-      return this;
-    }
-
-    List<Level> levels = new ArrayList<>(myLevels);
-    for (int i = 0; i < levels.size(); i++) {
-      levels.set(i, levels.get(i).subst(subst));
-    }
-    return new LevelArguments(levels);
+    return new LevelArguments(myPLevel.subst(subst), myHLevel.subst(subst));
   }
 
-  public static LevelArguments generateInferVars(List<LevelBinding> polyParams, Equations equations, Abstract.Expression expr) {
-    List<Level> levels = new ArrayList<>(polyParams.size());
-    for (LevelBinding polyVar : polyParams) {
-      InferenceLevelVariable l = new InferenceLevelVariable(polyVar.getName(), polyVar.getType(), expr);
-      levels.add(new Level(l));
-      equations.addVariable(l);
-    }
-    return new LevelArguments(levels);
+  public static LevelArguments generateInferVars(Equations equations, Abstract.Expression expr) {
+    InferenceLevelVariable pl = new InferenceLevelVariable(LevelBinding.PLVL_BND, expr);
+    InferenceLevelVariable hl = new InferenceLevelVariable(LevelBinding.HLVL_BND, expr);
+    equations.addVariable(pl);
+    equations.addVariable(hl);
+    return new LevelArguments(new Level(pl), new Level(hl));
   }
 }
