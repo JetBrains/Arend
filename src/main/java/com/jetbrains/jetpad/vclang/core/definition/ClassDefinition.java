@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.ClassCallExpression;
@@ -8,7 +7,6 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -88,7 +86,7 @@ public class ClassDefinition extends Definition {
     assert myEnclosingThisField == null;
     super.setThisClass(enclosingClass);
     if (enclosingClass != null) {
-      myEnclosingThisField = new ClassField(null, ClassCall(enclosingClass, new LevelArguments(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND))), this, param("\\this", ClassCall(this, new LevelArguments(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND)))));
+      myEnclosingThisField = new ClassField(null, ClassCall(enclosingClass, LevelArguments.STD), this, param("\\this", ClassCall(this, LevelArguments.STD)));
       myEnclosingThisField.setThisClass(this);
       myFieldSet.addField(myEnclosingThisField);
     }

@@ -78,20 +78,16 @@ public class ExpressionFactory {
     return new ClassCallExpression(definition, polyArgs);
   }
 
-  // TODO: This function is incorrect, it should be removed.
-  @Deprecated
   public static ClassCallExpression ClassCall(ClassDefinition definition) {
-    return ClassCall(definition, new LevelArguments());
+    return ClassCall(definition, LevelArguments.STD);
   }
 
   public static ClassCallExpression ClassCall(ClassDefinition definition, LevelArguments polyParams, FieldSet fieldSet) {
     return new ClassCallExpression(definition, polyParams, fieldSet);
    }
 
-  // TODO: This function is incorrect, it should be removed.
-  @Deprecated
   public static ClassCallExpression ClassCall(ClassDefinition definition, FieldSet fieldSet) {
-    return ClassCall(definition, new LevelArguments(), fieldSet);
+    return ClassCall(definition, LevelArguments.STD, fieldSet);
   }
 
   public static ConCallExpression ConCall(Constructor definition, LevelArguments polyParams, List<Expression> parameters, List<Expression> arguments) {
@@ -111,15 +107,15 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Interval() {
-    return DataCall(Prelude.INTERVAL, new LevelArguments(), Collections.<Expression>emptyList());
+    return DataCall(Prelude.INTERVAL, LevelArguments.ZERO, Collections.<Expression>emptyList());
   }
 
   public static ConCallExpression Left() {
-    return ConCall(Prelude.LEFT, new LevelArguments(), Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
+    return ConCall(Prelude.LEFT, LevelArguments.ZERO, Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
   }
 
   public static ConCallExpression Right() {
-    return ConCall(Prelude.RIGHT, new LevelArguments(), Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
+    return ConCall(Prelude.RIGHT, LevelArguments.ZERO, Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
   }
 
   public static NewExpression New(ClassCallExpression expression) {
@@ -240,15 +236,15 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Nat() {
-    return DataCall(Prelude.NAT, new LevelArguments(), Collections.<Expression>emptyList());
+    return DataCall(Prelude.NAT, LevelArguments.ZERO, Collections.<Expression>emptyList());
   }
 
   public static ConCallExpression Zero() {
-    return ConCall(Prelude.ZERO, new LevelArguments(), Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
+    return ConCall(Prelude.ZERO, LevelArguments.ZERO, Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
   }
 
   public static ConCallExpression Suc(Expression expr) {
-    return ConCall(Prelude.SUC, new LevelArguments(), Collections.<Expression>emptyList(), Collections.singletonList(expr));
+    return ConCall(Prelude.SUC, LevelArguments.ZERO, Collections.<Expression>emptyList(), Collections.singletonList(expr));
   }
 
   public static UniverseExpression Universe(int pLevel) {

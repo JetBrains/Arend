@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.core.definition.Referable;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
@@ -87,7 +86,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
       link = link.getNext();
     }
     DependentLink.Helper.freeSubsts(constructorParameters, subst);
-    return ConCall(myConstructor, new LevelArguments(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND)), params, arguments);
+    return ConCall(myConstructor, LevelArguments.STD, params, arguments);
   }
 
   public ExprSubstitution getMatchedArguments(List<Expression> dataTypeArguments) {

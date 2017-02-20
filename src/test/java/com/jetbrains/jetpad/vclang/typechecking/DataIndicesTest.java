@@ -3,10 +3,10 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
+import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -54,12 +54,12 @@ public class DataIndicesTest extends TypeCheckingTestCase {
         "  | NatVec zero => nil\n" +
         "  | NatVec (suc n) => cons Nat (NatVec n)");
     DataDefinition data = (DataDefinition) result.getDefinition("NatVec");
-    assertEquals(DataCall(data, new LevelArguments(), Zero()), data.getConstructor("nil").getTypeWithParams(new ArrayList<DependentLink>(), new LevelArguments()));
+    assertEquals(DataCall(data, LevelArguments.ZERO, Zero()), data.getConstructor("nil").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.ZERO));
     DependentLink param = param(false, "n", Nat());
-    param.setNext(params(param((String) null, Nat()), param((String) null, DataCall(data, new LevelArguments(), Reference(param)))));
+    param.setNext(params(param((String) null, Nat()), param((String) null, DataCall(data, LevelArguments.ZERO, Reference(param)))));
     List<DependentLink> consParams = new ArrayList<>();
-    Type consType = data.getConstructor("cons").getTypeWithParams(consParams, new LevelArguments());
-    assertEquals(Pi(param, DataCall(data, new LevelArguments(), Suc(Reference(param)))), consType.fromPiParameters(consParams));
+    Type consType = data.getConstructor("cons").getTypeWithParams(consParams, LevelArguments.ZERO);
+    assertEquals(Pi(param, DataCall(data, LevelArguments.ZERO, Suc(Reference(param)))), consType.fromPiParameters(consParams));
   }
 
   @Test

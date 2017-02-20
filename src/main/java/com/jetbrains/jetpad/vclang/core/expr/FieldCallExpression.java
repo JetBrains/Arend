@@ -13,7 +13,7 @@ public class FieldCallExpression extends DefCallExpression {
   private Expression myExpression;
 
   public FieldCallExpression(ClassField definition, Expression expression) {
-    super(definition, new LevelArguments());
+    super(definition, LevelArguments.ZERO);
     myExpression = expression;
   }
 

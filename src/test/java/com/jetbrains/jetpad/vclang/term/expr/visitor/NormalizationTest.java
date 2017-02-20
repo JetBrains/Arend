@@ -58,7 +58,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink xPlusMinusOne = param("x'", Nat());
     ElimTreeNode plusElimTree = top(xPlus, branch(xPlus, tail(yPlus),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Reference(yPlus)),
-        clause(Prelude.SUC, xPlusMinusOne, Suc(FunCall(plus, new LevelArguments(), Reference(xPlusMinusOne), Reference(yPlus))))));
+        clause(Prelude.SUC, xPlusMinusOne, Suc(FunCall(plus, LevelArguments.ZERO, Reference(xPlusMinusOne), Reference(yPlus))))));
     plus.setElimTree(plusElimTree);
     plus.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
@@ -70,7 +70,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink xMulMinusOne = param("x'", Nat());
     ElimTreeNode mulElimTree = top(xMul, branch(xMul, tail(yMul),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Zero()),
-        clause(Prelude.SUC, xMulMinusOne, FunCall(plus, new LevelArguments(), Reference(yMul), FunCall(mul, new LevelArguments(), Reference(xMulMinusOne), Reference(yMul))))
+        clause(Prelude.SUC, xMulMinusOne, FunCall(plus, LevelArguments.ZERO, Reference(yMul), FunCall(mul, LevelArguments.ZERO, Reference(xMulMinusOne), Reference(yMul))))
     ));
     mul.setElimTree(mulElimTree);
     mul.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
@@ -82,7 +82,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink xFacMinusOne = param("x'", Nat());
     ElimTreeNode facElimTree = top(xFac, branch(xFac, tail(),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Suc(Zero())),
-        clause(Prelude.SUC, xFacMinusOne, FunCall(mul, new LevelArguments(), Suc(Reference(xFacMinusOne)), FunCall(fac, new LevelArguments(), Reference(xFacMinusOne))))
+        clause(Prelude.SUC, xFacMinusOne, FunCall(mul, LevelArguments.ZERO, Suc(Reference(xFacMinusOne)), FunCall(fac, LevelArguments.ZERO, Reference(xFacMinusOne))))
     ));
     fac.setElimTree(facElimTree);
     fac.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
@@ -96,7 +96,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink xNElimMinusOne = param("x'", Nat());
     ElimTreeNode nelimElimTree = top(zNElim, branch(xNElim, tail(),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Reference(zNElim)),
-        clause(Prelude.SUC, xNElimMinusOne, Apps(Reference(sNElim), Reference(xNElimMinusOne), FunCall(nelim, new LevelArguments(), Reference(zNElim), Reference(sNElim), Reference(xNElimMinusOne))))
+        clause(Prelude.SUC, xNElimMinusOne, Apps(Reference(sNElim), Reference(xNElimMinusOne), FunCall(nelim, LevelArguments.ZERO, Reference(zNElim), Reference(sNElim), Reference(xNElimMinusOne))))
     ));
     nelim.setElimTree(nelimElimTree);
     nelim.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
@@ -156,7 +156,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   public void normalizeNelimZero() {
     // normalize( N-elim (suc zero) (\x. suc x) 0 ) = suc zero
     DependentLink x = param("x", Nat());
-    Expression expr = FunCall(nelim, new LevelArguments(), Suc(Zero()), Lam(x, Suc(Reference(x))), Zero());
+    Expression expr = FunCall(nelim, LevelArguments.ZERO, Suc(Zero()), Lam(x, Suc(Reference(x))), Zero());
     assertEquals(Suc(Zero()), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -166,7 +166,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink var0 = param("var0", Pi(Nat(), Nat()));
     DependentLink x = param("x", Nat());
     DependentLink y = param("y", Nat());
-    Expression expr = FunCall(nelim, new LevelArguments(), Suc(Zero()), Lam(x, Lam(y, Apps(Reference(var0), Reference(y)))), Suc(Zero()));
+    Expression expr = FunCall(nelim, LevelArguments.ZERO, Suc(Zero()), Lam(x, Lam(y, Apps(Reference(var0), Reference(y)))), Suc(Zero()));
     assertEquals(Apps(Reference(var0), Suc(Zero())), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -176,7 +176,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink var0 = param("var0", Universe(0));
     DependentLink x = param("x", Nat());
     Expression arg = Apps(Lam(x, Reference(x)), Zero());
-    Expression expr = FunCall(nelim, new LevelArguments(), Suc(Zero()), Reference(var0), arg);
+    Expression expr = FunCall(nelim, LevelArguments.ZERO, Suc(Zero()), Reference(var0), arg);
     Expression result = expr.normalize(NormalizeVisitor.Mode.NF);
     assertEquals(Suc(Zero()), result);
   }
@@ -184,49 +184,49 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizePlus0a3() {
     // normalize (plus 0 3) = 3
-    Expression expr = FunCall(plus, new LevelArguments(), Zero(), Suc(Suc(Suc(Zero()))));
+    Expression expr = FunCall(plus, LevelArguments.ZERO, Zero(), Suc(Suc(Suc(Zero()))));
     assertEquals(Suc(Suc(Suc(Zero()))), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizePlus3a0() {
     // normalize (plus 3 0) = 3
-    Expression expr = FunCall(plus, new LevelArguments(), Suc(Suc(Suc(Zero()))), Zero());
+    Expression expr = FunCall(plus, LevelArguments.ZERO, Suc(Suc(Suc(Zero()))), Zero());
     assertEquals(Suc(Suc(Suc(Zero()))), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizePlus3a3() {
     // normalize (plus 3 3) = 6
-    Expression expr = FunCall(plus, new LevelArguments(), Suc(Suc(Suc(Zero()))), Suc(Suc(Suc(Zero()))));
+    Expression expr = FunCall(plus, LevelArguments.ZERO, Suc(Suc(Suc(Zero()))), Suc(Suc(Suc(Zero()))));
     assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeMul3a0() {
     // normalize (mul 3 0) = 0
-    Expression expr = FunCall(mul, new LevelArguments(), Suc(Suc(Suc(Zero()))), Zero());
+    Expression expr = FunCall(mul, LevelArguments.ZERO, Suc(Suc(Suc(Zero()))), Zero());
     assertEquals(Zero(), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeMul0a3() {
     // normalize (mul 0 3) = 0
-    Expression expr = FunCall(mul, new LevelArguments(), Zero(), Suc(Suc(Suc(Zero()))));
+    Expression expr = FunCall(mul, LevelArguments.ZERO, Zero(), Suc(Suc(Suc(Zero()))));
     assertEquals(Zero(), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeMul3a3() {
     // normalize (mul 3 3) = 9
-    Expression expr = FunCall(mul, new LevelArguments(), Suc(Suc(Suc(Zero()))), Suc(Suc(Suc(Zero()))));
+    Expression expr = FunCall(mul, LevelArguments.ZERO, Suc(Suc(Suc(Zero()))), Suc(Suc(Suc(Zero()))));
     assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Suc(Suc(Suc(Zero()))))))))), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeFac3() {
     // normalize (fac 3) = 6
-    Expression expr = FunCall(fac, new LevelArguments(), Suc(Suc(Suc(Zero()))));
+    Expression expr = FunCall(fac, LevelArguments.ZERO, Suc(Suc(Suc(Zero()))));
     assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -279,7 +279,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
         "\\data D | d Nat\n" +
         "\\function test (x : D) : Nat <= \\elim x | _! => 0");
     FunctionDefinition test = (FunctionDefinition) result.getDefinition("test");
-    assertEquals(FunCall(test, new LevelArguments(), Reference(var0)), FunCall(test, new LevelArguments(), Reference(var0)).normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(FunCall(test, LevelArguments.ZERO, Reference(var0)), FunCall(test, LevelArguments.ZERO, Reference(var0)).normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
@@ -299,8 +299,8 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void testConCallNormFull() {
     initializeBDList();
-    Expression expr1 = ConCall(bdSnoc, new LevelArguments(), Collections.<Expression>singletonList(Nat()), ConCall(bdNil, new LevelArguments(), Collections.<Expression>singletonList(Nat())), Zero());
-    assertEquals(ConCall(bdCons, new LevelArguments(), Collections.<Expression>singletonList(Nat()), Zero(), ConCall(bdNil, new LevelArguments(), Collections.<Expression>singletonList(Nat()))), expr1.normalize(NormalizeVisitor.Mode.NF));
+    Expression expr1 = ConCall(bdSnoc, LevelArguments.ZERO, Collections.<Expression>singletonList(Nat()), ConCall(bdNil, LevelArguments.ZERO, Collections.<Expression>singletonList(Nat())), Zero());
+    assertEquals(ConCall(bdCons, LevelArguments.ZERO, Collections.<Expression>singletonList(Nat()), Zero(), ConCall(bdNil, LevelArguments.ZERO, Collections.<Expression>singletonList(Nat()))), expr1.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test

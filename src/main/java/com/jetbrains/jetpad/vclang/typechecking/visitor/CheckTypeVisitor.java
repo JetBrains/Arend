@@ -510,7 +510,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       return null;
     }
 
-    return new Result(ExpressionFactory.ClassCall((ClassDefinition) typeChecked, new LevelArguments()), new PiUniverseType(EmptyDependentLink.getInstance(), ((ClassDefinition) typeChecked).getSorts()));
+    return new Result(ExpressionFactory.ClassCall((ClassDefinition) typeChecked, LevelArguments.ZERO), new PiUniverseType(EmptyDependentLink.getInstance(), ((ClassDefinition) typeChecked).getSorts()));
   }
 
   @Override

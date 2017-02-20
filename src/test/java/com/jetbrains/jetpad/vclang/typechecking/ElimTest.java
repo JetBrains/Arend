@@ -1,14 +1,14 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -142,10 +142,10 @@ public class ElimTest extends TypeCheckingTestCase {
     FunctionDefinition test = (FunctionDefinition) result.getDefinition("test");
     Constructor d = (Constructor) result.getDefinition("d");
     Binding binding = new TypedBinding("y", Nat());
-    Expression call1 = ConCall(d, new LevelArguments(), Collections.<Expression>emptyList(), Zero(), Reference(binding));
-    Expression call2 = ConCall(d, new LevelArguments(), Collections.<Expression>emptyList(), Suc(Zero()), Reference(binding));
-    assertEquals(FunCall(test, new LevelArguments(), call1), FunCall(test, new LevelArguments(), call1).normalize(NormalizeVisitor.Mode.NF));
-    assertEquals(Suc(Zero()), FunCall(test, new LevelArguments(), call2).normalize(NormalizeVisitor.Mode.NF));
+    Expression call1 = ConCall(d, LevelArguments.ZERO, Collections.<Expression>emptyList(), Zero(), Reference(binding));
+    Expression call2 = ConCall(d, LevelArguments.ZERO, Collections.<Expression>emptyList(), Suc(Zero()), Reference(binding));
+    assertEquals(FunCall(test, LevelArguments.ZERO, call1), FunCall(test, LevelArguments.ZERO, call1).normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Suc(Zero()), FunCall(test, LevelArguments.ZERO, call2).normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test

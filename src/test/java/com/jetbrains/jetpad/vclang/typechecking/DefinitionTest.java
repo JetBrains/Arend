@@ -27,7 +27,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f => 0");
     assertNotNull(typedDef);
     assertTrue(typedDef.status() == Definition.TypeCheckingStatus.NO_ERRORS);
-    assertEquals(Nat(), typedDef.getTypeWithParams(new ArrayList<DependentLink>(), new LevelArguments()));
+    assertEquals(Nat(), typedDef.getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.ZERO));
   }
 
   @Test
@@ -36,7 +36,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     assertNotNull(typedDef);
     assertTrue(typedDef.status() == Definition.TypeCheckingStatus.NO_ERRORS);
     List<DependentLink> params = new ArrayList<>();
-    TypeMax type = typedDef.getTypeWithParams(params, new LevelArguments());
+    TypeMax type = typedDef.getTypeWithParams(params, LevelArguments.ZERO);
     assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), type.fromPiParameters(params));
   }
 

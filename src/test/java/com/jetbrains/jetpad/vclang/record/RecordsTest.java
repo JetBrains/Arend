@@ -1,13 +1,13 @@
 package com.jetbrains.jetpad.vclang.record;
 
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.sort.SortMax;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
-import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -162,7 +162,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\class Point { \\field x : Nat \\field y : Nat }\n" +
         "\\function C => Point { x => 0 }");
     assertEquals(new SortMax(Sort.SET0), ((ClassDefinition) result.getDefinition("Point")).getSorts());
-    assertEquals(Universe(Sort.SET0), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), new LevelArguments()).toExpression());
+    assertEquals(Universe(Sort.SET0), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.ZERO).toExpression());
   }
 
   @Test
@@ -171,7 +171,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\class Point { \\field x : Nat \\field y : Nat }\n" +
         "\\function C => Point { x => 0 | y => 1 }");
     assertEquals(new SortMax(Sort.SET0), ((ClassDefinition) result.getDefinition("Point")).getSorts());
-    assertEquals(Universe(Sort.PROP), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), new LevelArguments()).toExpression());
+    assertEquals(Universe(Sort.PROP), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.ZERO).toExpression());
   }
 
   @Test
@@ -180,7 +180,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\class Point { \\field x : \\Type3 \\field y : \\Type1 }\n" +
         "\\function C => Point { x => Nat }");
     assertEquals(new SortMax(Sort.TypeOfLevel(4)), ((ClassDefinition) result.getDefinition("Point")).getSorts());
-    assertEquals(Universe(Sort.TypeOfLevel(2)), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), new LevelArguments()).toExpression());
+    assertEquals(Universe(Sort.TypeOfLevel(2)), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.ZERO).toExpression());
   }
 
   @Test

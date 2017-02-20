@@ -34,7 +34,7 @@ public class GlobalInstancePool implements ClassViewInstancePool {
            classView instanceof Abstract.ClassDefinition &&
              ((Abstract.ClassView) instance.getClassView().getReferent()).getUnderlyingClassDefCall().getReferent() == classView) &&
           instance.getClassifyingDefinition() == classifyingDefCall.getDefinition().getAbstractDefinition()) {
-        return new FunCallExpression((FunctionDefinition) myTypecheckerState.getTypechecked(instance), new LevelArguments(), Collections.<Expression>emptyList());
+        return new FunCallExpression((FunctionDefinition) myTypecheckerState.getTypechecked(instance), LevelArguments.ZERO, Collections.<Expression>emptyList());
       }
     }
     return null;

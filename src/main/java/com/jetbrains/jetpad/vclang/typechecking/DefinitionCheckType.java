@@ -144,7 +144,7 @@ public class DefinitionCheckType {
 
   private static DependentLink createThisParam(ClassDefinition enclosingClass) {
     assert enclosingClass != null;
-    return param("\\this", ClassCall(enclosingClass, new LevelArguments(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND))));
+    return param("\\this", ClassCall(enclosingClass, LevelArguments.STD));
   }
 
   private static boolean typeCheckParameters(List<? extends Abstract.Argument> arguments, List<Binding> context, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool, Map<Integer, ClassField> classifyingFields) {
@@ -876,7 +876,7 @@ public class DefinitionCheckType {
     FieldSet fieldSet = new FieldSet();
     ClassDefinition classDef = (ClassDefinition) visitor.getTypecheckingState().getTypechecked(classView.getUnderlyingClassDefCall().getReferent());
     fieldSet.addFieldsFrom(classDef.getFieldSet());
-    ClassCallExpression term = ExpressionFactory.ClassCall(classDef, new LevelArguments(), fieldSet);
+    ClassCallExpression term = ExpressionFactory.ClassCall(classDef, LevelArguments.ZERO, fieldSet);
     for (ClassField field : classDef.getFieldSet().getFields()) {
       Abstract.ClassFieldImpl impl = classFieldMap.get(field);
       if (impl != null) {

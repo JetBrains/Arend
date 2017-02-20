@@ -14,13 +14,8 @@ public class LevelArguments {
   private final Level myPLevel;
   private final Level myHLevel;
 
-  public LevelArguments() {
-    this(0, 0);
-  }
-
-  public LevelArguments(int pLevel, int hLevel) {
-    this(new Level(pLevel), new Level(hLevel));
-  }
+  public static final LevelArguments STD = new LevelArguments(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND));
+  public static final LevelArguments ZERO = new LevelArguments(new Level(0), new Level(0));
 
   public LevelArguments(Level pLevel, Level hLevel) {
     myPLevel = pLevel;

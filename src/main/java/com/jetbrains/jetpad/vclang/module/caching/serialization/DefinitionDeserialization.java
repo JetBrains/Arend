@@ -154,10 +154,6 @@ class DefinitionDeserialization {
     return new SortMax(readLevelMax(proto.getPLevel()), readLevelMax(proto.getHLevel()));
   }
 
-  private LevelArguments readPolyArguments(LevelProtos.Level pProto, LevelProtos.Level hProto) throws DeserializationError {
-    return new LevelArguments(readLevel(pProto), readLevel(hProto));
-  }
-
 
   // Parameters
 
