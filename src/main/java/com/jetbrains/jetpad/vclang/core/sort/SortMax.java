@@ -132,6 +132,8 @@ public class SortMax {
 
   @Override
   public String toString() {
+    // TODO: Replace with ToAbstract + PrettyPrintVisitor
+
     Sort sort = toSort();
     if (sort != null && sort.isProp()) {
       return "\\Prop";

@@ -362,34 +362,31 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       Abstract.UniverseExpression uni = (Abstract.UniverseExpression)cod;
       if (args == null) return null;
 
+      LevelMax pLevelMax = replaceInfinities && uni.getPLevel() == null ? new LevelMax(new Level(LevelBinding.PLVL_BND)) : typeCheckLevelMax(uni.getPLevel(), 0);
+      LevelMax hLevelMax = uni.getHLevel() == null ?
+        replaceInfinities ? new LevelMax(new Level(LevelBinding.HLVL_BND)) : LevelMax.INFINITY : typeCheckLevelMax(uni.getHLevel(), -1);
       if (maxAllowed) {
-        LevelMax plevel = replaceInfinities && uni.getPLevel() == null ? new LevelMax(new Level(LevelBinding.PLVL_BND)) : typeCheckLevelMax(uni.getPLevel(), 0);
-        LevelMax hlevel = uni.getHLevel() == null ?
-                replaceInfinities ? new LevelMax(new Level(LevelBinding.HLVL_BND)) : LevelMax.INFINITY : typeCheckLevelMax(uni.getHLevel(), -1);
-        return new PiUniverseType(args, new SortMax(plevel, hlevel));
+        return new PiUniverseType(args, new SortMax(pLevelMax, hLevelMax));
       }
-      if ((uni.getPLevel() != null && uni.getPLevel().size() != 1) || (uni.getHLevel() != null && uni.getHLevel().size() != 1)) {
+
+      Level pLevel = pLevelMax.toLevel();
+      Level hLevel = hLevelMax.toLevel();
+      if (pLevel == null || hLevel == null) {
         // TODO: create special class for this error
-        myErrorReporter.report(new LocalTypeCheckingError("\'max\' can only be used in a result type", uni));
+        myErrorReporter.report(new LocalTypeCheckingError("\\max can only be used in a result type", uni));
         return null;
       }
-      Level pLevel;
-      Level hLevel;
 
-      if (uni.getPLevel() == null) {
+      if (pLevel.isInfinity()) {
         if (!replaceInfinities) {
           myErrorReporter.report(new LocalTypeCheckingError("\\Type without level is not allowed in this context", uni));
           return null;
         }
         pLevel = new Level(LevelBinding.PLVL_BND);
-      } else {
-        pLevel = typeCheckLevel(uni.getPLevel().get(0), 0);
       }
 
-      if (uni.getHLevel() == null) {
-        hLevel = !replaceInfinities ? Level.INFINITY : new Level(LevelBinding.HLVL_BND);
-      } else {
-        hLevel = typeCheckLevel(uni.getHLevel().get(0), -1);
+      if (replaceInfinities && hLevel.isInfinity()) {
+        hLevel = new Level(LevelBinding.HLVL_BND);
       }
 
       UniverseExpression universe = Universe(pLevel, hLevel);
@@ -463,12 +460,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     return tResultToResult(expectedType, result, expr);
   }
 
-  private Variable getLocalVar(Abstract.DefCallExpression expr, List<? extends Variable> context) {
+  public CheckTypeVisitor.Result getLocalVar(Abstract.DefCallExpression expr) {
     String name = expr.getName();
-    for (int i = context.size() - 1; i >= 0; i--) {
-      Variable def = context.get(i);
+    for (int i = myContext.size() - 1; i >= 0; i--) {
+      Variable def = myContext.get(i);
       if (name.equals(def.getName())) {
-        return def;
+        return new CheckTypeVisitor.Result(Reference((Binding) def), ((Binding) def).getType());
       }
     }
 
@@ -476,11 +473,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     expr.setWellTyped(myContext, Error(null, error));
     myErrorReporter.report(error);
     return null;
-  }
-
-  public CheckTypeVisitor.Result getLocalVar(Abstract.DefCallExpression expr) {
-    Variable def = getLocalVar(expr, myContext);
-    return def == null ? null : new CheckTypeVisitor.Result(Reference((Binding)def), ((Binding)def).getType());
   }
 
   @Override
@@ -510,7 +502,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       return null;
     }
 
-    return new Result(ExpressionFactory.ClassCall((ClassDefinition) typeChecked, LevelArguments.ZERO), new PiUniverseType(EmptyDependentLink.getInstance(), ((ClassDefinition) typeChecked).getSorts()));
+    return new Result(ExpressionFactory.ClassCall((ClassDefinition) typeChecked, LevelArguments.ZERO), new PiUniverseType(EmptyDependentLink.getInstance(), ((ClassDefinition) typeChecked).getSorts(LevelArguments.ZERO)));
   }
 
   @Override
@@ -622,84 +614,50 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   }
 
   @Override
-  public Result visitLP(Abstract.LPExpression expr, Type params) {
-    throw new IllegalStateException();
-  }
-
-  @Override
-  public Result visitLH(Abstract.LHExpression expr, Type params) {
-    throw new IllegalStateException();
-  }
-
-  public Level typeCheckLevel(Abstract.Expression expr, int minValue) {
-    int num_sucs = 0;
-    LocalTypeCheckingError error = null;
-
-    if (expr instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression)expr).getName().equals("inf")) {
-      return Level.INFINITY;
-    }
-
-    while (expr instanceof Abstract.AppExpression) {
-      Abstract.AppExpression app = (Abstract.AppExpression) expr;
-      Abstract.Expression suc = app.getFunction();
-      if (!(suc instanceof Abstract.DefCallExpression) || !((Abstract.DefCallExpression) suc).getName().equals("suc")) {
-        error = new LocalTypeCheckingError("Expression " + suc + " is invalid, 'suc' expected", expr);
-        break;
-      }
-      expr = app.getArgument().getExpression();
-      ++num_sucs;
-    }
-
-    if (error == null) {
-      if (expr instanceof Abstract.NumericLiteral) {
-        int val = ((Abstract.NumericLiteral) expr).getNumber();
-        return new Level(val + num_sucs - minValue);
-      } else if (expr instanceof Abstract.DefCallExpression) {
-        Abstract.DefCallExpression defCall = (Abstract.DefCallExpression)expr;
-        String name = defCall.getName();
-        if (name.equals("inf")) {
-          return Level.INFINITY;
-        }
-      } else if (expr instanceof Abstract.LPExpression) {
-        return new Level(LevelBinding.PLVL_BND, num_sucs);
-      } else if (expr instanceof Abstract.LHExpression) {
-        return new Level(LevelBinding.HLVL_BND, num_sucs);
-      }
-      error = new LocalTypeCheckingError("Invalid level expression", expr);
-    }
-
-    myErrorReporter.report(error);
-    return null;
-  }
-
-  public LevelMax typeCheckLevelMax(List<? extends Abstract.Expression> maxArgs, int minVal) {
-    LevelMax level = new LevelMax();
-    if (maxArgs == null) {
-      return LevelMax.INFINITY;
-    }
-    for (Abstract.Expression maxArgExpr : maxArgs) {
-      Level maxArg = typeCheckLevel(maxArgExpr, minVal);
-      if (maxArg == null) return null;
-      level = level.max(maxArg);
-    }
-    return level;
-  }
-
-  @Override
   public Result visitUniverse(Abstract.UniverseExpression expr, Type expectedType) {
-    if (expr.getPLevel() != null && expr.getPLevel().size() != 1) {
-      myErrorReporter.report(new LocalTypeCheckingError("\'max\' can only be used in a result type", expr));
+    Level pLevel = typeCheckLevelMax(expr.getPLevel(), 0).toLevel();
+    Level hLevel = typeCheckLevelMax(expr.getHLevel(), -1).toLevel();
+
+    if (pLevel == null || hLevel == null) {
+      myErrorReporter.report(new LocalTypeCheckingError("\\max can only be used in a result type", expr));
       return null;
     }
-    Level pLevel = expr.getPLevel() == null ? Level.INFINITY : typeCheckLevel(expr.getPLevel().get(0), 0);
-    Level hLevel = expr.getHLevel() != null ? typeCheckLevel(expr.getHLevel().get(0), -1) : Level.INFINITY;
-    if (pLevel == null) return null;
     if (pLevel.isInfinity()) {
       myErrorReporter.report(new LocalTypeCheckingError("\\Type can only used as Pi codomain in definition parameters or result type", expr));
       return null;
     }
+
     UniverseExpression universe = ExpressionFactory.Universe(new Sort(pLevel, hLevel));
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getSort().succ())), expr);
+  }
+
+  private LevelMax typeCheckLevelMax(Abstract.LevelExpression expr, int minValue) {
+    int n = 0;
+    while (expr instanceof Abstract.SucLevelExpression) {
+      n++;
+      expr = ((Abstract.SucLevelExpression) expr).getExpression();
+    }
+    if (expr instanceof Abstract.PLevelExpression) {
+      return new LevelMax(new Level(LevelBinding.PLVL_BND).add(n));
+    }
+    if (expr instanceof Abstract.HLevelExpression) {
+      return new LevelMax(new Level(LevelBinding.HLVL_BND).add(n));
+    }
+    if (expr instanceof Abstract.InfLevelExpression) {
+      return LevelMax.INFINITY;
+    }
+    if (expr instanceof Abstract.NumberLevelExpression) {
+      return new LevelMax(new Level(((Abstract.NumberLevelExpression) expr).getNumber() + n - minValue));
+    }
+    if (expr instanceof Abstract.MaxLevelExpression) {
+      LevelMax level = typeCheckLevelMax(((Abstract.MaxLevelExpression) expr).getLeft(), minValue);
+      level.add(typeCheckLevelMax(((Abstract.MaxLevelExpression) expr).getRight(), minValue));
+      if (n > 0) {
+        level.add(new Level(n));
+      }
+      return level;
+    }
+    throw new IllegalStateException();
   }
 
   @Override
@@ -937,7 +895,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
 
     FieldSet fieldSet = new FieldSet();
-    Expression resultExpr = ExpressionFactory.ClassCall(baseClass, classCallExpr.getPolyArguments(), fieldSet);
+    Expression resultExpr = ExpressionFactory.ClassCall(baseClass, classCallExpr.getLevelArguments(), fieldSet);
 
     fieldSet.addFieldsFrom(classCallExpr.getFieldSet());
     for (Map.Entry<ClassField, FieldSet.Implementation> entry : classCallExpr.getFieldSet().getImplemented()) {
@@ -986,7 +944,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   }
 
   public CheckTypeVisitor.Result implementField(FieldSet fieldSet, ClassField field, Abstract.Expression implBody, ClassCallExpression fieldSetClass) {
-    CheckTypeVisitor.Result result = typeCheck(implBody, field.getBaseType().subst(field.getThisParameter(), ExpressionFactory.New(fieldSetClass)));
+    CheckTypeVisitor.Result result = typeCheck(implBody, field.getBaseType(fieldSetClass.getLevelArguments()).subst(field.getThisParameter(), ExpressionFactory.New(fieldSetClass)));
     fieldSet.implementField(field, new FieldSet.Implementation(null, result != null ? result.expression : ExpressionFactory.Error(null, null)));
     return result;
   }

@@ -114,8 +114,8 @@ public class Constructor extends Definition implements Function {
           DataCallExpression dataCall = dataTypeParams.getType().toExpression().subst(subst).normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
           List<? extends Expression> argDataTypeParams = dataCall.getDefCallArguments();
           innerSubst = ((ConstructorPattern) patternArg.getPattern()).getMatchedArguments(new ArrayList<>(argDataTypeParams));
-          innerLevelSubst.add(LevelBinding.PLVL_BND, dataCall.getPolyArguments().getPLevel());
-          innerLevelSubst.add(LevelBinding.HLVL_BND, dataCall.getPolyArguments().getHLevel());
+          innerLevelSubst.add(LevelBinding.PLVL_BND, dataCall.getLevelArguments().getPLevel());
+          innerLevelSubst.add(LevelBinding.HLVL_BND, dataCall.getLevelArguments().getHLevel());
         }
 
         if (substitution != null) {

@@ -14,6 +14,7 @@ public class FunCallExpression extends DefCallExpression {
 
   public FunCallExpression(FunctionDefinition definition, LevelArguments polyParams, List<Expression> arguments) {
     super(definition, polyParams);
+    assert definition.status().headerIsOK();
     myArguments = arguments;
   }
 

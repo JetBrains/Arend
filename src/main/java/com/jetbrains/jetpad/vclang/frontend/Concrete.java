@@ -600,51 +600,23 @@ public final class Concrete {
     }
   }
 
-  public static class LPExpression extends Expression implements Abstract.LPExpression {
-    public LPExpression(Position position) {
-      super(position);
-    }
-
-    @Override
-    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitLP(this, params);
-    }
-  }
-
-  public static class LHExpression extends Expression implements Abstract.LHExpression {
-    public LHExpression(Position position) {
-      super(position);
-    }
-
-    @Override
-    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitLH(this, params);
-    }
-  }
-
   public static class UniverseExpression extends Expression implements Abstract.UniverseExpression {
-    private final List<? extends Abstract.Expression> myPLevel;
-    private final List<? extends Abstract.Expression> myHLevel;
+    private final LevelExpression myPLevel;
+    private final LevelExpression myHLevel;
 
-    public UniverseExpression(Position position, List<? extends Abstract.Expression> pLevel, List<? extends Abstract.Expression> hLevel) {
+    public UniverseExpression(Position position, LevelExpression pLevel, LevelExpression hLevel) {
       super(position);
       myPLevel = pLevel;
       myHLevel = hLevel;
     }
 
-    public UniverseExpression(Position position, List<? extends Abstract.Expression> pLevel, int hLevel) {
-      super(position);
-      myPLevel = pLevel;
-      myHLevel = Collections.singletonList(new NumericLiteral(position, hLevel));
-    }
-
     @Override
-    public List<? extends Abstract.Expression> getPLevel() {
+    public LevelExpression getPLevel() {
       return myPLevel;
     }
 
     @Override
-    public List<? extends Abstract.Expression> getHLevel() {
+    public LevelExpression getHLevel() {
       return myHLevel;
     }
 
@@ -777,6 +749,81 @@ public final class Concrete {
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitNumericLiteral(this, params);
+    }
+  }
+
+  // Level expressions
+
+  public static class LevelExpression extends SourceNode implements Abstract.LevelExpression {
+    protected LevelExpression(Position position) {
+      super(position);
+    }
+  }
+
+  public static class PLevelExpression extends LevelExpression implements Abstract.PLevelExpression {
+    public PLevelExpression(Position position) {
+      super(position);
+    }
+  }
+
+  public static class HLevelExpression extends LevelExpression implements Abstract.HLevelExpression {
+    public HLevelExpression(Position position) {
+      super(position);
+    }
+  }
+
+  public static class InfLevelExpression extends LevelExpression implements Abstract.InfLevelExpression {
+    public InfLevelExpression(Position position) {
+      super(position);
+    }
+  }
+
+  public static class NumberLevelExpression extends LevelExpression implements Abstract.NumberLevelExpression {
+    private final int myNumber;
+
+    public NumberLevelExpression(Position position, int number) {
+      super(position);
+      myNumber = number;
+    }
+
+    @Override
+    public int getNumber() {
+      return myNumber;
+    }
+  }
+
+  public static class SucLevelExpression extends LevelExpression implements Abstract.SucLevelExpression {
+    private final LevelExpression myExpression;
+
+    public SucLevelExpression(Position position, LevelExpression expression) {
+      super(position);
+      myExpression = expression;
+    }
+
+    @Override
+    public LevelExpression getExpression() {
+      return myExpression;
+    }
+  }
+
+  public static class MaxLevelExpression extends LevelExpression implements Abstract.MaxLevelExpression {
+    private final LevelExpression myLeft;
+    private final LevelExpression myRight;
+
+    public MaxLevelExpression(Position position, LevelExpression left, LevelExpression right) {
+      super(position);
+      myLeft = left;
+      myRight = right;
+    }
+
+    @Override
+    public LevelExpression getLeft() {
+      return myLeft;
+    }
+
+    @Override
+    public LevelExpression getRight() {
+      return myRight;
     }
   }
 

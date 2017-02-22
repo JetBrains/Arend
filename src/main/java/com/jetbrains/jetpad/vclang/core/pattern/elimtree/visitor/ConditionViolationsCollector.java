@@ -6,9 +6,9 @@ import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 
 import java.util.ArrayList;
@@ -53,7 +53,7 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<ExprSub
               }
               final Expression rhs = leaf.getExpression().subst(subst);
               try (Utils.ContextSaver ignore = new Utils.ContextSaver(ctx)) {
-                final ExprSubstitution subst1 = new ExprSubstitution(branchNode.getReference(), new ConCallExpression(conCall.getDefinition(), conCall.getPolyArguments(), new ArrayList<>(conCall.getDataTypeArguments()), arguments));
+                final ExprSubstitution subst1 = new ExprSubstitution(branchNode.getReference(), new ConCallExpression(conCall.getDefinition(), conCall.getLevelArguments(), new ArrayList<>(conCall.getDataTypeArguments()), arguments));
                 ctx.addAll(subst1.extendBy(branchNode.getContextTail()));
                 SubstituteExpander.substituteExpand(branchNode, subst1, ctx, new SubstituteExpander.SubstituteExpansionProcessor() {
                   @Override

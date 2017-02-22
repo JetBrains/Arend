@@ -18,6 +18,7 @@ public class ConCallExpression extends DefCallExpression {
   public ConCallExpression(Constructor definition, LevelArguments polyParams, List<Expression> dataTypeArguments, List<Expression> arguments) {
     super(definition, polyParams);
     assert dataTypeArguments != null;
+    assert definition.status().headerIsOK();
     myDataTypeArguments = dataTypeArguments;
     myArguments = arguments;
   }

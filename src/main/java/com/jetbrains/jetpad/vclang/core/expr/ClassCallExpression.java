@@ -19,6 +19,7 @@ public class ClassCallExpression extends DefCallExpression {
 
   public ClassCallExpression(ClassDefinition definition, LevelArguments polyParams) {
     super(definition, polyParams);
+    assert definition.status().headerIsOK();
     myFieldSet = new FieldSet(definition.getFieldSet());
   }
 
@@ -56,7 +57,7 @@ public class ClassCallExpression extends DefCallExpression {
     ClassField parent = getDefinition().getEnclosingThisField();
     boolean success = newFieldSet.implementField(parent, new FieldSet.Implementation(null, thisExpr));
     assert success;
-    return ClassCall(getDefinition(), getPolyArguments(), newFieldSet);
+    return ClassCall(getDefinition(), getLevelArguments(), newFieldSet);
   }
 
   @Override
@@ -79,7 +80,7 @@ public class ClassCallExpression extends DefCallExpression {
         newFieldSet.implementField(entry.getKey(), new FieldSet.Implementation(entry.getValue().thisParam, entry.getValue().term.accept(visitor, arg)));
       }
     }
-    return ClassCall(getDefinition(), getPolyArguments(), newFieldSet);
+    return ClassCall(getDefinition(), getLevelArguments(), newFieldSet);
   }
 
   @Override

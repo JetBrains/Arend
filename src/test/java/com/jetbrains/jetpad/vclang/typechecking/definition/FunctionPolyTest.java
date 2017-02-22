@@ -49,7 +49,8 @@ public class FunctionPolyTest extends TypeCheckingTestCase {
 
   @Test
   public void funWithTypeOmegaResultRecursive() {
-    FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) : \\Type <= \\elim n | zero => \\Set0 | suc n => A");
+    FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef(
+      "\\function f (A : \\Type) (n : Nat) : \\o-Type (\\max \\lp 1) <= \\elim n | zero => \\Set0 | suc n => A");
     assertEquals(new SortMax(
         new LevelMax(new Level(LevelBinding.PLVL_BND)).max(new LevelMax(new Level(1))),
         new LevelMax(new Level(LevelBinding.HLVL_BND)).max(new LevelMax(new Level(2)))), /* \Type (max \lp 1, max \lh 1) */
@@ -102,7 +103,7 @@ public class FunctionPolyTest extends TypeCheckingTestCase {
 
   @Test
   public void funOmegaSetExplicit() {
-    FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) : \\Type => \\Sigma (n = n) A Nat");
+    FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) : \\o-Type => \\Sigma (n = n) A Nat");
     assertEquals(new SortMax(
         new LevelMax(new Level(LevelBinding.PLVL_BND)),
         new LevelMax(new Level(LevelBinding.HLVL_BND)).max(new Level(1))), /* \Type (\lp, max \lh 0) */

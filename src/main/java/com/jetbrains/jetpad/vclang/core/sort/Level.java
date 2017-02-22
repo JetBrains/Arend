@@ -1,13 +1,13 @@
 package com.jetbrains.jetpad.vclang.core.sort;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
+import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
+import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
-import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
-import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
@@ -57,7 +57,7 @@ public class Level implements PrettyPrintable {
   }
 
   public Level add(int constant) {
-    return isInfinity() ? this : new Level(myVar, myConstant + constant);
+    return constant == 0 || isInfinity() ? this : new Level(myVar, myConstant + constant);
   }
 
   public Level subst(LevelSubstitution subst) {
@@ -78,8 +78,7 @@ public class Level implements PrettyPrintable {
   @Override
   public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent) {
     ToAbstractVisitor toAbsVisitor = new ToAbstractVisitor(new ConcreteExpressionFactory(), names);
-    toAbsVisitor.addFlags(ToAbstractVisitor.Flag.SHOW_GEN_PARAMS);
-    toAbsVisitor.visitLevel(this, 0).accept(new PrettyPrintVisitor(builder, indent), prec);
+    new PrettyPrintVisitor(builder, indent).prettyPrintLevelExpression(toAbsVisitor.visitLevel(this, 0), prec);
   }
 
   @Override

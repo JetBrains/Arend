@@ -195,8 +195,8 @@ public class ImplementTest extends TypeCheckingTestCase {
         "\\class B \\extends A {\n" +
         "  \\implement A => Nat\n" +
         "}");
-    assertEquals(new SortMax(new Sort(2,1)), ((ClassDefinition) result.getDefinition("A")).getSorts());
-    assertEquals(new SortMax(new Sort(0,0)), ((ClassDefinition) result.getDefinition("B")).getSorts());
+    assertEquals(new SortMax(new Sort(2,1)), ((ClassDefinition) result.getDefinition("A")).getSorts(LevelArguments.ZERO));
+    assertEquals(new SortMax(new Sort(0,0)), ((ClassDefinition) result.getDefinition("B")).getSorts(LevelArguments.ZERO));
   }
 
   @Test
@@ -207,7 +207,7 @@ public class ImplementTest extends TypeCheckingTestCase {
         "  \\field a : A\n" +
         "}\n" +
         "\\function f => A { A => Nat }");
-    assertEquals(new SortMax(new Sort(2,1)), ((ClassDefinition) result.getDefinition("A")).getSorts());
+    assertEquals(new SortMax(new Sort(2,1)), ((ClassDefinition) result.getDefinition("A")).getSorts(LevelArguments.ZERO));
     assertEquals(new SortMax(new Sort(0,0)), ((FunctionDefinition) result.getDefinition("f")).getResultType().toSorts());
   }
 
@@ -232,10 +232,10 @@ public class ImplementTest extends TypeCheckingTestCase {
         "\\function f => D { x => 1 }");
     List<DependentLink> fParams = new ArrayList<>();
     TypeMax fType = result.getDefinition("f").getTypeWithParams(fParams, LevelArguments.ZERO);
-    assertEquals(new SortMax(new Sort(2,1)), ((ClassDefinition) result.getDefinition("A")).getSorts());
-    assertEquals(new SortMax(new Sort(1,1)), ((ClassDefinition) result.getDefinition("B")).getSorts());
-    assertEquals(new SortMax(new Sort(2,1)), ((ClassDefinition) result.getDefinition("C")).getSorts());
-    assertEquals(new SortMax(new Sort(0,0)), ((ClassDefinition) result.getDefinition("D")).getSorts());
+    assertEquals(new SortMax(new Sort(2,1)), ((ClassDefinition) result.getDefinition("A")).getSorts(LevelArguments.ZERO));
+    assertEquals(new SortMax(new Sort(1,1)), ((ClassDefinition) result.getDefinition("B")).getSorts(LevelArguments.ZERO));
+    assertEquals(new SortMax(new Sort(2,1)), ((ClassDefinition) result.getDefinition("C")).getSorts(LevelArguments.ZERO));
+    assertEquals(new SortMax(new Sort(0,0)), ((ClassDefinition) result.getDefinition("D")).getSorts(LevelArguments.ZERO));
     assertEquals(ExpressionFactory.Universe(Sort.PROP), fType.fromPiParameters(fParams).toExpression());
   }
 

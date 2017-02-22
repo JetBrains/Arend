@@ -460,7 +460,7 @@ public class TypeCheckingElim {
 
       DependentLink constructorArgs = DependentLink.Helper.subst(constructor.getParameters(),
         toSubstitution(constructor.getDataTypeParameters(), matchedParameters),
-        type.toDataCall().getPolyArguments().toLevelSubstitution());
+        type.toDataCall().getLevelArguments().toLevelSubstitution());
 
       List<PatternArgument> resultPatterns = new ArrayList<>();
       DependentLink tailArgs = constructorArgs;
@@ -477,7 +477,7 @@ public class TypeCheckingElim {
 
       ConstructorPattern result = new ConstructorPattern(constructor, new Patterns(resultPatterns));
       pattern.setWellTyped(result);
-      return new ExpandPatternOKResult(ConCall(constructor, type.toDataCall().getPolyArguments(), matchedParameters, arguments), result);
+      return new ExpandPatternOKResult(ConCall(constructor, type.toDataCall().getLevelArguments(), matchedParameters, arguments), result);
     } else {
       throw new IllegalStateException();
     }

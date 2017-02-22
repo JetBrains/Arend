@@ -58,32 +58,39 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
   }
 
   @Override
-  public Boolean visitLP(Abstract.LPExpression expr1, Abstract.Expression expr2) {
-    return expr2 instanceof Abstract.LPExpression;
-  }
-
-  @Override
-  public Boolean visitLH(Abstract.LHExpression expr1, Abstract.Expression expr2) {
-    return expr2 instanceof Abstract.LHExpression;
-  }
-
-  @Override
   public Boolean visitUniverse(Abstract.UniverseExpression expr1, Abstract.Expression expr2) {
-    if(!(expr2 instanceof Abstract.UniverseExpression)) {
+    if (!(expr2 instanceof Abstract.UniverseExpression)) {
       return false;
     }
-    if (expr1.getPLevel() == null) {
-      return ((Abstract.UniverseExpression) expr2).getPLevel() == null;
+    Abstract.UniverseExpression uni2 = (Abstract.UniverseExpression) expr2;
+    return compareLevel(expr1.getPLevel(), uni2.getPLevel()) && compareLevel(expr1.getHLevel(), uni2.getHLevel());
+  }
+
+  public boolean compareLevel(Abstract.LevelExpression level1, Abstract.LevelExpression level2) {
+    if (level1 instanceof Abstract.PLevelExpression) {
+      return level2 instanceof Abstract.PLevelExpression;
     }
-    if (expr1.getPLevel().size() != ((Abstract.UniverseExpression) expr2).getPLevel().size()) {
-      return false;
+    if (level1 instanceof Abstract.HLevelExpression) {
+      return level2 instanceof Abstract.HLevelExpression;
     }
-    for (int i = 0; i < expr1.getPLevel().size(); ++i) {
-      if (!expr1.getPLevel().get(i).accept(this, ((Abstract.UniverseExpression) expr2).getPLevel().get(i))) {
+    if (level1 instanceof Abstract.InfLevelExpression) {
+      return level2 instanceof Abstract.InfLevelExpression;
+    }
+    if (level1 instanceof Abstract.NumberLevelExpression) {
+      return level2 instanceof Abstract.NumberLevelExpression && ((Abstract.NumberLevelExpression) level1).getNumber() == ((Abstract.NumberLevelExpression) level2).getNumber();
+    }
+    if (level1 instanceof Abstract.SucLevelExpression) {
+      return level2 instanceof Abstract.SucLevelExpression && compareLevel(((Abstract.SucLevelExpression) level1).getExpression(), ((Abstract.SucLevelExpression) level2).getExpression());
+    }
+    if (level1 instanceof Abstract.MaxLevelExpression) {
+      if (!(level2 instanceof Abstract.MaxLevelExpression)) {
         return false;
       }
+      Abstract.MaxLevelExpression max1 = (Abstract.MaxLevelExpression) level1;
+      Abstract.MaxLevelExpression max2 = (Abstract.MaxLevelExpression) level2;
+      return compareLevel(max1.getLeft(), max2.getLeft()) && compareLevel(max1.getRight(), max2.getRight());
     }
-    return true;
+    throw new IllegalStateException();
   }
 
   @Override

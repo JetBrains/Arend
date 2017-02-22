@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
@@ -23,7 +24,7 @@ public class PathsTest extends TypeCheckingTestCase {
   @Test
   public void idpUntyped() {
     CheckTypeVisitor.Result idp = typeCheckExpr("\\lam {A : \\Type0} (a : A) => path (\\lam _ => a)", null);
-    DependentLink A = param(false, "A", Universe(0));
+    DependentLink A = param(false, "A", Universe(new Level(0), new Level(LevelBinding.HLVL_BND)));
     A.setNext(param("a", Reference(A)));
     DependentLink C = param((String) null, Interval());
     List<Expression> pathArgs = new ArrayList<>();

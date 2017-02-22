@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 public class ConcreteExpressionFactory {
@@ -189,15 +188,15 @@ public class ConcreteExpressionFactory {
     return new Concrete.Clause(POSITION, patterns, arrow, expr);
   }
 
-  public static Concrete.UniverseExpression cUniverse(int level) {
-    return cUniverse(level, null);
+  public static Concrete.UniverseExpression cUniverseInf(int level) {
+    return new Concrete.UniverseExpression(POSITION, new Concrete.NumberLevelExpression(POSITION, level), new Concrete.InfLevelExpression(POSITION));
   }
 
-  public static Concrete.UniverseExpression cUniverse(Integer level, Integer truncated) {
-    return cPolyUniverse(level == null ? null : Collections.singletonList(cNum(level)), truncated == null ? null : Collections.singletonList(cNum(truncated)));
+  public static Concrete.UniverseExpression cUniverseStd(int level) {
+    return new Concrete.UniverseExpression(POSITION, new Concrete.NumberLevelExpression(POSITION, level), new Concrete.HLevelExpression(POSITION));
   }
 
-  public static Concrete.UniverseExpression cPolyUniverse(List<? extends Abstract.Expression> pLevel, List<? extends Abstract.Expression> hLevel) {
+  public static Concrete.UniverseExpression cUniverse(Concrete.LevelExpression pLevel, Concrete.LevelExpression hLevel) {
     return new Concrete.UniverseExpression(POSITION, pLevel, hLevel);
   }
 

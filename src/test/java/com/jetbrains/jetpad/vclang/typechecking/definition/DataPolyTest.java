@@ -99,4 +99,13 @@ public class DataPolyTest extends TypeCheckingTestCase {
         new LevelMax(new Level(LevelBinding.HLVL_BND)).max(new Level(1))), /* \Type (\lp, max \lh 0) */
       dataDefinition.getSorts());
   }
+
+  @Test
+  public void dataOmegaSetExplicitMax() {
+    DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Type \\lp (\\max \\lh 0) | con1 (n = n) | con2 A | con3 Nat");
+    assertEquals(new SortMax(
+        new LevelMax(new Level(LevelBinding.PLVL_BND)),
+        new LevelMax(new Level(LevelBinding.HLVL_BND)).max(new Level(1))), /* \Type (\lp, max \lh 0) */
+      dataDefinition.getSorts());
+  }
 }

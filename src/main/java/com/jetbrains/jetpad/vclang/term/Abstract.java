@@ -187,22 +187,11 @@ public final class Abstract {
     List<BinOpSequenceElem> getSequence();
   }
 
-  public interface LPExpression extends Expression {
-    byte PREC = 12;
-  }
-
-  public interface LHExpression extends Expression {
-    byte PREC = 12;
-  }
-
   public interface UniverseExpression extends Expression {
     byte PREC = 12;
 
-    int PROP = -1;
-    int SET = 0;
-
-    List<? extends Expression> getPLevel();
-    List<? extends Expression> getHLevel();
+    LevelExpression getPLevel();
+    LevelExpression getHLevel();
   }
 
   public interface InferHoleExpression extends Expression {
@@ -245,6 +234,33 @@ public final class Abstract {
 
   public interface NumericLiteral extends Expression {
     int getNumber();
+  }
+
+  // Level expressions
+
+  public interface LevelExpression extends SourceNode {
+  }
+
+  public interface PLevelExpression extends LevelExpression {
+  }
+
+  public interface HLevelExpression extends LevelExpression {
+  }
+
+  public interface InfLevelExpression extends LevelExpression {
+  }
+
+  public interface NumberLevelExpression extends LevelExpression {
+    int getNumber();
+  }
+
+  public interface SucLevelExpression extends LevelExpression {
+    LevelExpression getExpression();
+  }
+
+  public interface MaxLevelExpression extends LevelExpression {
+    LevelExpression getLeft();
+    LevelExpression getRight();
   }
 
   // Definitions

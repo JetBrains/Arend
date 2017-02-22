@@ -88,7 +88,7 @@ public class DataDefinition extends Definition {
         matchedParameters = dataCall.getDefCallArguments();
       }
 
-      result.add(ConCall(constructor, dataCall.getPolyArguments(), new ArrayList<>(matchedParameters), new ArrayList<Expression>()));
+      result.add(ConCall(constructor, dataCall.getLevelArguments(), new ArrayList<>(matchedParameters), new ArrayList<Expression>()));
     }
     return result;
   }

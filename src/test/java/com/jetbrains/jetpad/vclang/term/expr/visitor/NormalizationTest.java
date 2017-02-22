@@ -54,6 +54,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     plus = new FunctionDefinition(null);
     plus.setParameters(params(xPlus, yPlus));
     plus.setResultType(Nat());
+    plus.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
     DependentLink xPlusMinusOne = param("x'", Nat());
     ElimTreeNode plusElimTree = top(xPlus, branch(xPlus, tail(yPlus),
@@ -67,6 +68,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     mul = new FunctionDefinition(null);
     mul.setParameters(params(xMul, yMul));
     mul.setResultType(Nat());
+    mul.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     DependentLink xMulMinusOne = param("x'", Nat());
     ElimTreeNode mulElimTree = top(xMul, branch(xMul, tail(yMul),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Zero()),
@@ -79,6 +81,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     fac = new FunctionDefinition(null);
     fac.setParameters(xFac);
     fac.setResultType(Nat());
+    fac.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     DependentLink xFacMinusOne = param("x'", Nat());
     ElimTreeNode facElimTree = top(xFac, branch(xFac, tail(),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Suc(Zero())),
@@ -93,6 +96,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     nelim = new FunctionDefinition(null);
     nelim.setParameters(params(zNElim, sNElim, xNElim));
     nelim.setResultType(Nat());
+    nelim.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     DependentLink xNElimMinusOne = param("x'", Nat());
     ElimTreeNode nelimElimTree = top(zNElim, branch(xNElim, tail(),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Reference(zNElim)),
@@ -263,13 +267,13 @@ public class NormalizationTest extends TypeCheckingTestCase {
 
   @Test
   public void normalizeLetElimNoStuck() {
-    // normalize (\let | x (y : N) : \Type2 <= \elim y | \Type0 => \Type1 | succ _ => \Type1 \in x zero) = \Type0
+    // normalize (\let | x (y : N) : \o-Type2 <= \elim y | zero => \Type0 | suc _ => \Type1 \in x zero) = \Type0
     Concrete.Expression elimTree = cElim(Collections.<Concrete.Expression>singletonList(cVar("y")),
-        cClause(cPatterns(cConPattern(Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cUniverse(0)),
-        cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern(null), true, false))), Abstract.Definition.Arrow.RIGHT, cUniverse(1))
+        cClause(cPatterns(cConPattern(Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cUniverseStd(0)),
+        cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern(null), true, false))), Abstract.Definition.Arrow.RIGHT, cUniverseStd(1))
     );
-    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cUniverse(2), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar("x"), cZero())), null);
-    assertEquals(Universe(0), result.expression.normalize(NormalizeVisitor.Mode.NF));
+    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cUniverseInf(2), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar("x"), cZero())), null);
+    assertEquals(Universe(new Level(0), new Level(LevelBinding.HLVL_BND)), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test

@@ -40,7 +40,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
     for (Expression arg : expr.getDefCallArguments()) {
       args.add(arg.accept(this, null));
     }
-    return new FunCallExpression(expr.getDefinition(), expr.getPolyArguments(), args);
+    return new FunCallExpression(expr.getDefinition(), expr.getLevelArguments(), args);
   }
 
   @Override
@@ -55,7 +55,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
       args.add(arg.accept(this, null));
     }
 
-    return new ConCallExpression(expr.getDefinition(), expr.getPolyArguments(), dataTypeArgs, args);
+    return new ConCallExpression(expr.getDefinition(), expr.getLevelArguments(), dataTypeArgs, args);
   }
 
   @Override
@@ -64,7 +64,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
     for (Expression arg : expr.getDefCallArguments()) {
       args.add(arg.accept(this, null));
     }
-    return new DataCallExpression(expr.getDefinition(), expr.getPolyArguments(), args);
+    return new DataCallExpression(expr.getDefinition(), expr.getLevelArguments(), args);
   }
 
   @Override

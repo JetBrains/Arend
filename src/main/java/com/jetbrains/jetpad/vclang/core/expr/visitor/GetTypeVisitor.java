@@ -30,15 +30,15 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
   @Override
   public TypeMax visitDefCall(DefCallExpression expr, Void params) {
     List<DependentLink> defParams = new ArrayList<>();
-    TypeMax type = expr.getDefinition().getTypeWithParams(defParams, expr.getPolyArguments());
+    TypeMax type = expr.getDefinition().getTypeWithParams(defParams, expr.getLevelArguments());
     assert expr.getDefCallArguments().size() == defParams.size();
-    return type.subst(DependentLink.Helper.toSubstitution(defParams, expr.getDefCallArguments()), expr.getPolyArguments().toLevelSubstitution());
+    return type.subst(DependentLink.Helper.toSubstitution(defParams, expr.getDefCallArguments()), expr.getLevelArguments().toLevelSubstitution());
   }
 
   @Override
   public TypeMax visitConCall(ConCallExpression expr, Void params) {
     List<DependentLink> defParams = new ArrayList<>();
-    TypeMax type = expr.getDefinition().getTypeWithParams(defParams, expr.getPolyArguments());
+    TypeMax type = expr.getDefinition().getTypeWithParams(defParams, expr.getLevelArguments());
     assert expr.getDataTypeArguments().size() + expr.getDefCallArguments().size() == defParams.size();
     ExprSubstitution subst = DependentLink.Helper.toSubstitution(defParams, expr.getDataTypeArguments());
     defParams = defParams.subList(expr.getDataTypeArguments().size(), defParams.size());
@@ -48,7 +48,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
 
   @Override
   public TypeMax visitClassCall(ClassCallExpression expr, Void params) {
-    return expr.getSorts().toType().subst(new ExprSubstitution(), expr.getPolyArguments().toLevelSubstitution());
+    return expr.getSorts().toType().subst(new ExprSubstitution(), expr.getLevelArguments().toLevelSubstitution());
   }
 
   @Override

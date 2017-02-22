@@ -111,14 +111,14 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void typeCheckingInferPiIndex() {
     // (X : Type1) -> X -> X : Type2
-    Concrete.Expression expr = cPi("X", cUniverse(1), cPi(cVar("X"), cVar("X")));
+    Concrete.Expression expr = cPi("X", cUniverseInf(1), cPi(cVar("X"), cVar("X")));
     assertThat(typeCheckExpr(expr, null).type.toExpression(), is((Expression) Universe(2)));
   }
 
   @Test
   public void typeCheckingUniverse() {
     // (f : Type1 -> Type1) -> f Type1
-    Concrete.Expression expr = cPi("f", cPi(cUniverse(1), cUniverse(1)), cApps(cVar("f"), cUniverse(1)));
+    Concrete.Expression expr = cPi("f", cPi(cUniverseStd(1), cUniverseStd(1)), cApps(cVar("f"), cUniverseStd(1)));
     typeCheckExpr(expr, null, 1);
     assertThatErrorsAre(typeMismatchError());
   }
@@ -150,7 +150,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
   public void typedLambdaExpectedType() {
     // \(X : Type0) x. x : (X : Type0) (X) -> X
     DependentLink link = param("X", Universe(0));
-    typeCheckExpr("\\lam (X : \\Type0) x => x", Pi(params(link, param(Reference(link))), Reference(link)));
+    typeCheckExpr("\\lam (X : \\o-Type0) x => x", Pi(params(link, param(Reference(link))), Reference(link)));
   }
 
   @Test
@@ -180,7 +180,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void letDependentType() {
     // \lam (F : \Pi N -> \Type0) (f : \Pi (x : N) -> F x) => \\let | x => 0 \\in f x");
-    Concrete.Expression expr = cLam(cargs(cTele(cvars("F"), cPi(cNat(), cUniverse(0))), cTele(cvars("f"), cPi(ctypeArgs(cTele(cvars("x"), cNat())), cApps(cVar("F"), cVar("x"))))),
+    Concrete.Expression expr = cLam(cargs(cTele(cvars("F"), cPi(cNat(), cUniverseStd(0))), cTele(cvars("f"), cPi(ctypeArgs(cTele(cvars("x"), cNat())), cApps(cVar("F"), cVar("x"))))),
             cLet(clets(clet("x", cZero())), cApps(cVar("f"), cVar("x"))));
     typeCheckExpr(expr, null);
   }
@@ -194,8 +194,8 @@ public class ExpressionTest extends TypeCheckingTestCase {
         cClause(cPatterns(cConPattern(Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cDefCall(null, Prelude.ZERO.getAbstractDefinition())),
         cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern("x'"), true, false))), Abstract.Definition.Arrow.RIGHT, cSuc(cVar("x'"))));
     Concrete.Expression expr = cLam(cargs(
-            cTele(cvars("F"), cPi(ctypeArgs(cTele(false, cvars("A"), cUniverse(0)), cTele(cvars("a"), cVar("A"))), cUniverse(1))),
-            cTele(cvars("f"), cPi(ctypeArgs(cTele(false, cvars("A"), cUniverse(0)), cTele(cvars("x"), cVar("A"))), cApps(cVar("F"), cVar("x"))))),
+            cTele(cvars("F"), cPi(ctypeArgs(cTele(false, cvars("A"), cUniverseInf(0)), cTele(cvars("a"), cVar("A"))), cUniverseInf(1))),
+            cTele(cvars("f"), cPi(ctypeArgs(cTele(false, cvars("A"), cUniverseInf(0)), cTele(cvars("x"), cVar("A"))), cApps(cVar("F"), cVar("x"))))),
         cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cNat(), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar("f"), cVar("x"))));
     CheckTypeVisitor.Result result = typeCheckExpr(expr, null);
     Expression typeCodom = ((Expression) result.type).getPiParameters(new ArrayList<DependentLink>(), true, false);

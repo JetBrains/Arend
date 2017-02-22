@@ -22,7 +22,7 @@ public class RecursiveTest extends TypeCheckingTestCase {
 
   @Test
   public void dataRightError() {
-    Definition def = typeCheckDef("\\data List (B : \\Type0 -> \\Type0) (A : \\Type0) | nil | cons (B (List B A))", 1);
+    Definition def = typeCheckDef("\\data List (B : \\o-Type0 -> \\Type0) (A : \\Type0) | nil | cons (B (List B A))", 1);
     assertEquals(Definition.TypeCheckingStatus.BODY_HAS_ERRORS, def.status());
   }
 

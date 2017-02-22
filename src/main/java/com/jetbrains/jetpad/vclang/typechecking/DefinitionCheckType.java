@@ -729,22 +729,8 @@ public class DefinitionCheckType {
       typedDef.setFieldSet(fieldSet);
       typedDef.setSuperClasses(superClasses);
       typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-      /*
-      for (Abstract.TypeArgument polyArgument : def.getPolyParameters()) {
-        if (!isPolyParam(polyArgument)) {
-          visitor.getErrorReporter().report(new LocalTypeCheckingError("Classes can only have level parameters", polyArgument));
-          classOk = false;
-          continue;
-        }
-        List<LevelBinding> teleParam = typeCheckPolyParam(polyArgument, def, errorReporter);
-        if (teleParam == null) {
-          classOk = false;
-          continue;
-        }
-        polyParams.addAll(teleParam);
-        lvlContext.addAll(teleParam);
-      } /**/
       typedDef.setThisClass(enclosingClass);
+
       if (enclosingClass != null) {
         DependentLink thisParam = createThisParam(enclosingClass);
         context.add(thisParam);
@@ -779,12 +765,6 @@ public class DefinitionCheckType {
         }
       }
 
-      /* if (enclosingClass != null) {
-        assert context.size() == 1;
-        context.remove(0);
-      } else {
-        assert context.size() == 0;
-      } /**/
       context.clear();
 
       for (Abstract.ClassField field : def.getFields()) {
@@ -826,7 +806,7 @@ public class DefinitionCheckType {
   }
 
   private static CheckTypeVisitor.Result implementField(FieldSet fieldSet, ClassField field, Abstract.Expression implBody, CheckTypeVisitor visitor, DependentLink thisParam) {
-    CheckTypeVisitor.Result result = visitor.checkType(implBody, field.getBaseType().subst(field.getThisParameter(), Reference(thisParam)));
+    CheckTypeVisitor.Result result = visitor.checkType(implBody, field.getBaseType(LevelArguments.STD).subst(field.getThisParameter(), Reference(thisParam)));
     fieldSet.implementField(field, new FieldSet.Implementation(thisParam, result != null ? result.expression : Error(null, null)));
     return result;
   }

@@ -97,13 +97,22 @@ elimCase : '\\elim'                     # elim
          | '\\case'                     # case
          ;
 
-levelMaxExpr : atom | '(max' '(' expr (',' expr)* ') )';
+levelAtom : '\\lp'              # pLevel
+          | '\\lh'              # hLevel
+          | NUMBER              # numLevel
+          | '(' levelExpr ')'   # exprLevel
+          ;
 
-binOpArg : maybeNew atomFieldsAcc argument*                            # binOpArgument
-      |  (TRUNCATED_UNIVERSE_PREFIX | UNIVERSE_PREFIX) (levelMaxExpr)? # polyUniverse
-      | UNIVERSE_PREFIX '(' levelMaxExpr ',' levelMaxExpr ')'          # polyUniverseWithLH
-      | SET_PREFIX (levelMaxExpr)?                                     # polySet
-      ;
+levelExpr : levelAtom                     # atomLevelExpr
+          | '\\suc' levelAtom             # sucLevelExpr
+          | '\\max' levelAtom levelAtom   # maxLevelExpr
+          ;
+
+binOpArg : maybeNew atomFieldsAcc argument*       # binOpArgument
+         | TRUNCATED_UNIVERSE_PREFIX levelAtom?   # truncatedUniverseArgs
+         | UNIVERSE_PREFIX levelAtom? levelAtom?  # universeArgs
+         | SET_PREFIX levelAtom?                  # setUniverse
+         ;
 
 binOpLeft : binOpArg infix;
 
@@ -142,8 +151,6 @@ literal : name                          # id
         | TRUNCATED_UNIVERSE            # truncatedUniverse
         | SET                           # set
         | '\\Prop'                      # prop
-        | '\\lp'                        # pParam
-        | '\\lh'                        # hParam
         | '_'                           # unknown
         | '{?}'                         # hole
         ;
@@ -157,11 +164,9 @@ typedExpr : expr                        # notTyped
           | expr ':' expr               # typed
           ;
 
-
 NUMBER : [0-9]+;
-LAMBDA : '\\lam';
-TRUNCATED_UNIVERSE_PREFIX : '\\'[0-9]+'-Type';
 UNIVERSE_PREFIX : '\\Type';
+TRUNCATED_UNIVERSE_PREFIX : '\\' (NUMBER | 'o') '-Type';
 SET_PREFIX : '\\Set';
 UNIVERSE : UNIVERSE_PREFIX[0-9]+;
 TRUNCATED_UNIVERSE : TRUNCATED_UNIVERSE_PREFIX[0-9]+;

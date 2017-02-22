@@ -251,7 +251,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
 
     String term =
         "\\let\n" +
-        "  | x {A : \\Type0} (y : A -> A) => f y\n" +
+        "  | x {A : \\o-Type0} (y : A -> A) => f y\n" +
         "  | z (x : Nat) => x\n" +
         "\\in x z";
     CheckTypeVisitor.Result result = typeCheckExpr(context, term, null);

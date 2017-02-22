@@ -53,8 +53,8 @@ public class ClassField extends Definition {
     myThisParameter = thisParameter;
   }
 
-  public Expression getBaseType() {
-    return myType;
+  public Expression getBaseType(LevelArguments levelArgs) {
+    return myType.subst(levelArgs.toLevelSubstitution());
   }
 
   @Override

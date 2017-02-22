@@ -101,7 +101,7 @@ public class FieldSet {
   private void updateUniverseSingleField(ClassField field, ClassCallExpression thisClass) {
     if (myImplemented.containsKey(field)) return;
 
-    Expression baseType = field.getBaseType();
+    Expression baseType = field.getBaseType(thisClass.getLevelArguments());
     if (baseType.toError() != null) return;
 
     DependentLink thisParam = param("\\this", thisClass);

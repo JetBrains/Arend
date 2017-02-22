@@ -320,7 +320,7 @@ public class ClassesTest extends TypeCheckingTestCase {
     ClassField xField = (ClassField) result.getDefinition("A.x");
     ClassField aField = (ClassField) result.getDefinition("B.a");
     ClassField yField = (ClassField) result.getDefinition("B.y");
-    assertEquals(FieldCall(xField, FieldCall(aField, Reference(yField.getThisParameter()))), yField.getBaseType());
+    assertEquals(FieldCall(xField, FieldCall(aField, Reference(yField.getThisParameter()))), yField.getBaseType(LevelArguments.ZERO));
   }
 
   @Test

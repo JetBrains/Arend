@@ -74,21 +74,21 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         for (Expression arg : fun.toFunCall().getDefCallArguments()) {
           args.add(arg.accept(this, mode));
         }
-        fun = new FunCallExpression(fun.toFunCall().getDefinition(), fun.toFunCall().getPolyArguments(), args);
+        fun = new FunCallExpression(fun.toFunCall().getDefinition(), fun.toFunCall().getLevelArguments(), args);
       }
       if (fun.toDataCall() != null && !fun.toDataCall().getDefCallArguments().isEmpty()) {
         List<Expression> args = new ArrayList<>(fun.toDataCall().getDefCallArguments().size());
         for (Expression arg : fun.toDataCall().getDefCallArguments()) {
           args.add(arg.accept(this, mode));
         }
-        fun = new DataCallExpression(fun.toDataCall().getDefinition(), fun.toDataCall().getPolyArguments(), args);
+        fun = new DataCallExpression(fun.toDataCall().getDefinition(), fun.toDataCall().getLevelArguments(), args);
       }
       if (fun.toConCall() != null && !fun.toConCall().getDefCallArguments().isEmpty()) {
         List<Expression> args = new ArrayList<>(fun.toConCall().getDefCallArguments().size());
         for (Expression arg : fun.toConCall().getDefCallArguments()) {
           args.add(arg.accept(this, mode));
         }
-        fun = new ConCallExpression(fun.toConCall().getDefinition(), fun.toConCall().getPolyArguments(), new ArrayList<>(fun.toConCall().getDataTypeArguments()), args);
+        fun = new ConCallExpression(fun.toConCall().getDefinition(), fun.toConCall().getLevelArguments(), new ArrayList<>(fun.toConCall().getDataTypeArguments()), args);
       }
       return newArgs.isEmpty() ? fun : new AppExpression(fun, newArgs);
     } else {
@@ -121,7 +121,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return visitConstructorCall(defCallExpr.toConCall(), mode);
     }
     if (defCallExpr.getDefinition() instanceof Function) {
-      return visitFunctionCall((Function) defCallExpr.getDefinition(), defCallExpr.getPolyArguments().toLevelSubstitution(), expr, mode); //.subst(defCallExpr.getPolyParamsSubst());
+      return visitFunctionCall((Function) defCallExpr.getDefinition(), defCallExpr.getLevelArguments().toLevelSubstitution(), expr, mode); //.subst(defCallExpr.getPolyParamsSubst());
     }
 
     return mode == Mode.TOP ? null : applyDefCall(expr, mode);
@@ -139,10 +139,10 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       for (int i = 0; i < take; i++) {
         parameters.add(args.get(i));
       }
-      expr = ConCall(expr.getDefinition(), expr.getPolyArguments(), parameters, args.subList(take, args.size()));
+      expr = ConCall(expr.getDefinition(), expr.getLevelArguments(), parameters, args.subList(take, args.size()));
     }
 
-    return visitFunctionCall(expr.getDefinition(), expr.getPolyArguments().toLevelSubstitution(), expr, mode);
+    return visitFunctionCall(expr.getDefinition(), expr.getLevelArguments().toLevelSubstitution(), expr, mode);
   }
 
   private Expression visitFunctionCall(Function func, LevelSubstitution polySubst, Expression expr, Mode mode) {

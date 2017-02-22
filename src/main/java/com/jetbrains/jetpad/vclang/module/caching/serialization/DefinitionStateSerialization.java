@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.module.caching.serialization;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
+import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.module.caching.LocalizedTypecheckerState;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
@@ -71,7 +72,7 @@ public class DefinitionStateSerialization {
       ClassField field = (ClassField) state.getTypechecked(abstractField);
       DefinitionProtos.Definition.ClassData.Field.Builder fBuilder = DefinitionProtos.Definition.ClassData.Field.newBuilder();
       fBuilder.setThisParam(defSerializer.writeParameter(field.getThisParameter()));
-      fBuilder.setType(defSerializer.writeExpr(field.getBaseType()));
+      fBuilder.setType(defSerializer.writeExpr(field.getBaseType(LevelArguments.STD)));
       builder.putFields(myPersistenceProvider.getIdFor(abstractField), fBuilder.build());
     }
 

@@ -37,7 +37,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     for (Expression arg : expr.getDefCallArguments()) {
       args.add(arg.accept(this, null));
     }
-    return expr.getDefinition().getDefCall(expr.getPolyArguments().subst(myLevelSubstitution), args);
+    return expr.getDefinition().getDefCall(expr.getLevelArguments().subst(myLevelSubstitution), args);
   }
 
   @Override
@@ -56,13 +56,13 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
       args.add(arg.accept(this, null));
     }
 
-    return ConCall(expr.getDefinition(), expr.getPolyArguments().subst(myLevelSubstitution), dataTypeArgs, args);
+    return ConCall(expr.getDefinition(), expr.getLevelArguments().subst(myLevelSubstitution), dataTypeArgs, args);
   }
 
   @Override
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
     ClassCallExpression classCall = expr.applyVisitorToImplementedHere(this, params);
-    classCall.setPolyParamsSubst(classCall.getPolyArguments().subst(myLevelSubstitution));
+    classCall.setPolyParamsSubst(classCall.getLevelArguments().subst(myLevelSubstitution));
     return classCall;
   }
 

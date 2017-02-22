@@ -65,13 +65,38 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.Expression makeUniverse(List<? extends Abstract.Expression> pLevel, List<? extends Abstract.Expression> hLevel) {
-    return cPolyUniverse(pLevel, hLevel);
+  public Abstract.Expression makeUniverse(Abstract.LevelExpression pLevel, Abstract.LevelExpression hLevel) {
+    return cUniverse((Concrete.LevelExpression) pLevel, (Concrete.LevelExpression) hLevel);
   }
 
   @Override
-  public Abstract.Expression makeUniverse(Integer pLevel, Integer hLevel) {
-    return cUniverse(pLevel, hLevel);
+  public Abstract.LevelExpression makePLevel() {
+    return new Concrete.PLevelExpression(POSITION);
+  }
+
+  @Override
+  public Abstract.LevelExpression makeHLevel() {
+    return new Concrete.HLevelExpression(POSITION);
+  }
+
+  @Override
+  public Abstract.LevelExpression makeNumberLevel(int number) {
+    return new Concrete.NumberLevelExpression(POSITION, number);
+  }
+
+  @Override
+  public Abstract.LevelExpression makeSucLevel(Abstract.LevelExpression expr) {
+    return new Concrete.SucLevelExpression(POSITION, (Concrete.LevelExpression) expr);
+  }
+
+  @Override
+  public Abstract.LevelExpression makeMaxLevel(Abstract.LevelExpression left, Abstract.LevelExpression right) {
+    return new Concrete.MaxLevelExpression(POSITION, (Concrete.LevelExpression) left, (Concrete.LevelExpression) right);
+  }
+
+  @Override
+  public Abstract.LevelExpression makeInf() {
+    return new Concrete.InfLevelExpression(POSITION);
   }
 
   @Override

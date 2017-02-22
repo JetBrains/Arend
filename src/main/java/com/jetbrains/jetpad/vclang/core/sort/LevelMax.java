@@ -2,11 +2,11 @@ package com.jetbrains.jetpad.vclang.core.sort;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
+import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.*;
@@ -198,8 +198,7 @@ public class LevelMax implements PrettyPrintable {
   @Override
   public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent) {
     ToAbstractVisitor toAbsVisitor = new ToAbstractVisitor(new ConcreteExpressionFactory(), names);
-    toAbsVisitor.addFlags(ToAbstractVisitor.Flag.SHOW_GEN_PARAMS);
-    new PrettyPrintVisitor(builder, indent).prettyPrintMaxExpression(toAbsVisitor.visitLevelMax(this, 0), prec);
+    new PrettyPrintVisitor(builder, indent).prettyPrintLevelExpression(toAbsVisitor.visitLevelMax(this, 0), prec);
   }
 
   @Override

@@ -17,7 +17,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   @Test
   public void typeCheckDefType() {
     typeCheckClass(
-        "\\function x : \\Type0 => Nat\n" +
+        "\\function x : \\Set0 => Nat\n" +
         "\\function y : x => zero");
   }
 

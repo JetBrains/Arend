@@ -199,7 +199,7 @@ public class TypeCheckingDefCall {
       }
 
       if (constructor != null) {
-        return CheckTypeVisitor.DefCallResult.makeTResult(expr, constructor, dataCall.getPolyArguments(), null).applyExpressions(args);
+        return CheckTypeVisitor.DefCallResult.makeTResult(expr, constructor, dataCall.getLevelArguments(), null).applyExpressions(args);
       }
     }
 
@@ -283,9 +283,13 @@ public class TypeCheckingDefCall {
       return result;
     }
     ClassField parentField = classDefinition.getEnclosingThisField();
-    if (parentField == null || parentField.getBaseType().toClassCall() == null) {
+    if (parentField == null) {
       return null;
     }
-    return findParent(parentField.getBaseType().toClassCall().getDefinition(), definition, FieldCall(parentField, result));
+    ClassCallExpression classCall = parentField.getBaseType(LevelArguments.STD).toClassCall();
+    if (classCall == null) {
+      return null;
+    }
+    return findParent(classCall.getDefinition(), definition, FieldCall(parentField, result));
   }
 }

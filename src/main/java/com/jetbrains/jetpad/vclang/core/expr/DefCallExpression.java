@@ -8,19 +8,19 @@ import java.util.List;
 
 public abstract class DefCallExpression extends Expression {
   private final Definition myDefinition;
-  private LevelArguments myPolyArguments;
+  private LevelArguments myLevelArguments;
 
   public DefCallExpression(Definition definition, LevelArguments polyArgs) {
     myDefinition = definition;
-    myPolyArguments = polyArgs;
+    myLevelArguments = polyArgs;
   }
 
   public List<? extends Expression> getDefCallArguments() {
     return Collections.emptyList();
   }
 
-  public LevelArguments getPolyArguments() {
-    return myPolyArguments;
+  public LevelArguments getLevelArguments() {
+    return myLevelArguments;
   }
 
   public abstract Expression applyThis(Expression thisExpr);
@@ -30,7 +30,7 @@ public abstract class DefCallExpression extends Expression {
   }
 
   public void setPolyParamsSubst(LevelArguments polyParams) {
-    myPolyArguments = polyParams;
+    myLevelArguments = polyParams;
   }
 
   @Override

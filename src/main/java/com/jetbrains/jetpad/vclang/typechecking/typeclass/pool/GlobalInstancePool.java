@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass.pool;
 
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
@@ -34,7 +35,10 @@ public class GlobalInstancePool implements ClassViewInstancePool {
            classView instanceof Abstract.ClassDefinition &&
              ((Abstract.ClassView) instance.getClassView().getReferent()).getUnderlyingClassDefCall().getReferent() == classView) &&
           instance.getClassifyingDefinition() == classifyingDefCall.getDefinition().getAbstractDefinition()) {
-        return new FunCallExpression((FunctionDefinition) myTypecheckerState.getTypechecked(instance), LevelArguments.ZERO, Collections.<Expression>emptyList());
+        Definition definition = myTypecheckerState.getTypechecked(instance);
+        if (definition.status().headerIsOK()) {
+          return new FunCallExpression((FunctionDefinition) definition, LevelArguments.ZERO, Collections.<Expression>emptyList());
+        }
       }
     }
     return null;

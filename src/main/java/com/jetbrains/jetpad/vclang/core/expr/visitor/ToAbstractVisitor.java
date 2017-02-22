@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
@@ -23,7 +24,7 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import java.util.*;
 
 public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expression> implements ElimTreeNodeVisitor<Void, Abstract.Expression> {
-  public enum Flag { SHOW_CON_DATA_TYPE, SHOW_CON_PARAMS, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS, SHOW_GEN_PARAMS }
+  public enum Flag { SHOW_CON_DATA_TYPE, SHOW_CON_PARAMS, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS }
   public static final EnumSet<Flag> DEFAULT = EnumSet.of(Flag.SHOW_IMPLICIT_ARGS);
 
   private final AbstractExpressionFactory myFactory;
@@ -182,7 +183,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       for (int i = 0; i < expr.getDataTypeArguments().size() && link.hasNext(); i++, link = link.getNext()) {
         substitution.add(link, expr.getDataTypeArguments().get(i));
       }
-      conParams = expr.getDefinition().getDataTypeExpression(substitution, expr.getPolyArguments()).accept(this, null);
+      conParams = expr.getDefinition().getDataTypeExpression(substitution, expr.getLevelArguments()).accept(this, null);
     }
     return visitArguments(myFactory.makeDefCall(conParams, expr.getDefinition().getAbstractDefinition()), expr);
   }
@@ -332,103 +333,45 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return null;
   }
 
-  private Integer getHNum(Level expr) {
-    if (expr.isClosed()) {
-      if (expr.isInfinity()) {
-        return null;
-      }
-      return expr.getConstant() - 1;
-    }
-    return null;
-  }
-
-  private Integer getPNum(Level expr) {
-    if (expr.isClosed() && !expr.isInfinity()) {
-      return expr.getConstant();
-    }
-    return null;
-  }
-
-  private Level eliminateGenParam(Level expr) {
-    if (expr.getVar() == null || !expr.getVar().getName().startsWith("\\")) {
-      return expr;
-    }
-    return Level.INFINITY;
-  }
-
-  private LevelMax eliminateGenParams(LevelMax expr) {
-    if (expr.isInfinity()) return LevelMax.INFINITY;
-    LevelMax result = new LevelMax();
-    for (Level arg : expr.toListOfLevels()) {
-      result.add(eliminateGenParam(arg));
-    }
-    return result;
-  }
-
   @Override
   public Abstract.Expression visitUniverse(UniverseExpression expr, Void params) {
     return visitSort(expr.getSort());
   }
 
-  public Abstract.Expression visitSort(Sort sort) {
-    if (sort.getPLevel().isClosed() && sort.getHLevel().isClosed()) {
-      return myFactory.makeUniverse(getPNum(sort.getPLevel()), getHNum(sort.getHLevel()));
-    } else {
-      Level plevel = sort.getPLevel();
-      Level hlevel = sort.getHLevel();
-      if (!myFlags.contains(Flag.SHOW_GEN_PARAMS)) {
-        plevel = eliminateGenParam(plevel);
-        hlevel = eliminateGenParam(hlevel);
-      }
-      return myFactory.makeUniverse(plevel.isInfinity() ? null : Collections.singletonList(visitLevel(plevel, 0)), hlevel.isInfinity() ? null : Collections.singletonList(visitLevel(hlevel, -1)));
-    }
+  public Abstract.Expression visitSort(Sort sorts) {
+    return myFactory.makeUniverse(visitLevel(sorts.getPLevel(), 0), visitLevel(sorts.getHLevel(), -1));
   }
 
   public Abstract.Expression visitSortMax(SortMax sorts) {
-    Sort sort = sorts.toSort();
-    if (sort != null) {
-      return visitSort(sort);
-    }
     return myFactory.makeUniverse(visitLevelMax(sorts.getPLevel(), 0), visitLevelMax(sorts.getHLevel(), -1));
   }
 
-  public Abstract.Expression visitLevel(Level level, int add) {
+  public Abstract.LevelExpression visitLevel(Level level, int add) {
     if (level.isInfinity()) {
-      return myFactory.makeVar("inf");
+      return myFactory.makeInf();
     }
     if (level.isClosed()) {
-      return myFactory.makeNumericalLiteral(level.getConstant() + add);
+      return myFactory.makeNumberLevel(level.getConstant() + add);
     }
 
-    Abstract.Expression result = visitVariable(level.getVar());
-    for (int i = 0; i < level.getConstant() + add; i++) {
-      result = myFactory.makeApp(myFactory.makeVar("suc"), true, result);
+    Abstract.LevelExpression result = level.getVar().getType() == LevelVariable.LvlType.PLVL ? myFactory.makePLevel() : myFactory.makeHLevel();
+    for (int i = 0; i < level.getConstant(); i++) {
+      result = myFactory.makeSucLevel(result);
     }
     return result;
   }
 
-  public List<Abstract.Expression> visitLevelMax(LevelMax levelMax, int add) {
-    if (!myFlags.contains(Flag.SHOW_GEN_PARAMS)) {
-      levelMax = eliminateGenParams(levelMax);
-    }
-    if (levelMax.isInfinity()) {
-      return null;
-    }
-
+  public Abstract.LevelExpression visitLevelMax(LevelMax levelMax, int add) {
     List<Level> levels = levelMax.toListOfLevels();
     if (levels.isEmpty()) {
-      return Collections.singletonList(myFactory.makeNumericalLiteral(add));
-    }
-    if (levels.size() == 1) {
-      return Collections.singletonList(visitLevel(levels.get(0), add));
+      return myFactory.makeNumberLevel(add);
     }
 
-    List<Abstract.Expression> maxArgs = new ArrayList<>();
-    for (Level level : levels) {
-      maxArgs.add(visitLevel(level, add));
+    Abstract.LevelExpression result = visitLevel(levels.get(0), add);
+    for (int i = 1; i < levels.size(); i++) {
+      result = myFactory.makeMaxLevel(result, visitLevel(levels.get(i), add));
     }
-
-    return maxArgs;
+    return result;
   }
 
   public Abstract.Expression visitTypeMax(TypeMax type) {

@@ -12,15 +12,8 @@ public class DataCallExpression extends DefCallExpression {
 
   public DataCallExpression(DataDefinition definition, LevelArguments polyParams, List<Expression> arguments) {
     super(definition, polyParams);
+    assert definition.status().headerIsOK();
     myArguments = arguments;
-
-    /*if (getPolyArguments().getLevels().size() < definition.getPolyParams().size()) {
-      List<Level> extendedPolyParams = new ArrayList<>(getPolyArguments().getLevels());
-      for (int i = getPolyArguments().getLevels().size(); i < definition.getPolyParams().size(); ++i) {
-        extendedPolyParams.add(Level.INFINITY);
-      }
-      setPolyParamsSubst(new LevelArguments(extendedPolyParams));
-    } /**/
   }
 
   @Override

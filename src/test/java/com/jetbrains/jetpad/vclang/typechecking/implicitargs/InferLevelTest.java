@@ -28,8 +28,8 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // ?l <= 10
     // error: cannot infer ?l
     typeCheckClass(
-        "\\function A => \\Type \\lp\n" +
-        "\\function f : \\Type10 => A");
+        "\\function A => \\o-Type \\lp\n" +
+        "\\function f : \\o-Type10 => A");
   }
 
   @Test
@@ -37,8 +37,15 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // ?l <= c
     // error: cannot infer ?l
     typeCheckClass(
-        "\\function A => \\Type \\lp \n" +
-        "\\function f : \\Type (suc \\lp) => A");
+        "\\function A => \\Type \\lp\n" +
+        "\\function f : \\Type (\\suc \\lp) (\\suc \\lh) => A");
+  }
+
+  @Test
+  public void belowParam2() {
+    typeCheckClass(
+        "\\function A => \\Type \\lp\n" +
+        "\\function f : \\o-Type (\\suc \\lp) => A");
   }
 
   @Test
@@ -46,8 +53,8 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // ?l + 1 <= c
     // error: cannot infer ?l
     typeCheckClass(
-        "\\function A => \\Type \\lp \n" +
-        "\\function f : \\Type \\lp => A", 1);
+        "\\function A => \\o-Type \\lp \n" +
+        "\\function f : \\o-Type \\lp => A", 1);
   }
 
   @Test
@@ -55,8 +62,8 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // 0 <= ?l, 0 <= c
     // ok: ?l = 0
     typeCheckClass(
-        "\\function f (A : \\Type \\lp) => A\n" +
-        "\\function g : \\Type \\lp => f Nat");
+        "\\function f (A : \\o-Type \\lp) => A\n" +
+        "\\function g : \\o-Type \\lp => f Nat");
   }
 
   @Test
@@ -73,8 +80,8 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // 0 <= ?l <= 10
     // ok: ?l = 0
     typeCheckClass(
-        "\\function f (A : \\Type \\lp) => A\n" +
-        "\\function g : \\Type10 => f Nat");
+        "\\function f (A : \\o-Type \\lp) => A\n" +
+        "\\function g : \\o-Type10 => f Nat");
   }
 
   @Test
@@ -82,8 +89,8 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // 1 <= ?l <= 10
     // ok: ?l = 1
     typeCheckClass(
-        "\\function f (A : \\Type \\lp) => A\n" +
-        "\\function g : \\Type10 => f \\Type0");
+        "\\function f (A : \\o-Type \\lp) => A\n" +
+        "\\function g : \\o-Type10 => f \\o-Type0");
   }
 
   @Test

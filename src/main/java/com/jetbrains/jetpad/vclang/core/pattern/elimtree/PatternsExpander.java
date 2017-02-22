@@ -77,7 +77,7 @@ class PatternsExpander {
       );
       clause.setChild(nestedResult.tree);
       for (MultiPatternsExpander.MultiBranch branch : nestedResult.branches) {
-        Expression expr = ConCall(conCall.getDefinition(), conCall.getPolyArguments(), new ArrayList<>(conCall.getDataTypeArguments()), branch.expressions);
+        Expression expr = ConCall(conCall.getDefinition(), conCall.getLevelArguments(), new ArrayList<>(conCall.getDataTypeArguments()), branch.expressions);
         resultBranches.add(new Branch(expr, branch.leaf, recalcIndices(matching.indices, branch.indices), branch.newContext));
       }
     }

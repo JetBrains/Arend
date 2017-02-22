@@ -21,7 +21,7 @@ public class ElimTest extends TypeCheckingTestCase {
   public void elim2() {
     typeCheckClass(
         "\\data D Nat (x y : Nat) | con1 Nat | con2 (Nat -> Nat) (a b c : Nat)\n" +
-        "\\function P (a1 b1 c1 : Nat) (d1 : D a1 b1 c1) (a2 b2 c2 : Nat) (d2 : D a2 b2 c2) : \\Type0 <= \\elim d1\n" +
+        "\\function P (a1 b1 c1 : Nat) (d1 : D a1 b1 c1) (a2 b2 c2 : Nat) (d2 : D a2 b2 c2) : \\o-Type0 <= \\elim d1\n" +
         "  | con2 _ _ _ _ => Nat -> Nat\n" +
         "  | con1 _ => Nat\n" +
         "\\function test (q w : Nat) (e : D w 0 q) (r : D q w 1) : P w 0 q e q w 1 r <= \\elim e, r\n" +
@@ -158,7 +158,7 @@ public class ElimTest extends TypeCheckingTestCase {
   @Test
   public void elim10() {
     typeCheckClass("\\data Bool | true | false\n" +
-                   "\\function tp : \\Pi (x : Bool) -> \\Type0 => \\lam x => \\case x\n" +
+                   "\\function tp : \\Pi (x : Bool) -> \\o-Type0 => \\lam x => \\case x\n" +
                    "| true => Bool\n" +
                    "| false => Nat\n" +
                    "\\function f (x : Bool) : tp x <= \\elim x\n" +
