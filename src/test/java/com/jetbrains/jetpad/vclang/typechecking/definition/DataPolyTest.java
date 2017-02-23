@@ -75,7 +75,7 @@ public class DataPolyTest extends TypeCheckingTestCase {
 
   @Test
   public void dataOmegaPropExplicit() {
-    DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Type | con1 (n = n) | con2 A");
+    DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Type \\lp (\\max \\lh 0) | con1 (n = n) | con2 A");
     assertEquals(new SortMax(
         new LevelMax(new Level(LevelBinding.PLVL_BND)),
         new LevelMax(new Level(LevelBinding.HLVL_BND)).max(new Level(1))), /* \Type (\lp, max \lh 0) */
@@ -93,11 +93,7 @@ public class DataPolyTest extends TypeCheckingTestCase {
 
   @Test
   public void dataOmegaSetExplicit() {
-    DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Type | con1 (n = n) | con2 A | con3 Nat");
-    assertEquals(new SortMax(
-        new LevelMax(new Level(LevelBinding.PLVL_BND)),
-        new LevelMax(new Level(LevelBinding.HLVL_BND)).max(new Level(1))), /* \Type (\lp, max \lh 0) */
-      dataDefinition.getSorts());
+    typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Type | con1 (n = n) | con2 A | con3 Nat", 1);
   }
 
   @Test

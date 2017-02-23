@@ -284,7 +284,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     if (parens) myBuilder.append('(');
 
     if (expr.getHLevel() instanceof Abstract.InfLevelExpression) {
-      myBuilder.append("\\o-Type");
+      myBuilder.append("\\oo-Type");
     } else
     if (expr.getHLevel() instanceof Abstract.NumberLevelExpression) {
       int hLevel = ((Abstract.NumberLevelExpression) expr.getHLevel()).getNumber();

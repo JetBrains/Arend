@@ -166,7 +166,7 @@ typedExpr : expr                        # notTyped
 
 NUMBER : [0-9]+;
 UNIVERSE_PREFIX : '\\Type';
-TRUNCATED_UNIVERSE_PREFIX : '\\' (NUMBER | 'o') '-Type';
+TRUNCATED_UNIVERSE_PREFIX : '\\' (NUMBER | 'oo') '-Type';
 SET_PREFIX : '\\Set';
 UNIVERSE : UNIVERSE_PREFIX[0-9]+;
 TRUNCATED_UNIVERSE : TRUNCATED_UNIVERSE_PREFIX[0-9]+;

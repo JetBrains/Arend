@@ -14,6 +14,7 @@ import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeOmega;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.StripVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
@@ -23,6 +24,9 @@ import com.jetbrains.jetpad.vclang.core.pattern.Utils.ProcessImplicitResult;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.*;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
@@ -856,7 +860,8 @@ public class DefinitionCheckType {
     FieldSet fieldSet = new FieldSet();
     ClassDefinition classDef = (ClassDefinition) visitor.getTypecheckingState().getTypechecked(classView.getUnderlyingClassDefCall().getReferent());
     fieldSet.addFieldsFrom(classDef.getFieldSet());
-    ClassCallExpression term = ExpressionFactory.ClassCall(classDef, LevelArguments.ZERO, fieldSet);
+    ClassCallExpression term = ExpressionFactory.ClassCall(classDef, LevelArguments.generateInferVars(visitor.getEquations(), def.getClassView()), fieldSet);
+
     for (ClassField field : classDef.getFieldSet().getFields()) {
       Abstract.ClassFieldImpl impl = classFieldMap.get(field);
       if (impl != null) {
@@ -867,6 +872,12 @@ public class DefinitionCheckType {
         return;
       }
     }
+
+    LevelSubstitution substitution = visitor.getEquations().solve(def);
+    if (!substitution.isEmpty()) {
+      term = new SubstVisitor(new ExprSubstitution(), substitution).visitClassCall(term, null);
+    }
+    term = new StripVisitor(new HashSet<>(visitor.getContext()), visitor.getErrorReporter()).visitClassCall(term, null);
 
     FieldSet.Implementation impl = fieldSet.getImplementation((ClassField) state.getTypechecked(classView.getClassifyingField()));
     DefCallExpression defCall = impl.term.normalize(NormalizeVisitor.Mode.WHNF).toDefCall();

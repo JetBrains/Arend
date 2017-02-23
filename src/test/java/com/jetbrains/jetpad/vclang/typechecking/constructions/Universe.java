@@ -12,7 +12,7 @@ import static org.junit.Assert.assertNotNull;
 public class Universe extends TypeCheckingTestCase {
   @Test
   public void universe() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\o-Type5", null);
+    CheckTypeVisitor.Result result = typeCheckExpr("\\oo-Type5", null);
     assertNotNull(result);
     assertEquals(ExpressionFactory.Universe(5), result.expression);
     assertEquals(ExpressionFactory.Universe(6), result.type);
@@ -21,7 +21,7 @@ public class Universe extends TypeCheckingTestCase {
 
   @Test
   public void universeExpected() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\o-Type5", ExpressionFactory.Universe(8));
+    CheckTypeVisitor.Result result = typeCheckExpr("\\oo-Type5", ExpressionFactory.Universe(8));
     assertNotNull(result);
     assertEquals(ExpressionFactory.Universe(5), result.expression);
     assertEquals(ExpressionFactory.Universe(6), result.expression.getType());
@@ -29,12 +29,12 @@ public class Universe extends TypeCheckingTestCase {
 
   @Test
   public void universeError() {
-    typeCheckExpr("\\Type5", ExpressionFactory.Universe(5), 1);
+    typeCheckExpr("\\oo-Type5", ExpressionFactory.Universe(5), 1);
   }
 
   @Test
   public void universeError2() {
-    typeCheckExpr("\\Type5", ExpressionFactory.Universe(6, 100), 1);
+    typeCheckExpr("\\oo-Type5", ExpressionFactory.Universe(6, 100), 1);
   }
 
   @Test

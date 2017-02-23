@@ -28,8 +28,8 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // ?l <= 10
     // error: cannot infer ?l
     typeCheckClass(
-        "\\function A => \\o-Type \\lp\n" +
-        "\\function f : \\o-Type10 => A");
+        "\\function A => \\oo-Type \\lp\n" +
+        "\\function f : \\oo-Type10 => A");
   }
 
   @Test
@@ -45,7 +45,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
   public void belowParam2() {
     typeCheckClass(
         "\\function A => \\Type \\lp\n" +
-        "\\function f : \\o-Type (\\suc \\lp) => A");
+        "\\function f : \\oo-Type (\\suc \\lp) => A");
   }
 
   @Test
@@ -53,8 +53,8 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // ?l + 1 <= c
     // error: cannot infer ?l
     typeCheckClass(
-        "\\function A => \\o-Type \\lp \n" +
-        "\\function f : \\o-Type \\lp => A", 1);
+        "\\function A => \\oo-Type \\lp \n" +
+        "\\function f : \\oo-Type \\lp => A", 1);
   }
 
   @Test
@@ -62,8 +62,8 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // 0 <= ?l, 0 <= c
     // ok: ?l = 0
     typeCheckClass(
-        "\\function f (A : \\o-Type \\lp) => A\n" +
-        "\\function g : \\o-Type \\lp => f Nat");
+        "\\function f (A : \\oo-Type \\lp) => A\n" +
+        "\\function g : \\oo-Type \\lp => f Nat");
   }
 
   @Test
@@ -80,8 +80,8 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // 0 <= ?l <= 10
     // ok: ?l = 0
     typeCheckClass(
-        "\\function f (A : \\o-Type \\lp) => A\n" +
-        "\\function g : \\o-Type10 => f Nat");
+        "\\function f (A : \\oo-Type \\lp) => A\n" +
+        "\\function g : \\oo-Type10 => f Nat");
   }
 
   @Test
@@ -89,8 +89,8 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // 1 <= ?l <= 10
     // ok: ?l = 1
     typeCheckClass(
-        "\\function f (A : \\o-Type \\lp) => A\n" +
-        "\\function g : \\o-Type10 => f \\o-Type0");
+        "\\function f (A : \\oo-Type \\lp) => A\n" +
+        "\\function g : \\oo-Type10 => f \\oo-Type0");
   }
 
   @Test
@@ -117,5 +117,15 @@ public class InferLevelTest extends TypeCheckingTestCase {
       "\\function f (X : \\Set10) (P : X -> \\Type) => \\Pi (a : X) -> P a\n" +
       "\\function g (X : \\Set10) (P : X -> \\Prop) : \\Prop => f X P"
     );
+  }
+
+  @Test
+  public void levelOfPath() {
+    typeCheckClass("\\function f (X : \\Set10) (x : X) : \\Prop => x = x");
+  }
+
+  @Test
+  public void levelOfPath2() {
+    typeCheckClass("\\function f (X : \\Set10) (x : X) : \\Set1 => x = x -> \\Set0");
   }
 }
