@@ -33,13 +33,6 @@ public class ConCallExpression extends DefCallExpression {
   }
 
   @Override
-  public Expression applyThis(Expression thisExpr) {
-    assert myDataTypeArguments.isEmpty();
-    myDataTypeArguments.add(thisExpr);
-    return this;
-  }
-
-  @Override
   public Constructor getDefinition() {
     return (Constructor) super.getDefinition();
   }

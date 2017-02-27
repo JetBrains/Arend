@@ -48,17 +48,8 @@ public class ClassCallExpression extends DefCallExpression {
   }
 
   public SortMax getSorts() {
-    myFieldSet.updateSorts(this);
+    myFieldSet.updateSorts(this); // TODO: sorts should be always updated
     return myFieldSet.getSorts();
-  }
-
-  @Override
-  public Expression applyThis(Expression thisExpr) {
-    FieldSet newFieldSet = new FieldSet(myFieldSet);
-    ClassField parent = getDefinition().getEnclosingThisField();
-    boolean success = newFieldSet.implementField(parent, new FieldSet.Implementation(null, thisExpr));
-    assert success;
-    return ClassCall(getDefinition(), getLevelArguments(), newFieldSet);
   }
 
   @Override

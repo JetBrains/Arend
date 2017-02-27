@@ -24,12 +24,6 @@ public class FunCallExpression extends DefCallExpression {
   }
 
   @Override
-  public Expression applyThis(Expression thisExpr) {
-    myArguments.add(thisExpr);
-    return this;
-  }
-
-  @Override
   public FunctionDefinition getDefinition() {
     return (FunctionDefinition) super.getDefinition();
   }

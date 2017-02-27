@@ -138,8 +138,12 @@ public class DataDefinition extends Definition {
   }
 
   @Override
-  public DataCallExpression getDefCall(LevelArguments polyArguments) {
-    return ExpressionFactory.DataCall(this, polyArguments, new ArrayList<Expression>());
+  public DataCallExpression getDefCall(LevelArguments polyArguments, Expression thisExpr) {
+    List<Expression> args = new ArrayList<>();
+    if (thisExpr != null) {
+      args.add(thisExpr);
+    }
+    return ExpressionFactory.DataCall(this, polyArguments, args);
   }
 
   @Override

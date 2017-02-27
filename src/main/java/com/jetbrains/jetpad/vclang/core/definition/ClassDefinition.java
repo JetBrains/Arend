@@ -76,8 +76,16 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
-  public ClassCallExpression getDefCall(LevelArguments polyArguments) {
-    return ClassCall(this, polyArguments, myFieldSet);
+  public ClassCallExpression getDefCall(LevelArguments polyArguments, Expression thisExpr) {
+    FieldSet fieldSet;
+    if (thisExpr != null) {
+      fieldSet = new FieldSet(myFieldSet);
+      boolean success = fieldSet.implementField(myEnclosingThisField, new FieldSet.Implementation(null, thisExpr));
+      assert success;
+    } else {
+      fieldSet = myFieldSet;
+    }
+    return ClassCall(this, polyArguments, fieldSet);
   }
 
   @Override

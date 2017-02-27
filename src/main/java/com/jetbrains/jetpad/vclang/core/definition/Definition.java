@@ -54,7 +54,7 @@ public abstract class Definition implements Variable {
 
   public abstract TypeMax getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments);
 
-  public abstract DefCallExpression getDefCall(LevelArguments polyArguments);
+  public abstract DefCallExpression getDefCall(LevelArguments polyArguments, Expression thisExpr);
 
   public abstract Expression getDefCall(LevelArguments polyArguments, List<Expression> args);
 

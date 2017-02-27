@@ -89,10 +89,6 @@ public class FieldSet {
   }
 
   public void updateSorts(ClassCallExpression thisClass) {
-    updateUniverse(thisClass);
-  }
-
-  private void updateUniverse(ClassCallExpression thisClass) {
     mySorts = new SortMax();
     for (ClassField field : myFields) {
       updateUniverseSingleField(field, thisClass);

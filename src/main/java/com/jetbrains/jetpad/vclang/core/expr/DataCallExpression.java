@@ -22,12 +22,6 @@ public class DataCallExpression extends DefCallExpression {
   }
 
   @Override
-  public Expression applyThis(Expression thisExpr) {
-    myArguments.add(thisExpr);
-    return this;
-  }
-
-  @Override
   public DataDefinition getDefinition() {
     return (DataDefinition) super.getDefinition();
   }

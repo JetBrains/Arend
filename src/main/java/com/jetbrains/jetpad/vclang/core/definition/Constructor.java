@@ -164,8 +164,12 @@ public class Constructor extends Definition implements Function {
   }
 
   @Override
-  public ConCallExpression getDefCall(LevelArguments polyArguments) {
-    return new ConCallExpression(this, polyArguments, new ArrayList<Expression>(), new ArrayList<Expression>());
+  public ConCallExpression getDefCall(LevelArguments polyArguments, Expression thisExpr) {
+    List<Expression> dataTypeArgs = new ArrayList<>();
+    if (thisExpr != null) {
+      dataTypeArgs.add(thisExpr);
+    }
+    return new ConCallExpression(this, polyArguments, dataTypeArgs, new ArrayList<Expression>());
   }
 
   @Override

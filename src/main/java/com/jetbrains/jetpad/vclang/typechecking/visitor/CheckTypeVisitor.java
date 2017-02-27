@@ -78,7 +78,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     private List<DependentLink> myParameters;
     private TypeMax myResultType;
     private Expression myThisExpr;
-    private int myLevels;
 
     private DefCallResult(Abstract.DefCallExpression defCall, Definition definition, LevelArguments polyArgs, List<Expression> arguments, List<DependentLink> parameters, TypeMax resultType, Expression thisExpr) {
       myDefCall = defCall;
@@ -100,8 +99,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       }
 
       if (parameters.isEmpty()) {
-        DefCallExpression expression = definition.getDefCall(polyArgs);
-        return new Result(thisExpr == null ? expression : expression.applyThis(thisExpr), resultType);
+        return new Result(definition.getDefCall(polyArgs, thisExpr), resultType);
       } else {
         return new DefCallResult(defCall, definition, polyArgs, new ArrayList<Expression>(), parameters, resultType, thisExpr);
       }
@@ -109,11 +107,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
     @Override
     public Result toResult(Equations equations, Abstract.Expression expr) {
-      Expression expression = myDefinition.getDefCall(myLevelArguments);
-      if (myThisExpr != null) {
-        expression = ((DefCallExpression) expression).applyThis(myThisExpr);
-      }
-      expression = expression.addArguments(myArguments);
+      Expression expression = myDefinition.getDefCall(myLevelArguments, myThisExpr).addArguments(myArguments);
 
       if (myParameters.isEmpty()) {
         return new Result(expression, myResultType);
@@ -194,14 +188,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
     public LevelArguments getPolyArguments() {
       return myLevelArguments;
-    }
-
-    public int getNumberOfLevels() {
-      return myLevels;
-    }
-
-    public void applyLevels(Level... levels) {
-      myLevels += levels.length;
     }
   }
 

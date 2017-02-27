@@ -7,8 +7,6 @@ import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import java.util.Collections;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FieldCall;
-
 public class FieldCallExpression extends DefCallExpression {
   private Expression myExpression;
 
@@ -25,12 +23,6 @@ public class FieldCallExpression extends DefCallExpression {
   @Override
   public List<? extends Expression> getDefCallArguments() {
     return Collections.singletonList(myExpression);
-  }
-
-  @Override
-  public Expression applyThis(Expression thisExpr) {
-    assert myExpression == null;
-    return FieldCall(getDefinition(), thisExpr);
   }
 
   @Override

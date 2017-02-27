@@ -223,7 +223,7 @@ class DefinitionSerialization {
     }
 
     if (fieldSet.getSorts() == null) {
-      fieldSet.updateSorts(classCall); // TODO: sorts should be updated
+      fieldSet.updateSorts(classCall); // TODO: sorts should be always updated
     }
     builder.setSorts(writeSortMax(fieldSet.getSorts()));
 

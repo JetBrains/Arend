@@ -23,8 +23,6 @@ public abstract class DefCallExpression extends Expression {
     return myLevelArguments;
   }
 
-  public abstract Expression applyThis(Expression thisExpr);
-
   public Definition getDefinition() {
     return myDefinition;
   }
