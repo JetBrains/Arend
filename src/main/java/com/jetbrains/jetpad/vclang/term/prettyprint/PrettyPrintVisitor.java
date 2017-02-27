@@ -279,8 +279,8 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       return null;
     }
 
-    boolean hParens = !(expr.getHLevel() instanceof Abstract.InfLevelExpression || expr.getHLevel() instanceof Abstract.NumberLevelExpression || expr.getHLevel() instanceof Abstract.HLevelExpression);
-    boolean parens = prec > Abstract.AppExpression.PREC && (hParens || !(expr.getPLevel() instanceof Abstract.NumberLevelExpression || expr.getPLevel() instanceof Abstract.PLevelExpression));
+    boolean hParens = !(expr.getHLevel() instanceof Abstract.InfLevelExpression || expr.getHLevel() instanceof Abstract.NumberLevelExpression || expr.getHLevel() == null);
+    boolean parens = prec > Abstract.AppExpression.PREC && (hParens || !(expr.getPLevel() instanceof Abstract.NumberLevelExpression || expr.getPLevel() == null));
     if (parens) myBuilder.append('(');
 
     if (expr.getHLevel() instanceof Abstract.InfLevelExpression) {
@@ -299,7 +299,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
     if (expr.getPLevel() instanceof Abstract.NumberLevelExpression) {
       myBuilder.append(((Abstract.NumberLevelExpression) expr.getPLevel()).getNumber());
-    } else if (!(expr.getPLevel() instanceof Abstract.PLevelExpression)) {
+    } else if (expr.getPLevel() != null) {
       myBuilder.append(" ");
       prettyPrintLevelExpression(expr.getPLevel(), (byte) (Abstract.AppExpression.PREC + 1));
     }

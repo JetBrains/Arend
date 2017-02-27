@@ -633,46 +633,84 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.Expression visitTruncatedUniverseArgs(TruncatedUniverseArgsContext ctx) {
     Concrete.Position position = tokenPosition(ctx.getStart());
-    Concrete.LevelExpression pLevel = ctx.levelAtom() == null ? new Concrete.PLevelExpression(position) : visitLevel(ctx.levelAtom());
-    return new Concrete.UniverseExpression(position, pLevel, parseTruncatedUniverse(ctx.TRUNCATED_UNIVERSE_PREFIX()));
+    Concrete.LevelExpression pLevel;
+
+    String text = ctx.TRUNCATED_UNIVERSE().getText();
+    text = text.substring(text.indexOf('-') + "-Type".length());
+    if (text.isEmpty()) {
+      pLevel = visitLevel(ctx.levelAtom());
+    } else {
+      pLevel = new Concrete.NumberLevelExpression(tokenPosition(ctx.TRUNCATED_UNIVERSE().getSymbol()), Integer.parseInt(text));
+      myErrorReporter.report(new ParserError(tokenPosition(ctx.levelAtom().getStart()), "p-level is already specified"));
+    }
+
+    return new Concrete.UniverseExpression(position, pLevel, parseTruncatedUniverse(ctx.TRUNCATED_UNIVERSE()));
   }
 
   @Override
   public Concrete.Expression visitUniverseArgs(UniverseArgsContext ctx) {
     Concrete.Position position = tokenPosition(ctx.getStart());
-    Concrete.LevelExpression lp = ctx.levelAtom().isEmpty() ? new Concrete.PLevelExpression(position) : visitLevel(ctx.levelAtom(0));
-    Concrete.LevelExpression lh = ctx.levelAtom().size() < 2 ? new Concrete.HLevelExpression(position) : visitLevel(ctx.levelAtom(1));
+    Concrete.LevelExpression lp;
+    Concrete.LevelExpression lh;
+
+    String text = ctx.UNIVERSE().getText().substring("\\Type".length());
+    lp = text.isEmpty() ? null : new Concrete.NumberLevelExpression(tokenPosition(ctx.UNIVERSE().getSymbol()), Integer.parseInt(text));
+
+    if (lp == null) {
+      lp = visitLevel(ctx.levelAtom(0));
+      lh = null;
+    } else {
+      lh = visitLevel(ctx.levelAtom(0));
+    }
+
+    if (ctx.levelAtom().size() >= 2) {
+      if (lh == null) {
+        lh = visitLevel(ctx.levelAtom(1));
+      } else {
+        myErrorReporter.report(new ParserError(tokenPosition(ctx.levelAtom(1).getStart()), "h-level is already specified"));
+      }
+    }
+
     return new Concrete.UniverseExpression(position, lp, lh);
   }
 
   @Override
-  public Concrete.Expression visitSetUniverse(SetUniverseContext ctx) {
+  public Concrete.Expression visitSetUniverseArgs(SetUniverseArgsContext ctx) {
     Concrete.Position position = tokenPosition(ctx.getStart());
-    Concrete.LevelExpression lp = ctx.levelAtom() == null ? new Concrete.PLevelExpression(position) : visitLevel(ctx.levelAtom());
-    return new Concrete.UniverseExpression(position, lp, new Concrete.NumberLevelExpression(position, 0));
+    Concrete.LevelExpression pLevel;
+
+    String text = ctx.SET().getText().substring("\\Set".length());
+    if (text.isEmpty()) {
+      pLevel = visitLevel(ctx.levelAtom());
+    } else {
+      pLevel = new Concrete.NumberLevelExpression(tokenPosition(ctx.SET().getSymbol()), Integer.parseInt(text));
+      myErrorReporter.report(new ParserError(tokenPosition(ctx.levelAtom().getStart()), "p-level is already specified"));
+    }
+
+    return new Concrete.UniverseExpression(position, pLevel, new Concrete.NumberLevelExpression(position, 0));
   }
 
   @Override
   public Concrete.UniverseExpression visitUniverse(UniverseContext ctx) {
     Concrete.Position pos = tokenPosition(ctx.UNIVERSE().getSymbol());
-    int pLevel = Integer.parseInt(ctx.UNIVERSE().getText().substring("\\Type".length()));
-    return new Concrete.UniverseExpression(pos, new Concrete.NumberLevelExpression(tokenPosition(ctx.UNIVERSE().getSymbol()), pLevel), new Concrete.HLevelExpression(pos));
+    String text = ctx.UNIVERSE().getText().substring("\\Type".length());
+    return new Concrete.UniverseExpression(pos, text.isEmpty() ? null : new Concrete.NumberLevelExpression(tokenPosition(ctx.UNIVERSE().getSymbol()), Integer.parseInt(text)), null);
   }
 
   @Override
   public Concrete.UniverseExpression visitTruncatedUniverse(TruncatedUniverseContext ctx) {
     Concrete.Position pos = tokenPosition(ctx.TRUNCATED_UNIVERSE().getSymbol());
     String text = ctx.TRUNCATED_UNIVERSE().getText();
-    int pLevel = Integer.parseInt(text.substring(text.indexOf('-') + "-Type".length()));
+    text = text.substring(text.indexOf('-') + "-Type".length());
     Concrete.LevelExpression lh = parseTruncatedUniverse(ctx.TRUNCATED_UNIVERSE());
-    return new Concrete.UniverseExpression(tokenPosition(ctx.getStart()), new Concrete.NumberLevelExpression(pos, pLevel), lh);
+    return new Concrete.UniverseExpression(tokenPosition(ctx.getStart()), text.isEmpty() ? null : new Concrete.NumberLevelExpression(pos, Integer.parseInt(text)), lh);
   }
 
   @Override
-  public Concrete.UniverseExpression visitSet(SetContext ctx) {
+  public Concrete.UniverseExpression visitSetUniverse(SetUniverseContext ctx) {
     Concrete.Position pos = tokenPosition(ctx.getStart());
-    int pLevel = Integer.parseInt(ctx.SET().getText().substring("\\Set".length()));
-    return new Concrete.UniverseExpression(pos, new Concrete.NumberLevelExpression(tokenPosition(ctx.SET().getSymbol()), pLevel), new Concrete.NumberLevelExpression(pos, 0));
+    String text = ctx.SET().getText().substring("\\Set".length());
+    return new Concrete.UniverseExpression(pos, text.isEmpty() ? null : new Concrete.NumberLevelExpression(tokenPosition(ctx.SET().getSymbol()), Integer.parseInt(text)), new Concrete.NumberLevelExpression(pos, 0));
   }
 
   @Override

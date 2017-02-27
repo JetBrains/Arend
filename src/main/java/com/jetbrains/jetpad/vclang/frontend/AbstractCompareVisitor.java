@@ -67,11 +67,14 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
   }
 
   public boolean compareLevel(Abstract.LevelExpression level1, Abstract.LevelExpression level2) {
+    if (level1 == null) {
+      return level2 == null || level2 instanceof Abstract.PLevelExpression || level2 instanceof Abstract.HLevelExpression;
+    }
     if (level1 instanceof Abstract.PLevelExpression) {
-      return level2 instanceof Abstract.PLevelExpression;
+      return level2 instanceof Abstract.PLevelExpression || level2 == null;
     }
     if (level1 instanceof Abstract.HLevelExpression) {
-      return level2 instanceof Abstract.HLevelExpression;
+      return level2 instanceof Abstract.HLevelExpression || level2 == null;
     }
     if (level1 instanceof Abstract.InfLevelExpression) {
       return level2 instanceof Abstract.InfLevelExpression;

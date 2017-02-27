@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
@@ -338,12 +339,20 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return visitSort(expr.getSort());
   }
 
+  private Abstract.LevelExpression visitLevelNull(Level level, int add) {
+    return level.getConstant() == 0 && (level.getVar() == LevelBinding.PLVL_BND || level.getVar() == LevelBinding.HLVL_BND) ? null : visitLevel(level, add);
+  }
+
   public Abstract.Expression visitSort(Sort sorts) {
-    return myFactory.makeUniverse(visitLevel(sorts.getPLevel(), 0), visitLevel(sorts.getHLevel(), -1));
+    return myFactory.makeUniverse(visitLevelNull(sorts.getPLevel(), 0), visitLevelNull(sorts.getHLevel(), -1));
   }
 
   public Abstract.Expression visitSortMax(SortMax sorts) {
-    return myFactory.makeUniverse(visitLevelMax(sorts.getPLevel(), 0), visitLevelMax(sorts.getHLevel(), -1));
+    Level pLevel = sorts.getPLevel().toLevel();
+    Level hLevel = sorts.getHLevel().toLevel();
+    return myFactory.makeUniverse(
+      pLevel != null ? visitLevelNull(pLevel, 0) : visitLevelMax(sorts.getPLevel(), 0),
+      hLevel != null ? visitLevelNull(hLevel, -1) : visitLevelMax(sorts.getHLevel(), -1));
   }
 
   public Abstract.LevelExpression visitLevel(Level level, int add) {

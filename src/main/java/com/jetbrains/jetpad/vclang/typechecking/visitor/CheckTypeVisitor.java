@@ -362,9 +362,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       Abstract.UniverseExpression uni = (Abstract.UniverseExpression)cod;
       if (args == null) return null;
 
-      LevelMax pLevelMax = replaceInfinities && uni.getPLevel() == null ? new LevelMax(new Level(LevelBinding.PLVL_BND)) : typeCheckLevelMax(uni.getPLevel(), 0);
-      LevelMax hLevelMax = uni.getHLevel() == null ?
-        replaceInfinities ? new LevelMax(new Level(LevelBinding.HLVL_BND)) : LevelMax.INFINITY : typeCheckLevelMax(uni.getHLevel(), -1);
+      LevelMax pLevelMax = uni.getPLevel() == null ? new LevelMax(new Level(LevelBinding.PLVL_BND)) : typeCheckLevelMax(uni.getPLevel(), 0);
+      LevelMax hLevelMax = uni.getHLevel() == null ? new LevelMax(new Level(LevelBinding.HLVL_BND)) : typeCheckLevelMax(uni.getHLevel(), -1);
       if (maxAllowed) {
         return new PiUniverseType(args, new SortMax(pLevelMax, hLevelMax));
       }
@@ -615,8 +614,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   @Override
   public Result visitUniverse(Abstract.UniverseExpression expr, Type expectedType) {
-    Level pLevel = typeCheckLevelMax(expr.getPLevel(), 0).toLevel();
-    Level hLevel = typeCheckLevelMax(expr.getHLevel(), -1).toLevel();
+    Level pLevel = expr.getPLevel() != null ? typeCheckLevelMax(expr.getPLevel(), 0).toLevel() : new Level(LevelBinding.PLVL_BND);
+    Level hLevel = expr.getHLevel() != null ? typeCheckLevelMax(expr.getHLevel(), -1).toLevel() : new Level(LevelBinding.HLVL_BND);
 
     if (pLevel == null || hLevel == null) {
       myErrorReporter.report(new LocalTypeCheckingError("\\max can only be used in a result type", expr));
@@ -638,10 +637,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       expr = ((Abstract.SucLevelExpression) expr).getExpression();
     }
     if (expr instanceof Abstract.PLevelExpression) {
-      return new LevelMax(new Level(LevelBinding.PLVL_BND).add(n));
+      return new LevelMax(new Level(LevelBinding.PLVL_BND, n));
     }
     if (expr instanceof Abstract.HLevelExpression) {
-      return new LevelMax(new Level(LevelBinding.HLVL_BND).add(n));
+      return new LevelMax(new Level(LevelBinding.HLVL_BND, n));
     }
     if (expr instanceof Abstract.InfLevelExpression) {
       return LevelMax.INFINITY;

@@ -109,9 +109,9 @@ levelExpr : levelAtom                     # atomLevelExpr
           ;
 
 binOpArg : maybeNew atomFieldsAcc argument*       # binOpArgument
-         | TRUNCATED_UNIVERSE_PREFIX levelAtom?   # truncatedUniverseArgs
-         | UNIVERSE_PREFIX levelAtom? levelAtom?  # universeArgs
-         | SET_PREFIX levelAtom?                  # setUniverse
+         | TRUNCATED_UNIVERSE levelAtom           # truncatedUniverseArgs
+         | UNIVERSE levelAtom levelAtom?          # universeArgs
+         | SET levelAtom                          # setUniverseArgs
          ;
 
 binOpLeft : binOpArg infix;
@@ -149,7 +149,7 @@ argument : atomFieldsAcc                # argumentExplicit
 literal : name                          # id
         | UNIVERSE                      # universe
         | TRUNCATED_UNIVERSE            # truncatedUniverse
-        | SET                           # set
+        | SET                           # setUniverse
         | '\\Prop'                      # prop
         | '_'                           # unknown
         | '{?}'                         # hole
@@ -165,12 +165,9 @@ typedExpr : expr                        # notTyped
           ;
 
 NUMBER : [0-9]+;
-UNIVERSE_PREFIX : '\\Type';
-TRUNCATED_UNIVERSE_PREFIX : '\\' (NUMBER | 'oo') '-Type';
-SET_PREFIX : '\\Set';
-UNIVERSE : UNIVERSE_PREFIX[0-9]+;
-TRUNCATED_UNIVERSE : TRUNCATED_UNIVERSE_PREFIX[0-9]+;
-SET : SET_PREFIX[0-9]+;
+UNIVERSE : '\\Type' [0-9]*;
+TRUNCATED_UNIVERSE : '\\' (NUMBER | 'oo') '-Type' [0-9]*;
+SET : '\\Set' [0-9]*;
 COLON : ':';
 ARROW : '->';
 WS : [ \t\r\n]+ -> skip;
