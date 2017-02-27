@@ -78,6 +78,10 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
 
         readClassifyingFields(def, typedCalltargetProvider, defProto.getClassifyingFieldList());
 
+        if (defProto.getThisClassRef() != 0) {
+          def.setThisClass(typedCalltargetProvider.getCalltarget(defProto.getThisClassRef(), ClassDefinition.class));
+        }
+
         switch (defProto.getDefinitionDataCase()) {
           case CLASS:
             ClassDefinition classDef = (ClassDefinition) def;
@@ -96,11 +100,6 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
         }
 
         def.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-
-        if (defProto.getThisClassRef() != 0) {
-          ClassDefinition thisClass = typedCalltargetProvider.getCalltarget(defProto.getThisClassRef(), ClassDefinition.class);
-          def.setThisClass(thisClass);
-        }
       }
     }
   }

@@ -43,7 +43,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
   @Test
   public void classExtTest() {
     TypeCheckClassResult result = typeCheckClass("\\class Test { \\field A : \\Type0 \\field a : A } \\function test => Test { A => Nat }");
-    assertEquals(Universe(new Level(1), new Level(LevelVariable.HVAR)), result.getDefinition("Test").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.ZERO).toExpression());
+    assertEquals(Universe(new Level(1), new Level(LevelVariable.HVAR, 1)), result.getDefinition("Test").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD).toExpression());
     assertEquals(Universe(Sort.SET0), result.getDefinition("test").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.ZERO).toExpression());
     testType(Universe(Sort.SET0), result);
   }

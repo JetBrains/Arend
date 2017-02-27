@@ -500,7 +500,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       return null;
     }
 
-    return new Result(ExpressionFactory.ClassCall((ClassDefinition) typeChecked, LevelArguments.ZERO), new PiUniverseType(EmptyDependentLink.getInstance(), ((ClassDefinition) typeChecked).getSorts(LevelArguments.ZERO)));
+    return new Result(ExpressionFactory.ClassCall((ClassDefinition) typeChecked, LevelArguments.ZERO), new PiUniverseType(EmptyDependentLink.getInstance(), ((ClassDefinition) typeChecked).getSorts().subst(LevelArguments.ZERO.toLevelSubstitution())));
   }
 
   @Override
@@ -893,7 +893,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
 
     FieldSet fieldSet = new FieldSet();
-    Expression resultExpr = ExpressionFactory.ClassCall(baseClass, classCallExpr.getLevelArguments(), fieldSet);
+    ClassCallExpression resultClassCall = ExpressionFactory.ClassCall(baseClass, classCallExpr.getLevelArguments(), fieldSet);
+    Expression resultExpr = resultClassCall;
 
     fieldSet.addFieldsFrom(classCallExpr.getFieldSet());
     for (Map.Entry<ClassField, FieldSet.Implementation> entry : classCallExpr.getFieldSet().getImplemented()) {
@@ -938,6 +939,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       }
     }
 
+    fieldSet.updateSorts(resultClassCall);
     return checkResult(expectedType, new Result(resultExpr, new PiUniverseType(EmptyDependentLink.getInstance(), resultExpr instanceof ClassCallExpression ? ((ClassCallExpression) resultExpr).getSorts() : new SortMax())), expr);
   }
 

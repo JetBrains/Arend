@@ -76,7 +76,7 @@ public class DefinitionStateSerialization {
       builder.putFields(myPersistenceProvider.getIdFor(abstractField), fBuilder.build());
     }
 
-    builder.setFieldSet(defSerializer.writeFieldSet(definition.getFieldSet()));
+    builder.setFieldSet(defSerializer.writeFieldSet(definition.getFieldSet(), null));
 
     for (ClassDefinition classDefinition : definition.getSuperClasses()) {
       builder.addSuperClassRef(myCalltargetIndexProvider.getDefIndex(classDefinition));

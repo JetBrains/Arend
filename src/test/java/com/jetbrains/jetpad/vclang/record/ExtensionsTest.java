@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.record;
 
 import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
@@ -272,7 +271,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "  \\field a : A\n" +
         "}\n" +
         "\\class B \\extends A");
-    assertEquals(new SortMax(new Sort(1,1)), ((ClassDefinition) result.getDefinition("A")).getSorts(LevelArguments.ZERO));
-    assertEquals(new SortMax(new Sort(1,1)), ((ClassDefinition) result.getDefinition("B")).getSorts(LevelArguments.ZERO));
+    assertEquals(new SortMax(new Sort(1, 1)), ((ClassDefinition) result.getDefinition("A")).getSorts());
+    assertEquals(new SortMax(new Sort(1, 1)), ((ClassDefinition) result.getDefinition("B")).getSorts());
   }
 }

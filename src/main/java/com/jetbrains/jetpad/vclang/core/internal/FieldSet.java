@@ -23,10 +23,6 @@ public class FieldSet {
       this.term = term;
     }
 
-    public Expression getWithThisParam() {
-      return ExpressionFactory.Lam(thisParam, term);
-    }
-
     public Expression substThisParam(Expression thisExpr) {
       return thisParam == null ? term : term.subst(thisParam, thisExpr);
     }
@@ -84,11 +80,16 @@ public class FieldSet {
     return myImplemented.get(field);
   }
 
-  public SortMax getSorts(ClassCallExpression thisClass) {
-    if (mySorts == null) {
-      updateUniverse(thisClass);
-    }
+  public SortMax getSorts() {
     return mySorts;
+  }
+
+  public void setSorts(SortMax sorts) {
+    mySorts = sorts;
+  }
+
+  public void updateSorts(ClassCallExpression thisClass) {
+    updateUniverse(thisClass);
   }
 
   private void updateUniverse(ClassCallExpression thisClass) {

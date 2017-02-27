@@ -43,8 +43,12 @@ public class ClassDefinition extends Definition {
     myFieldSet = fieldSet;
   }
 
-  public SortMax getSorts(LevelArguments levelArgs) {
-    return myFieldSet.getSorts(ClassCall(this, levelArgs, myFieldSet));
+  public void updateSorts() {
+    myFieldSet.updateSorts(ClassCall(this, LevelArguments.STD, myFieldSet));
+  }
+
+  public SortMax getSorts() {
+    return myFieldSet.getSorts();
   }
 
   public boolean isSubClassOf(ClassDefinition classDefinition) {
@@ -68,7 +72,7 @@ public class ClassDefinition extends Definition {
     if (getThisClass() != null) {
       params.add(param(ClassCall(getThisClass(), polyArguments)));
     }
-    return new PiUniverseType(EmptyDependentLink.getInstance(), getSorts(polyArguments));
+    return new PiUniverseType(EmptyDependentLink.getInstance(), getSorts().subst(polyArguments.toLevelSubstitution()));
   }
 
   @Override

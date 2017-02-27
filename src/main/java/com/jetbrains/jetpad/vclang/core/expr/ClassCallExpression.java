@@ -48,7 +48,8 @@ public class ClassCallExpression extends DefCallExpression {
   }
 
   public SortMax getSorts() {
-    return myFieldSet.getSorts(this);
+    myFieldSet.updateSorts(this);
+    return myFieldSet.getSorts();
   }
 
   @Override

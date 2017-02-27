@@ -730,10 +730,12 @@ public class DefinitionCheckType {
     FieldSet fieldSet = new FieldSet();
     Set<ClassDefinition> superClasses = new HashSet<>();
     Abstract.ClassDefinition def = typedDef.getAbstractDefinition();
+    visitor.getTypecheckingState().record(def, typedDef);
+
     try {
       typedDef.setFieldSet(fieldSet);
       typedDef.setSuperClasses(superClasses);
-      typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+      typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
       typedDef.setThisClass(enclosingClass);
 
       if (enclosingClass != null) {
@@ -801,12 +803,13 @@ public class DefinitionCheckType {
         }
       }
 
-      visitor.getTypecheckingState().record(def, typedDef);
-      if (!classOk) {
-        typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+      if (classOk) {
+        typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
       }
     } catch (Namespace.InvalidNamespaceException e) {
       errorReporter.report(e.toError());
+    } finally {
+      typedDef.updateSorts();
     }
   }
 

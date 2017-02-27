@@ -203,6 +203,7 @@ class DefinitionDeserialization {
       FieldSet.Implementation impl = new FieldSet.Implementation(thisParam, readExpr(entry.getValue().getTerm()));
       result.implementField(myCalltargetProvider.getCalltarget(entry.getKey(), ClassField.class), impl);
     }
+    result.setSorts(readSortMax(proto.getSorts()));
     return result;
   }
 
