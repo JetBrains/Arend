@@ -288,7 +288,7 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
     }
 
     ParameterVector(ParameterVector pv, Clause c) {
-      this(pv, new SubstVisitor(c.getSubst(), new LevelSubstitution()));
+      this(pv, new SubstVisitor(c.getSubst(), LevelSubstitution.EMPTY));
     }
 
     Expression getParameter(int i) {

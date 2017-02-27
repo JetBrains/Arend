@@ -1,21 +1,23 @@
 package com.jetbrains.jetpad.vclang.core.sort;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
-import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class LevelArguments {
   private final Level myPLevel;
   private final Level myHLevel;
 
-  public static final LevelArguments STD = new LevelArguments(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR));
   public static final LevelArguments ZERO = new LevelArguments(new Level(0), new Level(0));
+  public static final LevelArguments STD = new LevelArguments(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR)) {
+    @Override
+    public LevelSubstitution toLevelSubstitution() {
+      return LevelSubstitution.EMPTY;
+    }
+  };
 
   public LevelArguments(Level pLevel, Level hLevel) {
     myPLevel = pLevel;
@@ -31,10 +33,7 @@ public class LevelArguments {
   }
 
   public LevelSubstitution toLevelSubstitution() {
-    Map<Variable, Level> polySubst = new HashMap<>();
-    polySubst.put(LevelVariable.PVAR, myPLevel);
-    polySubst.put(LevelVariable.HVAR, myHLevel);
-    return new LevelSubstitution(polySubst);
+    return new StdLevelSubstitution(myPLevel, myHLevel);
   }
 
   public LevelArguments subst(LevelSubstitution subst) {

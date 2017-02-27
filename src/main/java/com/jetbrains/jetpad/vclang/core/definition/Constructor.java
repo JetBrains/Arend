@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
@@ -16,6 +15,7 @@ import com.jetbrains.jetpad.vclang.core.pattern.elimtree.EmptyElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
@@ -104,22 +104,23 @@ public class Constructor extends Definition implements Function {
       ExprSubstitution subst = new ExprSubstitution();
 
       DependentLink dataTypeParams = myDataType.getParameters();
-      LevelSubstitution levelSubst = polyArgs == null ? new LevelSubstitution() : polyArgs.toLevelSubstitution();
+      LevelSubstitution levelSubst = polyArgs == null ? LevelSubstitution.EMPTY : polyArgs.toLevelSubstitution();
       arguments = new ArrayList<>(myPatterns.getPatterns().size());
       for (PatternArgument patternArg : myPatterns.getPatterns()) {
         ExprSubstitution innerSubst = new ExprSubstitution();
-        LevelSubstitution innerLevelSubst = new LevelSubstitution();
+        LevelSubstitution innerLevelSubst;
 
         if (patternArg.getPattern() instanceof ConstructorPattern) {
           DataCallExpression dataCall = dataTypeParams.getType().toExpression().subst(subst).normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
           List<? extends Expression> argDataTypeParams = dataCall.getDefCallArguments();
           innerSubst = ((ConstructorPattern) patternArg.getPattern()).getMatchedArguments(new ArrayList<>(argDataTypeParams));
-          innerLevelSubst.add(LevelVariable.PVAR, dataCall.getLevelArguments().getPLevel());
-          innerLevelSubst.add(LevelVariable.HVAR, dataCall.getLevelArguments().getHLevel());
+          innerLevelSubst = new StdLevelSubstitution(dataCall.getLevelArguments().getPLevel(), dataCall.getLevelArguments().getHLevel());
+        } else {
+          innerLevelSubst = LevelSubstitution.EMPTY;
         }
 
         if (substitution != null) {
-          innerSubst.add(substitution);
+          innerSubst.addAll(substitution);
         }
         Expression expr = patternArg.getPattern().toExpression(innerSubst).subst(innerLevelSubst).subst(levelSubst);
 

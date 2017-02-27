@@ -21,8 +21,12 @@ public class ExprSubstitution {
     add(from, to);
   }
 
-  public Set<Variable> getDomain() {
-    return mySubstExprs.keySet();
+  public Set<Map.Entry<Variable, Expression>> getEntries() {
+    return mySubstExprs.entrySet();
+  }
+
+  public boolean isEmpty() {
+    return mySubstExprs.isEmpty();
   }
 
   public Expression get(Variable binding)  {
@@ -33,6 +37,14 @@ public class ExprSubstitution {
     mySubstExprs.clear();
   }
 
+  public void remove(Variable variable) {
+    mySubstExprs.remove(variable);
+  }
+
+  public void removeAll(Collection<? extends Variable> variables) {
+    mySubstExprs.keySet().removeAll(variables);
+  }
+
   public void add(Variable binding, Expression expression) {
     if (mySubstExprs.isEmpty()) {
       mySubstExprs = new HashMap<>();
@@ -40,7 +52,7 @@ public class ExprSubstitution {
     mySubstExprs.put(binding, expression);
   }
 
-  public void add(ExprSubstitution substitution) {
+  public void addAll(ExprSubstitution substitution) {
     if (!substitution.mySubstExprs.isEmpty()) {
       if (mySubstExprs.isEmpty()) {
         mySubstExprs = new HashMap<>();
@@ -65,8 +77,8 @@ public class ExprSubstitution {
 
   public ExprSubstitution compose(ExprSubstitution subst) {
     ExprSubstitution result = new ExprSubstitution();
-    for (Variable binding : subst.getDomain()) {
-      result.add(binding, subst.get(binding).subst(this));
+    for (Map.Entry<Variable, Expression> entry : subst.mySubstExprs.entrySet()) {
+      result.add(entry.getKey(), entry.getValue().subst(this));
     }
     return result;
   }
@@ -74,7 +86,7 @@ public class ExprSubstitution {
   public List<TypedBinding> extendBy(List<Binding> context) {
     List<TypedBinding> result = new ArrayList<>();
     for (Binding binding : context) {
-      result.add(new TypedBinding(binding.getName(), binding.getType().subst(this, new LevelSubstitution())));
+      result.add(new TypedBinding(binding.getName(), binding.getType().subst(this, LevelSubstitution.EMPTY)));
       add(binding, ExpressionFactory.Reference(result.get(result.size() - 1)));
     }
     return result;

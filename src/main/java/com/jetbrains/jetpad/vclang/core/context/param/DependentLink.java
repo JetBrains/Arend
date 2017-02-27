@@ -26,7 +26,7 @@ public interface DependentLink extends Binding {
   class Helper {
     public static void freeSubsts(DependentLink link, ExprSubstitution substitution) {
       for (; link.hasNext(); link = link.getNext()) {
-        substitution.getDomain().remove(link);
+        substitution.remove(link);
       }
     }
 
@@ -138,7 +138,7 @@ public interface DependentLink extends Binding {
     }
 
     public static DependentLink subst(DependentLink link, ExprSubstitution substitution) {
-      return subst(link, substitution, new LevelSubstitution());
+      return subst(link, substitution, LevelSubstitution.EMPTY);
     }
 
     public static List<DependentLink> subst(List<DependentLink> links, ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
@@ -169,7 +169,7 @@ public interface DependentLink extends Binding {
     }
 
     public static DependentLink clone(DependentLink link) {
-      return accept(link, new SubstVisitor(new ExprSubstitution(), new LevelSubstitution()), null);
+      return accept(link, new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY), null);
     }
 
     public static boolean findBinding(DependentLink link, Variable variable) {

@@ -32,10 +32,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingErr
 import com.jetbrains.jetpad.vclang.typechecking.error.local.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.toContext;
 import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.toSubstitution;
@@ -88,8 +85,8 @@ public class TypeCheckingElim {
     CoverageChecker.check(elimTree, ExprSubstitution.getIdentity(toContext(eliminatingArgs)), new CoverageChecker.CoverageCheckerMissingProcessor() {
       @Override
       public void process(ExprSubstitution argsSubst) {
-        for (Variable binding : argsSubst.getDomain()) {
-          Expression expr = argsSubst.get(binding);
+        for (Map.Entry<Variable, Expression> entry : argsSubst.getEntries()) {
+          Expression expr = entry.getValue();
           if (!expr.normalize(NormalizeVisitor.Mode.NF).equals(expr)) {
             return;
           }
@@ -214,7 +211,7 @@ public class TypeCheckingElim {
           clausePatterns.add(okResult.pattern);
           ExprSubstitution subst = new ExprSubstitution(tailArgs, okResult.expression);
           tailArgs = DependentLink.Helper.subst(tailArgs.getNext(), subst);
-          clauseExpectedType = clauseExpectedType.subst(subst, new LevelSubstitution());
+          clauseExpectedType = clauseExpectedType.subst(subst, LevelSubstitution.EMPTY);
         }
 
         if (clause.getExpression() != null) {

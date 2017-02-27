@@ -93,21 +93,26 @@ public abstract class Expression implements PrettyPrintable, Type {
     return accept(new StripVisitor(bounds, errorReporter), null);
   }
 
+  @Override
+  public Expression copy() {
+    return accept(new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY), null);
+  }
+
   public final Expression subst(Binding binding, Expression substExpr) {
-    return accept(new SubstVisitor(new ExprSubstitution(binding, substExpr), new LevelSubstitution()), null);
+    return accept(new SubstVisitor(new ExprSubstitution(binding, substExpr), LevelSubstitution.EMPTY), null);
   }
 
   public final Expression subst(ExprSubstitution subst) {
-     return subst(subst, new LevelSubstitution());
+     return subst.isEmpty() ? this : subst(subst, LevelSubstitution.EMPTY);
   }
 
   public final Expression subst(LevelSubstitution subst) {
-    return subst(new ExprSubstitution(), subst);
+    return subst.isEmpty() ? this : subst(new ExprSubstitution(), subst);
   }
 
   @Override
   public final Expression subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
-    return exprSubst.getDomain().isEmpty() && levelSubst.isEmpty() ? this : accept(new SubstVisitor(exprSubst, levelSubst), null);
+    return exprSubst.isEmpty() && levelSubst.isEmpty() ? this : accept(new SubstVisitor(exprSubst, levelSubst), null);
   }
 
   @Override

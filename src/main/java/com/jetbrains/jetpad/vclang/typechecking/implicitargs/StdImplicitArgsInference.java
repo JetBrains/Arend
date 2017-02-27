@@ -37,7 +37,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     ExprSubstitution substitution = new ExprSubstitution();
     int i = 0;
     for (DependentLink parameter : implicitParameters) {
-      Type type = parameter.getType().subst(substitution, new LevelSubstitution()).normalize(NormalizeVisitor.Mode.WHNF);
+      Type type = parameter.getType().subst(substitution, LevelSubstitution.EMPTY).normalize(NormalizeVisitor.Mode.WHNF);
       Expression typeExpr = type.toExpression();
       InferenceVariable infVar = null;
       if (result instanceof CheckTypeVisitor.DefCallResult) {

@@ -95,8 +95,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       TypeMax resultType = definition.getTypeWithParams(parameters, polyArgs);
       if (thisExpr != null) {
         ExprSubstitution subst = DependentLink.Helper.toSubstitution(parameters.get(0), Collections.singletonList(thisExpr));
-        parameters = DependentLink.Helper.subst(parameters.subList(1, parameters.size()), subst, new LevelSubstitution());
-        resultType = resultType.subst(subst, new LevelSubstitution());
+        parameters = DependentLink.Helper.subst(parameters.subList(1, parameters.size()), subst, LevelSubstitution.EMPTY);
+        resultType = resultType.subst(subst, LevelSubstitution.EMPTY);
       }
 
       if (parameters.isEmpty()) {
@@ -154,8 +154,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       for (int i = 0; i < args.size(); i++) {
         subst.add(myParameters.get(i), args.get(i));
       }
-      myParameters = DependentLink.Helper.subst(myParameters.subList(args.size(), size), subst, new LevelSubstitution());
-      myResultType = myResultType.subst(subst, new LevelSubstitution());
+      myParameters = DependentLink.Helper.subst(myParameters.subList(args.size(), size), subst, LevelSubstitution.EMPTY);
+      myResultType = myResultType.subst(subst, LevelSubstitution.EMPTY);
 
       if (expressions.size() < size) {
         return this;
@@ -579,7 +579,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
       Type expectedBodyType = null;
       if (actualPiLink == null && expectedCodomain != null) {
-        expectedBodyType = expectedCodomain.fromPiParameters(piParams.subList(piParamsIndex, piParams.size())).subst(piLamSubst, new LevelSubstitution());
+        expectedBodyType = expectedCodomain.fromPiParameters(piParams.subList(piParamsIndex, piParams.size())).subst(piLamSubst, LevelSubstitution.EMPTY);
       }
 
       Abstract.Expression body = expr.getBody();
@@ -864,7 +864,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
 
     exprResult.expression = ExpressionFactory.Proj(exprResult.expression, expr.getField());
-    exprResult.type = fieldLink.getType().subst(substitution, new LevelSubstitution());
+    exprResult.type = fieldLink.getType().subst(substitution, LevelSubstitution.EMPTY);
     return checkResult(expectedType, exprResult, expr);
   }
 

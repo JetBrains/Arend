@@ -16,6 +16,7 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class CoverageChecker implements ElimTreeNodeVisitor<ExprSubstitution, Boolean> {
   public interface CoverageCheckerMissingProcessor {
@@ -73,8 +74,8 @@ public class CoverageChecker implements ElimTreeNodeVisitor<ExprSubstitution, Bo
   @Override
   public Boolean visitEmpty(EmptyElimTreeNode emptyNode, ExprSubstitution argsSubst) {
     List<Binding> tailContext = new ArrayList<>();
-    for (Variable binding : argsSubst.getDomain()) {
-      ReferenceExpression ref = argsSubst.get(binding).toReference();
+    for (Map.Entry<Variable, Expression> entry : argsSubst.getEntries()) {
+      ReferenceExpression ref = entry.getValue().toReference();
       if (ref != null) {
         tailContext.add(ref.getBinding());
       }

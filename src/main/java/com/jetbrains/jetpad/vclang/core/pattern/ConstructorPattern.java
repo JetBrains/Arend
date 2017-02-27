@@ -1,7 +1,5 @@
 package com.jetbrains.jetpad.vclang.core.pattern;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
-import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
@@ -10,6 +8,7 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
@@ -64,17 +63,16 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
     List<Expression> arguments = new ArrayList<>();
     for (PatternArgument patternArgument : myArguments.getPatterns()) {
       assert link.hasNext();
-      LevelSubstitution levelSubst = new LevelSubstitution();
+      LevelSubstitution levelSubst;
       if (patternArgument.getPattern() instanceof ConstructorPattern) {
         assert link.getType().toExpression() != null;
         Expression type = link.getType().toExpression().subst(subst).normalize(NormalizeVisitor.Mode.WHNF);
         assert type.toDataCall() != null && type.toDataCall().getDefinition() == ((ConstructorPattern) patternArgument.getPattern()).getConstructor().getDataType();
         ExprSubstitution subSubst = ((ConstructorPattern) patternArgument.getPattern()).getMatchedArguments(new ArrayList<>(type.toDataCall().getDefCallArguments()));
-        levelSubst.add(LevelVariable.PVAR, type.toDataCall().getLevelArguments().getPLevel());
-        levelSubst.add(LevelVariable.HVAR, type.toDataCall().getLevelArguments().getHLevel());
-        for (Variable binding : subSubst.getDomain()) {
-          subst.add(binding, subSubst.get(binding));
-        }
+        levelSubst = new StdLevelSubstitution(type.toDataCall().getLevelArguments().getPLevel(), type.toDataCall().getLevelArguments().getHLevel());
+        subst.addAll(subSubst);
+      } else {
+        levelSubst = LevelSubstitution.EMPTY;
       }
       Expression param = patternArgument.getPattern().toExpression(subst).subst(levelSubst);
       if (patternArgument.getPattern() instanceof ConstructorPattern) {

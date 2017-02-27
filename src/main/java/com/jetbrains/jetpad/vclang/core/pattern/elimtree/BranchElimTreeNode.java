@@ -59,8 +59,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
     List<? extends Expression> dataTypeArguments = dataCall.getDefCallArguments();
 
     dataTypeArguments = constructor.matchDataTypeArguments(new ArrayList<>(dataTypeArguments));
-    LevelSubstitution polySubst = new LevelSubstitution();
-    DependentLink constructorArgs = DependentLink.Helper.subst(constructor.getParameters(), toSubstitution(constructor.getDataTypeParameters(), dataTypeArguments), polySubst);
+    DependentLink constructorArgs = DependentLink.Helper.subst(constructor.getParameters(), toSubstitution(constructor.getDataTypeParameters(), dataTypeArguments), LevelSubstitution.EMPTY);
     if (names != null) {
       constructorArgs = DependentLink.Helper.subst(constructorArgs, new ExprSubstitution());
       int i = 0;
@@ -136,8 +135,8 @@ public class BranchElimTreeNode extends ElimTreeNode {
     for (i = 0; i < myContextTail.size(); i++) {
       subst.add(clause.getTailBindings().get(i), subst.get(myContextTail.get(i)));
     }
-    subst.getDomain().remove(myReference);
-    subst.getDomain().removeAll(myContextTail);
+    subst.remove(myReference);
+    subst.removeAll(myContextTail);
     return clause.getChild().matchUntilStuck(subst, normalize);
   }
 

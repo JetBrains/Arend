@@ -42,8 +42,8 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
     assert expr.getDataTypeArguments().size() + expr.getDefCallArguments().size() == defParams.size();
     ExprSubstitution subst = DependentLink.Helper.toSubstitution(defParams, expr.getDataTypeArguments());
     defParams = defParams.subList(expr.getDataTypeArguments().size(), defParams.size());
-    subst.add(DependentLink.Helper.toSubstitution(defParams, expr.getDefCallArguments()));
-    return type.subst(subst, new LevelSubstitution());
+    subst.addAll(DependentLink.Helper.toSubstitution(defParams, expr.getDefCallArguments()));
+    return type.subst(subst, LevelSubstitution.EMPTY);
   }
 
   @Override
@@ -53,7 +53,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
 
   @Override
   public TypeMax visitReference(ReferenceExpression expr, Void params) {
-    return expr.getBinding().getType().subst(new ExprSubstitution(), new LevelSubstitution());
+    return expr.getBinding().getType().copy();
   }
 
   @Override
@@ -191,7 +191,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, TypeMax> {
       subst.add(params, new ProjExpression(expr.getExpression(), i));
       params = params.getNext();
     }
-    return params.getType().subst(subst, new LevelSubstitution());
+    return params.getType().subst(subst, LevelSubstitution.EMPTY);
   }
 
   @Override

@@ -137,8 +137,8 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
       newClause.setChild(clause.getChild().accept(this, null));
 
-      myExprSubstitution.getDomain().removeAll(DependentLink.Helper.toContext(clause.getParameters()));
-      myExprSubstitution.getDomain().removeAll(clause.getTailBindings());
+      myExprSubstitution.removeAll(DependentLink.Helper.toContext(clause.getParameters()));
+      myExprSubstitution.removeAll(clause.getTailBindings());
     }
 
     if (branchNode.getOtherwiseClause() != null) {
@@ -155,7 +155,8 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     if (leafNode.getMatched() != null) {
       List<Binding> matched = new ArrayList<>(leafNode.getMatched().size());
       for (Binding binding : leafNode.getMatched()) {
-        matched.add(myExprSubstitution.getDomain().contains(binding) ? myExprSubstitution.get(binding).toReference().getBinding() : binding);
+        Expression replacement = myExprSubstitution.get(binding);
+        matched.add(replacement != null ? replacement.toReference().getBinding() : binding);
       }
       result.setMatched(matched);
     }
@@ -204,9 +205,9 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
       clauses.add(newClause);
       myExprSubstitution.add(clause, ExpressionFactory.Reference(newClause));
     }
-    LetExpression result = ExpressionFactory.Let(clauses, letExpression.getExpression().subst(myExprSubstitution, myLevelSubstitution));
+    LetExpression result = ExpressionFactory.Let(clauses, letExpression.getExpression().accept(this, null));
     for (LetClause clause : letExpression.getClauses()) {
-      myExprSubstitution.getDomain().remove(clause);
+      myExprSubstitution.remove(clause);
     }
     return result;
   }
@@ -218,7 +219,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   public LetClause visitLetClause(LetClause clause) {
     DependentLink parameters = DependentLink.Helper.subst(clause.getParameters(), myExprSubstitution, myLevelSubstitution);
-    Expression resultType = clause.getResultType() == null ? null : clause.getResultType().subst(myExprSubstitution, myLevelSubstitution);
+    Expression resultType = clause.getResultType() == null ? null : clause.getResultType().accept(this, null);
     ElimTreeNode elimTree = clause.getElimTree().accept(this, null);
     DependentLink.Helper.freeSubsts(clause.getParameters(), myExprSubstitution);
     return new LetClause(clause.getName(), parameters, resultType, elimTree);

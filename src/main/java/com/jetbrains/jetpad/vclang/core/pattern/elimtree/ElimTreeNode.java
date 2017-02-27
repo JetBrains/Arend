@@ -1,13 +1,13 @@
 package com.jetbrains.jetpad.vclang.core.pattern.elimtree;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
+import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
@@ -28,14 +28,14 @@ public abstract class ElimTreeNode {
   }
 
   public ElimTreeNode subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
-    if (exprSubst.getDomain().isEmpty() && levelSubst.isEmpty()) {
+    if (exprSubst.isEmpty() && levelSubst.isEmpty()) {
       return this;
     }
     return accept(new SubstVisitor(exprSubst, levelSubst), null);
   }
 
   public ElimTreeNode subst(ExprSubstitution subst) {
-    return subst(subst, new LevelSubstitution());
+    return subst(subst, LevelSubstitution.EMPTY);
   }
 
   public abstract ElimTreeNode matchUntilStuck(ExprSubstitution subst, boolean normalize);

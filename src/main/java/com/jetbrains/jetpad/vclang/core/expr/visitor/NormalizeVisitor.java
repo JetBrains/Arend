@@ -43,7 +43,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       if (ref != null) {
         Binding binding = ref.getBinding();
         if (binding instanceof Function) {
-          return visitFunctionCall((Function) binding, new LevelSubstitution(), expr, mode);
+          return visitFunctionCall((Function) binding, LevelSubstitution.EMPTY, expr, mode);
         }
       }
     }
@@ -162,7 +162,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         }
         for (DependentLink link = excessiveParams; link.hasNext(); link = link.getNext()) {
           link = link.getNextTyped(null);
-          link.setType(link.getType().subst(substitution, new LevelSubstitution()));
+          link.setType(link.getType().subst(substitution, LevelSubstitution.EMPTY));
         }
       }
       requiredArgs = args;
@@ -215,7 +215,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
     Binding binding = expr.getBinding();
     if (binding instanceof Function) {
-      return visitFunctionCall((Function) binding, new LevelSubstitution(), expr, mode);
+      return visitFunctionCall((Function) binding, LevelSubstitution.EMPTY, expr, mode);
     } else {
       return expr;
     }

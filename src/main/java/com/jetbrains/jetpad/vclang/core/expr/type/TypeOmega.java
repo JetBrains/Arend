@@ -29,6 +29,11 @@ public class TypeOmega implements Type {
   private TypeOmega() {}
 
   @Override
+  public Type copy() {
+    return this;
+  }
+
+  @Override
   public Type subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
     return this;
   }
