@@ -340,7 +340,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   }
 
   private Abstract.LevelExpression visitLevelNull(Level level, int add) {
-    return level.getConstant() == 0 && (level.getVar() == LevelBinding.PLVL_BND || level.getVar() == LevelBinding.HLVL_BND) ? null : visitLevel(level, add);
+    return level.getConstant() == 0 && (level.getVar() == LevelVariable.PVAR || level.getVar() == LevelVariable.HVAR) ? null : visitLevel(level, add);
   }
 
   public Abstract.Expression visitSort(Sort sorts) {
