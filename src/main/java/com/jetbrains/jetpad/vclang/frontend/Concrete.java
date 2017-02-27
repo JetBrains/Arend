@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.*;
@@ -754,6 +755,20 @@ public final class Concrete {
   public static abstract class LevelExpression extends SourceNode implements Abstract.LevelExpression {
     protected LevelExpression(Position position) {
       super(position);
+    }
+  }
+
+  public static class InferVarLevelExpression extends LevelExpression implements Abstract.InferVarLevelExpression {
+    private final InferenceLevelVariable myVariable;
+
+    public InferVarLevelExpression(InferenceLevelVariable variable) {
+      super(ConcreteExpressionFactory.POSITION);
+      myVariable = variable;
+    }
+
+    @Override
+    public InferenceLevelVariable getVariable() {
+      return myVariable;
     }
   }
 

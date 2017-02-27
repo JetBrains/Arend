@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.expr.factory;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
@@ -18,6 +19,7 @@ public interface AbstractExpressionFactory {
   Abstract.Expression makeLam(List<? extends Abstract.Argument> arguments, Abstract.Expression body);
   Abstract.Expression makePi(List<? extends Abstract.TypeArgument> arguments, Abstract.Expression codomain);
   Abstract.Expression makeUniverse(Abstract.LevelExpression pLevel, Abstract.LevelExpression hLevel);
+  Abstract.LevelExpression makeInferVarLevel(InferenceLevelVariable variable);
   Abstract.LevelExpression makePLevel();
   Abstract.LevelExpression makeHLevel();
   Abstract.LevelExpression makeNumberLevel(int number);

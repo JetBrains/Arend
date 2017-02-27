@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 
 import java.util.Collection;
@@ -240,6 +241,10 @@ public final class Abstract {
 
   public interface LevelExpression extends SourceNode {
     <P, R> R accept(AbstractLevelExpressionVisitor<? super P, ? extends R> visitor, P params);
+  }
+
+  public interface InferVarLevelExpression extends LevelExpression {
+    InferenceLevelVariable getVariable();
   }
 
   public interface PLevelExpression extends LevelExpression {

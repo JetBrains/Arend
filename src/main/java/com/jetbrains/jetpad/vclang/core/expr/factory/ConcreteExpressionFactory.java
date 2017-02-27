@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.expr.factory;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -67,6 +68,11 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   @Override
   public Abstract.Expression makeUniverse(Abstract.LevelExpression pLevel, Abstract.LevelExpression hLevel) {
     return cUniverse((Concrete.LevelExpression) pLevel, (Concrete.LevelExpression) hLevel);
+  }
+
+  @Override
+  public Abstract.LevelExpression makeInferVarLevel(InferenceLevelVariable variable) {
+    return new Concrete.InferVarLevelExpression(variable);
   }
 
   @Override

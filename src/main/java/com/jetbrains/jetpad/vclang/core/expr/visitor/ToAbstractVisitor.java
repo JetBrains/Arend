@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
@@ -363,7 +362,19 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       return myFactory.makeNumberLevel(level.getConstant() + add);
     }
 
-    Abstract.LevelExpression result = level.getVar().getType() == LevelVariable.LvlType.PLVL ? myFactory.makePLevel() : myFactory.makeHLevel();
+    Abstract.LevelExpression result;
+    if (level.getVar() == LevelBinding.PLVL_BND) {
+      result = myFactory.makePLevel();
+    } else
+    if (level.getVar() == LevelBinding.HLVL_BND) {
+      result = myFactory.makeHLevel();
+    } else
+    if (level.getVar() instanceof InferenceLevelVariable) {
+      result = myFactory.makeInferVarLevel((InferenceLevelVariable) level.getVar());
+    } else {
+      throw new IllegalStateException();
+    }
+
     for (int i = 0; i < level.getConstant(); i++) {
       result = myFactory.makeSucLevel(result);
     }

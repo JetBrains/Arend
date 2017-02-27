@@ -15,7 +15,7 @@ public class InferenceLevelVariable implements LevelVariable {
 
   @Override
   public String getName() {
-    return myLevelBinding.getName();
+    return "?" + myLevelBinding.getName().substring(1);
   }
 
   @Override
@@ -29,6 +29,6 @@ public class InferenceLevelVariable implements LevelVariable {
 
   @Override
   public String toString() {
-    return "?" + myLevelBinding.getName().substring(1);
+    return getName();
   }
 }

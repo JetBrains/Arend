@@ -6,7 +6,7 @@ public class LevelBinding implements LevelVariable {
   public final static LevelBinding PLVL_BND = new LevelBinding(LvlType.PLVL);
   public final static LevelBinding HLVL_BND = new LevelBinding(LvlType.HLVL);
 
-  public LevelBinding(LvlType type) {
+  private LevelBinding(LvlType type) {
     myType = type;
   }
 
