@@ -1,10 +1,10 @@
 package com.jetbrains.jetpad.vclang.core.expr.type;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.core.definition.Referable;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.PiExpression;
@@ -94,7 +94,7 @@ public class PiUniverseType implements TypeMax {
   }
 
   @Override
-  public boolean findBinding(Referable binding) {
+  public boolean findBinding(Variable binding) {
     return DependentLink.Helper.findBinding(myParameters, binding);
   }
 

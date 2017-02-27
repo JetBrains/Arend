@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.core.definition.Referable;
 import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
@@ -80,11 +80,11 @@ public abstract class Expression implements PrettyPrintable, Type {
   }
 
   @Override
-  public boolean findBinding(Referable binding) {
+  public boolean findBinding(Variable binding) {
     return accept(new FindBindingVisitor(Collections.singleton(binding)), null) != null;
   }
 
-  public Referable findBinding(Set<? extends Referable> bindings) {
+  public Variable findBinding(Set<? extends Variable> bindings) {
     return this.accept(new FindBindingVisitor(bindings), null);
   }
 

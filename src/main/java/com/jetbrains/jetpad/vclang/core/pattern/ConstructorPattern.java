@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.core.pattern;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
+import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.definition.Referable;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
@@ -72,7 +72,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
         ExprSubstitution subSubst = ((ConstructorPattern) patternArgument.getPattern()).getMatchedArguments(new ArrayList<>(type.toDataCall().getDefCallArguments()));
         levelSubst.add(LevelVariable.PVAR, type.toDataCall().getLevelArguments().getPLevel());
         levelSubst.add(LevelVariable.HVAR, type.toDataCall().getLevelArguments().getHLevel());
-        for (Referable binding : subSubst.getDomain()) {
+        for (Variable binding : subSubst.getDomain()) {
           subst.add(binding, subSubst.get(binding));
         }
       }

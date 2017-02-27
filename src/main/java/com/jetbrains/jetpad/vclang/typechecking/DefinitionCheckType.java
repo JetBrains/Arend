@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.LinkList;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
+import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.UntypedDependentLink;
@@ -679,7 +680,7 @@ public class DefinitionCheckType {
   }
 
   private static boolean checkNonPositiveError(Expression expr, String name, DependentLink params, DependentLink param, List<? extends Abstract.Argument> args, Abstract.Constructor constructor, LocalErrorReporter errorReporter, Set<DataDefinition> dataDefinitions) {
-    Referable def = expr.findBinding(dataDefinitions);
+    Variable def = expr.findBinding(dataDefinitions);
     if (def == null) {
       return true;
     }

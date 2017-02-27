@@ -245,7 +245,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   public void prettyPrintLevelExpression(Abstract.LevelExpression expr, byte prec) {
     if (expr instanceof Abstract.InferVarLevelExpression) {
-      myBuilder.append(new Name(((Abstract.InferVarLevelExpression) expr).getVariable().getName()));
+      myBuilder.append(new Name(((Abstract.InferVarLevelExpression) expr).getVariable().toString()));
     } else
     if (expr instanceof Abstract.PLevelExpression) {
       myBuilder.append("\\lp");

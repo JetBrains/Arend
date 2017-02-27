@@ -1,12 +1,12 @@
 package com.jetbrains.jetpad.vclang.core.context.param;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.definition.Referable;
-import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.type.Type;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 
 import java.util.ArrayList;
@@ -172,10 +172,10 @@ public interface DependentLink extends Binding {
       return accept(link, new SubstVisitor(new ExprSubstitution(), new LevelSubstitution()), null);
     }
 
-    public static boolean findBinding(DependentLink link, Referable referable) {
+    public static boolean findBinding(DependentLink link, Variable variable) {
       for (; link.hasNext(); link = link.getNext()) {
         link = link.getNextTyped(null);
-        if (link.getType().findBinding(referable)) {
+        if (link.getType().findBinding(variable)) {
           return true;
         }
       }

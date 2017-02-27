@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.LinkList;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
-import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.ExpressionInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
@@ -462,9 +461,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   public CheckTypeVisitor.Result getLocalVar(Abstract.DefCallExpression expr) {
     String name = expr.getName();
     for (int i = myContext.size() - 1; i >= 0; i--) {
-      Variable def = myContext.get(i);
+      Binding def = myContext.get(i);
       if (name.equals(def.getName())) {
-        return new CheckTypeVisitor.Result(Reference((Binding) def), ((Binding) def).getType());
+        return new CheckTypeVisitor.Result(Reference(def), def.getType());
       }
     }
 

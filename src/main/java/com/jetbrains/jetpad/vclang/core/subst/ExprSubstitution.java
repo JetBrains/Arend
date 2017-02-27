@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.core.subst;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
-import com.jetbrains.jetpad.vclang.core.definition.Referable;
+import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
@@ -10,22 +10,22 @@ import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import java.util.*;
 
 public class ExprSubstitution {
-  private Map<Referable, Expression> mySubstExprs;
+  private Map<Variable, Expression> mySubstExprs;
 
   public ExprSubstitution() {
     mySubstExprs = Collections.emptyMap();
   }
 
-  public ExprSubstitution(Referable from, Expression to) {
+  public ExprSubstitution(Variable from, Expression to) {
     mySubstExprs = new HashMap<>();
     add(from, to);
   }
 
-  public Set<Referable> getDomain() {
+  public Set<Variable> getDomain() {
     return mySubstExprs.keySet();
   }
 
-  public Expression get(Referable binding)  {
+  public Expression get(Variable binding)  {
     return mySubstExprs.get(binding);
   }
 
@@ -33,7 +33,7 @@ public class ExprSubstitution {
     mySubstExprs.clear();
   }
 
-  public void add(Referable binding, Expression expression) {
+  public void add(Variable binding, Expression expression) {
     if (mySubstExprs.isEmpty()) {
       mySubstExprs = new HashMap<>();
     }
@@ -50,7 +50,7 @@ public class ExprSubstitution {
   }
 
   public void subst(ExprSubstitution subst) {
-    for (Map.Entry<Referable, Expression> entry : mySubstExprs.entrySet()) {
+    for (Map.Entry<Variable, Expression> entry : mySubstExprs.entrySet()) {
       entry.setValue(entry.getValue().subst(subst));
     }
   }
@@ -65,7 +65,7 @@ public class ExprSubstitution {
 
   public ExprSubstitution compose(ExprSubstitution subst) {
     ExprSubstitution result = new ExprSubstitution();
-    for (Referable binding : subst.getDomain()) {
+    for (Variable binding : subst.getDomain()) {
       result.add(binding, subst.get(binding).subst(this));
     }
     return result;

@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.core.expr.type;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.core.definition.Referable;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
@@ -99,7 +99,7 @@ public class TypeOmega implements Type {
   }
 
   @Override
-  public boolean findBinding(Referable binding) {
+  public boolean findBinding(Variable binding) {
     return false;
   }
 

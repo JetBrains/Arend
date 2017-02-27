@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.core.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
-import com.jetbrains.jetpad.vclang.core.definition.Referable;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
@@ -15,16 +15,16 @@ import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVis
 import java.util.Map;
 import java.util.Set;
 
-public class FindBindingVisitor extends BaseExpressionVisitor<Void, Referable> implements ElimTreeNodeVisitor<Void, Referable> {
-  private final Set<? extends Referable> myBindings;
+public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> implements ElimTreeNodeVisitor<Void, Variable> {
+  private final Set<? extends Variable> myBindings;
 
-  public FindBindingVisitor(Set<? extends Referable> binding) {
+  public FindBindingVisitor(Set<? extends Variable> binding) {
     myBindings = binding;
   }
 
   @Override
-  public Referable visitApp(AppExpression expr, Void params) {
-    Referable result = expr.getFunction().accept(this, null);
+  public Variable visitApp(AppExpression expr, Void params) {
+    Variable result = expr.getFunction().accept(this, null);
     if (result != null) {
       return result;
     }
@@ -38,9 +38,9 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Referable> i
   }
 
   @Override
-  public Referable visitDefCall(DefCallExpression expr, Void params) {
+  public Variable visitDefCall(DefCallExpression expr, Void params) {
     for (Expression arg : expr.getDefCallArguments()) {
-      Referable result = arg.accept(this, null);
+      Variable result = arg.accept(this, null);
       if (result != null) {
         return result;
       }
@@ -49,9 +49,9 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Referable> i
   }
 
   @Override
-  public Referable visitConCall(ConCallExpression expr, Void params) {
+  public Variable visitConCall(ConCallExpression expr, Void params) {
     for (Expression arg : expr.getDataTypeArguments()) {
-      Referable result = arg.accept(this, null);
+      Variable result = arg.accept(this, null);
       if (result != null) {
         return result;
       }
@@ -60,9 +60,9 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Referable> i
   }
 
   @Override
-  public Referable visitClassCall(ClassCallExpression expr, Void params) {
+  public Variable visitClassCall(ClassCallExpression expr, Void params) {
     for (Map.Entry<ClassField, FieldSet.Implementation> entry : expr.getImplementedHere()) {
-      Referable result = entry.getValue().term.accept(this, null);
+      Variable result = entry.getValue().term.accept(this, null);
       if (result != null) {
         return result;
       }
@@ -71,41 +71,41 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Referable> i
   }
 
   @Override
-  public Referable visitReference(ReferenceExpression expr, Void params) {
+  public Variable visitReference(ReferenceExpression expr, Void params) {
     return myBindings.contains(expr.getBinding()) ? expr.getBinding() : null;
   }
 
   @Override
-  public Referable visitInferenceReference(InferenceReferenceExpression expr, Void params) {
+  public Variable visitInferenceReference(InferenceReferenceExpression expr, Void params) {
     return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : myBindings.contains(expr.getVariable()) ? expr.getVariable() : null;
   }
 
   @Override
-  public Referable visitLam(LamExpression expr, Void params) {
-    Referable result = visitDependentLink(expr.getParameters());
+  public Variable visitLam(LamExpression expr, Void params) {
+    Variable result = visitDependentLink(expr.getParameters());
     return result != null ? result : expr.getBody().accept(this, null);
   }
 
   @Override
-  public Referable visitPi(PiExpression expr, Void params) {
-    Referable result = visitDependentLink(expr.getParameters());
+  public Variable visitPi(PiExpression expr, Void params) {
+    Variable result = visitDependentLink(expr.getParameters());
     return result != null ? result : expr.getCodomain().accept(this, null);
   }
 
   @Override
-  public Referable visitUniverse(UniverseExpression expr, Void params) {
+  public Variable visitUniverse(UniverseExpression expr, Void params) {
     return null;
   }
 
   @Override
-  public Referable visitError(ErrorExpression expr, Void params) {
+  public Variable visitError(ErrorExpression expr, Void params) {
     return null;
   }
 
   @Override
-  public Referable visitTuple(TupleExpression expr, Void params) {
+  public Variable visitTuple(TupleExpression expr, Void params) {
     for (Expression field : expr.getFields()) {
-      Referable result = field.accept(this, null);
+      Variable result = field.accept(this, null);
       if (result != null) {
         return result;
       }
@@ -114,26 +114,26 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Referable> i
   }
 
   @Override
-  public Referable visitSigma(SigmaExpression expr, Void params) {
+  public Variable visitSigma(SigmaExpression expr, Void params) {
     return visitDependentLink(expr.getParameters());
   }
 
   @Override
-  public Referable visitProj(ProjExpression expr, Void params) {
+  public Variable visitProj(ProjExpression expr, Void params) {
     return expr.getExpression().accept(this, null);
   }
 
-  private Referable visitTypeExpression(Type type) {
+  private Variable visitTypeExpression(Type type) {
     if (type.toExpression() != null) {
       return type.toExpression().accept(this, null);
     }
     return visitDependentLink(type.getPiParameters());
   }
 
-  private Referable visitDependentLink(DependentLink link) {
+  private Variable visitDependentLink(DependentLink link) {
     for (; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
-      Referable result = visitTypeExpression(link.getType());
+      Variable result = visitTypeExpression(link.getType());
       if (result != null) {
         return result;
       }
@@ -142,14 +142,14 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Referable> i
   }
 
   @Override
-  public Referable visitNew(NewExpression expr, Void params) {
+  public Variable visitNew(NewExpression expr, Void params) {
     return expr.getExpression().accept(this, null);
   }
 
   @Override
-  public Referable visitLet(LetExpression letExpression, Void params) {
+  public Variable visitLet(LetExpression letExpression, Void params) {
     for (LetClause clause : letExpression.getClauses()) {
-      Referable result = visitLetClause(clause);
+      Variable result = visitLetClause(clause);
       if (result != null) {
         return result;
       }
@@ -158,13 +158,13 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Referable> i
   }
 
   @Override
-  public Referable visitOfType(OfTypeExpression expr, Void params) {
-    Referable result = expr.getExpression().accept(this, null);
+  public Variable visitOfType(OfTypeExpression expr, Void params) {
+    Variable result = expr.getExpression().accept(this, null);
     return result != null ? result : visitTypeExpression(expr.getType());
   }
 
-  public Referable visitLetClause(LetClause clause) {
-    Referable result = visitDependentLink(clause.getParameters());
+  public Variable visitLetClause(LetClause clause) {
+    Variable result = visitDependentLink(clause.getParameters());
     if (result != null) {
       return result;
     }
@@ -178,15 +178,15 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Referable> i
   }
 
   @Override
-  public Referable visitBranch(BranchElimTreeNode branchNode, Void params) {
+  public Variable visitBranch(BranchElimTreeNode branchNode, Void params) {
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-      Referable result = clause.getChild().accept(this, null);
+      Variable result = clause.getChild().accept(this, null);
       if (result != null) {
         return result;
       }
     }
     if (branchNode.getOtherwiseClause() != null) {
-      Referable result = branchNode.getOtherwiseClause().getChild().accept(this, null);
+      Variable result = branchNode.getOtherwiseClause().getChild().accept(this, null);
       if (result != null) {
         return result;
       }
@@ -195,12 +195,12 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Referable> i
   }
 
   @Override
-  public Referable visitLeaf(LeafElimTreeNode leafNode, Void params) {
+  public Variable visitLeaf(LeafElimTreeNode leafNode, Void params) {
     return leafNode.getExpression().accept(this, null);
   }
 
   @Override
-  public Referable visitEmpty(EmptyElimTreeNode emptyNode, Void params) {
+  public Variable visitEmpty(EmptyElimTreeNode emptyNode, Void params) {
     return null;
   }
 }

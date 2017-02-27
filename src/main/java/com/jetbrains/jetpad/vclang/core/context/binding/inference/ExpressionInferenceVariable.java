@@ -9,7 +9,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingErr
 
 public class ExpressionInferenceVariable extends InferenceVariable {
   public ExpressionInferenceVariable(Type type, Abstract.SourceNode sourceNode) {
-    super(null, type, sourceNode);
+    super("H", type, sourceNode);
   }
 
   @Override

@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.core.sort;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
+import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
-import com.jetbrains.jetpad.vclang.core.definition.Referable;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -31,7 +31,7 @@ public class LevelArguments {
   }
 
   public LevelSubstitution toLevelSubstitution() {
-    Map<Referable, Level> polySubst = new HashMap<>();
+    Map<Variable, Level> polySubst = new HashMap<>();
     polySubst.put(LevelVariable.PVAR, myPLevel);
     polySubst.put(LevelVariable.HVAR, myHLevel);
     return new LevelSubstitution(polySubst);
