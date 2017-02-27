@@ -4,8 +4,7 @@ public interface LevelVariable extends Variable {
   enum LvlType { PLVL, HLVL }
   LvlType getType();
 
-  /*
-  LevelVariable PLVL_BND = new LevelVariable() {
+  LevelVariable PVAR = new LevelVariable() {
     @Override
     public String getName() {
       return "\\lp";
@@ -16,5 +15,16 @@ public interface LevelVariable extends Variable {
       return LvlType.PLVL;
     }
   };
-  */
+
+  LevelVariable HVAR = new LevelVariable() {
+    @Override
+    public String getName() {
+      return "\\lh";
+    }
+
+    @Override
+    public LvlType getType() {
+      return LvlType.HLVL;
+    }
+  };
 }

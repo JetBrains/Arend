@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.definition;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.LevelMax;
@@ -55,21 +55,21 @@ public class DataPolyTest extends TypeCheckingTestCase {
   @Test
   public void dataOmega() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) | con A");
-    assertEquals(new SortMax(new Sort(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND))), dataDefinition.getSorts());
+    assertEquals(new SortMax(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR))), dataDefinition.getSorts());
   }
 
   @Test
   public void dataOmegaExplicit() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) : \\Type | con A");
-    assertEquals(new SortMax(new Sort(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND))), dataDefinition.getSorts());
+    assertEquals(new SortMax(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR))), dataDefinition.getSorts());
   }
 
   @Test
   public void dataOmegaProp() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) | con1 A | con2 (n = n)");
     assertEquals(new SortMax(
-        new LevelMax(new Level(LevelBinding.PLVL_BND)),
-        new LevelMax(new Level(LevelBinding.HLVL_BND)).max(new Level(1))), /* \Type (\lp, max \lh 0) */
+        new LevelMax(new Level(LevelVariable.PVAR)),
+        new LevelMax(new Level(LevelVariable.HVAR)).max(new Level(1))), /* \Type (\lp, max \lh 0) */
       dataDefinition.getSorts());
   }
 
@@ -77,8 +77,8 @@ public class DataPolyTest extends TypeCheckingTestCase {
   public void dataOmegaPropExplicit() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Type \\lp (\\max \\lh 0) | con1 (n = n) | con2 A");
     assertEquals(new SortMax(
-        new LevelMax(new Level(LevelBinding.PLVL_BND)),
-        new LevelMax(new Level(LevelBinding.HLVL_BND)).max(new Level(1))), /* \Type (\lp, max \lh 0) */
+        new LevelMax(new Level(LevelVariable.PVAR)),
+        new LevelMax(new Level(LevelVariable.HVAR)).max(new Level(1))), /* \Type (\lp, max \lh 0) */
       dataDefinition.getSorts());
   }
 
@@ -86,8 +86,8 @@ public class DataPolyTest extends TypeCheckingTestCase {
   public void dataOmegaSet() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) | con1 (n = n) | con2 A | con3 Nat");
     assertEquals(new SortMax(
-        new LevelMax(new Level(LevelBinding.PLVL_BND)),
-        new LevelMax(new Level(LevelBinding.HLVL_BND)).max(new Level(1))), /* \Type (\lp, max \lh 0) */
+        new LevelMax(new Level(LevelVariable.PVAR)),
+        new LevelMax(new Level(LevelVariable.HVAR)).max(new Level(1))), /* \Type (\lp, max \lh 0) */
       dataDefinition.getSorts());
   }
 
@@ -100,8 +100,8 @@ public class DataPolyTest extends TypeCheckingTestCase {
   public void dataOmegaSetExplicitMax() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Type \\lp (\\max \\lh 0) | con1 (n = n) | con2 A | con3 Nat");
     assertEquals(new SortMax(
-        new LevelMax(new Level(LevelBinding.PLVL_BND)),
-        new LevelMax(new Level(LevelBinding.HLVL_BND)).max(new Level(1))), /* \Type (\lp, max \lh 0) */
+        new LevelMax(new Level(LevelVariable.PVAR)),
+        new LevelMax(new Level(LevelVariable.HVAR)).max(new Level(1))), /* \Type (\lp, max \lh 0) */
       dataDefinition.getSorts());
   }
 }

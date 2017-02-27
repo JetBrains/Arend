@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.definition;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.LevelMax;
@@ -52,8 +52,8 @@ public class FunctionPolyTest extends TypeCheckingTestCase {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef(
       "\\function f (A : \\Type) (n : Nat) : \\oo-Type (\\max \\lp 1) <= \\elim n | zero => \\Set0 | suc n => A");
     assertEquals(new SortMax(
-        new LevelMax(new Level(LevelBinding.PLVL_BND)).max(new LevelMax(new Level(1))),
-        new LevelMax(new Level(LevelBinding.HLVL_BND)).max(new LevelMax(new Level(2)))), /* \Type (max \lp 1, max \lh 1) */
+        new LevelMax(new Level(LevelVariable.PVAR)).max(new LevelMax(new Level(1))),
+        new LevelMax(new Level(LevelVariable.HVAR)).max(new LevelMax(new Level(2)))), /* \Type (max \lp 1, max \lh 1) */
       funDefinition.getResultType().toSorts());
   }
 
@@ -71,33 +71,33 @@ public class FunctionPolyTest extends TypeCheckingTestCase {
   @Test
   public void funOmega() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) => A");
-    assertEquals(new SortMax(new Sort(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND))), funDefinition.getResultType().toSorts());
+    assertEquals(new SortMax(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR))), funDefinition.getResultType().toSorts());
   }
 
   @Test
   public void funOmegaExplicit() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) : \\Type => A");
-    assertEquals(new SortMax(new Sort(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND))), funDefinition.getResultType().toSorts());
+    assertEquals(new SortMax(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR))), funDefinition.getResultType().toSorts());
   }
 
   @Test
   public void funOmegaProp() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) => \\Sigma A (n = n)");
-    assertEquals(new SortMax(new Sort(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND))), funDefinition.getResultType().toSorts());
+    assertEquals(new SortMax(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR))), funDefinition.getResultType().toSorts());
   }
 
   @Test
   public void funOmegaPropExplicit() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) : \\Type => \\Sigma (n = n) A");
-    assertEquals(new SortMax(new Sort(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND))), funDefinition.getResultType().toSorts());
+    assertEquals(new SortMax(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR))), funDefinition.getResultType().toSorts());
   }
 
   @Test
   public void funOmegaSet() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) => \\Sigma (n = n) A Nat");
     assertEquals(new SortMax(
-        new LevelMax(new Level(LevelBinding.PLVL_BND)),
-        new LevelMax(new Level(LevelBinding.HLVL_BND)).max(new Level(1))), /* \Type (\lp, max \lh 0) */
+        new LevelMax(new Level(LevelVariable.PVAR)),
+        new LevelMax(new Level(LevelVariable.HVAR)).max(new Level(1))), /* \Type (\lp, max \lh 0) */
       funDefinition.getResultType().toSorts());
   }
 
@@ -105,8 +105,8 @@ public class FunctionPolyTest extends TypeCheckingTestCase {
   public void funOmegaSetExplicit() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) : \\oo-Type => \\Sigma (n = n) A Nat");
     assertEquals(new SortMax(
-        new LevelMax(new Level(LevelBinding.PLVL_BND)),
-        new LevelMax(new Level(LevelBinding.HLVL_BND)).max(new Level(1))), /* \Type (\lp, max \lh 0) */
+        new LevelMax(new Level(LevelVariable.PVAR)),
+        new LevelMax(new Level(LevelVariable.HVAR)).max(new Level(1))), /* \Type (\lp, max \lh 0) */
       funDefinition.getResultType().toSorts());
   }
 }

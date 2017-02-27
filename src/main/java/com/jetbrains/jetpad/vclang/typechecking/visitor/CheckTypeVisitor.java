@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.visitor;
 import com.jetbrains.jetpad.vclang.core.context.LinkList;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.ExpressionInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
@@ -122,8 +122,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
       for (DependentLink parameter : myParameters) {
         if (parameter.getType().toExpression() == null) {
-          InferenceLevelVariable pLvl = new InferenceLevelVariable(LevelBinding.PLVL_BND, expr);
-          InferenceLevelVariable hLvl = new InferenceLevelVariable(LevelBinding.HLVL_BND, expr);
+          InferenceLevelVariable pLvl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, expr);
+          InferenceLevelVariable hLvl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, expr);
           equations.addVariable(pLvl);
           equations.addVariable(hLvl);
           Expression type = ExpressionFactory.Universe(new Level(pLvl), new Level(hLvl));
@@ -362,8 +362,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       Abstract.UniverseExpression uni = (Abstract.UniverseExpression)cod;
       if (args == null) return null;
 
-      LevelMax pLevelMax = uni.getPLevel() == null ? new LevelMax(new Level(LevelBinding.PLVL_BND)) : typeCheckLevelMax(uni.getPLevel(), 0);
-      LevelMax hLevelMax = uni.getHLevel() == null ? new LevelMax(new Level(LevelBinding.HLVL_BND)) : typeCheckLevelMax(uni.getHLevel(), -1);
+      LevelMax pLevelMax = uni.getPLevel() == null ? new LevelMax(new Level(LevelVariable.PVAR)) : typeCheckLevelMax(uni.getPLevel(), 0);
+      LevelMax hLevelMax = uni.getHLevel() == null ? new LevelMax(new Level(LevelVariable.HVAR)) : typeCheckLevelMax(uni.getHLevel(), -1);
       if (maxAllowed) {
         return new PiUniverseType(args, new SortMax(pLevelMax, hLevelMax));
       }
@@ -381,11 +381,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
           myErrorReporter.report(new LocalTypeCheckingError("\\Type without level is not allowed in this context", uni));
           return null;
         }
-        pLevel = new Level(LevelBinding.PLVL_BND);
+        pLevel = new Level(LevelVariable.PVAR);
       }
 
       if (replaceInfinities && hLevel.isInfinity()) {
-        hLevel = new Level(LevelBinding.HLVL_BND);
+        hLevel = new Level(LevelVariable.HVAR);
       }
 
       UniverseExpression universe = Universe(pLevel, hLevel);
@@ -560,8 +560,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
             piLamSubst.add(piLink, ExpressionFactory.Reference(link));
           } else {
             if (argType == null) {
-              InferenceLevelVariable pLvl = new InferenceLevelVariable(LevelBinding.PLVL_BND, expr);
-              InferenceLevelVariable hLvl = new InferenceLevelVariable(LevelBinding.HLVL_BND, expr);
+              InferenceLevelVariable pLvl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, expr);
+              InferenceLevelVariable hLvl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, expr);
               myEquations.addVariable(pLvl);
               myEquations.addVariable(hLvl);
               InferenceVariable inferenceVariable = new LambdaInferenceVariable("type-of-" + name, ExpressionFactory.Universe(new Level(pLvl), new Level(hLvl)), argIndex, expr, false);
@@ -614,8 +614,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   @Override
   public Result visitUniverse(Abstract.UniverseExpression expr, Type expectedType) {
-    Level pLevel = expr.getPLevel() != null ? typeCheckLevelMax(expr.getPLevel(), 0).toLevel() : new Level(LevelBinding.PLVL_BND);
-    Level hLevel = expr.getHLevel() != null ? typeCheckLevelMax(expr.getHLevel(), -1).toLevel() : new Level(LevelBinding.HLVL_BND);
+    Level pLevel = expr.getPLevel() != null ? typeCheckLevelMax(expr.getPLevel(), 0).toLevel() : new Level(LevelVariable.PVAR);
+    Level hLevel = expr.getHLevel() != null ? typeCheckLevelMax(expr.getHLevel(), -1).toLevel() : new Level(LevelVariable.HVAR);
 
     if (pLevel == null || hLevel == null) {
       myErrorReporter.report(new LocalTypeCheckingError("\\max can only be used in a result type", expr));
@@ -637,10 +637,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       expr = ((Abstract.SucLevelExpression) expr).getExpression();
     }
     if (expr instanceof Abstract.PLevelExpression) {
-      return new LevelMax(new Level(LevelBinding.PLVL_BND, n));
+      return new LevelMax(new Level(LevelVariable.PVAR, n));
     }
     if (expr instanceof Abstract.HLevelExpression) {
-      return new LevelMax(new Level(LevelBinding.HLVL_BND, n));
+      return new LevelMax(new Level(LevelVariable.HVAR, n));
     }
     if (expr instanceof Abstract.InfLevelExpression) {
       return LevelMax.INFINITY;

@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
@@ -58,12 +58,12 @@ public class Prelude {
     } else
     if (abstractDef.getName().equals("Path")) {
       PATH = (DataDefinition) definition;
-      PATH.getParameters().setType(Pi(ExpressionFactory.Interval(), ExpressionFactory.Universe(new Sort(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND, 1)))));
+      PATH.getParameters().setType(Pi(ExpressionFactory.Interval(), ExpressionFactory.Universe(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, 1)))));
       PATH_CON = PATH.getConstructor("path");
     } else
     if (abstractDef.getName().equals("=")) {
       PATH_INFIX = (FunctionDefinition) definition;
-      PATH_INFIX.getParameters().setType(ExpressionFactory.Universe(new Sort(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND, 1))));
+      PATH_INFIX.getParameters().setType(ExpressionFactory.Universe(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, 1))));
     } else
     if (abstractDef.getName().equals("@")) {
       AT = (FunctionDefinition) definition;
@@ -87,7 +87,7 @@ public class Prelude {
       ISO.setElimTree(ExpressionFactory.top(ISO.getParameters(), ExpressionFactory.branch(ISO.getParameters().getNext().getNext().getNext().getNext().getNext().getNext(), ExpressionFactory.tail(),
         clause(LEFT, EmptyDependentLink.getInstance(), ExpressionFactory.Reference(ISO.getParameters())),
         clause(RIGHT, EmptyDependentLink.getInstance(), ExpressionFactory.Reference(ISO.getParameters().getNext())))));
-      ISO.setResultType(new PiUniverseType(EmptyDependentLink.getInstance(), new SortMax(new Sort(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND)))));
+      ISO.setResultType(new PiUniverseType(EmptyDependentLink.getInstance(), new SortMax(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR)))));
       ISO.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     } else
     if (abstractDef.getName().equals("TrP")) {
@@ -97,7 +97,7 @@ public class Prelude {
     } else
     if (abstractDef.getName().equals("TrS")) {
       SET_TRUNC = (DataDefinition) definition;
-      SET_TRUNC.setSorts(new SortMax(Sort.SetOfLevel(new Level(LevelBinding.PLVL_BND))));
+      SET_TRUNC.setSorts(new SortMax(Sort.SetOfLevel(new Level(LevelVariable.PVAR))));
       SET_TRUNC_PATH_CON = SET_TRUNC.getConstructor("truncS");
     }
   }

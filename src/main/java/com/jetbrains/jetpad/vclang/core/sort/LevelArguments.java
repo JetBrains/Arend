@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.sort;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.definition.Referable;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
@@ -14,7 +14,7 @@ public class LevelArguments {
   private final Level myPLevel;
   private final Level myHLevel;
 
-  public static final LevelArguments STD = new LevelArguments(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND));
+  public static final LevelArguments STD = new LevelArguments(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR));
   public static final LevelArguments ZERO = new LevelArguments(new Level(0), new Level(0));
 
   public LevelArguments(Level pLevel, Level hLevel) {
@@ -32,8 +32,8 @@ public class LevelArguments {
 
   public LevelSubstitution toLevelSubstitution() {
     Map<Referable, Level> polySubst = new HashMap<>();
-    polySubst.put(LevelBinding.PLVL_BND, myPLevel);
-    polySubst.put(LevelBinding.HLVL_BND, myHLevel);
+    polySubst.put(LevelVariable.PVAR, myPLevel);
+    polySubst.put(LevelVariable.HVAR, myHLevel);
     return new LevelSubstitution(polySubst);
   }
 
@@ -42,8 +42,8 @@ public class LevelArguments {
   }
 
   public static LevelArguments generateInferVars(Equations equations, Abstract.Expression expr) {
-    InferenceLevelVariable pl = new InferenceLevelVariable(LevelBinding.PLVL_BND, expr);
-    InferenceLevelVariable hl = new InferenceLevelVariable(LevelBinding.HLVL_BND, expr);
+    InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, expr);
+    InferenceLevelVariable hl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, expr);
     equations.addVariable(pl);
     equations.addVariable(hl);
     return new LevelArguments(new Level(pl), new Level(hl));

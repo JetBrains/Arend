@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.module.caching.serialization;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
@@ -128,9 +128,9 @@ class DefinitionSerialization {
     LevelProtos.Level.Builder builder = LevelProtos.Level.newBuilder();
     if (level.getVar() == null) {
       builder.setVariable(LevelProtos.Level.Variable.NO_VAR);
-    } else if (level.getVar() == LevelBinding.PLVL_BND) {
+    } else if (level.getVar() == LevelVariable.PVAR) {
       builder.setVariable(LevelProtos.Level.Variable.PLVL);
-    } else if (level.getVar() == LevelBinding.HLVL_BND) {
+    } else if (level.getVar() == LevelVariable.HVAR) {
       builder.setVariable(LevelProtos.Level.Variable.HLVL);
     } else {
       throw new IllegalStateException();

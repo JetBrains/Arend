@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.DerivedInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
@@ -119,8 +118,8 @@ public class TwoStageEquations implements Equations {
       // ?x <> Type
       SortMax sorts = cType.toSorts();
       if (sorts != null) {
-        InferenceLevelVariable lpInf = new InferenceLevelVariable(LevelBinding.PLVL_BND, cInf.getSourceNode());
-        InferenceLevelVariable lhInf = new InferenceLevelVariable(LevelBinding.HLVL_BND, cInf.getSourceNode());
+        InferenceLevelVariable lpInf = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, cInf.getSourceNode());
+        InferenceLevelVariable lhInf = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, cInf.getSourceNode());
         myLevelEquations.addVariable(lpInf);
         myLevelEquations.addVariable(lhInf);
         Level lp = new Level(lpInf);

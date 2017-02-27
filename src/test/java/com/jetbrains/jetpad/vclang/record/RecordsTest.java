@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.record;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
@@ -181,8 +181,8 @@ public class RecordsTest extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\class Point { \\field x : \\Type3 \\field y : \\Type1 }\n" +
         "\\function C => Point { x => Nat }");
-    assertEquals(new SortMax(new Sort(new Level(4), new Level(LevelBinding.HLVL_BND, 1))), ((ClassDefinition) result.getDefinition("Point")).getSorts(LevelArguments.STD));
-    assertEquals(Universe(new Sort(new Level(2), new Level(LevelBinding.HLVL_BND, 1))), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD).toExpression());
+    assertEquals(new SortMax(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1))), ((ClassDefinition) result.getDefinition("Point")).getSorts(LevelArguments.STD));
+    assertEquals(Universe(new Sort(new Level(2), new Level(LevelVariable.HVAR, 1))), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD).toExpression());
   }
 
   @Test

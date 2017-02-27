@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.core.context.LinkList;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.UntypedDependentLink;
@@ -244,12 +244,12 @@ public class DefinitionCheckType {
         Level expHlevel = userType.getPiCodomain().toSorts().getHLevel().toLevel();
 
         if (expPlevel == null || expPlevel.isInfinity()) {
-          InferenceLevelVariable lpVar = new InferenceLevelVariable(LevelBinding.PLVL_BND, def);
+          InferenceLevelVariable lpVar = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, def);
           visitor.getEquations().addVariable(lpVar);
           expPlevel = new Level(lpVar);
         }
         if (expHlevel == null || expHlevel.isInfinity()) {
-          InferenceLevelVariable lhVar = new InferenceLevelVariable(LevelBinding.HLVL_BND, def);
+          InferenceLevelVariable lhVar = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, def);
           visitor.getEquations().addVariable(lhVar);
           expHlevel = new Level(lhVar);
         }

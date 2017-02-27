@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.module.caching.serialization;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
@@ -122,10 +122,10 @@ class DefinitionDeserialization {
         var = null;
         break;
       case PLVL:
-        var = LevelBinding.PLVL_BND;
+        var = LevelVariable.PVAR;
         break;
       case HLVL:
-        var = LevelBinding.HLVL_BND;
+        var = LevelVariable.HVAR;
         break;
       default: throw new DeserializationError("Unrecognized level variable");
     }
@@ -134,7 +134,7 @@ class DefinitionDeserialization {
     if (var == null && constant == -1) {
       return Level.INFINITY;
     } else {
-      return new Level((LevelBinding)var, constant);
+      return new Level((LevelVariable) var, constant);
     }
   }
 

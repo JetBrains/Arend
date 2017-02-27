@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
@@ -43,7 +43,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
   @Test
   public void classExtTest() {
     TypeCheckClassResult result = typeCheckClass("\\class Test { \\field A : \\Type0 \\field a : A } \\function test => Test { A => Nat }");
-    assertEquals(Universe(new Level(1), new Level(LevelBinding.HLVL_BND)), result.getDefinition("Test").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.ZERO).toExpression());
+    assertEquals(Universe(new Level(1), new Level(LevelVariable.HVAR)), result.getDefinition("Test").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.ZERO).toExpression());
     assertEquals(Universe(Sort.SET0), result.getDefinition("test").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.ZERO).toExpression());
     testType(Universe(Sort.SET0), result);
   }
@@ -57,7 +57,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
   @Test
   public void lambdaTest2() {
     TypeCheckClassResult result = typeCheckClass("\\function test => \\lam (A : \\Type0) (x : A) => x");
-    DependentLink A = param("A", Universe(new Level(0), new Level(LevelBinding.HLVL_BND)));
+    DependentLink A = param("A", Universe(new Level(0), new Level(LevelVariable.HVAR)));
     Expression expectedType = Pi(params(A, param("x", Reference(A))), Reference(A));
     testType(expectedType, result);
   }
@@ -85,7 +85,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
   @Test
   public void letTest() {
     Definition def = typeCheckDef("\\function test => \\lam (F : Nat -> \\Type0) (f : \\Pi (x : Nat) -> F x) => \\let | x => 0 \\in f x");
-    DependentLink F = param("F", Pi(Nat(), Universe(new Level(0), new Level(LevelBinding.HLVL_BND))));
+    DependentLink F = param("F", Pi(Nat(), Universe(new Level(0), new Level(LevelVariable.HVAR))));
     DependentLink x = param("x", Nat());
     DependentLink f = param("f", Pi(x, Apps(Reference(F), Reference(x))));
     assertEquals(Pi(params(F, f), Apps(Reference(F), Zero())), ((Expression) ((LeafElimTreeNode) ((FunctionDefinition) def).getElimTree()).getExpression().getType()).normalize(NormalizeVisitor.Mode.NF));

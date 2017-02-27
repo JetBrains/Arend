@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
@@ -273,7 +273,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
         cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern(null), true, false))), Abstract.Definition.Arrow.RIGHT, cUniverseStd(1))
     );
     CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cUniverseInf(2), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar("x"), cZero())), null);
-    assertEquals(Universe(new Level(0), new Level(LevelBinding.HLVL_BND)), result.expression.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Universe(new Level(0), new Level(LevelVariable.HVAR)), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
@@ -335,23 +335,23 @@ public class NormalizationTest extends TypeCheckingTestCase {
 
   @Test
   public void testIsoRight() {
-    DependentLink A = param("A", Universe(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND)));
-    DependentLink B = param("B", Universe(new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND)));
+    DependentLink A = param("A", Universe(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR)));
+    DependentLink B = param("B", Universe(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR)));
     DependentLink f = param("f", Pi(param(Reference(A)), Reference(B)));
     DependentLink g = param("g", Pi(param(Reference(B)), Reference(A)));
     DependentLink a = param("a", Reference(A));
     DependentLink b = param("b", Reference(B));
-    Expression linvType = FunCall(Prelude.PATH_INFIX, new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND),
+    Expression linvType = FunCall(Prelude.PATH_INFIX, new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR),
         Reference(A),
         Apps(Reference(g), Apps(Reference(f), Reference(a))),
         Reference(a));
     DependentLink linv = param("linv", Pi(a, linvType));
-    Expression rinvType = FunCall(Prelude.PATH_INFIX, new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND),
+    Expression rinvType = FunCall(Prelude.PATH_INFIX, new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR),
         Reference(B),
         Apps(Reference(f), Apps(Reference(g), Reference(b))),
         Reference(b));
     DependentLink rinv = param("rinv", Pi(b, rinvType));
-    Expression iso_expr = FunCall(Prelude.ISO, new Level(LevelBinding.PLVL_BND), new Level(LevelBinding.HLVL_BND),
+    Expression iso_expr = FunCall(Prelude.ISO, new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR),
         Reference(A), Reference(B),
         Reference(f), Reference(g),
         Reference(linv), Reference(rinv),

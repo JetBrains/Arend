@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelBinding;
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
@@ -114,8 +114,8 @@ public class Constructor extends Definition implements Function {
           DataCallExpression dataCall = dataTypeParams.getType().toExpression().subst(subst).normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
           List<? extends Expression> argDataTypeParams = dataCall.getDefCallArguments();
           innerSubst = ((ConstructorPattern) patternArg.getPattern()).getMatchedArguments(new ArrayList<>(argDataTypeParams));
-          innerLevelSubst.add(LevelBinding.PLVL_BND, dataCall.getLevelArguments().getPLevel());
-          innerLevelSubst.add(LevelBinding.HLVL_BND, dataCall.getLevelArguments().getHLevel());
+          innerLevelSubst.add(LevelVariable.PVAR, dataCall.getLevelArguments().getPLevel());
+          innerLevelSubst.add(LevelVariable.HVAR, dataCall.getLevelArguments().getHLevel());
         }
 
         if (substitution != null) {
