@@ -205,7 +205,10 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Mode mode) {
     if (mode == Mode.TOP) return null;
     if (mode == Mode.WHNF) return expr;
-    return expr.applyVisitorToImplementedHere(this, mode);
+
+    FieldSet fieldSet = FieldSet.applyVisitorToImplemented(expr.getFieldSet(), expr.getDefinition().getFieldSet(), this, mode);
+    fieldSet.setSorts(expr.getFieldSet().getSorts());
+    return new ClassCallExpression(expr.getDefinition(), expr.getLevelArguments(), fieldSet);
   }
 
   @Override

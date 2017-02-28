@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.core.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
+import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
@@ -208,7 +209,7 @@ class DefinitionSerialization {
 
   // FieldSet
 
-  ExpressionProtos.FieldSet writeFieldSet(FieldSet fieldSet, ClassCallExpression classCall) {
+  ExpressionProtos.FieldSet writeFieldSet(ReadonlyFieldSet fieldSet) {
     ExpressionProtos.FieldSet.Builder builder = ExpressionProtos.FieldSet.newBuilder();
     for (ClassField classField : fieldSet.getFields()) {
       builder.addClassFieldRef(myCalltargetIndexProvider.getDefIndex(classField));
@@ -222,9 +223,6 @@ class DefinitionSerialization {
       builder.putImplementations(myCalltargetIndexProvider.getDefIndex(impl.getKey()), iBuilder.build());
     }
 
-    if (fieldSet.getSorts() == null) {
-      fieldSet.updateSorts(classCall); // TODO: sorts should be always updated
-    }
     builder.setSorts(writeSortMax(fieldSet.getSorts()));
 
     return builder.build();
@@ -312,7 +310,7 @@ class DefinitionSerialization {
       builder.setClassRef(myCalltargetIndexProvider.getDefIndex(expr.getDefinition()));
       builder.setPLevel(writeLevel(expr.getLevelArguments().getPLevel()));
       builder.setHLevel(writeLevel(expr.getLevelArguments().getHLevel()));
-      builder.setFieldSet(writeFieldSet(expr.getFieldSet(), expr));
+      builder.setFieldSet(writeFieldSet(expr.getFieldSet()));
       return builder.build();
     }
 

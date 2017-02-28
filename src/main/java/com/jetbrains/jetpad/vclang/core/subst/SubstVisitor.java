@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.BaseExpressionVisitor;
+import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
@@ -61,8 +62,10 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
-    ClassCallExpression classCall = expr.applyVisitorToImplementedHere(this, params);
-    classCall.setPolyParamsSubst(classCall.getLevelArguments().subst(myLevelSubstitution));
+    FieldSet fieldSet = FieldSet.applyVisitorToImplemented(expr.getFieldSet(), expr.getDefinition().getFieldSet(), this, null);
+    ClassCallExpression classCall = new ClassCallExpression(expr.getDefinition(), expr.getLevelArguments(), fieldSet);
+    fieldSet.setSorts(expr.getFieldSet().getSorts().subst(myLevelSubstitution));
+    classCall.setLevelArguments(classCall.getLevelArguments().subst(myLevelSubstitution));
     return classCall;
   }
 

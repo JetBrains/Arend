@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.core.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 
@@ -13,7 +14,7 @@ import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.param;
 
-public class FieldSet {
+public class FieldSet implements ReadonlyFieldSet {
   public static class Implementation {
     public final DependentLink thisParam;
     public final Expression term;
@@ -46,40 +47,46 @@ public class FieldSet {
     mySorts = sorts;
   }
 
-  public void addField(ClassField field) {
+  public void addField(ClassField field, SortMax sorts) {
     myFields.add(field);
-    mySorts = null;
+    if (mySorts != null && sorts != null) {
+      mySorts.add(sorts);
+    }
   }
 
-  public void addFieldsFrom(FieldSet other) {
-    for (ClassField field : other.myFields) {
-      addField(field);
+  public void addFieldsFrom(ReadonlyFieldSet other) {
+    for (ClassField field : other.getFields()) {
+      addField(field, null);
     }
   }
 
   public boolean implementField(ClassField field, Implementation impl) {
     assert myFields.contains(field);
     Implementation old = myImplemented.put(field, impl);
-    mySorts = null;
     return old == null;
   }
 
+  @Override
   public boolean isImplemented(ClassField field) {
     return myImplemented.containsKey(field);
   }
 
+  @Override
   public Set<ClassField> getFields() {
     return myFields;
   }
 
+  @Override
   public Set<Map.Entry<ClassField, Implementation>> getImplemented() {
     return myImplemented.entrySet();
   }
 
+  @Override
   public Implementation getImplementation(ClassField field) {
     return myImplemented.get(field);
   }
 
+  @Override
   public SortMax getSorts() {
     return mySorts;
   }
@@ -120,6 +127,19 @@ public class FieldSet {
     if (sorts != null) {
       mySorts.add(sorts);
     }
+  }
+
+  public static <P> FieldSet applyVisitorToImplemented(ReadonlyFieldSet fieldSet, ReadonlyFieldSet parentFieldSet, ExpressionVisitor<P, Expression> visitor, P arg) {
+    FieldSet newFieldSet = new FieldSet();
+    newFieldSet.addFieldsFrom(fieldSet);
+    for (Map.Entry<ClassField, FieldSet.Implementation> entry : fieldSet.getImplemented()) {
+      if (parentFieldSet != null && parentFieldSet.isImplemented(entry.getKey())) {
+        newFieldSet.implementField(entry.getKey(), entry.getValue());
+      } else {
+        newFieldSet.implementField(entry.getKey(), new FieldSet.Implementation(entry.getValue().thisParam, entry.getValue().term.accept(visitor, arg)));
+      }
+    }
+    return newFieldSet;
   }
 
   @Override

@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
+import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -35,7 +36,7 @@ public class ClassDefinition extends Definition {
     return (Abstract.ClassDefinition) super.getAbstractDefinition();
   }
 
-  public FieldSet getFieldSet() {
+  public ReadonlyFieldSet getFieldSet() {
     return myFieldSet;
   }
 
@@ -85,7 +86,12 @@ public class ClassDefinition extends Definition {
     } else {
       fieldSet = myFieldSet;
     }
-    return ClassCall(this, polyArguments, fieldSet);
+
+    ClassCallExpression classCall = ClassCall(this, polyArguments, fieldSet);
+    if (thisExpr != null) {
+      fieldSet.updateSorts(classCall);
+    }
+    return classCall;
   }
 
   @Override
@@ -100,7 +106,7 @@ public class ClassDefinition extends Definition {
     if (enclosingClass != null) {
       myEnclosingThisField = new ClassField(null, ClassCall(enclosingClass, LevelArguments.STD), this, param("\\this", ClassCall(this, LevelArguments.STD)));
       myEnclosingThisField.setThisClass(this);
-      myFieldSet.addField(myEnclosingThisField);
+      myFieldSet.addField(myEnclosingThisField, enclosingClass.getSorts());
     }
   }
 

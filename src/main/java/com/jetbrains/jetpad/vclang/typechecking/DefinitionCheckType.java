@@ -775,7 +775,7 @@ public class DefinitionCheckType {
       context.clear();
 
       for (Abstract.ClassField field : def.getFields()) {
-        fieldSet.addField(typeCheckClassField(field, typedDef, visitor));
+        typeCheckClassField(field, typedDef, fieldSet, visitor);
       }
 
       for (Abstract.Implementation implementation : def.getImplementations()) {
@@ -797,6 +797,7 @@ public class DefinitionCheckType {
           context.add(thisParameter);
           visitor.setThisClass(typedDef, Reference(thisParameter));
           CheckTypeVisitor.Result result = implementField(fieldSet, field, implementation.getImplementation(), visitor, thisParameter);
+          fieldSet.updateSorts(ClassCall(typedDef, LevelArguments.STD));
           if (result == null || result.expression.toError() != null) {
             classOk = false;
           }
@@ -819,7 +820,7 @@ public class DefinitionCheckType {
     return result;
   }
 
-  private static ClassField typeCheckClassField(Abstract.ClassField def, ClassDefinition enclosingClass, CheckTypeVisitor visitor) {
+  private static ClassField typeCheckClassField(Abstract.ClassField def, ClassDefinition enclosingClass, FieldSet fieldSet, CheckTypeVisitor visitor) {
     DependentLink thisParameter = createThisParam(enclosingClass);
     visitor.setThisClass(enclosingClass, Reference(thisParameter));
     CheckTypeVisitor.Result typeResult;
@@ -833,6 +834,7 @@ public class DefinitionCheckType {
       typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
     }
     visitor.getTypecheckingState().record(def, typedDef);
+    fieldSet.addField(typedDef, typeResult == null ? null : typeResult.type.toSorts());
     return typedDef;
   }
 
@@ -876,6 +878,8 @@ public class DefinitionCheckType {
         return;
       }
     }
+
+    fieldSet.updateSorts(term);
 
     LevelSubstitution substitution = visitor.getEquations().solve(def);
     if (!substitution.isEmpty()) {

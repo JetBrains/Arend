@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
+import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 
@@ -12,23 +13,21 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.ClassCall;
-
 public class ClassCallExpression extends DefCallExpression {
-  private final FieldSet myFieldSet;
+  private final ReadonlyFieldSet myFieldSet;
 
   public ClassCallExpression(ClassDefinition definition, LevelArguments polyParams) {
     super(definition, polyParams);
     assert definition.status().headerIsOK();
-    myFieldSet = new FieldSet(definition.getFieldSet());
+    myFieldSet = definition.getFieldSet();
   }
 
-  public ClassCallExpression(ClassDefinition definition, LevelArguments polyParams, FieldSet fieldSet) {
+  public ClassCallExpression(ClassDefinition definition, LevelArguments polyParams, ReadonlyFieldSet fieldSet) {
     super(definition, polyParams);
     myFieldSet = fieldSet;
   }
 
-  public FieldSet getFieldSet() {
+  public ReadonlyFieldSet getFieldSet() {
     return myFieldSet;
   }
 
@@ -48,7 +47,6 @@ public class ClassCallExpression extends DefCallExpression {
   }
 
   public SortMax getSorts() {
-    myFieldSet.updateSorts(this); // TODO: sorts should be always updated
     return myFieldSet.getSorts();
   }
 
@@ -60,19 +58,6 @@ public class ClassCallExpression extends DefCallExpression {
   @Override
   public ClassCallExpression toClassCall() {
     return this;
-  }
-
-  public <P> ClassCallExpression applyVisitorToImplementedHere(ExpressionVisitor<P, Expression> visitor, P arg) {
-    FieldSet newFieldSet = new FieldSet();
-    newFieldSet.addFieldsFrom(getFieldSet());
-    for (Map.Entry<ClassField, FieldSet.Implementation> entry : getFieldSet().getImplemented()) {
-      if (getDefinition().getFieldSet().isImplemented(entry.getKey())) {
-        newFieldSet.implementField(entry.getKey(), entry.getValue());
-      } else {
-        newFieldSet.implementField(entry.getKey(), new FieldSet.Implementation(entry.getValue().thisParam, entry.getValue().term.accept(visitor, arg)));
-      }
-    }
-    return ClassCall(getDefinition(), getLevelArguments(), newFieldSet);
   }
 
   @Override

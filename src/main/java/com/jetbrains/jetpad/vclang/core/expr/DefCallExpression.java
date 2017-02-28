@@ -27,7 +27,7 @@ public abstract class DefCallExpression extends Expression {
     return myDefinition;
   }
 
-  public void setPolyParamsSubst(LevelArguments polyParams) {
+  public void setLevelArguments(LevelArguments polyParams) {
     myLevelArguments = polyParams;
   }
 

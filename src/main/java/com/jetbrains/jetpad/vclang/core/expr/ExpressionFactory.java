@@ -86,10 +86,6 @@ public class ExpressionFactory {
     return new ClassCallExpression(definition, polyParams, fieldSet);
    }
 
-  public static ClassCallExpression ClassCall(ClassDefinition definition, FieldSet fieldSet) {
-    return ClassCall(definition, LevelArguments.STD, fieldSet);
-  }
-
   public static ConCallExpression ConCall(Constructor definition, LevelArguments polyParams, List<Expression> parameters, List<Expression> arguments) {
     return new ConCallExpression(definition, polyParams, parameters, arguments);
   }

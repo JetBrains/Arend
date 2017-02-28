@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
+import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.List;
@@ -19,9 +20,10 @@ public class InferenceReferenceExpression extends Expression {
     myVar.setReference(this);
 
     Type type = myVar.getType().normalize(NormalizeVisitor.Mode.WHNF);
-    if (type.toExpression() != null && type.toExpression().toClassCall() != null) {
-      ClassCallExpression classCall = type.toExpression().toClassCall();
-      FieldSet fieldSet = classCall.getFieldSet();
+    Expression expr = type.toExpression();
+    if (expr != null && expr.toClassCall() != null) {
+      ClassCallExpression classCall = expr.toClassCall();
+      ReadonlyFieldSet fieldSet = classCall.getFieldSet();
       if (!fieldSet.getFields().isEmpty()) {
         for (ClassField field : fieldSet.getFields()) {
           FieldSet.Implementation impl = fieldSet.getImplementation(field);

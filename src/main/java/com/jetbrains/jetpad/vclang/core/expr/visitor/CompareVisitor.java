@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
+import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
@@ -230,7 +231,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     return true;
   }
 
-  private boolean checkSubclassImpl(FieldSet fieldSet1, ClassCallExpression classCall2) {
+  private boolean checkSubclassImpl(ReadonlyFieldSet fieldSet1, ClassCallExpression classCall2) {
     for (Map.Entry<ClassField, FieldSet.Implementation> entry : classCall2.getImplementedHere()) {
       FieldSet.Implementation impl1 = fieldSet1.getImplementation(entry.getKey());
       if (impl1 == null) return false;
@@ -251,8 +252,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     boolean subclass1of2Test = myCMP.equals(Equations.CMP.GE) || expr1.getDefinition().isSubClassOf(classCall2.getDefinition());
     if (!(subclass1of2Test && subclass2of1Test)) return false;
 
-    FieldSet fieldSet1 = expr1.getFieldSet();
-    FieldSet fieldSet2 = classCall2.getFieldSet();
+    ReadonlyFieldSet fieldSet1 = expr1.getFieldSet();
+    ReadonlyFieldSet fieldSet2 = classCall2.getFieldSet();
     boolean implAllOf1Test = myCMP.equals(Equations.CMP.LE) || checkSubclassImpl(fieldSet2, expr1);
     boolean implAllOf2Test = myCMP.equals(Equations.CMP.GE) || checkSubclassImpl(fieldSet1, classCall2);
     return implAllOf1Test && implAllOf2Test;

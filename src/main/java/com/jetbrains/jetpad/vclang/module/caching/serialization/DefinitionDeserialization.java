@@ -191,7 +191,7 @@ class DefinitionDeserialization {
   FieldSet readFieldSet(ExpressionProtos.FieldSet proto) throws DeserializationError {
     FieldSet result = new FieldSet();
     for (int classFieldRef : proto.getClassFieldRefList()) {
-      result.addField(myCalltargetProvider.getCalltarget(classFieldRef, ClassField.class));
+      result.addField(myCalltargetProvider.getCalltarget(classFieldRef, ClassField.class), null);
     }
     for (Map.Entry<Integer, ExpressionProtos.FieldSet.Implementation> entry : proto.getImplementationsMap().entrySet()) {
       final DependentLink thisParam;
