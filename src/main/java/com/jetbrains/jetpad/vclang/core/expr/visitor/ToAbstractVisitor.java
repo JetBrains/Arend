@@ -224,7 +224,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     if (name == null) {
       name = "_";
     }
-    return myFactory.makeVar(((var instanceof InferenceVariable || var instanceof InferenceLevelVariable) && !name.equals("_") ? "?" : "") + name);
+    return myFactory.makeVar((var instanceof InferenceVariable && !name.equals("_") ? "?" : "") + name);
   }
 
   @Override
@@ -242,9 +242,6 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     if (name == null || name.equals("_")) {
       return "_";
     }
-    if (var instanceof InferenceLevelVariable && name.charAt(0) == '\\') {
-      name = name.substring(1);
-    }
 
     while (myFreeNames.contains(name)) {
       name = name + "'";
@@ -256,9 +253,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   private void freeVars(DependentLink link) {
     for (; link.hasNext(); link = link.getNext()) {
-      myNames.remove(link);
       if (link.getName() != null && !link.getName().equals("_")) {
         myFreeNames.pop();
+        myNames.remove(link);
       }
     }
   }

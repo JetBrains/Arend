@@ -1,18 +1,19 @@
 package com.jetbrains.jetpad.vclang.term.prettyprint;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.definition.Name;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.AbstractStatementVisitor;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>, AbstractDefinitionVisitor<Void, Void>, AbstractStatementVisitor<Void, Void> {
   private final StringBuilder myBuilder;
+  private Map<InferenceLevelVariable, Integer> myPVariables = Collections.emptyMap();
+  private Map<InferenceLevelVariable, Integer> myHVariables = Collections.emptyMap();
   private int myIndent;
   public static final int INDENT = 4;
   public static final int MAX_LEN = 120;
@@ -243,9 +244,31 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
+  private int getVariableNumber(InferenceLevelVariable variable) {
+    Map<InferenceLevelVariable, Integer> variables = variable.getType() == LevelVariable.LvlType.PLVL ? myPVariables : myHVariables;
+    Integer number = variables.get(variable);
+    if (number != null) {
+      return number;
+    }
+
+    if (variables.isEmpty()) {
+      variables = new HashMap<>();
+      if (variable.getType() == LevelVariable.LvlType.PLVL) {
+        myPVariables = variables;
+      } else {
+        myHVariables = variables;
+      }
+    }
+
+    int num = variables.size() + 1;
+    variables.put(variable, num);
+    return num;
+  }
+
   public void prettyPrintLevelExpression(Abstract.LevelExpression expr, byte prec) {
     if (expr instanceof Abstract.InferVarLevelExpression) {
-      myBuilder.append(new Name(((Abstract.InferVarLevelExpression) expr).getVariable().toString()));
+      InferenceLevelVariable variable = ((Abstract.InferVarLevelExpression) expr).getVariable();
+      myBuilder.append(variable).append(getVariableNumber(variable));
     } else
     if (expr instanceof Abstract.PLevelExpression) {
       myBuilder.append("\\lp");
