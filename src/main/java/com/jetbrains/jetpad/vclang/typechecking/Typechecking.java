@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.typechecking.typeclass.DefinitionResolveInsta
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.ClassViewInstanceProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.SimpleClassViewInstanceProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.scope.InstanceScopeProvider;
+import com.jetbrains.jetpad.vclang.util.ComputationInterruptedException;
 
 import java.util.Collection;
 
@@ -53,18 +54,24 @@ public class Typechecking {
 
     myDependencyListener.setInstanceProvider(instanceProvider);
     Ordering ordering = new Ordering(instanceProvider, myDependencyListener, false);
-    for (Abstract.ClassDefinition classDef : classDefs) {
-      new OrderDefinitionVisitor(ordering).orderDefinition(classDef);
-    }
+
+    try {
+      for (Abstract.ClassDefinition classDef : classDefs) {
+        new OrderDefinitionVisitor(ordering).orderDefinition(classDef);
+      }
+    } catch (ComputationInterruptedException ignored) { }
   }
 
 
   private void typecheckDefinitions(final Collection<? extends Abstract.Definition> definitions, ClassViewInstanceProvider instanceProvider) {
     myDependencyListener.setInstanceProvider(instanceProvider);
     Ordering ordering = new Ordering(instanceProvider, myDependencyListener, false);
-    for (Abstract.Definition definition : definitions) {
-      ordering.doOrder(definition);
-    }
+
+    try {
+      for (Abstract.Definition definition : definitions) {
+        ordering.doOrder(definition);
+      }
+    } catch (ComputationInterruptedException ignored) { }
   }
 
   private Scope getDefinitionScope(Abstract.Definition definition) {

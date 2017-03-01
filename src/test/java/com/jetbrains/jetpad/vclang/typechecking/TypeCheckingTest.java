@@ -92,28 +92,10 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
         "coe (\\lam i => B ((@) {\\lam _ => A} {a} {a'} p i)) b right");
   }
 
-  // TODO: Remove or modify the obsolete test below!
-  /*
-  @Test
-  public void testTransport1Error() {
-    typeCheckDef("\\function transport {A : \\Type1} (B : A -> \\Type1) {a a' : A} (p : a = a') (b : B a) : B a' =>\n" +
-        "coe (\\lam i => B ((@) {zero} {inf} {\\lam _ => A} {a} {a'} p i)) b right", 1);
-  } /**/
-
   @Test
   public void testAt() {
     CheckTypeVisitor.Result result = typeCheckExpr("\\lam (p : suc = suc) => (p @ left) 0", null);
     assertNotNull(result.expression.getType());
-  }
-
-  // There's no way to test this property now as values cannot be explicitly assigned for generated poly parameters
-  @Ignore
-  @Test
-  public void compareData() {
-    typeCheckClass(
-        "\\data D (A : \\Type) | con\n" +
-        "\\function f {l : Lvl} (d : D {l} {0} (Nat)) => d\n" +
-        "\\function g {l : Lvl} (d : D {l} {inf} (Nat)) => f d");
   }
 
   @Test
@@ -134,5 +116,13 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
         "  \\field A : X\n" +
         "  \\field a : (\\lam (x : Nat) => Nat) A\n" +
         "}", 1, 2);
+  }
+
+  @Ignore
+  @Test
+  public void interruptThreadTest() {
+    typeCheckClass(
+      "\\function ack (m n : Nat) : Nat <= \\elim m, n | zero, n => suc n | suc m, zero => ack m 1 | suc m, suc n => ack m (ack (suc m) n)\n" +
+      "\\function t : ack 4 4 = ack 4 4 => path (\\lam _ => ack 4 4)");
   }
 }

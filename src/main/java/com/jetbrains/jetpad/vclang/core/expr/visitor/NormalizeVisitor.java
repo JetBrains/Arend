@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.typechecking.normalization.Normalizer;
+import com.jetbrains.jetpad.vclang.util.ComputationInterruptedException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -183,6 +184,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       paramArgs = conCall.getDataTypeArguments();
     }
     Expression result = myNormalizer.normalize(func, polySubst, params, paramArgs, requiredArgs, args, mode);
+
+    if (Thread.interrupted()) {
+      throw new ComputationInterruptedException();
+    }
+
     if (result == null) {
       return applyDefCall(expr, mode);
     }
