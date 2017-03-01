@@ -134,10 +134,10 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
   private boolean checkIsInferVar(Expression fun, Expression expr1, Expression expr2) {
     InferenceVariable binding = checkIsInferVar(fun);
-    return binding != null && myEquations.add(expr1.subst(getSubstition()), expr2, myCMP, binding.getSourceNode(), binding);
+    return binding != null && myEquations.add(expr1.subst(getSubstitution()), expr2, myCMP, binding.getSourceNode(), binding);
   }
 
-  private ExprSubstitution getSubstition() {
+  private ExprSubstitution getSubstitution() {
     ExprSubstitution substitution = new ExprSubstitution();
     for (Map.Entry<Binding, Binding> entry : mySubstitution.entrySet()) {
       substitution.add(entry.getKey(), Reference(entry.getValue()));
@@ -163,8 +163,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return false;
     }
 
-    //Equations.CMP cmp = myCMP;
-    //myCMP = Equations.CMP.EQ;
+    Equations.CMP cmp = myCMP;
+    myCMP = Equations.CMP.EQ;
     if (!compare(fun1, fun2)) {
       return false;
     }
@@ -172,7 +172,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     int i = 0;
     if (fun1.toDataCall() != null && fun2.toDataCall() != null) {
       if (args1.isEmpty()) {
-      //  myCMP = cmp;
+        myCMP = cmp;
         return true;
       }
       if (fun1.toDataCall().getDefinition().getThisClass() != null) {
@@ -180,31 +180,10 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
           return false;
         }
         if (++i >= args1.size()) {
-        //  myCMP = cmp;
+          myCMP = cmp;
           return true;
         }
       }
-
-      /*
-      Expression type1 = args1.get(i).getType().normalize(NormalizeVisitor.Mode.NF);
-      if (type1.toDataCall() != null && type1.toDataCall().getDefinition() == Preprelude.LVL) {
-        Expression type2 = args2.get(i).getType().normalize(NormalizeVisitor.Mode.NF);
-        if (type2.toDataCall() != null && type2.toDataCall().getDefinition() == Preprelude.LVL) {
-          compare(myEquations, cmp, args1.get(i), args2.get(i), null);
-          if (++i >= args1.size()) {
-            myCMP = cmp;
-            return true;
-          }
-          type1 = args1.get(i).getType().normalize(NormalizeVisitor.Mode.NF);
-          if (type1.toDataCall() != null && type1.toDataCall().getDefinition() == Preprelude.CNAT) {
-            type2 = args2.get(i).getType().normalize(NormalizeVisitor.Mode.NF);
-            if (type2.toDataCall() != null && type2.toDataCall().getDefinition() == Preprelude.CNAT) {
-              compare(myEquations, cmp, args1.get(i), args2.get(i), null);
-              i++;
-            }
-          }
-        }
-      }/**/
     }
 
     for (; i < args1.size(); i++) {
@@ -213,7 +192,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       }
     }
 
-    //myCMP = cmp;
+    myCMP = cmp;
     return true;
   }
 
@@ -264,7 +243,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return true;
     }
 
-    return myEquations.add(expr1, expr2.subst(getSubstition()), first ? myCMP : myCMP.not(), expr1.getVariable().getSourceNode(), expr1.getVariable());
+    return myEquations.add(expr1, expr2.subst(getSubstitution()), first ? myCMP : myCMP.not(), expr1.getVariable().getSourceNode(), expr1.getVariable());
   }
 
   @Override
@@ -305,10 +284,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     for (int i = 0; i < params1.size(); i++) {
       substitution.put(params1.get(i), params2.get(i));
     }
-    if (!new CompareVisitor(substitution, myEquations, Equations.CMP.EQ).compare(body1, body2)) {
-      return false;
-    }
-    return true;
+    return new CompareVisitor(substitution, myEquations, Equations.CMP.EQ).compare(body1, body2);
   }
 
   @Override
