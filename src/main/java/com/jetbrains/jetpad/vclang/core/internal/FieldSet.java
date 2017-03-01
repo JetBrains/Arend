@@ -34,7 +34,7 @@ public class FieldSet implements ReadonlyFieldSet {
   private SortMax mySorts;
 
   public FieldSet() {
-    this(new LinkedHashSet<ClassField>(), new HashMap<ClassField, Implementation>(), new SortMax());
+    this(new LinkedHashSet<ClassField>(), new HashMap<ClassField, Implementation>(), null);
   }
 
   public FieldSet(FieldSet other) {
@@ -49,8 +49,12 @@ public class FieldSet implements ReadonlyFieldSet {
 
   public void addField(ClassField field, SortMax sorts) {
     myFields.add(field);
-    if (mySorts != null && sorts != null) {
-      mySorts.add(sorts);
+    if (mySorts != null) {
+      if (sorts != null) {
+        mySorts.add(sorts);
+      } else {
+        mySorts = null;
+      }
     }
   }
 
@@ -63,6 +67,7 @@ public class FieldSet implements ReadonlyFieldSet {
   public boolean implementField(ClassField field, Implementation impl) {
     assert myFields.contains(field);
     Implementation old = myImplemented.put(field, impl);
+    mySorts = null;
     return old == null;
   }
 
@@ -95,6 +100,7 @@ public class FieldSet implements ReadonlyFieldSet {
     mySorts = sorts;
   }
 
+  @Override
   public void updateSorts(ClassCallExpression thisClass) {
     mySorts = new SortMax();
     for (ClassField field : myFields) {

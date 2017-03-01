@@ -64,7 +64,6 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
     FieldSet fieldSet = FieldSet.applyVisitorToImplemented(expr.getFieldSet(), expr.getDefinition().getFieldSet(), this, null);
     ClassCallExpression classCall = new ClassCallExpression(expr.getDefinition(), expr.getLevelArguments(), fieldSet);
-    fieldSet.setSorts(expr.getFieldSet().getSorts().subst(myLevelSubstitution));
     classCall.setLevelArguments(classCall.getLevelArguments().subst(myLevelSubstitution));
     return classCall;
   }
