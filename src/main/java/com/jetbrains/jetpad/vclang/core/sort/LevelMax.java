@@ -66,6 +66,9 @@ public class LevelMax implements PrettyPrintable {
 
     LevelMax result = new LevelMax(new HashMap<>(myVars));
     add(result.myVars, level.getVar(), level.getConstant());
+    if (level.getMaxConstant() != 0) {
+      add(result.myVars, null, level.getMaxConstant());
+    }
     return result;
   }
 
@@ -87,6 +90,9 @@ public class LevelMax implements PrettyPrintable {
       myVars = null;
     } else {
       add(myVars, level.getVar(), level.getConstant());
+      if (level.getMaxConstant() != 0) {
+        add(myVars, null, level.getMaxConstant());
+      }
     }
   }
 

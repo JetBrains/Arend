@@ -22,6 +22,13 @@ public class Level implements PrettyPrintable {
 
   public static final Level INFINITY = new Level(null, -1);
 
+  // max(var + constant, maxConstant)
+  public Level(LevelVariable var, int constant, int maxConstant) {
+    myVar = var;
+    myConstant = var == null ? Math.max(constant, maxConstant) : constant;
+    myMaxConstant = var == null || maxConstant <= constant ? 0 : maxConstant;
+  }
+
   public Level(LevelVariable var, int constant) {
     myConstant = constant;
     myVar = var;

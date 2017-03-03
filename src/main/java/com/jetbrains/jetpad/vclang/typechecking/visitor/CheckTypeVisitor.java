@@ -22,7 +22,10 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
-import com.jetbrains.jetpad.vclang.core.sort.*;
+import com.jetbrains.jetpad.vclang.core.sort.Level;
+import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
@@ -347,18 +350,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       Abstract.UniverseExpression uni = (Abstract.UniverseExpression)cod;
       if (args == null) return null;
 
-      LevelMax pLevelMax = uni.getPLevel() == null ? new LevelMax(new Level(LevelVariable.PVAR)) : typeCheckLevelMax(uni.getPLevel(), 0);
-      LevelMax hLevelMax = uni.getHLevel() == null ? new LevelMax(new Level(LevelVariable.HVAR)) : typeCheckLevelMax(uni.getHLevel(), -1);
+      Level pLevel = uni.getPLevel() == null ? new Level(LevelVariable.PVAR) : typeCheckLevelMax(uni.getPLevel(), LevelVariable.PVAR);
+      Level hLevel = uni.getHLevel() == null ? new Level(LevelVariable.HVAR) : typeCheckLevelMax(uni.getHLevel(), LevelVariable.HVAR);
       if (maxAllowed) {
-        return new PiUniverseType(args, new SortMax(pLevelMax, hLevelMax));
-      }
-
-      Level pLevel = pLevelMax.toLevel();
-      Level hLevel = hLevelMax.toLevel();
-      if (pLevel == null || hLevel == null) {
-        // TODO: create special class for this error
-        myErrorReporter.report(new LocalTypeCheckingError("\\max can only be used in a result type", uni));
-        return null;
+        return new PiUniverseType(args, new SortMax(new Sort(pLevel, hLevel)));
       }
 
       if (pLevel.isInfinity()) {
@@ -599,8 +594,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   @Override
   public Result visitUniverse(Abstract.UniverseExpression expr, Type expectedType) {
-    Level pLevel = expr.getPLevel() != null ? typeCheckLevelMax(expr.getPLevel(), 0).toLevel() : new Level(LevelVariable.PVAR);
-    Level hLevel = expr.getHLevel() != null ? typeCheckLevelMax(expr.getHLevel(), -1).toLevel() : new Level(LevelVariable.HVAR);
+    Level pLevel = expr.getPLevel() != null ? typeCheckLevelMax(expr.getPLevel(), LevelVariable.PVAR) : new Level(LevelVariable.PVAR);
+    Level hLevel = expr.getHLevel() != null ? typeCheckLevelMax(expr.getHLevel(), LevelVariable.HVAR) : new Level(LevelVariable.HVAR);
 
     if (pLevel == null || hLevel == null) {
       myErrorReporter.report(new LocalTypeCheckingError("\\max can only be used in a result type", expr));
@@ -615,31 +610,53 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getSort().succ())), expr);
   }
 
-  private LevelMax typeCheckLevelMax(Abstract.LevelExpression expr, int minValue) {
+  private Level typeCheckLevelMax(Abstract.LevelExpression expr, LevelVariable base) {
     int n = 0;
     while (expr instanceof Abstract.SucLevelExpression) {
       n++;
       expr = ((Abstract.SucLevelExpression) expr).getExpression();
     }
     if (expr instanceof Abstract.PLevelExpression) {
-      return new LevelMax(new Level(LevelVariable.PVAR, n));
+      if (base != LevelVariable.PVAR) {
+        myErrorReporter.report(new LocalTypeCheckingError("Expected \\lp", expr));
+      }
+      return new Level(base, n);
     }
     if (expr instanceof Abstract.HLevelExpression) {
-      return new LevelMax(new Level(LevelVariable.HVAR, n));
+      if (base != LevelVariable.HVAR) {
+        myErrorReporter.report(new LocalTypeCheckingError("Expected \\lh", expr));
+      }
+      return new Level(base, n);
     }
     if (expr instanceof Abstract.InfLevelExpression) {
-      return LevelMax.INFINITY;
+      return Level.INFINITY;
     }
     if (expr instanceof Abstract.NumberLevelExpression) {
-      return new LevelMax(new Level(((Abstract.NumberLevelExpression) expr).getNumber() + n - minValue));
+      return new Level(((Abstract.NumberLevelExpression) expr).getNumber() + n - (base == LevelVariable.PVAR ? 0 : -1));
     }
     if (expr instanceof Abstract.MaxLevelExpression) {
-      LevelMax level = typeCheckLevelMax(((Abstract.MaxLevelExpression) expr).getLeft(), minValue);
-      level.add(typeCheckLevelMax(((Abstract.MaxLevelExpression) expr).getRight(), minValue));
-      if (n > 0) {
-        level.add(new Level(n));
+      Level level1 = typeCheckLevelMax(((Abstract.MaxLevelExpression) expr).getLeft(), base);
+      Level level2 = typeCheckLevelMax(((Abstract.MaxLevelExpression) expr).getRight(), base);
+
+      int constant;
+      if (level1.getVar() == null && level2.getVar() != null) {
+        constant = level2.getConstant();
+      } else
+      if (level1.getVar() != null && level2.getVar() == null){
+        constant = level1.getConstant();
+      } else {
+        constant = Math.max(level1.getConstant(), level2.getConstant());
       }
-      return level;
+
+      int maxConstant = Math.max(level1.getMaxConstant(), level2.getMaxConstant());
+      if (level1.getVar() == null) {
+        maxConstant = Math.max(maxConstant, level1.getConstant());
+      }
+      if (level2.getVar() == null) {
+        maxConstant = Math.max(maxConstant, level2.getConstant());
+      }
+
+      return new Level(level1.getVar() != null || level2.getVar() != null ? base : null, constant + n, maxConstant + n);
     }
     throw new IllegalStateException();
   }

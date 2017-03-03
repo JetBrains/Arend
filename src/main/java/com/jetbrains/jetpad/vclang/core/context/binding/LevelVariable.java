@@ -9,12 +9,22 @@ public interface LevelVariable extends Variable {
     public LvlType getType() {
       return LvlType.PLVL;
     }
+
+    @Override
+    public String toString() {
+      return "\\lp";
+    }
   };
 
   LevelVariable HVAR = new LevelVariable() {
     @Override
     public LvlType getType() {
       return LvlType.HLVL;
+    }
+
+    @Override
+    public String toString() {
+      return "\\lh";
     }
   };
 }

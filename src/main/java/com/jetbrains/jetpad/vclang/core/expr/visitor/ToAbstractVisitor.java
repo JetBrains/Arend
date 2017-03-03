@@ -376,6 +376,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     for (int i = 0; i < level.getConstant(); i++) {
       result = myFactory.makeSucLevel(result);
     }
+
+    if (level.getMaxConstant() != 0) {
+      result = myFactory.makeMaxLevel(result, visitLevel(new Level(null, level.getMaxConstant()), add));
+    }
+
     return result;
   }
 
