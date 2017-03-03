@@ -12,7 +12,7 @@ public class FunctionInferenceVariable extends InferenceVariable {
   private final int myIndex;
   private final Definition myDefinition;
 
-  public FunctionInferenceVariable(String name, Type type, int index, Definition definition, Abstract.SourceNode sourceNode) {
+  public FunctionInferenceVariable(String name, Expression type, int index, Definition definition, Abstract.SourceNode sourceNode) {
     super(name, type, sourceNode);
     myIndex = index;
     myDefinition = definition;

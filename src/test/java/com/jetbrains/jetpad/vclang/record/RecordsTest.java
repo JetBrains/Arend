@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
@@ -131,7 +130,7 @@ public class RecordsTest extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\class Point { \\field x : Nat \\field y : Nat }\n" +
         "\\function C => Point { x => 0 }");
-    assertEquals(new SortMax(Sort.SET0), ((ClassDefinition) result.getDefinition("Point")).getSorts());
+    assertEquals(Sort.SET0, ((ClassDefinition) result.getDefinition("Point")).getSort());
     assertEquals(Universe(Sort.SET0), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD).toExpression());
   }
 
@@ -140,7 +139,7 @@ public class RecordsTest extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\class Point { \\field x : Nat \\field y : Nat }\n" +
         "\\function C => Point { x => 0 | y => 1 }");
-    assertEquals(new SortMax(Sort.SET0), ((ClassDefinition) result.getDefinition("Point")).getSorts());
+    assertEquals(Sort.SET0, ((ClassDefinition) result.getDefinition("Point")).getSort());
     assertEquals(Universe(Sort.PROP), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD).toExpression());
   }
 
@@ -149,7 +148,7 @@ public class RecordsTest extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\class Point { \\field x : \\Type3 \\field y : \\Type1 }\n" +
         "\\function C => Point { x => Nat }");
-    assertEquals(new SortMax(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1))), ((ClassDefinition) result.getDefinition("Point")).getSorts());
+    assertEquals(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) result.getDefinition("Point")).getSort());
     assertEquals(Universe(Sort.SetOfLevel(2)), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD).toExpression());
   }
 
@@ -158,7 +157,7 @@ public class RecordsTest extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\class Point { \\field x : \\Type3 \\field y : \\oo-Type1 }\n" +
         "\\function C => Point { x => Nat }");
-    assertEquals(new SortMax(new Sort(new Level(4), Level.INFINITY)), ((ClassDefinition) result.getDefinition("Point")).getSorts());
+    assertEquals(new Sort(new Level(4), Level.INFINITY), ((ClassDefinition) result.getDefinition("Point")).getSort());
     assertEquals(Universe(new Sort(new Level(2), Level.INFINITY)), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD).toExpression());
   }
 
@@ -167,7 +166,7 @@ public class RecordsTest extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\class Point { \\field x : \\Type3 \\field y : \\Type1 }\n" +
         "\\function C => Point { x => \\Type2 }");
-    assertEquals(new SortMax(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1))), ((ClassDefinition) result.getDefinition("Point")).getSorts());
+    assertEquals(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) result.getDefinition("Point")).getSort());
     assertEquals(Universe(new Sort(new Level(2), new Level(LevelVariable.HVAR, 1))), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD).toExpression());
   }
 
@@ -181,8 +180,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "}\n" +
         "\\function test (p : A) => p.y");
     FunctionDefinition testFun = (FunctionDefinition) result.getDefinition("test");
-    Expression resultType = (Expression) testFun.getResultType();
-    Expression function = resultType.normalize(NormalizeVisitor.Mode.WHNF);
+    Expression function = testFun.getResultType().normalize(NormalizeVisitor.Mode.WHNF);
     assertEquals(Prelude.PATH, function.toDataCall().getDefinition());
     List<? extends Expression> arguments = function.toDataCall().getDefCallArguments();
     assertEquals(3, arguments.size());
@@ -234,9 +232,8 @@ public class RecordsTest extends TypeCheckingTestCase {
         "}\n" +
         "\\function test (q : A) => q.y");
     FunctionDefinition testFun = (FunctionDefinition) result.getDefinition("test");
-    Expression resultType = (Expression) testFun.getResultType();
     Expression xCall = FieldCall((ClassField) result.getDefinition("A.x"), Reference(testFun.getParameters()));
-    PiExpression resultTypePi = resultType.toPi();
+    PiExpression resultTypePi = testFun.getResultType().toPi();
     assertNotNull(resultTypePi);
     Expression function = resultTypePi.getParameters().getType().normalize(NormalizeVisitor.Mode.NF).toExpression();
     assertEquals(Prelude.PATH, function.toDataCall().getDefinition());

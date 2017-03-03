@@ -8,10 +8,9 @@ import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
-import com.jetbrains.jetpad.vclang.core.expr.type.PiUniverseType;
+import com.jetbrains.jetpad.vclang.core.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
@@ -51,7 +50,7 @@ public class Prelude {
     } else
     if (abstractDef.getName().equals("I")) {
       INTERVAL = (DataDefinition) definition;
-      INTERVAL.setSorts(new SortMax(Sort.PROP));
+      INTERVAL.setSort(Sort.PROP);
       INTERVAL.setMatchesOnInterval();
       LEFT = INTERVAL.getConstructor("left");
       RIGHT = INTERVAL.getConstructor("right");
@@ -87,17 +86,17 @@ public class Prelude {
       ISO.setElimTree(ExpressionFactory.top(ISO.getParameters(), ExpressionFactory.branch(ISO.getParameters().getNext().getNext().getNext().getNext().getNext().getNext(), ExpressionFactory.tail(),
         clause(LEFT, EmptyDependentLink.getInstance(), ExpressionFactory.Reference(ISO.getParameters())),
         clause(RIGHT, EmptyDependentLink.getInstance(), ExpressionFactory.Reference(ISO.getParameters().getNext())))));
-      ISO.setResultType(new PiUniverseType(EmptyDependentLink.getInstance(), new SortMax(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR)))));
+      ISO.setResultType(new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR))));
       ISO.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     } else
     if (abstractDef.getName().equals("TrP")) {
       PROP_TRUNC = (DataDefinition) definition;
-      PROP_TRUNC.setSorts(new SortMax(Sort.PROP));
+      PROP_TRUNC.setSort(Sort.PROP);
       PROP_TRUNC_PATH_CON = PROP_TRUNC.getConstructor("truncP");
     } else
     if (abstractDef.getName().equals("TrS")) {
       SET_TRUNC = (DataDefinition) definition;
-      SET_TRUNC.setSorts(new SortMax(Sort.SetOfLevel(new Level(LevelVariable.PVAR))));
+      SET_TRUNC.setSort(Sort.SetOfLevel(new Level(LevelVariable.PVAR)));
       SET_TRUNC_PATH_CON = SET_TRUNC.getConstructor("truncS");
     }
   }

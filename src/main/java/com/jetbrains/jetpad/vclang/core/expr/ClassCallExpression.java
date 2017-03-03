@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
-import com.jetbrains.jetpad.vclang.core.sort.SortMax;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -46,13 +46,13 @@ public class ClassCallExpression extends DefCallExpression {
     return (ClassDefinition) super.getDefinition();
   }
 
-  public SortMax getSorts() {
-    SortMax sorts = myFieldSet.getSorts();
-    if (sorts == null) {
+  public Sort getSort() {
+    Sort sort = myFieldSet.getSort();
+    if (sort == null) {
       myFieldSet.updateSorts(this);
-      return myFieldSet.getSorts();
+      return myFieldSet.getSort();
     } else {
-      return sorts;
+      return sort;
     }
   }
 

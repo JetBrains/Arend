@@ -5,10 +5,9 @@ import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.core.sort.SortMax;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.*;
 
@@ -31,29 +30,29 @@ public class FieldSet implements ReadonlyFieldSet {
 
   private final LinkedHashSet<ClassField> myFields;
   private final Map<ClassField, Implementation> myImplemented;
-  private SortMax mySorts;
+  private Sort mySort;
 
   public FieldSet() {
     this(new LinkedHashSet<ClassField>(), new HashMap<ClassField, Implementation>(), null);
   }
 
   public FieldSet(FieldSet other) {
-    this(new LinkedHashSet<>(other.myFields), new HashMap<>(other.myImplemented), other.mySorts);
+    this(new LinkedHashSet<>(other.myFields), new HashMap<>(other.myImplemented), other.mySort);
   }
 
-  private FieldSet(LinkedHashSet<ClassField> fields, Map<ClassField, Implementation> implemented, SortMax sorts) {
+  private FieldSet(LinkedHashSet<ClassField> fields, Map<ClassField, Implementation> implemented, Sort sort) {
     myFields = fields;
     myImplemented = implemented;
-    mySorts = sorts;
+    mySort = sort;
   }
 
-  public void addField(ClassField field, SortMax sorts) {
+  public void addField(ClassField field, Sort sort) {
     myFields.add(field);
-    if (mySorts != null) {
-      if (sorts != null) {
-        mySorts.add(sorts);
+    if (mySort != null) {
+      if (sort != null) {
+        mySort = mySort.max(sort);
       } else {
-        mySorts = null;
+        mySort = null;
       }
     }
   }
@@ -67,7 +66,7 @@ public class FieldSet implements ReadonlyFieldSet {
   public boolean implementField(ClassField field, Implementation impl) {
     assert myFields.contains(field);
     Implementation old = myImplemented.put(field, impl);
-    mySorts = null;
+    mySort = null;
     return old == null;
   }
 
@@ -92,17 +91,17 @@ public class FieldSet implements ReadonlyFieldSet {
   }
 
   @Override
-  public SortMax getSorts() {
-    return mySorts;
+  public Sort getSort() {
+    return mySort;
   }
 
-  public void setSorts(SortMax sorts) {
-    mySorts = sorts;
+  public void setSorts(Sort sort) {
+    mySort = sort;
   }
 
   @Override
   public void updateSorts(ClassCallExpression thisClass) {
-    mySorts = new SortMax();
+    mySort = Sort.PROP;
     for (ClassField field : myFields) {
       updateUniverseSingleField(field, thisClass);
     }
@@ -116,22 +115,22 @@ public class FieldSet implements ReadonlyFieldSet {
 
     DependentLink thisParam = param("\\this", thisClass);
     Expression expr1 = baseType.subst(field.getThisParameter(), ExpressionFactory.Reference(thisParam)).normalize(NormalizeVisitor.Mode.WHNF);
-    SortMax sorts = null;
+    Sort sort = null;
     if (expr1.toOfType() != null) {
-      TypeMax type = expr1.toOfType().getExpression().getType();
+      Expression type = expr1.toOfType().getExpression().getType();
       if (type != null) {
-        sorts = type.toSorts();
+        sort = type.toSort();
       }
     }
-    if (sorts == null) {
-      TypeMax type = expr1.getType();
+    if (sort == null) {
+      Expression type = expr1.getType();
       if (type != null) {
-        sorts = type.toSorts();
+        sort = type.toSort();
       }
     }
 
-    if (sorts != null) {
-      mySorts.add(sorts);
+    if (sort != null) {
+      mySort = mySort.max(sort);
     }
   }
 

@@ -1,15 +1,13 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.type.PiUniverseType;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
+import com.jetbrains.jetpad.vclang.core.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
-import com.jetbrains.jetpad.vclang.core.sort.SortMax;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.Collections;
@@ -48,8 +46,8 @@ public class ClassDefinition extends Definition {
     myFieldSet.updateSorts(ClassCall(this, LevelArguments.STD, myFieldSet));
   }
 
-  public SortMax getSorts() {
-    return myFieldSet.getSorts();
+  public Sort getSort() {
+    return myFieldSet.getSort();
   }
 
   public boolean isSubClassOf(ClassDefinition classDefinition) {
@@ -69,11 +67,11 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
-  public TypeMax getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
+  public Expression getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
     if (getThisClass() != null) {
       params.add(param(ClassCall(getThisClass(), polyArguments)));
     }
-    return new PiUniverseType(EmptyDependentLink.getInstance(), getSorts().subst(polyArguments.toLevelSubstitution()));
+    return new UniverseExpression(getSort().subst(polyArguments.toLevelSubstitution()));
   }
 
   @Override
@@ -106,7 +104,7 @@ public class ClassDefinition extends Definition {
     if (enclosingClass != null) {
       myEnclosingThisField = new ClassField(null, ClassCall(enclosingClass, LevelArguments.STD), this, param("\\this", ClassCall(this, LevelArguments.STD)));
       myEnclosingThisField.setThisClass(this);
-      myFieldSet.addField(myEnclosingThisField, enclosingClass.getSorts());
+      myFieldSet.addField(myEnclosingThisField, enclosingClass.getSort());
     }
   }
 

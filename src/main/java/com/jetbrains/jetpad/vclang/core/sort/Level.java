@@ -72,7 +72,29 @@ public class Level implements PrettyPrintable {
   }
 
   public Level add(int constant) {
-    return constant == 0 || isInfinity() ? this : new Level(myVar, myConstant + constant);
+    return constant == 0 || isInfinity() ? this : new Level(myVar, myConstant + constant, myMaxConstant + constant);
+  }
+
+  public Level max(Level level) {
+    int constant;
+    if (myVar == null && level.myVar != null) {
+      constant = level.myConstant;
+    } else
+    if (myVar != null && level.myVar == null){
+      constant = myConstant;
+    } else {
+      constant = Math.max(myConstant, level.myConstant);
+    }
+
+    int maxConstant = Math.max(myMaxConstant, level.myMaxConstant);
+    if (myVar == null) {
+      maxConstant = Math.max(maxConstant, myConstant);
+    }
+    if (level.myVar == null) {
+      maxConstant = Math.max(maxConstant, level.myConstant);
+    }
+
+    return new Level(myVar != null ? myVar : level.myVar != null ? level.myVar : null, constant, maxConstant);
   }
 
   public Level subst(LevelSubstitution subst) {

@@ -169,7 +169,7 @@ public class PiUniverseType implements TypeMax {
       Expression exprType = (Expression)type;
       InferenceVariable binding = CompareVisitor.checkIsInferVar(exprType);
       if (binding != null) {
-        return equations.add(this, exprType, sourceNode, binding);
+        return true; // equations.add(this, exprType, sourceNode, binding);
       }
     }
 
@@ -184,7 +184,7 @@ public class PiUniverseType implements TypeMax {
     if (cod.toExpression() != null) {
       InferenceVariable binding = CompareVisitor.checkIsInferVar(cod.toExpression());
       if (binding != null) {
-        return equations.add(getPiCodomain(), cod.toExpression(), sourceNode, binding);
+        return true; // equations.add(getPiCodomain(), cod.toExpression(), sourceNode, binding);
       }
     }
 

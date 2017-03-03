@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.core.expr;
 import com.jetbrains.jetpad.vclang.core.context.binding.NamedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Function;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 
 public class LetClause extends NamedBinding implements Function {
@@ -52,7 +51,7 @@ public class LetClause extends NamedBinding implements Function {
   }
 
   @Override
-  public Type getType() {
+  public Expression getType() {
     return myResultType.addParameters(myParameters, false);
   }
 }

@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
@@ -52,7 +51,7 @@ public abstract class Definition implements Variable {
     myClassifyingFields = fields.isEmpty() ? Collections.<Integer, ClassField>emptyMap() : fields;
   }
 
-  public abstract TypeMax getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments);
+  public abstract Expression getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments);
 
   public abstract DefCallExpression getDefCall(LevelArguments polyArguments, Expression thisExpr);
 

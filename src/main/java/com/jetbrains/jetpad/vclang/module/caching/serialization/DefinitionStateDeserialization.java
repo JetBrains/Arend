@@ -125,7 +125,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
 
   private void fillInDataDefinition(DefinitionDeserialization defDeserializer, CalltargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
     dataDef.setParameters(defDeserializer.readParameters(dataProto.getParamList()));
-    dataDef.setSorts(defDeserializer.readSortMax(dataProto.getSorts()));
+    dataDef.setSort(defDeserializer.readSort(dataProto.getSort()));
 
     for (Map.Entry<String, DefinitionProtos.Definition.DataData.Constructor> entry : dataProto.getConstructorsMap().entrySet()) {
       DefinitionProtos.Definition.DataData.Constructor constructorProto = entry.getValue();
@@ -150,7 +150,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
 
   private void fillInFunctionDefinition(DefinitionDeserialization defDeserializer, DefinitionProtos.Definition.FunctionData functionProto, FunctionDefinition functionDef) throws DeserializationError {
     functionDef.setParameters(defDeserializer.readParameters(functionProto.getParamList()));
-    functionDef.setResultType(defDeserializer.readTypeMax(functionProto.getType()));
+    functionDef.setResultType(defDeserializer.readExpr(functionProto.getType()));
     if (functionProto.hasElimTree()) {
       functionDef.setElimTree(defDeserializer.readElimTree(functionProto.getElimTree()));
     }

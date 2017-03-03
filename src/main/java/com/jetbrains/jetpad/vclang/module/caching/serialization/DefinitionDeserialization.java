@@ -10,7 +10,6 @@ import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.PiUniverseType;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.*;
@@ -60,7 +59,7 @@ class DefinitionDeserialization {
   }
 
   TypedBinding readTypedBinding(ExpressionProtos.Binding.TypedBinding proto) throws DeserializationError {
-    TypedBinding typedBinding = new TypedBinding(proto.getName(), readType(proto.getType()));
+    TypedBinding typedBinding = new TypedBinding(proto.getName(), readExpr(proto.getType()));
     registerBinding(typedBinding);
     return typedBinding;
   }
@@ -146,7 +145,7 @@ class DefinitionDeserialization {
     return result;
   }
 
-  private Sort readSort(LevelProtos.Sort proto) throws DeserializationError {
+  Sort readSort(LevelProtos.Sort proto) throws DeserializationError {
     return new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel()));
   }
 
@@ -165,7 +164,7 @@ class DefinitionDeserialization {
       for (String name : proto.getNameList()) {
         unfixedNames.add(name.isEmpty() ? null : name);
       }
-      DependentLink tele = ExpressionFactory.param(!proto.getIsNotExplicit(), unfixedNames, readType(proto.getType()));
+      DependentLink tele = ExpressionFactory.param(!proto.getIsNotExplicit(), unfixedNames, readExpr(proto.getType()));
       for (DependentLink link = tele; link.hasNext(); link = link.getNext()) {
         registerBinding(link);
       }
@@ -180,7 +179,7 @@ class DefinitionDeserialization {
   }
 
   DependentLink readParameter(ExpressionProtos.SingleParameter proto) throws DeserializationError {
-    TypedDependentLink link = new TypedDependentLink(!proto.getIsNotExplicit(), proto.getName(), readType(proto.getType()), EmptyDependentLink.getInstance());
+    TypedDependentLink link = new TypedDependentLink(!proto.getIsNotExplicit(), proto.getName(), readExpr(proto.getType()), EmptyDependentLink.getInstance());
     registerBinding(link);
     return link;
   }
@@ -203,7 +202,7 @@ class DefinitionDeserialization {
       FieldSet.Implementation impl = new FieldSet.Implementation(thisParam, readExpr(entry.getValue().getTerm()));
       result.implementField(myCalltargetProvider.getCalltarget(entry.getKey(), ClassField.class), impl);
     }
-    result.setSorts(readSortMax(proto.getSorts()));
+    result.setSorts(readSort(proto.getSort()));
     return result;
   }
 
@@ -220,15 +219,6 @@ class DefinitionDeserialization {
         return readExpr(proto.getExpr());
       default:
         throw new DeserializationError("Unknown TypeMax kind: " + proto.getKindCase());
-    }
-  }
-
-  private Type readType(ExpressionProtos.Type proto) throws DeserializationError {
-    TypeMax typeMax = readTypeMax(proto);
-    if (typeMax instanceof Type) {
-      return (Type) typeMax;
-    } else {
-      throw new DeserializationError("Deserialized Type is not a TypeMax");
     }
   }
 

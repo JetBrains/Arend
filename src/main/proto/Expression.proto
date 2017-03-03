@@ -121,19 +121,19 @@ message Type {
 message SingleParameter {
     string name = 1;
     bool is_not_explicit = 2;
-    Type type = 3;
+    Expression type = 4;
 }
 
 message Telescope {
     repeated string name = 1;
     bool is_not_explicit = 2;
-    Type type = 3;
+    Expression type = 4;
 }
 
 message Binding {
     message TypedBinding {
         string name = 1;
-        Type type = 2;
+        Expression type = 3;
     }
 }
 
@@ -168,7 +168,7 @@ message ElimTreeNode {
 message FieldSet {
     repeated int32 class_field_ref = 1;
     map<int32, Implementation> implementations = 2;
-    SortMax sorts = 3;
+    Sort sort = 4;
 
     message Implementation {
         SingleParameter this_param = 1;

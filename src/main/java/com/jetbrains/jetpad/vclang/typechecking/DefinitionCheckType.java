@@ -20,10 +20,9 @@ import com.jetbrains.jetpad.vclang.core.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.core.pattern.Utils.ProcessImplicitResult;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.PatternsToElimTreeConversion;
+import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
-import com.jetbrains.jetpad.vclang.core.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
@@ -74,7 +73,7 @@ public class DefinitionCheckType {
     if (definition instanceof Abstract.DataDefinition) {
       DataDefinition dataDef = typechecked != null ? (DataDefinition) typechecked : new DataDefinition((Abstract.DataDefinition) definition);
       typeCheckDataHeader(dataDef, typedEnclosingClass, visitor, localInstancePool);
-      if (dataDef.getSorts() == null || dataDef.getSorts().getPLevel().isInfinity()) {
+      if (dataDef.getSort() == null || dataDef.getSort().getPLevel().isInfinity()) {
         visitor.getErrorReporter().report(new LocalTypeCheckingError("Cannot infer the sort of a recursive data type", definition));
         dataDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
       }
@@ -278,7 +277,7 @@ public class DefinitionCheckType {
     LinkList list = initializeThisParam(visitor, enclosingClass);
 
     Map<Integer, ClassField> classifyingFields = new HashMap<>();
-    SortMax userSorts = null;
+    Sort userSort = null;
     boolean paramsOk;
     Abstract.DataDefinition def = dataDefinition.getAbstractDefinition();
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
@@ -289,8 +288,8 @@ public class DefinitionCheckType {
       if (def.getUniverse() instanceof Abstract.UniverseExpression) {
         CheckTypeVisitor.Result userTypeResult = visitor.checkType(def.getUniverse(), TypeOmega.getInstance());
         if (userTypeResult != null) {
-          userSorts = userTypeResult.expression.toSorts();
-          if (userSorts == null) {
+          userSort = userTypeResult.expression.toSort();
+          if (userSort == null) {
             visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected a universe", def.getUniverse()));
           }
         }
@@ -303,7 +302,7 @@ public class DefinitionCheckType {
     dataDefinition.setClassifyingFieldsOfParameters(classifyingFields);
     dataDefinition.setThisClass(enclosingClass);
     dataDefinition.setParameters(list.getFirst());
-    dataDefinition.setSorts(userSorts);
+    dataDefinition.setSort(userSort);
     visitor.getTypecheckingState().record(def, dataDefinition);
 
     if (!paramsOk) {
@@ -318,36 +317,36 @@ public class DefinitionCheckType {
 
   private static boolean typeCheckDataBody(DataDefinition dataDefinition, CheckTypeVisitor visitor, boolean polyHLevel, Set<DataDefinition> dataDefinitions) {
     Abstract.DataDefinition def = dataDefinition.getAbstractDefinition();
-    SortMax userSorts = dataDefinition.getSorts();
-    SortMax inferredSorts = new SortMax();
-    if (userSorts != null) {
-      if (!userSorts.getPLevel().isInfinity()) {
-        inferredSorts.addPLevel(userSorts.getPLevel());
+    Sort userSort = dataDefinition.getSort();
+    Sort inferredSort = Sort.PROP;
+    if (userSort != null) {
+      if (!userSort.getPLevel().isInfinity()) {
+        inferredSort = inferredSort.max(new Sort(userSort.getPLevel(), inferredSort.getHLevel()));
       }
-      if (!polyHLevel || !userSorts.getHLevel().isInfinity()) {
-        inferredSorts.addHLevel(userSorts.getHLevel());
+      if (!polyHLevel || !userSort.getHLevel().isInfinity()) {
+        inferredSort = inferredSort.max(new Sort(inferredSort.getPLevel(), userSort.getHLevel()));
       }
     }
-    dataDefinition.setSorts(inferredSorts);
+    dataDefinition.setSort(inferredSort);
     if (def.getConstructors().size() > 1) {
-      inferredSorts.add(Sort.SET0);
+      inferredSort = inferredSort.max(Sort.SET0);
     }
 
     boolean dataOk = true;
     boolean universeOk = true;
     for (Abstract.Constructor constructor : def.getConstructors()) {
       visitor.getContext().clear();
-      SortMax conSorts = new SortMax();
-      Constructor typedConstructor = typeCheckConstructor(constructor, dataDefinition, visitor, conSorts, dataDefinitions);
+      Sort conSort = Sort.PROP;
+      Constructor typedConstructor = typeCheckConstructor(constructor, dataDefinition, visitor, conSort, dataDefinitions);
       visitor.getTypecheckingState().record(constructor, typedConstructor);
       if (!typedConstructor.status().headerIsOK()) {
         dataOk = false;
       }
 
-      inferredSorts.add(conSorts);
-      if (userSorts != null) {
-        if (!def.isTruncated() && !conSorts.isLessOrEquals(userSorts)) {
-          String msg = "Universe " + conSorts + " of constructor '" + constructor.getName() + "' is not compatible with expected universe " + userSorts;
+      inferredSort = inferredSort.max(conSort);
+      if (userSort != null) {
+        if (!def.isTruncated() && !conSort.isLessOrEquals(userSort)) {
+          String msg = "Universe " + conSort + " of constructor '" + constructor.getName() + "' is not compatible with expected universe " + userSort;
           visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, constructor));
           universeOk = false;
         }
@@ -385,26 +384,26 @@ public class DefinitionCheckType {
       for (Condition condition : dataDefinition.getConditions()) {
         if (condition.getElimTree().accept(new FindMatchOnIntervalVisitor(), null)) {
           dataDefinition.setMatchesOnInterval();
-          inferredSorts.addHLevel(LevelMax.INFINITY);
+          inferredSort = inferredSort.max(new Sort(inferredSort.getPLevel(), Level.INFINITY));
           break;
         }
       }
     }
 
     if (def.isTruncated()) {
-      if (userSorts == null) {
+      if (userSort == null) {
         String msg = "The data type cannot be truncated since its universe is not specified";
         visitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, msg, def));
       } else {
-        if (inferredSorts.isLessOrEquals(userSorts)) {
+        if (inferredSort.isLessOrEquals(userSort)) {
           String msg = "The data type will not be truncated since it already fits in the specified universe";
           visitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, msg, def.getUniverse()));
         } else {
           dataDefinition.setIsTruncated(true);
         }
       }
-    } else if (universeOk && userSorts != null && !inferredSorts.isLessOrEquals(userSorts)) {
-      String msg = "Actual universe " + inferredSorts + " is not compatible with expected universe " + userSorts;
+    } else if (universeOk && userSort != null && !inferredSort.isLessOrEquals(userSort)) {
+      String msg = "Actual universe " + inferredSort + " is not compatible with expected universe " + userSort;
       visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, def.getUniverse()));
       universeOk = false;
     }
@@ -516,7 +515,7 @@ public class DefinitionCheckType {
     return null;
   }
 
-  private static Constructor typeCheckConstructor(Abstract.Constructor def, DataDefinition dataDefinition, CheckTypeVisitor visitor, SortMax sorts, Set<DataDefinition> dataDefinitions) {
+  private static Constructor typeCheckConstructor(Abstract.Constructor def, DataDefinition dataDefinition, CheckTypeVisitor visitor, Sort sort, Set<DataDefinition> dataDefinitions) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(visitor.getContext())) {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
       String name = def.getName();
@@ -553,7 +552,7 @@ public class DefinitionCheckType {
           return constructor;
         }
 
-        sorts.add(paramResult.type.toSorts());
+        sort = sort.max(paramResult.type.toSort());
 
         DependentLink param;
         if (argument instanceof Abstract.TelescopeArgument) {
@@ -772,7 +771,7 @@ public class DefinitionCheckType {
       typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
     }
     visitor.getTypecheckingState().record(def, typedDef);
-    fieldSet.addField(typedDef, typeResult == null ? null : typeResult.type.toSorts());
+    fieldSet.addField(typedDef, typeResult == null ? null : typeResult.type.toSort());
     return typedDef;
   }
 

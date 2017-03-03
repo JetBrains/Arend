@@ -54,6 +54,10 @@ public class Sort {
     return isProp() ? SET0 : new Sort(getPLevel().add(1), getHLevel().add(1));
   }
 
+  public Sort max(Sort sort) {
+    return isProp() ? sort : sort.isProp() ? this : new Sort(myPLevel.max(sort.myPLevel), myHLevel.max(sort.myHLevel));
+  }
+
   public boolean isProp() {
     return myHLevel.isMinimum();
   }

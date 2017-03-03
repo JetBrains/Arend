@@ -69,13 +69,18 @@ public abstract class Expression implements PrettyPrintable, Type {
     return CompareVisitor.compare(equations, Equations.CMP.LE, normalize(NormalizeVisitor.Mode.NF), typeExpr, sourceNode);
   }
 
+  public Sort toSort() {
+    UniverseExpression universe = normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
+    return universe == null ? null : universe.getSort();
+  }
+
   @Override
   public SortMax toSorts() {
     UniverseExpression universe = normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
     return universe == null ? null : new SortMax(universe.getSort());
   }
 
-  public TypeMax getType() {
+  public Expression getType() {
     return accept(new GetTypeVisitor(), null);
   }
 
@@ -184,7 +189,7 @@ public abstract class Expression implements PrettyPrintable, Type {
   }
 
   @Override
-  public Type getPiCodomain() {
+  public Expression getPiCodomain() {
     PiExpression pi = normalize(NormalizeVisitor.Mode.WHNF).toPi();
     return pi == null ? this : pi.getCodomain();
   }

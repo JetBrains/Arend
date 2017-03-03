@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.FunCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
@@ -18,7 +17,7 @@ import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FunCall;
 
 public class FunctionDefinition extends Definition implements Function {
   private DependentLink myParameters;
-  private TypeMax myResultType;
+  private Expression myResultType;
   private ElimTreeNode myElimTree;
 
   public FunctionDefinition(Abstract.Definition abstractDef) {
@@ -44,7 +43,7 @@ public class FunctionDefinition extends Definition implements Function {
     myParameters = parameters;
   }
 
-  public TypeMax getResultType() {
+  public Expression getResultType() {
     return myResultType;
   }
 
@@ -53,12 +52,12 @@ public class FunctionDefinition extends Definition implements Function {
     return DependentLink.Helper.size(myParameters);
   }
 
-  public void setResultType(TypeMax resultType) {
+  public void setResultType(Expression resultType) {
     myResultType = resultType;
   }
 
   @Override
-  public TypeMax getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
+  public Expression getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
     if (!status().headerIsOK()) {
       return null;
     }

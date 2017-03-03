@@ -1,8 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 
 import java.util.ArrayList;
@@ -59,18 +57,6 @@ public class LetExpression extends Expression {
       }
     }
     return result;
-  }
-
-  public TypeMax getType(TypeMax type) {
-    if (type instanceof Expression) {
-      return new LetExpression(myClauses, (Expression) type);
-    } else {
-      for (DependentLink link = type.getPiParameters(); link.hasNext(); link = link.getNext()) {
-        List<LetClause> clauses = getBindingsFreeIn(myClauses, link.getType().toExpression());
-        link.setType(clauses.isEmpty() ? link.getType() : new LetExpression(clauses, link.getType().toExpression()));
-      }
-      return type;
-    }
   }
 
   @Override

@@ -70,7 +70,7 @@ class DefinitionSerialization {
     if (binding.getName() != null) {
       builder.setName(binding.getName());
     }
-    builder.setType(writeType(binding.getType()));
+    builder.setType(writeExpr(binding.getType()));
     registerBinding(binding);
     return builder.build();
   }
@@ -149,7 +149,7 @@ class DefinitionSerialization {
     return builder.build();
   }
 
-  private LevelProtos.Sort writeSort(Sort sort) {
+  LevelProtos.Sort writeSort(Sort sort) {
     LevelProtos.Sort.Builder builder = LevelProtos.Sort.newBuilder();
     builder.setPLevel(writeLevel(sort.getPLevel()));
     builder.setHLevel(writeLevel(sort.getHLevel()));
@@ -181,7 +181,7 @@ class DefinitionSerialization {
       }
       tBuilder.addAllName(fixedNames);
       tBuilder.setIsNotExplicit(!typed.isExplicit());
-      tBuilder.setType(writeType(typed.getType()));
+      tBuilder.setType(writeExpr(typed.getType()));
       for (; link != typed; link = link.getNext()) {
         registerBinding(link);
       }
@@ -198,7 +198,7 @@ class DefinitionSerialization {
         builder.setName(link.getName());
       }
       builder.setIsNotExplicit(!link.isExplicit());
-      builder.setType(writeType(link.getType()));
+      builder.setType(writeExpr(link.getType()));
     } else {
       throw new IllegalStateException();
     }
@@ -223,7 +223,7 @@ class DefinitionSerialization {
       builder.putImplementations(myCalltargetIndexProvider.getDefIndex(impl.getKey()), iBuilder.build());
     }
 
-    builder.setSorts(writeSortMax(fieldSet.getSorts()));
+    builder.setSort(writeSort(fieldSet.getSort()));
 
     return builder.build();
   }

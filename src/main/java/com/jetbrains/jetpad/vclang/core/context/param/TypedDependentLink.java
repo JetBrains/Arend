@@ -1,20 +1,20 @@
 package com.jetbrains.jetpad.vclang.core.context.param;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
-import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
+import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 
 import java.util.List;
 
 public class TypedDependentLink implements DependentLink {
   private boolean myExplicit;
   private String myName;
-  private Type myType;
+  private Expression myType;
   private DependentLink myNext;
 
-  public TypedDependentLink(boolean isExplicit, String name, Type type, DependentLink next) {
+  public TypedDependentLink(boolean isExplicit, String name, Expression type, DependentLink next) {
     assert next != null;
     myExplicit = isExplicit;
     myName = name;
@@ -33,7 +33,7 @@ public class TypedDependentLink implements DependentLink {
   }
 
   @Override
-  public void setType(Type type) {
+  public void setType(Expression type) {
     myType = type;
   }
 
@@ -66,7 +66,7 @@ public class TypedDependentLink implements DependentLink {
   }
 
   @Override
-  public Type getType() {
+  public Expression getType() {
     return myType;
   }
 

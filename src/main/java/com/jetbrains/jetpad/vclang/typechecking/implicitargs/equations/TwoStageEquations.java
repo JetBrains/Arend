@@ -7,13 +7,11 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVaria
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SimpleLevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -38,8 +36,8 @@ public class TwoStageEquations implements Equations {
     myVisitor = visitor;
   }
 
-  private void addEquation(TypeMax type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode, InferenceVariable stuckVar) {
-    InferenceVariable inf1 = type instanceof Expression && ((Expression) type).toInferenceReference() != null ? ((Expression) type).toInferenceReference().getVariable() : null;
+  private void addEquation(Expression type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode, InferenceVariable stuckVar) {
+    InferenceVariable inf1 = type.toInferenceReference() != null ? type.toInferenceReference().getVariable() : null;
     InferenceVariable inf2 = expr.toInferenceReference() != null ? expr.toInferenceReference().getVariable() : null;
 
     // expr1 == expr2 == ?x
@@ -83,21 +81,17 @@ public class TwoStageEquations implements Equations {
     // expr1 == ?x && expr2 /= ?y || expr1 /= ?x && expr2 == ?y
     if (inf1 != null && inf2 == null || inf2 != null && inf1 == null) {
       InferenceVariable cInf = inf1 != null ? inf1 : inf2;
-      TypeMax cType = inf1 != null ? expr : type;
+      Expression cType = inf1 != null ? expr : type;
 
-      if (cType instanceof Expression) {
-        Expression cExpr = (Expression) cType;
-        // TODO: set cmp to CMP.EQ only if cExpr is not stuck on a meta-variable
-        // cExpr /= Pi, cExpr /= Type, cExpr /= Class, cExpr /= stuck
-        if (cExpr.toPi() == null && cExpr.toUniverse() == null && cExpr.toClassCall() == null) {
-          cmp = CMP.EQ;
-        }
+      // TODO: set cmp to CMP.EQ only if cExpr is not stuck on a meta-variable
+      // cExpr /= Pi, cExpr /= Type, cExpr /= Class, cExpr /= stuck
+      if (cType.toPi() == null && cType.toUniverse() == null && cType.toClassCall() == null) {
+        cmp = CMP.EQ;
       }
 
       // ?x == _
       if (cmp == CMP.EQ) {
-        assert cType instanceof Expression;
-        solve(cInf, (Expression) cType);
+        solve(cInf, cType);
         return;
       }
 
@@ -116,8 +110,8 @@ public class TwoStageEquations implements Equations {
       }
 
       // ?x <> Type
-      SortMax sorts = cType.toSorts();
-      if (sorts != null) {
+      Sort sort = cType.toSort();
+      if (sort != null) {
         InferenceLevelVariable lpInf = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, cInf.getSourceNode());
         InferenceLevelVariable lhInf = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, cInf.getSourceNode());
         myLevelEquations.addVariable(lpInf);
@@ -126,10 +120,9 @@ public class TwoStageEquations implements Equations {
         Level lh = new Level(lhInf);
         solve(cInf, new UniverseExpression(new Sort(lp, lh)));
         if (cmp == CMP.LE) {
-          sorts.getPLevel().isLessOrEquals(lp, this, sourceNode);
-          sorts.getHLevel().isLessOrEquals(lh, this, sourceNode);
+          Level.compare(sort.getPLevel(), lp, CMP.LE, this, sourceNode);
+          Level.compare(sort.getHLevel(), lh, CMP.LE, this, sourceNode);
         } else {
-          Sort sort = sorts.toSort();
           if (!sort.getPLevel().isInfinity()) {
             addLevelEquation(lpInf, sort.getPLevel().getVar(), sort.getPLevel().getConstant(), sort.getPLevel().getMaxConstant(), sourceNode);
           }
@@ -142,8 +135,8 @@ public class TwoStageEquations implements Equations {
     }
 
     Equation equation;
-    if (expr.toInferenceReference() == null && type instanceof Expression && ((Expression) type).toInferenceReference() != null) {
-      equation = new Equation(expr, (Expression) type, cmp.not(), sourceNode);
+    if (expr.toInferenceReference() == null && type.toInferenceReference() != null) {
+      equation = new Equation(expr, type, cmp.not(), sourceNode);
     } else {
       equation = new Equation(type, expr, cmp, sourceNode);
     }
@@ -259,7 +252,7 @@ public class TwoStageEquations implements Equations {
   }
 
   @Override
-  public boolean add(TypeMax type, Expression expr, Abstract.SourceNode sourceNode, InferenceVariable stuckVar) {
+  public boolean add(Expression type, Expression expr, Abstract.SourceNode sourceNode, InferenceVariable stuckVar) {
     addEquation(type, expr, CMP.LE, sourceNode, stuckVar);
     return true;
   }
@@ -422,8 +415,8 @@ public class TwoStageEquations implements Equations {
       return false;
     }
 
-    Type expectedType = var.getType();
-    TypeMax actualType = expr.getType();
+    Expression expectedType = var.getType();
+    Expression actualType = expr.getType();
     if (actualType == null || actualType.isLessOrEquals(expectedType.normalize(NormalizeVisitor.Mode.NF), this, var.getSourceNode())) {
       // TODO: if actualType == null then add equation type_of(var) == type_of(expr)
       var.solve(this, new OfTypeExpression(expr, expectedType));

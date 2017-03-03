@@ -10,7 +10,6 @@ import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 
@@ -42,14 +41,14 @@ public class CoverageChecker implements ElimTreeNodeVisitor<ExprSubstitution, Bo
     boolean result = true;
     for (ConCallExpression conCall : type.toDataCall().getDefinition().getMatchedConstructors(type.toDataCall())) {
       if (myResultType.toExpression() != null) {
-        SortMax sorts = myResultType.toExpression().getType().toSorts();
-        if (sorts != null) {
-          if (sorts.isLessOrEquals(Sort.PROP)) {
+        Sort sort = myResultType.toExpression().getType().toSort();
+        if (sort != null) {
+          if (sort.isLessOrEquals(Sort.PROP)) {
             if (conCall.getDefinition() == Prelude.PROP_TRUNC_PATH_CON ||
               conCall.getDefinition() == Prelude.SET_TRUNC_PATH_CON) {
               continue;
             }
-          } else if (sorts.isLessOrEquals(Sort.SET)) {
+          } else if (sort.isLessOrEquals(Sort.SET)) {
             if (conCall.getDefinition() == Prelude.SET_TRUNC_PATH_CON) {
               continue;
             }

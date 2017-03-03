@@ -1,16 +1,10 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
-import com.jetbrains.jetpad.vclang.core.expr.type.PiUniverseType;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
+import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
-import com.jetbrains.jetpad.vclang.core.sort.SortMax;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -23,7 +17,7 @@ public class DataDefinition extends Definition {
   private List<Constructor> myConstructors;
   private DependentLink myParameters;
   private Map<Constructor, Condition> myConditions;
-  private SortMax mySorts;
+  private Sort mySort;
   private boolean myMatchesOnInterval;
   private boolean myIsTruncated;
 
@@ -37,12 +31,12 @@ public class DataDefinition extends Definition {
     return (Abstract.DataDefinition) super.getAbstractDefinition();
   }
 
-  public SortMax getSorts() {
-    return mySorts;
+  public Sort getSort() {
+    return mySort;
   }
 
-  public void setSorts(SortMax sorts) {
-    mySorts = sorts;
+  public void setSort(Sort sort) {
+    mySort = sort;
   }
 
   public boolean isTruncated() {
@@ -126,7 +120,7 @@ public class DataDefinition extends Definition {
   public void setMatchesOnInterval() { myMatchesOnInterval = true; }
 
   @Override
-  public TypeMax getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
+  public Expression getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
     if (!status().headerIsOK()) {
       return null;
     }
@@ -134,7 +128,7 @@ public class DataDefinition extends Definition {
     ExprSubstitution subst = new ExprSubstitution();
     LevelSubstitution polySubst = polyArguments.toLevelSubstitution();
     params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, subst, polySubst)));
-    return new PiUniverseType(EmptyDependentLink.getInstance(), mySorts).subst(subst, polySubst);
+    return new UniverseExpression(mySort).subst(subst, polySubst);
   }
 
   @Override

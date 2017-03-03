@@ -1,10 +1,10 @@
 package com.jetbrains.jetpad.vclang.core.context.param;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 
 import java.util.List;
 
@@ -34,7 +34,7 @@ public class UntypedDependentLink implements DependentLink {
   }
 
   @Override
-  public void setType(Type type) {
+  public void setType(Expression type) {
 
   }
 
@@ -82,7 +82,7 @@ public class UntypedDependentLink implements DependentLink {
   }
 
   @Override
-  public Type getType() {
+  public Expression getType() {
     return myNext.getType();
   }
 

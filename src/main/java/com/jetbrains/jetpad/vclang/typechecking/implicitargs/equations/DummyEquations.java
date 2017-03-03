@@ -33,7 +33,7 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public boolean add(TypeMax type, Expression expr, Abstract.SourceNode sourceNode, InferenceVariable stuckVar) {
+  public boolean add(Expression type, Expression expr, Abstract.SourceNode sourceNode, InferenceVariable stuckVar) {
     return false;
   }
 

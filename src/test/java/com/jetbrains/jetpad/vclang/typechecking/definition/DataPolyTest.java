@@ -3,9 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.definition;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
-import com.jetbrains.jetpad.vclang.core.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -15,13 +13,13 @@ public class DataPolyTest extends TypeCheckingTestCase {
   @Test
   public void dataWithoutTypeOmega() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (n : Nat) | con1 (n = n) | con2 Nat");
-    assertEquals(Sort.SET0, dataDefinition.getSorts().toSort());
+    assertEquals(Sort.SET0, dataDefinition.getSort());
   }
 
   @Test
   public void dataWithoutTypeOmegaExplicit() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (n : Nat) : \\Set1 | con1 (n = n) | con2 Nat");
-    assertEquals(Sort.SetOfLevel(1), dataDefinition.getSorts().toSort());
+    assertEquals(Sort.SetOfLevel(1), dataDefinition.getSort());
   }
 
   @Test
@@ -32,19 +30,19 @@ public class DataPolyTest extends TypeCheckingTestCase {
   @Test
   public void dataWithTypeOmega() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) | con1 (n = n) | con2 Nat | con3 (D A n)");
-    assertEquals(Sort.SET0, dataDefinition.getSorts().toSort());
+    assertEquals(Sort.SET0, dataDefinition.getSort());
   }
 
   @Test
   public void dataWithTypeOmegaExplicit() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Set1 | con1 (n = n) | con2 Nat");
-    assertEquals(Sort.SetOfLevel(1), dataDefinition.getSorts().toSort());
+    assertEquals(Sort.SetOfLevel(1), dataDefinition.getSort());
   }
 
   @Test
   public void dataWithTypeOmegaExplicitSet() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Set0 | con1 (n = n) | con2 Nat");
-    assertEquals(Sort.SET0, dataDefinition.getSorts().toSort());
+    assertEquals(Sort.SET0, dataDefinition.getSort());
   }
 
   @Test
@@ -55,40 +53,40 @@ public class DataPolyTest extends TypeCheckingTestCase {
   @Test
   public void dataOmega() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) | con A");
-    assertEquals(new SortMax(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR))), dataDefinition.getSorts());
+    assertEquals(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR)), dataDefinition.getSort());
   }
 
   @Test
   public void dataOmegaExplicit() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) : \\Type | con A");
-    assertEquals(new SortMax(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR))), dataDefinition.getSorts());
+    assertEquals(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR)), dataDefinition.getSort());
   }
 
   @Test
   public void dataOmegaProp() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) | con1 A | con2 (n = n)");
-    assertEquals(new SortMax(
-        new LevelMax(new Level(LevelVariable.PVAR)),
-        new LevelMax(new Level(LevelVariable.HVAR)).max(new Level(1))), /* \Type (\lp, max \lh 0) */
-      dataDefinition.getSorts());
+    assertEquals(new Sort(
+        new Level(LevelVariable.PVAR),
+        new Level(LevelVariable.HVAR, 0, 1)), /* \Type (\lp, max \lh 0) */
+      dataDefinition.getSort());
   }
 
   @Test
   public void dataOmegaPropExplicit() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Type \\lp (\\max \\lh 0) | con1 (n = n) | con2 A");
-    assertEquals(new SortMax(
-        new LevelMax(new Level(LevelVariable.PVAR)),
-        new LevelMax(new Level(LevelVariable.HVAR)).max(new Level(1))), /* \Type (\lp, max \lh 0) */
-      dataDefinition.getSorts());
+    assertEquals(new Sort(
+        new Level(LevelVariable.PVAR),
+        new Level(LevelVariable.HVAR, 0, 1)), /* \Type (\lp, max \lh 0) */
+      dataDefinition.getSort());
   }
 
   @Test
   public void dataOmegaSet() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) | con1 (n = n) | con2 A | con3 Nat");
-    assertEquals(new SortMax(
-        new LevelMax(new Level(LevelVariable.PVAR)),
-        new LevelMax(new Level(LevelVariable.HVAR)).max(new Level(1))), /* \Type (\lp, max \lh 0) */
-      dataDefinition.getSorts());
+    assertEquals(new Sort(
+        new Level(LevelVariable.PVAR),
+        new Level(LevelVariable.HVAR, 0, 1)), /* \Type (\lp, max \lh 0) */
+      dataDefinition.getSort());
   }
 
   @Test
@@ -99,9 +97,9 @@ public class DataPolyTest extends TypeCheckingTestCase {
   @Test
   public void dataOmegaSetExplicitMax() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Type \\lp (\\max \\lh 0) | con1 (n = n) | con2 A | con3 Nat");
-    assertEquals(new SortMax(
-        new LevelMax(new Level(LevelVariable.PVAR)),
-        new LevelMax(new Level(LevelVariable.HVAR)).max(new Level(1))), /* \Type (\lp, max \lh 0) */
-      dataDefinition.getSorts());
+    assertEquals(new Sort(
+        new Level(LevelVariable.PVAR),
+        new Level(LevelVariable.HVAR, 0, 1)), /* \Type (\lp, max \lh 0) */
+      dataDefinition.getSort());
   }
 }

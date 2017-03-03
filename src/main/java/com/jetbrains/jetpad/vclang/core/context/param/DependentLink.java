@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.core.context.param;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
@@ -15,7 +14,7 @@ import java.util.List;
 public interface DependentLink extends Binding {
   boolean isExplicit();
   void setExplicit(boolean isExplicit);
-  void setType(Type type);
+  void setType(Expression type);
   DependentLink getNext();
   void setNext(DependentLink next);
   void setName(String name);

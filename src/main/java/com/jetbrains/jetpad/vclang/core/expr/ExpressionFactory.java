@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.core.pattern.NamePattern;
@@ -169,15 +168,15 @@ public class ExpressionFactory {
     return links[0];
   }
 
-  public static DependentLink param(boolean explicit, String var, Type type) {
+  public static DependentLink param(boolean explicit, String var, Expression type) {
     return new TypedDependentLink(explicit, var, type, EmptyDependentLink.getInstance());
   }
 
-  public static DependentLink param(String var, Type type) {
+  public static DependentLink param(String var, Expression type) {
     return new TypedDependentLink(true, var, type, EmptyDependentLink.getInstance());
   }
 
-  public static DependentLink param(Type type) {
+  public static DependentLink param(Expression type) {
     return new TypedDependentLink(true, null, type, EmptyDependentLink.getInstance());
   }
 
@@ -185,7 +184,7 @@ public class ExpressionFactory {
     return Arrays.asList(vars);
   }
 
-  public static DependentLink param(boolean explicit, List<String> names, Type type) {
+  public static DependentLink param(boolean explicit, List<String> names, Expression type) {
     DependentLink link = new TypedDependentLink(explicit, names.get(names.size() - 1), type, EmptyDependentLink.getInstance());
     for (int i = names.size() - 2; i >= 0; i--) {
       link = new UntypedDependentLink(names.get(i), link);

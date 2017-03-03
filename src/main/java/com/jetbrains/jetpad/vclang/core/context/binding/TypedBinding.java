@@ -1,21 +1,21 @@
 package com.jetbrains.jetpad.vclang.core.context.binding;
 
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
 
 public class TypedBinding extends NamedBinding {
-  private Type myType;
+  private Expression myType;
 
-  public TypedBinding(String name, Type type) {
+  public TypedBinding(String name, Expression type) {
     super(name);
     myType = type;
   }
 
   @Override
-  public Type getType() {
+  public Expression getType() {
     return myType;
   }
 
-  public void setType(Type type) {
+  public void setType(Expression type) {
     myType = type;
   }
 

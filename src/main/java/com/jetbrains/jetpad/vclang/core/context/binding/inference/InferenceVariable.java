@@ -17,11 +17,11 @@ import java.util.List;
 public abstract class InferenceVariable implements Binding {
   private final String myName;
   private final Abstract.SourceNode mySourceNode;
-  private Type myType;
+  private Expression myType;
   private InferenceReferenceExpression myReference;
   private List<InferenceVariableListener> myListeners;
 
-  public InferenceVariable(String name, Type type, Abstract.SourceNode sourceNode) {
+  public InferenceVariable(String name, Expression type, Abstract.SourceNode sourceNode) {
     myName = name;
     mySourceNode = sourceNode;
     myType = type;
@@ -55,11 +55,11 @@ public abstract class InferenceVariable implements Binding {
   }
 
   @Override
-  public Type getType() {
+  public Expression getType() {
     return myType;
   }
 
-  public void setType(Type type) {
+  public void setType(Expression type) {
     myType = type;
   }
 

@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.core.context.param;
 
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 
 import java.util.List;
 
@@ -26,7 +26,7 @@ public class EmptyDependentLink implements DependentLink {
   }
 
   @Override
-  public void setType(Type type) {
+  public void setType(Expression type) {
     throw new IllegalStateException();
   }
 
@@ -66,7 +66,7 @@ public class EmptyDependentLink implements DependentLink {
   }
 
   @Override
-  public Type getType() {
+  public Expression getType() {
     throw new IllegalStateException();
   }
 
