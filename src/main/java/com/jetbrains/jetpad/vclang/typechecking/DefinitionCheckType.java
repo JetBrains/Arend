@@ -3,16 +3,12 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.core.context.LinkList;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
-import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.expr.type.PiUniverseType;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeOmega;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.StripVisitor;
@@ -22,9 +18,12 @@ import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.core.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.core.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.core.pattern.Utils.ProcessImplicitResult;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
-import com.jetbrains.jetpad.vclang.core.sort.*;
+import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
+import com.jetbrains.jetpad.vclang.core.pattern.elimtree.PatternsToElimTreeConversion;
+import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.sort.LevelMax;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
@@ -39,7 +38,6 @@ import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.NotInScopeError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.CompositeInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.GlobalInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.LocalInstancePool;
@@ -236,89 +234,23 @@ public class DefinitionCheckType {
 
   private static void typeCheckFunctionBody(FunctionDefinition typedDef, CheckTypeVisitor visitor) {
     Abstract.FunctionDefinition def = (Abstract.FunctionDefinition) typedDef.getAbstractDefinition();
-
-    TypeMax userType = typedDef.getResultType();
-    Type expectedType = null; //userType == null ? null : userType instanceof Type ? (Type) userType : TypeOmega.getInstance();
-
-    if (userType != null) {
-      if (userType instanceof Type) {
-        expectedType = (Type) userType;
-      } else {
-        Level expPlevel = userType.getPiCodomain().toSorts().getPLevel().toLevel();
-        Level expHlevel = userType.getPiCodomain().toSorts().getHLevel().toLevel();
-
-        if (expPlevel == null || expPlevel.isInfinity()) {
-          InferenceLevelVariable lpVar = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, def);
-          visitor.getEquations().addVariable(lpVar);
-          expPlevel = new Level(lpVar);
-        }
-        if (expHlevel == null || expHlevel.isInfinity()) {
-          InferenceLevelVariable lhVar = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, def);
-          visitor.getEquations().addVariable(lhVar);
-          expHlevel = new Level(lhVar);
-        }
-        UniverseExpression universe = Universe(expPlevel, expHlevel);
-        expectedType = userType.getPiParameters().hasNext() ? Pi(userType.getPiParameters(), universe) : universe;
-        // TODO: result type should be set to expectedType at this point
-        typedDef.setResultType(Universe(Sort.PROP));
-      }
-    }
-
     Abstract.Expression term = def.getTerm();
-    TypeMax actualType = null;
+
     if (term != null) {
+      Type expectedType = typedDef.getResultType() instanceof Type ? (Type) typedDef.getResultType() : null;
+
       if (term instanceof Abstract.ElimExpression) {
         visitor.getContext().subList(visitor.getContext().size() - size(typedDef.getParameters()), visitor.getContext().size()).clear();
         ElimTreeNode elimTree = visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, def.getArrow() == Abstract.Definition.Arrow.LEFT ? typedDef.getParameters() : null, expectedType, false, true);
         if (elimTree != null) {
           typedDef.setElimTree(elimTree);
-          if (userType != null && !(userType instanceof Type)) {
-            final SortMax sorts = new SortMax();
-            elimTree.accept(new ElimTreeNodeVisitor<Void, Void>() {
-              @Override
-              public Void visitBranch(BranchElimTreeNode branchNode, Void params) {
-                for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-                  clause.getChild().accept(this, null);
-                }
-                if (branchNode.getOtherwiseClause() != null) {
-                  branchNode.getOtherwiseClause().getChild().accept(this, null);
-                }
-                return null;
-              }
-
-              @Override
-              public Void visitLeaf(LeafElimTreeNode leafNode, Void params) {
-                SortMax sorts1 = leafNode.getExpression().getType().getPiCodomain().toSorts();
-                if (sorts1 != null) {
-                  sorts.add(sorts1);
-                }
-                return null;
-              }
-
-              @Override
-              public Void visitEmpty(EmptyElimTreeNode emptyNode, Void params) {
-                return null;
-              }
-            }, null);
-            actualType = new PiUniverseType(userType.getPiParameters(), sorts);
-          } else {
-            actualType = userType;
-          }
         }
       } else {
         CheckTypeVisitor.Result termResult = visitor.checkType(term, expectedType);
         if (termResult != null) {
           typedDef.setElimTree(top(typedDef.getParameters(), leaf(def.getArrow(), termResult.expression)));
-          actualType = termResult.type;
-        }
-      }
-
-      if (actualType != null && !(actualType instanceof ErrorExpression)) {
-        typedDef.setResultType(actualType);
-        if (userType != null && !(userType instanceof Type)) {
-          SortMax actualSorts = actualType.getPiCodomain().toSorts();
-          if (actualSorts == null || !actualSorts.isLessOrEquals(userType.getPiCodomain().toSorts())) {
-            visitor.getErrorReporter().report(new TypeMismatchError(userType, actualType, term));
+          if (expectedType == null) {
+            typedDef.setResultType(termResult.type);
           }
         }
       }
