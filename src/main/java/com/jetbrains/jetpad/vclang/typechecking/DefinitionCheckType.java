@@ -159,8 +159,8 @@ public class DefinitionCheckType {
     for (Abstract.Argument argument : arguments) {
       if (argument instanceof Abstract.TypeArgument) {
         Abstract.TypeArgument typeArgument = (Abstract.TypeArgument) argument;
-        Type paramType = visitor.checkParamType(typeArgument.getType());
-        if (paramType == null) {
+        CheckTypeVisitor.Result paramResult = visitor.checkType(typeArgument.getType(), TypeOmega.getInstance());
+        if (paramResult == null) {
           ok = false;
           continue;
         }
@@ -168,10 +168,10 @@ public class DefinitionCheckType {
         DependentLink param;
         if (argument instanceof Abstract.TelescopeArgument) {
           List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
-          param = param(argument.getExplicit(), names, paramType);
+          param = param(argument.getExplicit(), names, paramResult.expression);
           index += names.size();
         } else {
-          param = param(argument.getExplicit(), (String) null, paramType);
+          param = param(argument.getExplicit(), (String) null, paramResult.expression);
           index++;
         }
 
@@ -217,10 +217,13 @@ public class DefinitionCheckType {
     Map<Integer, ClassField> classifyingFields = new HashMap<>();
     Abstract.FunctionDefinition def = (Abstract.FunctionDefinition) typedDef.getAbstractDefinition();
     boolean paramsOk = typeCheckParameters(def.getArguments(), visitor.getContext(), list, visitor, localInstancePool, classifyingFields);
-    TypeMax expectedType = null;
+    Expression expectedType = null;
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
-      expectedType = visitor.checkFunOrDataType(resultType);
+      CheckTypeVisitor.Result expectedTypeResult = visitor.checkType(resultType, TypeOmega.getInstance());
+      if (expectedTypeResult != null) {
+        expectedType = expectedTypeResult.expression;
+      }
     }
 
     visitor.getTypecheckingState().record(def, typedDef);
@@ -352,9 +355,12 @@ public class DefinitionCheckType {
 
     if (def.getUniverse() != null) {
       if (def.getUniverse() instanceof Abstract.UniverseExpression) {
-        TypeMax userType = visitor.checkFunOrDataType(def.getUniverse());
-        if (userType != null) {
-          userSorts = userType.toSorts();
+        CheckTypeVisitor.Result userTypeResult = visitor.checkType(def.getUniverse(), TypeOmega.getInstance());
+        if (userTypeResult != null) {
+          userSorts = userTypeResult.expression.toSorts();
+          if (userSorts == null) {
+            visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected a universe", def.getUniverse()));
+          }
         }
       } else {
         String msg = "Specified type " + PrettyPrintVisitor.prettyPrint(def.getUniverse(), 0) + " of '" + def.getName() + "' is not a universe";

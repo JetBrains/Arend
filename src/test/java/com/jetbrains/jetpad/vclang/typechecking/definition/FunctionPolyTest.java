@@ -51,10 +51,7 @@ public class FunctionPolyTest extends TypeCheckingTestCase {
   public void funWithTypeOmegaResultRecursive() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef(
       "\\function f (A : \\Type) (n : Nat) : \\oo-Type (\\max \\lp 1) <= \\elim n | zero => \\Set0 | suc n => A");
-    assertEquals(new SortMax(
-        new LevelMax(new Level(LevelVariable.PVAR)).max(new LevelMax(new Level(1))),
-        new LevelMax(new Level(LevelVariable.HVAR)).max(new LevelMax(new Level(2)))), /* \Type (max \lp 1, max \lh 1) */
-      funDefinition.getResultType().toSorts());
+    assertEquals(new SortMax(new LevelMax(new Level(LevelVariable.PVAR)).max(new LevelMax(new Level(1))), LevelMax.INFINITY), funDefinition.getResultType().toSorts());
   }
 
   @Test

@@ -326,56 +326,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     return result == null ? null : checkResult(expectedType, result.toResult(myEquations, expr), expr);
   }
 
-  public TypeMax checkFunOrDataType(Abstract.Expression typeExpr) {
-    TypeMax type = typeMax(typeExpr, false, true);
-    if (type == null) return null;
-    LevelSubstitution levelSubst = myEquations.solve(typeExpr);
-    LocalErrorReporterCounter counter = new LocalErrorReporterCounter(myErrorReporter);
-    return type.subst(new ExprSubstitution(), levelSubst).strip(new HashSet<>(myContext), counter);
-  }
-
-  public Type checkParamType(Abstract.Expression typeExpr) {
-    Type type = (Type)typeMax(typeExpr, true, false);
-    if (type == null) return null;
-    LevelSubstitution levelSubst = myEquations.solve(typeExpr);
-    LocalErrorReporterCounter counter = new LocalErrorReporterCounter(myErrorReporter);
-    return type.subst(new ExprSubstitution(), levelSubst).strip(new HashSet<>(myContext), counter);
-  }
-
-  private TypeMax typeMax(Abstract.Expression type, boolean replaceInfinities, boolean maxAllowed) {
-    List<Abstract.TypeArgument> arguments = new ArrayList<>();
-    Abstract.Expression cod = Abstract.getCodomain(type, arguments);
-    if (cod instanceof Abstract.UniverseExpression) {
-      DependentLink args = visitArguments(arguments);
-      Abstract.UniverseExpression uni = (Abstract.UniverseExpression)cod;
-      if (args == null) return null;
-
-      Level pLevel = uni.getPLevel() == null ? new Level(LevelVariable.PVAR) : typeCheckLevelMax(uni.getPLevel(), LevelVariable.PVAR);
-      Level hLevel = uni.getHLevel() == null ? new Level(LevelVariable.HVAR) : typeCheckLevelMax(uni.getHLevel(), LevelVariable.HVAR);
-      if (maxAllowed) {
-        return new PiUniverseType(args, new SortMax(new Sort(pLevel, hLevel)));
-      }
-
-      if (pLevel.isInfinity()) {
-        if (!replaceInfinities) {
-          myErrorReporter.report(new LocalTypeCheckingError("\\Type without level is not allowed in this context", uni));
-          return null;
-        }
-        pLevel = new Level(LevelVariable.PVAR);
-      }
-
-      if (replaceInfinities && hLevel.isInfinity()) {
-        hLevel = new Level(LevelVariable.HVAR);
-      }
-
-      UniverseExpression universe = Universe(pLevel, hLevel);
-      return !args.hasNext() ? universe :  Pi(args, universe);
-    }
-    Result result = typeCheck(type, TypeOmega.getInstance());
-    if (result == null) return null;
-    return result.expression;
-  }
-
   public Result typeCheck(Abstract.Expression expr, Type expectedType) {
     if (expr == null) {
       LocalTypeCheckingError error = new LocalTypeCheckingError("Incomplete expression", null);
