@@ -53,7 +53,8 @@ public class LevelEquations<Var> {
         } else {
           Integer a = solution.get(equation.getVariable1());
           Integer b = solution.get(equation.getVariable2());
-          if (b != null && (a == null || b > a + equation.getConstant())) {
+          Integer m = equation.getMaxConstant();
+          if (b != null && (a == null || (m == null || a + m < 0) && b > a + equation.getConstant())) {
             if (a != null) {
               List<LevelEquation<Var>> newPath = new ArrayList<>(paths.get(equation.getVariable1()));
               newPath.add(equation);
@@ -61,7 +62,6 @@ public class LevelEquations<Var> {
             }
             if (i == 0 || equation.getVariable2() == null && a != null) {
               solution.remove(null);
-             // Var var = equation.getVariable1() != null ? equation.getVariable1() : equation.getVariable2();
               return paths.get(equation.getVariable2());
             }
 

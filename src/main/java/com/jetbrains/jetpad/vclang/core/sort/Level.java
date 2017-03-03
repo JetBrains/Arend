@@ -18,22 +18,26 @@ import java.util.List;
 public class Level implements PrettyPrintable {
   private final int myConstant;
   private final LevelVariable myVar;
+  private final int myMaxConstant;
 
   public static final Level INFINITY = new Level(null, -1);
 
   public Level(LevelVariable var, int constant) {
     myConstant = constant;
     myVar = var;
+    myMaxConstant = 0;
   }
 
   public Level(LevelVariable var) {
     myConstant = 0;
     myVar = var;
+    myMaxConstant = 0;
   }
 
   public Level(int constant) {
     myConstant = constant;
     myVar = null;
+    myMaxConstant = 0;
   }
 
   public LevelVariable getVar() {
@@ -42,6 +46,10 @@ public class Level implements PrettyPrintable {
 
   public int getConstant() {
     return myConstant;
+  }
+
+  public int getMaxConstant() {
+    return myMaxConstant;
   }
 
   public boolean isInfinity() {

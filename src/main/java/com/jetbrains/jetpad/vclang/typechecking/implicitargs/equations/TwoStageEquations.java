@@ -131,10 +131,10 @@ public class TwoStageEquations implements Equations {
         } else {
           Sort sort = sorts.toSort();
           if (!sort.getPLevel().isInfinity()) {
-            addLevelEquation(lpInf, sort.getPLevel().getVar(), sort.getPLevel().getConstant(), sourceNode);
+            addLevelEquation(lpInf, sort.getPLevel().getVar(), sort.getPLevel().getConstant(), sort.getPLevel().getMaxConstant(), sourceNode);
           }
           if (!sort.getHLevel().isInfinity()) {
-            addLevelEquation(lhInf, sort.getHLevel().getVar(), sort.getHLevel().getConstant(), sourceNode);
+            addLevelEquation(lhInf, sort.getHLevel().getVar(), sort.getHLevel().getConstant(), sort.getHLevel().getMaxConstant(), sourceNode);
           }
         }
         return;
@@ -152,44 +152,53 @@ public class TwoStageEquations implements Equations {
     stuckVar.addListener(equation);
   }
 
-  private void addBase(InferenceLevelVariable var, LevelVariable base, Abstract.SourceNode sourceNode) {
-    LevelVariable base1 = myBases.get(var);
-    if (base1 == null) {
-      myBases.put(var, base);
-    } else {
-      if (base != base1) {
-        List<LevelEquation<LevelVariable>> equations = new ArrayList<>(2);
-        equations.add(new LevelEquation<>(base, var, 0));
-        equations.add(new LevelEquation<>(base1, var, 0));
-        myVisitor.getErrorReporter().report(new SolveLevelEquationsError(equations, sourceNode));
-      }
-    }
-  }
-
-  private void addLevelEquation(LevelVariable var1, LevelVariable var2, int constant, Abstract.SourceNode sourceNode) {
-    // 0 <= c, 0 <= y + c, 0 <= ?y + c
-    if (var1 == null && constant >= 0) {
+  private void addLevelEquation(LevelVariable var1, LevelVariable var2, int constant, int maxConstant, Abstract.SourceNode sourceNode) {
+    // _ <= max(-c, -d), _ <= max(l - c, -d) // 6
+    if (constant < 0 && maxConstant < 0 && !(var2 instanceof InferenceLevelVariable)) {
+      myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant, maxConstant)), sourceNode));
       return;
     }
 
-    // x <= +-c, 0 <= y - c, 0 <= -c, x <= y +- c, ?x <= -c, ?x <= y - c
-    if (!(var2 instanceof InferenceLevelVariable) && (constant < 0 || !(var1 instanceof InferenceLevelVariable))) {
-      if (var1 != var2 || constant < 0) {
-        myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant)), sourceNode));
+    // 0 <= max(_ +-c, +-d) // 10
+    if (var1 == null) {
+      // 0 <= max(?y - c, -d) // 1
+      if (constant < 0 && maxConstant < 0) {
+        myLevelEquations.addEquation(new LevelEquation<>(null, (InferenceLevelVariable) var2, constant, maxConstant));
       }
       return;
     }
 
-    // ?x <= ?y +- c, x <= ?y +- c
-    if (var1 != null && var2 instanceof InferenceLevelVariable) {
-      LevelVariable base = var1 instanceof InferenceLevelVariable ? myBases.get(var1) : var1;
-      if (base != null) {
-        addBase((InferenceLevelVariable) var2, base, sourceNode);
+    // ?x <= max(_ +- c, +-d) // 10
+    if (var1 instanceof InferenceLevelVariable) {
+      if (var2 instanceof InferenceLevelVariable) {
+        // ?x <= max(?y +- c, +-d) // 4
+        myLevelEquations.addEquation(new LevelEquation<>((InferenceLevelVariable) var1, (InferenceLevelVariable) var2, constant, maxConstant < 0 ? null : maxConstant));
+      } else {
+        // ?x <= max(+-c, +-d), ?x <= max(l +- c, +-d) // 6
+        myLevelEquations.addEquation(new LevelEquation<>((InferenceLevelVariable) var1, null, Math.max(constant, maxConstant)));
       }
+      return;
     }
 
-    // 0 <= ?y - c, ?x <= c, ?x <= y + c, ?x <= ?y +- c, x <= ?y +- c
-    myLevelEquations.addEquation(new LevelEquation<>(var1 instanceof InferenceLevelVariable ? (InferenceLevelVariable) var1 : null, var2 instanceof InferenceLevelVariable ? (InferenceLevelVariable) var2 : null, constant));
+    // l <= max(_ +- c, +-d) // 10
+    {
+      // l <= max(l + c, +-d) // 2
+      if (var1 == var2) {
+        return;
+      }
+
+      // l <= max(?y +- c, +-d) // 4
+      if (var2 instanceof InferenceLevelVariable) {
+        myBases.put((InferenceLevelVariable) var2, var1);
+        if (constant < 0) {
+          myLevelEquations.addEquation(new LevelEquation<>(null, (InferenceLevelVariable) var2, constant));
+        }
+        return;
+      }
+
+      // l <= max(l - c, +-d), l <= max(+-c, +-d) // 4
+      myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant, maxConstant)), sourceNode));
+    }
   }
 
   private void addLevelEquation(LevelVariable var, Abstract.SourceNode sourceNode) {
@@ -239,10 +248,12 @@ public class TwoStageEquations implements Equations {
     }
 
     if (cmp == CMP.LE || cmp == CMP.EQ) {
-      addLevelEquation(level1.getVar(), level2.getVar(), level2.getConstant() - level1.getConstant(), sourceNode);
+      addLevelEquation(level1.getVar(), level2.getVar(), level2.getConstant() - level1.getConstant(), level2.getMaxConstant() - level1.getConstant(), sourceNode);
+      addLevelEquation(null, level2.getVar(), level2.getConstant() - level1.getMaxConstant(), level2.getMaxConstant() - level1.getMaxConstant(), sourceNode);
     }
     if (cmp == CMP.GE || cmp == CMP.EQ) {
-      addLevelEquation(level2.getVar(), level1.getVar(), level1.getConstant() - level2.getConstant(), sourceNode);
+      addLevelEquation(level2.getVar(), level1.getVar(), level1.getConstant() - level2.getConstant(), level1.getMaxConstant() - level2.getConstant(), sourceNode);
+      addLevelEquation(null, level1.getVar(), level1.getConstant() - level2.getMaxConstant(), level1.getMaxConstant() - level2.getMaxConstant(), sourceNode);
     }
     return true;
   }
@@ -274,7 +285,7 @@ public class TwoStageEquations implements Equations {
       List<LevelEquation<LevelVariable>> basedCycle = new ArrayList<>();
       for (LevelEquation<InferenceLevelVariable> equation : cycle) {
         if (equation.isInfinity() || equation.getVariable1() != null) {
-          basedCycle.add(new LevelEquation<LevelVariable>(equation.getVariable1(), equation.getVariable2(), equation.getConstant()));
+          basedCycle.add(new LevelEquation<LevelVariable>(equation));
         } else {
           basedCycle.add(new LevelEquation<>(myBases.get(equation.getVariable2()), equation.getVariable2(), equation.getConstant()));
         }
