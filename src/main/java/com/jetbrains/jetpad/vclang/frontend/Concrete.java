@@ -3,10 +3,7 @@ package com.jetbrains.jetpad.vclang.frontend;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
-import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
-import com.jetbrains.jetpad.vclang.term.AbstractStatementVisitor;
+import com.jetbrains.jetpad.vclang.term.*;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 
 import java.util.Collections;
@@ -754,7 +751,7 @@ public final class Concrete {
 
   // Level expressions
 
-  public static class LevelExpression extends SourceNode implements Abstract.LevelExpression {
+  public static abstract class LevelExpression extends SourceNode implements Abstract.LevelExpression {
     protected LevelExpression(Position position) {
       super(position);
     }
@@ -764,17 +761,32 @@ public final class Concrete {
     public PLevelExpression(Position position) {
       super(position);
     }
+
+    @Override
+    public <P, R> R accept(AbstractLevelExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitLP(this, params);
+    }
   }
 
   public static class HLevelExpression extends LevelExpression implements Abstract.HLevelExpression {
     public HLevelExpression(Position position) {
       super(position);
     }
+
+    @Override
+    public <P, R> R accept(AbstractLevelExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitLH(this, params);
+    }
   }
 
   public static class InfLevelExpression extends LevelExpression implements Abstract.InfLevelExpression {
     public InfLevelExpression(Position position) {
       super(position);
+    }
+
+    @Override
+    public <P, R> R accept(AbstractLevelExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitInf(this, params);
     }
   }
 
@@ -790,6 +802,11 @@ public final class Concrete {
     public int getNumber() {
       return myNumber;
     }
+
+    @Override
+    public <P, R> R accept(AbstractLevelExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitNumber(this, params);
+    }
   }
 
   public static class SucLevelExpression extends LevelExpression implements Abstract.SucLevelExpression {
@@ -803,6 +820,11 @@ public final class Concrete {
     @Override
     public LevelExpression getExpression() {
       return myExpression;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractLevelExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitSuc(this, params);
     }
   }
 
@@ -824,6 +846,11 @@ public final class Concrete {
     @Override
     public LevelExpression getRight() {
       return myRight;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractLevelExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitMax(this, params);
     }
   }
 

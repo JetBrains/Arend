@@ -239,6 +239,7 @@ public final class Abstract {
   // Level expressions
 
   public interface LevelExpression extends SourceNode {
+    <P, R> R accept(AbstractLevelExpressionVisitor<? super P, ? extends R> visitor, P params);
   }
 
   public interface PLevelExpression extends LevelExpression {
