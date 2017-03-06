@@ -158,7 +158,7 @@ public class TypeCheckingElim {
     boolean wasError = false;
 
     for (ReferenceExpression elimExpr : elimExprs) {
-      DataCallExpression dataCall = elimExpr.getBinding().getType().toExpression().toDataCall();
+      DataCallExpression dataCall = elimExpr.getBinding().getType().toDataCall();
       if (dataCall != null && dataCall.getDefinition().isTruncated()) {
         if (!expectedType.getType().isLessOrEquals(dataCall.getType(), myVisitor.getEquations(), expr)) {
           error = new LocalTypeCheckingError("Data " + dataCall.getDefinition().getName() + " is truncated to the universe "
@@ -306,7 +306,7 @@ public class TypeCheckingElim {
           return null;
         }
 
-        if (((Expression) refExpr.getType()).normalize(NormalizeVisitor.Mode.WHNF).toDataCall() == null) {
+        if (refExpr.getType().normalize(NormalizeVisitor.Mode.WHNF).toDataCall() == null) {
           error = new LocalTypeCheckingError("Elimination is allowed only for a data type variable.", var);
           myVisitor.getErrorReporter().report(error);
           var.setWellTyped(argsBindings, Error(null, error));
@@ -361,7 +361,7 @@ public class TypeCheckingElim {
     } else if (pattern instanceof Abstract.AnyConstructorPattern || pattern instanceof Abstract.ConstructorPattern) {
       LocalTypeCheckingError error = null;
 
-      Expression type = binding.getType().toExpression().normalize(NormalizeVisitor.Mode.WHNF);
+      Expression type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF);
       if (type.toDataCall() == null) {
         error = new LocalTypeCheckingError("Pattern expected a data type, got: " + type, pattern);
         myVisitor.getErrorReporter().report(error);

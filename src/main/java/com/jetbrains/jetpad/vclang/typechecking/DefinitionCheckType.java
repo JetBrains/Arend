@@ -236,7 +236,7 @@ public class DefinitionCheckType {
     Abstract.Expression term = def.getTerm();
 
     if (term != null) {
-      Type expectedType = typedDef.getResultType() instanceof Type ? (Type) typedDef.getResultType() : null;
+      Expression expectedType = typedDef.getResultType();
 
       if (term instanceof Abstract.ElimExpression) {
         visitor.getContext().subList(visitor.getContext().size() - size(typedDef.getParameters()), visitor.getContext().size()).clear();
@@ -336,11 +336,10 @@ public class DefinitionCheckType {
     boolean universeOk = true;
     for (Abstract.Constructor constructor : def.getConstructors()) {
       visitor.getContext().clear();
-      Sort conSort = Sort.PROP;
-      Constructor typedConstructor = typeCheckConstructor(constructor, dataDefinition, visitor, conSort, dataDefinitions);
-      visitor.getTypecheckingState().record(constructor, typedConstructor);
-      if (!typedConstructor.status().headerIsOK()) {
+      Sort conSort = typeCheckConstructor(constructor, dataDefinition, visitor, dataDefinitions);
+      if (conSort == null) {
         dataOk = false;
+        conSort = Sort.PROP;
       }
 
       inferredSort = inferredSort.max(conSort);
@@ -408,6 +407,7 @@ public class DefinitionCheckType {
       universeOk = false;
     }
 
+    dataDefinition.setSort(universeOk && userSort != null ? userSort : inferredSort);
     return universeOk;
   }
 
@@ -515,12 +515,14 @@ public class DefinitionCheckType {
     return null;
   }
 
-  private static Constructor typeCheckConstructor(Abstract.Constructor def, DataDefinition dataDefinition, CheckTypeVisitor visitor, Sort sort, Set<DataDefinition> dataDefinitions) {
+  private static Sort typeCheckConstructor(Abstract.Constructor def, DataDefinition dataDefinition, CheckTypeVisitor visitor, Set<DataDefinition> dataDefinitions) {
+    Sort sort = Sort.PROP;
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(visitor.getContext())) {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
       String name = def.getName();
 
       Constructor constructor = new Constructor(def, dataDefinition);
+      visitor.getTypecheckingState().record(def, constructor);
       List<? extends Abstract.PatternArgument> patterns = def.getPatterns();
       Patterns typedPatterns = null;
       if (patterns != null) {
@@ -530,12 +532,12 @@ public class DefinitionCheckType {
         }
         processedPatterns = processImplicitPatterns(def, dataDefinition.getParameters(), processedPatterns, visitor.getErrorReporter());
         if (processedPatterns == null) {
-          return constructor;
+          return null;
         }
 
         typedPatterns = visitor.getTypeCheckingElim().visitPatternArgs(processedPatterns, dataDefinition.getParameters(), Collections.<Expression>emptyList(), TypeCheckingElim.PatternExpansionMode.DATATYPE);
         if (typedPatterns == null) {
-          return constructor;
+          return null;
         }
       } else {
         visitor.getContext().addAll(toContext(dataDefinition.getParameters()));
@@ -549,7 +551,7 @@ public class DefinitionCheckType {
       for (Abstract.TypeArgument argument : arguments) {
         CheckTypeVisitor.Result paramResult = visitor.checkType(argument.getType(), TypeOmega.getInstance());
         if (paramResult == null) {
-          return constructor;
+          return null;
         }
 
         sort = sort.max(paramResult.type.toSort());
@@ -565,43 +567,41 @@ public class DefinitionCheckType {
       }
 
       for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext()) {
-        Type type = link.getType().normalize(NormalizeVisitor.Mode.WHNF);
+        Expression type = link.getType().normalize(NormalizeVisitor.Mode.WHNF);
         List<DependentLink> piParams = new ArrayList<>();
         type = type.getPiParameters(piParams, true, false);
         for (DependentLink piParam : piParams) {
           if (piParam instanceof UntypedDependentLink) {
             continue;
           }
-          if (!checkNonPositiveError(piParam.getType().toExpression(), name, list.getFirst(), link, arguments, def, visitor.getErrorReporter(), dataDefinitions)) {
-            return constructor;
+          if (!checkNonPositiveError(piParam.getType(), name, list.getFirst(), link, arguments, def, visitor.getErrorReporter(), dataDefinitions)) {
+            return null;
           }
         }
 
         boolean check = true;
         while (check) {
           check = false;
-          if (type.toExpression() != null) {
-            if (type.toExpression().toDataCall() != null) {
-              List<? extends Expression> exprs = type.toExpression().toDataCall().getDefCallArguments();
-              DataDefinition typeDef = type.toExpression().toDataCall().getDefinition();
-              if (typeDef == Prelude.PATH && exprs.size() >= 1) {
-                LamExpression lam = exprs.get(0).normalize(NormalizeVisitor.Mode.WHNF).toLam();
-                if (lam != null) {
-                  check = true;
-                  type = lam.getBody().normalize(NormalizeVisitor.Mode.WHNF);
-                  exprs = exprs.subList(1, exprs.size());
-                }
+          if (type.toDataCall() != null) {
+            List<? extends Expression> exprs = type.toDataCall().getDefCallArguments();
+            DataDefinition typeDef = type.toDataCall().getDefinition();
+            if (typeDef == Prelude.PATH && exprs.size() >= 1) {
+              LamExpression lam = exprs.get(0).normalize(NormalizeVisitor.Mode.WHNF).toLam();
+              if (lam != null) {
+                check = true;
+                type = lam.getBody().normalize(NormalizeVisitor.Mode.WHNF);
+                exprs = exprs.subList(1, exprs.size());
               }
+            }
 
-              for (Expression expr : exprs) {
-                if (!checkNonPositiveError(expr, name, list.getFirst(), link, arguments, def, visitor.getErrorReporter(), dataDefinitions)) {
-                  return constructor;
-                }
+            for (Expression expr : exprs) {
+              if (!checkNonPositiveError(expr, name, list.getFirst(), link, arguments, def, visitor.getErrorReporter(), dataDefinitions)) {
+                return null;
               }
-            } else {
-              if (!checkNonPositiveError(type.toExpression(), name, list.getFirst(), link, arguments, def, visitor.getErrorReporter(), dataDefinitions)) {
-                return constructor;
-              }
+            }
+          } else {
+            if (!checkNonPositiveError(type, name, list.getFirst(), link, arguments, def, visitor.getErrorReporter(), dataDefinitions)) {
+              return null;
             }
           }
         }
@@ -612,7 +612,7 @@ public class DefinitionCheckType {
       constructor.setThisClass(dataDefinition.getThisClass());
       constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
       dataDefinition.addConstructor(constructor);
-      return constructor;
+      return sort;
     }
   }
 

@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
@@ -306,7 +305,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     CompareVisitor visitor = new CompareVisitor(mySubstitution, myEquations, Equations.CMP.EQ);
     for (int i = 0; i < params1.size(); i++) {
       if (!(params1.get(i) instanceof UntypedDependentLink && params2.get(i) instanceof UntypedDependentLink)) {
-        if (!visitor.compare(params1.get(i).getType().toExpression(), params2.get(i).getType().toExpression())) {
+        if (!visitor.compare(params1.get(i).getType(), params2.get(i).getType())) {
           return false;
         }
       }
@@ -329,7 +328,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     }
 
     for (int i = 0; i < params1.size() && i < params2.size(); ++i) {
-      if (!compare(params1.get(i).getType().toExpression(), params2.get(i).getType().toExpression())) {
+      if (!compare(params1.get(i).getType(), params2.get(i).getType())) {
         return false;
       }
       mySubstitution.put(params1.get(i), params2.get(i));
@@ -405,11 +404,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return false;
     }
 
-    TypeMax type2 = expr2.getType();
-    if (!(type2 instanceof Expression)) {
+    Expression type2 = expr2.getType();
+    if (type2 == null) {
       return false;
     }
-    ClassCallExpression classCall2 = ((Expression) type2).normalize(NormalizeVisitor.Mode.WHNF).toClassCall();
+    ClassCallExpression classCall2 = type2.normalize(NormalizeVisitor.Mode.WHNF).toClassCall();
     if (classCall2 == null) {
       return false;
     }

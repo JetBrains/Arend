@@ -158,7 +158,7 @@ public interface DependentLink extends Binding {
       link = DependentLink.Helper.subst(link, substitution);
       for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
         link1 = link1.getNextTyped(null);
-        link1.setType(link1.getType().toExpression().accept(visitor, params));
+        link1.setType(link1.getType().accept(visitor, params));
       }
       return link;
     }

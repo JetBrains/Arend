@@ -52,7 +52,7 @@ public class DataTest extends TypeCheckingTestCase {
 
     assertNotNull(typedDef);
     assertEquals(Definition.TypeCheckingStatus.NO_ERRORS, typedDef.status());
-    assertEquals(Pi(parameters.getFirst(), Universe(0, 0)), type.fromPiParameters(params).toExpression());
+    assertEquals(Pi(parameters.getFirst(), Universe(0, 0)), type.fromPiParameters(params));
     assertEquals(2, typedDef.getConstructors().size());
 
     ExprSubstitution substitution = new ExprSubstitution();
@@ -106,7 +106,7 @@ public class DataTest extends TypeCheckingTestCase {
 
     assertNotNull(typedDef);
     assertEquals(Definition.TypeCheckingStatus.NO_ERRORS, typedDef.status());
-    assertEquals(Pi(A, Universe(6, 7)), type.fromPiParameters(params).toExpression());
+    assertEquals(Pi(A, Universe(6, 7)), type.fromPiParameters(params));
     assertEquals(2, typedDef.getConstructors().size());
 
     assertEquals(Pi(A, Pi(parameters1.getFirst(), DataCall(typedDef, LevelArguments.ZERO, Reference(A)))), con1Type.fromPiParameters(con1Params));
@@ -169,6 +169,6 @@ public class DataTest extends TypeCheckingTestCase {
   public void truncatedDataElimError() {
     typeCheckClass(
       "\\truncated \\data S : \\Prop | base | loop I \\with loop left => base | loop right => base\n"+
-      "\\function f (x : S) : Nat <= \\elim x | base => 0 | loop _ => 0");
+      "\\function f (x : S) : Nat <= \\elim x | base => 0 | loop _ => 0", 1);
   }
 }

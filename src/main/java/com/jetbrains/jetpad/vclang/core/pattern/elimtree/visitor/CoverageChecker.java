@@ -36,7 +36,7 @@ public class CoverageChecker implements ElimTreeNodeVisitor<ExprSubstitution, Bo
 
   @Override
   public Boolean visitBranch(BranchElimTreeNode branchNode, ExprSubstitution argsSubst) {
-    Expression type = branchNode.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF).toExpression();
+    Expression type = branchNode.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF);
 
     boolean result = true;
     for (ConCallExpression conCall : type.toDataCall().getDefinition().getMatchedConstructors(type.toDataCall())) {
@@ -88,7 +88,7 @@ public class CoverageChecker implements ElimTreeNodeVisitor<ExprSubstitution, Bo
       return false;
     }
 
-    Expression type = tailContext.get(0).getType().normalize(NormalizeVisitor.Mode.WHNF).toExpression();
+    Expression type = tailContext.get(0).getType().normalize(NormalizeVisitor.Mode.WHNF);
     DataCallExpression dType = type == null ? null : type.toDataCall();
     if (dType == null) {
       return checkEmptyContext(new ArrayList<>(tailContext.subList(1, tailContext.size())), argsSubst);

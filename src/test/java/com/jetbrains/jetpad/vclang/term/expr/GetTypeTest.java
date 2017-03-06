@@ -24,8 +24,8 @@ import static org.junit.Assert.assertEquals;
 
 public class GetTypeTest extends TypeCheckingTestCase {
   private static void testType(Expression expected, TypeCheckClassResult result) {
-    assertEquals(expected, ((FunctionDefinition) result.getDefinition("test")).getResultType().toExpression());
-    assertEquals(expected, ((LeafElimTreeNode) ((FunctionDefinition) result.getDefinition("test")).getElimTree()).getExpression().getType().toExpression());
+    assertEquals(expected, ((FunctionDefinition) result.getDefinition("test")).getResultType());
+    assertEquals(expected, ((LeafElimTreeNode) ((FunctionDefinition) result.getDefinition("test")).getElimTree()).getExpression().getType());
   }
 
   @Test
@@ -43,8 +43,8 @@ public class GetTypeTest extends TypeCheckingTestCase {
   @Test
   public void classExtTest() {
     TypeCheckClassResult result = typeCheckClass("\\class Test { \\field A : \\Type0 \\field a : A } \\function test => Test { A => Nat }");
-    assertEquals(Universe(new Level(1), new Level(LevelVariable.HVAR, 1)), result.getDefinition("Test").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD).toExpression());
-    assertEquals(Universe(Sort.SET0), result.getDefinition("test").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.ZERO).toExpression());
+    assertEquals(Universe(new Level(1), new Level(LevelVariable.HVAR, 1)), result.getDefinition("Test").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD));
+    assertEquals(Universe(Sort.SET0), result.getDefinition("test").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.ZERO));
     testType(Universe(Sort.SET0), result);
   }
 
@@ -88,7 +88,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
     DependentLink F = param("F", Pi(Nat(), Universe(new Level(0), new Level(LevelVariable.HVAR))));
     DependentLink x = param("x", Nat());
     DependentLink f = param("f", Pi(x, Apps(Reference(F), Reference(x))));
-    assertEquals(Pi(params(F, f), Apps(Reference(F), Zero())), ((Expression) ((LeafElimTreeNode) ((FunctionDefinition) def).getElimTree()).getExpression().getType()).normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Pi(params(F, f), Apps(Reference(F), Zero())), ((LeafElimTreeNode) ((FunctionDefinition) def).getElimTree()).getExpression().getType().normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test

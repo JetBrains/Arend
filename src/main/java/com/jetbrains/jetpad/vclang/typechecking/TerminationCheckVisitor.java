@@ -154,16 +154,9 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
     return visitArguments(expr.getParameters()) && expr.getCodomain().accept(this, null);
   }
 
-  private boolean visitTypeExpression(Type type) {
-    if (type.toExpression() != null) {
-      return type.toExpression().<Void, Boolean>accept(this, null);
-    }
-    return visitArguments(type.getPiParameters());
-  }
-
   private boolean visitArguments(DependentLink parameters) {
     for (; parameters.hasNext(); parameters = parameters.getNext()) {
-      if (!visitTypeExpression(parameters.getType())) {
+      if (!parameters.getType().accept(this, null)) {
         return false;
       }
     }

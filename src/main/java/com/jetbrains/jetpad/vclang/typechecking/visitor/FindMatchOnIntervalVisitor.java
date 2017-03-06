@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking.visitor;
 
-import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ConstructorClause;
@@ -11,12 +10,11 @@ import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVis
 public class FindMatchOnIntervalVisitor implements ElimTreeNodeVisitor<Void, Boolean> {
   @Override
   public Boolean visitBranch(BranchElimTreeNode branchNode, Void params) {
-    Expression type = branchNode.getReference().getType().toExpression();
-    DataCallExpression dataCall = type == null ? null : type.toDataCall();
+    Expression type = branchNode.getReference().getType();
 
-    if (dataCall != null && dataCall.getDefinition().matchesOnInterval()) {
+    if (type.toDataCall() != null && type.toDataCall().getDefinition().matchesOnInterval()) {
       return true;
-    } /**/
+    }
 
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
       if (clause.getChild().accept(this, null)) {

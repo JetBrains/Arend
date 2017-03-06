@@ -65,8 +65,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
       assert link.hasNext();
       LevelSubstitution levelSubst;
       if (patternArgument.getPattern() instanceof ConstructorPattern) {
-        assert link.getType().toExpression() != null;
-        Expression type = link.getType().toExpression().subst(subst).normalize(NormalizeVisitor.Mode.WHNF);
+        Expression type = link.getType().subst(subst).normalize(NormalizeVisitor.Mode.WHNF);
         assert type.toDataCall() != null && type.toDataCall().getDefinition() == ((ConstructorPattern) patternArgument.getPattern()).getConstructor().getDataType();
         ExprSubstitution subSubst = ((ConstructorPattern) patternArgument.getPattern()).getMatchedArguments(new ArrayList<>(type.toDataCall().getDefCallArguments()));
         levelSubst = new StdLevelSubstitution(type.toDataCall().getLevelArguments().getPLevel(), type.toDataCall().getLevelArguments().getHLevel());

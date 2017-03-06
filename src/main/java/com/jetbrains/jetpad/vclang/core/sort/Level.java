@@ -76,6 +76,10 @@ public class Level implements PrettyPrintable {
   }
 
   public Level max(Level level) {
+    if (isInfinity() || level.isInfinity()) {
+      return INFINITY;
+    }
+
     int constant;
     if (myVar == null && level.myVar != null) {
       constant = level.myConstant;
@@ -126,41 +130,28 @@ public class Level implements PrettyPrintable {
   }
 
   public static boolean compare(Level level1, Level level2, Equations.CMP cmp, Equations equations, Abstract.SourceNode sourceNode) {
+    if (cmp == Equations.CMP.GE) {
+      return compare(level2, level1, Equations.CMP.LE, equations, sourceNode);
+    }
+
     if (level1.isInfinity()) {
-      if (level2.isInfinity() || cmp == Equations.CMP.GE) {
-        return true;
-      } else {
-        return !level2.isClosed() && equations.add(level2, INFINITY, Equations.CMP.EQ, sourceNode);
-      }
+      return level2.isInfinity() || !level2.isClosed() && equations.add(level2, INFINITY, Equations.CMP.EQ, sourceNode);
     }
     if (level2.isInfinity()) {
-      if (cmp == Equations.CMP.LE) {
-        return true;
-      } else {
-        return !level1.isClosed() && equations.add(level1, INFINITY, Equations.CMP.EQ, sourceNode);
-      }
+      return cmp == Equations.CMP.LE || !level1.isClosed() && equations.add(level1, INFINITY, Equations.CMP.EQ, sourceNode);
     }
 
     if (level1.getVar() == null && cmp == Equations.CMP.LE) {
-      if (level1.getConstant() <= level2.getConstant()) {
-        return true;
-      }
-    }
-
-    if (level2.getVar() == null && cmp == Equations.CMP.GE) {
-      if (level1.getConstant() >= level2.getConstant()) {
+      if (level1.getConstant() <= level2.getConstant() || level1.getConstant() <= level2.getMaxConstant()) {
         return true;
       }
     }
 
     if (level1.getVar() == level2.getVar()) {
       if (cmp == Equations.CMP.LE) {
-        return level1.getConstant() <= level2.getConstant();
+        return level1.getConstant() <= level2.getConstant() && level1.getMaxConstant() <= level2.getMaxConstant();
       }
-      if (cmp == Equations.CMP.GE) {
-        return level1.getConstant() >= level2.getConstant();
-      }
-      return level1.getConstant() == level2.getConstant();
+      return level1.getConstant() == level2.getConstant() && level1.getMaxConstant() == level2.getMaxConstant();
     } else {
       return equations.add(level1, level2, cmp, sourceNode);
     }

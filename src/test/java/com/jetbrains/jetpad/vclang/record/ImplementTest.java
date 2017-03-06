@@ -235,7 +235,7 @@ public class ImplementTest extends TypeCheckingTestCase {
     assertEquals(new Sort(1, 1), ((ClassDefinition) result.getDefinition("B")).getSort());
     assertEquals(new Sort(2, 1), ((ClassDefinition) result.getDefinition("C")).getSort());
     assertEquals(new Sort(0, 0), ((ClassDefinition) result.getDefinition("D")).getSort());
-    assertEquals(ExpressionFactory.Universe(Sort.PROP), fType.fromPiParameters(fParams).toExpression());
+    assertEquals(ExpressionFactory.Universe(Sort.PROP), fType.fromPiParameters(fParams));
   }
 
   @Test

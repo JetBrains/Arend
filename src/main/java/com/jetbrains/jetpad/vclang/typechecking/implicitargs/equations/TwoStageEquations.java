@@ -36,9 +36,9 @@ public class TwoStageEquations implements Equations {
     myVisitor = visitor;
   }
 
-  private void addEquation(Expression type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode, InferenceVariable stuckVar) {
-    InferenceVariable inf1 = type.toInferenceReference() != null ? type.toInferenceReference().getVariable() : null;
-    InferenceVariable inf2 = expr.toInferenceReference() != null ? expr.toInferenceReference().getVariable() : null;
+  private void addEquation(Expression expr1, Expression expr2, CMP cmp, Abstract.SourceNode sourceNode, InferenceVariable stuckVar) {
+    InferenceVariable inf1 = expr1.toInferenceReference() != null ? expr1.toInferenceReference().getVariable() : null;
+    InferenceVariable inf2 = expr2.toInferenceReference() != null ? expr2.toInferenceReference().getVariable() : null;
 
     // expr1 == expr2 == ?x
     if (inf1 == inf2 && inf1 != null) {
@@ -46,10 +46,9 @@ public class TwoStageEquations implements Equations {
     }
 
     if (inf1 == null && inf2 == null) {
-      Expression expr1 = type.toExpression();
       // TODO: correctly check for stuck expressions
       // expr1 /= stuck, expr2 /= stuck
-      if (expr1 != null && (expr1.getFunction().toInferenceReference() == null || expr1.getFunction().toInferenceReference().getVariable() == null) && (expr.getFunction().toInferenceReference() == null || expr.getFunction().toInferenceReference().getVariable() == null)) {
+      if ((expr1.getFunction().toInferenceReference() == null || expr1.getFunction().toInferenceReference().getVariable() == null) && (expr2.getFunction().toInferenceReference() == null || expr2.getFunction().toInferenceReference().getVariable() == null)) {
         InferenceVariable variable = null;
         Expression result = null;
 
@@ -58,15 +57,15 @@ public class TwoStageEquations implements Equations {
           variable = expr1.toFieldCall().getExpression().toInferenceReference().getVariable();
           // expr1 == view field call
           if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassifyingField() == expr1.toFieldCall().getDefinition()) {
-            result = ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getClassViewInstancePool(), expr);
+            result = ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getClassViewInstancePool(), expr2);
           }
         }
 
         // expr2 == field call
-        if (variable == null && expr.toFieldCall() != null && expr.toFieldCall().getExpression().toInferenceReference() != null) {
-          variable = expr.toFieldCall().getExpression().toInferenceReference().getVariable();
+        if (variable == null && expr2.toFieldCall() != null && expr2.toFieldCall().getExpression().toInferenceReference() != null) {
+          variable = expr2.toFieldCall().getExpression().toInferenceReference().getVariable();
           // expr2 == view field call
-          if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassifyingField() == expr.toFieldCall().getDefinition()) {
+          if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassifyingField() == expr2.toFieldCall().getDefinition()) {
             result = ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getClassViewInstancePool(), expr1);
           }
         }
@@ -81,7 +80,7 @@ public class TwoStageEquations implements Equations {
     // expr1 == ?x && expr2 /= ?y || expr1 /= ?x && expr2 == ?y
     if (inf1 != null && inf2 == null || inf2 != null && inf1 == null) {
       InferenceVariable cInf = inf1 != null ? inf1 : inf2;
-      Expression cType = inf1 != null ? expr : type;
+      Expression cType = inf1 != null ? expr2 : expr1;
 
       // TODO: set cmp to CMP.EQ only if cExpr is not stuck on a meta-variable
       // cExpr /= Pi, cExpr /= Type, cExpr /= Class, cExpr /= stuck
@@ -135,10 +134,10 @@ public class TwoStageEquations implements Equations {
     }
 
     Equation equation;
-    if (expr.toInferenceReference() == null && type.toInferenceReference() != null) {
-      equation = new Equation(expr, type, cmp.not(), sourceNode);
+    if (expr2.toInferenceReference() == null && expr1.toInferenceReference() != null) {
+      equation = new Equation(expr2, expr1, cmp.not(), sourceNode);
     } else {
-      equation = new Equation(type, expr, cmp, sourceNode);
+      equation = new Equation(expr1, expr2, cmp, sourceNode);
     }
 
     myEquations.add(equation);

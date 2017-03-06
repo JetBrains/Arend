@@ -138,7 +138,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       type.getPiParameters(params, true, false);
     }
     for (int j = 0; i < isExplicit.length; i++, j++) {
-      isExplicit[i] = j < params.size() ? params.get(j).isExplicit() : true;
+      isExplicit[i] = j >= params.size() || params.get(j).isExplicit();
     }
   }
 
@@ -274,7 +274,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
         if (names.isEmpty()) {
           names.add(null);
         }
-        arguments.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(names), link.getType().toExpression().accept(this, null)));
+        arguments.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(names), link.getType().accept(this, null)));
         names.clear();
       }
     } else {
@@ -298,9 +298,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       }
       names.add(renameVar(link));
       if (names.isEmpty() || names.get(0).equals("_")) {
-        args.add(myFactory.makeTypeArgument(link.isExplicit(), link.getType().toExpression().accept(this, null)));
+        args.add(myFactory.makeTypeArgument(link.isExplicit(), link.getType().accept(this, null)));
       } else {
-        args.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(names), link.getType().toExpression().accept(this, null)));
+        args.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(names), link.getType().accept(this, null)));
         names.clear();
       }
     }
@@ -337,7 +337,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   }
 
   private Abstract.LevelExpression visitLevelNull(Level level, int add) {
-    return level.getConstant() == 0 && (level.getVar() == LevelVariable.PVAR || level.getVar() == LevelVariable.HVAR) ? null : visitLevel(level, add);
+    return level.getConstant() == 0 && level.getMaxConstant() == 0 && (level.getVar() == LevelVariable.PVAR || level.getVar() == LevelVariable.HVAR) ? null : visitLevel(level, add);
   }
 
   public Abstract.Expression visitSort(Sort sorts) {

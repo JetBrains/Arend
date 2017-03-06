@@ -87,7 +87,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
     Sort sort = Sort.PROP;
     for (DependentLink link = expr.getParameters(); link.hasNext(); link = link.getNext()) {
       if (!(link instanceof UntypedDependentLink)) {
-        Expression typeExpr = link.getType().toExpression();
+        Expression typeExpr = link.getType();
         if (typeExpr == null) {
           return null;
         }
@@ -102,11 +102,11 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
           return null;
         }
 
-        Sort sorts1 = typeType.toSort();
-        if (sorts1 == null) {
+        Sort sort1 = typeType.toSort();
+        if (sort1 == null) {
           return null;
         }
-        sort = sort.max(sorts1);
+        sort = sort.max(sort1);
       }
     }
 

@@ -112,7 +112,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
   public void typeCheckingInferPiIndex() {
     // (X : Type1) -> X -> X : Type2
     Concrete.Expression expr = cPi("X", cUniverseInf(1), cPi(cVar("X"), cVar("X")));
-    assertThat(typeCheckExpr(expr, null).type.toExpression(), is((Expression) Universe(2)));
+    assertThat(typeCheckExpr(expr, null).type, is((Expression) Universe(2)));
   }
 
   @Test
@@ -198,8 +198,8 @@ public class ExpressionTest extends TypeCheckingTestCase {
             cTele(cvars("f"), cPi(ctypeArgs(cTele(false, cvars("A"), cUniverseInf(0)), cTele(cvars("x"), cVar("A"))), cApps(cVar("F"), cVar("x"))))),
         cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cNat(), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar("f"), cVar("x"))));
     CheckTypeVisitor.Result result = typeCheckExpr(expr, null);
-    Expression typeCodom = ((Expression) result.type).getPiParameters(new ArrayList<DependentLink>(), true, false);
-    assertThat(typeCodom.toLet(), is(notNullValue()));
+    Expression typeCodomain = result.type.getPiParameters(new ArrayList<DependentLink>(), true, false);
+    assertThat(typeCodomain.toLet(), is(notNullValue()));
   }
 
   @Test

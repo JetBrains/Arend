@@ -36,7 +36,7 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<ExprSub
 
   @Override
   public Void visitBranch(final BranchElimTreeNode branchNode, final ExprSubstitution argSubst) {
-    Expression type = branchNode.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF).toExpression();
+    Expression type = branchNode.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF);
     for (final ConCallExpression conCall : type.toDataCall().getDefinition().getMatchedConstructors(type.toDataCall())) {
       if (branchNode.getClause(conCall.getDefinition()) != null) {
         Clause clause = branchNode.getClause(conCall.getDefinition());

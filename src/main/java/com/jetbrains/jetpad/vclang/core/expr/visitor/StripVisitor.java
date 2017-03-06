@@ -115,7 +115,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
   private void visitArguments(DependentLink link) {
     for (; link.hasNext(); link = link.getNext()) {
       DependentLink link1 = link.getNextTyped(null);
-      link1.setType(link1.getType().toExpression().accept(this, null));
+      link1.setType(link1.getType().accept(this, null));
 
       for (; link != link1; link = link.getNext()) {
         myBounds.add(link);

@@ -123,17 +123,10 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> im
     return expr.getExpression().accept(this, null);
   }
 
-  private Variable visitTypeExpression(Type type) {
-    if (type.toExpression() != null) {
-      return type.toExpression().accept(this, null);
-    }
-    return visitDependentLink(type.getPiParameters());
-  }
-
   private Variable visitDependentLink(DependentLink link) {
     for (; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
-      Variable result = visitTypeExpression(link.getType());
+      Variable result = link.getType().accept(this, null);
       if (result != null) {
         return result;
       }
@@ -160,7 +153,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> im
   @Override
   public Variable visitOfType(OfTypeExpression expr, Void params) {
     Variable result = expr.getExpression().accept(this, null);
-    return result != null ? result : visitTypeExpression(expr.getType());
+    return result != null ? result : expr.getType().accept(this, null);
   }
 
   public Variable visitLetClause(LetClause clause) {
@@ -169,7 +162,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> im
       return result;
     }
     if (clause.getResultType() != null) {
-      result = visitTypeExpression(clause.getResultType());
+      result = clause.getResultType().accept(this, null);
       if (result != null) {
         return result;
       }

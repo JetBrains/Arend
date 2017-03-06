@@ -131,7 +131,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\class Point { \\field x : Nat \\field y : Nat }\n" +
         "\\function C => Point { x => 0 }");
     assertEquals(Sort.SET0, ((ClassDefinition) result.getDefinition("Point")).getSort());
-    assertEquals(Universe(Sort.SET0), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD).toExpression());
+    assertEquals(Universe(Sort.SET0), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD));
   }
 
   @Test
@@ -140,7 +140,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\class Point { \\field x : Nat \\field y : Nat }\n" +
         "\\function C => Point { x => 0 | y => 1 }");
     assertEquals(Sort.SET0, ((ClassDefinition) result.getDefinition("Point")).getSort());
-    assertEquals(Universe(Sort.PROP), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD).toExpression());
+    assertEquals(Universe(Sort.PROP), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD));
   }
 
   @Test
@@ -149,7 +149,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\class Point { \\field x : \\Type3 \\field y : \\Type1 }\n" +
         "\\function C => Point { x => Nat }");
     assertEquals(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) result.getDefinition("Point")).getSort());
-    assertEquals(Universe(Sort.SetOfLevel(2)), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD).toExpression());
+    assertEquals(Universe(new Sort(2, 1)), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD));
   }
 
   @Test
@@ -158,7 +158,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\class Point { \\field x : \\Type3 \\field y : \\oo-Type1 }\n" +
         "\\function C => Point { x => Nat }");
     assertEquals(new Sort(new Level(4), Level.INFINITY), ((ClassDefinition) result.getDefinition("Point")).getSort());
-    assertEquals(Universe(new Sort(new Level(2), Level.INFINITY)), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD).toExpression());
+    assertEquals(Universe(new Sort(new Level(2), Level.INFINITY)), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD));
   }
 
   @Test
@@ -167,7 +167,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\class Point { \\field x : \\Type3 \\field y : \\Type1 }\n" +
         "\\function C => Point { x => \\Type2 }");
     assertEquals(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) result.getDefinition("Point")).getSort());
-    assertEquals(Universe(new Sort(new Level(2), new Level(LevelVariable.HVAR, 1))), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD).toExpression());
+    assertEquals(Universe(new Sort(new Level(2), new Level(LevelVariable.HVAR, 2))), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD));
   }
 
   @Test
@@ -204,7 +204,7 @@ public class RecordsTest extends TypeCheckingTestCase {
     assertNotNull(arg0);
     PiExpression arg0Body = arg0.getBody().toPi();
     assertNotNull(arg0Body);
-    Expression domFunction = arg0Body.getParameters().getType().toExpression();
+    Expression domFunction = arg0Body.getParameters().getType();
     assertEquals(Prelude.PATH, domFunction.toDataCall().getDefinition());
     List<? extends Expression> domArguments = domFunction.toDataCall().getDefCallArguments();
     assertEquals(3, domArguments.size());
@@ -235,7 +235,7 @@ public class RecordsTest extends TypeCheckingTestCase {
     Expression xCall = FieldCall((ClassField) result.getDefinition("A.x"), Reference(testFun.getParameters()));
     PiExpression resultTypePi = testFun.getResultType().toPi();
     assertNotNull(resultTypePi);
-    Expression function = resultTypePi.getParameters().getType().normalize(NormalizeVisitor.Mode.NF).toExpression();
+    Expression function = resultTypePi.getParameters().getType().normalize(NormalizeVisitor.Mode.NF);
     assertEquals(Prelude.PATH, function.toDataCall().getDefinition());
     List<? extends Expression> arguments = function.toDataCall().getDefCallArguments();
     assertEquals(3, arguments.size());

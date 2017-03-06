@@ -111,7 +111,7 @@ public class Constructor extends Definition implements Function {
         LevelSubstitution innerLevelSubst;
 
         if (patternArg.getPattern() instanceof ConstructorPattern) {
-          DataCallExpression dataCall = dataTypeParams.getType().toExpression().subst(subst).normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
+          DataCallExpression dataCall = dataTypeParams.getType().subst(subst).normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
           List<? extends Expression> argDataTypeParams = dataCall.getDefCallArguments();
           innerSubst = ((ConstructorPattern) patternArg.getPattern()).getMatchedArguments(new ArrayList<>(argDataTypeParams));
           innerLevelSubst = new StdLevelSubstitution(dataCall.getLevelArguments().getPLevel(), dataCall.getLevelArguments().getHLevel());
