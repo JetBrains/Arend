@@ -306,10 +306,14 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
+  public void prettyPrintInferLevelVar(InferenceLevelVariable variable) {
+    myBuilder.append(variable).append(getVariableNumber(variable));
+  }
+
   @Override
   public Void visitVar(Abstract.InferVarLevelExpression expr, Byte param) {
     InferenceLevelVariable variable = expr.getVariable();
-    myBuilder.append(variable).append(getVariableNumber(variable));
+    prettyPrintInferLevelVar(variable);
     return null;
   }
 

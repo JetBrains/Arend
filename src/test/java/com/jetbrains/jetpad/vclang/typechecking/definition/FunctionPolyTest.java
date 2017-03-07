@@ -99,9 +99,6 @@ public class FunctionPolyTest extends TypeCheckingTestCase {
   @Test
   public void funOmegaSetExplicit() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) : \\oo-Type => \\Sigma (n = n) A Nat");
-    assertEquals(new Sort(
-        new Level(LevelVariable.PVAR),
-        new Level(LevelVariable.HVAR, 0, 1)), /* \Type (\lp, max \lh 0) */
-      funDefinition.getResultType().toSort());
+    assertEquals(new Sort(new Level(LevelVariable.PVAR), Level.INFINITY), funDefinition.getResultType().toSort());
   }
 }

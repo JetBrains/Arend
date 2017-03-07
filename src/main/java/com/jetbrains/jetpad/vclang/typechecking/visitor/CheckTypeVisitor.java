@@ -427,7 +427,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     Type expectedCodomain = expectedType == null ? null : expectedType.getPiParameters(piParams, true, false);
     LinkList list = new LinkList();
     DependentLink actualPiLink = null;
-    Result result;
     ExprSubstitution piLamSubst = new ExprSubstitution();
     int piParamsIndex = 0;
     int argIndex = 1;
@@ -503,12 +502,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       Abstract.Expression body = expr.getBody();
       bodyResult = typeCheck(body, expectedBodyType);
       if (bodyResult == null) return null;
-      if (actualPiLink != null && expectedCodomain != null) {
-        // TODO: Why we do this twice?
-        result = new Result(bodyResult.expression, bodyResult.type.addParameters(actualPiLink));
-        if (!compare(result, expectedCodomain, body)) {
-          return null;
-        }
+      if (actualPiLink != null && expectedCodomain != null && !compare(new Result(bodyResult.expression, bodyResult.type.addParameters(actualPiLink)), expectedCodomain, body)) {
+        return null;
       }
     }
 
@@ -518,15 +513,19 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   @Override
   public Result visitPi(Abstract.PiExpression expr, Type expectedType) {
-    DependentLink args = visitArguments(expr.getArguments());
+    List<Sort> sorts = new ArrayList<>(expr.getArguments().size() + 1);
+    DependentLink args = visitArguments(expr.getArguments(), sorts);
     if (args == null || !args.hasNext()) return null;
+
     try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
       myContext.addAll(DependentLink.Helper.toContext(args));
       Result result = typeCheck(expr.getCodomain(), TypeOmega.INSTANCE);
       if (result == null) return null;
-      LevelArguments levelArguments = LevelArguments.generateInferVars(myEquations, expr);
-      Expression piExpr = new PiExpression(levelArguments, args, result.expression);
-      return checkResult(expectedType, new Result(piExpr, new UniverseExpression(new Sort(levelArguments.getPLevel(), levelArguments.getHLevel()))), expr);
+
+      sorts.add(result.type.toUniverse().getSort());
+      Sort sort = getUpperBound(sorts, expr, true);
+      Expression piExpr = new PiExpression(new LevelArguments(sort.getPLevel(), sort.getHLevel()), args, result.expression);
+      return checkResult(expectedType, new Result(piExpr, new UniverseExpression(sort)), expr);
     }
   }
 
@@ -661,7 +660,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     return tupleResult;
   }
 
-  public DependentLink visitArguments(List<? extends Abstract.TypeArgument> arguments) {
+  private DependentLink visitArguments(List<? extends Abstract.TypeArgument> arguments, List<Sort> resultSorts) {
     LinkList list = new LinkList();
 
     try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
@@ -678,19 +677,72 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
           list.append(link);
           myContext.add(link);
         }
+
+        resultSorts.add(result.type.toUniverse().getSort());
       }
     }
 
     return list.getFirst();
   }
 
+  private Sort getUpperBound(List<Sort> sorts, Abstract.SourceNode sourceNode, boolean isPi) {
+    LevelVariable pVar = null;
+    LevelVariable hVar = null;
+    boolean ok = true;
+    for (Sort sort : sorts) {
+      if (sort.getPLevel().getVar() != null) {
+        if (pVar != sort.getPLevel().getVar()) {
+          ok = false;
+          break;
+        }
+        if (pVar == null) {
+          pVar = sort.getPLevel().getVar();
+        }
+      }
+      if (!isPi && sort.getHLevel().getVar() != null) {
+        if (hVar != sort.getHLevel().getVar()) {
+          ok = false;
+          break;
+        }
+        if (hVar == null) {
+          hVar = sort.getHLevel().getVar();
+        }
+      }
+    }
+
+    if (ok) {
+      Sort resultSort;
+      if (sorts.isEmpty()) {
+        resultSort = Sort.PROP;
+      } else {
+        resultSort = sorts.get(0);
+        for (int i = 1; i < sorts.size(); i++) {
+          resultSort = resultSort.max(sorts.get(i));
+        }
+      }
+      return isPi ? new Sort(resultSort.getPLevel(), sorts.get(sorts.size() - 1).getHLevel()) : resultSort;
+    } else {
+      LevelArguments levelArguments = LevelArguments.generateInferVars(myEquations, sourceNode);
+      for (Sort sort : sorts) {
+        myEquations.add(sort.getPLevel(), levelArguments.getPLevel(), Equations.CMP.LE, sourceNode);
+        if (!isPi) {
+          myEquations.add(sort.getHLevel(), levelArguments.getHLevel(), Equations.CMP.LE, sourceNode);
+        }
+      }
+      if (isPi) {
+        myEquations.add(sorts.get(sorts.size() - 1).getHLevel(), levelArguments.getHLevel(), Equations.CMP.LE, sourceNode);
+      }
+      return new Sort(levelArguments.getPLevel(), levelArguments.getHLevel());
+    }
+  }
+
   @Override
   public Result visitSigma(Abstract.SigmaExpression expr, Type expectedType) {
-    DependentLink args = visitArguments(expr.getArguments());
+    List<Sort> sorts = new ArrayList<>(expr.getArguments().size());
+    DependentLink args = visitArguments(expr.getArguments(), sorts);
     if (args == null || !args.hasNext()) return null;
-    LevelArguments levelArguments = LevelArguments.generateInferVars(myEquations, expr);
-    Expression sigmaExpr = new SigmaExpression(levelArguments, args);
-    return checkResult(expectedType, new Result(sigmaExpr, new UniverseExpression(new Sort(levelArguments.getPLevel(), levelArguments.getHLevel()))), expr);
+    Sort sort = getUpperBound(sorts, expr, false);
+    return checkResult(expectedType, new Result(new SigmaExpression(new LevelArguments(sort.getPLevel(), sort.getHLevel()), args), new UniverseExpression(sort)), expr);
   }
 
   @Override

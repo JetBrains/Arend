@@ -1,12 +1,10 @@
 package com.jetbrains.jetpad.vclang.core.context.param;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -118,20 +116,6 @@ public interface DependentLink extends Binding {
       return result;
     }
 
-    public static DependentLink mergeList(List<DependentLink> list, ExprSubstitution subst) {
-      if (list.isEmpty()) {
-        return EmptyDependentLink.getInstance();
-      }
-
-      list = fromList(list);
-      DependentLink link = subst(list.get(0), subst);
-      for (int i = 1; i < list.size(); ++i) {
-        DependentLink nextLink = subst(list.get(i), subst);
-        link.setNext(nextLink);
-      }
-      return link;
-    }
-
     public static DependentLink subst(DependentLink link, ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
       return link.subst(exprSubst, levelSubst, Integer.MAX_VALUE);
     }
@@ -165,20 +149,6 @@ public interface DependentLink extends Binding {
 
     public static <P> DependentLink accept(DependentLink link, ExpressionVisitor<? super P, ? extends Expression> visitor, P params) {
       return accept(link, new ExprSubstitution(), visitor, params);
-    }
-
-    public static DependentLink clone(DependentLink link) {
-      return accept(link, new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY), null);
-    }
-
-    public static boolean findBinding(DependentLink link, Variable variable) {
-      for (; link.hasNext(); link = link.getNext()) {
-        link = link.getNextTyped(null);
-        if (link.getType().findBinding(variable)) {
-          return true;
-        }
-      }
-      return false;
     }
   }
 }

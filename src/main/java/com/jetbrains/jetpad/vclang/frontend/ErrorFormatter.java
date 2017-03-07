@@ -1,7 +1,9 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.frontend.parser.ParserError;
@@ -136,14 +138,15 @@ public class ErrorFormatter {
       }
     } else if (error instanceof SolveLevelEquationsError) {
       boolean first = true;
+      PrettyPrintVisitor ppv = new PrettyPrintVisitor(builder, 0);
       for (LevelEquation<? extends Variable> equation : ((SolveLevelEquationsError) error).equations) {
         if (!first) builder.append('\n');
         if (equation.isInfinity()) {
           builder.append(equation.getVariable()).append(" = inf");
         } else {
-          printEqExpr(builder, equation.getVariable1(), -equation.getConstant());
+          printEqExpr(builder, ppv, equation.getVariable1(), -equation.getConstant());
           builder.append(" <= ");
-          printEqExpr(builder, equation.getVariable2(), equation.getConstant());
+          printEqExpr(builder, ppv, equation.getVariable2(), equation.getConstant());
         }
         first = false;
       }
@@ -175,9 +178,13 @@ public class ErrorFormatter {
     }
   }
 
-  private void printEqExpr(StringBuilder builder, Variable var, Integer constant) {
+  private void printEqExpr(StringBuilder builder, PrettyPrintVisitor ppv, Variable var, Integer constant) {
     if (var != null) {
-      builder.append(var);
+      if (var instanceof InferenceLevelVariable) {
+        ppv.prettyPrintInferLevelVar((InferenceLevelVariable) var);
+      } else {
+        builder.append(var);
+      }
       if (constant > 0) {
         builder.append(" + ").append(constant);
       }
