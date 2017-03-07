@@ -770,6 +770,11 @@ public final class Concrete {
     public InferenceLevelVariable getVariable() {
       return myVariable;
     }
+
+    @Override
+    public <P, R> R accept(AbstractLevelExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitVar(this, params);
+    }
   }
 
   public static class PLevelExpression extends LevelExpression implements Abstract.PLevelExpression {

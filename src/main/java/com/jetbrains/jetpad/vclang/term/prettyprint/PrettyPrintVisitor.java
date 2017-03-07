@@ -3,14 +3,11 @@ package com.jetbrains.jetpad.vclang.term.prettyprint;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.definition.Name;
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
-import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
-import com.jetbrains.jetpad.vclang.term.AbstractStatementVisitor;
+import com.jetbrains.jetpad.vclang.term.*;
 
 import java.util.*;
 
-public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>, AbstractDefinitionVisitor<Void, Void>, AbstractStatementVisitor<Void, Void> {
+public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>, AbstractLevelExpressionVisitor<Byte, Void>, AbstractDefinitionVisitor<Void, Void>, AbstractStatementVisitor<Void, Void> {
   private final StringBuilder myBuilder;
   private Map<InferenceLevelVariable, Integer> myPVariables = Collections.emptyMap();
   private Map<InferenceLevelVariable, Integer> myHVariables = Collections.emptyMap();
@@ -63,7 +60,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       return true;
     }
     if (node instanceof Abstract.LevelExpression) {
-      prettyPrintLevelExpression((Abstract.LevelExpression) node, Abstract.Expression.PREC);
+      ((Abstract.LevelExpression) node).accept(this, Abstract.Expression.PREC);
       return true;
     }
     return false;
@@ -265,37 +262,55 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return num;
   }
 
-  public void prettyPrintLevelExpression(Abstract.LevelExpression expr, byte prec) {
-    if (expr instanceof Abstract.InferVarLevelExpression) {
-      InferenceLevelVariable variable = ((Abstract.InferVarLevelExpression) expr).getVariable();
-      myBuilder.append(variable).append(getVariableNumber(variable));
-    } else
-    if (expr instanceof Abstract.PLevelExpression) {
-      myBuilder.append("\\lp");
-    } else
-    if (expr instanceof Abstract.HLevelExpression) {
-      myBuilder.append("\\lh");
-    } else
-    if (expr instanceof Abstract.InfLevelExpression) {
-      myBuilder.append("\\inf");
-    } else
-    if (expr instanceof Abstract.NumberLevelExpression) {
-      myBuilder.append(((Abstract.NumberLevelExpression) expr).getNumber());
-    } else {
-      if (prec > Abstract.AppExpression.PREC) myBuilder.append('(');
-      if (expr instanceof Abstract.SucLevelExpression) {
-        myBuilder.append("\\suc ");
-        prettyPrintLevelExpression(((Abstract.SucLevelExpression) expr).getExpression(), (byte) (Abstract.AppExpression.PREC + 1));
-      } else if (expr instanceof Abstract.MaxLevelExpression) {
-        myBuilder.append("\\max ");
-        prettyPrintLevelExpression(((Abstract.MaxLevelExpression) expr).getLeft(), (byte) (Abstract.AppExpression.PREC + 1));
-        myBuilder.append(" ");
-        prettyPrintLevelExpression(((Abstract.MaxLevelExpression) expr).getRight(), (byte) (Abstract.AppExpression.PREC + 1));
-      } else {
-        throw new IllegalStateException();
-      }
-      if (prec > Abstract.AppExpression.PREC) myBuilder.append(')');
-    }
+  @Override
+  public Void visitInf(Abstract.InfLevelExpression expr, Byte param) {
+    myBuilder.append("\\inf");
+    return null;
+  }
+
+  @Override
+  public Void visitLP(Abstract.PLevelExpression expr, Byte param) {
+    myBuilder.append("\\lp");
+    return null;
+  }
+
+  @Override
+  public Void visitLH(Abstract.HLevelExpression expr, Byte param) {
+    myBuilder.append("\\lh");
+    return null;
+  }
+
+  @Override
+  public Void visitNumber(Abstract.NumberLevelExpression expr, Byte param) {
+    myBuilder.append(expr.getNumber());
+    return null;
+  }
+
+  @Override
+  public Void visitSuc(Abstract.SucLevelExpression expr, Byte prec) {
+    if (prec > Abstract.AppExpression.PREC) myBuilder.append('(');
+    myBuilder.append("\\suc ");
+    expr.getExpression().accept(this, (byte) (Abstract.AppExpression.PREC + 1));
+    if (prec > Abstract.AppExpression.PREC) myBuilder.append(')');
+    return null;
+  }
+
+  @Override
+  public Void visitMax(Abstract.MaxLevelExpression expr, Byte prec) {
+    if (prec > Abstract.AppExpression.PREC) myBuilder.append('(');
+    myBuilder.append("\\max ");
+    expr.getLeft().accept(this, (byte) (Abstract.AppExpression.PREC + 1));
+    myBuilder.append(" ");
+    expr.getRight().accept(this, (byte) (Abstract.AppExpression.PREC + 1));
+    if (prec > Abstract.AppExpression.PREC) myBuilder.append(')');
+    return null;
+  }
+
+  @Override
+  public Void visitVar(Abstract.InferVarLevelExpression expr, Byte param) {
+    InferenceLevelVariable variable = expr.getVariable();
+    myBuilder.append(variable).append(getVariableNumber(variable));
+    return null;
   }
 
   @Override
@@ -327,12 +342,12 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       myBuilder.append(((Abstract.NumberLevelExpression) expr.getPLevel()).getNumber());
     } else if (expr.getPLevel() != null) {
       myBuilder.append(" ");
-      prettyPrintLevelExpression(expr.getPLevel(), (byte) (Abstract.AppExpression.PREC + 1));
+      expr.getPLevel().accept(this, (byte) (Abstract.AppExpression.PREC + 1));
     }
 
     if (hParens) {
       myBuilder.append(" ");
-      prettyPrintLevelExpression(expr.getHLevel(), (byte) (Abstract.AppExpression.PREC + 1));
+      expr.getHLevel().accept(this, (byte) (Abstract.AppExpression.PREC + 1));
     }
 
     if (parens) myBuilder.append(')');

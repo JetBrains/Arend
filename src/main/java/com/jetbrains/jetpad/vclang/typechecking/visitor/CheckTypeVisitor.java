@@ -29,6 +29,7 @@ import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.AbstractLevelExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.prettyprint.StringPrettyPrintable;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
@@ -51,7 +52,7 @@ import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.expression;
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.ordinal;
 
-public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTypeVisitor.Result> {
+public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTypeVisitor.Result>, AbstractLevelExpressionVisitor<LevelVariable, Level> {
   private final TypecheckerState myState;
   private final StaticNamespaceProvider myStaticNsProvider;
   private final DynamicNamespaceProvider myDynamicNsProvider;
@@ -529,8 +530,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   @Override
   public Result visitUniverse(Abstract.UniverseExpression expr, Type expectedType) {
-    Level pLevel = expr.getPLevel() != null ? typeCheckLevel(expr.getPLevel(), LevelVariable.PVAR) : new Level(LevelVariable.PVAR);
-    Level hLevel = expr.getHLevel() != null ? typeCheckLevel(expr.getHLevel(), LevelVariable.HVAR) : new Level(LevelVariable.HVAR);
+    Level pLevel = expr.getPLevel() != null ? expr.getPLevel().accept(this, LevelVariable.PVAR) : new Level(LevelVariable.PVAR);
+    Level hLevel = expr.getHLevel() != null ? expr.getHLevel().accept(this, LevelVariable.HVAR) : new Level(LevelVariable.HVAR);
 
     if (pLevel == null || hLevel == null) {
       myErrorReporter.report(new LocalTypeCheckingError("\\max can only be used in a result type", expr));
@@ -545,36 +546,48 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getSort().succ())), expr);
   }
 
-  private Level typeCheckLevel(Abstract.LevelExpression expr, LevelVariable base) {
-    int n = 0;
-    while (expr instanceof Abstract.SucLevelExpression) {
-      n++;
-      expr = ((Abstract.SucLevelExpression) expr).getExpression();
+  @Override
+  public Level visitInf(Abstract.InfLevelExpression expr, LevelVariable param) {
+    return Level.INFINITY;
+  }
+
+  @Override
+  public Level visitLP(Abstract.PLevelExpression expr, LevelVariable base) {
+    if (base != LevelVariable.PVAR) {
+      myErrorReporter.report(new LocalTypeCheckingError("Expected \\lp", expr));
     }
-    if (expr instanceof Abstract.PLevelExpression) {
-      if (base != LevelVariable.PVAR) {
-        myErrorReporter.report(new LocalTypeCheckingError("Expected \\lp", expr));
-      }
-      return new Level(base, n);
+    return new Level(base, 0);
+  }
+
+  @Override
+  public Level visitLH(Abstract.HLevelExpression expr, LevelVariable base) {
+    if (base != LevelVariable.HVAR) {
+      myErrorReporter.report(new LocalTypeCheckingError("Expected \\lh", expr));
     }
-    if (expr instanceof Abstract.HLevelExpression) {
-      if (base != LevelVariable.HVAR) {
-        myErrorReporter.report(new LocalTypeCheckingError("Expected \\lh", expr));
-      }
-      return new Level(base, n);
+    return new Level(base, 0);
+  }
+
+  @Override
+  public Level visitNumber(Abstract.NumberLevelExpression expr, LevelVariable base) {
+    return new Level(expr.getNumber() - (base == LevelVariable.PVAR ? 0 : -1));
+  }
+
+  @Override
+  public Level visitSuc(Abstract.SucLevelExpression expr, LevelVariable base) {
+    return expr.getExpression().accept(this, base).add(1);
+  }
+
+  @Override
+  public Level visitMax(Abstract.MaxLevelExpression expr, LevelVariable base) {
+    return expr.getLeft().accept(this, base).max(expr.getRight().accept(this, base));
+  }
+
+  @Override
+  public Level visitVar(Abstract.InferVarLevelExpression expr, LevelVariable base) {
+    if (base.getType() != expr.getVariable().getType()) {
+      myErrorReporter.report(new LocalTypeCheckingError("Expected " + base, expr));
     }
-    if (expr instanceof Abstract.InfLevelExpression) {
-      return Level.INFINITY;
-    }
-    if (expr instanceof Abstract.NumberLevelExpression) {
-      return new Level(((Abstract.NumberLevelExpression) expr).getNumber() + n - (base == LevelVariable.PVAR ? 0 : -1));
-    }
-    if (expr instanceof Abstract.MaxLevelExpression) {
-      Level level1 = typeCheckLevel(((Abstract.MaxLevelExpression) expr).getLeft(), base);
-      Level level2 = typeCheckLevel(((Abstract.MaxLevelExpression) expr).getRight(), base);
-      return level1.max(level2).add(n);
-    }
-    throw new IllegalStateException();
+    return new Level(expr.getVariable());
   }
 
   @Override
