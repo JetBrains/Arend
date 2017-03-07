@@ -7,8 +7,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
@@ -21,7 +20,6 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 
 public class DataTest extends TypeCheckingTestCase {
@@ -29,7 +27,7 @@ public class DataTest extends TypeCheckingTestCase {
   public void dataType() {
     DataDefinition typedDef = (DataDefinition) typeCheckDef("\\data D {A B : \\Set0} (I : A -> B -> \\Set0) (a : A) (b : B) | con1 (x : A) (I x b) | con2 {y : B} (I a y)");
     List<DependentLink> params = new ArrayList<>();
-    TypeMax type = typedDef.getTypeWithParams(params, LevelArguments.ZERO);
+    Expression type = typedDef.getTypeWithParams(params, LevelArguments.ZERO);
 
     LinkList parameters = new LinkList();
     parameters.append(param(false, vars("A", "B"), Universe(0, 0)));
@@ -67,7 +65,7 @@ public class DataTest extends TypeCheckingTestCase {
     link = link.getNext();
     substitution.add(link, Reference(b));
     List<DependentLink> con1Params = new ArrayList<>();
-    Type con1Type = typedDef.getConstructors().get(0).getTypeWithParams(con1Params, LevelArguments.ZERO);
+    Expression con1Type = typedDef.getConstructors().get(0).getTypeWithParams(con1Params, LevelArguments.ZERO);
     assertEquals(Pi(parameters.getFirst(), Pi(parameters1.getFirst(), DataCall(typedDef, LevelArguments.ZERO,
       Reference(A),
       Reference(B),
@@ -75,7 +73,7 @@ public class DataTest extends TypeCheckingTestCase {
       Reference(a),
       Reference(b)))), con1Type.fromPiParameters(con1Params));
     List<DependentLink> con2Params = new ArrayList<>();
-    Type con2Type = typedDef.getConstructors().get(1).getTypeWithParams(con2Params, LevelArguments.ZERO);
+    Expression con2Type = typedDef.getConstructors().get(1).getTypeWithParams(con2Params, LevelArguments.ZERO);
     assertEquals(Pi(parameters.getFirst(), Pi(parameters2.getFirst(), DataCall(typedDef, LevelArguments.ZERO,
       Reference(A),
       Reference(B),
@@ -89,11 +87,11 @@ public class DataTest extends TypeCheckingTestCase {
     DataDefinition typedDef = (DataDefinition) typeCheckDef("\\data D (A : \\7-Type2) | con1 (X : \\1-Type5) X | con2 (Y : \\2-Type3) A Y");
     DependentLink A = typedDef.getParameters();
     List<DependentLink> params = new ArrayList<>();
-    TypeMax type = typedDef.getTypeWithParams(params, LevelArguments.ZERO);
+    Expression type = typedDef.getTypeWithParams(params, LevelArguments.ZERO);
     List<DependentLink> con1Params = new ArrayList<>();
-    Type con1Type = typedDef.getConstructors().get(0).getTypeWithParams(con1Params, LevelArguments.ZERO);
+    Expression con1Type = typedDef.getConstructors().get(0).getTypeWithParams(con1Params, LevelArguments.ZERO);
     List<DependentLink> con2Params = new ArrayList<>();
-    Type con2Type = typedDef.getConstructors().get(1).getTypeWithParams(con2Params, LevelArguments.ZERO);
+    Expression con2Type = typedDef.getConstructors().get(1).getTypeWithParams(con2Params, LevelArguments.ZERO);
 
     LinkList parameters1 = new LinkList();
     parameters1.append(param("X", Universe(5, 1)));
@@ -121,7 +119,7 @@ public class DataTest extends TypeCheckingTestCase {
     Concrete.Expression expr = cApps(cDefCall(null, con.getAbstractDefinition()), cNat(), cZero(), cZero());
 
     CheckTypeVisitor.Result result = typeCheckExpr(expr, null);
-    assertThat(result.type, is((TypeMax) DataCall(def, LevelArguments.ZERO, Nat())));
+    assertEquals(result.type, DataCall(def, LevelArguments.ZERO, Nat()));
   }
 
   @Test
@@ -134,7 +132,7 @@ public class DataTest extends TypeCheckingTestCase {
     localContext.add(new TypedBinding("f", Pi(DataCall(def, LevelArguments.ZERO, Pi(Nat(), Nat())), Nat())));
 
     CheckTypeVisitor.Result result = typeCheckExpr(localContext, expr, null);
-    assertThat(result.type, is((TypeMax) Nat()));
+    assertEquals(result.type, Nat());
   }
 
   @Test
@@ -147,7 +145,7 @@ public class DataTest extends TypeCheckingTestCase {
     localContext.add(new TypedBinding("f", Pi(Pi(Nat(), DataCall(def, LevelArguments.ZERO, Nat())), Pi(Nat(), Nat()))));
 
     CheckTypeVisitor.Result result = typeCheckExpr(localContext, expr, null);
-    assertThat(result.type, is((TypeMax) Pi(Nat(), Nat())));
+    assertEquals(result.type, Pi(Nat(), Nat()));
   }
 
   @Test

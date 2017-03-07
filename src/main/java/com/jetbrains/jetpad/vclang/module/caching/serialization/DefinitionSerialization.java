@@ -7,8 +7,6 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.expr.type.PiUniverseType;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
@@ -16,9 +14,7 @@ import com.jetbrains.jetpad.vclang.core.pattern.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
-import com.jetbrains.jetpad.vclang.core.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
@@ -140,26 +136,10 @@ class DefinitionSerialization {
     return builder.build();
   }
 
-  private LevelProtos.LevelMax writeLevelMax(LevelMax levelMax) {
-    // This will store LevelMax.INFINITY as a singleton list with Level.INFINITY in it
-    LevelProtos.LevelMax.Builder builder = LevelProtos.LevelMax.newBuilder();
-    for (Level level : levelMax.toListOfLevels()) {
-      builder.addLevel(writeLevel(level));
-    }
-    return builder.build();
-  }
-
   LevelProtos.Sort writeSort(Sort sort) {
     LevelProtos.Sort.Builder builder = LevelProtos.Sort.newBuilder();
     builder.setPLevel(writeLevel(sort.getPLevel()));
     builder.setHLevel(writeLevel(sort.getHLevel()));
-    return builder.build();
-  }
-
-  LevelProtos.SortMax writeSortMax(SortMax sort) {
-    LevelProtos.SortMax.Builder builder = LevelProtos.SortMax.newBuilder();
-    builder.setPLevel(writeLevelMax(sort.getPLevel()));
-    builder.setHLevel(writeLevelMax(sort.getHLevel()));
     return builder.build();
   }
 
@@ -233,21 +213,6 @@ class DefinitionSerialization {
 
   ExpressionProtos.Expression writeExpr(Expression expr) {
     return expr.accept(myVisitor, null);
-  }
-
-  ExpressionProtos.Type writeType(TypeMax type) {
-    ExpressionProtos.Type.Builder builder = ExpressionProtos.Type.newBuilder();
-    if (type instanceof PiUniverseType) {
-      ExpressionProtos.Type.PiUniverse.Builder piUniverse = ExpressionProtos.Type.PiUniverse.newBuilder();
-      piUniverse.addAllParam(writeParameters(type.getPiParameters()));
-      piUniverse.setSorts(writeSortMax(((PiUniverseType) type).getSorts()));
-      builder.setPiUniverse(piUniverse);
-    } else if (type instanceof Expression) {
-      builder.setExpr(writeExpr((Expression) type));
-    } else {
-      throw new IllegalStateException();
-    }
-    return builder.build();
   }
 
   ExpressionProtos.ElimTreeNode writeElimTree(ElimTreeNode elimTree) {

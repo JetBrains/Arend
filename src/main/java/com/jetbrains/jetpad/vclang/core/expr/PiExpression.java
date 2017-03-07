@@ -25,16 +25,6 @@ public class PiExpression extends DependentTypeExpression {
   }
 
   @Override
-  public DependentLink getPiParameters() {
-    return getParameters();
-  }
-
-  @Override
-  public Expression getPiCodomain() {
-    return myCodomain;
-  }
-
-  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitPi(this, params);
   }

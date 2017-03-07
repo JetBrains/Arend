@@ -110,18 +110,6 @@ message Expression {
     }
 }
 
-message Type {
-    oneof kind {
-        Expression expr = 1;
-        PiUniverse pi_universe = 2;
-    }
-
-    message PiUniverse {
-        repeated Telescope param = 1;
-        SortMax sorts = 2;
-    }
-}
-
 message SingleParameter {
     string name = 1;
     bool is_not_explicit = 2;

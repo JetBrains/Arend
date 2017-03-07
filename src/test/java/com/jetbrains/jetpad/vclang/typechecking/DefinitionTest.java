@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import org.junit.Test;
 
@@ -36,7 +36,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     assertNotNull(typedDef);
     assertTrue(typedDef.status() == Definition.TypeCheckingStatus.NO_ERRORS);
     List<DependentLink> params = new ArrayList<>();
-    TypeMax type = typedDef.getTypeWithParams(params, LevelArguments.ZERO);
+    Expression type = typedDef.getTypeWithParams(params, LevelArguments.ZERO);
     assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), type.fromPiParameters(params));
   }
 

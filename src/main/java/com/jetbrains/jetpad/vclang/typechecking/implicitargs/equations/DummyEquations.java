@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -23,7 +22,7 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public boolean solve(TypeMax type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode) {
+  public boolean solve(Expression type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode) {
     return false;
   }
 

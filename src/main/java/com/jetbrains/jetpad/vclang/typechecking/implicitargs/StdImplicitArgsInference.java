@@ -124,8 +124,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       if (result instanceof CheckTypeVisitor.DefCallResult && isExplicit && expectedType != null) {
         CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
         if (defCallResult.getDefinition() instanceof Constructor && defCallResult.getArguments().size() < DependentLink.Helper.size(((Constructor) defCallResult.getDefinition()).getDataTypeParameters())) {
-          Expression exprExpType = expectedType.toExpression();
-          DataCallExpression dataCall = exprExpType == null ? null : exprExpType.normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
+          DataCallExpression dataCall = expectedType instanceof Expression ? ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF).toDataCall() : null;
           if (dataCall != null) {
             List<? extends Expression> args = dataCall.getDefCallArguments();
             List<Expression> args1 = new ArrayList<>(args.size());

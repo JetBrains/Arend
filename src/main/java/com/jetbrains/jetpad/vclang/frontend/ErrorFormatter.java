@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.frontend;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.frontend.parser.ParserError;
 import com.jetbrains.jetpad.vclang.module.error.ModuleCycleError;
@@ -96,7 +95,7 @@ public class ErrorFormatter {
         List<String> names = new ArrayList<>(((GoalError) error).context.size());
         for (Binding binding : ((GoalError) error).context) {
           builder.append("\n  ").append(binding.getName() == null ? "_" : binding.getName()).append(" : ");
-          Type type = binding.getType();
+          Expression type = binding.getType();
           if (type != null) {
             type.prettyPrint(builder, names, Abstract.Expression.PREC, 0);
           } else {

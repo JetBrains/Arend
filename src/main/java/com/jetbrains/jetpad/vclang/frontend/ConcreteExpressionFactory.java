@@ -200,6 +200,10 @@ public class ConcreteExpressionFactory {
     return new Concrete.UniverseExpression(POSITION, pLevel, hLevel);
   }
 
+  public static Concrete.InfLevelExpression cInf() {
+    return new Concrete.InfLevelExpression(POSITION);
+  }
+
   public static List<Concrete.Pattern> cPatterns(Concrete.Pattern... patterns) {
     return Arrays.asList(patterns);
   }

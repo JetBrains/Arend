@@ -3,8 +3,8 @@ package com.jetbrains.jetpad.vclang.record;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
@@ -230,7 +230,7 @@ public class ImplementTest extends TypeCheckingTestCase {
         "}\n" +
         "\\function f => D { x => 1 }");
     List<DependentLink> fParams = new ArrayList<>();
-    TypeMax fType = result.getDefinition("f").getTypeWithParams(fParams, LevelArguments.STD);
+    Expression fType = result.getDefinition("f").getTypeWithParams(fParams, LevelArguments.STD);
     assertEquals(new Sort(2, 1), ((ClassDefinition) result.getDefinition("A")).getSort());
     assertEquals(new Sort(1, 1), ((ClassDefinition) result.getDefinition("B")).getSort());
     assertEquals(new Sort(2, 1), ((ClassDefinition) result.getDefinition("C")).getSort());

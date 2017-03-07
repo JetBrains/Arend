@@ -3,8 +3,6 @@ package com.jetbrains.jetpad.vclang.core.context.binding.inference;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.InferenceReferenceExpression;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -73,7 +71,7 @@ public abstract class InferenceVariable implements Binding {
 
   public abstract LocalTypeCheckingError getErrorInfer(Expression... candidates);
 
-  public abstract LocalTypeCheckingError getErrorMismatch(Type expectedType, TypeMax actualType, Expression candidate);
+  public abstract LocalTypeCheckingError getErrorMismatch(Expression expectedType, Expression actualType, Expression candidate);
 
   @Override
   public String toString() {

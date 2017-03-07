@@ -10,14 +10,11 @@ import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Name;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.factory.AbstractExpressionFactory;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
-import com.jetbrains.jetpad.vclang.core.sort.LevelMax;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -133,7 +130,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   private void getArgumentsExplicitness(Expression expr, boolean[] isExplicit, int i) {
     List<DependentLink> params = new ArrayList<>(isExplicit.length - i);
-    TypeMax type = expr.getType();
+    Expression type = expr.getType();
     if (type != null) {
       type.getPiParameters(params, true, false);
     }
@@ -344,14 +341,6 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return myFactory.makeUniverse(visitLevelNull(sorts.getPLevel(), 0), visitLevelNull(sorts.getHLevel(), -1));
   }
 
-  public Abstract.Expression visitSortMax(SortMax sorts) {
-    Level pLevel = sorts.getPLevel().toLevel();
-    Level hLevel = sorts.getHLevel().toLevel();
-    return myFactory.makeUniverse(
-      pLevel != null ? visitLevelNull(pLevel, 0) : visitLevelMax(sorts.getPLevel(), 0),
-      hLevel != null ? visitLevelNull(hLevel, -1) : visitLevelMax(sorts.getHLevel(), -1));
-  }
-
   public Abstract.LevelExpression visitLevel(Level level, int add) {
     if (level.isInfinity()) {
       return myFactory.makeInf();
@@ -382,26 +371,6 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     }
 
     return result;
-  }
-
-  public Abstract.LevelExpression visitLevelMax(LevelMax levelMax, int add) {
-    List<Level> levels = levelMax.toListOfLevels();
-    if (levels.isEmpty()) {
-      return myFactory.makeNumberLevel(add);
-    }
-
-    Abstract.LevelExpression result = visitLevel(levels.get(0), add);
-    for (int i = 1; i < levels.size(); i++) {
-      result = myFactory.makeMaxLevel(result, visitLevel(levels.get(i), add));
-    }
-    return result;
-  }
-
-  public Abstract.Expression visitTypeMax(TypeMax type) {
-    if (type.toExpression() != null) {
-      return type.toExpression().accept(this, null);
-    }
-    return myFactory.makePi(visitTypeArguments(type.getPiParameters()), visitSortMax(type.getPiCodomain().toSorts()));
   }
 
   @Override
@@ -465,7 +434,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     List<Abstract.LetClause> clauses = new ArrayList<>(letExpression.getClauses().size());
     for (LetClause clause : letExpression.getClauses()) {
       List<Abstract.TypeArgument> arguments = visitTypeArguments(clause.getParameters());
-      Abstract.Expression resultType = clause.getResultType() == null ? null : visitTypeMax(clause.getResultType());
+      Abstract.Expression resultType = clause.getResultType() == null ? null : clause.getResultType().accept(this, null);
       Abstract.Expression term = visitElimTree(clause.getElimTree(), clause.getParameters());
       freeVars(clause.getParameters());
       clauses.add(myFactory.makeLetClause(renameVar(clause), arguments, resultType, getTopLevelArrow(clause.getElimTree()), term));

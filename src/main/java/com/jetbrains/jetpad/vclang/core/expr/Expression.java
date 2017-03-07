@@ -3,20 +3,15 @@ package com.jetbrains.jetpad.vclang.core.expr;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeOmega;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.core.sort.SortMax;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
-import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -24,7 +19,7 @@ import com.jetbrains.jetpad.vclang.typechecking.normalization.EvalNormalizer;
 
 import java.util.*;
 
-public abstract class Expression implements PrettyPrintable, Type {
+public abstract class Expression implements Type {
   public abstract <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params);
 
   @Override
@@ -51,22 +46,13 @@ public abstract class Expression implements PrettyPrintable, Type {
     accept(visitor, null).accept(new PrettyPrintVisitor(builder, indent), prec);
   }
 
-  @Override
-  public boolean isLessOrEquals(Sort sort) {
-    UniverseExpression expr = normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
-    return expr != null && expr.getSort().isLessOrEquals(sort);
-  }
-
-  @Override
-  public boolean isLessOrEquals(TypeMax type, Equations equations, Abstract.SourceNode sourceNode) {
-    if (type instanceof TypeOmega) {
+  public boolean isLessOrEquals(Type type, Equations equations, Abstract.SourceNode sourceNode) {
+    if (type instanceof Expression) {
+      return CompareVisitor.compare(equations, Equations.CMP.LE, normalize(NormalizeVisitor.Mode.NF), ((Expression) type).normalize(NormalizeVisitor.Mode.NF), sourceNode);
+    } else {
       // TODO: if this expression is stuck, add an equation
-      return toSorts() != null;
+      return normalize(NormalizeVisitor.Mode.WHNF).toUniverse() != null;
     }
-    Expression typeExpr = type.toExpression();
-    assert typeExpr != null;
-    typeExpr = typeExpr.normalize(NormalizeVisitor.Mode.NF);
-    return CompareVisitor.compare(equations, Equations.CMP.LE, normalize(NormalizeVisitor.Mode.NF), typeExpr, sourceNode);
   }
 
   public Sort toSort() {
@@ -74,17 +60,10 @@ public abstract class Expression implements PrettyPrintable, Type {
     return universe == null ? null : universe.getSort();
   }
 
-  @Override
-  public SortMax toSorts() {
-    UniverseExpression universe = normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
-    return universe == null ? null : new SortMax(universe.getSort());
-  }
-
   public Expression getType() {
     return accept(new GetTypeVisitor(), null);
   }
 
-  @Override
   public boolean findBinding(Variable binding) {
     return accept(new FindBindingVisitor(Collections.singleton(binding)), null) != null;
   }
@@ -93,12 +72,10 @@ public abstract class Expression implements PrettyPrintable, Type {
     return this.accept(new FindBindingVisitor(bindings), null);
   }
 
-  @Override
   public Expression strip(Set<Binding> bounds, LocalErrorReporter errorReporter) {
     return accept(new StripVisitor(bounds, errorReporter), null);
   }
 
-  @Override
   public Expression copy() {
     return accept(new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY), null);
   }
@@ -115,7 +92,6 @@ public abstract class Expression implements PrettyPrintable, Type {
     return subst.isEmpty() ? this : subst(new ExprSubstitution(), subst);
   }
 
-  @Override
   public final Expression subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
     return exprSubst.isEmpty() && levelSubst.isEmpty() ? this : accept(new SubstVisitor(exprSubst, levelSubst), null);
   }
@@ -133,7 +109,6 @@ public abstract class Expression implements PrettyPrintable, Type {
     return compare(expr1, expr2, Equations.CMP.EQ);
   }
 
-  @Override
   public Expression getPiParameters(List<DependentLink> params, boolean normalize, boolean implicitOnly) {
     Expression cod = normalize ? normalize(NormalizeVisitor.Mode.WHNF) : this;
     PiExpression piCod = cod.toPi();
@@ -167,7 +142,6 @@ public abstract class Expression implements PrettyPrintable, Type {
     return cod;
   }
 
-  @Override
   public Expression fromPiParameters(List<DependentLink> params) {
     params = DependentLink.Helper.fromList(params);
     Expression result = this;
@@ -177,26 +151,8 @@ public abstract class Expression implements PrettyPrintable, Type {
     return result;
   }
 
-  @Override
-  public Expression addParameters(DependentLink params, boolean modify) {
+  public Expression addParameters(DependentLink params) {
     return params.hasNext() ? new PiExpression(params, this) : this;
-  }
-
-  @Override
-  public DependentLink getPiParameters() {
-    PiExpression pi = normalize(NormalizeVisitor.Mode.WHNF).toPi();
-    return pi == null ? EmptyDependentLink.getInstance() : pi.getParameters();
-  }
-
-  @Override
-  public Expression getPiCodomain() {
-    PiExpression pi = normalize(NormalizeVisitor.Mode.WHNF).toPi();
-    return pi == null ? this : pi.getCodomain();
-  }
-
-  @Override
-  public Expression toExpression() {
-    return this;
   }
 
   public Expression getLamParameters(List<DependentLink> params) {

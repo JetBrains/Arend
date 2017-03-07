@@ -196,7 +196,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
     @Override
     public DependentLink getParameter() {
-      return type.getPiParameters();
+      type = type.normalize(NormalizeVisitor.Mode.WHNF);
+      return type.toPi() == null ? EmptyDependentLink.getInstance() : type.toPi().getParameters();
     }
 
     @Override
@@ -291,7 +292,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   }
 
   public boolean compare(Result result, Type expectedType, Abstract.Expression expr) {
-    if (result.type.isLessOrEquals(expectedType.normalize(NormalizeVisitor.Mode.NF), myEquations, expr)) {
+    if (result.type.isLessOrEquals(expectedType, myEquations, expr)) {
       if (expectedType instanceof Expression) {
         result.expression = new OfTypeExpression(result.expression, (Expression) expectedType);
         result.type = (Expression) expectedType;
@@ -444,7 +445,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         } else if (argument instanceof Abstract.TypeArgument) {
           names = argument instanceof Abstract.TelescopeArgument ? ((Abstract.TelescopeArgument) argument).getNames() : Collections.<String>singletonList(null);
           argAbsType = ((Abstract.TypeArgument) argument).getType();
-          Result argResult = typeCheck(argAbsType, TypeOmega.getInstance());
+          Result argResult = typeCheck(argAbsType, TypeOmega.INSTANCE);
           if (argResult == null) return null;
           argType = argResult.expression;
         } else {
@@ -496,14 +497,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
       Type expectedBodyType = null;
       if (actualPiLink == null && expectedCodomain != null) {
-        expectedBodyType = expectedCodomain.fromPiParameters(piParams.subList(piParamsIndex, piParams.size())).subst(piLamSubst, LevelSubstitution.EMPTY);
+        expectedBodyType = expectedCodomain instanceof Expression ? ((Expression) expectedCodomain).fromPiParameters(piParams.subList(piParamsIndex, piParams.size())).subst(piLamSubst, LevelSubstitution.EMPTY) : expectedCodomain;
       }
 
       Abstract.Expression body = expr.getBody();
       bodyResult = typeCheck(body, expectedBodyType);
       if (bodyResult == null) return null;
       if (actualPiLink != null && expectedCodomain != null) {
-        result = new Result(bodyResult.expression, bodyResult.type.addParameters(actualPiLink, true));
+        // TODO: Why we do this twice?
+        result = new Result(bodyResult.expression, bodyResult.type.addParameters(actualPiLink));
         if (!compare(result, expectedCodomain, body)) {
           return null;
         }
@@ -511,7 +513,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
 
     return new Result(ExpressionFactory.Lam(list.getFirst(), bodyResult.expression),
-            bodyResult.type.addParameters(list.getFirst(), true));
+            bodyResult.type.addParameters(list.getFirst()));
   }
 
   @Override
@@ -520,7 +522,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     if (args == null || !args.hasNext()) return null;
     try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
       myContext.addAll(DependentLink.Helper.toContext(args));
-      Result result = typeCheck(expr.getCodomain(), TypeOmega.getInstance());
+      Result result = typeCheck(expr.getCodomain(), TypeOmega.INSTANCE);
       if (result == null) return null;
       LevelArguments levelArguments = LevelArguments.generateInferVars(myEquations, expr);
       Expression piExpr = new PiExpression(levelArguments, args, result.expression);
@@ -614,8 +616,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   @Override
   public Result visitTuple(Abstract.TupleExpression expr, Type expectedType) {
     Expression expectedTypeNorm = null;
-    if (expectedType != null && expectedType.toExpression() != null) {
-      expectedTypeNorm = expectedType.toExpression().normalize(NormalizeVisitor.Mode.WHNF);
+    if (expectedType instanceof Expression) {
+      expectedTypeNorm = ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF);
       SigmaExpression expectedTypeSigma = expectedTypeNorm.toSigma();
       if (expectedTypeSigma != null) {
         DependentLink sigmaParams = expectedTypeSigma.getParameters();
@@ -629,7 +631,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         }
 
         List<Expression> fields = new ArrayList<>(expr.getFields().size());
-        Result tupleResult = new Result(ExpressionFactory.Tuple(fields, expectedTypeSigma), expectedType.toExpression());
+        Result tupleResult = new Result(ExpressionFactory.Tuple(fields, expectedTypeSigma), (Expression) expectedType);
         ExprSubstitution substitution = new ExprSubstitution();
         for (Abstract.Expression field : expr.getFields()) {
           Expression expType = sigmaParams.getType().subst(substitution);
@@ -664,7 +666,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
     try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
       for (Abstract.TypeArgument arg : arguments) {
-        Result result = typeCheck(arg.getType(), TypeOmega.getInstance());
+        Result result = typeCheck(arg.getType(), TypeOmega.INSTANCE);
         if (result == null) return null;
 
         if (arg instanceof Abstract.TelescopeArgument) {
@@ -739,7 +741,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
     letBinding.setParameters(list.getFirst());
 
-    ElimTreeNode elimTree = myTypeCheckingElim.typeCheckElim(expr, list.getFirst(), expectedType, true, false);
+    ElimTreeNode elimTree = myTypeCheckingElim.typeCheckElim(expr, list.getFirst(), (Expression) expectedType, true, false);
     if (elimTree == null) return null;
     letBinding.setElimTree(elimTree);
 
@@ -913,7 +915,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       for (Abstract.Argument arg : clause.getArguments()) {
         if (arg instanceof Abstract.TelescopeArgument) {
           Abstract.TelescopeArgument teleArg = (Abstract.TelescopeArgument) arg;
-          Result result = typeCheck(teleArg.getType(), TypeOmega.getInstance());
+          Result result = typeCheck(teleArg.getType(), TypeOmega.INSTANCE);
           if (result == null) return null;
           Expression argType = result.expression;
           links.append(param(teleArg.getExplicit(), teleArg.getNames(), argType));

@@ -12,11 +12,8 @@ import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
-import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.StripVisitor;
-import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.*;
 import com.jetbrains.jetpad.vclang.core.pattern.Utils.ProcessImplicitResult;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
@@ -79,7 +76,7 @@ public class TypeCheckingElim {
     return null;
   }
 
-  public static LocalTypeCheckingError checkCoverage(final Abstract.ReferableSourceNode def, final DependentLink eliminatingArgs, ElimTreeNode elimTree, Type resultType) {
+  public static LocalTypeCheckingError checkCoverage(final Abstract.ReferableSourceNode def, final DependentLink eliminatingArgs, ElimTreeNode elimTree, Expression resultType) {
     final StringBuilder incompleteCoverageMessage = new StringBuilder();
 
     CoverageChecker.check(elimTree, ExprSubstitution.getIdentity(toContext(eliminatingArgs)), new CoverageChecker.CoverageCheckerMissingProcessor() {
@@ -129,7 +126,7 @@ public class TypeCheckingElim {
     return new Patterns(typedPatterns);
   }
 
-  public ElimTreeNode typeCheckElim(final Abstract.ElimCaseExpression expr, DependentLink eliminatingArgs, Type expectedType, boolean isCase, boolean isTopLevel) {
+  public ElimTreeNode typeCheckElim(final Abstract.ElimCaseExpression expr, DependentLink eliminatingArgs, Expression expectedType, boolean isCase, boolean isTopLevel) {
     LocalTypeCheckingError error = null;
     if (expectedType == null) {
       error = new LocalTypeCheckingError("Cannot infer type of the expression", expr);
@@ -162,8 +159,8 @@ public class TypeCheckingElim {
       if (dataCall != null && dataCall.getDefinition().isTruncated()) {
         if (!expectedType.getType().isLessOrEquals(dataCall.getType(), myVisitor.getEquations(), expr)) {
           error = new LocalTypeCheckingError("Data " + dataCall.getDefinition().getName() + " is truncated to the universe "
-            + new ToAbstractVisitor(new ConcreteExpressionFactory()).visitTypeMax(dataCall.getType()) + " which must be not less than the universe of " +
-            new ToAbstractVisitor(new ConcreteExpressionFactory()).visitTypeMax(expectedType) + " - the type of eliminator", expr);
+            + dataCall.getType() + " which must be not less than the universe of " +
+            expectedType + " - the type of eliminator", expr);
           expr.setWellTyped(myVisitor.getContext(), Error(null, error));
           myVisitor.getErrorReporter().report(error);
           wasError = true;
@@ -187,7 +184,7 @@ public class TypeCheckingElim {
     for (Abstract.Clause clause : expr.getClauses()) {
       try (Utils.ContextSaver ignore = new Utils.ContextSaver(myVisitor.getContext())) {
         List<Pattern> clausePatterns = new ArrayList<>(dummyPatterns);
-        Type clauseExpectedType = expectedType;
+        Expression clauseExpectedType = expectedType;
 
         DependentLink tailArgs = eliminatingArgs;
         LinkList links = new LinkList();

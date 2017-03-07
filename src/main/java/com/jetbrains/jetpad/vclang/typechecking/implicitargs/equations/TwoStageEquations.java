@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVaria
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
@@ -104,7 +103,7 @@ public class TwoStageEquations implements Equations {
       if (pi != null) {
         LevelArguments piLevels = LevelArguments.generateInferVars(this, sourceNode);
         Expression piType = new UniverseExpression(new Sort(piLevels.getPLevel(), piLevels.getHLevel()));
-        for (DependentLink link = pi.getPiParameters(); link.hasNext(); link = link.getNext()) {
+        for (DependentLink link = pi.getParameters(); link.hasNext(); link = link.getNext()) {
           link = link.getNextTyped(null);
           Expression type = link.getType().getType(); // TODO: Add getSort to Type interface
           if (type == null || !CompareVisitor.compare(this, CMP.LE, type, piType, sourceNode)) {
@@ -116,7 +115,7 @@ public class TwoStageEquations implements Equations {
 
         InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, piType);
         Expression newRef = new InferenceReferenceExpression(infVar, this);
-        solve(cInf, new PiExpression(piLevels, pi.getPiParameters(), newRef));
+        solve(cInf, new PiExpression(piLevels, pi.getParameters(), newRef));
         addEquation(pi.getCodomain(), newRef, cmp, sourceNode, infVar);
         return;
       }
@@ -221,21 +220,13 @@ public class TwoStageEquations implements Equations {
   }
 
   @Override
-  public boolean solve(TypeMax type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode) {
-    boolean ok;
-    if (type instanceof Expression) {
-      ok = CompareVisitor.compare(this, cmp, ((Expression) type).normalize(NormalizeVisitor.Mode.NF), expr.normalize(NormalizeVisitor.Mode.NF), sourceNode);
-    } else
-    if (cmp == CMP.LE) {
-      ok = type.normalize(NormalizeVisitor.Mode.NF).isLessOrEquals(expr.normalize(NormalizeVisitor.Mode.NF), this, sourceNode);
-    } else {
-      throw new IllegalStateException();
-    }
-
-    if (!ok) {
+  public boolean solve(Expression type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode) {
+    if (!CompareVisitor.compare(this, cmp, type.normalize(NormalizeVisitor.Mode.NF), expr.normalize(NormalizeVisitor.Mode.NF), sourceNode)) {
       myVisitor.getErrorReporter().report(new SolveEquationError<>(type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr.normalize(NormalizeVisitor.Mode.HUMAN_NF), sourceNode));
+      return false;
+    } else {
+      return true;
     }
-    return ok;
   }
 
   @Override
@@ -313,9 +304,8 @@ public class TwoStageEquations implements Equations {
       Expression stuckExpr = equation.expr.getStuckExpression();
       if (stuckExpr instanceof InferenceReferenceExpression || stuckExpr instanceof ErrorExpression) {
         iterator.remove();
-      } else
-      if (equation.type instanceof Expression) {
-        stuckExpr = ((Expression) equation.type).getStuckExpression();
+      } else {
+        stuckExpr = equation.type.getStuckExpression();
         if (stuckExpr instanceof InferenceReferenceExpression || stuckExpr instanceof ErrorExpression) {
           iterator.remove();
         }
@@ -334,8 +324,8 @@ public class TwoStageEquations implements Equations {
     List<Equation> lowerBounds = new ArrayList<>(myEquations.size());
     for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
       Equation equation = iterator.next();
-      if (equation.expr.toInferenceReference() != null && equation.expr.toInferenceReference().getSubstExpression() == null && equation.type instanceof Expression) {
-        Expression expr = (Expression) equation.type;
+      if (equation.expr.toInferenceReference() != null && equation.expr.toInferenceReference().getSubstExpression() == null) {
+        Expression expr = equation.type;
         if (expr.toInferenceReference() != null && expr.toInferenceReference().getSubstExpression() == null || expr.toClassCall() != null && !(equation.cmp == CMP.GE && expr.toClassCall() != null)) {
           if (equation.cmp == CMP.LE) {
             lowerBounds.add(equation);
@@ -355,8 +345,8 @@ public class TwoStageEquations implements Equations {
     Map<InferenceVariable, Expression> result = new HashMap<>();
     for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
       Equation equation = iterator.next();
-      if (equation.expr.toInferenceReference() != null && equation.expr.toInferenceReference().getSubstExpression() == null && equation.type instanceof Expression) {
-        Expression newResult = (Expression) equation.type;
+      if (equation.expr.toInferenceReference() != null && equation.expr.toInferenceReference().getSubstExpression() == null) {
+        Expression newResult = equation.type;
         if (newResult.toInferenceReference() != null && newResult.toInferenceReference().getSubstExpression() == null || newResult.toClassCall() != null && equation.cmp == CMP.GE && newResult.toClassCall() != null) {
           InferenceVariable var = equation.expr.toInferenceReference().getVariable();
           Expression oldResult = result.get(var);
@@ -384,7 +374,7 @@ public class TwoStageEquations implements Equations {
     while (true) {
       boolean updated = false;
       for (Equation equation : lowerBounds) {
-        Expression newSolution = (Expression) equation.type;
+        Expression newSolution = equation.type;
         if (newSolution.toInferenceReference() != null && newSolution.toInferenceReference().getSubstExpression() == null) {
           newSolution = solutions.get(newSolution.toInferenceReference().getVariable());
         }
@@ -429,7 +419,7 @@ public class TwoStageEquations implements Equations {
 
     Expression expectedType = var.getType();
     Expression actualType = expr.getType();
-    if (actualType == null || actualType.isLessOrEquals(expectedType.normalize(NormalizeVisitor.Mode.NF), this, var.getSourceNode())) {
+    if (actualType == null || actualType.isLessOrEquals(expectedType, this, var.getSourceNode())) {
       // TODO: if actualType == null then add equation type_of(var) == type_of(expr)
       var.solve(this, new OfTypeExpression(expr, expectedType));
       return true;

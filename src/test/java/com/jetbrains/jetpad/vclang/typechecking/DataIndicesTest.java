@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
@@ -58,7 +58,7 @@ public class DataIndicesTest extends TypeCheckingTestCase {
     DependentLink param = param(false, "n", Nat());
     param.setNext(params(param((String) null, Nat()), param((String) null, DataCall(data, LevelArguments.ZERO, Reference(param)))));
     List<DependentLink> consParams = new ArrayList<>();
-    Type consType = data.getConstructor("cons").getTypeWithParams(consParams, LevelArguments.ZERO);
+    Expression consType = data.getConstructor("cons").getTypeWithParams(consParams, LevelArguments.ZERO);
     assertEquals(Pi(param, DataCall(data, LevelArguments.ZERO, Suc(Reference(param)))), consType.fromPiParameters(consParams));
   }
 

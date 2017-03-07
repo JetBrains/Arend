@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
@@ -23,14 +22,14 @@ public class CoverageChecker implements ElimTreeNodeVisitor<ExprSubstitution, Bo
   }
 
   private final CoverageCheckerMissingProcessor myProcessor;
-  private final Type myResultType;
+  private final Expression myResultType;
 
-  private CoverageChecker(CoverageCheckerMissingProcessor processor, Type resultType) {
+  private CoverageChecker(CoverageCheckerMissingProcessor processor, Expression resultType) {
     myProcessor = processor;
     myResultType = resultType;
   }
 
-  public static boolean check(ElimTreeNode tree, ExprSubstitution argsSubst, CoverageCheckerMissingProcessor processor, Type resultType) {
+  public static boolean check(ElimTreeNode tree, ExprSubstitution argsSubst, CoverageCheckerMissingProcessor processor, Expression resultType) {
     return tree.accept(new CoverageChecker(processor, resultType), argsSubst);
   }
 
@@ -40,8 +39,8 @@ public class CoverageChecker implements ElimTreeNodeVisitor<ExprSubstitution, Bo
 
     boolean result = true;
     for (ConCallExpression conCall : type.toDataCall().getDefinition().getMatchedConstructors(type.toDataCall())) {
-      if (myResultType.toExpression() != null) {
-        Sort sort = myResultType.toExpression().getType().toSort();
+      if (myResultType != null) {
+        Sort sort = myResultType.getType().toSort();
         if (sort != null) {
           if (sort.isLessOrEquals(Sort.PROP)) {
             if (conCall.getDefinition() == Prelude.PROP_TRUNC_PATH_CON ||

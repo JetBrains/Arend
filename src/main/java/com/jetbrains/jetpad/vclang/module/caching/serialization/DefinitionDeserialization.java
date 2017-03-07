@@ -9,8 +9,6 @@ import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.expr.type.PiUniverseType;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.BranchElimTreeNode;
@@ -137,20 +135,8 @@ class DefinitionDeserialization {
     }
   }
 
-  private LevelMax readLevelMax(LevelProtos.LevelMax proto) throws DeserializationError {
-    LevelMax result = new LevelMax();
-    for (LevelProtos.Level levelProto : proto.getLevelList()) {
-      result.add(readLevel(levelProto));
-    }
-    return result;
-  }
-
   Sort readSort(LevelProtos.Sort proto) throws DeserializationError {
     return new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel()));
-  }
-
-  SortMax readSortMax(LevelProtos.SortMax proto) throws DeserializationError {
-    return new SortMax(readLevelMax(proto.getPLevel()), readLevelMax(proto.getHLevel()));
   }
 
 
@@ -207,20 +193,7 @@ class DefinitionDeserialization {
   }
 
 
-  // Types, Expressions and ElimTrees
-
-  TypeMax readTypeMax(ExpressionProtos.Type proto) throws DeserializationError {
-    switch (proto.getKindCase()) {
-      case PI_UNIVERSE:
-        DependentLink parameters = readParameters(proto.getPiUniverse().getParamList());
-        SortMax sorts = readSortMax(proto.getPiUniverse().getSorts());
-        return new PiUniverseType(parameters, sorts);
-      case EXPR:
-        return readExpr(proto.getExpr());
-      default:
-        throw new DeserializationError("Unknown TypeMax kind: " + proto.getKindCase());
-    }
-  }
+  // Expressions and ElimTrees
 
   ElimTreeNode readElimTree(ExpressionProtos.ElimTreeNode proto) throws DeserializationError {
     switch (proto.getKindCase()) {
