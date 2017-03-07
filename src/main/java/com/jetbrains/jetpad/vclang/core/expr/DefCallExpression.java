@@ -8,7 +8,7 @@ import java.util.List;
 
 public abstract class DefCallExpression extends Expression {
   private final Definition myDefinition;
-  private LevelArguments myLevelArguments;
+  private final LevelArguments myLevelArguments;
 
   public DefCallExpression(Definition definition, LevelArguments polyArgs) {
     myDefinition = definition;
@@ -25,10 +25,6 @@ public abstract class DefCallExpression extends Expression {
 
   public Definition getDefinition() {
     return myDefinition;
-  }
-
-  public void setLevelArguments(LevelArguments polyParams) {
-    myLevelArguments = polyParams;
   }
 
   @Override

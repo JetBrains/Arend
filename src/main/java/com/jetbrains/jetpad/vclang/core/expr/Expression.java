@@ -144,7 +144,7 @@ public abstract class Expression implements PrettyPrintable, Type {
         }
         for (DependentLink link = piCod.getParameters(); link.hasNext(); link = link.getNext()) {
           if (link.isExplicit()) {
-            return new PiExpression(link, piCod.getCodomain());
+            return null;
           }
           if (params != null) {
             params.add(link);
@@ -332,10 +332,6 @@ public abstract class Expression implements PrettyPrintable, Type {
 
   public UniverseExpression toUniverse() {
     return null;
-  }
-
-  public boolean isAnyUniverse() {
-    return false;
   }
 
   public Expression getStuckExpression() {

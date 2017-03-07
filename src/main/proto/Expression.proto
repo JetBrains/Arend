@@ -84,6 +84,8 @@ message Expression {
         ClassCall class_call = 1;
     }
     message Pi {
+        Level pLevel = 3;
+        Level hLevel = 4;
         repeated Telescope param = 1;
         Expression codomain = 2;
     }
@@ -95,6 +97,8 @@ message Expression {
         int32 binding_ref = 1;
     }
     message Sigma {
+        Level pLevel = 2;
+        Level hLevel = 3;
         repeated Telescope param = 1;
     }
     message Tuple {

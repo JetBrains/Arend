@@ -8,8 +8,8 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingErr
 public class DerivedInferenceVariable extends InferenceVariable {
   private final InferenceVariable myVar;
 
-  public DerivedInferenceVariable(String name, InferenceVariable binding) {
-    super(name, binding.getType(), binding.getSourceNode());
+  public DerivedInferenceVariable(String name, InferenceVariable binding, Expression type) {
+    super(name, type, binding.getSourceNode());
     myVar = binding;
   }
 

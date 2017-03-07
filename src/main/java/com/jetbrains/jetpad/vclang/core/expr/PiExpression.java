@@ -2,12 +2,20 @@ package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 
 public class PiExpression extends DependentTypeExpression {
   private final Expression myCodomain;
 
+  @Deprecated
   public PiExpression(DependentLink link, Expression codomain) {
-    super(link);
+    super(LevelArguments.ZERO, link);
+    assert link.hasNext();
+    myCodomain = codomain;
+  }
+
+  public PiExpression(LevelArguments levelArguments, DependentLink link, Expression codomain) {
+    super(levelArguments, link);
     assert link.hasNext();
     myCodomain = codomain;
   }

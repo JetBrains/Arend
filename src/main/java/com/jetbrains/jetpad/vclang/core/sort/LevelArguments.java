@@ -40,9 +40,9 @@ public class LevelArguments {
     return new LevelArguments(myPLevel.subst(subst), myHLevel.subst(subst));
   }
 
-  public static LevelArguments generateInferVars(Equations equations, Abstract.Expression expr) {
-    InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, expr);
-    InferenceLevelVariable hl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, expr);
+  public static LevelArguments generateInferVars(Equations equations, Abstract.SourceNode sourceNode) {
+    InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, sourceNode);
+    InferenceLevelVariable hl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, sourceNode);
     equations.addVariable(pl);
     equations.addVariable(hl);
     return new LevelArguments(new Level(pl), new Level(hl));

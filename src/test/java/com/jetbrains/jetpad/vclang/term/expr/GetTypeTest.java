@@ -79,7 +79,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
   public void tupleTest() {
     TypeCheckClassResult result = typeCheckClass("\\function test : \\Sigma (x y : Nat) (x = y) => (0, 0, path (\\lam _ => 0))");
     DependentLink xy = param(true, vars("x", "y"), Nat());
-    testType(Sigma(params(xy, param(FunCall(Prelude.PATH_INFIX, new LevelArguments(new Level(0), new Level(1)), Nat(), Reference(xy), Reference(xy.getNext()))))), result);
+    testType(Sigma(params(xy, param(FunCall(Prelude.PATH_INFIX, new Level(0), new Level(1), Nat(), Reference(xy), Reference(xy.getNext()))))), result);
   }
 
   @Test

@@ -342,6 +342,8 @@ class DefinitionSerialization {
     @Override
     public ExpressionProtos.Expression visitPi(PiExpression expr, Void params) {
       ExpressionProtos.Expression.Pi.Builder builder = ExpressionProtos.Expression.Pi.newBuilder();
+      builder.setPLevel(LevelProtos.Level.newBuilder(writeLevel(expr.getLevelArguments().getPLevel())).build());
+      builder.setHLevel(LevelProtos.Level.newBuilder(writeLevel(expr.getLevelArguments().getHLevel())).build());
       builder.addAllParam(writeParameters(expr.getParameters()));
       builder.setCodomain(expr.getCodomain().accept(this, null));
       return ExpressionProtos.Expression.newBuilder().setPi(builder).build();
@@ -375,6 +377,8 @@ class DefinitionSerialization {
 
     private ExpressionProtos.Expression.Sigma writeSigma(SigmaExpression sigma) {
       ExpressionProtos.Expression.Sigma.Builder builder = ExpressionProtos.Expression.Sigma.newBuilder();
+      builder.setPLevel(LevelProtos.Level.newBuilder(writeLevel(sigma.getLevelArguments().getPLevel())).build());
+      builder.setHLevel(LevelProtos.Level.newBuilder(writeLevel(sigma.getLevelArguments().getHLevel())).build());
       builder.addAllParam(writeParameters(sigma.getParameters()));
       return builder.build();
     }

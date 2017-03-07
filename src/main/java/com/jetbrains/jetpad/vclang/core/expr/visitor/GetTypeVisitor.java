@@ -62,59 +62,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
   }
 
   private Expression visitDependentType(DependentTypeExpression expr) {
-    Sort codomain = null;
-    if (expr instanceof PiExpression) {
-      Expression codomainExpr = ((PiExpression) expr).getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
-      if (codomainExpr instanceof ErrorExpression) {
-        return codomainExpr;
-      }
-
-      Expression codomainType = codomainExpr.accept(this, null);
-      if (codomainType == null) {
-        return null;
-      }
-
-      codomain = codomainType.toSort();
-      if (codomain == null) {
-        return null;
-      }
-
-      if (codomain.getHLevel().isMinimum()) {
-        return new UniverseExpression(Sort.PROP);
-      }
-    }
-
-    Sort sort = Sort.PROP;
-    for (DependentLink link = expr.getParameters(); link.hasNext(); link = link.getNext()) {
-      if (!(link instanceof UntypedDependentLink)) {
-        Expression typeExpr = link.getType();
-        if (typeExpr == null) {
-          return null;
-        }
-
-        typeExpr = typeExpr.normalize(NormalizeVisitor.Mode.WHNF);
-        if (typeExpr instanceof ErrorExpression) {
-          return typeExpr;
-        }
-
-        Expression typeType = typeExpr.accept(this, null);
-        if (typeType == null) {
-          return null;
-        }
-
-        Sort sort1 = typeType.toSort();
-        if (sort1 == null) {
-          return null;
-        }
-        sort = sort.max(sort1);
-      }
-    }
-
-    if (codomain != null) {
-      sort = new Sort(sort.getPLevel().max(codomain.getPLevel()), codomain.getHLevel());
-    }
-
-    return new UniverseExpression(sort);
+    return new UniverseExpression(new Sort(expr.getLevelArguments().getPLevel(), expr.getLevelArguments().getHLevel()));
   }
 
   @Override

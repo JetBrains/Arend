@@ -26,11 +26,6 @@ public class UniverseExpression extends Expression {
   }
 
   @Override
-  public boolean isAnyUniverse() {
-    return mySort.getPLevel().isInfinity();
-  }
-
-  @Override
   public boolean equals(Object obj) {
     if (!(obj instanceof UniverseExpression)) {
       return false;

@@ -105,9 +105,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
     if (defCallExpr instanceof FieldCallExpression) {
       Expression thisExpr = ((FieldCallExpression) defCallExpr).getExpression().normalize(Mode.WHNF);
-      TypeMax type = thisExpr.getType();
-      if (type instanceof Expression) {
-        ClassCallExpression classCall = ((Expression) type).normalize(Mode.WHNF).toClassCall();
+      Expression type = thisExpr.getType();
+      if (type != null) {
+        ClassCallExpression classCall = type.normalize(Mode.WHNF).toClassCall();
         if (classCall != null) {
           FieldSet.Implementation impl = classCall.getFieldSet().getImplementation((ClassField) defCallExpr.getDefinition());
           if (impl != null) {
@@ -252,7 +252,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
     if (mode == Mode.HUMAN_NF || mode == Mode.NF) {
       ExprSubstitution substitution = new ExprSubstitution();
-      return ExpressionFactory.Pi(DependentLink.Helper.accept(expr.getParameters(), substitution, this, mode), expr.getCodomain().subst(substitution).accept(this, mode));
+      return new PiExpression(expr.getLevelArguments(), DependentLink.Helper.accept(expr.getParameters(), substitution, this, mode), expr.getCodomain().subst(substitution).accept(this, mode));
     } else {
       return expr;
     }
@@ -285,7 +285,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitSigma(SigmaExpression expr, Mode mode) {
-    return mode == Mode.TOP ? null : mode == Mode.NF || mode == Mode.HUMAN_NF ? ExpressionFactory.Sigma(DependentLink.Helper.accept(expr.getParameters(), this, mode)) : expr;
+    return mode == Mode.TOP ? null : mode == Mode.NF || mode == Mode.HUMAN_NF ? new SigmaExpression(expr.getLevelArguments(), DependentLink.Helper.accept(expr.getParameters(), this, mode)) : expr;
   }
 
   @Override

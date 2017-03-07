@@ -146,7 +146,7 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
 
     for (LetClause lc : expression.getClauses()) {
       lc.getResultType().accept(this, vector);
-      visitDependendLink(lc.getParameters(), vector);
+      visitDependentLink(lc.getParameters(), vector);
       lc.getElimTree().accept(this, vector);
     }
     return null;
@@ -183,7 +183,7 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
     return null;
   }
 
-  private Void visitDependendLink(DependentLink link, ParameterVector vector) {
+  private Void visitDependentLink(DependentLink link, ParameterVector vector) {
     for (; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
       link.getType().accept(this, vector);
@@ -193,21 +193,21 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
 
   @Override
   public Void visitLam(LamExpression expression, ParameterVector vector) {
-    visitDependendLink(expression.getParameters(), vector);
+    visitDependentLink(expression.getParameters(), vector);
     expression.getBody().accept(this, vector);
     return null;
   }
 
   @Override
   public Void visitPi(PiExpression expression, ParameterVector vector) {
-    visitDependendLink(expression.getParameters(), vector);
+    visitDependentLink(expression.getParameters(), vector);
     expression.getCodomain().accept(this, vector);
     return null;
   }
 
   @Override
   public Void visitSigma(SigmaExpression expression, ParameterVector vector) {
-    visitDependendLink(expression.getParameters(), vector);
+    visitDependentLink(expression.getParameters(), vector);
     return null;
   }
 

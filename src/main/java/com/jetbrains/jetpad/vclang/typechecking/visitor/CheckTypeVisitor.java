@@ -174,7 +174,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       return myArguments;
     }
 
-    public LevelArguments getPolyArguments() {
+    public LevelArguments getLevelArguments() {
       return myLevelArguments;
     }
   }
@@ -521,9 +521,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       myContext.addAll(DependentLink.Helper.toContext(args));
       Result result = typeCheck(expr.getCodomain(), TypeOmega.getInstance());
       if (result == null) return null;
-      Expression piExpr = new PiExpression(args, result.expression);
-      Expression type = piExpr.getType();
-      return type == null ? null : checkResult(expectedType, new Result(piExpr, type), expr);
+      LevelArguments levelArguments = LevelArguments.generateInferVars(myEquations, expr);
+      Expression piExpr = new PiExpression(levelArguments, args, result.expression);
+      return checkResult(expectedType, new Result(piExpr, new UniverseExpression(new Sort(levelArguments.getPLevel(), levelArguments.getHLevel()))), expr);
     }
   }
 
@@ -619,7 +619,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         Result tupleResult = new Result(ExpressionFactory.Tuple(fields, expectedTypeSigma), expectedType.toExpression());
         ExprSubstitution substitution = new ExprSubstitution();
         for (Abstract.Expression field : expr.getFields()) {
-          Expression expType = sigmaParams.getType().toExpression().subst(substitution);
+          Expression expType = sigmaParams.getType().subst(substitution);
           Result result = typeCheck(field, expType);
           if (result == null) return null;
           fields.add(result.expression);
@@ -637,19 +637,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     for (int i = 0; i < expr.getFields().size(); i++) {
       Result result = typeCheck(expr.getFields().get(i), null);
       if (result == null) return null;
-      Expression type = result.type.toExpression();
-      if (type == null) {
-        LocalTypeCheckingError error = new LocalTypeCheckingError("Cannot infer type of " + (i + 1) + "th field", expr.getFields().get(i));
-        expr.setWellTyped(myContext, ExpressionFactory.Error(null, error));
-        myErrorReporter.report(error);
-        return null;
-      }
-
       fields.add(result.expression);
-      list.append(ExpressionFactory.param(type));
+      list.append(ExpressionFactory.param(result.type));
     }
 
-    SigmaExpression type = ExpressionFactory.Sigma(list.getFirst());
+    SigmaExpression type = new SigmaExpression(LevelArguments.generateInferVars(myEquations, expr), list.getFirst());
     tupleResult = checkResult(expectedTypeNorm, new Result(ExpressionFactory.Tuple(fields, type), type), expr);
     return tupleResult;
   }
@@ -681,9 +673,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   public Result visitSigma(Abstract.SigmaExpression expr, Type expectedType) {
     DependentLink args = visitArguments(expr.getArguments());
     if (args == null || !args.hasNext()) return null;
-    Expression sigmaExpr = new SigmaExpression(args);
-    Expression type = sigmaExpr.getType();
-    return type == null ? null : checkResult(expectedType, new Result(sigmaExpr, type), expr);
+    LevelArguments levelArguments = LevelArguments.generateInferVars(myEquations, expr);
+    Expression sigmaExpr = new SigmaExpression(levelArguments, args);
+    return checkResult(expectedType, new Result(sigmaExpr, new UniverseExpression(new Sort(levelArguments.getPLevel(), levelArguments.getHLevel()))), expr);
   }
 
   @Override

@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.core.expr.type.TypeMax;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
+import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SimpleLevelSubstitution;
@@ -99,12 +100,24 @@ public class TwoStageEquations implements Equations {
       }
 
       // ?x <> Pi
-      DependentLink piParams = cType.getPiParameters();
-      if (piParams.hasNext()) {
-        InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf);
+      PiExpression pi = cType.normalize(NormalizeVisitor.Mode.WHNF).toPi();
+      if (pi != null) {
+        LevelArguments piLevels = LevelArguments.generateInferVars(this, sourceNode);
+        Expression piType = new UniverseExpression(new Sort(piLevels.getPLevel(), piLevels.getHLevel()));
+        for (DependentLink link = pi.getPiParameters(); link.hasNext(); link = link.getNext()) {
+          link = link.getNextTyped(null);
+          Expression type = link.getType().getType(); // TODO: Add getSort to Type interface
+          if (type == null || !CompareVisitor.compare(this, CMP.LE, type, piType, sourceNode)) {
+            add(pi.getLevelArguments().getPLevel(), piLevels.getPLevel(), CMP.LE, sourceNode);
+            add(pi.getLevelArguments().getHLevel(), piLevels.getHLevel(), CMP.LE, sourceNode);
+            break;
+          }
+        }
+
+        InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, piType);
         Expression newRef = new InferenceReferenceExpression(infVar, this);
-        solve(cInf, new PiExpression(piParams, newRef));
-        addEquation(cType.getPiCodomain(), newRef, cmp, sourceNode, infVar);
+        solve(cInf, new PiExpression(piLevels, pi.getPiParameters(), newRef));
+        addEquation(pi.getCodomain(), newRef, cmp, sourceNode, infVar);
         return;
       }
 

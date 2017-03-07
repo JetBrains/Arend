@@ -63,9 +63,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   @Override
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
     FieldSet fieldSet = FieldSet.applyVisitorToImplemented(expr.getFieldSet(), expr.getDefinition().getFieldSet(), this, null);
-    ClassCallExpression classCall = new ClassCallExpression(expr.getDefinition(), expr.getLevelArguments(), fieldSet);
-    classCall.setLevelArguments(classCall.getLevelArguments().subst(myLevelSubstitution));
-    return classCall;
+    return new ClassCallExpression(expr.getDefinition(), expr.getLevelArguments().subst(myLevelSubstitution), fieldSet);
   }
 
   @Override
@@ -107,14 +105,14 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   @Override
   public PiExpression visitPi(PiExpression expr, Void params) {
     DependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), myExprSubstitution, myLevelSubstitution);
-    PiExpression result = ExpressionFactory.Pi(parameters, expr.getCodomain().accept(this, null));
+    PiExpression result = new PiExpression(expr.getLevelArguments().subst(myLevelSubstitution), parameters, expr.getCodomain().accept(this, null));
     DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
     return result;
   }
 
   @Override
   public SigmaExpression visitSigma(SigmaExpression expr, Void params) {
-    SigmaExpression result = ExpressionFactory.Sigma(DependentLink.Helper.subst(expr.getParameters(), myExprSubstitution, myLevelSubstitution));
+    SigmaExpression result = new SigmaExpression(expr.getLevelArguments().subst(myLevelSubstitution), DependentLink.Helper.subst(expr.getParameters(), myExprSubstitution, myLevelSubstitution));
     DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
     return result;
   }
