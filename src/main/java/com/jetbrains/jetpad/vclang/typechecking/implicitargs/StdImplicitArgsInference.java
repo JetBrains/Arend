@@ -70,7 +70,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", type, 1, Prelude.PATH_CON, fun), myVisitor.getEquations());
           result = result.applyExpressions(Collections.singletonList(Lam(lamParam, binding)));
 
-          CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, new PiExpression(new Sort(defCallResult.getLevelArguments().getPLevel().add(1), defCallResult.getLevelArguments().getHLevel().add(2)), lamParam, binding));
+          CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, new PiExpression(Collections.singletonList(defCallResult.getLevelArguments().getPLevel().add(1)), lamParam, binding));
           if (argResult == null) {
             return null;
           }

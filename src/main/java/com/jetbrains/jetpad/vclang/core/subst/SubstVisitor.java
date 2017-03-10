@@ -7,6 +7,8 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.BaseExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
+import com.jetbrains.jetpad.vclang.core.sort.Level;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -105,7 +107,12 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   @Override
   public PiExpression visitPi(PiExpression expr, Void params) {
     DependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), myExprSubstitution, myLevelSubstitution);
-    PiExpression result = new PiExpression(expr.getSort().subst(myLevelSubstitution), parameters, expr.getCodomain().accept(this, null));
+    List<Level> pLevels = new ArrayList<>(expr.getPLevels().size());
+    for (Level pLevel : expr.getPLevels()) {
+      pLevels.add(pLevel.subst(myLevelSubstitution));
+    }
+
+    PiExpression result = new PiExpression(pLevels, parameters, expr.getCodomain().accept(this, null));
     DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
     return result;
   }

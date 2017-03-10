@@ -84,8 +84,7 @@ message Expression {
         ClassCall class_call = 1;
     }
     message Pi {
-        Level pLevel = 3;
-        Level hLevel = 4;
+        repeated Level pLevel = 5;
         repeated Telescope param = 1;
         Expression codomain = 2;
     }

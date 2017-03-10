@@ -60,18 +60,14 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
     return bodyType == null ? null : new PiExpression(expr.getParameters(), bodyType);
   }
 
-  private Expression visitDependentType(DependentTypeExpression expr) {
-    return new UniverseExpression(expr.getSort());
-  }
-
   @Override
   public Expression visitPi(PiExpression expr, Void params) {
-    return visitDependentType(expr);
+    return new UniverseExpression(new Sort(expr.getPLevels().get(0), expr.getCodomain().accept(this, null).toUniverse().getSort().getHLevel()));
   }
 
   @Override
   public Expression visitSigma(SigmaExpression expr, Void params) {
-    return visitDependentType(expr);
+    return new UniverseExpression(expr.getSort());
   }
 
   @Override

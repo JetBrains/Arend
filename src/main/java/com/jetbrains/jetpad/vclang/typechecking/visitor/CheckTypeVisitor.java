@@ -513,19 +513,24 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   @Override
   public Result visitPi(Abstract.PiExpression expr, Type expectedType) {
-    List<Sort> sorts = new ArrayList<>(expr.getArguments().size() + 1);
+    List<Sort> sorts = new ArrayList<>(expr.getArguments().size());
     DependentLink args = visitArguments(expr.getArguments(), sorts);
     if (args == null || !args.hasNext()) return null;
+
+    List<Level> pLevels = new ArrayList<>(sorts.size());
+    for (Sort sort : sorts) {
+      pLevels.add(sort.getPLevel());
+    }
 
     try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
       myContext.addAll(DependentLink.Helper.toContext(args));
       Result result = typeCheck(expr.getCodomain(), TypeOmega.INSTANCE);
       if (result == null) return null;
 
-      sorts.add(result.type.toUniverse().getSort());
-      Sort sort = getUpperBound(sorts, expr, true);
-      Expression piExpr = new PiExpression(sort, args, result.expression);
-      return checkResult(expectedType, new Result(piExpr, new UniverseExpression(sort)), expr);
+      Sort codSort = result.type.toUniverse().getSort();
+      List<Level> resultLevels = PiExpression.generateUpperBound(pLevels, codSort.getPLevel(), myEquations, expr);
+      Expression piExpr = new PiExpression(resultLevels, args, result.expression);
+      return checkResult(expectedType, new Result(piExpr, new UniverseExpression(new Sort(resultLevels.get(0), codSort.getHLevel()))), expr);
     }
   }
 
@@ -679,6 +684,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
           myContext.add(link);
         }
 
+        result.type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
         resultSorts.add(result.type.toUniverse().getSort());
       }
     }
@@ -686,63 +692,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     return list.getFirst();
   }
 
-  private Sort getUpperBound(List<Sort> sorts, Abstract.SourceNode sourceNode, boolean isPi) {
-    LevelVariable pVar = null;
-    LevelVariable hVar = null;
-    boolean ok = true;
-    for (Sort sort : sorts) {
-      if (sort.getPLevel().getVar() != null) {
-        if (pVar != sort.getPLevel().getVar()) {
-          ok = false;
-          break;
-        }
-        if (pVar == null) {
-          pVar = sort.getPLevel().getVar();
-        }
-      }
-      if (!isPi && sort.getHLevel().getVar() != null) {
-        if (hVar != sort.getHLevel().getVar()) {
-          ok = false;
-          break;
-        }
-        if (hVar == null) {
-          hVar = sort.getHLevel().getVar();
-        }
-      }
-    }
-
-    if (ok) {
-      Sort resultSort;
-      if (sorts.isEmpty()) {
-        resultSort = Sort.PROP;
-      } else {
-        resultSort = sorts.get(0);
-        for (int i = 1; i < sorts.size(); i++) {
-          resultSort = resultSort.max(sorts.get(i));
-        }
-      }
-      return isPi ? new Sort(resultSort.getPLevel(), sorts.get(sorts.size() - 1).getHLevel()) : resultSort;
-    } else {
-      LevelArguments levelArguments = LevelArguments.generateInferVars(myEquations, sourceNode);
-      for (Sort sort : sorts) {
-        myEquations.add(sort.getPLevel(), levelArguments.getPLevel(), Equations.CMP.LE, sourceNode);
-        if (!isPi) {
-          myEquations.add(sort.getHLevel(), levelArguments.getHLevel(), Equations.CMP.LE, sourceNode);
-        }
-      }
-      if (isPi) {
-        myEquations.add(sorts.get(sorts.size() - 1).getHLevel(), levelArguments.getHLevel(), Equations.CMP.LE, sourceNode);
-      }
-      return new Sort(levelArguments.getPLevel(), levelArguments.getHLevel());
-    }
-  }
-
   @Override
   public Result visitSigma(Abstract.SigmaExpression expr, Type expectedType) {
     List<Sort> sorts = new ArrayList<>(expr.getArguments().size());
     DependentLink args = visitArguments(expr.getArguments(), sorts);
     if (args == null || !args.hasNext()) return null;
-    Sort sort = getUpperBound(sorts, expr, false);
+    Sort sort = SigmaExpression.getUpperBound(sorts, myEquations, expr);
     return checkResult(expectedType, new Result(new SigmaExpression(sort, args), new UniverseExpression(sort)), expr);
   }
 

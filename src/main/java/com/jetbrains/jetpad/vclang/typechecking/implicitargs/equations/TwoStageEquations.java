@@ -101,22 +101,19 @@ public class TwoStageEquations implements Equations {
       // ?x <> Pi
       PiExpression pi = cType.normalize(NormalizeVisitor.Mode.WHNF).toPi();
       if (pi != null) {
-        LevelArguments piLevels = LevelArguments.generateInferVars(this, sourceNode);
-        Sort piSort = new Sort(piLevels.getPLevel(), piLevels.getHLevel());
-        Expression piType = new UniverseExpression(piSort);
+        List<Level> piLevels = new ArrayList<>(pi.getPLevels().size());
         for (DependentLink link = pi.getParameters(); link.hasNext(); link = link.getNext()) {
           link = link.getNextTyped(null);
-          Expression type = link.getType().getType(); // TODO: Add getSort to Type interface
-          if (type == null || !CompareVisitor.compare(this, CMP.LE, type, piType, sourceNode)) {
-            add(pi.getSort().getPLevel(), piLevels.getPLevel(), CMP.LE, sourceNode);
-            add(pi.getSort().getHLevel(), piLevels.getHLevel(), CMP.LE, sourceNode);
-            break;
-          }
+          piLevels.add(link.getType().getType().toUniverse().getSort().getPLevel());
         }
 
-        InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, piType);
+        LevelArguments codLevels = LevelArguments.generateInferVars(this, sourceNode);
+        Sort codSort = new Sort(codLevels.getPLevel(), codLevels.getHLevel());
+        piLevels = PiExpression.generateUpperBound(piLevels, codLevels.getPLevel(), this, sourceNode);
+
+        InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, new UniverseExpression(codSort));
         Expression newRef = new InferenceReferenceExpression(infVar, this);
-        solve(cInf, new PiExpression(piSort, pi.getParameters(), newRef));
+        solve(cInf, new PiExpression(piLevels, pi.getParameters(), newRef));
         addEquation(pi.getCodomain(), newRef, cmp, sourceNode, infVar);
         return;
       }

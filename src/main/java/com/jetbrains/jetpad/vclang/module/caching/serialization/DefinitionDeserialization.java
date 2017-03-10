@@ -286,7 +286,11 @@ class DefinitionDeserialization {
   }
 
   private PiExpression readPi(ExpressionProtos.Expression.Pi proto) throws DeserializationError {
-    return new PiExpression(new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readParameters(proto.getParamList()), readExpr(proto.getCodomain()));
+    List<Level> pLevels = new ArrayList<>(proto.getPLevelCount());
+    for (LevelProtos.Level pLevel : proto.getPLevelList()) {
+      pLevels.add(readLevel(pLevel));
+    }
+    return new PiExpression(pLevels, readParameters(proto.getParamList()), readExpr(proto.getCodomain()));
   }
 
   private UniverseExpression readUniverse(ExpressionProtos.Expression.Universe proto) throws DeserializationError {
