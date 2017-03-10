@@ -105,14 +105,14 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   @Override
   public PiExpression visitPi(PiExpression expr, Void params) {
     DependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), myExprSubstitution, myLevelSubstitution);
-    PiExpression result = new PiExpression(expr.getLevelArguments().subst(myLevelSubstitution), parameters, expr.getCodomain().accept(this, null));
+    PiExpression result = new PiExpression(expr.getSort().subst(myLevelSubstitution), parameters, expr.getCodomain().accept(this, null));
     DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
     return result;
   }
 
   @Override
   public SigmaExpression visitSigma(SigmaExpression expr, Void params) {
-    SigmaExpression result = new SigmaExpression(expr.getLevelArguments().subst(myLevelSubstitution), DependentLink.Helper.subst(expr.getParameters(), myExprSubstitution, myLevelSubstitution));
+    SigmaExpression result = new SigmaExpression(expr.getSort().subst(myLevelSubstitution), DependentLink.Helper.subst(expr.getParameters(), myExprSubstitution, myLevelSubstitution));
     DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
     return result;
   }

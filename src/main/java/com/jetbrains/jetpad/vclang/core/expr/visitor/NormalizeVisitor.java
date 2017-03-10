@@ -251,7 +251,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
     if (mode == Mode.HUMAN_NF || mode == Mode.NF) {
       ExprSubstitution substitution = new ExprSubstitution();
-      return new PiExpression(expr.getLevelArguments(), DependentLink.Helper.accept(expr.getParameters(), substitution, this, mode), expr.getCodomain().subst(substitution).accept(this, mode));
+      return new PiExpression(expr.getSort(), DependentLink.Helper.accept(expr.getParameters(), substitution, this, mode), expr.getCodomain().subst(substitution).accept(this, mode));
     } else {
       return expr;
     }
@@ -284,7 +284,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitSigma(SigmaExpression expr, Mode mode) {
-    return mode == Mode.TOP ? null : mode == Mode.NF || mode == Mode.HUMAN_NF ? new SigmaExpression(expr.getLevelArguments(), DependentLink.Helper.accept(expr.getParameters(), this, mode)) : expr;
+    return mode == Mode.TOP ? null : mode == Mode.NF || mode == Mode.HUMAN_NF ? new SigmaExpression(expr.getSort(), DependentLink.Helper.accept(expr.getParameters(), this, mode)) : expr;
   }
 
   @Override

@@ -1,19 +1,19 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 public abstract class DependentTypeExpression extends Expression {
-  private final LevelArguments myLevelArguments;
+  private final Sort mySort;
   private final DependentLink myLink;
 
-  public DependentTypeExpression(LevelArguments levelArguments, DependentLink link) {
-    myLevelArguments = levelArguments;
+  public DependentTypeExpression(Sort sort, DependentLink link) {
+    mySort = sort;
     myLink = link;
   }
 
-  public LevelArguments getLevelArguments() {
-    return myLevelArguments;
+  public Sort getSort() {
+    return mySort;
   }
 
   public DependentLink getParameters() {

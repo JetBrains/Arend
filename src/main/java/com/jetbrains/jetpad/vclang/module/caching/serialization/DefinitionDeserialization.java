@@ -286,7 +286,7 @@ class DefinitionDeserialization {
   }
 
   private PiExpression readPi(ExpressionProtos.Expression.Pi proto) throws DeserializationError {
-    return new PiExpression(new LevelArguments(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readParameters(proto.getParamList()), readExpr(proto.getCodomain()));
+    return new PiExpression(new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readParameters(proto.getParamList()), readExpr(proto.getCodomain()));
   }
 
   private UniverseExpression readUniverse(ExpressionProtos.Expression.Universe proto) throws DeserializationError {
@@ -308,7 +308,7 @@ class DefinitionDeserialization {
   }
 
   private SigmaExpression readSigma(ExpressionProtos.Expression.Sigma proto) throws DeserializationError {
-    return new SigmaExpression(new LevelArguments(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readParameters(proto.getParamList()));
+    return new SigmaExpression(new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readParameters(proto.getParamList()));
   }
 
   private ProjExpression readProj(ExpressionProtos.Expression.Proj proto) throws DeserializationError {

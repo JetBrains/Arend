@@ -524,7 +524,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
       sorts.add(result.type.toUniverse().getSort());
       Sort sort = getUpperBound(sorts, expr, true);
-      Expression piExpr = new PiExpression(new LevelArguments(sort.getPLevel(), sort.getHLevel()), args, result.expression);
+      Expression piExpr = new PiExpression(sort, args, result.expression);
       return checkResult(expectedType, new Result(piExpr, new UniverseExpression(sort)), expr);
     }
   }
@@ -655,7 +655,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       list.append(ExpressionFactory.param(result.type));
     }
 
-    SigmaExpression type = new SigmaExpression(LevelArguments.generateInferVars(myEquations, expr), list.getFirst());
+    LevelArguments levelArguments = LevelArguments.generateInferVars(myEquations, expr);
+    SigmaExpression type = new SigmaExpression(new Sort(levelArguments.getPLevel(), levelArguments.getHLevel()), list.getFirst());
     tupleResult = checkResult(expectedTypeNorm, new Result(ExpressionFactory.Tuple(fields, type), type), expr);
     return tupleResult;
   }
@@ -742,7 +743,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     DependentLink args = visitArguments(expr.getArguments(), sorts);
     if (args == null || !args.hasNext()) return null;
     Sort sort = getUpperBound(sorts, expr, false);
-    return checkResult(expectedType, new Result(new SigmaExpression(new LevelArguments(sort.getPLevel(), sort.getHLevel()), args), new UniverseExpression(sort)), expr);
+    return checkResult(expectedType, new Result(new SigmaExpression(sort, args), new UniverseExpression(sort)), expr);
   }
 
   @Override

@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
@@ -62,7 +61,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
   }
 
   private Expression visitDependentType(DependentTypeExpression expr) {
-    return new UniverseExpression(new Sort(expr.getLevelArguments().getPLevel(), expr.getLevelArguments().getHLevel()));
+    return new UniverseExpression(expr.getSort());
   }
 
   @Override

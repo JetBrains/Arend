@@ -12,7 +12,6 @@ import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.core.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
@@ -59,7 +58,7 @@ public class Prelude {
     } else
     if (abstractDef.getName().equals("Path")) {
       PATH = (DataDefinition) definition;
-      PATH.getParameters().setType(new PiExpression(new LevelArguments(new Level(LevelVariable.PVAR, 1), new Level(LevelVariable.HVAR, 2)), new TypedDependentLink(true, null, ExpressionFactory.Interval(), EmptyDependentLink.getInstance()), ExpressionFactory.Universe(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, 1)))));
+      PATH.getParameters().setType(new PiExpression(new Sort(new Level(LevelVariable.PVAR, 1), new Level(LevelVariable.HVAR, 2)), new TypedDependentLink(true, null, ExpressionFactory.Interval(), EmptyDependentLink.getInstance()), ExpressionFactory.Universe(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, 1)))));
       PATH_CON = PATH.getConstructor("path");
     } else
     if (abstractDef.getName().equals("=")) {

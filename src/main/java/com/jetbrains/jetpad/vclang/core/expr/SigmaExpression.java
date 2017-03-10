@@ -2,11 +2,11 @@ package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 public class SigmaExpression extends DependentTypeExpression {
-  public SigmaExpression(LevelArguments levelArguments, DependentLink link) {
-    super(levelArguments, link);
+  public SigmaExpression(Sort sort, DependentLink link) {
+    super(sort, link);
     assert link != null;
   }
 

@@ -202,15 +202,15 @@ public class ExpressionFactory {
 
   public static PiExpression Pi(DependentLink domain, Expression codomain) {
     assert domain.hasNext();
-    return new PiExpression(LevelArguments.ZERO, domain, codomain);
+    return new PiExpression(Sort.PROP, domain, codomain);
   }
 
   public static PiExpression Pi(Expression domain, Expression codomain) {
-    return new PiExpression(LevelArguments.ZERO, param(domain), codomain);
+    return new PiExpression(Sort.PROP, param(domain), codomain);
   }
 
   public static SigmaExpression Sigma(DependentLink domain) {
-    return new SigmaExpression(LevelArguments.ZERO, domain);
+    return new SigmaExpression(Sort.PROP, domain);
   }
 
   public static TupleExpression Tuple(List<Expression> fields, SigmaExpression type) {
