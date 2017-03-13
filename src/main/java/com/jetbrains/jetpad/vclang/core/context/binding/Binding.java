@@ -8,7 +8,8 @@ public interface Binding extends Variable {
 
   class Helper {
     public static String toString(Binding binding) {
-      return (binding.getName() == null ? "_" : binding.getName()) + (binding.getType() == null ? "" : " : " + binding.getType());
+      Expression type = binding.getType();
+      return (binding.getName() == null ? "_" : binding.getName()) + (type == null ? "" : " : " + type);
     }
   }
 }

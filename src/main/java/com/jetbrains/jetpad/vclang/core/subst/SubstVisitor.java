@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
-import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -226,9 +225,14 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   public LetClause visitLetClause(LetClause clause) {
     DependentLink parameters = DependentLink.Helper.subst(clause.getParameters(), myExprSubstitution, myLevelSubstitution);
+    List<Level> pLevels = new ArrayList<>(clause.getPLevels().size());
+    for (Level pLevel : clause.getPLevels()) {
+      pLevels.add(pLevel.subst(myLevelSubstitution));
+    }
+
     Expression resultType = clause.getResultType() == null ? null : clause.getResultType().accept(this, null);
     ElimTreeNode elimTree = clause.getElimTree().accept(this, null);
     DependentLink.Helper.freeSubsts(clause.getParameters(), myExprSubstitution);
-    return new LetClause(clause.getName(), parameters, resultType, elimTree);
+    return new LetClause(clause.getName(), pLevels, parameters, resultType, elimTree);
   }
 }

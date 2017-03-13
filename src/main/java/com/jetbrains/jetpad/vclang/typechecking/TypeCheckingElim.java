@@ -387,7 +387,7 @@ public class TypeCheckingElim {
       }
 
       if (pattern instanceof Abstract.AnyConstructorPattern) {
-        links.append(new TypedDependentLink(true, null, binding.getType(), EmptyDependentLink.getInstance()));
+        links.append(new TypedDependentLink(true, null, type, EmptyDependentLink.getInstance()));
         AnyConstructorPattern newPattern = new AnyConstructorPattern(links.getLast());
         pattern.setWellTyped(newPattern);
         myVisitor.getContext().add(links.getLast());

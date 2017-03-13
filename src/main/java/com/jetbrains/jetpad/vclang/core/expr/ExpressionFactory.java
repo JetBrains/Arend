@@ -158,7 +158,7 @@ public class ExpressionFactory {
   }
 
   public static LetClause let(String name, DependentLink params, Expression resultType, ElimTreeNode elimTree) {
-    return new LetClause(name, params, resultType, elimTree);
+    return new LetClause(name, Collections.<Level>emptyList(), params, resultType, elimTree);
   }
 
   public static DependentLink params(DependentLink... links) {

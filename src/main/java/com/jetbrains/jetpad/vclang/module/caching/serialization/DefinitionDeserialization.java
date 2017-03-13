@@ -19,6 +19,7 @@ import com.jetbrains.jetpad.vclang.core.sort.*;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -326,7 +327,7 @@ class DefinitionDeserialization {
   private LetExpression readLet(ExpressionProtos.Expression.Let proto) throws DeserializationError {
     List<LetClause> clauses = new ArrayList<>();
     for (ExpressionProtos.Expression.Let.Clause cProto : proto.getClauseList()) {
-      LetClause clause = new LetClause(cProto.getName(), readParameters(cProto.getParamList()), readExpr(cProto.getResultType()), readElimTree(cProto.getElimTree()));
+      LetClause clause = new LetClause(cProto.getName(), Collections.<Level>emptyList(), readParameters(cProto.getParamList()), readExpr(cProto.getResultType()), readElimTree(cProto.getElimTree()));
       registerBinding(clause);
       clauses.add(clause);
     }

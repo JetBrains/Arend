@@ -736,23 +736,25 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
 
     Result caseResult = new Result(null, (Expression) expectedType);
-    LetClause letBinding = let(Abstract.CaseExpression.FUNCTION_NAME, EmptyDependentLink.getInstance(), (Expression) expectedType, (ElimTreeNode) null);
     List<? extends Abstract.Expression> expressions = expr.getExpressions();
 
     LinkList list = new LinkList();
     List<Expression> letArguments = new ArrayList<>(expressions.size());
+    List<Level> domPLevels = new ArrayList<>(expressions.size());
     for (int i = 0; i < expressions.size(); i++) {
       Result exprResult = typeCheck(expressions.get(i), null);
       if (exprResult == null) return null;
       list.append(param(true, ExpressionFactory.vars(Abstract.CaseExpression.ARGUMENT_NAME + i), exprResult.type));
       letArguments.add(exprResult.expression);
+      domPLevels.add(exprResult.type.getType().toUniverse().getSort().getPLevel());
     }
-    letBinding.setParameters(list.getFirst());
 
     ElimTreeNode elimTree = myTypeCheckingElim.typeCheckElim(expr, list.getFirst(), (Expression) expectedType, true, false);
     if (elimTree == null) return null;
-    letBinding.setElimTree(elimTree);
 
+    Level codPLevel = ((Expression) expectedType).getType().toUniverse().getSort().getPLevel();
+    List<Level> pLevels = PiExpression.generateUpperBound(domPLevels, codPLevel, myEquations, expr);
+    LetClause letBinding = new LetClause(Abstract.CaseExpression.FUNCTION_NAME, pLevels, list.getFirst(), (Expression) expectedType, elimTree);
     caseResult.expression = ExpressionFactory.Let(ExpressionFactory.lets(letBinding), ExpressionFactory.Apps(ExpressionFactory.Reference(letBinding), letArguments));
     expr.setWellTyped(myContext, caseResult.expression);
     return caseResult;
@@ -918,6 +920,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     Expression resultType;
     ElimTreeNode elimTree;
     LetClause letResult;
+    List<Level> domPLevels = new ArrayList<>(clause.getArguments().size());
 
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
       for (Abstract.Argument arg : clause.getArguments()) {
@@ -927,6 +930,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
           if (result == null) return null;
           Expression argType = result.expression;
           links.append(param(teleArg.getExplicit(), teleArg.getNames(), argType));
+          domPLevels.add(result.type.toUniverse().getSort().getPLevel());
           for (DependentLink link = links.getLast(); link != EmptyDependentLink.getInstance(); link = link.getNext()) {
             myContext.add(link);
           }
@@ -943,6 +947,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       }
 
       if (clause.getTerm() instanceof Abstract.ElimExpression)  {
+        assert expectedType != null;
         myContext.subList(myContext.size() - DependentLink.Helper.size(links.getFirst()), myContext.size()).clear();
         elimTree = myTypeCheckingElim.typeCheckElim((Abstract.ElimExpression) clause.getTerm(), clause.getArrow() == Abstract.Definition.Arrow.LEFT ? links.getFirst() : null, expectedType, false, false);
         if (elimTree == null) return null;
@@ -966,7 +971,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       }
     }
 
-    letResult = new LetClause(clause.getName(), links.getFirst(), resultType, elimTree);
+    Level codPLevel = resultType.getType().toUniverse().getSort().getPLevel();
+    List<Level> pLevels = PiExpression.generateUpperBound(domPLevels, codPLevel, myEquations, clause);
+    letResult = new LetClause(clause.getName(), pLevels, links.getFirst(), resultType, elimTree);
     myContext.add(letResult);
     return letResult;
   }

@@ -7,13 +7,11 @@ import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
+import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.Stack;
+import java.util.*;
 
 public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTreeNodeVisitor<Void, ElimTreeNode> {
   private final Set<Binding> myBounds;
@@ -189,6 +187,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
       if (clause.getResultType() != null) {
         clause.setResultType(clause.getResultType().accept(this, null));
       }
+      clause.setPLevels(Collections.<Level>emptyList());
       clause.setElimTree(clause.getElimTree().accept(this, null));
       freeArguments(clause.getParameters());
       myBounds.add(clause);
