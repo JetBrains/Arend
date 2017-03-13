@@ -221,6 +221,8 @@ class DefinitionDeserialization {
         return readDataCall(proto.getDataCall());
       case CLASS_CALL:
         return readClassCall(proto.getClassCall());
+      case LET_CLAUSE_CALL:
+        return readLetClauseCall(proto.getLetClauseCall());
       case REFERENCE:
         return readReference(proto.getReference());
       case LAM:
@@ -263,6 +265,10 @@ class DefinitionDeserialization {
 
   private FunCallExpression readFunCall(ExpressionProtos.Expression.FunCall proto) throws DeserializationError {
     return new FunCallExpression(myCalltargetProvider.getCalltarget(proto.getFunRef(), FunctionDefinition.class), new LevelArguments(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExprList(proto.getArgumentList()));
+  }
+
+  private LetClauseCallExpression readLetClauseCall(ExpressionProtos.Expression.LetClauseCall proto) throws DeserializationError {
+    return new LetClauseCallExpression((LetClause) readBindingRef(proto.getLetClauseRef()), readExprList(proto.getArgumentList()));
   }
 
   private ConCallExpression readConCall(ExpressionProtos.Expression.ConCall proto) throws DeserializationError {

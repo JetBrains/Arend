@@ -70,7 +70,7 @@ public class ClassField extends Definition {
   }
 
   @Override
-  public DefCallExpression getDefCall(LevelArguments polyArguments, Expression thisExpr) {
+  public DefCallExpression getDefCall(LevelArguments polyArguments, Expression thisExpr, List<Expression> args) {
     return new FieldCallExpression(this, thisExpr);
   }
 

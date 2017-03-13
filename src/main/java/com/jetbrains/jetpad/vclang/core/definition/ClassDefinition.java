@@ -75,7 +75,7 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
-  public ClassCallExpression getDefCall(LevelArguments polyArguments, Expression thisExpr) {
+  public ClassCallExpression getDefCall(LevelArguments polyArguments, Expression thisExpr, List<Expression> args) {
     FieldSet fieldSet;
     if (thisExpr != null) {
       fieldSet = new FieldSet(myFieldSet);

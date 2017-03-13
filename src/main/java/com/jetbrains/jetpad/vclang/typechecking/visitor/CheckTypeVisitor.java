@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVaria
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.LambdaInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.Callable;
 import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
@@ -46,6 +47,7 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.TwoStageE
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.ClassViewInstancePool;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
@@ -65,7 +67,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   private ClassViewInstancePool myClassViewInstancePool;
 
   public interface TResult {
-    Result toResult(Equations equations, Abstract.Expression expr);
+    Result toResult();
     DependentLink getParameter();
     TResult applyExpressions(List<? extends Expression> expressions);
     List<DependentLink> getImplicitParameters();
@@ -73,14 +75,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   public static class DefCallResult implements TResult {
     private final Abstract.DefCallExpression myDefCall;
-    private final Definition myDefinition;
+    private final Callable myDefinition;
     private final LevelArguments myLevelArguments;
     private final List<Expression> myArguments;
     private List<DependentLink> myParameters;
     private Expression myResultType;
     private Expression myThisExpr;
 
-    private DefCallResult(Abstract.DefCallExpression defCall, Definition definition, LevelArguments polyArgs, List<Expression> arguments, List<DependentLink> parameters, Expression resultType, Expression thisExpr) {
+    private DefCallResult(Abstract.DefCallExpression defCall, Callable definition, LevelArguments polyArgs, List<Expression> arguments, List<DependentLink> parameters, Expression resultType, Expression thisExpr) {
       myDefCall = defCall;
       myDefinition = definition;
       myLevelArguments = polyArgs;
@@ -90,7 +92,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       myThisExpr = thisExpr;
     }
 
-    public static TResult makeTResult(Abstract.DefCallExpression defCall, Definition definition, LevelArguments polyArgs, Expression thisExpr) {
+    public static TResult makeTResult(Abstract.DefCallExpression defCall, Callable definition, LevelArguments polyArgs, Expression thisExpr) {
       List<DependentLink> parameters = new ArrayList<>();
       Expression resultType = definition.getTypeWithParams(parameters, polyArgs);
       if (thisExpr != null) {
@@ -100,26 +102,20 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       }
 
       if (parameters.isEmpty()) {
-        return new Result(definition.getDefCall(polyArgs, thisExpr), resultType);
+        return new Result(definition.getDefCall(polyArgs, thisExpr, Collections.emptyList()), resultType);
       } else {
-        return new DefCallResult(defCall, definition, polyArgs, new ArrayList<Expression>(), parameters, resultType, thisExpr);
+        return new DefCallResult(defCall, definition, polyArgs, new ArrayList<>(), parameters, resultType, thisExpr);
       }
     }
 
     @Override
-    public Result toResult(Equations equations, Abstract.Expression expr) {
-      Expression expression = myDefinition.getDefCall(myLevelArguments, myThisExpr).addArguments(myArguments);
-
-      if (myParameters.isEmpty()) {
-        return new Result(expression, myResultType);
+    public Result toResult() {
+      myArguments.addAll(myParameters.stream().map(ExpressionFactory::Reference).collect(Collectors.toList()));
+      Expression expression = myDefinition.getDefCall(myLevelArguments, myThisExpr, myArguments);
+      if (!myParameters.isEmpty()) {
+        expression = Lam(myParameters.get(0), expression);
+        myResultType = myResultType.fromPiParameters(myParameters);
       }
-
-      for (DependentLink parameter : myParameters) {
-        expression = expression.addArgument(ExpressionFactory.Reference(parameter));
-      }
-      expression = Lam(myParameters.get(0), expression);
-      myResultType = myResultType.fromPiParameters(myParameters);
-
       return new Result(expression, myResultType);
     }
 
@@ -144,7 +140,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         return this;
       }
 
-      Result result = toResult(null, null);
+      Result result = toResult();
       if (size < expressions.size()) {
        result = result.applyExpressions(expressions.subList(size, expressions.size()));
       }
@@ -167,7 +163,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       return myDefCall;
     }
 
-    public Definition getDefinition() {
+    public Callable getDefinition() {
       return myDefinition;
     }
 
@@ -190,7 +186,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
 
     @Override
-    public Result toResult(Equations equations, Abstract.Expression expr) {
+    public Result toResult() {
       return this;
     }
 
@@ -310,7 +306,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     if (result != null && expectedType != null) {
       result = myArgsInference.inferTail(result, expectedType, expr);
     }
-    return result == null ? null : checkResult(expectedType, result.toResult(myEquations, expr), expr);
+    return result == null ? null : checkResult(expectedType, result.toResult(), expr);
   }
 
   public Result typeCheck(Abstract.Expression expr, Type expectedType) {
@@ -350,7 +346,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   private boolean checkPath(TResult result, Abstract.Expression expr) {
     if (result instanceof DefCallResult && ((DefCallResult) result).getDefinition() == Prelude.PATH_CON) {
       LocalTypeCheckingError error = new LocalTypeCheckingError("Expected an argument for 'path'", expr);
-      expr.setWellTyped(myContext, ExpressionFactory.Error(result.toResult(myEquations, expr).expression, error));
+      expr.setWellTyped(myContext, ExpressionFactory.Error(result.toResult().expression, error));
       myErrorReporter.report(error);
       return false;
     }
@@ -376,12 +372,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     return tResultToResult(expectedType, result, expr);
   }
 
-  public CheckTypeVisitor.Result getLocalVar(Abstract.DefCallExpression expr) {
+  public CheckTypeVisitor.TResult getLocalVar(Abstract.DefCallExpression expr) {
     String name = expr.getName();
     for (int i = myContext.size() - 1; i >= 0; i--) {
       Binding def = myContext.get(i);
       if (name.equals(def.getName())) {
-        return new CheckTypeVisitor.Result(Reference(def), def.getType());
+        if (def instanceof LetClause) {
+          return DefCallResult.makeTResult(expr, (LetClause) def, LevelArguments.ZERO, null);
+        } else {
+          return new Result(Reference(def), def.getType());
+        }
       }
     }
 
@@ -755,7 +755,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     Level codPLevel = ((Expression) expectedType).getType().toUniverse().getSort().getPLevel();
     List<Level> pLevels = PiExpression.generateUpperBound(domPLevels, codPLevel, myEquations, expr);
     LetClause letBinding = new LetClause(Abstract.CaseExpression.FUNCTION_NAME, pLevels, list.getFirst(), (Expression) expectedType, elimTree);
-    caseResult.expression = ExpressionFactory.Let(ExpressionFactory.lets(letBinding), ExpressionFactory.Apps(ExpressionFactory.Reference(letBinding), letArguments));
+    caseResult.expression = ExpressionFactory.Let(ExpressionFactory.lets(letBinding), new LetClauseCallExpression(letBinding, letArguments));
     expr.setWellTyped(myContext, caseResult.expression);
     return caseResult;
   }

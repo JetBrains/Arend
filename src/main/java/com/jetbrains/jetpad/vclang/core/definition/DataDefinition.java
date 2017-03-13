@@ -82,7 +82,7 @@ public class DataDefinition extends Definition {
         matchedParameters = dataCall.getDefCallArguments();
       }
 
-      result.add(ConCall(constructor, dataCall.getLevelArguments(), new ArrayList<>(matchedParameters), new ArrayList<Expression>()));
+      result.add(ConCall(constructor, dataCall.getLevelArguments(), new ArrayList<>(matchedParameters), new ArrayList<>()));
     }
     return result;
   }
@@ -132,12 +132,15 @@ public class DataDefinition extends Definition {
   }
 
   @Override
-  public DataCallExpression getDefCall(LevelArguments polyArguments, Expression thisExpr) {
-    List<Expression> args = new ArrayList<>();
-    if (thisExpr != null) {
+  public DataCallExpression getDefCall(LevelArguments polyArguments, Expression thisExpr, List<Expression> arguments) {
+    if (thisExpr == null) {
+      return ExpressionFactory.DataCall(this, polyArguments, arguments);
+    } else {
+      List<Expression> args = new ArrayList<>(arguments.size() + 1);
       args.add(thisExpr);
+      args.addAll(arguments);
+      return ExpressionFactory.DataCall(this, polyArguments, args);
     }
-    return ExpressionFactory.DataCall(this, polyArguments, args);
   }
 
   @Override

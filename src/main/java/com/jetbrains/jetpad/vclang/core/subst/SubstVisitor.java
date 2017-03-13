@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Level;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.ConCall;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Universe;
@@ -68,6 +69,25 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   }
 
   @Override
+  public Expression visitLetClauseCall(LetClauseCallExpression expr, Void params) {
+    List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
+    for (Expression arg : expr.getDefCallArguments()) {
+      args.add(arg.accept(this, null));
+    }
+
+    Expression subst = myExprSubstitution.get(expr.getLetClause());
+    if (subst != null) {
+      if (subst.toReference() != null && subst.toReference().getBinding() instanceof LetClause) {
+        return new LetClauseCallExpression((LetClause) subst.toReference().getBinding(), args);
+      } else {
+        return new AppExpression(subst, args);
+      }
+    } else {
+      return new LetClauseCallExpression(expr.getLetClause(), args);
+    }
+  }
+
+  @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
     Expression result = myExprSubstitution.get(expr.getDefinition());
     if (result != null) {
@@ -106,11 +126,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   @Override
   public PiExpression visitPi(PiExpression expr, Void params) {
     DependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), myExprSubstitution, myLevelSubstitution);
-    List<Level> pLevels = new ArrayList<>(expr.getPLevels().size());
-    for (Level pLevel : expr.getPLevels()) {
-      pLevels.add(pLevel.subst(myLevelSubstitution));
-    }
-
+    List<Level> pLevels = expr.getPLevels().stream().map(pLevel -> pLevel.subst(myLevelSubstitution)).collect(Collectors.toList());
     PiExpression result = new PiExpression(pLevels, parameters, expr.getCodomain().accept(this, null));
     DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
     return result;
@@ -126,11 +142,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   @Override
   public BranchElimTreeNode visitBranch(BranchElimTreeNode branchNode, Void params) {
     Binding newReference = visitReference(ExpressionFactory.Reference(branchNode.getReference()), null).toReference().getBinding();
-    List<Binding> newContextTail = new ArrayList<>(branchNode.getContextTail().size());
-    for (Binding binding : branchNode.getContextTail()) {
-      newContextTail.add(visitReference(ExpressionFactory.Reference(binding), null).toReference().getBinding());
-    }
-
+    List<Binding> newContextTail = branchNode.getContextTail().stream().map(binding -> visitReference(ExpressionFactory.Reference(binding), null).toReference().getBinding()).collect(Collectors.toList());
     BranchElimTreeNode newNode = new BranchElimTreeNode(newReference, newContextTail);
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
       ConstructorClause newClause = newNode.addClause(clause.getConstructor(), DependentLink.Helper.toNames(clause.getParameters()));
@@ -212,9 +224,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
       myExprSubstitution.add(clause, ExpressionFactory.Reference(newClause));
     }
     LetExpression result = ExpressionFactory.Let(clauses, letExpression.getExpression().accept(this, null));
-    for (LetClause clause : letExpression.getClauses()) {
-      myExprSubstitution.remove(clause);
-    }
+    letExpression.getClauses().forEach(myExprSubstitution::remove);
     return result;
   }
 
@@ -225,11 +235,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   public LetClause visitLetClause(LetClause clause) {
     DependentLink parameters = DependentLink.Helper.subst(clause.getParameters(), myExprSubstitution, myLevelSubstitution);
-    List<Level> pLevels = new ArrayList<>(clause.getPLevels().size());
-    for (Level pLevel : clause.getPLevels()) {
-      pLevels.add(pLevel.subst(myLevelSubstitution));
-    }
-
+    List<Level> pLevels = clause.getPLevels().stream().map(pLevel -> pLevel.subst(myLevelSubstitution)).collect(Collectors.toList());
     Expression resultType = clause.getResultType() == null ? null : clause.getResultType().accept(this, null);
     ElimTreeNode elimTree = clause.getElimTree().accept(this, null);
     DependentLink.Helper.freeSubsts(clause.getParameters(), myExprSubstitution);

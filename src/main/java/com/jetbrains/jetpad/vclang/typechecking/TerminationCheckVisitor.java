@@ -134,6 +134,17 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
   }
 
   @Override
+  public Boolean visitLetClauseCall(LetClauseCallExpression expr, Void params) {
+    for (Expression arg : expr.getDefCallArguments()) {
+      if (!arg.accept(this, null)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  @Override
   public Boolean visitReference(ReferenceExpression expr, Void params) {
     return true;
   }

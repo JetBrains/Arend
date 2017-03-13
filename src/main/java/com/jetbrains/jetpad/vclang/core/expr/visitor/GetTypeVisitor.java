@@ -45,6 +45,11 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
   }
 
   @Override
+  public Expression visitLetClauseCall(LetClauseCallExpression expr, Void params) {
+    return expr.getLetClause().getType().applyExpressions(expr.getDefCallArguments());
+  }
+
+  @Override
   public Expression visitReference(ReferenceExpression expr, Void params) {
     return expr.getBinding().getType().copy();
   }

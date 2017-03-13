@@ -9,6 +9,7 @@ public interface ExpressionVisitor<P, R> {
   R visitDataCall(DataCallExpression expr, P params);
   R visitFieldCall(FieldCallExpression expr, P params);
   R visitClassCall(ClassCallExpression expr, P params);
+  R visitLetClauseCall(LetClauseCallExpression expr, P params);
   R visitReference(ReferenceExpression expr, P params);
   R visitInferenceReference(InferenceReferenceExpression expr, P params);
   R visitLam(LamExpression expr, P params);

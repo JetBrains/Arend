@@ -68,12 +68,15 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   @Override
-  public FunCallExpression getDefCall(LevelArguments polyArguments, Expression thisExpr) {
-    List<Expression> args = new ArrayList<>();
-    if (thisExpr != null) {
+  public FunCallExpression getDefCall(LevelArguments polyArguments, Expression thisExpr, List<Expression> arguments) {
+    if (thisExpr == null) {
+      return FunCall(this, polyArguments, arguments);
+    } else {
+      List<Expression> args = new ArrayList<>(arguments.size() + 1);
       args.add(thisExpr);
+      args.addAll(arguments);
+      return FunCall(this, polyArguments, args);
     }
-    return FunCall(this, polyArguments, args);
   }
 
   @Override

@@ -6,10 +6,10 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInfer
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
@@ -40,7 +40,10 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       InferenceVariable infVar = null;
       if (result instanceof CheckTypeVisitor.DefCallResult) {
         CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
-        ClassField classifyingField = defCallResult.getDefinition().getClassifyingFieldOfParameter(defCallResult.getArguments().size());
+        ClassField classifyingField = null;
+        if (defCallResult.getDefinition() instanceof Definition) {
+          classifyingField = ((Definition) defCallResult.getDefinition()).getClassifyingFieldOfParameter(defCallResult.getArguments().size());
+        }
         if (classifyingField != null) {
           infVar = new TypeClassInferenceVariable(parameter.getName(), type, defCallResult.getDefCall(), i, null, classifyingField);
         }
@@ -86,7 +89,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
     DependentLink param = result.getParameter();
     if (!param.hasNext()) {
-      CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations(), fun);
+      CheckTypeVisitor.Result result1 = result.toResult();
       LocalTypeCheckingError error = new TypeMismatchError(new StringPrettyPrintable("A pi type"), result1.type, fun);
       fun.setWellTyped(myVisitor.getContext(), new ErrorExpression(result1.expression, error));
       myVisitor.getErrorReporter().report(error);
@@ -171,7 +174,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     List<DependentLink> expectedParams = new ArrayList<>(actualParams.size());
     expectedType.getPiParameters(expectedParams, true, true);
     if (expectedParams.size() > actualParams.size()) {
-      CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations(), expr);
+      CheckTypeVisitor.Result result1 = result.toResult();
       LocalTypeCheckingError error = new TypeMismatchError(expectedType, result1.type, expr);
       expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result1.expression, error));
       myVisitor.getErrorReporter().report(error);

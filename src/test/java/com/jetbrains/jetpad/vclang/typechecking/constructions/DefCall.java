@@ -795,7 +795,7 @@ public class DefCall extends TypeCheckingTestCase {
     TypeCheckClassResult result = typeCheckClass(
         "\\class C\n" +
         "\\function test => C", "");
-    test(result.getDefinition("C").getDefCall(LevelArguments.ZERO, Reference(getThis(result))), result);
+    test(result.getDefinition("C").getDefCall(LevelArguments.ZERO, Reference(getThis(result)), Collections.emptyList()), result);
   }
 
   @Test
@@ -805,7 +805,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class Test {\n" +
         "  \\function test => C\n" +
         "}", "");
-    testFI(result.getDefinition("C").getDefCall(LevelArguments.ZERO, getThisFI(result)), result);
+    testFI(result.getDefinition("C").getDefCall(LevelArguments.ZERO, getThisFI(result), Collections.emptyList()), result);
   }
 
   @Test
@@ -839,7 +839,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\function test => A.B.C", "");
-    test(result.getDefinition("A.B.C").getDefCall(LevelArguments.ZERO, Reference(getThis(result))), result);
+    test(result.getDefinition("A.B.C").getDefCall(LevelArguments.ZERO, Reference(getThis(result)), Collections.emptyList()), result);
   }
 
   @Test
@@ -849,7 +849,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\class C\n" +
         "}\n" +
         "\\function test (e : E) => e.C");
-    test(result.getDefinition("E.C").getDefCall(LevelArguments.ZERO, Reference(getThis(result))), result);
+    test(result.getDefinition("E.C").getDefCall(LevelArguments.ZERO, Reference(getThis(result)), Collections.emptyList()), result);
   }
 
   @Test
@@ -868,7 +868,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\class C\n" +
         "}\n" +
         "\\function test (e : E) => e.C", "");
-    test(result.getDefinition("E.C").getDefCall(LevelArguments.ZERO, Reference(getThis(result).getNext())), result);
+    test(result.getDefinition("E.C").getDefCall(LevelArguments.ZERO, Reference(getThis(result).getNext()), Collections.emptyList()), result);
   }
 
   @Test
@@ -882,7 +882,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\function test (e : E) => e.A.B.C");
-    test(result.getDefinition("E.A.B.C").getDefCall(LevelArguments.ZERO, Reference(getThis(result))), result);
+    test(result.getDefinition("E.A.B.C").getDefCall(LevelArguments.ZERO, Reference(getThis(result)), Collections.emptyList()), result);
   }
 
   @Test

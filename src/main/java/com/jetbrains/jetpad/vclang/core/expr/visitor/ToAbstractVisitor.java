@@ -42,9 +42,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     myFlags = DEFAULT;
     myNames = new HashMap<>();
     myFreeNames = new Stack<>();
-    for (String name : names) {
-      myFreeNames.push(name);
-    }
+    names.forEach(myFreeNames::push);
   }
 
   public void setFlags(EnumSet<Flag> flags) {
@@ -144,11 +142,10 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return arg != null ? myFactory.makeApp(function, isExplicit, arg) : function;
   }
 
-  private Abstract.Expression visitArguments(Abstract.Expression expr, DefCallExpression defCall) {
-    DependentLink link = defCall.getDefinition().getParameters();
-    for (Expression arg : defCall.getDefCallArguments()) {
-      expr = myFactory.makeApp(expr, link.isExplicit(), arg.accept(this, null));
-      link = link.getNext();
+  private Abstract.Expression visitArguments(Abstract.Expression expr, DependentLink parameters, List<? extends Expression> arguments) {
+    for (Expression arg : arguments) {
+      expr = myFactory.makeApp(expr, parameters.isExplicit(), arg.accept(this, null));
+      parameters = parameters.getNext();
     }
     return expr;
   }
@@ -159,7 +156,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     if (result != null) {
       return result;
     }
-    return visitArguments(myFactory.makeDefCall(null, expr.getDefinition().getAbstractDefinition()), expr);
+    return visitArguments(myFactory.makeDefCall(null, expr.getDefinition().getAbstractDefinition()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
   }
 
   @Override
@@ -183,7 +180,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       }
       conParams = expr.getDefinition().getDataTypeExpression(substitution, expr.getLevelArguments()).accept(this, null);
     }
-    return visitArguments(myFactory.makeDefCall(conParams, expr.getDefinition().getAbstractDefinition()), expr);
+    return visitArguments(myFactory.makeDefCall(conParams, expr.getDefinition().getAbstractDefinition()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
   }
 
   @Override
@@ -211,6 +208,15 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     } else {
       return myFactory.makeClassExt(defCallExpr, statements);
     }
+  }
+
+  @Override
+  public Abstract.Expression visitLetClauseCall(LetClauseCallExpression expr, Void params) {
+    Abstract.Expression result = checkBinOp(expr);
+    if (result != null) {
+      return result;
+    }
+    return visitArguments(visitBinding(expr.getLetClause()), expr.getLetClause().getParameters(), expr.getDefCallArguments());
   }
 
   private Abstract.Expression visitBinding(Binding var) {
@@ -406,14 +412,15 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   private Abstract.Expression checkCase(LetExpression letExpression) {
     if (letExpression.getClauses().size() == 1 && Abstract.CaseExpression.FUNCTION_NAME.equals(letExpression.getClauses().get(0).getName()) && letExpression.getClauses().get(0).getElimTree() instanceof BranchElimTreeNode) {
-      ReferenceExpression ref = letExpression.getExpression().getFunction().toReference();
-      List<? extends Expression> args = letExpression.getExpression().getArguments();
-      if (ref != null && ref.getBinding() == letExpression.getClauses().get(0)) {
+      LetClauseCallExpression clauseCall = letExpression.getExpression().toLetClauseCall();
+      if (clauseCall != null && clauseCall.getLetClause() == letExpression.getClauses().get(0)) {
+        List<? extends Expression> args = clauseCall.getDefCallArguments();
         for (Expression arg : args) {
           if (arg.findBinding(letExpression.getClauses().get(0))) {
             return null;
           }
         }
+
         List<Abstract.Expression> caseArgs = new ArrayList<>(args.size());
         for (int i = args.size() - 1; i >= 0; i--) {
           caseArgs.add(args.get(i).accept(this, null));
@@ -441,9 +448,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     }
 
     result = myFactory.makeLet(clauses, letExpression.getExpression().accept(this, null));
-    for (LetClause clause : letExpression.getClauses()) {
-      myNames.remove(clause);
-    }
+    letExpression.getClauses().forEach(myNames::remove);
     return result;
   }
 

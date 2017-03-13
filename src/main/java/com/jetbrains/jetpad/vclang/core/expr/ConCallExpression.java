@@ -8,23 +8,29 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 
-import java.util.Collection;
 import java.util.List;
 
 public class ConCallExpression extends DefCallExpression {
+  private final LevelArguments myLevelArguments;
   private final List<Expression> myDataTypeArguments;
   private final List<Expression> myArguments;
 
-  public ConCallExpression(Constructor definition, LevelArguments polyParams, List<Expression> dataTypeArguments, List<Expression> arguments) {
-    super(definition, polyParams);
+  public ConCallExpression(Constructor definition, LevelArguments levelArguments, List<Expression> dataTypeArguments, List<Expression> arguments) {
+    super(definition);
     assert dataTypeArguments != null;
     assert definition.status().headerIsOK();
+    myLevelArguments = levelArguments;
     myDataTypeArguments = dataTypeArguments;
     myArguments = arguments;
   }
 
   public List<? extends Expression> getDataTypeArguments() {
     return myDataTypeArguments;
+  }
+
+  @Override
+  public LevelArguments getLevelArguments() {
+    return myLevelArguments;
   }
 
   @Override
@@ -56,11 +62,6 @@ public class ConCallExpression extends DefCallExpression {
       myArguments.add(argument);
     }
     return this;
-  }
-
-  public void addDefCallArguments(Collection<? extends Expression> arguments) {
-    myArguments.addAll(arguments);
-    assert myArguments.size() <= DependentLink.Helper.size(getDefinition().getParameters());
   }
 
   @Override

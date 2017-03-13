@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class Definition implements Variable {
+public abstract class Definition implements Variable, Callable {
   private ClassDefinition myThisClass;
   private Abstract.Definition myAbstractDefinition;
   private Map<Integer, ClassField> myClassifyingFields = Collections.emptyMap();
@@ -24,6 +24,7 @@ public abstract class Definition implements Variable {
     myStatus = status;
   }
 
+  @Override
   public String getName() {
     return myAbstractDefinition.getName();
   }
@@ -53,7 +54,8 @@ public abstract class Definition implements Variable {
 
   public abstract Expression getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments);
 
-  public abstract DefCallExpression getDefCall(LevelArguments polyArguments, Expression thisExpr);
+  @Override
+  public abstract DefCallExpression getDefCall(LevelArguments polyArguments, Expression thisExpr, List<Expression> args);
 
   public abstract Expression getDefCall(LevelArguments polyArguments, List<Expression> args);
 

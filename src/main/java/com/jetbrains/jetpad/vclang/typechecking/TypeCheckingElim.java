@@ -55,19 +55,16 @@ public class TypeCheckingElim {
   public static LocalTypeCheckingError checkConditions(final String name, final Abstract.SourceNode source, final DependentLink eliminatingArgs, ElimTreeNode elimTree) {
     final StringBuilder errorMsg = new StringBuilder();
 
-    ConditionViolationsCollector.check(elimTree, ExprSubstitution.getIdentity(toContext(eliminatingArgs)), new ConditionViolationsCollector.ConditionViolationChecker() {
-      @Override
-      public void check(Expression expr1, ExprSubstitution argsSubst1, Expression expr2, ExprSubstitution argsSubst2) {
-        expr1 = expr1.normalize(NormalizeVisitor.Mode.NF);
-        expr2 = expr2.normalize(NormalizeVisitor.Mode.NF);
+    ConditionViolationsCollector.check(elimTree, ExprSubstitution.getIdentity(toContext(eliminatingArgs)), (expr1, argsSubst1, expr2, argsSubst2) -> {
+      expr1 = expr1.normalize(NormalizeVisitor.Mode.NF);
+      expr2 = expr2.normalize(NormalizeVisitor.Mode.NF);
 
-        if (!expr1.equals(expr2)){
-          errorMsg.append("\n").append(name);
-          printArgs(eliminatingArgs, argsSubst1, errorMsg);
-          errorMsg.append(" = ").append(expr1).append(" =/= ").append(expr2).append(" = ").append(name);
-          printArgs(eliminatingArgs, argsSubst2, errorMsg);
-       }
-      }
+      if (!expr1.equals(expr2)){
+        errorMsg.append("\n").append(name);
+        printArgs(eliminatingArgs, argsSubst1, errorMsg);
+        errorMsg.append(" = ").append(expr1).append(" =/= ").append(expr2).append(" = ").append(name);
+        printArgs(eliminatingArgs, argsSubst2, errorMsg);
+     }
     });
 
     if (errorMsg.length() != 0) {
@@ -79,19 +76,16 @@ public class TypeCheckingElim {
   public static LocalTypeCheckingError checkCoverage(final Abstract.ReferableSourceNode def, final DependentLink eliminatingArgs, ElimTreeNode elimTree, Expression resultType) {
     final StringBuilder incompleteCoverageMessage = new StringBuilder();
 
-    CoverageChecker.check(elimTree, ExprSubstitution.getIdentity(toContext(eliminatingArgs)), new CoverageChecker.CoverageCheckerMissingProcessor() {
-      @Override
-      public void process(ExprSubstitution argsSubst) {
-        for (Map.Entry<Variable, Expression> entry : argsSubst.getEntries()) {
-          Expression expr = entry.getValue();
-          if (!expr.normalize(NormalizeVisitor.Mode.NF).equals(expr)) {
-            return;
-          }
+    CoverageChecker.check(elimTree, ExprSubstitution.getIdentity(toContext(eliminatingArgs)), argsSubst -> {
+      for (Map.Entry<Variable, Expression> entry : argsSubst.getEntries()) {
+        Expression expr = entry.getValue();
+        if (!expr.normalize(NormalizeVisitor.Mode.NF).equals(expr)) {
+          return;
         }
-
-        incompleteCoverageMessage.append("\n ").append(def.getName());
-        printArgs(eliminatingArgs, argsSubst, incompleteCoverageMessage);
       }
+
+      incompleteCoverageMessage.append("\n ").append(def.getName());
+      printArgs(eliminatingArgs, argsSubst, incompleteCoverageMessage);
     }, resultType);
 
     if (incompleteCoverageMessage.length() != 0) {
@@ -260,16 +254,22 @@ public class TypeCheckingElim {
 
   private ReferenceExpression lookupLocalVar(Abstract.Expression expression) {
     if (expression instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expression).getExpression() == null && ((Abstract.DefCallExpression) expression).getReferent() == null) {
-      CheckTypeVisitor.Result exprResult = myVisitor.getLocalVar((Abstract.DefCallExpression) expression);
-      if (exprResult == null)
+      CheckTypeVisitor.TResult exprResult = myVisitor.getLocalVar((Abstract.DefCallExpression) expression);
+      if (exprResult == null) {
         return null;
-      return exprResult.expression.toReference();
-    } else {
-      LocalTypeCheckingError error = new LocalTypeCheckingError("\\elim can be applied only to a local variable", expression);
-      myVisitor.getErrorReporter().report(error);
-      expression.setWellTyped(myVisitor.getContext(), Error(null, error));
-      return null;
+      }
+      if (exprResult instanceof CheckTypeVisitor.Result) {
+        ReferenceExpression result = ((CheckTypeVisitor.Result) exprResult).expression.toReference();
+        if (result != null) {
+          return result;
+        }
+      }
     }
+
+    LocalTypeCheckingError error = new LocalTypeCheckingError("\\elim can be applied only to a local variable", expression);
+    myVisitor.getErrorReporter().report(error);
+    expression.setWellTyped(myVisitor.getContext(), Error(null, error));
+    return null;
   }
 
   private List<ReferenceExpression> typecheckElimIndices(Abstract.ElimCaseExpression expr, DependentLink eliminatingArgs) {

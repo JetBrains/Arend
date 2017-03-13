@@ -234,6 +234,10 @@ public abstract class Expression implements Type {
     return null;
   }
 
+  public LetClauseCallExpression toLetClauseCall() {
+    return null;
+  }
+
   public ErrorExpression toError() {
     return null;
   }

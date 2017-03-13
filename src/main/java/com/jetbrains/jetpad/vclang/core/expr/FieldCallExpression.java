@@ -11,7 +11,7 @@ public class FieldCallExpression extends DefCallExpression {
   private Expression myExpression;
 
   public FieldCallExpression(ClassField definition, Expression expression) {
-    super(definition, LevelArguments.ZERO);
+    super(definition);
     assert definition.status().headerIsOK();
     myExpression = expression;
   }
@@ -23,6 +23,11 @@ public class FieldCallExpression extends DefCallExpression {
   @Override
   public List<? extends Expression> getDefCallArguments() {
     return Collections.singletonList(myExpression);
+  }
+
+  @Override
+  public LevelArguments getLevelArguments() {
+    return LevelArguments.ZERO;
   }
 
   @Override

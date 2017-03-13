@@ -8,20 +8,16 @@ import java.util.List;
 
 public abstract class DefCallExpression extends Expression {
   private final Definition myDefinition;
-  private final LevelArguments myLevelArguments;
 
-  public DefCallExpression(Definition definition, LevelArguments polyArgs) {
+  public DefCallExpression(Definition definition) {
     myDefinition = definition;
-    myLevelArguments = polyArgs;
   }
 
   public List<? extends Expression> getDefCallArguments() {
     return Collections.emptyList();
   }
 
-  public LevelArguments getLevelArguments() {
-    return myLevelArguments;
-  }
+  public abstract LevelArguments getLevelArguments();
 
   public Definition getDefinition() {
     return myDefinition;

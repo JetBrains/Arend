@@ -14,16 +14,19 @@ import java.util.Map;
 import java.util.Set;
 
 public class ClassCallExpression extends DefCallExpression {
+  private final LevelArguments myLevelArguments;
   private final ReadonlyFieldSet myFieldSet;
 
-  public ClassCallExpression(ClassDefinition definition, LevelArguments polyParams) {
-    super(definition, polyParams);
+  public ClassCallExpression(ClassDefinition definition, LevelArguments levelArguments) {
+    super(definition);
     assert definition.status().headerIsOK();
+    myLevelArguments = levelArguments;
     myFieldSet = definition.getFieldSet();
   }
 
-  public ClassCallExpression(ClassDefinition definition, LevelArguments polyParams, ReadonlyFieldSet fieldSet) {
-    super(definition, polyParams);
+  public ClassCallExpression(ClassDefinition definition, LevelArguments levelArguments, ReadonlyFieldSet fieldSet) {
+    super(definition);
+    myLevelArguments = levelArguments;
     myFieldSet = fieldSet;
   }
 
@@ -44,6 +47,11 @@ public class ClassCallExpression extends DefCallExpression {
   @Override
   public ClassDefinition getDefinition() {
     return (ClassDefinition) super.getDefinition();
+  }
+
+  @Override
+  public LevelArguments getLevelArguments() {
+    return myLevelArguments;
   }
 
   public Sort getSort() {

@@ -10,12 +10,19 @@ import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import java.util.List;
 
 public class FunCallExpression extends DefCallExpression {
+  private final LevelArguments myLevelArguments;
   private final List<Expression> myArguments;
 
-  public FunCallExpression(FunctionDefinition definition, LevelArguments polyParams, List<Expression> arguments) {
-    super(definition, polyParams);
+  public FunCallExpression(FunctionDefinition definition, LevelArguments levelArguments, List<Expression> arguments) {
+    super(definition);
     assert definition.status().headerIsOK();
+    myLevelArguments = levelArguments;
     myArguments = arguments;
+  }
+
+  @Override
+  public LevelArguments getLevelArguments() {
+    return myLevelArguments;
   }
 
   @Override

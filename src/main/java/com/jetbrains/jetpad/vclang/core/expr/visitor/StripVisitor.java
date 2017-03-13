@@ -83,15 +83,32 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
     return classCall;
   }
 
+  private Expression cannotInferError(Expression expr) {
+    LocalTypeCheckingError error = myVariables.empty() ? new LocalTypeCheckingError("Cannot infer some expressions", null) : myVariables.peek().getOriginalVariable().getErrorInfer(myVariables.peek().getSubstExpression());
+    myErrorReporter.report(error);
+    return new ErrorExpression(expr, error);
+  }
+
+  @Override
+  public Expression visitLetClauseCall(LetClauseCallExpression expr, Void params) {
+    if (myBounds.contains(expr.getLetClause())) {
+      List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
+      for (Expression arg : expr.getDefCallArguments()) {
+        args.add(arg.accept(this, null));
+      }
+      return new LetClauseCallExpression(expr.getLetClause(), args);
+    } else {
+      return cannotInferError(expr);
+    }
+  }
+
   @Override
   public Expression visitReference(ReferenceExpression expr, Void params) {
     if (myBounds.contains(expr.getBinding())) {
       return expr;
+    } else {
+      return cannotInferError(expr);
     }
-
-    LocalTypeCheckingError error = myVariables.empty() ? new LocalTypeCheckingError("Cannot infer some expressions", null) : myVariables.peek().getOriginalVariable().getErrorInfer(myVariables.peek().getSubstExpression());
-    myErrorReporter.report(error);
-    return new ErrorExpression(expr, error);
   }
 
   @Override
@@ -194,9 +211,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
     }
 
     LetExpression result = new LetExpression(expr.getClauses(), expr.getExpression().accept(this, null));
-    for (LetClause clause : expr.getClauses()) {
-      myBounds.remove(clause);
-    }
+    expr.getClauses().forEach(myBounds::remove);
     return result;
   }
 
@@ -218,9 +233,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
       clause.setChild(clause.getChild().accept(this, null));
 
       freeArguments(clause.getParameters());
-      for (Binding binding : clause.getTailBindings()) {
-        myBounds.remove(binding);
-      }
+      clause.getTailBindings().forEach(myBounds::remove);
     }
 
     myBounds.add(branchNode.getReference());

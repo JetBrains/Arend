@@ -8,12 +8,19 @@ import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import java.util.List;
 
 public class DataCallExpression extends DefCallExpression {
+  private final LevelArguments myLevelArguments;
   private final List<Expression> myArguments;
 
-  public DataCallExpression(DataDefinition definition, LevelArguments polyParams, List<Expression> arguments) {
-    super(definition, polyParams);
+  public DataCallExpression(DataDefinition definition, LevelArguments levelArguments, List<Expression> arguments) {
+    super(definition);
     assert definition.status().headerIsOK();
+    myLevelArguments = levelArguments;
     myArguments = arguments;
+  }
+
+  @Override
+  public LevelArguments getLevelArguments() {
+    return myLevelArguments;
   }
 
   @Override
