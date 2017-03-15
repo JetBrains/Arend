@@ -10,7 +10,7 @@ import java.util.List;
 
 public class UntypedDependentLink implements DependentLink {
   private String myName;
-  private DependentLink myNext;
+  protected DependentLink myNext;
 
   public UntypedDependentLink(String name, DependentLink next) {
     assert next instanceof UntypedDependentLink || next instanceof TypedDependentLink;
@@ -18,7 +18,7 @@ public class UntypedDependentLink implements DependentLink {
     myNext = next;
   }
 
-  private UntypedDependentLink(String name) {
+  protected UntypedDependentLink(String name) {
     myName = name;
     myNext = EmptyDependentLink.getInstance();
   }

@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 
 import java.util.List;
 
-public class EmptyDependentLink implements DependentLink {
+public class EmptyDependentLink implements SingleDependentLink {
   private final static EmptyDependentLink INSTANCE = new EmptyDependentLink();
 
   private EmptyDependentLink() {}
@@ -31,7 +31,7 @@ public class EmptyDependentLink implements DependentLink {
   }
 
   @Override
-  public DependentLink getNext() {
+  public SingleDependentLink getNext() {
     throw new IllegalStateException();
   }
 
@@ -46,12 +46,12 @@ public class EmptyDependentLink implements DependentLink {
   }
 
   @Override
-  public DependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size) {
+  public EmptyDependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size) {
     return this;
   }
 
   @Override
-  public TypedDependentLink getNextTyped(List<String> names) {
+  public TypedSingleDependentLink getNextTyped(List<String> names) {
     throw new IllegalStateException();
   }
 

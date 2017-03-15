@@ -138,6 +138,10 @@ public interface DependentLink extends Binding {
       return newLinks;
     }
 
+    public static SingleDependentLink subst(SingleDependentLink link, ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
+      return link.subst(exprSubst, levelSubst, Integer.MAX_VALUE);
+    }
+
     public static <P> DependentLink accept(DependentLink link, ExprSubstitution substitution, ExpressionVisitor<? super P, ? extends Expression> visitor, P params) {
       link = DependentLink.Helper.subst(link, substitution);
       for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {

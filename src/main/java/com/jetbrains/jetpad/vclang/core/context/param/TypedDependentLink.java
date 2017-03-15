@@ -12,7 +12,7 @@ public class TypedDependentLink implements DependentLink {
   private boolean myExplicit;
   private String myName;
   private Expression myType;
-  private DependentLink myNext;
+  protected DependentLink myNext;
 
   public TypedDependentLink(boolean isExplicit, String name, Expression type, DependentLink next) {
     assert next != null;
