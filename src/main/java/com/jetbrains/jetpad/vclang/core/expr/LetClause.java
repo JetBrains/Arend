@@ -45,7 +45,6 @@ public class LetClause extends NamedBinding implements Function, Callable {
     myPLevels = pLevels;
   }
 
-  @Override
   public DependentLink getParameters() {
     return myParameters;
   }
@@ -56,11 +55,6 @@ public class LetClause extends NamedBinding implements Function, Callable {
 
   public void setResultType(Expression resultType) {
     myResultType = resultType;
-  }
-
-  @Override
-  public int getNumberOfRequiredArguments() {
-    return DependentLink.Helper.size(myParameters);
   }
 
   @Override

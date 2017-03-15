@@ -53,11 +53,6 @@ public class Constructor extends Definition implements Function {
     return myParameters;
   }
 
-  @Override
-  public int getNumberOfRequiredArguments() {
-    return DependentLink.Helper.size(myParameters);
-  }
-
   public void setParameters(DependentLink parameters) {
     assert parameters != null;
     myParameters = parameters;

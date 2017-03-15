@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.normalization;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.Callable;
 import com.jetbrains.jetpad.vclang.core.definition.Function;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
@@ -12,9 +13,9 @@ import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 
@@ -43,9 +44,7 @@ public class EvalNormalizer implements Normalizer {
   }
 
   @Override
-  public Expression normalize(Function fun, LevelSubstitution polySubst, DependentLink params, List<? extends Expression> paramArgs, List<? extends Expression> arguments, List<? extends Expression> otherArguments, NormalizeVisitor.Mode mode) {
-    assert fun.getNumberOfRequiredArguments() == arguments.size();
-
+  public Expression normalize(Function fun, LevelSubstitution polySubst, DependentLink params, List<? extends Expression> paramArgs, List<? extends Expression> arguments, NormalizeVisitor.Mode mode) {
     if (fun == Prelude.COERCE) {
       Expression result = null;
 
@@ -73,7 +72,7 @@ public class EvalNormalizer implements Normalizer {
       }
 
       if (result != null) {
-        return Apps(result.subst(polySubst), otherArguments).normalize(mode);
+        return result.subst(polySubst).normalize(mode);
       }
     }
 
@@ -88,16 +87,13 @@ public class EvalNormalizer implements Normalizer {
       subst.add(params, argument);
       params = params.getNext();
     }
-    return Apps(leaf.getExpression().subst(subst, polySubst), otherArguments).normalize(mode);
+    return leaf.getExpression().subst(subst, polySubst).normalize(mode);
   }
 
   @Override
   public Expression normalize(LetExpression expression) {
     Expression term = expression.getExpression().normalize(NormalizeVisitor.Mode.NF);
-    Set<Binding> bindings = new HashSet<>();
-    for (LetClause clause : expression.getClauses()) {
-      bindings.add(clause);
-    }
+    Set<Binding> bindings = expression.getClauses().stream().collect(Collectors.toSet());
     return term.findBinding(bindings) != null ? Let(expression.getClauses(), term) : term;
   }
 }

@@ -12,6 +12,6 @@ import java.util.List;
 
 public interface Normalizer {
   Expression normalize(LamExpression fun, List<? extends Expression> arguments, NormalizeVisitor.Mode mode);
-  Expression normalize(Function fun, LevelSubstitution polySubst, DependentLink params, List<? extends Expression> paramArgs, List<? extends Expression> arguments, List<? extends Expression> otherArguments, NormalizeVisitor.Mode mode);
+  Expression normalize(Function fun, LevelSubstitution polySubst, DependentLink params, List<? extends Expression> paramArgs, List<? extends Expression> arguments, NormalizeVisitor.Mode mode);
   Expression normalize(LetExpression expression);
 }
