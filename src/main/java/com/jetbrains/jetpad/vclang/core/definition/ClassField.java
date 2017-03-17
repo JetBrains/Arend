@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.FieldCallExpression;
@@ -14,7 +15,7 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FieldCall;
 
 public class ClassField extends Definition {
-  private DependentLink myThisParameter;
+  private TypedDependentLink myThisParameter;
   private Expression myType;
 
   public ClassField(Abstract.ClassField abstractDef, ClassDefinition thisClass) {
@@ -22,7 +23,7 @@ public class ClassField extends Definition {
     setThisClass(thisClass);
   }
 
-  public ClassField(Abstract.ClassField abstractDef, Expression type, ClassDefinition thisClass, DependentLink thisParameter) {
+  public ClassField(Abstract.ClassField abstractDef, Expression type, ClassDefinition thisClass, TypedDependentLink thisParameter) {
     super(abstractDef, TypeCheckingStatus.NO_ERRORS);
     myThisParameter = thisParameter;
     myType = type;
@@ -44,11 +45,11 @@ public class ClassField extends Definition {
     return myThisParameter;
   }
 
-  public DependentLink getThisParameter() {
+  public TypedDependentLink getThisParameter() {
     return myThisParameter;
   }
 
-  public void setThisParameter(DependentLink thisParameter) {
+  public void setThisParameter(TypedDependentLink thisParameter) {
     assert myThisParameter == null;
     myThisParameter = thisParameter;
   }

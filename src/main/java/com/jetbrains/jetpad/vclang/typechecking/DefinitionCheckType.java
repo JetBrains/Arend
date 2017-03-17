@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
@@ -96,7 +97,7 @@ public class DefinitionCheckType {
   }
 
   public static Definition typeCheck(TypecheckerState state, GlobalInstancePool instancePool, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckingUnit unit, boolean recursive, LocalErrorReporter errorReporter) {
-    CheckTypeVisitor visitor = new CheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, new ArrayList<Binding>(), errorReporter, instancePool);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, new ArrayList<>(), errorReporter, instancePool);
     ClassDefinition enclosingClass = unit.getEnclosingClass() == null ? null : (ClassDefinition) state.getTypechecked(unit.getEnclosingClass());
     Definition typechecked = state.getTypechecked(unit.getDefinition());
 
@@ -143,7 +144,7 @@ public class DefinitionCheckType {
     }
   }
 
-  private static DependentLink createThisParam(ClassDefinition enclosingClass) {
+  private static TypedDependentLink createThisParam(ClassDefinition enclosingClass) {
     assert enclosingClass != null;
     return param("\\this", ClassCall(enclosingClass, LevelArguments.STD));
   }
@@ -422,7 +423,7 @@ public class DefinitionCheckType {
         continue;
       }
       if (!condMap.containsKey(constructor)) {
-        condMap.put(constructor, new ArrayList<Abstract.Condition>());
+        condMap.put(constructor, new ArrayList<>());
       }
       condMap.get(constructor).add(cond);
     }
@@ -728,7 +729,7 @@ public class DefinitionCheckType {
           continue;
         }
 
-        DependentLink thisParameter = createThisParam(typedDef);
+        TypedDependentLink thisParameter = createThisParam(typedDef);
         try (Utils.ContextSaver saver = new Utils.ContextSaver(context)) {
           context.add(thisParameter);
           visitor.setThisClass(typedDef, Reference(thisParameter));
@@ -750,14 +751,14 @@ public class DefinitionCheckType {
     }
   }
 
-  private static CheckTypeVisitor.Result implementField(FieldSet fieldSet, ClassField field, Abstract.Expression implBody, CheckTypeVisitor visitor, DependentLink thisParam) {
+  private static CheckTypeVisitor.Result implementField(FieldSet fieldSet, ClassField field, Abstract.Expression implBody, CheckTypeVisitor visitor, TypedDependentLink thisParam) {
     CheckTypeVisitor.Result result = visitor.checkType(implBody, field.getBaseType(LevelArguments.STD).subst(field.getThisParameter(), Reference(thisParam)));
     fieldSet.implementField(field, new FieldSet.Implementation(thisParam, result != null ? result.expression : Error(null, null)));
     return result;
   }
 
   private static ClassField typeCheckClassField(Abstract.ClassField def, ClassDefinition enclosingClass, FieldSet fieldSet, CheckTypeVisitor visitor) {
-    DependentLink thisParameter = createThisParam(enclosingClass);
+    TypedDependentLink thisParameter = createThisParam(enclosingClass);
     visitor.setThisClass(enclosingClass, Reference(thisParameter));
     CheckTypeVisitor.Result typeResult;
     try (Utils.ContextSaver saver = new Utils.ContextSaver(visitor.getContext())) {

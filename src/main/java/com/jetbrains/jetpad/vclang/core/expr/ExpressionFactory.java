@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.core.context.param.*;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.ConstructorPattern;
-import com.jetbrains.jetpad.vclang.core.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.core.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.core.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
@@ -177,7 +176,7 @@ public class ExpressionFactory {
     return new TypedDependentLink(explicit, var, type, EmptyDependentLink.getInstance());
   }
 
-  public static DependentLink param(String var, Expression type) {
+  public static TypedDependentLink param(String var, Expression type) {
     return new TypedDependentLink(true, var, type, EmptyDependentLink.getInstance());
   }
 
@@ -358,13 +357,5 @@ public class ExpressionFactory {
 
   public static ConstructorClausePair clause(Constructor constructor, DependentLink parameters, Expression expr) {
     return new ConstructorClausePair(constructor, parameters, leaf(Abstract.Definition.Arrow.RIGHT, expr));
-  }
-
-  public static PatternArgument match(boolean isExplicit, DependentLink link) {
-    return new PatternArgument(new NamePattern(link), isExplicit, false);
-  }
-
-  public static PatternArgument match(DependentLink link) {
-    return match(true, link);
   }
 }

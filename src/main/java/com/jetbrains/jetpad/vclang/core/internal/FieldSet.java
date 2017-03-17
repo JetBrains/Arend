@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.core.internal;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
@@ -10,15 +11,16 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.param;
 
 public class FieldSet implements ReadonlyFieldSet {
   public static class Implementation {
-    public final DependentLink thisParam;
+    public final TypedDependentLink thisParam;
     public final Expression term;
 
-    public Implementation(DependentLink thisParam, Expression term) {
+    public Implementation(TypedDependentLink thisParam, Expression term) {
       this.thisParam = thisParam;
       this.term = term;
     }
@@ -33,7 +35,7 @@ public class FieldSet implements ReadonlyFieldSet {
   private Sort mySort;
 
   public FieldSet() {
-    this(new LinkedHashSet<ClassField>(), new HashMap<ClassField, Implementation>(), null);
+    this(new LinkedHashSet<>(), new HashMap<>(), null);
   }
 
   public FieldSet(FieldSet other) {
@@ -149,15 +151,8 @@ public class FieldSet implements ReadonlyFieldSet {
 
   @Override
   public String toString() {
-    ArrayList<String> fields = new ArrayList<>();
-    for (ClassField f : myFields) {
-      fields.add(f.getName());
-    }
-    ArrayList<String> impl = new ArrayList<>();
-    for (ClassField f : myImplemented.keySet()) {
-      impl.add(f.getName());
-    }
-
+    ArrayList<String> fields = myFields.stream().map(ClassField::getName).collect(Collectors.toCollection(ArrayList::new));
+    ArrayList<String> impl = myImplemented.keySet().stream().map(ClassField::getName).collect(Collectors.toCollection(ArrayList::new));
     return "All: " + fields.toString() + " Impl: " + impl.toString();
   }
 }

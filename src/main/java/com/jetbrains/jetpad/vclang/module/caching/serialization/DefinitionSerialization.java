@@ -100,12 +100,12 @@ class DefinitionSerialization {
     if (pattern instanceof NamePattern) {
       builder.setName(
           DefinitionProtos.Definition.DataData.Constructor.Pattern.Name.newBuilder()
-            .setVar(writeParameter(pattern.getParameters()))
+            .setVar(writeParameter((TypedDependentLink) pattern.getParameters())) // TODO: This cast is potentially dangerous
       );
     } else if (pattern instanceof AnyConstructorPattern) {
       builder.setAnyConstructor(
           DefinitionProtos.Definition.DataData.Constructor.Pattern.AnyConstructor.newBuilder()
-              .setVar(writeParameter(pattern.getParameters()))
+              .setVar(writeParameter(((AnyConstructorPattern) pattern).getParameters()))
       );
     } else if (pattern instanceof ConstructorPattern) {
       DefinitionProtos.Definition.DataData.Constructor.Pattern.ConstructorRef.Builder pBuilder = DefinitionProtos.Definition.DataData.Constructor.Pattern.ConstructorRef.newBuilder();
@@ -176,17 +176,13 @@ class DefinitionSerialization {
     return tBuilder.build();
   }
 
-  ExpressionProtos.SingleParameter writeParameter(DependentLink link) {
+  ExpressionProtos.SingleParameter writeParameter(TypedDependentLink link) {
     ExpressionProtos.SingleParameter.Builder builder = ExpressionProtos.SingleParameter.newBuilder();
-    if (link instanceof TypedDependentLink) {
-      if (link.getName() != null) {
-        builder.setName(link.getName());
-      }
-      builder.setIsNotExplicit(!link.isExplicit());
-      builder.setType(writeExpr(link.getType()));
-    } else {
-      throw new IllegalStateException();
+    if (link.getName() != null) {
+      builder.setName(link.getName());
     }
+    builder.setIsNotExplicit(!link.isExplicit());
+    builder.setType(writeExpr(link.getType()));
     registerBinding(link);
     return builder.build();
   }

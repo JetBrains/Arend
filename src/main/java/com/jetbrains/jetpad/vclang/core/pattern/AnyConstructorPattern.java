@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.pattern;
 
-import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
@@ -10,19 +10,15 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import java.util.Collections;
 
 public class AnyConstructorPattern extends Pattern implements Abstract.AnyConstructorPattern {
-  private final DependentLink myLink;
+  private final TypedDependentLink myLink;
 
-  public AnyConstructorPattern(DependentLink link) {
+  public AnyConstructorPattern(TypedDependentLink link) {
     assert link != null;
     myLink = link;
   }
 
-  public DependentLink getLink() {
-    return myLink;
-  }
-
   @Override
-  public DependentLink getParameters() {
+  public TypedDependentLink getParameters() {
     return myLink;
   }
 

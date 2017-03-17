@@ -99,7 +99,7 @@ class DefinitionDeserialization {
         prev[0] = param;
         return new NamePattern(param);
       case ANY_CONSTRUCTOR:
-        DependentLink param1 = readParameter(proto.getAnyConstructor().getVar());
+        TypedDependentLink param1 = readParameter(proto.getAnyConstructor().getVar());
         if (prev[0] != null) prev[0].setNext(param1);
         prev[0] = param1;
         return new AnyConstructorPattern(param1);
@@ -174,7 +174,7 @@ class DefinitionDeserialization {
     return tele;
   }
 
-  DependentLink readParameter(ExpressionProtos.SingleParameter proto) throws DeserializationError {
+  TypedDependentLink readParameter(ExpressionProtos.SingleParameter proto) throws DeserializationError {
     TypedDependentLink link = new TypedDependentLink(!proto.getIsNotExplicit(), proto.getName(), readExpr(proto.getType()), EmptyDependentLink.getInstance());
     registerBinding(link);
     return link;
@@ -189,7 +189,7 @@ class DefinitionDeserialization {
       result.addField(myCalltargetProvider.getCalltarget(classFieldRef, ClassField.class), null);
     }
     for (Map.Entry<Integer, ExpressionProtos.FieldSet.Implementation> entry : proto.getImplementationsMap().entrySet()) {
-      final DependentLink thisParam;
+      final TypedDependentLink thisParam;
       if (entry.getValue().hasThisParam()) {
         thisParam = readParameter(entry.getValue().getThisParam());
       } else {
