@@ -103,6 +103,16 @@ public interface DependentLink extends Binding {
       return result;
     }
 
+    public static List<DependentLink> toList(List<SingleDependentLink> links) {
+      List<DependentLink> result = new ArrayList<>();
+      for (SingleDependentLink link : links) {
+        for (; link.hasNext(); link = link.getNext()) {
+          result.add(link);
+        }
+      }
+      return result;
+    }
+
     public static List<DependentLink> fromList(List<DependentLink> list) {
       List<DependentLink> result = new ArrayList<>(list.size());
       for (int i = 0; i < list.size(); i++) {

@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.core.expr.visitor;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.*;
@@ -490,8 +491,10 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return false;
     }
     for (int i = 0; i < letExpr1.getClauses().size(); i++) {
-      for (DependentLink link = letExpr1.getClauses().get(i).getParameters(); link.hasNext(); link = link.getNext()) {
-        mySubstitution.remove(link);
+      for (SingleDependentLink param : letExpr1.getClauses().get(i).getParameters()) {
+        for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
+          mySubstitution.remove(link);
+        }
       }
       mySubstitution.remove(letExpr1.getClauses().get(i));
     }

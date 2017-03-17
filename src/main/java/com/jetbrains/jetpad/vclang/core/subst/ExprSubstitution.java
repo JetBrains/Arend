@@ -92,7 +92,7 @@ public class ExprSubstitution {
     return result;
   }
 
-  public static ExprSubstitution getIdentity(List<Binding> bindings) {
+  public static ExprSubstitution getIdentity(List<? extends Binding> bindings) {
     ExprSubstitution result = new ExprSubstitution();
     for (Binding binding : bindings) {
       result.add(binding, new ReferenceExpression(binding));

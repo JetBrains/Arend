@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
@@ -32,6 +33,7 @@ import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.toContext;
+import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.toList;
 import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.toSubstitution;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Error;
@@ -53,17 +55,29 @@ public class TypeCheckingElim {
   }
 
   public static LocalTypeCheckingError checkConditions(final String name, final Abstract.SourceNode source, final DependentLink eliminatingArgs, ElimTreeNode elimTree) {
+    return checkConditionsContext(name, source, toList(eliminatingArgs), elimTree);
+  }
+
+  public static LocalTypeCheckingError checkConditions(String name, Abstract.SourceNode source, List<SingleDependentLink> eliminatingArgs, ElimTreeNode elimTree) {
+    return checkConditionsContext(name, source, toList(eliminatingArgs), elimTree);
+  }
+
+  public static LocalTypeCheckingError checkConditions(Abstract.ReferableSourceNode def, List<SingleDependentLink> eliminatingArgs, ElimTreeNode elimTree) {
+    return checkConditionsContext(def.getName(), def, toList(eliminatingArgs), elimTree);
+  }
+
+  private static LocalTypeCheckingError checkConditionsContext(final String name, final Abstract.SourceNode source, List<? extends DependentLink> context, ElimTreeNode elimTree) {
     final StringBuilder errorMsg = new StringBuilder();
 
-    ConditionViolationsCollector.check(elimTree, ExprSubstitution.getIdentity(toContext(eliminatingArgs)), (expr1, argsSubst1, expr2, argsSubst2) -> {
+    ConditionViolationsCollector.check(elimTree, ExprSubstitution.getIdentity(context), (expr1, argsSubst1, expr2, argsSubst2) -> {
       expr1 = expr1.normalize(NormalizeVisitor.Mode.NF);
       expr2 = expr2.normalize(NormalizeVisitor.Mode.NF);
 
       if (!expr1.equals(expr2)){
         errorMsg.append("\n").append(name);
-        printArgs(eliminatingArgs, argsSubst1, errorMsg);
+        printArgs(context, argsSubst1, errorMsg);
         errorMsg.append(" = ").append(expr1).append(" =/= ").append(expr2).append(" = ").append(name);
-        printArgs(eliminatingArgs, argsSubst2, errorMsg);
+        printArgs(context, argsSubst2, errorMsg);
      }
     });
 
@@ -74,9 +88,17 @@ public class TypeCheckingElim {
   }
 
   public static LocalTypeCheckingError checkCoverage(final Abstract.ReferableSourceNode def, final DependentLink eliminatingArgs, ElimTreeNode elimTree, Expression resultType) {
+    return checkCoverageContext(def.getName(), def, toList(eliminatingArgs), elimTree, resultType);
+  }
+
+  public static LocalTypeCheckingError checkCoverage(String name, Abstract.SourceNode sourceNode, List<SingleDependentLink> eliminatingArgs, ElimTreeNode elimTree, Expression resultType) {
+    return checkCoverageContext(name, sourceNode, toList(eliminatingArgs), elimTree, resultType);
+  }
+
+  private static LocalTypeCheckingError checkCoverageContext(String name, Abstract.SourceNode sourceNode, List<? extends DependentLink> context, ElimTreeNode elimTree, Expression resultType) {
     final StringBuilder incompleteCoverageMessage = new StringBuilder();
 
-    CoverageChecker.check(elimTree, ExprSubstitution.getIdentity(toContext(eliminatingArgs)), argsSubst -> {
+    CoverageChecker.check(elimTree, ExprSubstitution.getIdentity(context), argsSubst -> {
       for (Map.Entry<Variable, Expression> entry : argsSubst.getEntries()) {
         Expression expr = entry.getValue();
         if (!expr.normalize(NormalizeVisitor.Mode.NF).equals(expr)) {
@@ -84,12 +106,12 @@ public class TypeCheckingElim {
         }
       }
 
-      incompleteCoverageMessage.append("\n ").append(def.getName());
-      printArgs(eliminatingArgs, argsSubst, incompleteCoverageMessage);
+      incompleteCoverageMessage.append("\n ").append(name);
+      printArgs(context, argsSubst, incompleteCoverageMessage);
     }, resultType);
 
     if (incompleteCoverageMessage.length() != 0) {
-      return new LocalTypeCheckingError("Coverage check failed for: " + incompleteCoverageMessage.toString(), def);
+      return new LocalTypeCheckingError("Coverage check failed for: " + incompleteCoverageMessage.toString(), sourceNode);
     } else {
       return null;
     }
@@ -277,7 +299,7 @@ public class TypeCheckingElim {
       List<Binding> argsBindings = toContext(eliminatingArgs);
       myVisitor.getContext().addAll(argsBindings);
 
-      List<Integer> eliminatingIndicies = new ArrayList<>();
+      List<Integer> eliminatingIndices = new ArrayList<>();
 
       LocalTypeCheckingError error;
       final List<ReferenceExpression> elimExprs = new ArrayList<>(expr.getExpressions().size());
@@ -294,9 +316,9 @@ public class TypeCheckingElim {
           var.setWellTyped(argsBindings, Error(null, error));
           return null;
         }
-        eliminatingIndicies.add(argsBindings.indexOf(refExpr.getBinding()));
+        eliminatingIndices.add(argsBindings.indexOf(refExpr.getBinding()));
 
-        if (eliminatingIndicies.size() >= 2 && eliminatingIndicies.get(eliminatingIndicies.size() - 2) >= eliminatingIndicies.get(eliminatingIndicies.size() - 1)) {
+        if (eliminatingIndices.size() >= 2 && eliminatingIndices.get(eliminatingIndices.size() - 2) >= eliminatingIndices.get(eliminatingIndices.size() - 1)) {
           error = new LocalTypeCheckingError("Variable elimination must be in the order of variable introduction", var);
           myVisitor.getErrorReporter().report(error);
           var.setWellTyped(argsBindings, Error(null, error));
@@ -315,8 +337,8 @@ public class TypeCheckingElim {
     }
   }
 
-  private static void printArgs(DependentLink eliminatingArgs, ExprSubstitution argsSubst, StringBuilder errorMsg) {
-    for (DependentLink link = eliminatingArgs; link.hasNext(); link = link.getNext()) {
+  private static void printArgs(List<? extends DependentLink> context, ExprSubstitution argsSubst, StringBuilder errorMsg) {
+    for (DependentLink link : context) {
       errorMsg.append(" ").append(link.isExplicit() ? "(" : "{");
       errorMsg.append(argsSubst.get(link));
       errorMsg.append(link.isExplicit() ? ")" : "}");

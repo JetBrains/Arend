@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
@@ -19,9 +20,9 @@ import com.jetbrains.jetpad.vclang.core.sort.*;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 class DefinitionDeserialization {
   private final CalltargetProvider.Typed myCalltargetProvider;
@@ -148,9 +149,7 @@ class DefinitionDeserialization {
     DependentLink cur = null;
     for (ExpressionProtos.Telescope proto : protos) {
       List<String> unfixedNames = new ArrayList<>(proto.getNameList().size());
-      for (String name : proto.getNameList()) {
-        unfixedNames.add(name.isEmpty() ? null : name);
-      }
+      unfixedNames.addAll(proto.getNameList().stream().map(name -> name.isEmpty() ? null : name).collect(Collectors.toList()));
       DependentLink tele = ExpressionFactory.param(!proto.getIsNotExplicit(), unfixedNames, readExpr(proto.getType()));
       for (DependentLink link = tele; link.hasNext(); link = link.getNext()) {
         registerBinding(link);
@@ -163,6 +162,16 @@ class DefinitionDeserialization {
       }
     }
     return first != null ? first : EmptyDependentLink.getInstance();
+  }
+
+  SingleDependentLink readSingleParameter(ExpressionProtos.Telescope proto) throws DeserializationError {
+    List<String> unfixedNames = new ArrayList<>(proto.getNameList().size());
+    unfixedNames.addAll(proto.getNameList().stream().map(name -> name.isEmpty() ? null : name).collect(Collectors.toList()));
+    SingleDependentLink tele = ExpressionFactory.singleParam(!proto.getIsNotExplicit(), unfixedNames, readExpr(proto.getType()));
+    for (DependentLink link = tele; link.hasNext(); link = link.getNext()) {
+      registerBinding(link);
+    }
+    return tele;
   }
 
   DependentLink readParameter(ExpressionProtos.SingleParameter proto) throws DeserializationError {
@@ -333,7 +342,15 @@ class DefinitionDeserialization {
   private LetExpression readLet(ExpressionProtos.Expression.Let proto) throws DeserializationError {
     List<LetClause> clauses = new ArrayList<>();
     for (ExpressionProtos.Expression.Let.Clause cProto : proto.getClauseList()) {
-      LetClause clause = new LetClause(cProto.getName(), Collections.<Level>emptyList(), readParameters(cProto.getParamList()), readExpr(cProto.getResultType()), readElimTree(cProto.getElimTree()));
+      List<Level> pLevels = new ArrayList<>(cProto.getPLevelCount());
+      for (LevelProtos.Level pLevel : cProto.getPLevelList()) {
+        pLevels.add(readLevel(pLevel));
+      }
+      List<SingleDependentLink> parameters = new ArrayList<>(cProto.getParamCount());
+      for (ExpressionProtos.Telescope telescope : cProto.getParamList()) {
+        parameters.add(readSingleParameter(telescope));
+      }
+      LetClause clause = new LetClause(cProto.getName(), pLevels, parameters, readExpr(cProto.getResultType()), readElimTree(cProto.getElimTree()));
       registerBinding(clause);
       clauses.add(clause);
     }

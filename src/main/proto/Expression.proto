@@ -80,6 +80,7 @@ message Expression {
 
         message Clause {
             string name = 1;
+            repeated Level pLevel = 5;
             repeated Telescope param = 2;
             ElimTreeNode elim_tree = 3;
             Expression result_type = 4;

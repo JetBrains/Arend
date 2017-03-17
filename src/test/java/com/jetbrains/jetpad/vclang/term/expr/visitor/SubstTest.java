@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
@@ -105,8 +106,8 @@ public class SubstTest extends TypeCheckingTestCase {
   public void substLet() {
     // \let | x (z : N) => z | y (w : N) => a \in a [a := zero] = \let | x (z : N) => z | y (w : N) => zero \in zero
     Binding a = new TypedBinding("a", Nat());
-    DependentLink z = param("z", Nat());
-    DependentLink w = param("w", Nat());
+    SingleDependentLink z = singleParam("z", Nat());
+    SingleDependentLink w = singleParam("w", Nat());
 
     Expression expr1 = Let(lets(let("x", z, Reference(z)), let("y", w, Reference(a))), Reference(a));
     Expression expr2 = Let(lets(let("x", z, Reference(z)), let("y", w, Zero())), Zero());

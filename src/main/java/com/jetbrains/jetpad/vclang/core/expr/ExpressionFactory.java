@@ -1,10 +1,7 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.UntypedDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.*;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.ConstructorPattern;
@@ -138,27 +135,35 @@ public class ExpressionFactory {
   }
 
   public static LetClause let(String name, ElimTreeNode elimTree) {
-    return let(name, EmptyDependentLink.getInstance(), elimTree);
+    return let(name, Collections.emptyList(), elimTree);
   }
 
-  public static LetClause let(String name, DependentLink params, Expression expr) {
+  public static LetClause let(String name, SingleDependentLink param, Expression expr) {
+    return let(name, Collections.singletonList(param), leaf(expr));
+  }
+
+  public static LetClause let(String name, List<SingleDependentLink> params, Expression expr) {
     return let(name, params, leaf(expr));
   }
 
-  public static LetClause let(String name, DependentLink params, ElimTreeNode elimTree) {
+  public static LetClause let(String name, List<SingleDependentLink> params, ElimTreeNode elimTree) {
     return let(name, params, null, elimTree);
   }
 
-  public static LetClause let(String name, DependentLink params, Expression resultType, Abstract.Definition.Arrow arrow, Expression expr) {
+  public static LetClause let(String name, List<SingleDependentLink> params, Expression resultType, Abstract.Definition.Arrow arrow, Expression expr) {
     return let(name, params, resultType, leaf(arrow, expr));
   }
 
-  public static LetClause let(String name, DependentLink params, Expression resultType, Expression expr) {
+  public static LetClause let(String name, SingleDependentLink param, Expression resultType, Expression expr) {
+    return let(name, Collections.singletonList(param), resultType, leaf(expr));
+  }
+
+  public static LetClause let(String name, List<SingleDependentLink> params, Expression resultType, Expression expr) {
     return let(name, params, resultType, leaf(expr));
   }
 
-  public static LetClause let(String name, DependentLink params, Expression resultType, ElimTreeNode elimTree) {
-    return new LetClause(name, Collections.<Level>emptyList(), params, resultType, elimTree);
+  public static LetClause let(String name, List<SingleDependentLink> params, Expression resultType, ElimTreeNode elimTree) {
+    return new LetClause(name, Collections.nCopies(params.size(), new Level(0)), params, resultType, elimTree);
   }
 
   public static DependentLink params(DependentLink... links) {
@@ -188,6 +193,18 @@ public class ExpressionFactory {
     DependentLink link = new TypedDependentLink(explicit, names.get(names.size() - 1), type, EmptyDependentLink.getInstance());
     for (int i = names.size() - 2; i >= 0; i--) {
       link = new UntypedDependentLink(names.get(i), link);
+    }
+    return link;
+  }
+
+  public static TypedSingleDependentLink singleParam(String name, Expression type) {
+    return new TypedSingleDependentLink(true, name, type);
+  }
+
+  public static SingleDependentLink singleParam(boolean explicit, List<String> names, Expression type) {
+    SingleDependentLink link = new TypedSingleDependentLink(explicit, names.get(names.size() - 1), type);
+    for (int i = names.size() - 2; i >= 0; i--) {
+      link = new UntypedSingleDependentLink(names.get(i), link);
     }
     return link;
   }
@@ -283,6 +300,15 @@ public class ExpressionFactory {
 
   public static ElimTreeNode top(DependentLink parameters, ElimTreeNode tree) {
     tree.updateLeavesMatched(DependentLink.Helper.toContext(parameters));
+    return tree;
+  }
+
+  public static ElimTreeNode top(List<SingleDependentLink> parameters, ElimTreeNode tree) {
+    List<Binding> context = new ArrayList<>();
+    for (SingleDependentLink link : parameters) {
+      context.addAll(DependentLink.Helper.toContext(link));
+    }
+    tree.updateLeavesMatched(context);
     return tree;
   }
 

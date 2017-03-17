@@ -65,6 +65,13 @@ public class PiExpression extends DependentTypeExpression {
     if (resultPLevel != null) {
       return Collections.singletonList(resultPLevel);
     }
+    return generateUpperBounds(domPLevels, codPLevel, equations, sourceNode);
+  }
+
+  public static List<Level> generateUpperBounds(List<Level> domPLevels, Level codPLevel, Equations equations, Abstract.SourceNode sourceNode) {
+    if (domPLevels.isEmpty()) {
+      return Collections.emptyList();
+    }
 
     List<Level> resultPLevels = new ArrayList<>(domPLevels.size());
     for (Level domPLevel : domPLevels) {

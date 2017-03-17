@@ -288,7 +288,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
 
   @Test
   public void letNormalizationContext() {
-    LetClause let = let("x", EmptyDependentLink.getInstance(), Nat(), top(EmptyDependentLink.getInstance(), leaf(Abstract.Definition.Arrow.RIGHT, Zero())));
+    LetClause let = let("x", Collections.emptyList(), Nat(), top(EmptyDependentLink.getInstance(), leaf(Abstract.Definition.Arrow.RIGHT, Zero())));
     Let(lets(let), Reference(let)).normalize(NormalizeVisitor.Mode.NF);
   }
 

@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Callable;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.BranchElimTreeNode;
@@ -40,9 +41,11 @@ public class LetClauseCallExpression extends Expression implements CallableCallE
   public Expression getStuckExpression() {
     Binding binding = ((BranchElimTreeNode) myLetClause.getElimTree()).getReference();
     int i = 0;
-    for (DependentLink param = myLetClause.getParameters(); param.hasNext(); param = param.getNext()) {
-      if (param == binding) {
-        return myArguments.get(i).getStuckExpression();
+    for (SingleDependentLink link : myLetClause.getParameters()) {
+      for (DependentLink param = link; param.hasNext(); param = param.getNext()) {
+        if (param == binding) {
+          return myArguments.get(i).getStuckExpression();
+        }
       }
     }
 

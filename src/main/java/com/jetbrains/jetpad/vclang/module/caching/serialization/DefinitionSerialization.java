@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.*;
@@ -149,26 +150,30 @@ class DefinitionSerialization {
   List<ExpressionProtos.Telescope> writeParameters(DependentLink link) {
     List<ExpressionProtos.Telescope> out = new ArrayList<>();
     for (; link.hasNext(); link = link.getNext()) {
-      ExpressionProtos.Telescope.Builder tBuilder = ExpressionProtos.Telescope.newBuilder();
-      List<String> names = new ArrayList<>();
-      TypedDependentLink typed = link.getNextTyped(names);
-      List<String> fixedNames = new ArrayList<>(names.size());
-      for (String name : names) {
-        if (name != null && name.isEmpty()) {
-          throw new IllegalArgumentException();
-        }
-        fixedNames.add(name == null ? "" : name);
-      }
-      tBuilder.addAllName(fixedNames);
-      tBuilder.setIsNotExplicit(!typed.isExplicit());
-      tBuilder.setType(writeExpr(typed.getType()));
-      for (; link != typed; link = link.getNext()) {
-        registerBinding(link);
-      }
-      registerBinding(typed);
-      out.add(tBuilder.build());
+      out.add(writeSingleParameter(link));
     }
     return out;
+  }
+
+  private ExpressionProtos.Telescope writeSingleParameter(DependentLink link) {
+    ExpressionProtos.Telescope.Builder tBuilder = ExpressionProtos.Telescope.newBuilder();
+    List<String> names = new ArrayList<>();
+    TypedDependentLink typed = link.getNextTyped(names);
+    List<String> fixedNames = new ArrayList<>(names.size());
+    for (String name : names) {
+      if (name != null && name.isEmpty()) {
+        throw new IllegalArgumentException();
+      }
+      fixedNames.add(name == null ? "" : name);
+    }
+    tBuilder.addAllName(fixedNames);
+    tBuilder.setIsNotExplicit(!typed.isExplicit());
+    tBuilder.setType(writeExpr(typed.getType()));
+    for (; link != typed; link = link.getNext()) {
+      registerBinding(link);
+    }
+    registerBinding(typed);
+    return tBuilder.build();
   }
 
   ExpressionProtos.SingleParameter writeParameter(DependentLink link) {
@@ -385,7 +390,12 @@ class DefinitionSerialization {
       for (LetClause letClause : letExpression.getClauses()) {
         ExpressionProtos.Expression.Let.Clause.Builder cBuilder = ExpressionProtos.Expression.Let.Clause.newBuilder();
         cBuilder.setName(letClause.getName());
-        cBuilder.addAllParam(writeParameters(letClause.getParameters()));
+        for (Level pLevel : letClause.getPLevels()) {
+          cBuilder.addPLevel(writeLevel(pLevel));
+        }
+        for (SingleDependentLink link : letClause.getParameters()) {
+          cBuilder.addParam(writeSingleParameter(link));
+        }
         cBuilder.setResultType(letClause.getResultType().accept(this, null));
         cBuilder.setElimTree(writeElimTree(letClause.getElimTree()));
         builder.addClause(cBuilder);

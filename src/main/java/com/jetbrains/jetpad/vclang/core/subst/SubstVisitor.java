@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.core.subst;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.BaseExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
@@ -234,11 +235,14 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   }
 
   public LetClause visitLetClause(LetClause clause) {
-    DependentLink parameters = DependentLink.Helper.subst(clause.getParameters(), myExprSubstitution, myLevelSubstitution);
+    List<SingleDependentLink> parameters = new ArrayList<>(clause.getParameters().size());
+    parameters.addAll(clause.getParameters().stream().map(link -> DependentLink.Helper.subst(link, myExprSubstitution, myLevelSubstitution)).collect(Collectors.toList()));
     List<Level> pLevels = clause.getPLevels().stream().map(pLevel -> pLevel.subst(myLevelSubstitution)).collect(Collectors.toList());
     Expression resultType = clause.getResultType() == null ? null : clause.getResultType().accept(this, null);
     ElimTreeNode elimTree = clause.getElimTree().accept(this, null);
-    DependentLink.Helper.freeSubsts(clause.getParameters(), myExprSubstitution);
+    for (SingleDependentLink link : clause.getParameters()) {
+      DependentLink.Helper.freeSubsts(link, myExprSubstitution);
+    }
     return new LetClause(clause.getName(), pLevels, parameters, resultType, elimTree);
   }
 }

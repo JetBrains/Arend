@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.core.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
@@ -172,12 +173,14 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> im
   }
 
   public Variable visitLetClause(LetClause clause) {
-    Variable result = visitDependentLink(clause.getParameters());
-    if (result != null) {
-      return result;
+    for (SingleDependentLink link : clause.getParameters()) {
+      Variable result = visitDependentLink(link);
+      if (result != null) {
+        return result;
+      }
     }
     if (clause.getResultType() != null) {
-      result = clause.getResultType().accept(this, null);
+      Variable result = clause.getResultType().accept(this, null);
       if (result != null) {
         return result;
       }

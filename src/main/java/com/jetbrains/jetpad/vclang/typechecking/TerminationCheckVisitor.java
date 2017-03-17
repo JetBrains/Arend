@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.*;
@@ -224,8 +225,10 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
   }
 
   private boolean visitLetClause(LetClause clause) {
-    if (!visitArguments(clause.getParameters())) {
-      return false;
+    for (SingleDependentLink link : clause.getParameters()) {
+      if (!visitArguments(link)) {
+        return false;
+      }
     }
     return clause.getElimTree().accept(this, null);
   }

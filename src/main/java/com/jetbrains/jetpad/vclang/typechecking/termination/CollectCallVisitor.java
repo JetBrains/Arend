@@ -4,6 +4,7 @@ package com.jetbrains.jetpad.vclang.typechecking.termination;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
@@ -146,7 +147,9 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
 
     for (LetClause lc : expression.getClauses()) {
       lc.getResultType().accept(this, vector);
-      visitDependentLink(lc.getParameters(), vector);
+      for (SingleDependentLink link : lc.getParameters()) {
+        visitDependentLink(link, vector);
+      }
       lc.getElimTree().accept(this, vector);
     }
     return null;
