@@ -199,7 +199,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   public Expression visitPi(PiExpression expr, Mode mode) {
     if (mode == Mode.HUMAN_NF || mode == Mode.NF) {
       ExprSubstitution substitution = new ExprSubstitution();
-      return new PiExpression(expr.getPLevels(), DependentLink.Helper.accept(expr.getParameters(), substitution, this, mode), expr.getCodomain().subst(substitution).accept(this, mode));
+      return new PiExpression(expr.getPLevel(), DependentLink.Helper.accept(expr.getParameters(), substitution, this, mode), expr.getCodomain().subst(substitution).accept(this, mode));
     } else {
       return expr;
     }

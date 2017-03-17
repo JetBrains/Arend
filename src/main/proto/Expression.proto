@@ -71,7 +71,7 @@ message Expression {
         repeated Expression argument = 2;
     }
     message Lam {
-        repeated Telescope param = 1;
+        Telescope param = 3;
         Expression body = 2;
     }
     message Let {
@@ -90,8 +90,8 @@ message Expression {
         ClassCall class_call = 1;
     }
     message Pi {
-        repeated Level pLevel = 5;
-        repeated Telescope param = 1;
+        Level pLevel = 6;
+        Telescope param = 7;
         Expression codomain = 2;
     }
     message Proj {

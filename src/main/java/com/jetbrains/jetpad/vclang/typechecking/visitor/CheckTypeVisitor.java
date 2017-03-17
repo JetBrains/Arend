@@ -8,9 +8,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.ExpressionInfe
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.LambdaInferenceVariable;
-import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.*;
 import com.jetbrains.jetpad.vclang.core.definition.Callable;
 import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
@@ -71,7 +69,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     Result toResult();
     DependentLink getParameter();
     TResult applyExpressions(List<? extends Expression> expressions);
-    List<DependentLink> getImplicitParameters();
+    List<? extends DependentLink> getImplicitParameters();
   }
 
   public static class DefCallResult implements TResult {
@@ -111,13 +109,41 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
     @Override
     public Result toResult() {
-      myArguments.addAll(myParameters.stream().map(ExpressionFactory::Reference).collect(Collectors.toList()));
-      Expression expression = myDefinition.getDefCall(myLevelArguments, myThisExpr, myArguments);
-      if (!myParameters.isEmpty()) {
-        expression = Lam(myParameters.get(0), expression);
-        myResultType = myResultType.fromPiParameters(myParameters);
+      if (myParameters.isEmpty()) {
+        return new Result(myDefinition.getDefCall(myLevelArguments, myThisExpr, myArguments), myResultType);
       }
-      return new Result(expression, myResultType);
+
+      List<SingleDependentLink> parameters = new ArrayList<>();
+      ExprSubstitution substitution = new ExprSubstitution();
+      List<String> names = new ArrayList<>();
+      DependentLink link0 = null;
+      for (DependentLink link : myParameters) {
+        if (link0 == null) {
+          link0 = link;
+        }
+
+        names.add(link.getName());
+        if (link instanceof TypedDependentLink) {
+          SingleDependentLink parameter = singleParam(link.isExplicit(), names, link.getType().subst(substitution, LevelSubstitution.EMPTY));
+          parameters.add(parameter);
+          names.clear();
+
+          for (; parameter.hasNext(); parameter = parameter.getNext(), link0 = link0.getNext()) {
+            substitution.add(link0, Reference(parameter));
+            myArguments.add(Reference(parameter));
+          }
+
+          link0 = null;
+        }
+      }
+
+      Expression expression = myDefinition.getDefCall(myLevelArguments, myThisExpr, myArguments);
+      Expression type = myResultType.subst(substitution, LevelSubstitution.EMPTY);
+      for (int i = parameters.size() - 1; i >= 0; i--) {
+        expression = new LamExpression(parameters.get(i), expression);
+        type = new PiExpression(parameters.get(i), type);
+      }
+      return new Result(expression, type);
     }
 
     @Override
@@ -205,8 +231,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
 
     @Override
-    public List<DependentLink> getImplicitParameters() {
-      List<DependentLink> params = new ArrayList<>();
+    public List<SingleDependentLink> getImplicitParameters() {
+      List<SingleDependentLink> params = new ArrayList<>();
       type.getPiParameters(params, true, true);
       return params;
     }
@@ -424,10 +450,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
   @Override
   public Result visitLam(Abstract.LamExpression expr, Type expectedType) {
-    List<DependentLink> piParams = new ArrayList<>();
+    List<SingleDependentLink> piParams = new ArrayList<>();
     Type expectedCodomain = expectedType == null ? null : expectedType.getPiParameters(piParams, true, false);
-    LinkList list = new LinkList();
-    DependentLink actualPiLink = null;
+    List<SingleDependentLink> links = new ArrayList<>(expr.getArguments().size());
+    SingleDependentLink actualPiLink = null;
     ExprSubstitution piLamSubst = new ExprSubstitution();
     int piParamsIndex = 0;
     int argIndex = 1;
@@ -452,8 +478,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
           throw new IllegalStateException();
         }
 
-        DependentLink link = param(isExplicit, names, argType);
-        list.append(link);
+        SingleDependentLink link = singleParam(isExplicit, names, argType);
+        links.add(link);
 
         for (String name : names) {
           if (piParamsIndex < piParams.size()) {
@@ -497,39 +523,62 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
 
       Type expectedBodyType = null;
       if (actualPiLink == null && expectedCodomain != null) {
-        expectedBodyType = expectedCodomain instanceof Expression ? ((Expression) expectedCodomain).fromPiParameters(piParams.subList(piParamsIndex, piParams.size())).subst(piLamSubst, LevelSubstitution.EMPTY) : expectedCodomain;
+        expectedBodyType = expectedCodomain instanceof Expression ? ((Expression) expectedCodomain).fromPiParametersSingle(piParams.subList(piParamsIndex, piParams.size())).subst(piLamSubst, LevelSubstitution.EMPTY) : expectedCodomain;
       }
 
       Abstract.Expression body = expr.getBody();
       bodyResult = typeCheck(body, expectedBodyType);
       if (bodyResult == null) return null;
-      if (actualPiLink != null && expectedCodomain != null && !compare(new Result(bodyResult.expression, bodyResult.type.addParameters(actualPiLink)), expectedCodomain, body)) {
+      if (actualPiLink != null && expectedCodomain != null && !compare(new Result(bodyResult.expression, new PiExpression(actualPiLink, bodyResult.type)), expectedCodomain, body)) {
         return null;
       }
     }
 
-    return new Result(ExpressionFactory.Lam(list.getFirst(), bodyResult.expression),
-            bodyResult.type.addParameters(list.getFirst()));
+    Expression exprResult = bodyResult.expression;
+    Expression typeResult = bodyResult.type;
+    for (int i = links.size() - 1; i >= 0; i--) {
+      exprResult = Lam(links.get(i), exprResult);
+      typeResult = new PiExpression(links.get(i), typeResult);
+    }
+    return new Result(exprResult, typeResult);
   }
 
   @Override
   public Result visitPi(Abstract.PiExpression expr, Type expectedType) {
+    List<SingleDependentLink> list = new ArrayList<>();
     List<Sort> sorts = new ArrayList<>(expr.getArguments().size());
-    DependentLink args = visitArguments(expr.getArguments(), sorts);
-    if (args == null || !args.hasNext()) return null;
-
-    List<Level> pLevels = new ArrayList<>(sorts.size());
-    pLevels.addAll(sorts.stream().map(Sort::getPLevel).collect(Collectors.toList()));
 
     try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
-      myContext.addAll(DependentLink.Helper.toContext(args));
+      for (Abstract.TypeArgument arg : expr.getArguments()) {
+        Result result = typeCheck(arg.getType(), TypeOmega.INSTANCE);
+        if (result == null) return null;
+
+        if (arg instanceof Abstract.TelescopeArgument) {
+          SingleDependentLink link = singleParam(arg.getExplicit(), ((Abstract.TelescopeArgument) arg).getNames(), result.expression);
+          list.add(link);
+          myContext.addAll(DependentLink.Helper.toContext(link));
+        } else {
+          SingleDependentLink link = singleParam(arg.getExplicit(), Collections.singletonList(null), result.expression);
+          list.add(link);
+          myContext.add(link);
+        }
+
+        result.type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
+        sorts.add(result.type.toUniverse().getSort());
+      }
+
       Result result = typeCheck(expr.getCodomain(), TypeOmega.INSTANCE);
       if (result == null) return null;
-
       Sort codSort = result.type.toUniverse().getSort();
-      List<Level> resultLevels = PiExpression.generateUpperBound(pLevels, codSort.getPLevel(), myEquations, expr);
-      Expression piExpr = new PiExpression(resultLevels, args, result.expression);
-      return checkResult(expectedType, new Result(piExpr, new UniverseExpression(new Sort(resultLevels.get(0), codSort.getHLevel()))), expr);
+
+      Level codPLevel = codSort.getPLevel();
+      Expression piExpr = result.expression;
+      for (int i = list.size() - 1; i >= 0; i--) {
+        codPLevel = PiExpression.generateUpperBound(sorts.get(i).getPLevel(), codPLevel, myEquations, expr);
+        piExpr = new PiExpression(codPLevel, list.get(i), piExpr);
+      }
+
+      return checkResult(expectedType, new Result(piExpr, new UniverseExpression(list.isEmpty() ? codSort : new Sort(((PiExpression) piExpr).getPLevel(), codSort.getHLevel()))), expr);
     }
   }
 
@@ -770,11 +819,32 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
 
     Level codPLevel = ((Expression) expectedType).getType().toUniverse().getSort().getPLevel();
-    List<Level> pLevels = PiExpression.generateUpperBound(domPLevels, codPLevel, myEquations, expr);
+    List<Level> pLevels = generateUpperBounds(domPLevels, codPLevel, expr);
     LetClause letBinding = new LetClause(Abstract.CaseExpression.FUNCTION_NAME, pLevels, links, (Expression) expectedType, elimTree);
     caseResult.expression = ExpressionFactory.Let(ExpressionFactory.lets(letBinding), new LetClauseCallExpression(letBinding, letArguments));
     expr.setWellTyped(myContext, caseResult.expression);
     return caseResult;
+  }
+
+  private List<Level> generateUpperBounds(List<Level> domPLevels, Level codPLevel, Abstract.SourceNode sourceNode) {
+    if (domPLevels.isEmpty()) {
+      return Collections.emptyList();
+    }
+
+    List<Level> resultPLevels = new ArrayList<>(domPLevels.size());
+    for (Level domPLevel : domPLevels) {
+      InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, sourceNode);
+      myEquations.addVariable(pl);
+      Level pLevel = new Level(pl);
+      resultPLevels.add(pLevel);
+      myEquations.add(domPLevel, pLevel, Equations.CMP.LE, sourceNode);
+      if (!resultPLevels.isEmpty()) {
+        myEquations.add(pLevel, resultPLevels.get(resultPLevels.size() - 1), Equations.CMP.LE, sourceNode);
+      }
+    }
+
+    myEquations.add(codPLevel, resultPLevels.get(resultPLevels.size() - 1), Equations.CMP.LE, sourceNode);
+    return resultPLevels;
   }
 
   @Override
@@ -1000,7 +1070,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
 
     Level codPLevel = resultType.getType().toUniverse().getSort().getPLevel();
-    List<Level> pLevels = PiExpression.generateUpperBounds(domPLevels, codPLevel, myEquations, clause);
+    List<Level> pLevels = generateUpperBounds(domPLevels, codPLevel, clause);
     letResult = new LetClause(clause.getName(), pLevels, links, resultType, elimTree);
     myContext.add(letResult);
     return letResult;

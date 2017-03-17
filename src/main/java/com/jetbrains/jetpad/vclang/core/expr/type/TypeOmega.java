@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.expr.type;
 
-import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
@@ -17,7 +17,7 @@ public class TypeOmega implements Type {
   }
 
   @Override
-  public Type getPiParameters(List<DependentLink> params, boolean normalize, boolean implicitOnly) {
+  public Type getPiParameters(List<SingleDependentLink> params, boolean normalize, boolean implicitOnly) {
     return this;
   }
 

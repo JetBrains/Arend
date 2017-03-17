@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
@@ -91,7 +92,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     fac.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
     DependentLink zNElim = param("z", Nat());
-    DependentLink sNElim = param("s", Pi(param(Nat()), Pi(param(Nat()), Nat())));
+    DependentLink sNElim = param("s", Pi(Nat(), Pi(Nat(), Nat())));
     DependentLink xNElim = param("x", Nat());
     nelim = new FunctionDefinition(null);
     nelim.setParameters(params(zNElim, sNElim, xNElim));
@@ -120,7 +121,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizeLamId() {
     // normalize( (\x.x) (suc zero) ) = suc zero
-    DependentLink x = param("x", Nat());
+    SingleDependentLink x = singleParam("x", Nat());
     Expression expr = Apps(Lam(x, Reference(x)), Suc(Zero()));
     assertEquals(Suc(Zero()), expr.normalize(NormalizeVisitor.Mode.NF));
   }
@@ -128,9 +129,9 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizeLamK() {
     // normalize( (\x y. x) (suc zero) ) = \z. suc zero
-    DependentLink x = param("x", Nat());
-    DependentLink y = param("y", Nat());
-    DependentLink z = param("z", Nat());
+    SingleDependentLink x = singleParam("x", Nat());
+    SingleDependentLink y = singleParam("y", Nat());
+    SingleDependentLink z = singleParam("z", Nat());
     Expression expr = Apps(Lam(x, Lam(y, Reference(x))), Suc(Zero()));
     assertEquals(Lam(z, Suc(Zero())), expr.normalize(NormalizeVisitor.Mode.NF));
   }
@@ -138,9 +139,9 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizeLamKstar() {
     // normalize( (\x y. y) (suc zero) ) = \z. z
-    DependentLink x = param("x", Nat());
-    DependentLink y = param("y", Nat());
-    DependentLink z = param("z", Nat());
+    SingleDependentLink x = singleParam("x", Nat());
+    SingleDependentLink y = singleParam("y", Nat());
+    SingleDependentLink z = singleParam("z", Nat());
     Expression expr = Apps(Lam(x, Lam(y, Reference(y))), Suc(Zero()));
     assertEquals(Lam(z, Reference(z)), expr.normalize(NormalizeVisitor.Mode.NF));
   }
@@ -149,17 +150,16 @@ public class NormalizationTest extends TypeCheckingTestCase {
   public void normalizeLamKOpen() {
     // normalize( (\x y. x) (suc (var(0))) ) = \z. suc (var(0))
     DependentLink var0 = param("var0", Universe(0));
-    DependentLink x = param("x", Nat());
-    DependentLink y = param("y", Nat());
-    DependentLink z = param("z", Nat());
-    Expression expr = Apps(Lam(params(x, y), Reference(x)), Suc(Reference(var0)));
+    SingleDependentLink xy = singleParam(true, vars("x", "y"), Nat());
+    SingleDependentLink z = singleParam("z", Nat());
+    Expression expr = Apps(Lam(xy, Reference(xy)), Suc(Reference(var0)));
     assertEquals(Lam(z, Suc(Reference(var0))), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeNelimZero() {
     // normalize( N-elim (suc zero) (\x. suc x) 0 ) = suc zero
-    DependentLink x = param("x", Nat());
+    SingleDependentLink x = singleParam("x", Nat());
     Expression expr = FunCall(nelim, LevelArguments.ZERO, Suc(Zero()), Lam(x, Suc(Reference(x))), Zero());
     assertEquals(Suc(Zero()), expr.normalize(NormalizeVisitor.Mode.NF));
   }
@@ -168,8 +168,8 @@ public class NormalizationTest extends TypeCheckingTestCase {
   public void normalizeNelimOne() {
     // normalize( N-elim (suc zero) (\x y. (var(0)) y) (suc zero) ) = var(0) (suc zero)
     DependentLink var0 = param("var0", Pi(Nat(), Nat()));
-    DependentLink x = param("x", Nat());
-    DependentLink y = param("y", Nat());
+    SingleDependentLink x = singleParam("x", Nat());
+    SingleDependentLink y = singleParam("y", Nat());
     Expression expr = FunCall(nelim, LevelArguments.ZERO, Suc(Zero()), Lam(x, Lam(y, Apps(Reference(var0), Reference(y)))), Suc(Zero()));
     assertEquals(Apps(Reference(var0), Suc(Zero())), expr.normalize(NormalizeVisitor.Mode.NF));
   }
@@ -178,7 +178,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   public void normalizeNelimArg() {
     // normalize( N-elim (suc zero) (var(0)) ((\x. x) zero) ) = suc zero
     DependentLink var0 = param("var0", Universe(0));
-    DependentLink x = param("x", Nat());
+    SingleDependentLink x = singleParam("x", Nat());
     Expression arg = Apps(Lam(x, Reference(x)), Zero());
     Expression expr = FunCall(nelim, LevelArguments.ZERO, Suc(Zero()), Reference(var0), arg);
     Expression result = expr.normalize(NormalizeVisitor.Mode.NF);
@@ -252,7 +252,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   public void normalizeLetNo() {
     // normalize (\let | x (y z : N) => zero \in x zero) = \lam (z : N) => zero
     CheckTypeVisitor.Result result = typeCheckExpr("\\let x (y z : Nat) => 0 \\in x 0", null);
-    DependentLink x = param("x", Nat());
+    SingleDependentLink x = singleParam("x", Nat());
     assertEquals(Lam(x, Zero()), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -308,13 +308,13 @@ public class NormalizationTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void testIsoleft() {
+  public void testIsoLeft() {
     DependentLink A = param("A", Universe(new Level(0), new Level(0)));
     DependentLink B = param("B", Universe(new Level(0), new Level(0)));
-    DependentLink f = param("f", Pi(param(Reference(A)), Reference(B)));
-    DependentLink g = param("g", Pi(param(Reference(B)), Reference(A)));
-    DependentLink a = param("a", Reference(A));
-    DependentLink b = param("b", Reference(B));
+    DependentLink f = param("f", Pi(Reference(A), Reference(B)));
+    DependentLink g = param("g", Pi(Reference(B), Reference(A)));
+    SingleDependentLink a = singleParam("a", Reference(A));
+    SingleDependentLink b = singleParam("b", Reference(B));
     Expression linvType = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0),
         Reference(A),
         Apps(Reference(g), Apps(Reference(f), Reference(a))),
@@ -337,10 +337,10 @@ public class NormalizationTest extends TypeCheckingTestCase {
   public void testIsoRight() {
     DependentLink A = param("A", Universe(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR)));
     DependentLink B = param("B", Universe(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR)));
-    DependentLink f = param("f", Pi(param(Reference(A)), Reference(B)));
-    DependentLink g = param("g", Pi(param(Reference(B)), Reference(A)));
-    DependentLink a = param("a", Reference(A));
-    DependentLink b = param("b", Reference(B));
+    DependentLink f = param("f", Pi(Reference(A), Reference(B)));
+    DependentLink g = param("g", Pi(Reference(B), Reference(A)));
+    SingleDependentLink a = singleParam("a", Reference(A));
+    SingleDependentLink b = singleParam("b", Reference(B));
     Expression linvType = FunCall(Prelude.PATH_INFIX, new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR),
         Reference(A),
         Apps(Reference(g), Apps(Reference(f), Reference(a))),
@@ -363,11 +363,11 @@ public class NormalizationTest extends TypeCheckingTestCase {
   public void testCoeIso() {
     DependentLink A = param("A", Universe(new Level(0), new Level(0)));
     DependentLink B = param("B", Universe(new Level(0), new Level(0)));
-    DependentLink f = param("f", Pi(param(Reference(A)), Reference(B)));
-    DependentLink g = param("g", Pi(param(Reference(B)), Reference(A)));
-    DependentLink a = param("a", Reference(A));
-    DependentLink b = param("b", Reference(B));
-    DependentLink k = param("k", Interval());
+    DependentLink f = param("f", Pi(Reference(A), Reference(B)));
+    DependentLink g = param("g", Pi(Reference(B), Reference(A)));
+    SingleDependentLink a = singleParam("a", Reference(A));
+    SingleDependentLink b = singleParam("b", Reference(B));
+    SingleDependentLink k = singleParam("k", Interval());
     Expression linvType = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0),
         Reference(A),
         Apps(Reference(g), Apps(Reference(f), Reference(a))),
@@ -393,14 +393,14 @@ public class NormalizationTest extends TypeCheckingTestCase {
 
   @Test
   public void testCoeIsoFreeVar() {
-    DependentLink k = param("k", Interval());
-    DependentLink i = param("i", Interval());
+    SingleDependentLink k = singleParam("k", Interval());
+    SingleDependentLink i = singleParam("i", Interval());
     Expression A = DataCall(Prelude.PATH, new Level(0), new Level(0), Lam(i, Interval()), Reference(k), Reference(k));
     DependentLink B = param("B", Universe(new Level(0), new Level(0)));
-    DependentLink f = param("f", Pi(param(A), Reference(B)));
-    DependentLink g = param("g", Pi(param(Reference(B)), A));
-    DependentLink a = param("a", A);
-    DependentLink b = param("b", Reference(B));
+    DependentLink f = param("f", Pi(A, Reference(B)));
+    DependentLink g = param("g", Pi(Reference(B), A));
+    SingleDependentLink a = singleParam("a", A);
+    SingleDependentLink b = singleParam("b", Reference(B));
     Expression linvType = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0),
         A,
         Apps(Reference(g), Apps(Reference(f), Reference(a))),
@@ -431,8 +431,8 @@ public class NormalizationTest extends TypeCheckingTestCase {
 
   @Test
   public void testAppProj() {
-    DependentLink x = param("x", Nat());
-    Expression expr = Apps(Proj(Tuple(Sigma(param(Pi(param(Nat()), Nat()))), Lam(x, Reference(x))), 0), Zero());
+    SingleDependentLink x = singleParam("x", Nat());
+    Expression expr = Apps(Proj(Tuple(Sigma(param(Pi(Nat(), Nat()))), Lam(x, Reference(x))), 0), Zero());
     assertEquals(Zero(), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 

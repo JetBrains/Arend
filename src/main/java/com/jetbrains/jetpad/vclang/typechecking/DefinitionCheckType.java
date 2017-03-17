@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
@@ -568,7 +569,7 @@ public class DefinitionCheckType {
 
       for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext()) {
         Expression type = link.getType().normalize(NormalizeVisitor.Mode.WHNF);
-        List<DependentLink> piParams = new ArrayList<>();
+        List<SingleDependentLink> piParams = new ArrayList<>();
         type = type.getPiParameters(piParams, true, false);
         for (DependentLink piParam : piParams) {
           if (piParam instanceof UntypedDependentLink) {

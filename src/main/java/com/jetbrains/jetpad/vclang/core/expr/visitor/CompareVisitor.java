@@ -316,15 +316,15 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   public Boolean visitPi(PiExpression expr1, Expression expr2) {
     if (expr2.toPi() == null) return false;
 
-    List<DependentLink> params1 = new ArrayList<>(), params2 = new ArrayList<>();
+    List<SingleDependentLink> params1 = new ArrayList<>(), params2 = new ArrayList<>();
     Expression cod1 = expr1.getPiParameters(params1, false, false);
     Expression cod2 = expr2.getPiParameters(params2, false, false);
     if (params1.size() < params2.size()) {
-      cod2 = cod2.fromPiParameters(params2.subList(params1.size(), params2.size()));
+      cod2 = cod2.fromPiParametersSingle(params2.subList(params1.size(), params2.size()));
       params2 = params2.subList(0, params1.size());
     }
     if (params2.size() < params1.size()) {
-      cod1 = cod1.fromPiParameters(params1.subList(params2.size(), params1.size()));
+      cod1 = cod1.fromPiParametersSingle(params1.subList(params2.size(), params1.size()));
       params1 = params1.subList(0, params2.size());
     }
 

@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
@@ -54,12 +55,11 @@ public class DataIndicesTest extends TypeCheckingTestCase {
         "  | NatVec zero => nil\n" +
         "  | NatVec (suc n) => cons Nat (NatVec n)");
     DataDefinition data = (DataDefinition) result.getDefinition("NatVec");
-    assertEquals(DataCall(data, LevelArguments.ZERO, Zero()), data.getConstructor("nil").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.ZERO));
-    DependentLink param = param(false, "n", Nat());
-    param.setNext(params(param((String) null, Nat()), param((String) null, DataCall(data, LevelArguments.ZERO, Reference(param)))));
+    assertEquals(DataCall(data, LevelArguments.ZERO, Zero()), data.getConstructor("nil").getTypeWithParams(new ArrayList<>(), LevelArguments.ZERO));
+    SingleDependentLink param = singleParam(false, vars("n"), Nat());
     List<DependentLink> consParams = new ArrayList<>();
     Expression consType = data.getConstructor("cons").getTypeWithParams(consParams, LevelArguments.ZERO);
-    assertEquals(Pi(param, DataCall(data, LevelArguments.ZERO, Suc(Reference(param)))), consType.fromPiParameters(consParams));
+    assertEquals(Pi(param, Pi(Nat(), Pi(DataCall(data, LevelArguments.ZERO, Reference(param)), DataCall(data, LevelArguments.ZERO, Suc(Reference(param)))))), consType.fromPiParameters(consParams));
   }
 
   @Test

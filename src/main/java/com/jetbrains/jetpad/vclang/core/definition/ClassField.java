@@ -59,7 +59,7 @@ public class ClassField extends Definition {
   }
 
   @Override
-  public Expression getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
+  public Expression getTypeWithParams(List<? super DependentLink> params, LevelArguments polyArguments) {
     if (myType == null) {
       return null;
     }

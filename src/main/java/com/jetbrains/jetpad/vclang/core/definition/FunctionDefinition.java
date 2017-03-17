@@ -56,7 +56,7 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   @Override
-  public Expression getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
+  public Expression getTypeWithParams(List<? super DependentLink> params, LevelArguments polyArguments) {
     if (!status().headerIsOK()) {
       return null;
     }

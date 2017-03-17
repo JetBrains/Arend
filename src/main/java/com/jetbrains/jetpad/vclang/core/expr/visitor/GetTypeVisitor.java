@@ -67,7 +67,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitPi(PiExpression expr, Void params) {
-    return new UniverseExpression(new Sort(expr.getPLevels().get(0), expr.getCodomain().accept(this, null).toUniverse().getSort().getHLevel()));
+    return new UniverseExpression(new Sort(expr.getPLevel(), expr.getCodomain().accept(this, null).toUniverse().getSort().getHLevel()));
   }
 
   @Override

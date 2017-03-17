@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.LetClause;
@@ -26,7 +25,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   @Test
   public void prettyPrintingLam() {
     // \x. x x
-    DependentLink x = param("x", Pi(Nat(), Nat()));
+    SingleDependentLink x = singleParam("x", Pi(Nat(), Nat()));
     Expression expr = Lam(x, Apps(Reference(x), Reference(x)));
     expr.prettyPrint(new StringBuilder(), new ArrayList<>(), Abstract.Expression.PREC, 0);
   }
@@ -34,32 +33,29 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   @Test
   public void prettyPrintingLam2() {
     // \x. x (\y. y x) (\z w. x w z)
-    DependentLink x = param("x", Pi(Nat(), Pi(Nat(), Nat())));
-    DependentLink y = param("y", Pi(Nat(), Nat()));
-    DependentLink z = param("z", Nat());
-    DependentLink w = param("w", Nat());
-    Expression expr = Lam(x, Apps(Reference(x), Lam(y, Apps(Reference(y), Reference(x))), Lam(params(z, w), Apps(Reference(x), Reference(w), Reference(z)))));
+    SingleDependentLink x = singleParam("x", Pi(Nat(), Pi(Nat(), Nat())));
+    SingleDependentLink y = singleParam("y", Pi(Nat(), Nat()));
+    SingleDependentLink zw = singleParam(true, vars("z", "w"), Nat());
+    Expression expr = Lam(x, Apps(Reference(x), Lam(y, Apps(Reference(y), Reference(x))), Lam(zw, Apps(Reference(x), Reference(zw.getNext()), Reference(zw)))));
     expr.prettyPrint(new StringBuilder(), new ArrayList<>(), Abstract.Expression.PREC, 0);
   }
 
   @Test
   public void prettyPrintingU() {
     // (X : Type0) -> X -> X
-    DependentLink X = param("x", Universe(0));
-    Expression expr = Pi(X, Pi(param(Reference(X)), Reference(X)));
+    SingleDependentLink X = singleParam("x", Universe(0));
+    Expression expr = Pi(X, Pi(singleParam(null, Reference(X)), Reference(X)));
     expr.prettyPrint(new StringBuilder(), new ArrayList<>(), Abstract.Expression.PREC, 0);
   }
 
   @Test
   public void prettyPrintingPi() {
     // (t : Nat -> Nat -> Nat) (x y : Nat) (z w : Nat -> Nat) -> ((s : Nat) -> t (z s) (w x)) -> Nat
-    DependentLink t = param("t", Pi(Nat(), Pi(Nat(), Nat())));
-    DependentLink x = param("x", Nat());
-    DependentLink y = param("y", Nat());
-    DependentLink z = param("z", Pi(param(Nat()), Nat()));
-    DependentLink w = param("w", Pi(param(Nat()), Nat()));
-    DependentLink s = param("s", Nat());
-    Expression expr = Pi(params(t, x, y, z, w), Pi(param(Pi(s, Apps(Reference(t), Apps(Reference(z), Reference(s)), Apps(Reference(w), Reference(x))))), Nat()));
+    SingleDependentLink t = singleParam("t", Pi(Nat(), Pi(Nat(), Nat())));
+    SingleDependentLink xy = singleParam(true, vars("x", "y"), Nat());
+    SingleDependentLink zw = singleParam(true, vars("z", "w"), Pi(singleParam(null, Nat()), Nat()));
+    SingleDependentLink s = singleParam("s", Nat());
+    Expression expr = Pi(t, Pi(xy, Pi(zw, Pi(singleParam(null, Pi(s, Apps(Reference(t), Apps(Reference(zw), Reference(s)), Apps(Reference(zw.getNext()), Reference(xy))))), Nat()))));
     expr.prettyPrint(new StringBuilder(), new ArrayList<>(), Abstract.Expression.PREC, 0);
   }
 

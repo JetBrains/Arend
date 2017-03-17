@@ -11,7 +11,6 @@ import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 
-import java.util.Collections;
 import java.util.List;
 
 public class LetClause extends NamedBinding implements Function, Callable {
@@ -57,14 +56,14 @@ public class LetClause extends NamedBinding implements Function, Callable {
   @Override
   public Expression getType() {
     Expression type = myResultType;
-    for (int i = 0; i < myParameters.size(); i++) {
-      type = new PiExpression(Collections.singletonList(myPLevels.get(i)), myParameters.get(i), type);
+    for (int i = myParameters.size() - 1; i >= 0; i--) {
+      type = new PiExpression(myPLevels.get(i), myParameters.get(i), type);
     }
     return type;
   }
 
   @Override
-  public Expression getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
+  public Expression getTypeWithParams(List<? super DependentLink> params, LevelArguments polyArguments) {
     ExprSubstitution subst = new ExprSubstitution();
     for (SingleDependentLink parameter : myParameters) {
       params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(parameter, subst, LevelSubstitution.EMPTY)));

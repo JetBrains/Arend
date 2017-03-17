@@ -120,7 +120,7 @@ public class DataDefinition extends Definition {
   public void setMatchesOnInterval() { myMatchesOnInterval = true; }
 
   @Override
-  public Expression getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
+  public Expression getTypeWithParams(List<? super DependentLink> params, LevelArguments polyArguments) {
     if (!status().headerIsOK()) {
       return null;
     }

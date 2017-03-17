@@ -8,6 +8,6 @@ import java.util.List;
 
 public interface Callable {
   String getName();
-  Expression getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments);
+  Expression getTypeWithParams(List<? super DependentLink> params, LevelArguments polyArguments);
   Expression getDefCall(LevelArguments polyArguments, Expression thisExpr, List<Expression> arguments);
 }

@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
@@ -59,7 +60,7 @@ public class EtaNormalization {
     }
 
     ExprSubstitution substitution = new ExprSubstitution();
-    DependentLink newParams = expression.getParameters().subst(substitution, LevelSubstitution.EMPTY, params.size() - index);
+    SingleDependentLink newParams = expression.getParameters().subst(substitution, LevelSubstitution.EMPTY, params.size() - index);
     return new LamExpression(newParams, body.subst(substitution));
   }
 

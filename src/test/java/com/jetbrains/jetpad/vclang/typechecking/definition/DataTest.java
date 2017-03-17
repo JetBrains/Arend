@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.typechecking.definition;
 
-import com.jetbrains.jetpad.vclang.core.context.LinkList;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
@@ -29,28 +29,17 @@ public class DataTest extends TypeCheckingTestCase {
     List<DependentLink> params = new ArrayList<>();
     Expression type = typedDef.getTypeWithParams(params, LevelArguments.ZERO);
 
-    LinkList parameters = new LinkList();
-    parameters.append(param(false, vars("A", "B"), Universe(0, 0)));
-    DependentLink A = parameters.getFirst();
-    DependentLink B = A.getNext();
-    parameters.append(param("I", Pi(Reference(A), Pi(Reference(B), Universe(0, 0)))));
-    DependentLink I = B.getNext();
-    parameters.append(param("a", Reference(A)));
-    parameters.append(param("b", Reference(B)));
-    DependentLink a = I.getNext();
-    DependentLink b = a.getNext();
-
-    LinkList parameters1 = new LinkList();
-    parameters1.append(param("x", Reference(A)));
-    parameters1.append(param(Apps(Reference(I), Reference(parameters1.getFirst()), Reference(b))));
-
-    LinkList parameters2 = new LinkList();
-    parameters2.append(param(false, "y", Reference(B)));
-    parameters2.append(param(Apps(Reference(I), Reference(a), Reference(parameters2.getFirst()))));
+    SingleDependentLink A = singleParam(false, vars("A", "B"), Universe(0, 0));
+    SingleDependentLink B = A.getNext();
+    SingleDependentLink I = singleParam("I", Pi(Reference(A), Pi(Reference(B), Universe(0, 0))));
+    SingleDependentLink a = singleParam("a", Reference(A));
+    SingleDependentLink b = singleParam("b", Reference(B));
+    SingleDependentLink x = singleParam("x", Reference(A));
+    SingleDependentLink y = singleParam(false, vars("y"), Reference(B));
 
     assertNotNull(typedDef);
     assertEquals(Definition.TypeCheckingStatus.NO_ERRORS, typedDef.status());
-    assertEquals(Pi(parameters.getFirst(), Universe(0, 0)), type.fromPiParameters(params));
+    assertEquals(Pi(A, Pi(B, Pi(I, Pi(a, Pi(b, Universe(0, 0)))))), type.fromPiParameters(params));
     assertEquals(2, typedDef.getConstructors().size());
 
     ExprSubstitution substitution = new ExprSubstitution();
@@ -66,26 +55,26 @@ public class DataTest extends TypeCheckingTestCase {
     substitution.add(link, Reference(b));
     List<DependentLink> con1Params = new ArrayList<>();
     Expression con1Type = typedDef.getConstructors().get(0).getTypeWithParams(con1Params, LevelArguments.ZERO);
-    assertEquals(Pi(parameters.getFirst(), Pi(parameters1.getFirst(), DataCall(typedDef, LevelArguments.ZERO,
+    assertEquals(Pi(A, Pi(B, Pi(I, Pi(a, Pi(b, Pi(x, Pi(Apps(Reference(I), Reference(x), Reference(b)), DataCall(typedDef, LevelArguments.ZERO,
       Reference(A),
       Reference(B),
       Reference(I),
       Reference(a),
-      Reference(b)))), con1Type.fromPiParameters(con1Params));
+      Reference(b))))))))), con1Type.fromPiParameters(con1Params));
     List<DependentLink> con2Params = new ArrayList<>();
     Expression con2Type = typedDef.getConstructors().get(1).getTypeWithParams(con2Params, LevelArguments.ZERO);
-    assertEquals(Pi(parameters.getFirst(), Pi(parameters2.getFirst(), DataCall(typedDef, LevelArguments.ZERO,
+    assertEquals(Pi(A, Pi(B, Pi(I, Pi(a, Pi(b, Pi(y, Pi(Apps(Reference(I), Reference(a), Reference(y)), DataCall(typedDef, LevelArguments.ZERO,
       Reference(A),
       Reference(B),
       Reference(I),
       Reference(a),
-      Reference(b)))), con2Type.fromPiParameters(con2Params));
+      Reference(b))))))))), con2Type.fromPiParameters(con2Params));
   }
 
   @Test
   public void dataType2() {
     DataDefinition typedDef = (DataDefinition) typeCheckDef("\\data D (A : \\7-Type2) | con1 (X : \\1-Type5) X | con2 (Y : \\2-Type3) A Y");
-    DependentLink A = typedDef.getParameters();
+    SingleDependentLink A = singleParam("A", Universe(2, 7));
     List<DependentLink> params = new ArrayList<>();
     Expression type = typedDef.getTypeWithParams(params, LevelArguments.ZERO);
     List<DependentLink> con1Params = new ArrayList<>();
@@ -93,22 +82,16 @@ public class DataTest extends TypeCheckingTestCase {
     List<DependentLink> con2Params = new ArrayList<>();
     Expression con2Type = typedDef.getConstructors().get(1).getTypeWithParams(con2Params, LevelArguments.ZERO);
 
-    LinkList parameters1 = new LinkList();
-    parameters1.append(param("X", Universe(5, 1)));
-    parameters1.append(param(Reference(parameters1.getFirst())));
-
-    LinkList parameters2 = new LinkList();
-    parameters2.append(param("Y", Universe(3, 2)));
-    parameters2.append(param(Reference(A)));
-    parameters2.append(param(Reference(parameters2.getFirst())));
+    SingleDependentLink X = singleParam("X", Universe(5, 1));
+    SingleDependentLink Y = singleParam("Y", Universe(3, 2));
 
     assertNotNull(typedDef);
     assertEquals(Definition.TypeCheckingStatus.NO_ERRORS, typedDef.status());
     assertEquals(Pi(A, Universe(6, 7)), type.fromPiParameters(params));
     assertEquals(2, typedDef.getConstructors().size());
 
-    assertEquals(Pi(A, Pi(parameters1.getFirst(), DataCall(typedDef, LevelArguments.ZERO, Reference(A)))), con1Type.fromPiParameters(con1Params));
-    assertEquals(Pi(A, Pi(parameters2.getFirst(), DataCall(typedDef, LevelArguments.ZERO, Reference(A)))), con2Type.fromPiParameters(con2Params));
+    assertEquals(Pi(A, Pi(X, Pi(Reference(X), DataCall(typedDef, LevelArguments.ZERO, Reference(A))))), con1Type.fromPiParameters(con1Params));
+    assertEquals(Pi(A, Pi(Y, Pi(Reference(A), Pi(Reference(Y), DataCall(typedDef, LevelArguments.ZERO, Reference(A)))))), con2Type.fromPiParameters(con2Params));
   }
 
   @Test

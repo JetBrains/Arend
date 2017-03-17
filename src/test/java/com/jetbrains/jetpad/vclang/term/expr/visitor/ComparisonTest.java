@@ -17,6 +17,7 @@ import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 import static com.jetbrains.jetpad.vclang.core.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
@@ -25,38 +26,28 @@ import static org.junit.Assert.*;
 public class ComparisonTest extends TypeCheckingTestCase {
   @Test
   public void lambdas() {
-    DependentLink x = param("x", Nat());
-    DependentLink y = param("y", Nat());
-    Expression expr1 = Lam(params(param("x", Nat()), y), Reference(x));
-    Expression expr2 = Lam(x, Lam(y, Reference(x)));
-    assertEquals(expr1, expr2);
-  }
-
-  @Test
-  public void lambdas2() {
-    DependentLink x = param("x", Nat());
-    DependentLink y = param("y", Nat());
-    DependentLink xy = param(true, vars("x", "y"), Nat());
+    SingleDependentLink x = singleParam("x", Nat());
+    SingleDependentLink y = singleParam("y", Nat());
+    SingleDependentLink xy = singleParam(true, vars("x", "y"), Nat());
     Expression expr1 = Lam(xy, Reference(xy));
     Expression expr2 = Lam(x, Lam(y, Reference(x)));
     assertEquals(expr1, expr2);
   }
 
   @Test
-  public void lambdas3() {
-    DependentLink x = param("x", Nat());
-    DependentLink y = param("y", Nat());
-    DependentLink z = param("z", Nat());
-    DependentLink xy = param(true, vars("x", "y"), Nat());
-    Expression expr1 = Lam(params(xy, z), Reference(xy.getNext()));
-    Expression expr2 = Lam(x, Lam(params(y, z), Reference(y)));
+  public void lambdas2() {
+    SingleDependentLink x = singleParam("x", Nat());
+    SingleDependentLink yz = singleParam(true, vars("y", "z"), Nat());
+    SingleDependentLink xyz = singleParam(true, vars("x", "y", "z"), Nat());
+    Expression expr1 = Lam(xyz, Reference(xyz.getNext()));
+    Expression expr2 = Lam(x, Lam(yz, Reference(yz)));
     assertEquals(expr1, expr2);
   }
 
   @Test
   public void lambdasNotEqual() {
-    DependentLink x = param("x", Nat());
-    DependentLink xy = param(true, vars("x", "y"), Nat());
+    SingleDependentLink x = singleParam("x", Nat());
+    SingleDependentLink xy = singleParam(true, vars("x", "y"), Nat());
     Expression expr1 = Lam(xy, Reference(xy.getNext()));
     Expression expr2 = Lam(x, Reference(x));
     assertNotEquals(expr1, expr2);
@@ -64,57 +55,57 @@ public class ComparisonTest extends TypeCheckingTestCase {
 
   @Test
   public void lambdasImplicit() {
-    DependentLink x = param("x", Nat());
-    DependentLink y = param("y", Nat());
-    DependentLink yImpl = param(false, "y", Nat());
-    DependentLink xImpl = param(false, "x", Nat());
-    Expression expr1 = Lam(params(x, yImpl), Reference(x));
-    Expression expr2 = Lam(params(xImpl, y), Reference(xImpl));
+    SingleDependentLink x = singleParam("x", Nat());
+    SingleDependentLink y = singleParam("y", Nat());
+    SingleDependentLink yImpl = singleParam(false, vars("y"), Nat());
+    SingleDependentLink xImpl = singleParam(false, vars("x"), Nat());
+    Expression expr1 = Lam(x, Lam(yImpl, Reference(x)));
+    Expression expr2 = Lam(xImpl, Lam(y, Reference(xImpl)));
     assertEquals(expr1, expr2);
   }
 
   @Test
   public void pi() {
-    DependentLink x = param("x", Nat());
-    DependentLink y = param("y", Nat());
-    DependentLink xy = param(true, vars("x", "y"), Nat());
-    DependentLink _Impl = param(false, (String) null, Nat());
+    SingleDependentLink x = singleParam("x", Nat());
+    SingleDependentLink y = singleParam("y", Nat());
+    SingleDependentLink xy = singleParam(true, vars("x", "y"), Nat());
+    SingleDependentLink _Impl = singleParam(false, Collections.singletonList(null), Nat());
     Binding A = new TypedBinding("A", Pi(Nat(), Pi(Nat(), Universe(0))));
-    Expression expr1 = Pi(params(xy, _Impl), Apps(Reference(A), Reference(xy), Reference(xy.getNext())));
-    Expression expr2 = Pi(params(x, y), Pi(_Impl, Apps(Reference(A), Reference(x), Reference(y))));
+    Expression expr1 = Pi(xy, Pi(_Impl, Apps(Reference(A), Reference(xy), Reference(xy.getNext()))));
+    Expression expr2 = Pi(x, Pi(y, Pi(_Impl, Apps(Reference(A), Reference(x), Reference(y)))));
     assertEquals(expr1, expr2);
   }
 
   @Test
   public void pi2() {
-    DependentLink xy = param(true, vars("x", "y"), Nat());
-    DependentLink zw = param(true, vars("z", "w"), Nat());
-    DependentLink xyz = param(true, vars("x", "y", "z"), Nat());
-    DependentLink ts = param(true, vars("t", "s"), Nat());
-    DependentLink wts = param(true, vars("w", "t", "s"), Nat());
-    Expression expr1 = Pi(params(xy, zw, ts), Nat());
-    Expression expr2 = Pi(params(xyz, wts), Nat());
+    SingleDependentLink xy = singleParam(true, vars("x", "y"), Nat());
+    SingleDependentLink zw = singleParam(true, vars("z", "w"), Nat());
+    SingleDependentLink xyz = singleParam(true, vars("x", "y", "z"), Nat());
+    SingleDependentLink ts = singleParam(true, vars("t", "s"), Nat());
+    SingleDependentLink wts = singleParam(true, vars("w", "t", "s"), Nat());
+    Expression expr1 = Pi(xy, Pi(zw, Pi(ts, Nat())));
+    Expression expr2 = Pi(xyz, Pi(wts, Nat()));
     assertEquals(expr1, expr2);
   }
 
   @Test
   public void pi3() {
-    DependentLink xy = param(true, vars("x", "y"), Nat());
-    DependentLink zw = param(true, vars("z", "w"), Nat());
-    DependentLink ts = param(true, vars("t", "s"), Nat());
-    Expression expr1 = Pi(params(xy, zw, ts), Nat());
-    Expression expr2 = Pi(param(Nat()), Pi(param(Nat()), Pi(param(Nat()), Pi(param(Nat()), Pi(param(Nat()), Pi(param(Nat()), Nat()))))));
+    SingleDependentLink xy = singleParam(true, vars("x", "y"), Nat());
+    SingleDependentLink zw = singleParam(true, vars("z", "w"), Nat());
+    SingleDependentLink ts = singleParam(true, vars("t", "s"), Nat());
+    Expression expr1 = Pi(xy, Pi(zw, Pi(ts, Nat())));
+    Expression expr2 = Pi(singleParam(null, Nat()), Pi(singleParam(null, Nat()), Pi(singleParam(null, Nat()), Pi(singleParam(null, Nat()), Pi(singleParam(null, Nat()), Pi(singleParam(null, Nat()), Nat()))))));
     assertEquals(expr1, expr2);
   }
 
   @Test
   public void piNotEquals() {
-    DependentLink xy = param(true, vars("x", "y"), Nat());
-    DependentLink xyz = param(true, vars("x", "y", "z"), Nat());
-    DependentLink zw = param(true, vars("z", "w"), Nat());
-    DependentLink w = param("w", Pi(param(Nat()), Nat()));
-    Expression expr1 = Pi(params(xy, zw), Nat());
-    Expression expr2 = Pi(params(xyz, w), Nat());
+    SingleDependentLink xy = singleParam(true, vars("x", "y"), Nat());
+    SingleDependentLink xyz = singleParam(true, vars("x", "y", "z"), Nat());
+    SingleDependentLink zw = singleParam(true, vars("z", "w"), Nat());
+    SingleDependentLink w = singleParam("w", Pi(singleParam(null, Nat()), Nat()));
+    Expression expr1 = Pi(xy, Pi(zw, Nat()));
+    Expression expr2 = Pi(xyz, Pi(w, Nat()));
     assertNotEquals(expr1, expr2);
   }
 
@@ -129,10 +120,10 @@ public class ComparisonTest extends TypeCheckingTestCase {
 
   @Test
   public void compareNotLeq() {
-    DependentLink X0 = param("X", Universe(0));
-    DependentLink X1 = param("X", Universe(1));
-    Expression expr1 = Pi(X0, Pi(param(Reference(X0)), Reference(X0)));
-    Expression expr2 = Pi(X1, Pi(param(Reference(X1)), Reference(X1)));
+    SingleDependentLink X0 = singleParam("X", Universe(0));
+    SingleDependentLink X1 = singleParam("X", Universe(1));
+    Expression expr1 = Pi(X0, Pi(singleParam(null, Reference(X0)), Reference(X0)));
+    Expression expr2 = Pi(X1, Pi(singleParam(null, Reference(X1)), Reference(X1)));
     assertFalse(compare(expr1, expr2, Equations.CMP.LE));
   }
 
@@ -200,29 +191,29 @@ public class ComparisonTest extends TypeCheckingTestCase {
 
   @Test
   public void etaLam() {
-    Expression type = Pi(param(Nat()), DataCall(Prelude.PATH, new Level(0), new Level(1),
-            Lam(param("i", Interval()), Nat()), Zero(), Zero()));
-    CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(param(type), type));
-    CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(param(type), type));
+    Expression type = Pi(singleParam(null, Nat()), DataCall(Prelude.PATH, new Level(0), new Level(1),
+            Lam(singleParam("i", Interval()), Nat()), Zero(), Zero()));
+    CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(singleParam(null, type), type));
+    CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(singleParam(null, type), type));
     assertEquals(result2.expression, result1.expression);
   }
 
   @Test
   public void etaLamBody() {
-    Expression type = Pi(param(Nat()), DataCall(Prelude.PATH, new Level(0), new Level(1),
-      Lam(param("i", Interval()), Nat()), Zero(), Zero()));
-    CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(param(type), type));
-    CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => \\lam x => a x", Pi(param(type), type));
+    Expression type = Pi(singleParam(null, Nat()), DataCall(Prelude.PATH, new Level(0), new Level(1),
+      Lam(singleParam("i", Interval()), Nat()), Zero(), Zero()));
+    CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(singleParam(null, type), type));
+    CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => \\lam x => a x", Pi(singleParam(null, type), type));
     assertEquals(result2.expression, result1.expression);
   }
 
   @Test
   public void etaPath() {
-    DependentLink x = param("x", Nat());
+    SingleDependentLink x = singleParam("x", Nat());
     Expression type = DataCall(Prelude.PATH, new Level(0), new Level(1),
-            Lam(param("i", Interval()), Pi(param(Nat()), Nat())), Lam(x, Reference(x)), Lam(x, Reference(x)));
-    CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a => path (\\lam i x => (a @ i) x)", Pi(param(type), type));
-    CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(param(type), type));
+            Lam(singleParam("i", Interval()), Pi(singleParam(null, Nat()), Nat())), Lam(x, Reference(x)), Lam(x, Reference(x)));
+    CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a => path (\\lam i x => (a @ i) x)", Pi(singleParam(null, type), type));
+    CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(singleParam(null, type), type));
     assertEquals(result2.expression, result1.expression);
   }
 }

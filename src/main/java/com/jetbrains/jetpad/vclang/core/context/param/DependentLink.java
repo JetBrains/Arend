@@ -113,8 +113,8 @@ public interface DependentLink extends Binding {
       return result;
     }
 
-    public static List<DependentLink> fromList(List<DependentLink> list) {
-      List<DependentLink> result = new ArrayList<>(list.size());
+    public static List<SingleDependentLink> fromList(List<SingleDependentLink> list) {
+      List<SingleDependentLink> result = new ArrayList<>(list.size());
       for (int i = 0; i < list.size(); i++) {
         if (list.get(i).hasNext()) {
           result.add(list.get(i));
@@ -131,6 +131,10 @@ public interface DependentLink extends Binding {
     }
 
     public static DependentLink subst(DependentLink link, ExprSubstitution substitution) {
+      return subst(link, substitution, LevelSubstitution.EMPTY);
+    }
+
+    public static SingleDependentLink subst(SingleDependentLink link, ExprSubstitution substitution) {
       return subst(link, substitution, LevelSubstitution.EMPTY);
     }
 
@@ -153,6 +157,15 @@ public interface DependentLink extends Binding {
     }
 
     public static <P> DependentLink accept(DependentLink link, ExprSubstitution substitution, ExpressionVisitor<? super P, ? extends Expression> visitor, P params) {
+      link = DependentLink.Helper.subst(link, substitution);
+      for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
+        link1 = link1.getNextTyped(null);
+        link1.setType(link1.getType().accept(visitor, params));
+      }
+      return link;
+    }
+
+    public static <P> SingleDependentLink accept(SingleDependentLink link, ExprSubstitution substitution, ExpressionVisitor<? super P, ? extends Expression> visitor, P params) {
       link = DependentLink.Helper.subst(link, substitution);
       for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
         link1 = link1.getNextTyped(null);

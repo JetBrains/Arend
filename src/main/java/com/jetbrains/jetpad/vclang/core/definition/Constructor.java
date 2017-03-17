@@ -133,7 +133,7 @@ public class Constructor extends Definition implements Function {
   }
 
   @Override
-  public Expression getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments) {
+  public Expression getTypeWithParams(List<? super DependentLink> params, LevelArguments polyArguments) {
     if (myParameters == null) {
       return null;
     }
@@ -142,16 +142,18 @@ public class Constructor extends Definition implements Function {
     Expression resultType = getDataTypeExpression(polyArguments);
     DependentLink parameters = getDataTypeParameters();
     ExprSubstitution substitution = new ExprSubstitution();
+    List<DependentLink> paramList = null;
     if (parameters.hasNext()) {
       parameters = DependentLink.Helper.subst(parameters, substitution, polySubst);
       for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
         link.setExplicit(false);
       }
-      params.addAll(DependentLink.Helper.toList(parameters));
+      paramList = DependentLink.Helper.toList(parameters);
+      params.addAll(paramList);
     }
     DependentLink conParams = DependentLink.Helper.subst(myParameters, substitution, polySubst);
-    if (!params.isEmpty()) {
-      params.get(params.size() - 1).setNext(conParams);
+    if (paramList != null && !paramList.isEmpty()) {
+      paramList.get(paramList.size() - 1).setNext(conParams);
     }
     params.addAll(DependentLink.Helper.toList(conParams));
     resultType = resultType.subst(substitution, polySubst);

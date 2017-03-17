@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.frontend.parser;
 
-import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
@@ -49,8 +49,8 @@ public class PrettyPrintingParserTest extends ParserTestCase {
   public void prettyPrintingParserLamApp() throws UnsupportedEncodingException {
     // (\x y. x (x y)) (\x y. x) ((\x. x) (\x. x))
     Concrete.Expression expected = cApps(cLam(cargs(cTele(cvars("x", "y"), cPi(cUniverseInf(1), cUniverseInf(1)))), cApps(cVar("x"), cApps(cVar("x"), cVar("y")))), cLam(cargs(cTele(cvars("x", "y"), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar("x")), cApps(cLam(cargs(cTele(cvars("x"), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar("x")), cLam(cargs(cTele(cvars("x"), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar("x"))));
-    DependentLink x = param("x", Pi(Universe(1), Universe(1)));
-    DependentLink xy = param(true, vars("x", "y"), Pi(Universe(1), Universe(1)));
+    SingleDependentLink x = singleParam("x", Pi(Universe(1), Universe(1)));
+    SingleDependentLink xy = singleParam(true, vars("x", "y"), Pi(Universe(1), Universe(1)));
     Expression expr = Apps(Lam(xy, Apps(Reference(xy), Apps(Reference(xy), Reference(xy.getNext())))), Lam(xy, Reference(xy)), Apps(Lam(x, Reference(x)), Lam(x, Reference(x))));
     testExpr(expected, expr);
   }
@@ -59,7 +59,7 @@ public class PrettyPrintingParserTest extends ParserTestCase {
   public void prettyPrintingParserPi() throws UnsupportedEncodingException {
     // (x y z : \Type1 -> \Type1 -> \Type1) -> \Type1 -> \Type1 -> (x y -> y x) -> z x y
     Concrete.Expression expected = cPi(ctypeArgs(cTele(cvars("x", "y", "z"), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cUniverseInf(1))))), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cPi(cApps(cVar("x"), cVar("y")), cApps(cVar("y"), cVar("x"))), cApps(cVar("z"), cVar("x"), cVar("y"))))));
-    DependentLink xyz = param(true, vars("x", "y", "z"), Pi(Universe(1), Pi(Universe(1), Universe(1))));
+    SingleDependentLink xyz = singleParam(true, vars("x", "y", "z"), Pi(Universe(1), Pi(Universe(1), Universe(1))));
     Expression expr = Pi(xyz, Pi(Universe(1), Pi(Universe(1), Pi(Pi(Apps(Reference(xyz), Reference(xyz.getNext())), Apps(Reference(xyz.getNext()), Reference(xyz))), Apps(Reference(xyz.getNext().getNext()), Reference(xyz), Reference(xyz.getNext()))))));
     testExpr(expected, expr);
   }
@@ -68,11 +68,11 @@ public class PrettyPrintingParserTest extends ParserTestCase {
   public void prettyPrintingParserPiImplicit() throws UnsupportedEncodingException {
     // (w : \Type1 -> \Type1 -> \Type1 -> \Type1 -> \Type1) (x : \Type1) {y z : \Type1} -> \Type1 -> (t z' : \Type1) {x' : \Type1 -> \Type1} -> w x' y z' t
     Concrete.Expression expected = cPi("w", cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cUniverseInf(1))))), cPi("x", cUniverseInf(1), cPi(ctypeArgs(cTele(false, cvars("y", "z"), cUniverseInf(1))), cPi(cUniverseInf(1), cPi(ctypeArgs(cTele(cvars("t", "z'"), cUniverseInf(1))), cPi(false, "x'", cPi(cUniverseInf(1), cUniverseInf(1)), cApps(cVar("w"), cVar("x'"), cVar("y"), cVar("z'"), cVar("t"))))))));
-    DependentLink w = param("w", Pi(Universe(1), Pi(Universe(1), Pi(Universe(1), Pi(Universe(1), Universe(1))))));
-    DependentLink x = param("x", Universe(1));
-    DependentLink yz = param(false, vars("y", "z"), Universe(1));
-    DependentLink tz_ = param(true, vars("t", "z'"), Universe(1));
-    DependentLink x_ = param(false, "x'", Pi(param(Universe(1)), Universe(1)));
+    SingleDependentLink w = singleParam("w", Pi(Universe(1), Pi(Universe(1), Pi(Universe(1), Pi(Universe(1), Universe(1))))));
+    SingleDependentLink x = singleParam("x", Universe(1));
+    SingleDependentLink yz = singleParam(false, vars("y", "z"), Universe(1));
+    SingleDependentLink tz_ = singleParam(true, vars("t", "z'"), Universe(1));
+    SingleDependentLink x_ = singleParam(false, vars("x'"), Pi(singleParam(null, Universe(1)), Universe(1)));
     Expression expr = Pi(w, Pi(x, Pi(yz, Pi(Universe(1), Pi(tz_, Pi(x_, Apps(Reference(w), Reference(x_), Reference(yz), Reference(tz_.getNext()), Reference(tz_))))))));
     testExpr(expected, expr);
   }

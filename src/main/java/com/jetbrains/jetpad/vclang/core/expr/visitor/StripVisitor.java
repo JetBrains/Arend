@@ -156,7 +156,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
   @Override
   public PiExpression visitPi(PiExpression expr, Void params) {
     visitArguments(expr.getParameters());
-    PiExpression result = new PiExpression(expr.getPLevels(), expr.getParameters(), expr.getCodomain().accept(this, null));
+    PiExpression result = new PiExpression(expr.getPLevel(), expr.getParameters(), expr.getCodomain().accept(this, null));
     freeArguments(expr.getParameters());
     return result;
   }

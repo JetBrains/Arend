@@ -3,6 +3,8 @@ package com.jetbrains.jetpad.vclang.core.expr;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.*;
@@ -109,7 +111,8 @@ public abstract class Expression implements Type {
     return compare(expr1, expr2, Equations.CMP.EQ);
   }
 
-  public Expression getPiParameters(List<DependentLink> params, boolean normalize, boolean implicitOnly) {
+  @Override
+  public Expression getPiParameters(List<SingleDependentLink> params, boolean normalize, boolean implicitOnly) {
     Expression cod = normalize ? normalize(NormalizeVisitor.Mode.WHNF) : this;
     PiExpression piCod = cod.toPi();
     while (piCod != null) {
@@ -117,7 +120,7 @@ public abstract class Expression implements Type {
         if (piCod.getParameters().isExplicit()) {
           break;
         }
-        for (DependentLink link = piCod.getParameters(); link.hasNext(); link = link.getNext()) {
+        for (SingleDependentLink link = piCod.getParameters(); link.hasNext(); link = link.getNext()) {
           if (link.isExplicit()) {
             return null;
           }
@@ -127,7 +130,7 @@ public abstract class Expression implements Type {
         }
       } else {
         if (params != null) {
-          for (DependentLink link = piCod.getParameters(); link.hasNext(); link = link.getNext()) {
+          for (SingleDependentLink link = piCod.getParameters(); link.hasNext(); link = link.getNext()) {
             params.add(link);
           }
         }
@@ -142,7 +145,7 @@ public abstract class Expression implements Type {
     return cod;
   }
 
-  public Expression fromPiParameters(List<DependentLink> params) {
+  public Expression fromPiParametersSingle(List<SingleDependentLink> params) {
     params = DependentLink.Helper.fromList(params);
     Expression result = this;
     for (int i = params.size() - 1; i >= 0; i--) {
@@ -151,8 +154,35 @@ public abstract class Expression implements Type {
     return result;
   }
 
-  public Expression addParameters(DependentLink params) {
-    return params.hasNext() ? new PiExpression(params, this) : this;
+  public Expression fromPiParameters(List<DependentLink> params) {
+    List<SingleDependentLink> parameters = new ArrayList<>();
+    ExprSubstitution substitution = new ExprSubstitution();
+    List<String> names = new ArrayList<>();
+    DependentLink link0 = null;
+    for (DependentLink link : params) {
+      if (link0 == null) {
+        link0 = link;
+      }
+
+      names.add(link.getName());
+      if (link instanceof TypedDependentLink) {
+        SingleDependentLink parameter = ExpressionFactory.singleParam(link.isExplicit(), names, link.getType().subst(substitution, LevelSubstitution.EMPTY));
+        parameters.add(parameter);
+        names.clear();
+
+        for (; parameter.hasNext(); parameter = parameter.getNext(), link0 = link0.getNext()) {
+          substitution.add(link0, ExpressionFactory.Reference(parameter));
+        }
+
+        link0 = null;
+      }
+    }
+
+    Expression type = subst(substitution, LevelSubstitution.EMPTY);
+    for (int i = parameters.size() - 1; i >= 0; i--) {
+      type = new PiExpression(parameters.get(i), type);
+    }
+    return type;
   }
 
   public Expression getLamParameters(List<DependentLink> params) {
@@ -176,7 +206,7 @@ public abstract class Expression implements Type {
     }
 
     ExprSubstitution subst = new ExprSubstitution();
-    List<DependentLink> params = new ArrayList<>();
+    List<SingleDependentLink> params = new ArrayList<>();
     Expression cod = getPiParameters(params, true, false);
     if (params.isEmpty()) {
       assert false;
@@ -188,7 +218,7 @@ public abstract class Expression implements Type {
     }
 
     if (expressions.size() < params.size()) {
-      cod = cod.fromPiParameters(params.subList(expressions.size(), params.size()));
+      cod = cod.fromPiParametersSingle(params.subList(expressions.size(), params.size()));
     }
     return cod.subst(subst).applyExpressions(expressions.subList(size, expressions.size()));
   }

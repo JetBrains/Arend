@@ -31,15 +31,16 @@ public class SubstTest extends TypeCheckingTestCase {
   @Test
   public void substLam() {
     // \x y. y x [y := suc zero] = \x y. y x
-    DependentLink xy = params(param("x", Nat()), param("y", Pi(Nat(), Nat())));
-    Expression expr = Lam(xy, Apps(Reference(xy.getNext()), Reference(xy)));
-    assertEquals(expr, expr.subst(xy.getNext(), Suc(Zero())));
+    SingleDependentLink x = singleParam("x", Nat());
+    SingleDependentLink y = singleParam("y", Pi(Nat(), Nat()));
+    Expression expr = Lam(x, Lam(y, Apps(Reference(y), Reference(x))));
+    assertEquals(expr, expr.subst(y, Suc(Zero())));
   }
 
   @Test
   public void substLamConst() {
     // \x y. z y x [z := suc zero] = \x. suc zero
-    DependentLink xy = param(true, vars("x", "y"), Nat());
+    SingleDependentLink xy = singleParam(true, vars("x", "y"), Nat());
     Binding z = new TypedBinding("z", Pi(Nat(), Pi(Nat(), Nat())));
     Expression expr = Lam(xy, Apps(Reference(z), Reference(xy.getNext()), Reference(xy)));
     assertEquals(Lam(xy, Apps(Lam(xy, Suc(Zero())), Reference(xy.getNext()), Reference(xy))), expr.subst(z, Lam(xy, Suc(Zero()))));
@@ -48,11 +49,11 @@ public class SubstTest extends TypeCheckingTestCase {
   @Test
   public void substLamInLamOpen() {
     // \ x y. z x y [z := x] = \x' y'. x x' y'
-    DependentLink xy = param(true, vars("x", "y"), Nat());
+    SingleDependentLink xy = singleParam(true, vars("x", "y"), Nat());
     Binding z = new TypedBinding("z", Nat());
     Expression expr = Lam(xy, Apps(Reference(z), Reference(xy), Reference(xy.getNext())));
 
-    DependentLink xy1 = param(true, vars("x'", "y'"), Nat());
+    SingleDependentLink xy1 = singleParam(true, vars("x'", "y'"), Nat());
     Expression expr1 = Lam(xy1, Apps(Reference(xy), Reference(xy1), Reference(xy1.getNext())));
     assertEquals(expr1, expr.subst(z, Reference(xy)));
   }
@@ -63,20 +64,22 @@ public class SubstTest extends TypeCheckingTestCase {
     Binding a = new TypedBinding("a", Pi(Nat(), Pi(Nat(), Nat())));
     Binding b = new TypedBinding("b", Nat());
     Binding c = new TypedBinding("c", Nat());
-    DependentLink xy = params(param("x", Pi(Nat(), Pi(Pi(Nat(), Nat()), Nat()))), param("y", Nat()));
-    DependentLink z = param("z", Nat());
-    DependentLink wt = params(param("w", Pi(Nat(), Nat())), param("t", Pi(Nat(), Pi(Nat(), Nat()))));
+    SingleDependentLink x = singleParam("x", Pi(Nat(), Pi(Pi(Nat(), Nat()), Nat())));
+    SingleDependentLink y = singleParam("y", Nat());
+    SingleDependentLink z = singleParam("z", Nat());
+    SingleDependentLink w = singleParam("w", Pi(Nat(), Nat()));
+    SingleDependentLink t = singleParam("t", Pi(Nat(), Pi(Nat(), Nat())));
 
-    Expression expr = Lam(xy, Apps(Reference(xy), Reference(b), Lam(z, Apps(Reference(a), Reference(z), Reference(xy.getNext())))));
-    Expression substExpr = Lam(wt, Apps(Reference(wt.getNext()), Reference(b), Apps(Reference(wt), Reference(c))));
-    Expression result = Lam(xy, Apps(Reference(xy), Reference(b), Lam(z, Apps(Lam(wt, Apps(Reference(wt.getNext()), Reference(b), Apps(Reference(wt), Reference(c)))), Reference(z), Reference(xy.getNext())))));
+    Expression expr = Lam(x, Lam(y, Apps(Reference(x), Reference(b), Lam(z, Apps(Reference(a), Reference(z), Reference(y))))));
+    Expression substExpr = Lam(w, Lam(t, Apps(Reference(t), Reference(b), Apps(Reference(w), Reference(c)))));
+    Expression result = Lam(x, Lam(y, Apps(Reference(x), Reference(b), Lam(z, Apps(Lam(w, Lam(t, Apps(Reference(t), Reference(b), Apps(Reference(w), Reference(c))))), Reference(z), Reference(y))))));
     assertEquals(result, expr.subst(a, substExpr));
   }
 
   @Test
   public void substPiClosed() {
     // (x : Nat) -> A x [x := zero] = (x : Nat) -> A x
-    DependentLink x = param("x", Nat());
+    SingleDependentLink x = singleParam("x", Nat());
     Expression expr = Pi(x, Apps(Reference(new TypedBinding("A", Pi(Nat(), Universe(0)))), Reference(x)));
     assertEquals(expr, expr.subst(x, Zero()));
   }
@@ -84,8 +87,8 @@ public class SubstTest extends TypeCheckingTestCase {
   @Test
   public void substPiOpen() {
     // (x : Nat) -> A z [z := zero] = (y : Nat) -> A zero
-    DependentLink x = param("x", Nat());
-    DependentLink z = param("z", Nat());
+    SingleDependentLink x = singleParam("x", Nat());
+    SingleDependentLink z = singleParam("z", Nat());
     Binding A = new TypedBinding("A", Pi(Nat(), Universe(0)));
     Expression expr1 = Pi(x, Apps(Reference(A), Reference(z)));
     Expression expr2 = Pi(x, Apps(Reference(A), Zero()));

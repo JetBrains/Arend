@@ -41,4 +41,12 @@ public class UntypedSingleDependentLink extends UntypedDependentLink implements 
       return EmptyDependentLink.getInstance();
     }
   }
+
+  @Override
+  public void setNext(DependentLink next) {
+    if (!(next instanceof SingleDependentLink)) {
+      throw new IllegalStateException();
+    }
+    super.setNext(next);
+  }
 }

@@ -1,18 +1,18 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
-import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 
 public class LamExpression extends Expression {
-  private final DependentLink myLink;
+  private final SingleDependentLink myLink;
   private final Expression myBody;
 
-  public LamExpression(DependentLink link, Expression body) {
+  public LamExpression(SingleDependentLink link, Expression body) {
     myLink = link;
     myBody = body;
   }
 
-  public DependentLink getParameters() {
+  public SingleDependentLink getParameters() {
     return myLink;
   }
 

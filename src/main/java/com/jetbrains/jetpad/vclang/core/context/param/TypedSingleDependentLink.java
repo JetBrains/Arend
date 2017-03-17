@@ -35,4 +35,11 @@ public class TypedSingleDependentLink extends TypedDependentLink implements Sing
   public EmptyDependentLink getNext() {
     return EmptyDependentLink.getInstance();
   }
+
+  @Override
+  public void setNext(DependentLink next) {
+    if (next.hasNext()) {
+      throw new IllegalStateException();
+    }
+  }
 }

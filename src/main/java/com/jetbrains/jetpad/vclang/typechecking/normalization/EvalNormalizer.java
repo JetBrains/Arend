@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.normalization;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.definition.Callable;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Function;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
@@ -23,7 +23,7 @@ public class EvalNormalizer implements Normalizer {
   @Override
   public Expression normalize(LamExpression fun, List<? extends Expression> arguments, NormalizeVisitor.Mode mode) {
     int i = 0;
-    DependentLink link = fun.getParameters();
+    SingleDependentLink link = fun.getParameters();
     ExprSubstitution subst = new ExprSubstitution();
     while (link.hasNext() && i < arguments.size()) {
       subst.add(link, arguments.get(i++));

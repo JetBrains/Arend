@@ -310,7 +310,7 @@ class DefinitionSerialization {
     @Override
     public ExpressionProtos.Expression visitLam(LamExpression expr, Void params) {
       ExpressionProtos.Expression.Lam.Builder builder = ExpressionProtos.Expression.Lam.newBuilder();
-      builder.addAllParam(writeParameters(expr.getParameters()));
+      builder.setParam(writeSingleParameter(expr.getParameters()));
       builder.setBody(expr.getBody().accept(this, null));
       return ExpressionProtos.Expression.newBuilder().setLam(builder).build();
     }
@@ -318,10 +318,8 @@ class DefinitionSerialization {
     @Override
     public ExpressionProtos.Expression visitPi(PiExpression expr, Void params) {
       ExpressionProtos.Expression.Pi.Builder builder = ExpressionProtos.Expression.Pi.newBuilder();
-      for (Level pLevel : expr.getPLevels()) {
-        builder.addPLevel(LevelProtos.Level.newBuilder(writeLevel(pLevel)));
-      }
-      builder.addAllParam(writeParameters(expr.getParameters()));
+      builder.setPLevel(LevelProtos.Level.newBuilder(writeLevel(expr.getPLevel())));
+      builder.setParam(writeSingleParameter(expr.getParameters()));
       builder.setCodomain(expr.getCodomain().accept(this, null));
       return ExpressionProtos.Expression.newBuilder().setPi(builder).build();
     }

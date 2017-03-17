@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.DerivedInferen
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
-import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
@@ -101,19 +100,14 @@ public class TwoStageEquations implements Equations {
       // ?x <> Pi
       PiExpression pi = cType.normalize(NormalizeVisitor.Mode.WHNF).toPi();
       if (pi != null) {
-        List<Level> piLevels = new ArrayList<>(pi.getPLevels().size());
-        for (DependentLink link = pi.getParameters(); link.hasNext(); link = link.getNext()) {
-          link = link.getNextTyped(null);
-          piLevels.add(link.getType().getType().toUniverse().getSort().getPLevel());
-        }
-
+        Level domLevel = pi.getParameters().getType().getType().toUniverse().getSort().getPLevel();
         LevelArguments codLevels = LevelArguments.generateInferVars(this, sourceNode);
         Sort codSort = new Sort(codLevels.getPLevel(), codLevels.getHLevel());
-        piLevels = PiExpression.generateUpperBound(piLevels, codLevels.getPLevel(), this, sourceNode);
+        Level piLevel = PiExpression.generateUpperBound(domLevel, codLevels.getPLevel(), this, sourceNode);
 
         InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, new UniverseExpression(codSort));
         Expression newRef = new InferenceReferenceExpression(infVar, this);
-        solve(cInf, new PiExpression(piLevels, pi.getParameters(), newRef));
+        solve(cInf, new PiExpression(piLevel, pi.getParameters(), newRef));
         addEquation(pi.getCodomain(), newRef, cmp, sourceNode, infVar);
         return;
       }
@@ -279,7 +273,7 @@ public class TwoStageEquations implements Equations {
       List<LevelEquation<LevelVariable>> basedCycle = new ArrayList<>();
       for (LevelEquation<InferenceLevelVariable> equation : cycle) {
         if (equation.isInfinity() || equation.getVariable1() != null) {
-          basedCycle.add(new LevelEquation<LevelVariable>(equation));
+          basedCycle.add(new LevelEquation<>(equation));
         } else {
           basedCycle.add(new LevelEquation<>(myBases.get(equation.getVariable2()), equation.getVariable2(), equation.getConstant()));
         }

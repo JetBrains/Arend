@@ -52,7 +52,7 @@ public abstract class Definition implements Variable, Callable {
     myClassifyingFields = fields.isEmpty() ? Collections.<Integer, ClassField>emptyMap() : fields;
   }
 
-  public abstract Expression getTypeWithParams(List<DependentLink> params, LevelArguments polyArguments);
+  public abstract Expression getTypeWithParams(List<? super DependentLink> params, LevelArguments polyArguments);
 
   @Override
   public abstract DefCallExpression getDefCall(LevelArguments polyArguments, Expression thisExpr, List<Expression> args);

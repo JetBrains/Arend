@@ -122,49 +122,52 @@ public class TypeCheckingDefCall {
     String name = expr.getName();
 
     // Field call
-    if (result.type instanceof Expression) {
-      Expression type = ((Expression) result.type).normalize(NormalizeVisitor.Mode.WHNF);
-      if (type.toClassCall() != null) {
-        ClassDefinition classDefinition = type.toClassCall().getDefinition();
+    Expression type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
+    if (type.toClassCall() != null) {
+      ClassDefinition classDefinition = type.toClassCall().getDefinition();
 
+      if (typeCheckedDefinition == null) {
+        Abstract.Definition member = myVisitor.getDynamicNamespaceProvider().forClass(classDefinition.getAbstractDefinition()).resolveName(name);
+        if (member == null) {
+          MemberNotFoundError error = new MemberNotFoundError(classDefinition, name, false, expr);
+          expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+          myVisitor.getErrorReporter().report(error);
+          return null;
+        }
+        typeCheckedDefinition = getTypeCheckedDefinition(member, expr);
         if (typeCheckedDefinition == null) {
-          Abstract.Definition member = myVisitor.getDynamicNamespaceProvider().forClass(classDefinition.getAbstractDefinition()).resolveName(name);
-          if (member == null) {
-            MemberNotFoundError error = new MemberNotFoundError(classDefinition, name, false, expr);
-            expr.setWellTyped(myVisitor.getContext(), Error(null, error));
-            myVisitor.getErrorReporter().report(error);
-            return null;
-          }
-          typeCheckedDefinition = getTypeCheckedDefinition(member, expr);
-          if (typeCheckedDefinition == null) {
-            return null;
-          }
-        } else {
-          if (!(typeCheckedDefinition instanceof ClassField && classDefinition.getFieldSet().getFields().contains(typeCheckedDefinition))) {
-            throw new IllegalStateException("Internal error: field " + typeCheckedDefinition + " does not belong to class " + classDefinition);
-          }
-        }
-
-        if (typeCheckedDefinition.getThisClass() == null) {
-          LocalTypeCheckingError error = new LocalTypeCheckingError("Static definitions are not allowed in a non-static context", expr);
-          expr.setWellTyped(myVisitor.getContext(), Error(null, error));
-          myVisitor.getErrorReporter().report(error);
           return null;
         }
-        if (!classDefinition.isSubClassOf(typeCheckedDefinition.getThisClass())) {
-          ClassCallExpression classCall = ClassCall(typeCheckedDefinition.getThisClass(), LevelArguments.generateInferVars(myVisitor.getEquations(), expr));
-          LocalTypeCheckingError error = new TypeMismatchError(classCall, type, left);
-          expr.setWellTyped(myVisitor.getContext(), Error(null, error));
-          myVisitor.getErrorReporter().report(error);
-          return null;
+      } else {
+        if (!(typeCheckedDefinition instanceof ClassField && classDefinition.getFieldSet().getFields().contains(typeCheckedDefinition))) {
+          throw new IllegalStateException("Internal error: field " + typeCheckedDefinition + " does not belong to class " + classDefinition);
         }
-
-        return makeResult(typeCheckedDefinition, result.expression, expr);
       }
+
+      if (typeCheckedDefinition.getThisClass() == null) {
+        LocalTypeCheckingError error = new LocalTypeCheckingError("Static definitions are not allowed in a non-static context", expr);
+        expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+        myVisitor.getErrorReporter().report(error);
+        return null;
+      }
+      if (!classDefinition.isSubClassOf(typeCheckedDefinition.getThisClass())) {
+        ClassCallExpression classCall = ClassCall(typeCheckedDefinition.getThisClass(), LevelArguments.generateInferVars(myVisitor.getEquations(), expr));
+        LocalTypeCheckingError error = new TypeMismatchError(classCall, type, left);
+        expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+        myVisitor.getErrorReporter().report(error);
+        return null;
+      }
+
+      return makeResult(typeCheckedDefinition, result.expression, expr);
+    }
+
+    Expression lamExpr = result.expression;
+    while (lamExpr.toLam() != null) {
+      lamExpr = lamExpr.toLam().getBody();
     }
 
     // Constructor call
-    DataCallExpression dataCall = result.expression.toLam() != null ? result.expression.toLam().getBody().toDataCall() : result.expression.toDataCall();
+    DataCallExpression dataCall = lamExpr.toDataCall();
     if (dataCall != null) {
       DataDefinition dataDefinition = dataCall.getDefinition();
       List<? extends Expression> args = dataCall.getDefCallArguments();

@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.FunctionInfere
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
@@ -32,7 +33,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     super(visitor);
   }
 
-  protected CheckTypeVisitor.TResult fixImplicitArgs(CheckTypeVisitor.TResult result, List<DependentLink> implicitParameters, Abstract.Expression expr) {
+  protected CheckTypeVisitor.TResult fixImplicitArgs(CheckTypeVisitor.TResult result, List<? extends DependentLink> implicitParameters, Abstract.Expression expr) {
     ExprSubstitution substitution = new ExprSubstitution();
     int i = 0;
     for (DependentLink parameter : implicitParameters) {
@@ -68,12 +69,12 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       if (result instanceof CheckTypeVisitor.DefCallResult) {
         CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
         if (defCallResult.getDefinition() == Prelude.PATH_CON && defCallResult.getArguments().isEmpty()) {
-          DependentLink lamParam = param("i", Interval());
+          SingleDependentLink lamParam = singleParam("i", Interval());
           Expression type = ExpressionFactory.Universe(new Sort(defCallResult.getLevelArguments().getPLevel(), defCallResult.getLevelArguments().getHLevel().add(1)));
           Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", type, 1, Prelude.PATH_CON, fun), myVisitor.getEquations());
           result = result.applyExpressions(Collections.singletonList(Lam(lamParam, binding)));
 
-          CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, new PiExpression(Collections.singletonList(defCallResult.getLevelArguments().getPLevel().add(1)), lamParam, binding));
+          CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, new PiExpression(defCallResult.getLevelArguments().getPLevel().add(1), lamParam, binding));
           if (argResult == null) {
             return null;
           }
@@ -170,8 +171,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
   @Override
   public CheckTypeVisitor.TResult inferTail(CheckTypeVisitor.TResult result, Type expectedType, Abstract.Expression expr) {
-    List<DependentLink> actualParams = result.getImplicitParameters();
-    List<DependentLink> expectedParams = new ArrayList<>(actualParams.size());
+    List<? extends DependentLink> actualParams = result.getImplicitParameters();
+    List<SingleDependentLink> expectedParams = new ArrayList<>(actualParams.size());
     expectedType.getPiParameters(expectedParams, true, true);
     if (expectedParams.size() > actualParams.size()) {
       CheckTypeVisitor.Result result1 = result.toResult();

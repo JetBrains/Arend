@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
-import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
@@ -43,21 +43,21 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void typeCheckingId() {
     // \X x. x : (X : Type0) -> X -> X
-    DependentLink param = param("X", Universe(0));
+    SingleDependentLink param = singleParam("X", Universe(0));
     typeCheckExpr("\\lam X x => x", Pi(param, Pi(Reference(param), Reference(param))));
   }
 
   @Test
   public void typeCheckingIdSplit() {
     // \X x. x : (X : Type0) -> X -> X
-    DependentLink param = param("X", Universe(0));
+    SingleDependentLink param = singleParam("X", Universe(0));
     typeCheckExpr("\\lam X => \\lam x => x", Pi(param, Pi(Reference(param), Reference(param))));
   }
 
   @Test
   public void typeCheckingIdError() {
     // \X x. X : (X : Type0) -> X -> X
-    DependentLink param = param("X", Universe(0));
+    SingleDependentLink param = singleParam("X", Universe(0));
     typeCheckExpr("\\lam X x => X", Pi(param, Pi(Reference(param), Reference(param))), 1);
     assertTrue(errorList.get(0) instanceof TypeCheckingError && ((TypeCheckingError) errorList.get(0)).localError instanceof TypeMismatchError);
   }
@@ -81,12 +81,12 @@ public class ExpressionTest extends TypeCheckingTestCase {
     Concrete.Expression expr = cLam("f", cLam("g", cApps(cVar("g"), cZero(), cApps(cVar("f"), cZero()))));
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("T", Pi(Nat(), Universe(0))));
-    DependentLink x_ = param("x", Nat());
-    context.add(new TypedBinding("Q", Pi(params(x_, param(Apps(Reference(context.get(0)), Reference(x_)))), Universe(0))));
+    SingleDependentLink x_ = singleParam("x", Nat());
+    context.add(new TypedBinding("Q", Pi(x_, Pi(singleParam(null, Apps(Reference(context.get(0)), Reference(x_))), Universe(0)))));
 
-    DependentLink x = param("x", Nat());
-    DependentLink f = param("f", Pi(x, Apps(Reference(context.get(0)), Reference(x))));
-    DependentLink x2 = param("x", Nat());
+    SingleDependentLink x = singleParam("x", Nat());
+    SingleDependentLink f = singleParam("f", Pi(x, Apps(Reference(context.get(0)), Reference(x))));
+    SingleDependentLink x2 = singleParam("x", Nat());
     Expression type = Pi(f, Pi(Pi(x2, Pi(Apps(Reference(context.get(0)), Reference(x2)), Apps(Reference(context.get(1)), Reference(x2), Apps(Reference(f), Reference(x2))))), Apps(Reference(context.get(1)), Zero(), Apps(Reference(f), Zero()))));
 
     typeCheckExpr(context, expr, type);
@@ -96,8 +96,8 @@ public class ExpressionTest extends TypeCheckingTestCase {
   public void typeCheckingAppLamPiIndex() {
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("X", Pi(Nat(), Universe(0))));
-    DependentLink link = param("t", Nat());
-    context.add(new TypedBinding("Y", Pi(params(link, param("x", Apps(Reference(context.get(0)), Reference(link)))), Universe(0))));
+    SingleDependentLink link = singleParam("t", Nat());
+    context.add(new TypedBinding("Y", Pi(link, Pi(singleParam("x", Apps(Reference(context.get(0)), Reference(link))), Universe(0)))));
     CheckTypeVisitor.Result typeResult = typeCheckExpr(context,
           "\\Pi (f : \\Pi (g : Nat -> Nat) -> X (g zero)) " +
           "-> (\\Pi (z : (Nat -> Nat) -> Nat) -> Y (z (\\lam _ => 0)) (f (\\lam x => z (\\lam _ => x)))) " +
@@ -148,8 +148,8 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void typedLambdaExpectedType() {
     // \(X : Type0) x. x : (X : Type0) (X) -> X
-    DependentLink link = param("X", Universe(0));
-    typeCheckExpr("\\lam (X : \\oo-Type0) x => x", Pi(params(link, param(Reference(link))), Reference(link)));
+    SingleDependentLink link = singleParam("X", Universe(0));
+    typeCheckExpr("\\lam (X : \\oo-Type0) x => x", Pi(link, Pi(singleParam(null, Reference(link)), Reference(link))));
   }
 
   @Test
@@ -197,7 +197,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
             cTele(cvars("f"), cPi(ctypeArgs(cTele(false, cvars("A"), cUniverseInf(0)), cTele(cvars("x"), cVar("A"))), cApps(cVar("F"), cVar("x"))))),
         cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cNat(), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar("f"), cVar("x"))));
     CheckTypeVisitor.Result result = typeCheckExpr(expr, null);
-    Expression typeCodomain = result.type.getPiParameters(new ArrayList<DependentLink>(), true, false);
+    Expression typeCodomain = result.type.getPiParameters(null, true, false);
     assertThat(typeCodomain.toLet(), is(notNullValue()));
   }
 
@@ -213,7 +213,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
   public void caseTranslation() {
     FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\function test (n : Nat) : Nat => \\case n, n | zero, _ => 0 | suc y, _ => y");
     FunctionDefinition def2 = (FunctionDefinition) typeCheckDef("\\function test (n : Nat) => \\let | caseF (caseA : Nat) (caseB : Nat) : Nat <= \\elim caseA, caseB | zero, _ => 0 | suc y, _ => y \\in caseF n n");
-    assertTrue(CompareVisitor.compare(new HashMap<Binding, Binding>(Collections.singletonMap(def.getParameters(), def2.getParameters())),
+    assertTrue(CompareVisitor.compare(new HashMap<>(Collections.singletonMap(def.getParameters(), def2.getParameters())),
         DummyEquations.getInstance(), Equations.CMP.EQ, def.getElimTree(), def2.getElimTree()));
   }
 

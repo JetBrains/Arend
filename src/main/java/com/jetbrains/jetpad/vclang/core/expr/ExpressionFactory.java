@@ -117,7 +117,7 @@ public class ExpressionFactory {
     return new ReferenceExpression(binding);
   }
 
-  public static LamExpression Lam(DependentLink link, Expression body) {
+  public static LamExpression Lam(SingleDependentLink link, Expression body) {
     return new LamExpression(link, body);
   }
 
@@ -216,13 +216,13 @@ public class ExpressionFactory {
     }
   }
 
-  public static PiExpression Pi(DependentLink domain, Expression codomain) {
+  public static PiExpression Pi(SingleDependentLink domain, Expression codomain) {
     assert domain.hasNext();
-    return new PiExpression(Collections.singletonList(new Level(0)), domain, codomain);
+    return new PiExpression(new Level(0), domain, codomain);
   }
 
   public static PiExpression Pi(Expression domain, Expression codomain) {
-    return new PiExpression(Collections.singletonList(new Level(0)), param(domain), codomain);
+    return new PiExpression(new Level(0), singleParam(null, domain), codomain);
   }
 
   public static SigmaExpression Sigma(DependentLink domain) {
