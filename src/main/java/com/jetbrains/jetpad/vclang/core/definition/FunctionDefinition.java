@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.FunCallExpression;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -56,30 +56,30 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   @Override
-  public Expression getTypeWithParams(List<? super DependentLink> params, LevelArguments polyArguments) {
+  public Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument) {
     if (!status().headerIsOK()) {
       return null;
     }
     ExprSubstitution subst = new ExprSubstitution();
-    LevelSubstitution polySubst = polyArguments.toLevelSubstitution();
+    LevelSubstitution polySubst = sortArgument.toLevelSubstitution();
     params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, subst, polySubst)));
     return myResultType.subst(subst, polySubst);
   }
 
   @Override
-  public FunCallExpression getDefCall(LevelArguments polyArguments, Expression thisExpr, List<Expression> arguments) {
+  public FunCallExpression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> arguments) {
     if (thisExpr == null) {
-      return FunCall(this, polyArguments, arguments);
+      return FunCall(this, sortArgument, arguments);
     } else {
       List<Expression> args = new ArrayList<>(arguments.size() + 1);
       args.add(thisExpr);
       args.addAll(arguments);
-      return FunCall(this, polyArguments, args);
+      return FunCall(this, sortArgument, args);
     }
   }
 
   @Override
-  public FunCallExpression getDefCall(LevelArguments polyArguments, List<Expression> args) {
-    return new FunCallExpression(this, polyArguments, args);
+  public FunCallExpression getDefCall(Sort sortArgument, List<Expression> args) {
+    return new FunCallExpression(this, sortArgument, args);
   }
 }

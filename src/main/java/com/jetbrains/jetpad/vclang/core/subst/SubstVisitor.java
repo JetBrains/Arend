@@ -41,7 +41,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     for (Expression arg : expr.getDefCallArguments()) {
       args.add(arg.accept(this, null));
     }
-    return expr.getDefinition().getDefCall(expr.getLevelArguments().subst(myLevelSubstitution), args);
+    return expr.getDefinition().getDefCall(expr.getSortArgument().subst(myLevelSubstitution), args);
   }
 
   @Override
@@ -60,13 +60,13 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
       args.add(arg.accept(this, null));
     }
 
-    return ConCall(expr.getDefinition(), expr.getLevelArguments().subst(myLevelSubstitution), dataTypeArgs, args);
+    return ConCall(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), dataTypeArgs, args);
   }
 
   @Override
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
     FieldSet fieldSet = FieldSet.applyVisitorToImplemented(expr.getFieldSet(), expr.getDefinition().getFieldSet(), this, null);
-    return new ClassCallExpression(expr.getDefinition(), expr.getLevelArguments().subst(myLevelSubstitution), fieldSet);
+    return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), fieldSet);
   }
 
   @Override

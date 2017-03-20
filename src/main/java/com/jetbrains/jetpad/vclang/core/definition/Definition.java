@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.Collections;
@@ -52,12 +52,12 @@ public abstract class Definition implements Variable, Callable {
     myClassifyingFields = fields.isEmpty() ? Collections.<Integer, ClassField>emptyMap() : fields;
   }
 
-  public abstract Expression getTypeWithParams(List<? super DependentLink> params, LevelArguments polyArguments);
+  public abstract Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument);
 
   @Override
-  public abstract DefCallExpression getDefCall(LevelArguments polyArguments, Expression thisExpr, List<Expression> args);
+  public abstract DefCallExpression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> args);
 
-  public abstract Expression getDefCall(LevelArguments polyArguments, List<Expression> args);
+  public abstract Expression getDefCall(Sort sortArgument, List<Expression> args);
 
   public ClassDefinition getThisClass() {
     return myThisClass;

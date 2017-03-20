@@ -21,7 +21,6 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
@@ -46,7 +45,6 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.TwoStageE
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.ClassViewInstancePool;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
@@ -75,25 +73,25 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   public static class DefCallResult implements TResult {
     private final Abstract.DefCallExpression myDefCall;
     private final Callable myDefinition;
-    private final LevelArguments myLevelArguments;
+    private final Sort mySortArgument;
     private final List<Expression> myArguments;
     private List<DependentLink> myParameters;
     private Expression myResultType;
     private Expression myThisExpr;
 
-    private DefCallResult(Abstract.DefCallExpression defCall, Callable definition, LevelArguments polyArgs, List<Expression> arguments, List<DependentLink> parameters, Expression resultType, Expression thisExpr) {
+    private DefCallResult(Abstract.DefCallExpression defCall, Callable definition, Sort sortArgument, List<Expression> arguments, List<DependentLink> parameters, Expression resultType, Expression thisExpr) {
       myDefCall = defCall;
       myDefinition = definition;
-      myLevelArguments = polyArgs;
+      mySortArgument = sortArgument;
       myArguments = arguments;
       myParameters = parameters;
       myResultType = resultType;
       myThisExpr = thisExpr;
     }
 
-    public static TResult makeTResult(Abstract.DefCallExpression defCall, Callable definition, LevelArguments polyArgs, Expression thisExpr) {
+    public static TResult makeTResult(Abstract.DefCallExpression defCall, Callable definition, Sort sortArgument, Expression thisExpr) {
       List<DependentLink> parameters = new ArrayList<>();
-      Expression resultType = definition.getTypeWithParams(parameters, polyArgs);
+      Expression resultType = definition.getTypeWithParams(parameters, sortArgument);
       if (thisExpr != null) {
         ExprSubstitution subst = DependentLink.Helper.toSubstitution(parameters.get(0), Collections.singletonList(thisExpr));
         parameters = DependentLink.Helper.subst(parameters.subList(1, parameters.size()), subst, LevelSubstitution.EMPTY);
@@ -101,16 +99,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       }
 
       if (parameters.isEmpty()) {
-        return new Result(definition.getDefCall(polyArgs, thisExpr, Collections.emptyList()), resultType);
+        return new Result(definition.getDefCall(sortArgument, thisExpr, Collections.emptyList()), resultType);
       } else {
-        return new DefCallResult(defCall, definition, polyArgs, new ArrayList<>(), parameters, resultType, thisExpr);
+        return new DefCallResult(defCall, definition, sortArgument, new ArrayList<>(), parameters, resultType, thisExpr);
       }
     }
 
     @Override
     public Result toResult() {
       if (myParameters.isEmpty()) {
-        return new Result(myDefinition.getDefCall(myLevelArguments, myThisExpr, myArguments), myResultType);
+        return new Result(myDefinition.getDefCall(mySortArgument, myThisExpr, myArguments), myResultType);
       }
 
       List<SingleDependentLink> parameters = new ArrayList<>();
@@ -137,7 +135,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         }
       }
 
-      Expression expression = myDefinition.getDefCall(myLevelArguments, myThisExpr, myArguments);
+      Expression expression = myDefinition.getDefCall(mySortArgument, myThisExpr, myArguments);
       Expression type = myResultType.subst(substitution, LevelSubstitution.EMPTY);
       for (int i = parameters.size() - 1; i >= 0; i--) {
         expression = new LamExpression(parameters.get(i), expression);
@@ -198,8 +196,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       return myArguments;
     }
 
-    public LevelArguments getLevelArguments() {
-      return myLevelArguments;
+    public Sort getSortArgument() {
+      return mySortArgument;
     }
   }
 
@@ -405,7 +403,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       Binding def = myContext.get(i);
       if (name.equals(def.getName())) {
         if (def instanceof LetClause) {
-          return DefCallResult.makeTResult(expr, (LetClause) def, LevelArguments.ZERO, null);
+          return DefCallResult.makeTResult(expr, (LetClause) def, Sort.ZERO, null);
         } else {
           return new Result(Reference(def), def.getType());
         }
@@ -445,7 +443,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       return null;
     }
 
-    return new Result(ExpressionFactory.ClassCall((ClassDefinition) typeChecked, LevelArguments.ZERO), new UniverseExpression(((ClassDefinition) typeChecked).getSort().subst(LevelArguments.ZERO.toLevelSubstitution())));
+    return new Result(ExpressionFactory.ClassCall((ClassDefinition) typeChecked, Sort.ZERO), new UniverseExpression(((ClassDefinition) typeChecked).getSort().subst(Sort.ZERO.toLevelSubstitution())));
   }
 
   @Override
@@ -564,12 +562,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         }
 
         result.type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
-        sorts.add(result.type.toUniverse().getSort());
+        sorts.add(result.type.toSort());
       }
 
       Result result = typeCheck(expr.getCodomain(), TypeOmega.INSTANCE);
       if (result == null) return null;
-      Sort codSort = result.type.toUniverse().getSort();
+      Sort codSort = result.type.toSort();
 
       Level codPLevel = codSort.getPLevel();
       Expression piExpr = result.expression;
@@ -708,8 +706,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       list.append(ExpressionFactory.param(result.type));
     }
 
-    LevelArguments levelArguments = LevelArguments.generateInferVars(myEquations, expr);
-    SigmaExpression type = new SigmaExpression(new Sort(levelArguments.getPLevel(), levelArguments.getHLevel()), list.getFirst());
+    Sort sortArgument = Sort.generateInferVars(myEquations, expr);
+    SigmaExpression type = new SigmaExpression(sortArgument, list.getFirst());
     tupleResult = checkResult(expectedTypeNorm, new Result(ExpressionFactory.Tuple(fields, type), type), expr);
     return tupleResult;
   }
@@ -733,7 +731,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         }
 
         result.type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
-        resultSorts.add(result.type.toUniverse().getSort());
+        resultSorts.add(result.type.toSort());
       }
     }
 
@@ -794,7 +792,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       if (exprResult == null) return null;
       links.add(singleParam(true, ExpressionFactory.vars(Abstract.CaseExpression.ARGUMENT_NAME + i), exprResult.type));
       letArguments.add(exprResult.expression);
-      domPLevels.add(exprResult.type.getType().toUniverse().getSort().getPLevel());
+      domPLevels.add(exprResult.type.getType().toSort().getPLevel());
     }
 
     if (links.size() > 1) { // TODO: Fix this
@@ -818,7 +816,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       return null;
     }
 
-    Level codPLevel = ((Expression) expectedType).getType().toUniverse().getSort().getPLevel();
+    Level codPLevel = ((Expression) expectedType).getType().toSort().getPLevel();
     List<Level> pLevels = generateUpperBounds(domPLevels, codPLevel, expr);
     LetClause letBinding = new LetClause(Abstract.CaseExpression.FUNCTION_NAME, pLevels, links, (Expression) expectedType, elimTree);
     caseResult.expression = ExpressionFactory.Let(ExpressionFactory.lets(letBinding), new LetClauseCallExpression(letBinding, letArguments));
@@ -905,7 +903,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     }
 
     FieldSet fieldSet = new FieldSet();
-    ClassCallExpression resultClassCall = ExpressionFactory.ClassCall(baseClass, classCallExpr.getLevelArguments(), fieldSet);
+    ClassCallExpression resultClassCall = ExpressionFactory.ClassCall(baseClass, classCallExpr.getSortArgument(), fieldSet);
     Expression resultExpr = resultClassCall;
 
     fieldSet.addFieldsFrom(classCallExpr.getFieldSet());
@@ -956,7 +954,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
   }
 
   public CheckTypeVisitor.Result implementField(FieldSet fieldSet, ClassField field, Abstract.Expression implBody, ClassCallExpression fieldSetClass) {
-    CheckTypeVisitor.Result result = typeCheck(implBody, field.getBaseType(fieldSetClass.getLevelArguments()).subst(field.getThisParameter(), ExpressionFactory.New(fieldSetClass)));
+    CheckTypeVisitor.Result result = typeCheck(implBody, field.getBaseType(fieldSetClass.getSortArgument()).subst(field.getThisParameter(), ExpressionFactory.New(fieldSetClass)));
     fieldSet.implementField(field, new FieldSet.Implementation(null, result != null ? result.expression : ExpressionFactory.Error(null, null)));
     return result;
   }
@@ -1017,7 +1015,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
           if (result == null) return null;
           Expression argType = result.expression;
           links.add(singleParam(teleArg.getExplicit(), teleArg.getNames(), argType));
-          domPLevels.add(result.type.toUniverse().getSort().getPLevel());
+          domPLevels.add(result.type.toSort().getPLevel());
           for (SingleDependentLink link = links.get(links.size() - 1); link.hasNext(); link = link.getNext()) {
             myContext.add(link);
           }
@@ -1069,7 +1067,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       }
     }
 
-    Level codPLevel = resultType.getType().toUniverse().getSort().getPLevel();
+    Level codPLevel = resultType.getType().toSort().getPLevel();
     List<Level> pLevels = generateUpperBounds(domPLevels, codPLevel, clause);
     letResult = new LetClause(clause.getName(), pLevels, links, resultType, elimTree);
     myContext.add(letResult);

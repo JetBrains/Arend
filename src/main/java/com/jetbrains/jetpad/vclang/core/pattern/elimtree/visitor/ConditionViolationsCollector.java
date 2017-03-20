@@ -44,37 +44,26 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<ExprSub
         if (conCall.getDefinition().getDataType().getCondition(conCall.getDefinition()) != null) {
           ExprSubstitution subst = toSubstitution(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments());
           final DependentLink constructorArgs = DependentLink.Helper.subst(conCall.getDefinition().getParameters(), subst);
-          SubstituteExpander.substituteExpand(conCall.getDefinition().getDataType().getCondition(conCall.getDefinition()).getElimTree(), subst, toContext(constructorArgs), new SubstituteExpander.SubstituteExpansionProcessor() {
-            @Override
-            public void process(ExprSubstitution subst, ExprSubstitution toCtxC, List<Binding> ctx, LeafElimTreeNode leaf) {
-              List<Expression> arguments = new ArrayList<>();
-              for (DependentLink link = constructorArgs; link.hasNext(); link = link.getNext()) {
-                arguments.add(toCtxC.get(link));
-              }
-              final Expression rhs = leaf.getExpression().subst(subst);
-              try (Utils.ContextSaver ignore = new Utils.ContextSaver(ctx)) {
-                final ExprSubstitution subst1 = new ExprSubstitution(branchNode.getReference(), new ConCallExpression(conCall.getDefinition(), conCall.getLevelArguments(), new ArrayList<>(conCall.getDataTypeArguments()), arguments));
-                ctx.addAll(subst1.extendBy(branchNode.getContextTail()));
-                SubstituteExpander.substituteExpand(branchNode, subst1, ctx, new SubstituteExpander.SubstituteExpansionProcessor() {
-                  @Override
-                  public void process(ExprSubstitution subst, final ExprSubstitution toCtx1, List<Binding> ctx, LeafElimTreeNode leaf) {
-                    final Expression lhsVal = leaf.getExpression().subst(subst);
-                    try (Utils.ContextSaver ignore = new Utils.ContextSaver(ctx)) {
-                      final ExprSubstitution subst2 = new ExprSubstitution(branchNode.getReference(), rhs.subst(toCtx1));
-                      for (Binding binding : branchNode.getContextTail()) {
-                        subst2.add(binding, subst1.get(binding).subst(toCtx1));
-                      }
-                      SubstituteExpander.substituteExpand(branchNode, subst2, ctx, new SubstituteExpander.SubstituteExpansionProcessor() {
-                        @Override
-                        public void process(ExprSubstitution subst, ExprSubstitution toCtx2, List<Binding> ctx, LeafElimTreeNode leaf) {
-                          myChecker.check(lhsVal.subst(toCtx2), toCtx2.compose(toCtx1.compose(subst1.compose(argSubst))),
-                              leaf.getExpression().subst(subst), toCtx2.compose(subst2.compose(argSubst)));
-                        }
-                      });
-                    }
+          SubstituteExpander.substituteExpand(conCall.getDefinition().getDataType().getCondition(conCall.getDefinition()).getElimTree(), subst, toContext(constructorArgs), (subst1, toCtxC, ctx, leaf) -> {
+            List<Expression> arguments = new ArrayList<>();
+            for (DependentLink link = constructorArgs; link.hasNext(); link = link.getNext()) {
+              arguments.add(toCtxC.get(link));
+            }
+            final Expression rhs = leaf.getExpression().subst(subst1);
+            try (Utils.ContextSaver ignore = new Utils.ContextSaver(ctx)) {
+              final ExprSubstitution subst2 = new ExprSubstitution(branchNode.getReference(), new ConCallExpression(conCall.getDefinition(), conCall.getSortArgument(), new ArrayList<>(conCall.getDataTypeArguments()), arguments));
+              ctx.addAll(subst2.extendBy(branchNode.getContextTail()));
+              SubstituteExpander.substituteExpand(branchNode, subst2, ctx, (subst3, toCtx1, ctx1, leaf1) -> {
+                final Expression lhsVal = leaf1.getExpression().subst(subst3);
+                try (Utils.ContextSaver ignore1 = new Utils.ContextSaver(ctx1)) {
+                  final ExprSubstitution subst4 = new ExprSubstitution(branchNode.getReference(), rhs.subst(toCtx1));
+                  for (Binding binding : branchNode.getContextTail()) {
+                    subst4.add(binding, subst2.get(binding).subst(toCtx1));
                   }
-                });
-              }
+                  SubstituteExpander.substituteExpand(branchNode, subst4, ctx1, (subst5, toCtx2, ctx11, leaf11) -> myChecker.check(lhsVal.subst(toCtx2), toCtx2.compose(toCtx1.compose(subst2.compose(argSubst))),
+                      leaf11.getExpression().subst(subst5), toCtx2.compose(subst4.compose(argSubst))));
+                }
+              });
             }
           });
         }
@@ -95,21 +84,13 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<ExprSub
   private void checkInterval(final BranchElimTreeNode branchNode, final ExprSubstitution argSubst, final ConCallExpression conCall) {
     final ExprSubstitution subst1 = new ExprSubstitution(branchNode.getReference(), conCall);
     List<TypedBinding> ctx = subst1.extendBy(branchNode.getContextTail());
-    SubstituteExpander.substituteExpand(branchNode, subst1, ctx, new SubstituteExpander.SubstituteExpansionProcessor() {
-      @Override
-      public void process(ExprSubstitution subst, final ExprSubstitution toCtx1, List<Binding> ctx, LeafElimTreeNode leaf) {
-        final Expression lhsVal = leaf.getExpression().subst(subst);
-        try (Utils.ContextSaver ignore = new Utils.ContextSaver(ctx)) {
-          final ExprSubstitution subst2 = new ExprSubstitution(branchNode.getReference(), conCall);
-          ctx.addAll(subst2.extendBy(branchNode.getContextTail()));
-          SubstituteExpander.substituteExpand(branchNode.getOtherwiseClause().getChild(), subst2, ctx, new SubstituteExpander.SubstituteExpansionProcessor() {
-            @Override
-            public void process(ExprSubstitution subst, ExprSubstitution toCtx2, List<Binding> ctx, LeafElimTreeNode leaf) {
-              myChecker.check(lhsVal.subst(toCtx2), toCtx2.compose(toCtx1.compose(subst1.compose(argSubst))),
-                  leaf.getExpression().subst(subst), toCtx2.compose(subst2.compose(argSubst)));
-            }
-          });
-        }
+    SubstituteExpander.substituteExpand(branchNode, subst1, ctx, (subst, toCtx1, ctx1, leaf) -> {
+      final Expression lhsVal = leaf.getExpression().subst(subst);
+      try (Utils.ContextSaver ignore = new Utils.ContextSaver(ctx1)) {
+        final ExprSubstitution subst2 = new ExprSubstitution(branchNode.getReference(), conCall);
+        ctx1.addAll(subst2.extendBy(branchNode.getContextTail()));
+        SubstituteExpander.substituteExpand(branchNode.getOtherwiseClause().getChild(), subst2, ctx1, (subst3, toCtx2, ctx2, leaf1) -> myChecker.check(lhsVal.subst(toCtx2), toCtx2.compose(toCtx1.compose(subst1.compose(argSubst))),
+            leaf1.getExpression().subst(subst3), toCtx2.compose(subst2.compose(argSubst))));
       }
     });
   }

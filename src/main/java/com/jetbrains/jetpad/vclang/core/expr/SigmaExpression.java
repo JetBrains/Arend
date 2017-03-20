@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.core.expr;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -72,11 +71,11 @@ public class SigmaExpression extends DependentTypeExpression {
       return resultSort;
     }
 
-    LevelArguments levelArguments = LevelArguments.generateInferVars(equations, sourceNode);
+    Sort sortResult = Sort.generateInferVars(equations, sourceNode);
     for (Sort sort : sorts) {
-      equations.add(sort.getPLevel(), levelArguments.getPLevel(), Equations.CMP.LE, sourceNode);
-      equations.add(sort.getHLevel(), levelArguments.getHLevel(), Equations.CMP.LE, sourceNode);
+      equations.add(sort.getPLevel(), sortResult.getPLevel(), Equations.CMP.LE, sourceNode);
+      equations.add(sort.getHLevel(), sortResult.getHLevel(), Equations.CMP.LE, sourceNode);
     }
-    return new Sort(levelArguments.getPLevel(), levelArguments.getHLevel());
+    return sortResult;
   }
 }

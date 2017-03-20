@@ -273,7 +273,7 @@ class DefinitionDeserialization {
   }
 
   private FunCallExpression readFunCall(ExpressionProtos.Expression.FunCall proto) throws DeserializationError {
-    return new FunCallExpression(myCalltargetProvider.getCalltarget(proto.getFunRef(), FunctionDefinition.class), new LevelArguments(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExprList(proto.getArgumentList()));
+    return new FunCallExpression(myCalltargetProvider.getCalltarget(proto.getFunRef(), FunctionDefinition.class), new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExprList(proto.getArgumentList()));
   }
 
   private LetClauseCallExpression readLetClauseCall(ExpressionProtos.Expression.LetClauseCall proto) throws DeserializationError {
@@ -281,16 +281,16 @@ class DefinitionDeserialization {
   }
 
   private ConCallExpression readConCall(ExpressionProtos.Expression.ConCall proto) throws DeserializationError {
-    return new ConCallExpression(myCalltargetProvider.getCalltarget(proto.getConstructorRef(), Constructor.class), new LevelArguments(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())),
+    return new ConCallExpression(myCalltargetProvider.getCalltarget(proto.getConstructorRef(), Constructor.class), new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())),
         readExprList(proto.getDatatypeArgumentList()), readExprList(proto.getArgumentList()));
   }
 
   private DataCallExpression readDataCall(ExpressionProtos.Expression.DataCall proto) throws DeserializationError {
-    return new DataCallExpression(myCalltargetProvider.getCalltarget(proto.getDataRef(), DataDefinition.class), new LevelArguments(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExprList(proto.getArgumentList()));
+    return new DataCallExpression(myCalltargetProvider.getCalltarget(proto.getDataRef(), DataDefinition.class), new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExprList(proto.getArgumentList()));
   }
 
   private ClassCallExpression readClassCall(ExpressionProtos.Expression.ClassCall proto) throws DeserializationError {
-    return new ClassCallExpression(myCalltargetProvider.getCalltarget(proto.getClassRef(), ClassDefinition.class), new LevelArguments(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readFieldSet(proto.getFieldSet()));
+    return new ClassCallExpression(myCalltargetProvider.getCalltarget(proto.getClassRef(), ClassDefinition.class), new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readFieldSet(proto.getFieldSet()));
   }
 
   private ReferenceExpression readReference(ExpressionProtos.Expression.Reference proto) throws DeserializationError {

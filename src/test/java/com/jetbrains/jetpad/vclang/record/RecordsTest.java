@@ -1,12 +1,10 @@
 package com.jetbrains.jetpad.vclang.record;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
-import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
@@ -131,7 +129,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\class Point { \\field x : Nat \\field y : Nat }\n" +
         "\\function C => Point { x => 0 }");
     assertEquals(Sort.SET0, ((ClassDefinition) result.getDefinition("Point")).getSort());
-    assertEquals(Universe(Sort.SET0), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD));
+    assertEquals(Universe(Sort.SET0), result.getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
   }
 
   @Test
@@ -140,7 +138,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\class Point { \\field x : Nat \\field y : Nat }\n" +
         "\\function C => Point { x => 0 | y => 1 }");
     assertEquals(Sort.SET0, ((ClassDefinition) result.getDefinition("Point")).getSort());
-    assertEquals(Universe(Sort.PROP), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD));
+    assertEquals(Universe(Sort.PROP), result.getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
   }
 
   @Test
@@ -149,7 +147,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\class Point { \\field x : \\Type3 \\field y : \\Type1 }\n" +
         "\\function C => Point { x => Nat }");
     assertEquals(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) result.getDefinition("Point")).getSort());
-    assertEquals(Universe(new Sort(2, 1)), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD));
+    assertEquals(Universe(new Sort(2, 1)), result.getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
   }
 
   @Test
@@ -158,7 +156,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\class Point { \\field x : \\Type3 \\field y : \\oo-Type1 }\n" +
         "\\function C => Point { x => Nat }");
     assertEquals(new Sort(new Level(4), Level.INFINITY), ((ClassDefinition) result.getDefinition("Point")).getSort());
-    assertEquals(Universe(new Sort(new Level(2), Level.INFINITY)), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD));
+    assertEquals(Universe(new Sort(new Level(2), Level.INFINITY)), result.getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
   }
 
   @Test
@@ -167,7 +165,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\class Point { \\field x : \\Type3 \\field y : \\Type1 }\n" +
         "\\function C => Point { x => \\Type2 }");
     assertEquals(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) result.getDefinition("Point")).getSort());
-    assertEquals(Universe(new Sort(new Level(2), new Level(LevelVariable.HVAR, 2))), result.getDefinition("C").getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.STD));
+    assertEquals(Universe(new Sort(new Level(2), new Level(LevelVariable.HVAR, 2))), result.getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
   }
 
   @Test

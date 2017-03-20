@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.core.definition;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
@@ -82,7 +81,7 @@ public class DataDefinition extends Definition {
         matchedParameters = dataCall.getDefCallArguments();
       }
 
-      result.add(ConCall(constructor, dataCall.getLevelArguments(), new ArrayList<>(matchedParameters), new ArrayList<>()));
+      result.add(ConCall(constructor, dataCall.getSortArgument(), new ArrayList<>(matchedParameters), new ArrayList<>()));
     }
     return result;
   }
@@ -120,31 +119,31 @@ public class DataDefinition extends Definition {
   public void setMatchesOnInterval() { myMatchesOnInterval = true; }
 
   @Override
-  public Expression getTypeWithParams(List<? super DependentLink> params, LevelArguments polyArguments) {
+  public Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument) {
     if (!status().headerIsOK()) {
       return null;
     }
 
     ExprSubstitution subst = new ExprSubstitution();
-    LevelSubstitution polySubst = polyArguments.toLevelSubstitution();
+    LevelSubstitution polySubst = sortArgument.toLevelSubstitution();
     params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, subst, polySubst)));
     return new UniverseExpression(mySort).subst(subst, polySubst);
   }
 
   @Override
-  public DataCallExpression getDefCall(LevelArguments polyArguments, Expression thisExpr, List<Expression> arguments) {
+  public DataCallExpression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> arguments) {
     if (thisExpr == null) {
-      return ExpressionFactory.DataCall(this, polyArguments, arguments);
+      return ExpressionFactory.DataCall(this, sortArgument, arguments);
     } else {
       List<Expression> args = new ArrayList<>(arguments.size() + 1);
       args.add(thisExpr);
       args.addAll(arguments);
-      return ExpressionFactory.DataCall(this, polyArguments, args);
+      return ExpressionFactory.DataCall(this, sortArgument, args);
     }
   }
 
   @Override
-  public DataCallExpression getDefCall(LevelArguments polyArguments, List<Expression> args) {
-    return new DataCallExpression(this, polyArguments, args);
+  public DataCallExpression getDefCall(Sort sortArgument, List<Expression> args) {
+    return new DataCallExpression(this, sortArgument, args);
   }
 }

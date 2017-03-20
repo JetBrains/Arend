@@ -237,8 +237,8 @@ class DefinitionSerialization {
     public ExpressionProtos.Expression visitFunCall(FunCallExpression expr, Void params) {
       ExpressionProtos.Expression.FunCall.Builder builder = ExpressionProtos.Expression.FunCall.newBuilder();
       builder.setFunRef(myCalltargetIndexProvider.getDefIndex(expr.getDefinition()));
-      builder.setPLevel(writeLevel(expr.getLevelArguments().getPLevel()));
-      builder.setHLevel(writeLevel(expr.getLevelArguments().getHLevel()));
+      builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
+      builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
       for (Expression arg : expr.getDefCallArguments()) {
         builder.addArgument(arg.accept(this, null));
       }
@@ -249,8 +249,8 @@ class DefinitionSerialization {
     public ExpressionProtos.Expression visitConCall(ConCallExpression expr, Void params) {
       ExpressionProtos.Expression.ConCall.Builder builder = ExpressionProtos.Expression.ConCall.newBuilder();
       builder.setConstructorRef(myCalltargetIndexProvider.getDefIndex(expr.getDefinition()));
-      builder.setPLevel(writeLevel(expr.getLevelArguments().getPLevel()));
-      builder.setHLevel(writeLevel(expr.getLevelArguments().getHLevel()));
+      builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
+      builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
       for (Expression arg : expr.getDataTypeArguments()) {
         builder.addDatatypeArgument(arg.accept(this, null));
       }
@@ -264,8 +264,8 @@ class DefinitionSerialization {
     public ExpressionProtos.Expression visitDataCall(DataCallExpression expr, Void params) {
       ExpressionProtos.Expression.DataCall.Builder builder = ExpressionProtos.Expression.DataCall.newBuilder();
       builder.setDataRef(myCalltargetIndexProvider.getDefIndex(expr.getDefinition()));
-      builder.setPLevel(writeLevel(expr.getLevelArguments().getPLevel()));
-      builder.setHLevel(writeLevel(expr.getLevelArguments().getHLevel()));
+      builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
+      builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
       for (Expression arg : expr.getDefCallArguments()) {
         builder.addArgument(arg.accept(this, null));
       }
@@ -275,8 +275,8 @@ class DefinitionSerialization {
     private ExpressionProtos.Expression.ClassCall writeClassCall(ClassCallExpression expr) {
       ExpressionProtos.Expression.ClassCall.Builder builder = ExpressionProtos.Expression.ClassCall.newBuilder();
       builder.setClassRef(myCalltargetIndexProvider.getDefIndex(expr.getDefinition()));
-      builder.setPLevel(writeLevel(expr.getLevelArguments().getPLevel()));
-      builder.setHLevel(writeLevel(expr.getLevelArguments().getHLevel()));
+      builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
+      builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
       builder.setFieldSet(writeFieldSet(expr.getFieldSet()));
       return builder.build();
     }
@@ -409,8 +409,8 @@ class DefinitionSerialization {
     public ExpressionProtos.Expression visitFieldCall(FieldCallExpression expr, Void params) {
       ExpressionProtos.Expression.FieldCall.Builder builder = ExpressionProtos.Expression.FieldCall.newBuilder();
       builder.setFieldRef(myCalltargetIndexProvider.getDefIndex(expr.getDefinition()));
-      builder.setPLevel(writeLevel(expr.getLevelArguments().getPLevel()));
-      builder.setHLevel(writeLevel(expr.getLevelArguments().getHLevel()));
+      builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
+      builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
       builder.setExpression(expr.getExpression().accept(this, null));
       return ExpressionProtos.Expression.newBuilder().setFieldCall(builder).build();
     }

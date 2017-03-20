@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.core.definition.Callable;
 import com.jetbrains.jetpad.vclang.core.definition.Function;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 
@@ -63,7 +63,7 @@ public class LetClause extends NamedBinding implements Function, Callable {
   }
 
   @Override
-  public Expression getTypeWithParams(List<? super DependentLink> params, LevelArguments polyArguments) {
+  public Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument) {
     ExprSubstitution subst = new ExprSubstitution();
     for (SingleDependentLink parameter : myParameters) {
       params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(parameter, subst, LevelSubstitution.EMPTY)));
@@ -72,7 +72,7 @@ public class LetClause extends NamedBinding implements Function, Callable {
   }
 
   @Override
-  public Expression getDefCall(LevelArguments polyArguments, Expression thisExpr, List<Expression> arguments) {
+  public Expression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> arguments) {
     return new LetClauseCallExpression(this, arguments);
   }
 }

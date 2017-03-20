@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.core.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.FunCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.ClassViewInstanceProvider;
@@ -37,7 +37,7 @@ public class GlobalInstancePool implements ClassViewInstancePool {
           instance.getClassifyingDefinition() == classifyingDefCall.getDefinition().getAbstractDefinition()) {
         Definition definition = myTypecheckerState.getTypechecked(instance);
         if (definition.status().headerIsOK()) {
-          return new FunCallExpression((FunctionDefinition) definition, LevelArguments.ZERO, Collections.<Expression>emptyList());
+          return new FunCallExpression((FunctionDefinition) definition, Sort.ZERO, Collections.<Expression>emptyList());
         }
       }
     }

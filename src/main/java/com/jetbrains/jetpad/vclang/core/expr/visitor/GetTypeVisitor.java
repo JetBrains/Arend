@@ -23,15 +23,15 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitDefCall(DefCallExpression expr, Void params) {
     List<DependentLink> defParams = new ArrayList<>();
-    Expression type = expr.getDefinition().getTypeWithParams(defParams, expr.getLevelArguments());
+    Expression type = expr.getDefinition().getTypeWithParams(defParams, expr.getSortArgument());
     assert expr.getDefCallArguments().size() == defParams.size();
-    return type.subst(DependentLink.Helper.toSubstitution(defParams, expr.getDefCallArguments()), expr.getLevelArguments().toLevelSubstitution());
+    return type.subst(DependentLink.Helper.toSubstitution(defParams, expr.getDefCallArguments()), expr.getSortArgument().toLevelSubstitution());
   }
 
   @Override
   public Expression visitConCall(ConCallExpression expr, Void params) {
     List<DependentLink> defParams = new ArrayList<>();
-    Expression type = expr.getDefinition().getTypeWithParams(defParams, expr.getLevelArguments());
+    Expression type = expr.getDefinition().getTypeWithParams(defParams, expr.getSortArgument());
     assert expr.getDataTypeArguments().size() + expr.getDefCallArguments().size() == defParams.size();
     ExprSubstitution subst = DependentLink.Helper.toSubstitution(defParams, expr.getDataTypeArguments());
     defParams = defParams.subList(expr.getDataTypeArguments().size(), defParams.size());
@@ -41,7 +41,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitClassCall(ClassCallExpression expr, Void params) {
-    return new UniverseExpression(expr.getSort().subst(expr.getLevelArguments().toLevelSubstitution()));
+    return new UniverseExpression(expr.getSort().subst(expr.getSortArgument().toLevelSubstitution()));
   }
 
   @Override
@@ -67,7 +67,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitPi(PiExpression expr, Void params) {
-    return new UniverseExpression(new Sort(expr.getPLevel(), expr.getCodomain().accept(this, null).toUniverse().getSort().getHLevel()));
+    return new UniverseExpression(new Sort(expr.getPLevel(), expr.getCodomain().accept(this, null).toSort().getHLevel()));
   }
 
   @Override

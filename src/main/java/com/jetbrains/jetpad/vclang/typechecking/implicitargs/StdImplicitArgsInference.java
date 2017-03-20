@@ -70,11 +70,11 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
         if (defCallResult.getDefinition() == Prelude.PATH_CON && defCallResult.getArguments().isEmpty()) {
           SingleDependentLink lamParam = singleParam("i", Interval());
-          Expression type = ExpressionFactory.Universe(new Sort(defCallResult.getLevelArguments().getPLevel(), defCallResult.getLevelArguments().getHLevel().add(1)));
+          Expression type = ExpressionFactory.Universe(new Sort(defCallResult.getSortArgument().getPLevel(), defCallResult.getSortArgument().getHLevel().add(1)));
           Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", type, 1, Prelude.PATH_CON, fun), myVisitor.getEquations());
           result = result.applyExpressions(Collections.singletonList(Lam(lamParam, binding)));
 
-          CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, new PiExpression(defCallResult.getLevelArguments().getPLevel().add(1), lamParam, binding));
+          CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, new PiExpression(defCallResult.getSortArgument().getPLevel().add(1), lamParam, binding));
           if (argResult == null) {
             return null;
           }
@@ -136,7 +136,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
             args1.addAll(args.subList(defCallResult.getArguments().size(), args.size()));
             args1 = ((Constructor) defCallResult.getDefinition()).matchDataTypeArguments(args1);
             if (args1 != null) {
-              result = CheckTypeVisitor.DefCallResult.makeTResult(defCallResult.getDefCall(), defCallResult.getDefinition(), defCallResult.getLevelArguments(), null).applyExpressions(args1);
+              result = CheckTypeVisitor.DefCallResult.makeTResult(defCallResult.getDefCall(), defCallResult.getDefinition(), defCallResult.getSortArgument(), null).applyExpressions(args1);
             }
           }
         }

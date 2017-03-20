@@ -5,24 +5,24 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.BranchElimTreeNode;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.List;
 
 public class FunCallExpression extends DefCallExpression {
-  private final LevelArguments myLevelArguments;
+  private final Sort mySortArgument;
   private final List<Expression> myArguments;
 
-  public FunCallExpression(FunctionDefinition definition, LevelArguments levelArguments, List<Expression> arguments) {
+  public FunCallExpression(FunctionDefinition definition, Sort sortArgument, List<Expression> arguments) {
     super(definition);
     assert definition.status().headerIsOK();
-    myLevelArguments = levelArguments;
+    mySortArgument = sortArgument;
     myArguments = arguments;
   }
 
   @Override
-  public LevelArguments getLevelArguments() {
-    return myLevelArguments;
+  public Sort getSortArgument() {
+    return mySortArgument;
   }
 
   @Override

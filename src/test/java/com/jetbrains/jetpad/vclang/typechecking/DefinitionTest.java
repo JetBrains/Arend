@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f => 0");
     assertNotNull(typedDef);
     assertTrue(typedDef.status() == Definition.TypeCheckingStatus.NO_ERRORS);
-    assertEquals(Nat(), typedDef.getTypeWithParams(new ArrayList<DependentLink>(), LevelArguments.ZERO));
+    assertEquals(Nat(), typedDef.getTypeWithParams(new ArrayList<>(), Sort.ZERO));
   }
 
   @Test
@@ -36,7 +36,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     assertNotNull(typedDef);
     assertTrue(typedDef.status() == Definition.TypeCheckingStatus.NO_ERRORS);
     List<DependentLink> params = new ArrayList<>();
-    Expression type = typedDef.getTypeWithParams(params, LevelArguments.ZERO);
+    Expression type = typedDef.getTypeWithParams(params, Sort.ZERO);
     assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), type.fromPiParameters(params));
   }
 

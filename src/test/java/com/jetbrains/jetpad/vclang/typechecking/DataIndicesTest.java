@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -55,11 +55,11 @@ public class DataIndicesTest extends TypeCheckingTestCase {
         "  | NatVec zero => nil\n" +
         "  | NatVec (suc n) => cons Nat (NatVec n)");
     DataDefinition data = (DataDefinition) result.getDefinition("NatVec");
-    assertEquals(DataCall(data, LevelArguments.ZERO, Zero()), data.getConstructor("nil").getTypeWithParams(new ArrayList<>(), LevelArguments.ZERO));
+    assertEquals(DataCall(data, Sort.ZERO, Zero()), data.getConstructor("nil").getTypeWithParams(new ArrayList<>(), Sort.ZERO));
     SingleDependentLink param = singleParam(false, vars("n"), Nat());
     List<DependentLink> consParams = new ArrayList<>();
-    Expression consType = data.getConstructor("cons").getTypeWithParams(consParams, LevelArguments.ZERO);
-    assertEquals(Pi(param, Pi(Nat(), Pi(DataCall(data, LevelArguments.ZERO, Reference(param)), DataCall(data, LevelArguments.ZERO, Suc(Reference(param)))))), consType.fromPiParameters(consParams));
+    Expression consType = data.getConstructor("cons").getTypeWithParams(consParams, Sort.ZERO);
+    assertEquals(Pi(param, Pi(Nat(), Pi(DataCall(data, Sort.ZERO, Reference(param)), DataCall(data, Sort.ZERO, Suc(Reference(param)))))), consType.fromPiParameters(consParams));
   }
 
   @Test

@@ -9,7 +9,6 @@ import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SimpleLevelSubstitution;
@@ -100,10 +99,9 @@ public class TwoStageEquations implements Equations {
       // ?x <> Pi
       PiExpression pi = cType.normalize(NormalizeVisitor.Mode.WHNF).toPi();
       if (pi != null) {
-        Level domLevel = pi.getParameters().getType().getType().toUniverse().getSort().getPLevel();
-        LevelArguments codLevels = LevelArguments.generateInferVars(this, sourceNode);
-        Sort codSort = new Sort(codLevels.getPLevel(), codLevels.getHLevel());
-        Level piLevel = PiExpression.generateUpperBound(domLevel, codLevels.getPLevel(), this, sourceNode);
+        Level domLevel = pi.getParameters().getType().getType().toSort().getPLevel();
+        Sort codSort = Sort.generateInferVars(this, sourceNode);
+        Level piLevel = PiExpression.generateUpperBound(domLevel, codSort.getPLevel(), this, sourceNode);
 
         InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, new UniverseExpression(codSort));
         Expression newRef = new InferenceReferenceExpression(infVar, this);

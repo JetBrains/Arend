@@ -9,7 +9,6 @@ import com.jetbrains.jetpad.vclang.core.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.core.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -27,32 +26,32 @@ public class ExpressionFactory {
     return arguments.isEmpty() ? fun : new AppExpression(fun, arguments);
   }
 
-  public static FunCallExpression FunCall(FunctionDefinition definition, LevelArguments polyParams, List<Expression> arguments) {
-    return new FunCallExpression(definition, polyParams, arguments);
+  public static FunCallExpression FunCall(FunctionDefinition definition, Sort sortArgument, List<Expression> arguments) {
+    return new FunCallExpression(definition, sortArgument, arguments);
   }
 
-  public static FunCallExpression FunCall(FunctionDefinition definition, LevelArguments polyParams, Expression... arguments) {
-    return FunCall(definition, polyParams, Arrays.asList(arguments));
+  public static FunCallExpression FunCall(FunctionDefinition definition, Sort sortArgument, Expression... arguments) {
+    return FunCall(definition, sortArgument, Arrays.asList(arguments));
   }
 
   public static FunCallExpression FunCall(FunctionDefinition definition, Level lp, Level lh, List<Expression> arguments) {
-    return FunCall(definition, new LevelArguments(lp, lh), arguments);
+    return FunCall(definition, new Sort(lp, lh), arguments);
   }
 
   public static FunCallExpression FunCall(FunctionDefinition definition, Level lp, Level lh, Expression... arguments) {
     return FunCall(definition, lp, lh, Arrays.asList(arguments));
   }
 
-  public static DataCallExpression DataCall(DataDefinition definition, LevelArguments polyParams, List<Expression> arguments) {
-    return new DataCallExpression(definition, polyParams, arguments);
+  public static DataCallExpression DataCall(DataDefinition definition, Sort sortArgument, List<Expression> arguments) {
+    return new DataCallExpression(definition, sortArgument, arguments);
   }
 
-  public static DataCallExpression DataCall(DataDefinition definition, LevelArguments polyParams, Expression... arguments) {
-    return DataCall(definition, polyParams, Arrays.asList(arguments));
+  public static DataCallExpression DataCall(DataDefinition definition, Sort sortArgument, Expression... arguments) {
+    return DataCall(definition, sortArgument, Arrays.asList(arguments));
   }
 
   public static DataCallExpression DataCall(DataDefinition definition, Level lp, Level lh, List<Expression> arguments) {
-    return new DataCallExpression(definition, new LevelArguments(lp, lh), arguments);
+    return new DataCallExpression(definition, new Sort(lp, lh), arguments);
   }
 
   public static DataCallExpression DataCall(DataDefinition definition, Level lp, Level lh, Expression... arguments) {
@@ -69,28 +68,28 @@ public class ExpressionFactory {
     }
   }
 
-  public static ClassCallExpression ClassCall(ClassDefinition definition, LevelArguments polyArgs) {
-    return new ClassCallExpression(definition, polyArgs);
+  public static ClassCallExpression ClassCall(ClassDefinition definition, Sort sortArgument) {
+    return new ClassCallExpression(definition, sortArgument);
   }
 
   public static ClassCallExpression ClassCall(ClassDefinition definition) {
-    return ClassCall(definition, LevelArguments.STD);
+    return ClassCall(definition, Sort.STD);
   }
 
-  public static ClassCallExpression ClassCall(ClassDefinition definition, LevelArguments polyParams, FieldSet fieldSet) {
-    return new ClassCallExpression(definition, polyParams, fieldSet);
+  public static ClassCallExpression ClassCall(ClassDefinition definition, Sort sortArgument, FieldSet fieldSet) {
+    return new ClassCallExpression(definition, sortArgument, fieldSet);
    }
 
-  public static ConCallExpression ConCall(Constructor definition, LevelArguments polyParams, List<Expression> parameters, List<Expression> arguments) {
-    return new ConCallExpression(definition, polyParams, parameters, arguments);
+  public static ConCallExpression ConCall(Constructor definition, Sort sortArgument, List<Expression> parameters, List<Expression> arguments) {
+    return new ConCallExpression(definition, sortArgument, parameters, arguments);
   }
 
-  public static ConCallExpression ConCall(Constructor definition, LevelArguments polyParams, List<Expression> dataTypeArguments, Expression... arguments) {
-    return ConCall(definition, polyParams, dataTypeArguments, Arrays.asList(arguments));
+  public static ConCallExpression ConCall(Constructor definition, Sort sortArgument, List<Expression> dataTypeArguments, Expression... arguments) {
+    return ConCall(definition, sortArgument, dataTypeArguments, Arrays.asList(arguments));
   }
 
   public static ConCallExpression ConCall(Constructor definition, Level lp, Level lh, List<Expression> dataTypeArguments, List<Expression> arguments) {
-    return new ConCallExpression(definition, new LevelArguments(lp, lh), dataTypeArguments, arguments);
+    return new ConCallExpression(definition, new Sort(lp, lh), dataTypeArguments, arguments);
   }
 
   public static ConCallExpression ConCall(Constructor definition, Level lp, Level lh, List<Expression> dataTypeArguments, Expression... arguments) {
@@ -98,15 +97,15 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Interval() {
-    return DataCall(Prelude.INTERVAL, LevelArguments.ZERO, Collections.<Expression>emptyList());
+    return DataCall(Prelude.INTERVAL, Sort.ZERO, Collections.<Expression>emptyList());
   }
 
   public static ConCallExpression Left() {
-    return ConCall(Prelude.LEFT, LevelArguments.ZERO, Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
+    return ConCall(Prelude.LEFT, Sort.ZERO, Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
   }
 
   public static ConCallExpression Right() {
-    return ConCall(Prelude.RIGHT, LevelArguments.ZERO, Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
+    return ConCall(Prelude.RIGHT, Sort.ZERO, Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
   }
 
   public static NewExpression New(ClassCallExpression expression) {
@@ -242,15 +241,15 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Nat() {
-    return DataCall(Prelude.NAT, LevelArguments.ZERO, Collections.<Expression>emptyList());
+    return DataCall(Prelude.NAT, Sort.ZERO, Collections.<Expression>emptyList());
   }
 
   public static ConCallExpression Zero() {
-    return ConCall(Prelude.ZERO, LevelArguments.ZERO, Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
+    return ConCall(Prelude.ZERO, Sort.ZERO, Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
   }
 
   public static ConCallExpression Suc(Expression expr) {
-    return ConCall(Prelude.SUC, LevelArguments.ZERO, Collections.<Expression>emptyList(), Collections.singletonList(expr));
+    return ConCall(Prelude.SUC, Sort.ZERO, Collections.<Expression>emptyList(), Collections.singletonList(expr));
   }
 
   public static UniverseExpression Universe(int pLevel) {

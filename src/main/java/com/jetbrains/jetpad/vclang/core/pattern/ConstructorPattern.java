@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
@@ -68,7 +68,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
         Expression type = link.getType().subst(subst).normalize(NormalizeVisitor.Mode.WHNF);
         assert type.toDataCall() != null && type.toDataCall().getDefinition() == ((ConstructorPattern) patternArgument.getPattern()).getConstructor().getDataType();
         ExprSubstitution subSubst = ((ConstructorPattern) patternArgument.getPattern()).getMatchedArguments(new ArrayList<>(type.toDataCall().getDefCallArguments()));
-        levelSubst = new StdLevelSubstitution(type.toDataCall().getLevelArguments().getPLevel(), type.toDataCall().getLevelArguments().getHLevel());
+        levelSubst = new StdLevelSubstitution(type.toDataCall().getSortArgument().getPLevel(), type.toDataCall().getSortArgument().getHLevel());
         subst.addAll(subSubst);
       } else {
         levelSubst = LevelSubstitution.EMPTY;
@@ -83,7 +83,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
       link = link.getNext();
     }
     DependentLink.Helper.freeSubsts(constructorParameters, subst);
-    return ConCall(myConstructor, LevelArguments.STD, params, arguments);
+    return ConCall(myConstructor, Sort.STD, params, arguments);
   }
 
   public ExprSubstitution getMatchedArguments(List<Expression> dataTypeArguments) {

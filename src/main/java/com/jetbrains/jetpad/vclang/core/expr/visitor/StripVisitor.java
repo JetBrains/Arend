@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
-import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
@@ -39,7 +38,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
     for (Expression arg : expr.getDefCallArguments()) {
       args.add(arg.accept(this, null));
     }
-    return new FunCallExpression(expr.getDefinition(), expr.getLevelArguments(), args);
+    return new FunCallExpression(expr.getDefinition(), expr.getSortArgument(), args);
   }
 
   @Override
@@ -54,7 +53,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
       args.add(arg.accept(this, null));
     }
 
-    return new ConCallExpression(expr.getDefinition(), expr.getLevelArguments(), dataTypeArgs, args);
+    return new ConCallExpression(expr.getDefinition(), expr.getSortArgument(), dataTypeArgs, args);
   }
 
   @Override
@@ -63,7 +62,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
     for (Expression arg : expr.getDefCallArguments()) {
       args.add(arg.accept(this, null));
     }
-    return new DataCallExpression(expr.getDefinition(), expr.getLevelArguments(), args);
+    return new DataCallExpression(expr.getDefinition(), expr.getSortArgument(), args);
   }
 
   @Override
@@ -78,7 +77,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
   @Override
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
     FieldSet fieldSet = FieldSet.applyVisitorToImplemented(expr.getFieldSet(), expr.getDefinition().getFieldSet(), this, null);
-    ClassCallExpression classCall = new ClassCallExpression(expr.getDefinition(), expr.getLevelArguments(), fieldSet);
+    ClassCallExpression classCall = new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), fieldSet);
     fieldSet.updateSorts(classCall);
     return classCall;
   }

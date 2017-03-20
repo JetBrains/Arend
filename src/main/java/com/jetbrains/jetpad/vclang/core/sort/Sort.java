@@ -1,7 +1,10 @@
 package com.jetbrains.jetpad.vclang.core.sort;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -12,7 +15,13 @@ public class Sort {
 
   public static final Sort PROP = new Sort(null, new Level(0));
   public static final Sort SET0 = new Sort(new Level(0), new Level(1));
-  public static final Sort SET = new Sort(Level.INFINITY, new Level(1));
+  public static final Sort ZERO = new Sort(new Level(0), new Level(0));
+  public static final Sort STD = new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR)) {
+    @Override
+    public LevelSubstitution toLevelSubstitution() {
+      return LevelSubstitution.EMPTY;
+    }
+  };
 
   public static Sort SetOfLevel(int level) {
     return new Sort(level, 0);
@@ -62,6 +71,10 @@ public class Sort {
     return myHLevel.isMinimum();
   }
 
+  public LevelSubstitution toLevelSubstitution() {
+    return new StdLevelSubstitution(myPLevel, myHLevel);
+  }
+
   public static boolean compare(Sort sort1, Sort sort2, Equations.CMP cmp, Equations equations, Abstract.SourceNode sourceNode) {
     if (sort1.isProp()) {
       if (cmp == Equations.CMP.LE || sort2.isProp()) {
@@ -84,6 +97,14 @@ public class Sort {
 
   public Sort subst(LevelSubstitution subst) {
     return myPLevel.isClosed() && myHLevel.isClosed() ? this : new Sort(myPLevel.subst(subst), myHLevel.subst(subst));
+  }
+
+  public static Sort generateInferVars(Equations equations, Abstract.SourceNode sourceNode) {
+    InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, sourceNode);
+    InferenceLevelVariable hl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, sourceNode);
+    equations.addVariable(pl);
+    equations.addVariable(hl);
+    return new Sort(new Level(pl), new Level(hl));
   }
 
   @Override

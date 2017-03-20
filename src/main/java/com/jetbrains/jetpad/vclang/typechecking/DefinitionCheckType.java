@@ -22,7 +22,6 @@ import com.jetbrains.jetpad.vclang.core.pattern.Utils.ProcessImplicitResult;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.PatternsToElimTreeConversion;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
@@ -147,7 +146,7 @@ public class DefinitionCheckType {
 
   private static TypedDependentLink createThisParam(ClassDefinition enclosingClass) {
     assert enclosingClass != null;
-    return param("\\this", ClassCall(enclosingClass, LevelArguments.STD));
+    return param("\\this", ClassCall(enclosingClass, Sort.STD));
   }
 
   private static boolean typeCheckParameters(List<? extends Abstract.Argument> arguments, List<Binding> context, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool, Map<Integer, ClassField> classifyingFields) {
@@ -735,7 +734,7 @@ public class DefinitionCheckType {
           context.add(thisParameter);
           visitor.setThisClass(typedDef, Reference(thisParameter));
           CheckTypeVisitor.Result result = implementField(fieldSet, field, implementation.getImplementation(), visitor, thisParameter);
-          fieldSet.updateSorts(ClassCall(typedDef, LevelArguments.STD));
+          fieldSet.updateSorts(ClassCall(typedDef, Sort.STD));
           if (result == null || result.expression.toError() != null) {
             classOk = false;
           }
@@ -753,7 +752,7 @@ public class DefinitionCheckType {
   }
 
   private static CheckTypeVisitor.Result implementField(FieldSet fieldSet, ClassField field, Abstract.Expression implBody, CheckTypeVisitor visitor, TypedDependentLink thisParam) {
-    CheckTypeVisitor.Result result = visitor.checkType(implBody, field.getBaseType(LevelArguments.STD).subst(field.getThisParameter(), Reference(thisParam)));
+    CheckTypeVisitor.Result result = visitor.checkType(implBody, field.getBaseType(Sort.STD).subst(field.getThisParameter(), Reference(thisParam)));
     fieldSet.implementField(field, new FieldSet.Implementation(thisParam, result != null ? result.expression : Error(null, null)));
     return result;
   }
@@ -804,7 +803,7 @@ public class DefinitionCheckType {
     FieldSet fieldSet = new FieldSet();
     ClassDefinition classDef = (ClassDefinition) visitor.getTypecheckingState().getTypechecked(classView.getUnderlyingClassDefCall().getReferent());
     fieldSet.addFieldsFrom(classDef.getFieldSet());
-    ClassCallExpression term = ExpressionFactory.ClassCall(classDef, LevelArguments.generateInferVars(visitor.getEquations(), def.getClassView()), fieldSet);
+    ClassCallExpression term = ExpressionFactory.ClassCall(classDef, Sort.generateInferVars(visitor.getEquations(), def.getClassView()), fieldSet);
 
     for (ClassField field : classDef.getFieldSet().getFields()) {
       Abstract.ClassFieldImpl impl = classFieldMap.get(field);

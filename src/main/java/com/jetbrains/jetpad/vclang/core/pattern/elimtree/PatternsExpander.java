@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.core.pattern.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.ConCall;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Reference;
@@ -73,11 +74,11 @@ class PatternsExpander {
 
       ConstructorClause clause = resultTree.addClause(conCall.getDefinition(), matching.names);
       MultiPatternsExpander.MultiElimTreeExpansionResult nestedResult = MultiPatternsExpander.expandPatterns(
-        DependentLink.Helper.toContext(clause.getParameters()), matching.nestedPatterns, new ArrayList<Binding>(clause.getTailBindings())
+        DependentLink.Helper.toContext(clause.getParameters()), matching.nestedPatterns, new ArrayList<>(clause.getTailBindings())
       );
       clause.setChild(nestedResult.tree);
       for (MultiPatternsExpander.MultiBranch branch : nestedResult.branches) {
-        Expression expr = ConCall(conCall.getDefinition(), conCall.getLevelArguments(), new ArrayList<>(conCall.getDataTypeArguments()), branch.expressions);
+        Expression expr = ConCall(conCall.getDefinition(), conCall.getSortArgument(), new ArrayList<>(conCall.getDataTypeArguments()), branch.expressions);
         resultBranches.add(new Branch(expr, branch.leaf, recalcIndices(matching.indices, branch.indices), branch.newContext));
       }
     }
@@ -145,9 +146,6 @@ class PatternsExpander {
   }
 
   static List<Integer> recalcIndices(List<Integer> old, List<Integer> newValid) {
-    List<Integer> indices = new ArrayList<>();
-    for (int i : newValid)
-      indices.add(old.get(i));
-    return indices;
+    return newValid.stream().map(old::get).collect(Collectors.toList());
   }
 }

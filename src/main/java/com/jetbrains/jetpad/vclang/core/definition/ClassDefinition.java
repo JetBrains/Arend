@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
@@ -43,7 +42,7 @@ public class ClassDefinition extends Definition {
   }
 
   public void updateSorts() {
-    myFieldSet.updateSorts(ClassCall(this, LevelArguments.STD, myFieldSet));
+    myFieldSet.updateSorts(ClassCall(this, Sort.STD, myFieldSet));
   }
 
   public Sort getSort() {
@@ -67,15 +66,15 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
-  public Expression getTypeWithParams(List<? super DependentLink> params, LevelArguments polyArguments) {
+  public Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument) {
     if (getThisClass() != null) {
-      params.add(param(ClassCall(getThisClass(), polyArguments)));
+      params.add(param(ClassCall(getThisClass(), sortArgument)));
     }
-    return new UniverseExpression(getSort().subst(polyArguments.toLevelSubstitution()));
+    return new UniverseExpression(getSort().subst(sortArgument.toLevelSubstitution()));
   }
 
   @Override
-  public ClassCallExpression getDefCall(LevelArguments polyArguments, Expression thisExpr, List<Expression> args) {
+  public ClassCallExpression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> args) {
     FieldSet fieldSet;
     if (thisExpr != null) {
       fieldSet = new FieldSet(myFieldSet);
@@ -85,7 +84,7 @@ public class ClassDefinition extends Definition {
       fieldSet = myFieldSet;
     }
 
-    ClassCallExpression classCall = ClassCall(this, polyArguments, fieldSet);
+    ClassCallExpression classCall = ClassCall(this, sortArgument, fieldSet);
     if (thisExpr != null) {
       fieldSet.updateSorts(classCall);
     }
@@ -93,8 +92,8 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
-  public ClassCallExpression getDefCall(LevelArguments polyArguments, List<Expression> args) {
-    return new ClassCallExpression(this, polyArguments, myFieldSet);
+  public ClassCallExpression getDefCall(Sort sortArgument, List<Expression> args) {
+    return new ClassCallExpression(this, sortArgument, myFieldSet);
   }
 
   @Override
@@ -102,7 +101,7 @@ public class ClassDefinition extends Definition {
     assert myEnclosingThisField == null;
     super.setThisClass(enclosingClass);
     if (enclosingClass != null) {
-      myEnclosingThisField = new ClassField(null, ClassCall(enclosingClass, LevelArguments.STD), this, param("\\this", ClassCall(this, LevelArguments.STD)));
+      myEnclosingThisField = new ClassField(null, ClassCall(enclosingClass, Sort.STD), this, param("\\this", ClassCall(this, Sort.STD)));
       myEnclosingThisField.setThisClass(this);
       myFieldSet.addField(myEnclosingThisField, enclosingClass.getSort());
     }

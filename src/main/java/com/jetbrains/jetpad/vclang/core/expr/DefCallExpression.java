@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.Collections;
 import java.util.List;
@@ -18,7 +18,7 @@ public abstract class DefCallExpression extends Expression implements CallableCa
     return Collections.emptyList();
   }
 
-  public abstract LevelArguments getLevelArguments();
+  public abstract Sort getSortArgument();
 
   @Override
   public Definition getDefinition() {

@@ -9,7 +9,7 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.InferenceReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.OverridingScope;
@@ -95,7 +95,7 @@ public class TypeCheckingDefCall {
           if (resolvedDefinition instanceof Abstract.ClassViewField) {
             assert typeCheckedDefinition instanceof ClassField;
             Abstract.ClassView ownClassView = ((Abstract.ClassViewField) resolvedDefinition).getOwnView();
-            ClassCallExpression classCall = ClassCall(typeCheckedDefinition.getThisClass(), LevelArguments.generateInferVars(myVisitor.getEquations(), expr));
+            ClassCallExpression classCall = ClassCall(typeCheckedDefinition.getThisClass(), Sort.generateInferVars(myVisitor.getEquations(), expr));
             thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable(typeCheckedDefinition.getThisClass().getName() + "-inst", classCall, expr, 0, ownClassView, (ClassField) myVisitor.getTypecheckingState().getTypechecked(ownClassView.getClassifyingField())), myVisitor.getEquations());
           } else {
             LocalTypeCheckingError error;
@@ -151,7 +151,7 @@ public class TypeCheckingDefCall {
         return null;
       }
       if (!classDefinition.isSubClassOf(typeCheckedDefinition.getThisClass())) {
-        ClassCallExpression classCall = ClassCall(typeCheckedDefinition.getThisClass(), LevelArguments.generateInferVars(myVisitor.getEquations(), expr));
+        ClassCallExpression classCall = ClassCall(typeCheckedDefinition.getThisClass(), Sort.generateInferVars(myVisitor.getEquations(), expr));
         LocalTypeCheckingError error = new TypeMismatchError(classCall, type, left);
         expr.setWellTyped(myVisitor.getContext(), Error(null, error));
         myVisitor.getErrorReporter().report(error);
@@ -204,7 +204,7 @@ public class TypeCheckingDefCall {
       }
 
       if (constructor != null) {
-        return CheckTypeVisitor.DefCallResult.makeTResult(expr, constructor, dataCall.getLevelArguments(), null).applyExpressions(args);
+        return CheckTypeVisitor.DefCallResult.makeTResult(expr, constructor, dataCall.getSortArgument(), null).applyExpressions(args);
       }
     }
 
@@ -271,7 +271,7 @@ public class TypeCheckingDefCall {
   }
 
   private CheckTypeVisitor.TResult makeResult(Definition definition, Expression thisExpr, Abstract.DefCallExpression expr) {
-    LevelArguments polyArgs = LevelArguments.generateInferVars(myVisitor.getEquations(), expr);
+    Sort sortArgument = Sort.generateInferVars(myVisitor.getEquations(), expr);
 
     if (thisExpr == null && definition instanceof ClassField) {
       LocalTypeCheckingError error = new LocalTypeCheckingError("Field call without a class instance", expr);
@@ -280,7 +280,7 @@ public class TypeCheckingDefCall {
       return null;
     }
 
-    return CheckTypeVisitor.DefCallResult.makeTResult(expr, definition, polyArgs, thisExpr);
+    return CheckTypeVisitor.DefCallResult.makeTResult(expr, definition, sortArgument, thisExpr);
   }
 
   private Expression findParent(ClassDefinition classDefinition, Definition definition, Expression result) {
@@ -291,7 +291,7 @@ public class TypeCheckingDefCall {
     if (parentField == null) {
       return null;
     }
-    ClassCallExpression classCall = parentField.getBaseType(LevelArguments.STD).toClassCall();
+    ClassCallExpression classCall = parentField.getBaseType(Sort.STD).toClassCall();
     if (classCall == null) {
       return null;
     }

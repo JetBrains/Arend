@@ -73,7 +73,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
       arguments.add(ExpressionFactory.Reference(link));
     }
 
-    List<TypedBinding> tailBindings = new ExprSubstitution(myReference, ConCall(constructor, dataCall.getLevelArguments(), new ArrayList<>(dataTypeArguments), arguments)).extendBy(myContextTail);
+    List<TypedBinding> tailBindings = new ExprSubstitution(myReference, ConCall(constructor, dataCall.getSortArgument(), new ArrayList<>(dataTypeArguments), arguments)).extendBy(myContextTail);
     ConstructorClause result = new ConstructorClause(constructor, constructorArgs, tailBindings, this);
     myClauses.put(constructor, result);
     return result;

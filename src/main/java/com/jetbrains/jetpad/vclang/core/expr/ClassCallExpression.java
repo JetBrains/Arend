@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.Collection;
@@ -14,19 +13,19 @@ import java.util.Map;
 import java.util.Set;
 
 public class ClassCallExpression extends DefCallExpression {
-  private final LevelArguments myLevelArguments;
+  private final Sort mySortArgument;
   private final ReadonlyFieldSet myFieldSet;
 
-  public ClassCallExpression(ClassDefinition definition, LevelArguments levelArguments) {
+  public ClassCallExpression(ClassDefinition definition, Sort sortArgument) {
     super(definition);
     assert definition.status().headerIsOK();
-    myLevelArguments = levelArguments;
+    mySortArgument = sortArgument;
     myFieldSet = definition.getFieldSet();
   }
 
-  public ClassCallExpression(ClassDefinition definition, LevelArguments levelArguments, ReadonlyFieldSet fieldSet) {
+  public ClassCallExpression(ClassDefinition definition, Sort sortArgument, ReadonlyFieldSet fieldSet) {
     super(definition);
-    myLevelArguments = levelArguments;
+    mySortArgument = sortArgument;
     myFieldSet = fieldSet;
   }
 
@@ -50,8 +49,8 @@ public class ClassCallExpression extends DefCallExpression {
   }
 
   @Override
-  public LevelArguments getLevelArguments() {
-    return myLevelArguments;
+  public Sort getSortArgument() {
+    return mySortArgument;
   }
 
   public Sort getSort() {

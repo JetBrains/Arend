@@ -12,7 +12,7 @@ import com.jetbrains.jetpad.vclang.core.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.core.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.EmptyElimTreeNode;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
@@ -81,11 +81,11 @@ public class Constructor extends Definition implements Function {
     }
   }
 
-  public Expression getDataTypeExpression(LevelArguments polyParams) {
-    return getDataTypeExpression(null, polyParams);
+  public Expression getDataTypeExpression(Sort sortArgument) {
+    return getDataTypeExpression(null, sortArgument);
   }
 
-  public Expression getDataTypeExpression(ExprSubstitution substitution, LevelArguments polyArgs) {
+  public Expression getDataTypeExpression(ExprSubstitution substitution, Sort sortArgument) {
     assert myParameters != null && myDataType.status().headerIsOK();
 
     List<Expression> arguments;
@@ -99,7 +99,7 @@ public class Constructor extends Definition implements Function {
       ExprSubstitution subst = new ExprSubstitution();
 
       DependentLink dataTypeParams = myDataType.getParameters();
-      LevelSubstitution levelSubst = polyArgs == null ? LevelSubstitution.EMPTY : polyArgs.toLevelSubstitution();
+      LevelSubstitution levelSubst = sortArgument == null ? LevelSubstitution.EMPTY : sortArgument.toLevelSubstitution();
       arguments = new ArrayList<>(myPatterns.getPatterns().size());
       for (PatternArgument patternArg : myPatterns.getPatterns()) {
         ExprSubstitution innerSubst = new ExprSubstitution();
@@ -109,7 +109,7 @@ public class Constructor extends Definition implements Function {
           DataCallExpression dataCall = dataTypeParams.getType().subst(subst).normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
           List<? extends Expression> argDataTypeParams = dataCall.getDefCallArguments();
           innerSubst = ((ConstructorPattern) patternArg.getPattern()).getMatchedArguments(new ArrayList<>(argDataTypeParams));
-          innerLevelSubst = new StdLevelSubstitution(dataCall.getLevelArguments().getPLevel(), dataCall.getLevelArguments().getHLevel());
+          innerLevelSubst = new StdLevelSubstitution(dataCall.getSortArgument().getPLevel(), dataCall.getSortArgument().getHLevel());
         } else {
           innerLevelSubst = LevelSubstitution.EMPTY;
         }
@@ -125,21 +125,21 @@ public class Constructor extends Definition implements Function {
       }
     }
 
-    if (polyArgs == null) {
-      polyArgs = LevelArguments.STD;
+    if (sortArgument == null) {
+      sortArgument = Sort.STD;
     }
 
-    return myDataType.getDefCall(polyArgs, arguments);
+    return myDataType.getDefCall(sortArgument, arguments);
   }
 
   @Override
-  public Expression getTypeWithParams(List<? super DependentLink> params, LevelArguments polyArguments) {
+  public Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument) {
     if (myParameters == null) {
       return null;
     }
 
-    LevelSubstitution polySubst = polyArguments.toLevelSubstitution();
-    Expression resultType = getDataTypeExpression(polyArguments);
+    LevelSubstitution polySubst = sortArgument.toLevelSubstitution();
+    Expression resultType = getDataTypeExpression(sortArgument);
     DependentLink parameters = getDataTypeParameters();
     ExprSubstitution substitution = new ExprSubstitution();
     List<DependentLink> paramList = null;
@@ -161,7 +161,7 @@ public class Constructor extends Definition implements Function {
   }
 
   @Override
-  public ConCallExpression getDefCall(LevelArguments polyArguments, Expression thisExpr, List<Expression> args) {
+  public ConCallExpression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> args) {
     int dataTypeArgsNumber = DependentLink.Helper.size(getDataTypeParameters());
     List<Expression> dataTypeArgs = new ArrayList<>(dataTypeArgsNumber);
     if (thisExpr != null) {
@@ -169,11 +169,11 @@ public class Constructor extends Definition implements Function {
       dataTypeArgsNumber--;
     }
     dataTypeArgs.addAll(args.subList(0, dataTypeArgsNumber));
-    return new ConCallExpression(this, polyArguments, dataTypeArgs, args.subList(dataTypeArgsNumber, args.size()));
+    return new ConCallExpression(this, sortArgument, dataTypeArgs, args.subList(dataTypeArgsNumber, args.size()));
   }
 
   @Override
-  public ConCallExpression getDefCall(LevelArguments polyArguments, List<Expression> args) {
+  public ConCallExpression getDefCall(Sort sortArgument, List<Expression> args) {
     throw new IllegalStateException();
   }
 }

@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.FieldCallExpression;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -54,29 +54,29 @@ public class ClassField extends Definition {
     myThisParameter = thisParameter;
   }
 
-  public Expression getBaseType(LevelArguments levelArgs) {
-    return myType.subst(levelArgs.toLevelSubstitution());
+  public Expression getBaseType(Sort sortArgument) {
+    return myType.subst(sortArgument.toLevelSubstitution());
   }
 
   @Override
-  public Expression getTypeWithParams(List<? super DependentLink> params, LevelArguments polyArguments) {
+  public Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument) {
     if (myType == null) {
       return null;
     }
 
     ExprSubstitution subst = new ExprSubstitution();
-    LevelSubstitution polySubst = polyArguments.toLevelSubstitution();
+    LevelSubstitution polySubst = sortArgument.toLevelSubstitution();
     params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myThisParameter, subst, polySubst)));
     return myType.subst(subst, polySubst);
   }
 
   @Override
-  public DefCallExpression getDefCall(LevelArguments polyArguments, Expression thisExpr, List<Expression> args) {
+  public DefCallExpression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> args) {
     return new FieldCallExpression(this, thisExpr);
   }
 
   @Override
-  public Expression getDefCall(LevelArguments polyArguments, List<Expression> args) {
+  public Expression getDefCall(Sort sortArgument, List<Expression> args) {
     assert args.size() == 1;
     return FieldCall(this, args.get(0));
   }

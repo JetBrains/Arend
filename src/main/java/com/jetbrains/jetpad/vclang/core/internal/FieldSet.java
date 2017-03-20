@@ -112,7 +112,7 @@ public class FieldSet implements ReadonlyFieldSet {
   private void updateUniverseSingleField(ClassField field, ClassCallExpression thisClass) {
     if (myImplemented.containsKey(field)) return;
 
-    Expression baseType = field.getBaseType(thisClass.getLevelArguments());
+    Expression baseType = field.getBaseType(thisClass.getSortArgument());
     if (baseType.toError() != null) return;
 
     DependentLink thisParam = param("\\this", thisClass);

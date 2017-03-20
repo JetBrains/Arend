@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.core.sort.LevelArguments;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import org.junit.Test;
 
@@ -142,10 +142,10 @@ public class ElimTest extends TypeCheckingTestCase {
     FunctionDefinition test = (FunctionDefinition) result.getDefinition("test");
     Constructor d = (Constructor) result.getDefinition("d");
     Binding binding = new TypedBinding("y", Nat());
-    Expression call1 = ConCall(d, LevelArguments.ZERO, Collections.<Expression>emptyList(), Zero(), Reference(binding));
-    Expression call2 = ConCall(d, LevelArguments.ZERO, Collections.<Expression>emptyList(), Suc(Zero()), Reference(binding));
-    assertEquals(FunCall(test, LevelArguments.ZERO, call1), FunCall(test, LevelArguments.ZERO, call1).normalize(NormalizeVisitor.Mode.NF));
-    assertEquals(Suc(Zero()), FunCall(test, LevelArguments.ZERO, call2).normalize(NormalizeVisitor.Mode.NF));
+    Expression call1 = ConCall(d, Sort.ZERO, Collections.<Expression>emptyList(), Zero(), Reference(binding));
+    Expression call2 = ConCall(d, Sort.ZERO, Collections.<Expression>emptyList(), Suc(Zero()), Reference(binding));
+    assertEquals(FunCall(test, Sort.ZERO, call1), FunCall(test, Sort.ZERO, call1).normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Suc(Zero()), FunCall(test, Sort.ZERO, call2).normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
