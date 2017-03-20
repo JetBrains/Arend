@@ -39,7 +39,7 @@ public class DataTest extends TypeCheckingTestCase {
 
     assertNotNull(typedDef);
     assertEquals(Definition.TypeCheckingStatus.NO_ERRORS, typedDef.status());
-    assertEquals(Pi(A, Pi(B, Pi(I, Pi(a, Pi(b, Universe(0, 0)))))), type.fromPiParameters(params));
+    assertEquals(Pi(A, Pi(I, Pi(a, Pi(b, Universe(0, 0))))), type.fromPiParameters(params));
     assertEquals(2, typedDef.getConstructors().size());
 
     ExprSubstitution substitution = new ExprSubstitution();
@@ -55,20 +55,20 @@ public class DataTest extends TypeCheckingTestCase {
     substitution.add(link, Reference(b));
     List<DependentLink> con1Params = new ArrayList<>();
     Expression con1Type = typedDef.getConstructors().get(0).getTypeWithParams(con1Params, LevelArguments.ZERO);
-    assertEquals(Pi(A, Pi(B, Pi(I, Pi(a, Pi(b, Pi(x, Pi(Apps(Reference(I), Reference(x), Reference(b)), DataCall(typedDef, LevelArguments.ZERO,
+    assertEquals(Pi(A, Pi(I, Pi(a, Pi(b, Pi(x, Pi(Apps(Reference(I), Reference(x), Reference(b)), DataCall(typedDef, LevelArguments.ZERO,
       Reference(A),
       Reference(B),
       Reference(I),
       Reference(a),
-      Reference(b))))))))), con1Type.fromPiParameters(con1Params));
+      Reference(b)))))))), con1Type.fromPiParameters(con1Params));
     List<DependentLink> con2Params = new ArrayList<>();
     Expression con2Type = typedDef.getConstructors().get(1).getTypeWithParams(con2Params, LevelArguments.ZERO);
-    assertEquals(Pi(A, Pi(B, Pi(I, Pi(a, Pi(b, Pi(y, Pi(Apps(Reference(I), Reference(a), Reference(y)), DataCall(typedDef, LevelArguments.ZERO,
+    assertEquals(Pi(A, Pi(I, Pi(a, Pi(b, Pi(y, Pi(Apps(Reference(I), Reference(a), Reference(y)), DataCall(typedDef, LevelArguments.ZERO,
       Reference(A),
       Reference(B),
       Reference(I),
       Reference(a),
-      Reference(b))))))))), con2Type.fromPiParameters(con2Params));
+      Reference(b)))))))), con2Type.fromPiParameters(con2Params));
   }
 
   @Test

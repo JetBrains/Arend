@@ -298,7 +298,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void untypedLambdaError2() {
     // f : (A : Type0) (B : A -> Type0) (a : A) -> B a |- \x1 x2 x3. f x2 x1 x3
     SingleDependentLink A = singleParam("A", Universe(0));
-    SingleDependentLink B = singleParam("B", Universe(0));
+    SingleDependentLink B = singleParam("B", Pi(Reference(A), Universe(0)));
     SingleDependentLink a = singleParam("a", Reference(A));
     Expression type = Pi(A, Pi(B, Pi(a, Apps(Reference(B), Reference(a)))));
     List<Binding> context = new ArrayList<>();

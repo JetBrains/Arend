@@ -161,8 +161,10 @@ public class TypeCheckingDefCall {
       return makeResult(typeCheckedDefinition, result.expression, expr);
     }
 
+    int lamSize = 0;
     Expression lamExpr = result.expression;
     while (lamExpr.toLam() != null) {
+      lamSize += DependentLink.Helper.size(lamExpr.toLam().getParameters());
       lamExpr = lamExpr.toLam().getBody();
     }
 
@@ -172,7 +174,7 @@ public class TypeCheckingDefCall {
       DataDefinition dataDefinition = dataCall.getDefinition();
       List<? extends Expression> args = dataCall.getDefCallArguments();
       if (result.expression.toLam() != null) {
-        args = args.subList(0, args.size() - DependentLink.Helper.size(result.expression.toLam().getParameters()));
+        args = args.subList(0, args.size() - lamSize);
       }
 
       Constructor constructor;

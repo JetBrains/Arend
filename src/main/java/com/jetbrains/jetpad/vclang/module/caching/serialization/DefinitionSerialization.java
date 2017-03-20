@@ -151,6 +151,7 @@ class DefinitionSerialization {
     List<ExpressionProtos.Telescope> out = new ArrayList<>();
     for (; link.hasNext(); link = link.getNext()) {
       out.add(writeSingleParameter(link));
+      link = link.getNextTyped(null);
     }
     return out;
   }
