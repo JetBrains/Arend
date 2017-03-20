@@ -32,7 +32,7 @@ public class EvalNormalizer implements Normalizer {
 
     Expression result = fun.getBody();
     if (link.hasNext()) {
-      result = Lam(link, result);
+      result = new LamExpression(fun.getPLevel(), link, result);
     }
     result = result.subst(subst);
     if (result != fun.getBody()) {

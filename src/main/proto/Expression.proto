@@ -71,6 +71,7 @@ message Expression {
         repeated Expression argument = 2;
     }
     message Lam {
+        Level pLevel = 4;
         Telescope param = 3;
         Expression body = 2;
     }

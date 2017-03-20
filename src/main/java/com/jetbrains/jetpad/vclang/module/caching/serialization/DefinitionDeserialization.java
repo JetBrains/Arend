@@ -298,7 +298,7 @@ class DefinitionDeserialization {
   }
 
   private LamExpression readLam(ExpressionProtos.Expression.Lam proto) throws DeserializationError {
-    return new LamExpression(readSingleParameter(proto.getParam()), readExpr(proto.getBody()));
+    return new LamExpression(readLevel(proto.getPLevel()), readSingleParameter(proto.getParam()), readExpr(proto.getBody()));
   }
 
   private PiExpression readPi(ExpressionProtos.Expression.Pi proto) throws DeserializationError {

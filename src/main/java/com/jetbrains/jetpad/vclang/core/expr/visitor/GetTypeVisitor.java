@@ -62,7 +62,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitLam(LamExpression expr, Void ignored) {
     Expression bodyType = expr.getBody().accept(this, null);
-    return bodyType == null ? null : new PiExpression(expr.getParameters(), bodyType);
+    return bodyType == null ? null : new PiExpression(expr.getPLevel(), expr.getParameters(), bodyType);
   }
 
   @Override

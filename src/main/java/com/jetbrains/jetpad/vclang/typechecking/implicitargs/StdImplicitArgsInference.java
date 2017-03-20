@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
@@ -72,7 +73,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           SingleDependentLink lamParam = singleParam("i", Interval());
           Expression type = ExpressionFactory.Universe(new Sort(defCallResult.getSortArgument().getPLevel(), defCallResult.getSortArgument().getHLevel().add(1)));
           Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", type, 1, Prelude.PATH_CON, fun), myVisitor.getEquations());
-          result = result.applyExpressions(Collections.singletonList(Lam(lamParam, binding)));
+          result = result.applyExpressions(Collections.singletonList(new LamExpression(new Level(0), lamParam, binding)));
 
           CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, new PiExpression(defCallResult.getSortArgument().getPLevel().add(1), lamParam, binding));
           if (argResult == null) {
@@ -90,7 +91,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
     DependentLink param = result.getParameter();
     if (!param.hasNext()) {
-      CheckTypeVisitor.Result result1 = result.toResult();
+      CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations());
       LocalTypeCheckingError error = new TypeMismatchError(new StringPrettyPrintable("A pi type"), result1.type, fun);
       fun.setWellTyped(myVisitor.getContext(), new ErrorExpression(result1.expression, error));
       myVisitor.getErrorReporter().report(error);
@@ -175,7 +176,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     List<SingleDependentLink> expectedParams = new ArrayList<>(actualParams.size());
     expectedType.getPiParameters(expectedParams, true, true);
     if (expectedParams.size() > actualParams.size()) {
-      CheckTypeVisitor.Result result1 = result.toResult();
+      CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations());
       LocalTypeCheckingError error = new TypeMismatchError(expectedType, result1.type, expr);
       expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result1.expression, error));
       myVisitor.getErrorReporter().report(error);

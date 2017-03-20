@@ -180,7 +180,7 @@ public abstract class Expression implements Type {
 
     Expression type = subst(substitution, LevelSubstitution.EMPTY);
     for (int i = parameters.size() - 1; i >= 0; i--) {
-      type = new PiExpression(parameters.get(i), type);
+      type = ExpressionFactory.Pi(parameters.get(i), type);
     }
     return type;
   }

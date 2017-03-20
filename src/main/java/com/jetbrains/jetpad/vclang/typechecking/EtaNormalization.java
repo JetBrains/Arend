@@ -51,7 +51,7 @@ public class EtaNormalization {
     }
 
     if (index == 0) {
-      return new LamExpression(expression.getParameters(), body);
+      return new LamExpression(expression.getPLevel(), expression.getParameters(), body);
     }
 
     body = Apps(body.getFunction(), args.subList(0, args.size() - index));
@@ -61,7 +61,7 @@ public class EtaNormalization {
 
     ExprSubstitution substitution = new ExprSubstitution();
     SingleDependentLink newParams = expression.getParameters().subst(substitution, LevelSubstitution.EMPTY, params.size() - index);
-    return new LamExpression(newParams, body.subst(substitution));
+    return new LamExpression(expression.getPLevel(), newParams, body.subst(substitution));
   }
 
   public static Expression normalizePath(ConCallExpression expr) {

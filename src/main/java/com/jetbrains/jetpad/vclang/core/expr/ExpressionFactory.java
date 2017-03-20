@@ -117,7 +117,7 @@ public class ExpressionFactory {
   }
 
   public static LamExpression Lam(SingleDependentLink link, Expression body) {
-    return new LamExpression(link, body);
+    return new LamExpression(new Level(0), link, body);
   }
 
   public static LetExpression Let(List<LetClause> clauses, Expression expr) {

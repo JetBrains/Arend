@@ -147,7 +147,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
   @Override
   public LamExpression visitLam(LamExpression expr, Void params) {
     visitArguments(expr.getParameters());
-    LamExpression result = new LamExpression(expr.getParameters(), expr.getBody().accept(this, null));
+    LamExpression result = new LamExpression(expr.getPLevel(), expr.getParameters(), expr.getBody().accept(this, null));
     freeArguments(expr.getParameters());
     return result;
   }

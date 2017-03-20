@@ -186,10 +186,10 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   public Expression visitLam(LamExpression expr, Mode mode) {
     if (mode == Mode.HUMAN_NF) {
       ExprSubstitution substitution = new ExprSubstitution();
-      return ExpressionFactory.Lam(DependentLink.Helper.accept(expr.getParameters(), substitution, this, mode), expr.getBody().subst(substitution).accept(this, mode));
+      return new LamExpression(expr.getPLevel(), DependentLink.Helper.accept(expr.getParameters(), substitution, this, mode), expr.getBody().subst(substitution).accept(this, mode));
     }
     if (mode == Mode.NF) {
-      return ExpressionFactory.Lam(expr.getParameters(), expr.getBody().accept(this, mode));
+      return new LamExpression(expr.getPLevel(), expr.getParameters(), expr.getBody().accept(this, mode));
     } else {
       return expr;
     }

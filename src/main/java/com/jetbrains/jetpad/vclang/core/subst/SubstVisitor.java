@@ -119,7 +119,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   @Override
   public LamExpression visitLam(LamExpression expr, Void params) {
     SingleDependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), myExprSubstitution, myLevelSubstitution);
-    LamExpression result = ExpressionFactory.Lam(parameters, expr.getBody().accept(this, null));
+    LamExpression result = new LamExpression(expr.getPLevel().subst(myLevelSubstitution), parameters, expr.getBody().accept(this, null));
     DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
     return result;
   }

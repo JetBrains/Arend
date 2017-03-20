@@ -311,6 +311,7 @@ class DefinitionSerialization {
     @Override
     public ExpressionProtos.Expression visitLam(LamExpression expr, Void params) {
       ExpressionProtos.Expression.Lam.Builder builder = ExpressionProtos.Expression.Lam.newBuilder();
+      builder.setPLevel(writeLevel(expr.getPLevel()));
       builder.setParam(writeSingleParameter(expr.getParameters()));
       builder.setBody(expr.getBody().accept(this, null));
       return ExpressionProtos.Expression.newBuilder().setLam(builder).build();
