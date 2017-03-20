@@ -12,14 +12,6 @@ public class PiExpression extends DependentTypeExpression {
   private final Level myPLevel;
   private final Expression myCodomain;
 
-  @Deprecated
-  public PiExpression(SingleDependentLink link, Expression codomain) {
-    super(link);
-    assert link.hasNext();
-    myPLevel = new Level(0);
-    myCodomain = codomain;
-  }
-
   public PiExpression(Level pLevel, SingleDependentLink link, Expression codomain) {
     super(link);
     assert link.hasNext();

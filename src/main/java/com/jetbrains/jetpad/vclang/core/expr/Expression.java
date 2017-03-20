@@ -145,15 +145,6 @@ public abstract class Expression implements Type {
     return cod;
   }
 
-  public Expression fromPiParametersSingle(List<SingleDependentLink> params) {
-    params = DependentLink.Helper.fromList(params);
-    Expression result = this;
-    for (int i = params.size() - 1; i >= 0; i--) {
-      result = new PiExpression(params.get(i), result);
-    }
-    return result;
-  }
-
   public Expression fromPiParameters(List<DependentLink> params) {
     List<SingleDependentLink> parameters = new ArrayList<>();
     ExprSubstitution substitution = new ExprSubstitution();
@@ -205,22 +196,23 @@ public abstract class Expression implements Type {
       return this;
     }
 
+    PiExpression piExpr = normalize(NormalizeVisitor.Mode.WHNF).toPi();
     ExprSubstitution subst = new ExprSubstitution();
-    List<SingleDependentLink> params = new ArrayList<>();
-    Expression cod = getPiParameters(params, true, false);
-    if (params.isEmpty()) {
-      assert false;
-      return null;
-    }
-    int size = expressions.size() > params.size() ? params.size() : expressions.size();
-    for (int i = 0; i < size; i++) {
-      subst.add(params.get(i), expressions.get(i));
+    SingleDependentLink link = piExpr.getParameters();
+    int i = 0;
+    for (; link.hasNext() && i < expressions.size(); link = link.getNext(), i++) {
+      subst.add(link, expressions.get(i));
     }
 
-    if (expressions.size() < params.size()) {
-      cod = cod.fromPiParametersSingle(params.subList(expressions.size(), params.size()));
+    Expression result = piExpr.getCodomain();
+    if (link.hasNext()) {
+      result = new PiExpression(piExpr.getPLevel(), link, result);
     }
-    return cod.subst(subst).applyExpressions(expressions.subList(size, expressions.size()));
+    result = result.subst(subst);
+    if (i < expressions.size()) {
+      result = result.applyExpressions(expressions.subList(i, expressions.size()));
+    }
+    return result;
   }
 
   public Expression getFunction() {

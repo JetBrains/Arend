@@ -314,37 +314,28 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
   @Override
   public Boolean visitPi(PiExpression expr1, Expression expr2) {
-    if (expr2.toPi() == null) return false;
+    PiExpression piExpr2 = expr2.toPi();
+    if (piExpr2 == null) return false;
 
-    List<SingleDependentLink> params1 = new ArrayList<>(), params2 = new ArrayList<>();
-    Expression cod1 = expr1.getPiParameters(params1, false, false);
-    Expression cod2 = expr2.getPiParameters(params2, false, false);
-    if (params1.size() < params2.size()) {
-      cod2 = cod2.fromPiParametersSingle(params2.subList(params1.size(), params2.size()));
-      params2 = params2.subList(0, params1.size());
-    }
-    if (params2.size() < params1.size()) {
-      cod1 = cod1.fromPiParametersSingle(params1.subList(params2.size(), params1.size()));
-      params1 = params1.subList(0, params2.size());
-    }
-
-    CompareVisitor visitor = new CompareVisitor(mySubstitution, myEquations, Equations.CMP.EQ);
-    for (int i = 0; i < params1.size(); i++) {
-      if (!(params1.get(i) instanceof UntypedDependentLink && params2.get(i) instanceof UntypedDependentLink)) {
-        if (!visitor.compare(params1.get(i).getType(), params2.get(i).getType())) {
-          return false;
-        }
-      }
-      mySubstitution.put(params1.get(i), params2.get(i));
-    }
-
-    visitor.myCMP = myCMP;
-    if (!visitor.compare(cod1, cod2)) {
+    Equations.CMP oldCMP = myCMP;
+    myCMP = Equations.CMP.EQ;
+    if (!compare(expr1.getParameters().getType(), piExpr2.getParameters().getType())) {
       return false;
     }
-    for (DependentLink param : params1) {
-      mySubstitution.remove(param);
+    myCMP = oldCMP;
+
+    SingleDependentLink link1 = expr1.getParameters(), link2 = piExpr2.getParameters();
+    for (; link1.hasNext() && link2.hasNext(); link1 = link1.getNext(), link2 = link2.getNext()) {
+      mySubstitution.put(link1, link2);
     }
+    if (!compare(link1.hasNext() ? new PiExpression(expr1.getPLevel(), link1, expr1.getCodomain()) : expr1.getCodomain(), link2.hasNext() ? new PiExpression(piExpr2.getPLevel(), link2, piExpr2.getCodomain()) : piExpr2.getCodomain())) {
+      return false;
+    }
+
+    for (DependentLink link = expr1.getParameters(); link != link1; link = link.getNext()) {
+      mySubstitution.remove(link);
+    }
+    mySubstitution.remove(link1);
     return true;
   }
 

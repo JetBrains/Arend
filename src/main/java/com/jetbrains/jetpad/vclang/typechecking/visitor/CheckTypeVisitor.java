@@ -450,109 +450,130 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
     return new Result(ExpressionFactory.ClassCall((ClassDefinition) typeChecked, Sort.ZERO), new UniverseExpression(((ClassDefinition) typeChecked).getSort().subst(Sort.ZERO.toLevelSubstitution())));
   }
 
+  private Result visitLam(List<? extends Abstract.Argument> parameters, Abstract.LamExpression expr, Expression expectedType, int argIndex) {
+    if (parameters.isEmpty()) {
+      return typeCheck(expr.getBody(), expectedType);
+    }
+
+    Abstract.Argument param = parameters.get(0);
+    if (param instanceof Abstract.NameArgument) {
+      String name = ((Abstract.NameArgument) param).getName();
+      if (expectedType != null) {
+        expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+      }
+
+      if (expectedType == null || expectedType.toPi() == null) {
+        InferenceLevelVariable pLvl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, expr);
+        InferenceLevelVariable hLvl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, expr);
+        myEquations.addVariable(pLvl);
+        myEquations.addVariable(hLvl);
+        Level pLevel = new Level(pLvl);
+        InferenceVariable inferenceVariable = new LambdaInferenceVariable("type-of-" + name, ExpressionFactory.Universe(pLevel, new Level(hLvl)), argIndex, expr, false);
+        Expression argType = new InferenceReferenceExpression(inferenceVariable, myEquations);
+
+        SingleDependentLink link = new TypedSingleDependentLink(param.getExplicit(), name, argType);
+        myContext.add(link);
+        Result bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, null, argIndex + 1);
+        if (bodyResult == null) return null;
+        pLevel = PiExpression.generateUpperBound(pLevel, bodyResult.type.getType().toSort().getPLevel(), myEquations, expr);
+        Result result = new Result(new LamExpression(pLevel, link, bodyResult.expression), new PiExpression(pLevel, link, bodyResult.type));
+        if (expectedType != null && !compare(result, expectedType, expr)) {
+          return null;
+        }
+        return result;
+      } else {
+        SingleDependentLink piParams = expectedType.toPi().getParameters();
+        if (piParams.isExplicit() != param.getExplicit()) {
+          myErrorReporter.report(new LocalTypeCheckingError(ordinal(argIndex) + " argument of the lambda should be " + (piParams.isExplicit() ? "explicit" : "implicit"), expr));
+        }
+        SingleDependentLink link = new TypedSingleDependentLink(piParams.isExplicit(), name, piParams.getType());
+        myContext.add(link);
+        piParams = piParams.getNext();
+        Result bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, piParams.hasNext() ? new PiExpression(expectedType.toPi().getPLevel(), piParams, expectedType.toPi().getCodomain()) : expectedType.toPi().getCodomain(), argIndex + 1);
+        if (bodyResult == null) return null;
+        Level pLevel = PiExpression.generateUpperBound(link.getType().getType().toSort().getPLevel(), bodyResult.type.getType().toSort().getPLevel(), myEquations, expr);
+        return new Result(new LamExpression(pLevel, link, bodyResult.expression), new PiExpression(pLevel, link, bodyResult.type));
+      }
+    } else if (param instanceof Abstract.TypeArgument) {
+      List<String> names = param instanceof Abstract.TelescopeArgument ? ((Abstract.TelescopeArgument) param).getNames() : Collections.singletonList(null);
+      Abstract.Expression paramType = ((Abstract.TypeArgument) param).getType();
+      Result argResult = typeCheck(paramType, TypeOmega.INSTANCE);
+      if (argResult == null) return null;
+      SingleDependentLink link = singleParam(param.getExplicit(), names, argResult.expression);
+      for (SingleDependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
+        myContext.add(link1);
+      }
+
+      SingleDependentLink actualLink = null;
+      Expression expectedBodyType = null;
+      if (expectedType != null) {
+        Expression argExpr = null;
+        int checked = 0;
+        while (true) {
+          expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+          if (expectedType.toPi() == null) {
+            actualLink = link;
+            for (int i = 0; i < checked; i++) {
+              actualLink = actualLink.getNext();
+            }
+            break;
+          }
+          if (argExpr == null) {
+            argExpr = argResult.expression.normalize(NormalizeVisitor.Mode.NF);
+          }
+          if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, expectedType.toPi().getParameters().getType().normalize(NormalizeVisitor.Mode.NF), argExpr, paramType)) {
+            LocalTypeCheckingError error = new TypeMismatchError(expectedType.toPi().getParameters().getType().normalize(NormalizeVisitor.Mode.HUMAN_NF), argResult.expression.normalize(NormalizeVisitor.Mode.HUMAN_NF), paramType);
+            myErrorReporter.report(error);
+            return null;
+          }
+          int parametersCount = DependentLink.Helper.size(expectedType.toPi().getParameters());
+          checked += parametersCount;
+          if (checked >= names.size()) {
+            if (checked == names.size()) {
+              expectedBodyType = expectedType;
+            } else {
+              int skip = parametersCount - (checked - names.size());
+              SingleDependentLink link1 = expectedType.toPi().getParameters();
+              for (int i = 0; i < skip; i++) {
+                link1 = link1.getNext();
+              }
+              expectedBodyType = checked == names.size() ? expectedType : new PiExpression(expectedType.toPi().getPLevel(), link1, expectedType.toPi().getCodomain());
+            }
+            break;
+          }
+          expectedType = expectedType.toPi().getCodomain();
+        }
+      }
+
+      Result bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, expectedBodyType, argIndex + names.size());
+      if (bodyResult == null) return null;
+      Level pLevel = PiExpression.generateUpperBound(link.getType().getType().toSort().getPLevel(), bodyResult.type.getType().toSort().getPLevel(), myEquations, expr);
+      if (actualLink != null) {
+        if (!compare(new Result(null, new PiExpression(pLevel, actualLink, bodyResult.type)), expectedType, expr)) {
+          return null;
+        }
+      }
+
+      return new Result(new LamExpression(pLevel, link, bodyResult.expression), new PiExpression(pLevel, link, bodyResult.type));
+    } else {
+      throw new IllegalStateException();
+    }
+  }
+
   @Override
   public Result visitLam(Abstract.LamExpression expr, Type expectedType) {
-    List<SingleDependentLink> piParams = new ArrayList<>();
-    Type expectedCodomain = expectedType == null ? null : expectedType.getPiParameters(piParams, true, false);
-    List<Pair<SingleDependentLink, Level>> links = new ArrayList<>(expr.getArguments().size());
-    SingleDependentLink actualPiLink = null;
-    ExprSubstitution piLamSubst = new ExprSubstitution();
-    int piParamsIndex = 0;
-    int argIndex = 1;
-
-    Result bodyResult;
-    try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
-      for (Abstract.Argument argument : expr.getArguments()) {
-        List<String> names;
-        Expression argType = null;
-        Level pLevel = null;
-        Abstract.Expression argAbsType = null;
-        boolean isExplicit = argument.getExplicit();
-
-        if (argument instanceof Abstract.NameArgument) {
-          names = Collections.singletonList(((Abstract.NameArgument) argument).getName());
-        } else if (argument instanceof Abstract.TypeArgument) {
-          names = argument instanceof Abstract.TelescopeArgument ? ((Abstract.TelescopeArgument) argument).getNames() : Collections.<String>singletonList(null);
-          argAbsType = ((Abstract.TypeArgument) argument).getType();
-          Result argResult = typeCheck(argAbsType, TypeOmega.INSTANCE);
-          if (argResult == null) return null;
-          argType = argResult.expression;
-          pLevel = argResult.type.toSort().getPLevel();
-        } else {
-          throw new IllegalStateException();
+    try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
+      Result result = visitLam(expr.getArguments(), expr, expectedType instanceof Expression ? (Expression) expectedType : null, 1);
+      if (result != null) {
+        expr.setWellTyped(myContext, result.expression);
+        if (expectedType != null && !(expectedType instanceof Expression)) {
+          LocalTypeCheckingError error = new TypeMismatchError(expectedType, result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
+          myErrorReporter.report(error);
+          return null;
         }
-
-        SingleDependentLink origLink = singleParam(isExplicit, names, argType);
-        SingleDependentLink link = origLink;
-
-        for (String name : names) {
-          if (piParamsIndex < piParams.size()) {
-            DependentLink piLink = piParams.get(piParamsIndex++);
-            if (piLink.isExplicit() != isExplicit) {
-              myErrorReporter.report(new LocalTypeCheckingError(ordinal(argIndex) + " argument of the lambda should be " + (piLink.isExplicit() ? "explicit" : "implicit"), expr));
-              link.setExplicit(piLink.isExplicit());
-            }
-
-            Expression piLinkType = piLink.getType().subst(piLamSubst);
-            if (argType != null) {
-              if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, piLinkType.normalize(NormalizeVisitor.Mode.NF), argType.normalize(NormalizeVisitor.Mode.NF), argAbsType)) {
-                LocalTypeCheckingError error = new TypeMismatchError(piLinkType.normalize(NormalizeVisitor.Mode.HUMAN_NF), argType.normalize(NormalizeVisitor.Mode.HUMAN_NF), argAbsType);
-                myErrorReporter.report(error);
-                return null;
-              }
-            } else {
-              argType = piLinkType;
-              pLevel = argType.getType().toSort().getPLevel();
-              link.setType(argType);
-            }
-
-            piLamSubst.add(piLink, ExpressionFactory.Reference(link));
-          } else {
-            if (argType == null) {
-              InferenceLevelVariable pLvl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, expr);
-              InferenceLevelVariable hLvl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, expr);
-              myEquations.addVariable(pLvl);
-              myEquations.addVariable(hLvl);
-              pLevel = new Level(pLvl);
-              InferenceVariable inferenceVariable = new LambdaInferenceVariable("type-of-" + name, ExpressionFactory.Universe(pLevel, new Level(hLvl)), argIndex, expr, false);
-              argType = new InferenceReferenceExpression(inferenceVariable, myEquations);
-              link.setType(argType);
-            }
-            if (actualPiLink == null) {
-              actualPiLink = link;
-            }
-          }
-
-          argIndex++;
-          myContext.add(link);
-          link = link.getNext();
-        }
-
-        links.add(new Pair<>(origLink, pLevel));
       }
-
-      Type expectedBodyType = null;
-      if (actualPiLink == null && expectedCodomain != null) {
-        expectedBodyType = expectedCodomain instanceof Expression ? ((Expression) expectedCodomain).fromPiParametersSingle(piParams.subList(piParamsIndex, piParams.size())).subst(piLamSubst, LevelSubstitution.EMPTY) : expectedCodomain;
-      }
-
-      Abstract.Expression body = expr.getBody();
-      bodyResult = typeCheck(body, expectedBodyType);
-      if (bodyResult == null) return null;
-      if (actualPiLink != null && expectedCodomain != null && !compare(new Result(bodyResult.expression, new PiExpression(new Level(0), actualPiLink, bodyResult.type)), expectedCodomain, body)) {
-        return null;
-      }
+      return result;
     }
-
-    Expression exprResult = bodyResult.expression;
-    Expression typeResult = bodyResult.type;
-    Level codPLevel = typeResult.getType().toSort().getPLevel();
-    for (int i = links.size() - 1; i >= 0; i--) {
-      codPLevel = PiExpression.generateUpperBound(links.get(i).proj2, codPLevel, myEquations, expr);
-      exprResult = new LamExpression(codPLevel, links.get(i).proj1, exprResult);
-      typeResult = new PiExpression(codPLevel, links.get(i).proj1, typeResult);
-    }
-    return new Result(exprResult, typeResult);
   }
 
   @Override
