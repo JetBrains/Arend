@@ -40,11 +40,9 @@ import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporterCounter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.ImplicitArgsInference;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.StdImplicitArgsInference;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equation;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.TwoStageEquations;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.ClassViewInstancePool;
-import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
 
@@ -488,8 +486,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
         }
         SingleDependentLink link = new TypedSingleDependentLink(piParams.isExplicit(), name, piParams.getType());
         myContext.add(link);
-        piParams = piParams.getNext();
-        Result bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, piParams.hasNext() ? new PiExpression(expectedType.toPi().getPLevel(), piParams, expectedType.toPi().getCodomain()) : expectedType.toPi().getCodomain(), argIndex + 1);
+        Expression codomain = expectedType.toPi().getCodomain().subst(piParams, Reference(link));
+        Result bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, piParams.getNext().hasNext() ? new PiExpression(expectedType.toPi().getPLevel(), piParams.getNext(), codomain) : codomain, argIndex + 1);
         if (bodyResult == null) return null;
         Level pLevel = PiExpression.generateUpperBound(link.getType().getType().toSort().getPLevel(), bodyResult.type.getType().toSort().getPLevel(), myEquations, expr);
         return new Result(new LamExpression(pLevel, link, bodyResult.expression), new PiExpression(pLevel, link, bodyResult.type));
@@ -507,6 +505,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
       SingleDependentLink actualLink = null;
       Expression expectedBodyType = null;
       if (expectedType != null) {
+        SingleDependentLink lamLink = link;
+        ExprSubstitution substitution = new ExprSubstitution();
         Expression argExpr = null;
         int checked = 0;
         while (true) {
@@ -516,28 +516,40 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Type, CheckTy
             for (int i = 0; i < checked; i++) {
               actualLink = actualLink.getNext();
             }
+            expectedType = expectedType.subst(substitution);
             break;
           }
           if (argExpr == null) {
             argExpr = argResult.expression.normalize(NormalizeVisitor.Mode.NF);
           }
-          if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, expectedType.toPi().getParameters().getType().normalize(NormalizeVisitor.Mode.NF), argExpr, paramType)) {
-            LocalTypeCheckingError error = new TypeMismatchError(expectedType.toPi().getParameters().getType().normalize(NormalizeVisitor.Mode.HUMAN_NF), argResult.expression.normalize(NormalizeVisitor.Mode.HUMAN_NF), paramType);
+
+          Expression argExpectedType = expectedType.toPi().getParameters().getType().subst(substitution);
+          if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, argExpectedType.normalize(NormalizeVisitor.Mode.NF), argExpr, paramType)) {
+            LocalTypeCheckingError error = new TypeMismatchError(argExpectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), argResult.expression.normalize(NormalizeVisitor.Mode.HUMAN_NF), paramType);
             myErrorReporter.report(error);
             return null;
           }
-          int parametersCount = DependentLink.Helper.size(expectedType.toPi().getParameters());
+
+          int parametersCount = 0;
+          for (DependentLink link1 = expectedType.toPi().getParameters(); link1.hasNext(); link1 = link1.getNext()) {
+            parametersCount++;
+            if (lamLink.hasNext()) {
+              substitution.add(link1, Reference(lamLink));
+              lamLink = lamLink.getNext();
+            }
+          }
+
           checked += parametersCount;
           if (checked >= names.size()) {
             if (checked == names.size()) {
-              expectedBodyType = expectedType;
+              expectedBodyType = expectedType.toPi().getCodomain().subst(substitution);
             } else {
               int skip = parametersCount - (checked - names.size());
               SingleDependentLink link1 = expectedType.toPi().getParameters();
               for (int i = 0; i < skip; i++) {
                 link1 = link1.getNext();
               }
-              expectedBodyType = checked == names.size() ? expectedType : new PiExpression(expectedType.toPi().getPLevel(), link1, expectedType.toPi().getCodomain());
+              expectedBodyType = (checked == names.size() ? expectedType : new PiExpression(expectedType.toPi().getPLevel(), link1, expectedType.toPi().getCodomain())).subst(substitution);
             }
             break;
           }
