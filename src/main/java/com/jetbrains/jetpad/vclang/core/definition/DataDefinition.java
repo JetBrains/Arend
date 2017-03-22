@@ -127,7 +127,7 @@ public class DataDefinition extends Definition {
     ExprSubstitution subst = new ExprSubstitution();
     LevelSubstitution polySubst = sortArgument.toLevelSubstitution();
     params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, subst, polySubst)));
-    return new UniverseExpression(mySort).subst(subst, polySubst);
+    return new UniverseExpression(mySort.subst(polySubst));
   }
 
   @Override

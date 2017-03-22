@@ -1,9 +1,15 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
-import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 
-public class UniverseExpression extends Expression {
+import java.util.Set;
+
+public class UniverseExpression extends Expression implements Type {
   private final Sort mySort;
 
   public UniverseExpression(Sort sort) {
@@ -32,5 +38,25 @@ public class UniverseExpression extends Expression {
     }
     UniverseExpression expr = (UniverseExpression)obj;
     return mySort.equals(expr.getSort());
+  }
+
+  @Override
+  public Expression getExpr() {
+    return this;
+  }
+
+  @Override
+  public Sort getSortOfType() {
+    return mySort.succ();
+  }
+
+  @Override
+  public UniverseExpression subst(LevelSubstitution substitution) {
+    return new UniverseExpression(mySort.subst(substitution));
+  }
+
+  @Override
+  public UniverseExpression strip(Set<Binding> bounds, LocalErrorReporter errorReporter) {
+    return this;
   }
 }

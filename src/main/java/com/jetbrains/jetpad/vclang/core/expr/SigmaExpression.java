@@ -23,6 +23,11 @@ public class SigmaExpression extends DependentTypeExpression {
   }
 
   @Override
+  public Sort getSortOfType() {
+    return mySort;
+  }
+
+  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitSigma(this, params);
   }

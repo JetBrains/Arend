@@ -96,7 +96,7 @@ public class Sort {
   }
 
   public Sort subst(LevelSubstitution subst) {
-    return myPLevel.isClosed() && myHLevel.isClosed() ? this : new Sort(myPLevel.subst(subst), myHLevel.subst(subst));
+    return subst.isEmpty() || myPLevel.isClosed() && myHLevel.isClosed() ? this : new Sort(myPLevel.subst(subst), myHLevel.subst(subst));
   }
 
   public static Sort generateInferVars(Equations equations, Abstract.SourceNode sourceNode) {

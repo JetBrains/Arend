@@ -15,6 +15,7 @@ import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.ExpectedType;
+import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
@@ -354,7 +355,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     return result;
   }
 
-  public TypeExpression checkType(Abstract.Expression expr) {
+  public Type checkType(Abstract.Expression expr) {
     if (expr == null) {
       LocalTypeCheckingError error = new LocalTypeCheckingError("Incomplete expression", null);
       myErrorReporter.report(error);
@@ -364,6 +365,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     Result result = expr.accept(this, ExpectedType.OMEGA);
     if (result == null) {
       return null;
+    }
+    if (result.expression instanceof Type) {
+      return (Type) result.expression;
     }
 
     // TODO: if result.type is stuck, add an equation
@@ -378,17 +382,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     return new TypeExpression(result.expression, universe.getSort());
   }
 
-  public TypeExpression finalCheckType(Abstract.Expression expr) {
-    TypeExpression result = checkType(expr);
+  public Type finalCheckType(Abstract.Expression expr) {
+    Type result = checkType(expr);
     if (result == null) return null;
-    LevelSubstitution substitution = myEquations.solve(expr);
-    Expression type = result.getExpr();
-    Sort sort = result.getSort();
-    if (!substitution.isEmpty()) {
-      type = type.subst(substitution);
-      sort = sort.subst(substitution);
-    }
-    return new TypeExpression(type.strip(new HashSet<>(myContext), myErrorReporter), sort);
+    return result.subst(myEquations.solve(expr)).strip(new HashSet<>(myContext), myErrorReporter);
   }
 
   private boolean compareExpressions(Result result, Expression expected, Expression actual, Abstract.Expression expr) {
@@ -526,7 +523,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     } else if (param instanceof Abstract.TypeArgument) {
       List<String> names = param instanceof Abstract.TelescopeArgument ? ((Abstract.TelescopeArgument) param).getNames() : Collections.singletonList(null);
       Abstract.Expression paramType = ((Abstract.TypeArgument) param).getType();
-      TypeExpression argResult = checkType(paramType);
+      Type argResult = checkType(paramType);
       if (argResult == null) return null;
       SingleDependentLink link = singleParam(param.getExplicit(), names, argResult.getExpr());
       for (SingleDependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
@@ -626,7 +623,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
     try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
       for (Abstract.TypeArgument arg : expr.getArguments()) {
-        TypeExpression result = checkType(arg.getType());
+        Type result = checkType(arg.getType());
         if (result == null) return null;
 
         if (arg instanceof Abstract.TelescopeArgument) {
@@ -639,12 +636,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
           myContext.add(link);
         }
 
-        sorts.add(result.getSort());
+        sorts.add(result.getSortOfType());
       }
 
-      TypeExpression result = checkType(expr.getCodomain());
+      Type result = checkType(expr.getCodomain());
       if (result == null) return null;
-      Sort codSort = result.getSort();
+      Sort codSort = result.getSortOfType();
 
       Level codPLevel = codSort.getPLevel();
       Expression piExpr = result.getExpr();
@@ -794,7 +791,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
     try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
       for (Abstract.TypeArgument arg : arguments) {
-        TypeExpression result = checkType(arg.getType());
+        Type result = checkType(arg.getType());
         if (result == null) return null;
 
         if (arg instanceof Abstract.TelescopeArgument) {
@@ -807,7 +804,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
           myContext.add(link);
         }
 
-        resultSorts.add(result.getSort());
+        resultSorts.add(result.getSortOfType());
       }
     }
 
@@ -1084,10 +1081,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       for (Abstract.Argument arg : clause.getArguments()) {
         if (arg instanceof Abstract.TelescopeArgument) {
           Abstract.TelescopeArgument teleArg = (Abstract.TelescopeArgument) arg;
-          TypeExpression result = checkType(teleArg.getType());
+          Type result = checkType(teleArg.getType());
           if (result == null) return null;
           links.add(singleParam(teleArg.getExplicit(), teleArg.getNames(), result.getExpr()));
-          domPLevels.add(result.getSort().getPLevel());
+          domPLevels.add(result.getSortOfType().getPLevel());
           for (SingleDependentLink link = links.get(links.size() - 1); link.hasNext(); link = link.getNext()) {
             myContext.add(link);
           }
@@ -1099,7 +1096,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
       Expression expectedType = null;
       if (clause.getResultType() != null) {
-        TypeExpression result = checkType(clause.getResultType());
+        Type result = checkType(clause.getResultType());
         if (result == null) return null;
         expectedType = result.getExpr();
       }

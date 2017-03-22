@@ -85,7 +85,7 @@ public abstract class Expression implements ExpectedType {
      return subst.isEmpty() ? this : subst(subst, LevelSubstitution.EMPTY);
   }
 
-  public final Expression subst(LevelSubstitution subst) {
+  public Expression subst(LevelSubstitution subst) {
     return subst.isEmpty() ? this : subst(new ExprSubstitution(), subst);
   }
 

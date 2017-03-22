@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevel
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
@@ -53,5 +54,10 @@ public class PiExpression extends DependentTypeExpression {
   @Override
   public PiExpression toPi() {
     return this;
+  }
+
+  @Override
+  public Sort getSortOfType() {
+    return new Sort(myPLevel, myCodomain.getType().toSort().getHLevel());
   }
 }

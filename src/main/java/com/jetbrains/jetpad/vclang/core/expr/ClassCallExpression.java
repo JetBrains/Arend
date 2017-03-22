@@ -1,18 +1,22 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
+import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class ClassCallExpression extends DefCallExpression {
+public class ClassCallExpression extends DefCallExpression implements Type {
   private final Sort mySortArgument;
   private final ReadonlyFieldSet myFieldSet;
 
@@ -51,6 +55,26 @@ public class ClassCallExpression extends DefCallExpression {
   @Override
   public Sort getSortArgument() {
     return mySortArgument;
+  }
+
+  @Override
+  public Expression getExpr() {
+    return this;
+  }
+
+  @Override
+  public Sort getSortOfType() {
+    return getSort();
+  }
+
+  @Override
+  public ClassCallExpression subst(LevelSubstitution substitution) {
+    return (ClassCallExpression) super.subst(substitution);
+  }
+
+  @Override
+  public ClassCallExpression strip(Set<Binding> bounds, LocalErrorReporter errorReporter) {
+    return (ClassCallExpression) super.strip(bounds, errorReporter);
   }
 
   public Sort getSort() {

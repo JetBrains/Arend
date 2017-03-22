@@ -10,7 +10,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
+import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.StripVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
@@ -156,7 +156,7 @@ public class DefinitionCheckType {
     for (Abstract.Argument argument : arguments) {
       if (argument instanceof Abstract.TypeArgument) {
         Abstract.TypeArgument typeArgument = (Abstract.TypeArgument) argument;
-        TypeExpression paramResult = visitor.finalCheckType(typeArgument.getType());
+        Type paramResult = visitor.finalCheckType(typeArgument.getType());
         if (paramResult == null) {
           ok = false;
           continue;
@@ -217,7 +217,7 @@ public class DefinitionCheckType {
     Expression expectedType = null;
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
-      TypeExpression expectedTypeResult = visitor.finalCheckType(resultType);
+      Type expectedTypeResult = visitor.finalCheckType(resultType);
       if (expectedTypeResult != null) {
         expectedType = expectedTypeResult.getExpr();
       }
@@ -286,7 +286,7 @@ public class DefinitionCheckType {
 
     if (def.getUniverse() != null) {
       if (def.getUniverse() instanceof Abstract.UniverseExpression) {
-        TypeExpression userTypeResult = visitor.finalCheckType(def.getUniverse());
+        Type userTypeResult = visitor.finalCheckType(def.getUniverse());
         if (userTypeResult != null) {
           userSort = userTypeResult.getExpr().toSort();
           if (userSort == null) {
@@ -549,12 +549,12 @@ public class DefinitionCheckType {
 
       LinkList list = new LinkList();
       for (Abstract.TypeArgument argument : arguments) {
-        TypeExpression paramResult = visitor.finalCheckType(argument.getType());
+        Type paramResult = visitor.finalCheckType(argument.getType());
         if (paramResult == null) {
           return null;
         }
 
-        sort = sort.max(paramResult.getSort());
+        sort = sort.max(paramResult.getSortOfType());
 
         DependentLink param;
         if (argument instanceof Abstract.TelescopeArgument) {
@@ -760,7 +760,7 @@ public class DefinitionCheckType {
   private static ClassField typeCheckClassField(Abstract.ClassField def, ClassDefinition enclosingClass, FieldSet fieldSet, CheckTypeVisitor visitor) {
     TypedDependentLink thisParameter = createThisParam(enclosingClass);
     visitor.setThisClass(enclosingClass, Reference(thisParameter));
-    TypeExpression typeResult;
+    Type typeResult;
     try (Utils.ContextSaver saver = new Utils.ContextSaver(visitor.getContext())) {
       visitor.getContext().add(thisParameter);
       typeResult = visitor.finalCheckType(def.getResultType());
@@ -771,7 +771,7 @@ public class DefinitionCheckType {
       typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
     }
     visitor.getTypecheckingState().record(def, typedDef);
-    fieldSet.addField(typedDef, typeResult == null ? null : typeResult.getSort());
+    fieldSet.addField(typedDef, typeResult == null ? null : typeResult.getSortOfType());
     return typedDef;
   }
 
