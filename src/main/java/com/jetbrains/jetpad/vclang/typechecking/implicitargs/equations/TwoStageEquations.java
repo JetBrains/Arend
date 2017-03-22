@@ -79,11 +79,14 @@ public class TwoStageEquations implements Equations {
     if (inf1 != null && inf2 == null || inf2 != null && inf1 == null) {
       InferenceVariable cInf = inf1 != null ? inf1 : inf2;
       Expression cType = inf1 != null ? expr2 : expr1;
+      cType = cType.normalize(NormalizeVisitor.Mode.WHNF);
 
-      // TODO: set cmp to CMP.EQ only if cExpr is not stuck on a meta-variable
-      // cExpr /= Pi, cExpr /= Type, cExpr /= Class, cExpr /= stuck
+      // cType /= Pi, cType /= Type, cType /= Class, cType /= stuck on ?X
       if (cType.toPi() == null && cType.toUniverse() == null && cType.toClassCall() == null) {
-        cmp = CMP.EQ;
+        Expression stuck = cType.getStuckExpression();
+        if (stuck == null || stuck.toInferenceReference() == null) {
+          cmp = CMP.EQ;
+        }
       }
 
       // ?x == _
@@ -97,7 +100,7 @@ public class TwoStageEquations implements Equations {
       }
 
       // ?x <> Pi
-      PiExpression pi = cType.normalize(NormalizeVisitor.Mode.WHNF).toPi();
+      PiExpression pi = cType.toPi();
       if (pi != null) {
         Level domLevel = pi.getParameters().getType().getType().toSort().getPLevel();
         Sort codSort = Sort.generateInferVars(this, sourceNode);
@@ -113,22 +116,16 @@ public class TwoStageEquations implements Equations {
       // ?x <> Type
       Sort sort = cType.toSort();
       if (sort != null) {
-        InferenceLevelVariable lpInf = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, cInf.getSourceNode());
-        InferenceLevelVariable lhInf = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, cInf.getSourceNode());
-        myLevelEquations.addVariable(lpInf);
-        myLevelEquations.addVariable(lhInf);
-        Level lp = new Level(lpInf);
-        Level lh = new Level(lhInf);
-        solve(cInf, new UniverseExpression(new Sort(lp, lh)));
+        Sort genSort = Sort.generateInferVars(this, cInf.getSourceNode());
+        solve(cInf, new UniverseExpression(genSort));
         if (cmp == CMP.LE) {
-          Level.compare(sort.getPLevel(), lp, CMP.LE, this, sourceNode);
-          Level.compare(sort.getHLevel(), lh, CMP.LE, this, sourceNode);
+          Sort.compare(sort, genSort, CMP.LE, this, sourceNode);
         } else {
           if (!sort.getPLevel().isInfinity()) {
-            addLevelEquation(lpInf, sort.getPLevel().getVar(), sort.getPLevel().getConstant(), sort.getPLevel().getMaxConstant(), sourceNode);
+            addLevelEquation(genSort.getPLevel().getVar(), sort.getPLevel().getVar(), sort.getPLevel().getConstant(), sort.getPLevel().getMaxConstant(), sourceNode);
           }
           if (!sort.getHLevel().isInfinity()) {
-            addLevelEquation(lhInf, sort.getHLevel().getVar(), sort.getHLevel().getConstant(), sort.getHLevel().getMaxConstant(), sourceNode);
+            addLevelEquation(genSort.getHLevel().getVar(), sort.getHLevel().getVar(), sort.getHLevel().getConstant(), sort.getHLevel().getMaxConstant(), sourceNode);
           }
         }
         return;
@@ -400,10 +397,14 @@ public class TwoStageEquations implements Equations {
   }
 
   private boolean solve(InferenceVariable var, Expression expr) {
+    expr = expr.normalize(NormalizeVisitor.Mode.WHNF);
+    if (expr.toInferenceReference() != null && expr.toInferenceReference().getVariable() == var) {
+      return true;
+    }
     if (expr.findBinding(var)) {
       LocalTypeCheckingError error = var.getErrorInfer(expr);
       myVisitor.getErrorReporter().report(error);
-      var.solve(this, new ErrorExpression(expr, error));
+      var.solve(this, new ErrorExpression(null, error));
       return false;
     }
 

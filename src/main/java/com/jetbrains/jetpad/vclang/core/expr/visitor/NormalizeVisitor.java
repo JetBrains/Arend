@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
@@ -14,7 +15,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.ConCall;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Tuple;
 
 public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mode, Expression>  {
   private final Normalizer myNormalizer;
@@ -136,13 +138,15 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
     if (expr instanceof FieldCallExpression) {
       Expression thisExpr = ((FieldCallExpression) expr).getExpression().normalize(Mode.WHNF);
-      Expression type = thisExpr.getType();
-      if (type != null) {
-        ClassCallExpression classCall = type.normalize(Mode.WHNF).toClassCall();
-        if (classCall != null) {
-          FieldSet.Implementation impl = classCall.getFieldSet().getImplementation((ClassField) expr.getDefinition());
-          if (impl != null) {
-            return impl.substThisParam(thisExpr).accept(this, mode);
+      if (thisExpr.toInferenceReference() == null || !(thisExpr.toInferenceReference().getVariable() instanceof TypeClassInferenceVariable)) {
+        Expression type = thisExpr.getType();
+        if (type != null) {
+          ClassCallExpression classCall = type.normalize(Mode.WHNF).toClassCall();
+          if (classCall != null) {
+            FieldSet.Implementation impl = classCall.getFieldSet().getImplementation((ClassField) expr.getDefinition());
+            if (impl != null) {
+              return impl.substThisParam(thisExpr).accept(this, mode);
+            }
           }
         }
       }
