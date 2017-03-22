@@ -279,30 +279,35 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   }
 
   @Override
-  public Abstract.Expression visitLam(LamExpression expr, Void params) {
+  public Abstract.Expression visitLam(LamExpression lamExpr, Void params) {
     List<Abstract.Argument> arguments = new ArrayList<>();
-    if (myFlags.contains(Flag.SHOW_TYPES_IN_LAM)) {
-      List<String> names = new ArrayList<>(3);
-      for (DependentLink link = expr.getParameters(); link.hasNext(); link = link.getNext()) {
-        DependentLink link1 = link.getNextTyped(null);
-        for (; link != link1; link = link.getNext()) {
+    Expression expr = lamExpr;
+    for (; expr.toLam() != null; expr = expr.toLam().getBody()) {
+      if (myFlags.contains(Flag.SHOW_TYPES_IN_LAM)) {
+        List<String> names = new ArrayList<>(3);
+        for (DependentLink link = expr.toLam().getParameters(); link.hasNext(); link = link.getNext()) {
+          DependentLink link1 = link.getNextTyped(null);
+          for (; link != link1; link = link.getNext()) {
+            names.add(renameVar(link));
+          }
           names.add(renameVar(link));
+          if (names.isEmpty()) {
+            names.add(null);
+          }
+          arguments.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(names), link.getType().accept(this, null)));
+          names.clear();
         }
-        names.add(renameVar(link));
-        if (names.isEmpty()) {
-          names.add(null);
+      } else {
+        for (DependentLink link = expr.toLam().getParameters(); link.hasNext(); link = link.getNext()) {
+          arguments.add(myFactory.makeNameArgument(link.isExplicit(), renameVar(link)));
         }
-        arguments.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(names), link.getType().accept(this, null)));
-        names.clear();
-      }
-    } else {
-      for (DependentLink link = expr.getParameters(); link.hasNext(); link = link.getNext()) {
-        arguments.add(myFactory.makeNameArgument(link.isExplicit(), link.getName()));
       }
     }
 
-    Abstract.Expression result = myFactory.makeLam(arguments, expr.getBody().accept(this, null));
-    freeVars(expr.getParameters());
+    Abstract.Expression result = myFactory.makeLam(arguments, expr.accept(this, null));
+    for (expr = lamExpr; expr.toLam() != null; expr = expr.toLam().getBody()) {
+      freeVars(expr.toLam().getParameters());
+    }
     return result;
   }
 
@@ -329,7 +334,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
         names.add(renameVar(link));
       }
       names.add(renameVar(link));
-      if (names.isEmpty() || names.get(0).equals("_")) {
+      if (names.get(0).equals("_")) {
         args.add(myFactory.makeTypeArgument(link.isExplicit(), link.getType().accept(this, null)));
       } else {
         args.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(names), link.getType().accept(this, null)));
@@ -340,10 +345,25 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   }
 
   @Override
-  public Abstract.Expression visitPi(PiExpression expr, Void params) {
-    List<Abstract.TypeArgument> arguments = visitTypeArguments(expr.getParameters());
-    Abstract.Expression result = myFactory.makePi(arguments, expr.getCodomain().accept(this, null));
-    freeVars(expr.getParameters());
+  public Abstract.Expression visitPi(PiExpression piExpr, Void params) {
+    List<List<Abstract.TypeArgument>> arguments = new ArrayList<>();
+    Expression expr = piExpr;
+    for (; expr.toPi() != null; expr = expr.toPi().getCodomain()) {
+      List<Abstract.TypeArgument> args = visitTypeArguments(expr.toPi().getParameters());
+      if (!arguments.isEmpty() && arguments.get(arguments.size() - 1) instanceof Abstract.TelescopeArgument && !args.isEmpty() && args.get(0) instanceof Abstract.TelescopeArgument) {
+        arguments.get(arguments.size() - 1).addAll(args);
+      } else {
+        arguments.add(args);
+      }
+    }
+
+    Abstract.Expression result = expr.accept(this, null);
+    for (int i = arguments.size() - 1; i >= 0; i--) {
+      result = myFactory.makePi(arguments.get(i), result);
+    }
+    for (expr = piExpr; expr.toPi() != null; expr = expr.toPi().getCodomain()) {
+      freeVars(expr.toPi().getParameters());
+    }
     return result;
   }
 

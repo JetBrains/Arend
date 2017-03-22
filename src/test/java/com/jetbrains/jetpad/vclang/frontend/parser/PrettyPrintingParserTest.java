@@ -20,14 +20,20 @@ import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 import static org.junit.Assert.*;
 
 public class PrettyPrintingParserTest extends ParserTestCase {
-  private void testExpr(Abstract.Expression expected, Expression expr) throws UnsupportedEncodingException {
+  private void testExpr(Abstract.Expression expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
     List<String> context = new ArrayList<>();
     ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory(), context);
-    visitor.setFlags(EnumSet.of(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS, ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM));
+    if (flags != null) {
+      visitor.setFlags(flags);
+    }
     expr.accept(visitor, null).accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
     Concrete.Expression result = parseExpr(builder.toString());
     assertEquals(expected, result);
+  }
+
+  private void testExpr(Abstract.Expression expected, Expression expr) throws UnsupportedEncodingException {
+    testExpr(expected, expr, EnumSet.of(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS, ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM));
   }
 
   private void testDef(Concrete.FunctionDefinition expected, Concrete.FunctionDefinition def) throws UnsupportedEncodingException {
@@ -82,5 +88,20 @@ public class PrettyPrintingParserTest extends ParserTestCase {
     // f {x : \Type1} (A : \Type1 -> \Type0) : A x -> (\Type1 -> \Type1) -> \Type1 -> \Type1 => \t y z. y z;
     Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(POSITION, "f", Abstract.Precedence.DEFAULT, cargs(cTele(false, cvars("x"), cUniverseStd(1)), cTele(cvars("A"), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar("A"), cVar("x")), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), Abstract.Definition.Arrow.RIGHT, cLam(cargs(cName("t"), cName("y"), cName("z")), cApps(cVar("y"), cVar("z"))), Collections.<Concrete.Statement>emptyList());
     testDef(def, def);
+  }
+
+  @Test
+  public void prettyPrintPiLam() throws UnsupportedEncodingException {
+    // A : \Type
+    // a : A
+    // D : (A -> A) -> A -> A
+    // \Pi (x : \Pi (y : A) -> A) -> D x (\lam y => a)
+    Expression A = Reference(singleParam("A", Universe(0)));
+    Expression D = Reference(singleParam("D", Pi(Pi(A, A), Pi(A, A))));
+    SingleDependentLink x = singleParam("x", Pi(singleParam("y", A), A));
+    Expression actual = Pi(x, Apps(D, Reference(x), Lam(singleParam("y", A), Reference(singleParam("a", A)))));
+
+    Concrete.Expression expected = cPi("x", cPi("y", cVar("A"), cVar("A")), cApps(cVar("D"), cVar("x"), cLam("y", cVar("a"))));
+    testExpr(expected, actual, null);
   }
 }
