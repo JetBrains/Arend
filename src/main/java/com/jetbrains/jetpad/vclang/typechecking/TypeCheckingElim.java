@@ -32,9 +32,7 @@ import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.*;
 
-import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.toContext;
-import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.toList;
-import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.toSubstitution;
+import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.core.pattern.Utils.processImplicit;
@@ -228,7 +226,7 @@ public class TypeCheckingElim {
         }
 
         if (clause.getExpression() != null) {
-          CheckTypeVisitor.Result clauseResult = isTopLevel ? myVisitor.checkType(clause.getExpression(), clauseExpectedType) : myVisitor.typeCheck(clause.getExpression(), clauseExpectedType);
+          CheckTypeVisitor.Result clauseResult = isTopLevel ? myVisitor.finalCheckExpr(clause.getExpression(), clauseExpectedType) : myVisitor.checkExpr(clause.getExpression(), clauseExpectedType);
           if (clauseResult == null) {
             wasError = true;
             continue;

@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
+import com.jetbrains.jetpad.vclang.core.expr.type.ExpectedType;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
@@ -21,7 +21,7 @@ import com.jetbrains.jetpad.vclang.typechecking.normalization.EvalNormalizer;
 
 import java.util.*;
 
-public abstract class Expression implements Type {
+public abstract class Expression implements ExpectedType {
   public abstract <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params);
 
   @Override
@@ -48,13 +48,8 @@ public abstract class Expression implements Type {
     accept(visitor, null).accept(new PrettyPrintVisitor(builder, indent), prec);
   }
 
-  public boolean isLessOrEquals(Type type, Equations equations, Abstract.SourceNode sourceNode) {
-    if (type instanceof Expression) {
-      return CompareVisitor.compare(equations, Equations.CMP.LE, normalize(NormalizeVisitor.Mode.NF), ((Expression) type).normalize(NormalizeVisitor.Mode.NF), sourceNode);
-    } else {
-      // TODO: if this expression is stuck, add an equation
-      return normalize(NormalizeVisitor.Mode.WHNF).toUniverse() != null;
-    }
+  public boolean isLessOrEquals(Expression type, Equations equations, Abstract.SourceNode sourceNode) {
+    return CompareVisitor.compare(equations, Equations.CMP.LE, normalize(NormalizeVisitor.Mode.NF), type.normalize(NormalizeVisitor.Mode.NF), sourceNode);
   }
 
   public Sort toSort() {

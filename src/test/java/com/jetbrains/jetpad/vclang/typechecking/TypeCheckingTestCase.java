@@ -56,7 +56,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
-    CheckTypeVisitor.Result result = new CheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, context, localErrorReporter, null).checkType(expression, expectedType);
+    CheckTypeVisitor.Result result = new CheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, context, localErrorReporter, null).finalCheckExpr(expression, expectedType);
     assertThat(errorList, containsErrors(errors));
     if (errors == 0) {
       assertThat(result, is(notNullValue()));
@@ -65,7 +65,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
   CheckTypeVisitor.Result typeCheckExpr(Concrete.Expression expression, Expression expectedType, int errors) {
-    return typeCheckExpr(new ArrayList<Binding>(), expression, expectedType, errors);
+    return typeCheckExpr(new ArrayList<>(), expression, expectedType, errors);
   }
 
   protected CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, Concrete.Expression expression, Expression expectedType) {
@@ -73,7 +73,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
   protected CheckTypeVisitor.Result typeCheckExpr(Concrete.Expression expression, Expression expectedType) {
-    return typeCheckExpr(new ArrayList<Binding>(), expression, expectedType, 0);
+    return typeCheckExpr(new ArrayList<>(), expression, expectedType, 0);
   }
 
 

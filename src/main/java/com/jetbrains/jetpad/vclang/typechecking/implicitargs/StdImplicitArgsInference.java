@@ -9,7 +9,7 @@ import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
+import com.jetbrains.jetpad.vclang.core.expr.type.ExpectedType;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
@@ -75,7 +75,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", type, 1, Prelude.PATH_CON, fun), myVisitor.getEquations());
           result = result.applyExpressions(Collections.singletonList(new LamExpression(new Level(0), lamParam, binding)));
 
-          CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, new PiExpression(defCallResult.getSortArgument().getPLevel().add(1), lamParam, binding));
+          CheckTypeVisitor.Result argResult = myVisitor.checkExpr(arg, new PiExpression(defCallResult.getSortArgument().getPLevel().add(1), lamParam, binding));
           if (argResult == null) {
             return null;
           }
@@ -98,7 +98,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       return null;
     }
 
-    CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, param.getType());
+    CheckTypeVisitor.Result argResult = myVisitor.checkExpr(arg, param.getType());
     if (argResult == null) {
       return null;
     }
@@ -113,7 +113,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     return result.applyExpressions(Collections.singletonList(argResult.expression));
   }
 
-  protected CheckTypeVisitor.TResult inferArg(Abstract.Expression fun, Abstract.Expression arg, boolean isExplicit, Type expectedType) {
+  protected CheckTypeVisitor.TResult inferArg(Abstract.Expression fun, Abstract.Expression arg, boolean isExplicit, ExpectedType expectedType) {
     CheckTypeVisitor.TResult result;
     if (fun instanceof Abstract.AppExpression) {
       Abstract.ArgumentExpression argument = ((Abstract.AppExpression) fun).getArgument();
@@ -123,7 +123,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         Abstract.DefCallExpression defCall = (Abstract.DefCallExpression) fun;
         result = defCall.getExpression() == null && defCall.getReferent() == null ? myVisitor.getLocalVar(defCall) : myVisitor.getTypeCheckingDefCall().typeCheckDefCall(defCall);
       } else {
-        result = myVisitor.typeCheck(fun, null);
+        result = myVisitor.checkExpr(fun, null);
       }
 
       if (result instanceof CheckTypeVisitor.DefCallResult && isExplicit && expectedType != null) {
@@ -145,13 +145,13 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     if (result == null) {
-      myVisitor.typeCheck(arg, null);
+      myVisitor.checkExpr(arg, null);
       return null;
     }
     return inferArg(result, arg, isExplicit, fun);
   }
 
-  private CheckTypeVisitor.TResult checkBinOpInferArg(Abstract.Expression fun, Abstract.Expression arg, boolean isExplicit, Type expectedType) {
+  private CheckTypeVisitor.TResult checkBinOpInferArg(Abstract.Expression fun, Abstract.Expression arg, boolean isExplicit, ExpectedType expectedType) {
     if (fun instanceof Abstract.BinOpExpression) {
       return inferArg(inferArg(inferArg(fun, ((Abstract.BinOpExpression) fun).getLeft(), true, null), ((Abstract.BinOpExpression) fun).getRight(), true, fun), arg, isExplicit, fun);
     } else {
@@ -160,18 +160,18 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
   }
 
   @Override
-  public CheckTypeVisitor.TResult infer(Abstract.AppExpression expr, Type expectedType) {
+  public CheckTypeVisitor.TResult infer(Abstract.AppExpression expr, ExpectedType expectedType) {
     Abstract.ArgumentExpression arg = expr.getArgument();
     return checkBinOpInferArg(expr.getFunction(), arg.getExpression(), arg.isExplicit(), expectedType);
   }
 
   @Override
-  public CheckTypeVisitor.TResult infer(Abstract.BinOpExpression expr, Type expectedType) {
+  public CheckTypeVisitor.TResult infer(Abstract.BinOpExpression expr, ExpectedType expectedType) {
     return inferArg(inferArg(expr, expr.getLeft(), true, null), expr.getRight(), true, expr);
   }
 
   @Override
-  public CheckTypeVisitor.TResult inferTail(CheckTypeVisitor.TResult result, Type expectedType, Abstract.Expression expr) {
+  public CheckTypeVisitor.TResult inferTail(CheckTypeVisitor.TResult result, ExpectedType expectedType, Abstract.Expression expr) {
     List<? extends DependentLink> actualParams = result.getImplicitParameters();
     List<SingleDependentLink> expectedParams = new ArrayList<>(actualParams.size());
     expectedType.getPiParameters(expectedParams, true, true);
