@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.*;
+import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
@@ -68,8 +69,17 @@ class DefinitionSerialization {
     if (binding.getName() != null) {
       builder.setName(binding.getName());
     }
-    builder.setType(writeExpr(binding.getType()));
+    builder.setType(writeType(binding.getType()));
     registerBinding(binding);
+    return builder.build();
+  }
+
+  private ExpressionProtos.Type writeType(Type type) {
+    ExpressionProtos.Type.Builder builder = ExpressionProtos.Type.newBuilder();
+    builder.setExpr(writeExpr(type.getExpr()));
+    if (type instanceof TypeExpression) {
+      builder.setSort(writeSort(type.getSortOfType()));
+    }
     return builder.build();
   }
 
@@ -170,10 +180,7 @@ class DefinitionSerialization {
     }
     tBuilder.addAllName(fixedNames);
     tBuilder.setIsNotExplicit(!typed.isExplicit());
-    tBuilder.setType(writeExpr(typed.getType()));
-    if (typed.getType_() instanceof TypeExpression) {
-      tBuilder.setSort(writeSort(typed.getType_().getSortOfType()));
-    }
+    tBuilder.setType(writeType(typed.getType()));
     for (; link != typed; link = link.getNext()) {
       registerBinding(link);
     }
@@ -187,10 +194,7 @@ class DefinitionSerialization {
       builder.setName(link.getName());
     }
     builder.setIsNotExplicit(!link.isExplicit());
-    builder.setType(writeExpr(link.getType()));
-    if (link.getType_() instanceof TypeExpression) {
-      builder.setSort(writeSort(link.getType_().getSortOfType()));
-    }
+    builder.setType(writeType(link.getType()));
     registerBinding(link);
     return builder.build();
   }
@@ -399,7 +403,7 @@ class DefinitionSerialization {
         for (SingleDependentLink link : letClause.getParameters()) {
           cBuilder.addParam(writeSingleParameter(link));
         }
-        cBuilder.setResultType(letClause.getResultType().accept(this, null));
+        cBuilder.setResultType(writeType(letClause.getResultType()));
         cBuilder.setElimTree(writeElimTree(letClause.getElimTree()));
         builder.addClause(cBuilder);
         registerBinding(letClause);

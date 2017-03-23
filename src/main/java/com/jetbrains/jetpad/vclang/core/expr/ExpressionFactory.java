@@ -163,7 +163,7 @@ public class ExpressionFactory {
   }
 
   public static LetClause let(String name, List<SingleDependentLink> params, Expression resultType, ElimTreeNode elimTree) {
-    return new LetClause(name, Collections.nCopies(params.size(), new Level(0)), params, resultType, elimTree);
+    return new LetClause(name, Collections.nCopies(params.size(), new Level(0)), params, resultType == null ? null : new TypeExpression(resultType, Sort.ZERO), elimTree);
   }
 
   public static DependentLink params(DependentLink... links) {

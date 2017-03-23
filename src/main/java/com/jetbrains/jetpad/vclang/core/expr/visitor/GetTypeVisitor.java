@@ -54,12 +54,12 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitReference(ReferenceExpression expr, Void params) {
-    return expr.getBinding().getType().copy();
+    return expr.getBinding().getType().getExpr().copy();
   }
 
   @Override
   public Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
-    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : expr.getVariable().getType();
+    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : expr.getVariable().getType().getExpr();
   }
 
   @Override
@@ -113,7 +113,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
     if (sigma == null) return null;
     DependentLink params = sigma.getParameters();
     if (expr.getField() == 0) {
-      return params.getType();
+      return params.getType().getExpr();
     }
 
     ExprSubstitution subst = new ExprSubstitution();
@@ -124,7 +124,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
       subst.add(params, new ProjExpression(expr.getExpression(), i));
       params = params.getNext();
     }
-    return params.getType().subst(subst, LevelSubstitution.EMPTY);
+    return params.getType().subst(subst, LevelSubstitution.EMPTY).getExpr();
   }
 
   @Override

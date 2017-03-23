@@ -4,7 +4,10 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.PiExpression;
+import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
@@ -195,7 +198,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     // I : Type1 -> Type1, i : I Type0, f : {A : Type0} -> I A -> Nat |- f i : Nat
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("I", Pi(Universe(1), Universe(1))));
-    context.add(new TypedBinding("i", Apps(Reference(context.get(0)), Universe(0))));
+    context.add(new TypedBinding("i", new TypeExpression(Apps(Reference(context.get(0)), Universe(0)), Sort.ZERO)));
     SingleDependentLink A = singleParam(false, vars("A"), Universe(0));
     context.add(new TypedBinding("f", Pi(A, Arrow(Apps(Reference(context.get(0)), Reference(A)), Nat()))));
 
@@ -224,7 +227,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("I", Pi(Nat(), Universe(0))));
     SingleDependentLink x = singleParam(false, vars("x"), Nat());
-    Expression type = Pi(x, Apps(Reference(context.get(0)), Reference(x)));
+    PiExpression type = Pi(x, Apps(Reference(context.get(0)), Reference(x)));
     context.add(new TypedBinding("i", type));
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "i", type);
@@ -263,7 +266,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void untypedLambda1() {
     // f : (A : \Type0) (a : A) -> Nat |- \x1 x2. f x1 x2
     SingleDependentLink A = singleParam("A", Universe(0));
-    Expression type = Pi(A, Pi(singleParam("a", Reference(A)), Nat()));
+    PiExpression type = Pi(A, Pi(singleParam("a", Reference(A)), Nat()));
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("f", type));
     typeCheckExpr(context, "\\lam x1 x2 => f x1 x2", null);
@@ -276,7 +279,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     SingleDependentLink A = singleParam("A", Universe(0));
     SingleDependentLink B = singleParam("B", Pi(Reference(A), Universe(0)));
     SingleDependentLink a = singleParam("a", Reference(A));
-    Expression type = Pi(A, Pi(B, Pi(a, Apps(Reference(B), Reference(a)))));
+    PiExpression type = Pi(A, Pi(B, Pi(a, Apps(Reference(B), Reference(a)))));
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("f", type));
 
@@ -288,7 +291,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void untypedLambdaError1() {
     // f : (A : \Type0) (a : A) -> Nat |- \x1 x2. f x2 x1
     SingleDependentLink A = singleParam("A", Universe(0));
-    Expression type = Pi(A, Pi(singleParam("a", Reference(A)), Nat()));
+    PiExpression type = Pi(A, Pi(singleParam("a", Reference(A)), Nat()));
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("f", type));
     typeCheckExpr(context, "\\lam x1 x2 => f x2 x1", null, 1);
@@ -300,7 +303,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     SingleDependentLink A = singleParam("A", Universe(0));
     SingleDependentLink B = singleParam("B", Pi(Reference(A), Universe(0)));
     SingleDependentLink a = singleParam("a", Reference(A));
-    Expression type = Pi(A, Pi(B, Pi(a, Apps(Reference(B), Reference(a)))));
+    PiExpression type = Pi(A, Pi(B, Pi(a, Apps(Reference(B), Reference(a)))));
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("f", type));
 

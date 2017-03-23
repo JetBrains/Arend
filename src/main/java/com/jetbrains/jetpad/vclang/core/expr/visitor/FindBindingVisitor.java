@@ -142,7 +142,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> im
   private Variable visitDependentLink(DependentLink link) {
     for (; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
-      Variable result = link.getType().accept(this, null);
+      Variable result = link.getType().getExpr().accept(this, null);
       if (result != null) {
         return result;
       }
@@ -180,7 +180,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> im
       }
     }
     if (clause.getResultType() != null) {
-      Variable result = clause.getResultType().accept(this, null);
+      Variable result = clause.getResultType().getExpr().accept(this, null);
       if (result != null) {
         return result;
       }

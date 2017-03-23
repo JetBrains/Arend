@@ -146,7 +146,7 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
     expression.getExpression().accept(this, vector);
 
     for (LetClause lc : expression.getClauses()) {
-      lc.getResultType().accept(this, vector);
+      lc.getResultType().getExpr().accept(this, vector);
       for (SingleDependentLink link : lc.getParameters()) {
         visitDependentLink(link, vector);
       }
@@ -197,7 +197,7 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
   private Void visitDependentLink(DependentLink link, ParameterVector vector) {
     for (; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
-      link.getType().accept(this, vector);
+      link.getType().getExpr().accept(this, vector);
     }
     return null;
   }

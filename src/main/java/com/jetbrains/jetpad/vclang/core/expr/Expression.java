@@ -152,7 +152,7 @@ public abstract class Expression implements ExpectedType {
 
       names.add(link.getName());
       if (link instanceof TypedDependentLink) {
-        SingleDependentLink parameter = ExpressionFactory.singleParam(link.isExplicit(), names, link.getType_().subst(substitution, LevelSubstitution.EMPTY));
+        SingleDependentLink parameter = ExpressionFactory.singleParam(link.isExplicit(), names, link.getType().subst(substitution, LevelSubstitution.EMPTY));
         parameters.add(parameter);
         names.clear();
 

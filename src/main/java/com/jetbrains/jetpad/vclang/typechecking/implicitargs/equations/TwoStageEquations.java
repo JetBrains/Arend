@@ -102,7 +102,7 @@ public class TwoStageEquations implements Equations {
       // ?x <> Pi
       PiExpression pi = cType.toPi();
       if (pi != null) {
-        Level domLevel = pi.getParameters().getType().getType().toSort().getPLevel();
+        Level domLevel = pi.getParameters().getType().getSortOfType().getPLevel();
         Sort codSort = Sort.generateInferVars(this, sourceNode);
         Level piLevel = PiExpression.generateUpperBound(domLevel, codSort.getPLevel(), this, sourceNode);
 
@@ -408,7 +408,7 @@ public class TwoStageEquations implements Equations {
       return false;
     }
 
-    Expression expectedType = var.getType();
+    Expression expectedType = var.getType().getExpr();
     Expression actualType = expr.getType();
     if (actualType == null || actualType.isLessOrEquals(expectedType, this, var.getSourceNode())) {
       // TODO: if actualType == null then add equation type_of(var) == type_of(expr)

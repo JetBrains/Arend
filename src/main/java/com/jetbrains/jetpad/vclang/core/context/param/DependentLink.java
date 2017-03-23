@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public interface DependentLink extends Binding {
-  Type getType_();
   boolean isExplicit();
   void setExplicit(boolean isExplicit);
   void setType(Type type);

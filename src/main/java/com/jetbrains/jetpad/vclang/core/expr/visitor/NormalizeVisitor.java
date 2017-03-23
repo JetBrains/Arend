@@ -199,7 +199,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       SingleDependentLink link = DependentLink.Helper.subst(expr.getParameters(), substitution);
       for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
         link1 = link1.getNextTyped(null);
-        link1.setType(link1.getType_().normalize(mode));
+        link1.setType(link1.getType().normalize(mode));
       }
       return new LamExpression(expr.getPLevel(), link, expr.getBody().subst(substitution).accept(this, mode));
     }
@@ -217,7 +217,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       SingleDependentLink link = DependentLink.Helper.subst(expr.getParameters(), substitution);
       for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
         link1 = link1.getNextTyped(null);
-        link1.setType(link1.getType_().normalize(mode));
+        link1.setType(link1.getType().normalize(mode));
       }
       return new PiExpression(expr.getPLevel(), link, expr.getCodomain().subst(substitution).accept(this, mode));
     } else {
@@ -254,7 +254,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     DependentLink link = DependentLink.Helper.subst(expr.getParameters(), new ExprSubstitution());
     for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
       link1 = link1.getNextTyped(null);
-      link1.setType(link1.getType_().normalize(mode));
+      link1.setType(link1.getType().normalize(mode));
     }
     return new SigmaExpression(expr.getSort(), link);
   }

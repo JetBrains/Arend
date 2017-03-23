@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.core.context.binding.inference;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.InferenceReferenceExpression;
+import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -15,11 +16,11 @@ import java.util.List;
 public abstract class InferenceVariable implements Binding {
   private final String myName;
   private final Abstract.SourceNode mySourceNode;
-  private Expression myType;
+  private Type myType;
   private InferenceReferenceExpression myReference;
   private List<InferenceVariableListener> myListeners;
 
-  public InferenceVariable(String name, Expression type, Abstract.SourceNode sourceNode) {
+  public InferenceVariable(String name, Type type, Abstract.SourceNode sourceNode) {
     myName = name;
     mySourceNode = sourceNode;
     myType = type;
@@ -53,11 +54,11 @@ public abstract class InferenceVariable implements Binding {
   }
 
   @Override
-  public Expression getType() {
+  public Type getType() {
     return myType;
   }
 
-  public void setType(Expression type) {
+  public void setType(Type type) {
     myType = type;
   }
 

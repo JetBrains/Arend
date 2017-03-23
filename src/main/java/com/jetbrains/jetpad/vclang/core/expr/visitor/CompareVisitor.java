@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
@@ -319,7 +318,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
     Equations.CMP oldCMP = myCMP;
     myCMP = Equations.CMP.EQ;
-    if (!compare(expr1.getParameters().getType(), piExpr2.getParameters().getType())) {
+    if (!compare(expr1.getParameters().getType().getExpr(), piExpr2.getParameters().getType().getExpr())) {
       return false;
     }
     myCMP = oldCMP;
@@ -345,7 +344,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     }
 
     for (int i = 0; i < params1.size() && i < params2.size(); ++i) {
-      if (!compare(params1.get(i).getType(), params2.get(i).getType())) {
+      if (!compare(params1.get(i).getType().getExpr(), params2.get(i).getType().getExpr())) {
         return false;
       }
       mySubstitution.put(params1.get(i), params2.get(i));

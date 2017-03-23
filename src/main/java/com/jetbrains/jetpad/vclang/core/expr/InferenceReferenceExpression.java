@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
+import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
@@ -18,9 +19,9 @@ public class InferenceReferenceExpression extends Expression {
     myVar = binding;
     myVar.setReference(this);
 
-    Expression type = myVar.getType().normalize(NormalizeVisitor.Mode.WHNF);
-    if (type != null && type.toClassCall() != null) {
-      ClassCallExpression classCall = type.toClassCall();
+    Type type = myVar.getType().normalize(NormalizeVisitor.Mode.WHNF);
+    if (type instanceof ClassCallExpression) {
+      ClassCallExpression classCall = (ClassCallExpression) type;
       ReadonlyFieldSet fieldSet = classCall.getFieldSet();
       if (!fieldSet.getFields().isEmpty()) {
         for (ClassField field : fieldSet.getFields()) {

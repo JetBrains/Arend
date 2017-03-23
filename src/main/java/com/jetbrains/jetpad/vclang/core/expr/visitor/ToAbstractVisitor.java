@@ -294,7 +294,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
           if (names.isEmpty()) {
             names.add(null);
           }
-          arguments.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(names), link.getType().accept(this, null)));
+          arguments.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(names), link.getType().getExpr().accept(this, null)));
           names.clear();
         }
       } else {
@@ -319,9 +319,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     }
     names.add(renameVar(arguments));
     if (names.isEmpty() || names.get(0).equals("_")) {
-      return myFactory.makeTypeArgument(arguments.isExplicit(), arguments.getType().accept(this, null));
+      return myFactory.makeTypeArgument(arguments.isExplicit(), arguments.getType().getExpr().accept(this, null));
     } else {
-      return myFactory.makeTelescopeArgument(arguments.isExplicit(), new ArrayList<>(names), arguments.getType().accept(this, null));
+      return myFactory.makeTelescopeArgument(arguments.isExplicit(), new ArrayList<>(names), arguments.getType().getExpr().accept(this, null));
     }
   }
 
@@ -335,9 +335,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       }
       names.add(renameVar(link));
       if (names.get(0).equals("_")) {
-        args.add(myFactory.makeTypeArgument(link.isExplicit(), link.getType().accept(this, null)));
+        args.add(myFactory.makeTypeArgument(link.isExplicit(), link.getType().getExpr().accept(this, null)));
       } else {
-        args.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(names), link.getType().accept(this, null)));
+        args.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(names), link.getType().getExpr().accept(this, null)));
         names.clear();
       }
     }
@@ -490,7 +490,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     List<Abstract.LetClause> clauses = new ArrayList<>(letExpression.getClauses().size());
     for (LetClause clause : letExpression.getClauses()) {
       List<Abstract.TypeArgument> arguments = clause.getParameters().stream().map(this::visitTypeArgument).collect(Collectors.toList());
-      Abstract.Expression resultType = clause.getResultType().accept(this, null);
+      Abstract.Expression resultType = clause.getResultType().getExpr().accept(this, null);
       Abstract.Expression term = visitElimTree(clause.getElimTree(), clause.getParameters());
       clause.getParameters().forEach(this::freeVars);
       clauses.add(myFactory.makeLetClause(renameVar(clause), arguments, resultType, getTopLevelArrow(clause.getElimTree()), term));

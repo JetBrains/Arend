@@ -1,12 +1,13 @@
 package com.jetbrains.jetpad.vclang.core.context.binding.inference;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
 public class ExpressionInferenceVariable extends InferenceVariable {
-  public ExpressionInferenceVariable(Expression type, Abstract.SourceNode sourceNode) {
+  public ExpressionInferenceVariable(Type type, Abstract.SourceNode sourceNode) {
     super("H", type, sourceNode);
   }
 

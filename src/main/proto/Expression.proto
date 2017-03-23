@@ -84,7 +84,7 @@ message Expression {
             repeated Level pLevel = 5;
             repeated Telescope param = 2;
             ElimTreeNode elim_tree = 3;
-            Expression result_type = 4;
+            Type result_type = 6;
         }
     }
     message New {
@@ -116,24 +116,27 @@ message Expression {
     }
 }
 
+message Type {
+    Expression expr = 1;
+    Sort sort = 2;
+}
+
 message SingleParameter {
     string name = 1;
     bool is_not_explicit = 2;
-    Expression type = 4;
-    Sort sort = 5;
+    Type type = 5;
 }
 
 message Telescope {
     repeated string name = 1;
     bool is_not_explicit = 2;
-    Expression type = 4;
-    Sort sort = 5;
+    Type type = 5;
 }
 
 message Binding {
     message TypedBinding {
         string name = 1;
-        Expression type = 3;
+        Type type = 4;
     }
 }
 

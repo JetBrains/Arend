@@ -10,7 +10,7 @@ import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVis
 public class FindMatchOnIntervalVisitor implements ElimTreeNodeVisitor<Void, Boolean> {
   @Override
   public Boolean visitBranch(BranchElimTreeNode branchNode, Void params) {
-    Expression type = branchNode.getReference().getType();
+    Expression type = branchNode.getReference().getType().getExpr();
 
     if (type.toDataCall() != null && type.toDataCall().getDefinition().matchesOnInterval()) {
       return true;

@@ -167,7 +167,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
 
   private boolean visitArguments(DependentLink parameters) {
     for (; parameters.hasNext(); parameters = parameters.getNext()) {
-      if (!parameters.getType().accept(this, null)) {
+      if (!parameters.getType().getExpr().accept(this, null)) {
         return false;
       }
     }

@@ -170,7 +170,7 @@ public class TypeCheckingElim {
     boolean wasError = false;
 
     for (ReferenceExpression elimExpr : elimExprs) {
-      DataCallExpression dataCall = elimExpr.getBinding().getType().toDataCall();
+      DataCallExpression dataCall = elimExpr.getBinding().getType().getExpr().toDataCall();
       if (dataCall != null && dataCall.getDefinition().isTruncated()) {
         if (!expectedType.getType().isLessOrEquals(dataCall.getType(), myVisitor.getEquations(), expr)) {
           error = new LocalTypeCheckingError("Data " + dataCall.getDefinition().getName() + " is truncated to the universe "
@@ -366,12 +366,12 @@ public class TypeCheckingElim {
 
   private ExpandPatternResult expandPattern(Abstract.Pattern pattern, DependentLink binding, PatternExpansionMode mode, LinkList links) {
     if (pattern == null) {
-      links.append(new TypedDependentLink(true, binding.getName(), binding.getType_(), EmptyDependentLink.getInstance()));
+      links.append(new TypedDependentLink(true, binding.getName(), binding.getType(), EmptyDependentLink.getInstance()));
       myVisitor.getContext().add(links.getLast());
       return new ExpandPatternOKResult(Reference(links.getLast()), new NamePattern(links.getLast()));
     } else if (pattern instanceof Abstract.NamePattern) {
       String name = ((Abstract.NamePattern) pattern).getName() == null ? binding.getName() : ((Abstract.NamePattern) pattern).getName();
-      links.append(new TypedDependentLink(true, name, binding.getType_(), EmptyDependentLink.getInstance()));
+      links.append(new TypedDependentLink(true, name, binding.getType(), EmptyDependentLink.getInstance()));
       NamePattern namePattern = new NamePattern(links.getLast());
       myVisitor.getContext().add(links.getLast());
       pattern.setWellTyped(namePattern);
@@ -379,7 +379,7 @@ public class TypeCheckingElim {
     } else if (pattern instanceof Abstract.AnyConstructorPattern || pattern instanceof Abstract.ConstructorPattern) {
       LocalTypeCheckingError error = null;
 
-      Type type = binding.getType_().normalize(NormalizeVisitor.Mode.WHNF);
+      Type type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF);
       if (!(type instanceof DataCallExpression)) {
         error = new LocalTypeCheckingError("Pattern expected a data type, got: " + type, pattern);
         myVisitor.getErrorReporter().report(error);

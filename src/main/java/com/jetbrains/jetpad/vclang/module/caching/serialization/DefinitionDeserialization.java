@@ -62,9 +62,15 @@ class DefinitionDeserialization {
   }
 
   TypedBinding readTypedBinding(ExpressionProtos.Binding.TypedBinding proto) throws DeserializationError {
-    TypedBinding typedBinding = new TypedBinding(proto.getName(), readExpr(proto.getType()));
+    Type type = readType(proto.getType());
+    TypedBinding typedBinding = new TypedBinding(proto.getName(), type);
     registerBinding(typedBinding);
     return typedBinding;
+  }
+
+  Type readType(ExpressionProtos.Type proto) throws DeserializationError {
+    Expression expr = readExpr(proto.getExpr());
+    return expr instanceof Type ? (Type) expr : new TypeExpression(expr, readSort(proto.getSort()));
   }
 
   private Variable readBindingRef(int index) throws DeserializationError {
@@ -153,8 +159,7 @@ class DefinitionDeserialization {
     for (ExpressionProtos.Telescope proto : protos) {
       List<String> unfixedNames = new ArrayList<>(proto.getNameList().size());
       unfixedNames.addAll(proto.getNameList().stream().map(name -> name.isEmpty() ? null : name).collect(Collectors.toList()));
-      Expression expr = readExpr(proto.getType());
-      Type type = expr instanceof Type ? (Type) expr : new TypeExpression(expr, readSort(proto.getSort()));
+      Type type = readType(proto.getType());
       DependentLink tele = ExpressionFactory.param(!proto.getIsNotExplicit(), unfixedNames, type);
       for (DependentLink link = tele; link.hasNext(); link = link.getNext()) {
         registerBinding(link);
@@ -172,8 +177,7 @@ class DefinitionDeserialization {
   SingleDependentLink readSingleParameter(ExpressionProtos.Telescope proto) throws DeserializationError {
     List<String> unfixedNames = new ArrayList<>(proto.getNameList().size());
     unfixedNames.addAll(proto.getNameList().stream().map(name -> name.isEmpty() ? null : name).collect(Collectors.toList()));
-    Expression expr = readExpr(proto.getType());
-    Type type = expr instanceof Type ? (Type) expr : new TypeExpression(expr, readSort(proto.getSort()));
+    Type type = readType(proto.getType());
     SingleDependentLink tele = ExpressionFactory.singleParam(!proto.getIsNotExplicit(), unfixedNames, type);
     for (DependentLink link = tele; link.hasNext(); link = link.getNext()) {
       registerBinding(link);
@@ -182,8 +186,7 @@ class DefinitionDeserialization {
   }
 
   TypedDependentLink readParameter(ExpressionProtos.SingleParameter proto) throws DeserializationError {
-    Expression expr = readExpr(proto.getType());
-    Type type = expr instanceof Type ? (Type) expr : new TypeExpression(expr, readSort(proto.getSort()));
+    Type type = readType(proto.getType());
     TypedDependentLink link = new TypedDependentLink(!proto.getIsNotExplicit(), proto.getName(), type, EmptyDependentLink.getInstance());
     registerBinding(link);
     return link;
@@ -355,7 +358,7 @@ class DefinitionDeserialization {
       for (ExpressionProtos.Telescope telescope : cProto.getParamList()) {
         parameters.add(readSingleParameter(telescope));
       }
-      LetClause clause = new LetClause(cProto.getName(), pLevels, parameters, readExpr(cProto.getResultType()), readElimTree(cProto.getElimTree()));
+      LetClause clause = new LetClause(cProto.getName(), pLevels, parameters, readType(cProto.getResultType()), readElimTree(cProto.getElimTree()));
       registerBinding(clause);
       clauses.add(clause);
     }

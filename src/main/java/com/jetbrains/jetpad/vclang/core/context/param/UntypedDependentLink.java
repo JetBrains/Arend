@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.context.param;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
@@ -25,8 +24,8 @@ public class UntypedDependentLink implements DependentLink {
   }
 
   @Override
-  public Type getType_() {
-    return myNext.getType_();
+  public Type getType() {
+    return myNext.getType();
   }
 
   @Override
@@ -88,14 +87,9 @@ public class UntypedDependentLink implements DependentLink {
   }
 
   @Override
-  public Expression getType() {
-    return myNext.getType();
-  }
-
-  @Override
   public DependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size) {
     if (size == 1) {
-      TypedDependentLink result = new TypedDependentLink(isExplicit(), myName, getType_(), EmptyDependentLink.getInstance());
+      TypedDependentLink result = new TypedDependentLink(isExplicit(), myName, getType(), EmptyDependentLink.getInstance());
       exprSubst.add(this, new ReferenceExpression(result));
       return result;
     } else

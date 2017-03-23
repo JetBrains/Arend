@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Callable;
 import com.jetbrains.jetpad.vclang.core.definition.Function;
+import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
@@ -17,9 +18,9 @@ public class LetClause extends NamedBinding implements Function, Callable {
   private List<Level> myPLevels;
   private List<SingleDependentLink> myParameters;
   private ElimTreeNode myElimTree;
-  private Expression myResultType;
+  private Type myResultType;
 
-  public LetClause(String name, List<Level> pLevels, List<SingleDependentLink> parameters, Expression resultType, ElimTreeNode elimTree) {
+  public LetClause(String name, List<Level> pLevels, List<SingleDependentLink> parameters, Type resultType, ElimTreeNode elimTree) {
     super(name);
     assert pLevels.size() == parameters.size();
     myPLevels = pLevels;
@@ -45,19 +46,19 @@ public class LetClause extends NamedBinding implements Function, Callable {
     return myParameters;
   }
 
-  public Expression getResultType() {
+  public Type getResultType() {
     return myResultType;
   }
 
-  public void setResultType(Expression resultType) {
+  public void setResultType(Type resultType) {
     myResultType = resultType;
   }
 
   @Override
-  public Expression getType() {
-    Expression type = myResultType;
+  public Type getType() {
+    Type type = myResultType;
     for (int i = myParameters.size() - 1; i >= 0; i--) {
-      type = new PiExpression(myPLevels.get(i), myParameters.get(i), type);
+      type = new PiExpression(myPLevels.get(i), myParameters.get(i), type.getExpr());
     }
     return type;
   }
@@ -68,7 +69,7 @@ public class LetClause extends NamedBinding implements Function, Callable {
     for (SingleDependentLink parameter : myParameters) {
       params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(parameter, subst, LevelSubstitution.EMPTY)));
     }
-    return myResultType.subst(subst, LevelSubstitution.EMPTY);
+    return myResultType.getExpr().subst(subst, LevelSubstitution.EMPTY);
   }
 
   @Override

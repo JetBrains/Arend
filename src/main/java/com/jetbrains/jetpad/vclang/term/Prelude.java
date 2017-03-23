@@ -68,7 +68,7 @@ public class Prelude {
     if (abstractDef.getName().equals("@")) {
       AT = (FunctionDefinition) definition;
       DependentLink param4 = AT.getParameters().getNext().getNext().getNext();
-      DependentLink atPath = ExpressionFactory.param("f", PATH_CON.getParameters().getType_());
+      DependentLink atPath = ExpressionFactory.param("f", PATH_CON.getParameters().getType());
       AT.setElimTree(ExpressionFactory.top(AT.getParameters(), ExpressionFactory.branch(param4.getNext(), ExpressionFactory.tail(),
         clause(LEFT, EmptyDependentLink.getInstance(), ExpressionFactory.Reference(AT.getParameters().getNext())),
         clause(RIGHT, EmptyDependentLink.getInstance(), ExpressionFactory.Reference(AT.getParameters().getNext().getNext())),

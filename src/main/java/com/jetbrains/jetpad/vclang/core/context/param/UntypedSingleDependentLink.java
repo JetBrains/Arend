@@ -28,7 +28,7 @@ public class UntypedSingleDependentLink extends UntypedDependentLink implements 
   @Override
   public SingleDependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size) {
     if (size == 1) {
-      TypedSingleDependentLink result = new TypedSingleDependentLink(isExplicit(), getName(), getType_());
+      TypedSingleDependentLink result = new TypedSingleDependentLink(isExplicit(), getName(), getType());
       exprSubst.add(this, new ReferenceExpression(result));
       return result;
     } else

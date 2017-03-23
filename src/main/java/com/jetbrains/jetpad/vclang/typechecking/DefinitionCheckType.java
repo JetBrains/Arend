@@ -567,14 +567,14 @@ public class DefinitionCheckType {
       }
 
       for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext()) {
-        Expression type = link.getType().normalize(NormalizeVisitor.Mode.WHNF);
+        Expression type = link.getType().getExpr().normalize(NormalizeVisitor.Mode.WHNF);
         List<SingleDependentLink> piParams = new ArrayList<>();
         type = type.getPiParameters(piParams, true, false);
         for (DependentLink piParam : piParams) {
           if (piParam instanceof UntypedDependentLink) {
             continue;
           }
-          if (!checkNonPositiveError(piParam.getType(), name, list.getFirst(), link, arguments, def, visitor.getErrorReporter(), dataDefinitions)) {
+          if (!checkNonPositiveError(piParam.getType().getExpr(), name, list.getFirst(), link, arguments, def, visitor.getErrorReporter(), dataDefinitions)) {
             return null;
           }
         }

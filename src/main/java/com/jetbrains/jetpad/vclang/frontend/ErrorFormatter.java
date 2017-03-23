@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
@@ -21,6 +20,7 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.LevelEqua
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ErrorFormatter {
   private final SourceInfoProvider mySrc;
@@ -86,9 +86,7 @@ public class ErrorFormatter {
         String text = "Expected type: ";
         builder.append(text);
         List<String> names = new ArrayList<>(((GoalError) error).context.size());
-        for (Binding binding : ((GoalError) error).context) {
-          names.add(binding.getName() == null ? null : binding.getName());
-        }
+        names.addAll(((GoalError) error).context.stream().map(binding -> binding.getName() == null ? null : binding.getName()).collect(Collectors.toList()));
         ((GoalError) error).type.prettyPrint(builder, names, Abstract.Expression.PREC, text.length());
       }
       if (printContext) {
@@ -97,7 +95,7 @@ public class ErrorFormatter {
         List<String> names = new ArrayList<>(((GoalError) error).context.size());
         for (Binding binding : ((GoalError) error).context) {
           builder.append("\n  ").append(binding.getName() == null ? "_" : binding.getName()).append(" : ");
-          Expression type = binding.getType();
+          Expression type = binding.getType().getExpr();
           if (type != null) {
             type.prettyPrint(builder, names, Abstract.Expression.PREC, 0);
           } else {
@@ -109,31 +107,31 @@ public class ErrorFormatter {
     } else if (error instanceof TypeMismatchError) {
       String text = "Expected type: ";
       builder.append(text);
-      ((TypeMismatchError) error).expected.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, text.length());
+      ((TypeMismatchError) error).expected.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, text.length());
       builder.append('\n')
         .append("  Actual type: ");
-      ((TypeMismatchError) error).actual.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, text.length());
+      ((TypeMismatchError) error).actual.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, text.length());
     } else if (error instanceof ExpressionMismatchError) {
       String text = "Expected: ";
       builder.append(text);
-      ((ExpressionMismatchError) error).expected.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, text.length());
+      ((ExpressionMismatchError) error).expected.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, text.length());
       builder.append('\n')
         .append("  Actual: ");
-      ((ExpressionMismatchError) error).actual.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, text.length());
+      ((ExpressionMismatchError) error).actual.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, text.length());
     } else if (error instanceof SolveEquationError) {
       String text = "1st expression: ";
       builder.append(text);
-      ((SolveEquationError) error).expr1.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, text.length());
+      ((SolveEquationError) error).expr1.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, text.length());
       builder.append('\n')
           .append("2nd expression: ");
-      ((SolveEquationError) error).expr2.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, text.length());
+      ((SolveEquationError) error).expr2.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, text.length());
     } else if (error instanceof SolveEquationsError) {
       boolean first = true;
       for (Equation equation : ((SolveEquationsError) error).equations) {
         if (!first) builder.append('\n');
-        equation.type.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, 0);
+        equation.type.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0);
         builder.append(equation.cmp == Equations.CMP.LE ? " <= " : equation.cmp == Equations.CMP.EQ ? " = " : " >= ");
-        equation.expr.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, 0);
+        equation.expr.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0);
         first = false;
       }
     } else if (error instanceof SolveLevelEquationsError) {
@@ -156,7 +154,7 @@ public class ErrorFormatter {
         for (Expression candidate : ((ArgInferenceError) error).candidates) {
           builder.append("\n");
           PrettyPrintVisitor.printIndent(builder, 2);
-          candidate.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, 2);
+          candidate.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 2);
         }
       }
 
@@ -165,12 +163,12 @@ public class ErrorFormatter {
         if (((ArgInferenceError) error).expected != null) {
           String text = "Expected type: ";
           builder.append('\n').append(text);
-          ((ArgInferenceError) error).expected.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, text.length());
+          ((ArgInferenceError) error).expected.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, text.length());
         }
         if (((ArgInferenceError) error).actual != null) {
           String text = "  Actual type: ";
           builder.append('\n').append(text);
-          ((ArgInferenceError) error).actual.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, text.length());
+          ((ArgInferenceError) error).actual.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, text.length());
         }
       }
     } else if (error instanceof MemberNotFoundError) {
