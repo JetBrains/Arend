@@ -13,8 +13,6 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FunCall;
-
 public class FunctionDefinition extends Definition implements Function {
   private DependentLink myParameters;
   private Expression myResultType;
@@ -69,12 +67,12 @@ public class FunctionDefinition extends Definition implements Function {
   @Override
   public FunCallExpression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> arguments) {
     if (thisExpr == null) {
-      return FunCall(this, sortArgument, arguments);
+      return new FunCallExpression(this, sortArgument, arguments);
     } else {
       List<Expression> args = new ArrayList<>(arguments.size() + 1);
       args.add(thisExpr);
       args.addAll(arguments);
-      return FunCall(this, sortArgument, args);
+      return new FunCallExpression(this, sortArgument, args);
     }
   }
 

@@ -6,14 +6,13 @@ import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
+import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.param;
 
 public class FieldSet implements ReadonlyFieldSet {
   public static class Implementation {
@@ -115,8 +114,8 @@ public class FieldSet implements ReadonlyFieldSet {
     Expression baseType = field.getBaseType(thisClass.getSortArgument());
     if (baseType.toError() != null) return;
 
-    DependentLink thisParam = param("\\this", thisClass);
-    Expression expr1 = baseType.subst(field.getThisParameter(), ExpressionFactory.Reference(thisParam)).normalize(NormalizeVisitor.Mode.WHNF);
+    DependentLink thisParam = ExpressionFactory.parameter("\\this", thisClass);
+    Expression expr1 = baseType.subst(field.getThisParameter(), new ReferenceExpression(thisParam)).normalize(NormalizeVisitor.Mode.WHNF);
     Sort sort = null;
     if (expr1.toOfType() != null) {
       Expression type = expr1.toOfType().getExpression().getType();

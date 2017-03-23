@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 import static org.junit.Assert.assertNotNull;
@@ -26,7 +27,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   public void prettyPrintingLam() {
     // \x. x x
     SingleDependentLink x = singleParam("x", Pi(Nat(), Nat()));
-    Expression expr = Lam(x, Apps(Reference(x), Reference(x)));
+    Expression expr = Lam(x, Apps(Ref(x), Ref(x)));
     expr.prettyPrint(new StringBuilder(), new ArrayList<>(), Abstract.Expression.PREC, 0);
   }
 
@@ -36,7 +37,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     SingleDependentLink x = singleParam("x", Pi(Nat(), Pi(Nat(), Nat())));
     SingleDependentLink y = singleParam("y", Pi(Nat(), Nat()));
     SingleDependentLink zw = singleParam(true, vars("z", "w"), Nat());
-    Expression expr = Lam(x, Apps(Reference(x), Lam(y, Apps(Reference(y), Reference(x))), Lam(zw, Apps(Reference(x), Reference(zw.getNext()), Reference(zw)))));
+    Expression expr = Lam(x, Apps(Ref(x), Lam(y, Apps(Ref(y), Ref(x))), Lam(zw, Apps(Ref(x), Ref(zw.getNext()), Ref(zw)))));
     expr.prettyPrint(new StringBuilder(), new ArrayList<>(), Abstract.Expression.PREC, 0);
   }
 
@@ -44,7 +45,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   public void prettyPrintingU() {
     // (X : Type0) -> X -> X
     SingleDependentLink X = singleParam("x", Universe(0));
-    Expression expr = Pi(X, Pi(singleParam(null, Reference(X)), Reference(X)));
+    Expression expr = Pi(X, Pi(singleParam(null, Ref(X)), Ref(X)));
     expr.prettyPrint(new StringBuilder(), new ArrayList<>(), Abstract.Expression.PREC, 0);
   }
 
@@ -55,7 +56,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     SingleDependentLink xy = singleParam(true, vars("x", "y"), Nat());
     SingleDependentLink zw = singleParam(true, vars("z", "w"), Pi(singleParam(null, Nat()), Nat()));
     SingleDependentLink s = singleParam("s", Nat());
-    Expression expr = Pi(t, Pi(xy, Pi(zw, Pi(singleParam(null, Pi(s, Apps(Reference(t), Apps(Reference(zw), Reference(s)), Apps(Reference(zw.getNext()), Reference(xy))))), Nat()))));
+    Expression expr = Pi(t, Pi(xy, Pi(zw, Pi(singleParam(null, Pi(s, Apps(Ref(t), Apps(Ref(zw), Ref(s)), Apps(Ref(zw.getNext()), Ref(xy))))), Nat()))));
     expr.prettyPrint(new StringBuilder(), new ArrayList<>(), Abstract.Expression.PREC, 0);
   }
 
@@ -73,9 +74,9 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   public void prettyPrintingLet() {
     // \let x {A : Type0} (y : A) : A => y \in x Zero()
     SingleDependentLink A = singleParam("A", Universe(0));
-    SingleDependentLink y = singleParam("y", Reference(A));
-    LetClause clause = let("x", Arrays.asList(A, y), Reference(A), Reference(y));
-    LetExpression expr = Let(lets(clause), Apps(Reference(clause), Zero()));
+    SingleDependentLink y = singleParam("y", Ref(A));
+    LetClause clause = let("x", Arrays.asList(A, y), Ref(A), Ref(y));
+    LetExpression expr = new LetExpression(lets(clause), Apps(Ref(clause), Zero()));
     expr.prettyPrint(new StringBuilder(), new ArrayList<>(), Abstract.Expression.PREC, 0);
   }
 
@@ -83,9 +84,9 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   public void prettyPrintingLetEmpty() {
     // \let x {A : Type0} (y ; A) : A <= \elim y
     SingleDependentLink A = singleParam("A", Universe(0));
-    SingleDependentLink y = singleParam("y", Reference(A));
-    LetClause clause = let("x", Arrays.asList(A, y), Reference(A), EmptyElimTreeNode.getInstance());
-    LetExpression expr = Let(lets(clause), Apps(Reference(clause), Zero()));
+    SingleDependentLink y = singleParam("y", Ref(A));
+    LetClause clause = let("x", Arrays.asList(A, y), Ref(A), EmptyElimTreeNode.getInstance());
+    LetExpression expr = new LetExpression(lets(clause), Apps(Ref(clause), Zero()));
     expr.prettyPrint(new StringBuilder(), new ArrayList<>(), Abstract.Expression.PREC, 0);
   }
 

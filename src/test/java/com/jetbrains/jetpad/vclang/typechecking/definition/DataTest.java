@@ -18,6 +18,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
@@ -30,46 +31,46 @@ public class DataTest extends TypeCheckingTestCase {
     List<DependentLink> params = new ArrayList<>();
     Expression type = typedDef.getTypeWithParams(params, Sort.ZERO);
 
-    SingleDependentLink A = singleParam(false, vars("A", "B"), Universe(0, 0));
+    SingleDependentLink A = singleParams(false, vars("A", "B"), Universe(0, 0));
     SingleDependentLink B = A.getNext();
-    SingleDependentLink I = singleParam("I", Pi(Reference(A), Pi(Reference(B), Universe(0, 0))));
-    SingleDependentLink a = singleParam("a", Reference(A));
-    SingleDependentLink b = singleParam("b", Reference(B));
-    SingleDependentLink x = singleParam("x", Reference(A));
-    SingleDependentLink y = singleParam(false, vars("y"), Reference(B));
+    SingleDependentLink I = singleParam("I", Pi(Ref(A), Pi(Ref(B), Universe(0, 0))));
+    SingleDependentLink a = singleParam("a", Ref(A));
+    SingleDependentLink b = singleParam("b", Ref(B));
+    SingleDependentLink x = singleParam("x", Ref(A));
+    SingleDependentLink y = singleParam(false, "y", Ref(B));
 
     assertNotNull(typedDef);
     assertEquals(Definition.TypeCheckingStatus.NO_ERRORS, typedDef.status());
-    assertEquals(Pi(A, Pi(I, Pi(a, Pi(b, Universe(0, 0))))), type.fromPiParameters(params));
+    assertEquals(Pi(A, Pi(I, Pi(a, Pi(b, Universe(0, 0))))), fromPiParameters(type, params));
     assertEquals(2, typedDef.getConstructors().size());
 
     ExprSubstitution substitution = new ExprSubstitution();
     DependentLink link = typedDef.getParameters();
-    substitution.add(link, Reference(A));
+    substitution.add(link, Ref(A));
     link = link.getNext();
-    substitution.add(link, Reference(B));
+    substitution.add(link, Ref(B));
     link = link.getNext();
-    substitution.add(link, Reference(I));
+    substitution.add(link, Ref(I));
     link = link.getNext();
-    substitution.add(link, Reference(a));
+    substitution.add(link, Ref(a));
     link = link.getNext();
-    substitution.add(link, Reference(b));
+    substitution.add(link, Ref(b));
     List<DependentLink> con1Params = new ArrayList<>();
     Expression con1Type = typedDef.getConstructors().get(0).getTypeWithParams(con1Params, Sort.ZERO);
-    assertEquals(Pi(A, Pi(I, Pi(a, Pi(b, Pi(x, Arrow(Apps(Reference(I), Reference(x), Reference(b)), DataCall(typedDef, Sort.ZERO,
-      Reference(A),
-      Reference(B),
-      Reference(I),
-      Reference(a),
-      Reference(b)))))))), con1Type.fromPiParameters(con1Params));
+    assertEquals(Pi(A, Pi(I, Pi(a, Pi(b, Pi(x, Pi(Apps(Ref(I), Ref(x), Ref(b)), DataCall(typedDef, Sort.ZERO,
+      Ref(A),
+      Ref(B),
+      Ref(I),
+      Ref(a),
+      Ref(b)))))))), fromPiParameters(con1Type, con1Params));
     List<DependentLink> con2Params = new ArrayList<>();
     Expression con2Type = typedDef.getConstructors().get(1).getTypeWithParams(con2Params, Sort.ZERO);
-    assertEquals(Pi(A, Pi(I, Pi(a, Pi(b, Pi(y, Arrow(Apps(Reference(I), Reference(a), Reference(y)), DataCall(typedDef, Sort.ZERO,
-      Reference(A),
-      Reference(B),
-      Reference(I),
-      Reference(a),
-      Reference(b)))))))), con2Type.fromPiParameters(con2Params));
+    assertEquals(Pi(A, Pi(I, Pi(a, Pi(b, Pi(y, Pi(Apps(Ref(I), Ref(a), Ref(y)), DataCall(typedDef, Sort.ZERO,
+      Ref(A),
+      Ref(B),
+      Ref(I),
+      Ref(a),
+      Ref(b)))))))), fromPiParameters(con2Type, con2Params));
   }
 
   @Test
@@ -88,11 +89,11 @@ public class DataTest extends TypeCheckingTestCase {
 
     assertNotNull(typedDef);
     assertEquals(Definition.TypeCheckingStatus.NO_ERRORS, typedDef.status());
-    assertEquals(Pi(A, Universe(6, 7)), type.fromPiParameters(params));
+    assertEquals(Pi(A, Universe(6, 7)), fromPiParameters(type, params));
     assertEquals(2, typedDef.getConstructors().size());
 
-    assertEquals(Pi(A, Pi(X, Pi(Reference(X), DataCall(typedDef, Sort.ZERO, Reference(A))))), con1Type.fromPiParameters(con1Params));
-    assertEquals(Pi(A, Pi(Y, Pi(Reference(A), Pi(Reference(Y), DataCall(typedDef, Sort.ZERO, Reference(A)))))), con2Type.fromPiParameters(con2Params));
+    assertEquals(Pi(A, Pi(X, Pi(Ref(X), DataCall(typedDef, Sort.ZERO, Ref(A))))), fromPiParameters(con1Type, con1Params));
+    assertEquals(Pi(A, Pi(Y, Pi(Ref(A), Pi(Ref(Y), DataCall(typedDef, Sort.ZERO, Ref(A)))))), fromPiParameters(con2Type, con2Params));
   }
 
   @Test

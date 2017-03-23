@@ -160,7 +160,7 @@ class DefinitionDeserialization {
       List<String> unfixedNames = new ArrayList<>(proto.getNameList().size());
       unfixedNames.addAll(proto.getNameList().stream().map(name -> name.isEmpty() ? null : name).collect(Collectors.toList()));
       Type type = readType(proto.getType());
-      DependentLink tele = ExpressionFactory.param(!proto.getIsNotExplicit(), unfixedNames, type);
+      DependentLink tele = ExpressionFactory.parameter(!proto.getIsNotExplicit(), unfixedNames, type);
       for (DependentLink link = tele; link.hasNext(); link = link.getNext()) {
         registerBinding(link);
       }
@@ -178,7 +178,7 @@ class DefinitionDeserialization {
     List<String> unfixedNames = new ArrayList<>(proto.getNameList().size());
     unfixedNames.addAll(proto.getNameList().stream().map(name -> name.isEmpty() ? null : name).collect(Collectors.toList()));
     Type type = readType(proto.getType());
-    SingleDependentLink tele = ExpressionFactory.singleParam(!proto.getIsNotExplicit(), unfixedNames, type);
+    SingleDependentLink tele = ExpressionFactory.singleParams(!proto.getIsNotExplicit(), unfixedNames, type);
     for (DependentLink link = tele; link.hasNext(); link = link.getNext()) {
       registerBinding(link);
     }

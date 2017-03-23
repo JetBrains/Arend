@@ -18,6 +18,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -28,11 +29,11 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void inferId() {
     // f : {A : Type0} -> A -> A |- f 0 : N
     List<Binding> context = new ArrayList<>();
-    SingleDependentLink A = singleParam(false, vars("A"), Universe(0));
-    context.add(new TypedBinding("f", Pi(A, Pi(Reference(A), Reference(A)))));
+    SingleDependentLink A = singleParams(false, vars("A"), Universe(0));
+    context.add(new TypedBinding("f", Pi(A, Pi(Ref(A), Ref(A)))));
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "f 0", null);
-    Expression expr = Reference(context.get(0))
+    Expression expr = Ref(context.get(0))
       .addArgument(Nat())
       .addArgument(Zero());
     assertEquals(expr, result.expression);
@@ -52,7 +53,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void tooManyArguments() {
     // f : (x : N) {y : N} (z : N) -> N |- f 0 0 0 : N
     List<Binding> context = new ArrayList<>();
-    context.add(new TypedBinding("f", Pi(singleParam("x", Nat()), Pi(singleParam(false, vars("y"), Nat()), Pi(singleParam("z", Nat()), Nat())))));
+    context.add(new TypedBinding("f", Pi(singleParam("x", Nat()), Pi(singleParams(false, vars("y"), Nat()), Pi(singleParam("z", Nat()), Nat())))));
 
     assertThat(typeCheckExpr(context, "f 0 0 0", null, 1), is(nullValue()));
   }
@@ -61,8 +62,8 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void cannotInfer() {
     // f : {A B : Type0} -> A -> A |- f 0 : N
     List<Binding> context = new ArrayList<>();
-    SingleDependentLink params = singleParam(false, vars("A", "B"), Universe(0));
-    context.add(new TypedBinding("f", Pi(params, Pi(Reference(params), Reference(params)))));
+    SingleDependentLink params = singleParams(false, vars("A", "B"), Universe(0));
+    context.add(new TypedBinding("f", Pi(params, Pi(Ref(params), Ref(params)))));
 
     typeCheckExpr(context, "f 0", null, 1);
     assertTrue(errorList.get(0) instanceof TypeCheckingError && ((TypeCheckingError) errorList.get(0)).localError instanceof ArgInferenceError);
@@ -72,14 +73,14 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void inferLam() {
     // f : {A : Type0} -> ((A -> Nat) -> Nat) -> A |- f (\g. g 0) : Nat
     List<Binding> context = new ArrayList<>();
-    SingleDependentLink A = singleParam(false, vars("A"), Universe(0));
-    context.add(new TypedBinding("f", Pi(A, Pi(Pi(Pi(Reference(A), Nat()), Nat()), Reference(A)))));
+    SingleDependentLink A = singleParams(false, vars("A"), Universe(0));
+    context.add(new TypedBinding("f", Pi(A, Pi(Pi(Pi(Ref(A), Nat()), Nat()), Ref(A)))));
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "f (\\lam g => g 0)", null);
     SingleDependentLink g = singleParam("g", Pi(Nat(), Nat()));
-    Expression expr = Reference(context.get(0))
+    Expression expr = Ref(context.get(0))
       .addArgument(Nat())
-      .addArgument(Lam(g, Apps(Reference(g), Zero())));
+      .addArgument(Lam(g, Apps(Ref(g), Zero())));
     assertEquals(expr, result.expression);
     assertEquals(Nat(), result.type);
   }
@@ -88,14 +89,14 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void inferFromFunction() {
     // s : Nat -> Nat, f : {A : Type0} -> (Nat -> A) -> A |- f s : Nat
     List<Binding> context = new ArrayList<>(2);
-    SingleDependentLink A = singleParam(false, vars("A"), Universe(0));
+    SingleDependentLink A = singleParams(false, vars("A"), Universe(0));
     context.add(new TypedBinding("s", Pi(Nat(), Nat())));
-    context.add(new TypedBinding("f", Pi(A, Pi(Pi(Nat(), Reference(A)), Reference(A)))));
+    context.add(new TypedBinding("f", Pi(A, Pi(Pi(Nat(), Ref(A)), Ref(A)))));
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "f s", null);
-    Expression expr = Reference(context.get(1))
+    Expression expr = Ref(context.get(1))
       .addArgument(Nat())
-      .addArgument(Reference(context.get(0)));
+      .addArgument(Ref(context.get(0)));
     assertEquals(expr, result.expression);
     assertEquals(Nat(), result.type);
   }
@@ -104,14 +105,14 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void inferFromLam() {
     // f : {A : Type0} -> (Nat -> A) -> A |- f (\x y. suc y) : Nat -> Nat
     List<Binding> context = new ArrayList<>();
-    SingleDependentLink A = singleParam(false, vars("A"), Universe(0));
-    context.add(new TypedBinding("f", Pi(A, Pi(Pi(Nat(), Reference(A)), Reference(A)))));
+    SingleDependentLink A = singleParams(false, vars("A"), Universe(0));
+    context.add(new TypedBinding("f", Pi(A, Pi(Pi(Nat(), Ref(A)), Ref(A)))));
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "f (\\lam x y => suc y)", null);
-    SingleDependentLink xy = singleParam(true, vars("x", "y"), Nat());
-    Expression expr = Reference(context.get(0))
+    SingleDependentLink xy = singleParams(true, vars("x", "y"), Nat());
+    Expression expr = Ref(context.get(0))
       .addArgument(Pi(Nat(), Nat()))
-      .addArgument(Lam(xy, Suc(Reference(xy.getNext()))));
+      .addArgument(Lam(xy, Suc(Ref(xy.getNext()))));
     assertEquals(expr, result.expression);
     assertEquals(Pi(Nat(), Nat()), result.type);
   }
@@ -120,14 +121,14 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void inferFromLamType() {
     // f : {A : Type0} -> (Nat -> A) -> A |- f (\x (y : Nat -> Nat). y x) : (Nat -> Nat) -> Nat
     List<Binding> context = new ArrayList<>();
-    SingleDependentLink A = singleParam(false, vars("A"), Universe(0));
-    context.add(new TypedBinding("f", Pi(A, Pi(Pi(Nat(), Reference(A)), Reference(A)))));
+    SingleDependentLink A = singleParams(false, vars("A"), Universe(0));
+    context.add(new TypedBinding("f", Pi(A, Pi(Pi(Nat(), Ref(A)), Ref(A)))));
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "f (\\lam x (y : Nat -> Nat) => y x)", null);
     SingleDependentLink x = singleParam("x", Nat());
     SingleDependentLink y = singleParam("y", Pi(Nat(), Nat()));
-    Expression arg = Lam(x, Lam(y, Apps(Reference(y), Reference(x))));
-    Expression expr = Reference(context.get(0))
+    Expression arg = Lam(x, Lam(y, Apps(Ref(y), Ref(x))));
+    Expression expr = Ref(context.get(0))
       .addArgument(Pi(Pi(Nat(), Nat()), Nat()))
       .addArgument(arg);
     assertEquals(expr, result.expression);
@@ -138,15 +139,15 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void inferFromSecondArg() {
     // f : {A : Type0} -> (A -> A) -> (A -> Nat) -> Nat |- f (\x. x) (\x. x) : Nat
     List<Binding> context = new ArrayList<>();
-    SingleDependentLink A = singleParam(false, vars("A"), Universe(0));
-    context.add(new TypedBinding("f", Pi(A, Pi(Pi(Reference(A), Reference(A)), Pi(Pi(Reference(A), Nat()), Nat())))));
+    SingleDependentLink A = singleParams(false, vars("A"), Universe(0));
+    context.add(new TypedBinding("f", Pi(A, Pi(Pi(Ref(A), Ref(A)), Pi(Pi(Ref(A), Nat()), Nat())))));
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "f (\\lam x => x) (\\lam x => x)", null);
     SingleDependentLink x = singleParam("x", Nat());
-    Expression expr = Reference(context.get(0))
+    Expression expr = Ref(context.get(0))
       .addArgument(Nat())
-      .addArgument(Lam(x, Reference(x)))
-      .addArgument(Lam(x, Reference(x)));
+      .addArgument(Lam(x, Ref(x)))
+      .addArgument(Lam(x, Ref(x)));
     assertEquals(expr, result.expression);
     assertEquals(Nat(), result.type);
   }
@@ -155,15 +156,15 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void inferFromSecondArgLam() {
     // f : {A : Type0} -> (A -> A) -> (A -> Nat) -> Nat |- f (\x. x) (\(x : Nat). x) : Nat
     List<Binding> context = new ArrayList<>();
-    SingleDependentLink A = singleParam(false, vars("A"), Universe(0));
-    context.add(new TypedBinding("f", Pi(A, Pi(Pi(Reference(A), Reference(A)), Pi(Pi(Reference(A), Nat()), Nat())))));
+    SingleDependentLink A = singleParams(false, vars("A"), Universe(0));
+    context.add(new TypedBinding("f", Pi(A, Pi(Pi(Ref(A), Ref(A)), Pi(Pi(Ref(A), Nat()), Nat())))));
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "f (\\lam x => x) (\\lam (x : Nat) => x)", null);
     SingleDependentLink x = singleParam("x", Nat());
-    Expression expr = Reference(context.get(0))
+    Expression expr = Ref(context.get(0))
         .addArgument(Nat())
-        .addArgument(Lam(x, Reference(x)))
-        .addArgument(Lam(x, Reference(x)));
+        .addArgument(Lam(x, Ref(x)))
+        .addArgument(Lam(x, Ref(x)));
     assertEquals(expr, result.expression);
     assertEquals(Nat(), result.type);
   }
@@ -172,11 +173,11 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void inferFromTheGoal() {
     // f : {A : Type0} -> Nat -> A -> A |- f 0 : Nat -> Nat
     List<Binding> context = new ArrayList<>();
-    SingleDependentLink A = singleParam(false, vars("A"), Universe(0));
-    context.add(new TypedBinding("f", Pi(A, Pi(Nat(), Pi(Reference(A), Reference(A))))));
+    SingleDependentLink A = singleParams(false, vars("A"), Universe(0));
+    context.add(new TypedBinding("f", Pi(A, Pi(Nat(), Pi(Ref(A), Ref(A))))));
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "f 0", Pi(Nat(), Nat()));
-    Expression expr = Reference(context.get(0))
+    Expression expr = Ref(context.get(0))
         .addArgument(Nat())
         .addArgument(Zero());
     assertEquals(expr, result.expression);
@@ -187,8 +188,8 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void inferFromTheGoalError() {
     // f : {A : Type0} -> Nat -> A -> A |- f 0 : Nat -> Nat -> Nat
     List<Binding> context = new ArrayList<>();
-    SingleDependentLink A = singleParam(false, vars("A"), Universe(0));
-    context.add(new TypedBinding("f", Pi(A, Pi(Nat(), Pi(Reference(A), Reference(A))))));
+    SingleDependentLink A = singleParams(false, vars("A"), Universe(0));
+    context.add(new TypedBinding("f", Pi(A, Pi(Nat(), Pi(Ref(A), Ref(A))))));
 
     typeCheckExpr(context, "f 0", Pi(Nat(), Pi(Nat(), Nat())), 1);
   }
@@ -198,9 +199,9 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     // I : Type1 -> Type1, i : I Type0, f : {A : Type0} -> I A -> Nat |- f i : Nat
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("I", Pi(Universe(1), Universe(1))));
-    context.add(new TypedBinding("i", new TypeExpression(Apps(Reference(context.get(0)), Universe(0)), Sort.ZERO)));
-    SingleDependentLink A = singleParam(false, vars("A"), Universe(0));
-    context.add(new TypedBinding("f", Pi(A, Arrow(Apps(Reference(context.get(0)), Reference(A)), Nat()))));
+    context.add(new TypedBinding("i", new TypeExpression(Apps(Ref(context.get(0)), Universe(0)), Sort.ZERO)));
+    SingleDependentLink A = singleParams(false, vars("A"), Universe(0));
+    context.add(new TypedBinding("f", Pi(A, Pi(Apps(Ref(context.get(0)), Ref(A)), Nat()))));
 
     typeCheckExpr(context, "f i", null, 1);
   }
@@ -210,12 +211,12 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     // I : Nat -> Type0, i : {x : Nat} -> I (suc x) |- i : I (suc (suc 0))
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("I", Pi(Nat(), Universe(0))));
-    SingleDependentLink x = singleParam(false, vars("x"), Nat());
-    context.add(new TypedBinding("i", Pi(x, Apps(Reference(context.get(0)), Suc(Reference(x))))));
-    Expression type = Apps(Reference(context.get(0)), Suc(Suc(Zero())));
+    SingleDependentLink x = singleParams(false, vars("x"), Nat());
+    context.add(new TypedBinding("i", Pi(x, Apps(Ref(context.get(0)), Suc(Ref(x))))));
+    Expression type = Apps(Ref(context.get(0)), Suc(Suc(Zero())));
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "i", type);
-    Expression expr = Reference(context.get(1))
+    Expression expr = Ref(context.get(1))
         .addArgument(Suc(Zero()));
     assertEquals(expr, result.expression);
     assertEquals(type, result.type);
@@ -226,12 +227,12 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     // I : Nat -> Type0, i : {x : Nat} -> I x |- i : {x : Nat} -> I x
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("I", Pi(Nat(), Universe(0))));
-    SingleDependentLink x = singleParam(false, vars("x"), Nat());
-    PiExpression type = Pi(x, Apps(Reference(context.get(0)), Reference(x)));
+    SingleDependentLink x = singleParams(false, vars("x"), Nat());
+    PiExpression type = Pi(x, Apps(Ref(context.get(0)), Ref(x)));
     context.add(new TypedBinding("i", type));
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "i", type);
-    assertEquals(Reference(context.get(1)), result.expression);
+    assertEquals(Ref(context.get(1)), result.expression);
     assertEquals(type, result.type);
   }
 
@@ -240,18 +241,18 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     // I : Type1 -> Type1, i : {x : Type0} -> I x |- i : I Type0
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("I", Pi(Universe(1), Universe(1))));
-    SingleDependentLink x = singleParam(false, vars("x"), Universe(0));
-    context.add(new TypedBinding("i", Pi(x, Apps(Reference(context.get(0)), Reference(x)))));
+    SingleDependentLink x = singleParams(false, vars("x"), Universe(0));
+    context.add(new TypedBinding("i", Pi(x, Apps(Ref(context.get(0)), Ref(x)))));
 
-    typeCheckExpr(context, "i", Apps(Reference(context.get(0)), Universe(0)), 1);
+    typeCheckExpr(context, "i", Apps(Ref(context.get(0)), Universe(0)), 1);
   }
 
   @Test
   public void inferUnderLet() {
     // f : {A : Type0} -> (A -> A) -> A -> A |- let | x {A : Type0} (y : A -> A) = f y | z (x : Nat) = x \in x z :
     List<Binding> context = new ArrayList<>();
-    SingleDependentLink A = singleParam(false, vars("A"), Universe(0));
-    context.add(new TypedBinding("f", Pi(A, Pi(singleParam(null, Pi(Reference(A), Reference(A))), Pi(singleParam(null, Reference(A)), Reference(A))))));
+    SingleDependentLink A = singleParams(false, vars("A"), Universe(0));
+    context.add(new TypedBinding("f", Pi(A, Pi(singleParam(null, Pi(Ref(A), Ref(A))), Pi(singleParam(null, Ref(A)), Ref(A))))));
 
     String term =
         "\\let\n" +
@@ -266,7 +267,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void untypedLambda1() {
     // f : (A : \Type0) (a : A) -> Nat |- \x1 x2. f x1 x2
     SingleDependentLink A = singleParam("A", Universe(0));
-    PiExpression type = Pi(A, Pi(singleParam("a", Reference(A)), Nat()));
+    PiExpression type = Pi(A, Pi(singleParam("a", Ref(A)), Nat()));
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("f", type));
     typeCheckExpr(context, "\\lam x1 x2 => f x1 x2", null);
@@ -277,9 +278,9 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void untypedLambda2() {
     // f : (A : Type) (B : A -> Type) (a : A) -> B a |- \x1 x2 x3. f x1 x2 x3
     SingleDependentLink A = singleParam("A", Universe(0));
-    SingleDependentLink B = singleParam("B", Pi(Reference(A), Universe(0)));
-    SingleDependentLink a = singleParam("a", Reference(A));
-    PiExpression type = Pi(A, Pi(B, Pi(a, Apps(Reference(B), Reference(a)))));
+    SingleDependentLink B = singleParam("B", Pi(Ref(A), Universe(0)));
+    SingleDependentLink a = singleParam("a", Ref(A));
+    PiExpression type = Pi(A, Pi(B, Pi(a, Apps(Ref(B), Ref(a)))));
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("f", type));
 
@@ -291,7 +292,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void untypedLambdaError1() {
     // f : (A : \Type0) (a : A) -> Nat |- \x1 x2. f x2 x1
     SingleDependentLink A = singleParam("A", Universe(0));
-    PiExpression type = Pi(A, Pi(singleParam("a", Reference(A)), Nat()));
+    PiExpression type = Pi(A, Pi(singleParam("a", Ref(A)), Nat()));
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("f", type));
     typeCheckExpr(context, "\\lam x1 x2 => f x2 x1", null, 1);
@@ -301,9 +302,9 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void untypedLambdaError2() {
     // f : (A : Type0) (B : A -> Type0) (a : A) -> B a |- \x1 x2 x3. f x2 x1 x3
     SingleDependentLink A = singleParam("A", Universe(0));
-    SingleDependentLink B = singleParam("B", Pi(Reference(A), Universe(0)));
-    SingleDependentLink a = singleParam("a", Reference(A));
-    PiExpression type = Pi(A, Pi(B, Pi(a, Apps(Reference(B), Reference(a)))));
+    SingleDependentLink B = singleParam("B", Pi(Ref(A), Universe(0)));
+    SingleDependentLink a = singleParam("a", Ref(A));
+    PiExpression type = Pi(A, Pi(B, Pi(a, Apps(Ref(B), Ref(a)))));
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("f", type));
 
@@ -314,9 +315,9 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void inferLater() {
     // f : {A : \Type0} (B : \Type1) -> A -> B -> A |- f Nat (\lam x => x) 0 : Nat -> Nat
     List<Binding> context = new ArrayList<>();
-    SingleDependentLink A = singleParam(false, vars("A"), Universe(0));
-    SingleDependentLink B = singleParam(true, vars("B"), Universe(1));
-    context.add(new TypedBinding("f", Pi(A, Pi(B, Pi(Reference(A), Pi(Reference(B), Reference(A)))))));
+    SingleDependentLink A = singleParams(false, vars("A"), Universe(0));
+    SingleDependentLink B = singleParams(true, vars("B"), Universe(1));
+    context.add(new TypedBinding("f", Pi(A, Pi(B, Pi(Ref(A), Pi(Ref(B), Ref(A)))))));
     typeCheckExpr(context, "f Nat (\\lam x => x) 0", Pi(Nat(), Nat()));
   }
 

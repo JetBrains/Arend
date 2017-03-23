@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
+import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 
@@ -60,13 +60,13 @@ public class ConstructorClause implements Clause {
 
     List<Expression> arguments = new ArrayList<>();
     for (DependentLink link = myParameters; link.hasNext(); link = link.getNext()) {
-      arguments.add(ExpressionFactory.Reference(link));
+      arguments.add(new ReferenceExpression(link));
     }
     DataCallExpression dataCall = myParent.getReference().getType().getExpr().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
     result.add(myParent.getReference(), new ConCallExpression(myConstructor, dataCall.getSortArgument(), myConstructor.matchDataTypeArguments(new ArrayList<>(dataCall.getDefCallArguments())), arguments));
 
     for (int i = 0; i < myParent.getContextTail().size(); i++) {
-      result.add(myParent.getContextTail().get(i), ExpressionFactory.Reference(myTailBindings.get(i)));
+      result.add(myParent.getContextTail().get(i), new ReferenceExpression(myTailBindings.get(i)));
     }
 
     return result;

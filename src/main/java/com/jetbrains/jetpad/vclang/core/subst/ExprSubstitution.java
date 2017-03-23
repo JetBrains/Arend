@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 
 import java.util.*;
@@ -87,7 +86,7 @@ public class ExprSubstitution {
     List<TypedBinding> result = new ArrayList<>();
     for (Binding binding : context) {
       result.add(new TypedBinding(binding.getName(), binding.getType().subst(this, LevelSubstitution.EMPTY)));
-      add(binding, ExpressionFactory.Reference(result.get(result.size() - 1)));
+      add(binding, new ReferenceExpression(result.get(result.size() - 1)));
     }
     return result;
   }

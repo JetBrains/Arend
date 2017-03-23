@@ -5,9 +5,11 @@ import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.LetExpression;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
+import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 
@@ -15,7 +17,7 @@ public class SubstTest extends TypeCheckingTestCase {
   @Test
   public void substConst() {
     // Nat -> A x [y := zero] = Nat -> A x
-    Expression expr = Pi(Nat(), Apps(Reference(new TypedBinding("A", Pi(Nat(), Universe(0)))), Reference(new TypedBinding("x", Nat()))));
+    Expression expr = Pi(Nat(), Apps(Ref(new TypedBinding("A", Pi(Nat(), Universe(0)))), Ref(new TypedBinding("x", Nat()))));
     assertEquals(expr, expr.subst(new TypedBinding("x", Nat()), Zero()));
   }
 
@@ -24,8 +26,8 @@ public class SubstTest extends TypeCheckingTestCase {
     // Nat -> A x [x := zero] = Nat -> A zero
     Binding x = new TypedBinding("x", Pi(Nat(), Nat()));
     Binding A = new TypedBinding("A", Pi(Pi(Nat(), Nat()), Universe(0)));
-    Expression expr = Pi(Nat(), Apps(Reference(A), Reference(x)));
-    assertEquals(Pi(Nat(), Apps(Reference(A), Zero())), expr.subst(x, Zero()));
+    Expression expr = Pi(Nat(), Apps(Ref(A), Ref(x)));
+    assertEquals(Pi(Nat(), Apps(Ref(A), Zero())), expr.subst(x, Zero()));
   }
 
   @Test
@@ -33,7 +35,7 @@ public class SubstTest extends TypeCheckingTestCase {
     // \x y. y x [y := suc zero] = \x y. y x
     SingleDependentLink x = singleParam("x", Nat());
     SingleDependentLink y = singleParam("y", Pi(Nat(), Nat()));
-    Expression expr = Lam(x, Lam(y, Apps(Reference(y), Reference(x))));
+    Expression expr = Lam(x, Lam(y, Apps(Ref(y), Ref(x))));
     assertEquals(expr, expr.subst(y, Suc(Zero())));
   }
 
@@ -42,8 +44,8 @@ public class SubstTest extends TypeCheckingTestCase {
     // \x y. z y x [z := suc zero] = \x. suc zero
     SingleDependentLink xy = singleParam(true, vars("x", "y"), Nat());
     Binding z = new TypedBinding("z", Pi(Nat(), Pi(Nat(), Nat())));
-    Expression expr = Lam(xy, Apps(Reference(z), Reference(xy.getNext()), Reference(xy)));
-    assertEquals(Lam(xy, Apps(Lam(xy, Suc(Zero())), Reference(xy.getNext()), Reference(xy))), expr.subst(z, Lam(xy, Suc(Zero()))));
+    Expression expr = Lam(xy, Apps(Ref(z), Ref(xy.getNext()), Ref(xy)));
+    assertEquals(Lam(xy, Apps(Lam(xy, Suc(Zero())), Ref(xy.getNext()), Ref(xy))), expr.subst(z, Lam(xy, Suc(Zero()))));
   }
 
   @Test
@@ -51,11 +53,11 @@ public class SubstTest extends TypeCheckingTestCase {
     // \ x y. z x y [z := x] = \x' y'. x x' y'
     SingleDependentLink xy = singleParam(true, vars("x", "y"), Nat());
     Binding z = new TypedBinding("z", Nat());
-    Expression expr = Lam(xy, Apps(Reference(z), Reference(xy), Reference(xy.getNext())));
+    Expression expr = Lam(xy, Apps(Ref(z), Ref(xy), Ref(xy.getNext())));
 
     SingleDependentLink xy1 = singleParam(true, vars("x'", "y'"), Nat());
-    Expression expr1 = Lam(xy1, Apps(Reference(xy), Reference(xy1), Reference(xy1.getNext())));
-    assertEquals(expr1, expr.subst(z, Reference(xy)));
+    Expression expr1 = Lam(xy1, Apps(Ref(xy), Ref(xy1), Ref(xy1.getNext())));
+    assertEquals(expr1, expr.subst(z, Ref(xy)));
   }
 
   @Test
@@ -70,9 +72,9 @@ public class SubstTest extends TypeCheckingTestCase {
     SingleDependentLink w = singleParam("w", Pi(Nat(), Nat()));
     SingleDependentLink t = singleParam("t", Pi(Nat(), Pi(Nat(), Nat())));
 
-    Expression expr = Lam(x, Lam(y, Apps(Reference(x), Reference(b), Lam(z, Apps(Reference(a), Reference(z), Reference(y))))));
-    Expression substExpr = Lam(w, Lam(t, Apps(Reference(t), Reference(b), Apps(Reference(w), Reference(c)))));
-    Expression result = Lam(x, Lam(y, Apps(Reference(x), Reference(b), Lam(z, Apps(Lam(w, Lam(t, Apps(Reference(t), Reference(b), Apps(Reference(w), Reference(c))))), Reference(z), Reference(y))))));
+    Expression expr = Lam(x, Lam(y, Apps(Ref(x), Ref(b), Lam(z, Apps(Ref(a), Ref(z), Ref(y))))));
+    Expression substExpr = Lam(w, Lam(t, Apps(Ref(t), Ref(b), Apps(Ref(w), Ref(c)))));
+    Expression result = Lam(x, Lam(y, Apps(Ref(x), Ref(b), Lam(z, Apps(Lam(w, Lam(t, Apps(Ref(t), Ref(b), Apps(Ref(w), Ref(c))))), Ref(z), Ref(y))))));
     assertEquals(result, expr.subst(a, substExpr));
   }
 
@@ -80,7 +82,7 @@ public class SubstTest extends TypeCheckingTestCase {
   public void substPiClosed() {
     // (x : Nat) -> A x [x := zero] = (x : Nat) -> A x
     SingleDependentLink x = singleParam("x", Nat());
-    Expression expr = Pi(x, Apps(Reference(new TypedBinding("A", Pi(Nat(), Universe(0)))), Reference(x)));
+    Expression expr = Pi(x, Apps(Ref(new TypedBinding("A", Pi(Nat(), Universe(0)))), Ref(x)));
     assertEquals(expr, expr.subst(x, Zero()));
   }
 
@@ -90,8 +92,8 @@ public class SubstTest extends TypeCheckingTestCase {
     SingleDependentLink x = singleParam("x", Nat());
     SingleDependentLink z = singleParam("z", Nat());
     Binding A = new TypedBinding("A", Pi(Nat(), Universe(0)));
-    Expression expr1 = Pi(x, Apps(Reference(A), Reference(z)));
-    Expression expr2 = Pi(x, Apps(Reference(A), Zero()));
+    Expression expr1 = Pi(x, Apps(Ref(A), Ref(z)));
+    Expression expr2 = Pi(x, Apps(Ref(A), Zero()));
     assertEquals(expr2, expr1.subst(z, Zero()));
   }
 
@@ -100,8 +102,8 @@ public class SubstTest extends TypeCheckingTestCase {
     // Nat -> A z [z := zero] = Nat -> A zero
     DependentLink z = param("z", Nat());
     Binding A = new TypedBinding("A", Pi(Nat(), Universe(0)));
-    Expression expr1 = Pi(Nat(), Apps(Reference(A), Reference(z)));
-    Expression expr2 = Pi(Nat(), Apps(Reference(A), Zero()));
+    Expression expr1 = Pi(Nat(), Apps(Ref(A), Ref(z)));
+    Expression expr2 = Pi(Nat(), Apps(Ref(A), Zero()));
     assertEquals(expr2, expr1.subst(z, Zero()));
   }
 
@@ -112,8 +114,8 @@ public class SubstTest extends TypeCheckingTestCase {
     SingleDependentLink z = singleParam("z", Nat());
     SingleDependentLink w = singleParam("w", Nat());
 
-    Expression expr1 = Let(lets(let("x", z, Reference(z)), let("y", w, Reference(a))), Reference(a));
-    Expression expr2 = Let(lets(let("x", z, Reference(z)), let("y", w, Zero())), Zero());
+    Expression expr1 = new LetExpression(lets(let("x", z, Ref(z)), let("y", w, Ref(a))), Ref(a));
+    Expression expr2 = new LetExpression(lets(let("x", z, Ref(z)), let("y", w, Zero())), Zero());
     assertEquals(expr2, expr1.subst(a, Zero()));
   }
 }

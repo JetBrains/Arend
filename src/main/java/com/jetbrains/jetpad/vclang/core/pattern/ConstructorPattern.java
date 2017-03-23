@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
@@ -13,9 +14,6 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.ConCall;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Reference;
 
 public class ConstructorPattern extends Pattern implements Abstract.ConstructorPattern {
   private final Constructor myConstructor;
@@ -55,7 +53,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
     List<Expression> params = new ArrayList<>();
     for (DependentLink link = myConstructor.getDataTypeParameters(); link.hasNext(); link = link.getNext()) {
       Expression param = subst.get(link);
-      params.add(param == null ? Reference(link) : param);
+      params.add(param == null ? new ReferenceExpression(link) : param);
     }
 
     DependentLink constructorParameters = myConstructor.getParameters();
@@ -83,7 +81,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
       link = link.getNext();
     }
     DependentLink.Helper.freeSubsts(constructorParameters, subst);
-    return ConCall(myConstructor, Sort.STD, params, arguments);
+    return new ConCallExpression(myConstructor, Sort.STD, params, arguments);
   }
 
   public ExprSubstitution getMatchedArguments(List<Expression> dataTypeArguments) {

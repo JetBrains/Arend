@@ -13,7 +13,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Interval;
 import static org.junit.Assert.assertEquals;
 
 public class PathsTest extends TypeCheckingTestCase {
@@ -26,15 +27,15 @@ public class PathsTest extends TypeCheckingTestCase {
   public void idpUntyped() {
     CheckTypeVisitor.Result idp = typeCheckExpr("\\lam {A : \\Type0} (a : A) => path (\\lam _ => a)", null);
     SingleDependentLink A = singleParam(false, Collections.singletonList("A"), Universe(new Level(0), new Level(LevelVariable.HVAR)));
-    SingleDependentLink a = singleParam("a", Reference(A));
+    SingleDependentLink a = singleParam("a", Ref(A));
     SingleDependentLink C = singleParam(null, Interval());
     List<Expression> pathArgs = new ArrayList<>();
-    pathArgs.add(Lam(C, Reference(A)));
-    pathArgs.add(Reference(a));
-    pathArgs.add(Reference(a));
-    Expression pathCall = ConCall(Prelude.PATH_CON, new Level(0), Level.INFINITY, pathArgs, Lam(C, Reference(a)));
+    pathArgs.add(Lam(C, Ref(A)));
+    pathArgs.add(Ref(a));
+    pathArgs.add(Ref(a));
+    Expression pathCall = ConCall(Prelude.PATH_CON, new Level(0), Level.INFINITY, pathArgs, Lam(C, Ref(a)));
     assertEquals(Lam(A, Lam(a, pathCall)).normalize(NormalizeVisitor.Mode.NF), idp.expression);
-    assertEquals(Pi(A, Pi(a, FunCall(Prelude.PATH_INFIX, new Level(0), Level.INFINITY, Reference(A), Reference(a), Reference(a)))).normalize(NormalizeVisitor.Mode.NF), idp.type.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Pi(A, Pi(a, FunCall(Prelude.PATH_INFIX, new Level(0), Level.INFINITY, Ref(A), Ref(a), Ref(a)))).normalize(NormalizeVisitor.Mode.NF), idp.type.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test

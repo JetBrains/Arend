@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FieldCall;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Reference;
 
 public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> implements ElimTreeNodeVisitor<ElimTreeNode,Boolean> {
   private final Map<Binding, Binding> mySubstitution;
@@ -139,7 +138,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   private ExprSubstitution getSubstitution() {
     ExprSubstitution substitution = new ExprSubstitution();
     for (Map.Entry<Binding, Binding> entry : mySubstitution.entrySet()) {
-      substitution.add(entry.getKey(), Reference(entry.getValue()));
+      substitution.add(entry.getKey(), new ReferenceExpression(entry.getValue()));
     }
     return substitution;
   }

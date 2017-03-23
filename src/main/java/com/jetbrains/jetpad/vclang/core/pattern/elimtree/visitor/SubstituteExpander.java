@@ -18,7 +18,6 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.toContext;
 import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.toSubstitution;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Reference;
 
 
 public class SubstituteExpander {
@@ -37,7 +36,7 @@ public class SubstituteExpander {
   public static void substituteExpand(ElimTreeNode tree, final ExprSubstitution subst, List<? extends Binding> context, SubstituteExpansionProcessor processor) {
     ExprSubstitution toCtx = new ExprSubstitution();
     for (Binding binding : context) {
-      toCtx.add(binding, Reference(binding));
+      toCtx.add(binding, new ReferenceExpression(binding));
     }
     new SubstituteExpander(processor, new ArrayList<>(context)).substituteExpand(tree, subst, toCtx);
   }
@@ -57,7 +56,7 @@ public class SubstituteExpander {
         for (ConCallExpression conCall : dType.getDefinition().getMatchedConstructors(dType)) {
           DependentLink constructorArgs = DependentLink.Helper.subst(conCall.getDefinition().getParameters(), toSubstitution(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments()));
           for (DependentLink link = constructorArgs; link.hasNext(); link = link.getNext()) {
-            conCall.addArgument(Reference(link));
+            conCall.addArgument(new ReferenceExpression(link));
           }
 
           List<Binding> tail = new ArrayList<>(myContext.subList(myContext.lastIndexOf(binding) + 1, myContext.size()));

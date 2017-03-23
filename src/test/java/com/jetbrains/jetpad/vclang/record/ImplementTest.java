@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
@@ -12,6 +11,8 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.ExpressionFactory.Universe;
+import static com.jetbrains.jetpad.vclang.ExpressionFactory.fromPiParameters;
 import static org.junit.Assert.assertEquals;
 
 public class ImplementTest extends TypeCheckingTestCase {
@@ -234,7 +235,7 @@ public class ImplementTest extends TypeCheckingTestCase {
     assertEquals(new Sort(1, 1), ((ClassDefinition) result.getDefinition("B")).getSort());
     assertEquals(new Sort(2, 1), ((ClassDefinition) result.getDefinition("C")).getSort());
     assertEquals(new Sort(0, 0), ((ClassDefinition) result.getDefinition("D")).getSort());
-    assertEquals(ExpressionFactory.Universe(Sort.PROP), fType.fromPiParameters(fParams));
+    assertEquals(Universe(Sort.PROP), fromPiParameters(fType, fParams));
   }
 
   @Test

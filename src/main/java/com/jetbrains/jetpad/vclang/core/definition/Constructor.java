@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
+import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
@@ -93,7 +93,7 @@ public class Constructor extends Definition implements Function {
       // TODO: Why substitution is not applied?
       arguments = new ArrayList<>();
       for (DependentLink link = myDataType.getParameters(); link.hasNext(); link = link.getNext()) {
-        arguments.add(ExpressionFactory.Reference(link));
+        arguments.add(new ReferenceExpression(link));
       }
     } else {
       ExprSubstitution subst = new ExprSubstitution();

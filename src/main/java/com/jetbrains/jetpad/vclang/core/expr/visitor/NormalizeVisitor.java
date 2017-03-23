@@ -16,9 +16,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.ConCall;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Tuple;
-
 public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mode, Expression>  {
   private final Normalizer myNormalizer;
 
@@ -104,7 +101,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       for (int i = 0; i < take; i++) {
         parameters.add(args.get(i));
       }
-      expr = ConCall(expr.getDefinition(), expr.getSortArgument(), parameters, args.subList(take, args.size()));
+      expr = new ConCallExpression(expr.getDefinition(), expr.getSortArgument(), parameters, args.subList(take, args.size()));
     }
 
     return visitCallableCall(expr, expr.getSortArgument().toLevelSubstitution(), mode);
@@ -242,7 +239,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     for (Expression field : expr.getFields()) {
       fields.add(field.accept(this, mode));
     }
-    return Tuple(fields, expr.getType());
+    return new TupleExpression(fields, expr.getType());
   }
 
   @Override
@@ -265,13 +262,13 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     if (exprNorm != null) {
       return exprNorm.getFields().get(expr.getField()).accept(this, mode);
     } else {
-      return mode == Mode.NF || mode == Mode.HUMAN_NF ? ExpressionFactory.Proj(expr.getExpression().accept(this, mode), expr.getField()) : expr;
+      return mode == Mode.NF || mode == Mode.HUMAN_NF ? new ProjExpression(expr.getExpression().accept(this, mode), expr.getField()) : expr;
     }
   }
 
   @Override
   public Expression visitNew(NewExpression expr, Mode mode) {
-    return mode == Mode.WHNF ? expr : ExpressionFactory.New(visitClassCall(expr.getExpression(), mode));
+    return mode == Mode.WHNF ? expr : new NewExpression(visitClassCall(expr.getExpression(), mode));
   }
 
   @Override

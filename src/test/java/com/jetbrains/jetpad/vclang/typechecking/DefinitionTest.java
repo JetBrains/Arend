@@ -10,8 +10,9 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.ExpressionFactory.Pi;
+import static com.jetbrains.jetpad.vclang.ExpressionFactory.fromPiParameters;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Nat;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Pi;
 import static org.junit.Assert.*;
 
 public class DefinitionTest extends TypeCheckingTestCase {
@@ -37,7 +38,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     assertTrue(typedDef.status() == Definition.TypeCheckingStatus.NO_ERRORS);
     List<DependentLink> params = new ArrayList<>();
     Expression type = typedDef.getTypeWithParams(params, Sort.ZERO);
-    assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), type.fromPiParameters(params));
+    assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), fromPiParameters(type, params));
   }
 
   @Test

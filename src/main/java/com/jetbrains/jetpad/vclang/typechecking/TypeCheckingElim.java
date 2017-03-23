@@ -10,9 +10,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
-import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
+import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.StripVisitor;
@@ -34,8 +32,6 @@ import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.*;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.core.pattern.Utils.processImplicit;
 
 public class TypeCheckingElim {
@@ -152,7 +148,7 @@ public class TypeCheckingElim {
 
     if (error != null) {
       myVisitor.getErrorReporter().report(error);
-      expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+      expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
       return null;
     }
 
@@ -162,7 +158,7 @@ public class TypeCheckingElim {
     } else {
       elimExprs = new ArrayList<>();
       for (DependentLink link = eliminatingArgs; link.hasNext(); link = link.getNext()) {
-        elimExprs.add(Reference(link));
+        elimExprs.add(new ReferenceExpression(link));
       }
     }
     if (elimExprs == null) return null;
@@ -176,7 +172,7 @@ public class TypeCheckingElim {
           error = new LocalTypeCheckingError("Data " + dataCall.getDefinition().getName() + " is truncated to the universe "
             + dataCall.getType() + " which must be not less than the universe of " +
             expectedType + " - the type of eliminator", expr);
-          expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+          expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
           myVisitor.getErrorReporter().report(error);
           wasError = true;
         }
@@ -214,7 +210,7 @@ public class TypeCheckingElim {
 
           if (patternResult instanceof ExpandPatternErrorResult) {
             assert j <= elimExprs.size();
-            expr.getExpressions().get(j - 1).setWellTyped(myVisitor.getContext(), Error(null, ((ExpandPatternErrorResult) patternResult).error));
+            expr.getExpressions().get(j - 1).setWellTyped(myVisitor.getContext(), new ErrorExpression(null, ((ExpandPatternErrorResult) patternResult).error));
             wasError = true;
             continue clause_loop;
           }
@@ -264,7 +260,7 @@ public class TypeCheckingElim {
     } else if (elimTreeResult instanceof PatternsToElimTreeConversion.EmptyReachableResult) {
       for (int i : ((PatternsToElimTreeConversion.EmptyReachableResult) elimTreeResult).reachable) {
         error = new LocalTypeCheckingError("Empty clause is reachable", expr.getClauses().get(i));
-        expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+        expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
         myVisitor.getErrorReporter().report(error);
       }
       return null;
@@ -289,7 +285,7 @@ public class TypeCheckingElim {
 
     LocalTypeCheckingError error = new LocalTypeCheckingError("\\elim can be applied only to a local variable", expression);
     myVisitor.getErrorReporter().report(error);
-    expression.setWellTyped(myVisitor.getContext(), Error(null, error));
+    expression.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
     return null;
   }
 
@@ -312,7 +308,7 @@ public class TypeCheckingElim {
         if (!argsBindings.contains(refExpr.getBinding())) {
           error = new LocalTypeCheckingError("\\elim can be applied only to arguments of the innermost definition", var);
           myVisitor.getErrorReporter().report(error);
-          var.setWellTyped(argsBindings, Error(null, error));
+          var.setWellTyped(argsBindings, new ErrorExpression(null, error));
           return null;
         }
         eliminatingIndices.add(argsBindings.indexOf(refExpr.getBinding()));
@@ -320,14 +316,14 @@ public class TypeCheckingElim {
         if (eliminatingIndices.size() >= 2 && eliminatingIndices.get(eliminatingIndices.size() - 2) >= eliminatingIndices.get(eliminatingIndices.size() - 1)) {
           error = new LocalTypeCheckingError("Variable elimination must be in the order of variable introduction", var);
           myVisitor.getErrorReporter().report(error);
-          var.setWellTyped(argsBindings, Error(null, error));
+          var.setWellTyped(argsBindings, new ErrorExpression(null, error));
           return null;
         }
 
         if (refExpr.getType().normalize(NormalizeVisitor.Mode.WHNF).toDataCall() == null) {
           error = new LocalTypeCheckingError("Elimination is allowed only for a data type variable.", var);
           myVisitor.getErrorReporter().report(error);
-          var.setWellTyped(argsBindings, Error(null, error));
+          var.setWellTyped(argsBindings, new ErrorExpression(null, error));
           return null;
         }
         elimExprs.add(refExpr);
@@ -368,14 +364,14 @@ public class TypeCheckingElim {
     if (pattern == null) {
       links.append(new TypedDependentLink(true, binding.getName(), binding.getType(), EmptyDependentLink.getInstance()));
       myVisitor.getContext().add(links.getLast());
-      return new ExpandPatternOKResult(Reference(links.getLast()), new NamePattern(links.getLast()));
+      return new ExpandPatternOKResult(new ReferenceExpression(links.getLast()), new NamePattern(links.getLast()));
     } else if (pattern instanceof Abstract.NamePattern) {
       String name = ((Abstract.NamePattern) pattern).getName() == null ? binding.getName() : ((Abstract.NamePattern) pattern).getName();
       links.append(new TypedDependentLink(true, name, binding.getType(), EmptyDependentLink.getInstance()));
       NamePattern namePattern = new NamePattern(links.getLast());
       myVisitor.getContext().add(links.getLast());
       pattern.setWellTyped(namePattern);
-      return new ExpandPatternOKResult(Reference(links.getLast()), namePattern);
+      return new ExpandPatternOKResult(new ReferenceExpression(links.getLast()), namePattern);
     } else if (pattern instanceof Abstract.AnyConstructorPattern || pattern instanceof Abstract.ConstructorPattern) {
       LocalTypeCheckingError error = null;
 
@@ -414,7 +410,7 @@ public class TypeCheckingElim {
         AnyConstructorPattern newPattern = new AnyConstructorPattern(param);
         pattern.setWellTyped(newPattern);
         myVisitor.getContext().add(param);
-        return new ExpandPatternOKResult(Reference(param), newPattern);
+        return new ExpandPatternOKResult(new ReferenceExpression(param), newPattern);
       }
 
       Abstract.ConstructorPattern constructorPattern = (Abstract.ConstructorPattern) pattern;
@@ -494,7 +490,7 @@ public class TypeCheckingElim {
 
       ConstructorPattern result = new ConstructorPattern(constructor, new Patterns(resultPatterns));
       pattern.setWellTyped(result);
-      return new ExpandPatternOKResult(ConCall(constructor, dataCall.getSortArgument(), matchedParameters, arguments), result);
+      return new ExpandPatternOKResult(new ConCallExpression(constructor, dataCall.getSortArgument(), matchedParameters, arguments), result);
     } else {
       throw new IllegalStateException();
     }

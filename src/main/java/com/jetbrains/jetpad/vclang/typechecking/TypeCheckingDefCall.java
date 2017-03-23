@@ -3,10 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
-import com.jetbrains.jetpad.vclang.core.expr.ClassCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.InferenceReferenceExpression;
+import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
@@ -22,9 +19,6 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.List;
-
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Error;
 
 public class TypeCheckingDefCall {
   private final CheckTypeVisitor myVisitor;
@@ -53,7 +47,7 @@ public class TypeCheckingDefCall {
     }
     if (!typeCheckedDefinition.status().headerIsOK()) {
       LocalTypeCheckingError error = new HasErrors(definition, expr);
-      expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+      expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
       myVisitor.getErrorReporter().report(error);
       return null;
     } else {
@@ -95,7 +89,7 @@ public class TypeCheckingDefCall {
           if (resolvedDefinition instanceof Abstract.ClassViewField) {
             assert typeCheckedDefinition instanceof ClassField;
             Abstract.ClassView ownClassView = ((Abstract.ClassViewField) resolvedDefinition).getOwnView();
-            ClassCallExpression classCall = ClassCall(typeCheckedDefinition.getThisClass(), Sort.generateInferVars(myVisitor.getEquations(), expr));
+            ClassCallExpression classCall = new ClassCallExpression(typeCheckedDefinition.getThisClass(), Sort.generateInferVars(myVisitor.getEquations(), expr));
             thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable(typeCheckedDefinition.getThisClass().getName() + "-inst", classCall, expr, 0, ownClassView, (ClassField) myVisitor.getTypecheckingState().getTypechecked(ownClassView.getClassifyingField())), myVisitor.getEquations());
           } else {
             LocalTypeCheckingError error;
@@ -104,7 +98,7 @@ public class TypeCheckingDefCall {
             } else {
               error = new LocalTypeCheckingError("Non-static definitions are not allowed in a static context", expr);
             }
-            expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+            expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
             myVisitor.getErrorReporter().report(error);
             return null;
           }
@@ -130,7 +124,7 @@ public class TypeCheckingDefCall {
         Abstract.Definition member = myVisitor.getDynamicNamespaceProvider().forClass(classDefinition.getAbstractDefinition()).resolveName(name);
         if (member == null) {
           MemberNotFoundError error = new MemberNotFoundError(classDefinition, name, false, expr);
-          expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+          expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
           myVisitor.getErrorReporter().report(error);
           return null;
         }
@@ -146,14 +140,14 @@ public class TypeCheckingDefCall {
 
       if (typeCheckedDefinition.getThisClass() == null) {
         LocalTypeCheckingError error = new LocalTypeCheckingError("Static definitions are not allowed in a non-static context", expr);
-        expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+        expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
         myVisitor.getErrorReporter().report(error);
         return null;
       }
       if (!classDefinition.isSubClassOf(typeCheckedDefinition.getThisClass())) {
-        ClassCallExpression classCall = ClassCall(typeCheckedDefinition.getThisClass(), Sort.generateInferVars(myVisitor.getEquations(), expr));
+        ClassCallExpression classCall = new ClassCallExpression(typeCheckedDefinition.getThisClass(), Sort.generateInferVars(myVisitor.getEquations(), expr));
         LocalTypeCheckingError error = new TypeMismatchError(classCall, type, left);
-        expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+        expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
         myVisitor.getErrorReporter().report(error);
         return null;
       }
@@ -182,13 +176,13 @@ public class TypeCheckingDefCall {
         constructor = dataDefinition.getConstructor(name);
         if (constructor == null && !args.isEmpty()) {
           LocalTypeCheckingError error = new LocalTypeCheckingError("Cannot find constructor '" + name + "' of data type '" + dataDefinition.getName() + "'", expr);
-          expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+          expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
           myVisitor.getErrorReporter().report(error);
           return null;
         }
         if (constructor != null && !constructor.status().headerIsOK()) {
           LocalTypeCheckingError error = new HasErrors(constructor.getAbstractDefinition(), expr);
-          expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+          expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
           myVisitor.getErrorReporter().report(error);
           return null;
         }
@@ -226,7 +220,7 @@ public class TypeCheckingDefCall {
         member = myVisitor.getStaticNamespaceProvider().forDefinition(leftDefinition.getAbstractDefinition()).resolveName(name);
         if (member == null) {
           MemberNotFoundError error = new MemberNotFoundError(leftDefinition, name, true, expr);
-          expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+          expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
           myVisitor.getErrorReporter().report(error);
           return null;
         }
@@ -238,7 +232,7 @@ public class TypeCheckingDefCall {
         leftDefinition = result.expression.toDefCall().getDefinition();
       } else {
         LocalTypeCheckingError error = new LocalTypeCheckingError("Expected a definition", expr);
-        expr.setWellTyped(myVisitor.getContext(), Error(result.expression, error));
+        expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
         myVisitor.getErrorReporter().report(error);
         return null;
       }
@@ -253,7 +247,7 @@ public class TypeCheckingDefCall {
         }
         if (member == null) {
           MemberNotFoundError error = new MemberNotFoundError(leftDefinition, name, expr);
-          expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+          expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
           myVisitor.getErrorReporter().report(error);
           return null;
         }
@@ -275,7 +269,7 @@ public class TypeCheckingDefCall {
 
     if (thisExpr == null && definition instanceof ClassField) {
       LocalTypeCheckingError error = new LocalTypeCheckingError("Field call without a class instance", expr);
-      expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+      expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
       myVisitor.getErrorReporter().report(error);
       return null;
     }
@@ -295,6 +289,6 @@ public class TypeCheckingDefCall {
     if (classCall == null) {
       return null;
     }
-    return findParent(classCall.getDefinition(), definition, FieldCall(parentField, result));
+    return findParent(classCall.getDefinition(), definition, ExpressionFactory.FieldCall(parentField, result));
   }
 }

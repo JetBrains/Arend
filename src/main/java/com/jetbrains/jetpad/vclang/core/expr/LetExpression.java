@@ -1,13 +1,9 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Let;
 
 public class LetExpression extends Expression {
   private final List<LetClause> myClauses;
@@ -25,7 +21,7 @@ public class LetExpression extends Expression {
       clauses.addAll(expression.toLet().getClauses());
       expression = expression.toLet().getExpression();
     }
-    return Let(clauses, expression);
+    return new LetExpression(clauses, expression);
   }
 
   public List<LetClause> getClauses() {
@@ -44,19 +40,6 @@ public class LetExpression extends Expression {
   @Override
   public LetExpression toLet() {
     return this;
-  }
-
-  private <T extends Binding> List<T> getBindingsFreeIn(List<T> bindings, Expression expr) {
-    List<T> result = Collections.emptyList();
-    for (T binding : bindings) {
-      if (expr.findBinding(binding)) {
-        if (result.isEmpty()) {
-          result = new ArrayList<>(bindings.size());
-        }
-        result.add(binding);
-      }
-    }
-    return result;
   }
 
   @Override

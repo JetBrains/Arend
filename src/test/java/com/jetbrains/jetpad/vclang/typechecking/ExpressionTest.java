@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 import static org.hamcrest.Matchers.*;
@@ -44,21 +45,21 @@ public class ExpressionTest extends TypeCheckingTestCase {
   public void typeCheckingId() {
     // \X x. x : (X : Type0) -> X -> X
     SingleDependentLink param = singleParam("X", Universe(0));
-    typeCheckExpr("\\lam X x => x", Pi(param, Pi(Reference(param), Reference(param))));
+    typeCheckExpr("\\lam X x => x", Pi(param, Pi(Ref(param), Ref(param))));
   }
 
   @Test
   public void typeCheckingIdSplit() {
     // \X x. x : (X : Type0) -> X -> X
     SingleDependentLink param = singleParam("X", Universe(0));
-    typeCheckExpr("\\lam X => \\lam x => x", Pi(param, Pi(Reference(param), Reference(param))));
+    typeCheckExpr("\\lam X => \\lam x => x", Pi(param, Pi(Ref(param), Ref(param))));
   }
 
   @Test
   public void typeCheckingIdError() {
     // \X x. X : (X : Type0) -> X -> X
     SingleDependentLink param = singleParam("X", Universe(0));
-    typeCheckExpr("\\lam X x => X", Pi(param, Pi(Reference(param), Reference(param))), 1);
+    typeCheckExpr("\\lam X x => X", Pi(param, Pi(Ref(param), Ref(param))), 1);
     assertTrue(errorList.get(0) instanceof TypeCheckingError && ((TypeCheckingError) errorList.get(0)).localError instanceof TypeMismatchError);
   }
 
@@ -82,12 +83,12 @@ public class ExpressionTest extends TypeCheckingTestCase {
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("T", Pi(Nat(), Universe(0))));
     SingleDependentLink x_ = singleParam("x", Nat());
-    context.add(new TypedBinding("Q", Pi(x_, Pi(singleParamExpr(null, Apps(Reference(context.get(0)), Reference(x_))), Universe(0)))));
+    context.add(new TypedBinding("Q", Pi(x_, Pi(singleParam(null, Apps(Ref(context.get(0)), Ref(x_))), Universe(0)))));
 
     SingleDependentLink x = singleParam("x", Nat());
-    SingleDependentLink f = singleParam("f", Pi(x, Apps(Reference(context.get(0)), Reference(x))));
+    SingleDependentLink f = singleParam("f", Pi(x, Apps(Ref(context.get(0)), Ref(x))));
     SingleDependentLink x2 = singleParam("x", Nat());
-    Expression type = Pi(f, Pi(Pi(x2, Arrow(Apps(Reference(context.get(0)), Reference(x2)), Apps(Reference(context.get(1)), Reference(x2), Apps(Reference(f), Reference(x2))))), Apps(Reference(context.get(1)), Zero(), Apps(Reference(f), Zero()))));
+    Expression type = Pi(f, Pi(Pi(x2, Pi(Apps(Ref(context.get(0)), Ref(x2)), Apps(Ref(context.get(1)), Ref(x2), Apps(Ref(f), Ref(x2))))), Apps(Ref(context.get(1)), Zero(), Apps(Ref(f), Zero()))));
 
     typeCheckExpr(context, expr, type);
   }
@@ -97,7 +98,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("X", Pi(Nat(), Universe(0))));
     SingleDependentLink link = singleParam("t", Nat());
-    context.add(new TypedBinding("Y", Pi(link, Pi(singleParamExpr("x", Apps(Reference(context.get(0)), Reference(link))), Universe(0)))));
+    context.add(new TypedBinding("Y", Pi(link, Pi(singleParam("x", Apps(Ref(context.get(0)), Ref(link))), Universe(0)))));
     CheckTypeVisitor.Result typeResult = typeCheckExpr(context,
           "\\Pi (f : \\Pi (g : Nat -> Nat) -> X (g zero)) " +
           "-> (\\Pi (z : (Nat -> Nat) -> Nat) -> Y (z (\\lam _ => 0)) (f (\\lam x => z (\\lam _ => x)))) " +
@@ -149,7 +150,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
   public void typedLambdaExpectedType() {
     // \(X : Type0) x. x : (X : Type0) (X) -> X
     SingleDependentLink link = singleParam("X", Universe(0));
-    typeCheckExpr("\\lam (X : \\oo-Type0) x => x", Pi(link, Pi(singleParam(null, Reference(link)), Reference(link))));
+    typeCheckExpr("\\lam (X : \\oo-Type0) x => x", Pi(link, Pi(singleParam(null, Ref(link)), Ref(link))));
   }
 
   @Test

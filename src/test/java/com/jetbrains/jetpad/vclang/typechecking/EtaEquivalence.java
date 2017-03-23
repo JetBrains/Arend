@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEqua
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Reference;
+import static com.jetbrains.jetpad.vclang.ExpressionFactory.Ref;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -20,7 +20,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
     assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));
     assertTrue(result.getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) result.getDefinition("f");
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Reference(f.getParameters()), null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Ref(f.getParameters()), null));
   }
 
   @Test
@@ -31,7 +31,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
     assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));
     assertTrue(result.getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) result.getDefinition("f");
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.GE, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Reference(f.getParameters()), null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.GE, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Ref(f.getParameters()), null));
   }
 
   @Test
@@ -42,7 +42,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
     assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));
     assertTrue(result.getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) result.getDefinition("f");
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Reference(f.getParameters()), null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Ref(f.getParameters()), null));
   }
   @Test
   public void pathEtaLeftTest() {

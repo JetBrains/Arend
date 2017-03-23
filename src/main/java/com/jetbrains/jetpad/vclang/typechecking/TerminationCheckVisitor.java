@@ -17,8 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Reference;
-
 public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean> implements ElimTreeNodeVisitor<Void, Boolean> {
   private final Definition myDef;
   private final List<Expression> myPatterns;
@@ -29,7 +27,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
     myPatterns = new ArrayList<>();
     for (DependentLink parameter : allParameters) {
       for (; parameter.hasNext(); parameter = parameter.getNext()) {
-        myPatterns.add(Reference(parameter));
+        myPatterns.add(new ReferenceExpression(parameter));
       }
     }
   }

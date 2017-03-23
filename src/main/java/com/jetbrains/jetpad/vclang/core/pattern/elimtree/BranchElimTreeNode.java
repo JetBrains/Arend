@@ -8,7 +8,7 @@ import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
+import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
@@ -21,7 +21,6 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.toSubstitution;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.ConCall;
 
 public class BranchElimTreeNode extends ElimTreeNode {
   private final Binding myReference;
@@ -70,10 +69,10 @@ public class BranchElimTreeNode extends ElimTreeNode {
 
     List<Expression> arguments = new ArrayList<>();
     for (DependentLink link = constructorArgs; link.hasNext(); link = link.getNext()) {
-      arguments.add(ExpressionFactory.Reference(link));
+      arguments.add(new ReferenceExpression(link));
     }
 
-    List<TypedBinding> tailBindings = new ExprSubstitution(myReference, ConCall(constructor, dataCall.getSortArgument(), new ArrayList<>(dataTypeArguments), arguments)).extendBy(myContextTail);
+    List<TypedBinding> tailBindings = new ExprSubstitution(myReference, new ConCallExpression(constructor, dataCall.getSortArgument(), new ArrayList<>(dataTypeArguments), arguments)).extendBy(myContextTail);
     ConstructorClause result = new ConstructorClause(constructor, constructorArgs, tailBindings, this);
     myClauses.put(constructor, result);
     return result;

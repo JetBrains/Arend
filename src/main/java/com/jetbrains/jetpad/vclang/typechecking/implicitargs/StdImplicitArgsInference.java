@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVaria
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.TypedSingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
@@ -71,8 +72,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       if (result instanceof CheckTypeVisitor.DefCallResult) {
         CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
         if (defCallResult.getDefinition() == Prelude.PATH_CON && defCallResult.getArguments().isEmpty()) {
-          SingleDependentLink lamParam = singleParam("i", Interval());
-          Type type = ExpressionFactory.Universe(new Sort(defCallResult.getSortArgument().getPLevel(), defCallResult.getSortArgument().getHLevel().add(1)));
+          SingleDependentLink lamParam = new TypedSingleDependentLink(true, "i", Interval());
+          Type type = new UniverseExpression(new Sort(defCallResult.getSortArgument().getPLevel(), defCallResult.getSortArgument().getHLevel().add(1)));
           Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", type, 1, Prelude.PATH_CON, fun), myVisitor.getEquations());
           result = result.applyExpressions(Collections.singletonList(new LamExpression(new Level(0), lamParam, binding)));
 

@@ -1,7 +1,10 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.expr.*;
+import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
+import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
@@ -9,8 +12,6 @@ import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.*;
-
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.ConCall;
 
 public class DataDefinition extends Definition {
   private List<Constructor> myConstructors;
@@ -81,7 +82,7 @@ public class DataDefinition extends Definition {
         matchedParameters = dataCall.getDefCallArguments();
       }
 
-      result.add(ConCall(constructor, dataCall.getSortArgument(), new ArrayList<>(matchedParameters), new ArrayList<>()));
+      result.add(new ConCallExpression(constructor, dataCall.getSortArgument(), new ArrayList<>(matchedParameters), new ArrayList<>()));
     }
     return result;
   }
@@ -133,12 +134,12 @@ public class DataDefinition extends Definition {
   @Override
   public DataCallExpression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> arguments) {
     if (thisExpr == null) {
-      return ExpressionFactory.DataCall(this, sortArgument, arguments);
+      return new DataCallExpression(this, sortArgument, arguments);
     } else {
       List<Expression> args = new ArrayList<>(arguments.size() + 1);
       args.add(thisExpr);
       args.addAll(arguments);
-      return ExpressionFactory.DataCall(this, sortArgument, args);
+      return new DataCallExpression(this, sortArgument, args);
     }
   }
 

@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.core.definition;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
@@ -12,9 +13,6 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.ClassCall;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.param;
 
 public class ClassDefinition extends Definition {
   private FieldSet myFieldSet;
@@ -42,7 +40,7 @@ public class ClassDefinition extends Definition {
   }
 
   public void updateSorts() {
-    myFieldSet.updateSorts(ClassCall(this, Sort.STD, myFieldSet));
+    myFieldSet.updateSorts(new ClassCallExpression(this, Sort.STD, myFieldSet));
   }
 
   public Sort getSort() {
@@ -68,7 +66,7 @@ public class ClassDefinition extends Definition {
   @Override
   public Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument) {
     if (getThisClass() != null) {
-      params.add(param(ClassCall(getThisClass(), sortArgument)));
+      params.add(ExpressionFactory.parameter(null, new ClassCallExpression(getThisClass(), sortArgument)));
     }
     return new UniverseExpression(getSort().subst(sortArgument.toLevelSubstitution()));
   }
@@ -84,7 +82,7 @@ public class ClassDefinition extends Definition {
       fieldSet = myFieldSet;
     }
 
-    ClassCallExpression classCall = ClassCall(this, sortArgument, fieldSet);
+    ClassCallExpression classCall = new ClassCallExpression(this, sortArgument, fieldSet);
     if (thisExpr != null) {
       fieldSet.updateSorts(classCall);
     }
@@ -101,7 +99,7 @@ public class ClassDefinition extends Definition {
     assert myEnclosingThisField == null;
     super.setThisClass(enclosingClass);
     if (enclosingClass != null) {
-      myEnclosingThisField = new ClassField(null, ClassCall(enclosingClass, Sort.STD), this, param("\\this", ClassCall(this, Sort.STD)));
+      myEnclosingThisField = new ClassField(null, new ClassCallExpression(enclosingClass, Sort.STD), this, ExpressionFactory.parameter("\\this", new ClassCallExpression(this, Sort.STD)));
       myEnclosingThisField.setThisClass(this);
       myFieldSet.addField(myEnclosingThisField, enclosingClass.getSort());
     }

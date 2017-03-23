@@ -13,6 +13,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 
@@ -56,10 +57,10 @@ public class DataIndicesTest extends TypeCheckingTestCase {
         "  | NatVec (suc n) => cons Nat (NatVec n)");
     DataDefinition data = (DataDefinition) result.getDefinition("NatVec");
     assertEquals(DataCall(data, Sort.ZERO, Zero()), data.getConstructor("nil").getTypeWithParams(new ArrayList<>(), Sort.ZERO));
-    SingleDependentLink param = singleParam(false, vars("n"), Nat());
+    SingleDependentLink param = singleParams(false, vars("n"), Nat());
     List<DependentLink> consParams = new ArrayList<>();
     Expression consType = data.getConstructor("cons").getTypeWithParams(consParams, Sort.ZERO);
-    assertEquals(Pi(param, Pi(Nat(), Pi(DataCall(data, Sort.ZERO, Reference(param)), DataCall(data, Sort.ZERO, Suc(Reference(param)))))), consType.fromPiParameters(consParams));
+    assertEquals(Pi(param, Pi(Nat(), Pi(DataCall(data, Sort.ZERO, Ref(param)), DataCall(data, Sort.ZERO, Suc(Ref(param)))))), fromPiParameters(consType, consParams));
   }
 
   @Test

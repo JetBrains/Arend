@@ -7,10 +7,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.LetClause;
-import com.jetbrains.jetpad.vclang.core.expr.PiExpression;
+import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
@@ -21,6 +18,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collections;
 
+import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static org.junit.Assert.*;
@@ -31,8 +29,8 @@ public class ComparisonTest extends TypeCheckingTestCase {
     SingleDependentLink x = singleParam("x", Nat());
     SingleDependentLink y = singleParam("y", Nat());
     SingleDependentLink xy = singleParam(true, vars("x", "y"), Nat());
-    Expression expr1 = Lam(xy, Reference(xy));
-    Expression expr2 = Lam(x, Lam(y, Reference(x)));
+    Expression expr1 = Lam(xy, Ref(xy));
+    Expression expr2 = Lam(x, Lam(y, Ref(x)));
     assertEquals(expr1, expr2);
   }
 
@@ -41,8 +39,8 @@ public class ComparisonTest extends TypeCheckingTestCase {
     SingleDependentLink x = singleParam("x", Nat());
     SingleDependentLink yz = singleParam(true, vars("y", "z"), Nat());
     SingleDependentLink xyz = singleParam(true, vars("x", "y", "z"), Nat());
-    Expression expr1 = Lam(xyz, Reference(xyz.getNext()));
-    Expression expr2 = Lam(x, Lam(yz, Reference(yz)));
+    Expression expr1 = Lam(xyz, Ref(xyz.getNext()));
+    Expression expr2 = Lam(x, Lam(yz, Ref(yz)));
     assertEquals(expr1, expr2);
   }
 
@@ -50,8 +48,8 @@ public class ComparisonTest extends TypeCheckingTestCase {
   public void lambdasNotEqual() {
     SingleDependentLink x = singleParam("x", Nat());
     SingleDependentLink xy = singleParam(true, vars("x", "y"), Nat());
-    Expression expr1 = Lam(xy, Reference(xy.getNext()));
-    Expression expr2 = Lam(x, Reference(x));
+    Expression expr1 = Lam(xy, Ref(xy.getNext()));
+    Expression expr2 = Lam(x, Ref(x));
     assertNotEquals(expr1, expr2);
   }
 
@@ -61,8 +59,8 @@ public class ComparisonTest extends TypeCheckingTestCase {
     SingleDependentLink y = singleParam("y", Nat());
     SingleDependentLink yImpl = singleParam(false, vars("y"), Nat());
     SingleDependentLink xImpl = singleParam(false, vars("x"), Nat());
-    Expression expr1 = Lam(x, Lam(yImpl, Reference(x)));
-    Expression expr2 = Lam(xImpl, Lam(y, Reference(xImpl)));
+    Expression expr1 = Lam(x, Lam(yImpl, Ref(x)));
+    Expression expr2 = Lam(xImpl, Lam(y, Ref(xImpl)));
     assertEquals(expr1, expr2);
   }
 
@@ -73,8 +71,8 @@ public class ComparisonTest extends TypeCheckingTestCase {
     SingleDependentLink xy = singleParam(true, vars("x", "y"), Nat());
     SingleDependentLink _Impl = singleParam(false, Collections.singletonList(null), Nat());
     Binding A = new TypedBinding("A", Pi(Nat(), Pi(Nat(), Universe(0))));
-    Expression expr1 = Pi(xy, Pi(_Impl, Apps(Reference(A), Reference(xy), Reference(xy.getNext()))));
-    Expression expr2 = Pi(x, Pi(y, Pi(_Impl, Apps(Reference(A), Reference(x), Reference(y)))));
+    Expression expr1 = Pi(xy, Pi(_Impl, Apps(Ref(A), Ref(xy), Ref(xy.getNext()))));
+    Expression expr2 = Pi(x, Pi(y, Pi(_Impl, Apps(Ref(A), Ref(x), Ref(y)))));
     assertEquals(expr1, expr2);
   }
 
@@ -124,46 +122,46 @@ public class ComparisonTest extends TypeCheckingTestCase {
   public void compareNotLeq() {
     SingleDependentLink X0 = singleParam("X", Universe(0));
     SingleDependentLink X1 = singleParam("X", Universe(1));
-    Expression expr1 = Pi(X0, Pi(singleParam(null, Reference(X0)), Reference(X0)));
-    Expression expr2 = Pi(X1, Pi(singleParam(null, Reference(X1)), Reference(X1)));
+    Expression expr1 = Pi(X0, Pi(singleParam(null, Ref(X0)), Ref(X0)));
+    Expression expr2 = Pi(X1, Pi(singleParam(null, Ref(X1)), Ref(X1)));
     assertFalse(compare(expr1, expr2, Equations.CMP.LE));
   }
 
   @Test
   public void letsNotEqual() {
     SingleDependentLink y = singleParam("y", Nat());
-    LetClause let1 = let("x", y, Nat(), Reference(y));
-    Expression expr1 = Let(lets(let1), Apps(Reference(let1), Zero()));
+    LetClause let1 = let("x", y, Nat(), Ref(y));
+    Expression expr1 = new LetExpression(lets(let1), Apps(Ref(let1), Zero()));
     SingleDependentLink y_ = singleParam("y", Universe(0));
-    LetClause let2 = let("x", y_, Universe(0), Reference(y_));
-    Expression expr2 = Let(lets(let2), Apps(Reference(let2), Nat()));
+    LetClause let2 = let("x", y_, Universe(0), Ref(y_));
+    Expression expr2 = new LetExpression(lets(let2), Apps(Ref(let2), Nat()));
     assertNotEquals(expr1, expr2);
   }
 
   @Test
   public void letsTelesEqual() {
-    DependentLink A = param(Universe(0));
-    SingleDependentLink yz = singleParam(true, vars("y", "z"), Reference(A));
-    SingleDependentLink y = singleParam("y", Reference(A));
-    SingleDependentLink z = singleParam("z", Reference(A));
-    LetClause let1 = let("x", yz, Universe(0), Reference(A));
-    Expression expr1 = Let(lets(let1), Apps(Reference(let1), Zero()));
-    LetClause let2 = let("x", Arrays.asList(y, z), Universe(0), Reference(A));
-    Expression expr2 = Let(lets(let2), Apps(Reference(let2), Zero()));
+    DependentLink A = param(null, Universe(0));
+    SingleDependentLink yz = singleParam(true, vars("y", "z"), Ref(A));
+    SingleDependentLink y = singleParam("y", Ref(A));
+    SingleDependentLink z = singleParam("z", Ref(A));
+    LetClause let1 = let("x", yz, Universe(0), Ref(A));
+    Expression expr1 = new LetExpression(lets(let1), Apps(Ref(let1), Zero()));
+    LetClause let2 = let("x", Arrays.asList(y, z), Universe(0), Ref(A));
+    Expression expr2 = new LetExpression(lets(let2), Apps(Ref(let2), Zero()));
     assertEquals(expr1, expr2);
     assertEquals(expr2, expr1);
   }
 
   @Test
   public void letsTelesNotEqual() {
-    DependentLink A = param(Universe(0));
-    SingleDependentLink yz = singleParam(true, vars("y", "z"), Reference(A));
-    SingleDependentLink y = singleParam("y", Reference(A));
-    SingleDependentLink z = singleParam("z", Reference(y));
-    LetClause let1 = let("x", yz, Universe(0), Reference(A));
-    Expression expr1 = Let(lets(let1), Apps(Reference(let1), Zero()));
-    LetClause let2 = let("x", Arrays.asList(y, z), Universe(0), Reference(A));
-    Expression expr2 = Let(lets(let2), Apps(Reference(let2), Zero()));
+    DependentLink A = param(null, Universe(0));
+    SingleDependentLink yz = singleParam(true, vars("y", "z"), Ref(A));
+    SingleDependentLink y = singleParam("y", Ref(A));
+    SingleDependentLink z = singleParam("z", Ref(y));
+    LetClause let1 = let("x", yz, Universe(0), Ref(A));
+    Expression expr1 = new LetExpression(lets(let1), Apps(Ref(let1), Zero()));
+    LetClause let2 = let("x", Arrays.asList(y, z), Universe(0), Ref(A));
+    Expression expr2 = new LetExpression(lets(let2), Apps(Ref(let2), Zero()));
     assertNotEquals(expr1, expr2);
     assertNotEquals(expr2, expr1);
   }
@@ -171,16 +169,16 @@ public class ComparisonTest extends TypeCheckingTestCase {
   @Test
   public void letsNotEquiv() {
     LetClause let1 = let("x", EmptyDependentLink.getInstance(), Universe(1), Universe(0));
-    Expression expr1 = Let(lets(let1), Reference(let1));
+    Expression expr1 = new LetExpression(lets(let1), Ref(let1));
     LetClause let2 = let("x", EmptyDependentLink.getInstance(), Universe(2), Universe(1));
-    Expression expr2 = Let(lets(let2), Reference(let2));
+    Expression expr2 = new LetExpression(lets(let2), Ref(let2));
     assertNotEquals(expr1, expr2);
   }
 
   @Test
   public void letsLess() {
-    Expression expr1 = Let(lets(let("x", Nat())), Universe(0));
-    Expression expr2 = Let(lets(let("x", Nat())), Universe(1));
+    Expression expr1 = new LetExpression(lets(let("x", Nat())), Universe(0));
+    Expression expr2 = new LetExpression(lets(let("x", Nat())), Universe(1));
     assertTrue(compare(expr1, expr2, Equations.CMP.LE));
   }
 
@@ -213,7 +211,7 @@ public class ComparisonTest extends TypeCheckingTestCase {
   public void etaPath() {
     SingleDependentLink x = singleParam("x", Nat());
     DataCallExpression type = DataCall(Prelude.PATH, new Level(0), new Level(1),
-            Lam(singleParam("i", Interval()), Pi(singleParam(null, Nat()), Nat())), Lam(x, Reference(x)), Lam(x, Reference(x)));
+            Lam(singleParam("i", Interval()), Pi(singleParam(null, Nat()), Nat())), Lam(x, Ref(x)), Lam(x, Ref(x)));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a => path (\\lam i x => (a @ i) x)", Pi(singleParam(null, type), type));
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(singleParam(null, type), type));
     assertEquals(result2.expression, result1.expression);

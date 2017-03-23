@@ -17,8 +17,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
-
 public class EvalNormalizer implements Normalizer {
   @Override
   public Expression normalize(LamExpression fun, List<? extends Expression> arguments, NormalizeVisitor.Mode mode) {
@@ -38,7 +36,7 @@ public class EvalNormalizer implements Normalizer {
     if (result != fun.getBody()) {
       result = result.addArguments(arguments.subList(i, arguments.size()));
     } else {
-      result = Apps(result, arguments.subList(i, arguments.size()));
+      result = ExpressionFactory.Apps(result, arguments.subList(i, arguments.size()));
     }
     return result.normalize(mode);
   }
@@ -48,8 +46,8 @@ public class EvalNormalizer implements Normalizer {
     if (fun == Prelude.COERCE) {
       Expression result = null;
 
-      Binding binding = new TypedBinding("i", Interval());
-      Expression normExpr = arguments.get(0).addArgument(Reference(binding)).normalize(NormalizeVisitor.Mode.NF);
+      Binding binding = new TypedBinding("i", ExpressionFactory.Interval());
+      Expression normExpr = arguments.get(0).addArgument(new ReferenceExpression(binding)).normalize(NormalizeVisitor.Mode.NF);
       if (!normExpr.findBinding(binding)) {
         result = arguments.get(1);
       } else {
@@ -94,6 +92,6 @@ public class EvalNormalizer implements Normalizer {
   public Expression normalize(LetExpression expression) {
     Expression term = expression.getExpression().normalize(NormalizeVisitor.Mode.NF);
     Set<Binding> bindings = expression.getClauses().stream().collect(Collectors.toSet());
-    return term.findBinding(bindings) != null ? Let(expression.getClauses(), term) : term;
+    return term.findBinding(bindings) != null ? new LetExpression(expression.getClauses(), term) : term;
   }
 }

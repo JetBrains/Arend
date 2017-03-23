@@ -9,9 +9,9 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Pi;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Universe;
+import static com.jetbrains.jetpad.vclang.ExpressionFactory.Pi;
+import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.ExpressionFactory.Universe;
 import static org.junit.Assert.assertEquals;
 
 public class Sigma extends TypeCheckingTestCase {
@@ -28,7 +28,7 @@ public class Sigma extends TypeCheckingTestCase {
   public void sigmaArgName() {
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("A", Universe(4, 6)));
-    context.add(new TypedBinding("B", Pi(Reference(context.get(0)), Universe(2, 8))));
+    context.add(new TypedBinding("B", Pi(Ref(context.get(0)), Universe(2, 8))));
     CheckTypeVisitor.Result result = typeCheckExpr(context, "\\Sigma (x : A) (B x)", null);
     assertEquals(Universe(4, 8), result.type);
   }
@@ -43,7 +43,7 @@ public class Sigma extends TypeCheckingTestCase {
   public void sigmaProp() {
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("A", Universe(3, 7)));
-    context.add(new TypedBinding("B", Pi(Reference(context.get(0)), Universe(5, -1))));
+    context.add(new TypedBinding("B", Pi(Ref(context.get(0)), Universe(5, -1))));
     CheckTypeVisitor.Result result = typeCheckExpr(context, "\\Sigma (x : A) (B x)", null);
     assertEquals(Universe(3, 7), result.type);
   }

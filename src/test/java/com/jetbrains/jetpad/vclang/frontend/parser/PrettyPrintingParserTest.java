@@ -16,7 +16,9 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Apps;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.singleParams;
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 import static org.junit.Assert.*;
 
@@ -58,7 +60,7 @@ public class PrettyPrintingParserTest extends ParserTestCase {
     Concrete.Expression expected = cApps(cLam(cargs(cTele(cvars("x", "y"), cPi(cUniverseInf(1), cUniverseInf(1)))), cApps(cVar("x"), cApps(cVar("x"), cVar("y")))), cLam(cargs(cTele(cvars("x", "y"), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar("x")), cApps(cLam(cargs(cTele(cvars("x"), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar("x")), cLam(cargs(cTele(cvars("x"), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar("x"))));
     SingleDependentLink x = singleParam("x", Pi(Universe(1), Universe(1)));
     SingleDependentLink xy = singleParam(true, vars("x", "y"), Pi(Universe(1), Universe(1)));
-    Expression expr = Apps(Lam(xy, Apps(Reference(xy), Apps(Reference(xy), Reference(xy.getNext())))), Lam(xy, Reference(xy)), Apps(Lam(x, Reference(x)), Lam(x, Reference(x))));
+    Expression expr = Apps(Lam(xy, Apps(Ref(xy), Apps(Ref(xy), Ref(xy.getNext())))), Lam(xy, Ref(xy)), Apps(Lam(x, Ref(x)), Lam(x, Ref(x))));
     testExpr(expected, expr);
   }
 
@@ -66,8 +68,8 @@ public class PrettyPrintingParserTest extends ParserTestCase {
   public void prettyPrintingParserPi() throws UnsupportedEncodingException {
     // (x y z : \Type1 -> \Type1 -> \Type1) -> \Type1 -> \Type1 -> (x y -> y x) -> z x y
     Concrete.Expression expected = cPi(ctypeArgs(cTele(cvars("x", "y", "z"), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cUniverseInf(1))))), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cPi(cApps(cVar("x"), cVar("y")), cApps(cVar("y"), cVar("x"))), cApps(cVar("z"), cVar("x"), cVar("y"))))));
-    SingleDependentLink xyz = singleParam(true, vars("x", "y", "z"), Pi(Universe(1), Pi(Universe(1), Universe(1))));
-    Expression expr = Pi(xyz, Pi(Universe(1), Pi(Universe(1), Pi(Arrow(Apps(Reference(xyz), Reference(xyz.getNext())), Apps(Reference(xyz.getNext()), Reference(xyz))), Apps(Reference(xyz.getNext().getNext()), Reference(xyz), Reference(xyz.getNext()))))));
+    SingleDependentLink xyz = singleParams(true, vars("x", "y", "z"), Pi(Universe(1), Pi(Universe(1), Universe(1))));
+    Expression expr = Pi(xyz, Pi(Universe(1), Pi(Universe(1), Pi(Pi(Apps(Ref(xyz), Ref(xyz.getNext())), Apps(Ref(xyz.getNext()), Ref(xyz))), Apps(Ref(xyz.getNext().getNext()), Ref(xyz), Ref(xyz.getNext()))))));
     testExpr(expected, expr);
   }
 
@@ -80,7 +82,7 @@ public class PrettyPrintingParserTest extends ParserTestCase {
     SingleDependentLink yz = singleParam(false, vars("y", "z"), Universe(1));
     SingleDependentLink tz_ = singleParam(true, vars("t", "z'"), Universe(1));
     SingleDependentLink x_ = singleParam(false, vars("x'"), Pi(singleParam(null, Universe(1)), Universe(1)));
-    Expression expr = Pi(w, Pi(x, Pi(yz, Pi(Universe(1), Pi(tz_, Pi(x_, Apps(Reference(w), Reference(x_), Reference(yz), Reference(tz_.getNext()), Reference(tz_))))))));
+    Expression expr = Pi(w, Pi(x, Pi(yz, Pi(Universe(1), Pi(tz_, Pi(x_, Apps(Ref(w), Ref(x_), Ref(yz), Ref(tz_.getNext()), Ref(tz_))))))));
     testExpr(expected, expr);
   }
 
@@ -97,10 +99,10 @@ public class PrettyPrintingParserTest extends ParserTestCase {
     // a : A
     // D : (A -> A) -> A -> A
     // \Pi (x : \Pi (y : A) -> A) -> D x (\lam y => a)
-    ReferenceExpression A = Reference(singleParam("A", Universe(0)));
-    Expression D = Reference(singleParam("D", Pi(Pi(A, A), Pi(A, A))));
+    ReferenceExpression A = Ref(singleParam("A", Universe(0)));
+    Expression D = Ref(singleParam("D", Pi(Pi(A, A), Pi(A, A))));
     SingleDependentLink x = singleParam("x", Pi(singleParam("y", A), A));
-    Expression actual = Pi(x, Apps(D, Reference(x), Lam(singleParam("y", A), Reference(singleParam("a", A)))));
+    Expression actual = Pi(x, Apps(D, Ref(x), Lam(singleParam("y", A), Ref(singleParam("a", A)))));
 
     Concrete.Expression expected = cPi("x", cPi("y", cVar("A"), cVar("A")), cApps(cVar("D"), cVar("x"), cLam("y", cVar("a"))));
     testExpr(expected, actual, null);

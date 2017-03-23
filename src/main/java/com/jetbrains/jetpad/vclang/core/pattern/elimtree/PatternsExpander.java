@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.*;
 
@@ -15,8 +16,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.ConCall;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Reference;
 import static com.jetbrains.jetpad.vclang.core.pattern.Utils.toPatterns;
 
 class PatternsExpander {
@@ -57,7 +56,7 @@ class PatternsExpander {
 
     if (!hasConstructorPattern) {
       LeafElimTreeNode leaf = new LeafElimTreeNode();
-      return new ExpansionResult(leaf, Collections.singletonList(new Branch(Reference(binding), leaf, anyPatternIdxs, context)));
+      return new ExpansionResult(leaf, Collections.singletonList(new Branch(new ReferenceExpression(binding), leaf, anyPatternIdxs, context)));
     }
 
     DataCallExpression dType = binding.getType().getExpr().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
@@ -78,7 +77,7 @@ class PatternsExpander {
       );
       clause.setChild(nestedResult.tree);
       for (MultiPatternsExpander.MultiBranch branch : nestedResult.branches) {
-        Expression expr = ConCall(conCall.getDefinition(), conCall.getSortArgument(), new ArrayList<>(conCall.getDataTypeArguments()), branch.expressions);
+        Expression expr = new ConCallExpression(conCall.getDefinition(), conCall.getSortArgument(), new ArrayList<>(conCall.getDataTypeArguments()), branch.expressions);
         resultBranches.add(new Branch(expr, branch.leaf, recalcIndices(matching.indices, branch.indices), branch.newContext));
       }
     }
@@ -86,7 +85,7 @@ class PatternsExpander {
       OtherwiseClause clause = resultTree.addOtherwiseClause();
       LeafElimTreeNode leaf = new LeafElimTreeNode();
       clause.setChild(leaf);
-      resultBranches.add(new Branch(Reference(binding), leaf, anyPatternIdxs, context));
+      resultBranches.add(new Branch(new ReferenceExpression(binding), leaf, anyPatternIdxs, context));
     }
 
     return new ExpansionResult(resultTree, resultBranches);

@@ -13,6 +13,7 @@ import org.junit.Test;
 
 import java.util.Collections;
 
+import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 
@@ -142,8 +143,8 @@ public class ElimTest extends TypeCheckingTestCase {
     FunctionDefinition test = (FunctionDefinition) result.getDefinition("test");
     Constructor d = (Constructor) result.getDefinition("d");
     Binding binding = new TypedBinding("y", Nat());
-    Expression call1 = ConCall(d, Sort.ZERO, Collections.<Expression>emptyList(), Zero(), Reference(binding));
-    Expression call2 = ConCall(d, Sort.ZERO, Collections.<Expression>emptyList(), Suc(Zero()), Reference(binding));
+    Expression call1 = ConCall(d, Sort.ZERO, Collections.<Expression>emptyList(), Zero(), Ref(binding));
+    Expression call2 = ConCall(d, Sort.ZERO, Collections.<Expression>emptyList(), Suc(Zero()), Ref(binding));
     assertEquals(FunCall(test, Sort.ZERO, call1), FunCall(test, Sort.ZERO, call1).normalize(NormalizeVisitor.Mode.NF));
     assertEquals(Suc(Zero()), FunCall(test, Sort.ZERO, call2).normalize(NormalizeVisitor.Mode.NF));
   }
@@ -303,7 +304,7 @@ public class ElimTest extends TypeCheckingTestCase {
       " | zero => n\n" +
       " | _ => n\n"
     );
-    assertEquals(def.getElimTree(), top(def.getParameters(), branch(def.getParameters().getNext(), tail(), clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Reference(def.getParameters())), clause(Reference(def.getParameters())))));
+    assertEquals(def.getElimTree(), top(def.getParameters(), branch(def.getParameters().getNext(), tail(), clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Ref(def.getParameters())), clause(Ref(def.getParameters())))));
   }
 
   @Test

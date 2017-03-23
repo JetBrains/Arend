@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.type.ExpectedType;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.*;
@@ -138,37 +137,6 @@ public abstract class Expression implements ExpectedType {
       piCod = cod.toPi();
     }
     return cod;
-  }
-
-  public Expression fromPiParameters(List<DependentLink> params) {
-    List<SingleDependentLink> parameters = new ArrayList<>();
-    ExprSubstitution substitution = new ExprSubstitution();
-    List<String> names = new ArrayList<>();
-    DependentLink link0 = null;
-    for (DependentLink link : params) {
-      if (link0 == null) {
-        link0 = link;
-      }
-
-      names.add(link.getName());
-      if (link instanceof TypedDependentLink) {
-        SingleDependentLink parameter = ExpressionFactory.singleParam(link.isExplicit(), names, link.getType().subst(substitution, LevelSubstitution.EMPTY));
-        parameters.add(parameter);
-        names.clear();
-
-        for (; parameter.hasNext(); parameter = parameter.getNext(), link0 = link0.getNext()) {
-          substitution.add(link0, ExpressionFactory.Reference(parameter));
-        }
-
-        link0 = null;
-      }
-    }
-
-    Expression type = subst(substitution, LevelSubstitution.EMPTY);
-    for (int i = parameters.size() - 1; i >= 0; i--) {
-      type = ExpressionFactory.Pi(parameters.get(i), type);
-    }
-    return type;
   }
 
   public Expression getLamParameters(List<DependentLink> params) {
