@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.core.context.param;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 
@@ -10,9 +10,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public interface DependentLink extends Binding {
+  Type getType_();
   boolean isExplicit();
   void setExplicit(boolean isExplicit);
-  void setType(Expression type);
+  void setType(Type type);
   DependentLink getNext();
   void setNext(DependentLink next);
   void setName(String name);
@@ -113,19 +114,6 @@ public interface DependentLink extends Binding {
       return result;
     }
 
-    public static List<SingleDependentLink> fromList(List<SingleDependentLink> list) {
-      List<SingleDependentLink> result = new ArrayList<>(list.size());
-      for (int i = 0; i < list.size(); i++) {
-        if (list.get(i).hasNext()) {
-          result.add(list.get(i));
-          while (list.get(i).getNext().hasNext()) {
-            i++;
-          }
-        }
-      }
-      return result;
-    }
-
     public static DependentLink subst(DependentLink link, ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
       return link.subst(exprSubst, levelSubst, Integer.MAX_VALUE);
     }
@@ -154,28 +142,6 @@ public interface DependentLink extends Binding {
 
     public static SingleDependentLink subst(SingleDependentLink link, ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
       return link.subst(exprSubst, levelSubst, Integer.MAX_VALUE);
-    }
-
-    public static <P> DependentLink accept(DependentLink link, ExprSubstitution substitution, ExpressionVisitor<? super P, ? extends Expression> visitor, P params) {
-      link = DependentLink.Helper.subst(link, substitution);
-      for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
-        link1 = link1.getNextTyped(null);
-        link1.setType(link1.getType().accept(visitor, params));
-      }
-      return link;
-    }
-
-    public static <P> SingleDependentLink accept(SingleDependentLink link, ExprSubstitution substitution, ExpressionVisitor<? super P, ? extends Expression> visitor, P params) {
-      link = DependentLink.Helper.subst(link, substitution);
-      for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
-        link1 = link1.getNextTyped(null);
-        link1.setType(link1.getType().accept(visitor, params));
-      }
-      return link;
-    }
-
-    public static <P> DependentLink accept(DependentLink link, ExpressionVisitor<? super P, ? extends Expression> visitor, P params) {
-      return accept(link, new ExprSubstitution(), visitor, params);
     }
   }
 }

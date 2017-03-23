@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.LetClause;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
@@ -395,7 +396,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   public void testCoeIsoFreeVar() {
     SingleDependentLink k = singleParam("k", Interval());
     SingleDependentLink i = singleParam("i", Interval());
-    Expression A = DataCall(Prelude.PATH, new Level(0), new Level(0), Lam(i, Interval()), Reference(k), Reference(k));
+    DataCallExpression A = DataCall(Prelude.PATH, new Level(0), new Level(0), Lam(i, Interval()), Reference(k), Reference(k));
     DependentLink B = param("B", Universe(new Level(0), new Level(0)));
     DependentLink f = param("f", Pi(A, Reference(B)));
     DependentLink g = param("g", Pi(Reference(B), A));
@@ -411,7 +412,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
         Apps(Reference(f), Apps(Reference(g), Reference(b))),
         Reference(b));
     DependentLink rinv = param("rinv", Pi(b, rinvType));
-    DependentLink aleft = param("aleft", A.subst(k, Right()));
+    DependentLink aleft = paramExpr("aleft", A.subst(k, Right()));
     Expression expr = FunCall(Prelude.COERCE, new Level(0), new Level(0),
         Lam(k, FunCall(Prelude.ISO, new Level(0), new Level(0),
             DataCall(Prelude.PATH, new Level(0), new Level(0),

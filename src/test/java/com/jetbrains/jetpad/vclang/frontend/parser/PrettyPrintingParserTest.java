@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.frontend.parser;
 
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
@@ -66,7 +67,7 @@ public class PrettyPrintingParserTest extends ParserTestCase {
     // (x y z : \Type1 -> \Type1 -> \Type1) -> \Type1 -> \Type1 -> (x y -> y x) -> z x y
     Concrete.Expression expected = cPi(ctypeArgs(cTele(cvars("x", "y", "z"), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cUniverseInf(1))))), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cPi(cApps(cVar("x"), cVar("y")), cApps(cVar("y"), cVar("x"))), cApps(cVar("z"), cVar("x"), cVar("y"))))));
     SingleDependentLink xyz = singleParam(true, vars("x", "y", "z"), Pi(Universe(1), Pi(Universe(1), Universe(1))));
-    Expression expr = Pi(xyz, Pi(Universe(1), Pi(Universe(1), Pi(Pi(Apps(Reference(xyz), Reference(xyz.getNext())), Apps(Reference(xyz.getNext()), Reference(xyz))), Apps(Reference(xyz.getNext().getNext()), Reference(xyz), Reference(xyz.getNext()))))));
+    Expression expr = Pi(xyz, Pi(Universe(1), Pi(Universe(1), Pi(Arrow(Apps(Reference(xyz), Reference(xyz.getNext())), Apps(Reference(xyz.getNext()), Reference(xyz))), Apps(Reference(xyz.getNext().getNext()), Reference(xyz), Reference(xyz.getNext()))))));
     testExpr(expected, expr);
   }
 
@@ -96,7 +97,7 @@ public class PrettyPrintingParserTest extends ParserTestCase {
     // a : A
     // D : (A -> A) -> A -> A
     // \Pi (x : \Pi (y : A) -> A) -> D x (\lam y => a)
-    Expression A = Reference(singleParam("A", Universe(0)));
+    ReferenceExpression A = Reference(singleParam("A", Universe(0)));
     Expression D = Reference(singleParam("D", Pi(Pi(A, A), Pi(A, A))));
     SingleDependentLink x = singleParam("x", Pi(singleParam("y", A), A));
     Expression actual = Pi(x, Apps(D, Reference(x), Lam(singleParam("y", A), Reference(singleParam("a", A)))));

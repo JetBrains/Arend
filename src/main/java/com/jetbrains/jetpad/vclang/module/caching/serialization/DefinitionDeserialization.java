@@ -10,13 +10,16 @@ import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
+import com.jetbrains.jetpad.vclang.core.expr.type.Type;
+import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.EmptyElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
-import com.jetbrains.jetpad.vclang.core.sort.*;
+import com.jetbrains.jetpad.vclang.core.sort.Level;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
@@ -150,7 +153,9 @@ class DefinitionDeserialization {
     for (ExpressionProtos.Telescope proto : protos) {
       List<String> unfixedNames = new ArrayList<>(proto.getNameList().size());
       unfixedNames.addAll(proto.getNameList().stream().map(name -> name.isEmpty() ? null : name).collect(Collectors.toList()));
-      DependentLink tele = ExpressionFactory.param(!proto.getIsNotExplicit(), unfixedNames, readExpr(proto.getType()));
+      Expression expr = readExpr(proto.getType());
+      Type type = expr instanceof Type ? (Type) expr : new TypeExpression(expr, readSort(proto.getSort()));
+      DependentLink tele = ExpressionFactory.param(!proto.getIsNotExplicit(), unfixedNames, type);
       for (DependentLink link = tele; link.hasNext(); link = link.getNext()) {
         registerBinding(link);
       }
@@ -167,7 +172,9 @@ class DefinitionDeserialization {
   SingleDependentLink readSingleParameter(ExpressionProtos.Telescope proto) throws DeserializationError {
     List<String> unfixedNames = new ArrayList<>(proto.getNameList().size());
     unfixedNames.addAll(proto.getNameList().stream().map(name -> name.isEmpty() ? null : name).collect(Collectors.toList()));
-    SingleDependentLink tele = ExpressionFactory.singleParam(!proto.getIsNotExplicit(), unfixedNames, readExpr(proto.getType()));
+    Expression expr = readExpr(proto.getType());
+    Type type = expr instanceof Type ? (Type) expr : new TypeExpression(expr, readSort(proto.getSort()));
+    SingleDependentLink tele = ExpressionFactory.singleParam(!proto.getIsNotExplicit(), unfixedNames, type);
     for (DependentLink link = tele; link.hasNext(); link = link.getNext()) {
       registerBinding(link);
     }
@@ -175,7 +182,9 @@ class DefinitionDeserialization {
   }
 
   TypedDependentLink readParameter(ExpressionProtos.SingleParameter proto) throws DeserializationError {
-    TypedDependentLink link = new TypedDependentLink(!proto.getIsNotExplicit(), proto.getName(), readExpr(proto.getType()), EmptyDependentLink.getInstance());
+    Expression expr = readExpr(proto.getType());
+    Type type = expr instanceof Type ? (Type) expr : new TypeExpression(expr, readSort(proto.getSort()));
+    TypedDependentLink link = new TypedDependentLink(!proto.getIsNotExplicit(), proto.getName(), type, EmptyDependentLink.getInstance());
     registerBinding(link);
     return link;
   }

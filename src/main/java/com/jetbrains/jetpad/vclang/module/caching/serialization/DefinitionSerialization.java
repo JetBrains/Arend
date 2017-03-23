@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.*;
+import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
@@ -170,6 +171,9 @@ class DefinitionSerialization {
     tBuilder.addAllName(fixedNames);
     tBuilder.setIsNotExplicit(!typed.isExplicit());
     tBuilder.setType(writeExpr(typed.getType()));
+    if (typed.getType_() instanceof TypeExpression) {
+      tBuilder.setSort(writeSort(typed.getType_().getSortOfType()));
+    }
     for (; link != typed; link = link.getNext()) {
       registerBinding(link);
     }
@@ -184,6 +188,9 @@ class DefinitionSerialization {
     }
     builder.setIsNotExplicit(!link.isExplicit());
     builder.setType(writeExpr(link.getType()));
+    if (link.getType_() instanceof TypeExpression) {
+      builder.setSort(writeSort(link.getType_().getSortOfType()));
+    }
     registerBinding(link);
     return builder.build();
   }

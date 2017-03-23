@@ -1,14 +1,14 @@
 package com.jetbrains.jetpad.vclang.core.context.param;
 
-import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
+import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 
 import java.util.List;
 
 public class TypedSingleDependentLink extends TypedDependentLink implements SingleDependentLink {
-  public TypedSingleDependentLink(boolean isExplicit, String name, Expression type) {
+  public TypedSingleDependentLink(boolean isExplicit, String name, Type type) {
     super(isExplicit, name, type, EmptyDependentLink.getInstance());
   }
 
@@ -23,7 +23,7 @@ public class TypedSingleDependentLink extends TypedDependentLink implements Sing
   @Override
   public SingleDependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size) {
     if (size > 0) {
-      TypedSingleDependentLink result = new TypedSingleDependentLink(isExplicit(), getName(), getType().subst(exprSubst, levelSubst));
+      TypedSingleDependentLink result = new TypedSingleDependentLink(isExplicit(), getName(), getType_().subst(exprSubst, levelSubst));
       exprSubst.add(this, new ReferenceExpression(result));
       return result;
     } else {

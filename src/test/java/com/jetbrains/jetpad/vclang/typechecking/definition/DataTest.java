@@ -20,7 +20,8 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class DataTest extends TypeCheckingTestCase {
   @Test
@@ -55,7 +56,7 @@ public class DataTest extends TypeCheckingTestCase {
     substitution.add(link, Reference(b));
     List<DependentLink> con1Params = new ArrayList<>();
     Expression con1Type = typedDef.getConstructors().get(0).getTypeWithParams(con1Params, Sort.ZERO);
-    assertEquals(Pi(A, Pi(I, Pi(a, Pi(b, Pi(x, Pi(Apps(Reference(I), Reference(x), Reference(b)), DataCall(typedDef, Sort.ZERO,
+    assertEquals(Pi(A, Pi(I, Pi(a, Pi(b, Pi(x, Arrow(Apps(Reference(I), Reference(x), Reference(b)), DataCall(typedDef, Sort.ZERO,
       Reference(A),
       Reference(B),
       Reference(I),
@@ -63,7 +64,7 @@ public class DataTest extends TypeCheckingTestCase {
       Reference(b)))))))), con1Type.fromPiParameters(con1Params));
     List<DependentLink> con2Params = new ArrayList<>();
     Expression con2Type = typedDef.getConstructors().get(1).getTypeWithParams(con2Params, Sort.ZERO);
-    assertEquals(Pi(A, Pi(I, Pi(a, Pi(b, Pi(y, Pi(Apps(Reference(I), Reference(a), Reference(y)), DataCall(typedDef, Sort.ZERO,
+    assertEquals(Pi(A, Pi(I, Pi(a, Pi(b, Pi(y, Arrow(Apps(Reference(I), Reference(a), Reference(y)), DataCall(typedDef, Sort.ZERO,
       Reference(A),
       Reference(B),
       Reference(I),

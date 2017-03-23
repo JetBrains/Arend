@@ -7,8 +7,10 @@ import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.LetClause;
+import com.jetbrains.jetpad.vclang.core.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
@@ -191,7 +193,7 @@ public class ComparisonTest extends TypeCheckingTestCase {
 
   @Test
   public void etaLam() {
-    Expression type = Pi(singleParam(null, Nat()), DataCall(Prelude.PATH, new Level(0), new Level(1),
+    PiExpression type = Pi(singleParam(null, Nat()), DataCall(Prelude.PATH, new Level(0), new Level(1),
             Lam(singleParam("i", Interval()), Nat()), Zero(), Zero()));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(singleParam(null, type), type));
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(singleParam(null, type), type));
@@ -200,7 +202,7 @@ public class ComparisonTest extends TypeCheckingTestCase {
 
   @Test
   public void etaLamBody() {
-    Expression type = Pi(singleParam(null, Nat()), DataCall(Prelude.PATH, new Level(0), new Level(1),
+    PiExpression type = Pi(singleParam(null, Nat()), DataCall(Prelude.PATH, new Level(0), new Level(1),
       Lam(singleParam("i", Interval()), Nat()), Zero(), Zero()));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(singleParam(null, type), type));
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => \\lam x => a x", Pi(singleParam(null, type), type));
@@ -210,7 +212,7 @@ public class ComparisonTest extends TypeCheckingTestCase {
   @Test
   public void etaPath() {
     SingleDependentLink x = singleParam("x", Nat());
-    Expression type = DataCall(Prelude.PATH, new Level(0), new Level(1),
+    DataCallExpression type = DataCall(Prelude.PATH, new Level(0), new Level(1),
             Lam(singleParam("i", Interval()), Pi(singleParam(null, Nat()), Nat())), Lam(x, Reference(x)), Lam(x, Reference(x)));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a => path (\\lam i x => (a @ i) x)", Pi(singleParam(null, type), type));
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(singleParam(null, type), type));

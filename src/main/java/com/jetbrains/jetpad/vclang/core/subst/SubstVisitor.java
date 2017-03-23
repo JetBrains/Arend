@@ -45,6 +45,11 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   }
 
   @Override
+  public DataCallExpression visitDataCall(DataCallExpression expr, Void params) {
+    return (DataCallExpression) visitDefCall(expr, null);
+  }
+
+  @Override
   public ConCallExpression visitConCall(ConCallExpression expr, Void params) {
     List<Expression> dataTypeArgs = new ArrayList<>(expr.getDataTypeArguments().size());
     for (Expression parameter : expr.getDataTypeArguments()) {

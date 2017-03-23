@@ -3,7 +3,9 @@ package com.jetbrains.jetpad.vclang.core.expr;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 
@@ -51,12 +53,17 @@ public class UniverseExpression extends Expression implements Type {
   }
 
   @Override
-  public UniverseExpression subst(LevelSubstitution substitution) {
-    return new UniverseExpression(mySort.subst(substitution));
+  public UniverseExpression subst(ExprSubstitution exprSubstitution, LevelSubstitution levelSubstitution) {
+    return new UniverseExpression(mySort.subst(levelSubstitution));
   }
 
   @Override
   public UniverseExpression strip(Set<Binding> bounds, LocalErrorReporter errorReporter) {
+    return this;
+  }
+
+  @Override
+  public UniverseExpression normalize(NormalizeVisitor.Mode mode) {
     return this;
   }
 }

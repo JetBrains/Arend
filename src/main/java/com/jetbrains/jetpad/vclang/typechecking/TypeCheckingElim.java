@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
+import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.StripVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.*;
@@ -363,14 +364,14 @@ public class TypeCheckingElim {
     }
   }
 
-  private ExpandPatternResult expandPattern(Abstract.Pattern pattern, Binding binding, PatternExpansionMode mode, LinkList links) {
+  private ExpandPatternResult expandPattern(Abstract.Pattern pattern, DependentLink binding, PatternExpansionMode mode, LinkList links) {
     if (pattern == null) {
-      links.append(new TypedDependentLink(true, binding.getName(), binding.getType(), EmptyDependentLink.getInstance()));
+      links.append(new TypedDependentLink(true, binding.getName(), binding.getType_(), EmptyDependentLink.getInstance()));
       myVisitor.getContext().add(links.getLast());
       return new ExpandPatternOKResult(Reference(links.getLast()), new NamePattern(links.getLast()));
     } else if (pattern instanceof Abstract.NamePattern) {
       String name = ((Abstract.NamePattern) pattern).getName() == null ? binding.getName() : ((Abstract.NamePattern) pattern).getName();
-      links.append(new TypedDependentLink(true, name, binding.getType(), EmptyDependentLink.getInstance()));
+      links.append(new TypedDependentLink(true, name, binding.getType_(), EmptyDependentLink.getInstance()));
       NamePattern namePattern = new NamePattern(links.getLast());
       myVisitor.getContext().add(links.getLast());
       pattern.setWellTyped(namePattern);
@@ -378,15 +379,16 @@ public class TypeCheckingElim {
     } else if (pattern instanceof Abstract.AnyConstructorPattern || pattern instanceof Abstract.ConstructorPattern) {
       LocalTypeCheckingError error = null;
 
-      Expression type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF);
-      if (type.toDataCall() == null) {
+      Type type = binding.getType_().normalize(NormalizeVisitor.Mode.WHNF);
+      if (!(type instanceof DataCallExpression)) {
         error = new LocalTypeCheckingError("Pattern expected a data type, got: " + type, pattern);
         myVisitor.getErrorReporter().report(error);
         return new ExpandPatternErrorResult(error);
       }
 
-      DataDefinition dataType = type.toDataCall().getDefinition();
-      List<? extends Expression> parameters = type.toDataCall().getDefCallArguments();
+      DataCallExpression dataCall = (DataCallExpression) type;
+      DataDefinition dataType = dataCall.getDefinition();
+      List<? extends Expression> parameters = dataCall.getDefCallArguments();
 
       if (mode == PatternExpansionMode.DATATYPE && !dataType.getConditions().isEmpty()) {
         error = new LocalTypeCheckingError("Pattern matching on a data type with conditions is not allowed here: " + type, pattern);
@@ -400,7 +402,7 @@ public class TypeCheckingElim {
         return new ExpandPatternErrorResult(error);
       }
 
-      if (dataType.getMatchedConstructors(type.toDataCall()) == null) {
+      if (dataType.getMatchedConstructors(dataCall) == null) {
         error = new LocalTypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", pattern);
         myVisitor.getErrorReporter().report(error);
         return new ExpandPatternErrorResult(error);
@@ -475,7 +477,7 @@ public class TypeCheckingElim {
 
       DependentLink constructorArgs = DependentLink.Helper.subst(constructor.getParameters(),
         toSubstitution(constructor.getDataTypeParameters(), matchedParameters),
-        type.toDataCall().getSortArgument().toLevelSubstitution());
+        dataCall.getSortArgument().toLevelSubstitution());
 
       List<PatternArgument> resultPatterns = new ArrayList<>();
       DependentLink tailArgs = constructorArgs;
@@ -492,7 +494,7 @@ public class TypeCheckingElim {
 
       ConstructorPattern result = new ConstructorPattern(constructor, new Patterns(resultPatterns));
       pattern.setWellTyped(result);
-      return new ExpandPatternOKResult(ConCall(constructor, type.toDataCall().getSortArgument(), matchedParameters, arguments), result);
+      return new ExpandPatternOKResult(ConCall(constructor, dataCall.getSortArgument(), matchedParameters, arguments), result);
     } else {
       throw new IllegalStateException();
     }

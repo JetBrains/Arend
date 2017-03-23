@@ -3,6 +3,8 @@ package com.jetbrains.jetpad.vclang.core.expr;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.param.*;
 import com.jetbrains.jetpad.vclang.core.definition.*;
+import com.jetbrains.jetpad.vclang.core.expr.type.Type;
+import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.core.pattern.PatternArgument;
@@ -171,23 +173,35 @@ public class ExpressionFactory {
     return links[0];
   }
 
-  public static DependentLink param(boolean explicit, String var, Expression type) {
+  public static DependentLink param(boolean explicit, String var, Type type) {
     return new TypedDependentLink(explicit, var, type, EmptyDependentLink.getInstance());
   }
 
-  public static TypedDependentLink param(String var, Expression type) {
+  public static TypedDependentLink param(String var, Type type) {
     return new TypedDependentLink(true, var, type, EmptyDependentLink.getInstance());
   }
 
-  public static DependentLink param(Expression type) {
+  public static DependentLink param(String var, ReferenceExpression type) {
+    return new TypedDependentLink(true, var, new TypeExpression(type, Sort.ZERO), EmptyDependentLink.getInstance());
+  }
+
+  public static DependentLink paramExpr(String var, Expression type) {
+    return new TypedDependentLink(true, var, new TypeExpression(type, Sort.ZERO), EmptyDependentLink.getInstance());
+  }
+
+  public static DependentLink param(Type type) {
     return new TypedDependentLink(true, null, type, EmptyDependentLink.getInstance());
+  }
+
+  public static DependentLink paramExpr(Expression type) {
+    return new TypedDependentLink(true, null, new TypeExpression(type, Sort.ZERO), EmptyDependentLink.getInstance());
   }
 
   public static List<String> vars(String... vars) {
     return Arrays.asList(vars);
   }
 
-  public static DependentLink param(boolean explicit, List<String> names, Expression type) {
+  public static DependentLink param(boolean explicit, List<String> names, Type type) {
     DependentLink link = new TypedDependentLink(explicit, names.get(names.size() - 1), type, EmptyDependentLink.getInstance());
     for (int i = names.size() - 2; i >= 0; i--) {
       link = new UntypedDependentLink(names.get(i), link);
@@ -195,11 +209,19 @@ public class ExpressionFactory {
     return link;
   }
 
-  public static TypedSingleDependentLink singleParam(String name, Expression type) {
+  public static TypedSingleDependentLink singleParam(String name, Type type) {
     return new TypedSingleDependentLink(true, name, type);
   }
 
-  public static SingleDependentLink singleParam(boolean explicit, List<String> names, Expression type) {
+  public static TypedSingleDependentLink singleParam(String name, ReferenceExpression type) {
+    return new TypedSingleDependentLink(true, name, new TypeExpression(type, Sort.ZERO));
+  }
+
+  public static TypedSingleDependentLink singleParamExpr(String name, Expression type) {
+    return new TypedSingleDependentLink(true, name, new TypeExpression(type, Sort.ZERO));
+  }
+
+  public static SingleDependentLink singleParam(boolean explicit, List<String> names, Type type) {
     SingleDependentLink link = new TypedSingleDependentLink(explicit, names.get(names.size() - 1), type);
     for (int i = names.size() - 2; i >= 0; i--) {
       link = new UntypedSingleDependentLink(names.get(i), link);
@@ -207,7 +229,11 @@ public class ExpressionFactory {
     return link;
   }
 
-  public static DependentLink param(Abstract.Argument argument, Expression type) {
+  public static SingleDependentLink singleParam(boolean explicit, List<String> names, ReferenceExpression type) {
+    return singleParam(explicit, names, new TypeExpression(type, Sort.ZERO));
+  }
+
+  public static DependentLink param(Abstract.Argument argument, Type type) {
     if (argument instanceof Abstract.TelescopeArgument) {
       return param(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), type);
     } else {
@@ -220,8 +246,16 @@ public class ExpressionFactory {
     return new PiExpression(new Level(0), domain, codomain);
   }
 
-  public static PiExpression Pi(Expression domain, Expression codomain) {
+  public static PiExpression Pi(Type domain, Expression codomain) {
     return new PiExpression(new Level(0), singleParam(null, domain), codomain);
+  }
+
+  public static PiExpression Pi(ReferenceExpression domain, Expression codomain) {
+    return new PiExpression(new Level(0), singleParam(null, domain), codomain);
+  }
+
+  public static PiExpression Arrow(Expression domain, Expression codomain) {
+    return new PiExpression(new Level(0), singleParam(null, new TypeExpression(domain, Sort.ZERO)), codomain);
   }
 
   public static SigmaExpression Sigma(DependentLink domain) {

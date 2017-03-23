@@ -48,8 +48,8 @@ import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.size;
 import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.toContext;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Error;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.pattern.Utils.processImplicit;
 import static com.jetbrains.jetpad.vclang.core.pattern.Utils.toPatterns;
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.typeOfFunctionArg;
@@ -146,7 +146,7 @@ public class DefinitionCheckType {
 
   private static TypedDependentLink createThisParam(ClassDefinition enclosingClass) {
     assert enclosingClass != null;
-    return param("\\this", ClassCall(enclosingClass, Sort.STD));
+    return param("\\this", new ClassCallExpression(enclosingClass, Sort.STD));
   }
 
   private static boolean typeCheckParameters(List<? extends Abstract.Argument> arguments, List<Binding> context, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool, Map<Integer, ClassField> classifyingFields) {
@@ -165,10 +165,10 @@ public class DefinitionCheckType {
         DependentLink param;
         if (argument instanceof Abstract.TelescopeArgument) {
           List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
-          param = param(argument.getExplicit(), names, paramResult.getExpr());
+          param = param(argument.getExplicit(), names, paramResult);
           index += names.size();
         } else {
-          param = param(argument.getExplicit(), (String) null, paramResult.getExpr());
+          param = param(argument.getExplicit(), (String) null, paramResult);
           index++;
         }
 
@@ -558,9 +558,9 @@ public class DefinitionCheckType {
 
         DependentLink param;
         if (argument instanceof Abstract.TelescopeArgument) {
-          param = param(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), paramResult.getExpr());
+          param = param(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), paramResult);
         } else {
-          param = param(argument.getExplicit(), (String) null, paramResult.getExpr());
+          param = param(argument.getExplicit(), (String) null, paramResult);
         }
         list.append(param);
         visitor.getContext().addAll(toContext(param));
@@ -734,7 +734,7 @@ public class DefinitionCheckType {
           context.add(thisParameter);
           visitor.setThisClass(typedDef, Reference(thisParameter));
           CheckTypeVisitor.Result result = implementField(fieldSet, field, implementation.getImplementation(), visitor, thisParameter);
-          fieldSet.updateSorts(ClassCall(typedDef, Sort.STD));
+          fieldSet.updateSorts(new ClassCallExpression(typedDef, Sort.STD));
           if (result == null || result.expression.toError() != null) {
             classOk = false;
           }

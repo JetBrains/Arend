@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.core.expr.visitor;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
@@ -172,6 +173,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   @Override
+  public DataCallExpression visitDataCall(DataCallExpression expr, Mode mode) {
+    return (DataCallExpression) applyDefCall(expr, mode);
+  }
+
+  @Override
   public Expression visitLetClauseCall(LetClauseCallExpression expr, Mode mode) {
     return visitCallableCall(expr, LevelSubstitution.EMPTY, mode);
   }
@@ -190,7 +196,12 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   public Expression visitLam(LamExpression expr, Mode mode) {
     if (mode == Mode.HUMAN_NF) {
       ExprSubstitution substitution = new ExprSubstitution();
-      return new LamExpression(expr.getPLevel(), DependentLink.Helper.accept(expr.getParameters(), substitution, this, mode), expr.getBody().subst(substitution).accept(this, mode));
+      SingleDependentLink link = DependentLink.Helper.subst(expr.getParameters(), substitution);
+      for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
+        link1 = link1.getNextTyped(null);
+        link1.setType(link1.getType_().normalize(mode));
+      }
+      return new LamExpression(expr.getPLevel(), link, expr.getBody().subst(substitution).accept(this, mode));
     }
     if (mode == Mode.NF) {
       return new LamExpression(expr.getPLevel(), expr.getParameters(), expr.getBody().accept(this, mode));
@@ -200,10 +211,15 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   @Override
-  public Expression visitPi(PiExpression expr, Mode mode) {
+  public PiExpression visitPi(PiExpression expr, Mode mode) {
     if (mode == Mode.HUMAN_NF || mode == Mode.NF) {
       ExprSubstitution substitution = new ExprSubstitution();
-      return new PiExpression(expr.getPLevel(), DependentLink.Helper.accept(expr.getParameters(), substitution, this, mode), expr.getCodomain().subst(substitution).accept(this, mode));
+      SingleDependentLink link = DependentLink.Helper.subst(expr.getParameters(), substitution);
+      for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
+        link1 = link1.getNextTyped(null);
+        link1.setType(link1.getType_().normalize(mode));
+      }
+      return new PiExpression(expr.getPLevel(), link, expr.getCodomain().subst(substitution).accept(this, mode));
     } else {
       return expr;
     }
@@ -230,8 +246,17 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   @Override
-  public Expression visitSigma(SigmaExpression expr, Mode mode) {
-    return mode == Mode.NF || mode == Mode.HUMAN_NF ? new SigmaExpression(expr.getSort(), DependentLink.Helper.accept(expr.getParameters(), this, mode)) : expr;
+  public SigmaExpression visitSigma(SigmaExpression expr, Mode mode) {
+    if (mode != Mode.NF && mode != Mode.HUMAN_NF) {
+      return expr;
+    }
+
+    DependentLink link = DependentLink.Helper.subst(expr.getParameters(), new ExprSubstitution());
+    for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
+      link1 = link1.getNextTyped(null);
+      link1.setType(link1.getType_().normalize(mode));
+    }
+    return new SigmaExpression(expr.getSort(), link);
   }
 
   @Override

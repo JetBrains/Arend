@@ -89,12 +89,12 @@ public abstract class Expression implements ExpectedType {
     return subst.isEmpty() ? this : subst(new ExprSubstitution(), subst);
   }
 
-  public final Expression subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
+  public Expression subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
     return exprSubst.isEmpty() && levelSubst.isEmpty() ? this : accept(new SubstVisitor(exprSubst, levelSubst), null);
   }
 
   @Override
-  public final Expression normalize(NormalizeVisitor.Mode mode) {
+  public Expression normalize(NormalizeVisitor.Mode mode) {
     return accept(new NormalizeVisitor(new EvalNormalizer()), mode);
   }
 
@@ -152,7 +152,7 @@ public abstract class Expression implements ExpectedType {
 
       names.add(link.getName());
       if (link instanceof TypedDependentLink) {
-        SingleDependentLink parameter = ExpressionFactory.singleParam(link.isExplicit(), names, link.getType().subst(substitution, LevelSubstitution.EMPTY));
+        SingleDependentLink parameter = ExpressionFactory.singleParam(link.isExplicit(), names, link.getType_().subst(substitution, LevelSubstitution.EMPTY));
         parameters.add(parameter);
         names.clear();
 

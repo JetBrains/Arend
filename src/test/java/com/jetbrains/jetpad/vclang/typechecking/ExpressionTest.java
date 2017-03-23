@@ -82,12 +82,12 @@ public class ExpressionTest extends TypeCheckingTestCase {
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("T", Pi(Nat(), Universe(0))));
     SingleDependentLink x_ = singleParam("x", Nat());
-    context.add(new TypedBinding("Q", Pi(x_, Pi(singleParam(null, Apps(Reference(context.get(0)), Reference(x_))), Universe(0)))));
+    context.add(new TypedBinding("Q", Pi(x_, Pi(singleParamExpr(null, Apps(Reference(context.get(0)), Reference(x_))), Universe(0)))));
 
     SingleDependentLink x = singleParam("x", Nat());
     SingleDependentLink f = singleParam("f", Pi(x, Apps(Reference(context.get(0)), Reference(x))));
     SingleDependentLink x2 = singleParam("x", Nat());
-    Expression type = Pi(f, Pi(Pi(x2, Pi(Apps(Reference(context.get(0)), Reference(x2)), Apps(Reference(context.get(1)), Reference(x2), Apps(Reference(f), Reference(x2))))), Apps(Reference(context.get(1)), Zero(), Apps(Reference(f), Zero()))));
+    Expression type = Pi(f, Pi(Pi(x2, Arrow(Apps(Reference(context.get(0)), Reference(x2)), Apps(Reference(context.get(1)), Reference(x2), Apps(Reference(f), Reference(x2))))), Apps(Reference(context.get(1)), Zero(), Apps(Reference(f), Zero()))));
 
     typeCheckExpr(context, expr, type);
   }
@@ -97,7 +97,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("X", Pi(Nat(), Universe(0))));
     SingleDependentLink link = singleParam("t", Nat());
-    context.add(new TypedBinding("Y", Pi(link, Pi(singleParam("x", Apps(Reference(context.get(0)), Reference(link))), Universe(0)))));
+    context.add(new TypedBinding("Y", Pi(link, Pi(singleParamExpr("x", Apps(Reference(context.get(0)), Reference(link))), Universe(0)))));
     CheckTypeVisitor.Result typeResult = typeCheckExpr(context,
           "\\Pi (f : \\Pi (g : Nat -> Nat) -> X (g zero)) " +
           "-> (\\Pi (z : (Nat -> Nat) -> Nat) -> Y (z (\\lam _ => 0)) (f (\\lam x => z (\\lam _ => x)))) " +

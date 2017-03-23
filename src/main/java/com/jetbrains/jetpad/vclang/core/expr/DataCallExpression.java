@@ -5,9 +5,14 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.StripVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.normalization.EvalNormalizer;
 
 import java.util.List;
 import java.util.Set;
@@ -66,12 +71,17 @@ public class DataCallExpression extends DefCallExpression implements Type {
   }
 
   @Override
-  public DataCallExpression subst(LevelSubstitution substitution) {
-    return (DataCallExpression) super.subst(substitution);
+  public DataCallExpression subst(ExprSubstitution exprSubstitution, LevelSubstitution levelSubstitution) {
+    return new SubstVisitor(exprSubstitution, levelSubstitution).visitDataCall(this, null);
   }
 
   @Override
   public DataCallExpression strip(Set<Binding> bounds, LocalErrorReporter errorReporter) {
-    return (DataCallExpression) super.strip(bounds, errorReporter);
+    return new StripVisitor(bounds, errorReporter).visitDataCall(this, null);
+  }
+
+  @Override
+  public DataCallExpression normalize(NormalizeVisitor.Mode mode) {
+    return new NormalizeVisitor(new EvalNormalizer()).visitDataCall(this, mode);
   }
 }

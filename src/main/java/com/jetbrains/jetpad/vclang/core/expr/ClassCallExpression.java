@@ -5,11 +5,16 @@ import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.StripVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.normalization.EvalNormalizer;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -68,13 +73,18 @@ public class ClassCallExpression extends DefCallExpression implements Type {
   }
 
   @Override
-  public ClassCallExpression subst(LevelSubstitution substitution) {
-    return (ClassCallExpression) super.subst(substitution);
+  public ClassCallExpression subst(ExprSubstitution exprSubstitution, LevelSubstitution levelSubstitution) {
+    return new SubstVisitor(exprSubstitution, levelSubstitution).visitClassCall(this, null);
   }
 
   @Override
   public ClassCallExpression strip(Set<Binding> bounds, LocalErrorReporter errorReporter) {
-    return (ClassCallExpression) super.strip(bounds, errorReporter);
+    return new StripVisitor(bounds, errorReporter).visitClassCall(this, null);
+  }
+
+  @Override
+  public ClassCallExpression normalize(NormalizeVisitor.Mode mode) {
+    return new NormalizeVisitor(new EvalNormalizer()).visitClassCall(this, mode);
   }
 
   public Sort getSort() {

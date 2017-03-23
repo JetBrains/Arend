@@ -10,7 +10,10 @@ import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVis
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.Stack;
 
 public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTreeNodeVisitor<Void, ElimTreeNode> {
   private final Set<Binding> myBounds;
@@ -129,7 +132,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
   private void visitArguments(DependentLink link) {
     for (; link.hasNext(); link = link.getNext()) {
       DependentLink link1 = link.getNextTyped(null);
-      link1.setType(link1.getType().accept(this, null));
+      link1.setType(link1.getType_().strip(myBounds, myErrorReporter));
 
       for (; link != link1; link = link.getNext()) {
         myBounds.add(link);

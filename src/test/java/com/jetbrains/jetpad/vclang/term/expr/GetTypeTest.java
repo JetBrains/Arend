@@ -70,14 +70,14 @@ public class GetTypeTest extends TypeCheckingTestCase {
         FieldCall((ClassField) result.getDefinition("C.x"), Apps(Reference(p), Zero())));
     List<DependentLink> testParams = new ArrayList<>();
     Expression testType = result.getDefinition("test").getTypeWithParams(testParams, Sort.ZERO);
-    assertEquals(Pi(p, Pi(type, type)).normalize(NormalizeVisitor.Mode.NF), testType.fromPiParameters(testParams).normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Pi(p, Arrow(type, type)).normalize(NormalizeVisitor.Mode.NF), testType.fromPiParameters(testParams).normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void tupleTest() {
     TypeCheckClassResult result = typeCheckClass("\\function test : \\Sigma (x y : Nat) (x = y) => (0, 0, path (\\lam _ => 0))");
     DependentLink xy = param(true, vars("x", "y"), Nat());
-    testType(Sigma(params(xy, param(FunCall(Prelude.PATH_INFIX, new Level(0), new Level(1), Nat(), Reference(xy), Reference(xy.getNext()))))), result);
+    testType(Sigma(params(xy, paramExpr(FunCall(Prelude.PATH_INFIX, new Level(0), new Level(1), Nat(), Reference(xy), Reference(xy.getNext()))))), result);
   }
 
   @Test

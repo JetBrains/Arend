@@ -123,7 +123,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
         names.add(link.getName());
         if (link instanceof TypedDependentLink) {
-          SingleDependentLink parameter = singleParam(link.isExplicit(), names, link.getType().subst(substitution, LevelSubstitution.EMPTY));
+          SingleDependentLink parameter = singleParam(link.isExplicit(), names, link.getType_().subst(substitution, LevelSubstitution.EMPTY));
           parameters.add(parameter);
           names.clear();
 
@@ -385,7 +385,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   public Type finalCheckType(Abstract.Expression expr) {
     Type result = checkType(expr);
     if (result == null) return null;
-    return result.subst(myEquations.solve(expr)).strip(new HashSet<>(myContext), myErrorReporter);
+    return result.subst(new ExprSubstitution(), myEquations.solve(expr)).strip(new HashSet<>(myContext), myErrorReporter);
   }
 
   private boolean compareExpressions(Result result, Expression expected, Expression actual, Abstract.Expression expr) {
@@ -473,7 +473,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       return null;
     }
 
-    return new Result(ExpressionFactory.ClassCall((ClassDefinition) typeChecked, Sort.ZERO), new UniverseExpression(((ClassDefinition) typeChecked).getSort().subst(Sort.ZERO.toLevelSubstitution())));
+    return new Result(new ClassCallExpression((ClassDefinition) typeChecked, Sort.ZERO), new UniverseExpression(((ClassDefinition) typeChecked).getSort().subst(Sort.ZERO.toLevelSubstitution())));
   }
 
   private Result visitLam(List<? extends Abstract.Argument> parameters, Abstract.LamExpression expr, Expression expectedType, int argIndex) {
@@ -494,10 +494,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
         myEquations.addVariable(pLvl);
         myEquations.addVariable(hLvl);
         Level pLevel = new Level(pLvl);
-        InferenceVariable inferenceVariable = new LambdaInferenceVariable("type-of-" + name, ExpressionFactory.Universe(pLevel, new Level(hLvl)), argIndex, expr, false);
+        Sort sort = new Sort(pLevel, new Level(hLvl));
+        InferenceVariable inferenceVariable = new LambdaInferenceVariable("type-of-" + name, new UniverseExpression(sort), argIndex, expr, false);
         Expression argType = new InferenceReferenceExpression(inferenceVariable, myEquations);
 
-        SingleDependentLink link = new TypedSingleDependentLink(param.getExplicit(), name, argType);
+        SingleDependentLink link = new TypedSingleDependentLink(param.getExplicit(), name, new TypeExpression(argType, sort));
         myContext.add(link);
         Result bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, null, argIndex + 1);
         if (bodyResult == null) return null;
@@ -512,7 +513,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
         if (piParams.isExplicit() != param.getExplicit()) {
           myErrorReporter.report(new LocalTypeCheckingError(ordinal(argIndex) + " argument of the lambda should be " + (piParams.isExplicit() ? "explicit" : "implicit"), expr));
         }
-        SingleDependentLink link = new TypedSingleDependentLink(piParams.isExplicit(), name, piParams.getType());
+        SingleDependentLink link = new TypedSingleDependentLink(piParams.isExplicit(), name, piParams.getType_());
         myContext.add(link);
         Expression codomain = expectedType.toPi().getCodomain().subst(piParams, Reference(link));
         Result bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, piParams.getNext().hasNext() ? new PiExpression(expectedType.toPi().getPLevel(), piParams.getNext(), codomain) : codomain, argIndex + 1);
@@ -525,7 +526,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       Abstract.Expression paramType = ((Abstract.TypeArgument) param).getType();
       Type argResult = checkType(paramType);
       if (argResult == null) return null;
-      SingleDependentLink link = singleParam(param.getExplicit(), names, argResult.getExpr());
+      SingleDependentLink link = singleParam(param.getExplicit(), names, argResult);
       for (SingleDependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
         myContext.add(link1);
       }
@@ -627,11 +628,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
         if (result == null) return null;
 
         if (arg instanceof Abstract.TelescopeArgument) {
-          SingleDependentLink link = singleParam(arg.getExplicit(), ((Abstract.TelescopeArgument) arg).getNames(), result.getExpr());
+          SingleDependentLink link = singleParam(arg.getExplicit(), ((Abstract.TelescopeArgument) arg).getNames(), result);
           list.add(link);
           myContext.addAll(DependentLink.Helper.toContext(link));
         } else {
-          SingleDependentLink link = singleParam(arg.getExplicit(), Collections.singletonList(null), result.getExpr());
+          SingleDependentLink link = singleParam(arg.getExplicit(), Collections.singletonList(null), result);
           list.add(link);
           myContext.add(link);
         }
@@ -777,7 +778,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       Result result = checkExpr(expr.getFields().get(i), null);
       if (result == null) return null;
       fields.add(result.expression);
-      list.append(ExpressionFactory.param(result.type));
+      Sort sort = result.type.getType().toSort(); // TODO: Result.type should have type Type
+      list.append(ExpressionFactory.param(new TypeExpression(result.type, sort)));
     }
 
     Sort sortArgument = Sort.generateInferVars(myEquations, expr);
@@ -795,11 +797,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
         if (result == null) return null;
 
         if (arg instanceof Abstract.TelescopeArgument) {
-          DependentLink link = param(arg.getExplicit(), ((Abstract.TelescopeArgument) arg).getNames(), result.getExpr());
+          DependentLink link = param(arg.getExplicit(), ((Abstract.TelescopeArgument) arg).getNames(), result);
           list.append(link);
           myContext.addAll(DependentLink.Helper.toContext(link));
         } else {
-          DependentLink link = param(arg.getExplicit(), (String) null, result.getExpr());
+          DependentLink link = param(arg.getExplicit(), (String) null, result);
           list.append(link);
           myContext.add(link);
         }
@@ -860,9 +862,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     for (int i = 0; i < expressions.size(); i++) {
       Result exprResult = checkExpr(expressions.get(i), null);
       if (exprResult == null) return null;
-      links.add(singleParam(true, ExpressionFactory.vars(Abstract.CaseExpression.ARGUMENT_NAME + i), exprResult.type));
+      Sort sort = exprResult.type.getType().toSort(); // TODO: Result.type should have type Type
+      links.add(singleParam(true, ExpressionFactory.vars(Abstract.CaseExpression.ARGUMENT_NAME + i), new TypeExpression(exprResult.type, sort)));
       letArguments.add(exprResult.expression);
-      domPLevels.add(exprResult.type.getType().toSort().getPLevel());
+      domPLevels.add(sort.getPLevel());
     }
 
     if (links.size() > 1) { // TODO: Fix this
@@ -1083,7 +1086,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
           Abstract.TelescopeArgument teleArg = (Abstract.TelescopeArgument) arg;
           Type result = checkType(teleArg.getType());
           if (result == null) return null;
-          links.add(singleParam(teleArg.getExplicit(), teleArg.getNames(), result.getExpr()));
+          links.add(singleParam(teleArg.getExplicit(), teleArg.getNames(), result));
           domPLevels.add(result.getSortOfType().getPLevel());
           for (SingleDependentLink link = links.get(links.size() - 1); link.hasNext(); link = link.getNext()) {
             myContext.add(link);

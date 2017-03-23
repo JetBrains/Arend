@@ -120,12 +120,14 @@ message SingleParameter {
     string name = 1;
     bool is_not_explicit = 2;
     Expression type = 4;
+    Sort sort = 5;
 }
 
 message Telescope {
     repeated string name = 1;
     bool is_not_explicit = 2;
     Expression type = 4;
+    Sort sort = 5;
 }
 
 message Binding {
