@@ -6,6 +6,8 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.type.ExpectedType;
+import com.jetbrains.jetpad.vclang.core.expr.type.Type;
+import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
@@ -152,6 +154,19 @@ public abstract class Expression implements ExpectedType {
       lamBody = body.toLam();
     }
     return body;
+  }
+
+  public Type applyExpression(Expression expression) {
+    PiExpression piExpr = normalize(NormalizeVisitor.Mode.WHNF).toPi();
+    SingleDependentLink link = piExpr.getParameters();
+    ExprSubstitution subst = new ExprSubstitution(link, expression);
+    link = link.getNext();
+    Expression result = piExpr.getCodomain();
+    if (link.hasNext()) {
+      result = new PiExpression(piExpr.getPLevel(), link, result);
+    }
+    result = result.subst(subst);
+    return result instanceof Type ? (Type) result : new TypeExpression(result, result.getType().toSort());
   }
 
   public Expression applyExpressions(List<? extends Expression> expressions) {

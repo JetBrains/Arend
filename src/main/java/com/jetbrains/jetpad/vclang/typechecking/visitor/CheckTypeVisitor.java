@@ -66,7 +66,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   public interface TResult {
     Result toResult(Equations equations);
     DependentLink getParameter();
-    TResult applyExpressions(List<? extends Expression> expressions);
+    TResult applyExpression(Expression expression);
     List<? extends DependentLink> getImplicitParameters();
   }
 
@@ -152,6 +152,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     }
 
     @Override
+    public TResult applyExpression(Expression expression) {
+      int size = myParameters.size();
+      myArguments.add(expression);
+      ExprSubstitution subst = new ExprSubstitution();
+      subst.add(myParameters.get(0), expression);
+      myParameters = DependentLink.Helper.subst(myParameters.subList(1, size), subst, LevelSubstitution.EMPTY);
+      myResultType = myResultType.subst(subst, LevelSubstitution.EMPTY);
+      return size > 1 ? this : new Result(myDefinition.getDefCall(mySortArgument, myThisExpr, myArguments), myResultType);
+    }
+
     public TResult applyExpressions(List<? extends Expression> expressions) {
       int size = myParameters.size();
       List<? extends Expression> args = expressions.size() <= size ? expressions : expressions.subList(0, size);
@@ -163,15 +173,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       myParameters = DependentLink.Helper.subst(myParameters.subList(args.size(), size), subst, LevelSubstitution.EMPTY);
       myResultType = myResultType.subst(subst, LevelSubstitution.EMPTY);
 
-      if (expressions.size() < size) {
-        return this;
-      }
-
-      Result result = new Result(myDefinition.getDefCall(mySortArgument, myThisExpr, myArguments), myResultType);
-      if (size < expressions.size()) {
-       result = result.applyExpressions(expressions.subList(size, expressions.size()));
-      }
-      return result;
+      assert expressions.size() <= size;
+      return expressions.size() < size ? this : new Result(myDefinition.getDefCall(mySortArgument, myThisExpr, myArguments), myResultType);
     }
 
     @Override
@@ -220,13 +223,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     @Override
     public DependentLink getParameter() {
       type = type.normalize(NormalizeVisitor.Mode.WHNF);
-      return type.toPi() == null ? EmptyDependentLink.getInstance() : type.toPi().getParameters();
+      return type instanceof PiExpression ? ((PiExpression) type).getParameters() : EmptyDependentLink.getInstance();
     }
 
     @Override
-    public Result applyExpressions(List<? extends Expression> expressions) {
-      expression = expression.addArguments(expressions);
-      type = type.applyExpressions(expressions);
+    public Result applyExpression(Expression expr) {
+      expression = expression.addArgument(expr);
+      type = type.applyExpression(expr).getExpr();
       return this;
     }
 

@@ -26,7 +26,6 @@ import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
@@ -56,7 +55,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         infVar = new FunctionInferenceVariable(parameter.getName(), type, i + 1, result instanceof CheckTypeVisitor.DefCallResult ? ((CheckTypeVisitor.DefCallResult) result).getDefinition() : null, expr);
       }
       Expression binding = new InferenceReferenceExpression(infVar, myVisitor.getEquations());
-      result = result.applyExpressions(Collections.singletonList(binding));
+      result = result.applyExpression(binding);
       substitution.add(parameter, binding);
       i++;
     }
@@ -75,7 +74,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           SingleDependentLink lamParam = new TypedSingleDependentLink(true, "i", Interval());
           Type type = new UniverseExpression(new Sort(defCallResult.getSortArgument().getPLevel(), defCallResult.getSortArgument().getHLevel().add(1)));
           Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", type, 1, Prelude.PATH_CON, fun), myVisitor.getEquations());
-          result = result.applyExpressions(Collections.singletonList(new LamExpression(new Level(0), lamParam, binding)));
+          result = result.applyExpression(new LamExpression(new Level(0), lamParam, binding));
 
           CheckTypeVisitor.Result argResult = myVisitor.checkExpr(arg, new PiExpression(defCallResult.getSortArgument().getPLevel().add(1), lamParam, binding));
           if (argResult == null) {
@@ -84,7 +83,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
           Expression expr1 = argResult.expression.addArgument(Left());
           Expression expr2 = argResult.expression.addArgument(Right());
-          return result.applyExpressions(Arrays.asList(expr1, expr2, argResult.expression));
+          return ((CheckTypeVisitor.DefCallResult) result).applyExpressions(Arrays.asList(expr1, expr2, argResult.expression));
         }
       }
 
@@ -112,7 +111,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       return null;
     }
 
-    return result.applyExpressions(Collections.singletonList(argResult.expression));
+    return result.applyExpression(argResult.expression);
   }
 
   protected CheckTypeVisitor.TResult inferArg(Abstract.Expression fun, Abstract.Expression arg, boolean isExplicit, ExpectedType expectedType) {
@@ -139,7 +138,10 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
             args1.addAll(args.subList(defCallResult.getArguments().size(), args.size()));
             args1 = ((Constructor) defCallResult.getDefinition()).matchDataTypeArguments(args1);
             if (args1 != null) {
-              result = CheckTypeVisitor.DefCallResult.makeTResult(defCallResult.getDefCall(), defCallResult.getDefinition(), defCallResult.getSortArgument(), null).applyExpressions(args1);
+              result = CheckTypeVisitor.DefCallResult.makeTResult(defCallResult.getDefCall(), defCallResult.getDefinition(), defCallResult.getSortArgument(), null);
+              if (!args1.isEmpty()) {
+                result = ((CheckTypeVisitor.DefCallResult) result).applyExpressions(args1);
+              }
             }
           }
         }

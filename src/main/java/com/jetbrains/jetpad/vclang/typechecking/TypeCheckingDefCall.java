@@ -198,7 +198,8 @@ public class TypeCheckingDefCall {
       }
 
       if (constructor != null) {
-        return CheckTypeVisitor.DefCallResult.makeTResult(expr, constructor, dataCall.getSortArgument(), null).applyExpressions(args);
+        CheckTypeVisitor.TResult result1 = CheckTypeVisitor.DefCallResult.makeTResult(expr, constructor, dataCall.getSortArgument(), null);
+        return args.isEmpty() ? result1 : ((CheckTypeVisitor.DefCallResult) result1).applyExpressions(args);
       }
     }
 
