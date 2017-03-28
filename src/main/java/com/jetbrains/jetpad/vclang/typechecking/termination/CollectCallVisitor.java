@@ -228,7 +228,7 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
       e.accept(this, vector);
     }
 
-    expression.getType().accept(this, vector);
+    expression.getSigmaType().accept(this, vector);
     return null;
   }
 

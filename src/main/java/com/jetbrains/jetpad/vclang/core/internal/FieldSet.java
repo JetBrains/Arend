@@ -122,8 +122,13 @@ public class FieldSet implements ReadonlyFieldSet {
       if (type != null) {
         sort = type.toSort();
       }
-    }
-    if (sort == null) {
+      if (sort == null) {
+        type = expr1.toOfType().getTypeOf();
+        if (type != null) {
+          sort = type.toSort();
+        }
+      }
+    } else {
       Expression type = expr1.getType();
       if (type != null) {
         sort = type.toSort();

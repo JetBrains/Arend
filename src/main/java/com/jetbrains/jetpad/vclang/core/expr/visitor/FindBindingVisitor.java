@@ -126,7 +126,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> im
         return result;
       }
     }
-    return expr.getType().accept(this, null);
+    return expr.getSigmaType().accept(this, null);
   }
 
   @Override
@@ -169,7 +169,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> im
   @Override
   public Variable visitOfType(OfTypeExpression expr, Void params) {
     Variable result = expr.getExpression().accept(this, null);
-    return result != null ? result : expr.getType().accept(this, null);
+    return result != null ? result : expr.getTypeOf().accept(this, null);
   }
 
   public Variable visitLetClause(LetClause clause) {

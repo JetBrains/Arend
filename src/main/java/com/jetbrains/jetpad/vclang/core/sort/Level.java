@@ -11,9 +11,9 @@ import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Level implements PrettyPrintable {
   private final int myConstant;
@@ -162,10 +162,6 @@ public class Level implements PrettyPrintable {
   }
 
   public static List<Level> map(List<? extends LevelVariable> variables) {
-    List<Level> levels = new ArrayList<>();
-    for (LevelVariable var : variables) {
-      levels.add(new Level(var));
-    }
-    return levels;
+    return variables.stream().map(Level::new).collect(Collectors.toList());
   }
 }

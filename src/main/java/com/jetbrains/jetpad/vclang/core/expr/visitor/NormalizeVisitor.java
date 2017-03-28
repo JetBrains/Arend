@@ -239,7 +239,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     for (Expression field : expr.getFields()) {
       fields.add(field.accept(this, mode));
     }
-    return new TupleExpression(fields, expr.getType());
+    return new TupleExpression(fields, expr.getSigmaType());
   }
 
   @Override
@@ -278,7 +278,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitOfType(OfTypeExpression expr, Mode mode) {
-    return mode == Mode.NF ? new OfTypeExpression(expr.getExpression().accept(this, mode), expr.getType()) : expr.getExpression().accept(this, mode);
+    return mode == Mode.NF ? new OfTypeExpression(expr.getExpression().accept(this, mode), expr.getTypeOf()) : expr.getExpression().accept(this, mode);
   }
 
 }

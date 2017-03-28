@@ -32,8 +32,7 @@ public class OfTypeExpression extends Expression {
     return visitor.visitOfType(this, params);
   }
 
-  @Override
-  public Expression getType() {
+  public Expression getTypeOf() {
     return myType;
   }
 

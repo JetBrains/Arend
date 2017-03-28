@@ -359,7 +359,7 @@ class DefinitionSerialization {
       for (Expression field : expr.getFields()) {
         builder.addField(field.accept(this, null));
       }
-      builder.setType(writeSigma(expr.getType()));
+      builder.setType(writeSigma(expr.getSigmaType()));
       return ExpressionProtos.Expression.newBuilder().setTuple(builder).build();
     }
 

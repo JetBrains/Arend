@@ -205,7 +205,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     for (Expression field : expr.getFields()) {
       fields.add(field.accept(this, null));
     }
-    return new TupleExpression(fields, visitSigma(expr.getType(), null));
+    return new TupleExpression(fields, visitSigma(expr.getSigmaType(), null));
   }
 
   @Override
@@ -233,7 +233,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public Expression visitOfType(OfTypeExpression expr, Void params) {
-    return new OfTypeExpression(expr.getExpression().accept(this, null), expr.getType().subst(myExprSubstitution, myLevelSubstitution));
+    return new OfTypeExpression(expr.getExpression().accept(this, null), expr.getTypeOf().subst(myExprSubstitution, myLevelSubstitution));
   }
 
   public LetClause visitLetClause(LetClause clause) {

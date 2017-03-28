@@ -94,7 +94,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitTuple(TupleExpression expr, Void params) {
-    return expr.getType();
+    return expr.getSigmaType();
   }
 
   @Override
@@ -147,6 +147,6 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitOfType(OfTypeExpression expr, Void params) {
-    return expr.getType();
+    return expr.getTypeOf();
   }
 }

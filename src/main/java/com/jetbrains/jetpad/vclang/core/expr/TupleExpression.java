@@ -17,8 +17,7 @@ public class TupleExpression extends Expression {
     return myFields;
   }
 
-  @Override
-  public SigmaExpression getType() {
+  public SigmaExpression getSigmaType() {
     return myType;
   }
 

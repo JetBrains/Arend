@@ -17,9 +17,9 @@ import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.normalization.EvalNormalizer;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ClassCallExpression extends DefCallExpression implements Type {
   private final Sort mySortArgument;
@@ -43,13 +43,7 @@ public class ClassCallExpression extends DefCallExpression implements Type {
   }
 
   public Collection<Map.Entry<ClassField, FieldSet.Implementation>> getImplementedHere() {
-    // TODO[java8]: turn into a stream
-    Set<Map.Entry<ClassField, FieldSet.Implementation>> result = new HashSet<>();
-    for (Map.Entry<ClassField, FieldSet.Implementation> entry : myFieldSet.getImplemented()) {
-      if (getDefinition().getFieldSet().isImplemented(entry.getKey())) continue;
-      result.add(entry);
-    }
-    return result;
+    return myFieldSet.getImplemented().stream().filter(entry -> !getDefinition().getFieldSet().isImplemented(entry.getKey())).collect(Collectors.toSet());
   }
 
   @Override

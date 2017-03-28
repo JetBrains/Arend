@@ -186,7 +186,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
     for (Expression field : expr.getFields()) {
       fields.add(field.accept(this, null));
     }
-    return new TupleExpression(fields, visitSigma(expr.getType(), null));
+    return new TupleExpression(fields, visitSigma(expr.getSigmaType(), null));
   }
 
   @Override
