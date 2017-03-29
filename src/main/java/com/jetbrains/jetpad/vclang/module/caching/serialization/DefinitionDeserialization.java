@@ -310,11 +310,11 @@ class DefinitionDeserialization {
   }
 
   private LamExpression readLam(ExpressionProtos.Expression.Lam proto) throws DeserializationError {
-    return new LamExpression(readLevel(proto.getPLevel()), readSingleParameter(proto.getParam()), readExpr(proto.getBody()));
+    return new LamExpression(readSort(proto.getResultSort()), readSingleParameter(proto.getParam()), readExpr(proto.getBody()));
   }
 
   private PiExpression readPi(ExpressionProtos.Expression.Pi proto) throws DeserializationError {
-    return new PiExpression(readLevel(proto.getPLevel()), readSingleParameter(proto.getParam()), readExpr(proto.getCodomain()));
+    return new PiExpression(readSort(proto.getResultSort()), readSingleParameter(proto.getParam()), readExpr(proto.getCodomain()));
   }
 
   private UniverseExpression readUniverse(ExpressionProtos.Expression.Universe proto) throws DeserializationError {
@@ -350,15 +350,15 @@ class DefinitionDeserialization {
   private LetExpression readLet(ExpressionProtos.Expression.Let proto) throws DeserializationError {
     List<LetClause> clauses = new ArrayList<>();
     for (ExpressionProtos.Expression.Let.Clause cProto : proto.getClauseList()) {
-      List<Level> pLevels = new ArrayList<>(cProto.getPLevelCount());
-      for (LevelProtos.Level pLevel : cProto.getPLevelList()) {
-        pLevels.add(readLevel(pLevel));
+      List<Sort> sorts = new ArrayList<>(cProto.getSortCount());
+      for (LevelProtos.Sort sort : cProto.getSortList()) {
+        sorts.add(readSort(sort));
       }
       List<SingleDependentLink> parameters = new ArrayList<>(cProto.getParamCount());
       for (ExpressionProtos.Telescope telescope : cProto.getParamList()) {
         parameters.add(readSingleParameter(telescope));
       }
-      LetClause clause = new LetClause(cProto.getName(), pLevels, parameters, readType(cProto.getResultType()), readElimTree(cProto.getElimTree()));
+      LetClause clause = new LetClause(cProto.getName(), sorts, parameters, readType(cProto.getResultType()), readElimTree(cProto.getElimTree()));
       registerBinding(clause);
       clauses.add(clause);
     }

@@ -163,7 +163,7 @@ public abstract class Expression implements ExpectedType {
     link = link.getNext();
     Expression result = piExpr.getCodomain();
     if (link.hasNext()) {
-      result = new PiExpression(piExpr.getPLevel(), link, result);
+      result = new PiExpression(piExpr.getResultSort(), link, result);
     }
     result = result.subst(subst);
     return result instanceof Type ? (Type) result : new TypeExpression(result, result.getType().toSort());
@@ -184,7 +184,7 @@ public abstract class Expression implements ExpectedType {
 
     Expression result = piExpr.getCodomain();
     if (link.hasNext()) {
-      result = new PiExpression(piExpr.getPLevel(), link, result);
+      result = new PiExpression(piExpr.getResultSort(), link, result);
     }
     result = result.subst(subst);
     if (i < expressions.size()) {

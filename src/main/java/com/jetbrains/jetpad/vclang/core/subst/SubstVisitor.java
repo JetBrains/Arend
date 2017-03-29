@@ -9,7 +9,7 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.BaseExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
-import com.jetbrains.jetpad.vclang.core.sort.Level;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -122,7 +122,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   @Override
   public LamExpression visitLam(LamExpression expr, Void params) {
     SingleDependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), myExprSubstitution, myLevelSubstitution);
-    LamExpression result = new LamExpression(expr.getPLevel().subst(myLevelSubstitution), parameters, expr.getBody().accept(this, null));
+    LamExpression result = new LamExpression(expr.getResultSort().subst(myLevelSubstitution), parameters, expr.getBody().accept(this, null));
     DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
     return result;
   }
@@ -130,7 +130,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   @Override
   public PiExpression visitPi(PiExpression expr, Void params) {
     SingleDependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), myExprSubstitution, myLevelSubstitution);
-    PiExpression result = new PiExpression(expr.getPLevel().subst(myLevelSubstitution), parameters, expr.getCodomain().accept(this, null));
+    PiExpression result = new PiExpression(expr.getResultSort().subst(myLevelSubstitution), parameters, expr.getCodomain().accept(this, null));
     DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
     return result;
   }
@@ -239,12 +239,12 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   public LetClause visitLetClause(LetClause clause) {
     List<SingleDependentLink> parameters = new ArrayList<>(clause.getParameters().size());
     parameters.addAll(clause.getParameters().stream().map(link -> DependentLink.Helper.subst(link, myExprSubstitution, myLevelSubstitution)).collect(Collectors.toList()));
-    List<Level> pLevels = clause.getPLevels().stream().map(pLevel -> pLevel.subst(myLevelSubstitution)).collect(Collectors.toList());
+    List<Sort> sorts = clause.getSortList().stream().map(sort -> sort.subst(myLevelSubstitution)).collect(Collectors.toList());
     Type resultType = clause.getResultType() == null ? null : clause.getResultType().subst(myExprSubstitution, myLevelSubstitution);
     ElimTreeNode elimTree = clause.getElimTree().accept(this, null);
     for (SingleDependentLink link : clause.getParameters()) {
       DependentLink.Helper.freeSubsts(link, myExprSubstitution);
     }
-    return new LetClause(clause.getName(), pLevels, parameters, resultType, elimTree);
+    return new LetClause(clause.getName(), sorts, parameters, resultType, elimTree);
   }
 }

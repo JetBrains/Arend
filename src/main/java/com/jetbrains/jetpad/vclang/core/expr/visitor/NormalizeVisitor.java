@@ -198,10 +198,10 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         link1 = link1.getNextTyped(null);
         link1.setType(link1.getType().normalize(mode));
       }
-      return new LamExpression(expr.getPLevel(), link, expr.getBody().subst(substitution).accept(this, mode));
+      return new LamExpression(expr.getResultSort(), link, expr.getBody().subst(substitution).accept(this, mode));
     }
     if (mode == Mode.NF) {
-      return new LamExpression(expr.getPLevel(), expr.getParameters(), expr.getBody().accept(this, mode));
+      return new LamExpression(expr.getResultSort(), expr.getParameters(), expr.getBody().accept(this, mode));
     } else {
       return expr;
     }
@@ -216,7 +216,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         link1 = link1.getNextTyped(null);
         link1.setType(link1.getType().normalize(mode));
       }
-      return new PiExpression(expr.getPLevel(), link, expr.getCodomain().subst(substitution).accept(this, mode));
+      return new PiExpression(expr.getResultSort(), link, expr.getCodomain().subst(substitution).accept(this, mode));
     } else {
       return expr;
     }

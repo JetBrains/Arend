@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.core.definition.Callable;
 import com.jetbrains.jetpad.vclang.core.definition.Function;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
-import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
@@ -15,15 +14,15 @@ import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import java.util.List;
 
 public class LetClause extends NamedBinding implements Function, Callable {
-  private List<Level> myPLevels;
+  private List<Sort> mySorts;
   private List<SingleDependentLink> myParameters;
   private ElimTreeNode myElimTree;
   private Type myResultType;
 
-  public LetClause(String name, List<Level> pLevels, List<SingleDependentLink> parameters, Type resultType, ElimTreeNode elimTree) {
+  public LetClause(String name, List<Sort> sorts, List<SingleDependentLink> parameters, Type resultType, ElimTreeNode elimTree) {
     super(name);
-    assert pLevels.size() == parameters.size();
-    myPLevels = pLevels;
+    assert sorts.size() == parameters.size();
+    mySorts = sorts;
     myParameters = parameters;
     myResultType = resultType;
     myElimTree = elimTree;
@@ -38,8 +37,8 @@ public class LetClause extends NamedBinding implements Function, Callable {
     myElimTree = elimTree;
   }
 
-  public List<Level> getPLevels() {
-    return myPLevels;
+  public List<Sort> getSortList() {
+    return mySorts;
   }
 
   public List<SingleDependentLink> getParameters() {
@@ -58,7 +57,7 @@ public class LetClause extends NamedBinding implements Function, Callable {
   public Type getType() {
     Type type = myResultType;
     for (int i = myParameters.size() - 1; i >= 0; i--) {
-      type = new PiExpression(myPLevels.get(i), myParameters.get(i), type.getExpr());
+      type = new PiExpression(mySorts.get(i), myParameters.get(i), type.getExpr());
     }
     return type;
   }

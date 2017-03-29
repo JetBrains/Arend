@@ -102,13 +102,13 @@ public class TwoStageEquations implements Equations {
       // ?x <> Pi
       PiExpression pi = cType.toPi();
       if (pi != null) {
-        Level domLevel = pi.getParameters().getType().getSortOfType().getPLevel();
+        Sort domSort = pi.getParameters().getType().getSortOfType();
         Sort codSort = Sort.generateInferVars(this, sourceNode);
-        Level piLevel = PiExpression.generateUpperBound(domLevel, codSort.getPLevel(), this, sourceNode);
+        Sort piSort = PiExpression.generateUpperBound(domSort, codSort, this, sourceNode);
 
         InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, new UniverseExpression(codSort));
         Expression newRef = new InferenceReferenceExpression(infVar, this);
-        solve(cInf, new PiExpression(piLevel, pi.getParameters(), newRef));
+        solve(cInf, new PiExpression(piSort, pi.getParameters(), newRef));
         addEquation(pi.getCodomain(), newRef, cmp, sourceNode, infVar);
         return;
       }

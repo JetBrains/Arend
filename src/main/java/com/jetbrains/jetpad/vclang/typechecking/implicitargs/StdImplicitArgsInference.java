@@ -13,7 +13,6 @@ import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.ExpectedType;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
@@ -72,11 +71,12 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
         if (defCallResult.getDefinition() == Prelude.PATH_CON && defCallResult.getArguments().isEmpty()) {
           SingleDependentLink lamParam = new TypedSingleDependentLink(true, "i", Interval());
-          Type type = new UniverseExpression(new Sort(defCallResult.getSortArgument().getPLevel(), defCallResult.getSortArgument().getHLevel().add(1)));
+          UniverseExpression type = new UniverseExpression(new Sort(defCallResult.getSortArgument().getPLevel(), defCallResult.getSortArgument().getHLevel().add(1)));
           Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", type, 1, Prelude.PATH_CON, fun), myVisitor.getEquations());
-          result = result.applyExpression(new LamExpression(new Level(0), lamParam, binding));
+          Sort sort = type.getSort().succ();
+          result = result.applyExpression(new LamExpression(sort, lamParam, binding));
 
-          CheckTypeVisitor.Result argResult = myVisitor.checkExpr(arg, new PiExpression(defCallResult.getSortArgument().getPLevel().add(1), lamParam, binding));
+          CheckTypeVisitor.Result argResult = myVisitor.checkExpr(arg, new PiExpression(sort, lamParam, binding));
           if (argResult == null) {
             return null;
           }

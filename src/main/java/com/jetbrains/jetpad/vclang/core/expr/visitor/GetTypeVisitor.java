@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.core.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 
@@ -65,12 +64,12 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitLam(LamExpression expr, Void ignored) {
     Expression bodyType = expr.getBody().accept(this, null);
-    return bodyType == null ? null : new PiExpression(expr.getPLevel(), expr.getParameters(), bodyType);
+    return bodyType == null ? null : new PiExpression(expr.getResultSort(), expr.getParameters(), bodyType);
   }
 
   @Override
   public Expression visitPi(PiExpression expr, Void params) {
-    return new UniverseExpression(new Sort(expr.getPLevel(), expr.getCodomain().accept(this, null).toSort().getHLevel()));
+    return new UniverseExpression(expr.getResultSort());
   }
 
   @Override

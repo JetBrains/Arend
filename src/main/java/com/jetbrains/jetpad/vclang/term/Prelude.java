@@ -59,7 +59,7 @@ public class Prelude {
     } else
     if (abstractDef.getName().equals("Path")) {
       PATH = (DataDefinition) definition;
-      PATH.getParameters().setType(new PiExpression(new Level(LevelVariable.PVAR, 1), new TypedSingleDependentLink(true, null, ExpressionFactory.Interval()), new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, 1)))));
+      PATH.getParameters().setType(new PiExpression(new Sort(new Level(LevelVariable.PVAR, 1), new Level(LevelVariable.HVAR, 2)), new TypedSingleDependentLink(true, null, ExpressionFactory.Interval()), new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, 1)))));
       PATH_CON = PATH.getConstructor("path");
     } else
     if (abstractDef.getName().equals("=")) {

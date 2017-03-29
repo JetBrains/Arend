@@ -322,7 +322,7 @@ class DefinitionSerialization {
     @Override
     public ExpressionProtos.Expression visitLam(LamExpression expr, Void params) {
       ExpressionProtos.Expression.Lam.Builder builder = ExpressionProtos.Expression.Lam.newBuilder();
-      builder.setPLevel(writeLevel(expr.getPLevel()));
+      builder.setResultSort(writeSort(expr.getResultSort()));
       builder.setParam(writeSingleParameter(expr.getParameters()));
       builder.setBody(expr.getBody().accept(this, null));
       return ExpressionProtos.Expression.newBuilder().setLam(builder).build();
@@ -331,7 +331,7 @@ class DefinitionSerialization {
     @Override
     public ExpressionProtos.Expression visitPi(PiExpression expr, Void params) {
       ExpressionProtos.Expression.Pi.Builder builder = ExpressionProtos.Expression.Pi.newBuilder();
-      builder.setPLevel(LevelProtos.Level.newBuilder(writeLevel(expr.getPLevel())));
+      builder.setResultSort(LevelProtos.Sort.newBuilder(writeSort(expr.getResultSort())));
       builder.setParam(writeSingleParameter(expr.getParameters()));
       builder.setCodomain(expr.getCodomain().accept(this, null));
       return ExpressionProtos.Expression.newBuilder().setPi(builder).build();
@@ -397,8 +397,8 @@ class DefinitionSerialization {
       for (LetClause letClause : letExpression.getClauses()) {
         ExpressionProtos.Expression.Let.Clause.Builder cBuilder = ExpressionProtos.Expression.Let.Clause.newBuilder();
         cBuilder.setName(letClause.getName());
-        for (Level pLevel : letClause.getPLevels()) {
-          cBuilder.addPLevel(writeLevel(pLevel));
+        for (Sort sort : letClause.getSortList()) {
+          cBuilder.addSort(writeSort(sort));
         }
         for (SingleDependentLink link : letClause.getParameters()) {
           cBuilder.addParam(writeSingleParameter(link));

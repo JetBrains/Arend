@@ -21,32 +21,33 @@ import com.jetbrains.jetpad.vclang.typechecking.normalization.EvalNormalizer;
 import java.util.Set;
 
 public class PiExpression extends Expression implements Type {
-  private final Level myPLevel;
+  private final Sort myResultSort;
   private final SingleDependentLink myLink;
   private final Expression myCodomain;
 
-  public PiExpression(Level pLevel, SingleDependentLink link, Expression codomain) {
+  public PiExpression(Sort resultSort, SingleDependentLink link, Expression codomain) {
     assert link.hasNext();
-    myPLevel = pLevel;
+    myResultSort = resultSort;
     myLink = link;
     myCodomain = codomain;
   }
 
-  public static Level generateUpperBound(Level domPLevel, Level codPLevel, Equations equations, Abstract.SourceNode sourceNode) {
-    if (domPLevel.getVar() == null || codPLevel.getVar() == null || domPLevel.getVar() == codPLevel.getVar()) {
-      return domPLevel.max(codPLevel);
+  public static Sort generateUpperBound(Sort domSort, Sort codSort, Equations equations, Abstract.SourceNode sourceNode) {
+    if ((domSort.getPLevel().getVar() == null || codSort.getPLevel().getVar() == null || domSort.getPLevel().getVar() == codSort.getPLevel().getVar())
+      && (domSort.getHLevel().getVar() == null || codSort.getHLevel().getVar() == null || domSort.getHLevel().getVar() == codSort.getHLevel().getVar())) {
+      return new Sort(domSort.getPLevel().max(codSort.getPLevel()), codSort.getHLevel());
     }
 
     InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, sourceNode);
     equations.addVariable(pl);
     Level pLevel = new Level(pl);
-    equations.add(domPLevel, pLevel, Equations.CMP.LE, sourceNode);
-    equations.add(codPLevel, pLevel, Equations.CMP.LE, sourceNode);
-    return pLevel;
+    equations.add(domSort.getPLevel(), pLevel, Equations.CMP.LE, sourceNode);
+    equations.add(codSort.getPLevel(), pLevel, Equations.CMP.LE, sourceNode);
+    return new Sort(pLevel, codSort.getHLevel());
   }
 
-  public Level getPLevel() {
-    return myPLevel;
+  public Sort getResultSort() {
+    return myResultSort;
   }
 
   public SingleDependentLink getParameters() {
@@ -74,7 +75,7 @@ public class PiExpression extends Expression implements Type {
 
   @Override
   public Sort getSortOfType() {
-    return new Sort(myPLevel, myCodomain.getType().toSort().getHLevel());
+    return myResultSort;
   }
 
   @Override

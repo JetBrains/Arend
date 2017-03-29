@@ -326,7 +326,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     for (; link1.hasNext() && link2.hasNext(); link1 = link1.getNext(), link2 = link2.getNext()) {
       mySubstitution.put(link1, link2);
     }
-    if (!compare(link1.hasNext() ? new PiExpression(expr1.getPLevel(), link1, expr1.getCodomain()) : expr1.getCodomain(), link2.hasNext() ? new PiExpression(piExpr2.getPLevel(), link2, piExpr2.getCodomain()) : piExpr2.getCodomain())) {
+    if (!compare(link1.hasNext() ? new PiExpression(expr1.getResultSort(), link1, expr1.getCodomain()) : expr1.getCodomain(), link2.hasNext() ? new PiExpression(piExpr2.getResultSort(), link2, piExpr2.getCodomain()) : piExpr2.getCodomain())) {
       return false;
     }
 

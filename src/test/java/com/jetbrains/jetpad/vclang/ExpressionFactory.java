@@ -60,7 +60,7 @@ public class ExpressionFactory {
   }
 
   public static LamExpression Lam(SingleDependentLink link, Expression body) {
-    return new LamExpression(new Level(0), link, body);
+    return new LamExpression(Sort.ZERO, link, body);
   }
 
   public static List<LetClause> lets(LetClause... letClauses) {
@@ -84,7 +84,7 @@ public class ExpressionFactory {
   }
 
   public static LetClause let(String name, List<SingleDependentLink> params, Expression resultType, ElimTreeNode elimTree) {
-    return new LetClause(name, Collections.nCopies(params.size(), new Level(0)), params, resultType == null ? null : new TypeExpression(resultType, Sort.ZERO), elimTree);
+    return new LetClause(name, Collections.nCopies(params.size(), Sort.ZERO), params, resultType == null ? null : new TypeExpression(resultType, Sort.ZERO), elimTree);
   }
 
   public static List<String> vars(String... vars) {
@@ -124,11 +124,11 @@ public class ExpressionFactory {
 
   public static PiExpression Pi(SingleDependentLink domain, Expression codomain) {
     assert domain.hasNext();
-    return new PiExpression(new Level(0), domain, codomain);
+    return new PiExpression(Sort.ZERO, domain, codomain);
   }
 
   public static PiExpression Pi(Expression domain, Expression codomain) {
-    return new PiExpression(new Level(0), singleParam(null, domain), codomain);
+    return new PiExpression(Sort.ZERO, singleParam(null, domain), codomain);
   }
 
   public static UniverseExpression Universe(int pLevel) {
