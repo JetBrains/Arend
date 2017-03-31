@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +26,11 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
     Expression type = expr.getDefinition().getTypeWithParams(defParams, expr.getSortArgument());
     assert expr.getDefCallArguments().size() == defParams.size();
     return type.subst(DependentLink.Helper.toSubstitution(defParams, expr.getDefCallArguments()), expr.getSortArgument().toLevelSubstitution());
+  }
+
+  @Override
+  public UniverseExpression visitDataCall(DataCallExpression expr, Void params) {
+    return new UniverseExpression(expr.getDefinition().getSort().subst(new StdLevelSubstitution(expr.getSortArgument().getPLevel(), expr.getSortArgument().getHLevel())));
   }
 
   @Override

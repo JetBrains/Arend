@@ -816,13 +816,12 @@ public class DefinitionCheckType {
       }
     }
 
-    fieldSet.updateSorts(term);
-
     LevelSubstitution substitution = visitor.getEquations().solve(def);
     if (!substitution.isEmpty()) {
       term = new SubstVisitor(new ExprSubstitution(), substitution).visitClassCall(term, null);
     }
     term = new StripVisitor(new HashSet<>(visitor.getContext()), visitor.getErrorReporter()).visitClassCall(term, null);
+    fieldSet.updateSorts(term);
 
     FieldSet.Implementation impl = fieldSet.getImplementation((ClassField) state.getTypechecked(classView.getClassifyingField()));
     DefCallExpression defCall = impl.term.normalize(NormalizeVisitor.Mode.WHNF).toDefCall();
