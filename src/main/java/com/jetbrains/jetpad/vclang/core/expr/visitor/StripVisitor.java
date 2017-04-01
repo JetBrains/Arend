@@ -80,9 +80,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
   @Override
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
     FieldSet fieldSet = FieldSet.applyVisitorToImplemented(expr.getFieldSet(), expr.getDefinition().getFieldSet(), this, null);
-    ClassCallExpression classCall = new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), fieldSet);
-    fieldSet.updateSorts(classCall);
-    return classCall;
+    return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), fieldSet);
   }
 
   private Expression cannotInferError(Expression expr) {

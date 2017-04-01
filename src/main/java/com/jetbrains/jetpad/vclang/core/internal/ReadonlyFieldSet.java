@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.internal;
 
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
-import com.jetbrains.jetpad.vclang.core.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.Collection;
@@ -13,5 +12,4 @@ public interface ReadonlyFieldSet {
   boolean isImplemented(ClassField field);
   FieldSet.Implementation getImplementation(ClassField field);
   Sort getSort();
-  void updateSorts(ClassCallExpression classCall);
 }

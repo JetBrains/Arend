@@ -229,7 +229,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     @Override
     public Result applyExpression(Expression expr) {
       expression = expression.addArgument(expr);
-      type = type.applyExpression(expr).getExpr();
+      type = type.applyExpression(expr);
       return this;
     }
 
@@ -777,7 +777,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       Result result = checkExpr(expr.getFields().get(i), null);
       if (result == null) return null;
       fields.add(result.expression);
-      Sort sort = result.type.getType().toSort(); // TODO: Result.type should have type Type
+      Sort sort = result.type.getType().toSort();
       list.append(ExpressionFactory.parameter(null, new TypeExpression(result.type, sort)));
     }
 
@@ -817,7 +817,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     List<Sort> sorts = new ArrayList<>(expr.getArguments().size());
     DependentLink args = visitArguments(expr.getArguments(), sorts);
     if (args == null || !args.hasNext()) return null;
-    Sort sort = SigmaExpression.getUpperBound(sorts, myEquations, expr);
+    Sort sort = generateUpperBound(sorts, expr);
     return checkResult(expectedType, new Result(new SigmaExpression(sort, args), new UniverseExpression(sort)), expr);
   }
 
@@ -861,7 +861,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     for (int i = 0; i < expressions.size(); i++) {
       Result exprResult = checkExpr(expressions.get(i), null);
       if (exprResult == null) return null;
-      Sort sort = exprResult.type.getType().toSort(); // TODO: Result.type should have type Type
+      Sort sort = exprResult.type.getType().toSort();
       links.add(ExpressionFactory.singleParams(true, Collections.singletonList(Abstract.CaseExpression.ARGUMENT_NAME + i), new TypeExpression(exprResult.type, sort)));
       letArguments.add(exprResult.expression);
       domSorts.add(sort);
@@ -888,7 +888,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       return null;
     }
 
-    Sort codSort = ((Expression) expectedType).getType().toSort(); // TODO: expectedType should be Type?
+    Sort codSort = ((Expression) expectedType).getType().toSort();
     List<Sort> sorts = generateUpperBounds(domSorts, codSort, expr);
     LetClause letBinding = new LetClause(Abstract.CaseExpression.FUNCTION_NAME, sorts, links, expectedType instanceof Type ? (Type) expectedType : new TypeExpression((Expression) expectedType, codSort), elimTree);
     caseResult.expression = new LetExpression(Collections.singletonList(letBinding), new LetClauseCallExpression(letBinding, letArguments));
@@ -916,6 +916,53 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     myEquations.add(codSort.getPLevel(), resultSorts.get(resultSorts.size() - 1).getPLevel(), Equations.CMP.LE, sourceNode);
     myEquations.add(codSort.getHLevel(), resultSorts.get(resultSorts.size() - 1).getHLevel(), Equations.CMP.LE, sourceNode);
     return resultSorts;
+  }
+
+  private static Sort generateUniqueUpperBound(List<Sort> sorts) {
+    LevelVariable pVar = null;
+    LevelVariable hVar = null;
+    for (Sort sort : sorts) {
+      if (sort.getPLevel().getVar() != null) {
+        if (pVar != null && pVar != sort.getPLevel().getVar()) {
+          return null;
+        }
+        if (pVar == null) {
+          pVar = sort.getPLevel().getVar();
+        }
+      }
+      if (sort.getHLevel().getVar() != null) {
+        if (hVar != null && hVar != sort.getHLevel().getVar()) {
+          return null;
+        }
+        if (hVar == null) {
+          hVar = sort.getHLevel().getVar();
+        }
+      }
+    }
+
+    if (sorts.isEmpty()) {
+      return Sort.PROP;
+    } else {
+      Sort resultSort = sorts.get(0);
+      for (int i = 1; i < sorts.size(); i++) {
+        resultSort = resultSort.max(sorts.get(i));
+      }
+      return resultSort;
+    }
+  }
+
+  private Sort generateUpperBound(List<Sort> sorts, Abstract.SourceNode sourceNode) {
+    Sort resultSort = generateUniqueUpperBound(sorts);
+    if (resultSort != null) {
+      return resultSort;
+    }
+
+    Sort sortResult = Sort.generateInferVars(myEquations, sourceNode);
+    for (Sort sort : sorts) {
+      myEquations.add(sort.getPLevel(), sortResult.getPLevel(), Equations.CMP.LE, sourceNode);
+      myEquations.add(sort.getHLevel(), sortResult.getHLevel(), Equations.CMP.LE, sourceNode);
+    }
+    return sortResult;
   }
 
   @Override
@@ -975,7 +1022,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       return null;
     }
 
-    FieldSet fieldSet = new FieldSet();
+    FieldSet fieldSet = new FieldSet(baseClass.getSort());
     ClassCallExpression resultClassCall = new ClassCallExpression(baseClass, classCallExpr.getSortArgument(), fieldSet);
     Expression resultExpr = resultClassCall;
 
@@ -1022,7 +1069,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       }
     }
 
-    fieldSet.updateSorts(resultClassCall);
+    DependentLink thisParam = ExpressionFactory.parameter("\\this", resultClassCall);
+    List<Sort> sorts = new ArrayList<>();
+    for (ClassField field : fieldSet.getFields()) {
+      if (fieldSet.isImplemented(field)) continue;
+      Expression baseType = field.getBaseType(classCallExpr.getSortArgument());
+      if (baseType.toError() != null) continue;
+      sorts.add(baseType.subst(field.getThisParameter(), new ReferenceExpression(thisParam)).normalize(NormalizeVisitor.Mode.WHNF).getType().toSort());
+    }
+
+    fieldSet.setSort(generateUpperBound(sorts, expr));
     return checkResult(expectedType, new Result(resultExpr, new UniverseExpression(resultExpr instanceof ClassCallExpression ? ((ClassCallExpression) resultExpr).getSort() : Sort.PROP)), expr);
   }
 

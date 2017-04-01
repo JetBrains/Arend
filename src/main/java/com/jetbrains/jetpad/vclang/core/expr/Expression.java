@@ -156,7 +156,7 @@ public abstract class Expression implements ExpectedType {
     return body;
   }
 
-  public Type applyExpression(Expression expression) {
+  public Expression applyExpression(Expression expression) {
     PiExpression piExpr = normalize(NormalizeVisitor.Mode.WHNF).toPi();
     SingleDependentLink link = piExpr.getParameters();
     ExprSubstitution subst = new ExprSubstitution(link, expression);
@@ -165,8 +165,7 @@ public abstract class Expression implements ExpectedType {
     if (link.hasNext()) {
       result = new PiExpression(piExpr.getResultSort(), link, result);
     }
-    result = result.subst(subst);
-    return result instanceof Type ? (Type) result : new TypeExpression(result, result.getType().toSort());
+    return result.subst(subst);
   }
 
   public Expression applyExpressions(List<? extends Expression> expressions) {

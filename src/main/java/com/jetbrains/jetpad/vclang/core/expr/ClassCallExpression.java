@@ -82,13 +82,7 @@ public class ClassCallExpression extends DefCallExpression implements Type {
   }
 
   public Sort getSort() {
-    Sort sort = myFieldSet.getSort();
-    if (sort == null) {
-      myFieldSet.updateSorts(this);
-      return myFieldSet.getSort();
-    } else {
-      return sort;
-    }
+    return myFieldSet.getSort();
   }
 
   @Override

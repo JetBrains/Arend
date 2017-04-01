@@ -165,7 +165,6 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     if (mode == Mode.WHNF) return expr;
 
     FieldSet fieldSet = FieldSet.applyVisitorToImplemented(expr.getFieldSet(), expr.getDefinition().getFieldSet(), this, mode);
-    fieldSet.setSorts(expr.getFieldSet().getSort());
     return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), fieldSet);
   }
 

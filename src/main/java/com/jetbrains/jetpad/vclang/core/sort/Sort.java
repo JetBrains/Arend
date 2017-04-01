@@ -64,7 +64,18 @@ public class Sort {
   }
 
   public Sort max(Sort sort) {
-    return isProp() ? sort : sort.isProp() ? this : new Sort(myPLevel.max(sort.myPLevel), myHLevel.max(sort.myHLevel));
+    if (isProp()) {
+      return sort;
+    }
+    if (sort.isProp()) {
+      return this;
+    }
+    if (myPLevel.getVar() != null && sort.myPLevel.getVar() != null && myPLevel.getVar() != sort.myPLevel.getVar() ||
+        myHLevel.getVar() != null && sort.myHLevel.getVar() != null && myHLevel.getVar() != sort.myHLevel.getVar()) {
+      return null;
+    } else {
+      return new Sort(myPLevel.max(sort.myPLevel), myHLevel.max(sort.myHLevel));
+    }
   }
 
   public boolean isProp() {

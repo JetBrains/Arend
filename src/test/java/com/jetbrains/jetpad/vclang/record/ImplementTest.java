@@ -1,9 +1,11 @@
 package com.jetbrains.jetpad.vclang.record;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
@@ -201,12 +203,12 @@ public class ImplementTest extends TypeCheckingTestCase {
   @Test
   public void universeClassExt() {
     TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
-        "\\class A {\n" +
-        "  \\field A : \\Set1\n" +
+        "\\class C {\n" +
+        "  \\field A : \\Type\n" +
         "  \\field a : A\n" +
         "}\n" +
-        "\\function f => A { A => Nat }");
-    assertEquals(new Sort(2, 1), ((ClassDefinition) result.getDefinition("A")).getSort());
+        "\\function f => C { A => Nat }");
+    assertEquals(new Sort(new Level(LevelVariable.PVAR, 1), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) result.getDefinition("C")).getSort());
     assertEquals(new Sort(0, 0), ((FunctionDefinition) result.getDefinition("f")).getResultType().toSort());
   }
 

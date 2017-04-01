@@ -664,7 +664,7 @@ public class DefinitionCheckType {
     List<Binding> context = visitor.getContext();
     boolean classOk = true;
 
-    FieldSet fieldSet = new FieldSet();
+    FieldSet fieldSet = new FieldSet(Sort.PROP);
     Set<ClassDefinition> superClasses = new HashSet<>();
     Abstract.ClassDefinition def = typedDef.getAbstractDefinition();
     visitor.getTypecheckingState().record(def, typedDef);
@@ -715,28 +715,30 @@ public class DefinitionCheckType {
         typeCheckClassField(field, typedDef, fieldSet, visitor);
       }
 
-      for (Abstract.Implementation implementation : def.getImplementations()) {
-        Definition implementedDef = visitor.getTypecheckingState().getTypechecked(implementation.getImplementedField());
-        if (!(implementedDef instanceof ClassField)) {
-          classOk = false;
-          errorReporter.report(new LocalTypeCheckingError("'" + implementedDef.getName() + "' is not a field", implementation));
-          continue;
-        }
-        ClassField field = (ClassField) implementedDef;
-        if (fieldSet.isImplemented(field)) {
-          classOk = false;
-          errorReporter.report(new LocalTypeCheckingError("Field '" + field.getName() + "' is already implemented", implementation));
-          continue;
-        }
-
-        TypedDependentLink thisParameter = createThisParam(typedDef);
-        try (Utils.ContextSaver saver = new Utils.ContextSaver(context)) {
-          context.add(thisParameter);
-          visitor.setThisClass(typedDef, new ReferenceExpression(thisParameter));
-          CheckTypeVisitor.Result result = implementField(fieldSet, field, implementation.getImplementation(), visitor, thisParameter);
-          fieldSet.updateSorts(new ClassCallExpression(typedDef, Sort.STD));
-          if (result == null || result.expression.toError() != null) {
+      if (!def.getImplementations().isEmpty()) {
+        typedDef.updateSorts();
+        for (Abstract.Implementation implementation : def.getImplementations()) {
+          Definition implementedDef = visitor.getTypecheckingState().getTypechecked(implementation.getImplementedField());
+          if (!(implementedDef instanceof ClassField)) {
             classOk = false;
+            errorReporter.report(new LocalTypeCheckingError("'" + implementedDef.getName() + "' is not a field", implementation));
+            continue;
+          }
+          ClassField field = (ClassField) implementedDef;
+          if (fieldSet.isImplemented(field)) {
+            classOk = false;
+            errorReporter.report(new LocalTypeCheckingError("Field '" + field.getName() + "' is already implemented", implementation));
+            continue;
+          }
+
+          TypedDependentLink thisParameter = createThisParam(typedDef);
+          try (Utils.ContextSaver saver = new Utils.ContextSaver(context)) {
+            context.add(thisParameter);
+            visitor.setThisClass(typedDef, new ReferenceExpression(thisParameter));
+            CheckTypeVisitor.Result result = implementField(fieldSet, field, implementation.getImplementation(), visitor, thisParameter);
+            if (result == null || result.expression.toError() != null) {
+              classOk = false;
+            }
           }
         }
       }
@@ -771,7 +773,7 @@ public class DefinitionCheckType {
       typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
     }
     visitor.getTypecheckingState().record(def, typedDef);
-    fieldSet.addField(typedDef, typeResult == null ? null : typeResult.getSortOfType());
+    fieldSet.addField(typedDef);
     return typedDef;
   }
 
@@ -800,7 +802,7 @@ public class DefinitionCheckType {
       }
     }
 
-    FieldSet fieldSet = new FieldSet();
+    FieldSet fieldSet = new FieldSet(Sort.PROP);
     ClassDefinition classDef = (ClassDefinition) visitor.getTypecheckingState().getTypechecked(classView.getUnderlyingClassDefCall().getReferent());
     fieldSet.addFieldsFrom(classDef.getFieldSet());
     ClassCallExpression term = new ClassCallExpression(classDef, Sort.generateInferVars(visitor.getEquations(), def.getClassView()), fieldSet);
@@ -821,7 +823,6 @@ public class DefinitionCheckType {
       term = new SubstVisitor(new ExprSubstitution(), substitution).visitClassCall(term, null);
     }
     term = new StripVisitor(new HashSet<>(visitor.getContext()), visitor.getErrorReporter()).visitClassCall(term, null);
-    fieldSet.updateSorts(term);
 
     FieldSet.Implementation impl = fieldSet.getImplementation((ClassField) state.getTypechecked(classView.getClassifyingField()));
     DefCallExpression defCall = impl.term.normalize(NormalizeVisitor.Mode.WHNF).toDefCall();

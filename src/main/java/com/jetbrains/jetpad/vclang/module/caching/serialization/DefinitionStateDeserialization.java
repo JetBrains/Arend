@@ -113,6 +113,9 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
       superClasses.add(superClass);
     }
     classDef.setSuperClasses(superClasses);
+    if (classProto.getEnclosingThisFieldRef() != 0) {
+      classDef.setEnclosingThisField(calltargetProvider.getCalltarget(classProto.getEnclosingThisFieldRef(), ClassField.class));
+    }
 
     for (Map.Entry<String, DefinitionProtos.Definition.ClassData.Field> entry : classProto.getFieldsMap().entrySet()) {
       DefinitionProtos.Definition.ClassData.Field fieldProto = entry.getValue();

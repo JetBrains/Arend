@@ -33,8 +33,8 @@ public class FieldSet implements ReadonlyFieldSet {
   private final Map<ClassField, Implementation> myImplemented;
   private Sort mySort;
 
-  public FieldSet() {
-    this(new LinkedHashSet<>(), new HashMap<>(), null);
+  public FieldSet(Sort sort) {
+    this(new LinkedHashSet<>(), new HashMap<>(), sort);
   }
 
   public FieldSet(FieldSet other) {
@@ -47,27 +47,19 @@ public class FieldSet implements ReadonlyFieldSet {
     mySort = sort;
   }
 
-  public void addField(ClassField field, Sort sort) {
+  public void addField(ClassField field) {
     myFields.add(field);
-    if (mySort != null) {
-      if (sort != null) {
-        mySort = mySort.max(sort);
-      } else {
-        mySort = null;
-      }
-    }
   }
 
   public void addFieldsFrom(ReadonlyFieldSet other) {
     for (ClassField field : other.getFields()) {
-      addField(field, null);
+      myFields.add(field);
     }
   }
 
   public boolean implementField(ClassField field, Implementation impl) {
     assert myFields.contains(field);
     Implementation old = myImplemented.put(field, impl);
-    mySort = null;
     return old == null;
   }
 
@@ -96,11 +88,10 @@ public class FieldSet implements ReadonlyFieldSet {
     return mySort;
   }
 
-  public void setSorts(Sort sort) {
+  public void setSort(Sort sort) {
     mySort = sort;
   }
 
-  @Override
   public void updateSorts(ClassCallExpression thisClass) {
     mySort = Sort.PROP;
     for (ClassField field : myFields) {
@@ -115,33 +106,12 @@ public class FieldSet implements ReadonlyFieldSet {
     if (baseType.toError() != null) return;
 
     DependentLink thisParam = ExpressionFactory.parameter("\\this", thisClass);
-    Expression expr1 = baseType.subst(field.getThisParameter(), new ReferenceExpression(thisParam)).normalize(NormalizeVisitor.Mode.WHNF);
-    Sort sort = null;
-    if (expr1.toOfType() != null) {
-      Expression type = expr1.toOfType().getExpression().getType();
-      if (type != null) {
-        sort = type.toSort();
-      }
-      if (sort == null) {
-        type = expr1.toOfType().getTypeOf();
-        if (type != null) {
-          sort = type.toSort();
-        }
-      }
-    } else {
-      Expression type = expr1.getType();
-      if (type != null) {
-        sort = type.toSort();
-      }
-    }
-
-    if (sort != null) {
-      mySort = mySort.max(sort);
-    }
+    Expression expr = baseType.subst(field.getThisParameter(), new ReferenceExpression(thisParam)).normalize(NormalizeVisitor.Mode.WHNF);
+    mySort = mySort.max(expr.getType().toSort());
   }
 
   public static <P> FieldSet applyVisitorToImplemented(ReadonlyFieldSet fieldSet, ReadonlyFieldSet parentFieldSet, ExpressionVisitor<P, Expression> visitor, P arg) {
-    FieldSet newFieldSet = new FieldSet();
+    FieldSet newFieldSet = new FieldSet(fieldSet.getSort());
     newFieldSet.addFieldsFrom(fieldSet);
     for (Map.Entry<ClassField, FieldSet.Implementation> entry : fieldSet.getImplemented()) {
       if (parentFieldSet != null && parentFieldSet.isImplemented(entry.getKey())) {

@@ -82,11 +82,7 @@ public class ClassDefinition extends Definition {
       fieldSet = myFieldSet;
     }
 
-    ClassCallExpression classCall = new ClassCallExpression(this, sortArgument, fieldSet);
-    if (thisExpr != null) {
-      fieldSet.updateSorts(classCall);
-    }
-    return classCall;
+    return new ClassCallExpression(this, sortArgument, fieldSet);
   }
 
   @Override
@@ -98,14 +94,18 @@ public class ClassDefinition extends Definition {
   public void setThisClass(ClassDefinition enclosingClass) {
     assert myEnclosingThisField == null;
     super.setThisClass(enclosingClass);
-    if (enclosingClass != null) {
+    if (enclosingClass != null && myFieldSet != null) {
       myEnclosingThisField = new ClassField(null, new ClassCallExpression(enclosingClass, Sort.STD), this, ExpressionFactory.parameter("\\this", new ClassCallExpression(this, Sort.STD)));
       myEnclosingThisField.setThisClass(this);
-      myFieldSet.addField(myEnclosingThisField, enclosingClass.getSort());
+      myFieldSet.addField(myEnclosingThisField);
     }
   }
 
   public ClassField getEnclosingThisField() {
     return myEnclosingThisField;
+  }
+
+  public void setEnclosingThisField(ClassField field) {
+    myEnclosingThisField = field;
   }
 }

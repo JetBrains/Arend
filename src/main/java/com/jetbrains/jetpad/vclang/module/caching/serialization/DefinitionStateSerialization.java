@@ -77,6 +77,9 @@ public class DefinitionStateSerialization {
     }
 
     builder.setFieldSet(defSerializer.writeFieldSet(definition.getFieldSet()));
+    if (definition.getEnclosingThisField() != null) {
+      builder.setEnclosingThisFieldRef(myCalltargetIndexProvider.getDefIndex(definition.getEnclosingThisField()));
+    }
 
     for (ClassDefinition classDefinition : definition.getSuperClasses()) {
       builder.addSuperClassRef(myCalltargetIndexProvider.getDefIndex(classDefinition));
