@@ -122,10 +122,10 @@ public class TwoStageEquations implements Equations {
           Sort.compare(sort, genSort, CMP.LE, this, sourceNode);
         } else {
           if (!sort.getPLevel().isInfinity()) {
-            addLevelEquation(genSort.getPLevel().getVar(), sort.getPLevel().getVar(), sort.getPLevel().getConstant(), sort.getPLevel().getMaxConstant(), sourceNode);
+            addLevelEquation(genSort.getPLevel().getVar(), sort.getPLevel().getVar(), sort.getPLevel().getConstant(), sort.getPLevel().getMaxAddedConstant(), sourceNode);
           }
           if (!sort.getHLevel().isInfinity()) {
-            addLevelEquation(genSort.getHLevel().getVar(), sort.getHLevel().getVar(), sort.getHLevel().getConstant(), sort.getHLevel().getMaxConstant(), sourceNode);
+            addLevelEquation(genSort.getHLevel().getVar(), sort.getHLevel().getVar(), sort.getHLevel().getConstant(), sort.getHLevel().getMaxAddedConstant(), sourceNode);
           }
         }
         return;
@@ -231,12 +231,12 @@ public class TwoStageEquations implements Equations {
     }
 
     if (cmp == CMP.LE || cmp == CMP.EQ) {
-      addLevelEquation(level1.getVar(), level2.getVar(), level2.getConstant() - level1.getConstant(), level2.getMaxConstant() - level1.getConstant(), sourceNode);
-      addLevelEquation(null, level2.getVar(), level2.getConstant() - level1.getMaxConstant(), level2.getMaxConstant() - level1.getMaxConstant(), sourceNode);
+      addLevelEquation(level1.getVar(), level2.getVar(), level2.getConstant() - level1.getConstant(), level2.getMaxAddedConstant() - level1.getConstant(), sourceNode);
+      addLevelEquation(null, level2.getVar(), level2.getConstant() - level1.getMaxAddedConstant(), level2.getMaxAddedConstant() - level1.getMaxAddedConstant(), sourceNode);
     }
     if (cmp == CMP.GE || cmp == CMP.EQ) {
-      addLevelEquation(level2.getVar(), level1.getVar(), level1.getConstant() - level2.getConstant(), level1.getMaxConstant() - level2.getConstant(), sourceNode);
-      addLevelEquation(null, level1.getVar(), level1.getConstant() - level2.getMaxConstant(), level1.getMaxConstant() - level2.getMaxConstant(), sourceNode);
+      addLevelEquation(level2.getVar(), level1.getVar(), level1.getConstant() - level2.getConstant(), level1.getMaxAddedConstant() - level2.getConstant(), sourceNode);
+      addLevelEquation(null, level1.getVar(), level1.getConstant() - level2.getMaxAddedConstant(), level1.getMaxAddedConstant() - level2.getMaxAddedConstant(), sourceNode);
     }
     return true;
   }

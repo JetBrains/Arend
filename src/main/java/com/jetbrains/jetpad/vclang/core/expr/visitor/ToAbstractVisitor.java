@@ -417,12 +417,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       throw new IllegalStateException();
     }
 
-    for (int i = 0; i < level.getConstant(); i++) {
-      result = myFactory.makeSucLevel(result);
-    }
-
     if (level.getMaxConstant() != 0) {
       result = myFactory.makeMaxLevel(result, visitLevel(new Level(null, level.getMaxConstant()), add));
+    }
+
+    for (int i = 0; i < level.getConstant(); i++) {
+      result = myFactory.makeSucLevel(result);
     }
 
     return result;
@@ -509,7 +509,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
           exprs.add(visitBinding(link));
         }
       }
-      return myFactory.makeElim(exprs, Collections.<Abstract.Clause>emptyList());
+      return myFactory.makeElim(exprs, Collections.emptyList());
     }
     return elimTree.accept(this, null);
   }

@@ -145,6 +145,7 @@ class DefinitionSerialization {
       throw new IllegalStateException();
     }
     builder.setConstant(level.getConstant());
+    builder.setMaxConstant(level.getMaxConstant());
     return builder.build();
   }
 

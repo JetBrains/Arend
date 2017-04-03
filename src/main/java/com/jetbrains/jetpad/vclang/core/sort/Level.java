@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.sort;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
-import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
@@ -20,13 +19,13 @@ public class Level implements PrettyPrintable {
   private final LevelVariable myVar;
   private final int myMaxConstant;
 
-  public static final Level INFINITY = new Level(null, -1);
+  public static final Level INFINITY = new Level(null, -10);
 
-  // max(var + constant, maxConstant)
+  // max(var, maxConstant) + constant
   public Level(LevelVariable var, int constant, int maxConstant) {
     myVar = var;
-    myConstant = var == null ? Math.max(constant, maxConstant) : constant;
-    myMaxConstant = var == null || maxConstant <= constant ? 0 : maxConstant;
+    myConstant = var == null ? constant + maxConstant : constant;
+    myMaxConstant = var == null ? 0 : maxConstant;
   }
 
   public Level(LevelVariable var, int constant) {
@@ -59,20 +58,20 @@ public class Level implements PrettyPrintable {
     return myMaxConstant;
   }
 
+  public int getMaxAddedConstant() {
+    return myVar == null || myMaxConstant == 0 ? 0 : myConstant + myMaxConstant;
+  }
+
   public boolean isInfinity() {
-    return myConstant == -1;
+    return this == INFINITY;
   }
 
   public boolean isClosed() {
     return myVar == null;
   }
 
-  public boolean isMinimum() {
-    return isClosed() && myConstant == 0;
-  }
-
   public Level add(int constant) {
-    return constant == 0 || isInfinity() ? this : new Level(myVar, myConstant + constant, myMaxConstant + constant);
+    return constant == 0 || isInfinity() ? this : new Level(myVar, myConstant + constant, myMaxConstant);
   }
 
   public Level max(Level level) {
@@ -80,29 +79,26 @@ public class Level implements PrettyPrintable {
       return INFINITY;
     }
 
-    int constant;
-    if (myVar == null && level.myVar != null) {
-      constant = level.myConstant;
-    } else
-    if (myVar != null && level.myVar == null){
-      constant = myConstant;
-    } else {
-      constant = Math.max(myConstant, level.myConstant);
+    if (myVar != null && level.myVar != null) {
+      if (myVar == level.myVar) {
+        int constant = Math.max(myConstant, level.myConstant);
+        return new Level(myVar, constant, Math.max(myConstant + myMaxConstant, level.myConstant + level.myMaxConstant) - constant);
+      } else {
+        return null;
+      }
     }
 
-    int maxConstant = Math.max(myMaxConstant, level.myMaxConstant);
-    if (myVar == null) {
-      maxConstant = Math.max(maxConstant, myConstant);
-    }
-    if (level.myVar == null) {
-      maxConstant = Math.max(maxConstant, level.myConstant);
+    if (myVar == null && level.myVar == null) {
+      return new Level(null, Math.max(myConstant, level.myConstant));
     }
 
-    return new Level(myVar != null ? myVar : level.myVar != null ? level.myVar : null, constant, maxConstant);
+    int constant = myVar == null ? myConstant : level.myConstant;
+    Level lvl = myVar == null ? level : this;
+    return constant <= lvl.myConstant ? lvl : new Level(lvl.myVar, lvl.myConstant, Math.max(lvl.myMaxConstant, constant - lvl.myConstant));
   }
 
   public Level subst(LevelSubstitution subst) {
-    if (myVar == null) {
+    if (myVar == null || this == INFINITY) {
       return this;
     }
     Level level = subst.get(myVar);
@@ -110,10 +106,6 @@ public class Level implements PrettyPrintable {
       return this;
     }
     return level.add(myConstant);
-  }
-
-  public Level subst(Variable binding, Level subst) {
-    return myVar != binding ? this : subst.add(myConstant);
   }
 
   @Override
@@ -125,7 +117,7 @@ public class Level implements PrettyPrintable {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    prettyPrint(builder, Collections.<String>emptyList(), Abstract.Expression.PREC, 0);
+    prettyPrint(builder, Collections.emptyList(), Abstract.Expression.PREC, 0);
     return builder.toString();
   }
 
@@ -135,23 +127,24 @@ public class Level implements PrettyPrintable {
     }
 
     if (level1.isInfinity()) {
-      return level2.isInfinity() || !level2.isClosed() && equations.add(level2, INFINITY, Equations.CMP.EQ, sourceNode);
+      return level2.isInfinity() || !level2.isClosed() && equations.add(INFINITY, level2, Equations.CMP.LE, sourceNode);
     }
     if (level2.isInfinity()) {
-      return cmp == Equations.CMP.LE || !level1.isClosed() && equations.add(level1, INFINITY, Equations.CMP.EQ, sourceNode);
+      return cmp == Equations.CMP.LE || !level1.isClosed() && equations.add(INFINITY, level1, Equations.CMP.LE, sourceNode);
     }
 
     if (level1.getVar() == null && cmp == Equations.CMP.LE) {
-      if (level1.getConstant() <= level2.getConstant() || level1.getConstant() <= level2.getMaxConstant()) {
+      if (level1.myConstant <= level2.myConstant + level2.myMaxConstant) {
         return true;
       }
     }
 
     if (level1.getVar() == level2.getVar()) {
       if (cmp == Equations.CMP.LE) {
-        return level1.getConstant() <= level2.getConstant() && level1.getMaxConstant() <= level2.getMaxConstant();
+        return level1.myConstant <= level2.myConstant && level1.myMaxConstant <= level2.myMaxConstant;
+      } else {
+        return level1.myConstant == level2.myConstant && level1.myMaxConstant == level2.myMaxConstant;
       }
-      return level1.getConstant() == level2.getConstant() && level1.getMaxConstant() == level2.getMaxConstant();
     } else {
       return equations.add(level1, level2, cmp, sourceNode);
     }

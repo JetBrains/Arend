@@ -13,9 +13,9 @@ import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class EvalNormalizer implements Normalizer {
   @Override
@@ -70,12 +70,12 @@ public class EvalNormalizer implements Normalizer {
       }
 
       if (result != null) {
-        return result.subst(polySubst).normalize(mode);
+        return result.normalize(mode);
       }
     }
 
     List<Expression> matchedArguments = new ArrayList<>(arguments);
-    LeafElimTreeNode leaf = fun.getElimTree().match(matchedArguments);
+    LeafElimTreeNode leaf = fun.getElimTree().subst(new ExprSubstitution(), polySubst).match(matchedArguments);
     if (leaf == null) {
       return null;
     }
@@ -85,13 +85,13 @@ public class EvalNormalizer implements Normalizer {
       subst.add(params, argument);
       params = params.getNext();
     }
-    return leaf.getExpression().subst(subst, polySubst).normalize(mode);
+    return leaf.getExpression().subst(subst).normalize(mode);
   }
 
   @Override
   public Expression normalize(LetExpression expression) {
     Expression term = expression.getExpression().normalize(NormalizeVisitor.Mode.NF);
-    Set<Binding> bindings = expression.getClauses().stream().collect(Collectors.toSet());
+    Set<Binding> bindings = new HashSet<>(expression.getClauses());
     return term.findBinding(bindings) != null ? new LetExpression(expression.getClauses(), term) : term;
   }
 }

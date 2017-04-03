@@ -139,10 +139,10 @@ class DefinitionDeserialization {
     }
 
     int constant = proto.getConstant();
-    if (var == null && constant == -1) {
+    if (var == null && constant == -10) {
       return Level.INFINITY;
     } else {
-      return new Level((LevelVariable) var, constant);
+      return new Level((LevelVariable) var, constant, proto.getMaxConstant());
     }
   }
 

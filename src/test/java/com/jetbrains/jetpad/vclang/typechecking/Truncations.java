@@ -73,7 +73,7 @@ public class Truncations extends TypeCheckingTestCase {
         "\\with\n" +
         "  | loop left => base\n" +
         "  | loop right => base");
-    assertTrue(definition.getSort().getPLevel().isMinimum());
+    assertTrue(definition.getSort().getPLevel().isClosed() && definition.getSort().getPLevel().getConstant() == 0);
     assertTrue(definition.getSort().getHLevel().isInfinity());
   }
 }

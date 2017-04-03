@@ -13,7 +13,7 @@ public class Sort {
   private final Level myPLevel;
   private final Level myHLevel;
 
-  public static final Sort PROP = new Sort(null, new Level(0));
+  public static final Sort PROP = new Sort(new Level(0), new Level(0));
   public static final Sort SET0 = new Sort(new Level(0), new Level(1));
   public static final Sort ZERO = new Sort(new Level(0), new Level(0));
   public static final Sort STD = new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR)) {
@@ -42,9 +42,9 @@ public class Sort {
     myHLevel = new Level(hLevel + 1);
   }
 
-  public Sort(Level plevel, Level hlevel) {
-    myPLevel = hlevel.isMinimum() ? new Level(0) : plevel;
-    myHLevel = hlevel;
+  public Sort(Level pLevel, Level hLevel) {
+    myPLevel = pLevel;
+    myHLevel = hLevel;
   }
 
   public Level getPLevel() {
@@ -79,7 +79,7 @@ public class Sort {
   }
 
   public boolean isProp() {
-    return myHLevel.isMinimum();
+    return myHLevel.isClosed() && myHLevel.getConstant() == 0;
   }
 
   public LevelSubstitution toLevelSubstitution() {
