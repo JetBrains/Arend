@@ -408,7 +408,7 @@ public class TwoStageEquations implements Equations {
       return false;
     }
 
-    Expression expectedType = var.getType().getExpr();
+    Expression expectedType = var.getType();
     Expression actualType = expr.getType();
     if (actualType == null || actualType.isLessOrEquals(expectedType, this, var.getSourceNode())) {
       // TODO: if actualType == null then add equation type_of(var) == type_of(expr)

@@ -728,7 +728,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   @Override
   public Result visitInferHole(Abstract.InferHoleExpression expr, ExpectedType expectedType) {
     if (expectedType instanceof Expression) {
-      return new Result(new InferenceReferenceExpression(new ExpressionInferenceVariable(new TypeExpression((Expression) expectedType, Sort.PROP /* TODO: expectedType should be type? */), expr), myEquations), (Expression) expectedType);
+      return new Result(new InferenceReferenceExpression(new ExpressionInferenceVariable((Expression) expectedType, expr), myEquations), (Expression) expectedType);
     } else {
       LocalTypeCheckingError error = new ArgInferenceError(expression(), expr, new Expression[0]);
       expr.setWellTyped(myContext, new ErrorExpression(null, error));
@@ -1179,7 +1179,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
         Result termResult = checkExpr(clause.getTerm(), expectedType == null ? null : expectedType.getExpr());
         if (termResult == null) return null;
         elimTree = ExpressionFactory.top(links, new LeafElimTreeNode(clause.getArrow(), termResult.expression));
-        resultType = expectedType != null ? expectedType : new TypeExpression(termResult.type, Sort.PROP); // TODO: Result.type should have type Type
+        resultType = expectedType != null ? expectedType : new TypeExpression(termResult.type, termResult.type.getType().toSort());
       }
 
       LocalTypeCheckingError error = TypeCheckingElim.checkCoverage(clause.getName(), clause, links, elimTree, expectedType == null ? null : expectedType.getExpr());

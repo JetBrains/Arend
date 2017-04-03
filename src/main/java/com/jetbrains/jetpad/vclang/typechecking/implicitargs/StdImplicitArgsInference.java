@@ -47,11 +47,11 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           classifyingField = ((Definition) defCallResult.getDefinition()).getClassifyingFieldOfParameter(defCallResult.getArguments().size());
         }
         if (classifyingField != null) {
-          infVar = new TypeClassInferenceVariable(parameter.getName(), type, defCallResult.getDefCall(), i, null, classifyingField);
+          infVar = new TypeClassInferenceVariable(parameter.getName(), type.getExpr(), defCallResult.getDefCall(), i, null, classifyingField);
         }
       }
       if (infVar == null) {
-        infVar = new FunctionInferenceVariable(parameter.getName(), type, i + 1, result instanceof CheckTypeVisitor.DefCallResult ? ((CheckTypeVisitor.DefCallResult) result).getDefinition() : null, expr);
+        infVar = new FunctionInferenceVariable(parameter.getName(), type.getExpr(), i + 1, result instanceof CheckTypeVisitor.DefCallResult ? ((CheckTypeVisitor.DefCallResult) result).getDefinition() : null, expr);
       }
       Expression binding = new InferenceReferenceExpression(infVar, myVisitor.getEquations());
       result = result.applyExpression(binding);

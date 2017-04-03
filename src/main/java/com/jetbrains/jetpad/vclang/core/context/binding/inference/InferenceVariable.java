@@ -1,9 +1,8 @@
 package com.jetbrains.jetpad.vclang.core.context.binding.inference;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.InferenceReferenceExpression;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -13,14 +12,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public abstract class InferenceVariable implements Binding {
+public abstract class InferenceVariable implements Variable {
   private final String myName;
   private final Abstract.SourceNode mySourceNode;
-  private Type myType;
+  private Expression myType;
   private InferenceReferenceExpression myReference;
   private List<InferenceVariableListener> myListeners;
 
-  public InferenceVariable(String name, Type type, Abstract.SourceNode sourceNode) {
+  public InferenceVariable(String name, Expression type, Abstract.SourceNode sourceNode) {
     myName = name;
     mySourceNode = sourceNode;
     myType = type;
@@ -44,7 +43,6 @@ public abstract class InferenceVariable implements Binding {
     }
   }
 
-  @Override
   public String getName() {
     return myName;
   }
@@ -53,12 +51,11 @@ public abstract class InferenceVariable implements Binding {
     return mySourceNode;
   }
 
-  @Override
-  public Type getType() {
+  public Expression getType() {
     return myType;
   }
 
-  public void setType(Type type) {
+  public void setType(Expression type) {
     myType = type;
   }
 

@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.core.context.binding.inference;
 
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
@@ -14,7 +13,7 @@ public class TypeClassInferenceVariable extends InferenceVariable {
   private final Abstract.ClassView myClassView;
   private final ClassField myClassifyingField;
 
-  public TypeClassInferenceVariable(String name, Type type, Abstract.DefCallExpression defCall, int paramIndex, Abstract.ClassView classView, ClassField classifyingField) {
+  public TypeClassInferenceVariable(String name, Expression type, Abstract.DefCallExpression defCall, int paramIndex, Abstract.ClassView classView, ClassField classifyingField) {
     super(name, type, defCall);
     assert classifyingField != null;
     myDefCall = defCall;

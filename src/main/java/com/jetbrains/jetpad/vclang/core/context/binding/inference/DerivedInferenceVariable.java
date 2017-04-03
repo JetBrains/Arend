@@ -1,13 +1,12 @@
 package com.jetbrains.jetpad.vclang.core.context.binding.inference;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
 public class DerivedInferenceVariable extends InferenceVariable {
   private final InferenceVariable myVar;
 
-  public DerivedInferenceVariable(String name, InferenceVariable binding, Type type) {
+  public DerivedInferenceVariable(String name, InferenceVariable binding, Expression type) {
     super(name, type, binding.getSourceNode());
     myVar = binding;
   }

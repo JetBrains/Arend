@@ -234,15 +234,19 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return result;
   }
 
-  private Abstract.Expression visitBinding(Binding var) {
+  private Abstract.Expression visitVariable(Variable var, String varName) {
     String name = myNames.get(var);
     if (name == null) {
-      name = var.getName();
+      name = varName;
     }
     if (name == null) {
       name = "_";
     }
     return myFactory.makeVar((var instanceof InferenceVariable && !name.equals("_") ? "?" : "") + name);
+  }
+
+  private Abstract.Expression visitBinding(Binding var) {
+    return visitVariable(var, var.getName());
   }
 
   @Override
@@ -252,7 +256,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
-    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : visitBinding(expr.getVariable());
+    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : visitVariable(expr.getVariable(), expr.getVariable().getName());
   }
 
   private String renameVar(Binding var) {
