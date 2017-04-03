@@ -56,11 +56,11 @@ public class DataIndicesTest extends TypeCheckingTestCase {
         "  | NatVec zero => nil\n" +
         "  | NatVec (suc n) => cons Nat (NatVec n)");
     DataDefinition data = (DataDefinition) result.getDefinition("NatVec");
-    assertEquals(DataCall(data, Sort.ZERO, Zero()), data.getConstructor("nil").getTypeWithParams(new ArrayList<>(), Sort.ZERO));
+    assertEquals(DataCall(data, Sort.SET0, Zero()), data.getConstructor("nil").getTypeWithParams(new ArrayList<>(), Sort.SET0));
     SingleDependentLink param = singleParams(false, vars("n"), Nat());
     List<DependentLink> consParams = new ArrayList<>();
-    Expression consType = data.getConstructor("cons").getTypeWithParams(consParams, Sort.ZERO);
-    assertEquals(Pi(param, Pi(Nat(), Pi(DataCall(data, Sort.ZERO, Ref(param)), DataCall(data, Sort.ZERO, Suc(Ref(param)))))), fromPiParameters(consType, consParams));
+    Expression consType = data.getConstructor("cons").getTypeWithParams(consParams, Sort.SET0);
+    assertEquals(Pi(param, Pi(Nat(), Pi(DataCall(data, Sort.SET0, Ref(param)), DataCall(data, Sort.SET0, Suc(Ref(param)))))), fromPiParameters(consType, consParams));
   }
 
   @Test

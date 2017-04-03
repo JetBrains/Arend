@@ -60,7 +60,7 @@ public class ExpressionFactory {
   }
 
   public static LamExpression Lam(SingleDependentLink link, Expression body) {
-    return new LamExpression(Sort.ZERO, link, body);
+    return new LamExpression(Sort.SET0, link, body);
   }
 
   public static List<LetClause> lets(LetClause... letClauses) {
@@ -84,7 +84,7 @@ public class ExpressionFactory {
   }
 
   public static LetClause let(String name, List<SingleDependentLink> params, Expression resultType, ElimTreeNode elimTree) {
-    return new LetClause(name, Collections.nCopies(params.size(), Sort.ZERO), params, resultType == null ? null : new TypeExpression(resultType, Sort.ZERO), elimTree);
+    return new LetClause(name, Collections.nCopies(params.size(), Sort.SET0), params, resultType == null ? null : new TypeExpression(resultType, Sort.SET0), elimTree);
   }
 
   public static List<String> vars(String... vars) {
@@ -99,19 +99,19 @@ public class ExpressionFactory {
   }
 
   public static DependentLink param(String var, Expression type) {
-    return new TypedDependentLink(true, var, new TypeExpression(type, Sort.ZERO), EmptyDependentLink.getInstance());
+    return new TypedDependentLink(true, var, new TypeExpression(type, Sort.SET0), EmptyDependentLink.getInstance());
   }
 
   public static DependentLink paramExpr(String var, Expression type) {
-    return new TypedDependentLink(true, var, new TypeExpression(type, Sort.ZERO), EmptyDependentLink.getInstance());
+    return new TypedDependentLink(true, var, new TypeExpression(type, Sort.SET0), EmptyDependentLink.getInstance());
   }
 
   public static DependentLink paramExpr(Expression type) {
-    return new TypedDependentLink(true, null, new TypeExpression(type, Sort.ZERO), EmptyDependentLink.getInstance());
+    return new TypedDependentLink(true, null, new TypeExpression(type, Sort.SET0), EmptyDependentLink.getInstance());
   }
 
   public static TypedSingleDependentLink singleParam(boolean explicit, String name, Expression type) {
-    return new TypedSingleDependentLink(explicit, name, type instanceof Type ? (Type) type : new TypeExpression(type, Sort.ZERO));
+    return new TypedSingleDependentLink(explicit, name, type instanceof Type ? (Type) type : new TypeExpression(type, Sort.SET0));
   }
 
   public static TypedSingleDependentLink singleParam(String name, Expression type) {
@@ -119,16 +119,16 @@ public class ExpressionFactory {
   }
 
   public static SingleDependentLink singleParam(boolean explicit, List<String> names, Expression type) {
-    return com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.singleParams(explicit, names, type instanceof Type ? (Type) type : new TypeExpression(type, Sort.ZERO));
+    return com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.singleParams(explicit, names, type instanceof Type ? (Type) type : new TypeExpression(type, Sort.SET0));
   }
 
   public static PiExpression Pi(SingleDependentLink domain, Expression codomain) {
     assert domain.hasNext();
-    return new PiExpression(Sort.ZERO, domain, codomain);
+    return new PiExpression(Sort.SET0, domain, codomain);
   }
 
   public static PiExpression Pi(Expression domain, Expression codomain) {
-    return new PiExpression(Sort.ZERO, singleParam(null, domain), codomain);
+    return new PiExpression(Sort.SET0, singleParam(null, domain), codomain);
   }
 
   public static UniverseExpression Universe(int pLevel) {

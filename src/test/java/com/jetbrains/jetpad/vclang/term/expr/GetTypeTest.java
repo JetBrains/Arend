@@ -32,20 +32,20 @@ public class GetTypeTest extends TypeCheckingTestCase {
   @Test
   public void constructorTest() {
     TypeCheckClassResult result = typeCheckClass("\\data List (A : \\1-Type0) | nil | cons A (List A) \\function test => cons 0 nil");
-    testType(DataCall((DataDefinition) result.getDefinition("List"), Sort.ZERO, Nat()), result);
+    testType(DataCall((DataDefinition) result.getDefinition("List"), Sort.SET0, Nat()), result);
   }
 
   @Test
   public void nilConstructorTest() {
     TypeCheckClassResult result = typeCheckClass("\\data List (A : \\1-Type0) | nil | cons A (List A) \\function test => (List Nat).nil");
-    testType(DataCall((DataDefinition) result.getDefinition("List"), Sort.ZERO, Nat()), result);
+    testType(DataCall((DataDefinition) result.getDefinition("List"), Sort.SET0, Nat()), result);
   }
 
   @Test
   public void classExtTest() {
     TypeCheckClassResult result = typeCheckClass("\\class Test { \\field A : \\Type0 \\field a : A } \\function test => Test { A => Nat }");
     assertEquals(Universe(new Level(1), new Level(LevelVariable.HVAR, 1)), result.getDefinition("Test").getTypeWithParams(new ArrayList<>(), Sort.STD));
-    assertEquals(Universe(Sort.SET0), result.getDefinition("test").getTypeWithParams(new ArrayList<>(), Sort.ZERO));
+    assertEquals(Universe(Sort.SET0), result.getDefinition("test").getTypeWithParams(new ArrayList<>(), Sort.SET0));
     testType(Universe(Sort.SET0), result);
   }
 
@@ -66,13 +66,13 @@ public class GetTypeTest extends TypeCheckingTestCase {
   @Test
   public void fieldAccTest() {
     TypeCheckClassResult result = typeCheckClass("\\class C { \\field x : Nat \\function f (p : 0 = x) => p } \\function test (p : Nat -> C) => (p 0).f");
-    SingleDependentLink p = singleParam("p", Pi(Nat(), new ClassCallExpression((ClassDefinition) result.getDefinition("C"), Sort.ZERO)));
+    SingleDependentLink p = singleParam("p", Pi(Nat(), new ClassCallExpression((ClassDefinition) result.getDefinition("C"), Sort.SET0)));
     Expression type = FunCall(Prelude.PATH_INFIX, new Level(0), new Level(1),
         Nat(),
         Zero(),
         FieldCall((ClassField) result.getDefinition("C.x"), Apps(Ref(p), Zero())));
     List<DependentLink> testParams = new ArrayList<>();
-    Expression testType = result.getDefinition("test").getTypeWithParams(testParams, Sort.ZERO);
+    Expression testType = result.getDefinition("test").getTypeWithParams(testParams, Sort.SET0);
     assertEquals(Pi(p, Pi(type, type)).normalize(NormalizeVisitor.Mode.NF), fromPiParameters(testType, testParams).normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -98,13 +98,13 @@ public class GetTypeTest extends TypeCheckingTestCase {
         "\\data C (n : Nat) | C (zero) => c1 | C (suc n) => c2 Nat");
     DataDefinition data = (DataDefinition) result.getDefinition("C");
     List<DependentLink> c1Params = new ArrayList<>();
-    Expression c1Type = data.getConstructor("c1").getTypeWithParams(c1Params, Sort.ZERO);
-    assertEquals(DataCall(data, Sort.ZERO, Zero()), c1Type);
+    Expression c1Type = data.getConstructor("c1").getTypeWithParams(c1Params, Sort.SET0);
+    assertEquals(DataCall(data, Sort.SET0, Zero()), c1Type);
     List<DependentLink> c2Params = new ArrayList<>();
-    Expression c2Type = data.getConstructor("c2").getTypeWithParams(c2Params, Sort.ZERO);
+    Expression c2Type = data.getConstructor("c2").getTypeWithParams(c2Params, Sort.SET0);
     DependentLink params = data.getConstructor("c2").getDataTypeParameters();
     assertEquals(
-        fromPiParameters(Pi(Nat(), DataCall(data, Sort.ZERO, Suc(Ref(params)))), DependentLink.Helper.toList(params)),
+        fromPiParameters(Pi(Nat(), DataCall(data, Sort.SET0, Suc(Ref(params)))), DependentLink.Helper.toList(params)),
         fromPiParameters(c2Type, c2Params)
     );
   }
@@ -117,23 +117,23 @@ public class GetTypeTest extends TypeCheckingTestCase {
     DataDefinition vec = (DataDefinition) result.getDefinition("Vec");
     DataDefinition d = (DataDefinition) result.getDefinition("D");
     List<DependentLink> dzeroParams = new ArrayList<>();
-    Expression dzeroType = d.getConstructor("dzero").getTypeWithParams(dzeroParams, Sort.ZERO);
+    Expression dzeroType = d.getConstructor("dzero").getTypeWithParams(dzeroParams, Sort.SET0);
     assertEquals(
-        fromPiParameters(DataCall(d, Sort.ZERO, Zero(), Ref(d.getConstructor("dzero").getDataTypeParameters())), DependentLink.Helper.toList(d.getConstructor("dzero").getDataTypeParameters())),
+        fromPiParameters(DataCall(d, Sort.SET0, Zero(), Ref(d.getConstructor("dzero").getDataTypeParameters())), DependentLink.Helper.toList(d.getConstructor("dzero").getDataTypeParameters())),
         fromPiParameters(dzeroType, dzeroParams)
     );
     List<DependentLink> doneAllParams = new ArrayList<>();
-    Expression doneType = d.getConstructor("done").getTypeWithParams(doneAllParams, Sort.ZERO);
+    Expression doneType = d.getConstructor("done").getTypeWithParams(doneAllParams, Sort.SET0);
     DependentLink doneParams = d.getConstructor("done").getDataTypeParameters();
     assertEquals(
-        fromPiParameters(DataCall(d, Sort.ZERO, Suc(Ref(doneParams)), Ref(doneParams.getNext())), DependentLink.Helper.toList(d.getConstructor("done").getDataTypeParameters())),
+        fromPiParameters(DataCall(d, Sort.SET0, Suc(Ref(doneParams)), Ref(doneParams.getNext())), DependentLink.Helper.toList(d.getConstructor("done").getDataTypeParameters())),
         fromPiParameters(doneType, doneAllParams)
     );
     List<DependentLink> consAllParams = new ArrayList<>();
-    Expression consType = vec.getConstructor("Cons").getTypeWithParams(consAllParams, Sort.ZERO);
+    Expression consType = vec.getConstructor("Cons").getTypeWithParams(consAllParams, Sort.SET0);
     DependentLink consParams = vec.getConstructor("Cons").getDataTypeParameters();
     assertEquals(
-        fromPiParameters(Pi(Ref(consParams), Pi(DataCall(vec, Sort.ZERO, Ref(consParams), Ref(consParams.getNext())), DataCall(vec, Sort.ZERO, Ref(consParams), Suc(Ref(consParams.getNext()))))), DependentLink.Helper.toList(consParams)),
+        fromPiParameters(Pi(Ref(consParams), Pi(DataCall(vec, Sort.SET0, Ref(consParams), Ref(consParams.getNext())), DataCall(vec, Sort.SET0, Ref(consParams), Suc(Ref(consParams.getNext()))))), DependentLink.Helper.toList(consParams)),
         fromPiParameters(consType, consAllParams)
     );
   }
@@ -147,9 +147,9 @@ public class GetTypeTest extends TypeCheckingTestCase {
     DataDefinition c = (DataDefinition) result.getDefinition("C");
     DependentLink A = c.getConstructor("c").getDataTypeParameters();
     List<DependentLink> cParams = new ArrayList<>();
-    Expression cType = c.getConstructor("c").getTypeWithParams(cParams, Sort.ZERO);
+    Expression cType = c.getConstructor("c").getTypeWithParams(cParams, Sort.SET0);
     assertEquals(
-        fromPiParameters(Pi(Ref(A), DataCall(c, Sort.ZERO, ConCall(d.getConstructor("d"), Sort.ZERO, Collections.<Expression>emptyList(), Ref(A)))), DependentLink.Helper.toList(c.getConstructor("c").getDataTypeParameters())),
+        fromPiParameters(Pi(Ref(A), DataCall(c, Sort.SET0, ConCall(d.getConstructor("d"), Sort.SET0, Collections.emptyList(), Ref(A)))), DependentLink.Helper.toList(c.getConstructor("c").getDataTypeParameters())),
         fromPiParameters(cType, cParams)
     );
   }
@@ -161,9 +161,9 @@ public class GetTypeTest extends TypeCheckingTestCase {
         "\\data D (n : Nat) (Box n) | D (zero) _ => d");
     DataDefinition d = (DataDefinition) result.getDefinition("D");
     List<DependentLink> dParams = new ArrayList<>();
-    Expression dType = d.getConstructor("d").getTypeWithParams(dParams, Sort.ZERO);
+    Expression dType = d.getConstructor("d").getTypeWithParams(dParams, Sort.SET0);
     assertEquals(
-        fromPiParameters(DataCall(d, Sort.ZERO, Zero(), Ref(d.getConstructor("d").getDataTypeParameters())), DependentLink.Helper.toList(d.getConstructor("d").getDataTypeParameters())),
+        fromPiParameters(DataCall(d, Sort.SET0, Zero(), Ref(d.getConstructor("d").getDataTypeParameters())), DependentLink.Helper.toList(d.getConstructor("d").getDataTypeParameters())),
         fromPiParameters(dType, dParams)
     );
   }

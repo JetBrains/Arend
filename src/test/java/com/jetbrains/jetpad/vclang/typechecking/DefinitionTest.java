@@ -28,7 +28,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f => 0");
     assertNotNull(typedDef);
     assertTrue(typedDef.status() == Definition.TypeCheckingStatus.NO_ERRORS);
-    assertEquals(Nat(), typedDef.getTypeWithParams(new ArrayList<>(), Sort.ZERO));
+    assertEquals(Nat(), typedDef.getTypeWithParams(new ArrayList<>(), Sort.SET0));
   }
 
   @Test
@@ -37,7 +37,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     assertNotNull(typedDef);
     assertTrue(typedDef.status() == Definition.TypeCheckingStatus.NO_ERRORS);
     List<DependentLink> params = new ArrayList<>();
-    Expression type = typedDef.getTypeWithParams(params, Sort.ZERO);
+    Expression type = typedDef.getTypeWithParams(params, Sort.SET0);
     assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), fromPiParameters(type, params));
   }
 

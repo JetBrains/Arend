@@ -199,7 +199,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     // I : Type1 -> Type1, i : I Type0, f : {A : Type0} -> I A -> Nat |- f i : Nat
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("I", Pi(Universe(1), Universe(1))));
-    context.add(new TypedBinding("i", new TypeExpression(Apps(Ref(context.get(0)), Universe(0)), Sort.ZERO)));
+    context.add(new TypedBinding("i", new TypeExpression(Apps(Ref(context.get(0)), Universe(0)), Sort.SET0)));
     SingleDependentLink A = singleParams(false, vars("A"), Universe(0));
     context.add(new TypedBinding("f", Pi(A, Pi(Apps(Ref(context.get(0)), Ref(A)), Nat()))));
 

@@ -60,7 +60,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink xPlusMinusOne = param("x'", Nat());
     ElimTreeNode plusElimTree = top(xPlus, branch(xPlus, tail(yPlus),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Ref(yPlus)),
-        clause(Prelude.SUC, xPlusMinusOne, Suc(FunCall(plus, Sort.ZERO, Ref(xPlusMinusOne), Ref(yPlus))))));
+        clause(Prelude.SUC, xPlusMinusOne, Suc(FunCall(plus, Sort.SET0, Ref(xPlusMinusOne), Ref(yPlus))))));
     plus.setElimTree(plusElimTree);
     plus.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
@@ -73,7 +73,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink xMulMinusOne = param("x'", Nat());
     ElimTreeNode mulElimTree = top(xMul, branch(xMul, tail(yMul),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Zero()),
-        clause(Prelude.SUC, xMulMinusOne, FunCall(plus, Sort.ZERO, Ref(yMul), FunCall(mul, Sort.ZERO, Ref(xMulMinusOne), Ref(yMul))))
+        clause(Prelude.SUC, xMulMinusOne, FunCall(plus, Sort.SET0, Ref(yMul), FunCall(mul, Sort.SET0, Ref(xMulMinusOne), Ref(yMul))))
     ));
     mul.setElimTree(mulElimTree);
     mul.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
@@ -86,7 +86,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink xFacMinusOne = param("x'", Nat());
     ElimTreeNode facElimTree = top(xFac, branch(xFac, tail(),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Suc(Zero())),
-        clause(Prelude.SUC, xFacMinusOne, FunCall(mul, Sort.ZERO, Suc(Ref(xFacMinusOne)), FunCall(fac, Sort.ZERO, Ref(xFacMinusOne))))
+        clause(Prelude.SUC, xFacMinusOne, FunCall(mul, Sort.SET0, Suc(Ref(xFacMinusOne)), FunCall(fac, Sort.SET0, Ref(xFacMinusOne))))
     ));
     fac.setElimTree(facElimTree);
     fac.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
@@ -101,7 +101,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink xNElimMinusOne = param("x'", Nat());
     ElimTreeNode nelimElimTree = top(zNElim, branch(xNElim, tail(),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Ref(zNElim)),
-        clause(Prelude.SUC, xNElimMinusOne, Apps(Ref(sNElim), Ref(xNElimMinusOne), FunCall(nelim, Sort.ZERO, Ref(zNElim), Ref(sNElim), Ref(xNElimMinusOne))))
+        clause(Prelude.SUC, xNElimMinusOne, Apps(Ref(sNElim), Ref(xNElimMinusOne), FunCall(nelim, Sort.SET0, Ref(zNElim), Ref(sNElim), Ref(xNElimMinusOne))))
     ));
     nelim.setElimTree(nelimElimTree);
     nelim.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
@@ -160,7 +160,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   public void normalizeNelimZero() {
     // normalize( N-elim (suc zero) (\x. suc x) 0 ) = suc zero
     SingleDependentLink x = singleParam("x", Nat());
-    Expression expr = FunCall(nelim, Sort.ZERO, Suc(Zero()), Lam(x, Suc(Ref(x))), Zero());
+    Expression expr = FunCall(nelim, Sort.SET0, Suc(Zero()), Lam(x, Suc(Ref(x))), Zero());
     assertEquals(Suc(Zero()), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -170,7 +170,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink var0 = param("var0", Pi(Nat(), Nat()));
     SingleDependentLink x = singleParam("x", Nat());
     SingleDependentLink y = singleParam("y", Nat());
-    Expression expr = FunCall(nelim, Sort.ZERO, Suc(Zero()), Lam(x, Lam(y, Apps(Ref(var0), Ref(y)))), Suc(Zero()));
+    Expression expr = FunCall(nelim, Sort.SET0, Suc(Zero()), Lam(x, Lam(y, Apps(Ref(var0), Ref(y)))), Suc(Zero()));
     assertEquals(Apps(Ref(var0), Suc(Zero())), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -180,7 +180,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink var0 = param("var0", Universe(0));
     SingleDependentLink x = singleParam("x", Nat());
     Expression arg = Apps(Lam(x, Ref(x)), Zero());
-    Expression expr = FunCall(nelim, Sort.ZERO, Suc(Zero()), Ref(var0), arg);
+    Expression expr = FunCall(nelim, Sort.SET0, Suc(Zero()), Ref(var0), arg);
     Expression result = expr.normalize(NormalizeVisitor.Mode.NF);
     assertEquals(Suc(Zero()), result);
   }
@@ -188,49 +188,49 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizePlus0a3() {
     // normalize (plus 0 3) = 3
-    Expression expr = FunCall(plus, Sort.ZERO, Zero(), Suc(Suc(Suc(Zero()))));
+    Expression expr = FunCall(plus, Sort.SET0, Zero(), Suc(Suc(Suc(Zero()))));
     assertEquals(Suc(Suc(Suc(Zero()))), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizePlus3a0() {
     // normalize (plus 3 0) = 3
-    Expression expr = FunCall(plus, Sort.ZERO, Suc(Suc(Suc(Zero()))), Zero());
+    Expression expr = FunCall(plus, Sort.SET0, Suc(Suc(Suc(Zero()))), Zero());
     assertEquals(Suc(Suc(Suc(Zero()))), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizePlus3a3() {
     // normalize (plus 3 3) = 6
-    Expression expr = FunCall(plus, Sort.ZERO, Suc(Suc(Suc(Zero()))), Suc(Suc(Suc(Zero()))));
+    Expression expr = FunCall(plus, Sort.SET0, Suc(Suc(Suc(Zero()))), Suc(Suc(Suc(Zero()))));
     assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeMul3a0() {
     // normalize (mul 3 0) = 0
-    Expression expr = FunCall(mul, Sort.ZERO, Suc(Suc(Suc(Zero()))), Zero());
+    Expression expr = FunCall(mul, Sort.SET0, Suc(Suc(Suc(Zero()))), Zero());
     assertEquals(Zero(), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeMul0a3() {
     // normalize (mul 0 3) = 0
-    Expression expr = FunCall(mul, Sort.ZERO, Zero(), Suc(Suc(Suc(Zero()))));
+    Expression expr = FunCall(mul, Sort.SET0, Zero(), Suc(Suc(Suc(Zero()))));
     assertEquals(Zero(), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeMul3a3() {
     // normalize (mul 3 3) = 9
-    Expression expr = FunCall(mul, Sort.ZERO, Suc(Suc(Suc(Zero()))), Suc(Suc(Suc(Zero()))));
+    Expression expr = FunCall(mul, Sort.SET0, Suc(Suc(Suc(Zero()))), Suc(Suc(Suc(Zero()))));
     assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Suc(Suc(Suc(Zero()))))))))), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeFac3() {
     // normalize (fac 3) = 6
-    Expression expr = FunCall(fac, Sort.ZERO, Suc(Suc(Suc(Zero()))));
+    Expression expr = FunCall(fac, Sort.SET0, Suc(Suc(Suc(Zero()))));
     assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -268,7 +268,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizeLetElimNoStuck() {
     // normalize (\let | x (y : N) : \oo-Type2 <= \elim y | zero => \Type0 | suc _ => \Type1 \in x zero) = \Type0
-    Concrete.Expression elimTree = cElim(Collections.<Concrete.Expression>singletonList(cVar("y")),
+    Concrete.Expression elimTree = cElim(Collections.singletonList(cVar("y")),
         cClause(cPatterns(cConPattern(Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cUniverseStd(0)),
         cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern(null), true, false))), Abstract.Definition.Arrow.RIGHT, cUniverseStd(1))
     );
@@ -283,7 +283,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
         "\\data D | d Nat\n" +
         "\\function test (x : D) : Nat <= \\elim x | _! => 0");
     FunctionDefinition test = (FunctionDefinition) result.getDefinition("test");
-    assertEquals(FunCall(test, Sort.ZERO, Ref(var0)), FunCall(test, Sort.ZERO, Ref(var0)).normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(FunCall(test, Sort.SET0, Ref(var0)), FunCall(test, Sort.SET0, Ref(var0)).normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
@@ -303,8 +303,8 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void testConCallNormFull() {
     initializeBDList();
-    Expression expr1 = ConCall(bdSnoc, Sort.ZERO, Collections.<Expression>singletonList(Nat()), ConCall(bdNil, Sort.ZERO, Collections.<Expression>singletonList(Nat())), Zero());
-    assertEquals(ConCall(bdCons, Sort.ZERO, Collections.<Expression>singletonList(Nat()), Zero(), ConCall(bdNil, Sort.ZERO, Collections.<Expression>singletonList(Nat()))), expr1.normalize(NormalizeVisitor.Mode.NF));
+    Expression expr1 = ConCall(bdSnoc, Sort.SET0, Collections.singletonList(Nat()), ConCall(bdNil, Sort.SET0, Collections.singletonList(Nat())), Zero());
+    assertEquals(ConCall(bdCons, Sort.SET0, Collections.singletonList(Nat()), Zero(), ConCall(bdNil, Sort.SET0, Collections.singletonList(Nat()))), expr1.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
@@ -432,7 +432,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void testAppProj() {
     SingleDependentLink x = singleParam("x", Nat());
-    Expression expr = Apps(new ProjExpression(Tuple(new SigmaExpression(Sort.ZERO, param(null, Pi(Nat(), Nat()))), Lam(x, Ref(x))), 0), Zero());
+    Expression expr = Apps(new ProjExpression(Tuple(new SigmaExpression(Sort.SET0, param(null, Pi(Nat(), Nat()))), Lam(x, Ref(x))), 0), Zero());
     assertEquals(Zero(), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 

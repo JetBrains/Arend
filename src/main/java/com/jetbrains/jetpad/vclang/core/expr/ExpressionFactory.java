@@ -34,15 +34,15 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Interval() {
-    return new DataCallExpression(Prelude.INTERVAL, Sort.ZERO, Collections.<Expression>emptyList());
+    return new DataCallExpression(Prelude.INTERVAL, Sort.PROP, Collections.emptyList());
   }
 
   public static ConCallExpression Left() {
-    return new ConCallExpression(Prelude.LEFT, Sort.ZERO, Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
+    return new ConCallExpression(Prelude.LEFT, Sort.PROP, Collections.emptyList(), Collections.emptyList());
   }
 
   public static ConCallExpression Right() {
-    return new ConCallExpression(Prelude.RIGHT, Sort.ZERO, Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
+    return new ConCallExpression(Prelude.RIGHT, Sort.PROP, Collections.emptyList(), Collections.emptyList());
   }
 
   public static DependentLink parameter(boolean explicit, String var, Type type) {
@@ -70,15 +70,15 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Nat() {
-    return new DataCallExpression(Prelude.NAT, Sort.ZERO, Collections.<Expression>emptyList());
+    return new DataCallExpression(Prelude.NAT, Sort.SET0, Collections.emptyList());
   }
 
   public static ConCallExpression Zero() {
-    return new ConCallExpression(Prelude.ZERO, Sort.ZERO, Collections.<Expression>emptyList(), Collections.<Expression>emptyList());
+    return new ConCallExpression(Prelude.ZERO, Sort.SET0, Collections.emptyList(), Collections.emptyList());
   }
 
   public static ConCallExpression Suc(Expression expr) {
-    return new ConCallExpression(Prelude.SUC, Sort.ZERO, Collections.<Expression>emptyList(), Collections.singletonList(expr));
+    return new ConCallExpression(Prelude.SUC, Sort.SET0, Collections.emptyList(), Collections.singletonList(expr));
   }
 
   public static class ConstructorClausePair {

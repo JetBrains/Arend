@@ -15,7 +15,6 @@ public class Sort {
 
   public static final Sort PROP = new Sort(new Level(0), new Level(0));
   public static final Sort SET0 = new Sort(new Level(0), new Level(1));
-  public static final Sort ZERO = new Sort(new Level(0), new Level(0));
   public static final Sort STD = new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR)) {
     @Override
     public LevelSubstitution toLevelSubstitution() {

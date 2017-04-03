@@ -27,7 +27,7 @@ public class FieldCallExpression extends DefCallExpression {
 
   @Override
   public Sort getSortArgument() {
-    return Sort.ZERO;
+    return Sort.PROP;
   }
 
   @Override

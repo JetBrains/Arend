@@ -143,10 +143,10 @@ public class ElimTest extends TypeCheckingTestCase {
     FunctionDefinition test = (FunctionDefinition) result.getDefinition("test");
     Constructor d = (Constructor) result.getDefinition("d");
     Binding binding = new TypedBinding("y", Nat());
-    Expression call1 = ConCall(d, Sort.ZERO, Collections.<Expression>emptyList(), Zero(), Ref(binding));
-    Expression call2 = ConCall(d, Sort.ZERO, Collections.<Expression>emptyList(), Suc(Zero()), Ref(binding));
-    assertEquals(FunCall(test, Sort.ZERO, call1), FunCall(test, Sort.ZERO, call1).normalize(NormalizeVisitor.Mode.NF));
-    assertEquals(Suc(Zero()), FunCall(test, Sort.ZERO, call2).normalize(NormalizeVisitor.Mode.NF));
+    Expression call1 = ConCall(d, Sort.SET0, Collections.emptyList(), Zero(), Ref(binding));
+    Expression call2 = ConCall(d, Sort.SET0, Collections.emptyList(), Suc(Zero()), Ref(binding));
+    assertEquals(FunCall(test, Sort.SET0, call1), FunCall(test, Sort.SET0, call1).normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Suc(Zero()), FunCall(test, Sort.SET0, call2).normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
