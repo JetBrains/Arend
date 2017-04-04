@@ -13,8 +13,8 @@ public class Sort {
   private final Level myPLevel;
   private final Level myHLevel;
 
-  public static final Sort PROP = new Sort(new Level(0), new Level(0));
-  public static final Sort SET0 = new Sort(new Level(0), new Level(1));
+  public static final Sort PROP = new Sort(new Level(0), new Level(-1));
+  public static final Sort SET0 = new Sort(new Level(0), new Level(0));
   public static final Sort STD = new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR)) {
     @Override
     public LevelSubstitution toLevelSubstitution() {
@@ -22,23 +22,23 @@ public class Sort {
     }
   };
 
-  public static Sort SetOfLevel(int level) {
-    return new Sort(level, 0);
+  public static Sort SetOfLevel(int pLevel) {
+    return new Sort(pLevel, 0);
   }
 
-  public static Sort SetOfLevel(Level level) {
-    return new Sort(level, new Level(1));
+  public static Sort SetOfLevel(Level pLevel) {
+    return new Sort(pLevel, new Level(0));
   }
 
-  public static Sort TypeOfLevel(int level) {
-    return new Sort(new Level(level), Level.INFINITY);
+  public static Sort TypeOfLevel(int pLevel) {
+    return new Sort(new Level(pLevel), Level.INFINITY);
   }
 
   public Sort(int pLevel, int hLevel) {
     assert pLevel >= 0;
     assert hLevel >= 0;
     myPLevel = new Level(pLevel);
-    myHLevel = new Level(hLevel + 1);
+    myHLevel = new Level(hLevel);
   }
 
   public Sort(Level pLevel, Level hLevel) {
@@ -78,7 +78,7 @@ public class Sort {
   }
 
   public boolean isProp() {
-    return myHLevel.isClosed() && myHLevel.getConstant() == 0;
+    return myHLevel.isClosed() && myHLevel.getConstant() == -1;
   }
 
   public LevelSubstitution toLevelSubstitution() {
@@ -90,13 +90,13 @@ public class Sort {
       if (cmp == Equations.CMP.LE || sort2.isProp()) {
         return true;
       }
-      return !sort2.getHLevel().isClosed() && equations.add(sort2.getHLevel(), new Level(0), Equations.CMP.EQ, sourceNode);
+      return !sort2.getHLevel().isClosed() && equations.add(sort2.getHLevel(), new Level(-1), Equations.CMP.LE, sourceNode);
     }
     if (sort2.isProp()) {
       if (cmp == Equations.CMP.GE) {
         return true;
       }
-      return !sort1.getHLevel().isClosed() && equations.add(sort1.getHLevel(), new Level(0), Equations.CMP.EQ, sourceNode);
+      return !sort1.getHLevel().isClosed() && equations.add(sort1.getHLevel(), new Level(-1), Equations.CMP.LE, sourceNode);
     }
     return Level.compare(sort1.getPLevel(), sort2.getPLevel(), cmp, equations, sourceNode) && Level.compare(sort1.getHLevel(), sort2.getHLevel(), cmp, equations, sourceNode);
   }

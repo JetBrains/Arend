@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
@@ -33,9 +34,9 @@ public class PathsTest extends TypeCheckingTestCase {
     pathArgs.add(Lam(C, Ref(A)));
     pathArgs.add(Ref(a));
     pathArgs.add(Ref(a));
-    Expression pathCall = ConCall(Prelude.PATH_CON, new Level(0), Level.INFINITY, pathArgs, Lam(C, Ref(a)));
+    Expression pathCall = ConCall(Prelude.PATH_CON, Sort.TypeOfLevel(0), pathArgs, Lam(C, Ref(a)));
     assertEquals(Lam(A, Lam(a, pathCall)).normalize(NormalizeVisitor.Mode.NF), idp.expression);
-    assertEquals(Pi(A, Pi(a, FunCall(Prelude.PATH_INFIX, new Level(0), Level.INFINITY, Ref(A), Ref(a), Ref(a)))).normalize(NormalizeVisitor.Mode.NF), idp.type.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Pi(A, Pi(a, FunCall(Prelude.PATH_INFIX, Sort.TypeOfLevel(0), Ref(A), Ref(a), Ref(a)))).normalize(NormalizeVisitor.Mode.NF), idp.type.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test

@@ -105,13 +105,13 @@ public class Level implements PrettyPrintable {
     if (level == null) {
       return this;
     }
-    return level.add(myConstant);
+    return level.myVar != null ? new Level(level.myVar, level.myConstant + myConstant, Math.max(level.myMaxConstant, myMaxConstant - level.myConstant)) : new Level(Math.max(level.myConstant, myMaxConstant) + myConstant);
   }
 
   @Override
   public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent) {
     ToAbstractVisitor toAbsVisitor = new ToAbstractVisitor(new ConcreteExpressionFactory(), names);
-    toAbsVisitor.visitLevel(this, 0).accept(new PrettyPrintVisitor(builder, indent), prec);
+    toAbsVisitor.visitLevel(this).accept(new PrettyPrintVisitor(builder, indent), prec);
   }
 
   @Override

@@ -65,41 +65,30 @@ public class DataPolyTest extends TypeCheckingTestCase {
   @Test
   public void dataOmegaProp() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) | con1 A | con2 (n = n)");
-    assertEquals(new Sort(
-        new Level(LevelVariable.PVAR),
-        new Level(LevelVariable.HVAR, 0, 1)), /* \Type (\lp, max \lh 0) */
-      dataDefinition.getSort());
+    assertEquals(Sort.STD, dataDefinition.getSort());
   }
 
   @Test
   public void dataOmegaPropExplicit() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Type \\lp (\\max \\lh 0) | con1 (n = n) | con2 A");
-    assertEquals(new Sort(
-        new Level(LevelVariable.PVAR),
-        new Level(LevelVariable.HVAR, 0, 1)), /* \Type (\lp, max \lh 0) */
-      dataDefinition.getSort());
+    assertEquals(Sort.STD, dataDefinition.getSort());
   }
 
   @Test
   public void dataOmegaSet() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) | con1 (n = n) | con2 A | con3 Nat");
-    assertEquals(new Sort(
-        new Level(LevelVariable.PVAR),
-        new Level(LevelVariable.HVAR, 0, 1)), /* \Type (\lp, max \lh 0) */
-      dataDefinition.getSort());
+    assertEquals(Sort.STD, dataDefinition.getSort());
   }
 
   @Test
   public void dataOmegaSetExplicit() {
-    typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Type | con1 (n = n) | con2 A | con3 Nat", 1);
+    DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Type | con1 (n = n) | con2 A | con3 Nat");
+    assertEquals(Sort.STD, dataDefinition.getSort());
   }
 
   @Test
   public void dataOmegaSetExplicitMax() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Type \\lp (\\max \\lh 0) | con1 (n = n) | con2 A | con3 Nat");
-    assertEquals(new Sort(
-        new Level(LevelVariable.PVAR),
-        new Level(LevelVariable.HVAR, 0, 1)), /* \Type (\lp, max \lh 0) */
-      dataDefinition.getSort());
+    assertEquals(Sort.STD, dataDefinition.getSort());
   }
 }

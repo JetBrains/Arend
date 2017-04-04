@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.constructions;
 
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
-import com.jetbrains.jetpad.vclang.core.sort.Level;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
@@ -63,7 +63,7 @@ public class Lambda extends TypeCheckingTestCase {
   @Test
   public void lambda2() {
     SingleDependentLink param = singleParams(true, vars("x", "y"), Nat());
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam (x y z w : Nat) => path (\\lam _ => y)", Pi(Nat(), Pi(param, Pi(Nat(), FunCall(Prelude.PATH_INFIX, new Level(0), new Level(0), Nat(), Ref(param), Ref(param))))));
+    CheckTypeVisitor.Result result = typeCheckExpr("\\lam (x y z w : Nat) => path (\\lam _ => y)", Pi(Nat(), Pi(param, Pi(Nat(), FunCall(Prelude.PATH_INFIX, Sort.PROP, Nat(), Ref(param), Ref(param))))));
     assertNotNull(result);
   }
 

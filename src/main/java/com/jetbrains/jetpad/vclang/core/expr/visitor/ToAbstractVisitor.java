@@ -392,20 +392,20 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return visitSort(expr.getSort());
   }
 
-  private Abstract.LevelExpression visitLevelNull(Level level, int add) {
-    return level.getConstant() == 0 && level.getMaxConstant() == 0 && (level.getVar() == LevelVariable.PVAR || level.getVar() == LevelVariable.HVAR) ? null : visitLevel(level, add);
+  private Abstract.LevelExpression visitLevelNull(Level level) {
+    return (level.getConstant() == 0 || level.getConstant() == -1) && level.getMaxConstant() == 0 && (level.getVar() == LevelVariable.PVAR || level.getVar() == LevelVariable.HVAR) ? null : visitLevel(level);
   }
 
   public Abstract.Expression visitSort(Sort sorts) {
-    return myFactory.makeUniverse(visitLevelNull(sorts.getPLevel(), 0), visitLevelNull(sorts.getHLevel(), -1));
+    return myFactory.makeUniverse(visitLevelNull(sorts.getPLevel()), visitLevelNull(sorts.getHLevel()));
   }
 
-  public Abstract.LevelExpression visitLevel(Level level, int add) {
+  public Abstract.LevelExpression visitLevel(Level level) {
     if (level.isInfinity()) {
       return myFactory.makeInf();
     }
     if (level.isClosed()) {
-      return myFactory.makeNumberLevel(level.getConstant() + add);
+      return myFactory.makeNumberLevel(level.getConstant());
     }
 
     Abstract.LevelExpression result;
@@ -422,7 +422,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     }
 
     if (level.getMaxConstant() != 0) {
-      result = myFactory.makeMaxLevel(result, visitLevel(new Level(null, level.getMaxConstant()), add));
+      result = myFactory.makeMaxLevel(result, visitLevel(new Level(null, level.getMaxConstant())));
     }
 
     for (int i = 0; i < level.getConstant(); i++) {
