@@ -19,16 +19,25 @@ public class Level implements PrettyPrintable {
   private final LevelVariable myVar;
   private final int myMaxConstant;
 
-  public static final Level INFINITY = new Level(null, -10);
+  public static final Level INFINITY = new Level();
+
+  private Level() {
+    myVar = null;
+    myConstant = -10;
+    myMaxConstant = 0;
+  }
 
   // max(var, maxConstant) + constant
   public Level(LevelVariable var, int constant, int maxConstant) {
+    assert constant >= -1;
+    assert maxConstant >= 0;
     myVar = var;
     myConstant = var == null ? constant + maxConstant : constant;
     myMaxConstant = var == null ? 0 : maxConstant;
   }
 
   public Level(LevelVariable var, int constant) {
+    assert constant >= -1;
     myConstant = constant;
     myVar = var;
     myMaxConstant = 0;
@@ -41,6 +50,7 @@ public class Level implements PrettyPrintable {
   }
 
   public Level(int constant) {
+    assert constant >= -1;
     myConstant = constant;
     myVar = null;
     myMaxConstant = 0;
@@ -105,7 +115,16 @@ public class Level implements PrettyPrintable {
     if (level == null) {
       return this;
     }
-    return level.myVar != null ? new Level(level.myVar, level.myConstant + myConstant, Math.max(level.myMaxConstant, myMaxConstant - level.myConstant)) : new Level(Math.max(level.myConstant, myMaxConstant) + myConstant);
+
+    if (level.myVar != null) {
+      int constant = level.myConstant + myConstant;
+      if (constant < -1) {
+        constant = -1;
+      }
+      return new Level(level.myVar, constant, Math.max(level.myMaxConstant, myMaxConstant - level.myConstant));
+    } else {
+      return new Level(Math.max(level.myConstant, myMaxConstant) + myConstant);
+    }
   }
 
   @Override

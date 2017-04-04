@@ -26,11 +26,13 @@ public class TwoStageEquations implements Equations {
   private final Map<InferenceLevelVariable, LevelVariable> myBases;
   private final LevelEquations<InferenceLevelVariable> myLevelEquations;
   private final CheckTypeVisitor myVisitor;
+  private final List<InferenceVariable> myProps;
 
   public TwoStageEquations(CheckTypeVisitor visitor) {
     myEquations = new ArrayList<>();
     myBases = new HashMap<>();
     myLevelEquations = new LevelEquations<>();
+    myProps = new ArrayList<>();
     myVisitor = visitor;
   }
 
@@ -89,14 +91,23 @@ public class TwoStageEquations implements Equations {
         }
       }
 
+      if (inf1 != null) {
+        cmp = cmp.not();
+      }
+
+      if (cType.toUniverse() != null && cType.toUniverse().getSort().isProp()) {
+        if (cmp == CMP.LE) {
+          myProps.add(cInf);
+          return;
+        } else {
+          cmp = CMP.EQ;
+        }
+      }
+
       // ?x == _
       if (cmp == CMP.EQ) {
         solve(cInf, cType);
         return;
-      }
-
-      if (inf1 != null) {
-        cmp = cmp.not();
       }
 
       // ?x <> Pi
@@ -262,6 +273,12 @@ public class TwoStageEquations implements Equations {
   public LevelSubstitution solve(Abstract.SourceNode sourceNode) {
     solveClassCalls();
 
+    for (InferenceVariable var : myProps) {
+      if (!var.isSolved()) {
+        var.solve(this, new UniverseExpression(Sort.PROP));
+      }
+    }
+
     Map<InferenceLevelVariable, Integer> solution = new HashMap<>();
     List<LevelEquation<InferenceLevelVariable>> cycle = myLevelEquations.solve(solution);
     if (cycle != null) {
@@ -301,9 +318,11 @@ public class TwoStageEquations implements Equations {
     if (!myEquations.isEmpty()) {
       myVisitor.getErrorReporter().report(new SolveEquationsError(new ArrayList<>(myEquations), sourceNode));
     }
+
     myEquations.clear();
     myBases.clear();
     myLevelEquations.clear();
+    myProps.clear();
     return result;
   }
 

@@ -43,6 +43,10 @@ public abstract class InferenceVariable implements Variable {
     }
   }
 
+  public boolean isSolved() {
+    return myReference == null;
+  }
+
   public String getName() {
     return myName;
   }
