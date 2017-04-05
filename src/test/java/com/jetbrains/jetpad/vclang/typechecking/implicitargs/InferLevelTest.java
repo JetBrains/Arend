@@ -9,7 +9,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // no equations
     // error: cannot infer ?l
     typeCheckClass(
-        "\\function A => \\Type \\lp\n" +
+        "\\function A => \\Type\n" +
         "\\function f => A");
   }
 
@@ -18,8 +18,8 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // ?l <= ?l'
     // error: cannot infer ?l, ?l'
     typeCheckClass(
-        "\\function A => \\Type \\lp\n" +
-        "\\function f (A : \\Type \\lp) => A\n" +
+        "\\function A => \\Type\n" +
+        "\\function f (A : \\Type) => A\n" +
         "\\function g => f A");
   }
 
@@ -28,7 +28,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // ?l <= 10
     // error: cannot infer ?l
     typeCheckClass(
-        "\\function A => \\oo-Type \\lp\n" +
+        "\\function A => \\oo-Type\n" +
         "\\function f : \\oo-Type10 => A");
   }
 
@@ -37,14 +37,14 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // ?l <= c
     // error: cannot infer ?l
     typeCheckClass(
-        "\\function A => \\Type \\lp\n" +
+        "\\function A => \\Type\n" +
         "\\function f : \\Type (\\suc \\lp) (\\suc \\lh) => A");
   }
 
   @Test
   public void belowParam2() {
     typeCheckClass(
-        "\\function A => \\Type \\lp\n" +
+        "\\function A => \\Type\n" +
         "\\function f : \\oo-Type (\\suc \\lp) => A");
   }
 
@@ -53,8 +53,8 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // ?l + 1 <= c
     // error: cannot infer ?l
     typeCheckClass(
-        "\\function A => \\oo-Type \\lp \n" +
-        "\\function f : \\oo-Type \\lp => A", 1);
+        "\\function A => \\oo-Type\n" +
+        "\\function f : \\oo-Type => A", 1);
   }
 
   @Test
@@ -62,8 +62,8 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // 0 <= ?l, 0 <= c
     // ok: ?l = 0
     typeCheckClass(
-        "\\function f (A : \\oo-Type \\lp) => A\n" +
-        "\\function g : \\oo-Type \\lp => f Nat");
+        "\\function f (A : \\oo-Type) => A\n" +
+        "\\function g : \\oo-Type => f Nat");
   }
 
   @Test
@@ -71,8 +71,17 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // 1 <= ?l, 1 <= c
     // error: cannot solve 1 <= c
     typeCheckClass(
-        "\\function f (A : \\Type \\lp) => A\n" +
-        "\\function g : \\Type \\lp => f \\Type0", 1);
+        "\\function f (A : \\Type) => A\n" +
+        "\\function g : \\Type \\lp (\\suc \\lh) => f \\Type0", 1);
+  }
+
+  @Test
+  public void btwOneAndParamWithH() {
+    // 1 <= ?l, 1 <= c
+    // error: cannot solve 1 <= c
+    typeCheckClass(
+        "\\function f (A : \\Type) => A\n" +
+        "\\function g : \\Type => f \\Type0", 2);
   }
 
   @Test
@@ -80,7 +89,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // 0 <= ?l <= 10
     // ok: ?l = 0
     typeCheckClass(
-        "\\function f (A : \\oo-Type \\lp) => A\n" +
+        "\\function f (A : \\oo-Type) => A\n" +
         "\\function g : \\oo-Type10 => f Nat");
   }
 
@@ -89,7 +98,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // 1 <= ?l <= 10
     // ok: ?l = 1
     typeCheckClass(
-        "\\function f (A : \\oo-Type \\lp) => A\n" +
+        "\\function f (A : \\oo-Type) => A\n" +
         "\\function g : \\oo-Type10 => f \\oo-Type0");
   }
 
@@ -98,7 +107,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // 0 <= ?l
     // ok: ?l = 0
     typeCheckClass(
-        "\\function f (A : \\Type \\lp) => A\n" +
+        "\\function f (A : \\Type) => A\n" +
         "\\function g => f Nat");
   }
 
@@ -107,7 +116,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
     // 1 <= ?l
     // ok: ?l = 1
     typeCheckClass(
-        "\\function f (A : \\Type \\lp) => A\n" +
+        "\\function f (A : \\Type) => A\n" +
         "\\function g => f \\Type0");
   }
 

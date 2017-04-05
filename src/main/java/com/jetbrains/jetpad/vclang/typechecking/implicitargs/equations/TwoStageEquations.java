@@ -18,20 +18,25 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.SolveEquationError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.SolveEquationsError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.SolveLevelEquationsError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
 
 public class TwoStageEquations implements Equations {
   private List<Equation> myEquations;
   private final Map<InferenceLevelVariable, LevelVariable> myBases;
-  private final LevelEquations<InferenceLevelVariable> myLevelEquations;
+  private final LevelEquations<InferenceLevelVariable> myPLevelEquations;
+  private final LevelEquations<InferenceLevelVariable> myHLevelEquations;
   private final CheckTypeVisitor myVisitor;
   private final List<InferenceVariable> myProps;
+  private final List<Pair<InferenceLevelVariable, InferenceLevelVariable>> myBoundVariables;
 
   public TwoStageEquations(CheckTypeVisitor visitor) {
     myEquations = new ArrayList<>();
     myBases = new HashMap<>();
-    myLevelEquations = new LevelEquations<>();
+    myPLevelEquations = new LevelEquations<>();
+    myHLevelEquations = new LevelEquations<>();
+    myBoundVariables = new ArrayList<>();
     myProps = new ArrayList<>();
     myVisitor = visitor;
   }
@@ -154,6 +159,28 @@ public class TwoStageEquations implements Equations {
     stuckVar.addListener(equation);
   }
 
+  @Override
+  public void bindVariables(InferenceLevelVariable pVar, InferenceLevelVariable hVar) {
+    assert pVar.getType() == LevelVariable.LvlType.PLVL;
+    assert hVar.getType() == LevelVariable.LvlType.HLVL;
+    myBoundVariables.add(new Pair<>(pVar, hVar));
+  }
+
+  private void addEquation(LevelEquation<InferenceLevelVariable> equation) {
+    InferenceLevelVariable var1 = equation.isInfinity() ? equation.getVariable() : equation.getVariable1();
+    InferenceLevelVariable var2 = equation.isInfinity() ? equation.getVariable() : equation.getVariable2();
+    assert var1 == null || var2 == null || var1.getType() == var2.getType();
+
+    if (var1 != null && var1.getType() == LevelVariable.LvlType.PLVL || var2 != null && var2.getType() == LevelVariable.LvlType.PLVL) {
+      myPLevelEquations.addEquation(equation);
+    } else
+    if (var1 != null && var1.getType() == LevelVariable.LvlType.HLVL || var2 != null && var2.getType() == LevelVariable.LvlType.HLVL) {
+      myHLevelEquations.addEquation(equation);
+    } else {
+      throw new IllegalStateException();
+    }
+  }
+
   private void addLevelEquation(LevelVariable var1, LevelVariable var2, int constant, int maxConstant, Abstract.SourceNode sourceNode) {
     // _ <= max(-c, -d), _ <= max(l - c, -d) // 6
     if (constant < 0 && maxConstant < 0 && !(var2 instanceof InferenceLevelVariable)) {
@@ -165,7 +192,7 @@ public class TwoStageEquations implements Equations {
     if (var1 == null) {
       // 0 <= max(?y - c, -d) // 1
       if (constant < 0 && maxConstant < 0) {
-        myLevelEquations.addEquation(new LevelEquation<>(null, (InferenceLevelVariable) var2, constant, maxConstant));
+        addEquation(new LevelEquation<>(null, (InferenceLevelVariable) var2, constant, maxConstant));
       }
       return;
     }
@@ -174,10 +201,10 @@ public class TwoStageEquations implements Equations {
     if (var1 instanceof InferenceLevelVariable) {
       if (var2 instanceof InferenceLevelVariable) {
         // ?x <= max(?y +- c, +-d) // 4
-        myLevelEquations.addEquation(new LevelEquation<>((InferenceLevelVariable) var1, (InferenceLevelVariable) var2, constant, maxConstant < 0 ? null : maxConstant));
+        addEquation(new LevelEquation<>((InferenceLevelVariable) var1, (InferenceLevelVariable) var2, constant, maxConstant < 0 ? null : maxConstant));
       } else {
         // ?x <= max(+-c, +-d), ?x <= max(l +- c, +-d) // 6
-        myLevelEquations.addEquation(new LevelEquation<>((InferenceLevelVariable) var1, null, Math.max(constant, maxConstant)));
+        addEquation(new LevelEquation<>((InferenceLevelVariable) var1, null, Math.max(constant, maxConstant)));
       }
       return;
     }
@@ -193,7 +220,7 @@ public class TwoStageEquations implements Equations {
       if (var2 instanceof InferenceLevelVariable) {
         myBases.put((InferenceLevelVariable) var2, var1);
         if (constant < 0) {
-          myLevelEquations.addEquation(new LevelEquation<>(null, (InferenceLevelVariable) var2, constant));
+          addEquation(new LevelEquation<>(null, (InferenceLevelVariable) var2, constant));
         }
         return;
       }
@@ -205,7 +232,7 @@ public class TwoStageEquations implements Equations {
 
   private void addLevelEquation(LevelVariable var, Abstract.SourceNode sourceNode) {
     if (var instanceof InferenceLevelVariable) {
-      myLevelEquations.addEquation(new LevelEquation<>((InferenceLevelVariable) var));
+      addEquation(new LevelEquation<>((InferenceLevelVariable) var));
     } else {
       myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var)), sourceNode));
     }
@@ -260,13 +287,35 @@ public class TwoStageEquations implements Equations {
 
   @Override
   public boolean addVariable(InferenceLevelVariable var) {
-    myLevelEquations.addVariable(var);
+    if (var.getType() == LevelVariable.LvlType.PLVL) {
+      myPLevelEquations.addVariable(var);
+    } else {
+      myHLevelEquations.addVariable(var);
+    }
     return true;
   }
 
   @Override
   public void remove(Equation equation) {
     myEquations.remove(equation);
+  }
+
+  private void reportCycle(List<LevelEquation<InferenceLevelVariable>> cycle) {
+    if (cycle == null) {
+      return;
+    }
+
+    List<LevelEquation<LevelVariable>> basedCycle = new ArrayList<>();
+    for (LevelEquation<InferenceLevelVariable> equation : cycle) {
+      if (equation.isInfinity() || equation.getVariable1() != null) {
+        basedCycle.add(new LevelEquation<>(equation));
+      } else {
+        basedCycle.add(new LevelEquation<>(myBases.get(equation.getVariable2()), equation.getVariable2(), equation.getConstant()));
+      }
+    }
+    LevelEquation<InferenceLevelVariable> lastEquation = cycle.get(cycle.size() - 1);
+    InferenceLevelVariable var = lastEquation.getVariable1() != null ? lastEquation.getVariable1() : lastEquation.getVariable2();
+    myVisitor.getErrorReporter().report(new SolveLevelEquationsError(new ArrayList<LevelEquation<? extends LevelVariable>>(basedCycle), var.getSourceNode()));
   }
 
   @Override
@@ -280,20 +329,16 @@ public class TwoStageEquations implements Equations {
     }
 
     Map<InferenceLevelVariable, Integer> solution = new HashMap<>();
-    List<LevelEquation<InferenceLevelVariable>> cycle = myLevelEquations.solve(solution);
-    if (cycle != null) {
-      List<LevelEquation<LevelVariable>> basedCycle = new ArrayList<>();
-      for (LevelEquation<InferenceLevelVariable> equation : cycle) {
-        if (equation.isInfinity() || equation.getVariable1() != null) {
-          basedCycle.add(new LevelEquation<>(equation));
-        } else {
-          basedCycle.add(new LevelEquation<>(myBases.get(equation.getVariable2()), equation.getVariable2(), equation.getConstant()));
-        }
+    reportCycle(myHLevelEquations.solve(solution));
+
+    for (Pair<InferenceLevelVariable, InferenceLevelVariable> vars : myBoundVariables) {
+      Integer sol = solution.get(vars.proj2);
+      if (sol != null && sol == 0) {
+        myPLevelEquations.getEquations().removeIf(equation -> !equation.isInfinity() && (equation.getVariable1() == vars.proj1 || equation.getVariable2() == vars.proj1));
       }
-      LevelEquation<InferenceLevelVariable> lastEquation = cycle.get(cycle.size() - 1);
-      InferenceLevelVariable var = lastEquation.getVariable1() != null ? lastEquation.getVariable1() : lastEquation.getVariable2();
-      myVisitor.getErrorReporter().report(new SolveLevelEquationsError(new ArrayList<LevelEquation<? extends LevelVariable>>(basedCycle), var.getSourceNode()));
     }
+
+    reportCycle(myPLevelEquations.solve(solution));
 
     SimpleLevelSubstitution result = new SimpleLevelSubstitution();
     for (Map.Entry<InferenceLevelVariable, Integer> entry : solution.entrySet()) {
@@ -321,7 +366,9 @@ public class TwoStageEquations implements Equations {
 
     myEquations.clear();
     myBases.clear();
-    myLevelEquations.clear();
+    myPLevelEquations.clear();
+    myHLevelEquations.clear();
+    myBoundVariables.clear();
     myProps.clear();
     return result;
   }

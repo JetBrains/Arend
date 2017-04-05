@@ -1,11 +1,14 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
+import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
@@ -273,6 +276,19 @@ public class TypeCheckingDefCall {
       expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
       myVisitor.getErrorReporter().report(error);
       return null;
+    }
+
+    Level hLevel = null;
+    if (definition instanceof DataDefinition && !sortArgument.isProp()) {
+      hLevel = ((DataDefinition) definition).getSort().getHLevel();
+    } else if (definition instanceof FunctionDefinition && !sortArgument.isProp()) {
+      UniverseExpression universe = ((FunctionDefinition) definition).getResultType().getPiParameters(null, true, false).toUniverse();
+      if (universe != null) {
+        hLevel = universe.getSort().getHLevel();
+      }
+    }
+    if (hLevel != null && hLevel.getConstant() == -1 && hLevel.getVar() == LevelVariable.HVAR && hLevel.getMaxConstant() == 0) {
+      myVisitor.getEquations().bindVariables((InferenceLevelVariable) sortArgument.getPLevel().getVar(), (InferenceLevelVariable) sortArgument.getHLevel().getVar());
     }
 
     return CheckTypeVisitor.DefCallResult.makeTResult(expr, definition, sortArgument, thisExpr);
