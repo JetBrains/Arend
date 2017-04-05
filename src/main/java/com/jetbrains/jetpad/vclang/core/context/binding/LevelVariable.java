@@ -4,6 +4,10 @@ public interface LevelVariable extends Variable {
   enum LvlType { PLVL, HLVL }
   LvlType getType();
 
+  default LevelVariable getStd() {
+    return getType() == LvlType.PLVL ? PVAR : HVAR;
+  }
+
   LevelVariable PVAR = new LevelVariable() {
     @Override
     public LvlType getType() {
