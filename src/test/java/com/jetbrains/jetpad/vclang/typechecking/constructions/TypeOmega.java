@@ -1,8 +1,12 @@
 package com.jetbrains.jetpad.vclang.typechecking.constructions;
 
 
+import com.jetbrains.jetpad.vclang.core.expr.UniverseExpression;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class TypeOmega extends TypeCheckingTestCase {
   @Test
@@ -50,5 +54,20 @@ public class TypeOmega extends TypeCheckingTestCase {
     typeCheckClass(
         "\\function f (A : \\Type0) => 0\n" +
         "\\function g (A : \\Type) => f A", 1);
+  }
+
+  @Test
+  public void levelP() {
+    typeCheckExpr("\\Type \\lh", null, 1);
+  }
+
+  @Test
+  public void levelH() {
+    typeCheckExpr("\\Type1 \\lp", null, 1);
+  }
+
+  @Test
+  public void truncatedLevel() {
+    assertEquals(new UniverseExpression(new Sort(7, 2)), typeCheckExpr("\\2-Type 7", null).expression);
   }
 }

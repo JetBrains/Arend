@@ -680,7 +680,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   @Override
   public Level visitLP(Abstract.PLevelExpression expr, LevelVariable base) {
     if (base != LevelVariable.PVAR) {
-      myErrorReporter.report(new LocalTypeCheckingError("Expected \\lp", expr));
+      myErrorReporter.report(new LocalTypeCheckingError("Expected " + base, expr));
     }
     return new Level(base);
   }
@@ -688,7 +688,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   @Override
   public Level visitLH(Abstract.HLevelExpression expr, LevelVariable base) {
     if (base != LevelVariable.HVAR) {
-      myErrorReporter.report(new LocalTypeCheckingError("Expected \\lh", expr));
+      myErrorReporter.report(new LocalTypeCheckingError("Expected " + base, expr));
     }
     return new Level(base);
   }

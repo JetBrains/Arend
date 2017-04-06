@@ -109,9 +109,9 @@ levelExpr : levelAtom                     # atomLevelExpr
           ;
 
 binOpArg : maybeNew atomFieldsAcc argument*       # binOpArgument
-         | TRUNCATED_UNIVERSE levelAtom           # truncatedUniverseArgs
-         | UNIVERSE levelAtom levelAtom?          # universeArgs
-         | SET levelAtom                          # setUniverseArgs
+         | TRUNCATED_UNIVERSE levelAtom?          # truncatedUniverse
+         | UNIVERSE levelAtom? levelAtom?         # universe
+         | SET levelAtom?                         # setUniverse
          ;
 
 binOpLeft : binOpArg infix;
@@ -143,19 +143,23 @@ implementStatements : '{' implementStatement* '}';
 implementStatement : '|'? name '=>' expr;
 
 argument : atomFieldsAcc                # argumentExplicit
+         | universeAtom                 # argumentUniverse
          | '{' expr '}'                 # argumentImplicit
          ;
 
 literal : name                          # id
-        | UNIVERSE                      # universe
-        | TRUNCATED_UNIVERSE            # truncatedUniverse
-        | SET                           # setUniverse
         | '\\Prop'                      # prop
         | '_'                           # unknown
         | '{?}'                         # hole
         ;
 
+universeAtom : TRUNCATED_UNIVERSE       # uniTruncatedUniverse
+             | UNIVERSE                 # uniUniverse
+             | SET                      # uniSetUniverse
+             ;
+
 tele : literal                          # teleLiteral
+     | universeAtom                     # teleUniverse
      | '(' typedExpr ')'                # explicit
      | '{' typedExpr '}'                # implicit
      ;

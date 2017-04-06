@@ -49,14 +49,14 @@ public class ParserTest extends ParserTestCase {
 
   @Test
   public void parserPi() {
-    Concrete.Expression expr = parseExpr("\\Pi (x y z : \\Type0) (w t : \\Type0 -> \\Type0) -> \\Pi (a b : \\Pi (c : \\Type0) -> \\Type0 c) -> \\Type0 b y w");
-    assertTrue(compareAbstract(cPi(ctypeArgs(cTele(cvars("x", "y", "z"), cUniverseStd(0)), cTele(cvars("w", "t"), cPi(cUniverseStd(0), cUniverseStd(0)))), cPi(ctypeArgs(cTele(cvars("a", "b"), cPi("c", cUniverseStd(0), cApps(cUniverseStd(0), cVar("c"))))), cApps(cUniverseStd(0), cVar("b"), cVar("y"), cVar("w")))), expr));
+    Concrete.Expression expr = parseExpr("\\Pi (x y z : \\Type0) (w t : \\Type0 -> \\Type0) -> \\Pi (a b : \\Pi (c : \\Type0) -> x c) -> x b y w");
+    assertTrue(compareAbstract(cPi(ctypeArgs(cTele(cvars("x", "y", "z"), cUniverseStd(0)), cTele(cvars("w", "t"), cPi(cUniverseStd(0), cUniverseStd(0)))), cPi(ctypeArgs(cTele(cvars("a", "b"), cPi("c", cUniverseStd(0), cApps(cVar("x"), cVar("c"))))), cApps(cVar("x"), cVar("b"), cVar("y"), cVar("w")))), expr));
   }
 
   @Test
   public void parserPi2() {
-    Concrete.Expression expr = parseExpr("\\Pi (x y : \\Type0) (z : \\Type0 x -> \\Type0 y) -> \\Type0 z y x");
-    assertTrue(compareAbstract(cPi(ctypeArgs(cTele(cvars("x", "y"), cUniverseStd(0)), cTele(cvars("z"), cPi(cApps(cUniverseStd(0), cVar("x")), cApps(cUniverseStd(0), cVar("y"))))), cApps(cUniverseStd(0), cVar("z"), cVar("y"), cVar("x"))), expr));
+    Concrete.Expression expr = parseExpr("\\Pi (x y : \\Type0) (z : x x -> y y) -> z z y x");
+    assertTrue(compareAbstract(cPi(ctypeArgs(cTele(cvars("x", "y"), cUniverseStd(0)), cTele(cvars("z"), cPi(cApps(cVar("x"), cVar("x")), cApps(cVar("y"), cVar("y"))))), cApps(cVar("z"), cVar("z"), cVar("y"), cVar("x"))), expr));
   }
 
   @Test
