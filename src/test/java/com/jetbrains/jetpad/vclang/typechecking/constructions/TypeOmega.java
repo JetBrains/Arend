@@ -70,4 +70,18 @@ public class TypeOmega extends TypeCheckingTestCase {
   public void truncatedLevel() {
     assertEquals(new UniverseExpression(new Sort(7, 2)), typeCheckExpr("\\2-Type 7", null).expression);
   }
+
+  @Test
+  public void functionMaxTest() {
+    typeCheckClass(
+      "\\data Foo (A : \\Type) : \\Type | foo A\n" +
+      "\\function bar (A : \\Type \\lp (\\max \\lh 1)) : \\Type \\lp (\\max \\lh 1) => Foo A");
+  }
+
+  @Test
+  public void dataMaxTest() {
+    typeCheckClass(
+      "\\data Foo (A : \\Type) : \\Type | foo A\n" +
+      "\\data Bar (A : \\Type \\lp (\\max \\lh 1)) : \\Type \\lp (\\max \\lh 1) | bar (Foo A)");
+  }
 }
