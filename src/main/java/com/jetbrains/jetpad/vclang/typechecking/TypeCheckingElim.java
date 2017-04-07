@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.Condition;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.*;
@@ -387,9 +388,20 @@ public class TypeCheckingElim {
       List<? extends Expression> parameters = dataCall.getDefCallArguments();
 
       if (mode == PatternExpansionMode.DATATYPE && !dataType.getConditions().isEmpty()) {
-        error = new LocalTypeCheckingError("Pattern matching on a data type with conditions is not allowed here: " + type, pattern);
-        myVisitor.getErrorReporter().report(error);
-        return new ExpandPatternErrorResult(error);
+        boolean ok = pattern instanceof Abstract.ConstructorPattern;
+        if (ok) {
+          for (Condition condition : dataType.getConditions()) {
+            if (condition.getConstructor().getName().equals(((Abstract.ConstructorPattern) pattern).getConstructorName())) {
+              ok = false;
+              break;
+            }
+          }
+        }
+        if (!ok) {
+          error = new LocalTypeCheckingError("Pattern matching on a data type with conditions is not allowed here: " + type, pattern);
+          myVisitor.getErrorReporter().report(error);
+          return new ExpandPatternErrorResult(error);
+        }
       }
 
       if ((mode == PatternExpansionMode.FUNCTION || mode == PatternExpansionMode.DATATYPE) && dataType == Prelude.INTERVAL) {

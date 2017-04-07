@@ -241,4 +241,42 @@ public class ConditionsTest extends TypeCheckingTestCase {
         " | e1 d2 => 1\n"
     , 1);
   }
+
+  @Test
+  public void dataIntervalCondition() {
+    typeCheckClass("\\data D I | D left => c");
+  }
+
+  @Test
+  public void dataCondition() {
+    typeCheckClass(
+      "\\data D | c | c' | l I\n" +
+      "  \\with\n" +
+      "    | l left => c\n" +
+      "    | l right => c'\n" +
+      "\\data E D\n" +
+      " | E c => e");
+  }
+
+  @Test
+  public void dataConditionError() {
+    typeCheckClass(
+      "\\data D | c | c' | l I\n" +
+      "  \\with\n" +
+      "    | l left => c\n" +
+      "    | l right => c'\n" +
+      "\\data E D\n" +
+      " | E (l i) => e", 1);
+  }
+
+  @Test
+  public void dataConditionAnyPatternError() {
+    typeCheckClass(
+      "\\data D | c | c' | l I\n" +
+      "  \\with\n" +
+      "    | l left => c\n" +
+      "    | l right => c'\n" +
+      "\\data E D\n" +
+      " | E _! => e", 1);
+  }
 }

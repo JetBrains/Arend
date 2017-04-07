@@ -190,11 +190,4 @@ public class DefinitionTest extends TypeCheckingTestCase {
         "\\data Test (A : \\Set0)\n" +
         "  | Test (suc n) => foo (f n)", 1);
   }
-
-  @Test
-  public void indexedWithConditionsError() {
-    typeCheckClass(
-        "\\data S | base | loop I \\with | loop right => base | loop left => base\n" +
-        "\\data Q S | Q (base) => cq", 1);
-  }
 }
