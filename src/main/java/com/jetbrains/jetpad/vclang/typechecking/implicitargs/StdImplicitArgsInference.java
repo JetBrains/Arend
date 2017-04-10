@@ -62,8 +62,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
   }
 
   protected CheckTypeVisitor.TResult inferArg(CheckTypeVisitor.TResult result, Abstract.Expression arg, boolean isExplicit, Abstract.Expression fun) {
-    if (result == null) {
-      return null;
+    if (result == null || result instanceof CheckTypeVisitor.Result && ((CheckTypeVisitor.Result) result).expression.toError() != null) {
+      return result;
     }
 
     if (isExplicit) {

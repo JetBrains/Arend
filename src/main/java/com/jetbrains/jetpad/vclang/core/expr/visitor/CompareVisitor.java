@@ -419,11 +419,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return false;
     }
 
-    Expression type2 = expr2.getType();
-    if (type2 == null) {
-      return false;
-    }
-    ClassCallExpression classCall2 = type2.normalize(NormalizeVisitor.Mode.WHNF).toClassCall();
+    ClassCallExpression classCall2 = expr2.getType().normalize(NormalizeVisitor.Mode.WHNF).toClassCall();
     if (classCall2 == null) {
       return false;
     }

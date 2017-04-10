@@ -13,6 +13,18 @@ public class OfTypeExpression extends Expression {
     myType = type;
   }
 
+  public static Expression make(Expression expression, Expression actualType, Expression expectedType) {
+    if ((expectedType instanceof PiExpression || expectedType instanceof SigmaExpression || expectedType instanceof ClassCallExpression) &&
+        !(actualType instanceof PiExpression || actualType instanceof SigmaExpression || actualType instanceof ClassCallExpression)) {
+      while (expression.toOfType() != null) {
+        expression = expression.toOfType().myExpression;
+      }
+      return new OfTypeExpression(expression, expectedType);
+    } else {
+      return expression;
+    }
+  }
+
   public Expression getExpression() {
     return myExpression;
   }

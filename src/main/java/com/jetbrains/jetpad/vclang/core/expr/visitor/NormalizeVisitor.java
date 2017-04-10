@@ -109,7 +109,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   private Expression visitCallableCall(CallableCallExpression expr, LevelSubstitution polySubst, Mode mode) {
     DependentLink params = EmptyDependentLink.getInstance();
-    List<? extends Expression> paramArgs = Collections.<Expression>emptyList();
+    List<? extends Expression> paramArgs = Collections.emptyList();
     if (expr instanceof ConCallExpression) {
       params = ((ConCallExpression) expr).getDefinition().getDataTypeParameters();
       paramArgs = ((ConCallExpression) expr).getDataTypeArguments();
@@ -137,14 +137,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     if (expr instanceof FieldCallExpression) {
       Expression thisExpr = ((FieldCallExpression) expr).getExpression().normalize(Mode.WHNF);
       if (thisExpr.toInferenceReference() == null || !(thisExpr.toInferenceReference().getVariable() instanceof TypeClassInferenceVariable)) {
-        Expression type = thisExpr.getType();
-        if (type != null) {
-          ClassCallExpression classCall = type.normalize(Mode.WHNF).toClassCall();
-          if (classCall != null) {
-            FieldSet.Implementation impl = classCall.getFieldSet().getImplementation((ClassField) expr.getDefinition());
-            if (impl != null) {
-              return impl.substThisParam(thisExpr).accept(this, mode);
-            }
+        ClassCallExpression classCall = thisExpr.getType().normalize(Mode.WHNF).toClassCall();
+        if (classCall != null) {
+          FieldSet.Implementation impl = classCall.getFieldSet().getImplementation((ClassField) expr.getDefinition());
+          if (impl != null) {
+            return impl.substThisParam(thisExpr).accept(this, mode);
           }
         }
       }

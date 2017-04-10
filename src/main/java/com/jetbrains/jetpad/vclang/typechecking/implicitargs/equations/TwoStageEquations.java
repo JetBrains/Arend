@@ -532,11 +532,10 @@ public class TwoStageEquations implements Equations {
       return false;
     }
 
-    Expression expectedType = var.getType();
-    Expression actualType = expr.getType();
-    if (actualType == null || actualType.isLessOrEquals(expectedType, this, var.getSourceNode())) {
-      // TODO: if actualType == null then add equation type_of(var) == type_of(expr)
-      var.solve(this, new OfTypeExpression(expr, expectedType));
+    Expression expectedType = var.getType().normalize(NormalizeVisitor.Mode.WHNF);
+    Expression actualType = expr.getType().normalize(NormalizeVisitor.Mode.WHNF);
+    if (actualType.isLessOrEquals(expectedType, this, var.getSourceNode())) {
+      var.solve(this, OfTypeExpression.make(expr, actualType, expectedType));
       return true;
     } else {
       actualType = actualType.normalize(NormalizeVisitor.Mode.HUMAN_NF);

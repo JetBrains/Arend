@@ -233,7 +233,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public Expression visitOfType(OfTypeExpression expr, Void params) {
-    return new OfTypeExpression(expr.getExpression().accept(this, null), expr.getTypeOf().subst(myExprSubstitution, myLevelSubstitution));
+    return new OfTypeExpression(expr.getExpression().accept(this, null), expr.getTypeOf().accept(this, null));
   }
 
   public LetClause visitLetClause(LetClause clause) {

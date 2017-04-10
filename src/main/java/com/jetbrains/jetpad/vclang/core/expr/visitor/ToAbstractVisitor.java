@@ -130,10 +130,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   private void getArgumentsExplicitness(Expression expr, boolean[] isExplicit, int i) {
     List<SingleDependentLink> params = new ArrayList<>(isExplicit.length - i);
-    Expression type = expr.getType();
-    if (type != null) {
-      type.getPiParameters(params, true, false);
-    }
+    expr.getType().getPiParameters(params, true, false);
     for (int j = 0; i < isExplicit.length; i++, j++) {
       isExplicit[i] = j >= params.size() || params.get(j).isExplicit();
     }

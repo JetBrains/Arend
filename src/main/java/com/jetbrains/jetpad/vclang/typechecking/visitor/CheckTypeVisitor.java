@@ -314,8 +314,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   }
 
   public boolean compare(Result result, Expression expectedType, Abstract.Expression expr) {
-    if (result.type.isLessOrEquals(expectedType, myEquations, expr)) {
-      result.expression = new OfTypeExpression(result.expression, expectedType);
+    Expression actualType = result.type.normalize(NormalizeVisitor.Mode.WHNF);
+    expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+    if (actualType.isLessOrEquals(expectedType, myEquations, expr)) {
+      result.expression = OfTypeExpression.make(result.expression, actualType, expectedType);
       return true;
     }
 
