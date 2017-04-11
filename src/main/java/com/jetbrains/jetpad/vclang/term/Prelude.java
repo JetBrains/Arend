@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.core.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.UniverseExpression;
@@ -71,7 +72,7 @@ public class Prelude {
         clause(LEFT, EmptyDependentLink.getInstance(), new ReferenceExpression(AT.getParameters().getNext())),
         clause(RIGHT, EmptyDependentLink.getInstance(), new ReferenceExpression(AT.getParameters().getNext().getNext())),
         ExpressionFactory.clause(ExpressionFactory.branch(param4, ExpressionFactory.tail(param4.getNext()),
-            ExpressionFactory.clause(PATH_CON, atPath, ExpressionFactory.Apps(new ReferenceExpression(atPath), new ReferenceExpression(param4.getNext()))))))));
+            ExpressionFactory.clause(PATH_CON, atPath, new AppExpression(new ReferenceExpression(atPath), new ReferenceExpression(param4.getNext()))))))));
       AT.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     } else
     if (abstractDef.getName().equals("coe")) {

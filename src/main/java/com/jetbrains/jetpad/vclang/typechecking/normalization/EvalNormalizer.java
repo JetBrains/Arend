@@ -33,10 +33,8 @@ public class EvalNormalizer implements Normalizer {
       result = new LamExpression(fun.getResultSort(), link, result);
     }
     result = result.subst(subst);
-    if (result != fun.getBody()) {
-      result = result.addArguments(arguments.subList(i, arguments.size()));
-    } else {
-      result = ExpressionFactory.Apps(result, arguments.subList(i, arguments.size()));
+    for (; i < arguments.size(); i++) {
+      result = new AppExpression(result, arguments.get(i));
     }
     return result.normalize(mode);
   }
@@ -47,7 +45,7 @@ public class EvalNormalizer implements Normalizer {
       Expression result = null;
 
       Binding binding = new TypedBinding("i", ExpressionFactory.Interval());
-      Expression normExpr = arguments.get(0).addArgument(new ReferenceExpression(binding)).normalize(NormalizeVisitor.Mode.NF);
+      Expression normExpr = new AppExpression(arguments.get(0), new ReferenceExpression(binding)).normalize(NormalizeVisitor.Mode.NF);
       if (!normExpr.findBinding(binding)) {
         result = arguments.get(1);
       } else {
@@ -63,7 +61,7 @@ public class EvalNormalizer implements Normalizer {
           if (noFreeVar) {
             ConCallExpression normedPtCon = arguments.get(2).normalize(NormalizeVisitor.Mode.NF).toConCall();
             if (normedPtCon != null && normedPtCon.getDefinition() == Prelude.RIGHT) {
-              result = isoArgs.get(2).addArgument(arguments.get(1));
+              result = new AppExpression(isoArgs.get(2), arguments.get(1));
             }
           }
         }

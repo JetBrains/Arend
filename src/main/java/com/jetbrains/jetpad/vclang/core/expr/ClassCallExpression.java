@@ -94,9 +94,4 @@ public class ClassCallExpression extends DefCallExpression implements Type {
   public ClassCallExpression toClassCall() {
     return this;
   }
-
-  @Override
-  public Expression addArgument(Expression argument) {
-    throw new IllegalStateException();
-  }
 }

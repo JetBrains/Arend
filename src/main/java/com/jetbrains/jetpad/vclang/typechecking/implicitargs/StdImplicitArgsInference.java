@@ -81,8 +81,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
             return null;
           }
 
-          Expression expr1 = argResult.expression.addArgument(Left());
-          Expression expr2 = argResult.expression.addArgument(Right());
+          Expression expr1 = new AppExpression(argResult.expression, Left());
+          Expression expr2 = new AppExpression(argResult.expression, Right());
           return ((CheckTypeVisitor.DefCallResult) result).applyExpressions(Arrays.asList(expr1, expr2, argResult.expression));
         }
       }

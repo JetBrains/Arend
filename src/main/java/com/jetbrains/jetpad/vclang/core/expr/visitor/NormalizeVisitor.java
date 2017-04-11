@@ -27,22 +27,25 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitApp(AppExpression expr, Mode mode) {
-    Expression funNorm = expr.getFunction().accept(this, Mode.WHNF);
-    LamExpression lamFun = funNorm.toLam();
-    if (lamFun != null) {
-      return myNormalizer.normalize(lamFun, expr.getArguments(), mode);
+    List<Expression> args = new ArrayList<>();
+    Expression function = expr;
+    while (function.toApp() != null) {
+      args.add(function.toApp().getArgument());
+      function = function.toApp().getFunction().normalize(Mode.WHNF);
+    }
+    Collections.reverse(args);
+
+    if (function.toLam() != null) {
+      return myNormalizer.normalize(function.toLam(), args, mode);
     }
 
-    if (mode != Mode.NF) {
-      return funNorm.addArguments(expr.getArguments());
+    if (mode == Mode.NF) {
+      function = function.accept(this, mode);
     }
-
-    funNorm = funNorm.accept(this, Mode.NF);
-    for (Expression arg : expr.getArguments()) {
-      funNorm = funNorm.addArgument(arg.accept(this, mode));
+    for (Expression arg : args) {
+      function = new AppExpression(function, mode == Mode.NF ? arg.accept(this, mode) : arg);
     }
-
-    return funNorm;
+    return function;
   }
 
   private Expression applyDefCall(CallableCallExpression expr, Mode mode) {

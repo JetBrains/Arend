@@ -12,8 +12,6 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Apps;
-
 public class EtaNormalization {
   public static Expression normalize(Expression expression) {
     LamExpression lam = expression.toLam();
@@ -34,34 +32,26 @@ public class EtaNormalization {
   public static Expression normalizeLam(LamExpression expression) {
     List<DependentLink> params = DependentLink.Helper.toList(expression.getParameters());
     Expression body = normalize(expression.getBody());
-    List<? extends Expression> args = body.getArguments();
-
-    int index = 0;
-    for (; index < params.size() && index < args.size(); index++) {
-      DependentLink param = params.get(params.size() - 1 - index);
-      ReferenceExpression argRef = normalize(args.get(args.size() - 1 - index)).toReference();
-      if (!(argRef != null && argRef.getBinding() == param && !body.getFunction().findBinding(param))) {
-        break;
-      }
-      for (int i = 0; i < args.size() - 1 - index; i++) {
-        if (args.get(i).findBinding(param)) {
-          break;
+    int index = params.size() - 1;
+    for (; index >= 0; index--) {
+      if (body.toApp() != null) {
+        ReferenceExpression argRef = normalize(body.toApp().getArgument()).toReference();
+        if (argRef != null && argRef.getBinding() == params.get(index) && !body.toApp().getFunction().findBinding(argRef.getBinding())) {
+          body = body.toApp().getFunction();
+          continue;
         }
       }
+
+      if (index == params.size() - 1) {
+        return new LamExpression(expression.getResultSort(), expression.getParameters(), body);
+      } else {
+        ExprSubstitution substitution = new ExprSubstitution();
+        SingleDependentLink newParams = expression.getParameters().subst(substitution, LevelSubstitution.EMPTY, index + 1);
+        return new LamExpression(expression.getResultSort(), newParams, body.subst(substitution));
+      }
     }
 
-    if (index == 0) {
-      return new LamExpression(expression.getResultSort(), expression.getParameters(), body);
-    }
-
-    body = Apps(body.getFunction(), args.subList(0, args.size() - index));
-    if (index == params.size()) {
-      return body;
-    }
-
-    ExprSubstitution substitution = new ExprSubstitution();
-    SingleDependentLink newParams = expression.getParameters().subst(substitution, LevelSubstitution.EMPTY, params.size() - index);
-    return new LamExpression(expression.getResultSort(), newParams, body.subst(substitution));
+    return normalize(body);
   }
 
   public static Expression normalizePath(ConCallExpression expr) {

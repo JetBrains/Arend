@@ -2,8 +2,6 @@ package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 
-import java.util.List;
-
 public class OfTypeExpression extends Expression {
   private final Expression myExpression;
   private final Expression myType;
@@ -30,27 +28,12 @@ public class OfTypeExpression extends Expression {
   }
 
   @Override
-  public Expression getFunction() {
-    return myExpression.getFunction();
-  }
-
-  @Override
-  public List<? extends Expression> getArguments() {
-    return myExpression.getArguments();
-  }
-
-  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitOfType(this, params);
   }
 
   public Expression getTypeOf() {
     return myType;
-  }
-
-  @Override
-  public Expression addArgument(Expression argument) {
-    return myExpression.addArgument(argument);
   }
 
   @Override

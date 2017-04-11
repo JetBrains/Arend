@@ -69,7 +69,7 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
     do {
       f = false;
       if (argument instanceof AppExpression) {
-        argument = argument.getFunction();
+        argument = ((AppExpression) argument).getFunction();
         f = true;
       }
       if (argument instanceof ProjExpression) {
@@ -126,10 +126,7 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
   @Override
   public Void visitApp(AppExpression expression, ParameterVector vector) {
     expression.getFunction().accept(this, vector);
-
-    for (Expression e : expression.getArguments()) {
-      e.accept(this, vector);
-    }
+    expression.getArgument().accept(this, vector);
     return null;
   }
 
@@ -194,12 +191,11 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
     return null;
   }
 
-  private Void visitDependentLink(DependentLink link, ParameterVector vector) {
+  private void visitDependentLink(DependentLink link, ParameterVector vector) {
     for (; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
       link.getType().getExpr().accept(this, vector);
     }
-    return null;
   }
 
   @Override

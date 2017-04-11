@@ -280,7 +280,7 @@ class DefinitionDeserialization {
 
 
   private AppExpression readApp(ExpressionProtos.Expression.App proto) throws DeserializationError {
-    return new AppExpression(readExpr(proto.getFunction()), readExprList(proto.getArgumentList()));
+    return new AppExpression(readExpr(proto.getFunction()), readExpr(proto.getArgument()));
   }
 
   private FunCallExpression readFunCall(ExpressionProtos.Expression.FunCall proto) throws DeserializationError {

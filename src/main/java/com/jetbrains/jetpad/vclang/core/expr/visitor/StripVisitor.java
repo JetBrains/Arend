@@ -27,12 +27,8 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
   }
 
   @Override
-  public Expression visitApp(AppExpression expr, Void params) {
-    List<Expression> args = new ArrayList<>(expr.getArguments().size());
-    for (Expression arg : expr.getArguments()) {
-      args.add(arg.accept(this, null));
-    }
-    return new AppExpression(expr.getFunction().accept(this, null), args);
+  public AppExpression visitApp(AppExpression expr, Void params) {
+    return new AppExpression(expr.getFunction().accept(this, null), expr.getArgument().accept(this, null));
   }
 
   @Override

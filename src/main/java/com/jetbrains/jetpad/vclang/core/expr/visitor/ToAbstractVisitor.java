@@ -74,13 +74,19 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   }
 
   private Abstract.Expression checkBinOp(Expression expr) {
-    Expression fun = expr.getFunction();
+    List<Expression> args = new ArrayList<>(2);
+    Expression fun = expr;
+    while (fun.toApp() != null) {
+      args.add(fun.toApp().getArgument());
+      fun = fun.toApp().getFunction();
+    }
+    Collections.reverse(args);
     DefCallExpression defCall = fun.toDefCall();
 
     if (defCall == null || new Name(defCall.getDefinition().getName()).fixity != Name.Fixity.INFIX) {
       return null;
     }
-    boolean[] isExplicit = new boolean[defCall.getDefCallArguments().size() + expr.getArguments().size()];
+    boolean[] isExplicit = new boolean[defCall.getDefCallArguments().size() + args.size()];
     int i = 0;
     for (DependentLink link = defCall.getDefinition().getParameters(); link.hasNext(); link = link.getNext()) {
       isExplicit[i++] = link.isExplicit();
@@ -100,12 +106,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
         visibleArgs[i++] = defCall.getDefCallArguments().get(j);
       }
     }
-    for (int j = 0; j < expr.getArguments().size(); j++) {
+    for (int j = 0; j < args.size(); j++) {
       if (isExplicit[defCall.getDefCallArguments().size() + j]) {
         if (i == 2) {
           return null;
         }
-        visibleArgs[i++] = expr.getArguments().get(j);
+        visibleArgs[i++] = args.get(j);
       }
     }
     return i == 2 ? myFactory.makeBinOp(visibleArgs[0].accept(this, null), defCall.getDefinition().getAbstractDefinition(), visibleArgs[1].accept(this, null)) : null;
@@ -118,12 +124,19 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       return result;
     }
 
-    result = expr.getFunction().accept(this, null);
+    List<Expression> args = new ArrayList<>();
+    Expression fun = expr;
+    while (fun.toApp() != null) {
+      args.add(fun.toApp().getArgument());
+      fun = fun.toApp().getFunction();
+    }
+    Collections.reverse(args);
 
-    boolean[] isExplicit = new boolean[expr.getArguments().size()];
+    result = fun.accept(this, null);
+    boolean[] isExplicit = new boolean[args.size()];
     getArgumentsExplicitness(expr.getFunction(), isExplicit, 0);
-    for (int index = 0; index < expr.getArguments().size(); index++) {
-      result = visitApp(result, expr.getArguments().get(index), isExplicit[index]);
+    for (int index = 0; index < args.size(); index++) {
+      result = visitApp(result, args.get(index), isExplicit[index]);
     }
     return result;
   }

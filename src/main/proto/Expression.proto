@@ -30,7 +30,7 @@ message Expression {
 
     message App {
         Expression function = 1;
-        repeated Expression argument = 2;
+        Expression argument = 3;
     }
     message ClassCall {
         int32 class_ref = 1;

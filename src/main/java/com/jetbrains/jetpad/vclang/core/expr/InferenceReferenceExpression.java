@@ -8,8 +8,6 @@ import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
-import java.util.List;
-
 public class InferenceReferenceExpression extends Expression {
   private InferenceVariable myVar;
   private Expression mySubstExpression;
@@ -59,16 +57,6 @@ public class InferenceReferenceExpression extends Expression {
   @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitInferenceReference(this, params);
-  }
-
-  @Override
-  public Expression getFunction() {
-    return mySubstExpression != null ? mySubstExpression.getFunction() : super.getFunction();
-  }
-
-  @Override
-  public List<? extends Expression> getArguments() {
-    return mySubstExpression != null ? mySubstExpression.getArguments() : super.getArguments();
   }
 
   @Override

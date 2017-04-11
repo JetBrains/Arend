@@ -228,7 +228,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
     @Override
     public Result applyExpression(Expression expr) {
-      expression = expression.addArgument(expr);
+      expression = new AppExpression(expression, expr);
       type = type.applyExpression(expr);
       return this;
     }
@@ -421,8 +421,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     if (result instanceof Result) {
       ConCallExpression conCall = ((Result) result).expression.toConCall();
       if (conCall != null && conCall.getDefinition() == Prelude.PATH_CON) {
-        if (!compareExpressions((Result) result, conCall.getDataTypeArguments().get(1), conCall.getDefCallArguments().get(0).addArgument(ExpressionFactory.Left()), expr) ||
-          !compareExpressions((Result) result, conCall.getDataTypeArguments().get(2), conCall.getDefCallArguments().get(0).addArgument(ExpressionFactory.Right()), expr)) {
+        if (!compareExpressions((Result) result, conCall.getDataTypeArguments().get(1), new AppExpression(conCall.getDefCallArguments().get(0), ExpressionFactory.Left()), expr) ||
+          !compareExpressions((Result) result, conCall.getDataTypeArguments().get(2), new AppExpression(conCall.getDefCallArguments().get(0), ExpressionFactory.Right()), expr)) {
           return false;
         }
       }

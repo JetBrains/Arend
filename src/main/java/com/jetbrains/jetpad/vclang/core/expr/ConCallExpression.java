@@ -53,15 +53,13 @@ public class ConCallExpression extends DefCallExpression {
     return this;
   }
 
-  @Override
-  public Expression addArgument(Expression argument) {
+  public void addArgument(Expression argument) {
     if (myDataTypeArguments.size() < DependentLink.Helper.size(getDefinition().getDataTypeParameters())) {
       myDataTypeArguments.add(argument);
     } else {
       assert myArguments.size() < DependentLink.Helper.size(getDefinition().getParameters());
       myArguments.add(argument);
     }
-    return this;
   }
 
   @Override

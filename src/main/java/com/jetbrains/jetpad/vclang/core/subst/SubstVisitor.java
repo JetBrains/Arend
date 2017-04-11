@@ -25,12 +25,8 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   }
 
   @Override
-  public Expression visitApp(AppExpression expr, Void params) {
-    List<Expression> arguments = new ArrayList<>(expr.getArguments().size());
-    for (Expression argument : expr.getArguments()) {
-      arguments.add(argument.accept(this, null));
-    }
-    return new AppExpression(expr.getFunction().accept(this, null), arguments);
+  public AppExpression visitApp(AppExpression expr, Void params) {
+    return new AppExpression(expr.getFunction().accept(this, null), expr.getArgument().accept(this, null));
   }
 
   @Override
@@ -84,7 +80,10 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
       if (subst.toReference() != null && subst.toReference().getBinding() instanceof LetClause) {
         return new LetClauseCallExpression((LetClause) subst.toReference().getBinding(), args);
       } else {
-        return new AppExpression(subst, args);
+        for (Expression arg : args) {
+          subst = new AppExpression(subst, arg);
+        }
+        return subst;
       }
     } else {
       return new LetClauseCallExpression(expr.getLetClause(), args);
@@ -95,7 +94,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
     Expression result = myExprSubstitution.get(expr.getDefinition());
     if (result != null) {
-      return result.addArgument(expr.getExpression().accept(this, null));
+      return new AppExpression(result, expr.getExpression().accept(this, null));
     } else {
       return ExpressionFactory.FieldCall(expr.getDefinition(), expr.getExpression().accept(this, null));
     }

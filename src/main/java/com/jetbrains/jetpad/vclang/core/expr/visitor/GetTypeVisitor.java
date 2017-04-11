@@ -12,7 +12,7 @@ import java.util.List;
 public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitApp(AppExpression expr, Void params) {
-    return expr.getFunction().accept(this, null).normalize(NormalizeVisitor.Mode.WHNF).applyExpressions(expr.getArguments());
+    return expr.getFunction().accept(this, null).applyExpression(expr.getArgument());
   }
 
   @Override

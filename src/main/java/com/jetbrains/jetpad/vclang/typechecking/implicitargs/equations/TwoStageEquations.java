@@ -57,7 +57,15 @@ public class TwoStageEquations implements Equations {
     if (inf1 == null && inf2 == null) {
       // TODO: correctly check for stuck expressions
       // expr1 /= stuck, expr2 /= stuck
-      if ((expr1.getFunction().toInferenceReference() == null || expr1.getFunction().toInferenceReference().getVariable() == null) && (expr2.getFunction().toInferenceReference() == null || expr2.getFunction().toInferenceReference().getVariable() == null)) {
+      Expression fun1 = expr1;
+      while (fun1.toApp() != null) {
+        fun1 = fun1.toApp().getFunction();
+      }
+      Expression fun2 = expr2;
+      while (fun2.toApp() != null) {
+        fun2 = fun2.toApp().getFunction();
+      }
+      if ((fun1.toInferenceReference() == null || fun1.toInferenceReference().getVariable() == null) && (fun2.toInferenceReference() == null || fun2.toInferenceReference().getVariable() == null)) {
         InferenceVariable variable = null;
         Expression result = null;
 

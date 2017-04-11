@@ -95,7 +95,7 @@ public class DataDefinition extends Definition {
   }
 
   public Collection<Condition> getConditions() {
-    return myConditions == null ? Collections.<Condition>emptyList() : myConditions.values();
+    return myConditions == null ? Collections.emptyList() : myConditions.values();
   }
 
   public Condition getCondition(Constructor constructor) {

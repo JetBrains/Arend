@@ -51,13 +51,14 @@ public class SubstTest extends TypeCheckingTestCase {
   @Test
   public void substLamInLamOpen() {
     // \ x y. z x y [z := x] = \x' y'. x x' y'
-    SingleDependentLink xy = singleParam(true, vars("x", "y"), Nat());
+    SingleDependentLink xy = singleParam(true, vars("x", "y"), Pi(Nat(), Pi(Nat(), Nat())));
     Binding z = new TypedBinding("z", Nat());
     Expression expr = Lam(xy, Apps(Ref(z), Ref(xy), Ref(xy.getNext())));
 
-    SingleDependentLink xy1 = singleParam(true, vars("x'", "y'"), Nat());
+    SingleDependentLink xy1 = singleParam(true, vars("x'", "y'"), Pi(Nat(), Pi(Nat(), Nat())));
     Expression expr1 = Lam(xy1, Apps(Ref(xy), Ref(xy1), Ref(xy1.getNext())));
-    assertEquals(expr1, expr.subst(z, Ref(xy)));
+    Expression expr2 = expr.subst(z, Ref(xy));
+    assertEquals(expr1, expr2);
   }
 
   @Test

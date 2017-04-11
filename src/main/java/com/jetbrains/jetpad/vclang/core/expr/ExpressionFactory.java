@@ -12,15 +12,21 @@ import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class ExpressionFactory {
   public static Expression Apps(Expression function, Expression... arguments) {
-    return arguments.length == 0 ? function : new AppExpression(function, new ArrayList<>(Arrays.asList(arguments)));
-  }
-
-  public static Expression Apps(Expression fun, Collection<? extends Expression> arguments) {
-    return arguments.isEmpty() ? fun : new AppExpression(fun, arguments);
+    if (arguments.length == 0) {
+      return function;
+    }
+    Expression result = function;
+    for (Expression argument : arguments) {
+      result = new AppExpression(result, argument);
+    }
+    return result;
   }
 
   public static Expression FieldCall(ClassField definition, Expression thisExpr) {

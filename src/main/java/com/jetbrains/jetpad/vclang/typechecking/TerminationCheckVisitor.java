@@ -84,15 +84,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
 
   @Override
   public Boolean visitApp(AppExpression expr, Void params) {
-    if (!expr.getFunction().accept(this, null)) {
-      return false;
-    }
-    for (Expression arg : expr.getArguments()) {
-      if (!arg.accept(this, null)) {
-        return false;
-      }
-    }
-    return true;
+    return expr.getFunction().accept(this, null) && expr.getArgument().accept(this, null);
   }
 
   @Override

@@ -46,16 +46,6 @@ public class FunCallExpression extends DefCallExpression {
   }
 
   @Override
-  public Expression addArgument(Expression argument) {
-    if (myArguments.size() < DependentLink.Helper.size(getDefinition().getParameters())) {
-      myArguments.add(argument);
-      return this;
-    } else {
-      return super.addArgument(argument);
-    }
-  }
-
-  @Override
   public Expression getStuckExpression() {
     if (!(getDefinition().getElimTree() instanceof BranchElimTreeNode)) {
       return null;

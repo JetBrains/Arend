@@ -6,8 +6,6 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.type.ExpectedType;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
@@ -20,7 +18,9 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEqua
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import com.jetbrains.jetpad.vclang.typechecking.normalization.EvalNormalizer;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 public abstract class Expression implements ExpectedType {
   public abstract <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params);
@@ -166,51 +166,6 @@ public abstract class Expression implements ExpectedType {
       result = new PiExpression(piExpr.getResultSort(), link, result);
     }
     return result.subst(subst);
-  }
-
-  public Expression applyExpressions(List<? extends Expression> expressions) {
-    if (expressions.isEmpty()) {
-      return this;
-    }
-
-    PiExpression piExpr = normalize(NormalizeVisitor.Mode.WHNF).toPi();
-    ExprSubstitution subst = new ExprSubstitution();
-    SingleDependentLink link = piExpr.getParameters();
-    int i = 0;
-    for (; link.hasNext() && i < expressions.size(); link = link.getNext(), i++) {
-      subst.add(link, expressions.get(i));
-    }
-
-    Expression result = piExpr.getCodomain();
-    if (link.hasNext()) {
-      result = new PiExpression(piExpr.getResultSort(), link, result);
-    }
-    result = result.subst(subst);
-    if (i < expressions.size()) {
-      result = result.applyExpressions(expressions.subList(i, expressions.size()));
-    }
-    return result;
-  }
-
-  public Expression getFunction() {
-    return this;
-  }
-
-  public List<? extends Expression> getArguments() {
-    return Collections.emptyList();
-  }
-
-  public Expression addArgument(Expression argument) {
-    return new AppExpression(this, new ArrayList<>(Collections.singletonList(argument)));
-  }
-
-  public Expression addArguments(Collection<? extends Expression> arguments) {
-    Expression result = this;
-    for (Expression argument : arguments) {
-      result = result.addArgument(argument);
-    }
-    return result;
-//    return arguments.isEmpty() ? this : new AppExpression(this, arguments);
   }
 
   public AppExpression toApp() {

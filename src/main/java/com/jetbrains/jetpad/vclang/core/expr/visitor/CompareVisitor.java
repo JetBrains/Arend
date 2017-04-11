@@ -16,10 +16,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.EtaNormalization;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FieldCall;
 
@@ -93,10 +90,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       }
     }
 
-    if (!expr2.getArguments().isEmpty() && checkIsInferVar(expr2.getFunction(), expr1, expr2)) {
-      return true;
-    }
-
     InferenceReferenceExpression ref2 = expr2.toInferenceReference();
     if (ref2 != null) {
       return compareInferenceReference(ref2, expr1, false);
@@ -126,7 +119,10 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
   // TODO: should we check other stuck terms?
   public static InferenceVariable checkIsInferVar(Expression expr) {
-    InferenceReferenceExpression ref = expr.getFunction().toInferenceReference();
+    while (expr.toApp() != null) {
+      expr = expr.toApp().getFunction();
+    }
+    InferenceReferenceExpression ref = expr.toInferenceReference();
     return ref != null && ref.getSubstExpression() == null ? ref.getVariable() : null;
   }
 
@@ -145,14 +141,22 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
   @Override
   public Boolean visitApp(AppExpression expr1, Expression expr2) {
-    List<? extends Expression> args1 = expr1.getArguments();
-    Expression fun1 = expr1.getFunction();
+    List<Expression> args1 = new ArrayList<>();
+    Expression fun1 = expr1;
+    while (fun1.toApp() != null) {
+      args1.add(fun1.toApp().getArgument());
+      fun1 = fun1.toApp().getFunction();
+    }
     if (checkIsInferVar(fun1, expr1, expr2)) {
       return true;
     }
 
-    List<? extends Expression> args2 = expr2.getArguments();
-    Expression fun2 = expr2.getFunction();
+    List<Expression> args2 = new ArrayList<>();
+    Expression fun2 = expr2;
+    while (fun2.toApp() != null) {
+      args2.add(fun2.toApp().getArgument());
+      fun2 = fun2.toApp().getFunction();
+    }
     if (checkIsInferVar(fun2, expr1, expr2)) {
       return true;
     }
@@ -166,6 +170,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     if (!compare(fun1, fun2)) {
       return false;
     }
+    Collections.reverse(args1);
+    Collections.reverse(args2);
 
     int i = 0;
     if (fun1.toDataCall() != null && fun2.toDataCall() != null) {

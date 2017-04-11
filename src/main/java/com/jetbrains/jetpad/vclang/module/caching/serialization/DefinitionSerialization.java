@@ -239,9 +239,7 @@ class DefinitionSerialization {
     public ExpressionProtos.Expression visitApp(AppExpression expr, Void params) {
       ExpressionProtos.Expression.App.Builder builder = ExpressionProtos.Expression.App.newBuilder();
       builder.setFunction(expr.getFunction().accept(this, null));
-      for (Expression arg : expr.getArguments()) {
-        builder.addArgument(arg.accept(this, null));
-      }
+      builder.setArgument(expr.getArgument().accept(this, null));
       return ExpressionProtos.Expression.newBuilder().setApp(builder).build();
     }
 

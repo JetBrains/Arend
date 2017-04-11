@@ -2,61 +2,21 @@ package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 public class AppExpression extends Expression {
-  private Expression myFunction;
-  private List<Expression> myArguments;
+  private final Expression myFunction;
+  private final Expression myArgument;
 
-  private void initialize(Expression function, Collection<? extends Expression> arguments) {
-    assert !arguments.isEmpty();
-    assert function.toConCall() == null && function.toDataCall() == null && function.toClassCall() == null;
-
-    myFunction = function.getFunction();
-    AppExpression app = function.toApp();
-    if (app != null) {
-      myArguments = new ArrayList<>(app.getArguments().size() + arguments.size());
-      myArguments.addAll(app.getArguments());
-      myArguments.addAll(arguments);
-    }
+  public AppExpression(Expression function, Expression argument) {
+    myFunction = function;
+    myArgument = argument;
   }
 
-  public AppExpression(Expression function, Collection<? extends Expression> arguments) {
-    initialize(function, arguments);
-    if (myArguments == null) {
-      myArguments = new ArrayList<>(arguments);
-    }
-  }
-
-  public AppExpression(Expression function, List<Expression> arguments) {
-    initialize(function, arguments);
-    if (myArguments == null) {
-      myArguments = arguments;
-    }
-  }
-
-  @Override
   public Expression getFunction() {
     return myFunction;
   }
 
-  @Override
-  public List<? extends Expression> getArguments() {
-    return myArguments;
-  }
-
-  @Override
-  public AppExpression addArgument(Expression argument) {
-    myArguments.add(argument);
-    return this;
-  }
-
-  @Override
-  public AppExpression addArguments(Collection<? extends Expression> arguments) {
-    myArguments.addAll(arguments);
-    return this;
+  public Expression getArgument() {
+    return myArgument;
   }
 
   @Override

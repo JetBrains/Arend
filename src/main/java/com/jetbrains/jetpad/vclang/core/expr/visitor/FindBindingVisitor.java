@@ -28,13 +28,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> im
     if (result != null) {
       return result;
     }
-    for (Expression argument : expr.getArguments()) {
-      result = argument.accept(this, null);
-      if (result != null) {
-        return result;
-      }
-    }
-    return null;
+    return expr.getArgument().accept(this, null);
   }
 
   @Override
