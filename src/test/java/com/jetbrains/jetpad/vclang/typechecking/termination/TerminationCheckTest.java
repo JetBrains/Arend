@@ -136,8 +136,8 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
   @Test
   public void headerNoCycle() {
     typeCheckClass(
-      "\\function he1 (n : Nat) : Nat <= \\elim n | zero => he2 0 @ right | suc n => he2 0 @ right\n" +
-      "\\function he2 (n : Nat) : he1 n = 0 <= \\elim n | zero => path (\\lam _ => 0) | suc n => path (\\lam _ => he1 1)\n");
+      "\\function he1 (n : Nat) : Nat <= \\elim n | zero => 0 | suc n => he2 n @ right\n" +
+      "\\function he2 (n : Nat) : he1 n = he1 n <= \\elim n | zero => path (\\lam _ => he1 0) | suc n => path (\\lam _ => he1 (suc n))");
   }
 
   @Test

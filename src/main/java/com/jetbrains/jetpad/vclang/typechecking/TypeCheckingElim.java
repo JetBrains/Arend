@@ -229,9 +229,7 @@ public class TypeCheckingElim {
             wasError = true;
             continue;
           }
-          //TODO: call of normalize() below fixes ImplicitArgumentsTests.etaExpansionTest
-          //TODO: but it could lead to performance problems in the future
-          expressions.add(clauseResult.expression.normalize(NormalizeVisitor.Mode.NF));
+          expressions.add(clauseResult.expression);
         } else {
           expressions.add(null);
         }
