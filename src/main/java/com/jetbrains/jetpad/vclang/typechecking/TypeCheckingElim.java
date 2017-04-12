@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
-import com.jetbrains.jetpad.vclang.core.definition.Condition;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.*;
@@ -385,11 +384,11 @@ public class TypeCheckingElim {
       DataDefinition dataType = dataCall.getDefinition();
       List<? extends Expression> parameters = dataCall.getDefCallArguments();
 
-      if (mode == PatternExpansionMode.DATATYPE && !dataType.getConditions().isEmpty()) {
+      if (mode == PatternExpansionMode.DATATYPE) {
         boolean ok = pattern instanceof Abstract.ConstructorPattern;
         if (ok) {
-          for (Condition condition : dataType.getConditions()) {
-            if (condition.getConstructor().getName().equals(((Abstract.ConstructorPattern) pattern).getConstructorName())) {
+          for (Constructor constructor : dataType.getConstructors()) {
+            if (constructor.getCondition() != null && constructor.getName().equals(((Abstract.ConstructorPattern) pattern).getConstructorName())) {
               ok = false;
               break;
             }

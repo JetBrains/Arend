@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
+import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 
 import java.util.Collection;
@@ -424,7 +425,7 @@ public final class Abstract {
     List<? extends PatternArgument> getPatterns();
     String getConstructorName();
     Expression getTerm();
-    void setWellTyped(com.jetbrains.jetpad.vclang.core.definition.Condition condition);
+    void setWellTyped(ElimTreeNode condition);
   }
 
 

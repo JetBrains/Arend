@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
+import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.*;
@@ -727,7 +728,7 @@ public final class Concrete {
     @Override
     public void replaceWithConstructor(int index) {
       Pattern old = myPatterns.get(index);
-      myPatterns.set(index, new ConstructorPattern(old.getPosition(), old.getName(), Collections.<PatternArgument>emptyList()));
+      myPatterns.set(index, new ConstructorPattern(old.getPosition(), old.getName(), Collections.emptyList()));
     }
   }
 
@@ -982,7 +983,7 @@ public final class Concrete {
     }
 
     public ClassDefinition(Position position, String name, List<Statement> globalStatements) {
-      this(position, name, Collections.<TypeArgument>emptyList(), Collections.<SuperClass>emptyList(), Collections.<ClassField>emptyList(), Collections.<Implementation>emptyList(), globalStatements, Collections.<Definition>emptyList());
+      this(position, name, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), globalStatements, Collections.emptyList());
     }
 
     @Override
@@ -1214,7 +1215,7 @@ public final class Concrete {
     }
 
     @Override
-    public void setWellTyped(com.jetbrains.jetpad.vclang.core.definition.Condition condition) {
+    public void setWellTyped(ElimTreeNode condition) {
 
     }
   }
@@ -1450,7 +1451,7 @@ public final class Concrete {
     }
 
     public void replaceWithConstructor() {
-      myPattern = new ConstructorPattern(myPattern.getPosition(), myPattern.getName(), Collections.<PatternArgument>emptyList());
+      myPattern = new ConstructorPattern(myPattern.getPosition(), myPattern.getName(), Collections.emptyList());
     }
 
     @Override

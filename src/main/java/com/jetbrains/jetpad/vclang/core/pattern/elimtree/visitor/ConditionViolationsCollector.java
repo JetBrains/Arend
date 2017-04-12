@@ -42,10 +42,10 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<ExprSub
       if (branchNode.getClause(conCall.getDefinition()) != null) {
         Clause clause = branchNode.getClause(conCall.getDefinition());
         clause.getChild().accept(this, clause.getSubst().compose(argSubst));
-        if (conCall.getDefinition().getDataType().getCondition(conCall.getDefinition()) != null) {
+        if (conCall.getDefinition().getCondition() != null) {
           ExprSubstitution subst = toSubstitution(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments());
           final DependentLink constructorArgs = DependentLink.Helper.subst(conCall.getDefinition().getParameters(), subst);
-          SubstituteExpander.substituteExpand(conCall.getDefinition().getDataType().getCondition(conCall.getDefinition()).getElimTree(), subst, toContext(constructorArgs), (subst1, toCtxC, ctx, leaf) -> {
+          SubstituteExpander.substituteExpand(conCall.getDefinition().getCondition(), subst, toContext(constructorArgs), (subst1, toCtxC, ctx, leaf) -> {
             List<Expression> arguments = new ArrayList<>();
             for (DependentLink link = constructorArgs; link.hasNext(); link = link.getNext()) {
               arguments.add(toCtxC.get(link));

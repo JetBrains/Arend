@@ -25,11 +25,20 @@ public class Constructor extends Definition implements Function {
   private final DataDefinition myDataType;
   private DependentLink myParameters;
   private Patterns myPatterns;
+  private ElimTreeNode myCondition;
 
   public Constructor(Abstract.Constructor abstractDef, DataDefinition dataType) {
     super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
     myDataType = dataType;
     myParameters = null;
+  }
+
+  public ElimTreeNode getCondition() {
+    return myCondition;
+  }
+
+  public void setCondition(ElimTreeNode condition) {
+    myCondition = condition;
   }
 
   public Patterns getPatterns() {
@@ -43,8 +52,7 @@ public class Constructor extends Definition implements Function {
 
   @Override
   public ElimTreeNode getElimTree() {
-    Condition condition = myDataType.getCondition(this);
-    return condition == null ? EmptyElimTreeNode.getInstance() : condition.getElimTree();
+    return myCondition == null ? EmptyElimTreeNode.getInstance() : myCondition;
   }
 
   @Override

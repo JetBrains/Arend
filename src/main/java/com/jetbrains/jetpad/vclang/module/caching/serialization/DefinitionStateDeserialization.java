@@ -89,7 +89,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
             break;
           case DATA:
             DataDefinition dataDef = (DataDefinition) def;
-            fillInDataDefinition(defDeserializer, typedCalltargetProvider, defProto.getData(), dataDef, state);
+            fillInDataDefinition(defDeserializer, defProto.getData(), dataDef, state);
             break;
           case FUNCTION:
             FunctionDefinition functionDef = (FunctionDefinition) def;
@@ -126,7 +126,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
     }
   }
 
-  private void fillInDataDefinition(DefinitionDeserialization defDeserializer, CalltargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
+  private void fillInDataDefinition(DefinitionDeserialization defDeserializer, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
     dataDef.setParameters(defDeserializer.readParameters(dataProto.getParamList()));
     dataDef.setSort(defDeserializer.readSort(dataProto.getSort()));
 
@@ -137,13 +137,11 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
         constructor.setPatterns(defDeserializer.readPatterns(constructorProto.getPatterns()));
       }
       constructor.setParameters(defDeserializer.readParameters(constructorProto.getParamList()));
+      if (constructorProto.hasCondition()) {
+        constructor.setCondition(defDeserializer.readElimTree(constructorProto.getCondition()));
+      }
       constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
       dataDef.addConstructor(constructor);
-    }
-
-    for (Map.Entry<Integer, ExpressionProtos.ElimTreeNode> entry : dataProto.getConditionsMap().entrySet()) {
-      Constructor targetConstructor = calltargetProvider.getCalltarget(entry.getKey(), Constructor.class);
-      dataDef.addCondition(new Condition(targetConstructor, defDeserializer.readElimTree(entry.getValue())));
     }
 
     if (dataProto.getMatchesOnInterval()) {

@@ -2,10 +2,10 @@ package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.definition.Condition;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.BranchElimTreeNode;
+import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.List;
@@ -64,11 +64,11 @@ public class ConCallExpression extends DefCallExpression {
 
   @Override
   public Expression getStuckExpression() {
-    Condition condition = getDefinition().getDataType().getCondition(getDefinition());
-    if (condition == null || !(condition.getElimTree() instanceof BranchElimTreeNode)) {
+    ElimTreeNode condition = getDefinition().getCondition();
+    if (condition == null || !(condition instanceof BranchElimTreeNode)) {
       return null;
     }
-    Binding binding = ((BranchElimTreeNode) condition.getElimTree()).getReference();
+    Binding binding = ((BranchElimTreeNode) condition).getReference();
     int i = 0;
     for (DependentLink param = getDefinition().getParameters(); param.hasNext(); param = param.getNext()) {
       if (param == binding) {

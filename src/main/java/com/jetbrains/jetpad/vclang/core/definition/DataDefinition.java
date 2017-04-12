@@ -11,12 +11,12 @@ import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DataDefinition extends Definition {
   private List<Constructor> myConstructors;
   private DependentLink myParameters;
-  private Map<Constructor, Condition> myConditions;
   private Sort mySort;
   private boolean myMatchesOnInterval;
   private boolean myIsTruncated;
@@ -85,21 +85,6 @@ public class DataDefinition extends Definition {
       result.add(new ConCallExpression(constructor, dataCall.getSortArgument(), new ArrayList<>(matchedParameters), new ArrayList<>()));
     }
     return result;
-  }
-
-  public void addCondition(Condition condition) {
-    if (myConditions == null) {
-      myConditions = new HashMap<>();
-    }
-    myConditions.put(condition.getConstructor(), condition);
-  }
-
-  public Collection<Condition> getConditions() {
-    return myConditions == null ? Collections.emptyList() : myConditions.values();
-  }
-
-  public Condition getCondition(Constructor constructor) {
-    return myConditions == null ? null : myConditions.get(constructor);
   }
 
   public Constructor getConstructor(String name) {

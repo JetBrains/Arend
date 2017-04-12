@@ -100,12 +100,11 @@ public class DefinitionStateSerialization {
         cBuilder.setPatterns(defSerializer.writePatterns(constructor.getPatterns()));
       }
       cBuilder.addAllParam(defSerializer.writeParameters(constructor.getParameters()));
+      if (constructor.getCondition() != null) {
+        cBuilder.setCondition(defSerializer.writeElimTree(constructor.getCondition()));
+      }
 
       builder.putConstructors(myPersistenceProvider.getIdFor(constructor.getAbstractDefinition()), cBuilder.build());
-    }
-
-    for (Condition condition : definition.getConditions()) {
-      builder.putConditions(myCalltargetIndexProvider.getDefIndex(condition.getConstructor()), defSerializer.writeElimTree(condition.getElimTree()));
     }
 
     builder.setMatchesOnInterval(definition.matchesOnInterval());

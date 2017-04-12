@@ -366,25 +366,20 @@ public class DefinitionCheckType {
         LocalTypeCheckingError error = new LocalTypeCheckingError(cycleConditionsError.toString(), def);
         visitor.getErrorReporter().report(error);
       }
-    }
 
-    if (!dataDefinition.getConditions().isEmpty()) {
-      List<Condition> failedConditions = new ArrayList<>();
-      for (Condition condition : dataDefinition.getConditions()) {
-        LocalTypeCheckingError error = TypeCheckingElim.checkConditions(condition.getConstructor().getName(), def, condition.getConstructor().getParameters(), condition.getElimTree());
-        if (error != null) {
-          visitor.getErrorReporter().report(error);
-          failedConditions.add(condition);
-          dataDefinition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
-        }
-      }
-      dataDefinition.getConditions().removeAll(failedConditions);
-
-      for (Condition condition : dataDefinition.getConditions()) {
-        if (condition.getElimTree().accept(new FindMatchOnIntervalVisitor(), null)) {
-          dataDefinition.setMatchesOnInterval();
-          inferredSort = inferredSort.max(new Sort(inferredSort.getPLevel(), Level.INFINITY));
-          break;
+      for (Constructor constructor : dataDefinition.getConstructors()) {
+        if (constructor.getCondition() != null) {
+          LocalTypeCheckingError error = TypeCheckingElim.checkConditions(constructor.getName(), def, constructor.getParameters(), constructor.getCondition());
+          if (error != null) {
+            visitor.getErrorReporter().report(error);
+            constructor.setCondition(null);
+            dataDefinition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+          } else {
+            if (!dataDefinition.matchesOnInterval() && constructor.getCondition().accept(new FindMatchOnIntervalVisitor(), null)) {
+              dataDefinition.setMatchesOnInterval();
+              inferredSort = inferredSort.max(new Sort(inferredSort.getPLevel(), Level.INFINITY));
+            }
+          }
         }
       }
     }
@@ -468,10 +463,9 @@ public class DefinitionCheckType {
           continue;
         }
 
-        Condition typedCond = new Condition(constructor, elimTreeResult.elimTree);
-        dataDefinition.addCondition(typedCond);
+        constructor.setCondition(elimTreeResult.elimTree);
         for (Abstract.Condition cond : condMap.get(constructor)) {
-          cond.setWellTyped(typedCond);
+          cond.setWellTyped(elimTreeResult.elimTree);
         }
       }
     }
@@ -535,7 +529,7 @@ public class DefinitionCheckType {
           return null;
         }
 
-        typedPatterns = visitor.getTypeCheckingElim().visitPatternArgs(processedPatterns, dataDefinition.getParameters(), Collections.<Expression>emptyList(), TypeCheckingElim.PatternExpansionMode.DATATYPE);
+        typedPatterns = visitor.getTypeCheckingElim().visitPatternArgs(processedPatterns, dataDefinition.getParameters(), Collections.emptyList(), TypeCheckingElim.PatternExpansionMode.DATATYPE);
         if (typedPatterns == null) {
           return null;
         }

@@ -39,12 +39,12 @@ message Definition {
         repeated Telescope param = 2;
         Sort sort = 7;
         map<string, Constructor> constructors = 3;
-        map<int32, ElimTreeNode> conditions = 4;
         bool matches_on_interval = 5;
 
         message Constructor {
             Patterns patterns = 1;
             repeated Telescope param = 2;
+            ElimTreeNode condition = 3;
 
             message Patterns {
                 repeated PatternArgument pattern_argument = 1;
