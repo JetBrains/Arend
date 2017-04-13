@@ -171,6 +171,11 @@ public final class Abstract {
   public interface BinOpExpression extends DefCallExpression {
     Expression getLeft();
     Expression getRight();
+
+    @Override
+    default Expression getExpression() {
+      return null;
+    }
   }
 
   public static class BinOpSequenceElem {
