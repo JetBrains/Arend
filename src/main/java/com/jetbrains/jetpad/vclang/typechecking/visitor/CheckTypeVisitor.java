@@ -671,13 +671,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     Level pLevel = expr.getPLevel() != null ? expr.getPLevel().accept(this, LevelVariable.PVAR) : new Level(LevelVariable.PVAR);
     Level hLevel = expr.getHLevel() != null ? expr.getHLevel().accept(this, LevelVariable.HVAR) : new Level(LevelVariable.HVAR);
 
-    if (pLevel == null || hLevel == null) {
-      myErrorReporter.report(new LocalTypeCheckingError("\\max can only be used in a result type", expr));
-      return null;
-    }
     if (pLevel.isInfinity()) {
-      myErrorReporter.report(new LocalTypeCheckingError("\\Type can only used as Pi codomain in definition parameters or result type", expr));
-      return null;
+      myErrorReporter.report(new LocalTypeCheckingError("\\inf is not a correct p-level", expr));
+      pLevel = new Level(LevelVariable.PVAR);
     }
 
     UniverseExpression universe = new UniverseExpression(new Sort(pLevel, hLevel));
@@ -722,10 +718,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
   @Override
   public Level visitVar(Abstract.InferVarLevelExpression expr, LevelVariable base) {
-    if (base.getType() != expr.getVariable().getType()) {
-      myErrorReporter.report(new LocalTypeCheckingError("Expected " + base, expr));
-    }
-    return new Level(expr.getVariable());
+    myErrorReporter.report(new LocalTypeCheckingError("Cannot typecheck an inference variable", expr));
+    return new Level(base);
   }
 
   @Override
