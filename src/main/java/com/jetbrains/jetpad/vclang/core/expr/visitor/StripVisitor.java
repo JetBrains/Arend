@@ -211,6 +211,14 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
   }
 
   @Override
+  public Expression visitCase(CaseExpression expr, Void params) {
+    for (int i = 0; i < expr.getArguments().size(); i++) {
+      expr.getArguments().set(i, expr.getArguments().get(i).accept(this, null));
+    }
+    return new CaseExpression(expr.getResultType().accept(this, null), visitBranch(expr.getElimTree(), null), expr.getArguments());
+  }
+
+  @Override
   public Expression visitOfType(OfTypeExpression expr, Void params) {
     return expr.getExpression().accept(this, null);
   }

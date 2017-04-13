@@ -161,6 +161,28 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> im
   }
 
   @Override
+  public Variable visitCase(CaseExpression expr, Void params) {
+    for (Expression argument : expr.getArguments()) {
+      Variable result = argument.accept(this, null);
+      if (result != null) {
+        return result;
+      }
+    }
+
+    Variable result = expr.getResultType().accept(this, null);
+    if (result != null) {
+      return result;
+    }
+
+    result = expr.getElimTree().accept(this, null);
+    if (result != null) {
+      return result;
+    }
+
+    return null;
+  }
+
+  @Override
   public Variable visitOfType(OfTypeExpression expr, Void params) {
     Variable result = expr.getExpression().accept(this, null);
     return result != null ? result : expr.getTypeOf().accept(this, null);

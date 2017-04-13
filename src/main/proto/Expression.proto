@@ -19,6 +19,7 @@ message Expression {
         LetClauseCall let_clause_call = 19;
         Lam lam = 9;
         Let let = 10;
+        Case case = 20;
         New new = 11;
         Pi pi = 13;
         Proj proj = 14;
@@ -86,6 +87,11 @@ message Expression {
             ElimTreeNode elim_tree = 3;
             Type result_type = 6;
         }
+    }
+    message Case {
+        ElimTreeNode.Branch elim_tree = 1;
+        Expression result_type = 2;
+        repeated Expression argument = 3;
     }
     message New {
         ClassCall class_call = 1;

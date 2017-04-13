@@ -492,6 +492,15 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return result;
   }
 
+  @Override
+  public Abstract.Expression visitCase(CaseExpression expr, Void params) {
+    List<Abstract.Expression> arguments = new ArrayList<>(expr.getArguments().size());
+    for (Expression argument : expr.getArguments()) {
+      arguments.add(argument.accept(this, null));
+    }
+    return myFactory.makeCase(arguments, visitBranch(expr.getElimTree()));
+  }
+
   private Abstract.Expression visitElimTree(ElimTreeNode elimTree, List<SingleDependentLink> params) {
     if (elimTree == EmptyElimTreeNode.getInstance()) {
       List<Abstract.Expression> exprs = new ArrayList<>();

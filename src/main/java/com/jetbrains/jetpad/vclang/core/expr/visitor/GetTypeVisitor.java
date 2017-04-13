@@ -133,6 +133,11 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
   }
 
   @Override
+  public Expression visitCase(CaseExpression expr, Void params) {
+    return expr.getResultType();
+  }
+
+  @Override
   public Expression visitOfType(OfTypeExpression expr, Void params) {
     return expr.getTypeOf();
   }

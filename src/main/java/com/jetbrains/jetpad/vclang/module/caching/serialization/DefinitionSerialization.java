@@ -412,6 +412,17 @@ class DefinitionSerialization {
     }
 
     @Override
+    public ExpressionProtos.Expression visitCase(CaseExpression expr, Void params) {
+      ExpressionProtos.Expression.Case.Builder builder = ExpressionProtos.Expression.Case.newBuilder();
+      builder.setElimTree(visitBranch(expr.getElimTree()));
+      builder.setResultType(writeExpr(expr.getResultType()));
+      for (Expression argument : expr.getArguments()) {
+        builder.addArgument(writeExpr(argument));
+      }
+      return ExpressionProtos.Expression.newBuilder().setCase(builder).build();
+    }
+
+    @Override
     public ExpressionProtos.Expression visitOfType(OfTypeExpression expr, Void params) {
       throw new IllegalStateException();
     }
@@ -426,9 +437,7 @@ class DefinitionSerialization {
       return ExpressionProtos.Expression.newBuilder().setFieldCall(builder).build();
     }
 
-
-    @Override
-    public ExpressionProtos.ElimTreeNode visitBranch(BranchElimTreeNode branchNode, Void params) {
+    public ExpressionProtos.ElimTreeNode.Branch visitBranch(BranchElimTreeNode branchNode) {
       ExpressionProtos.ElimTreeNode.Branch.Builder builder = ExpressionProtos.ElimTreeNode.Branch.newBuilder();
 
       builder.setReferenceRef(writeBindingRef(branchNode.getReference()));
@@ -449,7 +458,12 @@ class DefinitionSerialization {
       if (branchNode.getOtherwiseClause() != null) {
         builder.setOtherwiseClause(writeElimTree(branchNode.getOtherwiseClause().getChild()));
       }
-      return ExpressionProtos.ElimTreeNode.newBuilder().setBranch(builder).build();
+      return builder.build();
+    }
+
+    @Override
+    public ExpressionProtos.ElimTreeNode visitBranch(BranchElimTreeNode branchNode, Void params) {
+      return ExpressionProtos.ElimTreeNode.newBuilder().setBranch(visitBranch(branchNode)).build();
     }
 
     @Override

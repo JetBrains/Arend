@@ -153,6 +153,16 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
   }
 
   @Override
+  public Void visitCase(CaseExpression expr, ParameterVector vector) {
+    expr.getElimTree().accept(this, vector);
+    expr.getResultType().accept(this, vector);
+    for (Expression argument : expr.getArguments()) {
+      argument.accept(this, null);
+    }
+    return null;
+  }
+
+  @Override
   public Void visitLeaf(LeafElimTreeNode node, ParameterVector vector) {
     node.getExpression().accept(this, vector);
     return null;

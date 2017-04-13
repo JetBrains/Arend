@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
+import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.typechecking.normalization.Normalizer;
@@ -276,8 +277,27 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   @Override
+  public Expression visitCase(CaseExpression expr, Mode mode) {
+    List<Expression> matchedArguments = new ArrayList<>(expr.getArguments());
+    LeafElimTreeNode leaf = expr.getElimTree().match(matchedArguments);
+    if (leaf == null) {
+      if (mode != Mode.NF) {
+        return expr;
+      }
+
+      List<Expression> args = new ArrayList<>();
+      for (Expression argument : expr.getArguments()) {
+        args.add(argument.accept(this, mode));
+      }
+
+      return new CaseExpression(expr.getResultType().accept(this, mode), expr.getElimTree() /* TODO: normalize elim tree */, args);
+    }
+    ExprSubstitution subst = leaf.matchedToSubst(matchedArguments);
+    return leaf.getExpression().subst(subst).accept(this, mode);
+  }
+
+  @Override
   public Expression visitOfType(OfTypeExpression expr, Mode mode) {
     return mode == Mode.NF ? new OfTypeExpression(expr.getExpression().accept(this, mode), expr.getTypeOf()) : expr.getExpression().accept(this, mode);
   }
-
 }

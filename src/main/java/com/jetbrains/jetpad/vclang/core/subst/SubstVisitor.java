@@ -231,6 +231,15 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   }
 
   @Override
+  public Expression visitCase(CaseExpression expr, Void params) {
+    List<Expression> arguments = new ArrayList<>(expr.getArguments().size());
+    for (Expression argument : expr.getArguments()) {
+      arguments.add(argument.accept(this, null));
+    }
+    return new CaseExpression(expr.getResultType().accept(this, null), visitBranch(expr.getElimTree(), null), arguments);
+  }
+
+  @Override
   public Expression visitOfType(OfTypeExpression expr, Void params) {
     return new OfTypeExpression(expr.getExpression().accept(this, null), expr.getTypeOf().accept(this, null));
   }

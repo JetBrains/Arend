@@ -216,6 +216,10 @@ public abstract class Expression implements ExpectedType {
     return null;
   }
 
+  public CaseExpression toCase() {
+    return null;
+  }
+
   public NewExpression toNew() {
     return null;
   }

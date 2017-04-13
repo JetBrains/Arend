@@ -263,6 +263,8 @@ class DefinitionDeserialization {
         return readNew(proto.getNew());
       case LET:
         return readLet(proto.getLet());
+      case CASE:
+        return readCase(proto.getCase());
       case FIELD_CALL:
         return readFieldCall(proto.getFieldCall());
       default:
@@ -362,6 +364,14 @@ class DefinitionDeserialization {
       clauses.add(clause);
     }
     return new LetExpression(clauses, readExpr(proto.getExpression()));
+  }
+
+  private CaseExpression readCase(ExpressionProtos.Expression.Case proto) throws DeserializationError {
+    List<Expression> arguments = new ArrayList<>(proto.getArgumentCount());
+    for (ExpressionProtos.Expression argument : proto.getArgumentList()) {
+      arguments.add(readExpr(argument));
+    }
+    return new CaseExpression(readExpr(proto.getResultType()), readBranch(proto.getElimTree()), arguments);
   }
 
   private FieldCallExpression readFieldCall(ExpressionProtos.Expression.FieldCall proto) throws DeserializationError {

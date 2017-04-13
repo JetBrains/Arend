@@ -493,6 +493,35 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   }
 
   @Override
+  public Boolean visitCase(CaseExpression case1, Expression expr2) {
+    CaseExpression case2 = expr2.toCase();
+    if (case2 == null) {
+      return false;
+    }
+
+    if (case1.getArguments().size() != case2.getArguments().size()) {
+      return false;
+    }
+
+    Equations.CMP oldCMP = myCMP;
+    myCMP = Equations.CMP.EQ;
+    for (int i = 0; i < case1.getArguments().size(); i++) {
+      if (!compare(case1.getArguments().get(i), case2.getArguments().get(i))) {
+        myCMP = oldCMP;
+        return false;
+      }
+    }
+
+    if (!compare(case1.getElimTree(), case2.getElimTree())) {
+      myCMP = oldCMP;
+      return false;
+    }
+
+    myCMP = oldCMP;
+    return true;
+  }
+
+  @Override
   public Boolean visitOfType(OfTypeExpression expr, Expression params) {
     return expr.getExpression().accept(this, params);
   }

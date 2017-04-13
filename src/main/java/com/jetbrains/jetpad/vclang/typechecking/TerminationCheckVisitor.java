@@ -210,6 +210,19 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
   }
 
   @Override
+  public Boolean visitCase(CaseExpression expr, Void params) {
+    if (!expr.getResultType().accept(this, null) || !expr.getElimTree().accept(this, null)) {
+      return false;
+    }
+    for (Expression argument : expr.getArguments()) {
+      if (!argument.accept(this, null)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  @Override
   public Boolean visitOfType(OfTypeExpression expr, Void params) {
     throw new IllegalStateException();
   }
