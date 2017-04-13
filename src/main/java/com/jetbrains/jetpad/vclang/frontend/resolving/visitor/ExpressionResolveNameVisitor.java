@@ -143,6 +143,14 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
 
   @Override
   public Void visitBinOp(Abstract.BinOpExpression expr, Void params) {
+    if (expr.getReferent() == null) {
+      Abstract.Definition ref = myParentScope.resolveName(expr.getName());
+      if (ref != null) {
+        myResolveListener.nameResolved(expr, ref);
+      } else {
+        myResolveListener.report(new NotInScopeError(expr, expr.getName()));
+      }
+    }
     expr.getLeft().accept(this, null);
     expr.getRight().accept(this, null);
     return null;
