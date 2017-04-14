@@ -247,11 +247,6 @@ public final class Concrete {
     }
 
     @Override
-    public Abstract.Expression getExpression() {
-      return null;
-    }
-
-    @Override
     public Abstract.Definition getReferent() {
       return myBinOp;
     }
