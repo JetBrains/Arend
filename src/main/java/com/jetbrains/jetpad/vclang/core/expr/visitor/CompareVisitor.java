@@ -512,13 +512,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       }
     }
 
-    if (!compare(case1.getElimTree(), case2.getElimTree())) {
-      myCMP = oldCMP;
-      return false;
-    }
-
+    mySubstitution.put(case1.getElimTree().getReference(), case2.getElimTree().getReference());
+    boolean ok = compare(case1.getElimTree(), case2.getElimTree());
+    mySubstitution.remove(case1.getElimTree().getReference());
     myCMP = oldCMP;
-    return true;
+    return ok;
   }
 
   @Override

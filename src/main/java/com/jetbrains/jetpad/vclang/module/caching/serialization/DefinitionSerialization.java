@@ -414,6 +414,7 @@ class DefinitionSerialization {
     @Override
     public ExpressionProtos.Expression visitCase(CaseExpression expr, Void params) {
       ExpressionProtos.Expression.Case.Builder builder = ExpressionProtos.Expression.Case.newBuilder();
+      registerBinding(expr.getElimTree().getReference());
       builder.setElimTree(visitBranch(expr.getElimTree()));
       builder.setResultType(writeExpr(expr.getResultType()));
       for (Expression argument : expr.getArguments()) {

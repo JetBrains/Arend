@@ -5,13 +5,16 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
+import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.BaseExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -236,7 +239,13 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     for (Expression argument : expr.getArguments()) {
       arguments.add(argument.accept(this, null));
     }
-    return new CaseExpression(expr.getResultType().accept(this, null), visitBranch(expr.getElimTree(), null), arguments);
+
+    Binding binding = expr.getElimTree().getReference();
+    Binding newBinding = ExpressionFactory.singleParams(true, Collections.singletonList(binding.getName()), binding.getType().subst(myExprSubstitution, myLevelSubstitution));
+    myExprSubstitution.add(binding, new ReferenceExpression(newBinding));
+    CaseExpression result = new CaseExpression(expr.getResultType().accept(this, null), visitBranch(expr.getElimTree(), null), arguments);
+    myExprSubstitution.remove(binding);
+    return result;
   }
 
   @Override

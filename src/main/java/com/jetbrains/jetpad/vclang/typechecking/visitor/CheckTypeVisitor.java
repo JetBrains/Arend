@@ -20,6 +20,7 @@ import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
+import com.jetbrains.jetpad.vclang.core.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
@@ -884,14 +885,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
     List<SingleDependentLink> links = new ArrayList<>();
     List<Expression> letArguments = new ArrayList<>(expressions.size());
-    List<Sort> domSorts = new ArrayList<>(expressions.size());
     for (int i = 0; i < expressions.size(); i++) {
       Result exprResult = checkExpr(expressions.get(i), null);
       if (exprResult == null) return null;
-      Sort sort = getSortOf(exprResult.type.getType());
-      links.add(ExpressionFactory.singleParams(true, Collections.singletonList(Abstract.CaseExpression.ARGUMENT_NAME + i), new TypeExpression(exprResult.type, sort)));
+      links.add(ExpressionFactory.singleParams(true, Collections.singletonList(Abstract.CaseExpression.ARGUMENT_NAME + i), new TypeExpression(exprResult.type, getSortOf(exprResult.type.getType()))));
       letArguments.add(exprResult.expression);
-      domSorts.add(sort);
     }
 
     if (links.size() > 1) { // TODO: Fix this
@@ -903,6 +901,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
     ElimTreeNode elimTree = myTypeCheckingElim.typeCheckElim(expr, links.isEmpty() ? Collections.emptyList() : Collections.singletonList(null), links.isEmpty() ? EmptyDependentLink.getInstance() : links.get(0), (Expression) expectedType, true, false);
     if (elimTree == null) return null;
+    if (!(elimTree instanceof BranchElimTreeNode)) {  // TODO
+      LocalTypeCheckingError error = new LocalTypeCheckingError("Cannot typecheck empty \\case", expr);
+      myErrorReporter.report(error);
+      expr.setWellTyped(myContext, new ErrorExpression(null, error));
+      return null;
+    }
 
     LocalTypeCheckingError error = TypeCheckingElim.checkCoverage("\\case", expr, links, elimTree, (Expression) expectedType);
     if (error != null) {
@@ -915,10 +919,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       return null;
     }
 
-    Sort codSort = getSortOf(((Expression) expectedType).getType());
-    List<Sort> sorts = generateUpperBounds(domSorts, codSort, expr);
-    LetClause letBinding = new LetClause(Abstract.CaseExpression.FUNCTION_NAME, sorts, links, expectedType instanceof Type ? (Type) expectedType : new TypeExpression((Expression) expectedType, codSort), elimTree);
-    caseResult.expression = new LetExpression(Collections.singletonList(letBinding), new LetClauseCallExpression(letBinding, letArguments));
+    caseResult.expression = new CaseExpression(caseResult.type, (BranchElimTreeNode) elimTree, letArguments);
     expr.setWellTyped(myContext, caseResult.expression);
     return caseResult;
   }
