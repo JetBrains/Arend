@@ -108,6 +108,10 @@ public class DefinitionStateSerialization {
     }
 
     builder.setMatchesOnInterval(definition.matchesOnInterval());
+    int i = 0;
+    for (DependentLink link = definition.getParameters(); link.hasNext(); link = link.getNext()) {
+      builder.addCovariantParameter(definition.isCovariant(i++));
+    }
 
     return builder.build();
   }

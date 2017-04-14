@@ -12,7 +12,9 @@ import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class DataDefinition extends Definition {
   private List<Constructor> myConstructors;
@@ -20,6 +22,7 @@ public class DataDefinition extends Definition {
   private Sort mySort;
   private boolean myMatchesOnInterval;
   private boolean myIsTruncated;
+  private Set<Integer> myCovariantParameters;
 
   public DataDefinition(Abstract.DataDefinition abstractDef) {
     super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -37,6 +40,17 @@ public class DataDefinition extends Definition {
 
   public void setSort(Sort sort) {
     mySort = sort;
+  }
+
+  public boolean isCovariant(int index) {
+    return myCovariantParameters != null && myCovariantParameters.contains(index);
+  }
+
+  public void setCovariant(int index) {
+    if (myCovariantParameters == null) {
+      myCovariantParameters = new HashSet<>();
+    }
+    myCovariantParameters.add(index);
   }
 
   public boolean isTruncated() {

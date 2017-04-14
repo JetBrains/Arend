@@ -147,6 +147,14 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
     if (dataProto.getMatchesOnInterval()) {
       dataDef.setMatchesOnInterval();
     }
+
+    int index = 0;
+    for (Boolean isCovariant : dataProto.getCovariantParameterList()) {
+      if (isCovariant) {
+        dataDef.setCovariant(index);
+      }
+      index++;
+    }
   }
 
   private void fillInFunctionDefinition(DefinitionDeserialization defDeserializer, DefinitionProtos.Definition.FunctionData functionProto, FunctionDefinition functionDef) throws DeserializationError {

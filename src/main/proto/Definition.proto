@@ -40,6 +40,7 @@ message Definition {
         Sort sort = 7;
         map<string, Constructor> constructors = 3;
         bool matches_on_interval = 5;
+        repeated bool covariant_parameter = 8;
 
         message Constructor {
             Patterns patterns = 1;

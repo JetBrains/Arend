@@ -32,7 +32,6 @@ import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
@@ -384,6 +383,26 @@ public class DefinitionCheckType {
       }
     }
 
+    int index = 0;
+    for (DependentLink link = dataDefinition.getParameters(); link.hasNext(); link = link.getNext(), index++) {
+      boolean isCovariant = true;
+      for (Constructor constructor : dataDefinition.getConstructors()) {
+        for (DependentLink link1 = constructor.getParameters(); link1.hasNext(); link1 = link1.getNext()) {
+          link1 = link1.getNextTyped(null);
+          if (!checkPositiveness(link1.getType().getExpr(), index, null, null, null, Collections.singleton(link))) {
+            isCovariant = false;
+            break;
+          }
+        }
+        if (!isCovariant) {
+          break;
+        }
+      }
+      if (isCovariant) {
+        dataDefinition.setCovariant(index);
+      }
+    }
+
     if (def.isTruncated()) {
       if (userSort == null) {
         String msg = "The data type cannot be truncated since its universe is not specified";
@@ -513,8 +532,6 @@ public class DefinitionCheckType {
     Sort sort = Sort.PROP;
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(visitor.getContext())) {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
-      String name = def.getName();
-
       Constructor constructor = new Constructor(def, dataDefinition);
       visitor.getTypecheckingState().record(def, constructor);
       List<? extends Abstract.PatternArgument> patterns = def.getPatterns();
@@ -560,44 +577,11 @@ public class DefinitionCheckType {
         visitor.getContext().addAll(toContext(param));
       }
 
-      for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext()) {
-        Expression type = link.getType().getExpr().normalize(NormalizeVisitor.Mode.WHNF);
-        List<SingleDependentLink> piParams = new ArrayList<>();
-        type = type.getPiParameters(piParams, true, false);
-        for (DependentLink piParam : piParams) {
-          if (piParam instanceof UntypedDependentLink) {
-            continue;
-          }
-          if (!checkNonPositiveError(piParam.getType().getExpr(), name, list.getFirst(), link, arguments, def, visitor.getErrorReporter(), dataDefinitions)) {
-            return null;
-          }
-        }
-
-        boolean check = true;
-        while (check) {
-          check = false;
-          if (type.toDataCall() != null) {
-            List<? extends Expression> exprs = type.toDataCall().getDefCallArguments();
-            DataDefinition typeDef = type.toDataCall().getDefinition();
-            if (typeDef == Prelude.PATH && exprs.size() >= 1) {
-              LamExpression lam = exprs.get(0).normalize(NormalizeVisitor.Mode.WHNF).toLam();
-              if (lam != null) {
-                check = true;
-                type = lam.getBody().normalize(NormalizeVisitor.Mode.WHNF);
-                exprs = exprs.subList(1, exprs.size());
-              }
-            }
-
-            for (Expression expr : exprs) {
-              if (!checkNonPositiveError(expr, name, list.getFirst(), link, arguments, def, visitor.getErrorReporter(), dataDefinitions)) {
-                return null;
-              }
-            }
-          } else {
-            if (!checkNonPositiveError(type, name, list.getFirst(), link, arguments, def, visitor.getErrorReporter(), dataDefinitions)) {
-              return null;
-            }
-          }
+      int index = 0;
+      for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext(), index++) {
+        link = link.getNextTyped(null);
+        if (!checkPositiveness(link.getType().getExpr(), index, arguments, def, visitor.getErrorReporter(), dataDefinitions)) {
+          return null;
         }
       }
 
@@ -610,13 +594,67 @@ public class DefinitionCheckType {
     }
   }
 
-  private static boolean checkNonPositiveError(Expression expr, String name, DependentLink params, DependentLink param, List<? extends Abstract.Argument> args, Abstract.Constructor constructor, LocalErrorReporter errorReporter, Set<DataDefinition> dataDefinitions) {
-    Variable def = expr.findBinding(dataDefinitions);
+  private static boolean checkPositiveness(Expression type, int index, List<? extends Abstract.Argument> arguments, Abstract.Constructor constructor, LocalErrorReporter errorReporter, Set<? extends Variable> variables) {
+    List<SingleDependentLink> piParams = new ArrayList<>();
+    type = type.getPiParameters(piParams, true, false);
+    for (DependentLink piParam : piParams) {
+      if (piParam instanceof UntypedDependentLink) {
+        continue;
+      }
+      if (!checkNonPositiveError(piParam.getType().getExpr(), index, arguments, constructor, errorReporter, variables)) {
+        return false;
+      }
+    }
+
+    if (type.toDataCall() != null) {
+      List<? extends Expression> exprs = type.toDataCall().getDefCallArguments();
+      DataDefinition typeDef = type.toDataCall().getDefinition();
+
+      for (int i = 0; i < exprs.size(); i++) {
+        if (typeDef.isCovariant(i)) {
+          Expression expr = exprs.get(i).normalize(NormalizeVisitor.Mode.WHNF);
+          while (expr.toLam() != null) {
+            expr = expr.toLam().getBody().normalize(NormalizeVisitor.Mode.WHNF);
+          }
+          if (!checkPositiveness(expr, index, arguments, constructor, errorReporter, variables)) {
+            return false;
+          }
+        } else {
+          if (!checkNonPositiveError(exprs.get(i), index, arguments, constructor, errorReporter, variables)) {
+            return false;
+          }
+        }
+      }
+    } else if (type.toApp() != null) {
+      for (; type.toApp() != null; type = type.toApp().getFunction()) {
+        if (!checkNonPositiveError(type.toApp().getArgument(), index, arguments, constructor, errorReporter, variables)) {
+          return false;
+        }
+      }
+      if (type.toReference() == null) {
+        if (!checkNonPositiveError(type, index, arguments, constructor, errorReporter, variables)) {
+          return false;
+        }
+      }
+    } else {
+      if (!checkNonPositiveError(type, index, arguments, constructor, errorReporter, variables)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private static boolean checkNonPositiveError(Expression expr, int index, List<? extends Abstract.Argument> args, Abstract.Constructor constructor, LocalErrorReporter errorReporter, Set<? extends Variable> variables) {
+    Variable def = expr.findBinding(variables);
     if (def == null) {
       return true;
     }
 
-    int index = DependentLink.Helper.getIndex(params, param);
+    if (errorReporter == null) {
+      return false;
+    }
+
     int i = 0;
     Abstract.Argument argument = null;
     for (Abstract.Argument arg : args) {
@@ -631,7 +669,7 @@ public class DefinitionCheckType {
       }
     }
 
-    String msg = "Non-positive recursive occurrence of data type " + ((DataDefinition) def).getName() + " in constructor " + name;
+    String msg = "Non-positive recursive occurrence of data type " + ((DataDefinition) def).getName() + " in constructor " + constructor.getName();
     errorReporter.report(new LocalTypeCheckingError(msg, argument == null ? constructor : argument));
     return false;
   }
