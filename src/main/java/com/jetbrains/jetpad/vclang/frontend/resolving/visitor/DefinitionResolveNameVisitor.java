@@ -28,7 +28,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
   private final ResolveListener myResolveListener;
 
   public DefinitionResolveNameVisitor(NamespaceProviders nsProviders, NameResolver nameResolver, ResolveListener resolveListener) {
-    this(nsProviders, new ArrayList<String>(), nameResolver, resolveListener);
+    this(nsProviders, new ArrayList<>(), nameResolver, resolveListener);
   }
 
   private DefinitionResolveNameVisitor(NamespaceProviders nsProviders, List<String> context,
@@ -113,6 +113,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
               if (exprVisitor.visitPattern(patternArgument.getPattern())) {
                 myResolveListener.replaceWithConstructor(patternArgument);
               }
+              exprVisitor.resolvePattern(patternArgument.getPattern());
             }
             cond.getTerm().accept(exprVisitor, null);
           }
@@ -132,6 +133,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
           if (exprVisitor.visitPattern(patternArg.getPattern())) {
             myResolveListener.replaceWithConstructor(patternArg);
           }
+          exprVisitor.resolvePattern(patternArg.getPattern());
         }
       }
 

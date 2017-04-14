@@ -130,7 +130,7 @@ public class Ordering {
       }
     }
 
-    Set<Abstract.Definition> dependencies = new HashSet<>();
+    Set<Abstract.Definition> dependencies = new LinkedHashSet<>();
     if (enclosingClass != null) {
       dependencies.add(enclosingClass);
     }

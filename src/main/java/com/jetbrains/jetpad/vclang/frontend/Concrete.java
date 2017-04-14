@@ -1499,6 +1499,7 @@ public final class Concrete {
 
   public static class ConstructorPattern extends Pattern implements Abstract.ConstructorPattern {
     private final String myConstructorName;
+    private Abstract.Constructor myConstructor;
     private final List<PatternArgument> myArguments;
 
     public ConstructorPattern(Position position, String constructorName, List<PatternArgument> arguments) {
@@ -1510,6 +1511,15 @@ public final class Concrete {
     @Override
     public String getConstructorName() {
       return myConstructorName;
+    }
+
+    @Override
+    public Abstract.Constructor getConstructor() {
+      return myConstructor;
+    }
+
+    public void setConstructor(Abstract.Constructor constructor) {
+      myConstructor = constructor;
     }
 
     @Override

@@ -78,6 +78,11 @@ public class ConcreteResolveListener implements ResolveListener {
   }
 
   @Override
+  public void patternResolved(Abstract.ConstructorPattern pattern, Abstract.Constructor definition) {
+    ((Concrete.ConstructorPattern) pattern).setConstructor(definition);
+  }
+
+  @Override
   public void report(GeneralError error) {
     myErrorReporter.report(error);
   }

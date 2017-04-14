@@ -411,6 +411,7 @@ public final class Abstract {
   public interface ConstructorPattern extends Pattern {
     List<? extends PatternArgument> getArguments();
     String getConstructorName();
+    Abstract.Constructor getConstructor();
   }
 
   public interface AnyConstructorPattern extends Pattern {}

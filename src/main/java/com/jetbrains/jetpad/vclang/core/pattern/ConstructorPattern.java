@@ -10,12 +10,11 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ConstructorPattern extends Pattern implements Abstract.ConstructorPattern {
+public class ConstructorPattern extends Pattern {
   private final Constructor myConstructor;
   private final Patterns myArguments;
 
@@ -29,16 +28,10 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
     return myConstructor;
   }
 
-  @Override
-  public String getConstructorName() {
-    return myConstructor.getName();
-  }
-
   public Patterns getPatterns() {
     return myArguments;
   }
 
-  @Override
   public List<PatternArgument> getArguments() {
     return myArguments.getPatterns();
   }
