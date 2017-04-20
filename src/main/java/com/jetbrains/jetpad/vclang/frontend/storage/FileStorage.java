@@ -8,9 +8,7 @@ import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -48,7 +46,7 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
   }
 
   public static Path cacheFile(Path base, long mtime) {
-    return base.resolveSibling(base.getFileName() + "." + mtime + SERIALIZED_EXTENSION);
+    return base.resolveSibling(base.getFileName() + SERIALIZED_EXTENSION);
   }
 
 
@@ -130,7 +128,9 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
       Path file = cacheFileForSource(sourceId);
       if (Files.isReadable(file)) {
         try {
-          return Files.newInputStream(file);
+          InputStream stream = Files.newInputStream(file);
+          long mtime = new DataInputStream(stream).readLong();
+          return mtime == sourceId.myMtime ? stream : null;
         } catch (IOException ignored) {
         }
       }
@@ -144,7 +144,9 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
       Path file = cacheFileForSource(sourceId);
       try {
         Files.createDirectories(file.getParent());
-        return Files.newOutputStream(file);
+        OutputStream stream = Files.newOutputStream(file);
+        new DataOutputStream(stream).writeLong(sourceId.myMtime);
+        return stream;
       } catch (IOException ignored) {
       }
       return null;
