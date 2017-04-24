@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
+import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.StripVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
@@ -117,18 +118,16 @@ public class DefinitionCheckType {
     if (unit.getDefinition() instanceof Abstract.FunctionDefinition) {
       FunctionDefinition definition = typechecked != null ? (FunctionDefinition) typechecked : new FunctionDefinition(unit.getDefinition());
       typeCheckFunctionHeader(definition, enclosingClass, visitor, localInstancePool);
-      if (definition.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
-        if (definition.getResultType() == null) {
-          definition.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
-          if (recursive) {
-            if (((Abstract.FunctionDefinition) unit.getDefinition()).getResultType() == null) {
-              errorReporter.report(new LocalTypeCheckingError("Cannot infer the result type of a recursive function", unit.getDefinition()));
-            }
-            return definition;
+      if (definition.getResultType() == null) {
+        definition.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
+        if (recursive) {
+          if (((Abstract.FunctionDefinition) unit.getDefinition()).getResultType() == null) {
+            errorReporter.report(new LocalTypeCheckingError("Cannot infer the result type of a recursive function", unit.getDefinition()));
           }
+          return definition;
         }
-        typeCheckFunctionBody(definition, visitor);
       }
+      typeCheckFunctionBody(definition, visitor);
       return definition;
     } else
     if (unit.getDefinition() instanceof Abstract.DataDefinition) {
@@ -158,7 +157,7 @@ public class DefinitionCheckType {
         Type paramResult = visitor.finalCheckType(typeArgument.getType());
         if (paramResult == null) {
           ok = false;
-          continue;
+          paramResult = new TypeExpression(new ErrorExpression(null, null), Sort.SET0);
         }
 
         DependentLink param;
@@ -239,9 +238,11 @@ public class DefinitionCheckType {
 
       if (term instanceof Abstract.ElimExpression) {
         visitor.getContext().subList(visitor.getContext().size() - size(typedDef.getParameters()), visitor.getContext().size()).clear();
-        ElimTreeNode elimTree = visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, def.getArrow() == Abstract.Definition.Arrow.LEFT ? typedDef.getParameters() : null, expectedType, false, true);
-        if (elimTree != null) {
-          typedDef.setElimTree(elimTree);
+        if (expectedType != null || def.getResultType() == null) {
+          ElimTreeNode elimTree = visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, def.getArrow() == Abstract.Definition.Arrow.LEFT ? typedDef.getParameters() : null, expectedType, false, true);
+          if (elimTree != null) {
+            typedDef.setElimTree(elimTree);
+          }
         }
       } else {
         CheckTypeVisitor.Result termResult = visitor.finalCheckExpr(term, expectedType);

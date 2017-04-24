@@ -1,9 +1,16 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import static com.jetbrains.jetpad.vclang.ExpressionFactory.FunCall;
+import static com.jetbrains.jetpad.vclang.ExpressionFactory.Ref;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Nat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class TypeCheckingTest extends TypeCheckingTestCase {
@@ -124,5 +131,11 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
     typeCheckClass(
       "\\function ack (m n : Nat) : Nat <= \\elim m, n | zero, n => suc n | suc m, zero => ack m 1 | suc m, suc n => ack m (ack (suc m) n)\n" +
       "\\function t : ack 4 4 = ack 4 4 => path (\\lam _ => ack 4 4)");
+  }
+
+  @Test
+  public void parameters() {
+    FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\function f (x : Nat Nat) (p : (=) {Nat} x x) => p", 1);
+    assertEquals(FunCall(Prelude.PATH_INFIX, Sort.SET0, Nat(), Ref(def.getParameters()), Ref(def.getParameters())), def.getResultType());
   }
 }
