@@ -163,7 +163,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
       left.accept(this, null);
       myResolveListener.replaceBinOp(expr, left);
     } else {
-      BinOpParser parser = new BinOpParser(myResolveListener, expr, myResolveListener);
+      BinOpParser parser = new BinOpParser(expr, myResolveListener);
       List<Abstract.BinOpSequenceElem> sequence = expr.getSequence();
 
       expr.getLeft().accept(this, null);
