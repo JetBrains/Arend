@@ -46,6 +46,7 @@ import com.jetbrains.jetpad.vclang.typechecking.visitor.CollectDefCallsVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.FindMatchOnIntervalVisitor;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.size;
 import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.toContext;
@@ -162,7 +163,7 @@ public class DefinitionCheckType {
 
         DependentLink param;
         if (argument instanceof Abstract.TelescopeArgument) {
-          List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
+          List<String> names = ((Abstract.TelescopeArgument) argument).getReferableList().stream().map(r -> r == null ? null : r.getName()).collect(Collectors.toList());
           param = parameter(argument.getExplicit(), names, paramResult);
           index += names.size();
         } else {
@@ -570,7 +571,7 @@ public class DefinitionCheckType {
 
         DependentLink param;
         if (argument instanceof Abstract.TelescopeArgument) {
-          param = parameter(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), paramResult);
+          param = parameter(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getReferableList().stream().map(r -> r == null ? null : r.getName()).collect(Collectors.toList()), paramResult);
         } else {
           param = parameter(argument.getExplicit(), (String) null, paramResult);
         }
@@ -660,7 +661,7 @@ public class DefinitionCheckType {
     Abstract.Argument argument = null;
     for (Abstract.Argument arg : args) {
       if (arg instanceof Abstract.TelescopeArgument) {
-        i += ((Abstract.TelescopeArgument) arg).getNames().size();
+        i += ((Abstract.TelescopeArgument) arg).getReferableList().size();
       } else {
         i++;
       }
@@ -836,7 +837,7 @@ public class DefinitionCheckType {
     }
 
     FieldSet fieldSet = new FieldSet(Sort.PROP);
-    ClassDefinition classDef = (ClassDefinition) visitor.getTypecheckingState().getTypechecked(classView.getUnderlyingClassDefCall().getReferent());
+    ClassDefinition classDef = (ClassDefinition) visitor.getTypecheckingState().getTypechecked((Abstract.Definition) classView.getUnderlyingClassDefCall().getReferent());
     fieldSet.addFieldsFrom(classDef.getFieldSet());
     ClassCallExpression term = new ClassCallExpression(classDef, Sort.generateInferVars(visitor.getEquations(), def.getClassView()), fieldSet);
 

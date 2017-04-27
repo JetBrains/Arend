@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
@@ -64,16 +65,16 @@ public final class Concrete {
   }
 
   public static class NameArgument extends Argument implements Abstract.NameArgument {
-    private final String myName;
+    private final Abstract.ReferableSourceNode myReferable;
 
-    public NameArgument(Position position, boolean explicit, String name) {
+    public NameArgument(Position position, boolean explicit, Abstract.ReferableSourceNode referableSourceNode) {
       super(position, explicit);
-      myName = name;
+      myReferable = referableSourceNode;
     }
 
     @Override
-    public String getName() {
-      return myName;
+    public Abstract.ReferableSourceNode getReferable() {
+      return myReferable;
     }
   }
 
@@ -96,16 +97,16 @@ public final class Concrete {
   }
 
   public static class TelescopeArgument extends TypeArgument implements Abstract.TelescopeArgument {
-    private final List<String> myNames;
+    private final List<? extends Abstract.ReferableSourceNode> myReferableList;
 
-    public TelescopeArgument(Position position, boolean explicit, List<String> names, Expression type) {
+    public TelescopeArgument(Position position, boolean explicit, List<? extends Abstract.ReferableSourceNode> referableList, Expression type) {
       super(position, explicit, type);
-      myNames = names;
+      myReferableList = referableList;
     }
 
     @Override
-    public List<String> getNames() {
-      return myNames;
+    public List<? extends Abstract.ReferableSourceNode> getReferableList() {
+      return myReferableList;
     }
   }
 
@@ -208,7 +209,7 @@ public final class Concrete {
       return mySequence;
     }
 
-    public BinOpExpression makeBinOp(Abstract.Expression left, Abstract.Definition binOp, Abstract.DefCallExpression var, Abstract.Expression right) {
+    public BinOpExpression makeBinOp(Abstract.Expression left, Abstract.Definition binOp, Abstract.ReferenceExpression var, Abstract.Expression right) {
       assert left instanceof Expression && right instanceof Expression && var instanceof Expression;
       return new BinOpExpression(((Expression) var).getPosition(), (Expression) left, binOp, (Expression) right);
     }
@@ -267,23 +268,23 @@ public final class Concrete {
     }
   }
 
-  public static class DefCallExpression extends Expression implements Abstract.DefCallExpression {
+  public static class ReferenceExpression extends Expression implements Abstract.ReferenceExpression {
     private final Expression myExpression;
     private final String myName;
-    private Abstract.Definition myDefinition;
+    private Abstract.ReferableSourceNode myReferent;
 
-    public DefCallExpression(Position position, Expression expression, String name) {
+    public ReferenceExpression(Position position, Expression expression, String name) {
       super(position);
       myExpression = expression;
       myName = name;
-      myDefinition = null;
+      myReferent = null;
     }
 
-    public DefCallExpression(Position position, Abstract.Definition definition) {
+    public ReferenceExpression(Position position, Abstract.ReferableSourceNode referable) {
       super(position);
       myExpression = null;
-      myName = definition.getName();
-      myDefinition = definition;
+      myName = referable.getName();
+      myReferent = referable;
     }
 
     @Override
@@ -292,12 +293,12 @@ public final class Concrete {
     }
 
     @Override
-    public Abstract.Definition getReferent() {
-      return myDefinition;
+    public Abstract.ReferableSourceNode getReferent() {
+      return myReferent;
     }
 
-    public void setResolvedDefinition(Abstract.Definition definition) {
-      myDefinition = definition;
+    public void setResolvedReferent(Abstract.ReferableSourceNode referent) {
+      myReferent = referent;
     }
 
     @Override
@@ -307,7 +308,21 @@ public final class Concrete {
 
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitDefCall(this, params);
+      return visitor.visitReference(this, params);
+    }
+  }
+
+  public static class InferenceReferenceExpression extends Expression implements Abstract.Expression {
+    private final InferenceVariable myVariable;
+
+    public InferenceReferenceExpression(Position position, InferenceVariable variable) {
+      super(position);
+      myVariable = variable;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return null;
     }
   }
 
@@ -1218,12 +1233,12 @@ public final class Concrete {
   // ClassViews
 
   public static class ClassView extends Definition implements Abstract.ClassView {
-    private final DefCallExpression myUnderlyingClass;
+    private final ReferenceExpression myUnderlyingClass;
     private final String myClassifyingFieldName;
     private Abstract.ClassField myClassifyingField;
     private final List<ClassViewField> myFields;
 
-    public ClassView(Position position, String name, DefCallExpression underlyingClass, String classifyingFieldName, List<ClassViewField> fields) {
+    public ClassView(Position position, String name, ReferenceExpression underlyingClass, String classifyingFieldName, List<ClassViewField> fields) {
       super(position, name, Abstract.Precedence.DEFAULT);
       myUnderlyingClass = underlyingClass;
       myFields = fields;
@@ -1231,7 +1246,7 @@ public final class Concrete {
     }
 
     @Override
-    public DefCallExpression getUnderlyingClassDefCall() {
+    public ReferenceExpression getUnderlyingClassDefCall() {
       return myUnderlyingClass;
     }
 
@@ -1299,11 +1314,11 @@ public final class Concrete {
   public static class ClassViewInstance extends Definition implements Abstract.ClassViewInstance {
     private final boolean myDefault;
     private final List<Argument> myArguments;
-    private final DefCallExpression myClassView;
+    private final ReferenceExpression myClassView;
     private final List<ClassFieldImpl> myClassFieldImpls;
     private Abstract.Definition myClassifyingDefinition;
 
-    public ClassViewInstance(Position position, boolean isDefault, String name, Abstract.Precedence precedence, List<Argument> arguments, DefCallExpression classView, List<ClassFieldImpl> classFieldImpls) {
+    public ClassViewInstance(Position position, boolean isDefault, String name, Abstract.Precedence precedence, List<Argument> arguments, ReferenceExpression classView, List<ClassFieldImpl> classFieldImpls) {
       super(position, name, precedence);
       myDefault = isDefault;
       myArguments = arguments;
@@ -1322,7 +1337,7 @@ public final class Concrete {
     }
 
     @Override
-    public DefCallExpression getClassView() {
+    public ReferenceExpression getClassView() {
       return myClassView;
     }
 

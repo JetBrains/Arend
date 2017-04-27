@@ -25,19 +25,19 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, V
   }
 
   @Override
-  public Void visitDefCall(Abstract.DefCallExpression expr, Void ignore) {
-    if (expr.getReferent() != null) {
+  public Void visitReference(Abstract.ReferenceExpression expr, Void ignore) {
+    if (expr.getReferent() instanceof Abstract.Definition) {
       if (myInstanceProvider != null) {
         if (expr.getReferent() instanceof Abstract.ClassViewField) {
           myDependencies.addAll(myInstanceProvider.getInstances(expr, 0));
         } else {
-          Collection<? extends Abstract.Argument> arguments = Abstract.getArguments(expr.getReferent());
+          Collection<? extends Abstract.Argument> arguments = Abstract.getArguments((Abstract.Definition) expr.getReferent());
           if (arguments != null) {
             int i = 0;
             for (Abstract.Argument arg : arguments) {
               myDependencies.addAll(myInstanceProvider.getInstances(expr, i));
               if (arg instanceof Abstract.TelescopeArgument) {
-                i += ((Abstract.TelescopeArgument) arg).getNames().size();
+                i += ((Abstract.TelescopeArgument) arg).getReferableList().size();
               } else {
                 i++;
               }
@@ -45,10 +45,15 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, V
           }
         }
       }
-      myDependencies.add(expr.getReferent());
+      myDependencies.add((Abstract.Definition) expr.getReferent());
     } else if (expr.getExpression() != null) {
       expr.getExpression().accept(this, null);
     }
+    return null;
+  }
+
+  @Override
+  public Void visitInferenceReference(Abstract.InferenceReferenceExpression expr, Void params) {
     return null;
   }
 
@@ -112,8 +117,8 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, V
 
   @Override
   public Void visitBinOp(Abstract.BinOpExpression expr, Void ignore) {
-    if (expr.getReferent() != null) {
-      myDependencies.add(expr.getReferent());
+    if (expr.getReferent() instanceof Abstract.Definition) {
+      myDependencies.add((Abstract.Definition) expr.getReferent());
     }
     expr.getLeft().accept(this, null);
     expr.getRight().accept(this, null);
@@ -124,7 +129,7 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, V
   public Void visitBinOpSequence(Abstract.BinOpSequenceExpression expr, Void ignore) {
     expr.getLeft().accept(this, null);
     for (Abstract.BinOpSequenceElem elem : expr.getSequence()) {
-      visitDefCall(elem.binOp, null);
+      visitReference(elem.binOp, null);
       elem.argument.accept(this, null);
     }
     return null;

@@ -112,12 +112,18 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   @Override
-  public Void visitDefCall(Abstract.DefCallExpression expr, Byte prec) {
+  public Void visitReference(Abstract.ReferenceExpression expr, Byte prec) {
     if (expr.getExpression() != null) {
-      expr.getExpression().accept(this, Abstract.DefCallExpression.PREC);
+      expr.getExpression().accept(this, Abstract.ReferenceExpression.PREC);
       myBuilder.append(".");
     }
     myBuilder.append(new Name(expr.getName()));
+    return null;
+  }
+
+  @Override
+  public Void visitInferenceReference(Abstract.InferenceReferenceExpression expr, Byte params) {
+    myBuilder.append("?").append(expr.getVariable().getName());
     return null;
   }
 
@@ -147,7 +153,8 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   public void prettyPrintArgument(Abstract.Argument argument, byte prec) {
     if (argument instanceof Abstract.NameArgument) {
-      String name = ((Abstract.NameArgument) argument).getName();
+      Abstract.ReferableSourceNode referable = ((Abstract.NameArgument) argument).getReferable();
+      String name = referable == null ? "_" : referable.getName();
       if (name == null) {
         name = "_";
       }
@@ -155,8 +162,8 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     } else
     if (argument instanceof Abstract.TelescopeArgument) {
       myBuilder.append(argument.getExplicit() ? '(' : '{');
-      for (String name : ((Abstract.TelescopeArgument) argument).getNames()) {
-        myBuilder.append(name == null ? "_" : name).append(' ');
+      for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeArgument) argument).getReferableList()) {
+        myBuilder.append(referable == null ? "_" : referable.getName()).append(' ');
       }
 
       myBuilder.append(": ");
@@ -694,7 +701,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     final BinOpLayout l = new BinOpLayout(){
       @Override
       void printLeft(PrettyPrintVisitor pp) {
-        pp.prettyPrintArguments(def.getArguments(), Abstract.DefCallExpression.PREC);
+        pp.prettyPrintArguments(def.getArguments(), Abstract.ReferenceExpression.PREC);
       }
 
       @Override
@@ -798,7 +805,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     if (parameters != null) {
       for (Abstract.TypeArgument parameter : parameters) {
         myBuilder.append(' ');
-        prettyPrintArgument(parameter, Abstract.DefCallExpression.PREC);
+        prettyPrintArgument(parameter, Abstract.ReferenceExpression.PREC);
       }
     } else {
       myBuilder.append("{!error}");
@@ -879,7 +886,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     } else {
       for (Abstract.TypeArgument argument : arguments) {
         myBuilder.append(' ');
-        prettyPrintArgument(argument, Abstract.DefCallExpression.PREC);
+        prettyPrintArgument(argument, Abstract.ReferenceExpression.PREC);
       }
     }
     return null;
@@ -900,7 +907,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   private void prettyPrintClassDefinitionHeader(Abstract.ClassDefinition def) {
     myBuilder.append("\\class ").append(def.getName());
-    prettyPrintArguments(def.getPolyParameters(), Abstract.DefCallExpression.PREC);
+    prettyPrintArguments(def.getPolyParameters(), Abstract.ReferenceExpression.PREC);
     if (def.getSuperClasses() != null && !def.getSuperClasses().isEmpty()) {
       myBuilder.append(" \\extends");
       int i = def.getSuperClasses().size();
@@ -1020,7 +1027,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitClassViewInstance(Abstract.ClassViewInstance def, Void params) {
     myBuilder.append("\\instance ");
     prettyPrintNameWithPrecedence(def);
-    prettyPrintArguments(def.getArguments(), Abstract.DefCallExpression.PREC);
+    prettyPrintArguments(def.getArguments(), Abstract.ReferenceExpression.PREC);
 
     myBuilder.append(" => \\new ");
     def.getClassView().accept(this, Abstract.Expression.PREC);

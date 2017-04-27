@@ -72,14 +72,18 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void typeCheckingAppIndex() {
     // \x y. y (y x) : N -> (N -> N) -> N
-    Concrete.Expression expr = cLam("x", cLam("y", cApps(cVar("y"), cApps(cVar("y"), cVar("x")))));
+    Concrete.ReferableSourceNode x = ref("x");
+    Concrete.ReferableSourceNode y = ref("y");
+    Concrete.Expression expr = cLam(x, cLam(y, cApps(cVar(y), cApps(cVar(y), cVar(x)))));
     typeCheckExpr(expr, Pi(Nat(), Pi(Pi(Nat(), Nat()), Nat())));
   }
 
   @Test
   public void typeCheckingAppPiIndex() {
     // T : Nat -> Type, Q : (x : Nat) -> T x -> Type |- \f g. g zero (f zero) : (f : (x : Nat) -> T x) -> ((x : Nat) -> T x -> Q x (f x)) -> Q zero (f zero)
-    Concrete.Expression expr = cLam("f", cLam("g", cApps(cVar("g"), cZero(), cApps(cVar("f"), cZero()))));
+    Concrete.ReferableSourceNode cf = ref("f");
+    Concrete.ReferableSourceNode cg = ref("g");
+    Concrete.Expression expr = cLam(cf, cLam(cg, cApps(cVar(cg), cZero(), cApps(cVar(cf), cZero()))));
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("T", Pi(Nat(), Universe(0))));
     SingleDependentLink x_ = singleParam("x", Nat());
@@ -111,14 +115,16 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void typeCheckingInferPiIndex() {
     // (X : Type1) -> X -> X : Type2
-    Concrete.Expression expr = cPi("X", cUniverseInf(1), cPi(cVar("X"), cVar("X")));
-    assertThat(typeCheckExpr(expr, null).type, is((Expression) Universe(2)));
+    Concrete.ReferableSourceNode X = ref("X");
+    Concrete.Expression expr = cPi(X, cUniverseInf(1), cPi(cVar(X), cVar(X)));
+    assertThat(typeCheckExpr(expr, null).type, is(Universe(2)));
   }
 
   @Test
   public void typeCheckingUniverse() {
     // (f : Type1 -> Type1) -> f Type1
-    Concrete.Expression expr = cPi("f", cPi(cUniverseStd(1), cUniverseStd(1)), cApps(cVar("f"), cUniverseStd(1)));
+    Concrete.ReferableSourceNode f = ref("f");
+    Concrete.Expression expr = cPi(f, cPi(cUniverseStd(1), cUniverseStd(1)), cApps(cVar(f), cUniverseStd(1)));
     typeCheckExpr(expr, null, 1);
     assertThatErrorsAre(typeMismatchError());
   }
@@ -126,7 +132,8 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void typeCheckingTwoErrors() {
     // f : Nat -> Nat -> Nat |- f S (f 0 S) : Nat
-    Concrete.Expression expr = cApps(cVar("f"), cSuc(), cApps(cVar("f"), cZero(), cSuc()));
+    Concrete.ReferableSourceNode f = ref("f");
+    Concrete.Expression expr = cApps(cVar(f), cSuc(), cApps(cVar(f), cZero(), cSuc()));
     List<Binding> defs = new ArrayList<>();
     defs.add(new TypedBinding("f", Pi(Nat(), Pi(Nat(), Nat()))));
     assertThat(typeCheckExpr(defs, expr, null, 2), is(nullValue()));
@@ -135,14 +142,17 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void typedLambda() {
     // \x:Nat. x : Nat -> Nat
-    Concrete.Expression expr = cLam(cargs(cTele(true, cvars("x"), cNat())), cVar("x"));
+    Concrete.ReferableSourceNode x = ref("x");
+    Concrete.Expression expr = cLam(cargs(cTele(true, cvars(x), cNat())), cVar(x));
     assertEquals(typeCheckExpr(expr, null).type, Pi(Nat(), Nat()));
   }
 
   @Test
   public void tooManyLambdasError() {
     // \x y. x : Nat -> Nat
-    Concrete.Expression expr = cLam(cargs(cName("x"), cName("y")), cVar("x"));
+    Concrete.ReferableSourceNode x = ref("x");
+    Concrete.ReferableSourceNode y = ref("y");
+    Concrete.Expression expr = cLam(cargs(cName(x), cName(y)), cVar(x));
     assertThat(typeCheckExpr(expr, Pi(Nat(), Nat()), 1), is(nullValue()));
   }
 
@@ -156,7 +166,8 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void lambdaExpectedError() {
     // \x. x : (Nat -> Nat) -> Nat
-    Concrete.Expression expr = cLam("x", cVar("x"));
+    Concrete.ReferableSourceNode x = ref("x");
+    Concrete.Expression expr = cLam(x, cVar(x));
     typeCheckExpr(expr, Pi(Pi(Nat(), Nat()), Nat()), 1);
     assertThatErrorsAre(typeMismatchError());
   }
@@ -164,7 +175,8 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void lambdaOmegaError() {
     // \x. x x : (Nat -> Nat) -> Nat
-    Concrete.Expression expr = cLam("x", cApps(cVar("x"), cVar("x")));
+    Concrete.ReferableSourceNode x = ref("x");
+    Concrete.Expression expr = cLam(x, cApps(cVar(x), cVar(x)));
     typeCheckExpr(expr, Pi(Pi(Nat(), Nat()), Nat()), 1);
     assertThatErrorsAre(typeMismatchError());
   }
@@ -172,7 +184,8 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void lambdaExpectedError2() {
     // \x. x 0 : (Nat -> Nat) -> Nat -> Nat
-    Concrete.Expression expr = cLam("x", cApps(cVar("x"), cZero()));
+    Concrete.ReferableSourceNode x = ref("x");
+    Concrete.Expression expr = cLam(x, cApps(cVar(x), cZero()));
     typeCheckExpr(expr, Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat())), 1);
     assertThatErrorsAre(typeMismatchError());
   }
@@ -180,8 +193,11 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void letDependentType() {
     // \lam (F : \Pi N -> \Type0) (f : \Pi (x : N) -> F x) => \\let | x => 0 \\in f x");
-    Concrete.Expression expr = cLam(cargs(cTele(cvars("F"), cPi(cNat(), cUniverseStd(0))), cTele(cvars("f"), cPi(ctypeArgs(cTele(cvars("x"), cNat())), cApps(cVar("F"), cVar("x"))))),
-            cLet(clets(clet("x", cZero())), cApps(cVar("f"), cVar("x"))));
+    Concrete.ReferableSourceNode F = ref("F");
+    Concrete.ReferableSourceNode f = ref("f");
+    Concrete.ReferableSourceNode x = ref("x");
+    Concrete.Expression expr = cLam(cargs(cTele(cvars(F), cPi(cNat(), cUniverseStd(0))), cTele(cvars(f), cPi(ctypeArgs(cTele(cvars(x), cNat())), cApps(cVar(F), cVar(x))))),
+            cLet(clets(clet("x", cZero())), cApps(cVar(f), cVar(x))));
     typeCheckExpr(expr, null);
   }
 
@@ -190,13 +206,20 @@ public class ExpressionTest extends TypeCheckingTestCase {
     // \lam (F : \Pi {A : \Type0}  (a : A) -> \Type1) (f : \Pi {A : \Type0} (x : A) -> F x) =>
     //   \let | x (y : Nat) : Nat <= \elim y | zero => zero
     //                                       | suc x' => suc x' \in f x)
-    Concrete.Expression elimTree = cElim(Collections.<Concrete.Expression>singletonList(cVar("y")),
-        cClause(cPatterns(cConPattern(Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cDefCall(null, Prelude.ZERO.getAbstractDefinition())),
-        cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern("x'"), true, false))), Abstract.Definition.Arrow.RIGHT, cSuc(cVar("x'"))));
+    Concrete.ReferableSourceNode y = ref("y");
+    Concrete.ReferableSourceNode x_ = ref("x'");
+    Concrete.ReferableSourceNode F = ref("F");
+    Concrete.ReferableSourceNode A = ref("A");
+    Concrete.ReferableSourceNode f = ref("f");
+    Concrete.ReferableSourceNode a = ref("a");
+    Concrete.ReferableSourceNode x = ref("x");
+    Concrete.Expression elimTree = cElim(Collections.<Concrete.Expression>singletonList(cVar(y)),
+        cClause(cPatterns(cConPattern(Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cDefCall(Prelude.ZERO.getAbstractDefinition())),
+        cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern("x'"), true))), Abstract.Definition.Arrow.RIGHT, cSuc(cVar(x_))));
     Concrete.Expression expr = cLam(cargs(
-            cTele(cvars("F"), cPi(ctypeArgs(cTele(false, cvars("A"), cUniverseInf(0)), cTele(cvars("a"), cVar("A"))), cUniverseInf(1))),
-            cTele(cvars("f"), cPi(ctypeArgs(cTele(false, cvars("A"), cUniverseInf(0)), cTele(cvars("x"), cVar("A"))), cApps(cVar("F"), cVar("x"))))),
-        cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cNat(), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar("f"), cVar("x"))));
+            cTele(cvars(F), cPi(ctypeArgs(cTele(false, cvars(A), cUniverseInf(0)), cTele(cvars(a), cVar(A))), cUniverseInf(1))),
+            cTele(cvars(f), cPi(ctypeArgs(cTele(false, cvars(A), cUniverseInf(0)), cTele(cvars(x), cVar(A))), cApps(cVar(F), cVar(x))))),
+        cLet(clets(clet("x", cargs(cTele(cvars(y), cNat())), cNat(), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar(f), cVar(x))));
     CheckTypeVisitor.Result result = typeCheckExpr(expr, null);
     Expression typeCodomain = result.type.getPiParameters(null, true, false);
     assertThat(typeCodomain.toLet(), is(notNullValue()));
@@ -205,7 +228,9 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void letArrowType() {
     // \let | x (y : Nat) => Zero \in x : Nat -> Nat
-    Concrete.Expression expr = cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cZero())), cVar("x"));
+    Concrete.ReferableSourceNode y = ref("y");
+    Concrete.ReferableSourceNode x = ref("x");
+    Concrete.Expression expr = cLet(clets(clet("x", cargs(cTele(cvars(y), cNat())), cZero())), cVar(x));
     CheckTypeVisitor.Result result = typeCheckExpr(expr, null);
     assertEquals(result.type.normalize(NormalizeVisitor.Mode.WHNF), Pi(Nat(), Nat()));
   }

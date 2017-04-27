@@ -51,6 +51,11 @@ public class Constructor extends Definition implements Function {
   }
 
   @Override
+  public Abstract.Constructor getAbstractDefinition() {
+    return (Abstract.Constructor) super.getAbstractDefinition();
+  }
+
+  @Override
   public ElimTreeNode getElimTree() {
     return myCondition == null ? EmptyElimTreeNode.getInstance() : myCondition;
   }

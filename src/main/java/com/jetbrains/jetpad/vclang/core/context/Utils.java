@@ -11,7 +11,7 @@ import java.util.List;
 public class Utils {
   public static void removeFromList(List<?> list, Abstract.Argument argument) {
     if (argument instanceof Abstract.TelescopeArgument) {
-      for (String ignored : ((Abstract.TelescopeArgument) argument).getNames()) {
+      for (Object ignored : ((Abstract.TelescopeArgument) argument).getReferableList()) {
         list.remove(list.size() - 1);
       }
     } else {

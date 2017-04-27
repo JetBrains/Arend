@@ -66,33 +66,33 @@ public class NameResolver {
     }
   }
 
-  public Abstract.Definition resolveDefCall(final Scope currentScope, final Abstract.DefCallExpression defCall, ModuleNamespaceProvider moduleNsProvider, StaticNamespaceProvider staticNsProvider) {
-    if (defCall.getReferent() != null) {
-      return defCall.getReferent();
+  public Abstract.ReferableSourceNode resolveReference(final Scope currentScope, final Abstract.ReferenceExpression reference, ModuleNamespaceProvider moduleNsProvider, StaticNamespaceProvider staticNsProvider) {
+    if (reference.getReferent() != null) {
+      return reference.getReferent();
     }
-    if (defCall.getName() == null) {
+    if (reference.getName() == null) {
       throw new IllegalArgumentException();
     }
 
-    if (defCall.getExpression() == null) {
-      return currentScope.resolveName(defCall.getName());
-    } else if (defCall.getExpression() instanceof Abstract.DefCallExpression) {
-      Abstract.Definition exprTarget = resolveDefCall(currentScope, (Abstract.DefCallExpression) defCall.getExpression(), moduleNsProvider, staticNsProvider);
+    if (reference.getExpression() == null) {
+      return currentScope.resolveName(reference.getName());
+    } else if (reference.getExpression() instanceof Abstract.ReferenceExpression) {
+      Abstract.ReferableSourceNode exprTarget = resolveReference(currentScope, (Abstract.ReferenceExpression) reference.getExpression(), moduleNsProvider, staticNsProvider);
       final Namespace ns;
-      if (exprTarget != null) {
-        ns = staticNsProvider.forDefinition(exprTarget);
+      if (exprTarget instanceof Abstract.Definition) {
+        ns = staticNsProvider.forDefinition((Abstract.Definition) exprTarget);
       } else {
         // TODO: implement this coherently
-        // ns = resolveModuleNamespace((Abstract.DefCallExpression) defCall.getExpression());
+        // ns = resolveModuleNamespace((Abstract.DefCallExpression) reference.getExpression());
         ns = null;
       }
       // TODO: throw MemberNotFoundError
-      return ns != null ? ns.resolveName(defCall.getName()) : null;
-    } else if (defCall.getExpression() instanceof Abstract.ModuleCallExpression) {
-      Abstract.Definition module = resolveModuleCall(currentScope, (Abstract.ModuleCallExpression) defCall.getExpression(), moduleNsProvider);
+      return ns != null ? ns.resolveName(reference.getName()) : null;
+    } else if (reference.getExpression() instanceof Abstract.ModuleCallExpression) {
+      Abstract.Definition module = resolveModuleCall(currentScope, (Abstract.ModuleCallExpression) reference.getExpression(), moduleNsProvider);
       if (module instanceof Abstract.ClassDefinition) {
         ModuleNamespace moduleNamespace = moduleNsProvider.forModule((Abstract.ClassDefinition) module);
-        return moduleNamespace.resolveName(defCall.getName());
+        return moduleNamespace.resolveName(reference.getName());
       }
       return null;
     } else {

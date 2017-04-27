@@ -57,7 +57,9 @@ public class PrettyPrintingParserTest extends ParserTestCase {
   @Test
   public void prettyPrintingParserLamApp() throws UnsupportedEncodingException {
     // (\x y. x (x y)) (\x y. x) ((\x. x) (\x. x))
-    Concrete.Expression expected = cApps(cLam(cargs(cTele(cvars("x", "y"), cPi(cUniverseInf(1), cUniverseInf(1)))), cApps(cVar("x"), cApps(cVar("x"), cVar("y")))), cLam(cargs(cTele(cvars("x", "y"), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar("x")), cApps(cLam(cargs(cTele(cvars("x"), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar("x")), cLam(cargs(cTele(cvars("x"), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar("x"))));
+    Concrete.ReferableSourceNode cx = ref("x");
+    Concrete.ReferableSourceNode cy = ref("y");
+    Concrete.Expression expected = cApps(cLam(cargs(cTele(cvars(cx, cy), cPi(cUniverseInf(1), cUniverseInf(1)))), cApps(cVar(cx), cApps(cVar(cx), cVar(cy)))), cLam(cargs(cTele(cvars(cx, cy), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar(cx)), cApps(cLam(cargs(cTele(cvars(cx), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar(cx)), cLam(cargs(cTele(cvars(cx), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar(cx))));
     SingleDependentLink x = singleParam("x", Pi(Universe(1), Universe(1)));
     SingleDependentLink xy = singleParam(true, vars("x", "y"), Pi(Universe(1), Universe(1)));
     Expression expr = Apps(Lam(xy, Apps(Ref(xy), Apps(Ref(xy), Ref(xy.getNext())))), Lam(xy, Ref(xy)), Apps(Lam(x, Ref(x)), Lam(x, Ref(x))));
@@ -67,7 +69,10 @@ public class PrettyPrintingParserTest extends ParserTestCase {
   @Test
   public void prettyPrintingParserPi() throws UnsupportedEncodingException {
     // (x y z : \Type1 -> \Type1 -> \Type1) -> \Type1 -> \Type1 -> (x y -> y x) -> z x y
-    Concrete.Expression expected = cPi(ctypeArgs(cTele(cvars("x", "y", "z"), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cUniverseInf(1))))), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cPi(cApps(cVar("x"), cVar("y")), cApps(cVar("y"), cVar("x"))), cApps(cVar("z"), cVar("x"), cVar("y"))))));
+    Concrete.ReferableSourceNode x = ref("x");
+    Concrete.ReferableSourceNode y = ref("y");
+    Concrete.ReferableSourceNode z = ref("z");
+    Concrete.Expression expected = cPi(ctypeArgs(cTele(cvars(x, y, z), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cUniverseInf(1))))), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cPi(cApps(cVar(x), cVar(y)), cApps(cVar(y), cVar(x))), cApps(cVar(z), cVar(x), cVar(y))))));
     SingleDependentLink xyz = singleParams(true, vars("x", "y", "z"), Pi(Universe(1), Pi(Universe(1), Universe(1))));
     Expression expr = Pi(xyz, Pi(Universe(1), Pi(Universe(1), Pi(Pi(Apps(Ref(xyz), Ref(xyz.getNext())), Apps(Ref(xyz.getNext()), Ref(xyz))), Apps(Ref(xyz.getNext().getNext()), Ref(xyz), Ref(xyz.getNext()))))));
     testExpr(expected, expr);
@@ -76,7 +81,14 @@ public class PrettyPrintingParserTest extends ParserTestCase {
   @Test
   public void prettyPrintingParserPiImplicit() throws UnsupportedEncodingException {
     // (w : \Type1 -> \Type1 -> \Type1 -> \Type1 -> \Type1) (x : \Type1) {y z : \Type1} -> \Type1 -> (t z' : \Type1) {x' : \Type1 -> \Type1} -> w x' y z' t
-    Concrete.Expression expected = cPi("w", cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cUniverseInf(1))))), cPi("x", cUniverseInf(1), cPi(ctypeArgs(cTele(false, cvars("y", "z"), cUniverseInf(1))), cPi(cUniverseInf(1), cPi(ctypeArgs(cTele(cvars("t", "z'"), cUniverseInf(1))), cPi(false, "x'", cPi(cUniverseInf(1), cUniverseInf(1)), cApps(cVar("w"), cVar("x'"), cVar("y"), cVar("z'"), cVar("t"))))))));
+    Concrete.ReferableSourceNode cx = ref("x");
+    Concrete.ReferableSourceNode cy = ref("y");
+    Concrete.ReferableSourceNode cz = ref("z");
+    Concrete.ReferableSourceNode ct = ref("t");
+    Concrete.ReferableSourceNode cx_ = ref("x'");
+    Concrete.ReferableSourceNode cz_ = ref("z'");
+    Concrete.ReferableSourceNode cw = ref("w");
+    Concrete.Expression expected = cPi(cw, cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cUniverseInf(1))))), cPi(cx, cUniverseInf(1), cPi(ctypeArgs(cTele(false, cvars(cy, cz), cUniverseInf(1))), cPi(cUniverseInf(1), cPi(ctypeArgs(cTele(cvars(ct, cz_), cUniverseInf(1))), cPi(false, cx_, cPi(cUniverseInf(1), cUniverseInf(1)), cApps(cVar(cw), cVar(cx_), cVar(cy), cVar(cz_), cVar(ct))))))));
     SingleDependentLink w = singleParam("w", Pi(Universe(1), Pi(Universe(1), Pi(Universe(1), Pi(Universe(1), Universe(1))))));
     SingleDependentLink x = singleParam("x", Universe(1));
     SingleDependentLink yz = singleParam(false, vars("y", "z"), Universe(1));
@@ -89,7 +101,12 @@ public class PrettyPrintingParserTest extends ParserTestCase {
   @Test
   public void prettyPrintingParserFunDef() throws UnsupportedEncodingException {
     // f {x : \Type1} (A : \Type1 -> \Type0) : A x -> (\Type1 -> \Type1) -> \Type1 -> \Type1 => \t y z. y z;
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(POSITION, "f", Abstract.Precedence.DEFAULT, cargs(cTele(false, cvars("x"), cUniverseStd(1)), cTele(cvars("A"), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar("A"), cVar("x")), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), Abstract.Definition.Arrow.RIGHT, cLam(cargs(cName("t"), cName("y"), cName("z")), cApps(cVar("y"), cVar("z"))), Collections.<Concrete.Statement>emptyList());
+    Concrete.ReferableSourceNode x = ref("x");
+    Concrete.ReferableSourceNode A = ref("A");
+    Concrete.ReferableSourceNode t = ref("t");
+    Concrete.ReferableSourceNode y = ref("y");
+    Concrete.ReferableSourceNode z = ref("z");
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(POSITION, "f", Abstract.Precedence.DEFAULT, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), Abstract.Definition.Arrow.RIGHT, cLam(cargs(cName(t), cName(y), cName(z)), cApps(cVar(y), cVar(z))), Collections.<Concrete.Statement>emptyList());
     testDef(def, def);
   }
 
@@ -104,7 +121,12 @@ public class PrettyPrintingParserTest extends ParserTestCase {
     SingleDependentLink x = singleParam("x", Pi(singleParam("y", A), A));
     Expression actual = Pi(x, Apps(D, Ref(x), Lam(singleParam("y", A), Ref(singleParam("a", A)))));
 
-    Concrete.Expression expected = cPi("x", cPi("y", cVar("A"), cVar("A")), cApps(cVar("D"), cVar("x"), cLam("y", cVar("a"))));
+    Concrete.ReferableSourceNode cx = ref("x");
+    Concrete.ReferableSourceNode cy = ref("y");
+    Concrete.ReferableSourceNode ca = ref("a");
+    Concrete.ReferableSourceNode cA = ref("A");
+    Concrete.ReferableSourceNode cD = ref("D");
+    Concrete.Expression expected = cPi(cx, cPi(cy, cVar(cA), cVar(cA)), cApps(cVar(cD), cVar(cx), cLam(cy, cVar(ca))));
     testExpr(expected, actual, null);
   }
 }

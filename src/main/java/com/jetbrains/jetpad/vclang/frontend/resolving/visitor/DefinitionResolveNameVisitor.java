@@ -16,10 +16,8 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.AbstractStatementVisitor;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<Scope, Void>, AbstractStatementVisitor<Scope, Scope> {
   private final NamespaceProviders myNsProviders;
@@ -90,7 +88,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
       for (Abstract.TypeArgument parameter : def.getParameters()) {
         parameter.getType().accept(exprVisitor, null);
         if (parameter instanceof Abstract.TelescopeArgument) {
-          myContext.addAll(((Abstract.TelescopeArgument) parameter).getNames());
+          myContext.addAll(((Abstract.TelescopeArgument) parameter).getReferableList().stream().filter(Objects::nonNull).map(Abstract.ReferableSourceNode::getName).collect(Collectors.toList()));
         }
       }
 
@@ -182,7 +180,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
         for (Abstract.TypeArgument polyParam : def.getPolyParameters()) {
           polyParam.getType().accept(exprVisitor, null);
           if (polyParam instanceof Abstract.TelescopeArgument) {
-            myContext.addAll(((Abstract.TelescopeArgument) polyParam).getNames());
+            myContext.addAll(((Abstract.TelescopeArgument) polyParam).getReferableList().stream().filter(Objects::nonNull).map(Abstract.ReferableSourceNode::getName).collect(Collectors.toList()));
           }
         }
 
@@ -221,7 +219,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
   @Override
   public Void visitClassView(Abstract.ClassView def, Scope parentScope) {
     def.getUnderlyingClassDefCall().accept(new ExpressionResolveNameVisitor(myNsProviders, parentScope, myContext, myNameResolver, myResolveListener), null);
-    Abstract.Definition resolvedUnderlyingClass = def.getUnderlyingClassDefCall().getReferent();
+    Abstract.ReferableSourceNode resolvedUnderlyingClass = def.getUnderlyingClassDefCall().getReferent();
     if (!(resolvedUnderlyingClass instanceof Abstract.ClassDefinition)) {
       if (resolvedUnderlyingClass != null) {
         myResolveListener.report(new WrongDefinition("Expected a class", resolvedUnderlyingClass, def));
@@ -257,7 +255,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myNsProviders, parentScope, myContext, myNameResolver, myResolveListener);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       exprVisitor.visitArguments(def.getArguments());
-      exprVisitor.visitDefCall(def.getClassView(), null);
+      exprVisitor.visitReference(def.getClassView(), null);
       if (def.getClassView().getReferent() instanceof Abstract.ClassView) {
         exprVisitor.visitClassFieldImpls(def.getClassFieldImpls(), (Abstract.ClassView) def.getClassView().getReferent(), null);
         boolean ok = false;
@@ -268,8 +266,8 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
             while (expr instanceof Abstract.AppExpression) {
               expr = ((Abstract.AppExpression) expr).getFunction();
             }
-            if (expr instanceof Abstract.DefCallExpression) {
-              myResolveListener.classViewInstanceResolved(def, ((Abstract.DefCallExpression) expr).getReferent());
+            if (expr instanceof Abstract.ReferenceExpression && ((Abstract.ReferenceExpression) expr).getReferent() instanceof Abstract.Definition) {
+              myResolveListener.classViewInstanceResolved(def, (Abstract.Definition) ((Abstract.ReferenceExpression) expr).getReferent());
             } else {
               myResolveListener.report(new GeneralError("Expected a definition applied to arguments", impl.getImplementation()));
             }

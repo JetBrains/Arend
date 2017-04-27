@@ -237,14 +237,18 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizeLet1() {
     // normalize (\let | x => zero \in \let | y = suc \in y x) = 1
-    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet("x", cZero())), cLet(clets(clet("y", cSuc())), cApps(cVar("y"), cVar("x")))), null);
+    Concrete.ReferableSourceNode x = ref("x");
+    Concrete.ReferableSourceNode y = ref("y");
+    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet("x", cZero())), cLet(clets(clet("y", cSuc())), cApps(cVar(y), cVar(x)))), null);
     assertEquals(Suc(Zero()), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeLet2() {
     // normalize (\let | x => suc \in \let | y = zero \in x y) = 1
-    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet("x", cSuc())), cLet(clets(clet("y", cZero())), cApps(cVar("x"), cVar("y")))), null);
+    Concrete.ReferableSourceNode x = ref("x");
+    Concrete.ReferableSourceNode y = ref("y");
+    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet("x", cSuc())), cLet(clets(clet("y", cZero())), cApps(cVar(x), cVar(y)))), null);
     assertEquals(Suc(Zero()), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -268,11 +272,13 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizeLetElimNoStuck() {
     // normalize (\let | x (y : N) : \oo-Type2 <= \elim y | zero => \Type0 | suc _ => \Type1 \in x zero) = \Type0
-    Concrete.Expression elimTree = cElim(Collections.singletonList(cVar("y")),
+    Concrete.ReferableSourceNode x = ref("x");
+    Concrete.ReferableSourceNode y = ref("y");
+    Concrete.Expression elimTree = cElim(Collections.singletonList(cVar(y)),
         cClause(cPatterns(cConPattern(Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cUniverseStd(0)),
-        cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern(null), true, false))), Abstract.Definition.Arrow.RIGHT, cUniverseStd(1))
+        cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern(null), true))), Abstract.Definition.Arrow.RIGHT, cUniverseStd(1))
     );
-    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cUniverseInf(2), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar("x"), cZero())), null);
+    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet(x.getName(), cargs(cTele(cvars(y), cNat())), cUniverseInf(2), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar(x), cZero())), null);
     assertEquals(Universe(new Level(0), new Level(LevelVariable.HVAR)), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -432,7 +438,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void testAppProj() {
     SingleDependentLink x = singleParam("x", Nat());
-    Expression expr = Apps(new ProjExpression(Tuple(new SigmaExpression(Sort.SET0, param(null, Pi(Nat(), Nat()))), Lam(x, Ref(x))), 0), Zero());
+    Expression expr = Apps(new ProjExpression(Tuple(new SigmaExpression(Sort.SET0, param("_", Pi(Nat(), Nat()))), Lam(x, Ref(x))), 0), Zero());
     assertEquals(Zero(), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 

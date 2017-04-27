@@ -101,7 +101,7 @@ public class DataTest extends TypeCheckingTestCase {
     DataDefinition def = (DataDefinition) typeCheckDef("\\data D (A : \\1-Type0) | con (B : \\1-Type1) A B");
 
     Constructor con = def.getConstructor("con");
-    Concrete.Expression expr = cApps(cDefCall(null, con.getAbstractDefinition()), cNat(), cZero(), cZero());
+    Concrete.Expression expr = cApps(cDefCall(con.getAbstractDefinition()), cNat(), cZero(), cZero());
 
     CheckTypeVisitor.Result result = typeCheckExpr(expr, null);
     assertEquals(result.type, DataCall(def, Sort.SET0, Nat()));
@@ -112,9 +112,11 @@ public class DataTest extends TypeCheckingTestCase {
     DataDefinition def = (DataDefinition) typeCheckDef("\\data D (A : \\1-Type0) | con (B : \\1-Type1) A B");
 
     Constructor con = def.getConstructor("con");
-    Concrete.Expression expr = cApps(cVar("f"), cApps(cDefCall(null, con.getAbstractDefinition()), cNat(), cLam("x", cVar("x")), cZero()));
+    Concrete.ReferableSourceNode f = ref("f");
+    Concrete.ReferableSourceNode x = ref("x");
+    Concrete.Expression expr = cApps(cVar(f), cApps(cDefCall(con.getAbstractDefinition()), cNat(), cLam(x, cVar(x)), cZero()));
     List<Binding> localContext = new ArrayList<>(1);
-    localContext.add(new TypedBinding("f", Pi(DataCall(def, Sort.SET0, Pi(Nat(), Nat())), Nat())));
+    localContext.add(new TypedBinding(f.getName(), Pi(DataCall(def, Sort.SET0, Pi(Nat(), Nat())), Nat())));
 
     CheckTypeVisitor.Result result = typeCheckExpr(localContext, expr, null);
     assertEquals(result.type, Nat());
@@ -125,9 +127,10 @@ public class DataTest extends TypeCheckingTestCase {
     DataDefinition def = (DataDefinition) typeCheckDef("\\data D (A : \\1-Type0) | con A");
 
     Constructor con = def.getConstructor("con");
-    Concrete.Expression expr = cApps(cVar("f"), cDefCall(null, con.getAbstractDefinition()));
+    Concrete.ReferableSourceNode f = ref("f");
+    Concrete.Expression expr = cApps(cVar(f), cDefCall(con.getAbstractDefinition()));
     List<Binding> localContext = new ArrayList<>(1);
-    localContext.add(new TypedBinding("f", Pi(Pi(Nat(), DataCall(def, Sort.SET0, Nat())), Pi(Nat(), Nat()))));
+    localContext.add(new TypedBinding(f.getName(), Pi(Pi(Nat(), DataCall(def, Sort.SET0, Nat())), Pi(Nat(), Nat()))));
 
     CheckTypeVisitor.Result result = typeCheckExpr(localContext, expr, null);
     assertEquals(result.type, Pi(Nat(), Nat()));

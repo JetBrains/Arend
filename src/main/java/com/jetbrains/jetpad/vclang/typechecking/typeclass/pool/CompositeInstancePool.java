@@ -14,7 +14,7 @@ public class CompositeInstancePool implements ClassViewInstancePool {
   }
 
   @Override
-  public Expression getInstance(Abstract.DefCallExpression defCall, Expression classifyingExpression, Abstract.ClassView classView) {
+  public Expression getInstance(Abstract.ReferenceExpression defCall, Expression classifyingExpression, Abstract.ClassView classView) {
     for (ClassViewInstancePool pool : myPools) {
       Expression expr = pool.getInstance(defCall, classifyingExpression, classView);
       if (expr != null) {
@@ -25,7 +25,7 @@ public class CompositeInstancePool implements ClassViewInstancePool {
   }
 
   @Override
-  public Expression getInstance(Abstract.DefCallExpression defCall, int paramIndex, Expression classifyingExpression, Abstract.ClassDefinition classDefinition) {
+  public Expression getInstance(Abstract.ReferenceExpression defCall, int paramIndex, Expression classifyingExpression, Abstract.ClassDefinition classDefinition) {
     for (ClassViewInstancePool pool : myPools) {
       Expression expr = pool.getInstance(defCall, paramIndex, classifyingExpression, classDefinition);
       if (expr != null) {

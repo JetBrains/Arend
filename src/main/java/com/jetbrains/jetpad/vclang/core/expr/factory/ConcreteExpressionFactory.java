@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.core.expr.factory;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -12,7 +13,7 @@ import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   @Override
   public Abstract.Expression makeApp(Abstract.Expression fun, boolean explicit, Abstract.Expression arg) {
-    return cApps((Concrete.Expression) fun, (Concrete.Expression) arg, explicit, false);
+    return cApps((Concrete.Expression) fun, (Concrete.Expression) arg, explicit);
   }
 
   @Override
@@ -36,13 +37,23 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.Expression makeVar(String name) {
-    return cVar(name);
+  public Abstract.ReferableSourceNode makeReferable(String name) {
+    return new Concrete.ReferableSourceNode(POSITION, name);
   }
 
   @Override
-  public Abstract.Argument makeNameArgument(boolean explicit, String name) {
-    return cName(explicit, name);
+  public Abstract.Expression makeVar(Abstract.ReferableSourceNode referable) {
+    return cVar(referable);
+  }
+
+  @Override
+  public Abstract.Expression makeInferVar(InferenceVariable variable) {
+    return new Concrete.InferenceReferenceExpression(POSITION, variable);
+  }
+
+  @Override
+  public Abstract.Argument makeNameArgument(boolean explicit, Abstract.ReferableSourceNode referable) {
+    return cName(explicit, referable);
   }
 
   @Override
@@ -51,8 +62,8 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.TypeArgument makeTelescopeArgument(boolean explicit, List<String> names, Abstract.Expression type) {
-    return cTele(explicit, names, (Concrete.Expression) type);
+  public Abstract.TypeArgument makeTelescopeArgument(boolean explicit, List<? extends Abstract.ReferableSourceNode> referableList, Abstract.Expression type) {
+    return cTele(explicit, referableList, (Concrete.Expression) type);
   }
 
   @Override
@@ -146,8 +157,8 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.LetClause makeLetClause(String name, List<? extends Abstract.Argument> arguments, Abstract.Expression resultType, Abstract.Definition.Arrow arrow, Abstract.Expression term) {
-    return clet(name, (List<Concrete.Argument>) arguments, (Concrete.Expression) resultType, arrow, (Concrete.Expression) term);
+  public Abstract.LetClause makeLetClause(Abstract.ReferableSourceNode referable, List<? extends Abstract.Argument> arguments, Abstract.Expression resultType, Abstract.Definition.Arrow arrow, Abstract.Expression term) {
+    return clet(referable.getName(), (List<Concrete.Argument>) arguments, (Concrete.Expression) resultType, arrow, (Concrete.Expression) term);
   }
 
   @Override
@@ -166,17 +177,17 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.Pattern makeConPattern(String name, List<? extends Abstract.PatternArgument> args) {
-    return cConPattern(name, (List<Concrete.PatternArgument>) args);
+  public Abstract.Pattern makeConPattern(Abstract.Constructor constructor, List<? extends Abstract.PatternArgument> args) {
+    return cConPattern(constructor.getName(), (List<Concrete.PatternArgument>) args);
   }
 
   @Override
-  public Abstract.Pattern makeNamePattern(String name) {
-    return cNamePattern(name);
+  public Abstract.Pattern makeNamePattern(Abstract.ReferableSourceNode referable) {
+    return cNamePattern(referable.getName());
   }
 
   @Override
   public Abstract.PatternArgument makePatternArgument(Abstract.Pattern pattern, boolean explicit) {
-    return cPatternArg((Concrete.Pattern) pattern, explicit, false);
+    return cPatternArg((Concrete.Pattern) pattern, explicit);
   }
 }

@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 
@@ -21,7 +22,7 @@ public final class Abstract {
   }
 
   public interface NameArgument extends Argument {
-    String getName();
+    ReferableSourceNode getReferable();
   }
 
   public interface TypeArgument extends Argument {
@@ -29,7 +30,7 @@ public final class Abstract {
   }
 
   public interface TelescopeArgument extends TypeArgument {
-    List<String> getNames();
+    List<? extends ReferableSourceNode> getReferableList();
   }
 
   // Expressions
@@ -67,11 +68,15 @@ public final class Abstract {
     Definition getModule();
   }
 
-  public interface DefCallExpression extends Expression {
+  public interface ReferenceExpression extends Expression {
     byte PREC = 12;
     String getName();
     Expression getExpression();
-    Definition getReferent();
+    ReferableSourceNode getReferent();
+  }
+
+  public interface InferenceReferenceExpression extends Expression {
+    InferenceVariable getVariable();
   }
 
   public interface ClassExtExpression extends Expression {
@@ -87,8 +92,8 @@ public final class Abstract {
   }
 
   public static ClassDefinition getUnderlyingClassDef(Expression expr) {
-    if (expr instanceof DefCallExpression) {
-      Definition definition = ((DefCallExpression) expr).getReferent();
+    if (expr instanceof ReferenceExpression) {
+      ReferableSourceNode definition = ((ReferenceExpression) expr).getReferent();
       if (definition instanceof ClassDefinition) {
         return (ClassDefinition) definition;
       }
@@ -105,8 +110,8 @@ public final class Abstract {
   }
 
   public static ClassView getUnderlyingClassView(Expression expr) {
-    if (expr instanceof DefCallExpression) {
-      Definition definition = ((DefCallExpression) expr).getReferent();
+    if (expr instanceof ReferenceExpression) {
+      ReferableSourceNode definition = ((ReferenceExpression) expr).getReferent();
       if (definition instanceof ClassView) {
         return (ClassView) definition;
       }
@@ -168,9 +173,12 @@ public final class Abstract {
     return codomain;
   }
 
-  public interface BinOpExpression extends DefCallExpression {
+  public interface BinOpExpression extends ReferenceExpression {
     Expression getLeft();
     Expression getRight();
+
+    @Override
+    Definition getReferent();
 
     @Override
     default Expression getExpression() {
@@ -179,10 +187,10 @@ public final class Abstract {
   }
 
   public static class BinOpSequenceElem {
-    public DefCallExpression binOp;
+    public ReferenceExpression binOp;
     public Expression argument;
 
-    public BinOpSequenceElem(DefCallExpression binOp, Expression argument) {
+    public BinOpSequenceElem(ReferenceExpression binOp, Expression argument) {
       this.binOp = binOp;
       this.argument = argument;
     }
@@ -354,7 +362,7 @@ public final class Abstract {
   // ClassViews
 
   public interface ClassView extends Definition {
-    DefCallExpression getUnderlyingClassDefCall();
+    ReferenceExpression getUnderlyingClassDefCall();
     String getClassifyingFieldName();
     ClassField getClassifyingField();
     List<? extends ClassViewField> getFields();
@@ -369,7 +377,7 @@ public final class Abstract {
   public interface ClassViewInstance extends Definition {
     boolean isDefault();
     List<? extends Argument> getArguments();
-    DefCallExpression getClassView();
+    ReferenceExpression getClassView();
     Definition getClassifyingDefinition();
     Collection<? extends ClassFieldImpl> getClassFieldImpls();
   }

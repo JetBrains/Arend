@@ -13,8 +13,8 @@ public class ConcreteResolveListener implements ResolveListener {
   }
 
   @Override
-  public void nameResolved(Abstract.DefCallExpression defCallExpression, Abstract.Definition definition) {
-    ((Concrete.DefCallExpression) defCallExpression).setResolvedDefinition(definition);
+  public void nameResolved(Abstract.ReferenceExpression referenceExpression, Abstract.ReferableSourceNode referable) {
+    ((Concrete.ReferenceExpression) referenceExpression).setResolvedReferent(referable);
   }
 
   @Override
@@ -53,7 +53,7 @@ public class ConcreteResolveListener implements ResolveListener {
   }
 
   @Override
-  public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Abstract.Definition binOp, Abstract.DefCallExpression var, Abstract.Expression right) {
+  public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Abstract.Definition binOp, Abstract.ReferenceExpression var, Abstract.Expression right) {
     return ((Concrete.BinOpSequenceExpression) binOpExpr).makeBinOp(left, binOp, var, right);
   }
 

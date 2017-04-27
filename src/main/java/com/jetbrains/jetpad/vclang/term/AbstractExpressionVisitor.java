@@ -2,7 +2,8 @@ package com.jetbrains.jetpad.vclang.term;
 
 public interface AbstractExpressionVisitor<P, R> {
   R visitApp(Abstract.AppExpression expr, P params);
-  R visitDefCall(Abstract.DefCallExpression expr, P params);
+  R visitReference(Abstract.ReferenceExpression expr, P params);
+  R visitInferenceReference(Abstract.InferenceReferenceExpression expr, P params);
   R visitModuleCall(Abstract.ModuleCallExpression expr, P params);
   R visitLam(Abstract.LamExpression expr, P params);
   R visitPi(Abstract.PiExpression expr, P params);

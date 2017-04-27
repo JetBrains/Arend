@@ -64,9 +64,11 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   public void prettyPrintingFunDef() {
     // f (X : Type0) (x : X) : X => x;
     List<Concrete.Argument> arguments = new ArrayList<>(2);
-    arguments.add(cTele(cvars("X"), cUniverseStd(0)));
-    arguments.add(cTele(cvars("x"), cVar("X")));
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(ConcreteExpressionFactory.POSITION, "f", Abstract.Precedence.DEFAULT, arguments, cVar("X"), Abstract.Definition.Arrow.RIGHT, cLam("X", cLam("x", cVar("x"))), Collections.<Concrete.Statement>emptyList());
+    Concrete.ReferableSourceNode X = ref("X");
+    Concrete.ReferableSourceNode x = ref("X");
+    arguments.add(cTele(cvars(X), cUniverseStd(0)));
+    arguments.add(cTele(cvars(x), cVar(X)));
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(ConcreteExpressionFactory.POSITION, "f", Abstract.Precedence.DEFAULT, arguments, cVar(X), Abstract.Definition.Arrow.RIGHT, cVar(x), Collections.emptyList());
     def.accept(new PrettyPrintVisitor(new StringBuilder(), 0), null);
   }
 

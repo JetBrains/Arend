@@ -39,7 +39,7 @@ public class TypeCheckingDefCall {
 
   private Definition getTypeCheckedDefinition(Abstract.Definition definition, Abstract.Expression expr) {
     while (definition instanceof Abstract.ClassView) {
-      definition = ((Abstract.ClassView) definition).getUnderlyingClassDefCall().getReferent();
+      definition = (Abstract.Definition) ((Abstract.ClassView) definition).getUnderlyingClassDefCall().getReferent();
     }
     if (definition instanceof Abstract.ClassViewField) {
       definition = ((Abstract.ClassViewField) definition).getUnderlyingField();
@@ -61,9 +61,9 @@ public class TypeCheckingDefCall {
     }
   }
 
-  public CheckTypeVisitor.TResult typeCheckDefCall(Abstract.DefCallExpression expr) {
+  public CheckTypeVisitor.TResult typeCheckDefCall(Abstract.ReferenceExpression expr) {
     Abstract.Expression left = expr.getExpression();
-    Abstract.Definition resolvedDefinition = expr.getReferent();
+    Abstract.Definition resolvedDefinition = expr.getReferent() instanceof Abstract.Definition ? (Abstract.Definition) expr.getReferent() : null;
     Definition typeCheckedDefinition = null;
     if (resolvedDefinition != null) {
       typeCheckedDefinition = getTypeCheckedDefinition(resolvedDefinition, expr);
@@ -73,7 +73,7 @@ public class TypeCheckingDefCall {
     }
 
     CheckTypeVisitor.Result result = null;
-    if (left != null && (typeCheckedDefinition == null || !(left instanceof Abstract.DefCallExpression || left instanceof Abstract.ModuleCallExpression))) {
+    if (left != null && (typeCheckedDefinition == null || !(left instanceof Abstract.ReferenceExpression || left instanceof Abstract.ModuleCallExpression))) {
       result = left.accept(myVisitor, null);
       if (result == null) {
         return null;
@@ -268,7 +268,7 @@ public class TypeCheckingDefCall {
     return makeResult(typeCheckedDefinition, thisExpr, expr);
   }
 
-  private CheckTypeVisitor.TResult makeResult(Definition definition, Expression thisExpr, Abstract.DefCallExpression expr) {
+  private CheckTypeVisitor.TResult makeResult(Definition definition, Expression thisExpr, Abstract.ReferenceExpression expr) {
     Sort sortArgument = (definition instanceof DataDefinition || definition instanceof FunctionDefinition) && !definition.getParameters().hasNext() ? Sort.PROP : Sort.generateInferVars(myVisitor.getEquations(), expr);
 
     if (thisExpr == null && definition instanceof ClassField) {

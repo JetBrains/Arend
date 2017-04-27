@@ -23,7 +23,7 @@ public class GlobalInstancePool implements ClassViewInstancePool {
     myInstanceProvider = instanceProvider;
   }
 
-  private Expression findInstance(Abstract.DefCallExpression defCall, int paramIndex, Expression classifyingExpression, Abstract.Definition classView) {
+  private Expression findInstance(Abstract.ReferenceExpression defCall, int paramIndex, Expression classifyingExpression, Abstract.Definition classView) {
     DefCallExpression classifyingDefCall = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF).toDefCall();
     if (classifyingDefCall == null) {
       return null;
@@ -45,12 +45,12 @@ public class GlobalInstancePool implements ClassViewInstancePool {
   }
 
   @Override
-  public Expression getInstance(Abstract.DefCallExpression defCall, Expression classifyingExpression, Abstract.ClassView classView) {
+  public Expression getInstance(Abstract.ReferenceExpression defCall, Expression classifyingExpression, Abstract.ClassView classView) {
     return findInstance(defCall, 0, classifyingExpression, classView);
   }
 
   @Override
-  public Expression getInstance(Abstract.DefCallExpression defCall, int paramIndex, Expression classifyingExpression, Abstract.ClassDefinition classDefinition) {
+  public Expression getInstance(Abstract.ReferenceExpression defCall, int paramIndex, Expression classifyingExpression, Abstract.ClassDefinition classDefinition) {
     return findInstance(defCall, paramIndex, classifyingExpression, classDefinition);
   }
 }

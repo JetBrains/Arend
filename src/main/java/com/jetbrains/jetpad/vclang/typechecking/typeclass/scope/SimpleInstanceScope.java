@@ -22,7 +22,7 @@ public class SimpleInstanceScope implements Scope {
       myInstances = new HashMap<>();
     }
     Abstract.ClassView classView = (Abstract.ClassView) instance.getClassView().getReferent();
-    Pair<Abstract.Definition, Abstract.Definition> pair = new Pair<>(instance.isDefault() ? classView.getUnderlyingClassDefCall().getReferent() : classView, instance.getClassifyingDefinition());
+    Pair<Abstract.Definition, Abstract.Definition> pair = new Pair<>(instance.isDefault() ? (Abstract.Definition) classView.getUnderlyingClassDefCall().getReferent() : classView, instance.getClassifyingDefinition());
     Abstract.ClassViewInstance oldInstance = myInstances.get(pair);
     if (oldInstance != null) {
       myErrorReporter.report(new DuplicateInstanceError(Error.Level.ERROR, oldInstance, instance));

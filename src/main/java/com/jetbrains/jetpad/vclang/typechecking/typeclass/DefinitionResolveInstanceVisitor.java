@@ -137,7 +137,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
 
   @Override
   public Void visitClassView(Abstract.ClassView def, Scope parentScope) {
-    new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider).visitDefCall(def.getUnderlyingClassDefCall(), null);
+    new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider).visitReference(def.getUnderlyingClassDefCall(), null);
     return null;
   }
 
@@ -150,7 +150,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
   public Void visitClassViewInstance(Abstract.ClassViewInstance def, Scope parentScope) {
     ExpressionResolveInstanceVisitor exprVisitor = new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider);
     exprVisitor.visitArguments(def.getArguments());
-    exprVisitor.visitDefCall(def.getClassView(), null);
+    exprVisitor.visitReference(def.getClassView(), null);
     for (Abstract.ClassFieldImpl impl : def.getClassFieldImpls()) {
       impl.getImplementation().accept(exprVisitor, null);
     }

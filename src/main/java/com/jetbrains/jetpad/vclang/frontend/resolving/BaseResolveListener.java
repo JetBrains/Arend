@@ -13,7 +13,7 @@ public class BaseResolveListener implements ResolveListener {
   }
 
   @Override
-  public void nameResolved(Abstract.DefCallExpression defCallExpression, Abstract.Definition resolvedDefinition) {
+  public void nameResolved(Abstract.ReferenceExpression referenceExpression, Abstract.ReferableSourceNode referable) {
 
   }
 
@@ -53,7 +53,7 @@ public class BaseResolveListener implements ResolveListener {
   }
 
   @Override
-  public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Abstract.Definition definition, Abstract.DefCallExpression var, Abstract.Expression right) {
+  public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Abstract.Definition definition, Abstract.ReferenceExpression var, Abstract.Expression right) {
     return null;
   }
 

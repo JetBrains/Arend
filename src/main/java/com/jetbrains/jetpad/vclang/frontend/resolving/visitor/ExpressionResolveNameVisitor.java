@@ -14,6 +14,8 @@ import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<Void, Void> {
   private final NamespaceProviders myNsProviders;
@@ -38,7 +40,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   }
 
   @Override
-  public Void visitDefCall(Abstract.DefCallExpression expr, Void params) {
+  public Void visitReference(Abstract.ReferenceExpression expr, Void params) {
     Abstract.Expression expression = expr.getExpression();
     if (expression != null) {
       expression.accept(this, null);
@@ -46,20 +48,25 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
 
     if (expr.getReferent() == null) {
       if (expression != null || !myContext.contains(expr.getName())) {
-        Abstract.Definition ref = myNameResolver.resolveDefCall(myParentScope, expr, myNsProviders.modules, myNsProviders.statics);
+        Abstract.ReferableSourceNode ref = myNameResolver.resolveReference(myParentScope, expr, myNsProviders.modules, myNsProviders.statics);
         if (ref != null) {
           myResolveListener.nameResolved(expr, ref);
         } else
         if (expression == null
             || expression instanceof Abstract.ModuleCallExpression
-            || expression instanceof Abstract.DefCallExpression &&
-              (((Abstract.DefCallExpression) expression).getReferent() instanceof Abstract.ClassDefinition
-              || ((Abstract.DefCallExpression) expression).getReferent() instanceof Abstract.DataDefinition
-              || ((Abstract.DefCallExpression) expression).getReferent() instanceof Abstract.ClassView)) {
+            || expression instanceof Abstract.ReferenceExpression &&
+              (((Abstract.ReferenceExpression) expression).getReferent() instanceof Abstract.ClassDefinition
+              || ((Abstract.ReferenceExpression) expression).getReferent() instanceof Abstract.DataDefinition
+              || ((Abstract.ReferenceExpression) expression).getReferent() instanceof Abstract.ClassView)) {
           myResolveListener.report(new NotInScopeError(expr, expr.getName()));
         }
       }
     }
+    return null;
+  }
+
+  @Override
+  public Void visitInferenceReference(Abstract.InferenceReferenceExpression expr, Void params) {
     return null;
   }
 
@@ -80,10 +87,13 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
         ((Abstract.TypeArgument) argument).getType().accept(this, null);
       }
       if (argument instanceof Abstract.TelescopeArgument) {
-        myContext.addAll(((Abstract.TelescopeArgument) argument).getNames());
+        myContext.addAll(((Abstract.TelescopeArgument) argument).getReferableList().stream().filter(Objects::nonNull).map(Abstract.ReferableSourceNode::getName).collect(Collectors.toList()));
       } else
       if (argument instanceof Abstract.NameArgument) {
-        myContext.add(((Abstract.NameArgument) argument).getName());
+        Abstract.ReferableSourceNode referable = ((Abstract.NameArgument) argument).getReferable();
+        if (referable != null) {
+          myContext.add(referable.getName());
+        }
       }
     }
   }

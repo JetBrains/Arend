@@ -29,10 +29,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
     LiteralContext literal = ((AtomLiteralContext) ctx.atom()).literal();
     if (literal instanceof UnknownContext) {
-      return new Concrete.NameArgument(tokenPosition(literal.getStart()), true, "_");
+      Concrete.Position position = tokenPosition(literal.getStart());
+      return new Concrete.NameArgument(position, true, new Concrete.ReferableSourceNode(position, "_"));
     }
     if (literal instanceof IdContext && ((IdContext) literal).name() instanceof NameIdContext) {
-      return new Concrete.NameArgument(tokenPosition(literal.getStart()), true, ((NameIdContext) ((IdContext) literal).name()).ID().getText());
+      Concrete.Position position = tokenPosition(literal.getStart());
+      return new Concrete.NameArgument(position, true, new Concrete.ReferableSourceNode(position, ((NameIdContext) ((IdContext) literal).name()).ID().getText()));
     }
     return null;
   }
@@ -292,12 +294,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<Concrete.ClassViewField> fields = new ArrayList<>(ctx.classViewField().size());
 
     Concrete.Expression expr = visitExpr(ctx.expr());
-    if (!(expr instanceof Concrete.DefCallExpression)) {
+    if (!(expr instanceof Concrete.ReferenceExpression)) {
       myErrorReporter.report(new ParserError(expr.getPosition(), "Expected a class"));
       throw new ParseException();
     }
 
-    Concrete.ClassView classView = new Concrete.ClassView(tokenPosition(ctx.getStart()), ctx.ID().getText(), (Concrete.DefCallExpression) expr, visitName(ctx.name()), fields);
+    Concrete.ClassView classView = new Concrete.ClassView(tokenPosition(ctx.getStart()), ctx.ID().getText(), (Concrete.ReferenceExpression) expr, visitName(ctx.name()), fields);
     for (ClassViewFieldContext classViewFieldContext : ctx.classViewField()) {
       fields.add(visitClassViewField(classViewFieldContext, classView));
     }
@@ -318,8 +320,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       Concrete.Expression type = ((Concrete.NewExpression) term).getExpression();
       if (type instanceof Concrete.ClassExtExpression) {
         Concrete.ClassExtExpression classExt = (Concrete.ClassExtExpression) type;
-        if (classExt.getBaseClassExpression() instanceof Concrete.DefCallExpression) {
-          return new Concrete.ClassViewInstance(tokenPosition(ctx.getStart()), ctx.defaultInst() instanceof WithDefaultContext, ctx.ID().getText(), Abstract.Precedence.DEFAULT, arguments, (Concrete.DefCallExpression) classExt.getBaseClassExpression(), classExt.getStatements());
+        if (classExt.getBaseClassExpression() instanceof Concrete.ReferenceExpression) {
+          return new Concrete.ClassViewInstance(tokenPosition(ctx.getStart()), ctx.defaultInst() instanceof WithDefaultContext, ctx.ID().getText(), Abstract.Precedence.DEFAULT, arguments, (Concrete.ReferenceExpression) classExt.getBaseClassExpression(), classExt.getStatements());
         }
       }
     }
@@ -557,7 +559,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       LiteralContext literalContext = ((TeleLiteralContext) tele).literal();
       if (literalContext instanceof IdContext && ((IdContext) literalContext).name() instanceof NameIdContext) {
         TerminalNode id = ((NameIdContext) ((IdContext) literalContext).name()).ID();
-        arguments.add(new Concrete.NameArgument(tokenPosition(id.getSymbol()), true, id.getText()));
+        Concrete.Position position = tokenPosition(id.getSymbol());
+        arguments.add(new Concrete.NameArgument(position, true, new Concrete.ReferableSourceNode(position, id.getText())));
       } else
       if (literalContext instanceof UnknownContext) {
         arguments.add(new Concrete.NameArgument(tokenPosition(literalContext.getStart()), true, null));
@@ -584,13 +587,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           arguments.addAll(vars);
         } else {
           for (Concrete.NameArgument var : vars) {
-            arguments.add(new Concrete.NameArgument(var.getPosition(), false, var.getName()));
+            arguments.add(new Concrete.NameArgument(var.getPosition(), false, var.getReferable()));
           }
         }
       } else {
-        List<String> args = new ArrayList<>(vars.size());
+        List<Abstract.ReferableSourceNode> args = new ArrayList<>(vars.size());
         for (Concrete.NameArgument var : vars) {
-          args.add(var.getName());
+          args.add(var.getReferable());
         }
         arguments.add(new Concrete.TelescopeArgument(tokenPosition(tele.getStart()), explicit, args, typeExpr));
       }
@@ -612,8 +615,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.DefCallExpression visitId(IdContext ctx) {
-    return new Concrete.DefCallExpression(tokenPosition(ctx.name().getStart()), null, visitName(ctx.name()));
+  public Concrete.ReferenceExpression visitId(IdContext ctx) {
+    return new Concrete.ReferenceExpression(tokenPosition(ctx.name().getStart()), null, visitName(ctx.name()));
   }
 
   @Override
@@ -794,9 +797,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
       if (typedExpr instanceof TypedContext) {
         List<Concrete.NameArgument> args = getVars(((TypedContext) typedExpr).expr(0));
-        List<String> vars = new ArrayList<>(args.size());
+        List<Abstract.ReferableSourceNode> vars = new ArrayList<>(args.size());
         for (Concrete.NameArgument arg : args) {
-          vars.add(arg.getName());
+          vars.add(arg.getReferable());
         }
         arguments.add(new Concrete.TelescopeArgument(tokenPosition(tele.getStart()), explicit, vars, visitExpr(((TypedContext) typedExpr).expr(1))));
       } else {
@@ -854,7 +857,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.Expression visitBinOp(BinOpContext ctx) {
     Concrete.Expression left = null;
-    Concrete.DefCallExpression binOp = null;
+    Concrete.ReferenceExpression binOp = null;
     List<Abstract.BinOpSequenceElem> sequence = new ArrayList<>(ctx.binOpLeft().size());
 
     for (BinOpLeftContext leftContext : ctx.binOpLeft()) {
@@ -866,7 +869,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       } else {
         sequence.add(new Abstract.BinOpSequenceElem(binOp, expr));
       }
-      binOp = new Concrete.DefCallExpression(tokenPosition(leftContext.infix().getStart()), null, name);
+      binOp = new Concrete.ReferenceExpression(tokenPosition(leftContext.infix().getStart()), null, name);
     }
 
     Concrete.Expression expr = (Concrete.Expression)visit(ctx.binOpArg());
@@ -884,7 +887,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Concrete.Expression expression = visitExpr(ctx.atom());
     for (FieldAccContext fieldAccContext : ctx.fieldAcc()) {
       if (fieldAccContext instanceof ClassFieldContext) {
-        expression = new Concrete.DefCallExpression(tokenPosition(fieldAccContext.getStart()), expression, visitName(((ClassFieldContext) fieldAccContext).name()));
+        expression = new Concrete.ReferenceExpression(tokenPosition(fieldAccContext.getStart()), expression, visitName(((ClassFieldContext) fieldAccContext).name()));
       } else
       if (fieldAccContext instanceof SigmaFieldContext) {
         expression = new Concrete.ProjExpression(tokenPosition(fieldAccContext.getStart()), expression, Integer.parseInt(((SigmaFieldContext) fieldAccContext).NUMBER().getText()) - 1);
@@ -937,7 +940,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     if (ctx.elimCase() instanceof ElimContext) {
       for (Concrete.Expression elimExpr : elimExprs) {
-        if (!(elimExpr instanceof Concrete.DefCallExpression && ((Concrete.DefCallExpression) elimExpr).getExpression() == null)) {
+        if (!(elimExpr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) elimExpr).getExpression() == null)) {
           myErrorReporter.report(new ParserError(elimExpr.getPosition(), "\\elim can be applied only to a local variable"));
           return null;
         }
