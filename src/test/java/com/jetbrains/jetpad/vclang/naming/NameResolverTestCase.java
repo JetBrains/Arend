@@ -4,11 +4,11 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
+import com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteResolveListener;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
-import com.jetbrains.jetpad.vclang.frontend.parser.ParserTestCase;
 import com.jetbrains.jetpad.vclang.frontend.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotNameResolver;
 import com.jetbrains.jetpad.vclang.frontend.resolving.visitor.DefinitionResolveNameVisitor;
@@ -22,6 +22,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +50,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     if (LOADED_PRELUDE == null) {
       ListErrorReporter internalErrorReporter = new ListErrorReporter();
       PreludeStorage preludeStorage = new PreludeStorage();
-      LOADED_PRELUDE = new DefaultModuleLoader<>(preludeStorage, internalErrorReporter, new DefaultModuleLoader.ModuleLoadingListener<PreludeStorage.SourceId>()).load(preludeStorage.preludeSourceId);
+      LOADED_PRELUDE = new DefaultModuleLoader<>(preludeStorage, internalErrorReporter, new DefaultModuleLoader.ModuleLoadingListener<>()).load(preludeStorage.preludeSourceId);
       assertThat("Failed loading Prelude", internalErrorReporter.getErrorList(), containsErrors(0));
 
       OneshotNameResolver.visitModule(LOADED_PRELUDE, globalScope, nameResolver, nsProviders, new ConcreteResolveListener(errorReporter));
@@ -71,7 +72,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
 
-  private Concrete.Expression resolveNamesExpr(Scope parentScope, List<String> context, String text, int errors) {
+  private Concrete.Expression resolveNamesExpr(Scope parentScope, List<Pair<String, Abstract.ReferableSourceNode>> context, String text, int errors) {
     Concrete.Expression expression = parseExpr(text);
     assertThat(expression, is(notNullValue()));
 
@@ -81,7 +82,11 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
   Concrete.Expression resolveNamesExpr(Scope parentScope, String text, int errors) {
-    return resolveNamesExpr(parentScope, new ArrayList<String>(), text, errors);
+    return resolveNamesExpr(parentScope, new ArrayList<>(), text, errors);
+  }
+
+  Concrete.Expression resolveNamesExpr(String text, int errors) {
+    return resolveNamesExpr(globalScope, new ArrayList<>(), text, errors);
   }
 
   Concrete.Expression resolveNamesExpr(Scope parentScope, String text) {
@@ -89,15 +94,15 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
   protected Concrete.Expression resolveNamesExpr(List<Binding> context, String text) {
-    List<String> names = new ArrayList<>(context.size());
+    List<Pair<String, Abstract.ReferableSourceNode>> names = new ArrayList<>(context.size());
     for (Binding binding : context) {
-      names.add(binding.getName());
+      names.add(new Pair<>(binding.getName(), new Concrete.ReferableSourceNode(ConcreteExpressionFactory.POSITION, binding.getName())));
     }
     return resolveNamesExpr(globalScope, names, text, 0);
   }
 
   protected Concrete.Expression resolveNamesExpr(String text) {
-    return resolveNamesExpr(new ArrayList<Binding>(), text);
+    return resolveNamesExpr(new ArrayList<>(), text);
   }
 
 

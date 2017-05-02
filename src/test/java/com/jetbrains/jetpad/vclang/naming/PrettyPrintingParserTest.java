@@ -1,8 +1,7 @@
-package com.jetbrains.jetpad.vclang.frontend.parser;
+package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
@@ -22,7 +21,7 @@ import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.singlePara
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 import static org.junit.Assert.*;
 
-public class PrettyPrintingParserTest extends ParserTestCase {
+public class PrettyPrintingParserTest extends NameResolverTest {
   private void testExpr(Abstract.Expression expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
     List<String> context = new ArrayList<>();
@@ -31,7 +30,7 @@ public class PrettyPrintingParserTest extends ParserTestCase {
       visitor.setFlags(flags);
     }
     expr.accept(visitor, null).accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
-    Concrete.Expression result = parseExpr(builder.toString());
+    Concrete.Expression result = resolveNamesExpr(builder.toString());
     assertEquals(expected, result);
   }
 
@@ -43,14 +42,20 @@ public class PrettyPrintingParserTest extends ParserTestCase {
     StringBuilder builder = new StringBuilder();
     def.accept(new PrettyPrintVisitor(builder, 0), null);
 
-    Concrete.FunctionDefinition result = (Concrete.FunctionDefinition) parseDef(builder.toString());
-    assertEquals(expected.getArguments().size(), result.getArguments().size());
-    for (int i = 0; i < expected.getArguments().size(); ++i) {
-      assertTrue(compareAbstract(((Concrete.TypeArgument) expected.getArguments().get(i)).getType(), ((Concrete.TypeArgument) result.getArguments().get(i)).getType()));
+    Concrete.FunctionDefinition result = (Concrete.FunctionDefinition) resolveNamesDef(builder.toString());
+    List<Concrete.TypeArgument> expectedArguments = new ArrayList<>();
+    for (Concrete.Argument argument : expected.getArguments()) {
+      expectedArguments.add((Concrete.TypeArgument) argument);
     }
-    assertTrue(compareAbstract(expected.getResultType(), result.getResultType()));
+    List<Concrete.TypeArgument> actualArguments = new ArrayList<>();
+    for (Concrete.Argument argument : result.getArguments()) {
+      actualArguments.add((Concrete.TypeArgument) argument);
+    }
+    Concrete.Expression expectedType = cPi(expectedArguments, expected.getResultType());
+    Concrete.Expression actualType = cPi(actualArguments, result.getResultType());
+    assertTrue(compareAbstract(expectedType, actualType));
     assertNotNull(result.getTerm());
-    assertEquals(expected.getTerm(), result.getTerm());
+    assertEquals(cLam(new ArrayList<>(expected.getArguments()), expected.getTerm()), cLam(new ArrayList<>(result.getArguments()), result.getTerm()));
     assertEquals(expected.getArrow(), result.getArrow());
   }
 
@@ -106,7 +111,7 @@ public class PrettyPrintingParserTest extends ParserTestCase {
     Concrete.ReferableSourceNode t = ref("t");
     Concrete.ReferableSourceNode y = ref("y");
     Concrete.ReferableSourceNode z = ref("z");
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(POSITION, "f", Abstract.Precedence.DEFAULT, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), Abstract.Definition.Arrow.RIGHT, cLam(cargs(cName(t), cName(y), cName(z)), cApps(cVar(y), cVar(z))), Collections.<Concrete.Statement>emptyList());
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(POSITION, "f", Abstract.Precedence.DEFAULT, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), Abstract.Definition.Arrow.RIGHT, cLam(cargs(cName(t), cName(y), cName(z)), cApps(cVar(y), cVar(z))), Collections.emptyList());
     testDef(def, def);
   }
 
@@ -116,17 +121,18 @@ public class PrettyPrintingParserTest extends ParserTestCase {
     // a : A
     // D : (A -> A) -> A -> A
     // \Pi (x : \Pi (y : A) -> A) -> D x (\lam y => a)
-    ReferenceExpression A = Ref(singleParam("A", Universe(0)));
-    Expression D = Ref(singleParam("D", Pi(Pi(A, A), Pi(A, A))));
-    SingleDependentLink x = singleParam("x", Pi(singleParam("y", A), A));
-    Expression actual = Pi(x, Apps(D, Ref(x), Lam(singleParam("y", A), Ref(singleParam("a", A)))));
+    SingleDependentLink A = singleParam("A", Universe(0));
+    SingleDependentLink D = singleParam("D", Pi(Pi(Ref(A), Ref(A)), Pi(Ref(A), Ref(A))));
+    SingleDependentLink x = singleParam("x", Pi(singleParam("y", Ref(A)), Ref(A)));
+    SingleDependentLink a = singleParam("a", Ref(A));
+    Expression actual = Pi(A, Pi(a, Pi(D, Pi(x, Apps(Ref(D), Ref(x), Lam(singleParam("y", Ref(A)), Ref(a)))))));
 
     Concrete.ReferableSourceNode cx = ref("x");
     Concrete.ReferableSourceNode cy = ref("y");
     Concrete.ReferableSourceNode ca = ref("a");
     Concrete.ReferableSourceNode cA = ref("A");
     Concrete.ReferableSourceNode cD = ref("D");
-    Concrete.Expression expected = cPi(cx, cPi(cy, cVar(cA), cVar(cA)), cApps(cVar(cD), cVar(cx), cLam(cy, cVar(ca))));
+    Concrete.Expression expected = cPi(cA, cUniverseInf(0), cPi(ca, cVar(cA), cPi(cD, cPi(cPi(cVar(cA), cVar(cA)), cPi(cVar(cA), cVar(cA))), cPi(cx, cPi(cy, cVar(cA), cVar(cA)), cApps(cVar(cD), cVar(cx), cLam(cy, cVar(ca)))))));
     testExpr(expected, actual, null);
   }
 }

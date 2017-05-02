@@ -15,13 +15,13 @@ import com.jetbrains.jetpad.vclang.naming.scope.*;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.AbstractStatementVisitor;
+import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<Scope, Void>, AbstractStatementVisitor<Scope, Scope> {
   private final NamespaceProviders myNsProviders;
-  private List<String> myContext;
+  private List<Pair<String, Abstract.ReferableSourceNode>> myContext;
   private final NameResolver myNameResolver;
   private final ResolveListener myResolveListener;
 
@@ -29,7 +29,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     this(nsProviders, new ArrayList<>(), nameResolver, resolveListener);
   }
 
-  private DefinitionResolveNameVisitor(NamespaceProviders nsProviders, List<String> context,
+  private DefinitionResolveNameVisitor(NamespaceProviders nsProviders, List<Pair<String, Abstract.ReferableSourceNode>> context,
                                       NameResolver nameResolver, ResolveListener resolveListener) {
     myNsProviders = nsProviders;
     myContext = context;
@@ -84,11 +84,15 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
   @Override
   public Void visitData(Abstract.DataDefinition def, Scope parentScope) {
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myNsProviders, parentScope, myContext, myNameResolver, myResolveListener);
-    try (Utils.CompleteContextSaver<String> saver = new Utils.CompleteContextSaver<>(myContext)) {
+    try (Utils.CompleteContextSaver<Pair<String, Abstract.ReferableSourceNode>> saver = new Utils.CompleteContextSaver<>(myContext)) {
       for (Abstract.TypeArgument parameter : def.getParameters()) {
         parameter.getType().accept(exprVisitor, null);
         if (parameter instanceof Abstract.TelescopeArgument) {
-          myContext.addAll(((Abstract.TelescopeArgument) parameter).getReferableList().stream().filter(Objects::nonNull).map(Abstract.ReferableSourceNode::getName).collect(Collectors.toList()));
+          for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeArgument) parameter).getReferableList()) {
+            if (referable != null && referable.getName() != null && !referable.getName().equals("_")) {
+              myContext.add(new Pair<>(referable.getName(), referable));
+            }
+          }
         }
       }
 
@@ -180,7 +184,11 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
         for (Abstract.TypeArgument polyParam : def.getPolyParameters()) {
           polyParam.getType().accept(exprVisitor, null);
           if (polyParam instanceof Abstract.TelescopeArgument) {
-            myContext.addAll(((Abstract.TelescopeArgument) polyParam).getReferableList().stream().filter(Objects::nonNull).map(Abstract.ReferableSourceNode::getName).collect(Collectors.toList()));
+            for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeArgument) polyParam).getReferableList()) {
+              if (referable != null && referable.getName() != null && referable.getName().equals("_")) {
+                myContext.add(new Pair<>(referable.getName(), referable));
+              }
+            }
           }
         }
 

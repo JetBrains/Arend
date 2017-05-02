@@ -1,6 +1,10 @@
-package com.jetbrains.jetpad.vclang.frontend.parser;
+package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.VclangTestCase;
+import com.jetbrains.jetpad.vclang.frontend.parser.BuildVisitor;
+import com.jetbrains.jetpad.vclang.frontend.parser.ParserError;
+import com.jetbrains.jetpad.vclang.frontend.parser.VcgrammarLexer;
+import com.jetbrains.jetpad.vclang.frontend.parser.VcgrammarParser;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Abstract;

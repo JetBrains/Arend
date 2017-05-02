@@ -104,9 +104,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       }
     }.doPrettyPrint(this);
 
-
-
-
     if (prec > Abstract.AppExpression.PREC) myBuilder.append(')');
     return null;
   }
@@ -676,7 +673,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
   }
 
-  private Void prettyPrintNameWithPrecedence(Abstract.Definition def) {
+  private void prettyPrintNameWithPrecedence(Abstract.Definition def) {
     Abstract.Precedence precedence = def.getPrecedence();
     if (precedence != null && !precedence.equals(Abstract.Precedence.DEFAULT)) {
       myBuilder.append("\\infix");
@@ -688,7 +685,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
 
     myBuilder.append(new Name(def.getName()).getPrefixName());
-    return null;
   }
 
   @Override
