@@ -132,6 +132,13 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         if (defCallResult.getDefinition() instanceof Constructor && defCallResult.getArguments().size() < DependentLink.Helper.size(((Constructor) defCallResult.getDefinition()).getDataTypeParameters())) {
           DataCallExpression dataCall = expectedType instanceof Expression ? ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF).toDataCall() : null;
           if (dataCall != null) {
+            if (((Constructor) defCallResult.getDefinition()).getDataType() != dataCall.getDefinition()) {
+              LocalTypeCheckingError error = new TypeMismatchError(dataCall, ((Constructor) defCallResult.getDefinition()).getDataType(), fun);
+              arg.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
+              myVisitor.getErrorReporter().report(error);
+              return null;
+            }
+
             List<? extends Expression> args = dataCall.getDefCallArguments();
             List<Expression> args1 = new ArrayList<>(args.size());
             args1.addAll(defCallResult.getArguments());

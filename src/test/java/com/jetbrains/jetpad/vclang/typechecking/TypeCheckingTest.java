@@ -138,4 +138,12 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
     FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\function f (x : Nat Nat) (p : (=) {Nat} x x) => p", 1);
     assertEquals(FunCall(Prelude.PATH_INFIX, Sort.SET0, Nat(), Ref(def.getParameters()), Ref(def.getParameters())), def.getResultType());
   }
+
+  @Test
+  public void constructorExpectedTypeMismatch() {
+    typeCheckClass(
+        "\\data Foo\n" +
+        "\\data Bar (n : Nat) | Bar (suc n) => bar (n = n)\n" +
+        "\\function foo : Foo => bar (path (\\lam _ => zero))", 1);
+  }
 }

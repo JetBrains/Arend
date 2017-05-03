@@ -7,13 +7,14 @@ import com.jetbrains.jetpad.vclang.core.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class Definition implements Variable, Callable {
+public abstract class Definition implements Variable, Callable, PrettyPrintable {
   private ClassDefinition myThisClass;
   private Abstract.Definition myAbstractDefinition;
   private Map<Integer, ClassField> myClassifyingFields = Collections.emptyMap();
@@ -107,5 +108,10 @@ public abstract class Definition implements Variable, Callable {
       return new ClassDefinition((Abstract.ClassDefinition) definition);
     }
     return null;
+  }
+
+  @Override
+  public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent) {
+    builder.append(myAbstractDefinition.getName());
   }
 }
