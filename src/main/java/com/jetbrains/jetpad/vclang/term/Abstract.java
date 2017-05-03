@@ -98,7 +98,7 @@ public final class Abstract {
         return (ClassDefinition) definition;
       }
       if (definition instanceof ClassView) {
-        return (ClassDefinition) ((ClassView) definition).getUnderlyingClassDefCall().getReferent();
+        return (ClassDefinition) ((ClassView) definition).getUnderlyingClassReference().getReferent();
       }
     }
 
@@ -135,7 +135,7 @@ public final class Abstract {
     Expression getBody();
   }
 
-  public interface LetClause extends Function {
+  public interface LetClause extends Function, ReferableSourceNode {
   }
 
   public interface LetExpression extends Expression {
@@ -362,7 +362,7 @@ public final class Abstract {
   // ClassViews
 
   public interface ClassView extends Definition {
-    ReferenceExpression getUnderlyingClassDefCall();
+    ReferenceExpression getUnderlyingClassReference();
     String getClassifyingFieldName();
     ClassField getClassifyingField();
     List<? extends ClassViewField> getFields();
@@ -419,6 +419,7 @@ public final class Abstract {
 
   public interface NamePattern extends Pattern {
     String getName();
+    ReferableSourceNode getReferent();
   }
 
   public interface ConstructorPattern extends Pattern {

@@ -843,11 +843,11 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   public void prettyPrintPattern(Abstract.Pattern pattern) {
     if (pattern instanceof Abstract.NamePattern) {
-      if (((Abstract.NamePattern) pattern).getName() == null) {
-        myBuilder.append('_');
-      } else {
-        myBuilder.append(((Abstract.NamePattern) pattern).getName());
+      String name = ((Abstract.NamePattern) pattern).getReferent().getName();
+      if (name == null) {
+        name = "_";
       }
+      myBuilder.append(name);
     } else if (pattern instanceof Abstract.AnyConstructorPattern) {
       myBuilder.append("_!");
     } else if (pattern instanceof Abstract.ConstructorPattern) {
@@ -980,7 +980,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   @Override
   public Void visitClassView(Abstract.ClassView def, Void params) {
     myBuilder.append("\\view ").append(def.getName()).append(" \\on ");
-    def.getUnderlyingClassDefCall().accept(this, Abstract.Expression.PREC);
+    def.getUnderlyingClassReference().accept(this, Abstract.Expression.PREC);
     myBuilder.append(" \\by ").append(def.getClassifyingFieldName()).append(" {");
 
     if (!def.getFields().isEmpty()) {

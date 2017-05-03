@@ -837,7 +837,7 @@ public class DefinitionCheckType {
     }
 
     FieldSet fieldSet = new FieldSet(Sort.PROP);
-    ClassDefinition classDef = (ClassDefinition) visitor.getTypecheckingState().getTypechecked((Abstract.Definition) classView.getUnderlyingClassDefCall().getReferent());
+    ClassDefinition classDef = (ClassDefinition) visitor.getTypecheckingState().getTypechecked((Abstract.Definition) classView.getUnderlyingClassReference().getReferent());
     fieldSet.addFieldsFrom(classDef.getFieldSet());
     ClassCallExpression term = new ClassCallExpression(classDef, Sort.generateInferVars(visitor.getEquations(), def.getClassView()), fieldSet);
 

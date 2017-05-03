@@ -68,12 +68,12 @@ public class BaseResolveListener implements ResolveListener {
   }
 
   @Override
-  public void replaceWithConstructor(Abstract.PatternArgument patternArg) {
+  public void replaceWithConstructor(Abstract.PatternArgument patternArg, Abstract.Constructor constructor) {
 
   }
 
   @Override
-  public void replaceWithConstructor(Abstract.PatternContainer container, int index) {
+  public void replaceWithConstructor(Abstract.PatternContainer container, int index, Abstract.Constructor constructor) {
 
   }
 

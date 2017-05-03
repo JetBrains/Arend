@@ -68,13 +68,13 @@ public class ConcreteResolveListener implements ResolveListener {
   }
 
   @Override
-  public void replaceWithConstructor(Abstract.PatternArgument patternArg) {
-    ((Concrete.PatternArgument) patternArg).replaceWithConstructor();
+  public void replaceWithConstructor(Abstract.PatternArgument patternArg, Abstract.Constructor constructor) {
+    ((Concrete.PatternArgument) patternArg).replaceWithConstructor(constructor);
   }
 
   @Override
-  public void replaceWithConstructor(Abstract.PatternContainer container, int index) {
-    ((Concrete.PatternContainer) container).replaceWithConstructor(index);
+  public void replaceWithConstructor(Abstract.PatternContainer container, int index, Abstract.Constructor constructor) {
+    ((Concrete.PatternContainer) container).replaceWithConstructor(index, constructor);
   }
 
   @Override

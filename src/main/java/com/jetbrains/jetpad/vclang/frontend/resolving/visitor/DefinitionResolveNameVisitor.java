@@ -112,8 +112,9 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
         for (Abstract.Condition cond : def.getConditions()) {
           try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
             for (Abstract.PatternArgument patternArgument : cond.getPatterns()) {
-              if (exprVisitor.visitPattern(patternArgument.getPattern())) {
-                myResolveListener.replaceWithConstructor(patternArgument);
+              Abstract.Constructor constructor = exprVisitor.visitPattern(patternArgument.getPattern());
+              if (constructor != null) {
+                myResolveListener.replaceWithConstructor(patternArgument, constructor);
               }
               exprVisitor.resolvePattern(patternArgument.getPattern());
             }
@@ -132,8 +133,9 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       if (def.getPatterns() != null) {
         for (Abstract.PatternArgument patternArg : def.getPatterns()) {
-          if (exprVisitor.visitPattern(patternArg.getPattern())) {
-            myResolveListener.replaceWithConstructor(patternArg);
+          Abstract.Constructor constructor = exprVisitor.visitPattern(patternArg.getPattern());
+          if (constructor != null) {
+            myResolveListener.replaceWithConstructor(patternArg, constructor);
           }
           exprVisitor.resolvePattern(patternArg.getPattern());
         }
@@ -226,8 +228,8 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
 
   @Override
   public Void visitClassView(Abstract.ClassView def, Scope parentScope) {
-    def.getUnderlyingClassDefCall().accept(new ExpressionResolveNameVisitor(myNsProviders, parentScope, myContext, myNameResolver, myResolveListener), null);
-    Abstract.ReferableSourceNode resolvedUnderlyingClass = def.getUnderlyingClassDefCall().getReferent();
+    def.getUnderlyingClassReference().accept(new ExpressionResolveNameVisitor(myNsProviders, parentScope, myContext, myNameResolver, myResolveListener), null);
+    Abstract.ReferableSourceNode resolvedUnderlyingClass = def.getUnderlyingClassReference().getReferent();
     if (!(resolvedUnderlyingClass instanceof Abstract.ClassDefinition)) {
       if (resolvedUnderlyingClass != null) {
         myResolveListener.report(new WrongDefinition("Expected a class", resolvedUnderlyingClass, def));

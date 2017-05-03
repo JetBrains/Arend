@@ -220,8 +220,8 @@ public class ConcreteExpressionFactory {
     return cConPattern(name, Arrays.asList(patternArgs));
   }
 
-  public static Concrete.NamePattern cNamePattern(String name) {
-    return new Concrete.NamePattern(POSITION, name);
+  public static Concrete.NamePattern cNamePattern(Abstract.ReferableSourceNode referable) {
+    return new Concrete.NamePattern(POSITION, referable);
   }
 
   public static Concrete.PatternArgument cPatternArg(Concrete.Pattern pattern, boolean isExplicit) {

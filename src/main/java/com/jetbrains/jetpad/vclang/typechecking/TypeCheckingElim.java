@@ -364,7 +364,10 @@ public class TypeCheckingElim {
       myVisitor.getContext().add(links.getLast());
       return new ExpandPatternOKResult(new ReferenceExpression(links.getLast()), new NamePattern(links.getLast()));
     } else if (pattern instanceof Abstract.NamePattern) {
-      String name = ((Abstract.NamePattern) pattern).getName() == null ? binding.getName() : ((Abstract.NamePattern) pattern).getName();
+      String name = ((Abstract.NamePattern) pattern).getReferent().getName();
+      if (name == null) {
+        name = binding.getName();
+      }
       links.append(new TypedDependentLink(true, name, binding.getType(), EmptyDependentLink.getInstance()));
       NamePattern namePattern = new NamePattern(links.getLast());
       myVisitor.getContext().add(links.getLast());

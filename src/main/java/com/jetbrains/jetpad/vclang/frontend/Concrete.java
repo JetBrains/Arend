@@ -320,6 +320,10 @@ public final class Concrete {
       myVariable = variable;
     }
 
+    public InferenceVariable getVariable() {
+      return myVariable;
+    }
+
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return null;
@@ -705,7 +709,7 @@ public final class Concrete {
   }
 
   public interface PatternContainer extends Abstract.PatternContainer {
-    void replaceWithConstructor(int index);
+    void replaceWithConstructor(int index, Abstract.Constructor constructor);
   }
 
   public static class Clause extends SourceNode implements PatternContainer, Abstract.Clause {
@@ -736,9 +740,9 @@ public final class Concrete {
     }
 
     @Override
-    public void replaceWithConstructor(int index) {
+    public void replaceWithConstructor(int index, Abstract.Constructor constructor) {
       Pattern old = myPatterns.get(index);
-      myPatterns.set(index, new ConstructorPattern(old.getPosition(), old.getName(), Collections.emptyList()));
+      myPatterns.set(index, new ConstructorPattern(old.getPosition(), constructor, Collections.emptyList()));
     }
   }
 
@@ -1246,7 +1250,7 @@ public final class Concrete {
     }
 
     @Override
-    public ReferenceExpression getUnderlyingClassDefCall() {
+    public ReferenceExpression getUnderlyingClassReference() {
       return myUnderlyingClass;
     }
 
@@ -1460,8 +1464,8 @@ public final class Concrete {
       this.myExplicit = explicit;
     }
 
-    public void replaceWithConstructor() {
-      myPattern = new ConstructorPattern(myPattern.getPosition(), myPattern.getName(), Collections.emptyList());
+    public void replaceWithConstructor(Abstract.Constructor constructor) {
+      myPattern = new ConstructorPattern(myPattern.getPosition(), constructor, Collections.emptyList());
     }
 
     @Override
@@ -1489,21 +1493,26 @@ public final class Concrete {
     public void setWellTyped(com.jetbrains.jetpad.vclang.core.pattern.Pattern pattern) {
 
     }
-
-    public abstract String getName();
   }
 
   public static class NamePattern extends Pattern implements Abstract.NamePattern {
     private final String myName;
+    private final Abstract.ReferableSourceNode myReferent;
 
-    public NamePattern(Position position, String name) {
+    public NamePattern(Position position, Abstract.ReferableSourceNode referent) {
       super(position);
-      myName = name;
+      myReferent = referent;
+      myName = referent.getName();
     }
 
     @Override
     public String getName() {
       return myName;
+    }
+
+    @Override
+    public Abstract.ReferableSourceNode getReferent() {
+      return myReferent;
     }
   }
 
@@ -1515,6 +1524,13 @@ public final class Concrete {
     public ConstructorPattern(Position position, String constructorName, List<PatternArgument> arguments) {
       super(position);
       myConstructorName = constructorName;
+      myArguments = arguments;
+    }
+
+    public ConstructorPattern(Position position, Abstract.Constructor constructor, List<PatternArgument> arguments) {
+      super(position);
+      myConstructor = constructor;
+      myConstructorName = constructor.getName();
       myArguments = arguments;
     }
 
@@ -1536,21 +1552,11 @@ public final class Concrete {
     public List<Concrete.PatternArgument> getArguments() {
       return myArguments;
     }
-
-    @Override
-    public String getName() {
-      return myConstructorName;
-    }
   }
 
   public static class AnyConstructorPattern extends Pattern implements Abstract.AnyConstructorPattern {
     public AnyConstructorPattern(Position position) {
       super(position);
-    }
-
-    @Override
-    public String getName() {
-      return null;
     }
   }
 }

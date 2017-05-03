@@ -215,7 +215,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     Concrete.ReferableSourceNode x = ref("x");
     Concrete.Expression elimTree = cElim(Collections.<Concrete.Expression>singletonList(cVar(y)),
         cClause(cPatterns(cConPattern(Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cDefCall(Prelude.ZERO.getAbstractDefinition())),
-        cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern("x'"), true))), Abstract.Definition.Arrow.RIGHT, cSuc(cVar(x_))));
+        cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern(x_), true))), Abstract.Definition.Arrow.RIGHT, cSuc(cVar(x_))));
     Concrete.Expression expr = cLam(cargs(
             cTele(cvars(F), cPi(ctypeArgs(cTele(false, cvars(A), cUniverseInf(0)), cTele(cvars(a), cVar(A))), cUniverseInf(1))),
             cTele(cvars(f), cPi(ctypeArgs(cTele(false, cvars(A), cUniverseInf(0)), cTele(cvars(x), cVar(A))), cApps(cVar(F), cVar(x))))),

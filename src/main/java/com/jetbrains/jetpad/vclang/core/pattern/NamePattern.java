@@ -36,4 +36,9 @@ public class NamePattern extends Pattern implements Abstract.NamePattern {
   public String getName() {
     return myLink.getName();
   }
+
+  @Override
+  public Abstract.ReferableSourceNode getReferent() {
+    return myLink::getName;
+  }
 }

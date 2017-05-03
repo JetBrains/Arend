@@ -39,7 +39,7 @@ public class TypeCheckingDefCall {
 
   private Definition getTypeCheckedDefinition(Abstract.Definition definition, Abstract.Expression expr) {
     while (definition instanceof Abstract.ClassView) {
-      definition = (Abstract.Definition) ((Abstract.ClassView) definition).getUnderlyingClassDefCall().getReferent();
+      definition = (Abstract.Definition) ((Abstract.ClassView) definition).getUnderlyingClassReference().getReferent();
     }
     if (definition instanceof Abstract.ClassViewField) {
       definition = ((Abstract.ClassViewField) definition).getUnderlyingField();

@@ -137,7 +137,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
 
   @Override
   public Void visitClassView(Abstract.ClassView def, Scope parentScope) {
-    new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider).visitReference(def.getUnderlyingClassDefCall(), null);
+    new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider).visitReference(def.getUnderlyingClassReference(), null);
     return null;
   }
 

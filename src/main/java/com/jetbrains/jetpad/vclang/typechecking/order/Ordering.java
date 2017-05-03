@@ -57,7 +57,7 @@ public class Ordering {
     }
 
     if (referable instanceof Abstract.ClassView) {
-      return Collections.singletonList((Abstract.Definition) ((Abstract.ClassView) referable).getUnderlyingClassDefCall().getReferent());
+      return Collections.singletonList((Abstract.Definition) ((Abstract.ClassView) referable).getUnderlyingClassReference().getReferent());
     }
 
     if (referable instanceof Abstract.ClassDefinition && !referable.equals(enclosingClass)) {

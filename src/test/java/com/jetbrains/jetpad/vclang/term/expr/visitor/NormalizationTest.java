@@ -276,7 +276,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     Concrete.ReferableSourceNode y = ref("y");
     Concrete.Expression elimTree = cElim(Collections.singletonList(cVar(y)),
         cClause(cPatterns(cConPattern(Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cUniverseStd(0)),
-        cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern(null), true))), Abstract.Definition.Arrow.RIGHT, cUniverseStd(1))
+        cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern(ref(null)), true))), Abstract.Definition.Arrow.RIGHT, cUniverseStd(1))
     );
     CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet(x.getName(), cargs(cTele(cvars(y), cNat())), cUniverseInf(2), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar(x), cZero())), null);
     assertEquals(Universe(new Level(0), new Level(LevelVariable.HVAR)), result.expression.normalize(NormalizeVisitor.Mode.NF));

@@ -41,7 +41,7 @@ public class LocalInstancePool implements ClassViewInstancePool {
   public Expression getInstance(Abstract.ReferenceExpression defCall, int paramIndex, Expression classifyingExpression, Abstract.ClassDefinition classDefinition) {
     Expression expr = classifyingExpression.normalize(NormalizeVisitor.Mode.NF);
     for (Pair pair : myPool) {
-      if (pair.key.equals(expr) && pair.classView.getUnderlyingClassDefCall().getReferent() == classDefinition) {
+      if (pair.key.equals(expr) && pair.classView.getUnderlyingClassReference().getReferent() == classDefinition) {
         return pair.value;
       }
     }

@@ -178,7 +178,7 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
 
   private boolean comparePattern(Abstract.Pattern pattern1, Abstract.Pattern pattern2) {
     if (pattern1 instanceof Abstract.NamePattern) {
-      return pattern2 instanceof Abstract.NamePattern && ((Abstract.NamePattern) pattern1).getName().equals(((Abstract.NamePattern) pattern2).getName());
+      return pattern2 instanceof Abstract.NamePattern && ((Abstract.NamePattern) pattern1).getReferent().equals(((Abstract.NamePattern) pattern2).getReferent());
     }
     if (pattern1 instanceof Abstract.ConstructorPattern) {
       return pattern2 instanceof Abstract.ConstructorPattern && ((Abstract.ConstructorPattern) pattern1).getConstructorName().equals(((Abstract.ConstructorPattern) pattern2).getConstructorName());

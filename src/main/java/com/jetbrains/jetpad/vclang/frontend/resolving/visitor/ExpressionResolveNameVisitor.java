@@ -237,8 +237,9 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       for (Abstract.Clause clause : expr.getClauses()) {
         for (int i = 0; i < clause.getPatterns().size(); i++) {
-          if (visitPattern(clause.getPatterns().get(i))) {
-            myResolveListener.replaceWithConstructor(clause, i);
+          Abstract.Constructor constructor = visitPattern(clause.getPatterns().get(i));
+          if (constructor != null) {
+            myResolveListener.replaceWithConstructor(clause, i, constructor);
           }
           resolvePattern(clause.getPatterns().get(i));
         }
@@ -249,26 +250,27 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
     }
   }
 
-  boolean visitPattern(Abstract.Pattern pattern) {
+  Abstract.Constructor visitPattern(Abstract.Pattern pattern) {
     if (pattern instanceof Abstract.NamePattern) {
       String name = ((Abstract.NamePattern) pattern).getName();
-      if (name == null) return false;
+      if (name == null) return null;
       Abstract.Definition ref = myParentScope.resolveName(name);
-      if (ref != null && (ref instanceof Constructor || ref instanceof Abstract.Constructor)) {
-        return true;
+      if (ref != null && ref instanceof Abstract.Constructor) {
+        return (Abstract.Constructor) ref;
       } else {
-        myContext.add(new Pair<>(name, null));
-        return false;
+        myContext.add(new Pair<>(name, ((Abstract.NamePattern) pattern).getReferent()));
+        return null;
       }
     } else if (pattern instanceof Abstract.ConstructorPattern) {
       for (Abstract.PatternArgument patternArg : ((Abstract.ConstructorPattern) pattern).getArguments()) {
-        if (visitPattern(patternArg.getPattern())) {
-          myResolveListener.replaceWithConstructor(patternArg);
+        Abstract.Constructor constructor = visitPattern(patternArg.getPattern());
+        if (constructor != null) {
+          myResolveListener.replaceWithConstructor(patternArg, constructor);
         }
       }
-      return false;
+      return null;
     } else if (pattern instanceof Abstract.AnyConstructorPattern) {
-      return false;
+      return null;
     } else {
       throw new IllegalStateException();
     }
@@ -276,10 +278,12 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
 
   void resolvePattern(Abstract.Pattern pattern) {
     if (pattern instanceof Abstract.ConstructorPattern) {
-      String name = ((Abstract.ConstructorPattern) pattern).getConstructorName();
-      Abstract.Definition definition = myParentScope.resolveName(name);
-      if (definition instanceof Abstract.Constructor) { // TODO: Better resolving of constructors
-        myResolveListener.patternResolved((Abstract.ConstructorPattern) pattern, (Abstract.Constructor) definition);
+      if (((Abstract.ConstructorPattern) pattern).getConstructor() == null) {
+        String name = ((Abstract.ConstructorPattern) pattern).getConstructorName();
+        Abstract.Definition definition = myParentScope.resolveName(name);
+        if (definition instanceof Abstract.Constructor) { // TODO: Better resolving of constructors
+          myResolveListener.patternResolved((Abstract.ConstructorPattern) pattern, (Abstract.Constructor) definition);
+        }
       }
       for (Abstract.PatternArgument patternArgument : ((Abstract.ConstructorPattern) pattern).getArguments()) {
         resolvePattern(patternArgument.getPattern());

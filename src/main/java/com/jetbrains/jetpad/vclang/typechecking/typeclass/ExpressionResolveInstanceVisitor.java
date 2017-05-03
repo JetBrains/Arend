@@ -70,7 +70,7 @@ public class ExpressionResolveInstanceVisitor implements AbstractExpressionVisit
           Collection<? extends Abstract.ClassViewInstance> instances = myParentScope.getInstances();
           List<Abstract.ClassViewInstance> filteredInstances = new ArrayList<>();
           for (Abstract.ClassViewInstance instance : instances) {
-            if (instance.isDefault() && ((Abstract.ClassView) instance.getClassView().getReferent()).getUnderlyingClassDefCall().getReferent() == classView.getUnderlyingClassDefCall().getReferent()) {
+            if (instance.isDefault() && ((Abstract.ClassView) instance.getClassView().getReferent()).getUnderlyingClassReference().getReferent() == classView.getUnderlyingClassReference().getReferent()) {
               filteredInstances.add(instance);
             }
           }
