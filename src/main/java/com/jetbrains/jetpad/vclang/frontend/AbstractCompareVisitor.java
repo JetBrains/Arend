@@ -256,13 +256,16 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
   public Boolean visitLet(Abstract.LetExpression expr1, Abstract.Expression expr2) {
     if (!(expr2 instanceof Abstract.LetExpression)) return false;
     Abstract.LetExpression letExpr2 = (Abstract.LetExpression) expr2;
-    if (!(expr1.getExpression().accept(this, letExpr2.getExpression()) && expr1.getClauses().size() == letExpr2.getClauses().size())) return false;
+    if (expr1.getClauses().size() != letExpr2.getClauses().size()) {
+      return false;
+    }
     for (int i = 0; i < expr1.getClauses().size(); i++) {
       if (!compareLetClause(expr1.getClauses().get(i), letExpr2.getClauses().get(i))) {
         return false;
       }
+      mySubstitution.put(expr1.getClauses().get(i), letExpr2.getClauses().get(i));
     }
-    return true;
+    return expr1.getExpression().accept(this, letExpr2.getExpression());
   }
 
   @Override

@@ -16,24 +16,24 @@ public class ParserTest extends NameResolverTestCase {
     Concrete.Expression expr = resolveNamesExpr("\\lam x => \\let | x => \\Type0 \\in x x");
     Concrete.Expression expr1 = resolveNamesExpr("\\let | x => \\Type0 \\in \\lam x => x x");
     Concrete.ReferableSourceNode x = ref("x");
-    Concrete.ReferableSourceNode x1 = ref("x");
-    assertTrue(compareAbstract(cLam(x, cLet(clets(clet(x1.getName(), cargs(), cUniverseStd(0))), cApps(cVar(x1), cVar(x1)))), expr));
-    assertTrue(compareAbstract(cLet(clets(clet(x1.getName(), cargs(), cUniverseStd(0))), cLam(x, cApps(cVar(x), cVar(x)))), expr1));
+    Concrete.LetClause x1 = clet("x", cargs(), cUniverseStd(0));
+    assertTrue(compareAbstract(cLam(x, cLet(clets(x1), cApps(cVar(x1), cVar(x1)))), expr));
+    assertTrue(compareAbstract(cLet(clets(x1), cLam(x, cApps(cVar(x), cVar(x)))), expr1));
   }
 
   @Test
   public void parseLetMultiple() {
     Concrete.Expression expr = resolveNamesExpr("\\let | x => \\Type0 | y => x \\in y");
-    Concrete.ReferableSourceNode x = ref("x");
-    Concrete.ReferableSourceNode y = ref("y");
-    assertTrue(compareAbstract(cLet(clets(clet(x.getName(), cUniverseStd(0)), clet(y.getName(), cVar(x))), cVar(y)), expr));
+    Concrete.LetClause x = clet("x", cUniverseStd(0));
+    Concrete.LetClause y = clet("y", cVar(x));
+    assertTrue(compareAbstract(cLet(clets(x, y), cVar(y)), expr));
   }
 
   @Test
   public void parseLetTyped() {
     Concrete.Expression expr = resolveNamesExpr("\\let | x : \\Type1 => \\Type0 \\in x");
-    Concrete.ReferableSourceNode x = ref("x");
-    assertTrue(compareAbstract(cLet(clets(clet(x.getName(), cargs(), cUniverseStd(1), Abstract.Definition.Arrow.RIGHT, cUniverseStd(0))), cVar(x)), expr));
+    Concrete.LetClause x = clet("x", cargs(), cUniverseStd(1), Abstract.Definition.Arrow.RIGHT, cUniverseStd(0));
+    assertTrue(compareAbstract(cLet(clets(x), cVar(x)), expr));
   }
 
   @Test

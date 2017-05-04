@@ -88,10 +88,6 @@ public class ConcreteExpressionFactory {
     return new Concrete.LetClause(POSITION, name, args, null, Abstract.Definition.Arrow.RIGHT, term);
   }
 
-  public static Concrete.LetClause clet(String name, List<Concrete.Argument> args, Abstract.Definition.Arrow arrow, Concrete.Expression term) {
-    return new Concrete.LetClause(POSITION, name, args, null, arrow, term);
-  }
-
   public static Concrete.LetClause clet(String name, List<Concrete.Argument> args, Concrete.Expression resultType, Abstract.Definition.Arrow arrow, Concrete.Expression term) {
     return new Concrete.LetClause(POSITION, name, args, resultType, arrow, term);
   }
