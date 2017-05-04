@@ -38,7 +38,7 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
 
   @Override
   public Abstract.ReferableSourceNode makeReferable(String name) {
-    return new Concrete.ReferableSourceNode(POSITION, name);
+    return new Concrete.LocalVariable(POSITION, name);
   }
 
   @Override

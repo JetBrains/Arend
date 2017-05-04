@@ -30,11 +30,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     LiteralContext literal = ((AtomLiteralContext) ctx.atom()).literal();
     if (literal instanceof UnknownContext) {
       Concrete.Position position = tokenPosition(literal.getStart());
-      return new Concrete.NameArgument(position, true, new Concrete.ReferableSourceNode(position, "_"));
+      return new Concrete.NameArgument(position, true, new Concrete.LocalVariable(position, "_"));
     }
     if (literal instanceof IdContext && ((IdContext) literal).name() instanceof NameIdContext) {
       Concrete.Position position = tokenPosition(literal.getStart());
-      return new Concrete.NameArgument(position, true, new Concrete.ReferableSourceNode(position, ((NameIdContext) ((IdContext) literal).name()).ID().getText()));
+      return new Concrete.NameArgument(position, true, new Concrete.LocalVariable(position, ((NameIdContext) ((IdContext) literal).name()).ID().getText()));
     }
     return null;
   }
@@ -88,15 +88,15 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return (Concrete.Expression) visit(expr);
   }
 
-  public Concrete.Expression visitExpr(AtomContext expr) {
+  private Concrete.Expression visitExpr(AtomContext expr) {
     return (Concrete.Expression) visit(expr);
   }
 
-  public Concrete.Expression visitExpr(LiteralContext expr) {
+  private Concrete.Expression visitExpr(LiteralContext expr) {
     return (Concrete.Expression) visit(expr);
   }
 
-  public Concrete.UniverseExpression visitExpr(UniverseAtomContext expr) {
+  private Concrete.UniverseExpression visitExpr(UniverseAtomContext expr) {
     return (Concrete.UniverseExpression) visit(expr);
   }
 
@@ -182,7 +182,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return Abstract.NamespaceCommandStatement.Kind.EXPORT;
   }
 
-  public Abstract.Definition.Arrow visitArrow(ArrowContext arrowCtx) {
+  private Abstract.Definition.Arrow visitArrow(ArrowContext arrowCtx) {
     if (arrowCtx instanceof ArrowLeftContext) {
       return Abstract.Definition.Arrow.LEFT;
     }
@@ -192,7 +192,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     throw new IllegalStateException();
   }
 
-  public Abstract.Precedence visitPrecedence(PrecedenceContext ctx) {
+  private Abstract.Precedence visitPrecedence(PrecedenceContext ctx) {
     return (Abstract.Precedence) visit(ctx);
   }
 
@@ -235,7 +235,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.NamePattern visitAnyPatternAny(AnyPatternAnyContext ctx) {
     Concrete.Position position = tokenPosition(ctx.start);
-    return new Concrete.NamePattern(position, new Concrete.ReferableSourceNode(position, null));
+    return new Concrete.NamePattern(position, new Concrete.LocalVariable(position, null));
   }
 
   @Override
@@ -251,7 +251,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.Pattern visitPatternConstructor(PatternConstructorContext ctx) {
     if (ctx.name() instanceof NameIdContext && ctx.patternArg().size() == 0) {
-      return new Concrete.NamePattern(tokenPosition(ctx.start), new Concrete.ReferableSourceNode(tokenPosition(((NameIdContext) ctx.name()).ID().getSymbol()), ((NameIdContext) ctx.name()).ID().getText()));
+      return new Concrete.NamePattern(tokenPosition(ctx.start), new Concrete.LocalVariable(tokenPosition(((NameIdContext) ctx.name()).ID().getSymbol()), ((NameIdContext) ctx.name()).ID().getText()));
     } else {
       return new Concrete.ConstructorPattern(tokenPosition(ctx.start), visitName(ctx.name()), visitPatternArgs(ctx.patternArg()));
     }
@@ -274,7 +274,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.PatternArgument visitPatternArgID(PatternArgIDContext ctx) {
-    return new Concrete.PatternArgument(tokenPosition(ctx.start), new Concrete.NamePattern(tokenPosition(ctx.start), new Concrete.ReferableSourceNode(tokenPosition(ctx.ID().getSymbol()), ctx.ID().getText())), true, false);
+    return new Concrete.PatternArgument(tokenPosition(ctx.start), new Concrete.NamePattern(tokenPosition(ctx.start), new Concrete.LocalVariable(tokenPosition(ctx.ID().getSymbol()), ctx.ID().getText())), true, false);
   }
 
   private List<Concrete.PatternArgument> visitPatternArgs(List<PatternArgContext> patternArgContexts) {
@@ -561,7 +561,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       if (literalContext instanceof IdContext && ((IdContext) literalContext).name() instanceof NameIdContext) {
         TerminalNode id = ((NameIdContext) ((IdContext) literalContext).name()).ID();
         Concrete.Position position = tokenPosition(id.getSymbol());
-        arguments.add(new Concrete.NameArgument(position, true, new Concrete.ReferableSourceNode(position, id.getText())));
+        arguments.add(new Concrete.NameArgument(position, true, new Concrete.LocalVariable(position, id.getText())));
       } else
       if (literalContext instanceof UnknownContext) {
         arguments.add(new Concrete.NameArgument(tokenPosition(literalContext.getStart()), true, null));
@@ -735,7 +735,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return new Concrete.UniverseExpression(pos, new Concrete.NumberLevelExpression(pos, 0), new Concrete.NumberLevelExpression(pos, -1));
   }
 
-  public Concrete.LevelExpression visitLevel(LevelAtomContext ctx) {
+  private Concrete.LevelExpression visitLevel(LevelAtomContext ctx) {
     return (Concrete.LevelExpression) visit(ctx);
   }
 

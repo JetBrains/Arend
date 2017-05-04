@@ -92,8 +92,8 @@ public class ConcreteExpressionFactory {
     return new Concrete.LetClause(POSITION, name, args, resultType, arrow, term);
   }
 
-  public static Concrete.ReferableSourceNode ref(String name) {
-    return new Concrete.ReferableSourceNode(POSITION, name);
+  public static Concrete.LocalVariable ref(String name) {
+    return new Concrete.LocalVariable(POSITION, name);
   }
 
   public static List<Concrete.ReferableSourceNode> cvars(Concrete.ReferableSourceNode... vars) {

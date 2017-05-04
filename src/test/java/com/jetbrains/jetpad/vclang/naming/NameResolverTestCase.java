@@ -22,7 +22,6 @@ import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -72,7 +71,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
 
-  private Concrete.Expression resolveNamesExpr(Scope parentScope, List<Pair<String, Abstract.ReferableSourceNode>> context, String text, int errors) {
+  private Concrete.Expression resolveNamesExpr(Scope parentScope, List<Abstract.ReferableSourceNode> context, String text, int errors) {
     Concrete.Expression expression = parseExpr(text);
     assertThat(expression, is(notNullValue()));
 
@@ -94,9 +93,9 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
   protected Concrete.Expression resolveNamesExpr(List<Binding> context, String text) {
-    List<Pair<String, Abstract.ReferableSourceNode>> names = new ArrayList<>(context.size());
+    List<Abstract.ReferableSourceNode> names = new ArrayList<>(context.size());
     for (Binding binding : context) {
-      names.add(new Pair<>(binding.getName(), new Concrete.ReferableSourceNode(ConcreteExpressionFactory.POSITION, binding.getName())));
+      names.add(new Concrete.LocalVariable(ConcreteExpressionFactory.POSITION, binding.getName()));
     }
     return resolveNamesExpr(globalScope, names, text, 0);
   }

@@ -15,13 +15,12 @@ import com.jetbrains.jetpad.vclang.naming.scope.*;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.AbstractStatementVisitor;
-import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
 
 public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<Scope, Void>, AbstractStatementVisitor<Scope, Scope> {
   private final NamespaceProviders myNsProviders;
-  private List<Pair<String, Abstract.ReferableSourceNode>> myContext;
+  private List<Abstract.ReferableSourceNode> myContext;
   private final NameResolver myNameResolver;
   private final ResolveListener myResolveListener;
 
@@ -29,7 +28,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     this(nsProviders, new ArrayList<>(), nameResolver, resolveListener);
   }
 
-  private DefinitionResolveNameVisitor(NamespaceProviders nsProviders, List<Pair<String, Abstract.ReferableSourceNode>> context,
+  private DefinitionResolveNameVisitor(NamespaceProviders nsProviders, List<Abstract.ReferableSourceNode> context,
                                       NameResolver nameResolver, ResolveListener resolveListener) {
     myNsProviders = nsProviders;
     myContext = context;
@@ -84,13 +83,13 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
   @Override
   public Void visitData(Abstract.DataDefinition def, Scope parentScope) {
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myNsProviders, parentScope, myContext, myNameResolver, myResolveListener);
-    try (Utils.CompleteContextSaver<Pair<String, Abstract.ReferableSourceNode>> saver = new Utils.CompleteContextSaver<>(myContext)) {
+    try (Utils.CompleteContextSaver<Abstract.ReferableSourceNode> saver = new Utils.CompleteContextSaver<>(myContext)) {
       for (Abstract.TypeArgument parameter : def.getParameters()) {
         parameter.getType().accept(exprVisitor, null);
         if (parameter instanceof Abstract.TelescopeArgument) {
           for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeArgument) parameter).getReferableList()) {
             if (referable != null && referable.getName() != null && !referable.getName().equals("_")) {
-              myContext.add(new Pair<>(referable.getName(), referable));
+              myContext.add(referable);
             }
           }
         }
@@ -111,13 +110,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
         exprVisitor = new ExpressionResolveNameVisitor(myNsProviders, scope, myContext, myNameResolver, myResolveListener);
         for (Abstract.Condition cond : def.getConditions()) {
           try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
-            for (Abstract.PatternArgument patternArgument : cond.getPatterns()) {
-              Abstract.Constructor constructor = exprVisitor.visitPattern(patternArgument.getPattern());
-              if (constructor != null) {
-                myResolveListener.replaceWithConstructor(patternArgument, constructor);
-              }
-              exprVisitor.resolvePattern(patternArgument.getPattern());
-            }
+            visitPatterns(cond.getPatterns(), exprVisitor);
             cond.getTerm().accept(exprVisitor, null);
           }
         }
@@ -132,19 +125,22 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myNsProviders, parentScope, myContext, myNameResolver, myResolveListener);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       if (def.getPatterns() != null) {
-        for (Abstract.PatternArgument patternArg : def.getPatterns()) {
-          Abstract.Constructor constructor = exprVisitor.visitPattern(patternArg.getPattern());
-          if (constructor != null) {
-            myResolveListener.replaceWithConstructor(patternArg, constructor);
-          }
-          exprVisitor.resolvePattern(patternArg.getPattern());
-        }
+        visitPatterns(def.getPatterns(), exprVisitor);
       }
-
       exprVisitor.visitArguments(def.getArguments());
     }
 
     return null;
+  }
+
+  private void visitPatterns(List<? extends Abstract.PatternArgument> patterns, ExpressionResolveNameVisitor exprVisitor) {
+    for (Abstract.PatternArgument patternArg : patterns) {
+      Abstract.Constructor constructor = exprVisitor.visitPattern(patternArg.getPattern());
+      if (constructor != null) {
+        myResolveListener.replaceWithConstructor(patternArg, constructor);
+      }
+      exprVisitor.resolvePattern(patternArg.getPattern());
+    }
   }
 
   private void mergeNames(Scope parent, Scope child) {
@@ -188,7 +184,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
           if (polyParam instanceof Abstract.TelescopeArgument) {
             for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeArgument) polyParam).getReferableList()) {
               if (referable != null && referable.getName() != null && referable.getName().equals("_")) {
-                myContext.add(new Pair<>(referable.getName(), referable));
+                myContext.add(referable);
               }
             }
           }
