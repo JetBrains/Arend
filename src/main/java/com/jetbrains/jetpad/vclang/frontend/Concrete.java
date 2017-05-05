@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public final class Concrete {
   private Concrete() {}
@@ -118,7 +119,7 @@ public final class Concrete {
     }
 
     @Override
-    public void setWellTyped(List<Binding> context, com.jetbrains.jetpad.vclang.core.expr.Expression wellTyped) {
+    public void setWellTyped(Map<Abstract.ReferableSourceNode, Binding> context, com.jetbrains.jetpad.vclang.core.expr.Expression wellTyped) {
     }
 
     @Override

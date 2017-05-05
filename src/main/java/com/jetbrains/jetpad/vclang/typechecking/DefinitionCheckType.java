@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.core.context.LinkList;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
@@ -48,8 +47,6 @@ import com.jetbrains.jetpad.vclang.typechecking.visitor.FindMatchOnIntervalVisit
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.size;
-import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.toContext;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.pattern.Utils.processImplicit;
 import static com.jetbrains.jetpad.vclang.core.pattern.Utils.toPatterns;
@@ -98,7 +95,7 @@ public class DefinitionCheckType {
   }
 
   public static Definition typeCheck(TypecheckerState state, GlobalInstancePool instancePool, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckingUnit unit, boolean recursive, LocalErrorReporter errorReporter) {
-    CheckTypeVisitor visitor = new CheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, new ArrayList<>(), errorReporter, instancePool);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, new HashMap<>(), errorReporter, instancePool);
     ClassDefinition enclosingClass = unit.getEnclosingClass() == null ? null : (ClassDefinition) state.getTypechecked(unit.getEnclosingClass());
     Definition typechecked = state.getTypechecked(unit.getDefinition());
 
@@ -148,7 +145,7 @@ public class DefinitionCheckType {
     return parameter("\\this", new ClassCallExpression(enclosingClass, Sort.STD));
   }
 
-  private static boolean typeCheckParameters(List<? extends Abstract.Argument> arguments, List<Binding> context, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool, Map<Integer, ClassField> classifyingFields) {
+  private static boolean typeCheckParameters(List<? extends Abstract.Argument> arguments, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool, Map<Integer, ClassField> classifyingFields) {
     boolean ok = true;
     int index = 0;
 
@@ -163,9 +160,15 @@ public class DefinitionCheckType {
 
         DependentLink param;
         if (argument instanceof Abstract.TelescopeArgument) {
-          List<String> names = ((Abstract.TelescopeArgument) argument).getReferableList().stream().map(r -> r == null ? null : r.getName()).collect(Collectors.toList());
+          List<? extends Abstract.ReferableSourceNode> referableList = ((Abstract.TelescopeArgument) argument).getReferableList();
+          List<String> names = referableList.stream().map(r -> r == null ? null : r.getName()).collect(Collectors.toList());
           param = parameter(argument.getExplicit(), names, paramResult);
           index += names.size();
+
+          int i = 0;
+          for (DependentLink link = param; link.hasNext(); link = link.getNext(), i++) {
+            visitor.getContext().put(referableList.get(i), link);
+          }
         } else {
           param = parameter(argument.getExplicit(), (String) null, paramResult);
           index++;
@@ -186,7 +189,6 @@ public class DefinitionCheckType {
         }
 
         list.append(param);
-        context.addAll(toContext(param));
       } else {
         visitor.getErrorReporter().report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, new Expression[0]));
         ok = false;
@@ -200,7 +202,6 @@ public class DefinitionCheckType {
     LinkList list = new LinkList();
     if (enclosingClass != null) {
       DependentLink thisParam = createThisParam(enclosingClass);
-      visitor.getContext().add(thisParam);
       list.append(thisParam);
       visitor.setThisClass(enclosingClass, new ReferenceExpression(thisParam));
     }
@@ -212,7 +213,7 @@ public class DefinitionCheckType {
 
     Map<Integer, ClassField> classifyingFields = new HashMap<>();
     Abstract.FunctionDefinition def = (Abstract.FunctionDefinition) typedDef.getAbstractDefinition();
-    boolean paramsOk = typeCheckParameters(def.getArguments(), visitor.getContext(), list, visitor, localInstancePool, classifyingFields);
+    boolean paramsOk = typeCheckParameters(def.getArguments(), list, visitor, localInstancePool, classifyingFields);
     Expression expectedType = null;
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
@@ -238,7 +239,7 @@ public class DefinitionCheckType {
       Expression expectedType = typedDef.getResultType();
 
       if (term instanceof Abstract.ElimExpression) {
-        visitor.getContext().subList(visitor.getContext().size() - size(typedDef.getParameters()), visitor.getContext().size()).clear();
+        // visitor.getContext().subList(visitor.getContext().size() - size(typedDef.getParameters()), visitor.getContext().size()).clear(); // TODO[context]
         if (expectedType != null || def.getResultType() == null) {
           ElimTreeNode elimTree = visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, def.getArrow() == Abstract.Definition.Arrow.LEFT ? typedDef.getParameters() : null, expectedType, false, true);
           if (elimTree != null) {
@@ -281,8 +282,8 @@ public class DefinitionCheckType {
     Sort userSort = null;
     boolean paramsOk;
     Abstract.DataDefinition def = dataDefinition.getAbstractDefinition();
-    try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
-      paramsOk = typeCheckParameters(def.getParameters(), visitor.getContext(), list, visitor, localInstancePool, classifyingFields);
+    try (Utils.MapContextSaver ignore = new Utils.MapContextSaver<>(visitor.getContext())) {
+      paramsOk = typeCheckParameters(def.getParameters(), list, visitor, localInstancePool, classifyingFields);
     }
 
     if (def.getUniverse() != null) {
@@ -448,14 +449,14 @@ public class DefinitionCheckType {
       return cycle;
     }
     for (Constructor constructor : condMap.keySet()) {
-      try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
+      try (Utils.MapContextSaver ignore = new Utils.MapContextSaver<>(visitor.getContext())) {
         List<List<Pattern>> patterns = new ArrayList<>();
         List<Expression> expressions = new ArrayList<>();
         List<Abstract.Definition.Arrow> arrows = new ArrayList<>();
-        visitor.getContext().addAll(toContext(constructor.getDataTypeParameters()));
+        // visitor.getContext().addAll(toContext(constructor.getDataTypeParameters())); // TODO[context]
 
         for (Abstract.Condition cond : condMap.get(constructor)) {
-          try (Utils.ContextSaver saver = new Utils.ContextSaver(visitor.getContext())) {
+          try (Utils.MapContextSaver saver = new Utils.MapContextSaver<>(visitor.getContext())) {
             List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getDataTypeExpression(null)));
             DependentLink params = constructor.getParameters();
             List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(cond, params, cond.getPatterns(), visitor.getErrorReporter());
@@ -532,7 +533,7 @@ public class DefinitionCheckType {
 
   private static Sort typeCheckConstructor(Abstract.Constructor def, DataDefinition dataDefinition, CheckTypeVisitor visitor, Set<DataDefinition> dataDefinitions) {
     Sort sort = Sort.PROP;
-    try (Utils.ContextSaver ignored = new Utils.ContextSaver(visitor.getContext())) {
+    try (Utils.MapContextSaver ignored = new Utils.MapContextSaver<>(visitor.getContext())) {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
       Constructor constructor = new Constructor(def, dataDefinition);
       visitor.getTypecheckingState().record(def, constructor);
@@ -553,7 +554,7 @@ public class DefinitionCheckType {
           return null;
         }
       } else {
-        visitor.getContext().addAll(toContext(dataDefinition.getParameters()));
+        // visitor.getContext().addAll(toContext(dataDefinition.getParameters())); // TODO[context]
       }
 
       if (dataDefinition.getThisClass() != null && typedPatterns != null) {
@@ -576,7 +577,7 @@ public class DefinitionCheckType {
           param = parameter(argument.getExplicit(), (String) null, paramResult);
         }
         list.append(param);
-        visitor.getContext().addAll(toContext(param));
+        // visitor.getContext().addAll(toContext(param)); // TODO[context]
       }
 
       int index = 0;
@@ -695,7 +696,6 @@ public class DefinitionCheckType {
 
   private static void typeCheckClass(ClassDefinition typedDef, ClassDefinition enclosingClass, CheckTypeVisitor visitor) {
     LocalErrorReporter errorReporter = visitor.getErrorReporter();
-    List<Binding> context = visitor.getContext();
     boolean classOk = true;
 
     FieldSet fieldSet = new FieldSet(Sort.PROP);
@@ -711,7 +711,6 @@ public class DefinitionCheckType {
 
       if (enclosingClass != null) {
         DependentLink thisParam = createThisParam(enclosingClass);
-        context.add(thisParam);
         visitor.setThisClass(enclosingClass, new ReferenceExpression(thisParam));
       }
 
@@ -743,8 +742,6 @@ public class DefinitionCheckType {
         }
       }
 
-      context.clear();
-
       for (Abstract.ClassField field : def.getFields()) {
         typeCheckClassField(field, typedDef, fieldSet, visitor);
       }
@@ -766,13 +763,10 @@ public class DefinitionCheckType {
           }
 
           TypedDependentLink thisParameter = createThisParam(typedDef);
-          try (Utils.ContextSaver saver = new Utils.ContextSaver(context)) {
-            context.add(thisParameter);
-            visitor.setThisClass(typedDef, new ReferenceExpression(thisParameter));
-            CheckTypeVisitor.Result result = implementField(fieldSet, field, implementation.getImplementation(), visitor, thisParameter);
-            if (result == null || result.expression.toError() != null) {
-              classOk = false;
-            }
+          visitor.setThisClass(typedDef, new ReferenceExpression(thisParameter));
+          CheckTypeVisitor.Result result = implementField(fieldSet, field, implementation.getImplementation(), visitor, thisParameter);
+          if (result == null || result.expression.toError() != null) {
+            classOk = false;
           }
         }
       }
@@ -796,11 +790,7 @@ public class DefinitionCheckType {
   private static ClassField typeCheckClassField(Abstract.ClassField def, ClassDefinition enclosingClass, FieldSet fieldSet, CheckTypeVisitor visitor) {
     TypedDependentLink thisParameter = createThisParam(enclosingClass);
     visitor.setThisClass(enclosingClass, new ReferenceExpression(thisParameter));
-    Type typeResult;
-    try (Utils.ContextSaver saver = new Utils.ContextSaver(visitor.getContext())) {
-      visitor.getContext().add(thisParameter);
-      typeResult = visitor.finalCheckType(def.getResultType());
-    }
+    Type typeResult = visitor.finalCheckType(def.getResultType());
 
     ClassField typedDef = new ClassField(def, typeResult == null ? new ErrorExpression(null, null) : typeResult.getExpr(), enclosingClass, thisParameter);
     if (typeResult == null) {
@@ -817,7 +807,7 @@ public class DefinitionCheckType {
 
     LinkList list = new LinkList();
     Abstract.ClassViewInstance def = (Abstract.ClassViewInstance) typedDef.getAbstractDefinition();
-    boolean paramsOk = typeCheckParameters(def.getArguments(), visitor.getContext(), list, visitor, null, null);
+    boolean paramsOk = typeCheckParameters(def.getArguments(), list, visitor, null, null);
     typedDef.setParameters(list.getFirst());
     typedDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
     state.record(def, typedDef);
@@ -856,7 +846,7 @@ public class DefinitionCheckType {
     if (!substitution.isEmpty()) {
       term = new SubstVisitor(new ExprSubstitution(), substitution).visitClassCall(term, null);
     }
-    term = new StripVisitor(new HashSet<>(visitor.getContext()), visitor.getErrorReporter()).visitClassCall(term, null);
+    term = new StripVisitor(new HashSet<>(visitor.getContext().values()), visitor.getErrorReporter()).visitClassCall(term, null);
 
     FieldSet.Implementation impl = fieldSet.getImplementation((ClassField) state.getTypechecked(classView.getClassifyingField()));
     DefCallExpression defCall = impl.term.normalize(NormalizeVisitor.Mode.WHNF).toDefCall();

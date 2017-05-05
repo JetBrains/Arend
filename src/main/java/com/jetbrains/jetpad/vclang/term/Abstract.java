@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.module.ModulePath;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public final class Abstract {
   private Abstract() {}
@@ -38,7 +39,7 @@ public final class Abstract {
   public interface Expression extends SourceNode {
     byte PREC = -12;
     <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
-    void setWellTyped(List<Binding> context, com.jetbrains.jetpad.vclang.core.expr.Expression wellTyped);
+    void setWellTyped(Map<ReferableSourceNode, Binding> context, com.jetbrains.jetpad.vclang.core.expr.Expression wellTyped);
   }
 
   public interface ArgumentExpression extends SourceNode {

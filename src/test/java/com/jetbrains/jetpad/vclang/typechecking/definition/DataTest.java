@@ -11,12 +11,15 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
@@ -115,8 +118,8 @@ public class DataTest extends TypeCheckingTestCase {
     Concrete.ReferableSourceNode f = ref("f");
     Concrete.ReferableSourceNode x = ref("x");
     Concrete.Expression expr = cApps(cVar(f), cApps(cDefCall(con.getAbstractDefinition()), cNat(), cLam(x, cVar(x)), cZero()));
-    List<Binding> localContext = new ArrayList<>(1);
-    localContext.add(new TypedBinding(f.getName(), Pi(DataCall(def, Sort.SET0, Pi(Nat(), Nat())), Nat())));
+    Map<Abstract.ReferableSourceNode, Binding> localContext = new HashMap<>();
+    localContext.put(f, new TypedBinding(f.getName(), Pi(DataCall(def, Sort.SET0, Pi(Nat(), Nat())), Nat())));
 
     CheckTypeVisitor.Result result = typeCheckExpr(localContext, expr, null);
     assertEquals(result.type, Nat());
@@ -129,8 +132,8 @@ public class DataTest extends TypeCheckingTestCase {
     Constructor con = def.getConstructor("con");
     Concrete.ReferableSourceNode f = ref("f");
     Concrete.Expression expr = cApps(cVar(f), cDefCall(con.getAbstractDefinition()));
-    List<Binding> localContext = new ArrayList<>(1);
-    localContext.add(new TypedBinding(f.getName(), Pi(Pi(Nat(), DataCall(def, Sort.SET0, Nat())), Pi(Nat(), Nat()))));
+    Map<Abstract.ReferableSourceNode, Binding> localContext = new HashMap<>();
+    localContext.put(f, new TypedBinding(f.getName(), Pi(Pi(Nat(), DataCall(def, Sort.SET0, Nat())), Pi(Nat(), Nat()))));
 
     CheckTypeVisitor.Result result = typeCheckExpr(localContext, expr, null);
     assertEquals(result.type, Pi(Nat(), Nat()));

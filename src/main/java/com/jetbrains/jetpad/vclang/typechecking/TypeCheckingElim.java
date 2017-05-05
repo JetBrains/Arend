@@ -115,7 +115,7 @@ public class TypeCheckingElim {
   public Patterns visitPatternArgs(List<Abstract.PatternArgument> patternArgs, DependentLink eliminatingArgs, List<Expression> substIn, PatternExpansionMode mode) {
     List<PatternArgument> typedPatterns = new ArrayList<>();
     LinkList links = new LinkList();
-    Set<Binding> bounds = new HashSet<>(myVisitor.getContext());
+    Set<Binding> bounds = new HashSet<>(myVisitor.getContext().values());
     for (Abstract.PatternArgument patternArg : patternArgs) {
       ExpandPatternResult result = expandPattern(patternArg.getPattern(), eliminatingArgs, mode, links);
       if (result == null || result instanceof ExpandPatternErrorResult)
@@ -183,7 +183,7 @@ public class TypeCheckingElim {
     List<Pattern> dummyPatterns = new ArrayList<>();
     for (;eliminatingArgs.hasNext() && eliminatingArgs != elimExprs.get(0).getBinding(); eliminatingArgs = eliminatingArgs.getNext()) {
       dummyPatterns.add(new NamePattern(eliminatingArgs));
-      myVisitor.getContext().add(eliminatingArgs);
+      // myVisitor.getContext().add(eliminatingArgs); // TODO[context]
     }
 
     List<Binding> argsBindings = toContext(eliminatingArgs);
@@ -193,7 +193,7 @@ public class TypeCheckingElim {
     final List<Abstract.Definition.Arrow> arrows = new ArrayList<>();
     clause_loop:
     for (Abstract.Clause clause : expr.getClauses()) {
-      try (Utils.ContextSaver ignore = new Utils.ContextSaver(myVisitor.getContext())) {
+      try (Utils.MapContextSaver ignore = new Utils.MapContextSaver<>(myVisitor.getContext())) {
         List<Pattern> clausePatterns = new ArrayList<>(dummyPatterns);
         Expression clauseExpectedType = expectedType;
 
@@ -250,7 +250,7 @@ public class TypeCheckingElim {
         if (!substitution.isEmpty()) {
           result = result.subst(new ExprSubstitution(), substitution);
         }
-        Set<Binding> bounds = new HashSet<>(myVisitor.getContext());
+        Set<Binding> bounds = new HashSet<>(myVisitor.getContext().values());
         bounds.addAll(argsBindings);
         result = result.accept(new StripVisitor(bounds, myVisitor.getErrorReporter()), null);
       }
@@ -288,9 +288,9 @@ public class TypeCheckingElim {
   }
 
   private List<ReferenceExpression> typecheckElimIndices(Abstract.ElimCaseExpression expr, DependentLink eliminatingArgs) {
-    try (Utils.ContextSaver ignore = new Utils.ContextSaver(myVisitor.getContext())) {
+    try (Utils.MapContextSaver ignore = new Utils.MapContextSaver<>(myVisitor.getContext())) {
       List<Binding> argsBindings = toContext(eliminatingArgs);
-      myVisitor.getContext().addAll(argsBindings);
+      // myVisitor.getContext().addAll(argsBindings); // TODO[context]
 
       List<Integer> eliminatingIndices = new ArrayList<>();
 
@@ -306,7 +306,7 @@ public class TypeCheckingElim {
         if (!argsBindings.contains(refExpr.getBinding())) {
           error = new LocalTypeCheckingError("\\elim can be applied only to arguments of the innermost definition", var);
           myVisitor.getErrorReporter().report(error);
-          var.setWellTyped(argsBindings, new ErrorExpression(null, error));
+          var.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
           return null;
         }
         eliminatingIndices.add(argsBindings.indexOf(refExpr.getBinding()));
@@ -314,14 +314,14 @@ public class TypeCheckingElim {
         if (eliminatingIndices.size() >= 2 && eliminatingIndices.get(eliminatingIndices.size() - 2) >= eliminatingIndices.get(eliminatingIndices.size() - 1)) {
           error = new LocalTypeCheckingError("Variable elimination must be in the order of variable introduction", var);
           myVisitor.getErrorReporter().report(error);
-          var.setWellTyped(argsBindings, new ErrorExpression(null, error));
+          var.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
           return null;
         }
 
         if (refExpr.getType().normalize(NormalizeVisitor.Mode.WHNF).toDataCall() == null) {
           error = new LocalTypeCheckingError("Elimination is allowed only for a data type variable.", var);
           myVisitor.getErrorReporter().report(error);
-          var.setWellTyped(argsBindings, new ErrorExpression(null, error));
+          var.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
           return null;
         }
         elimExprs.add(refExpr);
@@ -361,7 +361,7 @@ public class TypeCheckingElim {
   private ExpandPatternResult expandPattern(Abstract.Pattern pattern, DependentLink binding, PatternExpansionMode mode, LinkList links) {
     if (pattern == null) {
       links.append(new TypedDependentLink(true, binding.getName(), binding.getType(), EmptyDependentLink.getInstance()));
-      myVisitor.getContext().add(links.getLast());
+      // myVisitor.getContext().add(links.getLast()); // TODO[context]
       return new ExpandPatternOKResult(new ReferenceExpression(links.getLast()), new NamePattern(links.getLast()));
     } else if (pattern instanceof Abstract.NamePattern) {
       String name = ((Abstract.NamePattern) pattern).getReferent().getName();
@@ -370,7 +370,7 @@ public class TypeCheckingElim {
       }
       links.append(new TypedDependentLink(true, name, binding.getType(), EmptyDependentLink.getInstance()));
       NamePattern namePattern = new NamePattern(links.getLast());
-      myVisitor.getContext().add(links.getLast());
+      myVisitor.getContext().put(((Abstract.NamePattern) pattern).getReferent(), links.getLast());
       pattern.setWellTyped(namePattern);
       return new ExpandPatternOKResult(new ReferenceExpression(links.getLast()), namePattern);
     } else if (pattern instanceof Abstract.AnyConstructorPattern || pattern instanceof Abstract.ConstructorPattern) {
@@ -421,7 +421,6 @@ public class TypeCheckingElim {
         links.append(param);
         AnyConstructorPattern newPattern = new AnyConstructorPattern(param);
         pattern.setWellTyped(newPattern);
-        myVisitor.getContext().add(param);
         return new ExpandPatternOKResult(new ReferenceExpression(param), newPattern);
       }
 

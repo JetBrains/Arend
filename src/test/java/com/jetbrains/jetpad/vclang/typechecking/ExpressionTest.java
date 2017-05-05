@@ -17,10 +17,7 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
@@ -84,15 +81,17 @@ public class ExpressionTest extends TypeCheckingTestCase {
     Concrete.ReferableSourceNode cf = ref("f");
     Concrete.ReferableSourceNode cg = ref("g");
     Concrete.Expression expr = cLam(cf, cLam(cg, cApps(cVar(cg), cZero(), cApps(cVar(cf), cZero()))));
-    List<Binding> context = new ArrayList<>();
-    context.add(new TypedBinding("T", Pi(Nat(), Universe(0))));
+    Map<Abstract.ReferableSourceNode, Binding> context = new HashMap<>();
+    Binding T = new TypedBinding("T", Pi(Nat(), Universe(0)));
+    context.put(ref("T"), T);
     SingleDependentLink x_ = singleParam("x", Nat());
-    context.add(new TypedBinding("Q", Pi(x_, Pi(singleParam(null, Apps(Ref(context.get(0)), Ref(x_))), Universe(0)))));
+    Binding Q = new TypedBinding("Q", Pi(x_, Pi(singleParam(null, Apps(Ref(T), Ref(x_))), Universe(0))));
+    context.put(ref("Q"), Q);
 
     SingleDependentLink x = singleParam("x", Nat());
-    SingleDependentLink f = singleParam("f", Pi(x, Apps(Ref(context.get(0)), Ref(x))));
+    SingleDependentLink f = singleParam("f", Pi(x, Apps(Ref(T), Ref(x))));
     SingleDependentLink x2 = singleParam("x", Nat());
-    Expression type = Pi(f, Pi(Pi(x2, Pi(Apps(Ref(context.get(0)), Ref(x2)), Apps(Ref(context.get(1)), Ref(x2), Apps(Ref(f), Ref(x2))))), Apps(Ref(context.get(1)), Zero(), Apps(Ref(f), Zero()))));
+    Expression type = Pi(f, Pi(Pi(x2, Pi(Apps(Ref(T), Ref(x2)), Apps(Ref(Q), Ref(x2), Apps(Ref(f), Ref(x2))))), Apps(Ref(Q), Zero(), Apps(Ref(f), Zero()))));
 
     typeCheckExpr(context, expr, type);
   }
@@ -134,8 +133,8 @@ public class ExpressionTest extends TypeCheckingTestCase {
     // f : Nat -> Nat -> Nat |- f S (f 0 S) : Nat
     Concrete.ReferableSourceNode f = ref("f");
     Concrete.Expression expr = cApps(cVar(f), cSuc(), cApps(cVar(f), cZero(), cSuc()));
-    List<Binding> defs = new ArrayList<>();
-    defs.add(new TypedBinding("f", Pi(Nat(), Pi(Nat(), Nat()))));
+    Map<Abstract.ReferableSourceNode, Binding> defs = new HashMap<>();
+    defs.put(f, new TypedBinding(f.getName(), Pi(Nat(), Pi(Nat(), Nat()))));
     assertThat(typeCheckExpr(defs, expr, null, 2), is(nullValue()));
   }
 
@@ -213,7 +212,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     Concrete.ReferableSourceNode f = ref("f");
     Concrete.ReferableSourceNode a = ref("a");
     Concrete.ReferableSourceNode x = ref("x");
-    Concrete.Expression elimTree = cElim(Collections.<Concrete.Expression>singletonList(cVar(y)),
+    Concrete.Expression elimTree = cElim(Collections.singletonList(cVar(y)),
         cClause(cPatterns(cConPattern(Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cDefCall(Prelude.ZERO.getAbstractDefinition())),
         cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern(x_), true))), Abstract.Definition.Arrow.RIGHT, cSuc(cVar(x_))));
     Concrete.Expression expr = cLam(cargs(

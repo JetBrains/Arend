@@ -86,14 +86,14 @@ public class ErrorFormatter {
         String text = "Expected type: ";
         builder.append(text);
         List<String> names = new ArrayList<>(((GoalError) error).context.size());
-        names.addAll(((GoalError) error).context.stream().map(binding -> binding.getName() == null ? null : binding.getName()).collect(Collectors.toList()));
+        names.addAll(((GoalError) error).context.values().stream().map(Binding::getName).collect(Collectors.toList()));
         ((GoalError) error).type.prettyPrint(builder, names, Abstract.Expression.PREC, text.length());
       }
       if (printContext) {
         if (printType) builder.append('\n');
         builder.append("Context:");
         List<String> names = new ArrayList<>(((GoalError) error).context.size());
-        for (Binding binding : ((GoalError) error).context) {
+        for (Binding binding : ((GoalError) error).context.values()) {
           builder.append("\n  ").append(binding.getName() == null ? "_" : binding.getName()).append(" : ");
           Expression type = binding.getType().getExpr();
           if (type != null) {
@@ -101,7 +101,7 @@ public class ErrorFormatter {
           } else {
             builder.append("{!error}");
           }
-          names.add(binding.getName() == null ? null : binding.getName());
+          names.add(binding.getName());
         }
       }
     } else if (error instanceof TypeMismatchError) {

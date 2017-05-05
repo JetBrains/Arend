@@ -5,8 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class Utils {
   public static void removeFromList(List<?> list, Abstract.Argument argument) {
@@ -28,6 +27,21 @@ public class Utils {
   public static void trimToSize(List<?> list, int size) {
     if (size < list.size()) {
       list.subList(size, list.size()).clear();
+    }
+  }
+
+  public static class MapContextSaver<K> implements AutoCloseable {
+    private final Map<K, ?> myMap;
+    private final Set<K> myKeys;
+
+    public MapContextSaver(Map<K, ?> map) {
+      myMap = map;
+      myKeys = new HashSet<>(myMap.keySet());
+    }
+
+    @Override
+    public void close() {
+      myMap.keySet().retainAll(myKeys);
     }
   }
 

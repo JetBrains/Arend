@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
-import com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteResolveListener;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
@@ -24,7 +23,9 @@ import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -92,16 +93,13 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     return resolveNamesExpr(parentScope, text, 0);
   }
 
-  protected Concrete.Expression resolveNamesExpr(List<Binding> context, String text) {
-    List<Abstract.ReferableSourceNode> names = new ArrayList<>(context.size());
-    for (Binding binding : context) {
-      names.add(new Concrete.LocalVariable(ConcreteExpressionFactory.POSITION, binding.getName()));
-    }
+  protected Concrete.Expression resolveNamesExpr(Map<Abstract.ReferableSourceNode, Binding> context, String text) {
+    List<Abstract.ReferableSourceNode> names = new ArrayList<>(context.keySet());
     return resolveNamesExpr(globalScope, names, text, 0);
   }
 
   protected Concrete.Expression resolveNamesExpr(String text) {
-    return resolveNamesExpr(new ArrayList<>(), text);
+    return resolveNamesExpr(new HashMap<>(), text);
   }
 
 
