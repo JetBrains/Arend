@@ -33,6 +33,7 @@ import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.*;
 import static com.jetbrains.jetpad.vclang.core.pattern.Utils.processImplicit;
+import static com.jetbrains.jetpad.vclang.term.Util.getReferableList;
 
 public class TypeCheckingElim {
   private final CheckTypeVisitor myVisitor;
@@ -112,12 +113,13 @@ public class TypeCheckingElim {
     }
   }
 
-  public Patterns visitPatternArgs(List<Abstract.PatternArgument> patternArgs, DependentLink eliminatingArgs, List<Expression> substIn, PatternExpansionMode mode) {
+  public Patterns visitPatternArgs(List<Abstract.PatternArgument> patternArgs, List<Abstract.ReferableSourceNode> referableList, DependentLink eliminatingArgs, List<Expression> substIn, PatternExpansionMode mode) {
     List<PatternArgument> typedPatterns = new ArrayList<>();
     LinkList links = new LinkList();
     Set<Binding> bounds = new HashSet<>(myVisitor.getFreeBindings());
+    int i = 0;
     for (Abstract.PatternArgument patternArg : patternArgs) {
-      ExpandPatternResult result = expandPattern(patternArg.getPattern(), eliminatingArgs, mode, links);
+      ExpandPatternResult result = expandPattern(patternArg.getPattern(), referableList.get(i++), eliminatingArgs, mode, links);
       if (result == null || result instanceof ExpandPatternErrorResult)
         return null;
 
@@ -205,10 +207,10 @@ public class TypeCheckingElim {
         for (int i = 0, j = 0; tailArgs.hasNext() && i < argsBindings.size(); i++) {
           ExpandPatternResult patternResult;
           if (j < elimExprs.size() && elimExprs.get(j).getBinding() == argsBindings.get(i)) {
-            patternResult = expandPattern(clause.getPatterns().get(j), tailArgs, PatternExpansionMode.FUNCTION, links);
+            patternResult = expandPattern(clause.getPatterns().get(j), referableList.get(i), tailArgs, PatternExpansionMode.FUNCTION, links);
             j++;
           } else {
-            patternResult = expandPattern(null, tailArgs, PatternExpansionMode.FUNCTION, links);
+            patternResult = expandPattern(null, referableList.get(i), tailArgs, PatternExpansionMode.FUNCTION, links);
           }
 
           if (patternResult instanceof ExpandPatternErrorResult) {
@@ -365,10 +367,12 @@ public class TypeCheckingElim {
     }
   }
 
-  private ExpandPatternResult expandPattern(Abstract.Pattern pattern, DependentLink binding, PatternExpansionMode mode, LinkList links) {
+  private ExpandPatternResult expandPattern(Abstract.Pattern pattern, Abstract.ReferableSourceNode referable, DependentLink binding, PatternExpansionMode mode, LinkList links) {
     if (pattern == null) {
       links.append(new TypedDependentLink(true, binding.getName(), binding.getType(), EmptyDependentLink.getInstance()));
-      // myVisitor.getContext().add(links.getLast()); // TODO[context]
+      if (referable != null) {
+        myVisitor.getContext().put(referable, links.getLast());
+      }
       myVisitor.getFreeBindings().add(links.getLast());
       return new ExpandPatternOKResult(new ReferenceExpression(links.getLast()), new NamePattern(links.getLast()));
     } else if (pattern instanceof Abstract.NamePattern) {
@@ -499,8 +503,11 @@ public class TypeCheckingElim {
       List<PatternArgument> resultPatterns = new ArrayList<>();
       DependentLink tailArgs = constructorArgs;
       List<Expression> arguments = new ArrayList<>(patterns.size());
+      List<Abstract.ReferableSourceNode> conParams = new ArrayList<>();
+      getReferableList(constructor.getAbstractDefinition().getArguments(), conParams);
+      int i = 0;
       for (Abstract.PatternArgument subPattern : patterns) {
-        ExpandPatternResult result = expandPattern(subPattern.getPattern(), tailArgs, mode, links);
+        ExpandPatternResult result = expandPattern(subPattern.getPattern(), conParams.get(i++), tailArgs, mode, links);
         if (result instanceof ExpandPatternErrorResult)
           return result;
         ExpandPatternOKResult okResult = (ExpandPatternOKResult) result;

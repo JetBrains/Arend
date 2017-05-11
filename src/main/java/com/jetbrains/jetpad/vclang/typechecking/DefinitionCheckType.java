@@ -51,6 +51,7 @@ import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helpe
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.pattern.Utils.processImplicit;
 import static com.jetbrains.jetpad.vclang.core.pattern.Utils.toPatterns;
+import static com.jetbrains.jetpad.vclang.term.Util.getReferableList;
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.typeOfFunctionArg;
 
 public class DefinitionCheckType {
@@ -232,22 +233,6 @@ public class DefinitionCheckType {
     typedDef.setParameters(list.getFirst());
     typedDef.setResultType(expectedType);
     typedDef.setStatus(paramsOk ? Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING : Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
-  }
-
-  private static void getReferableList(List<? extends Abstract.Argument> parameters, List<Abstract.ReferableSourceNode> result) {
-    for (Abstract.Argument argument : parameters) {
-      if (argument instanceof Abstract.TelescopeArgument) {
-        result.addAll(((Abstract.TelescopeArgument) argument).getReferableList());
-      } else
-      if (argument instanceof Abstract.TypeArgument) {
-        result.add(null);
-      } else
-      if (argument instanceof Abstract.NameArgument) {
-        result.add(((Abstract.NameArgument) argument).getReferable());
-      } else {
-        throw new IllegalStateException();
-      }
-    }
   }
 
   private static void typeCheckFunctionBody(FunctionDefinition typedDef, CheckTypeVisitor visitor) {
@@ -488,7 +473,9 @@ public class DefinitionCheckType {
             if (processedPatterns == null)
               continue;
 
-            Patterns typedPatterns = visitor.getTypeCheckingElim().visitPatternArgs(processedPatterns, constructor.getParameters(), resultType, TypeCheckingElim.PatternExpansionMode.CONDITION);
+            List<Abstract.ReferableSourceNode> referableList = new ArrayList<>();
+            getReferableList(constructor.getAbstractDefinition().getArguments(), referableList);
+            Patterns typedPatterns = visitor.getTypeCheckingElim().visitPatternArgs(processedPatterns, referableList, constructor.getParameters(), resultType, TypeCheckingElim.PatternExpansionMode.CONDITION);
             if (typedPatterns == null) {
               continue;
             }
@@ -574,7 +561,12 @@ public class DefinitionCheckType {
           return null;
         }
 
-        typedPatterns = visitor.getTypeCheckingElim().visitPatternArgs(processedPatterns, dataDefinition.getParameters(), Collections.emptyList(), TypeCheckingElim.PatternExpansionMode.DATATYPE);
+        List<Abstract.ReferableSourceNode> referableList = new ArrayList<>();
+        if (dataDefinition.getThisClass() != null) {
+          referableList.add(null);
+        }
+        getReferableList(dataDefinition.getAbstractDefinition().getParameters(), referableList);
+        typedPatterns = visitor.getTypeCheckingElim().visitPatternArgs(processedPatterns, referableList, dataDefinition.getParameters(), Collections.emptyList(), TypeCheckingElim.PatternExpansionMode.DATATYPE);
         if (typedPatterns == null) {
           return null;
         }

@@ -194,9 +194,9 @@ public class ExpressionTest extends TypeCheckingTestCase {
     // \lam (F : \Pi N -> \Type0) (f : \Pi (x : N) -> F x) => \\let | x => 0 \\in f x");
     Concrete.ReferableSourceNode F = ref("F");
     Concrete.ReferableSourceNode f = ref("f");
-    Concrete.ReferableSourceNode x = ref("x");
+    Concrete.LetClause x = clet("x", cZero());
     Concrete.Expression expr = cLam(cargs(cTele(cvars(F), cPi(cNat(), cUniverseStd(0))), cTele(cvars(f), cPi(ctypeArgs(cTele(cvars(x), cNat())), cApps(cVar(F), cVar(x))))),
-            cLet(clets(clet("x", cZero())), cApps(cVar(f), cVar(x))));
+            cLet(clets(x), cApps(cVar(f), cVar(x))));
     typeCheckExpr(expr, null);
   }
 
@@ -211,14 +211,14 @@ public class ExpressionTest extends TypeCheckingTestCase {
     Concrete.ReferableSourceNode A = ref("A");
     Concrete.ReferableSourceNode f = ref("f");
     Concrete.ReferableSourceNode a = ref("a");
-    Concrete.ReferableSourceNode x = ref("x");
     Concrete.Expression elimTree = cElim(Collections.singletonList(cVar(y)),
         cClause(cPatterns(cConPattern(Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cDefCall(Prelude.ZERO.getAbstractDefinition())),
         cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern(x_), true))), Abstract.Definition.Arrow.RIGHT, cSuc(cVar(x_))));
+    Concrete.LetClause x = clet("x", cargs(cTele(cvars(y), cNat())), cNat(), Abstract.Definition.Arrow.LEFT, elimTree);
     Concrete.Expression expr = cLam(cargs(
             cTele(cvars(F), cPi(ctypeArgs(cTele(false, cvars(A), cUniverseInf(0)), cTele(cvars(a), cVar(A))), cUniverseInf(1))),
             cTele(cvars(f), cPi(ctypeArgs(cTele(false, cvars(A), cUniverseInf(0)), cTele(cvars(x), cVar(A))), cApps(cVar(F), cVar(x))))),
-        cLet(clets(clet("x", cargs(cTele(cvars(y), cNat())), cNat(), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar(f), cVar(x))));
+        cLet(clets(x), cApps(cVar(f), cVar(x))));
     CheckTypeVisitor.Result result = typeCheckExpr(expr, null);
     Expression typeCodomain = result.type.getPiParameters(null, true, false);
     assertThat(typeCodomain.toLet(), is(notNullValue()));
@@ -228,8 +228,8 @@ public class ExpressionTest extends TypeCheckingTestCase {
   public void letArrowType() {
     // \let | x (y : Nat) => Zero \in x : Nat -> Nat
     Concrete.ReferableSourceNode y = ref("y");
-    Concrete.ReferableSourceNode x = ref("x");
-    Concrete.Expression expr = cLet(clets(clet("x", cargs(cTele(cvars(y), cNat())), cZero())), cVar(x));
+    Concrete.LetClause x = clet("x", cargs(cTele(cvars(y), cNat())), cZero());
+    Concrete.Expression expr = cLet(clets(x), cVar(x));
     CheckTypeVisitor.Result result = typeCheckExpr(expr, null);
     assertEquals(result.type.normalize(NormalizeVisitor.Mode.WHNF), Pi(Nat(), Nat()));
   }

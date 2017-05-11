@@ -1163,6 +1163,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     LetClause letResult;
     List<Sort> domSorts = new ArrayList<>(clause.getArguments().size());
 
+    Abstract.ReferableSourceNode referable = null;
     try (Utils.MapContextSaver ignore = new Utils.MapContextSaver<>(myContext)) {
       for (Abstract.Argument arg : clause.getArguments()) {
         if (arg instanceof Abstract.TelescopeArgument) {
@@ -1171,6 +1172,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
           if (result == null) return null;
           List<? extends Abstract.ReferableSourceNode> referableList = teleArg.getReferableList();
           links.add(ExpressionFactory.singleParams(teleArg.getExplicit(), referableList.stream().map(r -> r == null ? null : r.getName()).collect(Collectors.toList()), result));
+          referable = referableList.get(referableList.size() - 1);
           domSorts.add(result.getSortOfType());
           int i = 0;
           for (SingleDependentLink link = links.get(links.size() - 1); link.hasNext(); link = link.getNext(), i++) {
@@ -1202,7 +1204,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
         }
         myContext.subList(myContext.size() - size, myContext.size()).clear();
         */
-        elimTree = myTypeCheckingElim.typeCheckElim((Abstract.ElimExpression) clause.getTerm(), links.isEmpty() ? Collections.emptyList() : Collections.singletonList(null) /* TODO[context] */, links.isEmpty() ? EmptyDependentLink.getInstance() : links.get(0), expectedType == null ? null : expectedType.getExpr(), false, false);
+        elimTree = myTypeCheckingElim.typeCheckElim((Abstract.ElimExpression) clause.getTerm(), links.isEmpty() ? Collections.emptyList() : Collections.singletonList(referable), links.isEmpty() ? EmptyDependentLink.getInstance() : links.get(0), expectedType == null ? null : expectedType.getExpr(), false, false);
         if (elimTree == null) return null;
         assert expectedType != null;
         resultType = expectedType;

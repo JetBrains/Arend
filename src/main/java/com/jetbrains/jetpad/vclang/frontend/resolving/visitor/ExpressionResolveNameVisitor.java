@@ -321,12 +321,14 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   public Void visitLet(Abstract.LetExpression expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       for (Abstract.LetClause clause : expr.getClauses()) {
-        visitArguments(clause.getArguments());
+        try (Utils.ContextSaver ignored1 = new Utils.ContextSaver(myContext)) {
+          visitArguments(clause.getArguments());
 
-        if (clause.getResultType() != null) {
-          clause.getResultType().accept(this, null);
+          if (clause.getResultType() != null) {
+            clause.getResultType().accept(this, null);
+          }
+          clause.getTerm().accept(this, null);
         }
-        clause.getTerm().accept(this, null);
         if (clause.getName() != null && !clause.getName().equals("_")) {
           myContext.add(clause);
         }
