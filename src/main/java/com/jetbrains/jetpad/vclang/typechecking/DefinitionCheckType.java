@@ -47,6 +47,7 @@ import com.jetbrains.jetpad.vclang.typechecking.visitor.FindMatchOnIntervalVisit
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.toContext;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.pattern.Utils.processImplicit;
 import static com.jetbrains.jetpad.vclang.core.pattern.Utils.toPatterns;
@@ -189,6 +190,7 @@ public class DefinitionCheckType {
         }
 
         list.append(param);
+        visitor.getFreeBindings().addAll(toContext(param));
       } else {
         visitor.getErrorReporter().report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, new Expression[0]));
         ok = false;
@@ -202,6 +204,7 @@ public class DefinitionCheckType {
     LinkList list = new LinkList();
     if (enclosingClass != null) {
       DependentLink thisParam = createThisParam(enclosingClass);
+      visitor.getFreeBindings().add(thisParam);
       list.append(thisParam);
       visitor.setThisClass(enclosingClass, new ReferenceExpression(thisParam));
     }
@@ -231,6 +234,22 @@ public class DefinitionCheckType {
     typedDef.setStatus(paramsOk ? Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING : Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
   }
 
+  private static void getReferableList(List<? extends Abstract.Argument> parameters, List<Abstract.ReferableSourceNode> result) {
+    for (Abstract.Argument argument : parameters) {
+      if (argument instanceof Abstract.TelescopeArgument) {
+        result.addAll(((Abstract.TelescopeArgument) argument).getReferableList());
+      } else
+      if (argument instanceof Abstract.TypeArgument) {
+        result.add(null);
+      } else
+      if (argument instanceof Abstract.NameArgument) {
+        result.add(((Abstract.NameArgument) argument).getReferable());
+      } else {
+        throw new IllegalStateException();
+      }
+    }
+  }
+
   private static void typeCheckFunctionBody(FunctionDefinition typedDef, CheckTypeVisitor visitor) {
     Abstract.FunctionDefinition def = (Abstract.FunctionDefinition) typedDef.getAbstractDefinition();
     Abstract.Expression term = def.getTerm();
@@ -241,7 +260,12 @@ public class DefinitionCheckType {
       if (term instanceof Abstract.ElimExpression) {
         // visitor.getContext().subList(visitor.getContext().size() - size(typedDef.getParameters()), visitor.getContext().size()).clear(); // TODO[context]
         if (expectedType != null || def.getResultType() == null) {
-          ElimTreeNode elimTree = visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, def.getArrow() == Abstract.Definition.Arrow.LEFT ? typedDef.getParameters() : null, expectedType, false, true);
+          List<Abstract.ReferableSourceNode> parameters = new ArrayList<>();
+          if (typedDef.getThisClass() != null) {
+            parameters.add(null);
+          }
+          getReferableList(def.getArguments(), parameters);
+          ElimTreeNode elimTree = visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, parameters, def.getArrow() == Abstract.Definition.Arrow.LEFT ? typedDef.getParameters() : null, expectedType, false, true);
           if (elimTree != null) {
             typedDef.setElimTree(elimTree);
           }
@@ -453,6 +477,7 @@ public class DefinitionCheckType {
         List<List<Pattern>> patterns = new ArrayList<>();
         List<Expression> expressions = new ArrayList<>();
         List<Abstract.Definition.Arrow> arrows = new ArrayList<>();
+        visitor.getFreeBindings().addAll(toContext(constructor.getDataTypeParameters()));
         // visitor.getContext().addAll(toContext(constructor.getDataTypeParameters())); // TODO[context]
 
         for (Abstract.Condition cond : condMap.get(constructor)) {
@@ -554,7 +579,18 @@ public class DefinitionCheckType {
           return null;
         }
       } else {
-        // visitor.getContext().addAll(toContext(dataDefinition.getParameters())); // TODO[context]
+        List<Abstract.ReferableSourceNode> referableList = new ArrayList<>();
+        if (dataDefinition.getThisClass() != null) {
+          referableList.add(null);
+        }
+        getReferableList(dataDefinition.getAbstractDefinition().getParameters(), referableList);
+        int i = 0;
+        for (DependentLink link = dataDefinition.getParameters(); link.hasNext(); link = link.getNext(), i++) {
+          if (referableList.get(i) != null) {
+            visitor.getContext().put(referableList.get(i), link);
+          }
+        }
+        visitor.getFreeBindings().addAll(toContext(dataDefinition.getParameters()));
       }
 
       if (dataDefinition.getThisClass() != null && typedPatterns != null) {
@@ -572,12 +608,17 @@ public class DefinitionCheckType {
 
         DependentLink param;
         if (argument instanceof Abstract.TelescopeArgument) {
-          param = parameter(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getReferableList().stream().map(r -> r == null ? null : r.getName()).collect(Collectors.toList()), paramResult);
+          List<? extends Abstract.ReferableSourceNode> referableList = ((Abstract.TelescopeArgument) argument).getReferableList();
+          param = parameter(argument.getExplicit(), referableList.stream().map(r -> r == null ? null : r.getName()).collect(Collectors.toList()), paramResult);
+          int i = 0;
+          for (DependentLink link = param; link.hasNext(); link = link.getNext(), i++) {
+            visitor.getContext().put(referableList.get(i), link);
+          }
         } else {
           param = parameter(argument.getExplicit(), (String) null, paramResult);
         }
         list.append(param);
-        // visitor.getContext().addAll(toContext(param)); // TODO[context]
+        visitor.getFreeBindings().addAll(toContext(param));
       }
 
       int index = 0;
@@ -711,6 +752,7 @@ public class DefinitionCheckType {
 
       if (enclosingClass != null) {
         DependentLink thisParam = createThisParam(enclosingClass);
+        visitor.getFreeBindings().add(thisParam);
         visitor.setThisClass(enclosingClass, new ReferenceExpression(thisParam));
       }
 
@@ -763,6 +805,7 @@ public class DefinitionCheckType {
           }
 
           TypedDependentLink thisParameter = createThisParam(typedDef);
+          visitor.getFreeBindings().add(thisParameter);
           visitor.setThisClass(typedDef, new ReferenceExpression(thisParameter));
           CheckTypeVisitor.Result result = implementField(fieldSet, field, implementation.getImplementation(), visitor, thisParameter);
           if (result == null || result.expression.toError() != null) {
@@ -789,6 +832,7 @@ public class DefinitionCheckType {
 
   private static ClassField typeCheckClassField(Abstract.ClassField def, ClassDefinition enclosingClass, FieldSet fieldSet, CheckTypeVisitor visitor) {
     TypedDependentLink thisParameter = createThisParam(enclosingClass);
+    visitor.getFreeBindings().add(thisParameter);
     visitor.setThisClass(enclosingClass, new ReferenceExpression(thisParameter));
     Type typeResult = visitor.finalCheckType(def.getResultType());
 
@@ -846,7 +890,7 @@ public class DefinitionCheckType {
     if (!substitution.isEmpty()) {
       term = new SubstVisitor(new ExprSubstitution(), substitution).visitClassCall(term, null);
     }
-    term = new StripVisitor(new HashSet<>(visitor.getContext().values()), visitor.getErrorReporter()).visitClassCall(term, null);
+    term = new StripVisitor(new HashSet<>(visitor.getFreeBindings()), visitor.getErrorReporter()).visitClassCall(term, null);
 
     FieldSet.Implementation impl = fieldSet.getImplementation((ClassField) state.getTypechecked(classView.getClassifyingField()));
     DefCallExpression defCall = impl.term.normalize(NormalizeVisitor.Mode.WHNF).toDefCall();

@@ -157,7 +157,11 @@ public abstract class Expression implements ExpectedType {
   }
 
   public Expression applyExpression(Expression expression) {
-    PiExpression piExpr = normalize(NormalizeVisitor.Mode.WHNF).toPi();
+    Expression normExpr = normalize(NormalizeVisitor.Mode.WHNF);
+    if (normExpr.toError() != null) {
+      return normExpr;
+    }
+    PiExpression piExpr = normExpr.toPi();
     SingleDependentLink link = piExpr.getParameters();
     ExprSubstitution subst = new ExprSubstitution(link, expression);
     link = link.getNext();

@@ -12,7 +12,7 @@ public class InferenceTest extends TypeCheckingTestCase {
         "\\function h : D 0 => con (\\case t\n" +
         "  | t => {?}\n" +
         "  | f => {?})";
-    typeCheckClass(text, 0, 2);
+    typeCheckClass(text, 2);
     assertThatErrorsAre(goal(0), goal(0));
   }
 

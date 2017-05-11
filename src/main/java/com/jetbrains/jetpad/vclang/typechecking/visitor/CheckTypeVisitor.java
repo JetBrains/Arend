@@ -58,6 +58,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   private final StaticNamespaceProvider myStaticNsProvider;
   private final DynamicNamespaceProvider myDynamicNsProvider;
   private final Map<Abstract.ReferableSourceNode, Binding> myContext;
+  private final Set<Binding> myFreeBindings;
   private final LocalErrorReporter myErrorReporter;
   private final TypeCheckingDefCall myTypeCheckingDefCall;
   private final TypeCheckingElim myTypeCheckingElim;
@@ -248,6 +249,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     myStaticNsProvider = staticNsProvider;
     myDynamicNsProvider = dynamicNsProvider;
     myContext = localContext;
+    myFreeBindings = new HashSet<>();
     myErrorReporter = errorReporter;
     myTypeCheckingDefCall = new TypeCheckingDefCall(this);
     myTypeCheckingElim = new TypeCheckingElim(this);
@@ -290,6 +292,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
   public Map<Abstract.ReferableSourceNode, Binding> getContext() {
     return myContext;
+  }
+
+  public Set<Binding> getFreeBindings() {
+    return myFreeBindings;
   }
 
   public LocalErrorReporter getErrorReporter() {
@@ -365,8 +371,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     }
 
     LocalErrorReporterCounter counter = new LocalErrorReporterCounter(myErrorReporter);
-    result.expression = result.expression.strip(new HashSet<>(myContext.values()), counter);
-    result.type = result.type.strip(new HashSet<>(myContext.values()), counter.getErrorsNumber() == 0 ? myErrorReporter : new DummyLocalErrorReporter());
+    result.expression = result.expression.strip(new HashSet<>(myFreeBindings), counter);
+    result.type = result.type.strip(new HashSet<>(myFreeBindings), counter.getErrorsNumber() == 0 ? myErrorReporter : new DummyLocalErrorReporter());
     return result;
   }
 
@@ -400,7 +406,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   public Type finalCheckType(Abstract.Expression expr) {
     Type result = checkType(expr);
     if (result == null) return null;
-    return result.subst(new ExprSubstitution(), myEquations.solve(expr)).strip(new HashSet<>(myContext.values()), myErrorReporter);
+    return result.subst(new ExprSubstitution(), myEquations.solve(expr)).strip(new HashSet<>(myFreeBindings), myErrorReporter);
   }
 
   private boolean compareExpressions(Result result, Expression expected, Expression actual, Abstract.Expression expr) {
@@ -659,8 +665,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
             myContext.put(referableList.get(i), link1);
           }
         } else {
-          SingleDependentLink link = new TypedSingleDependentLink(arg.getExplicit(), null, result);
-          list.add(link);
+          list.add(new TypedSingleDependentLink(arg.getExplicit(), null, result));
         }
 
         sorts.add(result.getSortOfType());
@@ -896,7 +901,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       return null;
     }
 
-    ElimTreeNode elimTree = myTypeCheckingElim.typeCheckElim(expr, links.isEmpty() ? EmptyDependentLink.getInstance() : links.get(0), (Expression) expectedType, true, false);
+    ElimTreeNode elimTree = myTypeCheckingElim.typeCheckElim(expr, links.isEmpty() ? Collections.emptyList() : Collections.singletonList(null), links.isEmpty() ? EmptyDependentLink.getInstance() : links.get(0), (Expression) expectedType, true, false);
     if (elimTree == null) return null;
 
     LocalTypeCheckingError error = TypeCheckingElim.checkCoverage("\\case", expr, links, elimTree, (Expression) expectedType);
@@ -1197,7 +1202,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
         }
         myContext.subList(myContext.size() - size, myContext.size()).clear();
         */
-        elimTree = myTypeCheckingElim.typeCheckElim((Abstract.ElimExpression) clause.getTerm(), clause.getArrow() == Abstract.Definition.Arrow.LEFT ? (links.isEmpty() ? EmptyDependentLink.getInstance() : links.get(0)) : null, expectedType == null ? null : expectedType.getExpr(), false, false);
+        elimTree = myTypeCheckingElim.typeCheckElim((Abstract.ElimExpression) clause.getTerm(), links.isEmpty() ? Collections.emptyList() : Collections.singletonList(null) /* TODO[context] */, links.isEmpty() ? EmptyDependentLink.getInstance() : links.get(0), expectedType == null ? null : expectedType.getExpr(), false, false);
         if (elimTree == null) return null;
         assert expectedType != null;
         resultType = expectedType;

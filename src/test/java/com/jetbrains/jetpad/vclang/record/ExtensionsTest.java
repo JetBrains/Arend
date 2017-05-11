@@ -39,7 +39,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void badFieldTypeError() {
-    typeCheckClass(
+    resolveNamesClass(
         "\\class A {\n" +
         "  \\field A : \\Set0\n" +
         "  \\field a : A\n" +
@@ -48,7 +48,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "  \\field a' : A\n" +
         "  \\field p : undefined_variable = a'\n" +
         "}\n" +
-        "\\function f => \\new B { A => Nat | a => 0 | a' => 0 | p => path (\\lam _ => 0) }", 1, 1);
+        "\\function f => \\new B { A => Nat | a => 0 | a' => 0 | p => path (\\lam _ => 0) }", 1);
   }
 
   @Test
@@ -96,18 +96,18 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void nameClashError() {
-    typeCheckClass(
+    resolveNamesClass(
         "\\class A {\n" +
         "  \\field x : Nat\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
         "  \\field x : Nat\n" +
-        "}", 1, 1);
+        "}", 1);
   }
 
   @Test
   public void nameClashError2() {
-    typeCheckClass(
+    resolveNamesClass(
         "\\class A {\n" +
         "  \\field x : Nat\n" +
         "}\n" +
@@ -116,12 +116,12 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "}\n" +
         "\\class C \\extends B {\n" +
         "  \\field x : Nat -> Nat\n" +
-        "}", 1, 1);
+        "}", 1);
   }
 
   @Test
   public void nameClashError3() {
-    typeCheckClass(
+    resolveNamesClass(
         "\\class A {\n" +
         "  \\field A : \\Set0\n" +
         "}\n" +
@@ -131,7 +131,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "\\class C \\extends A {\n" +
         "  \\field a : A\n" +
         "}\n" +
-        "\\class D \\extends B, C", 1, 0);
+        "\\class D \\extends B, C", 1);
   }
 
   @Test

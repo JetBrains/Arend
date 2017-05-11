@@ -139,18 +139,14 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     return new TypeCheckClassResult(state, classDefinition);
   }
 
-  protected TypeCheckClassResult typeCheckClass(String text, int nameErrors, int tcErrors) {
-    Concrete.ClassDefinition classDefinition = resolveNamesClass(text, nameErrors);
-    TypecheckerState state = typeCheckClass(classDefinition, nameErrors + tcErrors);
+  protected TypeCheckClassResult typeCheckClass(String text, int errors) {
+    Concrete.ClassDefinition classDefinition = resolveNamesClass(text);
+    TypecheckerState state = typeCheckClass(classDefinition, errors);
     return new TypeCheckClassResult(state, classDefinition);
   }
 
-  protected TypeCheckClassResult typeCheckClass(String text, int tcErrors) {
-    return typeCheckClass(text, 0, tcErrors);
-  }
-
   protected TypeCheckClassResult typeCheckClass(String text) {
-    return typeCheckClass(text, 0, 0);
+    return typeCheckClass(text, 0);
   }
 
   protected TypeCheckClassResult typeCheckClass(String instance, String global, int errors) {

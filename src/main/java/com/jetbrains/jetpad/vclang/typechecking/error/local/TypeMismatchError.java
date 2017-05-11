@@ -11,5 +11,6 @@ public class TypeMismatchError extends LocalTypeCheckingError {
     super("Type mismatch", expression);
     this.expected = expected;
     this.actual = actual;
+    expected.toString();
   }
 }

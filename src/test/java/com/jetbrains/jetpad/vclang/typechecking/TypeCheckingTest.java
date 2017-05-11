@@ -118,11 +118,11 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void definitionsWithErrors() {
-    typeCheckClass(
+    resolveNamesClass(
         "\\class C {\n" +
         "  \\field A : X\n" +
         "  \\field a : (\\lam (x : Nat) => Nat) A\n" +
-        "}", 1, 2);
+        "}", 1);
   }
 
   @Ignore

@@ -115,7 +115,7 @@ public class TypeCheckingElim {
   public Patterns visitPatternArgs(List<Abstract.PatternArgument> patternArgs, DependentLink eliminatingArgs, List<Expression> substIn, PatternExpansionMode mode) {
     List<PatternArgument> typedPatterns = new ArrayList<>();
     LinkList links = new LinkList();
-    Set<Binding> bounds = new HashSet<>(myVisitor.getContext().values());
+    Set<Binding> bounds = new HashSet<>(myVisitor.getFreeBindings());
     for (Abstract.PatternArgument patternArg : patternArgs) {
       ExpandPatternResult result = expandPattern(patternArg.getPattern(), eliminatingArgs, mode, links);
       if (result == null || result instanceof ExpandPatternErrorResult)
@@ -137,7 +137,7 @@ public class TypeCheckingElim {
     return new Patterns(typedPatterns);
   }
 
-  public ElimTreeNode typeCheckElim(final Abstract.ElimCaseExpression expr, DependentLink eliminatingArgs, Expression expectedType, boolean isCase, boolean isTopLevel) {
+  public ElimTreeNode typeCheckElim(final Abstract.ElimCaseExpression expr, List<Abstract.ReferableSourceNode> referableList, DependentLink eliminatingArgs, Expression expectedType, boolean isCase, boolean isTopLevel) {
     LocalTypeCheckingError error = null;
     if (expectedType == null) {
       error = new LocalTypeCheckingError("Cannot infer type of the expression", expr);
@@ -154,7 +154,7 @@ public class TypeCheckingElim {
 
     final List<ReferenceExpression> elimExprs;
     if (!isCase) {
-      elimExprs = typecheckElimIndices(expr, eliminatingArgs);
+      elimExprs = typecheckElimIndices(expr, referableList, eliminatingArgs);
     } else {
       elimExprs = new ArrayList<>();
       for (DependentLink link = eliminatingArgs; link.hasNext(); link = link.getNext()) {
@@ -181,9 +181,12 @@ public class TypeCheckingElim {
 
     DependentLink origEliminatingArgs = eliminatingArgs;
     List<Pattern> dummyPatterns = new ArrayList<>();
-    for (;eliminatingArgs.hasNext() && eliminatingArgs != elimExprs.get(0).getBinding(); eliminatingArgs = eliminatingArgs.getNext()) {
+    for (int i = 0; eliminatingArgs.hasNext() && eliminatingArgs != elimExprs.get(0).getBinding(); eliminatingArgs = eliminatingArgs.getNext(), i++) {
       dummyPatterns.add(new NamePattern(eliminatingArgs));
-      // myVisitor.getContext().add(eliminatingArgs); // TODO[context]
+      if (referableList.get(i) != null) {
+        myVisitor.getContext().put(referableList.get(i), eliminatingArgs);
+      }
+      myVisitor.getFreeBindings().add(eliminatingArgs);
     }
 
     List<Binding> argsBindings = toContext(eliminatingArgs);
@@ -250,7 +253,7 @@ public class TypeCheckingElim {
         if (!substitution.isEmpty()) {
           result = result.subst(new ExprSubstitution(), substitution);
         }
-        Set<Binding> bounds = new HashSet<>(myVisitor.getContext().values());
+        Set<Binding> bounds = new HashSet<>(myVisitor.getFreeBindings());
         bounds.addAll(argsBindings);
         result = result.accept(new StripVisitor(bounds, myVisitor.getErrorReporter()), null);
       }
@@ -287,10 +290,14 @@ public class TypeCheckingElim {
     return null;
   }
 
-  private List<ReferenceExpression> typecheckElimIndices(Abstract.ElimCaseExpression expr, DependentLink eliminatingArgs) {
+  private List<ReferenceExpression> typecheckElimIndices(Abstract.ElimCaseExpression expr, List<Abstract.ReferableSourceNode> referableList, DependentLink eliminatingArgs) {
     try (Utils.MapContextSaver ignore = new Utils.MapContextSaver<>(myVisitor.getContext())) {
+      DependentLink link = eliminatingArgs;
+      for (int i = 0; link.hasNext(); link = link.getNext(), i++) {
+        myVisitor.getContext().put(referableList.get(i), link);
+      }
       List<Binding> argsBindings = toContext(eliminatingArgs);
-      // myVisitor.getContext().addAll(argsBindings); // TODO[context]
+      myVisitor.getFreeBindings().addAll(argsBindings);
 
       List<Integer> eliminatingIndices = new ArrayList<>();
 
@@ -362,6 +369,7 @@ public class TypeCheckingElim {
     if (pattern == null) {
       links.append(new TypedDependentLink(true, binding.getName(), binding.getType(), EmptyDependentLink.getInstance()));
       // myVisitor.getContext().add(links.getLast()); // TODO[context]
+      myVisitor.getFreeBindings().add(links.getLast());
       return new ExpandPatternOKResult(new ReferenceExpression(links.getLast()), new NamePattern(links.getLast()));
     } else if (pattern instanceof Abstract.NamePattern) {
       String name = ((Abstract.NamePattern) pattern).getReferent().getName();
@@ -371,6 +379,7 @@ public class TypeCheckingElim {
       links.append(new TypedDependentLink(true, name, binding.getType(), EmptyDependentLink.getInstance()));
       NamePattern namePattern = new NamePattern(links.getLast());
       myVisitor.getContext().put(((Abstract.NamePattern) pattern).getReferent(), links.getLast());
+      myVisitor.getFreeBindings().add(links.getLast());
       pattern.setWellTyped(namePattern);
       return new ExpandPatternOKResult(new ReferenceExpression(links.getLast()), namePattern);
     } else if (pattern instanceof Abstract.AnyConstructorPattern || pattern instanceof Abstract.ConstructorPattern) {
@@ -421,6 +430,7 @@ public class TypeCheckingElim {
         links.append(param);
         AnyConstructorPattern newPattern = new AnyConstructorPattern(param);
         pattern.setWellTyped(newPattern);
+        myVisitor.getFreeBindings().add(param);
         return new ExpandPatternOKResult(new ReferenceExpression(param), newPattern);
       }
 

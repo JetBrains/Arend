@@ -313,7 +313,7 @@ public final class Concrete {
     }
   }
 
-  public static class InferenceReferenceExpression extends Expression implements Abstract.Expression {
+  public static class InferenceReferenceExpression extends Expression implements Abstract.InferenceReferenceExpression {
     private final InferenceVariable myVariable;
 
     public InferenceReferenceExpression(Position position, InferenceVariable variable) {
@@ -327,7 +327,7 @@ public final class Concrete {
 
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return null;
+      return visitor.visitInferenceReference(this, params);
     }
   }
 

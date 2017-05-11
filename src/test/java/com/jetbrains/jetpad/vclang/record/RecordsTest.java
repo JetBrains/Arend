@@ -37,14 +37,14 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void parentCallTest() {
-    typeCheckClass(
+    resolveNamesClass(
         "\\class A {\n" +
         "  \\field c : Nat -> Nat -> Nat\n" +
         "  \\field f : Nat -> Nat\n" +
         "}\n" +
         "\\function B => A {\n" +
         "  f => \\lam n => c n n\n" +
-        "}", 1, 1);
+        "}", 1);
   }
 
   @Test
@@ -104,7 +104,7 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void mutualRecursionTestError() {
-    typeCheckClass(
+    resolveNamesClass(
         "\\class Point {\n" +
         "  \\field x : Nat\n" +
         "  \\field y : Nat\n" +
@@ -112,7 +112,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\function test => Point {\n" +
         "  | x => y\n" +
         "  | y => x\n" +
-        "}", 2, 2);
+        "}", 2);
   }
 
   @Test
