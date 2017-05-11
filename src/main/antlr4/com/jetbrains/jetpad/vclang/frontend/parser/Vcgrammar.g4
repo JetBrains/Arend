@@ -175,7 +175,7 @@ SET : '\\Set' [0-9]*;
 COLON : ':';
 ARROW : '->';
 WS : [ \t\r\n]+ -> skip;
-LINE_COMMENT : '--' .*? '\r'? '\n' -> skip;
+LINE_COMMENT : '--' ~[\r\n]* -> skip;
 COMMENT : '{-' .*? '-}' -> skip;
 fragment BIN_OP_CHAR : [~!@#$%^&*\-+=<>?/|.:];
 BIN_OP : BIN_OP_CHAR+;
