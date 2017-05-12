@@ -900,8 +900,12 @@ public final class Concrete {
       myName = name;
     }
 
-    @Override
     public String getName() {
+      return myName;
+    }
+
+    @Override
+    public String toString() {
       return myName;
     }
   }

@@ -287,7 +287,9 @@ public final class Abstract {
   // Definitions
 
   public interface ReferableSourceNode extends SourceNode {
-    String getName();
+    default String getName() {
+      return toString();
+    }
   }
 
   public static Collection<? extends Abstract.Argument> getArguments(Abstract.Definition definition) {
