@@ -17,7 +17,7 @@ import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-public class CachingModuleLoader<SourceIdT extends SourceId> extends SourceModuleLoader<SourceIdT> {
+public class CachingModuleLoader<SourceIdT extends SourceId> implements SourceModuleLoader<SourceIdT> {
   private final SourceModuleLoader<SourceIdT> mySourceLoader;
   private final PersistenceProvider<SourceIdT> myPersistenceProvider;
   private final CacheStorageSupplier<SourceIdT> myCacheSupplier;

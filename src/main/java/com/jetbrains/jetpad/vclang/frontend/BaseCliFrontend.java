@@ -4,23 +4,19 @@ import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotSourceInfoCollector;
-import com.jetbrains.jetpad.vclang.frontend.resolving.ResolvingModuleLoader;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
-import com.jetbrains.jetpad.vclang.module.DefaultModuleLoader;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.module.caching.CachePersistenceException;
-import com.jetbrains.jetpad.vclang.module.caching.CachingModuleLoader;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
+import com.jetbrains.jetpad.vclang.module.source.SimpleModuleLoader;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
+import com.jetbrains.jetpad.vclang.module.source.SourceModuleLoader;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
-import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
+import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.*;
+import com.jetbrains.jetpad.vclang.typechecking.SimpleTypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
@@ -40,14 +36,8 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   protected final Storage<SourceIdT> storage;
 
   // Modules
-  private final ResolvingModuleLoader<SourceIdT> resolvingModuleLoader;
-  private final CachingModuleLoader<SourceIdT> moduleLoader;
-  private final Map<SourceIdT, Abstract.ClassDefinition> loadedSources = new HashMap<>();
-
-  // Name resolving
-  private final NameResolver nameResolver = new NameResolver();
-  private final SimpleStaticNamespaceProvider staticNsProvider = new SimpleStaticNamespaceProvider();
-  private final DynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
+  protected final SourceModuleLoader<SourceIdT> moduleLoader;
+  protected final Map<SourceIdT, Abstract.ClassDefinition> loadedSources = new HashMap<>();
 
   private final SourceInfoProvider<SourceIdT> srcInfoProvider;
 
@@ -63,13 +53,8 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     this.storage = storage;
 
-    ModuleLoadingListener moduleLoadingListener = new ModuleLoadingListener(srcInfoCollector);
-    resolvingModuleLoader = createResolvingModuleLoader(moduleLoadingListener);
-    moduleLoader = createCachingModuleLoader(recompile);
-    state = moduleLoader.getTypecheckerState();
-
-    Namespace preludeNamespace = loadPrelude();
-    resolvingModuleLoader.setPreludeNamespace(preludeNamespace);
+    moduleLoader = new ModuleWatch(new SimpleModuleLoader<>(storage, errorReporter), srcInfoCollector);
+    state = new SimpleTypecheckerState();
   }
 
   static class DefinitionIdsCollector implements AbstractDefinitionVisitor<Map<String, Abstract.Definition>, Void>, AbstractStatementVisitor<Map<String, Abstract.Definition>, Void> {
@@ -163,16 +148,18 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
   }
 
-  class ModuleLoadingListener extends DefaultModuleLoader.ModuleLoadingListener<SourceIdT> {
+  class ModuleWatch implements SourceModuleLoader<SourceIdT> {
+    private final SourceModuleLoader<SourceIdT> myModuleLoader;
     private final OneshotSourceInfoCollector<SourceIdT> mySrcInfoCollector;
     private final DefinitionIdsCollector defIdCollector = new DefinitionIdsCollector();
 
-    ModuleLoadingListener(OneshotSourceInfoCollector<SourceIdT> srcInfoCollector) {
+    ModuleWatch(SourceModuleLoader<SourceIdT> moduleLoader, OneshotSourceInfoCollector<SourceIdT> srcInfoCollector) {
+      myModuleLoader = moduleLoader;
       mySrcInfoCollector = srcInfoCollector;
     }
 
-    @Override
-    public void loadingSucceeded(SourceIdT module, Abstract.ClassDefinition abstractDefinition) {
+
+    private void loadingSucceeded(SourceIdT module, Abstract.ClassDefinition abstractDefinition) {
       assert abstractDefinition != null;
       if (!definitionIds.containsKey(module)) {
         definitionIds.put(module, new HashMap<String, Abstract.Definition>());
@@ -182,30 +169,54 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
       loadedSources.put(module, abstractDefinition);
       System.out.println("[Loaded] " + displaySource(module, false));
     }
+
+    private void loadingFailed(SourceIdT module) {
+      System.out.println("[Failed] " + displaySource(module, false));
+    }
+
+    @Override
+    public SourceIdT locateModule(ModulePath modulePath) {
+      return myModuleLoader.locateModule(modulePath);
+    }
+
+    @Override
+    public boolean isAvailable(SourceIdT sourceId) {
+      return myModuleLoader.isAvailable(sourceId);
+    }
+
+    @Override
+    public Abstract.ClassDefinition load(SourceIdT sourceId) {
+      if (loadedSources.containsKey(sourceId)) throw new IllegalStateException();
+      Abstract.ClassDefinition result = myModuleLoader.load(sourceId);
+
+      if (result != null) {
+        loadingSucceeded(sourceId, result);
+      } else {
+        loadingFailed(sourceId);
+      }
+
+      return result;
+    }
   }
 
+
+  protected abstract StaticNamespaceProvider getStaticNsProvider();
+  protected abstract DynamicNamespaceProvider getDynamicNsProvider();
   protected abstract PersistenceProvider<SourceIdT> createPersistenceProvider();
   protected abstract String displaySource(SourceIdT source, boolean modulePathOnly);
 
 
-  private Namespace loadPrelude() {
-    Abstract.ClassDefinition prelude = moduleLoader.load(moduleLoader.locateModule(PreludeStorage.PRELUDE_MODULE_PATH), true).definition;
-    new Typechecking(state, staticNsProvider, dynamicNsProvider, new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(state), new BaseDependencyListener()).typecheckModules(Collections.singletonList(prelude));
+  protected Abstract.ClassDefinition loadPrelude() {
+    //Abstract.ClassDefinition prelude = moduleLoader.load(moduleLoader.locateModule(PreludeStorage.PRELUDE_MODULE_PATH), true).definition;
+    Abstract.ClassDefinition prelude = moduleLoader.load(moduleLoader.locateModule(PreludeStorage.PRELUDE_MODULE_PATH));
+    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(state), new BaseDependencyListener()).typecheckModules(Collections.singletonList(prelude));
     assert errorReporter.getErrorList().isEmpty();
-    return staticNsProvider.forDefinition(prelude);
-  }
-
-  private ResolvingModuleLoader<SourceIdT> createResolvingModuleLoader(ModuleLoadingListener moduleLoadingListener) {
-    return new ResolvingModuleLoader<>(storage, moduleLoadingListener, nameResolver, staticNsProvider, dynamicNsProvider, new ConcreteResolveListener(errorReporter), errorReporter);
-  }
-
-  private CachingModuleLoader<SourceIdT> createCachingModuleLoader(boolean recompile) {
-    CachingModuleLoader<SourceIdT> moduleLoader = new CachingModuleLoader<>(resolvingModuleLoader, createPersistenceProvider(), storage, srcInfoProvider, !recompile);
-    nameResolver.setModuleLoader(moduleLoader);
-    return moduleLoader;
+    return prelude;
   }
 
   public void run(final Path sourceDir, Collection<String> argFiles) {
+    loadPrelude();
+
     // Collect sources for which typechecking was requested
     if (argFiles.isEmpty()) {
       if (sourceDir == null) return;
@@ -258,6 +269,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
       System.out.println("Number of modules with errors: " + numWithErrors);
     }
 
+    /*
     // Persist cache
     for (SourceIdT module : moduleLoader.getCachedModules()) {
       try {
@@ -266,6 +278,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
         e.printStackTrace();
       }
     }
+    */
   }
 
   private void reportTypeCheckResult(SourceIdT source, ModuleResult result) {
@@ -297,11 +310,14 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     for (SourceIdT source : sources) {
       Abstract.ClassDefinition definition = loadedSources.get(source);
       if (definition == null){
+        /*
         CachingModuleLoader.Result result = moduleLoader.loadWithResult(source);
         if (result.exception != null) {
           System.err.println("Error loading cache: " + result.exception);
         }
         definition = result.definition;
+        */
+        definition = moduleLoader.load(source);
         flushErrors();
       }
       if (definition == null) {
@@ -313,7 +329,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     System.out.println("--- Checking ---");
 
-    new Typechecking(state, staticNsProvider, dynamicNsProvider, errorReporter, new TypecheckedReporter() {
+    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), errorReporter, new TypecheckedReporter() {
       @Override
       public void typecheckingSucceeded(Abstract.Definition definition) {
         SourceIdT source = srcInfoProvider.sourceOf(definition);
@@ -361,16 +377,16 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   private void requestFileTypechecking(Path path) {
     String fileName = path.getFileName().toString();
     if (!fileName.endsWith(FileStorage.EXTENSION)) return;
-    path = path.resolveSibling(fileName.substring(0, fileName.length() - FileStorage.EXTENSION.length()));
 
-    ModulePath modulePath = FileStorage.modulePath(path);
+    Path sourcePath = path.resolveSibling(fileName.substring(0, fileName.length() - FileStorage.EXTENSION.length()));
+    ModulePath modulePath = FileStorage.modulePath(sourcePath);
     if (modulePath == null) {
-      System.err.println(path  + ": illegal file name");
+      System.err.println("[Not found] " + path + " is an illegal module path");
       return;
     }
     SourceIdT sourceId = storage.locateModule(modulePath);
     if (sourceId == null || !storage.isAvailable(sourceId)) {
-      System.err.println(path  + ": source is not available");
+      System.err.println("[Not found] " + path + " is not available");
       return;
     }
     requestedSources.add(sourceId);

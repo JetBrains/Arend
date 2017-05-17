@@ -4,6 +4,8 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.parser.ParseSource;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
+import com.jetbrains.jetpad.vclang.naming.NameResolver;
+import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 
@@ -26,6 +28,11 @@ public class PreludeStorage implements Storage<PreludeStorage.SourceId> {
 
   public static ModulePath PRELUDE_MODULE_PATH = new ModulePath("Prelude");
   public final SourceId preludeSourceId = new SourceId();
+  private final NameResolver myNameResolver;
+
+  public PreludeStorage(NameResolver nameResolver) {
+    myNameResolver = nameResolver;
+  }
 
   @Override
   public InputStream getCacheInputStream(SourceId sourceId) {
@@ -61,7 +68,7 @@ public class PreludeStorage implements Storage<PreludeStorage.SourceId> {
     if (stream == null) {
       throw new IllegalStateException("Prelude source resource not found");
     }
-    return new ParseSource(preludeSourceId, new InputStreamReader(stream, StandardCharsets.UTF_8)) {}.load(errorReporter);
+    return new ParseSource(preludeSourceId, new InputStreamReader(stream, StandardCharsets.UTF_8)) {}.load(errorReporter, null, new EmptyScope(), myNameResolver);
   }
 
 

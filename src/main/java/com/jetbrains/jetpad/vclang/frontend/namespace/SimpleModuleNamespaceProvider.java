@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.HashMap;
 
-public class SimpleModuleNamespaceProvider extends BaseModuleNamespaceProvider {
+public class SimpleModuleNamespaceProvider extends BaseModuleNamespaceProvider implements ModuleRegistry {
   private final HashMap<Abstract.ClassDefinition, ModuleNamespace> myMap = new HashMap<>();
 
   @Override
@@ -14,6 +14,7 @@ public class SimpleModuleNamespaceProvider extends BaseModuleNamespaceProvider {
     return myMap.get(definition);
   }
 
+  @Override
   public ModuleNamespace registerModule(ModulePath modulePath, Abstract.ClassDefinition module) {
     SimpleModuleNamespace ns = registerModuleNs(modulePath, module);
     ns.registerClass(module);
