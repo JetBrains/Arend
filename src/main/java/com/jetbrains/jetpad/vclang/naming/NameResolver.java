@@ -92,8 +92,8 @@ public class NameResolver {
       return ns != null ? ns.resolveName(defCall.getName()) : null;
     } else if (defCall.getExpression() instanceof Abstract.ModuleCallExpression) {
       Abstract.Definition module = resolveModuleCall(currentScope, (Abstract.ModuleCallExpression) defCall.getExpression());
-      if (module instanceof Abstract.ClassDefinition) {
-        ModuleNamespace moduleNamespace = nsProviders.modules.forModule((Abstract.ClassDefinition) module);
+      if (module != null) {
+        Namespace moduleNamespace = nsProviders.statics.forDefinition(module);
         return moduleNamespace.resolveName(defCall.getName());
       }
       return null;
@@ -102,9 +102,10 @@ public class NameResolver {
     }
   }
 
-  public Abstract.Definition resolveModuleCall(final Scope currentScope, final Abstract.ModuleCallExpression moduleCall) {
+  public Abstract.ClassDefinition resolveModuleCall(final Scope currentScope, final Abstract.ModuleCallExpression moduleCall) {
     if (moduleCall.getModule() != null) {
-      return moduleCall.getModule();
+      if (!(moduleCall.getModule() instanceof Abstract.ClassDefinition)) throw new IllegalStateException();
+      return (Abstract.ClassDefinition) moduleCall.getModule();
     }
 
     if (moduleCall.getPath() == null) {

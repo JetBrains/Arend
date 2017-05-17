@@ -93,4 +93,10 @@ public class NameResolutionOnLoadTest extends NameResolverTestCase {
     assertThat(defCall2.getReferent(), is(notNullValue()));
     assertThat(defCall2.getReferent(), is(get(moduleX, "f")));
   }
+
+  @Test
+  public void duplicateNamesOnTopLevel() {
+    storage.add(moduleName("Test"), "\\function a => 0 \n \\function a => 0");
+    moduleLoader.load(storage.locateModule(moduleName("Test")));
+  }
 }
