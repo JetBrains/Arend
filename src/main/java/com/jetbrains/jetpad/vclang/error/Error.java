@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.error;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 
 public abstract class Error {
@@ -15,7 +16,7 @@ public abstract class Error {
     this(Level.ERROR, message, cause);
   }
 
-  public Error(Level level, String message, Abstract.SourceNode cause) {
+  public Error(@Nonnull Level level, String message, Abstract.SourceNode cause) {
     this.level = level;
     this.message = message;
     this.cause = cause;
