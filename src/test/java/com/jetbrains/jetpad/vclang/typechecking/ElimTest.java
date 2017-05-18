@@ -352,4 +352,23 @@ public class ElimTest extends TypeCheckingTestCase {
         "\\function test (d : D) : 0 = 1 <= \\let x (d : D) : 0 = 1 <= \\elim d \\in x d"
     );
   }
+
+  @Test
+  public void dependentElim() {
+    typeCheckClass(
+        "\\data Bool | true | false\n" +
+        "\\function if (b : Bool) : \\Set <= \\elim b | true => Nat | false => Nat -> Nat\n" +
+        "\\function test (b : Bool) (x : if b) : Nat <= \\elim b, x | true, zero => 0 | true, suc n => n | false, _ => 0"
+    );
+  }
+
+  @Test
+  public void numberElim() {
+    typeCheckClass("\\function f (n : Nat) : Nat <= \\elim n | 2 => 0 | 0 => 1 | 1 => 2 | suc (suc (suc n)) => n");
+  }
+
+  @Test
+  public void numberElim2() {
+    typeCheckClass("\\function f (n : Nat) : Nat <= \\elim n | 0 => 1 | 1 => 2 | suc (suc (suc n)) => n", 1);
+  }
 }

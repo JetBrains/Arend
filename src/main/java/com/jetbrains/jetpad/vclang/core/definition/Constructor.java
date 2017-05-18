@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
@@ -21,7 +22,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Constructor extends Definition implements Function {
+public class Constructor extends Definition implements Function, BranchElimTree.Pattern {
   private final DataDefinition myDataType;
   private DependentLink myParameters;
   private Patterns myPatterns;

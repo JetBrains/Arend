@@ -20,7 +20,7 @@ import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.clause;
 
 public class Prelude {
   public static DataDefinition INTERVAL;
-  public static Constructor LEFT, RIGHT, ABSTRACT;
+  public static Constructor LEFT, RIGHT;
 
   public static DataDefinition NAT;
   public static Constructor ZERO, SUC;

@@ -68,15 +68,6 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<ExprSub
             }
           });
         }
-        // TODO: Remove abstract
-        if (conCall.getDefinition() == Prelude.ABSTRACT) {
-          if (branchNode.getClause(Prelude.LEFT) != branchNode.getOtherwiseClause()) {
-            checkInterval(branchNode, argSubst, Left());
-          }
-          if (branchNode.getClause(Prelude.RIGHT) != branchNode.getOtherwiseClause()) {
-            checkInterval(branchNode, argSubst, Right());
-          }
-        }
       }
     }
     return null;

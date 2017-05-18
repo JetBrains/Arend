@@ -1,19 +1,22 @@
 package com.jetbrains.jetpad.vclang.core.elimtree;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 
 import java.util.Map;
 
 public class BranchElimTree extends ElimTree {
-  private Map<Constructor, ElimTree> myChildren;
+  private Map<Pattern, ElimTree> myChildren;
 
-  public BranchElimTree(DependentLink parameters, Map<Constructor, ElimTree> children) {
+  public BranchElimTree(DependentLink parameters, Map<Pattern, ElimTree> children) {
     super(parameters);
     myChildren = children;
   }
 
-  public ElimTree getChild(Constructor constructor) {
-    return myChildren.get(constructor);
+  public ElimTree getChild(Pattern pattern) {
+    return myChildren.get(pattern);
+  }
+
+  public interface Pattern {
+    Pattern ANY = new Pattern() { };
   }
 }
