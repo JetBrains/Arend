@@ -453,7 +453,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       }
     }
 
-    LocalTypeCheckingError error = new NotInScopeError(expr, name);
+    LocalTypeCheckingError error = new LocalVarNotInScopeError(expr, name);
     expr.setWellTyped(myContext, new ErrorExpression(null, error));
     myErrorReporter.report(error);
     return null;

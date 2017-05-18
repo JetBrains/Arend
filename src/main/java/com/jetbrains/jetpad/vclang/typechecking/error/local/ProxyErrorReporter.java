@@ -6,11 +6,13 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
+import javax.annotation.Nonnull;
+
 public class ProxyErrorReporter implements LocalErrorReporter {
   private final Abstract.Definition myDefinition;
   private final ErrorReporter myErrorReporter;
 
-  public ProxyErrorReporter(Abstract.Definition definition, ErrorReporter errorReporter) {
+  public ProxyErrorReporter(@Nonnull Abstract.Definition definition, ErrorReporter errorReporter) {
     myDefinition = definition;
     myErrorReporter = errorReporter;
   }

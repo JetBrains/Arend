@@ -36,8 +36,9 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.ConstructorNotInScopeError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.CycleInConditions;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.CompositeInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.GlobalInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.LocalInstancePool;
@@ -355,16 +356,9 @@ public class DefinitionCheckType {
 
     visitor.getContext().clear();
     if (def.getConditions() != null) {
-      List<Constructor> cycle = typeCheckConditions(visitor, dataDefinition, def);
+      List<Constructor> cycle = typeCheckConditions(visitor, dataDefinition, def.getConditions());
       if (cycle != null) {
-        StringBuilder cycleConditionsError = new StringBuilder();
-        cycleConditionsError.append("Conditions form a cycle: ");
-        for (Constructor constructor : cycle) {
-          cycleConditionsError.append(constructor.getName()).append(" - ");
-        }
-        cycleConditionsError.append(cycle.get(0).getName());
-        LocalTypeCheckingError error = new LocalTypeCheckingError(cycleConditionsError.toString(), def);
-        visitor.getErrorReporter().report(error);
+        visitor.getErrorReporter().report(new CycleInConditions(cycle));
       }
 
       for (Constructor constructor : dataDefinition.getConstructors()) {
@@ -426,12 +420,12 @@ public class DefinitionCheckType {
     return universeOk;
   }
 
-  private static List<Constructor> typeCheckConditions(CheckTypeVisitor visitor, DataDefinition dataDefinition, Abstract.DataDefinition def) {
+  private static List<Constructor> typeCheckConditions(CheckTypeVisitor visitor, DataDefinition dataDefinition, Collection<? extends Abstract.Condition> conditions) {
     Map<Constructor, List<Abstract.Condition>> condMap = new HashMap<>();
-    for (Abstract.Condition cond : def.getConditions()) {
+    for (Abstract.Condition cond : conditions) {
       Constructor constructor = dataDefinition.getConstructor(cond.getConstructorName());
       if (constructor == null) {
-        visitor.getErrorReporter().report(new NotInScopeError(def, cond.getConstructorName()));  // TODO: refer by reference
+        visitor.getErrorReporter().report(new ConstructorNotInScopeError(cond.getConstructorName(), cond));  // TODO: refer by reference
         continue;
       }
       if (!constructor.status().headerIsOK()) {
