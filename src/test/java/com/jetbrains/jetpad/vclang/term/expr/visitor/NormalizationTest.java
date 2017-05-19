@@ -347,17 +347,17 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink g = param("g", Pi(Ref(B), Ref(A)));
     SingleDependentLink a = singleParam("a", Ref(A));
     SingleDependentLink b = singleParam("b", Ref(B));
-    Expression linvType = FunCall(Prelude.PATH_INFIX, new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR),
+    Expression linvType = FunCall(Prelude.PATH_INFIX, Sort.STD,
         Ref(A),
         Apps(Ref(g), Apps(Ref(f), Ref(a))),
         Ref(a));
     DependentLink linv = param("linv", Pi(a, linvType));
-    Expression rinvType = FunCall(Prelude.PATH_INFIX, new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR),
+    Expression rinvType = FunCall(Prelude.PATH_INFIX, Sort.STD,
         Ref(B),
         Apps(Ref(f), Apps(Ref(g), Ref(b))),
         Ref(b));
     DependentLink rinv = param("rinv", Pi(b, rinvType));
-    Expression iso_expr = FunCall(Prelude.ISO, new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR),
+    Expression iso_expr = FunCall(Prelude.ISO, Sort.STD,
         Ref(A), Ref(B),
         Ref(f), Ref(g),
         Ref(linv), Ref(rinv),

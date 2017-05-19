@@ -12,10 +12,10 @@ import java.util.List;
 
 public class ConCallExpression extends DefCallExpression {
   private final Sort mySortArgument;
-  private final List<Expression> myDataTypeArguments;
+  private final List<? extends Expression> myDataTypeArguments;
   private final List<Expression> myArguments;
 
-  public ConCallExpression(Constructor definition, Sort sortArgument, List<Expression> dataTypeArguments, List<Expression> arguments) {
+  public ConCallExpression(Constructor definition, Sort sortArgument, List<? extends Expression> dataTypeArguments, List<Expression> arguments) {
     super(definition);
     assert dataTypeArguments != null;
     assert definition.status().headerIsOK();
@@ -54,12 +54,15 @@ public class ConCallExpression extends DefCallExpression {
   }
 
   public void addArgument(Expression argument) {
-    if (myDataTypeArguments.size() < DependentLink.Helper.size(getDefinition().getDataTypeParameters())) {
-      myDataTypeArguments.add(argument);
-    } else {
-      assert myArguments.size() < DependentLink.Helper.size(getDefinition().getParameters());
-      myArguments.add(argument);
-    }
+    assert myDataTypeArguments.size() >= DependentLink.Helper.size(getDefinition().getDataTypeParameters());
+    assert myArguments.size() < DependentLink.Helper.size(getDefinition().getParameters());
+    myArguments.add(argument);
+  }
+
+  public void addArguments(List<? extends Expression> arguments) {
+    assert myDataTypeArguments.size() >= DependentLink.Helper.size(getDefinition().getDataTypeParameters());
+    assert myArguments.size() + arguments.size() <= DependentLink.Helper.size(getDefinition().getParameters());
+    myArguments.addAll(arguments);
   }
 
   @Override

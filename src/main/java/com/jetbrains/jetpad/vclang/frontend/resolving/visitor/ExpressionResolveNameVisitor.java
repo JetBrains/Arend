@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.frontend.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
+import com.jetbrains.jetpad.vclang.naming.error.WrongDefinition;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
@@ -262,6 +263,14 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
         if (constructor != null) {
           myResolveListener.replaceWithConstructor(patternArg, constructor);
         }
+      }
+      if (((Abstract.ConstructorPattern) pattern).getConstructor() != null) {
+        String name = ((Abstract.ConstructorPattern) pattern).getConstructorName();
+        Abstract.Definition def = myParentScope.resolveName(name);
+        if (def instanceof Abstract.Constructor) {
+          return (Abstract.Constructor) def;
+        }
+        myResolveListener.report(def == null ? new NotInScopeError(pattern, name) : new WrongDefinition("Expected a constructor", def, pattern));
       }
       return null;
     } else if (pattern instanceof Abstract.AnyConstructorPattern) {

@@ -53,7 +53,7 @@ public class SubstituteExpander {
         Binding binding = reference.getBinding();
         DataCallExpression dType = binding.getType().getExpr().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
 
-        for (ConCallExpression conCall : dType.getDefinition().getMatchedConstructors(dType)) {
+        for (ConCallExpression conCall : dType.getMatchedConstructors()) {
           DependentLink constructorArgs = DependentLink.Helper.subst(conCall.getDefinition().getParameters(), toSubstitution(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments()));
           for (DependentLink link = constructorArgs; link.hasNext(); link = link.getNext()) {
             conCall.addArgument(new ReferenceExpression(link));

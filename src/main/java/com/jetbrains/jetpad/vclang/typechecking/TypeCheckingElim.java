@@ -423,7 +423,7 @@ public class TypeCheckingElim {
         return new ExpandPatternErrorResult(error);
       }
 
-      if (dataType.getMatchedConstructors(dataCall) == null) {
+      if (dataCall.getMatchedConstructors() == null) {
         error = new LocalTypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", pattern);
         myVisitor.getErrorReporter().report(error);
         return new ExpandPatternErrorResult(error);

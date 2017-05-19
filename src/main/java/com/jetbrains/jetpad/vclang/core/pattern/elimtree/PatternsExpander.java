@@ -60,7 +60,7 @@ class PatternsExpander {
     }
 
     DataCallExpression dType = binding.getType().getExpr().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
-    List<ConCallExpression> validConstructors = dType.getDefinition().getMatchedConstructors(dType);
+    List<ConCallExpression> validConstructors = dType.getMatchedConstructors();
 
     BranchElimTreeNode resultTree = new BranchElimTreeNode(binding, context);
     List<Branch> resultBranches = new ArrayList<>();

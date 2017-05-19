@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.core.subst;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 public class StdLevelSubstitution implements LevelSubstitution {
   private final Level myPLevel;
@@ -11,6 +12,11 @@ public class StdLevelSubstitution implements LevelSubstitution {
   public StdLevelSubstitution(Level pLevel, Level hLevel) {
     myPLevel = pLevel;
     myHLevel = hLevel;
+  }
+
+  public StdLevelSubstitution(Sort sort) {
+    myPLevel = sort.getPLevel();
+    myHLevel = sort.getHLevel();
   }
 
   @Override

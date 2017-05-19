@@ -123,7 +123,7 @@ public class Constructor extends Definition implements Function, BranchElimTree.
           DataCallExpression dataCall = dataTypeParams.getType().getExpr().subst(subst).normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
           List<? extends Expression> argDataTypeParams = dataCall.getDefCallArguments();
           innerSubst = ((ConstructorPattern) patternArg.getPattern()).getMatchedArguments(new ArrayList<>(argDataTypeParams));
-          innerLevelSubst = new StdLevelSubstitution(dataCall.getSortArgument().getPLevel(), dataCall.getSortArgument().getHLevel());
+          innerLevelSubst = new StdLevelSubstitution(dataCall.getSortArgument());
         } else {
           innerLevelSubst = LevelSubstitution.EMPTY;
         }

@@ -1,22 +1,17 @@
 package com.jetbrains.jetpad.vclang.typechecking.patternmatching;
 
-import com.jetbrains.jetpad.vclang.core.context.LinkList;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.elimtree.*;
-import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
+import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
-import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -71,41 +66,6 @@ public class TypecheckingElim {
       myVisitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, "This clause is redundant", clause));
     }
     return result;
-  }
-
-  private Pair<List<Pattern>, Map<Abstract.ReferableSourceNode, Binding>> typecheckPatterns(List<Abstract.Pattern> patterns, Abstract.Clause clause, DependentLink parameters) {
-    List<Pattern> result = new ArrayList<>(patterns.size());
-    Map<Abstract.ReferableSourceNode, Binding> context = new HashMap<>();
-
-    while (!patterns.isEmpty()) {
-      Abstract.Pattern pattern = patterns.get(0);
-      if (pattern instanceof Abstract.NamePattern) {
-        DependentLink param = ExpressionFactory.parameter(parameters.isExplicit(), parameters.getName(), parameters.getType());
-        result.add(new BindingPattern(param));
-        if (context != null && ((Abstract.NamePattern) pattern).getReferent() != null) {
-          context.put(((Abstract.NamePattern) pattern).getReferent(), param);
-        }
-      } else
-      if (pattern instanceof Abstract.AnyConstructorPattern) {
-        result.add(EmptyPattern.INSTANCE);
-        context = null;
-      } else
-      if (pattern instanceof Abstract.ConstructorPattern) {
-        List<? extends Abstract.PatternArgument> patternArgs = ((Abstract.ConstructorPattern) pattern).getArguments();
-        List<Abstract.Pattern> newPatterns = new ArrayList<>(patternArgs.size() + patterns.size() - 1);
-        newPatterns.addAll(patternArgs.stream().map(Abstract.PatternArgument::getPattern).collect(Collectors.toList()));
-        newPatterns.addAll(patterns.subList(1, patterns.size()));
-        patterns = newPatterns;
-        // TODO: check implicitness of pattern arguments, generate missing implicit patterns
-        // TODO: check that parameters.getType() is a DataCall
-        // TODO: check that the data in the DataCall is the data of the constructor in the pattern
-        // TODO: extend parameters
-      } else {
-        throw new IllegalStateException();
-      }
-    }
-
-    return new Pair<>(result, context);
   }
 
   private static class ClauseData {

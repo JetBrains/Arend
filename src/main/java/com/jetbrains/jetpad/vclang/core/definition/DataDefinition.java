@@ -1,11 +1,9 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.UniverseExpression;
-import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
@@ -73,32 +71,6 @@ public class DataDefinition extends Definition {
 
   public List<Constructor> getConstructors() {
     return myConstructors;
-  }
-
-  public List<ConCallExpression> getMatchedConstructors(DataCallExpression dataCall) {
-    List<ConCallExpression> result = new ArrayList<>();
-    for (Constructor constructor : myConstructors) {
-      if (!constructor.status().headerIsOK())
-        continue;
-      List<? extends Expression> matchedParameters;
-      if (constructor.getPatterns() != null) {
-        Pattern.MatchResult matchResult = constructor.getPatterns().match(dataCall.getDefCallArguments());
-        if (matchResult instanceof Pattern.MatchMaybeResult) {
-          return null;
-        } else if (matchResult instanceof Pattern.MatchFailedResult) {
-          continue;
-        } else if (matchResult instanceof Pattern.MatchOKResult) {
-          matchedParameters = ((Pattern.MatchOKResult) matchResult).expressions;
-        } else {
-          throw new IllegalStateException();
-        }
-      } else {
-        matchedParameters = dataCall.getDefCallArguments();
-      }
-
-      result.add(new ConCallExpression(constructor, dataCall.getSortArgument(), new ArrayList<>(matchedParameters), new ArrayList<>()));
-    }
-    return result;
   }
 
   public Constructor getConstructor(String name) {

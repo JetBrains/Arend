@@ -27,10 +27,6 @@ public class ExpressionFactory {
     return new FunCallExpression(definition, sortArgument, Arrays.asList(arguments));
   }
 
-  public static FunCallExpression FunCall(FunctionDefinition definition, Level lp, Level lh, Expression... arguments) {
-    return new FunCallExpression(definition, new Sort(lp, lh), Arrays.asList(arguments));
-  }
-
   public static DataCallExpression DataCall(DataDefinition definition, Sort sortArgument, List<Expression> arguments) {
     return new DataCallExpression(definition, sortArgument, arguments);
   }
@@ -39,20 +35,12 @@ public class ExpressionFactory {
     return new DataCallExpression(definition, sortArgument, Arrays.asList(arguments));
   }
 
-  public static DataCallExpression DataCall(DataDefinition definition, Level lp, Level lh, Expression... arguments) {
-    return new DataCallExpression(definition, new Sort(lp, lh), Arrays.asList(arguments));
-  }
-
   public static ClassCallExpression ClassCall(ClassDefinition definition) {
     return new ClassCallExpression(definition, Sort.STD);
   }
 
   public static ConCallExpression ConCall(Constructor definition, Sort sortArgument, List<Expression> dataTypeArguments, Expression... arguments) {
     return new ConCallExpression(definition, sortArgument, dataTypeArguments, Arrays.asList(arguments));
-  }
-
-  public static ConCallExpression ConCall(Constructor definition, Level lp, Level lh, List<Expression> dataTypeArguments, Expression... arguments) {
-    return new ConCallExpression(definition, new Sort(lp, lh), dataTypeArguments, Arrays.asList(arguments));
   }
 
   public static ReferenceExpression Ref(Binding binding) {

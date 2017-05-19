@@ -59,7 +59,7 @@ public class ConstructorPattern extends Pattern {
         Expression type = link.getType().getExpr().subst(subst).normalize(NormalizeVisitor.Mode.WHNF);
         assert type.toDataCall() != null && type.toDataCall().getDefinition() == ((ConstructorPattern) patternArgument.getPattern()).getConstructor().getDataType();
         ExprSubstitution subSubst = ((ConstructorPattern) patternArgument.getPattern()).getMatchedArguments(new ArrayList<>(type.toDataCall().getDefCallArguments()));
-        levelSubst = new StdLevelSubstitution(type.toDataCall().getSortArgument().getPLevel(), type.toDataCall().getSortArgument().getHLevel());
+        levelSubst = new StdLevelSubstitution(type.toDataCall().getSortArgument());
         subst.addAll(subSubst);
       } else {
         levelSubst = LevelSubstitution.EMPTY;
