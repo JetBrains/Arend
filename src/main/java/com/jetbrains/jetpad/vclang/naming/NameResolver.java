@@ -1,11 +1,9 @@
 package com.jetbrains.jetpad.vclang.naming;
 
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
-import com.jetbrains.jetpad.vclang.naming.error.WrongDefinition;
-import com.jetbrains.jetpad.vclang.naming.namespace.*;
+import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
+import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -115,17 +113,16 @@ public class NameResolver {
     return ns == null ? null : ns.getRegisteredClass();
   }
 
-  public Abstract.ClassField resolveClassField(Abstract.ClassDefinition classDefinition, String name, ErrorReporter errorReporter, Abstract.SourceNode cause) {
+  public Abstract.ClassField resolveClassField(Abstract.ClassDefinition classDefinition, String name) {
     Abstract.Definition resolvedRef = nsProviders.dynamics.forClass(classDefinition).resolveName(name);
     if (resolvedRef instanceof Abstract.ClassField) {
       return (Abstract.ClassField) resolvedRef;
     } else {
-      errorReporter.report(resolvedRef != null ? new WrongDefinition("Expected a class field", resolvedRef, cause) : new NotInScopeError(cause, name));
       return null;
     }
   }
 
-  public Abstract.ClassField resolveClassFieldByView(Abstract.ClassView classView, String name, ErrorReporter errorReporter, Abstract.SourceNode cause) {
+  public Abstract.ClassField resolveClassFieldByView(Abstract.ClassView classView, String name) {
     if (name.equals(classView.getClassifyingFieldName())) {
       return classView.getClassifyingField();
     }
@@ -134,8 +131,6 @@ public class NameResolver {
         return viewField.getUnderlyingField();
       }
     }
-
-    errorReporter.report(new NotInScopeError(cause, name));
     return null;
   }
 

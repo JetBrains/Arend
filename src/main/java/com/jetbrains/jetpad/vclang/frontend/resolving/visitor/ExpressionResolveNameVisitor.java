@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.frontend.parser.BinOpParser;
 import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
+import com.jetbrains.jetpad.vclang.naming.error.NoSuchFieldError;
 import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -277,10 +278,14 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
 
   public void visitClassFieldImpls(Collection<? extends Abstract.ClassFieldImpl> classFieldImpls, Abstract.ClassView classView, Abstract.ClassDefinition classDef) {
     for (Abstract.ClassFieldImpl statement : classFieldImpls) {
-      Abstract.ClassField resolvedRef = classView != null ? myNameResolver.resolveClassFieldByView(classView, statement.getImplementedFieldName(), myResolveListener, statement) : classDef != null ? myNameResolver.resolveClassField(classDef, statement.getImplementedFieldName(), myResolveListener, statement) : null;
+      String name = statement.getImplementedFieldName();
+      Abstract.ClassField resolvedRef = classView != null ? myNameResolver.resolveClassFieldByView(classView, name) : classDef != null ? myNameResolver.resolveClassField(classDef, name) : null;
       if (resolvedRef != null) {
         myResolveListener.implementResolved(statement, resolvedRef);
+      } else {
+        myResolveListener.report(new NoSuchFieldError(statement, name));
       }
+
       statement.getImplementation().accept(this, null);
     }
   }

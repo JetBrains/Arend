@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateDefinitionError;
+import com.jetbrains.jetpad.vclang.naming.error.NoSuchFieldError;
 import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.error.WrongDefinition;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
@@ -206,9 +207,11 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
 
   @Override
   public Void visitImplement(Abstract.Implementation def, Scope parentScope) {
-    Abstract.ClassField referable = myNameResolver.resolveClassField(def.getParentDefinition(), def.getName(), myResolveListener, def);
+    Abstract.ClassField referable = myNameResolver.resolveClassField(def.getParentDefinition(), def.getName());
     if (referable != null) {
       myResolveListener.implementResolved(def, referable);
+    } else {
+      myResolveListener.report(new NoSuchFieldError(def, def.getName()));
     }
 
     def.getImplementation().accept(new ExpressionResolveNameVisitor(parentScope, myContext, myNameResolver, myResolveListener), null);
@@ -236,9 +239,11 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     myResolveListener.classViewResolved(def, (Abstract.ClassField) resolvedClassifyingField);
 
     for (Abstract.ClassViewField viewField : def.getFields()) {
-      Abstract.ClassField classField = myNameResolver.resolveClassField((Abstract.ClassDefinition) resolvedUnderlyingClass, viewField.getUnderlyingFieldName(), myResolveListener, viewField);
+      Abstract.ClassField classField = myNameResolver.resolveClassField((Abstract.ClassDefinition) resolvedUnderlyingClass, viewField.getUnderlyingFieldName());
       if (classField != null) {
         myResolveListener.classViewFieldResolved(viewField, classField);
+      } else {
+        myResolveListener.report(new NoSuchFieldError(def, def.getName()));
       }
     }
     return null;
