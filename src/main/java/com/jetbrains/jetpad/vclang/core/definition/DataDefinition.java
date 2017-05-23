@@ -73,6 +73,15 @@ public class DataDefinition extends Definition {
     return myConstructors;
   }
 
+  public Constructor getConstructor(Abstract.Constructor abstractCon) {
+    for (Constructor constructor : myConstructors) {
+      if (constructor.getAbstractDefinition().equals(abstractCon)) {
+        return constructor;
+      }
+    }
+    return null;
+  }
+
   public Constructor getConstructor(String name) {
     for (Constructor constructor : myConstructors) {
       if (constructor.getName().equals(name)) {
