@@ -8,7 +8,7 @@ import java.util.List;
 
 public class Utils {
   public static int getNumArguments(Pattern pattern) {
-    if (pattern instanceof NamePattern || pattern instanceof AnyConstructorPattern) {
+    if (pattern instanceof NamePattern || pattern instanceof EmptyPattern) {
       return 1;
     } else if (pattern instanceof ConstructorPattern) {
       return getNumArguments(((ConstructorPattern) pattern).getArguments());
@@ -63,9 +63,9 @@ public class Utils {
     List<Abstract.PatternArgument> result = new ArrayList<>();
     int indexI = 0;
     for (DependentLink link = params; link.hasNext(); link = link.getNext()) {
-      Abstract.PatternArgument curPattern = indexI < patterns.size() ? patterns.get(indexI) : new PatternArgument(new NamePattern(link), false, true);
+      Abstract.PatternArgument curPattern = indexI < patterns.size() ? patterns.get(indexI) : new PatternArgument(new NamePattern(link), false);
       if (curPattern.isExplicit() && !link.isExplicit()) {
-        curPattern = new PatternArgument(new NamePattern(link), false, true);
+        curPattern = new PatternArgument(new NamePattern(link), false);
       } else {
         indexI++;
       }

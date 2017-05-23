@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.elimtree.BindingPattern;
 import com.jetbrains.jetpad.vclang.core.elimtree.ConstructorPattern;
-import com.jetbrains.jetpad.vclang.core.elimtree.EmptyPattern;
 import com.jetbrains.jetpad.vclang.core.elimtree.Pattern;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
@@ -25,8 +24,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class TypecheckPattern {
-  public static Pair<List<Pattern>, Map<Abstract.ReferableSourceNode, Binding>> typecheckPatternArguments(List<? extends Abstract.PatternArgument> patternArgs, DependentLink parameters, LocalErrorReporter errorReporter, Abstract.SourceNode sourceNode, boolean allowInterval) {
+class TypecheckPattern {
+  static Pair<List<Pattern>, Map<Abstract.ReferableSourceNode, Binding>> typecheckPatternArguments(List<? extends Abstract.PatternArgument> patternArgs, DependentLink parameters, LocalErrorReporter errorReporter, Abstract.SourceNode sourceNode, boolean allowInterval) {
     Map<Abstract.ReferableSourceNode, Binding> context = new HashMap<>();
     Pair<List<Pattern>, List<Expression>> result = typecheckPatternArguments(patternArgs, parameters, context, errorReporter, sourceNode, allowInterval);
     return result == null ? null : new Pair<>(result.proj1, result.proj2 == null ? null : context);
@@ -87,13 +86,13 @@ public class TypecheckPattern {
         return null;
       }
 
-      if (pattern instanceof Abstract.AnyConstructorPattern) {
+      if (pattern instanceof Abstract.EmptyPattern) {
         List<ConCallExpression> conCalls = expr.toDataCall().getMatchedConstructors();
         if (!conCalls.isEmpty()) {
           errorReporter.report(new LocalTypeCheckingError("Data type " + expr + " is not empty, available constructors: " + conCalls, pattern));
           return null;
         }
-        result.add(EmptyPattern.INSTANCE);
+        result.add(com.jetbrains.jetpad.vclang.core.elimtree.EmptyPattern.INSTANCE);
         exprs = null;
         parameters = parameters.getNext();
         continue;

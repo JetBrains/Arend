@@ -411,7 +411,6 @@ public final class Abstract {
   // Patterns
 
   public interface PatternArgument extends SourceNode {
-    boolean isHidden();
     boolean isExplicit();
     Pattern getPattern();
   }
@@ -431,7 +430,7 @@ public final class Abstract {
     Abstract.Constructor getConstructor();
   }
 
-  public interface AnyConstructorPattern extends Pattern {}
+  public interface EmptyPattern extends Pattern {}
 
   public interface Constructor extends Definition {
     List<? extends PatternArgument> getPatterns();

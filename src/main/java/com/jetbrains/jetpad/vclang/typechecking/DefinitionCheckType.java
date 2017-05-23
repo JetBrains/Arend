@@ -554,7 +554,7 @@ public class DefinitionCheckType {
       if (patterns != null) {
         List<Abstract.PatternArgument> processedPatterns = new ArrayList<>(patterns);
         if (dataDefinition.getThisClass() != null) {
-          processedPatterns.add(0, new PatternArgument(new NamePattern(dataDefinition.getParameters()), true, true));
+          processedPatterns.add(0, new PatternArgument(new NamePattern(dataDefinition.getParameters()), true));
         }
         processedPatterns = processImplicitPatterns(def, dataDefinition.getParameters(), processedPatterns, visitor.getErrorReporter());
         if (processedPatterns == null) {

@@ -221,7 +221,7 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.PatternArgument cPatternArg(Concrete.Pattern pattern, boolean isExplicit) {
-    return new Concrete.PatternArgument(POSITION, pattern, isExplicit, false);
+    return new Concrete.PatternArgument(POSITION, pattern, isExplicit);
   }
 
   public static Concrete.BinOpExpression cBinOp(Concrete.Expression left, Abstract.Definition binOp, Concrete.Expression right) {

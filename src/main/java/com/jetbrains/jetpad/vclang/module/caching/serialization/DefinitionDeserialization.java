@@ -95,7 +95,7 @@ class DefinitionDeserialization {
   private Patterns readPatterns(DefinitionProtos.Definition.DataData.Constructor.Patterns proto, DependentLink[] prev) throws DeserializationError {
     List<PatternArgument> args = new ArrayList<>();
     for (DefinitionProtos.Definition.DataData.Constructor.PatternArgument argProto : proto.getPatternArgumentList()) {
-      args.add(new PatternArgument(readPattern(argProto.getPattern(), prev), !argProto.getNotExplicit(), argProto.getHidden()));
+      args.add(new PatternArgument(readPattern(argProto.getPattern(), prev), !argProto.getNotExplicit()));
     }
     return new Patterns(args);
   }
@@ -111,7 +111,7 @@ class DefinitionDeserialization {
         TypedDependentLink param1 = readParameter(proto.getAnyConstructor().getVar());
         if (prev[0] != null) prev[0].setNext(param1);
         prev[0] = param1;
-        return new AnyConstructorPattern(param1);
+        return new EmptyPattern(param1);
       case CONSTRUCTOR:
         return new ConstructorPattern(myCalltargetProvider.getCalltarget(proto.getConstructor().getConstructorRef(), Constructor.class), readPatterns(proto.getConstructor().getPatterns(), prev));
       default:

@@ -47,7 +47,7 @@ class PatternsExpander {
     List<Integer> anyPatternIdxs = new ArrayList<>();
     boolean hasConstructorPattern = false;
     for (int i = 0; i < patterns.size(); i++) {
-      if (patterns.get(i) instanceof ConstructorPattern || patterns.get(i) instanceof AnyConstructorPattern) {
+      if (patterns.get(i) instanceof ConstructorPattern || patterns.get(i) instanceof EmptyPattern) {
         hasConstructorPattern = true;
       } else if (patterns.get(i) instanceof NamePattern) {
         anyPatternIdxs.add(i);
@@ -113,7 +113,7 @@ class PatternsExpander {
         if (patterns.get(j) instanceof NamePattern) {
           indices.add(j);
           nestedPatterns.add(anyPatterns);
-        } else if (patterns.get(j) instanceof AnyConstructorPattern) {
+        } else if (patterns.get(j) instanceof EmptyPattern) {
           indices.add(j);
           nestedPatterns.add(anyPatterns);
           hasConstructor = true;

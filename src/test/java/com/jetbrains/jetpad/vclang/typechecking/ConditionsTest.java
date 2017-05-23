@@ -270,13 +270,13 @@ public class ConditionsTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void dataConditionAnyPatternError() {
+  public void dataConditionEmptyPatternError() {
     typeCheckClass(
       "\\data D | c | c' | l I\n" +
       "  \\with\n" +
       "    | l left => c\n" +
       "    | l right => c'\n" +
       "\\data E D\n" +
-      " | E _! => e", 1);
+      " | E () => e", 1);
   }
 }

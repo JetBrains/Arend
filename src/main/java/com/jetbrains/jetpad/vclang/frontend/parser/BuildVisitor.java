@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.util.Pair;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -11,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.frontend.parser.VcgrammarParser.*;
 
@@ -232,57 +234,63 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return Abstract.Precedence.Associativity.RIGHT_ASSOC;
   }
 
-  @Override
-  public Concrete.NamePattern visitAnyPatternAny(AnyPatternAnyContext ctx) {
-    Concrete.Position position = tokenPosition(ctx.start);
-    return new Concrete.NamePattern(position, new Concrete.LocalVariable(position, null));
+  private Concrete.Pattern visitPattern(PatternContext ctx) {
+    return (Concrete.Pattern) visit(ctx);
   }
 
   @Override
-  public Concrete.AnyConstructorPattern visitAnyPatternConstructor(AnyPatternConstructorContext ctx) {
-    return new Concrete.AnyConstructorPattern(tokenPosition(ctx.start));
-  }
-
-  @Override
-  public Concrete.Pattern visitPatternAny(PatternAnyContext ctx) {
-    return (Concrete.Pattern) visit(ctx.anyPattern());
+  public Concrete.Pattern visitPatternAtom(PatternAtomContext ctx) {
+    Concrete.PatternArgument patternArg = (Concrete.PatternArgument) visit(ctx.atomPattern());
+    if (!patternArg.isExplicit()) {
+      myErrorReporter.report(new ParserError(tokenPosition(ctx.getStart()), "Expected an explicit pattern"));
+    }
+    return patternArg.getPattern();
   }
 
   @Override
   public Concrete.Pattern visitPatternConstructor(PatternConstructorContext ctx) {
-    if (ctx.name() instanceof NameIdContext && ctx.patternArg().size() == 0) {
+    if (ctx.name() instanceof NameIdContext && ctx.atomPatternOrID().size() == 0) {
       return new Concrete.NamePattern(tokenPosition(ctx.start), new Concrete.LocalVariable(tokenPosition(((NameIdContext) ctx.name()).ID().getSymbol()), ((NameIdContext) ctx.name()).ID().getText()));
     } else {
-      return new Concrete.ConstructorPattern(tokenPosition(ctx.start), visitName(ctx.name()), visitPatternArgs(ctx.patternArg()));
+      return new Concrete.ConstructorPattern(tokenPosition(ctx.start), visitName(ctx.name()), ctx.atomPatternOrID().stream().map(this::visitAtomPattern).collect(Collectors.toList()));
     }
   }
 
-  @Override
-  public Concrete.PatternArgument visitPatternArgExplicit(PatternArgExplicitContext ctx) {
-    return new Concrete.PatternArgument(tokenPosition(ctx.start), (Concrete.Pattern) visit(ctx.pattern()), true, false);
+  private Concrete.PatternArgument visitAtomPattern(AtomPatternOrIDContext ctx) {
+    return (Concrete.PatternArgument) visit(ctx);
   }
 
   @Override
-  public Concrete.PatternArgument visitPatternArgImplicit(PatternArgImplicitContext ctx) {
-    return new Concrete.PatternArgument(tokenPosition(ctx.start), (Concrete.Pattern) visit(ctx.pattern()), false, false);
+  public Concrete.PatternArgument visitPatternExplicit(PatternExplicitContext ctx) {
+    return new Concrete.PatternArgument(tokenPosition(ctx.getStart()), visitPattern(ctx.pattern()), true);
   }
 
   @Override
-  public Concrete.PatternArgument visitPatternArgAny(PatternArgAnyContext ctx) {
-    return new Concrete.PatternArgument(tokenPosition(ctx.start), (Concrete.Pattern) visit(ctx.anyPattern()), true, false);
+  public Concrete.PatternArgument visitPatternImplicit(PatternImplicitContext ctx) {
+    return new Concrete.PatternArgument(tokenPosition(ctx.getStart()), visitPattern(ctx.pattern()), false);
   }
 
   @Override
-  public Concrete.PatternArgument visitPatternArgID(PatternArgIDContext ctx) {
-    return new Concrete.PatternArgument(tokenPosition(ctx.start), new Concrete.NamePattern(tokenPosition(ctx.start), new Concrete.LocalVariable(tokenPosition(ctx.ID().getSymbol()), ctx.ID().getText())), true, false);
+  public Concrete.PatternArgument visitPatternEmpty(PatternEmptyContext ctx) {
+    Concrete.Position position = tokenPosition(ctx.getStart());
+    return new Concrete.PatternArgument(position, new Concrete.EmptyPattern(position), true);
   }
 
-  private List<Concrete.PatternArgument> visitPatternArgs(List<PatternArgContext> patternArgContexts) {
-    List<Concrete.PatternArgument> patterns = new ArrayList<>();
-    for (PatternArgContext patternArgCtx : patternArgContexts) {
-      patterns.add((Concrete.PatternArgument) visit(patternArgCtx));
-    }
-    return patterns;
+  @Override
+  public Concrete.PatternArgument visitPatternOrIDAtom(PatternOrIDAtomContext ctx) {
+    return (Concrete.PatternArgument) visit(ctx.atomPattern());
+  }
+
+  @Override
+  public Concrete.PatternArgument visitPatternID(PatternIDContext ctx) {
+    Concrete.Position position = tokenPosition(ctx.getStart());
+    return new Concrete.PatternArgument(position, new Concrete.NamePattern(position, new Concrete.LocalVariable(position, ctx.ID().getText())), true);
+  }
+
+  @Override
+  public Concrete.PatternArgument visitPatternAny(PatternAnyContext ctx) {
+    Concrete.Position position = tokenPosition(ctx.getStart());
+    return new Concrete.PatternArgument(position, new Concrete.NamePattern(position, new Concrete.LocalVariable(position, "_")), true);
   }
 
   @Override
@@ -412,9 +420,23 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return result;
   }
 
+  private static Pair<String, List<Concrete.PatternArgument>> splitPattern(Concrete.Pattern pattern) {
+    String name = null;
+    List<Concrete.PatternArgument> patterns = null;
+    if (pattern instanceof Concrete.NamePattern) {
+      name = ((Concrete.NamePattern) pattern).getName();
+    } else
+    if (pattern instanceof Concrete.ConstructorPattern) {
+      name = ((Concrete.ConstructorPattern) pattern).getConstructorName();
+      patterns = ((Concrete.ConstructorPattern) pattern).getArguments();
+    }
+    return new Pair<>(name, patterns);
+  }
+
   @Override
   public Concrete.Condition visitCondition(ConditionContext ctx) {
-    return new Concrete.Condition(tokenPosition(ctx.start), visitName(ctx.name()), visitPatternArgs(ctx.patternArg()), visitExpr(ctx.expr()));
+    Pair<String, List<Concrete.PatternArgument>> splitPattern = splitPattern(visitPattern(ctx.pattern()));
+    return new Concrete.Condition(tokenPosition(ctx.start), splitPattern.proj1, splitPattern.proj2, visitExpr(ctx.expr()));
   }
 
   private void visitConstructorDef(ConstructorDefContext ctx, Concrete.DataDefinition def) {
@@ -422,13 +444,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     if (ctx instanceof WithPatternsContext) {
       WithPatternsContext wpCtx = (WithPatternsContext) ctx;
-      String dataDefName = visitName(wpCtx.name());
-      if (!def.getName().equals(dataDefName)) {
-        myErrorReporter.report(new ParserError(tokenPosition(wpCtx.name().getStart()), "Expected a data type name: " + def.getName()));
+      Concrete.Pattern pattern = visitPattern(wpCtx.pattern());
+      Pair<String, List<Concrete.PatternArgument>> splitPattern = splitPattern(pattern);
+      patterns = splitPattern.proj2;
+      if (!def.getName().equals(splitPattern.proj1)) {
+        myErrorReporter.report(new ParserError(pattern.getPosition(), "Expected a data type name: " + def.getName()));
         return;
       }
-
-      patterns = visitPatternArgs(wpCtx.patternArg());
     }
 
     List<ConstructorContext> constructorCtxs = ctx instanceof WithPatternsContext ?
@@ -951,7 +973,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     for (ClauseContext clauseCtx : ctx.clause()) {
       List<Concrete.Pattern> patterns = new ArrayList<>();
       for (PatternContext patternCtx : clauseCtx.pattern()) {
-        patterns.add((Concrete.Pattern) visit(patternCtx));
+        patterns.add(visitPattern(patternCtx));
       }
 
       if (patterns.size() != ctx.expr().size()) {

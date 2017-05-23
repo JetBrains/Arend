@@ -52,7 +52,6 @@ message Definition {
             }
             message PatternArgument {
                 bool not_explicit = 1;
-                bool hidden = 2;
                 Pattern pattern = 3;
             }
             message Pattern {

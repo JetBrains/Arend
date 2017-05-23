@@ -33,7 +33,7 @@ classViewField : name ('=>' precedence name)? ;
 
 conditionDef : '\\with' '|'? condition ('|' condition)*;
 
-condition : name patternArg* '=>' expr;
+condition : pattern '=>' expr;
 
 where : '\\where' ('{' statements '}' | statement);
 
@@ -45,23 +45,23 @@ arrow : '<='                            # arrowLeft
       | '=>'                            # arrowRight
       ;
 
-constructorDef : '|' name patternArg* '=>' constructor ('|' constructor)* ';'? # withPatterns
-               | '|' constructor                                               # noPatterns
+constructorDef : '|' pattern '=>' constructor ('|' constructor)* ';'? # withPatterns
+               | '|' constructor                                      # noPatterns
                ;
 
-anyPattern : '_'  # anyPatternAny
-           | '_!' # anyPatternConstructor
-           ;
-
-pattern : anyPattern       # patternAny
-        | name patternArg* # patternConstructor
+pattern : atomPattern             # patternAtom
+        | name atomPatternOrID*   # patternConstructor
         ;
 
-patternArg : '(' pattern ')'    # patternArgExplicit
-           | '{' pattern '}'    # patternArgImplicit
-           | anyPattern         # patternArgAny
-           | ID                 # patternArgID
-           ;
+atomPattern : '(' pattern ')'     # patternExplicit
+            | '{' pattern '}'     # patternImplicit
+            | '()'                # patternEmpty
+            | '_'                 # patternAny
+            ;
+
+atomPatternOrID : atomPattern     # patternOrIDAtom
+                | ID              # patternID
+                ;
 
 constructor : precedence name tele*;
 
@@ -75,7 +75,7 @@ associativity : '\\infix'               # nonAssoc
               ;
 
 name  : ID                              # nameId
-      | '(' BIN_OP ')'               # nameBinOp
+      | '(' BIN_OP ')'                  # nameBinOp
       ;
 
 expr  : (binOpLeft+ | ) binOpArg                            # binOp

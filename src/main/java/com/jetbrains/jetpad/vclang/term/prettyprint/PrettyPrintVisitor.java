@@ -783,10 +783,8 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public void prettyPrintCondition(Abstract.Condition condition) {
     myBuilder.append(condition.getConstructorName());
     for (Abstract.PatternArgument patternArg : condition.getPatterns()) {
-      if (!patternArg.isHidden()) {
-        myBuilder.append(" ");
-        prettyPrintPatternArg(patternArg);
-      }
+      myBuilder.append(" ");
+      prettyPrintPatternArg(patternArg);
     }
     myBuilder.append(" => ");
     condition.getTerm().accept(this, Abstract.Expression.PREC);
@@ -848,15 +846,13 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
         name = "_";
       }
       myBuilder.append(name);
-    } else if (pattern instanceof Abstract.AnyConstructorPattern) {
-      myBuilder.append("_!");
+    } else if (pattern instanceof Abstract.EmptyPattern) {
+      myBuilder.append("()");
     } else if (pattern instanceof Abstract.ConstructorPattern) {
       myBuilder.append(new Name(((Abstract.ConstructorPattern) pattern).getConstructorName()).getPrefixName());
       for (Abstract.PatternArgument patternArg : ((Abstract.ConstructorPattern) pattern).getArguments()) {
-        if (!patternArg.isHidden()) {
-          myBuilder.append(' ');
-          prettyPrintPatternArg(patternArg);
-        }
+        myBuilder.append(' ');
+        prettyPrintPatternArg(patternArg);
       }
     }
   }
@@ -867,10 +863,8 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     if (patternArgs != null) {
       myBuilder.append(def.getDataType().getName()).append(' ');
       for (Abstract.PatternArgument patternArg : patternArgs) {
-        if (!patternArg.isHidden()) {
-          prettyPrintPatternArg(patternArg);
-          myBuilder.append(' ');
-        }
+        prettyPrintPatternArg(patternArg);
+        myBuilder.append(' ');
       }
       myBuilder.append("=> ");
     }

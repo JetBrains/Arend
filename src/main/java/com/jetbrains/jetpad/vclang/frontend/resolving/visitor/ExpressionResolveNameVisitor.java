@@ -273,7 +273,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
         myResolveListener.report(def == null ? new NotInScopeError(pattern, name) : new WrongDefinition("Expected a constructor", def, pattern));
       }
       return null;
-    } else if (pattern instanceof Abstract.AnyConstructorPattern) {
+    } else if (pattern instanceof Abstract.EmptyPattern) {
       return null;
     } else {
       throw new IllegalStateException();

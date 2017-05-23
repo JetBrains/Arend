@@ -99,7 +99,6 @@ class DefinitionSerialization {
     for (PatternArgument patternArg : patterns.getPatterns()) {
       DefinitionProtos.Definition.DataData.Constructor.PatternArgument.Builder paBuilder = DefinitionProtos.Definition.DataData.Constructor.PatternArgument.newBuilder();
       paBuilder.setNotExplicit(!patternArg.isExplicit());
-      paBuilder.setHidden(patternArg.isHidden());
       paBuilder.setPattern(writePattern(patternArg.getPattern()));
       builder.addPatternArgument(paBuilder.build());
     }
@@ -113,10 +112,10 @@ class DefinitionSerialization {
           DefinitionProtos.Definition.DataData.Constructor.Pattern.Name.newBuilder()
             .setVar(writeParameter((TypedDependentLink) pattern.getParameters())) // TODO: This cast is potentially dangerous
       );
-    } else if (pattern instanceof AnyConstructorPattern) {
+    } else if (pattern instanceof EmptyPattern) {
       builder.setAnyConstructor(
           DefinitionProtos.Definition.DataData.Constructor.Pattern.AnyConstructor.newBuilder()
-              .setVar(writeParameter(((AnyConstructorPattern) pattern).getParameters()))
+              .setVar(writeParameter(((EmptyPattern) pattern).getParameters()))
       );
     } else if (pattern instanceof ConstructorPattern) {
       DefinitionProtos.Definition.DataData.Constructor.Pattern.ConstructorRef.Builder pBuilder = DefinitionProtos.Definition.DataData.Constructor.Pattern.ConstructorRef.newBuilder();

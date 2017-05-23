@@ -9,10 +9,10 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.Collections;
 
-public class AnyConstructorPattern extends Pattern implements Abstract.AnyConstructorPattern {
+public class EmptyPattern extends Pattern implements Abstract.EmptyPattern {
   private final TypedDependentLink myLink;
 
-  public AnyConstructorPattern(TypedDependentLink link) {
+  public EmptyPattern(TypedDependentLink link) {
     assert link != null;
     myLink = link;
   }

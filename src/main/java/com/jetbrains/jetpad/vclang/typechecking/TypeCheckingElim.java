@@ -123,7 +123,7 @@ public class TypeCheckingElim {
       if (result == null || result instanceof ExpandPatternErrorResult)
         return null;
 
-      typedPatterns.add(new PatternArgument(((ExpandPatternOKResult) result).pattern, patternArg.isExplicit(), patternArg.isHidden()));
+      typedPatterns.add(new PatternArgument(((ExpandPatternOKResult) result).pattern, patternArg.isExplicit()));
 
       for (DependentLink link = ((ExpandPatternOKResult) result).pattern.getParameters(); link.hasNext(); link = link.getNext()) {
         bounds.add(link);
@@ -386,7 +386,7 @@ public class TypeCheckingElim {
       myVisitor.getFreeBindings().add(links.getLast());
       pattern.setWellTyped(namePattern);
       return new ExpandPatternOKResult(new ReferenceExpression(links.getLast()), namePattern);
-    } else if (pattern instanceof Abstract.AnyConstructorPattern || pattern instanceof Abstract.ConstructorPattern) {
+    } else if (pattern instanceof Abstract.EmptyPattern || pattern instanceof Abstract.ConstructorPattern) {
       LocalTypeCheckingError error = null;
 
       Type type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF);
@@ -429,10 +429,10 @@ public class TypeCheckingElim {
         return new ExpandPatternErrorResult(error);
       }
 
-      if (pattern instanceof Abstract.AnyConstructorPattern) {
+      if (pattern instanceof Abstract.EmptyPattern) {
         TypedDependentLink param = new TypedDependentLink(true, null, type, EmptyDependentLink.getInstance());
         links.append(param);
-        AnyConstructorPattern newPattern = new AnyConstructorPattern(param);
+        EmptyPattern newPattern = new EmptyPattern(param);
         pattern.setWellTyped(newPattern);
         myVisitor.getFreeBindings().add(param);
         return new ExpandPatternOKResult(new ReferenceExpression(param), newPattern);
@@ -511,7 +511,7 @@ public class TypeCheckingElim {
         if (result instanceof ExpandPatternErrorResult)
           return result;
         ExpandPatternOKResult okResult = (ExpandPatternOKResult) result;
-        resultPatterns.add(new PatternArgument(okResult.pattern, subPattern.isExplicit(), subPattern.isHidden()));
+        resultPatterns.add(new PatternArgument(okResult.pattern, subPattern.isExplicit()));
         tailArgs = DependentLink.Helper.subst(tailArgs.getNext(), new ExprSubstitution(tailArgs, okResult.expression));
         arguments.add(okResult.expression);
       }

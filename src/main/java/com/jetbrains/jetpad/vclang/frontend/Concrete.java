@@ -1464,13 +1464,11 @@ public final class Concrete {
   // Patterns
 
   public static class PatternArgument extends SourceNode implements Abstract.PatternArgument {
-    private final boolean myHidden;
     private final boolean myExplicit;
     private Pattern myPattern;
 
-    public PatternArgument(Position position, Pattern pattern, boolean explicit, boolean hidden) {
+    public PatternArgument(Position position, Pattern pattern, boolean explicit) {
       super(position);
-      this.myHidden = hidden;
       this.myPattern = pattern;
       this.myExplicit = explicit;
     }
@@ -1480,17 +1478,12 @@ public final class Concrete {
     }
 
     @Override
-    public boolean isHidden() {
-      return myHidden;
-    }
-
-    @Override
     public boolean isExplicit() {
       return myExplicit;
     }
 
     @Override
-    public Abstract.Pattern getPattern() {
+    public Pattern getPattern() {
       return myPattern;
     }
   }
@@ -1565,8 +1558,8 @@ public final class Concrete {
     }
   }
 
-  public static class AnyConstructorPattern extends Pattern implements Abstract.AnyConstructorPattern {
-    public AnyConstructorPattern(Position position) {
+  public static class EmptyPattern extends Pattern implements Abstract.EmptyPattern {
+    public EmptyPattern(Position position) {
       super(position);
     }
   }
