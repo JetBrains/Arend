@@ -190,4 +190,19 @@ public class ParserTest extends NameResolverTestCase {
   public void incorrectDefinitionName() {
     parseDef("\\function (|) => \\Prop", 1);
   }
+
+  @Test
+  public void lineComment() {
+    parseDef("\\function f => -- ^_^ @_@ >.<\n  \\Prop");
+  }
+
+  @Test
+  public void blockComment() {
+    parseDef("\\function f => {- ^_^ @_@ >.< wow!!!-}\n  \\Prop");
+  }
+
+  @Test
+  public void lineCommentLastLine() {
+    parseDef("\\function f => \\Prop  -- ^_^ @_@ >.< wow!!!");
+  }
 }

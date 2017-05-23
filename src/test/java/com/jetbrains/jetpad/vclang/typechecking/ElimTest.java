@@ -354,9 +354,23 @@ public class ElimTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void threeVars() {
+    typeCheckClass(
+      "\\function f (x y z : Nat) : Nat <= \\elim x, y, z\n" +
+      "  | zero, zero, zero => zero\n" +
+      "  | zero, zero, suc k => k\n" +
+      "  | zero, suc m, zero => m\n" +
+      "  | zero, suc m, suc k => k\n" +
+      "  | suc n, zero, zero => n\n" +
+      "  | suc n, zero, suc k => k\n" +
+      "  | suc n, suc m, zero => m\n" +
+      "  | suc n, suc m, suc k => n");
+  }
+
+  @Test
   public void dependentElim() {
     typeCheckClass(
-        "\\data Bool | true | false\n" +
+      "\\data Bool | true | false\n" +
         "\\function if (b : Bool) : \\Set <= \\elim b | true => Nat | false => Nat -> Nat\n" +
         "\\function test (b : Bool) (x : if b) : Nat <= \\elim b, x | true, zero => 0 | true, suc n => n | false, _ => 0"
     );
