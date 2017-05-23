@@ -45,7 +45,10 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
   private ConsoleMain(StorageManager storageManager, boolean recompile) {
     super(storageManager.storage, recompile);
     this.storageManager = storageManager;
-    storageManager.nameResolver.setModuleResolver(modulePath -> moduleLoader.load(storage.locateModule(modulePath)));
+    storageManager.nameResolver.setModuleResolver(modulePath -> {
+      CompositeSourceSupplier<FileStorage.SourceId, CompositeSourceSupplier<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId sourceId = storage.locateModule(modulePath);
+      return sourceId != null ? moduleLoader.load(sourceId) : null;
+    });
   }
 
   @Override
