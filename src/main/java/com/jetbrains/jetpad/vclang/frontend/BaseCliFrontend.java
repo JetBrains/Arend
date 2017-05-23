@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
-import com.jetbrains.jetpad.vclang.error.Error;
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotSourceInfoCollector;
@@ -20,6 +20,7 @@ import com.jetbrains.jetpad.vclang.typechecking.SimpleTypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
+import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.order.BaseDependencyListener;
 
 import java.io.IOException;
@@ -38,12 +39,12 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   // Modules
   protected final SourceModuleLoader<SourceIdT> moduleLoader;
   protected final Map<SourceIdT, Abstract.ClassDefinition> loadedSources = new HashMap<>();
+  private final Set<SourceIdT> requestedSources = new LinkedHashSet<>();
 
   private final SourceInfoProvider<SourceIdT> srcInfoProvider;
 
   // Typechecking
   private final TypecheckerState state;
-  private final Set<SourceIdT> requestedSources = new LinkedHashSet<>();
 
 
   public BaseCliFrontend(Storage<SourceIdT> storage, boolean recompile) {
@@ -162,7 +163,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     private void loadingSucceeded(SourceIdT module, Abstract.ClassDefinition abstractDefinition) {
       assert abstractDefinition != null;
       if (!definitionIds.containsKey(module)) {
-        definitionIds.put(module, new HashMap<String, Abstract.Definition>());
+        definitionIds.put(module, new HashMap<>());
       }
       defIdCollector.visitClass(abstractDefinition, definitionIds.get(module));
       mySrcInfoCollector.visitModule(module, abstractDefinition);
@@ -247,7 +248,6 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     // Typecheck those sources
     Map<SourceIdT, ModuleResult> typeCheckResults = typeCheckSources(requestedSources);
-
     flushErrors();
 
     // Output nice per-module typechecking results
@@ -259,6 +259,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
         if (result == ModuleResult.ERRORS) numWithErrors += 1;
       }
     }
+    // Explicitly requested sources go last
     for (SourceIdT source : requestedSources) {
       ModuleResult result = typeCheckResults.get(source);
       reportTypeCheckResult(source, result == null ? ModuleResult.OK : result);
@@ -329,36 +330,40 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     System.out.println("--- Checking ---");
 
-    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), errorReporter, new TypecheckedReporter() {
+    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), new ErrorReporter() {
       @Override
-      public void typecheckingSucceeded(Abstract.Definition definition) {
-        SourceIdT source = srcInfoProvider.sourceOf(definition);
-        updateModuleResult(source, ModuleResult.OK);
-      }
+      public void report(GeneralError error) {
+        if (!(error instanceof TypeCheckingError)) throw new IllegalStateException("Non-typechecking error reported to typechecking reporter");
 
-      @Override
-      public void typecheckingFailed(Abstract.Definition definition) {
-        SourceIdT source = srcInfoProvider.sourceOf(definition);
-        boolean goals = false;
-        boolean errors = false;
-        for (GeneralError error : errorReporter.getErrorList()) {
-          if (error.getLevel() == Error.Level.GOAL) {
-            goals = true;
-          }
-          if (error.getLevel() == Error.Level.ERROR) {
-            errors = true;
-          }
+        final ModuleResult newResult;
+        switch (((TypeCheckingError) error).level) {
+          case ERROR:
+            newResult = ModuleResult.ERRORS;
+            break;
+          case GOAL:
+            newResult = ModuleResult.GOALS;
+            break;
+          default:
+            newResult = ModuleResult.OK;
         }
-        updateModuleResult(source, errors ? ModuleResult.ERRORS : goals ? ModuleResult.GOALS : ModuleResult.OK);
+        updateSourceResult(srcInfoProvider.sourceOf(((TypeCheckingError) error).definition), newResult);
 
-        flushErrors();
+        errorReporter.report(error);
       }
 
-      private void updateModuleResult(SourceIdT source, ModuleResult result) {
+      private void updateSourceResult(SourceIdT source, ModuleResult result) {
         ModuleResult prevResult = results.get(source);
         if (prevResult == null || result.ordinal() > prevResult.ordinal()) {
           results.put(source, result);
         }
+      }
+    }, new TypecheckedReporter() {
+      @Override
+      public void typecheckingSucceeded(Abstract.Definition definition) {
+      }
+      @Override
+      public void typecheckingFailed(Abstract.Definition definition) {
+        flushErrors();
       }
     }, new BaseDependencyListener()).typecheckModules(modulesToTypeCheck);
 
