@@ -352,4 +352,18 @@ public class ElimTest extends TypeCheckingTestCase {
         "\\function test (d : D) : 0 = 1 <= \\let x (d : D) : 0 = 1 <= \\elim d \\in x d"
     );
   }
+
+  @Test
+  public void threeVars() {
+    typeCheckClass(
+      "\\function f (x y z : Nat) : Nat <= \\elim x, y, z\n" +
+      "  | zero, zero, zero => zero\n" +
+      "  | zero, zero, suc k => k\n" +
+      "  | zero, suc m, zero => m\n" +
+      "  | zero, suc m, suc k => k\n" +
+      "  | suc n, zero, zero => n\n" +
+      "  | suc n, zero, suc k => k\n" +
+      "  | suc n, suc m, zero => m\n" +
+      "  | suc n, suc m, suc k => n");
+  }
 }
