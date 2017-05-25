@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.module.caching.serialization;
 
+import com.jetbrains.jetpad.vclang.core.context.LinkList;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
@@ -89,31 +90,29 @@ class DefinitionDeserialization {
   // Patterns
 
   Patterns readPatterns(DefinitionProtos.Definition.DataData.Constructor.Patterns proto) throws DeserializationError {
-    return readPatterns(proto, new DependentLink[] {null});
+    return readPatterns(proto, new LinkList());
   }
 
-  private Patterns readPatterns(DefinitionProtos.Definition.DataData.Constructor.Patterns proto, DependentLink[] prev) throws DeserializationError {
+  private Patterns readPatterns(DefinitionProtos.Definition.DataData.Constructor.Patterns proto, LinkList list) throws DeserializationError {
     List<PatternArgument> args = new ArrayList<>();
     for (DefinitionProtos.Definition.DataData.Constructor.PatternArgument argProto : proto.getPatternArgumentList()) {
-      args.add(new PatternArgument(readPattern(argProto.getPattern(), prev), !argProto.getNotExplicit()));
+      args.add(new PatternArgument(readPattern(argProto.getPattern(), list), !argProto.getNotExplicit()));
     }
     return new Patterns(args);
   }
 
-  private Pattern readPattern(DefinitionProtos.Definition.DataData.Constructor.Pattern proto, DependentLink[] prev) throws DeserializationError {
+  private Pattern readPattern(DefinitionProtos.Definition.DataData.Constructor.Pattern proto, LinkList list) throws DeserializationError {
     switch (proto.getKindCase()) {
       case NAME:
         DependentLink param = readParameter(proto.getName().getVar());
-        if (prev[0] != null) prev[0].setNext(param);
-        prev[0] = param;
+        list.append(param);
         return new NamePattern(param);
       case ANY_CONSTRUCTOR:
         TypedDependentLink param1 = readParameter(proto.getAnyConstructor().getVar());
-        if (prev[0] != null) prev[0].setNext(param1);
-        prev[0] = param1;
+        list.append(param1);
         return new EmptyPattern(param1);
       case CONSTRUCTOR:
-        return new ConstructorPattern(myCalltargetProvider.getCalltarget(proto.getConstructor().getConstructorRef(), Constructor.class), readPatterns(proto.getConstructor().getPatterns(), prev));
+        return new ConstructorPattern(myCalltargetProvider.getCalltarget(proto.getConstructor().getConstructorRef(), Constructor.class), readPatterns(proto.getConstructor().getPatterns(), list));
       default:
         throw new DeserializationError("Unknown Pattern kind: " + proto.getKindCase());
     }
@@ -154,8 +153,7 @@ class DefinitionDeserialization {
   // Parameters
 
   DependentLink readParameters(List<ExpressionProtos.Telescope> protos) throws DeserializationError {
-    DependentLink first = null;
-    DependentLink cur = null;
+    LinkList list = new LinkList();
     for (ExpressionProtos.Telescope proto : protos) {
       List<String> unfixedNames = new ArrayList<>(proto.getNameList().size());
       unfixedNames.addAll(proto.getNameList().stream().map(name -> name.isEmpty() ? null : name).collect(Collectors.toList()));
@@ -164,14 +162,9 @@ class DefinitionDeserialization {
       for (DependentLink link = tele; link.hasNext(); link = link.getNext()) {
         registerBinding(link);
       }
-      if (first == null) {
-        cur = first = tele;
-      } else {
-        cur.setNext(tele);
-        cur = tele;
-      }
+      list.append(tele);
     }
-    return first != null ? first : EmptyDependentLink.getInstance();
+    return list.getFirst();
   }
 
   SingleDependentLink readSingleParameter(ExpressionProtos.Telescope proto) throws DeserializationError {

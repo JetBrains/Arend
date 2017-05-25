@@ -81,7 +81,7 @@ public class ExpressionFactory {
 
   public static DependentLink params(DependentLink... links) {
     for (int i = 0; i < links.length - 1; i++) {
-      links[i].setNext(links[i + 1]);
+      DependentLink.Helper.getLast(links[i]).setNext(links[i + 1]);
     }
     return links[0];
   }
