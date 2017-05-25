@@ -12,7 +12,7 @@ public class TypedDependentLink implements DependentLink {
   private boolean myExplicit;
   private String myName;
   private Type myType;
-  protected DependentLink myNext;
+  private DependentLink myNext;
 
   public TypedDependentLink(boolean isExplicit, String name, Type type, DependentLink next) {
     assert next != null;
@@ -44,15 +44,7 @@ public class TypedDependentLink implements DependentLink {
 
   @Override
   public void setNext(DependentLink next) {
-    if (myNext.hasNext()) {
-      DependentLink last = myNext;
-      while (last.getNext().hasNext()) {
-        last = last.getNext();
-      }
-      last.setNext(next);
-    } else {
-      myNext = next;
-    }
+    myNext = next;
   }
 
   @Override

@@ -34,7 +34,7 @@ public class LinkList {
     }
 
     if (myFirst.hasNext()) {
-      link.setNext(myFirst);
+      DependentLink.Helper.getLast(link).setNext(myFirst);
     } else {
       myLast = DependentLink.Helper.getLast(link);
     }

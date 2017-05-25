@@ -50,11 +50,7 @@ public class UntypedDependentLink implements DependentLink {
 
   @Override
   public void setNext(DependentLink next) {
-    DependentLink last = myNext;
-    while (last.getNext().hasNext()) {
-      last = last.getNext();
-    }
-    last.setNext(next);
+    myNext = next;
   }
 
   @Override
