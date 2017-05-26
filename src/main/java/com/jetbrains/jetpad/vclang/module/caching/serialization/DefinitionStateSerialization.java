@@ -25,10 +25,16 @@ public class DefinitionStateSerialization {
     for (Abstract.Definition definition : state.getTypecheckedDefinitions()) {
       Definition typechecked = state.getTypechecked(definition);
       if (typechecked instanceof Constructor || typechecked instanceof ClassField) continue;
-      if (!typechecked.status().equals(Definition.TypeCheckingStatus.NO_ERRORS)) continue;
-      builder.putDefinition(myPersistenceProvider.getIdFor(definition), writeDefinition(typechecked, state));
+
+      if (canBeReferred(typechecked)) {
+        builder.putDefinition(myPersistenceProvider.getIdFor(definition), writeDefinition(typechecked, state));
+      }
     }
     return builder.build();
+  }
+
+  private boolean canBeReferred(Definition typechecked) {
+    return typechecked.status().headerIsOK();
   }
 
   // TODO: HACK. Second parameter should not be needed

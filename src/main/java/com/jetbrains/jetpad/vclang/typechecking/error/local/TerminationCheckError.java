@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.termination.BaseCallMatrix;
 import com.jetbrains.jetpad.vclang.typechecking.termination.CompositeCallMatrix;
 import com.jetbrains.jetpad.vclang.typechecking.termination.RecursiveBehavior;
@@ -14,12 +15,12 @@ import java.util.Set;
  */
 public class TerminationCheckError extends GeneralError {
     private Set<RecursiveBehavior<Definition>> myBehaviors = new HashSet<>();
-    private Definition myDefinition;
+    public Abstract.Definition definition;
 
     public TerminationCheckError(Definition def, Set<RecursiveBehavior<Definition>> behaviors) {
         super(formErrorMessage(def, behaviors), def.getAbstractDefinition());
         myBehaviors = behaviors;
-        myDefinition = def;
+        definition = def.getAbstractDefinition();
     }
 
     public static<T> String formErrorMessage(Definition def, Set<RecursiveBehavior<T>> behaviors) {
