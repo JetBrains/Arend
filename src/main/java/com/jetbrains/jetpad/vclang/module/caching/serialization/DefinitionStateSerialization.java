@@ -25,17 +25,10 @@ public class DefinitionStateSerialization {
     for (Abstract.Definition definition : state.getTypecheckedDefinitions()) {
       Definition typechecked = state.getTypechecked(definition);
       if (typechecked instanceof Constructor || typechecked instanceof ClassField) continue;
-      builder.putDefinition(myPersistenceProvider.getIdFor(definition), writeDefinitionStub(typechecked, state));
+      if (!typechecked.status().equals(Definition.TypeCheckingStatus.NO_ERRORS)) continue;
+      builder.putDefinition(myPersistenceProvider.getIdFor(definition), writeDefinition(typechecked, state));
     }
     return builder.build();
-  }
-
-  private DefinitionProtos.DefinitionStub writeDefinitionStub(Definition definition, LocalizedTypecheckerState<? extends SourceId>.LocalTypecheckerState state) {
-    DefinitionProtos.DefinitionStub.Builder out = DefinitionProtos.DefinitionStub.newBuilder();
-    if (definition.status() == Definition.TypeCheckingStatus.NO_ERRORS) {
-      out.setDefinition(writeDefinition(definition, state));
-    }
-    return out.build();
   }
 
   // TODO: HACK. Second parameter should not be needed

@@ -18,7 +18,7 @@ message Module {
     }
 
     message DefinitionState {
-        map<string, DefinitionStub> definition = 1;
+        map<string, Definition> definition = 1;
     }
     message InstanceState {
     }

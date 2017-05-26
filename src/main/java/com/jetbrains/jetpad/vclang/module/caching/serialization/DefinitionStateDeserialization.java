@@ -21,43 +21,33 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
   }
 
   public void readStubs(ModuleProtos.Module.DefinitionState in, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
-    for (Map.Entry<String, DefinitionProtos.DefinitionStub> entry : in.getDefinitionMap().entrySet()) {
+    for (Map.Entry<String, DefinitionProtos.Definition> entry : in.getDefinitionMap().entrySet()) {
       String id = entry.getKey();
-      DefinitionProtos.DefinitionStub defStubProto = entry.getValue();
+      DefinitionProtos.Definition defProto = entry.getValue();
       final Definition def;
       final Abstract.Definition abstractDef = getAbstract(id);
-
-      if (defStubProto.hasDefinition()) {
-        DefinitionProtos.Definition defProto = defStubProto.getDefinition();
-        switch (defProto.getDefinitionDataCase()) {
-          case CLASS:
-            ClassDefinition classDef = new ClassDefinition((Abstract.ClassDefinition) abstractDef);
-            for (String constructorId : defProto.getClass_().getFieldsMap().keySet()) {
-              Abstract.ClassField absField = (Abstract.ClassField) getAbstract(constructorId);
-              state.record(absField, new ClassField(absField, classDef));
-            }
-            def = classDef;
-            break;
-          case DATA:
-            DataDefinition dataDef = new DataDefinition((Abstract.DataDefinition) abstractDef);
-            for (String constructorId : defProto.getData().getConstructorsMap().keySet()) {
-              Abstract.Constructor absConstructor = (Abstract.Constructor) getAbstract(constructorId);
-              state.record(absConstructor, new Constructor(absConstructor, dataDef));
-            }
-            def = dataDef;
-            break;
-          case FUNCTION:
-            def = new FunctionDefinition(abstractDef);
-            break;
-          default:
-            throw new DeserializationError("Unknown Definition kind: " + defProto.getDefinitionDataCase());
-        }
-      } else {
-        def = Definition.newDefinition(abstractDef);
-        if (def == null) {
-          throw new DeserializationError("Unknown Definition kind: " + abstractDef);
-        }
-        def.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
+      switch (defProto.getDefinitionDataCase()) {
+        case CLASS:
+          ClassDefinition classDef = new ClassDefinition((Abstract.ClassDefinition) abstractDef);
+          for (String constructorId : defProto.getClass_().getFieldsMap().keySet()) {
+            Abstract.ClassField absField = (Abstract.ClassField) getAbstract(constructorId);
+            state.record(absField, new ClassField(absField, classDef));
+          }
+          def = classDef;
+          break;
+        case DATA:
+          DataDefinition dataDef = new DataDefinition((Abstract.DataDefinition) abstractDef);
+          for (String constructorId : defProto.getData().getConstructorsMap().keySet()) {
+            Abstract.Constructor absConstructor = (Abstract.Constructor) getAbstract(constructorId);
+            state.record(absConstructor, new Constructor(absConstructor, dataDef));
+          }
+          def = dataDef;
+          break;
+        case FUNCTION:
+          def = new FunctionDefinition(getAbstract(id));
+          break;
+        default:
+          throw new DeserializationError("Unknown Definition kind: " + defProto.getDefinitionDataCase());
       }
 
       state.record(abstractDef, def);
@@ -67,40 +57,38 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
   public void fillInDefinitions(ModuleProtos.Module.DefinitionState in, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state, CalltargetProvider calltargetProvider) throws DeserializationError {
     CalltargetProvider.Typed typedCalltargetProvider = new CalltargetProvider.Typed(calltargetProvider);
 
-    for (Map.Entry<String, DefinitionProtos.DefinitionStub> entry : in.getDefinitionMap().entrySet()) {
+    for (Map.Entry<String, DefinitionProtos.Definition> entry : in.getDefinitionMap().entrySet()) {
       String id = entry.getKey();
-      DefinitionProtos.DefinitionStub defStubProto = entry.getValue();
+      DefinitionProtos.Definition defProto = entry.getValue();
 
-      if (defStubProto.hasDefinition()) {
-        final DefinitionProtos.Definition defProto = defStubProto.getDefinition();
-        final Definition def = getTypechecked(state, id);
-        final DefinitionDeserialization defDeserializer = new DefinitionDeserialization(typedCalltargetProvider);
+      final Definition def = getTypechecked(state, id);
 
-        readClassifyingFields(def, typedCalltargetProvider, defProto.getClassifyingFieldList());
+      final DefinitionDeserialization defDeserializer = new DefinitionDeserialization(typedCalltargetProvider);
 
-        if (defProto.getThisClassRef() != 0) {
-          def.setThisClass(typedCalltargetProvider.getCalltarget(defProto.getThisClassRef(), ClassDefinition.class));
-        }
+      readClassifyingFields(def, typedCalltargetProvider, defProto.getClassifyingFieldList());
 
-        switch (defProto.getDefinitionDataCase()) {
-          case CLASS:
-            ClassDefinition classDef = (ClassDefinition) def;
-            fillInClassDefinition(defDeserializer, typedCalltargetProvider, defProto.getClass_(), classDef, state);
-            break;
-          case DATA:
-            DataDefinition dataDef = (DataDefinition) def;
-            fillInDataDefinition(defDeserializer, defProto.getData(), dataDef, state);
-            break;
-          case FUNCTION:
-            FunctionDefinition functionDef = (FunctionDefinition) def;
-            fillInFunctionDefinition(defDeserializer, defProto.getFunction(), functionDef);
-            break;
-          default:
-            throw new DeserializationError("Unknown Definition kind: " + defProto.getDefinitionDataCase());
-        }
-
-        def.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+      if (defProto.getThisClassRef() != 0) {
+        def.setThisClass(typedCalltargetProvider.getCalltarget(defProto.getThisClassRef(), ClassDefinition.class));
       }
+
+      switch (defProto.getDefinitionDataCase()) {
+        case CLASS:
+          ClassDefinition classDef = (ClassDefinition) def;
+          fillInClassDefinition(defDeserializer, typedCalltargetProvider, defProto.getClass_(), classDef, state);
+          break;
+        case DATA:
+          DataDefinition dataDef = (DataDefinition) def;
+          fillInDataDefinition(defDeserializer, defProto.getData(), dataDef, state);
+          break;
+        case FUNCTION:
+          FunctionDefinition functionDef = (FunctionDefinition) def;
+          fillInFunctionDefinition(defDeserializer, defProto.getFunction(), functionDef);
+          break;
+        default:
+          throw new DeserializationError("Unknown Definition kind: " + defProto.getDefinitionDataCase());
+      }
+
+      def.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     }
   }
 
