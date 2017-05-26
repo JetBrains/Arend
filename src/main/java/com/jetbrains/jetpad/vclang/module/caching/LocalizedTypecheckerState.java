@@ -77,5 +77,9 @@ public class LocalizedTypecheckerState<SourceIdT extends SourceId> implements Ty
     public void sync() {
       myIsOutOfSync = false;
     }
+
+    void unsync() {
+      myIsOutOfSync = true;
+    }
   }
 }

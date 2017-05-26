@@ -3,9 +3,9 @@ package com.jetbrains.jetpad.vclang.frontend.resolving.visitor;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.frontend.parser.BinOpParser;
-import com.jetbrains.jetpad.vclang.frontend.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
+import com.jetbrains.jetpad.vclang.naming.error.NoSuchFieldError;
 import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -16,14 +16,12 @@ import java.util.Collection;
 import java.util.List;
 
 public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<Void, Void> {
-  private final NamespaceProviders myNsProviders;
   private final Scope myParentScope;
   private final List<String> myContext;
   private final NameResolver myNameResolver;
   private final ResolveListener myResolveListener;
 
-  public ExpressionResolveNameVisitor(NamespaceProviders namespaceProviders, Scope parentScope, List<String> context, NameResolver nameResolver, ResolveListener resolveListener) {
-    myNsProviders = namespaceProviders;
+  public ExpressionResolveNameVisitor(Scope parentScope, List<String> context, NameResolver nameResolver, ResolveListener resolveListener) {
     myParentScope = parentScope;
     myContext = context;
     myNameResolver = nameResolver;
@@ -46,7 +44,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
 
     if (expr.getReferent() == null) {
       if (expression != null || !myContext.contains(expr.getName())) {
-        Abstract.Definition ref = myNameResolver.resolveDefCall(myParentScope, expr, myNsProviders.modules, myNsProviders.statics);
+        Abstract.Definition ref = myNameResolver.resolveDefCall(myParentScope, expr);
         if (ref != null) {
           myResolveListener.nameResolved(expr, ref);
         } else
@@ -66,7 +64,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   @Override
   public Void visitModuleCall(Abstract.ModuleCallExpression expr, Void params) {
     if (expr.getModule() == null) {
-      Abstract.Definition ref = myNameResolver.resolveModuleCall(myParentScope, expr, myNsProviders.modules);
+      Abstract.Definition ref = myNameResolver.resolveModuleCall(myParentScope, expr);
       if (ref != null) {
         myResolveListener.moduleResolved(expr, ref);
       }
@@ -280,10 +278,14 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
 
   public void visitClassFieldImpls(Collection<? extends Abstract.ClassFieldImpl> classFieldImpls, Abstract.ClassView classView, Abstract.ClassDefinition classDef) {
     for (Abstract.ClassFieldImpl statement : classFieldImpls) {
-      Abstract.ClassField resolvedRef = classView != null ? myNameResolver.resolveClassFieldByView(classView, statement.getImplementedFieldName(), myResolveListener, statement) : classDef != null ? myNameResolver.resolveClassField(classDef, statement.getImplementedFieldName(), myNsProviders.dynamics, myResolveListener, statement) : null;
+      String name = statement.getImplementedFieldName();
+      Abstract.ClassField resolvedRef = classView != null ? myNameResolver.resolveClassFieldByView(classView, name) : classDef != null ? myNameResolver.resolveClassField(classDef, name) : null;
       if (resolvedRef != null) {
         myResolveListener.implementResolved(statement, resolvedRef);
+      } else {
+        myResolveListener.report(new NoSuchFieldError(statement, name));
       }
+
       statement.getImplementation().accept(this, null);
     }
   }

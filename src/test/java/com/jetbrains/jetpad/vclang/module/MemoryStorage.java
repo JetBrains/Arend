@@ -1,9 +1,12 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.frontend.namespace.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.module.caching.CacheStorageSupplier;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.frontend.parser.ParseSource;
+import com.jetbrains.jetpad.vclang.naming.NameResolver;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.io.*;
@@ -13,6 +16,15 @@ import java.util.Map;
 public class MemoryStorage implements SourceSupplier<MemoryStorage.SourceId>, CacheStorageSupplier<MemoryStorage.SourceId> {
   private final Map<ModulePath, String> mySources = new HashMap<>();
   private final Map<SourceId, ByteArrayOutputStream> myCaches = new HashMap<>();
+  private final ModuleRegistry myModuleRegistry;
+  private final Scope myGlobalScope;
+  private final NameResolver myNameResolver;
+
+  public MemoryStorage(ModuleRegistry moduleRegistry, Scope globalScope, NameResolver nameResolver) {
+    myModuleRegistry = moduleRegistry;
+    myGlobalScope = globalScope;
+    myNameResolver = nameResolver;
+  }
 
   public void add(ModulePath modulePath, String source) {
     String old = mySources.put(modulePath, source);
@@ -39,7 +51,7 @@ public class MemoryStorage implements SourceSupplier<MemoryStorage.SourceId>, Ca
 
   @Override
   public Abstract.ClassDefinition loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
-    return isAvailable(sourceId) ? new ParseSource(sourceId, new StringReader(sourceId.myData)) {}.load(errorReporter) : null;
+    return isAvailable(sourceId) ? new ParseSource(sourceId, new StringReader(sourceId.myData)) {}.load(errorReporter, myModuleRegistry, myGlobalScope, myNameResolver) : null;
   }
 
   @Override

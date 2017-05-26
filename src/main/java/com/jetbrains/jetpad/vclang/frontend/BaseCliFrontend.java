@@ -1,29 +1,29 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
-import com.jetbrains.jetpad.vclang.error.Error;
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotSourceInfoCollector;
-import com.jetbrains.jetpad.vclang.frontend.resolving.ResolvingModuleLoader;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
-import com.jetbrains.jetpad.vclang.module.DefaultModuleLoader;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.module.caching.CacheLoadingException;
+import com.jetbrains.jetpad.vclang.module.caching.CacheManager;
 import com.jetbrains.jetpad.vclang.module.caching.CachePersistenceException;
-import com.jetbrains.jetpad.vclang.module.caching.CachingModuleLoader;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
+import com.jetbrains.jetpad.vclang.module.source.SimpleModuleLoader;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
+import com.jetbrains.jetpad.vclang.module.source.SourceModuleLoader;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
-import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
+import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.*;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
+import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.TerminationCheckError;
 import com.jetbrains.jetpad.vclang.typechecking.order.BaseDependencyListener;
 
 import java.io.IOException;
@@ -40,36 +40,27 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   protected final Storage<SourceIdT> storage;
 
   // Modules
-  private final ResolvingModuleLoader<SourceIdT> resolvingModuleLoader;
-  private final CachingModuleLoader<SourceIdT> moduleLoader;
-  private final Map<SourceIdT, Abstract.ClassDefinition> loadedSources = new HashMap<>();
-
-  // Name resolving
-  private final NameResolver nameResolver = new NameResolver();
-  private final SimpleStaticNamespaceProvider staticNsProvider = new SimpleStaticNamespaceProvider();
-  private final DynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
+  protected final SourceModuleLoader<SourceIdT> moduleLoader;
+  protected final Map<SourceIdT, Abstract.ClassDefinition> loadedSources = new HashMap<>();
+  private final Set<SourceIdT> requestedSources = new LinkedHashSet<>();
 
   private final SourceInfoProvider<SourceIdT> srcInfoProvider;
+  private final CacheManager<SourceIdT> cacheManager;
 
   // Typechecking
   private final TypecheckerState state;
-  private final Set<SourceIdT> requestedSources = new LinkedHashSet<>();
 
 
   public BaseCliFrontend(Storage<SourceIdT> storage, boolean recompile) {
     OneshotSourceInfoCollector<SourceIdT> srcInfoCollector = new OneshotSourceInfoCollector<>();
     srcInfoProvider = srcInfoCollector.sourceInfoProvider;
+    cacheManager = new CacheManager<>(createPersistenceProvider(), storage, srcInfoProvider);
     errf = new ErrorFormatter(srcInfoProvider);
 
     this.storage = storage;
 
-    ModuleLoadingListener moduleLoadingListener = new ModuleLoadingListener(srcInfoCollector);
-    resolvingModuleLoader = createResolvingModuleLoader(moduleLoadingListener);
-    moduleLoader = createCachingModuleLoader(recompile);
-    state = moduleLoader.getTypecheckerState();
-
-    Namespace preludeNamespace = loadPrelude();
-    resolvingModuleLoader.setPreludeNamespace(preludeNamespace);
+    moduleLoader = new ModuleWatch(new SimpleModuleLoader<>(storage, errorReporter), srcInfoCollector);
+    state = cacheManager.getTypecheckerState();
   }
 
   static class DefinitionIdsCollector implements AbstractDefinitionVisitor<Map<String, Abstract.Definition>, Void>, AbstractStatementVisitor<Map<String, Abstract.Definition>, Void> {
@@ -163,49 +154,83 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
   }
 
-  class ModuleLoadingListener extends DefaultModuleLoader.ModuleLoadingListener<SourceIdT> {
+  class ModuleWatch implements SourceModuleLoader<SourceIdT> {
+    private final SourceModuleLoader<SourceIdT> myModuleLoader;
     private final OneshotSourceInfoCollector<SourceIdT> mySrcInfoCollector;
     private final DefinitionIdsCollector defIdCollector = new DefinitionIdsCollector();
 
-    ModuleLoadingListener(OneshotSourceInfoCollector<SourceIdT> srcInfoCollector) {
+    ModuleWatch(SourceModuleLoader<SourceIdT> moduleLoader, OneshotSourceInfoCollector<SourceIdT> srcInfoCollector) {
+      myModuleLoader = moduleLoader;
       mySrcInfoCollector = srcInfoCollector;
     }
 
-    @Override
-    public void loadingSucceeded(SourceIdT module, Abstract.ClassDefinition abstractDefinition) {
+
+    private void loadingSucceeded(SourceIdT module, Abstract.ClassDefinition abstractDefinition) {
       assert abstractDefinition != null;
       if (!definitionIds.containsKey(module)) {
-        definitionIds.put(module, new HashMap<String, Abstract.Definition>());
+        definitionIds.put(module, new HashMap<>());
       }
       defIdCollector.visitClass(abstractDefinition, definitionIds.get(module));
       mySrcInfoCollector.visitModule(module, abstractDefinition);
       loadedSources.put(module, abstractDefinition);
       System.out.println("[Loaded] " + displaySource(module, false));
     }
+
+    private void loadingFailed(SourceIdT module) {
+      System.out.println("[Failed] " + displaySource(module, false));
+    }
+
+    @Override
+    public SourceIdT locateModule(ModulePath modulePath) {
+      return myModuleLoader.locateModule(modulePath);
+    }
+
+    @Override
+    public boolean isAvailable(SourceIdT sourceId) {
+      return myModuleLoader.isAvailable(sourceId);
+    }
+
+    @Override
+    public Abstract.ClassDefinition load(SourceIdT sourceId) {
+      if (loadedSources.containsKey(sourceId)) throw new IllegalStateException();
+      Abstract.ClassDefinition result = myModuleLoader.load(sourceId);
+
+      if (result != null) {
+        loadingSucceeded(sourceId, result);
+      } else {
+        loadingFailed(sourceId);
+      }
+
+      return result;
+    }
   }
 
+
+  protected abstract StaticNamespaceProvider getStaticNsProvider();
+  protected abstract DynamicNamespaceProvider getDynamicNsProvider();
   protected abstract PersistenceProvider<SourceIdT> createPersistenceProvider();
   protected abstract String displaySource(SourceIdT source, boolean modulePathOnly);
 
 
-  private Namespace loadPrelude() {
-    Abstract.ClassDefinition prelude = moduleLoader.load(moduleLoader.locateModule(PreludeStorage.PRELUDE_MODULE_PATH), true).definition;
-    new Typechecking(state, staticNsProvider, dynamicNsProvider, new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(state), new BaseDependencyListener()).typecheckModules(Collections.singletonList(prelude));
+  protected Abstract.ClassDefinition loadPrelude() {
+    Abstract.ClassDefinition prelude = moduleLoader.load(moduleLoader.locateModule(PreludeStorage.PRELUDE_MODULE_PATH));
     assert errorReporter.getErrorList().isEmpty();
-    return staticNsProvider.forDefinition(prelude);
-  }
-
-  private ResolvingModuleLoader<SourceIdT> createResolvingModuleLoader(ModuleLoadingListener moduleLoadingListener) {
-    return new ResolvingModuleLoader<>(storage, moduleLoadingListener, nameResolver, staticNsProvider, dynamicNsProvider, new ConcreteResolveListener(errorReporter), errorReporter);
-  }
-
-  private CachingModuleLoader<SourceIdT> createCachingModuleLoader(boolean recompile) {
-    CachingModuleLoader<SourceIdT> moduleLoader = new CachingModuleLoader<>(resolvingModuleLoader, createPersistenceProvider(), storage, srcInfoProvider, !recompile);
-    nameResolver.setModuleLoader(moduleLoader);
-    return moduleLoader;
+    boolean cacheLoaded;
+    try {
+      cacheLoaded = cacheManager.loadCache(moduleLoader.locateModule(PreludeStorage.PRELUDE_MODULE_PATH), prelude);
+    } catch (CacheLoadingException e) {
+      cacheLoaded = false;
+    }
+    if (!cacheLoaded) {
+      throw new IllegalStateException("Prelude cache is not available");
+    }
+    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(state), new BaseDependencyListener()).typecheckModules(Collections.singletonList(prelude));
+    return prelude;
   }
 
   public void run(final Path sourceDir, Collection<String> argFiles) {
+    loadPrelude();
+
     // Collect sources for which typechecking was requested
     if (argFiles.isEmpty()) {
       if (sourceDir == null) return;
@@ -236,7 +261,6 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     // Typecheck those sources
     Map<SourceIdT, ModuleResult> typeCheckResults = typeCheckSources(requestedSources);
-
     flushErrors();
 
     // Output nice per-module typechecking results
@@ -248,6 +272,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
         if (result == ModuleResult.ERRORS) numWithErrors += 1;
       }
     }
+    // Explicitly requested sources go last
     for (SourceIdT source : requestedSources) {
       ModuleResult result = typeCheckResults.get(source);
       reportTypeCheckResult(source, result == null ? ModuleResult.OK : result);
@@ -259,10 +284,10 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
     // Persist cache
-    for (SourceIdT module : moduleLoader.getCachedModules()) {
+    for (SourceIdT module : cacheManager.getCachedModules()) {
       try {
-        moduleLoader.persistModule(module);
-      } catch (IOException | CachePersistenceException e) {
+        cacheManager.persistCache(module);
+      } catch (CachePersistenceException e) {
         e.printStackTrace();
       }
     }
@@ -297,52 +322,66 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     for (SourceIdT source : sources) {
       Abstract.ClassDefinition definition = loadedSources.get(source);
       if (definition == null){
-        CachingModuleLoader.Result result = moduleLoader.loadWithResult(source);
-        if (result.exception != null) {
-          System.err.println("Error loading cache: " + result.exception);
+        definition = moduleLoader.load(source);
+        if (definition == null) {
+          results.put(source, ModuleResult.NOT_LOADED);
+          continue;
         }
-        definition = result.definition;
+        try {
+          cacheManager.loadCache(source, definition);
+        } catch (CacheLoadingException e) {
+          e.printStackTrace();
+        }
         flushErrors();
-      }
-      if (definition == null) {
-        results.put(source, ModuleResult.NOT_LOADED);
-        continue;
       }
       modulesToTypeCheck.add(definition);
     }
 
     System.out.println("--- Checking ---");
 
-    new Typechecking(state, staticNsProvider, dynamicNsProvider, errorReporter, new TypecheckedReporter() {
+    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), new ErrorReporter() {
       @Override
-      public void typecheckingSucceeded(Abstract.Definition definition) {
-        SourceIdT source = srcInfoProvider.sourceOf(definition);
-        updateModuleResult(source, ModuleResult.OK);
-      }
-
-      @Override
-      public void typecheckingFailed(Abstract.Definition definition) {
-        SourceIdT source = srcInfoProvider.sourceOf(definition);
-        boolean goals = false;
-        boolean errors = false;
-        for (GeneralError error : errorReporter.getErrorList()) {
-          if (error.getLevel() == Error.Level.GOAL) {
-            goals = true;
-          }
-          if (error.getLevel() == Error.Level.ERROR) {
-            errors = true;
-          }
+      public void report(GeneralError error) {
+        final ModuleResult newResult;
+        switch (error.level) {
+          case ERROR:
+            newResult = ModuleResult.ERRORS;
+            break;
+          case GOAL:
+            newResult = ModuleResult.GOALS;
+            break;
+          default:
+            newResult = ModuleResult.OK;
         }
-        updateModuleResult(source, errors ? ModuleResult.ERRORS : goals ? ModuleResult.GOALS : ModuleResult.OK);
 
-        flushErrors();
+        updateSourceResult(srcInfoProvider.sourceOf(sourceDefinitionOf(error)), newResult);
+
+        errorReporter.report(error);
       }
 
-      private void updateModuleResult(SourceIdT source, ModuleResult result) {
+      private Abstract.Definition sourceDefinitionOf(GeneralError error) {
+        if (error instanceof TypeCheckingError) {
+          return ((TypeCheckingError) error).definition;
+        } else if (error instanceof TerminationCheckError) {
+          return ((TerminationCheckError) error).definition;
+        } else {
+          throw new IllegalStateException("Non-typechecking error reported to typechecking reporter");
+        }
+      }
+
+      private void updateSourceResult(SourceIdT source, ModuleResult result) {
         ModuleResult prevResult = results.get(source);
         if (prevResult == null || result.ordinal() > prevResult.ordinal()) {
           results.put(source, result);
         }
+      }
+    }, new TypecheckedReporter() {
+      @Override
+      public void typecheckingSucceeded(Abstract.Definition definition) {
+      }
+      @Override
+      public void typecheckingFailed(Abstract.Definition definition) {
+        flushErrors();
       }
     }, new BaseDependencyListener()).typecheckModules(modulesToTypeCheck);
 
@@ -361,16 +400,16 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   private void requestFileTypechecking(Path path) {
     String fileName = path.getFileName().toString();
     if (!fileName.endsWith(FileStorage.EXTENSION)) return;
-    path = path.resolveSibling(fileName.substring(0, fileName.length() - FileStorage.EXTENSION.length()));
 
-    ModulePath modulePath = FileStorage.modulePath(path);
+    Path sourcePath = path.resolveSibling(fileName.substring(0, fileName.length() - FileStorage.EXTENSION.length()));
+    ModulePath modulePath = FileStorage.modulePath(sourcePath);
     if (modulePath == null) {
-      System.err.println(path  + ": illegal file name");
+      System.err.println("[Not found] " + path + " is an illegal module path");
       return;
     }
     SourceIdT sourceId = storage.locateModule(modulePath);
     if (sourceId == null || !storage.isAvailable(sourceId)) {
-      System.err.println(path  + ": source is not available");
+      System.err.println("[Not found] " + path + " is not available");
       return;
     }
     requestedSources.add(sourceId);

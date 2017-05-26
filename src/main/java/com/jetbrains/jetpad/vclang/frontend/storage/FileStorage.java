@@ -1,11 +1,18 @@
 package com.jetbrains.jetpad.vclang.frontend.storage;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.frontend.Concrete;
+import com.jetbrains.jetpad.vclang.frontend.namespace.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.frontend.parser.ParseSource;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.caching.CacheStorageSupplier;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
+import com.jetbrains.jetpad.vclang.naming.NameResolver;
+import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
+import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
+import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.io.*;
@@ -50,17 +57,24 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
   }
 
 
+  private final NameResolver myNameResolver;
+  private final ModuleRegistry myModuleRegistry;
+
+  private Scope myGlobalScope = new EmptyScope();
   private final FileSourceSupplier mySourceSupplier;
   private final FileCacheStorageSupplier myCacheStorageSupplier;
 
 
-  public FileStorage(Path root) {
-    this(root, root);
-  }
+  public FileStorage(Path sourceRoot, Path cacheRoot, NameResolver nameResolver, ModuleRegistry moduleRegistry) {
+    myNameResolver = nameResolver;
+    myModuleRegistry = moduleRegistry;
 
-  public FileStorage(Path sourceRoot, Path cacheRoot) {
     mySourceSupplier = new FileSourceSupplier(sourceRoot);
     myCacheStorageSupplier = new FileCacheStorageSupplier(cacheRoot);
+  }
+
+  public void setPreludeNamespace(Namespace ns) {
+    myGlobalScope = new NamespaceScope(ns);
   }
 
   private class FileSourceSupplier implements SourceSupplier<SourceId> {
@@ -98,15 +112,16 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
     }
 
     @Override
-    public Abstract.ClassDefinition loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
-      if (sourceId.getStorage() != FileStorage.this) return null;
+    public Concrete.ClassDefinition loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
       if (!isAvailable(sourceId)) return null;
 
       Path file = sourceFileForSource(sourceId);
       FileSource fileSource = new FileSource(sourceId, file);
-      Abstract.ClassDefinition definition = fileSource.load(errorReporter);
+      Concrete.ClassDefinition result = fileSource.load(errorReporter, myModuleRegistry, myGlobalScope, myNameResolver);
+
       // Make sure we loaded the right revision
-      return getLastModifiedTime(file) == sourceId.myMtime ? definition : null;
+      if (getLastModifiedTime(file) != sourceId.myMtime) return null;
+      return result;
     }
   }
 
