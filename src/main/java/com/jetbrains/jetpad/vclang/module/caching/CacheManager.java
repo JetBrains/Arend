@@ -158,13 +158,17 @@ public class CacheManager<SourceIdT extends SourceId> {
     }
 
     try {
-      GZIPOutputStream compressedCacheStream = new GZIPOutputStream(cacheStream);
-      writeModule(sourceId, localState).writeTo(compressedCacheStream);
-      compressedCacheStream.close();
-    } catch (IOException e) {
-      throw new CachePersistenceException(sourceId, e);
+      try {
+        GZIPOutputStream compressedCacheStream = new GZIPOutputStream(cacheStream);
+        writeModule(sourceId, localState).writeTo(compressedCacheStream);
+        compressedCacheStream.close();
+      } catch (IOException e) {
+        throw new CachePersistenceException(sourceId, e);
+      }
+    } catch (CachePersistenceException e) {
+      localState.unsync();
+      throw e;
     }
-    localState.sync();
     return true;
   }
 
@@ -174,6 +178,7 @@ public class CacheManager<SourceIdT extends SourceId> {
     // Serialize the module first in order to populate the call-target registry
     DefinitionStateSerialization defStateSerialization = new DefinitionStateSerialization(myPersistenceProvider, calltargets);
     out.setDefinitionState(defStateSerialization.writeDefinitionState(localState));
+    localState.sync();
     // now write the call-target registry
     out.addAllReferredDefinition(calltargets.write());
     return out.build();
