@@ -111,6 +111,28 @@ public class ErrorFormatter {
       builder.append('\n')
         .append("  Actual type: ");
       ((TypeMismatchError) error).actual.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, text.length());
+    } else if (error instanceof MissingClausesError) {
+      builder.append(error.getMessage()).append(":");
+      PrettyPrintVisitor ppv = new PrettyPrintVisitor(builder, 0);
+      for (List<MissingClausesError.ClauseElem> clause : ((MissingClausesError) error).getMissingClauses()) {
+        builder.append('\n');
+        if (clause != null) {
+          builder.append("  ");
+          for (MissingClausesError.ClauseElem clauseElem : clause) {
+            if (clauseElem instanceof MissingClausesError.PatternClauseElem) {
+              ppv.prettyPrintPattern(((MissingClausesError.PatternClauseElem) clauseElem).pattern);
+              builder.append(' ');
+            } else if (clauseElem instanceof MissingClausesError.ConstructorClauseElem) {
+              builder.append(((MissingClausesError.ConstructorClauseElem) clauseElem).constructor).append(" ");
+            } else if (clauseElem instanceof MissingClausesError.SkipClauseElem) {
+              builder.append('_');
+            } else {
+              throw new IllegalStateException();
+            }
+          }
+        }
+        builder.append("...");
+      }
     } else if (error instanceof ExpressionMismatchError) {
       String text = "Expected: ";
       builder.append(text);

@@ -133,5 +133,18 @@ public interface DependentLink extends Binding {
     public static SingleDependentLink subst(SingleDependentLink link, ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
       return link.subst(exprSubst, levelSubst, Integer.MAX_VALUE);
     }
+
+    public static DependentLink slice(DependentLink link1, DependentLink link2) {
+      if (link1 == link2) {
+        return EmptyDependentLink.getInstance();
+      }
+
+      DependentLink link = link1;
+      while (link.getNext() != link2) {
+        link = link.getNext();
+      }
+      link.setNext(EmptyDependentLink.getInstance());
+      return link1;
+    }
   }
 }
