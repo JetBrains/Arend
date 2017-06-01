@@ -259,8 +259,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     myClassViewInstancePool = pool;
   }
 
-  public void setThisClass(ClassDefinition thisClass, Expression thisExpr) {
-    myTypeCheckingDefCall.setThisClass(thisClass, thisExpr);
+  public void setThis(ClassDefinition thisClass, Binding thisBinding) {
+    myTypeCheckingDefCall.setThis(thisClass, thisBinding);
   }
 
   public TypecheckerState getTypecheckingState() {

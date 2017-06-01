@@ -81,6 +81,10 @@ public class Sort {
     return myHLevel.isClosed() && myHLevel.getConstant() == -1;
   }
 
+  public boolean isSet() {
+    return myHLevel.isClosed() && myHLevel.getConstant() == 0;
+  }
+
   public LevelSubstitution toLevelSubstitution() {
     return new StdLevelSubstitution(myPLevel, myHLevel);
   }

@@ -289,7 +289,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
         "\\data D | d Nat\n" +
         "\\function test (x : D) : Nat <= \\elim x | _ => 0");
     FunctionDefinition test = (FunctionDefinition) result.getDefinition("test");
-    assertEquals(FunCall(test, Sort.SET0, Ref(var0)), FunCall(test, Sort.SET0, Ref(var0)).normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Zero(), FunCall(test, Sort.SET0, Ref(var0)).normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test

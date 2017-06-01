@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
@@ -26,15 +27,23 @@ import java.util.List;
 public class TypeCheckingDefCall {
   private final CheckTypeVisitor myVisitor;
   private ClassDefinition myThisClass;
-  private Expression myThisExpr;
+  private Binding myThisBinding;
 
   public TypeCheckingDefCall(CheckTypeVisitor visitor) {
     myVisitor = visitor;
   }
 
-  public void setThisClass(ClassDefinition thisClass, Expression thisExpr) {
+  public ClassDefinition getThisClass() {
+    return myThisClass;
+  }
+
+  public Binding getThisBinding() {
+    return myThisBinding;
+  }
+
+  public void setThis(ClassDefinition thisClass, Binding thisBinding) {
     myThisClass = thisClass;
-    myThisExpr = thisExpr;
+    myThisBinding = thisBinding;
   }
 
   private Definition getTypeCheckedDefinition(Abstract.Definition definition, Abstract.Expression expr) {
@@ -85,7 +94,7 @@ public class TypeCheckingDefCall {
       Expression thisExpr = null;
       if (typeCheckedDefinition.getThisClass() != null) {
         if (myThisClass != null) {
-          thisExpr = findParent(myThisClass, typeCheckedDefinition, myThisExpr);
+          thisExpr = findParent(myThisClass, typeCheckedDefinition, new ReferenceExpression(myThisBinding));
         }
 
         if (thisExpr == null) {

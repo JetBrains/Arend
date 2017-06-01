@@ -37,6 +37,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.NotInScopeError;
+import com.jetbrains.jetpad.vclang.typechecking.patternmatching.TypecheckingElim;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.CompositeInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.GlobalInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.LocalInstancePool;
@@ -207,7 +208,7 @@ public class DefinitionCheckType {
       DependentLink thisParam = createThisParam(enclosingClass);
       visitor.getFreeBindings().add(thisParam);
       list.append(thisParam);
-      visitor.setThisClass(enclosingClass, new ReferenceExpression(thisParam));
+      visitor.setThis(enclosingClass, thisParam);
     }
     return list;
   }
@@ -253,6 +254,12 @@ public class DefinitionCheckType {
           ElimTreeNode elimTree = visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, parameters, def.getArrow() == Abstract.Definition.Arrow.LEFT ? typedDef.getParameters() : null, expectedType, false, true);
           if (elimTree != null) {
             typedDef.setElimTree(elimTree);
+          }
+
+          if (expectedType != null) {
+            new TypecheckingElim(visitor, expectedType, true, false).typecheckElim(((Abstract.ElimExpression) term), typedDef.getParameters());
+          } else {
+            // TODO[newElim]: report an error
           }
         }
       } else {
@@ -586,7 +593,7 @@ public class DefinitionCheckType {
       }
 
       if (dataDefinition.getThisClass() != null && typedPatterns != null) {
-        visitor.setThisClass(dataDefinition.getThisClass(), new ReferenceExpression(typedPatterns.getParameters()));
+        visitor.setThis(dataDefinition.getThisClass(), typedPatterns.getParameters());
       }
 
       LinkList list = new LinkList();
@@ -745,7 +752,7 @@ public class DefinitionCheckType {
       if (enclosingClass != null) {
         DependentLink thisParam = createThisParam(enclosingClass);
         visitor.getFreeBindings().add(thisParam);
-        visitor.setThisClass(enclosingClass, new ReferenceExpression(thisParam));
+        visitor.setThis(enclosingClass, thisParam);
       }
 
       for (Abstract.SuperClass aSuperClass : def.getSuperClasses()) {
@@ -798,7 +805,7 @@ public class DefinitionCheckType {
 
           TypedDependentLink thisParameter = createThisParam(typedDef);
           visitor.getFreeBindings().add(thisParameter);
-          visitor.setThisClass(typedDef, new ReferenceExpression(thisParameter));
+          visitor.setThis(typedDef, thisParameter);
           CheckTypeVisitor.Result result = implementField(fieldSet, field, implementation.getImplementation(), visitor, thisParameter);
           if (result == null || result.expression.toError() != null) {
             classOk = false;
@@ -825,7 +832,7 @@ public class DefinitionCheckType {
   private static ClassField typeCheckClassField(Abstract.ClassField def, ClassDefinition enclosingClass, FieldSet fieldSet, CheckTypeVisitor visitor) {
     TypedDependentLink thisParameter = createThisParam(enclosingClass);
     visitor.getFreeBindings().add(thisParameter);
-    visitor.setThisClass(enclosingClass, new ReferenceExpression(thisParameter));
+    visitor.setThis(enclosingClass, thisParameter);
     Type typeResult = visitor.finalCheckType(def.getResultType());
 
     ClassField typedDef = new ClassField(def, typeResult == null ? new ErrorExpression(null, null) : typeResult.getExpr(), enclosingClass, thisParameter);
