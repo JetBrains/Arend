@@ -198,7 +198,7 @@ public class TypeCheckingElim {
     final List<Abstract.Definition.Arrow> arrows = new ArrayList<>();
     clause_loop:
     for (Abstract.Clause clause : expr.getClauses()) {
-      try (Utils.MapContextSaver ignore = new Utils.MapContextSaver<>(myVisitor.getContext())) {
+      try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myVisitor.getContext())) {
         List<Pattern> clausePatterns = new ArrayList<>(dummyPatterns);
         Expression clauseExpectedType = expectedType;
 
@@ -293,7 +293,7 @@ public class TypeCheckingElim {
   }
 
   private List<ReferenceExpression> typecheckElimIndices(Abstract.ElimCaseExpression expr, List<Abstract.ReferableSourceNode> referableList, DependentLink eliminatingArgs) {
-    try (Utils.MapContextSaver ignore = new Utils.MapContextSaver<>(myVisitor.getContext())) {
+    try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myVisitor.getContext())) {
       DependentLink link = eliminatingArgs;
       for (int i = 0; link.hasNext(); link = link.getNext(), i++) {
         myVisitor.getContext().put(referableList.get(i), link);

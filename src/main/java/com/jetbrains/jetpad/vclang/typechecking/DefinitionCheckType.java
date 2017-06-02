@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.core.context.LinkList;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
@@ -298,7 +299,7 @@ public class DefinitionCheckType {
     Sort userSort = null;
     boolean paramsOk;
     Abstract.DataDefinition def = dataDefinition.getAbstractDefinition();
-    try (Utils.MapContextSaver ignore = new Utils.MapContextSaver<>(visitor.getContext())) {
+    try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(visitor.getContext())) {
       paramsOk = typeCheckParameters(def.getParameters(), list, visitor, localInstancePool, classifyingFields);
     }
 
@@ -465,7 +466,7 @@ public class DefinitionCheckType {
       return cycle;
     }
     for (Constructor constructor : condMap.keySet()) {
-      try (Utils.MapContextSaver ignore = new Utils.MapContextSaver<>(visitor.getContext())) {
+      try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(visitor.getContext())) {
         List<List<Pattern>> patterns = new ArrayList<>();
         List<Expression> expressions = new ArrayList<>();
         List<Abstract.Definition.Arrow> arrows = new ArrayList<>();
@@ -473,7 +474,7 @@ public class DefinitionCheckType {
         // visitor.getContext().addAll(toContext(constructor.getDataTypeParameters())); // TODO[context]
 
         for (Abstract.Condition cond : condMap.get(constructor)) {
-          try (Utils.MapContextSaver saver = new Utils.MapContextSaver<>(visitor.getContext())) {
+          try (Utils.SetContextSaver saver = new Utils.SetContextSaver<>(visitor.getContext())) {
             List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getDataTypeExpression(null)));
             DependentLink params = constructor.getParameters();
             List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(cond, params, cond.getPatterns(), visitor.getErrorReporter());
@@ -552,7 +553,7 @@ public class DefinitionCheckType {
 
   private static Sort typeCheckConstructor(Abstract.Constructor def, DataDefinition dataDefinition, CheckTypeVisitor visitor, Set<DataDefinition> dataDefinitions) {
     Sort sort = Sort.PROP;
-    try (Utils.MapContextSaver ignored = new Utils.MapContextSaver<>(visitor.getContext())) {
+    try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(visitor.getContext())) {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
       Constructor constructor = new Constructor(def, dataDefinition);
       visitor.getTypecheckingState().record(def, constructor);

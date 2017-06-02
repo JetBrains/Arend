@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 
 import java.util.List;
 
@@ -51,6 +52,15 @@ public class ConCallExpression extends DefCallExpression {
   @Override
   public ConCallExpression toConCall() {
     return this;
+  }
+
+  public DependentLink getConstructorParameters() {
+    ExprSubstitution substitution = new ExprSubstitution();
+    int i = 0;
+    for (DependentLink link = getDefinition().getDataTypeParameters(); link.hasNext(); link = link.getNext(), i++) {
+      substitution.add(link, myDataTypeArguments.get(i));
+    }
+    return DependentLink.Helper.subst(getDefinition().getParameters(), substitution);
   }
 
   public void addArgument(Expression argument) {

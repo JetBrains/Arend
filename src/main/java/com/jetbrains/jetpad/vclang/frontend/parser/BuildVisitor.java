@@ -422,7 +422,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   private static Pair<String, List<Concrete.PatternArgument>> splitPattern(Concrete.Pattern pattern) {
     String name = null;
-    List<Concrete.PatternArgument> patterns = null;
+    List<Concrete.PatternArgument> patterns = Collections.emptyList();
     if (pattern instanceof Concrete.NamePattern) {
       name = ((Concrete.NamePattern) pattern).getName();
     } else

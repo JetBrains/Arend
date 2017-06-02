@@ -25,7 +25,7 @@ public class TypecheckingElim {
   private Set<Abstract.Clause> myUnusedClauses;
   private final boolean myFinal;
   private final boolean myAllowInterval;
-  private final Expression myExpectedType;
+  private Expression myExpectedType;
   private boolean myOK = true;
 
   private static final int MISSING_CLAUSES_LIST_SIZE = 10;
@@ -42,10 +42,14 @@ public class TypecheckingElim {
     List<DependentLink> elimParams = new ArrayList<>(elimExpr.getExpressions().size());
     for (Abstract.Expression expr : elimExpr.getExpressions()) {
       if (expr instanceof Abstract.ReferenceExpression) {
-        elimParams.add((DependentLink) myVisitor.getContext().remove(((Abstract.ReferenceExpression) expr).getReferent()));
+        DependentLink param = (DependentLink) myVisitor.getContext().remove(((Abstract.ReferenceExpression) expr).getReferent());
+        elimParams.add(param);
       } else {
         // TODO[newElim]: report an error
       }
+    }
+    if (myFinal) {
+      myVisitor.getFreeBindings().clear();
     }
     return typecheckClauses(elimExpr.getClauses(), patternTypes, elimParams, elimExpr);
   }
@@ -94,19 +98,28 @@ public class TypecheckingElim {
     if (newThis != null) {
       myVisitor.setThis(myVisitor.getTypeCheckingDefCall().getThisClass(), ((ReferenceExpression) newThis).getBinding());
     }
+    myExpectedType = myExpectedType.subst(substitution);
 
-    ElimTree result = typecheckClauses(clauseDataList, patternTypes, substitution, new Stack<>());
+    ExprSubstitution newSubstitution = new ExprSubstitution();
+    for (Map.Entry<Variable, Expression> entry : substitution.getEntries()) {
+      newSubstitution.add(entry.getValue().toReference().getBinding(), entry.getValue());
+    }
+
+    ElimTree result = typecheckClauses(clauseDataList, patternTypes, newSubstitution, new Stack<>());
     if (result == null) {
       return null;
     }
 
     if (myMissingClauses != null && !myMissingClauses.isEmpty()) {
-      myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Some patterns are missing: " + myMissingClauses, sourceNode));
+      myVisitor.getErrorReporter().report(new MissingClausesError(myMissingClauses, sourceNode));
+    }
+    if (!myOK) {
+      return null;
     }
     for (Abstract.Clause clause : myUnusedClauses) {
       myVisitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, "This clause is redundant", clause));
     }
-    return myOK ? result : null;
+    return result;
   }
 
   private void addMissingClause(List<MissingClausesError.ClauseElem> clause) {
@@ -141,29 +154,25 @@ public class TypecheckingElim {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(context)) {
       // Skip pattern columns which exclusively consists of variables
       DependentLink vars = parameters;
+      loop:
       for (; parameters.hasNext(); parameters = parameters.getNext()) {
-        boolean allVars = true;
         for (ClauseData clauseData : clauseDataList) {
           if (!(clauseData.patterns.get(0) == null || clauseData.patterns.get(0) instanceof Abstract.NamePattern)) {
-            allVars = false;
+            break loop;
           }
         }
 
-        if (allVars) {
-          Abstract.Pattern pattern = clauseDataList.get(0).patterns.get(0);
-          context.push(pattern == null ? new MissingClausesError.SkipClauseElem() : new MissingClausesError.PatternClauseElem(pattern));
-          for (ClauseData clauseData : clauseDataList) {
-            pattern = clauseData.patterns.get(0);
-            if (pattern != null) {
-              clauseData.context.put(((Abstract.NamePattern) pattern).getReferent(), parameters);
-            }
-            if (clauseData.freeBindings != null) {
-              clauseData.freeBindings.add(parameters);
-            }
-            clauseData.patterns = clauseData.patterns.subList(1, clauseData.patterns.size());
+        Abstract.Pattern pattern = clauseDataList.get(0).patterns.get(0);
+        context.push(pattern == null ? new MissingClausesError.SkipClauseElem() : new MissingClausesError.PatternClauseElem(pattern));
+        for (ClauseData clauseData : clauseDataList) {
+          pattern = clauseData.patterns.get(0);
+          if (pattern != null) {
+            clauseData.context.put(((Abstract.NamePattern) pattern).getReferent(), parameters);
           }
-        } else {
-          break;
+          if (clauseData.freeBindings != null) {
+            clauseData.freeBindings.add(parameters);
+          }
+          clauseData.patterns = clauseData.patterns.subList(1, clauseData.patterns.size());
         }
       }
 
@@ -173,12 +182,14 @@ public class TypecheckingElim {
         myUnusedClauses.remove(clause);
         myVisitor.getContext().putAll(clauseDataList.get(0).context);
         if (clauseDataList.get(0).freeBindings != null) {
-          myVisitor.getFreeBindings().clear();
           myVisitor.getFreeBindings().addAll(clauseDataList.get(0).freeBindings);
         }
         Expression expectedType = myExpectedType.subst(substitution);
         CheckTypeVisitor.Result result = myFinal ? myVisitor.finalCheckExpr(clause.getExpression(), expectedType) : myVisitor.checkExpr(clause.getExpression(), expectedType);
         myVisitor.getContext().keySet().removeAll(clauseDataList.get(0).context.keySet());
+        if (clauseDataList.get(0).freeBindings != null) {
+          myVisitor.getFreeBindings().removeAll(clauseDataList.get(0).freeBindings);
+        }
         return result == null ? null : new LeafElimTree(vars, result.expression);
       }
 
@@ -198,6 +209,10 @@ public class TypecheckingElim {
         return null;
       }
       List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
+      if (conCalls == null) {
+        myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", firstPattern));
+        return null;
+      }
       vars = DependentLink.Helper.slice(vars, parameters);
 
       // If we have an empty pattern in the first column,
@@ -260,15 +275,30 @@ public class TypecheckingElim {
           if (!ok) {
             hasMissingConstructors = true;
             if (varClauseDataList.isEmpty()) {
-              addMissingClause(new ArrayList<>(context));
+              List<MissingClausesError.ClauseElem> missingClause = new ArrayList<>(context);
+              boolean moreArguments = clauseDataList.get(0).patterns.size() > 1;
+              if (!moreArguments) {
+                for (DependentLink link = conCall.getDefinition().getParameters(); link.hasNext(); link = link.getNext()) {
+                  if (link.isExplicit()) {
+                    moreArguments = true;
+                    break;
+                  }
+                }
+              }
+              if (moreArguments) {
+                missingClause.add(null);
+              }
+              addMissingClause(missingClause);
             }
           }
         } else {
           // Check that there is a correct number of patterns and construct new lists of patterns for each clause
-          for (ClauseData clauseData : conClauseDataList) {
+          for (int j = 0; j < conClauseDataList.size(); j++) {
+            ClauseData clauseData = conClauseDataList.get(j);
             Abstract.Pattern pattern = clauseData.patterns.get(0);
             List<Abstract.Pattern> newPatterns;
-            if (pattern instanceof Abstract.ConstructorPattern) {
+            boolean isConPattern = pattern instanceof Abstract.ConstructorPattern;
+            if (isConPattern) {
               newPatterns = new ArrayList<>();
               List<? extends Abstract.PatternArgument> patternArgs = ((Abstract.ConstructorPattern) pattern).getArguments();
               int i = 0;
@@ -283,7 +313,7 @@ public class TypecheckingElim {
                   }
                 }
                 if (i >= patternArgs.size()) {
-                  myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Not enough patterns, expected " + DependentLink.Helper.size(conCall.getDefinition().getParameters()) + " more", pattern));
+                  myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Not enough patterns, expected " + DependentLink.Helper.size(link) + " more", pattern));
                   return null;
                 }
                 if (link.isExplicit() && !patternArgs.get(i).isExplicit()) {
@@ -299,11 +329,11 @@ public class TypecheckingElim {
               newPatterns = new ArrayList<>(Collections.nCopies(DependentLink.Helper.size(conCall.getDefinition().getParameters()), null));
             }
             newPatterns.addAll(clauseData.patterns.subList(1, clauseData.patterns.size()));
-            clauseData.patterns = newPatterns;
+            conClauseDataList.set(j, new ClauseData(newPatterns, isConPattern ? clauseData.context : new HashMap<>(clauseData.context), isConPattern || clauseData.freeBindings == null ? clauseData.freeBindings : new HashSet<>(clauseData.freeBindings), clauseData.clause));
           }
 
           // Construct new list of parameters and new substitution
-          DependentLink newParameters = DependentLink.Helper.subst(conCall.getDefinition().getParameters(), new ExprSubstitution());
+          DependentLink newParameters = conCall.getConstructorParameters();
           for (DependentLink link = newParameters; link.hasNext(); link = link.getNext()) {
             conCall.addArgument(new ReferenceExpression(link));
           }

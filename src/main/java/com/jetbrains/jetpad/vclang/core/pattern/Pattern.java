@@ -12,7 +12,7 @@ public abstract class Pattern implements Abstract.Pattern {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    new PrettyPrintVisitor(builder, 0).prettyPrintPattern(this);
+    new PrettyPrintVisitor(builder, 0).prettyPrintPattern(this, Abstract.Pattern.PREC);
     return builder.toString();
   }
 

@@ -104,11 +104,12 @@ class TypecheckPattern {
       Abstract.ConstructorPattern conPattern = (Abstract.ConstructorPattern) pattern;
 
       Constructor constructor = expr.toDataCall().getDefinition().getConstructor(conPattern.getConstructor());
-      ConCallExpression conCall = constructor == null ? null : expr.toDataCall().getMatchedConCall(constructor);
-      if (conCall == null) {
+      List<ConCallExpression> conCalls = new ArrayList<>(1);
+      if (constructor == null || !expr.toDataCall().getMatchedConCall(constructor, conCalls) || conCalls.isEmpty() ) {
         errorReporter.report(new LocalTypeCheckingError("'" + conPattern.getConstructor() + "' is not a constructor of data type '" + expr + "'", pattern));
         return null;
       }
+      ConCallExpression conCall = conCalls.get(0);
 
       ExprSubstitution substitution = new ExprSubstitution();
       int i = 0;

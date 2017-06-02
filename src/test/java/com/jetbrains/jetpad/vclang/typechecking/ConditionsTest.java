@@ -121,12 +121,12 @@ public class ConditionsTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void dataTypeWithIndicies() {
+  public void dataTypeWithIndices() {
     typeCheckClass(
         "\\data S | base | loop I \n" +
         "  \\with | loop left => base\n" +
         "         | loop right => base\n" +
-        "\\data D Nat | D zero => di I | D _ => d \n" +
+        "\\data D Nat | D zero => di I | D _ => d\n" +
         "  \\with | di left => d | di right => d\n" +
         "\\function test (x : Nat) (y : D x) : S <= \\elim x, y\n" +
         "  | suc _, d => base\n" +
@@ -183,11 +183,11 @@ public class ConditionsTest extends TypeCheckingTestCase {
   @Test
   public void constructorArgumentWithCondition() {
     typeCheckClass(
-        "\\data S | base | loop I \n" +
-            "  \\with | loop left => base\n" +
-            "         | loop right => base\n" +
+        "\\data S | base | loop I\n" +
+        "  \\with | loop left => base\n" +
+        "         | loop right => base\n" +
         "\\data D | cons S | cons'\n" +
-            "  \\with cons (loop left) => cons'" +
+        "  \\with cons (loop left) => cons'\n" +
         "\\function condTest : (cons' = cons') => path (\\lam _ => cons (loop left))");
   }
 
@@ -244,7 +244,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
 
   @Test
   public void dataIntervalCondition() {
-    typeCheckClass("\\data D I | D left => c");
+    typeCheckClass("\\data D I | D left => c", 1);
   }
 
   @Test

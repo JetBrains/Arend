@@ -83,26 +83,25 @@ public class DataCallExpression extends DefCallExpression implements Type {
   public List<ConCallExpression> getMatchedConstructors() {
     List<ConCallExpression> result = new ArrayList<>();
     for (Constructor constructor : getDefinition().getConstructors()) {
-      ConCallExpression conCall = getMatchedConCall(constructor);
-      if (conCall != null) {
-        result.add(conCall);
+      if (!getMatchedConCall(constructor, result)) {
+        return null;
       }
     }
     return result;
   }
 
-  public ConCallExpression getMatchedConCall(Constructor constructor) {
+  public boolean getMatchedConCall(Constructor constructor, List<ConCallExpression> conCalls) {
     if (!constructor.status().headerIsOK()) {
-      return null;
+      return true;
     }
 
     List<? extends Expression> matchedParameters;
     if (constructor.getPatterns() != null) {
       Pattern.MatchResult matchResult = constructor.getPatterns().match(myArguments);
       if (matchResult instanceof Pattern.MatchMaybeResult) {
-        return null;
+        return false;
       } else if (matchResult instanceof Pattern.MatchFailedResult) {
-        return null;
+        return true;
       } else if (matchResult instanceof Pattern.MatchOKResult) {
         matchedParameters = ((Pattern.MatchOKResult) matchResult).expressions;
       } else {
@@ -112,6 +111,7 @@ public class DataCallExpression extends DefCallExpression implements Type {
       matchedParameters = myArguments;
     }
 
-    return new ConCallExpression(constructor, mySortArgument, new ArrayList<>(matchedParameters), new ArrayList<>());
+    conCalls.add(new ConCallExpression(constructor, mySortArgument, new ArrayList<>(matchedParameters), new ArrayList<>()));
+    return true;
   }
 }

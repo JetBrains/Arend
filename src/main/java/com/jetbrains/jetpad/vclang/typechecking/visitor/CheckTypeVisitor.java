@@ -633,7 +633,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
   @Override
   public Result visitLam(Abstract.LamExpression expr, ExpectedType expectedType) {
-    try (Utils.MapContextSaver ignored = new Utils.MapContextSaver<>(myContext)) {
+    try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myContext)) {
       Result result = visitLam(expr.getArguments(), expr, expectedType instanceof Expression ? (Expression) expectedType : null, 1);
       if (result != null) {
         expr.setWellTyped(myContext, result.expression);
@@ -652,7 +652,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     List<SingleDependentLink> list = new ArrayList<>();
     List<Sort> sorts = new ArrayList<>(expr.getArguments().size());
 
-    try (Utils.MapContextSaver ignored = new Utils.MapContextSaver<>(myContext)) {
+    try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myContext)) {
       for (Abstract.TypeArgument arg : expr.getArguments()) {
         Type result = checkType(arg.getType());
         if (result == null) return null;
@@ -815,7 +815,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   private DependentLink visitArguments(List<? extends Abstract.TypeArgument> arguments, List<Sort> resultSorts) {
     LinkList list = new LinkList();
 
-    try (Utils.MapContextSaver ignored = new Utils.MapContextSaver<>(myContext)) {
+    try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myContext)) {
       for (Abstract.TypeArgument arg : arguments) {
         Type result = checkType(arg.getType());
         if (result == null) return null;
@@ -1165,7 +1165,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     List<Sort> domSorts = new ArrayList<>(clause.getArguments().size());
 
     Abstract.ReferableSourceNode referable = null;
-    try (Utils.MapContextSaver ignore = new Utils.MapContextSaver<>(myContext)) {
+    try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myContext)) {
       for (Abstract.Argument arg : clause.getArguments()) {
         if (arg instanceof Abstract.TelescopeArgument) {
           Abstract.TelescopeArgument teleArg = (Abstract.TelescopeArgument) arg;
@@ -1236,7 +1236,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
   @Override
   public Result visitLet(Abstract.LetExpression expr, ExpectedType expectedType) {
-    try (Utils.MapContextSaver ignored = new Utils.MapContextSaver<>(myContext)) {
+    try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myContext)) {
       List<LetClause> clauses = new ArrayList<>();
       for (int i = 0; i < expr.getClauses().size(); i++) {
         LetClause clauseResult = typeCheckLetClause(expr.getClauses().get(i));

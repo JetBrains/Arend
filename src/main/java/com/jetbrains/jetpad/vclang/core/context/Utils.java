@@ -30,18 +30,23 @@ public class Utils {
     }
   }
 
-  public static class MapContextSaver<K> implements AutoCloseable {
-    private final Map<K, ?> myMap;
-    private final Set<K> myKeys;
+  public static class SetContextSaver<K> implements AutoCloseable {
+    private final Set<K> mySet;
+    private final Set<K> myOriginalSet;
 
-    public MapContextSaver(Map<K, ?> map) {
-      myMap = map;
-      myKeys = new HashSet<>(myMap.keySet());
+    public SetContextSaver(Set<K> set) {
+      mySet = set;
+      myOriginalSet = new HashSet<>(mySet);
+    }
+
+    public SetContextSaver(Map<K, ?> map) {
+      mySet = map.keySet();
+      myOriginalSet = new HashSet<>(mySet);
     }
 
     @Override
     public void close() {
-      myMap.keySet().retainAll(myKeys);
+      mySet.retainAll(myOriginalSet);
     }
   }
 

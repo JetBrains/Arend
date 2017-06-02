@@ -416,6 +416,7 @@ public final class Abstract {
   }
 
   public interface Pattern extends SourceNode {
+    byte PREC = 11;
     void setWellTyped(com.jetbrains.jetpad.vclang.core.pattern.Pattern pattern);
   }
 

@@ -112,26 +112,51 @@ public class ErrorFormatter {
         .append("  Actual type: ");
       ((TypeMismatchError) error).actual.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, text.length());
     } else if (error instanceof MissingClausesError) {
-      builder.append(error.getMessage()).append(":");
+      boolean first = true;
       PrettyPrintVisitor ppv = new PrettyPrintVisitor(builder, 0);
       for (List<MissingClausesError.ClauseElem> clause : ((MissingClausesError) error).getMissingClauses()) {
-        builder.append('\n');
+        if (first) {
+          first = false;
+        } else {
+          builder.append('\n');
+        }
         if (clause != null) {
-          builder.append("  ");
-          for (MissingClausesError.ClauseElem clauseElem : clause) {
-            if (clauseElem instanceof MissingClausesError.PatternClauseElem) {
-              ppv.prettyPrintPattern(((MissingClausesError.PatternClauseElem) clauseElem).pattern);
+          ppv.printIndent();
+          boolean patternFirst = true;
+          int parens = 0;
+          for (int i = 0; i < clause.size(); i++) {
+            MissingClausesError.ClauseElem clauseElem = clause.get(i);
+            if (!patternFirst) {
               builder.append(' ');
+            }
+            if (clauseElem == null) {
+              builder.append("...");
+              parens = 0;
+            } else if (clauseElem instanceof MissingClausesError.PatternClauseElem) {
+              ppv.prettyPrintPattern(((MissingClausesError.PatternClauseElem) clauseElem).pattern, (byte) (Abstract.Pattern.PREC + 1));
             } else if (clauseElem instanceof MissingClausesError.ConstructorClauseElem) {
-              builder.append(((MissingClausesError.ConstructorClauseElem) clauseElem).constructor).append(" ");
+              if (!patternFirst && i < clause.size() - 1) {
+                builder.append('(');
+                parens++;
+              }
+              builder.append(((MissingClausesError.ConstructorClauseElem) clauseElem).constructor);
             } else if (clauseElem instanceof MissingClausesError.SkipClauseElem) {
               builder.append('_');
             } else {
               throw new IllegalStateException();
             }
+
+            if (patternFirst) {
+              patternFirst = false;
+            }
           }
+
+          for (int i = 0; i < parens; i++) {
+            builder.append(')');
+          }
+        } else {
+          builder.append("...");
         }
-        builder.append("...");
       }
     } else if (error instanceof ExpressionMismatchError) {
       String text = "Expected: ";
