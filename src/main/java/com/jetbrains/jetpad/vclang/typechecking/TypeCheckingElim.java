@@ -113,17 +113,18 @@ public class TypeCheckingElim {
     }
   }
 
-  public Patterns visitPatternArgs(List<Abstract.PatternArgument> patternArgs, List<Abstract.ReferableSourceNode> referableList, DependentLink eliminatingArgs, List<Expression> substIn, PatternExpansionMode mode) {
-    List<PatternArgument> typedPatterns = new ArrayList<>();
+  public Patterns visitPatternArgs(List<Abstract.Pattern> patternArgs, List<Abstract.ReferableSourceNode> referableList, DependentLink eliminatingArgs, List<Expression> substIn, PatternExpansionMode mode) {
+    List<Pattern> typedPatterns = new ArrayList<>();
     LinkList links = new LinkList();
     Set<Binding> bounds = new HashSet<>(myVisitor.getFreeBindings());
     int i = 0;
-    for (Abstract.PatternArgument patternArg : patternArgs) {
-      ExpandPatternResult result = expandPattern(patternArg.getPattern(), referableList.get(i++), eliminatingArgs, mode, links);
+    for (Abstract.Pattern patternArg : patternArgs) {
+      ExpandPatternResult result = expandPattern(patternArg, referableList.get(i++), eliminatingArgs, mode, links);
       if (result == null || result instanceof ExpandPatternErrorResult)
         return null;
 
-      typedPatterns.add(new PatternArgument(((ExpandPatternOKResult) result).pattern, patternArg.isExplicit()));
+      ((ExpandPatternOKResult) result).pattern.setExplicit(patternArg.isExplicit());
+      typedPatterns.add(((ExpandPatternOKResult) result).pattern);
 
       for (DependentLink link = ((ExpandPatternOKResult) result).pattern.getParameters(); link.hasNext(); link = link.getNext()) {
         bounds.add(link);
@@ -494,24 +495,25 @@ public class TypeCheckingElim {
         myVisitor.getErrorReporter().report(error);
         return new ExpandPatternErrorResult(error);
       }
-      List<Abstract.PatternArgument> patterns = implicitResult.patterns;
+      List<Abstract.Pattern> patterns = implicitResult.patterns;
 
       DependentLink constructorArgs = DependentLink.Helper.subst(constructor.getParameters(),
         toSubstitution(constructor.getDataTypeParameters(), matchedParameters),
         dataCall.getSortArgument().toLevelSubstitution());
 
-      List<PatternArgument> resultPatterns = new ArrayList<>();
+      List<Pattern> resultPatterns = new ArrayList<>();
       DependentLink tailArgs = constructorArgs;
       List<Expression> arguments = new ArrayList<>(patterns.size());
       List<Abstract.ReferableSourceNode> conParams = new ArrayList<>();
       getReferableList(constructor.getAbstractDefinition().getArguments(), conParams);
       int i = 0;
-      for (Abstract.PatternArgument subPattern : patterns) {
-        ExpandPatternResult result = expandPattern(subPattern.getPattern(), conParams.get(i++), tailArgs, mode, links);
+      for (Abstract.Pattern subPattern : patterns) {
+        ExpandPatternResult result = expandPattern(subPattern, conParams.get(i++), tailArgs, mode, links);
         if (result instanceof ExpandPatternErrorResult)
           return result;
         ExpandPatternOKResult okResult = (ExpandPatternOKResult) result;
-        resultPatterns.add(new PatternArgument(okResult.pattern, subPattern.isExplicit()));
+        okResult.pattern.setExplicit(subPattern.isExplicit());
+        resultPatterns.add(okResult.pattern);
         tailArgs = DependentLink.Helper.subst(tailArgs.getNext(), new ExprSubstitution(tailArgs, okResult.expression));
         arguments.add(okResult.expression);
       }

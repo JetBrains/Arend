@@ -9,7 +9,6 @@ import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
-import com.jetbrains.jetpad.vclang.core.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.core.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.EmptyElimTreeNode;
@@ -115,14 +114,14 @@ public class Constructor extends Definition implements Function, BranchElimTree.
       DependentLink dataTypeParams = myDataType.getParameters();
       LevelSubstitution levelSubst = sortArgument == null ? LevelSubstitution.EMPTY : sortArgument.toLevelSubstitution();
       arguments = new ArrayList<>(myPatterns.getPatterns().size());
-      for (PatternArgument patternArg : myPatterns.getPatterns()) {
+      for (Pattern patternArg : myPatterns.getPatterns()) {
         ExprSubstitution innerSubst = new ExprSubstitution();
         LevelSubstitution innerLevelSubst;
 
-        if (patternArg.getPattern() instanceof ConstructorPattern) {
+        if (patternArg instanceof ConstructorPattern) {
           DataCallExpression dataCall = dataTypeParams.getType().getExpr().subst(subst).normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
           List<? extends Expression> argDataTypeParams = dataCall.getDefCallArguments();
-          innerSubst = ((ConstructorPattern) patternArg.getPattern()).getMatchedArguments(new ArrayList<>(argDataTypeParams));
+          innerSubst = ((ConstructorPattern) patternArg).getMatchedArguments(new ArrayList<>(argDataTypeParams));
           innerLevelSubst = new StdLevelSubstitution(dataCall.getSortArgument());
         } else {
           innerLevelSubst = LevelSubstitution.EMPTY;
@@ -131,7 +130,7 @@ public class Constructor extends Definition implements Function, BranchElimTree.
         if (substitution != null) {
           innerSubst.addAll(substitution);
         }
-        Expression expr = patternArg.getPattern().toExpression(innerSubst).subst(innerLevelSubst).subst(levelSubst);
+        Expression expr = patternArg.toExpression(innerSubst).subst(innerLevelSubst).subst(levelSubst);
 
         subst.add(dataTypeParams, expr);
         arguments.add(expr);

@@ -9,6 +9,17 @@ import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import java.util.List;
 
 public abstract class Pattern implements Abstract.Pattern {
+  private boolean myExplicit = true;
+
+  @Override
+  public boolean isExplicit() {
+    return myExplicit;
+  }
+
+  public void setExplicit(boolean isExplicit) {
+    myExplicit = isExplicit;
+  }
+
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();

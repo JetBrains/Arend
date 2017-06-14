@@ -133,13 +133,13 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     return null;
   }
 
-  private void visitPatterns(List<? extends Abstract.PatternArgument> patterns, ExpressionResolveNameVisitor exprVisitor) {
-    for (Abstract.PatternArgument patternArg : patterns) {
-      Abstract.Constructor constructor = exprVisitor.visitPattern(patternArg.getPattern());
+  private void visitPatterns(List<Abstract.Pattern> patterns, ExpressionResolveNameVisitor exprVisitor) {
+    for (int i = 0; i < patterns.size(); i++) {
+      Abstract.Constructor constructor = exprVisitor.visitPattern(patterns.get(i));
       if (constructor != null) {
-        myResolveListener.replaceWithConstructor(patternArg, constructor);
+        myResolveListener.replaceWithConstructor(patterns, i, constructor);
       }
-      exprVisitor.resolvePattern(patternArg.getPattern());
+      exprVisitor.resolvePattern(patterns.get(i));
     }
   }
 

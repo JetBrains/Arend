@@ -258,10 +258,11 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
         return null;
       }
     } else if (pattern instanceof Abstract.ConstructorPattern) {
-      for (Abstract.PatternArgument patternArg : ((Abstract.ConstructorPattern) pattern).getArguments()) {
-        Abstract.Constructor constructor = visitPattern(patternArg.getPattern());
+      List<Abstract.Pattern> patterns = ((Abstract.ConstructorPattern) pattern).getArguments();
+      for (int i = 0; i < patterns.size(); i++) {
+        Abstract.Constructor constructor = visitPattern(patterns.get(i));
         if (constructor != null) {
-          myResolveListener.replaceWithConstructor(patternArg, constructor);
+          myResolveListener.replaceWithConstructor(patterns, i, constructor);
         }
       }
       if (((Abstract.ConstructorPattern) pattern).getConstructor() != null) {
@@ -289,8 +290,8 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
           myResolveListener.patternResolved((Abstract.ConstructorPattern) pattern, (Abstract.Constructor) definition);
         }
       }
-      for (Abstract.PatternArgument patternArgument : ((Abstract.ConstructorPattern) pattern).getArguments()) {
-        resolvePattern(patternArgument.getPattern());
+      for (Abstract.Pattern patternArg : ((Abstract.ConstructorPattern) pattern).getArguments()) {
+        resolvePattern(patternArg);
       }
     }
   }

@@ -274,8 +274,8 @@ public class NormalizationTest extends TypeCheckingTestCase {
     // normalize (\let | x (y : N) : \oo-Type2 <= \elim y | zero => \Type0 | suc _ => \Type1 \in x zero) = \Type0
     Concrete.ReferableSourceNode y = ref("y");
     Concrete.Expression elimTree = cElim(Collections.singletonList(cVar(y)),
-        cClause(cPatterns(cConPattern(Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cUniverseStd(0)),
-        cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern(ref(null)), true))), Abstract.Definition.Arrow.RIGHT, cUniverseStd(1))
+        cClause(cPatterns(cConPattern(true, Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cUniverseStd(0)),
+        cClause(cPatterns(cConPattern(true, Prelude.SUC.getName(), cNamePattern(true, ref(null)))), Abstract.Definition.Arrow.RIGHT, cUniverseStd(1))
     );
     Concrete.LetClause x = clet("x", cargs(cTele(cvars(y), cNat())), cUniverseInf(2), Abstract.Definition.Arrow.LEFT, elimTree);
     CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(x), cApps(cVar(x), cZero())), null);

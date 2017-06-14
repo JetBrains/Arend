@@ -239,11 +239,8 @@ public final class Abstract {
     int getField();
   }
 
-  public interface PatternContainer {
+  public interface Clause extends SourceNode {
     List<? extends Pattern> getPatterns();
-  }
-
-  public interface Clause extends SourceNode, PatternContainer {
     Definition.Arrow getArrow();
     Expression getExpression();
   }
@@ -410,13 +407,9 @@ public final class Abstract {
 
   // Patterns
 
-  public interface PatternArgument extends SourceNode {
-    boolean isExplicit();
-    Pattern getPattern();
-  }
-
   public interface Pattern extends SourceNode {
     byte PREC = 11;
+    boolean isExplicit();
     void setWellTyped(com.jetbrains.jetpad.vclang.core.pattern.Pattern pattern);
   }
 
@@ -426,7 +419,7 @@ public final class Abstract {
   }
 
   public interface ConstructorPattern extends Pattern {
-    List<? extends PatternArgument> getArguments();
+    List<Pattern> getArguments();
     String getConstructorName();
     Abstract.Constructor getConstructor();
   }
@@ -434,13 +427,13 @@ public final class Abstract {
   public interface EmptyPattern extends Pattern {}
 
   public interface Constructor extends Definition {
-    List<? extends PatternArgument> getPatterns();
+    List<Pattern> getPatterns();
     List<? extends TypeArgument> getArguments();
     DataDefinition getDataType();
   }
 
   public interface Condition extends SourceNode {
-    List<? extends PatternArgument> getPatterns();
+    List<Pattern> getPatterns();
     String getConstructorName();
     Expression getTerm();
     void setWellTyped(ElimTreeNode condition);

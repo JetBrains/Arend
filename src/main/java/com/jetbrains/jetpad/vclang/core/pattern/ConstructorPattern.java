@@ -32,7 +32,7 @@ public class ConstructorPattern extends Pattern {
     return myArguments;
   }
 
-  public List<PatternArgument> getArguments() {
+  public List<Pattern> getArguments() {
     return myArguments.getPatterns();
   }
 
@@ -52,20 +52,20 @@ public class ConstructorPattern extends Pattern {
     DependentLink constructorParameters = myConstructor.getParameters();
     DependentLink link = constructorParameters;
     List<Expression> arguments = new ArrayList<>();
-    for (PatternArgument patternArgument : myArguments.getPatterns()) {
+    for (Pattern patternArgument : myArguments.getPatterns()) {
       assert link.hasNext();
       LevelSubstitution levelSubst;
-      if (patternArgument.getPattern() instanceof ConstructorPattern) {
+      if (patternArgument instanceof ConstructorPattern) {
         Expression type = link.getType().getExpr().subst(subst).normalize(NormalizeVisitor.Mode.WHNF);
-        assert type.toDataCall() != null && type.toDataCall().getDefinition() == ((ConstructorPattern) patternArgument.getPattern()).getConstructor().getDataType();
-        ExprSubstitution subSubst = ((ConstructorPattern) patternArgument.getPattern()).getMatchedArguments(new ArrayList<>(type.toDataCall().getDefCallArguments()));
+        assert type.toDataCall() != null && type.toDataCall().getDefinition() == ((ConstructorPattern) patternArgument).getConstructor().getDataType();
+        ExprSubstitution subSubst = ((ConstructorPattern) patternArgument).getMatchedArguments(new ArrayList<>(type.toDataCall().getDefCallArguments()));
         levelSubst = new StdLevelSubstitution(type.toDataCall().getSortArgument());
         subst.addAll(subSubst);
       } else {
         levelSubst = LevelSubstitution.EMPTY;
       }
-      Expression param = patternArgument.getPattern().toExpression(subst).subst(levelSubst);
-      if (patternArgument.getPattern() instanceof ConstructorPattern) {
+      Expression param = patternArgument.toExpression(subst).subst(levelSubst);
+      if (patternArgument instanceof ConstructorPattern) {
         DependentLink.Helper.freeSubsts(getParameters(), subst);
       }
 

@@ -16,8 +16,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.jetbrains.jetpad.vclang.core.pattern.Utils.toPatterns;
-
 class PatternsExpander {
   static class Branch {
     final LeafElimTreeNode leaf;
@@ -121,13 +119,13 @@ class PatternsExpander {
             ((ConstructorPattern) patterns.get(j)).getConstructor() == constructor) {
           hasConstructor = true;
           indices.add(j);
-          nestedPatterns.add(toPatterns(((ConstructorPattern) patterns.get(j)).getArguments()));
+          nestedPatterns.add(((ConstructorPattern) patterns.get(j)).getArguments());
 
           if (names == null) {
             names = new ArrayList<>(((ConstructorPattern) patterns.get(j)).getArguments().size());
-            for (PatternArgument patternArg : ((ConstructorPattern) patterns.get(j)).getArguments()) {
-              if (patternArg.getPattern() instanceof NamePattern) {
-                names.add(((NamePattern) patternArg.getPattern()).getName());
+            for (Pattern pattern : ((ConstructorPattern) patterns.get(j)).getArguments()) {
+              if (pattern instanceof NamePattern) {
+                names.add(((NamePattern) pattern).getName());
               } else {
                 names.add(null);
               }

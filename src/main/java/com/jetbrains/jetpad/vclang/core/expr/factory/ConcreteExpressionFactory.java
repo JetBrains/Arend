@@ -10,6 +10,7 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 
+@SuppressWarnings("unchecked")
 public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   @Override
   public Abstract.Expression makeApp(Abstract.Expression fun, boolean explicit, Abstract.Expression arg) {
@@ -177,17 +178,12 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.Pattern makeConPattern(Abstract.Constructor constructor, List<? extends Abstract.PatternArgument> args) {
-    return cConPattern(constructor.getName(), (List<Concrete.PatternArgument>) args);
+  public Abstract.Pattern makeConPattern(boolean isExplicit, Abstract.Constructor constructor, List<Abstract.Pattern> args) {
+    return cConPattern(isExplicit, constructor.getName(), args);
   }
 
   @Override
-  public Abstract.Pattern makeNamePattern(Abstract.ReferableSourceNode referable) {
-    return cNamePattern(referable);
-  }
-
-  @Override
-  public Abstract.PatternArgument makePatternArgument(Abstract.Pattern pattern, boolean explicit) {
-    return cPatternArg((Concrete.Pattern) pattern, explicit);
+  public Abstract.Pattern makeNamePattern(boolean isExplicit, Abstract.ReferableSourceNode referable) {
+    return cNamePattern(isExplicit, referable);
   }
 }

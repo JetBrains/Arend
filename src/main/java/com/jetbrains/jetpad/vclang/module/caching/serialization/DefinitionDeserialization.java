@@ -94,9 +94,11 @@ class DefinitionDeserialization {
   }
 
   private Patterns readPatterns(DefinitionProtos.Definition.DataData.Constructor.Patterns proto, LinkList list) throws DeserializationError {
-    List<PatternArgument> args = new ArrayList<>();
+    List<Pattern> args = new ArrayList<>();
     for (DefinitionProtos.Definition.DataData.Constructor.PatternArgument argProto : proto.getPatternArgumentList()) {
-      args.add(new PatternArgument(readPattern(argProto.getPattern(), list), !argProto.getNotExplicit()));
+      Pattern pattern = readPattern(argProto.getPattern(), list);
+      pattern.setExplicit(!argProto.getNotExplicit());
+      args.add(pattern);
     }
     return new Patterns(args);
   }

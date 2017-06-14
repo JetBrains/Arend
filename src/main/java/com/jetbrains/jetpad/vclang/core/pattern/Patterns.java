@@ -8,19 +8,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Patterns {
-  private final List<PatternArgument> myPatterns;
+  private final List<Pattern> myPatterns;
 
-  public Patterns(List<PatternArgument> patterns) {
+  public Patterns(List<Pattern> patterns) {
     myPatterns = patterns;
   }
 
-  public List<PatternArgument> getPatterns() {
+  public List<Pattern> getPatterns() {
     return myPatterns;
   }
 
   public DependentLink getParameters() {
-    for (PatternArgument pattern : myPatterns) {
-      DependentLink result = pattern.getPattern().getParameters();
+    for (Pattern pattern : myPatterns) {
+      DependentLink result = pattern.getParameters();
       if (result.hasNext()) {
         return result;
       }
@@ -38,7 +38,7 @@ public class Patterns {
 
     Pattern.MatchMaybeResult maybe = null;
     for (int i = 0; i < myPatterns.size(); i++) {
-      Pattern.MatchResult subMatch = myPatterns.get(i).getPattern().match(exprs.get(i), normalize);
+      Pattern.MatchResult subMatch = myPatterns.get(i).match(exprs.get(i), normalize);
       if (subMatch instanceof Pattern.MatchFailedResult) {
         return subMatch;
       } else

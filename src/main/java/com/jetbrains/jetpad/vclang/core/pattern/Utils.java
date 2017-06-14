@@ -17,20 +17,20 @@ public class Utils {
     }
   }
 
-  public static int getNumArguments(List<? extends PatternArgument> patternArgs) {
+  public static int getNumArguments(List<? extends Pattern> patternArgs) {
     int result = 0;
-    for (PatternArgument patternArg : patternArgs)
-      result += getNumArguments(patternArg.getPattern());
+    for (Pattern patternArg : patternArgs)
+      result += getNumArguments(patternArg);
     return result;
   }
 
   public static class ProcessImplicitResult {
-    public final List<Abstract.PatternArgument> patterns;
+    public final List<Abstract.Pattern> patterns;
     public final int wrongImplicitPosition;
     public final int numExplicit;
     public final int numExcessive;
 
-    public ProcessImplicitResult(List<Abstract.PatternArgument> patterns, int numExplicit) {
+    public ProcessImplicitResult(List<Abstract.Pattern> patterns, int numExplicit) {
       this.patterns = patterns;
       this.wrongImplicitPosition = -1;
       this.numExplicit = numExplicit;
@@ -52,7 +52,7 @@ public class Utils {
     }
   }
 
-  public static ProcessImplicitResult processImplicit(List<? extends Abstract.PatternArgument> patterns, DependentLink params) {
+  public static ProcessImplicitResult processImplicit(List<? extends Abstract.Pattern> patterns, DependentLink params) {
     int numExplicit = 0;
     for (DependentLink link = params; link.hasNext(); link = link.getNext()) {
       if (link.isExplicit()) {
@@ -60,12 +60,12 @@ public class Utils {
       }
     }
 
-    List<Abstract.PatternArgument> result = new ArrayList<>();
+    List<Abstract.Pattern> result = new ArrayList<>();
     int indexI = 0;
     for (DependentLink link = params; link.hasNext(); link = link.getNext()) {
-      Abstract.PatternArgument curPattern = indexI < patterns.size() ? patterns.get(indexI) : new PatternArgument(new NamePattern(link), false);
+      Abstract.Pattern curPattern = indexI < patterns.size() ? patterns.get(indexI) : new NamePattern(link, false);
       if (curPattern.isExplicit() && !link.isExplicit()) {
-        curPattern = new PatternArgument(new NamePattern(link), false);
+        curPattern = new NamePattern(link, false);
       } else {
         indexI++;
       }
@@ -78,13 +78,5 @@ public class Utils {
       return new ProcessImplicitResult(patterns.size() - indexI);
     }
     return new ProcessImplicitResult(result, numExplicit);
-  }
-
-  public static List<Pattern> toPatterns(List<PatternArgument> patternArgs)  {
-    List<Pattern> result = new ArrayList<>(patternArgs.size());
-    for (PatternArgument patternArg : patternArgs) {
-      result.add(patternArg.getPattern());
-    }
-    return result;
   }
 }

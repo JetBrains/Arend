@@ -17,7 +17,6 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.StripVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
-import com.jetbrains.jetpad.vclang.core.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.core.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.core.pattern.Utils.ProcessImplicitResult;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
@@ -52,7 +51,6 @@ import java.util.stream.Collectors;
 import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.toContext;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.pattern.Utils.processImplicit;
-import static com.jetbrains.jetpad.vclang.core.pattern.Utils.toPatterns;
 import static com.jetbrains.jetpad.vclang.term.Util.getReferableList;
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.typeOfFunctionArg;
 
@@ -477,7 +475,7 @@ public class DefinitionCheckType {
           try (Utils.SetContextSaver saver = new Utils.SetContextSaver<>(visitor.getContext())) {
             List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getDataTypeExpression(null)));
             DependentLink params = constructor.getParameters();
-            List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(cond, params, cond.getPatterns(), visitor.getErrorReporter());
+            List<Abstract.Pattern> processedPatterns = processImplicitPatterns(cond, params, cond.getPatterns(), visitor.getErrorReporter());
             if (processedPatterns == null)
               continue;
 
@@ -492,7 +490,7 @@ public class DefinitionCheckType {
             if (result == null)
               continue;
 
-            patterns.add(toPatterns(typedPatterns.getPatterns()));
+            patterns.add(typedPatterns.getPatterns());
             expressions.add(result.expression.normalize(NormalizeVisitor.Mode.NF));
             arrows.add(Abstract.Definition.Arrow.RIGHT);
           }
@@ -557,12 +555,12 @@ public class DefinitionCheckType {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
       Constructor constructor = new Constructor(def, dataDefinition);
       visitor.getTypecheckingState().record(def, constructor);
-      List<? extends Abstract.PatternArgument> patterns = def.getPatterns();
+      List<? extends Abstract.Pattern> patterns = def.getPatterns();
       Patterns typedPatterns = null;
       if (patterns != null) {
-        List<Abstract.PatternArgument> processedPatterns = new ArrayList<>(patterns);
+        List<Abstract.Pattern> processedPatterns = new ArrayList<>(patterns);
         if (dataDefinition.getThisClass() != null) {
-          processedPatterns.add(0, new PatternArgument(new NamePattern(dataDefinition.getParameters()), true));
+          processedPatterns.add(0, new NamePattern(dataDefinition.getParameters()));
         }
         processedPatterns = processImplicitPatterns(def, dataDefinition.getParameters(), processedPatterns, visitor.getErrorReporter());
         if (processedPatterns == null) {
@@ -718,8 +716,8 @@ public class DefinitionCheckType {
     return false;
   }
 
-  private static List<Abstract.PatternArgument> processImplicitPatterns(Abstract.SourceNode expression, DependentLink parameters, List<? extends Abstract.PatternArgument> patterns, LocalErrorReporter errorReporter) {
-    List<Abstract.PatternArgument> processedPatterns = null;
+  private static List<Abstract.Pattern> processImplicitPatterns(Abstract.SourceNode expression, DependentLink parameters, List<? extends Abstract.Pattern> patterns, LocalErrorReporter errorReporter) {
+    List<Abstract.Pattern> processedPatterns = null;
     ProcessImplicitResult processImplicitResult = processImplicit(patterns, parameters);
     if (processImplicitResult.patterns == null) {
       if (processImplicitResult.numExcessive != 0) {

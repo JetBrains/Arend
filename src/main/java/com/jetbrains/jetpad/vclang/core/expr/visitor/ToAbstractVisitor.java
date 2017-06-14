@@ -4,10 +4,8 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
-import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Name;
 import com.jetbrains.jetpad.vclang.core.expr.*;
@@ -522,15 +520,15 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   private List<Abstract.Clause> visitBranch(BranchElimTreeNode branchNode) {
     List<Abstract.Clause> clauses = new ArrayList<>(branchNode.getConstructorClauses().size());
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-      List<Abstract.PatternArgument> args = new ArrayList<>();
+      List<Abstract.Pattern> args = new ArrayList<>();
       for (DependentLink link = clause.getConstructor().getParameters(); link.hasNext(); link = link.getNext()) {
-        args.add(myFactory.makePatternArgument(myFactory.makeNamePattern(makeReferable(link)), link.isExplicit()));
+        args.add(myFactory.makeNamePattern(link.isExplicit(), makeReferable(link)));
       }
-      clauses.add(myFactory.makeClause(Collections.singletonList(myFactory.makeConPattern(clause.getConstructor().getAbstractDefinition(), args)), clause.getChild().getArrow(), clause.getChild() == EmptyElimTreeNode.getInstance() ? null : clause.getChild().accept(this, null)));
+      clauses.add(myFactory.makeClause(Collections.singletonList(myFactory.makeConPattern(true, clause.getConstructor().getAbstractDefinition(), args)), clause.getChild().getArrow(), clause.getChild() == EmptyElimTreeNode.getInstance() ? null : clause.getChild().accept(this, null)));
       freeVars(clause.getConstructor().getParameters());
     }
     if (branchNode.getOtherwiseClause() != null) {
-      clauses.add(myFactory.makeClause(Collections.singletonList(myFactory.makeNamePattern(null)), branchNode.getOtherwiseClause().getChild().getArrow(), branchNode.getOtherwiseClause().getChild() == EmptyElimTreeNode.getInstance() ? null : branchNode.getOtherwiseClause().getChild().accept(this, null)));
+      clauses.add(myFactory.makeClause(Collections.singletonList(myFactory.makeNamePattern(true, null)), branchNode.getOtherwiseClause().getChild().getArrow(), branchNode.getOtherwiseClause().getChild() == EmptyElimTreeNode.getInstance() ? null : branchNode.getOtherwiseClause().getChild().accept(this, null)));
     }
     return clauses;
   }

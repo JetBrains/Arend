@@ -208,20 +208,16 @@ public class ConcreteExpressionFactory {
     return Arrays.asList(patterns);
   }
 
-  public static Concrete.ConstructorPattern cConPattern(String name, List<Concrete.PatternArgument> patternArgs) {
-    return new Concrete.ConstructorPattern(POSITION, name, patternArgs);
+  public static Concrete.ConstructorPattern cConPattern(boolean isExplicit, String name, List<Abstract.Pattern> patternArgs) {
+    return new Concrete.ConstructorPattern(POSITION, isExplicit, name, patternArgs);
   }
 
-  public static Concrete.ConstructorPattern cConPattern(String name, Concrete.PatternArgument... patternArgs) {
-    return cConPattern(name, Arrays.asList(patternArgs));
+  public static Concrete.ConstructorPattern cConPattern(boolean isExplicit, String name, Concrete.Pattern... patternArgs) {
+    return cConPattern(isExplicit, name, Arrays.asList(patternArgs));
   }
 
-  public static Concrete.NamePattern cNamePattern(Abstract.ReferableSourceNode referable) {
-    return new Concrete.NamePattern(POSITION, referable);
-  }
-
-  public static Concrete.PatternArgument cPatternArg(Concrete.Pattern pattern, boolean isExplicit) {
-    return new Concrete.PatternArgument(POSITION, pattern, isExplicit);
+  public static Concrete.NamePattern cNamePattern(boolean isExplicit, Abstract.ReferableSourceNode referable) {
+    return new Concrete.NamePattern(POSITION, isExplicit, referable);
   }
 
   public static Concrete.BinOpExpression cBinOp(Concrete.Expression left, Abstract.Definition binOp, Concrete.Expression right) {

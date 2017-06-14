@@ -55,10 +55,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       prettyPrintPattern((Abstract.Pattern) node, prec);
       return true;
     }
-    if (node instanceof Abstract.PatternArgument) {
-      prettyPrintPatternArg((Abstract.PatternArgument) node);
-      return true;
-    }
     if (node instanceof Abstract.LevelExpression) {
       ((Abstract.LevelExpression) node).accept(this, Abstract.Expression.PREC);
       return true;
@@ -782,9 +778,9 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   public void prettyPrintCondition(Abstract.Condition condition) {
     myBuilder.append(condition.getConstructorName());
-    for (Abstract.PatternArgument patternArg : condition.getPatterns()) {
+    for (Abstract.Pattern patternArg : condition.getPatterns()) {
       myBuilder.append(" ");
-      prettyPrintPatternArg(patternArg);
+      prettyPrintPattern(patternArg, Abstract.Pattern.PREC);
     }
     myBuilder.append(" => ");
     condition.getTerm().accept(this, Abstract.Expression.PREC);
@@ -831,15 +827,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
-  public void prettyPrintPatternArg(Abstract.PatternArgument patternArg) {
-    Abstract.Pattern pat = patternArg.getPattern();
-    boolean isName = pat instanceof Abstract.NamePattern;
-    myBuilder.append(patternArg.isExplicit() ? (isName ? "" : "(") : "{");
-    prettyPrintPattern(pat, Abstract.Pattern.PREC);
-    myBuilder.append(patternArg.isExplicit() ? (isName ? "": ")") : "}");
-  }
-
   public void prettyPrintPattern(Abstract.Pattern pattern, byte prec) {
+    boolean isName = pattern instanceof Abstract.NamePattern;
+    myBuilder.append(pattern.isExplicit() ? (isName ? "" : "(") : "{");
+
     if (pattern instanceof Abstract.NamePattern) {
       String name = ((Abstract.NamePattern) pattern).getReferent().getName();
       if (name == null) {
@@ -852,22 +843,24 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       if (prec > Abstract.Pattern.PREC) myBuilder.append('(');
 
       myBuilder.append(new Name(((Abstract.ConstructorPattern) pattern).getConstructorName()).getPrefixName());
-      for (Abstract.PatternArgument patternArg : ((Abstract.ConstructorPattern) pattern).getArguments()) {
+      for (Abstract.Pattern patternArg : ((Abstract.ConstructorPattern) pattern).getArguments()) {
         myBuilder.append(' ');
-        prettyPrintPatternArg(patternArg);
+        prettyPrintPattern(patternArg, Abstract.Pattern.PREC);
       }
 
       if (prec > Abstract.Pattern.PREC) myBuilder.append(')');
     }
+
+    myBuilder.append(pattern.isExplicit() ? (isName ? "": ")") : "}");
   }
 
   @Override
   public Void visitConstructor(Abstract.Constructor def, Void ignored) {
-    List<? extends Abstract.PatternArgument> patternArgs = def.getPatterns();
+    List<? extends Abstract.Pattern> patternArgs = def.getPatterns();
     if (patternArgs != null) {
       myBuilder.append(def.getDataType().getName()).append(' ');
-      for (Abstract.PatternArgument patternArg : patternArgs) {
-        prettyPrintPatternArg(patternArg);
+      for (Abstract.Pattern patternArg : patternArgs) {
+        prettyPrintPattern(patternArg, Abstract.Pattern.PREC);
         myBuilder.append(' ');
       }
       myBuilder.append("=> ");

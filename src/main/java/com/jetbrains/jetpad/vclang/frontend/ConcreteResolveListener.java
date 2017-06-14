@@ -5,6 +5,9 @@ import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
+import java.util.Collections;
+import java.util.List;
+
 public class ConcreteResolveListener implements ResolveListener {
   private final ErrorReporter myErrorReporter;
 
@@ -68,13 +71,14 @@ public class ConcreteResolveListener implements ResolveListener {
   }
 
   @Override
-  public void replaceWithConstructor(Abstract.PatternArgument patternArg, Abstract.Constructor constructor) {
-    ((Concrete.PatternArgument) patternArg).replaceWithConstructor(constructor);
+  public void replaceWithConstructor(List<Abstract.Pattern> patterns, int index, Abstract.Constructor constructor) {
+    Concrete.Pattern pattern = ((Concrete.Pattern) patterns.get(index));
+    patterns.set(index, new Concrete.ConstructorPattern(pattern.getPosition(), pattern.isExplicit(), constructor, Collections.emptyList()));
   }
 
   @Override
-  public void replaceWithConstructor(Abstract.PatternContainer container, int index, Abstract.Constructor constructor) {
-    ((Concrete.PatternContainer) container).replaceWithConstructor(index, constructor);
+  public void replaceWithConstructor(Abstract.Clause clause, int index, Abstract.Constructor constructor) {
+    ((Concrete.Clause) clause).replaceWithConstructor(index, constructor);
   }
 
   @Override

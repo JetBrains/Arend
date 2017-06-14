@@ -96,10 +96,10 @@ class DefinitionSerialization {
 
   DefinitionProtos.Definition.DataData.Constructor.Patterns writePatterns(Patterns patterns) {
     DefinitionProtos.Definition.DataData.Constructor.Patterns.Builder builder = DefinitionProtos.Definition.DataData.Constructor.Patterns.newBuilder();
-    for (PatternArgument patternArg : patterns.getPatterns()) {
+    for (Pattern pattern : patterns.getPatterns()) {
       DefinitionProtos.Definition.DataData.Constructor.PatternArgument.Builder paBuilder = DefinitionProtos.Definition.DataData.Constructor.PatternArgument.newBuilder();
-      paBuilder.setNotExplicit(!patternArg.isExplicit());
-      paBuilder.setPattern(writePattern(patternArg.getPattern()));
+      paBuilder.setNotExplicit(!pattern.isExplicit());
+      paBuilder.setPattern(writePattern(pattern));
       builder.addPatternArgument(paBuilder.build());
     }
     return builder.build();

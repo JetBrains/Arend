@@ -300,7 +300,7 @@ public class TypecheckingElim {
             boolean isConPattern = pattern instanceof Abstract.ConstructorPattern;
             if (isConPattern) {
               newPatterns = new ArrayList<>();
-              List<? extends Abstract.PatternArgument> patternArgs = ((Abstract.ConstructorPattern) pattern).getArguments();
+              List<? extends Abstract.Pattern> patternArgs = ((Abstract.ConstructorPattern) pattern).getArguments();
               int i = 0;
               for (DependentLink link = conCall.getDefinition().getParameters(); link.hasNext(); link = link.getNext(), i++) {
                 if (i >= patternArgs.size() || patternArgs.get(i).isExplicit()) {
@@ -320,7 +320,7 @@ public class TypecheckingElim {
                   myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Expected an explicit pattern", patternArgs.get(i)));
                   return null;
                 }
-                newPatterns.add(patternArgs.get(i).getPattern());
+                newPatterns.add(patternArgs.get(i));
               }
               if (i < patternArgs.size()) {
                 myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Too many patterns", patternArgs.get(i)));

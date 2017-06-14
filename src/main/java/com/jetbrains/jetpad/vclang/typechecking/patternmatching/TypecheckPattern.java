@@ -25,23 +25,23 @@ import java.util.List;
 import java.util.Map;
 
 class TypecheckPattern {
-  static Pair<List<Pattern>, Map<Abstract.ReferableSourceNode, Binding>> typecheckPatternArguments(List<? extends Abstract.PatternArgument> patternArgs, DependentLink parameters, LocalErrorReporter errorReporter, Abstract.SourceNode sourceNode, boolean allowInterval) {
+  static Pair<List<Pattern>, Map<Abstract.ReferableSourceNode, Binding>> typecheckPatternArguments(List<? extends Abstract.Pattern> patternArgs, DependentLink parameters, LocalErrorReporter errorReporter, Abstract.SourceNode sourceNode, boolean allowInterval) {
     Map<Abstract.ReferableSourceNode, Binding> context = new HashMap<>();
     Pair<List<Pattern>, List<Expression>> result = typecheckPatternArguments(patternArgs, parameters, context, errorReporter, sourceNode, allowInterval);
     return result == null ? null : new Pair<>(result.proj1, result.proj2 == null ? null : context);
   }
 
-  private static Pair<List<Pattern>, List<Expression>> typecheckPatternArguments(List<? extends Abstract.PatternArgument> patternArgs, DependentLink parameters, Map<Abstract.ReferableSourceNode, Binding> context, LocalErrorReporter errorReporter, Abstract.SourceNode sourceNode, boolean allowInterval) {
+  private static Pair<List<Pattern>, List<Expression>> typecheckPatternArguments(List<? extends Abstract.Pattern> patternArgs, DependentLink parameters, Map<Abstract.ReferableSourceNode, Binding> context, LocalErrorReporter errorReporter, Abstract.SourceNode sourceNode, boolean allowInterval) {
     List<Pattern> result = new ArrayList<>();
     List<Expression> exprs = new ArrayList<>();
 
-    for (Abstract.PatternArgument patternArg : patternArgs) {
+    for (Abstract.Pattern pattern : patternArgs) {
       if (!parameters.hasNext()) {
-        errorReporter.report(new LocalTypeCheckingError("Too many patterns", patternArg));
+        errorReporter.report(new LocalTypeCheckingError("Too many patterns", pattern));
         return null;
       }
 
-      if (patternArg.isExplicit()) {
+      if (pattern.isExplicit()) {
         while (!parameters.isExplicit()) {
           result.add(new BindingPattern(parameters));
           if (exprs != null) {
@@ -49,18 +49,17 @@ class TypecheckPattern {
           }
           parameters = parameters.getNext();
           if (!parameters.hasNext()) {
-            errorReporter.report(new LocalTypeCheckingError("Too many patterns", patternArg));
+            errorReporter.report(new LocalTypeCheckingError("Too many patterns", pattern));
             return null;
           }
         }
       } else {
         if (parameters.isExplicit()) {
-          errorReporter.report(new LocalTypeCheckingError("Expected an explicit pattern", patternArg));
+          errorReporter.report(new LocalTypeCheckingError("Expected an explicit pattern", pattern));
           return null;
         }
       }
 
-      Abstract.Pattern pattern = patternArg.getPattern();
       if (exprs == null || pattern instanceof Abstract.NamePattern) {
         if (!(pattern instanceof Abstract.NamePattern)) {
           errorReporter.report(new LocalTypeCheckingError(Error.Level.WARNING, "This pattern is ignored", pattern));

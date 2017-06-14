@@ -78,14 +78,14 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
     return null;
   }
 
-  private void visitPatternArgument(Abstract.PatternArgument patternArgument) {
-    if (patternArgument.getPattern() instanceof Abstract.ConstructorPattern) {
-      Abstract.ConstructorPattern conPattern = (Abstract.ConstructorPattern) patternArgument.getPattern();
+  private void visitPattern(Abstract.Pattern pattern) {
+    if (pattern instanceof Abstract.ConstructorPattern) {
+      Abstract.ConstructorPattern conPattern = (Abstract.ConstructorPattern) pattern;
       if (conPattern.getConstructor() != null) {
         myDependencies.add(conPattern.getConstructor());
       }
-      for (Abstract.PatternArgument argument : conPattern.getArguments()) {
-        visitPatternArgument(argument);
+      for (Abstract.Pattern patternArg : conPattern.getArguments()) {
+        visitPattern(patternArg);
       }
     }
   }
@@ -95,8 +95,8 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
     CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myDependencies);
 
     if (def.getPatterns() != null) {
-      for (Abstract.PatternArgument patternArgument : def.getPatterns()) {
-        visitPatternArgument(patternArgument);
+      for (Abstract.Pattern pattern : def.getPatterns()) {
+        visitPattern(pattern);
       }
     }
 

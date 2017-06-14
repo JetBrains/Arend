@@ -709,11 +709,7 @@ public final class Concrete {
     }
   }
 
-  public interface PatternContainer extends Abstract.PatternContainer {
-    void replaceWithConstructor(int index, Abstract.Constructor constructor);
-  }
-
-  public static class Clause extends SourceNode implements PatternContainer, Abstract.Clause {
+  public static class Clause extends SourceNode implements Abstract.Clause {
     private final List<Pattern> myPatterns;
     private final Definition.Arrow myArrow;
     private final Expression myExpression;
@@ -740,10 +736,11 @@ public final class Concrete {
       return myExpression;
     }
 
-    @Override
     public void replaceWithConstructor(int index, Abstract.Constructor constructor) {
       Pattern old = myPatterns.get(index);
-      myPatterns.set(index, new ConstructorPattern(old.getPosition(), constructor, Collections.emptyList()));
+      Pattern newPattern = new ConstructorPattern(old.getPosition(), constructor, Collections.emptyList());
+      newPattern.setExplicit(old.isExplicit());
+      myPatterns.set(index, newPattern);
     }
   }
 
@@ -1182,9 +1179,9 @@ public final class Concrete {
   public static class Constructor extends Definition implements Abstract.Constructor {
     private final DataDefinition myDataType;
     private final List<TypeArgument> myArguments;
-    private final List<PatternArgument> myPatterns;
+    private final List<Abstract.Pattern> myPatterns;
 
-    public Constructor(Position position, String name, Abstract.Precedence precedence, List<TypeArgument> arguments, DataDefinition dataType, List<PatternArgument> patterns) {
+    public Constructor(Position position, String name, Abstract.Precedence precedence, List<TypeArgument> arguments, DataDefinition dataType, List<Abstract.Pattern> patterns) {
       super(position, name, precedence);
       myArguments = arguments;
       myDataType = dataType;
@@ -1192,7 +1189,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<PatternArgument> getPatterns() {
+    public List<Abstract.Pattern> getPatterns() {
       return myPatterns;
     }
 
@@ -1214,10 +1211,10 @@ public final class Concrete {
 
   public static class Condition extends SourceNode implements Abstract.Condition {
     private final String myConstructorName;
-    private final List<PatternArgument> myPatterns;
+    private final List<Abstract.Pattern> myPatterns;
     private final Expression myTerm;
 
-    public Condition(Position position, String constructorName, List<PatternArgument> patterns, Expression term) {
+    public Condition(Position position, String constructorName, List<Abstract.Pattern> patterns, Expression term) {
       super(position);
       myConstructorName = constructorName;
       myPatterns = patterns;
@@ -1230,7 +1227,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<PatternArgument> getPatterns() {
+    public List<Abstract.Pattern> getPatterns() {
       return myPatterns;
     }
 
@@ -1463,18 +1460,12 @@ public final class Concrete {
 
   // Patterns
 
-  public static class PatternArgument extends SourceNode implements Abstract.PatternArgument {
-    private final boolean myExplicit;
-    private Pattern myPattern;
+  public static abstract class Pattern extends SourceNode implements Abstract.Pattern {
+    private boolean myExplicit;
 
-    public PatternArgument(Position position, Pattern pattern, boolean explicit) {
+    public Pattern(Position position) {
       super(position);
-      this.myPattern = pattern;
-      this.myExplicit = explicit;
-    }
-
-    public void replaceWithConstructor(Abstract.Constructor constructor) {
-      myPattern = new ConstructorPattern(myPattern.getPosition(), constructor, Collections.emptyList());
+      myExplicit = true;
     }
 
     @Override
@@ -1482,15 +1473,8 @@ public final class Concrete {
       return myExplicit;
     }
 
-    @Override
-    public Pattern getPattern() {
-      return myPattern;
-    }
-  }
-
-  public static abstract class Pattern extends SourceNode implements Abstract.Pattern {
-    public Pattern(Position position) {
-      super(position);
+    public void setExplicit(boolean isExplicit) {
+      myExplicit = isExplicit;
     }
 
     @Override
@@ -1509,6 +1493,13 @@ public final class Concrete {
       myName = referent.getName();
     }
 
+    public NamePattern(Position position, boolean isExplicit, Abstract.ReferableSourceNode referent) {
+      super(position);
+      setExplicit(isExplicit);
+      myReferent = referent;
+      myName = referent.getName();
+    }
+
     @Override
     public String getName() {
       return myName;
@@ -1523,16 +1514,31 @@ public final class Concrete {
   public static class ConstructorPattern extends Pattern implements Abstract.ConstructorPattern {
     private final String myConstructorName;
     private Abstract.Constructor myConstructor;
-    private final List<PatternArgument> myArguments;
+    private final List<Abstract.Pattern> myArguments;
 
-    public ConstructorPattern(Position position, String constructorName, List<PatternArgument> arguments) {
+    public ConstructorPattern(Position position, String constructorName, List<Abstract.Pattern> arguments) {
       super(position);
       myConstructorName = constructorName;
       myArguments = arguments;
     }
 
-    public ConstructorPattern(Position position, Abstract.Constructor constructor, List<PatternArgument> arguments) {
+    public ConstructorPattern(Position position, boolean isExplicit, String constructorName, List<Abstract.Pattern> arguments) {
       super(position);
+      setExplicit(isExplicit);
+      myConstructorName = constructorName;
+      myArguments = arguments;
+    }
+
+    public ConstructorPattern(Position position, Abstract.Constructor constructor, List<Abstract.Pattern> arguments) {
+      super(position);
+      myConstructor = constructor;
+      myConstructorName = constructor.getName();
+      myArguments = arguments;
+    }
+
+    public ConstructorPattern(Position position, boolean isExplicit, Abstract.Constructor constructor, List<Abstract.Pattern> arguments) {
+      super(position);
+      setExplicit(isExplicit);
       myConstructor = constructor;
       myConstructorName = constructor.getName();
       myArguments = arguments;
@@ -1553,7 +1559,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<Concrete.PatternArgument> getArguments() {
+    public List<Abstract.Pattern> getArguments() {
       return myArguments;
     }
   }

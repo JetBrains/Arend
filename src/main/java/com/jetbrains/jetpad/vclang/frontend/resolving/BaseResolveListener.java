@@ -5,6 +5,8 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
+import java.util.List;
+
 public class BaseResolveListener implements ResolveListener {
   private final ErrorReporter myErrorReporter;
 
@@ -68,12 +70,12 @@ public class BaseResolveListener implements ResolveListener {
   }
 
   @Override
-  public void replaceWithConstructor(Abstract.PatternArgument patternArg, Abstract.Constructor constructor) {
+  public void replaceWithConstructor(List<Abstract.Pattern> patterns, int index, Abstract.Constructor constructor) {
 
   }
 
   @Override
-  public void replaceWithConstructor(Abstract.PatternContainer container, int index, Abstract.Constructor constructor) {
+  public void replaceWithConstructor(Abstract.Clause clause, int index, Abstract.Constructor constructor) {
 
   }
 
