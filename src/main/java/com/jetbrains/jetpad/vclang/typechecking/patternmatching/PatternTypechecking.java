@@ -19,23 +19,83 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
 
-class TypecheckPattern {
+class PatternTypechecking {
   private final LocalErrorReporter myErrorReporter;
   private final boolean myAllowInterval;
-  private final Map<Abstract.ReferableSourceNode, Binding> myContext = new HashMap<>();
+  private Map<Abstract.ReferableSourceNode, Binding> myContext;
 
-  TypecheckPattern(LocalErrorReporter errorReporter, boolean allowInterval) {
+  PatternTypechecking(LocalErrorReporter errorReporter, boolean allowInterval) {
     myErrorReporter = errorReporter;
     myAllowInterval = allowInterval;
   }
 
-  Pair<List<Pattern>, Map<Abstract.ReferableSourceNode, Binding>> typecheckPatternArguments(List<? extends Abstract.Pattern> patternArgs, DependentLink parameters, Abstract.SourceNode sourceNode, boolean fullList) {
+  private void collectBindings(List<Pattern> patterns, Collection<? super DependentLink> bindings) {
+    for (Pattern pattern : patterns) {
+      if (pattern instanceof BindingPattern) {
+        bindings.add(((BindingPattern) pattern).getBinding());
+      } else if (pattern instanceof ConstructorPattern) {
+        collectBindings(((ConstructorPattern) pattern).getPatterns(), bindings);
+      }
+    }
+  }
+
+  Pair<List<Pattern>, Expression> typecheckClause(Abstract.Clause clause, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType, CheckTypeVisitor visitor, boolean isFinal) {
+    myContext = visitor.getContext();
     myContext.clear();
-    Pair<List<Pattern>, List<Expression>> result = doTypechecking(patternArgs, parameters, sourceNode, fullList);
+
+    // Typecheck patterns
+    Pair<List<Pattern>, List<Expression>> result;
+    if (elimParams != null) {
+      // Put patterns in the correct order
+      // If some parameters are not eliminated (i.e. absent in elimParams), then we put null in corresponding patterns
+      List<Abstract.Pattern> patterns = new ArrayList<>();
+      for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
+        int index = elimParams.indexOf(link);
+        patterns.add(index < 0 ? null : clause.getPatterns().get(index));
+      }
+      result = doTypechecking(patterns, DependentLink.Helper.subst(parameters, new ExprSubstitution()), clause, true);
+    } else {
+      result = doTypechecking(clause.getPatterns(), DependentLink.Helper.subst(parameters, new ExprSubstitution()), clause, true);
+    }
+    if (result == null) {
+      return null;
+    }
+
+    // If we have the absurd pattern, then RHS is ignored
+    if (result.proj2 == null) {
+      if (clause.getExpression() != null) {
+        myErrorReporter.report(new LocalTypeCheckingError(Error.Level.WARNING, "The RHS is ignored", clause.getExpression()));
+      }
+      return new Pair<>(result.proj1, null);
+    }
+
+    ExprSubstitution substitution = new ExprSubstitution();
+    for (Expression expr : result.proj2) {
+      substitution.add(parameters, expr);
+      parameters = parameters.getNext();
+    }
+    expectedType = expectedType.subst(substitution);
+
+    // Typecheck the RHS
+    CheckTypeVisitor.Result tcResult;
+    if (isFinal) {
+      visitor.getFreeBindings().clear();
+      collectBindings(result.proj1, visitor.getFreeBindings());
+      tcResult = visitor.finalCheckExpr(clause.getExpression(), expectedType);
+    } else {
+      tcResult = visitor.checkExpr(clause.getExpression(), expectedType);
+    }
+    return tcResult == null ? null : new Pair<>(result.proj1, tcResult.expression);
+  }
+
+  Pair<List<Pattern>, Map<Abstract.ReferableSourceNode, Binding>> typecheckPatterns(List<? extends Abstract.Pattern> patterns, DependentLink parameters, Abstract.SourceNode sourceNode, boolean fullList) {
+    myContext = new HashMap<>();
+    Pair<List<Pattern>, List<Expression>> result = doTypechecking(patterns, parameters, sourceNode, fullList);
     return result == null ? null : new Pair<>(result.proj1, result.proj2 == null ? null : myContext);
   }
 
@@ -68,11 +128,11 @@ class TypecheckPattern {
     patterns.add(pattern);
   }
 
-  private Pair<List<Pattern>, List<Expression>> doTypechecking(List<? extends Abstract.Pattern> patternArgs, DependentLink parameters, Abstract.SourceNode sourceNode, boolean fullList) {
+  private Pair<List<Pattern>, List<Expression>> doTypechecking(List<? extends Abstract.Pattern> patterns, DependentLink parameters, Abstract.SourceNode sourceNode, boolean fullList) {
     List<Pattern> result = new ArrayList<>();
     List<Expression> exprs = new ArrayList<>();
 
-    for (Abstract.Pattern pattern : patternArgs) {
+    for (Abstract.Pattern pattern : patterns) {
       if (!parameters.hasNext()) {
         myErrorReporter.report(new LocalTypeCheckingError("Too many patterns", pattern));
         return null;

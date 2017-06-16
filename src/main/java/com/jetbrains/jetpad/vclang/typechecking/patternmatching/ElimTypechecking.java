@@ -16,25 +16,23 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.MissingClausesError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class TypecheckingElim {
+public class ElimTypechecking {
   private final CheckTypeVisitor myVisitor;
   private Set<Abstract.Clause> myUnusedClauses;
-  private final boolean myFinal;
   private final boolean myAllowInterval;
   private Expression myExpectedType;
-  private boolean myOK = true;
 
   private static final int MISSING_CLAUSES_LIST_SIZE = 10;
   private List<List<MissingClausesError.ClauseElem>> myMissingClauses;
 
-  public TypecheckingElim(CheckTypeVisitor visitor, Expression expectedType, boolean isFinal, boolean allowInterval) {
+  public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, boolean allowInterval) {
     myVisitor = visitor;
     myExpectedType = expectedType;
-    myFinal = isFinal;
     myAllowInterval = allowInterval;
   }
 
@@ -42,18 +40,56 @@ public class TypecheckingElim {
     List<DependentLink> elimParams = new ArrayList<>(elimExpr.getExpressions().size());
     for (Abstract.Expression expr : elimExpr.getExpressions()) {
       if (expr instanceof Abstract.ReferenceExpression) {
-        DependentLink param = (DependentLink) myVisitor.getContext().remove(((Abstract.ReferenceExpression) expr).getReferent());
-        elimParams.add(param);
+        elimParams.add((DependentLink) myVisitor.getContext().remove(((Abstract.ReferenceExpression) expr).getReferent()));
       } else {
         // TODO[newElim]: report an error
       }
     }
-    if (myFinal) {
-      myVisitor.getFreeBindings().clear();
+
+    List<Pair<List<Pattern>, Expression>> clauses = new ArrayList<>(elimExpr.getClauses().size());
+    PatternTypechecking patternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), myAllowInterval);
+    boolean ok = true;
+    for (Abstract.Clause clause : elimExpr.getClauses()) {
+      Pair<List<Pattern>, Expression> result = patternTypechecking.typecheckClause(clause, patternTypes, elimParams, myExpectedType, myVisitor, true);
+      if (result == null) {
+        ok = false;
+      } else {
+        clauses.add(result);
+      }
     }
-    return typecheckClauses(elimExpr.getClauses(), patternTypes, elimParams, elimExpr);
+    if (!ok) {
+      return null;
+    }
+
+    myUnusedClauses = new HashSet<>(elimExpr.getClauses());
+    ElimTree elimTree = clausesToElimTree(clauses);
+
+    if (myMissingClauses != null && !myMissingClauses.isEmpty()) {
+      myVisitor.getErrorReporter().report(new MissingClausesError(myMissingClauses, elimExpr));
+      return null;
+    }
+    for (Abstract.Clause clause : myUnusedClauses) {
+      myVisitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, "This clause is redundant", clause));
+    }
+    return elimTree;
   }
 
+  private ElimTree clausesToElimTree(List<Pair<List<Pattern>, Expression>> clauses) {
+
+  }
+
+  private void addMissingClause(List<MissingClausesError.ClauseElem> clause) {
+    if (myMissingClauses == null) {
+      myMissingClauses = new ArrayList<>(MISSING_CLAUSES_LIST_SIZE);
+    }
+    if (myMissingClauses.size() == MISSING_CLAUSES_LIST_SIZE) {
+      myMissingClauses.set(MISSING_CLAUSES_LIST_SIZE - 1, null);
+    } else {
+      myMissingClauses.add(clause);
+    }
+  }
+
+  /*
   public ElimTree typecheckClauses(List<? extends Abstract.Clause> clauses, DependentLink patternTypes, List<DependentLink> elimParams, Abstract.SourceNode sourceNode) {
     assert !elimParams.isEmpty();
     myMissingClauses = null;
@@ -72,8 +108,6 @@ public class TypecheckingElim {
 
     // Put patterns in the correct order
     // If some parameters are not eliminated (i.e. absent in elimParams), then we put null in corresponding patterns
-    int patternsNumber = DependentLink.Helper.size(patternTypes);
-    assert elimParams.size() <= patternsNumber;
     List<ClauseData> clauseDataList = clauses.stream().map(clause -> new ClauseData(new ArrayList<>(patternsNumber), new HashMap<>(), myFinal ? new HashSet<>() : null, clause)).collect(Collectors.toList());
     for (DependentLink link = patternTypes; link.hasNext(); link = link.getNext()) {
       int index = elimParams.indexOf(link);
@@ -81,6 +115,11 @@ public class TypecheckingElim {
         clauseDataList.get(i).patterns.add(index < 0 ? null : clauses.get(i).getPatterns().get(index));
       }
     }
+
+    int patternsNumber = DependentLink.Helper.size(patternTypes);
+    assert elimParams.size() <= patternsNumber;
+    List<ClauseData> clauseDataList = clauses.stream().map(clause -> new ClauseData(new ArrayList<>(patternsNumber), null, clause)).collect(Collectors.toList());
+    PatternTypechecking patternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), myAllowInterval);
 
     // Used clauses are sifted out in typecheckClauses
     myUnusedClauses = new HashSet<>(clauses);
@@ -122,28 +161,14 @@ public class TypecheckingElim {
     return result;
   }
 
-  private void addMissingClause(List<MissingClausesError.ClauseElem> clause) {
-    myOK = false;
-    if (myMissingClauses == null) {
-      myMissingClauses = new ArrayList<>(MISSING_CLAUSES_LIST_SIZE);
-    }
-    if (myMissingClauses.size() == MISSING_CLAUSES_LIST_SIZE) {
-      myMissingClauses.set(MISSING_CLAUSES_LIST_SIZE - 1, null);
-    } else {
-      myMissingClauses.add(clause);
-    }
-  }
-
   private static class ClauseData {
-    List<Abstract.Pattern> patterns;
-    Map<Abstract.ReferableSourceNode, Binding> context;
-    Set<Binding> freeBindings;
+    List<Pattern> patterns;
+    Expression expression;
     Abstract.Clause clause;
 
-    ClauseData(List<Abstract.Pattern> patterns, Map<Abstract.ReferableSourceNode, Binding> context, Set<Binding> freeBindings, Abstract.Clause clause) {
+    ClauseData(List<Pattern> patterns, Expression expression, Abstract.Clause clause) {
       this.patterns = patterns;
-      this.context = context;
-      this.freeBindings = freeBindings;
+      this.expression = expression;
       this.clause = clause;
     }
   }
@@ -386,4 +411,5 @@ public class TypecheckingElim {
       return new BranchElimTree(vars, children);
     }
   }
+  */
 }
