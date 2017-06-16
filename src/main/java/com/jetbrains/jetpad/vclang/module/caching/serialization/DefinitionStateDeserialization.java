@@ -50,6 +50,29 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
           throw new DeserializationError("Unknown Definition kind: " + defProto.getDefinitionDataCase());
       }
 
+      switch (defProto.getStatus()) {
+        case HEADER_HAS_ERRORS:
+          def.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
+          break;
+        case BODY_HAS_ERRORS:
+          def.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+          break;
+        case HEADER_NEEDS_TYPE_CHECKING:
+          def.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
+          break;
+        case BODY_NEEDS_TYPE_CHECKING:
+          def.setStatus(Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING);
+          break;
+        case HAS_ERRORS:
+          def.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
+          break;
+        case NO_ERRORS:
+          def.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+          break;
+        default:
+          throw new IllegalStateException("Unknown typechecking state");
+      }
+
       state.record(abstractDef, def);
     }
   }

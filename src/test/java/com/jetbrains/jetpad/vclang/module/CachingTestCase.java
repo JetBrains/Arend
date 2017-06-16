@@ -3,7 +3,9 @@ package com.jetbrains.jetpad.vclang.module;
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotSourceInfoCollector;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
+import com.jetbrains.jetpad.vclang.module.caching.CacheLoadingException;
 import com.jetbrains.jetpad.vclang.module.caching.CacheManager;
+import com.jetbrains.jetpad.vclang.module.caching.CachePersistenceException;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.SimpleModuleLoader;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
@@ -11,6 +13,7 @@ import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
+import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 import com.jetbrains.jetpad.vclang.typechecking.order.BaseDependencyListener;
 import org.junit.Before;
@@ -22,6 +25,7 @@ import java.net.URI;
 import java.util.*;
 
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
@@ -31,6 +35,7 @@ public class CachingTestCase extends NameResolverTestCase {
   protected final List<Abstract.Definition> typecheckingFailed = new ArrayList<>();
   protected SimpleModuleLoader<MemoryStorage.SourceId> moduleLoader;
   protected CacheManager<MemoryStorage.SourceId> cacheManager;
+  protected TypecheckerState tcState;
   private OneshotSourceInfoCollector<MemoryStorage.SourceId> srcInfoCollector;
   private PersistenceProvider<MemoryStorage.SourceId> peristenceProvider = new MemoryPersistenceProvider<>();
   private Typechecking typechecking;
@@ -46,9 +51,10 @@ public class CachingTestCase extends NameResolverTestCase {
         return result;
       }
     };
-    cacheManager = new CacheManager<>(peristenceProvider, storage, srcInfoCollector.sourceInfoProvider);
     nameResolver.setModuleResolver(moduleLoader);
-    typechecking = new Typechecking(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, errorReporter, new TypecheckedReporter() {
+    cacheManager = new CacheManager<>(peristenceProvider, storage, srcInfoCollector.sourceInfoProvider);
+    tcState = cacheManager.getTypecheckerState();
+    typechecking = new Typechecking(tcState, staticNsProvider, dynamicNsProvider, errorReporter, new TypecheckedReporter() {
       @Override
       public void typecheckingSucceeded(Abstract.Definition definition) {
         typecheckingSucceeded.add(definition);
@@ -88,7 +94,31 @@ public class CachingTestCase extends NameResolverTestCase {
   }
 
   protected void typecheck(Abstract.ClassDefinition module) {
+    typecheck(module, 0);
+  }
+
+  protected void typecheck(Abstract.ClassDefinition module, int size) {
     typechecking.typecheckModules(Collections.singleton(module));
+    assertThat(errorList, size > 0 ? hasSize(size) : is(empty()));
+  }
+
+  protected void load(MemoryStorage.SourceId sourceId, Abstract.ClassDefinition classDefinition) {
+    try {
+      boolean loaded = cacheManager.loadCache(sourceId, classDefinition);
+      assertThat(loaded, is(true));
+    } catch (CacheLoadingException e) {
+      throw new IllegalStateException();
+    }
+    assertThat(errorList, is(empty()));
+  }
+
+  protected void persist(MemoryStorage.SourceId sourceId) {
+    try {
+      boolean persisted = cacheManager.persistCache(sourceId);
+      assertThat(persisted, is(true));
+    } catch (CachePersistenceException e) {
+      throw new IllegalStateException();
+    }
     assertThat(errorList, is(empty()));
   }
 

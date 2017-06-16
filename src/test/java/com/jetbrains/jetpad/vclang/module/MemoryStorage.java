@@ -31,9 +31,10 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId> {
     myGlobalScope = new NamespaceScope(ns);
   }
 
-  public void add(ModulePath modulePath, String source) {
+  public SourceId add(ModulePath modulePath, String source) {
     String old = mySources.put(modulePath, source);
     assert old == null;
+    return locateModule(modulePath);
   }
 
   public void remove(ModulePath modulePath) {

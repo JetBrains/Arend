@@ -49,6 +49,11 @@ public class LocalizedTypecheckerState<SourceIdT extends SourceId> implements Ty
     myStates.remove(sourceId);
   }
 
+  @Override
+  public void reset() {
+    myStates.clear();
+  }
+
 
   public class LocalTypecheckerState {
     private boolean myIsOutOfSync = false;

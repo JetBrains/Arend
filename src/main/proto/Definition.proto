@@ -9,6 +9,7 @@ import "Level.proto";
 
 
 message Definition {
+    Status status = 1;
     int32 this_class_ref = 3;
     repeated ClassifyingFields classifying_field = 8;
     oneof definition_data {
@@ -75,5 +76,14 @@ message Definition {
         repeated Telescope param = 2;
         Expression type = 5;
         ElimTreeNode elim_tree = 4;
+    }
+
+    enum Status {
+        HEADER_HAS_ERRORS = 0;
+        BODY_HAS_ERRORS = 1;
+        HEADER_NEEDS_TYPE_CHECKING = 2;
+        BODY_NEEDS_TYPE_CHECKING = 3;
+        HAS_ERRORS = 4;
+        NO_ERRORS = 5;
     }
 }
