@@ -47,6 +47,9 @@ public class CachingTestCase extends NameResolverTestCase {
       @Override
       public Abstract.ClassDefinition load(MemoryStorage.SourceId sourceId) {
         Abstract.ClassDefinition result = super.load(sourceId);
+        if (result == null) {
+          throw new IllegalStateException("Could not load module");
+        }
         srcInfoCollector.visitModule(sourceId, result);
         return result;
       }
