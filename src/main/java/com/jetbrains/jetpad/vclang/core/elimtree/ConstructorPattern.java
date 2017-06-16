@@ -25,7 +25,7 @@ public class ConstructorPattern implements Pattern {
   }
 
   @Override
-  public Expression getExpression() {
+  public ConCallExpression getExpression() {
     List<Expression> arguments = new ArrayList<>(myPatterns.size());
     for (Pattern pattern : myPatterns) {
       Expression argument = pattern.getExpression();

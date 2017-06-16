@@ -99,6 +99,15 @@ public class DataDefinition extends Definition {
 
   public void setMatchesOnInterval() { myMatchesOnInterval = true; }
 
+  public boolean hasIndexedConstructors() {
+    for (Constructor constructor : myConstructors) {
+      if (constructor.getPatterns() != null) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   @Override
   public Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument) {
     if (!status().headerIsOK()) {

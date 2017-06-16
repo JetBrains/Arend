@@ -29,9 +29,9 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
   }
 
   @Override
-  public Expression visitConCall(ConCallExpression expr, Void params) {
+  public DataCallExpression visitConCall(ConCallExpression expr, Void params) {
     List<DependentLink> defParams = new ArrayList<>();
-    Expression type = expr.getDefinition().getTypeWithParams(defParams, expr.getSortArgument());
+    DataCallExpression type = expr.getDefinition().getTypeWithParams(defParams, expr.getSortArgument());
     assert expr.getDataTypeArguments().size() + expr.getDefCallArguments().size() == defParams.size();
     ExprSubstitution subst = DependentLink.Helper.toSubstitution(defParams, expr.getDataTypeArguments());
     defParams = defParams.subList(expr.getDataTypeArguments().size(), defParams.size());

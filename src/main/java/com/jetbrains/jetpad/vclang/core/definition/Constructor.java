@@ -94,11 +94,11 @@ public class Constructor extends Definition implements Function, BranchElimTree.
     }
   }
 
-  public Expression getDataTypeExpression(Sort sortArgument) {
+  public DataCallExpression getDataTypeExpression(Sort sortArgument) {
     return getDataTypeExpression(null, sortArgument);
   }
 
-  public Expression getDataTypeExpression(ExprSubstitution substitution, Sort sortArgument) {
+  public DataCallExpression getDataTypeExpression(ExprSubstitution substitution, Sort sortArgument) {
     assert myParameters != null && myDataType.status().headerIsOK();
 
     List<Expression> arguments;
@@ -146,13 +146,13 @@ public class Constructor extends Definition implements Function, BranchElimTree.
   }
 
   @Override
-  public Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument) {
+  public DataCallExpression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument) {
     if (myParameters == null) {
       return null;
     }
 
     LevelSubstitution polySubst = sortArgument.toLevelSubstitution();
-    Expression resultType = getDataTypeExpression(sortArgument);
+    DataCallExpression resultType = getDataTypeExpression(sortArgument);
     DependentLink parameters = getDataTypeParameters();
     ExprSubstitution substitution = new ExprSubstitution();
     List<DependentLink> paramList = null;

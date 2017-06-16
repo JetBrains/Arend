@@ -99,7 +99,7 @@ class PatternTypechecking {
     return result == null ? null : new Pair<>(result.proj1, result.proj2 == null ? null : myContext);
   }
 
-  private DependentLink getBinding(List<Pattern> patterns, boolean first) {
+  private static DependentLink getBinding(List<Pattern> patterns, boolean first) {
     for (int i = first ? 0 : patterns.size() - 1; first ? i < patterns.size() : i >= 0; i += first ? 1 : -1) {
       if (patterns.get(i) instanceof EmptyPattern) {
         return EmptyDependentLink.getInstance();
