@@ -35,17 +35,25 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   private   final NamespaceProviders nsProviders = new NamespaceProviders(moduleNsProvider, staticNsProvider, dynamicNsProvider);
   protected final NameResolver nameResolver = new NameResolver(nsProviders);
 
+  @SuppressWarnings("StaticNonFinalField")
+  private static Abstract.ClassDefinition LOADED_PRELUDE  = null;
   protected Abstract.ClassDefinition prelude = null;
   private Scope globalScope = new EmptyScope();
 
   protected void loadPrelude() {
     if (prelude != null) throw new IllegalStateException();
 
-    PreludeStorage preludeStorage = new PreludeStorage(nameResolver);
+    if (LOADED_PRELUDE == null) {
+      PreludeStorage preludeStorage = new PreludeStorage(nameResolver);
 
-    ListErrorReporter internalErrorReporter = new ListErrorReporter();
-    prelude = new SimpleModuleLoader<>(preludeStorage, internalErrorReporter).load(preludeStorage.preludeSourceId);
-    assertThat("Failed loading Prelude", internalErrorReporter.getErrorList(), containsErrors(0));
+      ListErrorReporter internalErrorReporter = new ListErrorReporter();
+      LOADED_PRELUDE = new SimpleModuleLoader<>(preludeStorage, internalErrorReporter).load(preludeStorage.preludeSourceId);
+      assertThat("Failed loading Prelude", internalErrorReporter.getErrorList(), containsErrors(0));
+    }
+
+    prelude = LOADED_PRELUDE;
+
+    globalScope = new NamespaceScope(staticNsProvider.forDefinition(prelude));
   }
 
 
