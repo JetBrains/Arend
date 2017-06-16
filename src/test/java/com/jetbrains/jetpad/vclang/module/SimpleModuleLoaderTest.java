@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.module;
 import com.jetbrains.jetpad.vclang.VclangTestCase;
 import com.jetbrains.jetpad.vclang.module.source.SimpleModuleLoader;
 import com.jetbrains.jetpad.vclang.module.source.SourceModuleLoader;
-import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,7 +21,7 @@ public class SimpleModuleLoaderTest extends VclangTestCase {
 
   @Before
   public void initialize() {
-    storage = new MemoryStorage(null, new EmptyScope(), null);
+    storage = new MemoryStorage(null, null);
     loadedModules = new HashMap<>();
     moduleLoader = new SimpleModuleLoader<MemoryStorage.SourceId>(storage, errorReporter) {
       @Override

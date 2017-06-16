@@ -23,8 +23,8 @@ public class PreludeStorage implements Storage<PreludeStorage.SourceId> {
   private static Path BASE_PATH = Paths.get("lib", "Prelude");
   public static Path SOURCE_PATH = FileStorage.sourceFile(BASE_PATH);
   public static Path CACHE_PATH = FileStorage.cacheFile(BASE_PATH, 0);
-  private static String SOURCE_RESOURCE_PATH = "/lib/" + SOURCE_PATH.getFileName();
-  private static String CACHE_RESOURCE_PATH = "/lib/" + CACHE_PATH.getFileName();
+  public static String SOURCE_RESOURCE_PATH = "/lib/" + SOURCE_PATH.getFileName();
+  public static String CACHE_RESOURCE_PATH = "/lib/" + CACHE_PATH.getFileName();
 
   public static ModulePath PRELUDE_MODULE_PATH = new ModulePath("Prelude");
   public final SourceId preludeSourceId = new SourceId();

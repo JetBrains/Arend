@@ -10,12 +10,10 @@ import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvi
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.parser.ParserTestCase;
 import com.jetbrains.jetpad.vclang.frontend.resolving.NamespaceProviders;
-import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotNameResolver;
 import com.jetbrains.jetpad.vclang.frontend.resolving.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.frontend.resolving.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.source.SimpleModuleLoader;
-import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
 import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
@@ -31,9 +29,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
 public abstract class NameResolverTestCase extends ParserTestCase {
-  @SuppressWarnings("StaticNonFinalField")
-  private static Abstract.ClassDefinition LOADED_PRELUDE = null;
-
   protected final SimpleModuleNamespaceProvider moduleNsProvider  = new SimpleModuleNamespaceProvider();
   protected final SimpleStaticNamespaceProvider staticNsProvider  = new SimpleStaticNamespaceProvider();
   protected final SimpleDynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
@@ -43,31 +38,14 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   protected Abstract.ClassDefinition prelude = null;
   private Scope globalScope = new EmptyScope();
 
-  protected final void loadPrelude() {
+  protected void loadPrelude() {
     if (prelude != null) throw new IllegalStateException();
 
-    if (LOADED_PRELUDE == null) {
-      ListErrorReporter internalErrorReporter = new ListErrorReporter();
-      PreludeStorage preludeStorage = new PreludeStorage(nameResolver);
-      LOADED_PRELUDE = new SimpleModuleLoader<>(preludeStorage, internalErrorReporter).load(preludeStorage.preludeSourceId);
-      assertThat("Failed loading Prelude", internalErrorReporter.getErrorList(), containsErrors(0));
+    PreludeStorage preludeStorage = new PreludeStorage(nameResolver);
 
-      OneshotNameResolver.visitModule(LOADED_PRELUDE, globalScope, nameResolver, new ConcreteResolveListener(errorReporter));
-      assertThat("Failed resolving names in Prelude", internalErrorReporter.getErrorList(), containsErrors(0));
-    }
-
-    prelude = LOADED_PRELUDE;
-    globalScope = new NamespaceScope(staticNsProvider.forDefinition(prelude));
-
-    moduleNsProvider.registerModule(new ModulePath("Prelude"), prelude);
-  }
-
-  protected final void loadModule(ModulePath modulePath, Abstract.ClassDefinition module) {
     ListErrorReporter internalErrorReporter = new ListErrorReporter();
-    OneshotNameResolver.visitModule(module, globalScope, nameResolver, new ConcreteResolveListener(errorReporter));
-    assertThat("Failed loading helper module", internalErrorReporter.getErrorList(), containsErrors(0));
-
-    moduleNsProvider.registerModule(modulePath, module);
+    prelude = new SimpleModuleLoader<>(preludeStorage, internalErrorReporter).load(preludeStorage.preludeSourceId);
+    assertThat("Failed loading Prelude", internalErrorReporter.getErrorList(), containsErrors(0));
   }
 
 

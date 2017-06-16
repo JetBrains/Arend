@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -32,18 +33,16 @@ public class LocalizedTypecheckerState<SourceIdT extends SourceId> implements Ty
     return myStates.keySet();
   }
 
-  public LocalTypecheckerState getLocal(SourceIdT sourceId) {
-    if (sourceId == null) throw new IllegalArgumentException();
-    LocalTypecheckerState state = myStates.get(sourceId);
-    if (state == null) {
-      state = new LocalTypecheckerState();
-      myStates.put(sourceId, state);
-    }
-    return state;
+  public LocalTypecheckerState getLocal(@Nonnull SourceIdT sourceId) {
+    return myStates.computeIfAbsent(sourceId, k -> new LocalTypecheckerState());
   }
 
   private LocalTypecheckerState getLocal(Abstract.Definition def) {
-    return getLocal(myDefLocator.sourceOf(def));
+    SourceIdT sourceId = myDefLocator.sourceOf(def);
+    if (sourceId == null) {
+      throw new IllegalArgumentException();
+    }
+    return getLocal(sourceId);
   }
 
   public void wipe(SourceIdT sourceId) {

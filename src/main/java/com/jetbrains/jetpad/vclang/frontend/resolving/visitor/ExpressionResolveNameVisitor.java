@@ -67,6 +67,8 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
       Abstract.Definition ref = myNameResolver.resolveModuleCall(myParentScope, expr);
       if (ref != null) {
         myResolveListener.moduleResolved(expr, ref);
+      } else {
+        myResolveListener.report(new NotInScopeError(expr, expr.getPath().toString()));
       }
     }
     return null;

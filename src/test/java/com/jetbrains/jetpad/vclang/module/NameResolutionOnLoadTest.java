@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.module.source.SimpleModuleLoader;
 import com.jetbrains.jetpad.vclang.module.source.SourceModuleLoader;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
-import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,7 +19,7 @@ public class NameResolutionOnLoadTest extends NameResolverTestCase {
 
   @Before
   public void initialize() {
-    storage = new MemoryStorage(moduleNsProvider, new EmptyScope(), nameResolver);
+    storage = new MemoryStorage(moduleNsProvider, nameResolver);
     moduleLoader = new SimpleModuleLoader<>(storage, errorReporter);
     nameResolver.setModuleResolver(modulePath -> moduleLoader.load(storage.locateModule(modulePath)));
   }
