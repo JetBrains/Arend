@@ -15,7 +15,6 @@ public class FunCallExpression extends DefCallExpression {
 
   public FunCallExpression(FunctionDefinition definition, Sort sortArgument, List<Expression> arguments) {
     super(definition);
-    assert definition.status().headerIsOK();
     mySortArgument = sortArgument;
     myArguments = arguments;
   }

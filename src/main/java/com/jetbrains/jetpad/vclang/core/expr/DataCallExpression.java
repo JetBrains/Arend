@@ -22,7 +22,6 @@ public class DataCallExpression extends DefCallExpression implements Type {
 
   public DataCallExpression(DataDefinition definition, Sort sortArgument, List<Expression> arguments) {
     super(definition);
-    assert definition.status().headerIsOK();
     mySortArgument = sortArgument;
     myArguments = arguments;
   }

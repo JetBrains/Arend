@@ -27,7 +27,6 @@ public class ClassCallExpression extends DefCallExpression implements Type {
 
   public ClassCallExpression(ClassDefinition definition, Sort sortArgument) {
     super(definition);
-    assert definition.status().headerIsOK();
     mySortArgument = sortArgument;
     myFieldSet = definition.getFieldSet();
   }

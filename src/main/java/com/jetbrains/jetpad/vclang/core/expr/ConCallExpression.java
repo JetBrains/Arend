@@ -18,7 +18,6 @@ public class ConCallExpression extends DefCallExpression {
   public ConCallExpression(Constructor definition, Sort sortArgument, List<Expression> dataTypeArguments, List<Expression> arguments) {
     super(definition);
     assert dataTypeArguments != null;
-    assert definition.status().headerIsOK();
     mySortArgument = sortArgument;
     myDataTypeArguments = dataTypeArguments;
     myArguments = arguments;

@@ -1,10 +1,10 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.typechecking.Matchers.goal;
-import static com.jetbrains.jetpad.vclang.typechecking.Matchers.typeMismatchError;
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.*;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.notNullValue;
@@ -53,27 +53,28 @@ public class SimpleCachingTest extends CachingTestCase {
   @Test
   public void errorInHeader() {
     MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "" +
-        "\\function a : \\Set0 => \\Prop\n" +
-        "\\function b : a a => \\Prop\n" +
-        "\\function c : \\Set0 => b");
+        "\\data D\n" +
+        "\\function a (d : D) <= \\elim d\n" +
+        "\\function b : \\Set0 => (\\lam x y => x) \\Prop a");
     Abstract.ClassDefinition aClass = moduleLoader.load(a);
 
-    typecheck(aClass, 1);
-    assertThatErrorsAre(typeMismatchError());
+    typecheck(aClass, 2);
+    assertThatErrorsAre(typecheckingError(), hasErrors(get(aClass, "a")));
+
     errorList.clear();
 
     persist(a);
 
     tcState.reset();
     assertThat(tcState.getTypechecked(aClass), is(nullValue()));
+    assertThat(tcState.getTypechecked(get(aClass, "D")), is(nullValue()));
     assertThat(tcState.getTypechecked(get(aClass, "a")), is(nullValue()));
     assertThat(tcState.getTypechecked(get(aClass, "b")), is(nullValue()));
-    assertThat(tcState.getTypechecked(get(aClass, "c")), is(nullValue()));
 
     load(a, aClass);
     assertThat(tcState.getTypechecked(aClass), is(notNullValue()));
-    assertThat(tcState.getTypechecked(get(aClass, "a")), is(notNullValue()));
-    assertThat(tcState.getTypechecked(get(aClass, "b")), is(nullValue()));
-    assertThat(tcState.getTypechecked(get(aClass, "c")), is(nullValue()));
+    assertThat(tcState.getTypechecked(get(aClass, "D")), is(notNullValue()));
+    assertThat(tcState.getTypechecked(get(aClass, "a")), is(nullValue()));
+    assertThat(tcState.getTypechecked(get(aClass, "b")), is(notNullValue()));
   }
 }

@@ -10,6 +10,9 @@ public abstract class DefCallExpression extends Expression implements CallableCa
   private final Definition myDefinition;
 
   public DefCallExpression(Definition definition) {
+    if(!definition.status().headerIsOK()) {
+      throw new IllegalStateException("Reference to a definition with a header error");
+    }
     myDefinition = definition;
   }
 

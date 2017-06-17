@@ -19,6 +19,7 @@ import com.jetbrains.jetpad.vclang.typechecking.order.BaseDependencyListener;
 import org.junit.Before;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URI;
@@ -72,7 +73,11 @@ public class CachingTestCase extends NameResolverTestCase {
   @Override
   protected void loadPrelude() {
     final String preludeSource;
-    try (Reader in = new InputStreamReader(Prelude.class.getResourceAsStream(PreludeStorage.SOURCE_RESOURCE_PATH), "UTF-8")) {
+    InputStream preludeStream = Prelude.class.getResourceAsStream(PreludeStorage.SOURCE_RESOURCE_PATH);
+    if (preludeStream == null) {
+      throw new IllegalStateException("Prelude source is not available");
+    }
+    try (Reader in = new InputStreamReader(preludeStream, "UTF-8")) {
       StringBuilder builder = new StringBuilder();
       final char[] buffer = new char[1024 * 1024];
       for (;;) {
