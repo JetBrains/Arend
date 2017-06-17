@@ -3,7 +3,11 @@ package com.jetbrains.jetpad.vclang.frontend;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
+import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.factory.*;
+import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.frontend.parser.ParserError;
 import com.jetbrains.jetpad.vclang.module.error.ModuleCycleError;
@@ -124,6 +128,7 @@ public class ErrorFormatter {
           ppv.printIndent();
           boolean patternFirst = true;
           int parens = 0;
+          ToAbstractVisitor toAbstractVisitor = new ToAbstractVisitor(new ConcreteExpressionFactory());
           for (int i = 0; i < clause.size(); i++) {
             MissingClausesError.ClauseElem clauseElem = clause.get(i);
             if (!patternFirst) {
@@ -133,13 +138,13 @@ public class ErrorFormatter {
               builder.append("...");
               parens = 0;
             } else if (clauseElem instanceof MissingClausesError.PatternClauseElem) {
-              ppv.prettyPrintPattern(((MissingClausesError.PatternClauseElem) clauseElem).pattern, (byte) (Abstract.Pattern.PREC + 1));
+              ppv.prettyPrintPattern(toAbstractVisitor.visitPattern(((MissingClausesError.PatternClauseElem) clauseElem).pattern, true), (byte) (Abstract.Pattern.PREC + 1));
             } else if (clauseElem instanceof MissingClausesError.ConstructorClauseElem) {
               if (!patternFirst && i < clause.size() - 1) {
                 builder.append('(');
                 parens++;
               }
-              builder.append(((MissingClausesError.ConstructorClauseElem) clauseElem).constructor);
+              builder.append(((MissingClausesError.ConstructorClauseElem) clauseElem).constructor.getAbstractDefinition());
             } else if (clauseElem instanceof MissingClausesError.SkipClauseElem) {
               builder.append('_');
             } else {

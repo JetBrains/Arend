@@ -72,6 +72,11 @@ class PatternTypechecking {
         myErrorReporter.report(new LocalTypeCheckingError(Error.Level.WARNING, "The RHS is ignored", clause.getExpression()));
       }
       return new Pair<>(result.proj1, null);
+    } else {
+      if (clause.getExpression() == null) {
+        myErrorReporter.report(new LocalTypeCheckingError("Required a RHS", clause));
+        return null;
+      }
     }
 
     ExprSubstitution substitution = new ExprSubstitution();

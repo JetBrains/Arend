@@ -186,4 +186,9 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   public Abstract.Pattern makeNamePattern(boolean isExplicit, Abstract.ReferableSourceNode referable) {
     return cNamePattern(isExplicit, referable);
   }
+
+  @Override
+  public Abstract.Pattern makeEmptyPattern(boolean isExplicit) {
+    return cEmptyPattern(isExplicit);
+  }
 }

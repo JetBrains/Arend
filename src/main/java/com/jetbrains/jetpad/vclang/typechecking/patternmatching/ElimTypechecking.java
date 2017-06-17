@@ -1,10 +1,12 @@
 package com.jetbrains.jetpad.vclang.typechecking.patternmatching;
 
+import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.GetTypeVisitor;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.error.Error;
@@ -23,6 +25,7 @@ public class ElimTypechecking {
   private final boolean myAllowInterval;
   private Expression myExpectedType;
   private boolean myOK;
+  private Stack<MissingClausesError.ClauseElem> myContext;
 
   private static final int MISSING_CLAUSES_LIST_SIZE = 10;
   private List<List<MissingClausesError.ClauseElem>> myMissingClauses;
@@ -63,6 +66,7 @@ public class ElimTypechecking {
     }
 
     myUnusedClauses = new HashSet<>(elimExpr.getClauses());
+    myContext = new Stack<>();
     ElimTree elimTree = clausesToElimTree(clauses);
 
     if (myMissingClauses != null && !myMissingClauses.isEmpty()) {
@@ -92,112 +96,175 @@ public class ElimTypechecking {
   }
 
   private ElimTree clausesToElimTree(List<ClauseData> clauseDataList) {
-    int index = clauseDataList.get(0).patterns.size() - 1;
-    loop:
-    for (; index >= 0; index--) {
-      for (ClauseData clauseData : clauseDataList) {
-        if (!(clauseData.patterns.get(index) instanceof BindingPattern)) {
-          break loop;
-        }
-      }
-    }
-
-    // If all patterns are variables
-    if (index < 0) {
-      ClauseData clauseData = clauseDataList.get(0);
-      myUnusedClauses.remove(clauseData.clause);
-      return new LeafElimTree(((BindingPattern) clauseData.patterns.peek()).getBinding(), clauseData.expression.subst(clauseData.substitution));
-    }
-
-    // Make new list of variables
-    DependentLink vars = ((BindingPattern) clauseDataList.get(0).patterns.peek()).getBinding().subst(clauseDataList.get(0).substitution, LevelSubstitution.EMPTY, clauseDataList.get(0).patterns.size() - 1 - index);
-    // Update substitution and patterns for each clause
-    for (DependentLink link = vars; link.hasNext(); link = link.getNext()) {
-      Expression newRef = new ReferenceExpression(link);
-      clauseDataList.get(0).patterns.pop();
-      for (int i = 1; i < clauseDataList.size(); i++) {
-        clauseDataList.get(i).substitution.add(((BindingPattern) clauseDataList.get(i).patterns.pop()).getBinding(), newRef);
-      }
-    }
-
-    ClauseData conClauseData = null;
-    for (ClauseData clauseData : clauseDataList) {
-      Pattern pattern = clauseData.patterns.peek();
-      if (pattern instanceof EmptyPattern) {
-        myUnusedClauses.remove(clauseData.clause);
-        return new BranchElimTree(vars, Collections.emptyMap());
-      }
-      if (conClauseData == null && pattern instanceof ConstructorPattern) {
-        conClauseData = clauseData;
-      }
-    }
-
-    assert conClauseData != null;
-    ConstructorPattern conPattern = (ConstructorPattern) conClauseData.patterns.peek();
-    List<Constructor> constructors;
-    if (conPattern.getConstructor().getDataType().hasIndexedConstructors()) {
-      DataCallExpression dataCall = new GetTypeVisitor().visitConCall(conPattern.getExpression(), null);
-      List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
-      if (conCalls == null) {
-        myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", conClauseData.clause));
-        return null;
-      }
-      constructors = conCalls.stream().map(ConCallExpression::getDefinition).collect(Collectors.toList());
-    } else {
-      constructors = conPattern.getConstructor().getDataType().getConstructors();
-    }
-
-    boolean hasVars = false;
-    Map<BranchElimTree.Pattern, List<ClauseData>> constructorMap = new HashMap<>();
-    for (ClauseData clauseData : clauseDataList) {
-      if (clauseData.patterns.peek() instanceof BindingPattern) {
-        hasVars = true;
-        for (Constructor constructor : constructors) {
-          constructorMap.computeIfAbsent(constructor, k -> new ArrayList<>()).add(clauseData);
-        }
-      } else {
-        constructorMap.computeIfAbsent(((ConstructorPattern) clauseData.patterns.peek()).getConstructor(), k -> new ArrayList<>()).add(clauseData);
-      }
-    }
-
-    if (constructors.size() > constructorMap.size()) {
-      if (hasVars) {
-        List<ClauseData> varClauseDataList = new ArrayList<>();
+    try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
+      int index = clauseDataList.get(0).patterns.size() - 1;
+      loop:
+      for (; index >= 0; index--) {
         for (ClauseData clauseData : clauseDataList) {
-          if (clauseData.patterns.peek() instanceof BindingPattern) {
-            varClauseDataList.add(clauseData);
-          }
-        }
-        constructorMap.put(BranchElimTree.Pattern.ANY, varClauseDataList);
-      } else {
-        for (Constructor constructor : constructors) {
-          if (!constructorMap.containsKey(constructor)) {
-            // addMissingClause(); // TODO
+          if (!(clauseData.patterns.get(index) instanceof BindingPattern)) {
+            break loop;
           }
         }
       }
-    }
 
-    Map<BranchElimTree.Pattern, ElimTree> children = new HashMap<>();
-    for (Map.Entry<BranchElimTree.Pattern, List<ClauseData>> entry : constructorMap.entrySet()) {
-      List<ClauseData> conClauseDataList = entry.getValue();
-      for (int i = 0; i < conClauseDataList.size(); i++) {
-        Pattern pattern = conClauseDataList.get(i).patterns.pop();
-        if (pattern instanceof ConstructorPattern) {
-          // TODO
+      // If all patterns are variables
+      if (index < 0) {
+        ClauseData clauseData = clauseDataList.get(0);
+        myUnusedClauses.remove(clauseData.clause);
+        return new LeafElimTree(((BindingPattern) clauseData.patterns.peek()).getBinding(), clauseData.expression.subst(clauseData.substitution));
+      }
+
+      // Make new list of variables
+      DependentLink vars = ((BindingPattern) clauseDataList.get(0).patterns.peek()).getBinding().subst(clauseDataList.get(0).substitution, LevelSubstitution.EMPTY, clauseDataList.get(0).patterns.size() - 1 - index);
+      for (DependentLink link = vars; link.hasNext(); link = link.getNext()) {
+        myContext.push(new MissingClausesError.PatternClauseElem(new BindingPattern(link)));
+      }
+
+      // Update substitution and patterns for each clause
+      for (DependentLink link = vars; link.hasNext(); link = link.getNext()) {
+        Expression newRef = new ReferenceExpression(link);
+        clauseDataList.get(0).patterns.pop();
+        for (int i = 1; i < clauseDataList.size(); i++) {
+          clauseDataList.get(i).substitution.add(((BindingPattern) clauseDataList.get(i).patterns.pop()).getBinding(), newRef);
+        }
+      }
+
+      ClauseData conClauseData = null;
+      for (ClauseData clauseData : clauseDataList) {
+        Pattern pattern = clauseData.patterns.peek();
+        if (pattern instanceof EmptyPattern) {
+          myUnusedClauses.remove(clauseData.clause);
+          return new BranchElimTree(vars, Collections.emptyMap());
+        }
+        if (conClauseData == null && pattern instanceof ConstructorPattern) {
+          conClauseData = clauseData;
+        }
+      }
+
+      assert conClauseData != null;
+      ConstructorPattern conPattern = (ConstructorPattern) conClauseData.patterns.peek();
+      List<Constructor> constructors;
+      if (conPattern.getConstructor().getDataType().hasIndexedConstructors()) {
+        DataCallExpression dataCall = new GetTypeVisitor().visitConCall(conPattern.getExpression(), null);
+        List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
+        if (conCalls == null) {
+          myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", conClauseData.clause));
+          return null;
+        }
+        constructors = conCalls.stream().map(ConCallExpression::getDefinition).collect(Collectors.toList());
+      } else {
+        constructors = conPattern.getConstructor().getDataType().getConstructors();
+      }
+
+      boolean hasVars = false;
+      Map<BranchElimTree.Pattern, List<ClauseData>> constructorMap = new HashMap<>();
+      for (ClauseData clauseData : clauseDataList) {
+        if (clauseData.patterns.peek() instanceof BindingPattern) {
+          hasVars = true;
+          for (Constructor constructor : constructors) {
+            constructorMap.computeIfAbsent(constructor, k -> new ArrayList<>()).add(clauseData);
+          }
         } else {
-          // TODO
+          constructorMap.computeIfAbsent(((ConstructorPattern) clauseData.patterns.peek()).getConstructor(), k -> new ArrayList<>()).add(clauseData);
         }
       }
 
-      ElimTree elimTree = clausesToElimTree(conClauseDataList);
-      if (elimTree == null) {
-        myOK = false;
+      if (constructors.size() > constructorMap.size()) {
+        if (hasVars) {
+          List<ClauseData> varClauseDataList = new ArrayList<>();
+          for (ClauseData clauseData : clauseDataList) {
+            if (clauseData.patterns.peek() instanceof BindingPattern) {
+              varClauseDataList.add(clauseData);
+            }
+          }
+          constructorMap.put(BranchElimTree.Pattern.ANY, varClauseDataList);
+        } else {
+          for (Constructor constructor : constructors) {
+            if (!constructorMap.containsKey(constructor)) {
+              List<MissingClausesError.ClauseElem> missingClause = unflattenMissingClause(myContext);
+              boolean moreArguments = clauseDataList.get(0).patterns.size() > 1;
+              if (!moreArguments) {
+                for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext()) {
+                  if (link.isExplicit()) {
+                    moreArguments = true;
+                    break;
+                  }
+                }
+              }
+              if (moreArguments) {
+                missingClause.add(null);
+              }
+              addMissingClause(missingClause);
+            }
+          }
+        }
+      }
+
+      Map<BranchElimTree.Pattern, ElimTree> children = new HashMap<>();
+      for (Map.Entry<BranchElimTree.Pattern, List<ClauseData>> entry : constructorMap.entrySet()) {
+        List<ClauseData> conClauseDataList = entry.getValue();
+        myContext.push(entry.getKey() instanceof Constructor ? new MissingClausesError.ConstructorClauseElem((Constructor) entry.getKey()) : new MissingClausesError.PatternClauseElem(conClauseDataList.get(0).patterns.peek()));
+
+        if (entry.getKey() instanceof Constructor) {
+          for (int i = 0; i < conClauseDataList.size(); i++) {
+            Stack<Pattern> patterns = new Stack<>();
+            patterns.addAll(conClauseDataList.get(i).patterns);
+            if (patterns.peek() instanceof ConstructorPattern) {
+              Pattern pattern = patterns.pop();
+              for (int j = ((ConstructorPattern) pattern).getPatterns().size() - 1; j >= 0; j--) {
+                patterns.push(((ConstructorPattern) pattern).getPatterns().get(j));
+              }
+            }
+            conClauseDataList.set(i, new ClauseData(patterns, conClauseDataList.get(i).expression, conClauseDataList.get(i).substitution, conClauseDataList.get(i).clause));
+          }
+        }
+
+        ElimTree elimTree = clausesToElimTree(conClauseDataList);
+        if (elimTree == null) {
+          myOK = false;
+        } else {
+          children.put(entry.getKey(), elimTree);
+        }
+
+        myContext.pop();
+      }
+
+      return new BranchElimTree(vars, children);
+    }
+  }
+
+  private List<MissingClausesError.ClauseElem> unflattenMissingClause(List<MissingClausesError.ClauseElem> clause) {
+    List<MissingClausesError.ClauseElem> result = new ArrayList<>();
+    int expectedParams = -1;
+    for (MissingClausesError.ClauseElem elem : clause) {
+      while (expectedParams == 0) {
+        int i = result.size() - 1;
+        while (!(result.get(i) instanceof MissingClausesError.ConstructorClauseElem)) {
+          i--;
+        }
+        Pattern pattern = new ConstructorPattern(new ConCallExpression(((MissingClausesError.ConstructorClauseElem) result.get(i)).constructor, Sort.STD, Collections.emptyList(), Collections.emptyList()), result.subList(i + 1, result.size()).stream().map(elem1 -> ((MissingClausesError.PatternClauseElem) elem1).pattern).collect(Collectors.toList()));
+        result = result.subList(0, i);
+        result.add(new MissingClausesError.PatternClauseElem(pattern));
+        for (i = result.size() - 2; i >= 0; i--) {
+          if (result.get(i) instanceof MissingClausesError.ConstructorClauseElem) {
+            break;
+          }
+        }
+        if (i == -1) {
+          expectedParams = -1;
+        } else {
+          expectedParams = DependentLink.Helper.size(((MissingClausesError.ConstructorClauseElem) result.get(i)).constructor.getParameters()) - (result.size() - 1 - i);
+        }
+      }
+
+      result.add(elem);
+      if (elem instanceof MissingClausesError.ConstructorClauseElem) {
+        expectedParams = DependentLink.Helper.size(((MissingClausesError.ConstructorClauseElem) elem).constructor.getParameters());
       } else {
-        children.put(entry.getKey(), elimTree);
+        expectedParams--;
       }
     }
-    return new BranchElimTree(vars, children);
+    return result;
   }
 
   private void addMissingClause(List<MissingClausesError.ClauseElem> clause) {

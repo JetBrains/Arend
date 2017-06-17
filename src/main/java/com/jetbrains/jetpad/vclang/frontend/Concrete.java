@@ -1568,5 +1568,10 @@ public final class Concrete {
     public EmptyPattern(Position position) {
       super(position);
     }
+
+    public EmptyPattern(Position position, boolean isExplicit) {
+      super(position);
+      setExplicit(isExplicit);
+    }
   }
 }

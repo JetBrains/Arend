@@ -220,6 +220,10 @@ public class ConcreteExpressionFactory {
     return new Concrete.NamePattern(POSITION, isExplicit, referable);
   }
 
+  public static Concrete.EmptyPattern cEmptyPattern(boolean isExplicit) {
+    return new Concrete.EmptyPattern(POSITION, isExplicit);
+  }
+
   public static Concrete.BinOpExpression cBinOp(Concrete.Expression left, Abstract.Definition binOp, Concrete.Expression right) {
     return new Concrete.BinOpExpression(POSITION, left, binOp, right);
   }

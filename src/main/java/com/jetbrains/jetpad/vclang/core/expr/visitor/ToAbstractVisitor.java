@@ -8,6 +8,10 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Name;
+import com.jetbrains.jetpad.vclang.core.elimtree.BindingPattern;
+import com.jetbrains.jetpad.vclang.core.elimtree.ConstructorPattern;
+import com.jetbrains.jetpad.vclang.core.elimtree.EmptyPattern;
+import com.jetbrains.jetpad.vclang.core.elimtree.Pattern;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.factory.AbstractExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
@@ -56,6 +60,30 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     }
     myFlags.add(flag);
     return this;
+  }
+
+  public Abstract.Pattern visitPattern(Pattern pattern, boolean isExplicit) {
+    if (pattern instanceof BindingPattern) {
+      return myFactory.makeNamePattern(isExplicit, myFactory.makeReferable(((BindingPattern) pattern).getBinding().getName()));
+    }
+    if (pattern instanceof EmptyPattern) {
+      return myFactory.makeEmptyPattern(isExplicit);
+    }
+    if (pattern instanceof ConstructorPattern) {
+      return myFactory.makeConPattern(isExplicit, ((ConstructorPattern) pattern).getConstructor().getAbstractDefinition(), visitPatterns(((ConstructorPattern) pattern).getPatterns(), ((ConstructorPattern) pattern).getConstructor().getParameters()));
+    }
+    throw new IllegalStateException();
+  }
+
+  private List<Abstract.Pattern> visitPatterns(List<Pattern> patterns, DependentLink parameters) {
+    List<Abstract.Pattern> result = new ArrayList<>(patterns.size());
+    for (Pattern pattern : patterns) {
+      result.add(visitPattern(pattern, !parameters.hasNext() || parameters.isExplicit()));
+      if (parameters.hasNext()) {
+        parameters = parameters.getNext();
+      }
+    }
+    return result;
   }
 
   private Abstract.Expression checkPath(DataCallExpression expr) {

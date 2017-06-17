@@ -1,5 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
+import com.jetbrains.jetpad.vclang.core.definition.Constructor;
+import com.jetbrains.jetpad.vclang.core.elimtree.Pattern;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.List;
@@ -20,17 +22,17 @@ public class MissingClausesError extends LocalTypeCheckingError {
   }
 
   public static class PatternClauseElem implements ClauseElem {
-    public Abstract.Pattern pattern;
+    public Pattern pattern;
 
-    public PatternClauseElem(Abstract.Pattern pattern) {
+    public PatternClauseElem(Pattern pattern) {
       this.pattern = pattern;
     }
   }
 
   public static class ConstructorClauseElem implements ClauseElem {
-    public Abstract.Constructor constructor;
+    public Constructor constructor;
 
-    public ConstructorClauseElem(Abstract.Constructor constructor) {
+    public ConstructorClauseElem(Constructor constructor) {
       this.constructor = constructor;
     }
   }

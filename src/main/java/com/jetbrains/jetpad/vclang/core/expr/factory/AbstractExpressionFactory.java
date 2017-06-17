@@ -43,4 +43,5 @@ public interface AbstractExpressionFactory {
   Abstract.Clause makeClause(List<? extends Abstract.Pattern> pattern, Abstract.Definition.Arrow arrow, Abstract.Expression expr);
   Abstract.Pattern makeConPattern(boolean isExplicit, Abstract.Constructor constructor, List<Abstract.Pattern> args);
   Abstract.Pattern makeNamePattern(boolean isExplicit, Abstract.ReferableSourceNode name);
+  Abstract.Pattern makeEmptyPattern(boolean isExplicit);
 }
