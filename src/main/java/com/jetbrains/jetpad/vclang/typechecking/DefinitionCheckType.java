@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.core.context.LinkList;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
@@ -249,12 +250,14 @@ public class DefinitionCheckType {
             parameters.add(null);
           }
           getReferableList(def.getArguments(), parameters);
+          Map<Abstract.ReferableSourceNode, Binding> originalContext = new HashMap<>(visitor.getContext());
           ElimTreeNode elimTree = visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, parameters, def.getArrow() == Abstract.Definition.Arrow.LEFT ? typedDef.getParameters() : null, expectedType, false, true);
           if (elimTree != null) {
             typedDef.setElimTree(elimTree);
           }
 
           if (expectedType != null) {
+            visitor.setContext(originalContext);
             new ElimTypechecking(visitor, expectedType, true).typecheckElim(((Abstract.ElimExpression) term), typedDef.getParameters());
           } else {
             // TODO[newElim]: report an error

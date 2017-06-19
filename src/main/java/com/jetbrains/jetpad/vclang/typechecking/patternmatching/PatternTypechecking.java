@@ -44,9 +44,8 @@ class PatternTypechecking {
     }
   }
 
-  Pair<List<Pattern>, Expression> typecheckClause(Abstract.Clause clause, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType, CheckTypeVisitor visitor, boolean isFinal) {
+  Pair<List<Pattern>, CheckTypeVisitor.Result> typecheckClause(Abstract.Clause clause, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType, CheckTypeVisitor visitor, boolean isFinal) {
     myContext = visitor.getContext();
-    myContext.clear();
 
     // Typecheck patterns
     Pair<List<Pattern>, List<Expression>> result;
@@ -84,6 +83,12 @@ class PatternTypechecking {
       substitution.add(parameters, expr);
       parameters = parameters.getNext();
     }
+    for (Map.Entry<Abstract.ReferableSourceNode, Binding> entry : myContext.entrySet()) {
+      Expression expr = substitution.get(entry.getValue());
+      if (expr != null) {
+        entry.setValue(expr.toReference().getBinding());
+      }
+    }
     expectedType = expectedType.subst(substitution);
 
     // Typecheck the RHS
@@ -95,7 +100,7 @@ class PatternTypechecking {
     } else {
       tcResult = visitor.checkExpr(clause.getExpression(), expectedType);
     }
-    return tcResult == null ? null : new Pair<>(result.proj1, tcResult.expression);
+    return tcResult == null ? null : new Pair<>(result.proj1, tcResult);
   }
 
   Pair<List<Pattern>, Map<Abstract.ReferableSourceNode, Binding>> typecheckPatterns(List<? extends Abstract.Pattern> patterns, DependentLink parameters, Abstract.SourceNode sourceNode, boolean fullList) {
@@ -233,6 +238,14 @@ class PatternTypechecking {
         exprs.add(conCall);
         parameters = DependentLink.Helper.subst(parameters.getNext(), new ExprSubstitution(parameters, conCall));
       }
+    }
+
+    while (!parameters.isExplicit()) {
+      addPattern(result, new BindingPattern(parameters));
+      if (exprs != null) {
+        exprs.add(new ReferenceExpression(parameters));
+      }
+      parameters = parameters.getNext();
     }
 
     if (parameters.hasNext()) {

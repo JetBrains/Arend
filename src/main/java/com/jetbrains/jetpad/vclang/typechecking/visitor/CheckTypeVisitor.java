@@ -58,7 +58,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   private final TypecheckerState myState;
   private final StaticNamespaceProvider myStaticNsProvider;
   private final DynamicNamespaceProvider myDynamicNsProvider;
-  private final Map<Abstract.ReferableSourceNode, Binding> myContext;
+  private Map<Abstract.ReferableSourceNode, Binding> myContext;
   private final Set<Binding> myFreeBindings;
   private final LocalErrorReporter myErrorReporter;
   private final TypeCheckingDefCall myTypeCheckingDefCall;
@@ -293,6 +293,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
   public Map<Abstract.ReferableSourceNode, Binding> getContext() {
     return myContext;
+  }
+
+  public void setContext(Map<Abstract.ReferableSourceNode, Binding> context) {
+    myContext = context;
   }
 
   public Set<Binding> getFreeBindings() {

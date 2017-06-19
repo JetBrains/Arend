@@ -229,4 +229,31 @@ public class PatternTest extends TypeCheckingTestCase {
     assertEquals(1, errorReporter.getErrorList().size());
     checkPatterns(patternsArgs, res.proj1, res.proj2, false);
   }
+
+  @Test
+  public void elimBefore() {
+    typeCheckDef(
+      "\\function if (n : Nat) {A : \\Type} (a a' : A) : A <= \\elim n\n" +
+      "  | zero => a\n" +
+      "  | suc _ => a'");
+  }
+
+  @Test
+  public void elimAfter() {
+    typeCheckDef(
+      "\\function if {A : \\Type} (a a' : A) (n : Nat) : A <= \\elim n\n" +
+      "  | zero => a\n" +
+      "  | suc _ => a'");
+  }
+
+  @Test
+  public void dependentElim() {
+    typeCheckClass(
+      "\\function if {A : \\Type} (n : Nat) (a a' : A) : A <= \\elim n\n" +
+      "  | zero => a\n" +
+      "  | suc _ => a'\n" +
+      "\\function f (n : Nat) (x : if n Nat (Nat -> Nat)) : Nat <= \\elim n\n" +
+      "  | zero => x\n" +
+      "  | suc _ => x 0");
+  }
 }

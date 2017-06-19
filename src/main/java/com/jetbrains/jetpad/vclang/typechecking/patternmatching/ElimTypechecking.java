@@ -1,7 +1,9 @@
 package com.jetbrains.jetpad.vclang.typechecking.patternmatching;
 
 import com.jetbrains.jetpad.vclang.core.context.Utils;
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
@@ -11,6 +13,7 @@ import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.MissingClausesError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
@@ -50,7 +53,10 @@ public class ElimTypechecking {
     PatternTypechecking patternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), myAllowInterval);
     myOK = true;
     for (Abstract.Clause clause : elimExpr.getClauses()) {
-      Pair<List<Pattern>, Expression> result = patternTypechecking.typecheckClause(clause, patternTypes, elimParams, myExpectedType, myVisitor, true);
+      Map<Abstract.ReferableSourceNode, Binding> originalContext = new HashMap<>(myVisitor.getContext());
+      Pair<List<Pattern>, CheckTypeVisitor.Result> result = patternTypechecking.typecheckClause(clause, patternTypes, elimParams, myExpectedType, myVisitor, true);
+      myVisitor.setContext(originalContext);
+
       if (result == null) {
         myOK = false;
       } else {
@@ -58,7 +64,7 @@ public class ElimTypechecking {
         for (int i = result.proj1.size() - 1; i >= 0; i--) {
           patterns.push(result.proj1.get(i));
         }
-        clauses.add(new ClauseData(patterns, result.proj2, new ExprSubstitution(), clause));
+        clauses.add(new ClauseData(patterns, result.proj2.expression, new ExprSubstitution(), clause));
       }
     }
     if (!myOK) {
@@ -111,11 +117,11 @@ public class ElimTypechecking {
       if (index < 0) {
         ClauseData clauseData = clauseDataList.get(0);
         myUnusedClauses.remove(clauseData.clause);
-        return new LeafElimTree(((BindingPattern) clauseData.patterns.peek()).getBinding(), clauseData.expression.subst(clauseData.substitution));
+        return new LeafElimTree(clauseData.patterns.isEmpty() ? EmptyDependentLink.getInstance() : ((BindingPattern) clauseData.patterns.peek()).getBinding(), clauseData.expression.subst(clauseData.substitution));
       }
 
       // Make new list of variables
-      DependentLink vars = ((BindingPattern) clauseDataList.get(0).patterns.peek()).getBinding().subst(clauseDataList.get(0).substitution, LevelSubstitution.EMPTY, clauseDataList.get(0).patterns.size() - 1 - index);
+      DependentLink vars = index == clauseDataList.get(0).patterns.size() - 1 ? EmptyDependentLink.getInstance() : ((BindingPattern) clauseDataList.get(0).patterns.peek()).getBinding().subst(clauseDataList.get(0).substitution, LevelSubstitution.EMPTY, clauseDataList.get(0).patterns.size() - 1 - index);
       for (DependentLink link = vars; link.hasNext(); link = link.getNext()) {
         myContext.push(new MissingClausesError.PatternClauseElem(new BindingPattern(link)));
       }
@@ -181,7 +187,21 @@ public class ElimTypechecking {
         } else {
           for (Constructor constructor : constructors) {
             if (!constructorMap.containsKey(constructor)) {
+              if (constructor == Prelude.PROP_TRUNC_PATH_CON) {
+                Sort sort = myExpectedType.getType().toSort();
+                if (sort != null && sort.isProp()) {
+                  continue;
+                }
+              } else if (constructor == Prelude.SET_TRUNC_PATH_CON) {
+                Sort sort = myExpectedType.getType().toSort();
+                if (sort != null && sort.isSet()) {
+                  continue;
+                }
+              }
+
+              myContext.push(new MissingClausesError.ConstructorClauseElem(constructor));
               List<MissingClausesError.ClauseElem> missingClause = unflattenMissingClause(myContext);
+              myContext.pop();
               boolean moreArguments = clauseDataList.get(0).patterns.size() > 1;
               if (!moreArguments) {
                 for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext()) {
