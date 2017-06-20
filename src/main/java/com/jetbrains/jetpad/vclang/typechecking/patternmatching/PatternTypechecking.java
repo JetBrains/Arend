@@ -196,6 +196,10 @@ class PatternTypechecking {
 
       if (pattern instanceof Abstract.EmptyPattern) {
         List<ConCallExpression> conCalls = expr.toDataCall().getMatchedConstructors();
+        if (conCalls == null) {
+          myErrorReporter.report(new LocalTypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", pattern));
+          return null;
+        }
         if (!conCalls.isEmpty()) {
           myErrorReporter.report(new LocalTypeCheckingError("Data type " + expr + " is not empty, available constructors: " + conCalls, pattern));
           return null;

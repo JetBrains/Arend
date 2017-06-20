@@ -58,7 +58,7 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
   @Test
   public void test34_2() {
     typeCheckClass("\\function ack (x y : Nat) : Nat <= \\elim x, y\n" +
-      "| zero, _ => suc y\n" +
+      "| zero, y => suc y\n" +
       "| suc x', zero => ack x' (suc zero)\n" +
       "| suc x', suc y' => ack (suc x') y';", 0);
   }

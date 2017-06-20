@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.core.elimtree;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +23,14 @@ public class ConstructorPattern implements Pattern {
 
   public List<Pattern> getPatterns() {
     return myPatterns;
+  }
+
+  public Sort getSortArgument() {
+    return myConCall.getSortArgument();
+  }
+
+  public List<? extends Expression> getDataTypeArguments() {
+    return myConCall.getDataTypeArguments();
   }
 
   @Override

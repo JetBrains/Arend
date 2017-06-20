@@ -125,34 +125,31 @@ public class ErrorFormatter {
           builder.append('\n');
         }
         if (clause != null) {
+          boolean topLevel = true;
           ppv.printIndent();
-          boolean patternFirst = true;
           int parens = 0;
           ToAbstractVisitor toAbstractVisitor = new ToAbstractVisitor(new ConcreteExpressionFactory());
           for (int i = 0; i < clause.size(); i++) {
             MissingClausesError.ClauseElem clauseElem = clause.get(i);
-            if (!patternFirst) {
-              builder.append(' ');
+            if (i != 0) {
+              builder.append(topLevel && i < clause.size() - 1 ? ", " : " ");
             }
             if (clauseElem == null) {
               builder.append("...");
               parens = 0;
             } else if (clauseElem instanceof MissingClausesError.PatternClauseElem) {
-              ppv.prettyPrintPattern(toAbstractVisitor.visitPattern(((MissingClausesError.PatternClauseElem) clauseElem).pattern, true), (byte) (Abstract.Pattern.PREC + 1));
+              ppv.prettyPrintPattern(toAbstractVisitor.visitPattern(((MissingClausesError.PatternClauseElem) clauseElem).pattern, true), topLevel ? Abstract.Expression.PREC : (byte) (Abstract.Pattern.PREC + 1));
             } else if (clauseElem instanceof MissingClausesError.ConstructorClauseElem) {
-              if (!patternFirst && i < clause.size() - 1) {
+              if (!topLevel && i != 0 && i < clause.size() - 1) {
                 builder.append('(');
                 parens++;
               }
               builder.append(((MissingClausesError.ConstructorClauseElem) clauseElem).constructor.getAbstractDefinition());
+              topLevel = false;
             } else if (clauseElem instanceof MissingClausesError.SkipClauseElem) {
               builder.append('_');
             } else {
               throw new IllegalStateException();
-            }
-
-            if (patternFirst) {
-              patternFirst = false;
             }
           }
 

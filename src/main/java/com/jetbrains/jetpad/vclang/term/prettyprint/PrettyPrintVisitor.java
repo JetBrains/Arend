@@ -828,8 +828,9 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   public void prettyPrintPattern(Abstract.Pattern pattern, byte prec) {
-    boolean isName = pattern instanceof Abstract.NamePattern;
-    myBuilder.append(pattern.isExplicit() ? (isName ? "" : "(") : "{");
+    if (!pattern.isExplicit()) {
+      myBuilder.append("{");
+    }
 
     if (pattern instanceof Abstract.NamePattern) {
       String name = ((Abstract.NamePattern) pattern).getReferent().getName();
@@ -840,18 +841,21 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     } else if (pattern instanceof Abstract.EmptyPattern) {
       myBuilder.append("()");
     } else if (pattern instanceof Abstract.ConstructorPattern) {
-      if (prec > Abstract.Pattern.PREC) myBuilder.append('(');
+      Abstract.ConstructorPattern conPattern = (Abstract.ConstructorPattern) pattern;
+      if (!conPattern.getArguments().isEmpty() && prec > Abstract.Pattern.PREC && pattern.isExplicit()) myBuilder.append('(');
 
-      myBuilder.append(new Name(((Abstract.ConstructorPattern) pattern).getConstructorName()).getPrefixName());
-      for (Abstract.Pattern patternArg : ((Abstract.ConstructorPattern) pattern).getArguments()) {
+      myBuilder.append(new Name(conPattern.getConstructorName()).getPrefixName());
+      for (Abstract.Pattern patternArg : conPattern.getArguments()) {
         myBuilder.append(' ');
-        prettyPrintPattern(patternArg, Abstract.Pattern.PREC);
+        prettyPrintPattern(patternArg, (byte) (Abstract.Pattern.PREC + 1));
       }
 
-      if (prec > Abstract.Pattern.PREC) myBuilder.append(')');
+      if (!conPattern.getArguments().isEmpty() && prec > Abstract.Pattern.PREC && pattern.isExplicit()) myBuilder.append(')');
     }
 
-    myBuilder.append(pattern.isExplicit() ? (isName ? "": ")") : "}");
+    if (!pattern.isExplicit()) {
+      myBuilder.append("}");
+    }
   }
 
   @Override
