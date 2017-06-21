@@ -6,7 +6,10 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.elimtree.*;
-import com.jetbrains.jetpad.vclang.core.expr.*;
+import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
+import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.GetTypeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
@@ -213,48 +216,48 @@ public class ElimTypechecking {
         }
       }
 
-      if (constructors.size() > constructorMap.size()) {
-        if (hasVars) {
-          List<ClauseData> varClauseDataList = new ArrayList<>();
-          for (ClauseData clauseData : clauseDataList) {
-            if (clauseData.patterns.get(0) instanceof BindingPattern) {
-              varClauseDataList.add(clauseData);
-              clauseData.substitution.remove(((BindingPattern) clauseData.patterns.get(0)).getBinding());
-            }
+      if (hasVars) {
+        List<ClauseData> varClauseDataList = new ArrayList<>();
+        for (ClauseData clauseData : clauseDataList) {
+          if (clauseData.patterns.get(0) instanceof BindingPattern) {
+            varClauseDataList.add(clauseData);
+            clauseData.substitution.remove(((BindingPattern) clauseData.patterns.get(0)).getBinding());
           }
-          constructorMap.put(BranchElimTree.Pattern.ANY, varClauseDataList);
-        } else {
-          for (Constructor constructor : constructors) {
-            if (!constructorMap.containsKey(constructor)) {
-              if (constructor == Prelude.PROP_TRUNC_PATH_CON) {
-                Sort sort = myExpectedType.getType().toSort();
-                if (sort != null && sort.isProp()) {
-                  continue;
-                }
-              } else if (constructor == Prelude.SET_TRUNC_PATH_CON) {
-                Sort sort = myExpectedType.getType().toSort();
-                if (sort != null && sort.isSet()) {
-                  continue;
-                }
-              }
+        }
+        constructorMap.put(BranchElimTree.Pattern.ANY, varClauseDataList);
+      }
 
-              myContext.push(new MissingClausesError.ConstructorClauseElem(constructor));
-              List<MissingClausesError.ClauseElem> missingClause = unflattenMissingClause(myContext);
-              myContext.pop();
-              boolean moreArguments = clauseDataList.get(0).patterns.size() > 1;
-              if (!moreArguments) {
-                for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext()) {
-                  if (link.isExplicit()) {
-                    moreArguments = true;
-                    break;
-                  }
+      if (!hasVars && constructors.size() > constructorMap.size()) {
+        for (Constructor constructor : constructors) {
+          if (!constructorMap.containsKey(constructor)) {
+            if (constructor == Prelude.PROP_TRUNC_PATH_CON) {
+              Sort sort = myExpectedType.getType().toSort();
+              if (sort != null && sort.isProp()) {
+                continue;
+              }
+            } else if (constructor == Prelude.SET_TRUNC_PATH_CON) {
+              Sort sort = myExpectedType.getType().toSort();
+              if (sort != null && sort.isSet()) {
+                continue;
+              }
+            }
+
+            myContext.push(new MissingClausesError.ConstructorClauseElem(constructor));
+            List<MissingClausesError.ClauseElem> missingClause = unflattenMissingClause(myContext);
+            myContext.pop();
+            boolean moreArguments = clauseDataList.get(0).patterns.size() > 1;
+            if (!moreArguments) {
+              for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext()) {
+                if (link.isExplicit()) {
+                  moreArguments = true;
+                  break;
                 }
               }
-              if (moreArguments) {
-                missingClause.add(null);
-              }
-              addMissingClause(missingClause);
             }
+            if (moreArguments) {
+              missingClause.add(null);
+            }
+            addMissingClause(missingClause);
           }
         }
       }

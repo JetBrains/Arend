@@ -7,6 +7,10 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
+import com.jetbrains.jetpad.vclang.core.definition.Constructor;
+import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
@@ -228,8 +232,34 @@ class DefinitionSerialization {
     return expr.accept(myVisitor, null);
   }
 
-  ExpressionProtos.ElimTreeNode writeElimTree(ElimTreeNode elimTree) {
+  ExpressionProtos.ElimTreeNode writeElimTreeNode(ElimTreeNode elimTree) {
     return elimTree.accept(myVisitor, null);
+  }
+
+  ExpressionProtos.ElimTree writeElimTree(ElimTree elimTree) {
+    ExpressionProtos.ElimTree.Builder builder = ExpressionProtos.ElimTree.newBuilder();
+    builder.addAllParam(writeParameters(elimTree.getParameters()));
+
+    if (elimTree instanceof LeafElimTree) {
+      ExpressionProtos.ElimTree.Leaf.Builder leafBuilder = ExpressionProtos.ElimTree.Leaf.newBuilder();
+      leafBuilder.setExpr(((LeafElimTree) elimTree).getExpression().accept(myVisitor, null));
+      builder.setLeaf(leafBuilder);
+    } else {
+      BranchElimTree branchElimTree = (BranchElimTree) elimTree;
+      ExpressionProtos.ElimTree.Branch.Builder branchBuilder = ExpressionProtos.ElimTree.Branch.newBuilder();
+
+      for (Map.Entry<BranchElimTree.Pattern, ElimTree> entry : branchElimTree.getChildren()) {
+        if (entry.getKey() instanceof Constructor) {
+          branchBuilder.putClauses(myCalltargetIndexProvider.getDefIndex((Constructor) entry.getKey()), writeElimTree(entry.getValue()));
+        } else {
+          branchBuilder.setOtherwiseClause(writeElimTree(entry.getValue()));
+        }
+      }
+
+      builder.setBranch(branchBuilder);
+    }
+
+    return builder.build();
   }
 
 
@@ -402,7 +432,7 @@ class DefinitionSerialization {
           cBuilder.addParam(writeSingleParameter(link));
         }
         cBuilder.setResultType(writeType(letClause.getResultType()));
-        cBuilder.setElimTree(writeElimTree(letClause.getElimTree()));
+        cBuilder.setElimTree(writeElimTreeNode(letClause.getElimTree()));
         builder.addClause(cBuilder);
         registerBinding(letClause);
       }
@@ -451,12 +481,12 @@ class DefinitionSerialization {
         for (TypedBinding binding : clause.getTailBindings()) {
           ccBuilder.addTailBinding(createTypedBinding(binding));
         }
-        ccBuilder.setChild(writeElimTree(clause.getChild()));
+        ccBuilder.setChild(writeElimTreeNode(clause.getChild()));
 
         builder.putConstructorClauses(myCalltargetIndexProvider.getDefIndex(clause.getConstructor()), ccBuilder.build());
       }
       if (branchNode.getOtherwiseClause() != null) {
-        builder.setOtherwiseClause(writeElimTree(branchNode.getOtherwiseClause().getChild()));
+        builder.setOtherwiseClause(writeElimTreeNode(branchNode.getOtherwiseClause().getChild()));
       }
       return builder.build();
     }

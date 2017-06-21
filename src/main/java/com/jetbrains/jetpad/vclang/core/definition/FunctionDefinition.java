@@ -2,9 +2,9 @@ package com.jetbrains.jetpad.vclang.core.definition;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.FunCallExpression;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
@@ -13,22 +13,21 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FunctionDefinition extends Definition implements Function {
+public class FunctionDefinition extends Definition {
   private DependentLink myParameters;
   private Expression myResultType;
-  private ElimTreeNode myElimTree;
+  private ElimTree myElimTree;
 
   public FunctionDefinition(Abstract.Definition abstractDef) {
     super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
     myParameters = EmptyDependentLink.getInstance();
   }
 
-  @Override
-  public ElimTreeNode getElimTree() {
+  public ElimTree getElimTree() {
     return myElimTree;
   }
 
-  public void setElimTree(ElimTreeNode elimTree) {
+  public void setElimTree(ElimTree elimTree) {
     myElimTree = elimTree;
   }
 

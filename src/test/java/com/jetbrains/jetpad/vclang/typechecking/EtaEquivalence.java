@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import org.junit.Test;
@@ -20,7 +20,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
     assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));
     assertTrue(result.getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) result.getDefinition("f");
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Ref(f.getParameters()), null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, ((LeafElimTree) f.getElimTree()).getExpression(), Ref(f.getParameters()), null));
   }
 
   @Test
@@ -31,7 +31,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
     assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));
     assertTrue(result.getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) result.getDefinition("f");
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.GE, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Ref(f.getParameters()), null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.GE, ((LeafElimTree) f.getElimTree()).getExpression(), Ref(f.getParameters()), null));
   }
 
   @Test
@@ -42,7 +42,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
     assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));
     assertTrue(result.getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) result.getDefinition("f");
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Ref(f.getParameters()), null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, ((LeafElimTree) f.getElimTree()).getExpression(), Ref(f.getParameters()), null));
   }
   @Test
   public void pathEtaLeftTest() {
@@ -67,6 +67,6 @@ public class EtaEquivalence extends TypeCheckingTestCase {
   @Test
   public void onlyDefCallsExpanded() {
     FunctionDefinition fun = (FunctionDefinition) typeCheckDef("\\function f (x : Nat -> Nat) => x");
-    assertTrue(((LeafElimTreeNode)fun.getElimTree()).getExpression().toLam() == null);
+    assertTrue(((LeafElimTree) fun.getElimTree()).getExpression().toLam() == null);
   }
 }

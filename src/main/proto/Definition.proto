@@ -77,6 +77,6 @@ message Definition {
     message FunctionData {
         repeated Telescope param = 2;
         Expression type = 5;
-        ElimTreeNode elim_tree = 4;
+        ElimTree elim_tree = 6;
     }
 }

@@ -33,7 +33,8 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
     myCycle = cycle;
     ParameterVector pv = new ParameterVector(def);
     if (def.getElimTree() != null) {
-      def.getElimTree().accept(this, pv);
+      // TODO[newELim]
+      // def.getElimTree().accept(this, pv);
     }
   }
 

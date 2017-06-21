@@ -5,6 +5,9 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVaria
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
+import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
@@ -56,6 +59,10 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     return new CompareVisitor(substitution, equations, cmp).compare(tree1, tree2);
   }
 
+  public static boolean compare(Map<Binding, Binding> substitution, Equations equations, Equations.CMP cmp, ElimTree tree1, ElimTree tree2) {
+    return new CompareVisitor(substitution, equations, cmp).compare(tree1, tree2);
+  }
+
   public static boolean compare(Map<Binding, Binding> substitution, Equations equations, Equations.CMP cmp, Expression expr1, Expression expr2) {
     return new CompareVisitor(substitution, equations, cmp).compare(expr1, expr2);
   }
@@ -65,6 +72,43 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return true;
     }
     return tree1.accept(this, tree2);
+  }
+
+  public Boolean compare(ElimTree elimTree1, ElimTree elimTree2) {
+    if (elimTree1 == elimTree2) {
+      return true;
+    }
+    if (!compareParameters(DependentLink.Helper.toList(elimTree1.getParameters()), DependentLink.Helper.toList(elimTree2.getParameters()))) {
+      return false;
+    }
+
+    boolean ok = false;
+    if (elimTree1 instanceof LeafElimTree && elimTree2 instanceof LeafElimTree) {
+      ok = compare(((LeafElimTree) elimTree1).getExpression(), ((LeafElimTree) elimTree2).getExpression());
+    } else
+    if (elimTree1 instanceof BranchElimTree && elimTree2 instanceof BranchElimTree) {
+      BranchElimTree branchElimTree1 = (BranchElimTree) elimTree1;
+      BranchElimTree branchElimTree2 = (BranchElimTree) elimTree2;
+      if (branchElimTree1.getChildren().size() == branchElimTree2.getChildren().size()) {
+        ok = true;
+        for (Map.Entry<BranchElimTree.Pattern, ElimTree> entry : branchElimTree1.getChildren()) {
+          ElimTree elimTree = branchElimTree2.getChild(entry.getKey());
+          if (elimTree == null) {
+            ok = false;
+            break;
+          }
+          ok = compare(entry.getValue(), elimTree);
+          if (!ok) {
+            break;
+          }
+        }
+      }
+    }
+
+    for (DependentLink link = elimTree1.getParameters(); link.hasNext(); link = link.getNext()) {
+      mySubstitution.remove(link);
+    }
+    return ok;
   }
 
   public Boolean compare(Expression expr1, Expression expr2) {

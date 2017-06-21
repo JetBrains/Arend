@@ -3,20 +3,29 @@ package com.jetbrains.jetpad.vclang.term;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.TypedSingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.core.expr.AppExpression;
-import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
-import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
-import com.jetbrains.jetpad.vclang.core.expr.UniverseExpression;
+import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
+import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.clause;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.parameter;
 
 public class Prelude {
   public static DataDefinition INTERVAL;
@@ -66,26 +75,34 @@ public class Prelude {
     } else
     if (abstractDef.getName().equals("@")) {
       AT = (FunctionDefinition) definition;
-      DependentLink param4 = AT.getParameters().getNext().getNext().getNext();
-      DependentLink atPath = ExpressionFactory.parameter("f", PATH_CON.getParameters().getType());
-      AT.setElimTree(ExpressionFactory.top(AT.getParameters(), ExpressionFactory.branch(param4.getNext(), ExpressionFactory.tail(),
-        clause(LEFT, EmptyDependentLink.getInstance(), new ReferenceExpression(AT.getParameters().getNext())),
-        clause(RIGHT, EmptyDependentLink.getInstance(), new ReferenceExpression(AT.getParameters().getNext().getNext())),
-        ExpressionFactory.clause(ExpressionFactory.branch(param4, ExpressionFactory.tail(param4.getNext()),
-            ExpressionFactory.clause(PATH_CON, atPath, new AppExpression(new ReferenceExpression(atPath), new ReferenceExpression(param4.getNext()))))))));
+      DependentLink atParams = AT.getParameters().subst(new ExprSubstitution(), LevelSubstitution.EMPTY, 3);
+      SingleDependentLink intervalParam = new TypedSingleDependentLink(true, "i", ExpressionFactory.Interval());
+      DependentLink pathParam = parameter("f", new PiExpression(Sort.STD, intervalParam, new AppExpression(new ReferenceExpression(atParams), new ReferenceExpression(intervalParam))));
+      DependentLink iParam = parameter("i", ExpressionFactory.Interval());
+      Map<BranchElimTree.Pattern, ElimTree> children = new HashMap<>();
+      Map<BranchElimTree.Pattern, ElimTree> anyChildren = new HashMap<>();
+      anyChildren.put(LEFT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(atParams.getNext())));
+      anyChildren.put(RIGHT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(atParams.getNext().getNext())));
+      Map<BranchElimTree.Pattern, ElimTree> pathChildren = new HashMap<>(anyChildren);
+      pathChildren.put(BranchElimTree.Pattern.ANY, new LeafElimTree(iParam, new AppExpression(new ReferenceExpression(pathParam), new ReferenceExpression(iParam))));
+      children.put(PATH_CON, new BranchElimTree(pathParam, pathChildren));
+      children.put(BranchElimTree.Pattern.ANY, new BranchElimTree(parameter("p", new DataCallExpression(PATH, Sort.STD, Arrays.asList(new ReferenceExpression(atParams), new ReferenceExpression(atParams.getNext()), new ReferenceExpression(atParams.getNext().getNext())))), anyChildren));
+      AT.setElimTree(new BranchElimTree(atParams, children));
       AT.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     } else
     if (abstractDef.getName().equals("coe")) {
       COERCE = (FunctionDefinition) definition;
-      COERCE.setElimTree(ExpressionFactory.top(COERCE.getParameters(), ExpressionFactory.branch(COERCE.getParameters().getNext().getNext(), ExpressionFactory.tail(),
-        ExpressionFactory.clause(LEFT, EmptyDependentLink.getInstance(), Abstract.Definition.Arrow.RIGHT, new ReferenceExpression(COERCE.getParameters().getNext())))));
+      DependentLink coeParams = COERCE.getParameters().subst(new ExprSubstitution(), LevelSubstitution.EMPTY, 2);
+      COERCE.setElimTree(new BranchElimTree(coeParams, Collections.singletonMap(LEFT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(coeParams.getNext())))));
       COERCE.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     } else
     if (abstractDef.getName().equals("iso")) {
       ISO = (FunctionDefinition) definition;
-      ISO.setElimTree(ExpressionFactory.top(ISO.getParameters(), ExpressionFactory.branch(ISO.getParameters().getNext().getNext().getNext().getNext().getNext().getNext(), ExpressionFactory.tail(),
-        clause(LEFT, EmptyDependentLink.getInstance(), new ReferenceExpression(ISO.getParameters())),
-        clause(RIGHT, EmptyDependentLink.getInstance(), new ReferenceExpression(ISO.getParameters().getNext())))));
+      DependentLink isoParams = ISO.getParameters().subst(new ExprSubstitution(), LevelSubstitution.EMPTY, 6);
+      Map<BranchElimTree.Pattern, ElimTree> children = new HashMap<>();
+      children.put(LEFT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(isoParams)));
+      children.put(RIGHT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(isoParams.getNext())));
+      ISO.setElimTree(new BranchElimTree(isoParams, children));
       ISO.setResultType(new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR))));
       ISO.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     } else

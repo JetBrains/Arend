@@ -146,6 +146,22 @@ message Binding {
     }
 }
 
+message ElimTree {
+    repeated Telescope param = 1;
+    oneof kind {
+        Leaf leaf = 2;
+        Branch branch = 3;
+    }
+
+    message Leaf {
+        Expression expr = 1;
+    }
+    message Branch {
+        map<int32, ElimTree> clauses = 1;
+        ElimTree otherwise_clause = 2;
+    }
+}
+
 message ElimTreeNode {
     oneof kind {
         Empty empty = 1;

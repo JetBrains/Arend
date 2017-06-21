@@ -7,9 +7,9 @@ import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -29,16 +29,16 @@ import static org.junit.Assert.assertNotNull;
 
 public class DefCall extends TypeCheckingTestCase {
   private void test(Expression expected, TypeCheckClassResult result) {
-    assertEquals(expected, ((LeafElimTreeNode) ((FunctionDefinition) result.getDefinition("test")).getElimTree()).getExpression());
+    assertEquals(expected, ((LeafElimTree) ((FunctionDefinition) result.getDefinition("test")).getElimTree()).getExpression());
   }
 
   private void testFI(Expression expected, TypeCheckClassResult result) {
-    assertEquals(expected, ((LeafElimTreeNode) ((FunctionDefinition) result.getDefinition("Test.test")).getElimTree()).getExpression());
+    assertEquals(expected, ((LeafElimTree) ((FunctionDefinition) result.getDefinition("Test.test")).getElimTree()).getExpression());
   }
 
   private void testType(Expression expected, TypeCheckClassResult result) {
     assertEquals(expected, ((FunctionDefinition) result.getDefinition("test")).getResultType());
-    assertEquals(expected, ((LeafElimTreeNode) ((FunctionDefinition) result.getDefinition("test")).getElimTree()).getExpression().getType());
+    assertEquals(expected, ((LeafElimTree) ((FunctionDefinition) result.getDefinition("test")).getElimTree()).getExpression().getType());
   }
 
   private DependentLink getThis(TypeCheckClassResult result) {

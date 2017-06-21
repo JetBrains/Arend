@@ -10,6 +10,9 @@ import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
+import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
@@ -24,6 +27,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -211,7 +215,7 @@ class DefinitionDeserialization {
 
   // Expressions and ElimTrees
 
-  ElimTreeNode readElimTree(ExpressionProtos.ElimTreeNode proto) throws DeserializationError {
+  ElimTreeNode readElimTreeNode(ExpressionProtos.ElimTreeNode proto) throws DeserializationError {
     switch (proto.getKindCase()) {
       case BRANCH:
         return readBranch(proto.getBranch());
@@ -219,6 +223,25 @@ class DefinitionDeserialization {
         return readLeaf(proto.getLeaf());
       case EMPTY:
         return readEmpty(proto.getEmpty());
+      default:
+        throw new DeserializationError("Unknown ElimTreeNode kind: " + proto.getKindCase());
+    }
+  }
+
+  ElimTree readElimTree(ExpressionProtos.ElimTree proto) throws DeserializationError {
+    switch (proto.getKindCase()) {
+      case BRANCH: {
+        Map<BranchElimTree.Pattern, ElimTree> children = new HashMap<>();
+        for (Map.Entry<Integer, ExpressionProtos.ElimTree> entry : proto.getBranch().getClausesMap().entrySet()) {
+          children.put(myCalltargetProvider.getCalltarget(entry.getKey(), Constructor.class), readElimTree(entry.getValue()));
+        }
+        if (proto.getBranch().hasOtherwiseClause()) {
+          children.put(BranchElimTree.Pattern.ANY, readElimTree(proto.getBranch().getOtherwiseClause()));
+        }
+        return new BranchElimTree(readParameters(proto.getParamList()), children);
+      }
+      case LEAF:
+        return new LeafElimTree(readParameters(proto.getParamList()), readExpr(proto.getLeaf().getExpr()));
       default:
         throw new DeserializationError("Unknown ElimTreeNode kind: " + proto.getKindCase());
     }
@@ -354,7 +377,7 @@ class DefinitionDeserialization {
       for (ExpressionProtos.Telescope telescope : cProto.getParamList()) {
         parameters.add(readSingleParameter(telescope));
       }
-      LetClause clause = new LetClause(cProto.getName(), sorts, parameters, readType(cProto.getResultType()), readElimTree(cProto.getElimTree()));
+      LetClause clause = new LetClause(cProto.getName(), sorts, parameters, readType(cProto.getResultType()), readElimTreeNode(cProto.getElimTree()));
       registerBinding(clause);
       clauses.add(clause);
     }
@@ -387,10 +410,10 @@ class DefinitionDeserialization {
       for (ExpressionProtos.Binding.TypedBinding bProto : cProto.getTailBindingList()) {
         tailBindings.add(readTypedBinding(bProto));
       }
-      result.addClause(myCalltargetProvider.getCalltarget(entry.getKey(), Constructor.class), constructorParams, tailBindings, readElimTree(cProto.getChild()));
+      result.addClause(myCalltargetProvider.getCalltarget(entry.getKey(), Constructor.class), constructorParams, tailBindings, readElimTreeNode(cProto.getChild()));
     }
     if (proto.hasOtherwiseClause()) {
-      result.addOtherwiseClause(readElimTree(proto.getOtherwiseClause()));
+      result.addOtherwiseClause(readElimTreeNode(proto.getOtherwiseClause()));
     }
     return result;
   }

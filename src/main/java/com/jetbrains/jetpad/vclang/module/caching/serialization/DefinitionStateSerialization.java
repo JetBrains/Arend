@@ -101,7 +101,7 @@ public class DefinitionStateSerialization {
       }
       cBuilder.addAllParam(defSerializer.writeParameters(constructor.getParameters()));
       if (constructor.getCondition() != null) {
-        cBuilder.setCondition(defSerializer.writeElimTree(constructor.getCondition()));
+        cBuilder.setCondition(defSerializer.writeElimTreeNode(constructor.getCondition()));
       }
 
       builder.putConstructors(myPersistenceProvider.getIdFor(constructor.getAbstractDefinition()), cBuilder.build());

@@ -2,13 +2,13 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.core.context.LinkList;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
+import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
@@ -19,8 +19,6 @@ import com.jetbrains.jetpad.vclang.core.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.core.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.core.pattern.Utils.ProcessImplicitResult;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.PatternsToElimTreeConversion;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
@@ -49,7 +47,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.toContext;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FieldCall;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.parameter;
 import static com.jetbrains.jetpad.vclang.core.pattern.Utils.processImplicit;
 import static com.jetbrains.jetpad.vclang.term.Util.getReferableList;
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.typeOfFunctionArg;
@@ -243,30 +242,23 @@ public class DefinitionCheckType {
       Expression expectedType = typedDef.getResultType();
 
       if (term instanceof Abstract.ElimExpression) {
-        // visitor.getContext().subList(visitor.getContext().size() - size(typedDef.getParameters()), visitor.getContext().size()).clear(); // TODO[context]
         if (expectedType != null || def.getResultType() == null) {
           List<Abstract.ReferableSourceNode> parameters = new ArrayList<>();
           if (typedDef.getThisClass() != null) {
             parameters.add(null);
           }
           getReferableList(def.getArguments(), parameters);
-          Map<Abstract.ReferableSourceNode, Binding> originalContext = new HashMap<>(visitor.getContext());
-          ElimTreeNode elimTree = visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, parameters, def.getArrow() == Abstract.Definition.Arrow.LEFT ? typedDef.getParameters() : null, expectedType, false, true);
-          if (elimTree != null) {
-            typedDef.setElimTree(elimTree);
-          }
 
           if (expectedType != null) {
-            visitor.setContext(originalContext);
-            new ElimTypechecking(visitor, expectedType, true).typecheckElim(((Abstract.ElimExpression) term), typedDef.getParameters());
+            typedDef.setElimTree(new ElimTypechecking(visitor, expectedType, true).typecheckElim(((Abstract.ElimExpression) term), typedDef.getParameters()));
           } else {
-            // TODO[newElim]: report an error
+            visitor.getErrorReporter().report(new LocalTypeCheckingError("Cannot infer type of the expression", def.getTerm()));
           }
         }
       } else {
         CheckTypeVisitor.Result termResult = visitor.finalCheckExpr(term, expectedType);
         if (termResult != null) {
-          typedDef.setElimTree(top(typedDef.getParameters(), new LeafElimTreeNode(def.getArrow(), termResult.expression)));
+          typedDef.setElimTree(new LeafElimTree(typedDef.getParameters(), termResult.expression));
           if (expectedType == null) {
             typedDef.setResultType(termResult.type);
           }
@@ -276,16 +268,13 @@ public class DefinitionCheckType {
       if (typedDef.getResultType() != null && typedDef.getElimTree() != null) {
         typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
-        LocalTypeCheckingError error = TypeCheckingElim.checkCoverage(def, typedDef.getParameters(), typedDef.getElimTree(), typedDef.getResultType());
-        if (error != null) {
-          visitor.getErrorReporter().report(error);
-        }
-
-        error = TypeCheckingElim.checkConditions(def, typedDef.getParameters(), typedDef.getElimTree());
+        /* TODO[newElim]
+        LocalTypeCheckingError error = TypeCheckingElim.checkConditions(def, typedDef.getParameters(), typedDef.getElimTree());
         if (error != null) {
           visitor.getErrorReporter().report(error);
           typedDef.setElimTree(null);
         }
+        */
       }
     }
 
@@ -900,7 +889,7 @@ public class DefinitionCheckType {
     }
 
     typedDef.setResultType(term);
-    typedDef.setElimTree(top(list.getFirst(), new LeafElimTreeNode(Abstract.Definition.Arrow.RIGHT, new NewExpression(term))));
+    typedDef.setElimTree(new LeafElimTree(list.getFirst(), new NewExpression(term)));
     typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
   }
 }

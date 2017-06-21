@@ -138,7 +138,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
       }
       constructor.setParameters(defDeserializer.readParameters(constructorProto.getParamList()));
       if (constructorProto.hasCondition()) {
-        constructor.setCondition(defDeserializer.readElimTree(constructorProto.getCondition()));
+        constructor.setCondition(defDeserializer.readElimTreeNode(constructorProto.getCondition()));
       }
       constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
       dataDef.addConstructor(constructor);

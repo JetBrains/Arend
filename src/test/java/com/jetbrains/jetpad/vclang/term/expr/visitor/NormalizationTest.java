@@ -10,12 +10,16 @@ import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -24,9 +28,7 @@ import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
@@ -57,11 +59,10 @@ public class NormalizationTest extends TypeCheckingTestCase {
     plus.setResultType(Nat());
     plus.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
-    DependentLink xPlusMinusOne = param("x'", Nat());
-    ElimTreeNode plusElimTree = top(xPlus, branch(xPlus, tail(yPlus),
-        clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Ref(yPlus)),
-        clause(Prelude.SUC, xPlusMinusOne, Suc(FunCall(plus, Sort.SET0, Ref(xPlusMinusOne), Ref(yPlus))))));
-    plus.setElimTree(plusElimTree);
+    Map<BranchElimTree.Pattern, ElimTree> plusChildren = new HashMap<>();
+    plusChildren.put(Prelude.ZERO, new LeafElimTree(yPlus, Ref(yPlus)));
+    plusChildren.put(Prelude.SUC, new LeafElimTree(xPlus, Suc(FunCall(plus, Sort.SET0, Ref(xPlus), Ref(yPlus)))));
+    plus.setElimTree(new BranchElimTree(EmptyDependentLink.getInstance(), plusChildren));
     plus.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
     DependentLink xMul = param("x", Nat());
@@ -70,12 +71,10 @@ public class NormalizationTest extends TypeCheckingTestCase {
     mul.setParameters(params(xMul, yMul));
     mul.setResultType(Nat());
     mul.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-    DependentLink xMulMinusOne = param("x'", Nat());
-    ElimTreeNode mulElimTree = top(xMul, branch(xMul, tail(yMul),
-        clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Zero()),
-        clause(Prelude.SUC, xMulMinusOne, FunCall(plus, Sort.SET0, Ref(yMul), FunCall(mul, Sort.SET0, Ref(xMulMinusOne), Ref(yMul))))
-    ));
-    mul.setElimTree(mulElimTree);
+    Map<BranchElimTree.Pattern, ElimTree> mulChildren = new HashMap<>();
+    mulChildren.put(Prelude.ZERO, new LeafElimTree(yMul, Zero()));
+    mulChildren.put(Prelude.SUC, new LeafElimTree(xMul, FunCall(plus, Sort.SET0, Ref(yMul), FunCall(mul, Sort.SET0, Ref(xMul), Ref(yMul)))));
+    mul.setElimTree(new BranchElimTree(EmptyDependentLink.getInstance(), mulChildren));
     mul.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
     DependentLink xFac = param("x", Nat());
@@ -83,12 +82,10 @@ public class NormalizationTest extends TypeCheckingTestCase {
     fac.setParameters(xFac);
     fac.setResultType(Nat());
     fac.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-    DependentLink xFacMinusOne = param("x'", Nat());
-    ElimTreeNode facElimTree = top(xFac, branch(xFac, tail(),
-        clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Suc(Zero())),
-        clause(Prelude.SUC, xFacMinusOne, FunCall(mul, Sort.SET0, Suc(Ref(xFacMinusOne)), FunCall(fac, Sort.SET0, Ref(xFacMinusOne))))
-    ));
-    fac.setElimTree(facElimTree);
+    Map<BranchElimTree.Pattern, ElimTree> facChildren = new HashMap<>();
+    facChildren.put(Prelude.ZERO, new LeafElimTree(EmptyDependentLink.getInstance(), Suc(Zero())));
+    facChildren.put(Prelude.SUC, new LeafElimTree(xFac, FunCall(mul, Sort.SET0, Suc(Ref(xFac)), FunCall(fac, Sort.SET0, Ref(xFac)))));
+    fac.setElimTree(new BranchElimTree(EmptyDependentLink.getInstance(), facChildren));
     fac.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
     DependentLink zNElim = param("z", Nat());
@@ -98,12 +95,11 @@ public class NormalizationTest extends TypeCheckingTestCase {
     nelim.setParameters(params(zNElim, sNElim, xNElim));
     nelim.setResultType(Nat());
     nelim.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-    DependentLink xNElimMinusOne = param("x'", Nat());
-    ElimTreeNode nelimElimTree = top(zNElim, branch(xNElim, tail(),
-        clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Ref(zNElim)),
-        clause(Prelude.SUC, xNElimMinusOne, Apps(Ref(sNElim), Ref(xNElimMinusOne), FunCall(nelim, Sort.SET0, Ref(zNElim), Ref(sNElim), Ref(xNElimMinusOne))))
-    ));
-    nelim.setElimTree(nelimElimTree);
+    DependentLink nelimParams = zNElim.subst(new ExprSubstitution(), LevelSubstitution.EMPTY, 2);
+    Map<BranchElimTree.Pattern, ElimTree> nelimChildren = new HashMap<>();
+    nelimChildren.put(Prelude.ZERO, new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nelimParams)));
+    nelimChildren.put(Prelude.SUC, new LeafElimTree(xNElim, Apps(Ref(nelimParams.getNext()), Ref(xNElim), FunCall(nelim, Sort.SET0, Ref(nelimParams), Ref(nelimParams.getNext()), Ref(xNElim)))));
+    nelim.setElimTree(new BranchElimTree(nelimParams, nelimChildren));
     nelim.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
   }
 
@@ -451,7 +447,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
         "  | Fin (suc n) => fsuc (Fin n)\n" +
         "\\function f (n : Nat) (x : Fin n) => fsuc $ x");
     FunctionDefinition f = (FunctionDefinition) result.getDefinition("f");
-    Expression term = ((LeafElimTreeNode) f.getElimTree()).getExpression().normalize(NormalizeVisitor.Mode.NF);
+    Expression term = ((LeafElimTree) f.getElimTree()).getExpression().normalize(NormalizeVisitor.Mode.NF);
     assertNotNull(term.toConCall());
     assertEquals(result.getDefinition("fsuc"), term.toConCall().getDefinition());
     assertEquals(1, term.toConCall().getDefCallArguments().size());
