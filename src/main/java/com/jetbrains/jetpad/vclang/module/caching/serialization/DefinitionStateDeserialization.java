@@ -110,8 +110,6 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
         default:
           throw new DeserializationError("Unknown Definition kind: " + defProto.getDefinitionDataCase());
       }
-
-      def.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     }
   }
 
