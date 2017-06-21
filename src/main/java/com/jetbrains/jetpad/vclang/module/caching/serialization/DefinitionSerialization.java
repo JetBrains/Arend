@@ -432,6 +432,9 @@ class DefinitionSerialization {
       ExpressionProtos.ElimTreeNode.Branch.Builder builder = ExpressionProtos.ElimTreeNode.Branch.newBuilder();
 
       builder.setReferenceRef(writeBindingRef(branchNode.getReference()));
+
+      builder.setIsInterval(branchNode.isInterval());
+
       for (Binding binding : branchNode.getContextTail()) {
         builder.addContextTailItemRef(writeBindingRef(binding));
       }
