@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
@@ -272,7 +273,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     System.out.println("--- Checking ---");
 
-    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), new ErrorReporter() {
+    class ResultTracker implements ErrorReporter, DependencyListener, TypecheckedReporter {
       @Override
       public void report(GeneralError error) {
         final ModuleResult newResult;
@@ -292,6 +293,19 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
         errorReporter.report(error);
       }
 
+      @Override
+      public void alreadyTypechecked(Abstract.Definition definition) {
+        Definition.TypeCheckingStatus status = state.getTypechecked(definition).status();
+        if (status != Definition.TypeCheckingStatus.NO_ERRORS) {
+          updateSourceResult(srcInfoProvider.sourceOf(definition), status != Definition.TypeCheckingStatus.HAS_ERRORS ? ModuleResult.ERRORS : ModuleResult.UNKNOWN);
+        }
+      }
+
+      @Override
+      public void typecheckingFailed(Abstract.Definition definition) {
+        flushErrors();
+      }
+
       private Abstract.Definition sourceDefinitionOf(GeneralError error) {
         if (error instanceof TypeCheckingError) {
           return ((TypeCheckingError) error).definition;
@@ -308,15 +322,10 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
           results.put(source, result);
         }
       }
-    }, new TypecheckedReporter() {
-      @Override
-      public void typecheckingSucceeded(Abstract.Definition definition) {
-      }
-      @Override
-      public void typecheckingFailed(Abstract.Definition definition) {
-        flushErrors();
-      }
-    }, new DependencyListener() {}).typecheckModules(modulesToTypeCheck);
+    }
+    ResultTracker resultTracker = new ResultTracker();
+
+    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), resultTracker, resultTracker, resultTracker).typecheckModules(modulesToTypeCheck);
 
     return results;
   }
@@ -334,13 +343,13 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
       case NOT_LOADED:
         return '✗';
       case OK:
-        return '✓';
+        return ' ';
       case GOALS:
         return '◯';
       case ERRORS:
         return '✗';
       default:
-        return ' ';
+        return '·';
     }
   }
 
