@@ -24,7 +24,7 @@ import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TerminationCheckError;
-import com.jetbrains.jetpad.vclang.typechecking.order.BaseDependencyListener;
+import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -217,7 +217,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     if (!cacheLoaded) {
       throw new IllegalStateException("Prelude cache is not available");
     }
-    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(state), new BaseDependencyListener()).typecheckModules(Collections.singletonList(prelude));
+    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(state), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
     return prelude;
   }
 
@@ -316,7 +316,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
       public void typecheckingFailed(Abstract.Definition definition) {
         flushErrors();
       }
-    }, new BaseDependencyListener()).typecheckModules(modulesToTypeCheck);
+    }, new DependencyListener() {}).typecheckModules(modulesToTypeCheck);
 
     return results;
   }

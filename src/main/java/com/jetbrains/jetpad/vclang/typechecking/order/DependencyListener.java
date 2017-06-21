@@ -5,12 +5,12 @@ import com.jetbrains.jetpad.vclang.typechecking.Typecheckable;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckingUnit;
 
 public interface DependencyListener {
-  void sccFound(SCC scc);
-  void unitFound(TypecheckingUnit unit, Recursion recursion);
-  boolean needsOrdering(Abstract.Definition definition);
+  default void sccFound(SCC scc) {}
+  default void unitFound(TypecheckingUnit unit, Recursion recursion) {}
+  default boolean needsOrdering(Abstract.Definition definition) { return true; }
 
-  void alreadyTypechecked(Abstract.Definition definition);
-  void dependsOn(Typecheckable unit, Abstract.Definition def);
+  default void alreadyTypechecked(Abstract.Definition definition) {}
+  default void dependsOn(Typecheckable unit, Abstract.Definition def) {}
 
   enum Recursion { NO, IN_HEADER, IN_BODY }
 }
