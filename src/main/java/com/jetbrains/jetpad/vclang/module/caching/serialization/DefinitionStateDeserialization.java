@@ -31,7 +31,9 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
           ClassDefinition classDef = new ClassDefinition((Abstract.ClassDefinition) abstractDef);
           for (String constructorId : defProto.getClass_().getFieldsMap().keySet()) {
             Abstract.ClassField absField = (Abstract.ClassField) getAbstract(constructorId);
-            state.record(absField, new ClassField(absField, classDef));
+            ClassField res = new ClassField(absField, classDef);
+            res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+            state.record(absField, res);
           }
           def = classDef;
           break;
@@ -39,7 +41,9 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
           DataDefinition dataDef = new DataDefinition((Abstract.DataDefinition) abstractDef);
           for (String constructorId : defProto.getData().getConstructorsMap().keySet()) {
             Abstract.Constructor absConstructor = (Abstract.Constructor) getAbstract(constructorId);
-            state.record(absConstructor, new Constructor(absConstructor, dataDef));
+            Constructor res = new Constructor(absConstructor, dataDef);
+            res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+            state.record(absConstructor, res);
           }
           def = dataDef;
           break;
@@ -131,7 +135,6 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
       ClassField field = getTypechecked(state, entry.getKey());
       field.setThisParameter(defDeserializer.readParameter(fieldProto.getThisParam()));
       field.setBaseType(defDeserializer.readExpr(fieldProto.getType()));
-      field.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     }
   }
 
@@ -149,7 +152,6 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
       if (constructorProto.hasCondition()) {
         constructor.setCondition(defDeserializer.readElimTree(constructorProto.getCondition()));
       }
-      constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
       dataDef.addConstructor(constructor);
     }
 
