@@ -205,13 +205,6 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
   }
 
-
-  protected abstract StaticNamespaceProvider getStaticNsProvider();
-  protected abstract DynamicNamespaceProvider getDynamicNsProvider();
-  protected abstract PersistenceProvider<SourceIdT> createPersistenceProvider();
-  protected abstract String displaySource(SourceIdT source, boolean modulePathOnly);
-
-
   protected Abstract.ClassDefinition loadPrelude() {
     Abstract.ClassDefinition prelude = moduleLoader.load(moduleLoader.locateModule(PreludeStorage.PRELUDE_MODULE_PATH));
     assert errorReporter.getErrorList().isEmpty();
@@ -228,92 +221,32 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     return prelude;
   }
 
-  public void run(final Path sourceDir, Collection<String> argFiles) {
-    loadPrelude();
 
-    // Collect sources for which typechecking was requested
-    if (argFiles.isEmpty()) {
-      if (sourceDir == null) return;
-      try {
-        Files.walkFileTree(sourceDir, new SimpleFileVisitor<Path>() {
-          @Override
-          public FileVisitResult visitFile(Path path, BasicFileAttributes basicFileAttributes) throws IOException {
-            if (path.getFileName().toString().endsWith(FileStorage.EXTENSION)) {
-              requestFileTypechecking(sourceDir.relativize(path));
-            }
-            return FileVisitResult.CONTINUE;
-          }
+  protected abstract StaticNamespaceProvider getStaticNsProvider();
+  protected abstract DynamicNamespaceProvider getDynamicNsProvider();
+  protected abstract PersistenceProvider<SourceIdT> createPersistenceProvider();
+  protected abstract String displaySource(SourceIdT source, boolean modulePathOnly);
 
-          @Override
-          public FileVisitResult visitFileFailed(Path path, IOException e) throws IOException {
-            System.err.println(GeneralError.ioError(e));
-            return FileVisitResult.CONTINUE;
-          }
-        });
-      } catch (IOException e) {
-        System.err.println(GeneralError.ioError(e));
-      }
-    } else {
-      for (String fileName : argFiles) {
-        requestFileTypechecking(Paths.get(fileName));
-      }
-    }
 
-    // Typecheck those sources
-    Map<SourceIdT, ModuleResult> typeCheckResults = typeCheckSources(requestedSources);
-    flushErrors();
+  private void requestFileTypechecking(Path path) {
+    String fileName = path.getFileName().toString();
+    if (!fileName.endsWith(FileStorage.EXTENSION)) return;
 
-    // Output nice per-module typechecking results
-    int numWithErrors = 0;
-    for (Map.Entry<SourceIdT, ModuleResult> entry : typeCheckResults.entrySet()) {
-      if (!requestedSources.contains(entry.getKey())) {
-        ModuleResult result = entry.getValue();
-        reportTypeCheckResult(entry.getKey(), result == ModuleResult.OK ? ModuleResult.UNKNOWN : result);
-        if (result == ModuleResult.ERRORS) numWithErrors += 1;
-      }
+    Path sourcePath = path.resolveSibling(fileName.substring(0, fileName.length() - FileStorage.EXTENSION.length()));
+    ModulePath modulePath = FileStorage.modulePath(sourcePath);
+    if (modulePath == null) {
+      System.err.println("[Not found] " + path + " is an illegal module path");
+      return;
     }
-    // Explicitly requested sources go last
-    for (SourceIdT source : requestedSources) {
-      ModuleResult result = typeCheckResults.get(source);
-      reportTypeCheckResult(source, result == null ? ModuleResult.OK : result);
-      if (result == ModuleResult.ERRORS) numWithErrors += 1;
+    SourceIdT sourceId = storage.locateModule(modulePath);
+    if (sourceId == null || !storage.isAvailable(sourceId)) {
+      System.err.println("[Not found] " + path + " is not available");
+      return;
     }
-    System.out.println("--- Done ---");
-    if (numWithErrors > 0) {
-      System.out.println("Number of modules with errors: " + numWithErrors);
-    }
-
-    // Persist cache
-    for (SourceIdT module : cacheManager.getCachedModules()) {
-      try {
-        cacheManager.persistCache(module);
-      } catch (CachePersistenceException e) {
-        e.printStackTrace();
-      }
-    }
+    requestedSources.add(sourceId);
   }
 
-  private void reportTypeCheckResult(SourceIdT source, ModuleResult result) {
-    StringBuilder builder = new StringBuilder();
-    builder.append("[").append(resultChar(result)).append("]");
-    builder.append(" ").append(displaySource(source, true));
-    System.out.println(builder);
-  }
-
-  private static char resultChar(ModuleResult result) {
-    switch (result) {
-      case NOT_LOADED:
-        return '✗';
-      case OK:
-        return '✓';
-      case GOALS:
-        return '◯';
-      case ERRORS:
-        return '✗';
-      default:
-        return ' ';
-    }
-  }
+  private enum ModuleResult { UNKNOWN, OK, GOALS, NOT_LOADED, ERRORS }
 
   private Map<SourceIdT, ModuleResult> typeCheckSources(Set<SourceIdT> sources) {
     final Map<SourceIdT, ModuleResult> results = new LinkedHashMap<>();
@@ -388,30 +321,98 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     return results;
   }
 
+
+  private void reportTypeCheckResult(SourceIdT source, ModuleResult result) {
+    StringBuilder builder = new StringBuilder();
+    builder.append("[").append(resultChar(result)).append("]");
+    builder.append(" ").append(displaySource(source, true));
+    System.out.println(builder);
+  }
+
+  private static char resultChar(ModuleResult result) {
+    switch (result) {
+      case NOT_LOADED:
+        return '✗';
+      case OK:
+        return '✓';
+      case GOALS:
+        return '◯';
+      case ERRORS:
+        return '✗';
+      default:
+        return ' ';
+    }
+  }
+
+  public void run(final Path sourceDir, Collection<String> argFiles) {
+    loadPrelude();
+
+    // Collect sources for which typechecking was requested
+    if (argFiles.isEmpty()) {
+      if (sourceDir == null) return;
+      try {
+        Files.walkFileTree(sourceDir, new SimpleFileVisitor<Path>() {
+          @Override
+          public FileVisitResult visitFile(Path path, BasicFileAttributes basicFileAttributes) throws IOException {
+            if (path.getFileName().toString().endsWith(FileStorage.EXTENSION)) {
+              requestFileTypechecking(sourceDir.relativize(path));
+            }
+            return FileVisitResult.CONTINUE;
+          }
+
+          @Override
+          public FileVisitResult visitFileFailed(Path path, IOException e) throws IOException {
+            System.err.println(GeneralError.ioError(e));
+            return FileVisitResult.CONTINUE;
+          }
+        });
+      } catch (IOException e) {
+        System.err.println(GeneralError.ioError(e));
+      }
+    } else {
+      for (String fileName : argFiles) {
+        requestFileTypechecking(Paths.get(fileName));
+      }
+    }
+
+    // Typecheck those sources
+    Map<SourceIdT, ModuleResult> typeCheckResults = typeCheckSources(requestedSources);
+    flushErrors();
+
+    // Output nice per-module typechecking results
+    int numWithErrors = 0;
+    for (Map.Entry<SourceIdT, ModuleResult> entry : typeCheckResults.entrySet()) {
+      if (!requestedSources.contains(entry.getKey())) {
+        ModuleResult result = entry.getValue();
+        reportTypeCheckResult(entry.getKey(), result == ModuleResult.OK ? ModuleResult.UNKNOWN : result);
+        if (result == ModuleResult.ERRORS) numWithErrors += 1;
+      }
+    }
+    // Explicitly requested sources go last
+    for (SourceIdT source : requestedSources) {
+      ModuleResult result = typeCheckResults.get(source);
+      reportTypeCheckResult(source, result == null ? ModuleResult.OK : result);
+      if (result == ModuleResult.ERRORS) numWithErrors += 1;
+    }
+    System.out.println("--- Done ---");
+    if (numWithErrors > 0) {
+      System.out.println("Number of modules with errors: " + numWithErrors);
+    }
+
+    // Persist cache
+    for (SourceIdT module : cacheManager.getCachedModules()) {
+      try {
+        cacheManager.persistCache(module);
+      } catch (CachePersistenceException e) {
+        e.printStackTrace();
+      }
+    }
+  }
+
   private void flushErrors() {
     for (GeneralError error : errorReporter.getErrorList()) {
       System.out.println(errf.printError(error));
     }
     errorReporter.getErrorList().clear();
-  }
-
-  private enum ModuleResult { UNKNOWN, OK, GOALS, NOT_LOADED, ERRORS }
-
-  private void requestFileTypechecking(Path path) {
-    String fileName = path.getFileName().toString();
-    if (!fileName.endsWith(FileStorage.EXTENSION)) return;
-
-    Path sourcePath = path.resolveSibling(fileName.substring(0, fileName.length() - FileStorage.EXTENSION.length()));
-    ModulePath modulePath = FileStorage.modulePath(sourcePath);
-    if (modulePath == null) {
-      System.err.println("[Not found] " + path + " is an illegal module path");
-      return;
-    }
-    SourceIdT sourceId = storage.locateModule(modulePath);
-    if (sourceId == null || !storage.isAvailable(sourceId)) {
-      System.err.println("[Not found] " + path + " is not available");
-      return;
-    }
-    requestedSources.add(sourceId);
   }
 }
