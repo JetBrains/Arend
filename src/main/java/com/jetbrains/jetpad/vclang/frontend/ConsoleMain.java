@@ -191,7 +191,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
           return null;
         }
       } else if ("prelude".equals(sourceUri.getScheme())) {
-        if (sourceUri.getAuthority() != null || !sourceUri.getPath().equals("/")) return null;
+        if (sourceUri.getAuthority() != null/* || !sourceUri.getPath().equals("/")*/) return null;
         return storageManager.idForPreludeSource(storageManager.preludeStorage.preludeSourceId);
       } else {
         return null;

@@ -28,6 +28,9 @@ public class SimpleNamespace implements Namespace {
   }
 
   public void addDefinition(String name, final Abstract.Definition def) {
+    if (name == null) {
+      return;
+    }
     final Abstract.Definition prev = myNames.put(name, def);
     if (!(prev == null || prev == def)) {
       throw new InvalidNamespaceException() {
