@@ -96,6 +96,9 @@ class PatternTypechecking {
     if (isFinal) {
       visitor.getFreeBindings().clear();
       collectBindings(result.proj1, visitor.getFreeBindings());
+      if (visitor.getTypeCheckingDefCall().getThisClass() != null) {
+        visitor.setThis(visitor.getTypeCheckingDefCall().getThisClass(), getBinding(result.proj1, true));
+      }
       tcResult = visitor.finalCheckExpr(clause.getExpression(), expectedType);
     } else {
       tcResult = visitor.checkExpr(clause.getExpression(), expectedType);

@@ -1,21 +1,28 @@
 package com.jetbrains.jetpad.vclang.core.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
+import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.normalization.Normalizer;
 import com.jetbrains.jetpad.vclang.util.ComputationInterruptedException;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Stack;
 
 public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mode, Expression>  {
   private final Normalizer myNormalizer;
@@ -111,6 +118,81 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     return visitCallableCall(expr, expr.getSortArgument().toLevelSubstitution(), mode);
   }
 
+  private Expression visitFunction(CallableCallExpression expr, LevelSubstitution levelSubstitution, Mode mode) {
+    if (expr.getDefinition() == Prelude.COERCE) {
+      Expression result = null;
+
+      Binding binding = new TypedBinding("i", ExpressionFactory.Interval());
+      Expression normExpr = new AppExpression(expr.getDefCallArguments().get(0), new ReferenceExpression(binding)).normalize(NormalizeVisitor.Mode.NF);
+      if (!normExpr.findBinding(binding)) {
+        result = expr.getDefCallArguments().get(1);
+      } else {
+        if (normExpr.toFunCall() != null && normExpr.toFunCall().getDefinition() == Prelude.ISO) {
+          List<? extends Expression> isoArgs = normExpr.toFunCall().getDefCallArguments();
+          boolean noFreeVar = true;
+          for (int i = 0; i < isoArgs.size() - 1; i++) {
+            if (isoArgs.get(i).findBinding(binding)) {
+              noFreeVar = false;
+              break;
+            }
+          }
+          if (noFreeVar) {
+            ConCallExpression normedPtCon = expr.getDefCallArguments().get(2).normalize(NormalizeVisitor.Mode.NF).toConCall();
+            if (normedPtCon != null && normedPtCon.getDefinition() == Prelude.RIGHT) {
+              result = new AppExpression(isoArgs.get(2), expr.getDefCallArguments().get(1));
+            }
+          }
+        }
+      }
+
+      if (result != null) {
+        return result.normalize(mode);
+      }
+    }
+
+    Expression result = null;
+    ExprSubstitution substitution = new ExprSubstitution();
+    ElimTree elimTree = ((FunctionDefinition) expr.getDefinition()).getElimTree();
+    Stack<Expression> stack = new Stack<>();
+    for (int i = expr.getDefCallArguments().size() - 1; i >= 0; i--) {
+      stack.push(expr.getDefCallArguments().get(i));
+    }
+
+    while (true) {
+      for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
+        substitution.add(link, stack.pop());
+      }
+      if (elimTree instanceof LeafElimTree) {
+        result = ((LeafElimTree) elimTree).getExpression().subst(substitution, levelSubstitution);
+        break;
+      }
+
+      Expression argument = stack.peek().accept(this, Mode.WHNF);
+      if (argument instanceof ConCallExpression) {
+        elimTree = ((BranchElimTree) elimTree).getChild(((ConCallExpression) argument).getDefinition());
+        if (elimTree == null) {
+          break;
+        }
+        stack.pop();
+        for (int i = ((ConCallExpression) argument).getDefCallArguments().size() - 1; i >= 0; i--) {
+          stack.push(((ConCallExpression) argument).getDefCallArguments().get(i));
+        }
+      } else {
+        elimTree = ((BranchElimTree) elimTree).getChild(BranchElimTree.Pattern.ANY);
+        if (elimTree == null) {
+          break;
+        }
+        stack.set(stack.size() - 1, argument);
+      }
+    }
+
+    if (Thread.interrupted()) {
+      throw new ComputationInterruptedException();
+    }
+
+    return result == null ? applyDefCall(expr, mode) : result.normalize(mode);
+  }
+
   private Expression visitCallableCall(CallableCallExpression expr, LevelSubstitution polySubst, Mode mode) {
     DependentLink params = EmptyDependentLink.getInstance();
     List<? extends Expression> paramArgs = Collections.emptyList();
@@ -156,6 +238,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
     if (expr.getDefinition() instanceof Function) {
       return visitCallableCall(expr, expr.getSortArgument().toLevelSubstitution(), mode);
+    }
+    if (expr.getDefinition() instanceof FunctionDefinition) {
+      return visitFunction(expr, expr.getSortArgument().toLevelSubstitution(), mode);
     }
 
     return applyDefCall(expr, mode);

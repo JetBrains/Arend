@@ -1,16 +1,17 @@
 package com.jetbrains.jetpad.vclang.typechecking.normalization;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Function;
-import com.jetbrains.jetpad.vclang.core.expr.*;
+import com.jetbrains.jetpad.vclang.core.expr.AppExpression;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.LamExpression;
+import com.jetbrains.jetpad.vclang.core.expr.LetExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -41,37 +42,6 @@ public class EvalNormalizer implements Normalizer {
 
   @Override
   public Expression normalize(Function fun, LevelSubstitution polySubst, DependentLink params, List<? extends Expression> paramArgs, List<? extends Expression> arguments, NormalizeVisitor.Mode mode) {
-    if (fun == Prelude.COERCE) {
-      Expression result = null;
-
-      Binding binding = new TypedBinding("i", ExpressionFactory.Interval());
-      Expression normExpr = new AppExpression(arguments.get(0), new ReferenceExpression(binding)).normalize(NormalizeVisitor.Mode.NF);
-      if (!normExpr.findBinding(binding)) {
-        result = arguments.get(1);
-      } else {
-        if (normExpr.toFunCall() != null && normExpr.toFunCall().getDefinition() == Prelude.ISO) {
-          List<? extends Expression> isoArgs = normExpr.toFunCall().getDefCallArguments();
-          boolean noFreeVar = true;
-          for (int i = 0; i < isoArgs.size() - 1; i++) {
-            if (isoArgs.get(i).findBinding(binding)) {
-              noFreeVar = false;
-              break;
-            }
-          }
-          if (noFreeVar) {
-            ConCallExpression normedPtCon = arguments.get(2).normalize(NormalizeVisitor.Mode.NF).toConCall();
-            if (normedPtCon != null && normedPtCon.getDefinition() == Prelude.RIGHT) {
-              result = new AppExpression(isoArgs.get(2), arguments.get(1));
-            }
-          }
-        }
-      }
-
-      if (result != null) {
-        return result.normalize(mode);
-      }
-    }
-
     List<Expression> matchedArguments = new ArrayList<>(arguments);
     LeafElimTreeNode leaf = fun.getElimTree().subst(new ExprSubstitution(), polySubst).match(matchedArguments);
     if (leaf == null) {

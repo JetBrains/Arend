@@ -2,17 +2,25 @@ package com.jetbrains.jetpad.vclang.typechecking.patternmatching;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
+import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
@@ -304,7 +312,11 @@ public class ElimTest extends TypeCheckingTestCase {
       " | zero => n\n" +
       " | _ => n\n"
     );
-    assertEquals(def.getElimTree(), top(def.getParameters(), branch(def.getParameters().getNext(), tail(), clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Ref(def.getParameters())), clause(Ref(def.getParameters())))));
+    DependentLink nParam = def.getParameters().subst(new ExprSubstitution(), LevelSubstitution.EMPTY, 1);
+    Map<BranchElimTree.Pattern, ElimTree> children = new HashMap<>();
+    children.put(Prelude.ZERO, new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nParam)));
+    children.put(BranchElimTree.Pattern.ANY, new LeafElimTree(param("m", Nat()), Ref(nParam)));
+    assertEquals(new BranchElimTree(nParam, children), def.getElimTree());
   }
 
   @Test
