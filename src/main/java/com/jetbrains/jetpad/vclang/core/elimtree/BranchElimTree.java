@@ -22,6 +22,11 @@ public class BranchElimTree extends ElimTree {
   }
 
   public interface Pattern {
-    Pattern ANY = new Pattern() { };
+    Pattern ANY = new Pattern() {
+      @Override
+      public String toString() {
+        return "ANY";
+      }
+    };
   }
 }

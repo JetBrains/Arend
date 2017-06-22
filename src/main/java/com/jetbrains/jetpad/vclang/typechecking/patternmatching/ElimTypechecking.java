@@ -14,6 +14,7 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.GetTypeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -168,16 +169,9 @@ public class ElimTypechecking {
         }
       }
 
-      // Update patterns for each clause
-      if (index > 0) {
-        for (ClauseData clauseData : clauseDataList) {
-          clauseData.patterns = clauseData.patterns.subList(index, clauseData.patterns.size());
-        }
-      }
-
       ClauseData conClauseData = null;
       for (ClauseData clauseData : clauseDataList) {
-        Pattern pattern = clauseData.patterns.get(0);
+        Pattern pattern = clauseData.patterns.get(index);
         if (pattern instanceof EmptyPattern) {
           myUnusedClauses.remove(clauseData.clause);
           return new BranchElimTree(vars, Collections.emptyMap());
@@ -188,11 +182,11 @@ public class ElimTypechecking {
       }
 
       assert conClauseData != null;
-      ConstructorPattern conPattern = (ConstructorPattern) conClauseData.patterns.get(0);
+      ConstructorPattern someConPattern = (ConstructorPattern) conClauseData.patterns.get(index);
       List<ConCallExpression> conCalls = null;
       List<Constructor> constructors;
-      if (conPattern.getConstructor().getDataType().hasIndexedConstructors()) {
-        DataCallExpression dataCall = new GetTypeVisitor().visitConCall(conPattern.getExpression(), null);
+      if (someConPattern.getConstructor().getDataType().hasIndexedConstructors()) {
+        DataCallExpression dataCall = new GetTypeVisitor().visitConCall(new SubstVisitor(conClauseData.substitution, LevelSubstitution.EMPTY).visitConCall(someConPattern.getExpression(), null), null);
         conCalls = dataCall.getMatchedConstructors();
         if (conCalls == null) {
           myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", conClauseData.clause));
@@ -200,28 +194,28 @@ public class ElimTypechecking {
         }
         constructors = conCalls.stream().map(ConCallExpression::getDefinition).collect(Collectors.toList());
       } else {
-        constructors = conPattern.getConstructor().getDataType().getConstructors();
+        constructors = someConPattern.getConstructor().getDataType().getConstructors();
       }
 
       boolean hasVars = false;
-      Map<BranchElimTree.Pattern, List<ClauseData>> constructorMap = new HashMap<>();
+      Map<BranchElimTree.Pattern, List<ClauseData>> constructorMap = new LinkedHashMap<>();
       for (ClauseData clauseData : clauseDataList) {
-        if (clauseData.patterns.get(0) instanceof BindingPattern) {
+        if (clauseData.patterns.get(index) instanceof BindingPattern) {
           hasVars = true;
           for (Constructor constructor : constructors) {
             constructorMap.computeIfAbsent(constructor, k -> new ArrayList<>()).add(clauseData);
           }
         } else {
-          constructorMap.computeIfAbsent(((ConstructorPattern) clauseData.patterns.get(0)).getConstructor(), k -> new ArrayList<>()).add(clauseData);
+          constructorMap.computeIfAbsent(((ConstructorPattern) clauseData.patterns.get(index)).getConstructor(), k -> new ArrayList<>()).add(clauseData);
         }
       }
 
       if (hasVars) {
         List<ClauseData> varClauseDataList = new ArrayList<>();
         for (ClauseData clauseData : clauseDataList) {
-          if (clauseData.patterns.get(0) instanceof BindingPattern) {
+          if (clauseData.patterns.get(index) instanceof BindingPattern) {
             varClauseDataList.add(clauseData);
-            clauseData.substitution.remove(((BindingPattern) clauseData.patterns.get(0)).getBinding());
+            clauseData.substitution.remove(((BindingPattern) clauseData.patterns.get(index)).getBinding());
           }
         }
         constructorMap.put(BranchElimTree.Pattern.ANY, varClauseDataList);
@@ -245,7 +239,7 @@ public class ElimTypechecking {
             myContext.push(new MissingClausesError.ConstructorClauseElem(constructor));
             List<MissingClausesError.ClauseElem> missingClause = unflattenMissingClause(myContext);
             myContext.pop();
-            boolean moreArguments = clauseDataList.get(0).patterns.size() > 1;
+            boolean moreArguments = clauseDataList.get(0).patterns.size() - index > 1;
             if (!moreArguments) {
               for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext()) {
                 if (link.isExplicit()) {
@@ -265,14 +259,14 @@ public class ElimTypechecking {
       Map<BranchElimTree.Pattern, ElimTree> children = new HashMap<>();
       for (Map.Entry<BranchElimTree.Pattern, List<ClauseData>> entry : constructorMap.entrySet()) {
         List<ClauseData> conClauseDataList = entry.getValue();
-        myContext.push(entry.getKey() instanceof Constructor ? new MissingClausesError.ConstructorClauseElem((Constructor) entry.getKey()) : new MissingClausesError.PatternClauseElem(conClauseDataList.get(0).patterns.get(0)));
+        myContext.push(entry.getKey() instanceof Constructor ? new MissingClausesError.ConstructorClauseElem((Constructor) entry.getKey()) : new MissingClausesError.PatternClauseElem(conClauseDataList.get(0).patterns.get(index)));
 
         if (entry.getKey() instanceof Constructor) {
           for (int i = 0; i < conClauseDataList.size(); i++) {
             List<Pattern> patterns = new ArrayList<>();
             List<Pattern> oldPatterns = conClauseDataList.get(i).patterns;
-            if (oldPatterns.get(0) instanceof ConstructorPattern) {
-              patterns.addAll(((ConstructorPattern) oldPatterns.get(0)).getPatterns());
+            if (oldPatterns.get(index) instanceof ConstructorPattern) {
+              patterns.addAll(((ConstructorPattern) oldPatterns.get(index)).getPatterns());
             } else {
               DependentLink conParameters = DependentLink.Helper.subst(((Constructor) entry.getKey()).getParameters(), new ExprSubstitution());
               for (DependentLink link = conParameters; link.hasNext(); link = link.getNext()) {
@@ -295,11 +289,11 @@ public class ElimTypechecking {
                 assert conCall != null;
                 substExpr = new ConCallExpression(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), arguments);
               } else {
-                substExpr = new ConCallExpression(conPattern.getConstructor(), conPattern.getSortArgument(), conPattern.getDataTypeArguments(), arguments);
+                substExpr = new ConCallExpression((Constructor) entry.getKey(), someConPattern.getSortArgument(), someConPattern.getDataTypeArguments(), arguments);
               }
-              conClauseDataList.get(i).substitution.add(((BindingPattern) oldPatterns.get(0)).getBinding(), substExpr);
+              conClauseDataList.get(i).substitution.add(((BindingPattern) oldPatterns.get(index)).getBinding(), substExpr);
             }
-            patterns.addAll(oldPatterns.subList(1, oldPatterns.size()));
+            patterns.addAll(oldPatterns.subList(index + 1, oldPatterns.size()));
             conClauseDataList.set(i, new ClauseData(patterns, conClauseDataList.get(i).expression, conClauseDataList.get(i).substitution, conClauseDataList.get(i).clause));
           }
         }
