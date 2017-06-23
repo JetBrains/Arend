@@ -8,7 +8,7 @@ public class EmptyPattern implements Pattern {
   private EmptyPattern() {}
 
   @Override
-  public Expression getExpression() {
+  public Expression toExpression() {
     return null;
   }
 }

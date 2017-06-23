@@ -148,7 +148,7 @@ class TypecheckingDependencyListener implements DependencyListener {
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
       LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter));
       CheckTypeVisitor visitor = new CheckTypeVisitor(myState, myStaticNsProvider, myDynamicNsProvider, new LinkedHashMap<>(), localErrorReporter, null);
-      Definition typechecked = DefinitionCheckType.typeCheckHeader(visitor, new GlobalInstancePool(myState, myInstanceProvider), unit.getDefinition(), unit.getEnclosingClass());
+      Definition typechecked = DefinitionTypechecking.typeCheckHeader(visitor, new GlobalInstancePool(myState, myInstanceProvider), unit.getDefinition(), unit.getEnclosingClass());
       if (typechecked.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
         mySuspensions.put(unit.getDefinition(), new Suspension(visitor, countingErrorReporter));
       }
@@ -199,7 +199,7 @@ class TypecheckingDependencyListener implements DependencyListener {
       Suspension suspension = mySuspensions.remove(definition);
       if (headersAreOK && suspension != null) {
         Definition def = myState.getTypechecked(definition);
-        DefinitionCheckType.typeCheckBody(def, suspension.visitor, dataDefinitions);
+        DefinitionTypechecking.typeCheckBody(def, suspension.visitor, dataDefinitions);
         if (def instanceof FunctionDefinition) {
           functionDefinitions.add((FunctionDefinition) def);
         }
@@ -241,7 +241,7 @@ class TypecheckingDependencyListener implements DependencyListener {
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
     CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(myErrorReporter, countingErrorReporter);
     LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), compositeErrorReporter);
-    Definition typechecked = DefinitionCheckType.typeCheck(myState, new GlobalInstancePool(myState, myInstanceProvider), myStaticNsProvider, myDynamicNsProvider, unit, recursive, localErrorReporter);
+    Definition typechecked = DefinitionTypechecking.typeCheck(myState, new GlobalInstancePool(myState, myInstanceProvider), myStaticNsProvider, myDynamicNsProvider, unit, recursive, localErrorReporter);
 
     if (recursive && typechecked instanceof FunctionDefinition) {
       DefinitionCallGraph definitionCallGraph = new DefinitionCallGraph();

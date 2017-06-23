@@ -34,10 +34,10 @@ public class ConstructorPattern implements Pattern {
   }
 
   @Override
-  public ConCallExpression getExpression() {
+  public ConCallExpression toExpression() {
     List<Expression> arguments = new ArrayList<>(myPatterns.size());
     for (Pattern pattern : myPatterns) {
-      Expression argument = pattern.getExpression();
+      Expression argument = pattern.toExpression();
       if (argument == null) {
         return null;
       }

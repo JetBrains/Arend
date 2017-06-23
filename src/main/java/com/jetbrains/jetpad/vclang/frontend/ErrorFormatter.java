@@ -3,11 +3,7 @@ package com.jetbrains.jetpad.vclang.frontend;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
-import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.factory.*;
-import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
-import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.frontend.parser.ParserError;
 import com.jetbrains.jetpad.vclang.module.error.ModuleCycleError;
@@ -116,49 +112,17 @@ public class ErrorFormatter {
         .append("  Actual type: ");
       ((TypeMismatchError) error).actual.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, text.length());
     } else if (error instanceof MissingClausesError) {
-      boolean first = true;
-      PrettyPrintVisitor ppv = new PrettyPrintVisitor(builder, 0);
-      for (List<MissingClausesError.ClauseElem> clause : ((MissingClausesError) error).getMissingClauses()) {
-        if (first) {
-          first = false;
-        } else {
-          builder.append('\n');
-        }
-        if (clause != null) {
-          boolean topLevel = true;
-          ppv.printIndent();
-          int parens = 0;
-          ToAbstractVisitor toAbstractVisitor = new ToAbstractVisitor(new ConcreteExpressionFactory());
-          for (int i = 0; i < clause.size(); i++) {
-            MissingClausesError.ClauseElem clauseElem = clause.get(i);
-            if (i != 0) {
-              builder.append(topLevel && i < clause.size() - 1 ? ", " : " ");
-            }
-            if (clauseElem == null) {
-              builder.append("...");
-              parens = 0;
-            } else if (clauseElem instanceof MissingClausesError.PatternClauseElem) {
-              ppv.prettyPrintPattern(toAbstractVisitor.visitPattern(((MissingClausesError.PatternClauseElem) clauseElem).pattern, true), topLevel ? Abstract.Expression.PREC : (byte) (Abstract.Pattern.PREC + 1));
-            } else if (clauseElem instanceof MissingClausesError.ConstructorClauseElem) {
-              if (!topLevel && i != 0 && i < clause.size() - 1) {
-                builder.append('(');
-                parens++;
-              }
-              builder.append(((MissingClausesError.ConstructorClauseElem) clauseElem).constructor.getAbstractDefinition());
-              topLevel = false;
-            } else if (clauseElem instanceof MissingClausesError.SkipClauseElem) {
-              builder.append('_');
-            } else {
-              throw new IllegalStateException();
-            }
+      for (List<Expression> missingClause : ((MissingClausesError) error).getMissingClauses()) {
+        boolean first = true;
+        for (Expression expression : missingClause) {
+          if (first) {
+            first = false;
+          } else {
+            builder.append(", ");
           }
-
-          for (int i = 0; i < parens; i++) {
-            builder.append(')');
-          }
-        } else {
-          builder.append("...");
+          expression.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0);
         }
+        builder.append('\n');
       }
     } else if (error instanceof ExpressionMismatchError) {
       String text = "Expected: ";

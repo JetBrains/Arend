@@ -169,20 +169,28 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
       Expression argument = stack.peek().accept(this, Mode.WHNF);
       if (argument instanceof ConCallExpression) {
-        elimTree = ((BranchElimTree) elimTree).getChild(((ConCallExpression) argument).getDefinition());
-        if (elimTree == null) {
-          break;
+        ElimTree newElimTree = ((BranchElimTree) elimTree).getChild(((ConCallExpression) argument).getDefinition());
+        if (newElimTree == null) {
+          newElimTree = ((BranchElimTree) elimTree).getChild(BranchElimTree.Pattern.ANY);
+          if (newElimTree == null) {
+            break;
+          }
+          stack.set(stack.size() - 1, argument);
+        } else {
+          stack.pop();
+          for (int i = ((ConCallExpression) argument).getDefCallArguments().size() - 1; i >= 0; i--) {
+            stack.push(((ConCallExpression) argument).getDefCallArguments().get(i));
+          }
         }
-        stack.pop();
-        for (int i = ((ConCallExpression) argument).getDefCallArguments().size() - 1; i >= 0; i--) {
-          stack.push(((ConCallExpression) argument).getDefCallArguments().get(i));
-        }
-      } else {
+        elimTree = newElimTree;
+      } else if (expr.getDefinition() == Prelude.AT) {
         elimTree = ((BranchElimTree) elimTree).getChild(BranchElimTree.Pattern.ANY);
         if (elimTree == null) {
           break;
         }
         stack.set(stack.size() - 1, argument);
+      } else {
+        break;
       }
     }
 

@@ -16,7 +16,7 @@ public class BindingPattern implements Pattern {
   }
 
   @Override
-  public Expression getExpression() {
+  public Expression toExpression() {
     return new ReferenceExpression(myBinding);
   }
 }
