@@ -16,7 +16,10 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.AbstractStatementVisitor;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<Scope, Void>, AbstractStatementVisitor<Scope, Scope> {
   private final NamespaceProviders myNsProviders;
@@ -60,9 +63,15 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
         resultType.accept(exprVisitor, null);
       }
 
-      Abstract.Expression term = def.getTerm();
-      if (term != null) {
-        term.accept(exprVisitor, null);
+      Abstract.FunctionBody body = def.getBody();
+      if (body instanceof Abstract.TermFunctionBody) {
+        ((Abstract.TermFunctionBody) body).getTerm().accept(exprVisitor, null);
+      }
+      if (body instanceof Abstract.ElimFunctionBody) {
+        for (Abstract.ReferenceExpression expression : ((Abstract.ElimFunctionBody) body).getExpressions()) {
+          exprVisitor.visitReference(expression, null);
+        }
+        exprVisitor.visitClauses(((Abstract.ElimFunctionBody) body).getClauses());
       }
     }
 

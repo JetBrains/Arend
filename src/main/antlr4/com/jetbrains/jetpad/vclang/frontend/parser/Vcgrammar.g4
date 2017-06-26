@@ -12,7 +12,7 @@ hidingOpt : '\\hiding'  # withHiding
 
 nsCmdRoot : modulePath | name;
 
-definition  : '\\function' precedence name tele* (':' expr)? '=>' expr where?                             # defFunction
+definition  : '\\function' precedence name tele* (':' expr)? functionBody where?                          # defFunction
             | '\\field' precedence name ':' expr                                                          # defAbstract
             | '\\implement' name '=>' expr                                                                # defImplement
             | isTruncated '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef?        # defData
@@ -20,6 +20,12 @@ definition  : '\\function' precedence name tele* (':' expr)? '=>' expr where?   
             | '\\view' ID '\\on' expr '\\by' name '{' classViewField* '}'                                 # defClassView
             | defaultInst '\\instance' ID tele* '=>' expr                                                 # defInstance
             ;
+
+functionBody  : '=>' expr     # withoutElim
+              | elim? clauses # withElim
+              ;
+
+elim : '\\with' | '=>' '\\elim' expr? (',' expr)*;
 
 isTruncated : '\\truncated' # truncated
             |               # notTruncated
@@ -80,18 +86,18 @@ expr  : (binOpLeft+ | ) binOpArg                            # binOp
       | '\\Sigma' tele+                                     # sigma
       | '\\lam' tele+ '=>' expr                             # lam
       | '\\let' '|'? letClause ('|' letClause)* '\\in' expr # let
-      | elimCase expr (',' expr)* clause* ';'?              # exprElim
+      | '\\case' expr (',' expr)* clauses                   # case
       ;
+
+clauses : clause*         # withoutBraces
+        | '{' clause* '}' # withBraces
+        ;
 
 letClause : ID tele* typeAnnotation? '=>' expr;
 
 typeAnnotation : ':' expr;
 
 clause : '|' pattern (',' pattern)* ('=>' expr)?;
-
-elimCase : '\\elim'                     # elim
-         | '\\case'                     # case
-         ;
 
 levelAtom : '\\lp'              # pLevel
           | '\\lh'              # hLevel

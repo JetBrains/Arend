@@ -140,7 +140,7 @@ public class TypeCheckingElim {
     return new Patterns(typedPatterns);
   }
 
-  public ElimTreeNode typeCheckElim(final Abstract.ElimCaseExpression expr, List<Abstract.ReferableSourceNode> referableList, DependentLink eliminatingArgs, Expression expectedType, boolean isCase, boolean isTopLevel) {
+  public ElimTreeNode typeCheckElim(final Abstract.CaseExpression expr, List<Abstract.ReferableSourceNode> referableList, DependentLink eliminatingArgs, Expression expectedType, boolean isCase, boolean isTopLevel) {
     LocalTypeCheckingError error = null;
     if (expectedType == null) {
       error = new LocalTypeCheckingError("Cannot infer type of the expression", expr);
@@ -291,7 +291,7 @@ public class TypeCheckingElim {
     return null;
   }
 
-  private List<ReferenceExpression> typecheckElimIndices(Abstract.ElimCaseExpression expr, List<Abstract.ReferableSourceNode> referableList, DependentLink eliminatingArgs) {
+  private List<ReferenceExpression> typecheckElimIndices(Abstract.CaseExpression expr, List<Abstract.ReferableSourceNode> referableList, DependentLink eliminatingArgs) {
     try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myVisitor.getContext())) {
       DependentLink link = eliminatingArgs;
       for (int i = 0; link.hasNext(); link = link.getNext(), i++) {

@@ -196,7 +196,7 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
     return true;
   }
 
-  private boolean compareElimCase(Abstract.ElimCaseExpression expr1, Abstract.ElimCaseExpression expr2) {
+  private boolean compareElimCase(Abstract.CaseExpression expr1, Abstract.CaseExpression expr2) {
     if (!(expr1.getExpressions().size() == expr2.getExpressions().size() && expr1.getClauses().size() == expr2.getClauses().size())) return false;
     for (int i = 0; i < expr1.getExpressions().size(); i++) {
       if (!expr1.getExpressions().get(i).accept(this, expr2.getExpressions().get(i))) {
@@ -209,11 +209,6 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
       }
     }
     return true;
-  }
-
-  @Override
-  public Boolean visitElim(Abstract.ElimExpression expr1, Abstract.Expression expr2) {
-    return expr2 instanceof Abstract.ElimExpression && compareElimCase(expr1, (Abstract.ElimExpression) expr2);
   }
 
   @Override

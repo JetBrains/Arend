@@ -156,14 +156,6 @@ public class ParserTest extends NameResolverTestCase {
   }
 
   @Test
-  public void elimManyMismatch() {
-    parseClass("test",
-        "\\data D Nat | D (suc n) => dsuc\n" +
-        "\\function tests (n : Nat) (d : D n) : Nat => \\elim n, d\n" +
-          "| suc n => 0", 1);
-  }
-
-  @Test
   public void parseIncorrectPi() {
     parseExpr("\\Pi (: Nat) -> Nat", 2);
   }
@@ -203,5 +195,15 @@ public class ParserTest extends NameResolverTestCase {
   @Test
   public void lineCommentLastLine() {
     parseDef("\\function f => \\Prop  -- ^_^ @_@ >.< wow!!!");
+  }
+
+  @Test
+  public void elimUnderLetError() {
+    parseDef("\\function test (n : Nat) : Nat => \\let x => 0 \\in \\elim n | _ => 0", 1);
+  }
+
+  @Test
+  public void testSide() {
+    parseDef("\\function test (n : Nat) => suc (\\elim n | suc n => n | zero => 0)", 1);
   }
 }

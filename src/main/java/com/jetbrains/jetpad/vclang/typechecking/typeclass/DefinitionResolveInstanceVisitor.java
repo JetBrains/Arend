@@ -48,10 +48,21 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
       resultType.accept(exprVisitor, null);
     }
 
-    Abstract.Expression term = def.getTerm();
-    if (term != null) {
-      term.accept(exprVisitor, null);
+    Abstract.FunctionBody body = def.getBody();
+    if (body instanceof Abstract.TermFunctionBody) {
+      ((Abstract.TermFunctionBody) body).getTerm().accept(exprVisitor, null);
     }
+    if (body instanceof Abstract.ElimFunctionBody) {
+      for (Abstract.Expression expression : ((Abstract.ElimFunctionBody) body).getExpressions()) {
+        expression.accept(exprVisitor, null);
+      }
+      for (Abstract.Clause clause : ((Abstract.ElimFunctionBody) body).getClauses()) {
+        if (clause.getExpression() != null) {
+          clause.getExpression().accept(exprVisitor, null);
+        }
+      }
+    }
+
 
     return null;
   }

@@ -5,8 +5,8 @@ import org.junit.Test;
 
 public class CoverageTest extends TypeCheckingTestCase {
   @Test
-  public void coverageInLet() {
-    typeCheckDef("\\function test => \\let x (n : Nat) : Nat => \\elim n | zero => 0 \\in x 1", 1);
+  public void coverageInCase() {
+    typeCheckDef("\\function test : Nat => \\case 1 | zero => 0", 1);
   }
 
   @Test

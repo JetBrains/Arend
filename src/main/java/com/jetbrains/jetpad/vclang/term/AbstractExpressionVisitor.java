@@ -14,7 +14,6 @@ public interface AbstractExpressionVisitor<P, R> {
   R visitSigma(Abstract.SigmaExpression expr, P params);
   R visitBinOp(Abstract.BinOpExpression expr, P params);
   R visitBinOpSequence(Abstract.BinOpSequenceExpression expr, P params);
-  R visitElim(Abstract.ElimExpression expr, P params);
   R visitCase(Abstract.CaseExpression expr, P params);
   R visitProj(Abstract.ProjExpression expr, P params);
   R visitClassExt(Abstract.ClassExtExpression expr, P params);

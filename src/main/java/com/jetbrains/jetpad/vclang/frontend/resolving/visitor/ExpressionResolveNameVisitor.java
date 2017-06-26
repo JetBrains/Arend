@@ -11,7 +11,10 @@ import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
 
 public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<Void, Void> {
   private final NamespaceProviders myNsProviders;
@@ -214,24 +217,9 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
     return null;
   }
 
-  @Override
-  public Void visitElim(Abstract.ElimExpression expr, Void params) {
-    visitElimCase(expr);
-    return null;
-  }
-
-  @Override
-  public Void visitCase(Abstract.CaseExpression expr, Void params) {
-    visitElimCase(expr);
-    return null;
-  }
-
-  private void visitElimCase(Abstract.ElimCaseExpression expr) {
-    for (Abstract.Expression expression : expr.getExpressions()) {
-      expression.accept(this, null);
-    }
+  public void visitClauses(List<? extends Abstract.Clause> clauses) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      for (Abstract.Clause clause : expr.getClauses()) {
+      for (Abstract.Clause clause : clauses) {
         for (int i = 0; i < clause.getPatterns().size(); i++) {
           Abstract.Constructor constructor = visitPattern(clause.getPatterns().get(i));
           if (constructor != null) {
@@ -244,6 +232,15 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
           clause.getExpression().accept(this, null);
       }
     }
+  }
+
+  @Override
+  public Void visitCase(Abstract.CaseExpression expr, Void params) {
+    for (Abstract.Expression expression : expr.getExpressions()) {
+      expression.accept(this, null);
+    }
+    visitClauses(expr.getClauses());
+    return null;
   }
 
   Abstract.Constructor visitPattern(Abstract.Pattern pattern) {

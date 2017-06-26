@@ -32,9 +32,16 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
         resultType.accept(visitor, null);
       }
     } else {
-      Abstract.Expression term = def.getTerm();
-      if (term != null) {
-        term.accept(visitor, null);
+      Abstract.FunctionBody body = def.getBody();
+      if (body instanceof Abstract.TermFunctionBody) {
+        ((Abstract.TermFunctionBody) body).getTerm().accept(visitor, null);
+      }
+      if (body instanceof Abstract.ElimFunctionBody) {
+        for (Abstract.Clause clause : ((Abstract.ElimFunctionBody) body).getClauses()) {
+          if (clause.getExpression() != null) {
+            clause.getExpression().accept(visitor, null);
+          }
+        }
       }
     }
 

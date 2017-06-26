@@ -38,7 +38,6 @@ public interface AbstractExpressionFactory {
   Abstract.Expression makeNumericalLiteral(int num);
   Abstract.Expression makeLet(List<? extends Abstract.LetClause> clauses, Abstract.Expression expr);
   Abstract.LetClause makeLetClause(Abstract.ReferableSourceNode referable, List<? extends Abstract.Argument> arguments, Abstract.Expression resultType, Abstract.Expression term);
-  Abstract.Expression makeElim(List<? extends Abstract.Expression> exprs, List<? extends Abstract.Clause> clauses);
   Abstract.Expression makeCase(List<? extends Abstract.Expression> expressions, List<? extends Abstract.Clause> clauses);
   Abstract.Clause makeClause(List<? extends Abstract.Pattern> pattern, Abstract.Expression expr);
   Abstract.Pattern makeConPattern(boolean isExplicit, Abstract.Constructor constructor, List<Abstract.Pattern> args);

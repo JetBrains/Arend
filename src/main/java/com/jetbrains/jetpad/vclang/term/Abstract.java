@@ -136,7 +136,10 @@ public final class Abstract {
     Expression getBody();
   }
 
-  public interface LetClause extends Function, ReferableSourceNode {
+  public interface LetClause extends ReferableSourceNode {
+    Expression getTerm();
+    List<? extends Argument> getArguments();
+    Expression getResultType();
   }
 
   public interface LetExpression extends Expression {
@@ -219,18 +222,10 @@ public final class Abstract {
     Expression getExpr();
   }
 
-  public interface ElimCaseExpression extends Expression {
+  public interface CaseExpression extends Expression {
     byte PREC = -8;
     List<? extends Expression> getExpressions();
     List<? extends Clause> getClauses();
-  }
-
-  public interface CaseExpression extends ElimCaseExpression {
-    String FUNCTION_NAME = "\\caseF";
-    String ARGUMENT_NAME = "\\caseA";
-  }
-
-  public interface ElimExpression extends ElimCaseExpression {
   }
 
   public interface ProjExpression extends Expression {
@@ -308,12 +303,6 @@ public final class Abstract {
     <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params);
   }
 
-  public interface Function extends ReferableSourceNode {
-    Expression getTerm();
-    List<? extends Argument> getArguments();
-    Expression getResultType();
-  }
-
   public interface ClassField extends Definition {
     Expression getResultType();
 
@@ -333,7 +322,21 @@ public final class Abstract {
     Collection<? extends Statement> getGlobalStatements();
   }
 
-  public interface FunctionDefinition extends Definition, Function, StatementCollection {
+  public interface FunctionBody extends SourceNode {}
+
+  public interface TermFunctionBody extends FunctionBody {
+    Expression getTerm();
+  }
+
+  public interface ElimFunctionBody extends FunctionBody {
+    List<? extends ReferenceExpression> getExpressions();
+    List<? extends Clause> getClauses();
+  }
+
+  public interface FunctionDefinition extends Definition, StatementCollection {
+    FunctionBody getBody();
+    List<? extends Argument> getArguments();
+    Expression getResultType();
   }
 
   public interface DataDefinition extends Definition {

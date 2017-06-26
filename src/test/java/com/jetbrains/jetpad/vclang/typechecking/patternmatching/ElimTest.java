@@ -191,26 +191,6 @@ public class ElimTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void elimUnderLetError() {
-    typeCheckClass("\\function test (n : Nat) : Nat => \\let x => 0 \\in \\elim n | _ => 0", 1);
-  }
-
-  @Test
-  public void elimOutOfDefinitionError() {
-    typeCheckClass("\\function test (n : Nat) : Nat => \\let x : Nat => \\elim n | _ => 0 \\in 1", 1);
-  }
-
-  @Test
-  public void elimLetError() {
-    typeCheckClass("\\function test => \\let x => 0 \\in \\let y : Nat => \\elim x | _ => 0 \\in 1", 1);
-  }
-
-  @Test
-  public void testSide() {
-    typeCheckClass("\\function test (n : Nat) => suc (\\elim n | suc n => n | zero => 0)", 1);
-  }
-
-  @Test
   public void testNoPatterns() {
     typeCheckClass("\\function test (n : Nat) : 0 = 1 => \\elim n", 1);
   }
@@ -269,7 +249,7 @@ public class ElimTest extends TypeCheckingTestCase {
         "  | Geq m zero => EqBase \n" +
         "  | Geq (suc n) (suc m) => EqSuc (p : Geq n m)\n" +
         "\n" +
-        "\\function f (x y : Nat) (p : Geq x y) : Nat =>n" +
+        "\\function f (x y : Nat) (p : Geq x y) : Nat =>\n" +
         "  \\case x, y, p\n" +
         "    | m, zero, EqBase => zero \n" +
         "    | zero, suc _, ()\n" +
@@ -287,14 +267,6 @@ public class ElimTest extends TypeCheckingTestCase {
                    "leq-trans {n m k : Nat} (nm : n =< m) (mk : m =< k) : n =< k => \\elim n, nm, m\n" +
                    "  | zero, le_z, _ => {?}\n" +
                    "  | suc n', le_ss nm', suc m' => {?}", 1);
-  }
-
-  @Test
-  public void arrowTest() {
-    typeCheckDef(
-        "\\function (+) (x y : Nat) : Nat => \\elim x" +
-        "  | zero => y\n" +
-        "  | suc x => suc (x + y)", 1);
   }
 
   @Test
@@ -365,10 +337,10 @@ public class ElimTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void testEmptyLet() {
+  public void testEmptyCase() {
     typeCheckClass(
         "\\data D\n" +
-        "\\function test (d : D) : 0 = 1 => \\let x (d : D) : 0 = 1 => \\elim d \\in x d"
+        "\\function test (d : D) : 0 = 1 => \\case d | ()"
     );
   }
 

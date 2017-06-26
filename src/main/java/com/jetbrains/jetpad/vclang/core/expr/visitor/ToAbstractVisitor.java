@@ -476,34 +476,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return myFactory.makeNew(expr.getExpression().accept(this, null));
   }
 
-  private Abstract.Expression checkCase(LetExpression letExpression) {
-    if (letExpression.getClauses().size() == 1 && Abstract.CaseExpression.FUNCTION_NAME.equals(letExpression.getClauses().get(0).getName()) && letExpression.getClauses().get(0).getElimTree() instanceof BranchElimTreeNode) {
-      LetClauseCallExpression clauseCall = letExpression.getExpression().toLetClauseCall();
-      if (clauseCall != null && clauseCall.getLetClause() == letExpression.getClauses().get(0)) {
-        List<? extends Expression> args = clauseCall.getDefCallArguments();
-        for (Expression arg : args) {
-          if (arg.findBinding(letExpression.getClauses().get(0))) {
-            return null;
-          }
-        }
-
-        List<Abstract.Expression> caseArgs = new ArrayList<>(args.size());
-        for (int i = args.size() - 1; i >= 0; i--) {
-          caseArgs.add(args.get(i).accept(this, null));
-        }
-        return myFactory.makeCase(caseArgs, visitBranch((BranchElimTreeNode) letExpression.getClauses().get(0).getElimTree()));
-      }
-    }
-    return null;
-  }
-
   @Override
   public Abstract.Expression visitLet(LetExpression letExpression, Void params) {
-    Abstract.Expression result = checkCase(letExpression);
-    if (result != null) {
-      return result;
-    }
-
     List<Abstract.LetClause> clauses = new ArrayList<>(letExpression.getClauses().size());
     for (LetClause clause : letExpression.getClauses()) {
       List<Abstract.TypeArgument> arguments = clause.getParameters().stream().map(this::visitSingleDependentLink).collect(Collectors.toList());
@@ -513,7 +487,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       clauses.add(myFactory.makeLetClause(makeReferable(clause), arguments, resultType, term));
     }
 
-    result = myFactory.makeLet(clauses, letExpression.getExpression().accept(this, null));
+    Abstract.Expression result = myFactory.makeLet(clauses, letExpression.getExpression().accept(this, null));
     letExpression.getClauses().forEach(myNames::remove);
     return result;
   }
@@ -535,7 +509,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
           exprs.add(visitBinding(link));
         }
       }
-      return myFactory.makeElim(exprs, Collections.emptyList());
+      // TODO[newElim]
+      return null; // myFactory.makeElim(exprs, Collections.emptyList());
     }
     return elimTree.accept(this, null);
   }
@@ -563,7 +538,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitBranch(BranchElimTreeNode branchNode, Void params) {
-    return myFactory.makeElim(Collections.singletonList(visitBinding(branchNode.getReference())), visitBranch(branchNode));
+    // TODO[newElim]
+    return null; // myFactory.makeElim(Collections.singletonList(visitBinding(branchNode.getReference())), visitBranch(branchNode));
   }
 
   @Override

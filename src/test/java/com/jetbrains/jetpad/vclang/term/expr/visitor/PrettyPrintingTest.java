@@ -68,7 +68,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     Concrete.ReferableSourceNode x = ref("X");
     arguments.add(cTele(cvars(X), cUniverseStd(0)));
     arguments.add(cTele(cvars(x), cVar(X)));
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(ConcreteExpressionFactory.POSITION, "f", Abstract.Precedence.DEFAULT, arguments, cVar(X), cVar(x), Collections.emptyList());
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(ConcreteExpressionFactory.POSITION, "f", Abstract.Precedence.DEFAULT, arguments, cVar(X), body(cVar(x)), Collections.emptyList());
     def.accept(new PrettyPrintVisitor(new StringBuilder(), 0), null);
   }
 

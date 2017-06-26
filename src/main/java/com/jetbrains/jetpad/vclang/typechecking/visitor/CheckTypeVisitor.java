@@ -865,14 +865,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   }
 
   @Override
-  public Result visitElim(Abstract.ElimExpression expr, ExpectedType expectedType) {
-    LocalTypeCheckingError error = new LocalTypeCheckingError("\\elim is allowed only at the root of a definition", expr);
-    myErrorReporter.report(error);
-    expr.setWellTyped(myContext, new ErrorExpression(null, error));
-    return null;
-  }
-
-  @Override
   public Result visitCase(Abstract.CaseExpression expr, ExpectedType expectedType) {
     if (expectedType == null) {
       LocalTypeCheckingError error = new LocalTypeCheckingError("Cannot infer the result type", expr);
@@ -889,10 +881,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
     List<SingleDependentLink> links = new ArrayList<>();
     List<Expression> letArguments = new ArrayList<>(expressions.size());
-    for (int i = 0; i < expressions.size(); i++) {
-      Result exprResult = checkExpr(expressions.get(i), null);
+    for (Abstract.Expression expression : expressions) {
+      Result exprResult = checkExpr(expression, null);
       if (exprResult == null) return null;
-      links.add(ExpressionFactory.singleParams(true, Collections.singletonList(Abstract.CaseExpression.ARGUMENT_NAME + i), new TypeExpression(exprResult.type, getSortOf(exprResult.type.getType()))));
+      links.add(ExpressionFactory.singleParams(true, Collections.singletonList(null), new TypeExpression(exprResult.type, getSortOf(exprResult.type.getType()))));
       letArguments.add(exprResult.expression);
     }
 
@@ -1195,30 +1187,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
         if (expectedType == null) return null;
       }
 
-      if (clause.getTerm() instanceof Abstract.ElimExpression)  {
-        if (links.size() > 1) { // TODO: Fix this
-          LocalTypeCheckingError error = new LocalTypeCheckingError("Expected exactly one argument", clause);
-          myErrorReporter.report(error);
-          return null;
-        }
-
-        /* TODO[context]
-        int size = 0;
-        for (SingleDependentLink link : links) {
-          size += DependentLink.Helper.size(link);
-        }
-        myContext.subList(myContext.size() - size, myContext.size()).clear();
-        */
-        elimTree = myTypeCheckingElim.typeCheckElim((Abstract.ElimExpression) clause.getTerm(), links.isEmpty() ? Collections.emptyList() : Collections.singletonList(referable), links.isEmpty() ? EmptyDependentLink.getInstance() : links.get(0), expectedType == null ? null : expectedType.getExpr(), false, false);
-        if (elimTree == null) return null;
-        assert expectedType != null;
-        resultType = expectedType;
-      } else {
-        Result termResult = checkExpr(clause.getTerm(), expectedType == null ? null : expectedType.getExpr());
-        if (termResult == null) return null;
-        elimTree = ExpressionFactory.top(links, new LeafElimTreeNode(termResult.expression));
-        resultType = expectedType != null ? expectedType : new TypeExpression(termResult.type, getSortOf(termResult.type.getType()));
-      }
+      Result termResult = checkExpr(clause.getTerm(), expectedType == null ? null : expectedType.getExpr());
+      if (termResult == null) return null;
+      elimTree = ExpressionFactory.top(links, new LeafElimTreeNode(termResult.expression));
+      resultType = expectedType != null ? expectedType : new TypeExpression(termResult.type, getSortOf(termResult.type.getType()));
 
       LocalTypeCheckingError error = TypeCheckingElim.checkCoverage(clause.getName(), clause, links, elimTree, expectedType == null ? null : expectedType.getExpr());
       if (error != null) {

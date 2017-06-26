@@ -117,9 +117,7 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, V
 
   @Override
   public Void visitBinOp(Abstract.BinOpExpression expr, Void ignore) {
-    if (expr.getReferent() instanceof Abstract.Definition) {
-      myDependencies.add((Abstract.Definition) expr.getReferent());
-    }
+    myDependencies.add(expr.getReferent());
     expr.getLeft().accept(this, null);
     expr.getRight().accept(this, null);
     return null;
@@ -131,15 +129,6 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, V
     for (Abstract.BinOpSequenceElem elem : expr.getSequence()) {
       visitReference(elem.binOp, null);
       elem.argument.accept(this, null);
-    }
-    return null;
-  }
-
-  @Override
-  public Void visitElim(Abstract.ElimExpression expr, Void ignore) {
-    for (Abstract.Clause clause : expr.getClauses()) {
-      if (clause.getExpression() != null)
-        clause.getExpression().accept(this, null);
     }
     return null;
   }

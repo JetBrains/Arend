@@ -19,7 +19,8 @@ import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Apps;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.singleParams;
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class PrettyPrintingParserTest extends NameResolverTest {
   private void testExpr(Abstract.Expression expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) throws UnsupportedEncodingException {
@@ -54,8 +55,8 @@ public class PrettyPrintingParserTest extends NameResolverTest {
     Concrete.Expression expectedType = cPi(expectedArguments, expected.getResultType());
     Concrete.Expression actualType = cPi(actualArguments, result.getResultType());
     assertTrue(compareAbstract(expectedType, actualType));
-    assertNotNull(result.getTerm());
-    assertEquals(cLam(new ArrayList<>(expected.getArguments()), expected.getTerm()), cLam(new ArrayList<>(result.getArguments()), result.getTerm()));
+    assertTrue(result.getBody() instanceof Abstract.TermFunctionBody);
+    assertEquals(cLam(new ArrayList<>(expected.getArguments()), ((Concrete.TermFunctionBody) expected.getBody()).getTerm()), cLam(new ArrayList<>(result.getArguments()), ((Concrete.TermFunctionBody) result.getBody()).getTerm()));
   }
 
   @Test
@@ -110,7 +111,7 @@ public class PrettyPrintingParserTest extends NameResolverTest {
     Concrete.ReferableSourceNode t = ref("t");
     Concrete.ReferableSourceNode y = ref("y");
     Concrete.ReferableSourceNode z = ref("z");
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(POSITION, "f", Abstract.Precedence.DEFAULT, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), cLam(cargs(cName(t), cName(y), cName(z)), cApps(cVar(y), cVar(z))), Collections.emptyList());
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(POSITION, "f", Abstract.Precedence.DEFAULT, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), body(cLam(cargs(cName(t), cName(y), cName(z)), cApps(cVar(y), cVar(z)))), Collections.emptyList());
     testDef(def, def);
   }
 

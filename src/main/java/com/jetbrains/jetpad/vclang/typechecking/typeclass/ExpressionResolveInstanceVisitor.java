@@ -165,18 +165,7 @@ public class ExpressionResolveInstanceVisitor implements AbstractExpressionVisit
   }
 
   @Override
-  public Void visitElim(Abstract.ElimExpression expr, Void params) {
-    visitElimCase(expr);
-    return null;
-  }
-
-  @Override
   public Void visitCase(Abstract.CaseExpression expr, Void params) {
-    visitElimCase(expr);
-    return null;
-  }
-
-  private void visitElimCase(Abstract.ElimCaseExpression expr) {
     for (Abstract.Expression expression : expr.getExpressions()) {
       expression.accept(this, null);
     }
@@ -185,6 +174,7 @@ public class ExpressionResolveInstanceVisitor implements AbstractExpressionVisit
         clause.getExpression().accept(this, null);
       }
     }
+    return null;
   }
 
   @Override

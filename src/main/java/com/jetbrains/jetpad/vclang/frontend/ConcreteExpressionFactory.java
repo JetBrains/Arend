@@ -68,10 +68,6 @@ public class ConcreteExpressionFactory {
     return new Concrete.ReferenceExpression(POSITION, Prelude.SUC.getAbstractDefinition());
   }
 
-  public static Concrete.Expression cSuc(Concrete.Expression expr) {
-    return cApps(cSuc(), expr);
-  }
-
   public static Concrete.LetExpression cLet(List<Concrete.LetClause> clauses, Concrete.Expression expr) {
     return new Concrete.LetExpression(POSITION, clauses, expr);
   }
@@ -172,14 +168,6 @@ public class ConcreteExpressionFactory {
     return new Concrete.NewExpression(POSITION, expr);
   }
 
-  public static Concrete.ElimExpression cElim(List<Concrete.Expression> expressions, List<Concrete.Clause> clauses) {
-    return new Concrete.ElimExpression(POSITION, expressions, clauses);
-  }
-
-  public static Concrete.ElimExpression cElim(List<Concrete.Expression> expressions, Concrete.Clause... clauses) {
-    return cElim(expressions, Arrays.asList(clauses));
-  }
-
   public static Concrete.CaseExpression cCase(List<Concrete.Expression> expressions, List<Concrete.Clause> clauses) {
     return new Concrete.CaseExpression(POSITION, expressions, clauses);
   }
@@ -200,20 +188,8 @@ public class ConcreteExpressionFactory {
     return new Concrete.UniverseExpression(POSITION, pLevel, hLevel);
   }
 
-  public static Concrete.InfLevelExpression cInf() {
-    return new Concrete.InfLevelExpression(POSITION);
-  }
-
-  public static List<Concrete.Pattern> cPatterns(Concrete.Pattern... patterns) {
-    return Arrays.asList(patterns);
-  }
-
   public static Concrete.ConstructorPattern cConPattern(boolean isExplicit, String name, List<Abstract.Pattern> patternArgs) {
     return new Concrete.ConstructorPattern(POSITION, isExplicit, name, patternArgs);
-  }
-
-  public static Concrete.ConstructorPattern cConPattern(boolean isExplicit, String name, Concrete.Pattern... patternArgs) {
-    return cConPattern(isExplicit, name, Arrays.asList(patternArgs));
   }
 
   public static Concrete.NamePattern cNamePattern(boolean isExplicit, Abstract.ReferableSourceNode referable) {
@@ -230,5 +206,9 @@ public class ConcreteExpressionFactory {
 
   public static Concrete.NumericLiteral cNum(int num) {
     return new Concrete.NumericLiteral(POSITION, num);
+  }
+
+  public static Concrete.TermFunctionBody body(Concrete.Expression term) {
+    return new Concrete.TermFunctionBody(POSITION, term);
   }
 }

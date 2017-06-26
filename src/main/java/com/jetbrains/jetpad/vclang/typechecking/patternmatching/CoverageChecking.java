@@ -58,17 +58,13 @@ class CoverageChecking {
       clauseElems.add(new PatternClauseElem(new BindingPattern(link)));
     }
 
-    DependentLink link = parameters;
-    for (int i = 0; i < elimParams.size(); i++, link = link.getNext()) {
-      while (link != elimParams.get(i)) {
-        clauseElems.remove(i);
-        link = link.getNext();
-      }
-    }
-
-    for (ClauseElem clauseElem : clauseElems) {
-      if (!(clauseElem instanceof PatternClauseElem)) {
-        throw new IllegalStateException();
+    if (elimParams != null) {
+      DependentLink link = parameters;
+      for (int i = 0; i < elimParams.size(); i++, link = link.getNext()) {
+        while (link != elimParams.get(i)) {
+          clauseElems.remove(i);
+          link = link.getNext();
+        }
       }
     }
 

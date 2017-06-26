@@ -163,11 +163,6 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.Expression makeElim(List<? extends Abstract.Expression> exprs, List<? extends Abstract.Clause> clauses) {
-    return cElim((List<Concrete.Expression>) exprs, (List<Concrete.Clause>) clauses);
-  }
-
-  @Override
   public Abstract.Expression makeCase(List<? extends Abstract.Expression> expressions, List<? extends Abstract.Clause> clauses) {
     return cCase((List<Concrete.Expression>) expressions, (List<Concrete.Clause>) clauses);
   }

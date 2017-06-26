@@ -230,11 +230,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.Pattern visitPatternAtom(PatternAtomContext ctx) {
-    Concrete.Pattern pattern = (Concrete.Pattern) visit(ctx.atomPattern());
-    if (!pattern.isExplicit()) {
-      myErrorReporter.report(new ParserError(tokenPosition(ctx.getStart()), "Expected an explicit pattern"));
-    }
-    return pattern;
+    return (Concrete.Pattern) visit(ctx.atomPattern());
   }
 
   @Override
@@ -348,10 +344,23 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.FunctionDefinition visitDefFunction(DefFunctionContext ctx) {
-    Concrete.Expression resultType = ctx.expr().size() == 2 ? visitExpr(ctx.expr(0)) : null;
-    Concrete.Expression term = visitExpr(ctx.expr().size() == 2 ? ctx.expr(1) : ctx.expr(0));
+    Concrete.Expression resultType = ctx.expr() != null ? visitExpr(ctx.expr()) : null;
+    Concrete.FunctionBody body;
+    if (ctx.functionBody() instanceof WithElimContext) {
+      WithElimContext elimCtx = ((WithElimContext) ctx.functionBody());
+      List<Concrete.ReferenceExpression> elimExprs = Collections.emptyList();
+      if (elimCtx.elim() != null && elimCtx.elim().expr() != null && !elimCtx.elim().expr().isEmpty()) {
+        elimExprs = checkElimExpressions(elimCtx.elim().expr().stream().map(this::visitExpr).collect(Collectors.toList()));
+        if (elimExprs == null) {
+          return null;
+        }
+      }
+      body = new Concrete.ElimFunctionBody(tokenPosition(elimCtx.start), elimExprs, visitClauses(elimCtx.clauses()));
+    } else {
+      body = new Concrete.TermFunctionBody(tokenPosition(ctx.start), visitExpr(((WithoutElimContext) ctx.functionBody()).expr()));
+    }
     List<Concrete.Statement> statements = visitWhere(ctx.where());
-    Concrete.FunctionDefinition result = new Concrete.FunctionDefinition(tokenPosition(ctx.getStart()), visitName(ctx.name()), visitPrecedence(ctx.precedence()), visitFunctionArguments(ctx.tele()), resultType, term, statements);
+    Concrete.FunctionDefinition result = new Concrete.FunctionDefinition(tokenPosition(ctx.getStart()), visitName(ctx.name()), visitPrecedence(ctx.precedence()), visitFunctionArguments(ctx.tele()), resultType, body, statements);
 
     for (Iterator<Concrete.Statement> iterator = statements.iterator(); iterator.hasNext(); ) {
       Concrete.Statement statement = iterator.next();
@@ -946,40 +955,35 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return ctx.BIN_OP().getText();
   }
 
+  private List<Concrete.Clause> visitClauses(ClausesContext ctx) {
+    List<ClauseContext> clauses = ctx instanceof WithBracesContext ? ((WithBracesContext) ctx).clause() : ((WithoutBracesContext) ctx).clause();
+    return clauses.stream().map(this::visitClause).collect(Collectors.toList());
+  }
+
   @Override
-  public Concrete.Expression visitExprElim(ExprElimContext ctx) {
-    List<Concrete.Clause> clauses = new ArrayList<>(ctx.clause().size());
-    List<Concrete.Expression> elimExprs = new ArrayList<>();
-    for (ExprContext exprCtx : ctx.expr()) {
-      elimExprs.add(visitExpr(exprCtx));
-    }
+  public Concrete.Clause visitClause(ClauseContext clauseCtx) {
+    List<Concrete.Pattern> patterns = clauseCtx.pattern().stream().map(this::visitPattern).collect(Collectors.toList());
+    return new Concrete.Clause(tokenPosition(clauseCtx.start), patterns, clauseCtx.expr() == null ? null : visitExpr(clauseCtx.expr()));
+  }
 
-    if (ctx.elimCase() instanceof ElimContext) {
-      for (Concrete.Expression elimExpr : elimExprs) {
-        if (!(elimExpr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) elimExpr).getExpression() == null)) {
-          myErrorReporter.report(new ParserError(elimExpr.getPosition(), "\\elim can be applied only to a local variable"));
-          return null;
-        }
-      }
-    }
-
-    for (ClauseContext clauseCtx : ctx.clause()) {
-      List<Concrete.Pattern> patterns = new ArrayList<>();
-      for (PatternContext patternCtx : clauseCtx.pattern()) {
-        patterns.add(visitPattern(patternCtx));
-      }
-
-      if (patterns.size() != ctx.expr().size()) {
-        myErrorReporter.report(new ParserError(tokenPosition(clauseCtx.getStart()), "Expected: " + ctx.expr().size() + " patterns, got: " + patterns.size()));
+  private List<Concrete.ReferenceExpression> checkElimExpressions(List<? extends Concrete.Expression> expressions) {
+    List<Concrete.ReferenceExpression> result = new ArrayList<>(expressions.size());
+    for (Concrete.Expression elimExpr : expressions) {
+      if (!(elimExpr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) elimExpr).getExpression() == null)) {
+        myErrorReporter.report(new ParserError(elimExpr.getPosition(), "\\elim can be applied only to a local variable"));
         return null;
       }
-
-      clauses.add(new Concrete.Clause(tokenPosition(clauseCtx.start), patterns, clauseCtx.expr() == null ? null : visitExpr(clauseCtx.expr())));
+      result.add((Concrete.ReferenceExpression) elimExpr);
     }
+    return result;
+  }
 
-    return ctx.elimCase() instanceof CaseContext ?
-      new Concrete.CaseExpression(tokenPosition(ctx.getStart()), elimExprs, clauses) :
-      new Concrete.ElimExpression(tokenPosition(ctx.getStart()), elimExprs, clauses);
+  @Override
+  public Concrete.Expression visitCase(CaseContext ctx) {
+    List<Concrete.Expression> elimExprs = ctx.expr().stream().map(this::visitExpr).collect(Collectors.toList());
+    List<Concrete.Clause> clauses = visitClauses(ctx.clauses());
+
+    return new Concrete.CaseExpression(tokenPosition(ctx.getStart()), elimExprs, clauses);
   }
 
   @Override

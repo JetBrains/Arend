@@ -238,12 +238,12 @@ class DefinitionTypechecking {
 
   private static void typeCheckFunctionBody(FunctionDefinition typedDef, CheckTypeVisitor visitor) {
     Abstract.FunctionDefinition def = (Abstract.FunctionDefinition) typedDef.getAbstractDefinition();
-    Abstract.Expression term = def.getTerm();
+    Abstract.FunctionBody body = def.getBody();
 
-    if (term != null) {
+    if (body != null) {
       Expression expectedType = typedDef.getResultType();
 
-      if (term instanceof Abstract.ElimExpression) {
+      if (body instanceof Abstract.ElimFunctionBody) {
         if (expectedType != null || def.getResultType() == null) {
           List<Abstract.ReferableSourceNode> parameters = new ArrayList<>();
           if (typedDef.getThisClass() != null) {
@@ -252,7 +252,7 @@ class DefinitionTypechecking {
           getReferableList(def.getArguments(), parameters);
 
           if (expectedType != null) {
-            ElimTree elimTree = new ElimTypechecking(visitor, expectedType, true).typecheckElim(((Abstract.ElimExpression) term), typedDef.getParameters());
+            ElimTree elimTree = new ElimTypechecking(visitor, expectedType, true).typecheckElim(((Abstract.ElimFunctionBody) body), typedDef.getParameters());
             if (elimTree != null) {
               typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
               if (ConditionsChecking.check(elimTree)) {
@@ -260,11 +260,11 @@ class DefinitionTypechecking {
               }
             }
           } else {
-            visitor.getErrorReporter().report(new LocalTypeCheckingError("Cannot infer type of the expression", def.getTerm()));
+            visitor.getErrorReporter().report(new LocalTypeCheckingError("Cannot infer type of the expression", body));
           }
         }
       } else {
-        CheckTypeVisitor.Result termResult = visitor.finalCheckExpr(term, expectedType);
+        CheckTypeVisitor.Result termResult = visitor.finalCheckExpr(((Abstract.TermFunctionBody) body).getTerm(), expectedType);
         if (termResult != null) {
           typedDef.setElimTree(new LeafElimTree(typedDef.getParameters(), termResult.expression));
           if (expectedType == null) {

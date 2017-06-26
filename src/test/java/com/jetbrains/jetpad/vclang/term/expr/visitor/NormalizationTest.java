@@ -256,23 +256,18 @@ public class NormalizationTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void normalizeLetElimStuck() {
-    // normalize (\let | x (y : N) : N => \elim y | zero => zero | suc _ => zero \in x <1>) = the same
+  public void normalizeCaseStuck() {
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("n", Nat()));
-    CheckTypeVisitor.Result result = typeCheckExpr(context, "\\let x (y : Nat) : Nat => \\elim y | zero => zero | suc _ => zero \\in x n", null);
+    CheckTypeVisitor.Result result = typeCheckExpr(context, "\\case n | zero => zero | suc _ => zero", Nat());
     assertEquals(result.expression, result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeLetElimNoStuck() {
-    // normalize (\let | x (y : N) : \oo-Type2 => \elim y | zero => \Type0 | suc _ => \Type1 \in x zero) = \Type0
+    // normalize (\let | x (y : N) : \oo-Type2 => \Type0 \in x zero) = \Type0
     Concrete.ReferableSourceNode y = ref("y");
-    Concrete.Expression elimTree = cElim(Collections.singletonList(cVar(y)),
-        cClause(cPatterns(cConPattern(true, Prelude.ZERO.getName())), cUniverseStd(0)),
-        cClause(cPatterns(cConPattern(true, Prelude.SUC.getName(), cNamePattern(true, ref(null)))), cUniverseStd(1))
-    );
-    Concrete.LetClause x = clet("x", cargs(cTele(cvars(y), cNat())), cUniverseInf(2), elimTree);
+    Concrete.LetClause x = clet("x", cargs(cTele(cvars(y), cNat())), cUniverseInf(2), cUniverseStd(0));
     CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(x), cApps(cVar(x), cZero())), null);
     assertEquals(Universe(new Level(0), new Level(LevelVariable.HVAR)), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }

@@ -43,12 +43,12 @@ public class ElimTypechecking {
     myAllowInterval = allowInterval;
   }
 
-  public ElimTree typecheckElim(Abstract.ElimExpression elimExpr, DependentLink patternTypes) {
+  public ElimTree typecheckElim(Abstract.ElimFunctionBody body, DependentLink patternTypes) {
     List<DependentLink> elimParams = null;
-    if (elimExpr.getExpressions() != null) {
+    if (!body.getExpressions().isEmpty()) {
       DependentLink link = patternTypes;
-      elimParams = new ArrayList<>(elimExpr.getExpressions().size());
-      for (Abstract.Expression expr : elimExpr.getExpressions()) {
+      elimParams = new ArrayList<>(body.getExpressions().size());
+      for (Abstract.Expression expr : body.getExpressions()) {
         if (expr instanceof Abstract.ReferenceExpression) {
           DependentLink elimParam = (DependentLink) myVisitor.getContext().remove(((Abstract.ReferenceExpression) expr).getReferent());
           while (elimParam != link) {
@@ -64,12 +64,14 @@ public class ElimTypechecking {
           return null;
         }
       }
+    } else {
+      myVisitor.getContext().clear();
     }
 
-    List<ClauseData> clauses = new ArrayList<>(elimExpr.getClauses().size());
+    List<ClauseData> clauses = new ArrayList<>(body.getClauses().size());
     PatternTypechecking patternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), myAllowInterval);
     myOK = true;
-    for (Abstract.Clause clause : elimExpr.getClauses()) {
+    for (Abstract.Clause clause : body.getClauses()) {
       Map<Abstract.ReferableSourceNode, Binding> originalContext = new HashMap<>(myVisitor.getContext());
       Pair<List<Pattern>, CheckTypeVisitor.Result> result = patternTypechecking.typecheckClause(clause, patternTypes, elimParams, myExpectedType, myVisitor, true);
       myVisitor.setContext(originalContext);
@@ -85,17 +87,17 @@ public class ElimTypechecking {
     }
 
     if (clauses.isEmpty()) {
-      myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Expected a pattern list", elimExpr));
+      myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Expected a clause list", body));
       return null;
     }
 
-    myUnusedClauses = new HashSet<>(elimExpr.getClauses());
+    myUnusedClauses = new HashSet<>(body.getClauses());
     myContext = new Stack<>();
     ElimTree elimTree = clausesToElimTree(clauses);
 
     if (myMissingClauses != null && !myMissingClauses.isEmpty()) {
       final List<DependentLink> finalElimParams = elimParams;
-      myVisitor.getErrorReporter().report(new MissingClausesError(myMissingClauses.stream().map(missingClause -> CoverageChecking.unflattenMissingClause(missingClause, patternTypes, finalElimParams)).collect(Collectors.toList()), elimExpr));
+      myVisitor.getErrorReporter().report(new MissingClausesError(myMissingClauses.stream().map(missingClause -> CoverageChecking.unflattenMissingClause(missingClause, patternTypes, finalElimParams)).collect(Collectors.toList()), body));
     }
     if (!myOK) {
       return null;

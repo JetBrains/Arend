@@ -659,11 +659,11 @@ public final class Concrete {
     }
   }
 
-  public static abstract class ElimCaseExpression extends Expression implements Abstract.ElimCaseExpression {
+  public static class CaseExpression extends Expression implements Abstract.CaseExpression {
     private final List<Expression> myExpressions;
     private final List<Clause> myClauses;
 
-    public ElimCaseExpression(Position position, List<Expression> expressions, List<Clause> clauses) {
+    public CaseExpression(Position position, List<Expression> expressions, List<Clause> clauses) {
       super(position);
       myExpressions = expressions;
       myClauses = clauses;
@@ -677,23 +677,6 @@ public final class Concrete {
     @Override
     public List<Clause> getClauses() {
       return myClauses;
-    }
-  }
-
-  public static class ElimExpression extends ElimCaseExpression implements Abstract.ElimExpression {
-    public ElimExpression(Position position, List<Expression> expressions, List<Clause> clauses) {
-      super(position, expressions, clauses);
-    }
-
-    @Override
-    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitElim(this, params);
-    }
-  }
-
-  public static class CaseExpression extends ElimCaseExpression implements Abstract.CaseExpression {
-    public CaseExpression(Position position, List<Expression> expressions, List<Clause> clauses) {
-      super(position, expressions, clauses);
     }
 
     @Override
@@ -1082,13 +1065,54 @@ public final class Concrete {
     }
   }
 
-  public static class FunctionDefinition extends SignatureDefinition implements Abstract.FunctionDefinition {
+  public static abstract class FunctionBody extends SourceNode implements Abstract.FunctionBody {
+    public FunctionBody(Position position) {
+      super(position);
+    }
+  }
+
+  public static class TermFunctionBody extends FunctionBody implements Abstract.TermFunctionBody {
     private final Expression myTerm;
+
+    public TermFunctionBody(Position position, Expression term) {
+      super(position);
+      myTerm = term;
+    }
+
+    @Override
+    public Expression getTerm() {
+      return myTerm;
+    }
+  }
+
+  public static class ElimFunctionBody extends FunctionBody implements Abstract.ElimFunctionBody {
+    private final List<ReferenceExpression> myExpressions;
+    private final List<Clause> myClauses;
+
+    public ElimFunctionBody(Position position, List<ReferenceExpression> expressions, List<Clause> clauses) {
+      super(position);
+      myExpressions = expressions;
+      myClauses = clauses;
+    }
+
+    @Override
+    public List<? extends ReferenceExpression> getExpressions() {
+      return myExpressions;
+    }
+
+    @Override
+    public List<? extends Clause> getClauses() {
+      return myClauses;
+    }
+  }
+
+  public static class FunctionDefinition extends SignatureDefinition implements Abstract.FunctionDefinition {
+    private final FunctionBody myBody;
     private final List<Statement> myStatements;
 
-    public FunctionDefinition(Position position, String name, Abstract.Precedence precedence, List<Argument> arguments, Expression resultType, Expression term, List<Statement> statements) {
+    public FunctionDefinition(Position position, String name, Abstract.Precedence precedence, List<Argument> arguments, Expression resultType, FunctionBody body, List<Statement> statements) {
       super(position, name, precedence, arguments, resultType);
-      myTerm = term;
+      myBody = body;
       myStatements = statements;
     }
 
@@ -1098,8 +1122,8 @@ public final class Concrete {
     }
 
     @Override
-    public Expression getTerm() {
-      return myTerm;
+    public FunctionBody getBody() {
+      return myBody;
     }
 
     @Override

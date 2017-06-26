@@ -497,41 +497,33 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myBuilder.append('\n');
   }
 
-  private void visitElimCaseExpression(Abstract.ElimCaseExpression expr, Byte prec) {
-    if (prec > Abstract.ElimExpression.PREC) myBuilder.append('(');
-    myBuilder.append(expr instanceof Abstract.ElimExpression ? "\\elim" : "\\case");
-    for (int i = 0; i < expr.getExpressions().size(); i++) {
+  private void prettyPrintClauses(List<? extends Abstract.Expression> expressions, List<? extends Abstract.Clause> clauses) {
+    for (int i = 0; i < expressions.size(); i++) {
       myBuilder.append(" ");
-      expr.getExpressions().get(i).accept(this, Abstract.Expression.PREC);
-      if (i != expr.getExpressions().size() - 1)
+      expressions.get(i).accept(this, Abstract.Expression.PREC);
+      if (i != expressions.size() - 1)
         myBuilder.append(",");
     }
 
-    List<? extends Abstract.Clause> clauses = expr.getClauses();
     if (!clauses.isEmpty()) {
-      myBuilder.append('\n');
+      myBuilder.append(" {\n");
       myIndent += INDENT;
       for (Abstract.Clause clause : clauses) {
         prettyPrintClause(clause);
       }
 
       printIndent();
+      myBuilder.append('}');
     }
+  }
 
-    myBuilder.append(';');
+  @Override
+  public Void visitCase(Abstract.CaseExpression expr, Byte prec) {
+    if (prec > Abstract.CaseExpression.PREC) myBuilder.append('(');
+    myBuilder.append("\\case");
+    prettyPrintClauses(expr.getExpressions(), expr.getClauses());
     myIndent -= INDENT;
-    if (prec > Abstract.ElimExpression.PREC) myBuilder.append(')');
-  }
-
-  @Override
-  public Void visitElim(Abstract.ElimExpression expr, Byte prec) {
-    visitElimCaseExpression(expr, prec);
-    return null;
-  }
-
-  @Override
-  public Void visitCase(Abstract.CaseExpression expr, Byte params) {
-    visitElimCaseExpression(expr, params);
+    if (prec > Abstract.CaseExpression.PREC) myBuilder.append(')');
     return null;
   }
 
@@ -675,6 +667,16 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myBuilder.append(new Name(def.getName()).getPrefixName());
   }
 
+  private void prettyPrintBody(Abstract.FunctionBody body) {
+    if (body instanceof Abstract.TermFunctionBody) {
+      ((Abstract.TermFunctionBody) body).getTerm().accept(this, Abstract.Expression.PREC);
+    } else {
+      myBuilder.append("\\elim");
+      Abstract.ElimFunctionBody elimFunctionBody = (Abstract.ElimFunctionBody) body;
+      prettyPrintClauses(elimFunctionBody.getExpressions(), elimFunctionBody.getClauses());
+    }
+  }
+
   @Override
   public Void visitFunction(final Abstract.FunctionDefinition def, Void ignored) {
     myBuilder.append("\\function\n");
@@ -712,8 +714,8 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
       @Override
       void printRight(PrettyPrintVisitor pp) {
-        if (def.getTerm() != null) {
-          def.getTerm().accept(pp, Abstract.Expression.PREC);
+        if (def.getBody() != null) {
+          pp.prettyPrintBody(def.getBody());
         } else {
           pp.myBuilder.append("{!error}");
         }
