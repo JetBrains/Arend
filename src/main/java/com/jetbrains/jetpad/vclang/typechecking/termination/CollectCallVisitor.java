@@ -6,22 +6,25 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
+import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.termination.CollectCallVisitor.ParameterVector;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, Void>, ExpressionVisitor<ParameterVector, Void> {
   private Set<BaseCallMatrix<Definition>> myCollectedCalls = new HashSet<>();
@@ -33,8 +36,8 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
     myCycle = cycle;
     ParameterVector pv = new ParameterVector(def);
     if (def.getElimTree() != null) {
-      // TODO[newELim]
-      // def.getElimTree().accept(this, pv);
+      //TODO: Remove this comment
+      //pv.doCollectCalls(def.getElimTree(), this);
     }
   }
 
@@ -132,14 +135,6 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
   }
 
   @Override
-  public Void visitBranch(BranchElimTreeNode node, ParameterVector vector) {
-    for (ConstructorClause clause : node.getConstructorClauses()) {
-      clause.getChild().accept(this, new ParameterVector(vector, clause));
-    }
-    return null;
-  }
-
-  @Override
   public Void visitLet(LetExpression expression, ParameterVector vector) {
     expression.getExpression().accept(this, vector);
 
@@ -162,13 +157,6 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
     }
     return null;
   }
-
-  @Override
-  public Void visitLeaf(LeafElimTreeNode node, ParameterVector vector) {
-    node.getExpression().accept(this, vector);
-    return null;
-  }
-
 
   @Override
   public Void visitDataCall(DataCallExpression expression, ParameterVector vector) {
@@ -281,20 +269,81 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
     throw new IllegalStateException();
   }
 
+  @Override
+  public Void visitBranch(BranchElimTreeNode node, ParameterVector vector) {
+    for (ConstructorClause clause : node.getConstructorClauses()) {
+      clause.getChild().accept(this, new ParameterVector(vector, clause));
+    }
+    return null;
+  }
+
+  @Override
+  public Void visitLeaf(LeafElimTreeNode node, ParameterVector vector) {
+    node.getExpression().accept(this, vector);
+    return null;
+  }
+
   public static class ParameterVector {
     private Expression[] myParts;
+    private List<DependentLink> myLinks;
 
     ParameterVector(FunctionDefinition def) {
       int paramCount = def.getNumberOfRequiredArguments();
       myParts = new Expression[paramCount];
+      myLinks = new LinkedList<>();
 
       int i = 0;
       DependentLink dl = def.getParameters();
       while (!(dl instanceof EmptyDependentLink)) {
         myParts[i] = new ReferenceExpression(dl);
-
+        myLinks.add(dl);
         dl = dl.getNext();
         i++;
+      }
+    }
+
+    void doCollectCalls(ElimTree elimTree, CollectCallVisitor collectCallVisitor) {
+      if (elimTree instanceof LeafElimTree) {
+        LeafElimTree leafElimTree = (LeafElimTree) elimTree;
+        leafElimTree.getExpression().accept(collectCallVisitor, this);
+      } else if (elimTree instanceof BranchElimTree) {
+        BranchElimTree branchElimTree = (BranchElimTree) elimTree;
+        DependentLink dl = branchElimTree.getParameters();
+        List<DependentLink> links2 = new LinkedList<>();
+        links2.addAll(myLinks);
+        while (!(dl instanceof EmptyDependentLink)) { //skip parameters that are not changed
+          assert (links2.get(0) == dl);
+          links2.remove(0);
+          dl = dl.getNext();
+        }
+        for (Map.Entry<BranchElimTree.Pattern, ElimTree> entry : branchElimTree.getChildren()) {
+          if (entry.getKey().equals(BranchElimTree.Pattern.ANY)) {
+            //Nothing to substitute
+          } else if (entry.getKey() instanceof Constructor) {
+            Constructor cons = (Constructor) entry.getKey();
+            ExprSubstitution exprSubst = new ExprSubstitution();
+
+            List<DependentLink> newpvList = new LinkedList<>();
+            List<Expression> refList = new ArrayList<>();
+
+            dl = cons.getParameters();
+            while (!(dl instanceof EmptyDependentLink)) {
+              newpvList.add(dl);
+              refList.add(new ReferenceExpression(dl));
+              dl = dl.getNext();
+            }
+            DependentLink current = links2.get(0);
+            links2.remove(0);
+            newpvList.addAll(links2);
+
+            DataCallExpression dataCall = current.getType().getExpr().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
+            exprSubst.add(current, new ConCallExpression(cons, dataCall.getSortArgument(), cons.matchDataTypeArguments(new ArrayList<>(dataCall.getDefCallArguments())), refList));
+            ParameterVector newpv = new ParameterVector(this, new SubstVisitor(exprSubst, LevelSubstitution.EMPTY));
+            newpv.myLinks = newpvList;
+
+            newpv.doCollectCalls(entry.getValue(), collectCallVisitor);
+          }
+        }
       }
     }
 
