@@ -12,7 +12,7 @@ hidingOpt : '\\hiding'  # withHiding
 
 nsCmdRoot : modulePath | name;
 
-definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?                            # defFunction
+definition  : '\\function' precedence name tele* (':' expr)? '=>' expr where?                             # defFunction
             | '\\field' precedence name ':' expr                                                          # defAbstract
             | '\\implement' name '=>' expr                                                                # defImplement
             | isTruncated '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef?        # defData
@@ -39,10 +39,6 @@ where : '\\where' ('{' statements '}' | statement);
 
 nsCmd : '\\open'                        # openCmd
       | '\\export'                      # exportCmd
-      ;
-
-arrow : '<='                            # arrowLeft
-      | '=>'                            # arrowRight
       ;
 
 constructorDef : '|' pattern '=>' constructor ('|' constructor)* ';'? # withPatterns
@@ -87,11 +83,11 @@ expr  : (binOpLeft+ | ) binOpArg                            # binOp
       | elimCase expr (',' expr)* clause* ';'?              # exprElim
       ;
 
-letClause : ID tele* typeAnnotation? arrow expr;
+letClause : ID tele* typeAnnotation? '=>' expr;
 
 typeAnnotation : ':' expr;
 
-clause : '|' pattern (',' pattern)* (arrow expr)?;
+clause : '|' pattern (',' pattern)* ('=>' expr)?;
 
 elimCase : '\\elim'                     # elim
          | '\\case'                     # case

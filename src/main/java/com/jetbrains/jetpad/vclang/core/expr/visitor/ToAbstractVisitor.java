@@ -510,7 +510,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       Abstract.Expression resultType = clause.getResultType().getExpr().accept(this, null);
       Abstract.Expression term = visitElimTree(clause.getElimTree(), clause.getParameters());
       clause.getParameters().forEach(this::freeVars);
-      clauses.add(myFactory.makeLetClause(makeReferable(clause), arguments, resultType, getTopLevelArrow(clause.getElimTree()), term));
+      clauses.add(myFactory.makeLetClause(makeReferable(clause), arguments, resultType, term));
     }
 
     result = myFactory.makeLet(clauses, letExpression.getExpression().accept(this, null));
@@ -552,22 +552,13 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       for (DependentLink link = clause.getConstructor().getParameters(); link.hasNext(); link = link.getNext()) {
         args.add(myFactory.makeNamePattern(link.isExplicit(), makeReferable(link)));
       }
-      clauses.add(myFactory.makeClause(Collections.singletonList(myFactory.makeConPattern(true, clause.getConstructor().getAbstractDefinition(), args)), clause.getChild().getArrow(), clause.getChild() == EmptyElimTreeNode.getInstance() ? null : clause.getChild().accept(this, null)));
+      clauses.add(myFactory.makeClause(Collections.singletonList(myFactory.makeConPattern(true, clause.getConstructor().getAbstractDefinition(), args)), clause.getChild() == EmptyElimTreeNode.getInstance() ? null : clause.getChild().accept(this, null)));
       freeVars(clause.getConstructor().getParameters());
     }
     if (branchNode.getOtherwiseClause() != null) {
-      clauses.add(myFactory.makeClause(Collections.singletonList(myFactory.makeNamePattern(true, null)), branchNode.getOtherwiseClause().getChild().getArrow(), branchNode.getOtherwiseClause().getChild() == EmptyElimTreeNode.getInstance() ? null : branchNode.getOtherwiseClause().getChild().accept(this, null)));
+      clauses.add(myFactory.makeClause(Collections.singletonList(myFactory.makeNamePattern(true, null)), branchNode.getOtherwiseClause().getChild() == EmptyElimTreeNode.getInstance() ? null : branchNode.getOtherwiseClause().getChild().accept(this, null)));
     }
     return clauses;
-  }
-
-  @SuppressWarnings("SuspiciousNameCombination")
-  private Abstract.Definition.Arrow getTopLevelArrow(ElimTreeNode elimTreeNode) {
-    if (elimTreeNode == EmptyElimTreeNode.getInstance()) {
-      return Abstract.Definition.Arrow.RIGHT;
-    } else {
-      return elimTreeNode.getArrow();
-    }
   }
 
   @Override

@@ -21,7 +21,6 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
@@ -37,13 +36,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class NormalizationTest extends TypeCheckingTestCase {
-  // \function (+) (x y : Nat) : Nat <= elim x | zero => y | suc x' => suc (x' + y)
+  // \function (+) (x y : Nat) : Nat => elim x | zero => y | suc x' => suc (x' + y)
   private final FunctionDefinition plus;
-  // \function (*) (x y : Nat) : Nat <= elim x | zero => zero | suc x' => y + x' * y
+  // \function (*) (x y : Nat) : Nat => elim x | zero => zero | suc x' => y + x' * y
   private final FunctionDefinition mul;
-  // \function fac (x : Nat) : Nat <= elim x | zero => suc zero | suc x' => suc x' * fac x'
+  // \function fac (x : Nat) : Nat => elim x | zero => suc zero | suc x' => suc x' * fac x'
   private final FunctionDefinition fac;
-  // \function nelim (z : Nat) (s : Nat -> Nat -> Nat) (x : Nat) : Nat <= elim x | zero => z | suc x' => s x' (nelim z s x')
+  // \function nelim (z : Nat) (s : Nat -> Nat -> Nat) (x : Nat) : Nat => elim x | zero => z | suc x' => s x' (nelim z s x')
   private final FunctionDefinition nelim;
 
   private DataDefinition bdList;
@@ -258,22 +257,22 @@ public class NormalizationTest extends TypeCheckingTestCase {
 
   @Test
   public void normalizeLetElimStuck() {
-    // normalize (\let | x (y : N) : N <= \elim y | zero => zero | suc _ => zero \in x <1>) = the same
+    // normalize (\let | x (y : N) : N => \elim y | zero => zero | suc _ => zero \in x <1>) = the same
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("n", Nat()));
-    CheckTypeVisitor.Result result = typeCheckExpr(context, "\\let x (y : Nat) : Nat <= \\elim y | zero => zero | suc _ => zero \\in x n", null);
+    CheckTypeVisitor.Result result = typeCheckExpr(context, "\\let x (y : Nat) : Nat => \\elim y | zero => zero | suc _ => zero \\in x n", null);
     assertEquals(result.expression, result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeLetElimNoStuck() {
-    // normalize (\let | x (y : N) : \oo-Type2 <= \elim y | zero => \Type0 | suc _ => \Type1 \in x zero) = \Type0
+    // normalize (\let | x (y : N) : \oo-Type2 => \elim y | zero => \Type0 | suc _ => \Type1 \in x zero) = \Type0
     Concrete.ReferableSourceNode y = ref("y");
     Concrete.Expression elimTree = cElim(Collections.singletonList(cVar(y)),
-        cClause(cPatterns(cConPattern(true, Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cUniverseStd(0)),
-        cClause(cPatterns(cConPattern(true, Prelude.SUC.getName(), cNamePattern(true, ref(null)))), Abstract.Definition.Arrow.RIGHT, cUniverseStd(1))
+        cClause(cPatterns(cConPattern(true, Prelude.ZERO.getName())), cUniverseStd(0)),
+        cClause(cPatterns(cConPattern(true, Prelude.SUC.getName(), cNamePattern(true, ref(null)))), cUniverseStd(1))
     );
-    Concrete.LetClause x = clet("x", cargs(cTele(cvars(y), cNat())), cUniverseInf(2), Abstract.Definition.Arrow.LEFT, elimTree);
+    Concrete.LetClause x = clet("x", cargs(cTele(cvars(y), cNat())), cUniverseInf(2), elimTree);
     CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(x), cApps(cVar(x), cZero())), null);
     assertEquals(Universe(new Level(0), new Level(LevelVariable.HVAR)), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
@@ -283,14 +282,14 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink var0 = param("var0", Universe(0));
     TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
         "\\data D | d Nat\n" +
-        "\\function test (x : D) : Nat <= \\elim x | _ => 0");
+        "\\function test (x : D) : Nat => \\elim x | _ => 0");
     FunctionDefinition test = (FunctionDefinition) result.getDefinition("test");
     assertEquals(Zero(), FunCall(test, Sort.SET0, Ref(var0)).normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void letNormalizationContext() {
-    LetClause let = let("x", Collections.emptyList(), Nat(), top(EmptyDependentLink.getInstance(), new LeafElimTreeNode(Abstract.Definition.Arrow.RIGHT, Zero())));
+    LetClause let = let("x", Collections.emptyList(), Nat(), top(EmptyDependentLink.getInstance(), new LeafElimTreeNode(Zero())));
     new LetExpression(lets(let), Ref(let)).normalize(NormalizeVisitor.Mode.NF);
   }
 

@@ -22,7 +22,6 @@ import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -499,7 +498,6 @@ class DefinitionSerialization {
     @Override
     public ExpressionProtos.ElimTreeNode visitLeaf(LeafElimTreeNode leafNode, Void params) {
       ExpressionProtos.ElimTreeNode.Leaf.Builder builder = ExpressionProtos.ElimTreeNode.Leaf.newBuilder();
-      builder.setArrowLeft(Abstract.Definition.Arrow.LEFT.equals(leafNode.getArrow()));
       for (Binding binding : leafNode.getMatched()) {
         builder.addMatchedRef(writeBindingRef(binding));
       }

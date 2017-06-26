@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
@@ -35,6 +36,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.NotInScopeError;
+import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ConditionsChecking;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ElimTypechecking;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.CompositeInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.GlobalInstancePool;
@@ -250,7 +252,13 @@ class DefinitionTypechecking {
           getReferableList(def.getArguments(), parameters);
 
           if (expectedType != null) {
-            typedDef.setElimTree(new ElimTypechecking(visitor, expectedType, true).typecheckElim(((Abstract.ElimExpression) term), typedDef.getParameters()));
+            ElimTree elimTree = new ElimTypechecking(visitor, expectedType, true).typecheckElim(((Abstract.ElimExpression) term), typedDef.getParameters());
+            if (elimTree != null) {
+              typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+              if (ConditionsChecking.check(elimTree)) {
+                typedDef.setElimTree(elimTree);
+              }
+            }
           } else {
             visitor.getErrorReporter().report(new LocalTypeCheckingError("Cannot infer type of the expression", def.getTerm()));
           }
@@ -263,18 +271,6 @@ class DefinitionTypechecking {
             typedDef.setResultType(termResult.type);
           }
         }
-      }
-
-      if (typedDef.getResultType() != null && typedDef.getElimTree() != null) {
-        typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-
-        /* TODO[newElim]
-        LocalTypeCheckingError error = TypeCheckingElim.checkConditions(def, typedDef.getParameters(), typedDef.getElimTree());
-        if (error != null) {
-          visitor.getErrorReporter().report(error);
-          typedDef.setElimTree(null);
-        }
-        */
       }
     }
 
@@ -458,7 +454,6 @@ class DefinitionTypechecking {
       try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(visitor.getContext())) {
         List<List<Pattern>> patterns = new ArrayList<>();
         List<Expression> expressions = new ArrayList<>();
-        List<Abstract.Definition.Arrow> arrows = new ArrayList<>();
         visitor.getFreeBindings().addAll(toContext(constructor.getDataTypeParameters()));
         // visitor.getContext().addAll(toContext(constructor.getDataTypeParameters())); // TODO[context]
 
@@ -483,11 +478,10 @@ class DefinitionTypechecking {
 
             patterns.add(typedPatterns.getPatterns());
             expressions.add(result.expression.normalize(NormalizeVisitor.Mode.NF));
-            arrows.add(Abstract.Definition.Arrow.RIGHT);
           }
         }
 
-        PatternsToElimTreeConversion.OKResult elimTreeResult = (PatternsToElimTreeConversion.OKResult) PatternsToElimTreeConversion.convert(constructor.getParameters(), patterns, expressions, arrows);
+        PatternsToElimTreeConversion.OKResult elimTreeResult = (PatternsToElimTreeConversion.OKResult) PatternsToElimTreeConversion.convert(constructor.getParameters(), patterns, expressions);
 
         if (!elimTreeResult.elimTree.accept(new TerminationCheckVisitor(constructor, constructor.getDataTypeParameters(), constructor.getParameters()), null)) {
           visitor.getErrorReporter().report(new LocalTypeCheckingError("Termination check failed", null));

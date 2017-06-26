@@ -68,7 +68,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     Concrete.ReferableSourceNode x = ref("X");
     arguments.add(cTele(cvars(X), cUniverseStd(0)));
     arguments.add(cTele(cvars(x), cVar(X)));
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(ConcreteExpressionFactory.POSITION, "f", Abstract.Precedence.DEFAULT, arguments, cVar(X), Abstract.Definition.Arrow.RIGHT, cVar(x), Collections.emptyList());
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(ConcreteExpressionFactory.POSITION, "f", Abstract.Precedence.DEFAULT, arguments, cVar(X), cVar(x), Collections.emptyList());
     def.accept(new PrettyPrintVisitor(new StringBuilder(), 0), null);
   }
 
@@ -84,7 +84,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
 
   @Test
   public void prettyPrintingLetEmpty() {
-    // \let x {A : Type0} (y ; A) : A <= \elim y
+    // \let x {A : Type0} (y ; A) : A => \elim y
     SingleDependentLink A = singleParam("A", Universe(0));
     SingleDependentLink y = singleParam("y", Ref(A));
     LetClause clause = let("x", Arrays.asList(A, y), Ref(A), EmptyElimTreeNode.getInstance());

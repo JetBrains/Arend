@@ -1,28 +1,25 @@
 package com.jetbrains.jetpad.vclang.core.pattern.elimtree;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
+import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class LeafElimTreeNode extends ElimTreeNode {
   private List<Binding> myMatched;
-  private Abstract.Definition.Arrow myArrow;
   private Expression myExpression;
 
-  public LeafElimTreeNode(Abstract.Definition.Arrow arrow, Expression expression) {
-    myArrow = arrow;
+  public LeafElimTreeNode(Expression expression) {
     myExpression = expression;
   }
 
   public LeafElimTreeNode() {
-    this(null, null);
+    this(null);
   }
 
   public Expression getExpression() {
@@ -31,14 +28,6 @@ public class LeafElimTreeNode extends ElimTreeNode {
 
   public void setExpression(Expression expression) {
     myExpression = expression;
-  }
-
-  public Abstract.Definition.Arrow getArrow() {
-    return myArrow;
-  }
-
-  public void setArrow(Abstract.Definition.Arrow arrow) {
-    myArrow = arrow;
   }
 
   public ElimTreeNode replaceWith(ElimTreeNode root, ElimTreeNode replacement) {

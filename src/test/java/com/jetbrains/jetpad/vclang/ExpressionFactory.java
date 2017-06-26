@@ -15,7 +15,6 @@ import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,19 +55,19 @@ public class ExpressionFactory {
   }
 
   public static LetClause let(String name, Expression expr) {
-    return let(name, Collections.emptyList(), null, new LeafElimTreeNode(Abstract.Definition.Arrow.RIGHT, expr));
+    return let(name, Collections.emptyList(), null, new LeafElimTreeNode(expr));
   }
 
   public static LetClause let(String name, SingleDependentLink param, Expression expr) {
-    return let(name, Collections.singletonList(param), null, new LeafElimTreeNode(Abstract.Definition.Arrow.RIGHT, expr));
+    return let(name, Collections.singletonList(param), null, new LeafElimTreeNode(expr));
   }
 
   public static LetClause let(String name, SingleDependentLink param, Expression resultType, Expression expr) {
-    return let(name, Collections.singletonList(param), resultType, new LeafElimTreeNode(Abstract.Definition.Arrow.RIGHT, expr));
+    return let(name, Collections.singletonList(param), resultType, new LeafElimTreeNode(expr));
   }
 
   public static LetClause let(String name, List<SingleDependentLink> params, Expression resultType, Expression expr) {
-    return let(name, params, resultType, new LeafElimTreeNode(Abstract.Definition.Arrow.RIGHT, expr));
+    return let(name, params, resultType, new LeafElimTreeNode(expr));
   }
 
   public static LetClause let(String name, List<SingleDependentLink> params, Expression resultType, ElimTreeNode elimTree) {

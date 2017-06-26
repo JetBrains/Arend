@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVis
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
@@ -47,8 +46,6 @@ public abstract class ElimTreeNode {
   public abstract void updateLeavesMatched(List<Binding> context);
 
   public abstract LeafElimTreeNode match(List<Expression> expressions);
-
-  public abstract Abstract.Definition.Arrow getArrow();
 
   void setParent(Clause parent) {
     myParent = parent;

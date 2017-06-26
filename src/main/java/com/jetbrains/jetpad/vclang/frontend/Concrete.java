@@ -492,20 +492,13 @@ public final class Concrete {
   public static class LetClause extends ReferableSourceNode implements Abstract.LetClause {
     private final List<Argument> myArguments;
     private final Expression myResultType;
-    private final Abstract.Definition.Arrow myArrow;
     private final Expression myTerm;
 
-    public LetClause(Position position, String name, List<Argument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
+    public LetClause(Position position, String name, List<Argument> arguments, Expression resultType, Expression term) {
       super(position, name);
       myArguments = arguments;
       myResultType = resultType;
-      myArrow = arrow;
       myTerm = term;
-    }
-
-    @Override
-    public Abstract.Definition.Arrow getArrow() {
-      return myArrow;
     }
 
     @Override
@@ -711,24 +704,17 @@ public final class Concrete {
 
   public static class Clause extends SourceNode implements Abstract.Clause {
     private final List<Pattern> myPatterns;
-    private final Definition.Arrow myArrow;
     private final Expression myExpression;
 
-    public Clause(Position position, List<Pattern> patterns, Abstract.Definition.Arrow arrow, Expression expression) {
+    public Clause(Position position, List<Pattern> patterns, Expression expression) {
       super(position);
       myPatterns = patterns;
-      myArrow = arrow;
       myExpression = expression;
     }
 
     @Override
     public List<Pattern> getPatterns() {
       return myPatterns;
-    }
-
-    @Override
-    public Definition.Arrow getArrow() {
-      return myArrow;
     }
 
     @Override
@@ -1097,20 +1083,13 @@ public final class Concrete {
   }
 
   public static class FunctionDefinition extends SignatureDefinition implements Abstract.FunctionDefinition {
-    private final Abstract.Definition.Arrow myArrow;
     private final Expression myTerm;
     private final List<Statement> myStatements;
 
-    public FunctionDefinition(Position position, String name, Abstract.Precedence precedence, List<Argument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term, List<Statement> statements) {
+    public FunctionDefinition(Position position, String name, Abstract.Precedence precedence, List<Argument> arguments, Expression resultType, Expression term, List<Statement> statements) {
       super(position, name, precedence, arguments, resultType);
-      myArrow = arrow;
       myTerm = term;
       myStatements = statements;
-    }
-
-    @Override
-    public Definition.Arrow getArrow() {
-      return myArrow;
     }
 
     @Override

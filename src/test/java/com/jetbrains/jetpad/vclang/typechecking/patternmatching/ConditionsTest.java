@@ -49,7 +49,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
     typeCheckClass(
         "\\data Z | zpos Nat | zneg Nat \n" +
             "\\with | zneg zero => zpos zero\n" +
-        "\\function test (x : Z) : Nat <= \\elim x\n" +
+        "\\function test (x : Z) : Nat => \\elim x\n" +
             "| zneg (suc (suc _)) => 0\n" +
             "| zneg (suc zero) => 1\n" +
             "| zneg zero => 2\n" +
@@ -62,7 +62,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
     typeCheckClass(
         "\\data Z | zpos Nat | zneg Nat \n" +
             "\\with | zneg zero => zpos zero\n" +
-        "\\function test (x : Z) : Nat <= \\elim x\n" +
+        "\\function test (x : Z) : Nat => \\elim x\n" +
             "| zneg (suc (suc _)) => 0\n" +
             "| zneg (suc zero) => 1\n" +
             "| zneg zero => 2\n" +
@@ -76,7 +76,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
         "\\data Z  | positive Nat | negative Nat\n" +
         "  \\with | positive zero => negative zero\n" +
         "\n" +
-        "\\function test (x : Z) (y : Nat) : Nat <= \\elim x, y\n" +
+        "\\function test (x : Z) (y : Nat) : Nat => \\elim x, y\n" +
         "| positive (suc n), m => n\n" +
         "| positive zero, m => m\n" +
         "| negative n, zero => zero\n" +
@@ -89,7 +89,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
         "\\data Z  | positive Nat | negative Nat\n" +
         "  \\with | positive zero => negative zero\n" +
         "\n" +
-        "\\function test (x : Z) (y : Nat) : Nat <= \\elim x, y\n" +
+        "\\function test (x : Z) (y : Nat) : Nat => \\elim x, y\n" +
         "| positive (suc n), m => n\n" +
         "| positive zero, m => m\n" +
         "| negative n, zero => zero\n" +
@@ -101,7 +101,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
     typeCheckClass(
         "\\data BD-list (A : \\Type0) | nil | cons A (BD-list A) | snoc (BD-list A) A\n" +
         "  \\with | snoc (cons x xs) y => cons x (snoc xs y) | snoc nil x => cons x nil\n" +
-        "\\function length {A : \\Type0} (x : BD-list A) : Nat <= \\elim x\n" +
+        "\\function length {A : \\Type0} (x : BD-list A) : Nat => \\elim x\n" +
         "  | nil => 0\n" +
         "  | cons x xs => suc (length xs)\n" +
         "  | snoc xs x => suc (length xs)\n"
@@ -114,7 +114,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
         "\\data Z | pos Nat | neg Nat \n" +
         "\\with | neg zero => pos zero\n" +
         "\\function test (x : Z) =>" +
-            "\\let | f (x : Z) : Nat <= \\elim x\n" +
+            "\\let | f (x : Z) : Nat => \\elim x\n" +
             "          | pos x => 1\n" +
             "          | neg x => 0\n" +
             "\\in f x"
@@ -129,7 +129,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
         "         | loop right => base\n" +
         "\\data D Nat | D zero => di I | D _ => d\n" +
         "  \\with | di left => d | di right => d\n" +
-        "\\function test (x : Nat) (y : D x) : S <= \\elim x, y\n" +
+        "\\function test (x : Nat) (y : D x) : S => \\elim x, y\n" +
         "  | suc _, d => base\n" +
         "  | zero, d => base\n" +
         "  | zero, di i => loop i\n"
@@ -161,7 +161,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
   public void nestedCheck() {
     typeCheckClass(
       "\\data Z | pos Nat | neg Nat \\with | neg zero => pos zero\n" +
-      "\\function test (x y z : Z) : Nat <= \\elim x, y, z\n" +
+      "\\function test (x y z : Z) : Nat => \\elim x, y, z\n" +
       "  | pos zero, pos zero, neg zero => 0\n" +
       "  | _, _, _ => 1\n"
     , 1);
@@ -176,7 +176,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
         "\\field S' : \\Type0\n" +
         "\\field base' : S'\n" +
         "\\field loop' : I -> S'\n" +
-        "\\function test (s : S) : S' <= \\elim s" +
+        "\\function test (s : S) : S' => \\elim s" +
         "  | base => base'\n" +
         "  | loop i => loop' i\n", "", 1);
   }
@@ -196,7 +196,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
   public void cc() {
     typeCheckClass(
       "\\data Z | pos Nat | neg Nat \\with neg zero => pos zero\n" +
-      "\\function test (z : Z) : Nat <= \\elim z\n" +
+      "\\function test (z : Z) : Nat => \\elim z\n" +
           " | pos n => 0\n" +
           " | neg (suc n) => 1\n"
     );
@@ -206,7 +206,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
   public void ccOtherDirectionError() {
     typeCheckClass(
       "\\data Z | pos Nat | neg Nat \\with neg zero => pos zero\n" +
-      "\\function test (z : Z) : Nat <= \\elim z\n" +
+      "\\function test (z : Z) : Nat => \\elim z\n" +
           " | pos (suc n) => 0\n" +
           " | neg n => 1\n"
     , 1);
@@ -216,7 +216,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
   public void ccComplexBranch() {
     typeCheckClass(
       "\\data D | fst Nat | snd \\with | fst zero => snd | fst (suc _) => snd \n" +
-      "\\function test (d : D) : Nat <= \\elim d\n" +
+      "\\function test (d : D) : Nat => \\elim d\n" +
           " | snd => zero\n"
     );
   }
@@ -225,7 +225,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
   public void whatIfNormalizeError() {
     typeCheckClass(
         "\\data Z | pos Nat | neg Nat \\with neg zero => pos zero\n" +
-        "\\function test (x : Z) : Nat <= \\elim x\n" +
+        "\\function test (x : Z) : Nat => \\elim x\n" +
         " | neg x => 1\n" +
         " | pos x => 2\n"
     , 1);
@@ -236,7 +236,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
     typeCheckClass(
         "\\data D | d1 | d2 \\with d1 => d2\n"+
         "\\data E | e1 D | e2 D \\with e2 x => e1 d1\n"+
-        "\\function test (e : E) : Nat <= \\elim e\n" +
+        "\\function test (e : E) : Nat => \\elim e\n" +
         " | e2 d2 => 1\n" +
         " | e1 d1 => 2\n" +
         " | e1 d2 => 1\n"

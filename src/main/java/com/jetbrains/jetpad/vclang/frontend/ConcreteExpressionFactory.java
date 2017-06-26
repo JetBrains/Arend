@@ -81,15 +81,15 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.LetClause clet(String name, Concrete.Expression term) {
-    return new Concrete.LetClause(POSITION, name, cargs(), null, Abstract.Definition.Arrow.RIGHT, term);
+    return new Concrete.LetClause(POSITION, name, cargs(), null, term);
   }
 
   public static Concrete.LetClause clet(String name, List<Concrete.Argument> args, Concrete.Expression term) {
-    return new Concrete.LetClause(POSITION, name, args, null, Abstract.Definition.Arrow.RIGHT, term);
+    return new Concrete.LetClause(POSITION, name, args, null, term);
   }
 
-  public static Concrete.LetClause clet(String name, List<Concrete.Argument> args, Concrete.Expression resultType, Abstract.Definition.Arrow arrow, Concrete.Expression term) {
-    return new Concrete.LetClause(POSITION, name, args, resultType, arrow, term);
+  public static Concrete.LetClause clet(String name, List<Concrete.Argument> args, Concrete.Expression resultType, Concrete.Expression term) {
+    return new Concrete.LetClause(POSITION, name, args, resultType, term);
   }
 
   public static Concrete.LocalVariable ref(String name) {
@@ -184,8 +184,8 @@ public class ConcreteExpressionFactory {
     return new Concrete.CaseExpression(POSITION, expressions, clauses);
   }
 
-  public static Concrete.Clause cClause(List<Concrete.Pattern> patterns, Abstract.Definition.Arrow arrow, Concrete.Expression expr) {
-    return new Concrete.Clause(POSITION, patterns, arrow, expr);
+  public static Concrete.Clause cClause(List<Concrete.Pattern> patterns, Concrete.Expression expr) {
+    return new Concrete.Clause(POSITION, patterns, expr);
   }
 
   public static Concrete.UniverseExpression cUniverseInf(int level) {

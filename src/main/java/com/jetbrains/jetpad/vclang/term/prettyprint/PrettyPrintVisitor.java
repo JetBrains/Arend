@@ -463,7 +463,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     printIndent();
     myBuilder.append("| ");
 
-    if (clause.getArrow() != null && clause.getExpression() != null) {
+    if (clause.getExpression() != null) {
       new BinOpLayout(){
         @Override
         void printLeft(PrettyPrintVisitor pp) {
@@ -482,7 +482,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
         @Override
         String getOpText() {
-          return prettyArrow(clause.getArrow());
+          return "=>";
         }
       }.doPrettyPrint(this);
     } else {
@@ -577,14 +577,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
-  private static String prettyArrow(Abstract.Definition.Arrow arrow) {
-    switch (arrow) {
-      case LEFT: return " <= ";
-      case RIGHT: return " => ";
-      default: return null;
-    }
-  }
-
   public void prettyPrintLetClause(final Abstract.LetClause letClause, boolean printPipe) {
     if (printPipe) {
       myBuilder.append("| ");
@@ -610,11 +602,11 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
         @Override
         String getOpText() {
-          return prettyArrow(letClause.getArrow());
+          return "=>";
         }
       }.doPrettyPrint(this);
     } else {
-      myBuilder.append(prettyArrow(letClause.getArrow()));
+      myBuilder.append("=>");
       letClause.getTerm().accept(this, Abstract.LetExpression.PREC);
     }
   }
@@ -715,7 +707,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     final BinOpLayout r = new BinOpLayout(){
       @Override
       String getOpText() {
-        return def.getArrow() == Abstract.Definition.Arrow.RIGHT ? "=>" : "<=";
+        return "=>";
       }
 
       @Override

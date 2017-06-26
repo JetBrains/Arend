@@ -196,7 +196,6 @@ public class TypeCheckingElim {
 
     final List<List<Pattern>> patterns = new ArrayList<>();
     final List<Expression> expressions = new ArrayList<>();
-    final List<Abstract.Definition.Arrow> arrows = new ArrayList<>();
     clause_loop:
     for (Abstract.Clause clause : expr.getClauses()) {
       try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myVisitor.getContext())) {
@@ -239,7 +238,6 @@ public class TypeCheckingElim {
           expressions.add(null);
         }
         patterns.add(clausePatterns);
-        arrows.add(clause.getArrow());
       }
     }
 
@@ -247,7 +245,7 @@ public class TypeCheckingElim {
       return null;
     }
 
-    PatternsToElimTreeConversion.Result elimTreeResult = PatternsToElimTreeConversion.convert(origEliminatingArgs, patterns, expressions, arrows);
+    PatternsToElimTreeConversion.Result elimTreeResult = PatternsToElimTreeConversion.convert(origEliminatingArgs, patterns, expressions);
 
     if (elimTreeResult instanceof PatternsToElimTreeConversion.OKResult) {
       ElimTreeNode result = ((PatternsToElimTreeConversion.OKResult) elimTreeResult).elimTree;

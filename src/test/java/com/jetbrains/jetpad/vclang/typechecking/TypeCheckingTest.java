@@ -71,7 +71,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   public void testEither() {
     typeCheckClass(
         "\\data Either (A B : \\Type0) | inl A | inr B\n" +
-        "\\function fun {A B : \\Type0} (e : Either A B) : \\Set0 <= \\elim e\n" +
+        "\\function fun {A B : \\Type0} (e : Either A B) : \\Set0 => \\elim e\n" +
         "  | inl _ => Nat\n" +
         "  | inr _ => Nat\n" +
         "\\function test : fun (inl {Nat} {Nat} 0) => 0");
@@ -110,7 +110,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
     typeCheckClass(
         "\\function\n" +
         "transport {A : \\Type} (B : A -> \\Type) {a a' : A} (p : a = a') (b : B a)\n" +
-        "  <= coe (\\lam i => B (p @ i)) b right\n" +
+        "  => coe (\\lam i => B (p @ i)) b right\n" +
         "\n" +
         "\\function\n" +
         "foo (A : \\1-Type0) (B : A -> \\Type0) (a a' : A) (p : a = a') => transport B p");
@@ -129,7 +129,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   @Test
   public void interruptThreadTest() {
     typeCheckClass(
-      "\\function ack (m n : Nat) : Nat <= \\elim m, n | zero, n => suc n | suc m, zero => ack m 1 | suc m, suc n => ack m (ack (suc m) n)\n" +
+      "\\function ack (m n : Nat) : Nat => \\elim m, n | zero, n => suc n | suc m, zero => ack m 1 | suc m, suc n => ack m (ack (suc m) n)\n" +
       "\\function t : ack 4 4 = ack 4 4 => path (\\lam _ => ack 4 4)");
   }
 

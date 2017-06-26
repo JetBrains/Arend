@@ -36,7 +36,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
         "  \\field B : A -> \\Type0\n" +
         "}\n" +
         "\\view Y \\on X \\by A { B }\n" +
-        "\\function f (n : Nat) : \\oo-Type0 <= \\elim n | zero => Nat | suc n => Nat\n" +
+        "\\function f (n : Nat) : \\oo-Type0 => \\elim n | zero => Nat | suc n => Nat\n" +
         "\\instance Nat-X (n : Nat) => \\new Y { A => f n | B => \\lam n => Nat }", 1);
   }
 

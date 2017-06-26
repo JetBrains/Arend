@@ -203,7 +203,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void letTypeHasBoundVarError() {
     // \lam (F : \Pi {A : \Type0}  (a : A) -> \Type1) (f : \Pi {A : \Type0} (x : A) -> F x) =>
-    //   \let | x (y : Nat) : Nat <= \elim y | zero => zero
+    //   \let | x (y : Nat) : Nat => \elim y | zero => zero
     //                                       | suc x' => suc x' \in f x)
     Concrete.ReferableSourceNode y = ref("y");
     Concrete.ReferableSourceNode x_ = ref("x'");
@@ -212,9 +212,9 @@ public class ExpressionTest extends TypeCheckingTestCase {
     Concrete.ReferableSourceNode f = ref("f");
     Concrete.ReferableSourceNode a = ref("a");
     Concrete.Expression elimTree = cElim(Collections.singletonList(cVar(y)),
-        cClause(cPatterns(cConPattern(true, Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cDefCall(Prelude.ZERO.getAbstractDefinition())),
-        cClause(cPatterns(cConPattern(true, Prelude.SUC.getName(), cNamePattern(true, x_))), Abstract.Definition.Arrow.RIGHT, cSuc(cVar(x_))));
-    Concrete.LetClause x = clet("x", cargs(cTele(cvars(y), cNat())), cNat(), Abstract.Definition.Arrow.LEFT, elimTree);
+        cClause(cPatterns(cConPattern(true, Prelude.ZERO.getName())), cDefCall(Prelude.ZERO.getAbstractDefinition())),
+        cClause(cPatterns(cConPattern(true, Prelude.SUC.getName(), cNamePattern(true, x_))), cSuc(cVar(x_))));
+    Concrete.LetClause x = clet("x", cargs(cTele(cvars(y), cNat())), cNat(), elimTree);
     Concrete.Expression expr = cLam(cargs(
             cTele(cvars(F), cPi(ctypeArgs(cTele(false, cvars(A), cUniverseInf(0)), cTele(cvars(a), cVar(A))), cUniverseInf(1))),
             cTele(cvars(f), cPi(ctypeArgs(cTele(false, cvars(A), cUniverseInf(0)), cTele(cvars(x), cVar(A))), cApps(cVar(F), cVar(x))))),
@@ -237,7 +237,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void caseTranslation() {
     FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\function test (n : Nat) : Nat => \\case n, n | zero, _ => 0 | suc y, _ => y");
-    FunctionDefinition def2 = (FunctionDefinition) typeCheckDef("\\function test (n : Nat) => \\let | caseF (caseA : Nat) (caseB : Nat) : Nat <= \\elim caseA, caseB | zero, _ => 0 | suc y, _ => y \\in caseF n n");
+    FunctionDefinition def2 = (FunctionDefinition) typeCheckDef("\\function test (n : Nat) => \\let | caseF (caseA : Nat) (caseB : Nat) : Nat => \\elim caseA, caseB | zero, _ => 0 | suc y, _ => y \\in caseF n n");
     assertTrue(CompareVisitor.compare(new HashMap<>(Collections.singletonMap(def.getParameters(), def2.getParameters())),
         DummyEquations.getInstance(), Equations.CMP.EQ, def.getElimTree(), def2.getElimTree()));
   }

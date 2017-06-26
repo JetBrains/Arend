@@ -1216,7 +1216,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       } else {
         Result termResult = checkExpr(clause.getTerm(), expectedType == null ? null : expectedType.getExpr());
         if (termResult == null) return null;
-        elimTree = ExpressionFactory.top(links, new LeafElimTreeNode(clause.getArrow(), termResult.expression));
+        elimTree = ExpressionFactory.top(links, new LeafElimTreeNode(termResult.expression));
         resultType = expectedType != null ? expectedType : new TypeExpression(termResult.type, getSortOf(termResult.type.getType()));
       }
 

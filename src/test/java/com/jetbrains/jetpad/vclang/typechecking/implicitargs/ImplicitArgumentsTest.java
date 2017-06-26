@@ -399,11 +399,11 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     typeCheckClass(
         "\\function ($) {A B : \\Set0} (f : A -> B) (a : A) => f a\n" +
         "\\data Fin (n : Nat) | Fin n => fzero | Fin (suc n) => fsuc (Fin n)\n" +
-        "\\function unsuc {n : Nat} (x : Fin (suc n)) : Fin n <= \\elim n, x\n" +
+        "\\function unsuc {n : Nat} (x : Fin (suc n)) : Fin n => \\elim n, x\n" +
         "  | _, fzero => fzero\n" +
         "  | zero, fsuc x => fzero\n" +
         "  | suc n, fsuc x => fsuc (unsuc x)\n" +
-        "\\function foo {n : Nat} (x : Fin n) : Nat <= \\elim n\n" +
+        "\\function foo {n : Nat} (x : Fin n) : Nat => \\elim n\n" +
         "  | zero => zero\n" +
         "  | suc n' => foo $ unsuc x");
   }

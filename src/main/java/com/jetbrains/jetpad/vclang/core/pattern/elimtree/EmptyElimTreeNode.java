@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.core.pattern.elimtree;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
@@ -33,11 +32,6 @@ public class EmptyElimTreeNode extends ElimTreeNode {
 
   @Override
   public LeafElimTreeNode match(List<Expression> expressions) {
-    return null;
-  }
-
-  @Override
-  public Abstract.Definition.Arrow getArrow() {
     return null;
   }
 

@@ -28,17 +28,17 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
 
   @Test
   public void test31_1() {
-    typeCheckClass("\\function \\infixl 9 (++) (a b : Nat) : Nat <= \\elim a | suc a' => suc (a' ++ b) | zero => b;", 0);
+    typeCheckClass("\\function \\infixl 9 (++) (a b : Nat) : Nat => \\elim a | suc a' => suc (a' ++ b) | zero => b;", 0);
   }
 
   @Test
   public void test31_2() {
-    typeCheckClass("\\function \\infixl 9 (+) (a b : Nat) : Nat <= \\elim a | suc a' => suc (suc a' + b) | zero => b;", 1);
+    typeCheckClass("\\function \\infixl 9 (+) (a b : Nat) : Nat => \\elim a | suc a' => suc (suc a' + b) | zero => b;", 1);
   }
 
   private static final String minus =
-    "\\function \\infix 9 (-) (x y : Nat) : Nat <= \\elim x | zero => zero | suc x' => x' - (p y);\n" +
-      "\\where {\\function p (z : Nat) : Nat <= \\elim z | zero => zero | suc z' => z';}\n";
+    "\\function \\infix 9 (-) (x y : Nat) : Nat => \\elim x | zero => zero | suc x' => x' - (p y);\n" +
+      "\\where {\\function p (z : Nat) : Nat => \\elim z | zero => zero | suc z' => z';}\n";
 
   private static final String list =
     "\\data List (A : \\Type0) | nil | \\infixr 5 (:-:) A (List A)\n";
@@ -50,14 +50,14 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
 
   @Test
   public void test33() {
-    typeCheckClass(minus + "\\function \\infix 9 (/) (x y : Nat) : Nat <= div' x ((-).p x - y)\n" +
+    typeCheckClass(minus + "\\function \\infix 9 (/) (x y : Nat) : Nat => div' x ((-).p x - y)\n" +
       "\\where {\\function div' (x : Nat) (y' : Nat) : Nat =>\n" +
       "\\elim y' | zero => zero | suc y'' => suc (div' x (x - suc y''));}\n", 2);
   }
 
   @Test
   public void test34_2() {
-    typeCheckClass("\\function ack (x y : Nat) : Nat <= \\elim x, y\n" +
+    typeCheckClass("\\function ack (x y : Nat) : Nat => \\elim x, y\n" +
       "| zero, y => suc y\n" +
       "| suc x', zero => ack x' (suc zero)\n" +
       "| suc x', suc y' => ack (suc x') y';", 0);
@@ -65,7 +65,7 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
 
   @Test
   public void test36_1() {
-    typeCheckClass(list + "\\function flatten {A : \\Type0} (l : List (List A)) : List A <= \\elim l\n" +
+    typeCheckClass(list + "\\function flatten {A : \\Type0} (l : List (List A)) : List A => \\elim l\n" +
       "| nil => nil\n" +
       "| (:-:) (nil) xs => flatten xs\n" +
       "| (:-:) ((:-:) y ys) xs => y :-: flatten (ys :-: xs);", 0);
@@ -73,23 +73,23 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
 
   @Test
   public void test36_2() {
-    typeCheckClass(list + "\\function f {A : \\Type0} (l : List (List A)) : List A <= \\elim l | nil => nil | (:-:) x xs => g x xs;\n" +
-      "\\function g {A : \\Type0} (l : List A) (ls : List (List A)) : List A <= \\elim l | nil => f ls | (:-:) x xs => x :-: g xs ls;", 0);
+    typeCheckClass(list + "\\function f {A : \\Type0} (l : List (List A)) : List A => \\elim l | nil => nil | (:-:) x xs => g x xs;\n" +
+      "\\function g {A : \\Type0} (l : List A) (ls : List (List A)) : List A => \\elim l | nil => f ls | (:-:) x xs => x :-: g xs ls;", 0);
   }
 
   @Test
   public void test38_1() {
-    typeCheckClass(list + "\\function zip1 {A : \\Type0} (l1 l2 : List A) : List A <= \\elim l1\n" +
+    typeCheckClass(list + "\\function zip1 {A : \\Type0} (l1 l2 : List A) : List A => \\elim l1\n" +
       "| nil => l2\n" +
       "| (:-:) x xs => x :-: zip2 l2 xs;\n" +
-      "\\function zip2 {A : \\Type0} (l1 l2 : List A) : List A <= \\elim l1\n" +
+      "\\function zip2 {A : \\Type0} (l1 l2 : List A) : List A => \\elim l1\n" +
       "| nil => l2\n" +
       "| (:-:) x xs => x :-: zip1 l2 xs;\n", 0);
   }
 
   @Test
   public void test38_2() {
-    typeCheckClass(list + "\\function zip-bad {A : \\Type0} (l1 l2 : List A) : List A <= \\elim l1\n" +
+    typeCheckClass(list + "\\function zip-bad {A : \\Type0} (l1 l2 : List A) : List A => \\elim l1\n" +
       "| nil => l2\n" +
       "| (:-:) x xs => x :-: zip-bad l2 xs;", 1);
   }
@@ -97,7 +97,7 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
   @Test
   public void test310() {
     typeCheckClass("\\data ord | O | S (_ : ord) | Lim (_ : Nat -> ord)\n" +
-      "\\function addord (x y : ord) : ord <= \\elim x\n" +
+      "\\function addord (x y : ord) : ord => \\elim x\n" +
       "| O => y\n" +
       "| S x' => S (addord x' y)\n" +
       "| Lim f => Lim (\\lam z => addord (f z) y);", 0);
@@ -105,15 +105,15 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
 
   @Test
   public void test312_2() {
-    typeCheckClass("\\function h (x y : Nat) : Nat <= \\elim x, y\n" +
+    typeCheckClass("\\function h (x y : Nat) : Nat => \\elim x, y\n" +
       "| zero, zero => zero\n" +
       "| zero, suc y' => h zero y'\n" +
       "| suc x', y' => h x' y';\n" +
-      "\\function f (x y : Nat) : Nat <= \\elim x, y\n" +
+      "\\function f (x y : Nat) : Nat => \\elim x, y\n" +
       "| zero, _ => zero\n" +
       "| suc x', zero => zero\n" +
       "| suc x', suc y' => h (g x' (suc y')) (f (suc (suc (suc x'))) y');\n" +
-      "\\function g (x y : Nat) : Nat <= \\elim x, y\n" +
+      "\\function g (x y : Nat) : Nat => \\elim x, y\n" +
       "| zero, _ => zero\n" +
       "| suc x', zero => zero\n" +
       "| suc x', suc y' => h (f (suc x') (suc y')) (g x' (suc (suc y')));", 2);
@@ -136,8 +136,8 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
   @Test
   public void headerNoCycle() {
     typeCheckClass(
-      "\\function he1 (n : Nat) : Nat <= \\elim n | zero => 0 | suc n => he2 n @ right\n" +
-      "\\function he2 (n : Nat) : he1 n = he1 n <= \\elim n | zero => path (\\lam _ => he1 0) | suc n => path (\\lam _ => he1 (suc n))");
+      "\\function he1 (n : Nat) : Nat => \\elim n | zero => 0 | suc n => he2 n @ right\n" +
+      "\\function he2 (n : Nat) : he1 n = he1 n => \\elim n | zero => path (\\lam _ => he1 0) | suc n => path (\\lam _ => he1 (suc n))");
   }
 
   @Test
@@ -153,7 +153,7 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
     typeCheckClass(
       "\\function f (n : Nat) (x : g n (\\lam _ => 0) -> Nat) : Nat => 0\n" +
       "\\function g (n : Nat) (x : h n = h n -> Nat) : \\Set0 => Nat\n" +
-      "\\function h (n : Nat) : Nat <= \\elim n | zero => 0 | suc n => f n (\\lam _ => n)");
+      "\\function h (n : Nat) : Nat => \\elim n | zero => 0 | suc n => f n (\\lam _ => n)");
   }
 
   @Test
@@ -161,14 +161,14 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
     typeCheckClass(
       "\\function f (n : Nat) (x : g n (\\lam _ => 0) -> Nat) : Nat => 0\n" +
       "\\function g (n : Nat) (x : h n = h n -> Nat) => Nat\n" +
-      "\\function h (n : Nat) : Nat <= \\elim n | zero => 0 | suc n => f n (\\lam _ => n)", 2);
+      "\\function h (n : Nat) : Nat => \\elim n | zero => 0 | suc n => f n (\\lam _ => n)", 2);
   }
 
   @Test
   public void nonMonomialCallMatrixTest() {
     typeCheckClass(
       "\\data Int : \\Set0 | pos Nat | neg Nat \\with neg zero => pos zero\n" +
-      "\\function \\infixl 6 (+$) (n m : Int) : Int <= \\elim n\n" +
+      "\\function \\infixl 6 (+$) (n m : Int) : Int => \\elim n\n" +
       "  | pos zero => m\n" +
       "  | pos (suc n) => (pos n) +$ m\n" +
       "  | neg zero => m\n" +

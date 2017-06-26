@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -32,7 +31,7 @@ public class ParserTest extends NameResolverTestCase {
   @Test
   public void parseLetTyped() {
     Concrete.Expression expr = resolveNamesExpr("\\let | x : \\Type1 => \\Type0 \\in x");
-    Concrete.LetClause x = clet("x", cargs(), cUniverseStd(1), Abstract.Definition.Arrow.RIGHT, cUniverseStd(0));
+    Concrete.LetClause x = clet("x", cargs(), cUniverseStd(1), cUniverseStd(0));
     assertTrue(compareAbstract(cLet(clets(x), cVar(x)), expr));
   }
 
@@ -160,7 +159,7 @@ public class ParserTest extends NameResolverTestCase {
   public void elimManyMismatch() {
     parseClass("test",
         "\\data D Nat | D (suc n) => dsuc\n" +
-        "\\function tests (n : Nat) (d : D n) : Nat <= \\elim n, d\n" +
+        "\\function tests (n : Nat) (d : D n) : Nat => \\elim n, d\n" +
           "| suc n => 0", 1);
   }
 

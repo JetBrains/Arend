@@ -241,7 +241,6 @@ public final class Abstract {
 
   public interface Clause extends SourceNode {
     List<? extends Pattern> getPatterns();
-    Definition.Arrow getArrow();
     Expression getExpression();
   }
 
@@ -303,7 +302,6 @@ public final class Abstract {
   }
 
   public interface Definition extends ReferableSourceNode {
-    enum Arrow { LEFT, RIGHT }
     Precedence getPrecedence();
     Definition getParentDefinition();
     boolean isStatic();
@@ -311,7 +309,6 @@ public final class Abstract {
   }
 
   public interface Function extends ReferableSourceNode {
-    Definition.Arrow getArrow();
     Expression getTerm();
     List<? extends Argument> getArguments();
     Expression getResultType();

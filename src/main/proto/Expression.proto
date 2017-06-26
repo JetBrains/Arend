@@ -173,7 +173,6 @@ message ElimTreeNode {
     }
     message Leaf {
         repeated int32 matched_ref = 1;
-        bool arrow_left = 2;
         Expression expr = 3;
     }
     message Branch {

@@ -24,7 +24,6 @@ import com.jetbrains.jetpad.vclang.core.pattern.elimtree.EmptyElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -423,7 +422,7 @@ class DefinitionDeserialization {
     for (int ref : proto.getMatchedRefList()) {
       context.add((Binding)readBindingRef(ref));
     }
-    LeafElimTreeNode result = new LeafElimTreeNode(proto.getArrowLeft() ? Abstract.Definition.Arrow.LEFT : Abstract.Definition.Arrow.RIGHT, readExpr(proto.getExpr()));
+    LeafElimTreeNode result = new LeafElimTreeNode(readExpr(proto.getExpr()));
     result.setMatched(context);
     return result;
   }

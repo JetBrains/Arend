@@ -184,16 +184,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return Abstract.NamespaceCommandStatement.Kind.EXPORT;
   }
 
-  private Abstract.Definition.Arrow visitArrow(ArrowContext arrowCtx) {
-    if (arrowCtx instanceof ArrowLeftContext) {
-      return Abstract.Definition.Arrow.LEFT;
-    }
-    if (arrowCtx instanceof ArrowRightContext) {
-      return Abstract.Definition.Arrow.RIGHT;
-    }
-    throw new IllegalStateException();
-  }
-
   private Abstract.Precedence visitPrecedence(PrecedenceContext ctx) {
     return (Abstract.Precedence) visit(ctx);
   }
@@ -361,7 +351,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Concrete.Expression resultType = ctx.expr().size() == 2 ? visitExpr(ctx.expr(0)) : null;
     Concrete.Expression term = visitExpr(ctx.expr().size() == 2 ? ctx.expr(1) : ctx.expr(0));
     List<Concrete.Statement> statements = visitWhere(ctx.where());
-    Concrete.FunctionDefinition result = new Concrete.FunctionDefinition(tokenPosition(ctx.getStart()), visitName(ctx.name()), visitPrecedence(ctx.precedence()), visitFunctionArguments(ctx.tele()), resultType, visitArrow(ctx.arrow()), term, statements);
+    Concrete.FunctionDefinition result = new Concrete.FunctionDefinition(tokenPosition(ctx.getStart()), visitName(ctx.name()), visitPrecedence(ctx.precedence()), visitFunctionArguments(ctx.tele()), resultType, term, statements);
 
     for (Iterator<Concrete.Statement> iterator = statements.iterator(); iterator.hasNext(); ) {
       Concrete.Statement statement = iterator.next();
@@ -984,12 +974,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         return null;
       }
 
-      if (clauseCtx.arrow() == null) {
-        clauses.add(new Concrete.Clause(tokenPosition(clauseCtx.start), patterns, null, null));
-      } else {
-        Abstract.Definition.Arrow arrow = clauseCtx.arrow() instanceof ArrowRightContext ? Abstract.Definition.Arrow.RIGHT : Abstract.Definition.Arrow.LEFT;
-        clauses.add(new Concrete.Clause(tokenPosition(clauseCtx.getStart()), patterns, arrow, visitExpr(clauseCtx.expr())));
-      }
+      clauses.add(new Concrete.Clause(tokenPosition(clauseCtx.start), patterns, clauseCtx.expr() == null ? null : visitExpr(clauseCtx.expr())));
     }
 
     return ctx.elimCase() instanceof CaseContext ?
@@ -1001,7 +986,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.LetClause visitLetClause(LetClauseContext ctx) {
     List<Concrete.Argument> arguments = visitFunctionArguments(ctx.tele());
     Concrete.Expression resultType = ctx.typeAnnotation() == null ? null : visitExpr(ctx.typeAnnotation().expr());
-    return new Concrete.LetClause(tokenPosition(ctx.getStart()), ctx.ID().getText(), arguments, resultType, visitArrow(ctx.arrow()), visitExpr(ctx.expr()));
+    return new Concrete.LetClause(tokenPosition(ctx.getStart()), ctx.ID().getText(), arguments, resultType, visitExpr(ctx.expr()));
   }
 
   @Override

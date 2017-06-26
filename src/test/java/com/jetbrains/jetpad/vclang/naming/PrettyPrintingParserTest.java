@@ -56,7 +56,6 @@ public class PrettyPrintingParserTest extends NameResolverTest {
     assertTrue(compareAbstract(expectedType, actualType));
     assertNotNull(result.getTerm());
     assertEquals(cLam(new ArrayList<>(expected.getArguments()), expected.getTerm()), cLam(new ArrayList<>(result.getArguments()), result.getTerm()));
-    assertEquals(expected.getArrow(), result.getArrow());
   }
 
   @Test
@@ -111,7 +110,7 @@ public class PrettyPrintingParserTest extends NameResolverTest {
     Concrete.ReferableSourceNode t = ref("t");
     Concrete.ReferableSourceNode y = ref("y");
     Concrete.ReferableSourceNode z = ref("z");
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(POSITION, "f", Abstract.Precedence.DEFAULT, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), Abstract.Definition.Arrow.RIGHT, cLam(cargs(cName(t), cName(y), cName(z)), cApps(cVar(y), cVar(z))), Collections.emptyList());
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(POSITION, "f", Abstract.Precedence.DEFAULT, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), cLam(cargs(cName(t), cName(y), cName(z)), cApps(cVar(y), cVar(z))), Collections.emptyList());
     testDef(def, def);
   }
 

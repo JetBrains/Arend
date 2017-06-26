@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -32,7 +31,7 @@ public class PatternsToElimTreeConversion {
     }
   }
 
-  public static Result convert(DependentLink eliminatingArgs, List<List<Pattern>> patterns, List<Expression> expressions, List<Abstract.Definition.Arrow> arrows) {
+  public static Result convert(DependentLink eliminatingArgs, List<List<Pattern>> patterns, List<Expression> expressions) {
     MultiPatternsExpander.MultiElimTreeExpansionResult treeExpansionResult = MultiPatternsExpander.expandPatterns(eliminatingArgs, patterns);
     if (treeExpansionResult.branches.isEmpty())
       return new OKResult(treeExpansionResult.tree);
@@ -49,7 +48,6 @@ public class PatternsToElimTreeConversion {
         continue;
       }
 
-      branch.leaf.setArrow(arrows.get(branch.indices.get(0)));
       List<Pattern> curPatterns = patterns.get(branch.indices.get(0));
       ExprSubstitution subst = new ExprSubstitution();
       for (int i = 0; i < curPatterns.size(); i++) {

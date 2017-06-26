@@ -158,8 +158,8 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.LetClause makeLetClause(Abstract.ReferableSourceNode referable, List<? extends Abstract.Argument> arguments, Abstract.Expression resultType, Abstract.Definition.Arrow arrow, Abstract.Expression term) {
-    return clet(referable.getName(), (List<Concrete.Argument>) arguments, (Concrete.Expression) resultType, arrow, (Concrete.Expression) term);
+  public Abstract.LetClause makeLetClause(Abstract.ReferableSourceNode referable, List<? extends Abstract.Argument> arguments, Abstract.Expression resultType, Abstract.Expression term) {
+    return clet(referable.getName(), (List<Concrete.Argument>) arguments, (Concrete.Expression) resultType, (Concrete.Expression) term);
   }
 
   @Override
@@ -173,8 +173,8 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.Clause makeClause(List<? extends Abstract.Pattern> patterns, Abstract.Definition.Arrow arrow, Abstract.Expression expr) {
-    return cClause((List<Concrete.Pattern>) patterns, arrow, (Concrete.Expression) expr);
+  public Abstract.Clause makeClause(List<? extends Abstract.Pattern> patterns, Abstract.Expression expr) {
+    return cClause((List<Concrete.Pattern>) patterns, (Concrete.Expression) expr);
   }
 
   @Override

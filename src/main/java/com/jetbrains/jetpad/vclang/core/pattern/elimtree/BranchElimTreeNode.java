@@ -15,7 +15,6 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 
 import java.util.*;
@@ -161,11 +160,6 @@ public class BranchElimTreeNode extends ElimTreeNode {
   @Override
   public String toString() {
     return accept(new ToAbstractVisitor(new ConcreteExpressionFactory()), null).toString();
-  }
-
-  @Override
-  public Abstract.Definition.Arrow getArrow() {
-    return Abstract.Definition.Arrow.LEFT;
   }
 
   @Override

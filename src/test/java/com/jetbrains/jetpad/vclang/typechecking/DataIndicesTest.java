@@ -26,12 +26,12 @@ public class DataIndicesTest extends TypeCheckingTestCase {
       "  | Vector (suc n) A => \\infixr 5 (:^) A (Vector n A)\n" +
       "\n" +
       "\\function \\infixl 6\n" +
-      "(+) (x y : Nat) : Nat <= \\elim x\n" +
+      "(+) (x y : Nat) : Nat => \\elim x\n" +
       "  | zero => y\n" +
       "  | suc x' => suc (x' + y)\n" +
       "\n" +
       "\\function\n" +
-      "(+^) {n m : Nat} {A : \\Set0} (xs : Vector n A) (ys : Vector m A) : Vector (n + m) A <= \\elim n, xs\n" +
+      "(+^) {n m : Nat} {A : \\Set0} (xs : Vector n A) (ys : Vector m A) : Vector (n + m) A => \\elim n, xs\n" +
       "  | zero, vnil => ys\n" +
       "  | suc n', (:^) x xs' => x :^ xs' +^ ys\n" +
       "\n" +
