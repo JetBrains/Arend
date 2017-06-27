@@ -54,6 +54,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
       }
     }
 
+    Abstract.FunctionBody body = def.getBody();
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myNsProviders, scope, myContext, myNameResolver, myResolveListener);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       exprVisitor.visitArguments(def.getArguments());
@@ -63,7 +64,6 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
         resultType.accept(exprVisitor, null);
       }
 
-      Abstract.FunctionBody body = def.getBody();
       if (body instanceof Abstract.TermFunctionBody) {
         ((Abstract.TermFunctionBody) body).getTerm().accept(exprVisitor, null);
       }
@@ -71,7 +71,33 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
         for (Abstract.ReferenceExpression expression : ((Abstract.ElimFunctionBody) body).getExpressions()) {
           exprVisitor.visitReference(expression, null);
         }
-        exprVisitor.visitClauses(((Abstract.ElimFunctionBody) body).getClauses());
+      }
+    }
+
+    if (body instanceof Abstract.ElimFunctionBody) {
+      try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
+        List<? extends Abstract.ReferenceExpression> references = ((Abstract.ElimFunctionBody) body).getExpressions();
+        if (!references.isEmpty()) {
+          Set<Abstract.ReferableSourceNode> referables = new HashSet<>();
+          for (Abstract.ReferenceExpression reference : references) {
+            referables.add(reference.getReferent());
+          }
+          for (Abstract.Argument argument : def.getArguments()) {
+            if (argument instanceof Abstract.TelescopeArgument) {
+              for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeArgument) argument).getReferableList()) {
+                if (referable != null && referable.getName() != null && !referable.getName().equals("_") && !referables.contains(referable)) {
+                  myContext.add(referable);
+                }
+              }
+            } else if (argument instanceof Abstract.NameArgument) {
+              Abstract.ReferableSourceNode referable = ((Abstract.NameArgument) argument).getReferable();
+              if (referable != null && referable.getName() != null && !referable.getName().equals("_") && !referables.contains(referable)) {
+                myContext.add(referable);
+              }
+            }
+          }
+        }
+        exprVisitor.visitClauses(((Abstract.ElimFunctionBody) body).getClauses(), references.isEmpty() ? def.getArguments() : null);
       }
     }
 
@@ -144,7 +170,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
 
   private void visitPatterns(List<Abstract.Pattern> patterns, ExpressionResolveNameVisitor exprVisitor) {
     for (int i = 0; i < patterns.size(); i++) {
-      Abstract.Constructor constructor = exprVisitor.visitPattern(patterns.get(i));
+      Abstract.Constructor constructor = exprVisitor.visitPattern(patterns.get(i), new HashSet<>());
       if (constructor != null) {
         myResolveListener.replaceWithConstructor(patterns, i, constructor);
       }

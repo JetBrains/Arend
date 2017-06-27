@@ -340,4 +340,21 @@ public class PatternTest extends TypeCheckingTestCase {
       "  | suc m => m\n" +
       "  | zero => n");
   }
+
+  @Test
+  public void explicitAvailable() {
+    typeCheckClass(
+      "\\function tests {n : Nat} (m : Nat) : Nat\n" +
+      "  | {n}, suc m => n\n" +
+      "  | {k}, zero => k");
+  }
+
+  @Test
+  public void eliminateOverridden() {
+    typeCheckClass(
+      "\\function f (n : Nat) (n : Nat) : Nat => \\elim n\n" +
+      "  | suc _ => 2\n" +
+      "  | zero => n\n" +
+      "\\function g : f 1 0 = 1 => path (\\lam _ => 1)");
+  }
 }

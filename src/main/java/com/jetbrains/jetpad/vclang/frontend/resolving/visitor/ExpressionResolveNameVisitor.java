@@ -5,16 +5,14 @@ import com.jetbrains.jetpad.vclang.frontend.parser.BinOpParser;
 import com.jetbrains.jetpad.vclang.frontend.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
+import com.jetbrains.jetpad.vclang.naming.error.DuplicateName;
 import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.error.WrongDefinition;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<Void, Void> {
   private final NamespaceProviders myNsProviders;
@@ -98,6 +96,14 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
       if (argument instanceof Abstract.TelescopeArgument) {
         for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeArgument) argument).getReferableList()) {
           if (referable != null && referable.getName() != null && !referable.getName().equals("_")) {
+            for (Abstract.ReferableSourceNode referable1 : ((Abstract.TelescopeArgument) argument).getReferableList()) {
+              if (referable1 == referable) {
+                break;
+              }
+              if (referable1 != null && referable.getName().equals(referable1.getName())) {
+                myResolveListener.report(new DuplicateName(referable1));
+              }
+            }
             myContext.add(referable);
           }
         }
@@ -217,11 +223,12 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
     return null;
   }
 
-  public void visitClauses(List<? extends Abstract.Clause> clauses) {
+  void visitClauses(List<? extends Abstract.Clause> clauses, List<? extends Abstract.Argument> arguments) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       for (Abstract.Clause clause : clauses) {
+        Set<String> usedNames = new HashSet<>();
         for (int i = 0; i < clause.getPatterns().size(); i++) {
-          Abstract.Constructor constructor = visitPattern(clause.getPatterns().get(i));
+          Abstract.Constructor constructor = visitPattern(clause.getPatterns().get(i), usedNames);
           if (constructor != null) {
             myResolveListener.replaceWithConstructor(clause, i, constructor);
           }
@@ -239,11 +246,11 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
     for (Abstract.Expression expression : expr.getExpressions()) {
       expression.accept(this, null);
     }
-    visitClauses(expr.getClauses());
+    visitClauses(expr.getClauses(), null);
     return null;
   }
 
-  Abstract.Constructor visitPattern(Abstract.Pattern pattern) {
+  Abstract.Constructor visitPattern(Abstract.Pattern pattern, Set<String> usedNames) {
     if (pattern instanceof Abstract.NamePattern) {
       String name = ((Abstract.NamePattern) pattern).getName();
       if (name == null) return null;
@@ -251,13 +258,19 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
       if (ref != null && ref instanceof Abstract.Constructor) {
         return (Abstract.Constructor) ref;
       } else {
-        myContext.add(((Abstract.NamePattern) pattern).getReferent());
+        Abstract.ReferableSourceNode referable = ((Abstract.NamePattern) pattern).getReferent();
+        if (referable != null && referable.getName() != null && !referable.getName().equals("_")) {
+          if (!usedNames.add(referable.getName())) {
+            myResolveListener.report(new DuplicateName(referable));
+          }
+          myContext.add(referable);
+        }
         return null;
       }
     } else if (pattern instanceof Abstract.ConstructorPattern) {
       List<Abstract.Pattern> patterns = ((Abstract.ConstructorPattern) pattern).getArguments();
       for (int i = 0; i < patterns.size(); i++) {
-        Abstract.Constructor constructor = visitPattern(patterns.get(i));
+        Abstract.Constructor constructor = visitPattern(patterns.get(i), usedNames);
         if (constructor != null) {
           myResolveListener.replaceWithConstructor(patterns, i, constructor);
         }
@@ -283,7 +296,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
       if (((Abstract.ConstructorPattern) pattern).getConstructor() == null) {
         String name = ((Abstract.ConstructorPattern) pattern).getConstructorName();
         Abstract.Definition definition = myParentScope.resolveName(name);
-        if (definition instanceof Abstract.Constructor) { // TODO: Better resolving of constructors
+        if (definition instanceof Abstract.Constructor) {
           myResolveListener.patternResolved((Abstract.ConstructorPattern) pattern, (Abstract.Constructor) definition);
         }
       }
