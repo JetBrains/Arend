@@ -6,7 +6,10 @@ import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvi
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
-import com.jetbrains.jetpad.vclang.module.caching.*;
+import com.jetbrains.jetpad.vclang.module.caching.CacheManager;
+import com.jetbrains.jetpad.vclang.module.caching.CachePersistenceException;
+import com.jetbrains.jetpad.vclang.module.caching.CacheStorageSupplier;
+import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.SimpleModuleLoader;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
@@ -15,7 +18,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
-import com.jetbrains.jetpad.vclang.typechecking.order.BaseDependencyListener;
+import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -99,7 +102,7 @@ public class PreludeCacheGenerator {
     CacheManager<PreludeStorage.SourceId> cacheManager = new CacheManager<>(new PreludePersistenceProvider(), new PreludeBuildCacheSupplier(Paths.get(args[0])), new PreludeDefLocator(storage.preludeSourceId));
     Abstract.ClassDefinition prelude = moduleLoader.load(storage.preludeSourceId);
     if (!errorReporter.getErrorList().isEmpty()) throw new IllegalStateException();
-    new Typechecking(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, errorReporter, new Prelude.UpdatePreludeReporter(cacheManager.getTypecheckerState()), new BaseDependencyListener()).typecheckModules(Collections.singleton(prelude));
+    new Typechecking(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, errorReporter, new Prelude.UpdatePreludeReporter(cacheManager.getTypecheckerState()), new DependencyListener() {}).typecheckModules(Collections.singleton(prelude));
     try {
       cacheManager.persistCache(storage.preludeSourceId);
     } catch (CachePersistenceException e) {

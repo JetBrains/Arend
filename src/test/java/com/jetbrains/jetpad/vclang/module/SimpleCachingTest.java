@@ -1,17 +1,40 @@
 package com.jetbrains.jetpad.vclang.module;
 
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.typechecking.Matchers.*;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 
 public class SimpleCachingTest extends CachingTestCase {
+  @Test
+  public void statusSerialization() {
+    MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "" +
+        "\\function a : \\Set0 => \\Prop\n" +
+        "\\function b1 : \\Set0 => \\Set0\n" +
+        "\\function b2 : \\Set0 => b1");
+    Abstract.ClassDefinition aClass = moduleLoader.load(a);
+
+    typecheck(aClass, 2);
+    errorList.clear();
+
+    Definition.TypeCheckingStatus aStatus = tcState.getTypechecked(get(aClass, "a")).status();
+    Definition.TypeCheckingStatus b1Status = tcState.getTypechecked(get(aClass, "b1")).status();
+    Definition.TypeCheckingStatus b2Status = tcState.getTypechecked(get(aClass, "b2")).status();
+
+    persist(a);
+    tcState.reset();
+
+    load(a, aClass);
+    assertThat(tcState.getTypechecked(get(aClass, "a")).status(), is(equalTo(aStatus)));
+    assertThat(tcState.getTypechecked(get(aClass, "b1")).status(), is(equalTo(b1Status)));
+    assertThat(tcState.getTypechecked(get(aClass, "b2")).status(), is(equalTo(b2Status)));
+  }
+
   @Test
   public void circularDependencies() {
     loadPrelude();

@@ -367,7 +367,7 @@ class DefinitionDeserialization {
     for (int ref : proto.getContextTailItemRefList()) {
       contextTail.add((Binding)readBindingRef(ref));
     }
-    BranchElimTreeNode result = new BranchElimTreeNode((Binding)readBindingRef(proto.getReferenceRef()), contextTail);
+    BranchElimTreeNode result = new BranchElimTreeNode((Binding)readBindingRef(proto.getReferenceRef()), contextTail, proto.getIsInterval());
     for (Map.Entry<Integer, ExpressionProtos.ElimTreeNode.ConstructorClause> entry : proto.getConstructorClausesMap().entrySet()) {
       ExpressionProtos.ElimTreeNode.ConstructorClause cProto = entry.getValue();
       DependentLink constructorParams = readParameters(cProto.getParamList());

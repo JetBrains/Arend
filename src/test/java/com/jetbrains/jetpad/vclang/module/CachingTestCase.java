@@ -15,7 +15,7 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
-import com.jetbrains.jetpad.vclang.typechecking.order.BaseDependencyListener;
+import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import org.junit.Before;
 
 import java.io.IOException;
@@ -25,9 +25,7 @@ import java.io.Reader;
 import java.net.URI;
 import java.util.*;
 
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 
 public class CachingTestCase extends NameResolverTestCase {
@@ -67,7 +65,7 @@ public class CachingTestCase extends NameResolverTestCase {
       public void typecheckingFailed(Abstract.Definition definition) {
         typecheckingFailed.add(definition);
       }
-    }, new BaseDependencyListener());
+    }, new DependencyListener() {});
   }
 
   @Override
@@ -98,7 +96,7 @@ public class CachingTestCase extends NameResolverTestCase {
     storage.setPreludeNamespace(staticNsProvider.forDefinition(prelude));
     srcInfoCollector.visitModule(sourceId, prelude);
 
-    new Typechecking(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(cacheManager.getTypecheckerState()), new BaseDependencyListener()).typecheckModules(Collections.singleton(this.prelude));
+    new Typechecking(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(cacheManager.getTypecheckerState()), new DependencyListener() {}).typecheckModules(Collections.singleton(this.prelude));
   }
 
   protected void typecheck(Abstract.ClassDefinition module) {

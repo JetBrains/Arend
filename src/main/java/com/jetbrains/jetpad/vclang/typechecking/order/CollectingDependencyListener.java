@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class CollectingDependencyListener extends BaseDependencyListener {
+public class CollectingDependencyListener implements DependencyListener {
   private final Map<Abstract.Definition, Set<Typecheckable>> myDependencies = new HashMap<>();
 
   @Override

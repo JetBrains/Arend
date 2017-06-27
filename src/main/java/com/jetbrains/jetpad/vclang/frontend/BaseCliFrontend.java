@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
@@ -24,7 +25,7 @@ import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TerminationCheckError;
-import com.jetbrains.jetpad.vclang.typechecking.order.BaseDependencyListener;
+import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -205,13 +206,6 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
   }
 
-
-  protected abstract StaticNamespaceProvider getStaticNsProvider();
-  protected abstract DynamicNamespaceProvider getDynamicNsProvider();
-  protected abstract PersistenceProvider<SourceIdT> createPersistenceProvider();
-  protected abstract String displaySource(SourceIdT source, boolean modulePathOnly);
-
-
   protected Abstract.ClassDefinition loadPrelude() {
     Abstract.ClassDefinition prelude = moduleLoader.load(moduleLoader.locateModule(PreludeStorage.PRELUDE_MODULE_PATH));
     assert errorReporter.getErrorList().isEmpty();
@@ -224,8 +218,139 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     if (!cacheLoaded) {
       throw new IllegalStateException("Prelude cache is not available");
     }
-    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(state), new BaseDependencyListener()).typecheckModules(Collections.singletonList(prelude));
+    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(state), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
     return prelude;
+  }
+
+
+  protected abstract StaticNamespaceProvider getStaticNsProvider();
+  protected abstract DynamicNamespaceProvider getDynamicNsProvider();
+  protected abstract PersistenceProvider<SourceIdT> createPersistenceProvider();
+  protected abstract String displaySource(SourceIdT source, boolean modulePathOnly);
+
+
+  private void requestFileTypechecking(Path path) {
+    String fileName = path.getFileName().toString();
+    if (!fileName.endsWith(FileStorage.EXTENSION)) return;
+
+    Path sourcePath = path.resolveSibling(fileName.substring(0, fileName.length() - FileStorage.EXTENSION.length()));
+    ModulePath modulePath = FileStorage.modulePath(sourcePath);
+    if (modulePath == null) {
+      System.err.println("[Not found] " + path + " is an illegal module path");
+      return;
+    }
+    SourceIdT sourceId = storage.locateModule(modulePath);
+    if (sourceId == null || !storage.isAvailable(sourceId)) {
+      System.err.println("[Not found] " + path + " is not available");
+      return;
+    }
+    requestedSources.add(sourceId);
+  }
+
+  private enum ModuleResult { UNKNOWN, OK, GOALS, NOT_LOADED, ERRORS }
+
+  private Map<SourceIdT, ModuleResult> typeCheckSources(Set<SourceIdT> sources) {
+    final Map<SourceIdT, ModuleResult> results = new LinkedHashMap<>();
+
+    final Set<Abstract.ClassDefinition> modulesToTypeCheck = new LinkedHashSet<>();
+    for (SourceIdT source : sources) {
+      Abstract.ClassDefinition definition = loadedSources.get(source);
+      if (definition == null){
+        definition = moduleLoader.load(source);
+        if (definition == null) {
+          results.put(source, ModuleResult.NOT_LOADED);
+          continue;
+        }
+        try {
+          cacheManager.loadCache(source, definition);
+        } catch (CacheLoadingException e) {
+          e.printStackTrace();
+        }
+        flushErrors();
+      }
+      modulesToTypeCheck.add(definition);
+    }
+
+    System.out.println("--- Checking ---");
+
+    class ResultTracker implements ErrorReporter, DependencyListener, TypecheckedReporter {
+      @Override
+      public void report(GeneralError error) {
+        final ModuleResult newResult;
+        switch (error.level) {
+          case ERROR:
+            newResult = ModuleResult.ERRORS;
+            break;
+          case GOAL:
+            newResult = ModuleResult.GOALS;
+            break;
+          default:
+            newResult = ModuleResult.OK;
+        }
+
+        updateSourceResult(srcInfoProvider.sourceOf(sourceDefinitionOf(error)), newResult);
+
+        errorReporter.report(error);
+      }
+
+      @Override
+      public void alreadyTypechecked(Abstract.Definition definition) {
+        Definition.TypeCheckingStatus status = state.getTypechecked(definition).status();
+        if (status != Definition.TypeCheckingStatus.NO_ERRORS) {
+          updateSourceResult(srcInfoProvider.sourceOf(definition), status != Definition.TypeCheckingStatus.HAS_ERRORS ? ModuleResult.ERRORS : ModuleResult.UNKNOWN);
+        }
+      }
+
+      @Override
+      public void typecheckingFailed(Abstract.Definition definition) {
+        flushErrors();
+      }
+
+      private Abstract.Definition sourceDefinitionOf(GeneralError error) {
+        if (error instanceof TypeCheckingError) {
+          return ((TypeCheckingError) error).definition;
+        } else if (error instanceof TerminationCheckError) {
+          return ((TerminationCheckError) error).definition;
+        } else {
+          throw new IllegalStateException("Non-typechecking error reported to typechecking reporter");
+        }
+      }
+
+      private void updateSourceResult(SourceIdT source, ModuleResult result) {
+        ModuleResult prevResult = results.get(source);
+        if (prevResult == null || result.ordinal() > prevResult.ordinal()) {
+          results.put(source, result);
+        }
+      }
+    }
+    ResultTracker resultTracker = new ResultTracker();
+
+    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), resultTracker, resultTracker, resultTracker).typecheckModules(modulesToTypeCheck);
+
+    return results;
+  }
+
+
+  private void reportTypeCheckResult(SourceIdT source, ModuleResult result) {
+    StringBuilder builder = new StringBuilder();
+    builder.append("[").append(resultChar(result)).append("]");
+    builder.append(" ").append(displaySource(source, true));
+    System.out.println(builder);
+  }
+
+  private static char resultChar(ModuleResult result) {
+    switch (result) {
+      case NOT_LOADED:
+        return '✗';
+      case OK:
+        return ' ';
+      case GOALS:
+        return '◯';
+      case ERRORS:
+        return '✗';
+      default:
+        return '·';
+    }
   }
 
   public void run(final Path sourceDir, Collection<String> argFiles) {
@@ -293,125 +418,10 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
   }
 
-  private void reportTypeCheckResult(SourceIdT source, ModuleResult result) {
-    StringBuilder builder = new StringBuilder();
-    builder.append("[").append(resultChar(result)).append("]");
-    builder.append(" ").append(displaySource(source, true));
-    System.out.println(builder);
-  }
-
-  private static char resultChar(ModuleResult result) {
-    switch (result) {
-      case NOT_LOADED:
-        return '✗';
-      case OK:
-        return '✓';
-      case GOALS:
-        return '◯';
-      case ERRORS:
-        return '✗';
-      default:
-        return ' ';
-    }
-  }
-
-  private Map<SourceIdT, ModuleResult> typeCheckSources(Set<SourceIdT> sources) {
-    final Map<SourceIdT, ModuleResult> results = new LinkedHashMap<>();
-
-    final Set<Abstract.ClassDefinition> modulesToTypeCheck = new LinkedHashSet<>();
-    for (SourceIdT source : sources) {
-      Abstract.ClassDefinition definition = loadedSources.get(source);
-      if (definition == null){
-        definition = moduleLoader.load(source);
-        if (definition == null) {
-          results.put(source, ModuleResult.NOT_LOADED);
-          continue;
-        }
-        try {
-          cacheManager.loadCache(source, definition);
-        } catch (CacheLoadingException e) {
-          e.printStackTrace();
-        }
-        flushErrors();
-      }
-      modulesToTypeCheck.add(definition);
-    }
-
-    System.out.println("--- Checking ---");
-
-    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), new ErrorReporter() {
-      @Override
-      public void report(GeneralError error) {
-        final ModuleResult newResult;
-        switch (error.level) {
-          case ERROR:
-            newResult = ModuleResult.ERRORS;
-            break;
-          case GOAL:
-            newResult = ModuleResult.GOALS;
-            break;
-          default:
-            newResult = ModuleResult.OK;
-        }
-
-        updateSourceResult(srcInfoProvider.sourceOf(sourceDefinitionOf(error)), newResult);
-
-        errorReporter.report(error);
-      }
-
-      private Abstract.Definition sourceDefinitionOf(GeneralError error) {
-        if (error instanceof TypeCheckingError) {
-          return ((TypeCheckingError) error).definition;
-        } else if (error instanceof TerminationCheckError) {
-          return ((TerminationCheckError) error).definition;
-        } else {
-          throw new IllegalStateException("Non-typechecking error reported to typechecking reporter");
-        }
-      }
-
-      private void updateSourceResult(SourceIdT source, ModuleResult result) {
-        ModuleResult prevResult = results.get(source);
-        if (prevResult == null || result.ordinal() > prevResult.ordinal()) {
-          results.put(source, result);
-        }
-      }
-    }, new TypecheckedReporter() {
-      @Override
-      public void typecheckingSucceeded(Abstract.Definition definition) {
-      }
-      @Override
-      public void typecheckingFailed(Abstract.Definition definition) {
-        flushErrors();
-      }
-    }, new BaseDependencyListener()).typecheckModules(modulesToTypeCheck);
-
-    return results;
-  }
-
   private void flushErrors() {
     for (GeneralError error : errorReporter.getErrorList()) {
       System.out.println(errf.printError(error));
     }
     errorReporter.getErrorList().clear();
-  }
-
-  private enum ModuleResult { UNKNOWN, OK, GOALS, NOT_LOADED, ERRORS }
-
-  private void requestFileTypechecking(Path path) {
-    String fileName = path.getFileName().toString();
-    if (!fileName.endsWith(FileStorage.EXTENSION)) return;
-
-    Path sourcePath = path.resolveSibling(fileName.substring(0, fileName.length() - FileStorage.EXTENSION.length()));
-    ModulePath modulePath = FileStorage.modulePath(sourcePath);
-    if (modulePath == null) {
-      System.err.println("[Not found] " + path + " is an illegal module path");
-      return;
-    }
-    SourceIdT sourceId = storage.locateModule(modulePath);
-    if (sourceId == null || !storage.isAvailable(sourceId)) {
-      System.err.println("[Not found] " + path + " is not available");
-      return;
-    }
-    requestedSources.add(sourceId);
   }
 }
