@@ -277,7 +277,7 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
     return null;
   }
 
-   terstatic class ParameterVector {
+   static class ParameterVector {
     private List<Expression> myParts;
 
     ParameterVector (List<Expression> list) {
