@@ -36,8 +36,7 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
     myCycle = cycle;
     ParameterVector pv = new ParameterVector(def);
     if (def.getElimTree() != null) {
-      //TODO: Remove this comment
-      //pv.doCollectCalls(def.getElimTree(), this);
+      pv.doCollectCalls(def.getElimTree(), this);
     }
   }
 
@@ -317,8 +316,9 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
           dl = dl.getNext();
         }
         for (Map.Entry<BranchElimTree.Pattern, ElimTree> entry : branchElimTree.getChildren()) {
+          ParameterVector newpv;
           if (entry.getKey().equals(BranchElimTree.Pattern.ANY)) {
-            //Nothing to substitute
+            newpv = this;
           } else if (entry.getKey() instanceof Constructor) {
             Constructor cons = (Constructor) entry.getKey();
             ExprSubstitution exprSubst = new ExprSubstitution();
@@ -333,16 +333,15 @@ public class CollectCallVisitor implements ElimTreeNodeVisitor<ParameterVector, 
               dl = dl.getNext();
             }
             DependentLink current = links2.get(0);
-            links2.remove(0);
-            newpvList.addAll(links2);
+            newpvList.addAll(links2.subList(1, links2.size()));
 
             DataCallExpression dataCall = current.getType().getExpr().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
             exprSubst.add(current, new ConCallExpression(cons, dataCall.getSortArgument(), cons.matchDataTypeArguments(new ArrayList<>(dataCall.getDefCallArguments())), refList));
-            ParameterVector newpv = new ParameterVector(this, new SubstVisitor(exprSubst, LevelSubstitution.EMPTY));
+            newpv = new ParameterVector(this, new SubstVisitor(exprSubst, LevelSubstitution.EMPTY));
             newpv.myLinks = newpvList;
-
-            newpv.doCollectCalls(entry.getValue(), collectCallVisitor);
-          }
+            //TODO: entry.getValue() bindings are unrelated with "cons" bindings for some reason -- fix this somehow
+          } else throw new IllegalStateException();
+          newpv.doCollectCalls(entry.getValue(), collectCallVisitor);
         }
       }
     }
