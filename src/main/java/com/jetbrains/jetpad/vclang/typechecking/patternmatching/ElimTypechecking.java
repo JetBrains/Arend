@@ -32,10 +32,10 @@ public class ElimTypechecking {
   private final boolean myAllowInterval;
   private Expression myExpectedType;
   private boolean myOK;
-  private Stack<CoverageChecking.ClauseElem> myContext;
+  private Stack<Util.ClauseElem> myContext;
 
   private static final int MISSING_CLAUSES_LIST_SIZE = 10;
-  private List<List<CoverageChecking.ClauseElem>> myMissingClauses;
+  private List<List<Util.ClauseElem>> myMissingClauses;
 
   public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, boolean allowInterval) {
     myVisitor = visitor;
@@ -105,7 +105,7 @@ public class ElimTypechecking {
 
     if (myMissingClauses != null && !myMissingClauses.isEmpty()) {
       final List<DependentLink> finalElimParams = elimParams;
-      myVisitor.getErrorReporter().report(new MissingClausesError(myMissingClauses.stream().map(missingClause -> CoverageChecking.unflattenMissingClause(missingClause, patternTypes, finalElimParams)).collect(Collectors.toList()), body));
+      myVisitor.getErrorReporter().report(new MissingClausesError(myMissingClauses.stream().map(missingClause -> Util.unflattenMissingClause(missingClause, patternTypes, finalElimParams)).collect(Collectors.toList()), body));
     }
     if (!myOK) {
       return null;
@@ -152,7 +152,7 @@ public class ElimTypechecking {
       // Make new list of variables
       DependentLink vars = index == 0 ? EmptyDependentLink.getInstance() : ((BindingPattern) clauseDataList.get(0).patterns.get(0)).getBinding().subst(clauseDataList.get(0).substitution, LevelSubstitution.EMPTY, index);
       for (DependentLink link = vars; link.hasNext(); link = link.getNext()) {
-        myContext.push(new CoverageChecking.PatternClauseElem(new BindingPattern(link)));
+        myContext.push(new Util.PatternClauseElem(new BindingPattern(link)));
       }
 
       // Update substitution for each clause
@@ -221,7 +221,7 @@ public class ElimTypechecking {
               }
             }
 
-            myContext.push(new CoverageChecking.ConstructorClauseElem(constructor));
+            myContext.push(new Util.ConstructorClauseElem(constructor));
             addMissingClause(new ArrayList<>(myContext));
             myContext.pop();
           }
@@ -231,7 +231,7 @@ public class ElimTypechecking {
       Map<BranchElimTree.Pattern, ElimTree> children = new HashMap<>();
       for (Map.Entry<Constructor, List<ClauseData>> entry : constructorMap.entrySet()) {
         List<ClauseData> conClauseDataList = entry.getValue();
-        myContext.push(new CoverageChecking.ConstructorClauseElem(entry.getKey()));
+        myContext.push(new Util.ConstructorClauseElem(entry.getKey()));
 
         for (int i = 0; i < conClauseDataList.size(); i++) {
           List<Pattern> patterns = new ArrayList<>();
@@ -287,7 +287,7 @@ public class ElimTypechecking {
           }
         }
 
-        myContext.push(new CoverageChecking.PatternClauseElem(varClauseDataList.get(0).patterns.get(index)));
+        myContext.push(new Util.PatternClauseElem(varClauseDataList.get(0).patterns.get(index)));
         ElimTree elimTree = clausesToElimTree(varClauseDataList);
         if (elimTree == null) {
           myOK = false;
@@ -301,7 +301,7 @@ public class ElimTypechecking {
     }
   }
 
-  private void addMissingClause(List<CoverageChecking.ClauseElem> clause) {
+  private void addMissingClause(List<Util.ClauseElem> clause) {
     myOK = false;
     if (myMissingClauses == null) {
       myMissingClauses = new ArrayList<>(MISSING_CLAUSES_LIST_SIZE);

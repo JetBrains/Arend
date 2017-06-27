@@ -2,24 +2,21 @@ package com.jetbrains.jetpad.vclang.typechecking.patternmatching;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.elimtree.BindingPattern;
-import com.jetbrains.jetpad.vclang.core.elimtree.ConstructorPattern;
-import com.jetbrains.jetpad.vclang.core.elimtree.Pattern;
+import com.jetbrains.jetpad.vclang.core.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
-class CoverageChecking {
-  interface ClauseElem {
+public class Util {
+  public interface ClauseElem {
   }
 
-  static class PatternClauseElem implements ClauseElem {
+  public static class PatternClauseElem implements ClauseElem {
     public Pattern pattern;
 
     PatternClauseElem(Pattern pattern) {
@@ -27,7 +24,7 @@ class CoverageChecking {
     }
   }
 
-  static class ConstructorClauseElem implements ClauseElem {
+  public static class ConstructorClauseElem implements ClauseElem {
     public Constructor constructor;
 
     ConstructorClauseElem(Constructor constructor) {
@@ -35,7 +32,42 @@ class CoverageChecking {
     }
   }
 
-  static List<Expression> unflattenMissingClause(List<ClauseElem> clauseElems, DependentLink parameters, List<DependentLink> elimParams) {
+  public static class ElimTreeWalker {
+    private final Stack<ClauseElem> myStack = new Stack<>();
+    private final BiConsumer<List<Expression>, Expression> myConsumer;
+
+    public ElimTreeWalker(BiConsumer<List<Expression>, Expression> consumer) {
+      myConsumer = consumer;
+    }
+
+    public void walk(ElimTree elimTree) {
+      for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
+        myStack.push(new PatternClauseElem(new BindingPattern(link)));
+      }
+      if (elimTree instanceof LeafElimTree) {
+        myConsumer.accept(unflattenMissingClause(new ArrayList<>(myStack)), ((LeafElimTree) elimTree).getExpression());
+      } else {
+        for (Map.Entry<BranchElimTree.Pattern, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
+          if (entry.getKey() instanceof Constructor) {
+            myStack.push(new ConstructorClauseElem((Constructor) entry.getKey()));
+          }
+          walk(entry.getValue());
+          if (entry.getKey() instanceof Constructor) {
+            myStack.pop();
+          }
+        }
+      }
+      for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
+        myStack.pop();
+      }
+    }
+  }
+
+  public static List<Expression> unflattenMissingClause(List<ClauseElem> clauseElems) {
+    return unflattenMissingClause(clauseElems, null, null);
+  }
+
+  public static List<Expression> unflattenMissingClause(List<ClauseElem> clauseElems, DependentLink parameters, List<DependentLink> elimParams) {
     for (int i = clauseElems.size() - 1; i >= 0; i--) {
       if (clauseElems.get(i) instanceof ConstructorClauseElem) {
         Constructor constructor = ((ConstructorClauseElem) clauseElems.get(i)).constructor;
@@ -54,8 +86,10 @@ class CoverageChecking {
       }
     }
 
-    for (DependentLink link = DependentLink.Helper.get(parameters, clauseElems.size()); link.hasNext(); link = link.getNext()) {
-      clauseElems.add(new PatternClauseElem(new BindingPattern(link)));
+    if (parameters != null) {
+      for (DependentLink link = DependentLink.Helper.get(parameters, clauseElems.size()); link.hasNext(); link = link.getNext()) {
+        clauseElems.add(new PatternClauseElem(new BindingPattern(link)));
+      }
     }
 
     if (elimParams != null) {
