@@ -265,6 +265,15 @@ public class PatternTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void withoutElimLess() {
+    typeCheckClass(
+      "\\data D Nat | D (suc n) => dsuc\n" +
+      "\\function tests (n : Nat) (d : D n) : Nat\n" +
+      "  | suc n => 0\n" +
+      "  | zero => 0", 2);
+  }
+
+  @Test
   public void elimMore() {
     typeCheckClass(
       "\\function tests (n m : Nat) : Nat => \\elim n\n" +
@@ -280,6 +289,14 @@ public class PatternTest extends TypeCheckingTestCase {
       "  | zero, zero => 0\n" +
       "  | suc n, suc m => 0\n" +
       "  | zero, suc m => 0", 1);
+  }
+
+  @Test
+  public void withoutElimMore() {
+    typeCheckClass(
+      "\\function tests (n : Nat) : Nat\n" +
+        "  | suc n, zero => 0\n" +
+        "  | zero, suc m => 0", 2);
   }
 
   @Test
@@ -305,7 +322,7 @@ public class PatternTest extends TypeCheckingTestCase {
     typeCheckClass(
       "\\function tests {n : Nat} : Nat\n" +
       "  | suc n => 0\n" +
-      "  | zero => 0", 1);
+      "  | zero => 0", 2);
   }
 
   @Test
@@ -313,6 +330,14 @@ public class PatternTest extends TypeCheckingTestCase {
     typeCheckClass(
       "\\function tests (n : Nat) : Nat\n" +
       "  | suc n => 0\n" +
-      "  | zero => 0", "", 1);
+      "  | zero => 0", "");
+  }
+
+  @Test
+  public void nonEliminatedAvailable() {
+    typeCheckClass(
+      "\\function tests {n : Nat} (m : Nat) : Nat => \\elim m\n" +
+      "  | suc m => m\n" +
+      "  | zero => n");
   }
 }

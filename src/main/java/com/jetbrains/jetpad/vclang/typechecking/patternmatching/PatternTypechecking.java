@@ -59,7 +59,7 @@ class PatternTypechecking {
       }
       result = doTypechecking(patterns, DependentLink.Helper.subst(parameters, new ExprSubstitution()), clause, true);
     } else {
-      result = doTypechecking(clause.getPatterns(), DependentLink.Helper.subst(parameters, new ExprSubstitution()), clause, true);
+      result = doTypechecking(clause.getPatterns(), DependentLink.Helper.subst(parameters, new ExprSubstitution()), clause, false);
     }
     if (result == null) {
       return null;

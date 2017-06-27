@@ -244,22 +244,20 @@ class DefinitionTypechecking {
       Expression expectedType = typedDef.getResultType();
 
       if (body instanceof Abstract.ElimFunctionBody) {
-        if (expectedType != null || def.getResultType() == null) {
-          List<Abstract.ReferableSourceNode> parameters = new ArrayList<>();
+        if (expectedType != null) {
+          DependentLink parameters = typedDef.getParameters();
           if (typedDef.getThisClass() != null) {
-            parameters.add(null);
+            parameters = parameters.getNext();
           }
-          getReferableList(def.getArguments(), parameters);
-
-          if (expectedType != null) {
-            ElimTree elimTree = new ElimTypechecking(visitor, expectedType, true).typecheckElim(((Abstract.ElimFunctionBody) body), typedDef.getParameters());
-            if (elimTree != null) {
-              typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-              if (ConditionsChecking.check(elimTree)) {
-                typedDef.setElimTree(elimTree);
-              }
+          ElimTree elimTree = new ElimTypechecking(visitor, expectedType, true).typecheckElim(((Abstract.ElimFunctionBody) body), parameters);
+          if (elimTree != null) {
+            typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+            if (ConditionsChecking.check(elimTree)) {
+              typedDef.setElimTree(elimTree);
             }
-          } else {
+          }
+        } else {
+          if (def.getResultType() == null) {
             visitor.getErrorReporter().report(new LocalTypeCheckingError("Cannot infer type of the expression", body));
           }
         }

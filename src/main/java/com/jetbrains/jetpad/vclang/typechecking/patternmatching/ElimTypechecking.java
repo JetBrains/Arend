@@ -46,6 +46,14 @@ public class ElimTypechecking {
   public ElimTree typecheckElim(Abstract.ElimFunctionBody body, DependentLink patternTypes) {
     List<DependentLink> elimParams = null;
     if (!body.getExpressions().isEmpty()) {
+      int expectedNumberOfPatterns = body.getExpressions().size();
+      for (Abstract.Clause clause : body.getClauses()) {
+        if (clause.getPatterns().size() != expectedNumberOfPatterns) {
+          myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Expected " + expectedNumberOfPatterns + " patterns, but got " + clause.getPatterns().size(), clause));
+          return null;
+        }
+      }
+
       DependentLink link = patternTypes;
       elimParams = new ArrayList<>(body.getExpressions().size());
       for (Abstract.Expression expr : body.getExpressions()) {
