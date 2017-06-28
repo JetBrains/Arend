@@ -63,14 +63,14 @@ public class ElimTest extends TypeCheckingTestCase {
   @Test
   public void elim5() {
     typeCheckClass(
-        "\\data D (x : Nat) | D zero => d0 | D (suc n) => d1\n" +
+        "\\data D Nat \\with | zero => d0 | suc n => d1\n" +
         "\\function test (x : D 0) : Nat => \\elim x | d0 => 0");
   }
 
   @Test
   public void elimUnknownIndex1() {
     typeCheckClass(
-        "\\data D (x : Nat) | D zero => d0 | D (suc _) => d1\n" +
+        "\\data D Nat \\with | zero => d0 | suc _ => d1\n" +
         "\\function test (x : Nat) (y : D x) : Nat => \\elim y | d0 => 0 | d1 => 1", 2);
   }
 
@@ -83,14 +83,14 @@ public class ElimTest extends TypeCheckingTestCase {
   @Test
   public void elimUnknownIndex2() {
     typeCheckClass(
-        "\\data D (x : Nat) | D zero => d0 | D (suc _) => d1\n" +
+        "\\data D Nat \\with | zero => d0 | suc _ => d1\n" +
         "\\function test (x : Nat) (y : D x) : Nat => \\elim y | d0 => 0 | _ => 1", 1);
   }
 
   @Test
   public void elimUnknownIndex3() {
     typeCheckClass(
-        "\\data D (x : Nat) | D zero => d0 | D (suc _) => d1\n" +
+        "\\data D Nat \\with | zero => d0 | suc _ => d1\n" +
         "\\function test (x : Nat) (y : D x) : Nat => \\elim y | _ => 0", 0);
   }
 
@@ -98,7 +98,7 @@ public class ElimTest extends TypeCheckingTestCase {
   public void elimUnknownIndex4() {
     typeCheckClass(
         "\\data E | A | B | C\n" +
-        "\\data D (x : E) | D A => d0 | D B => d1 | D _ => d2\n" +
+        "\\data D E \\with | A => d0 | B => d1 | _ => d2\n" +
         "\\function test (x : E) (y : D x) : Nat => \\elim y | d0 => 0 | d1 => 1", 2);
   }
 
@@ -106,7 +106,7 @@ public class ElimTest extends TypeCheckingTestCase {
   public void elimUnknownIndex5() {
     typeCheckClass(
         "\\data E | A | B | C\n" +
-        "\\data D (x : E) | D A => d0 | D B => d1 | D _ => d2\n" +
+        "\\data D E \\with | A => d0 | B => d1 | C => d2\n" +
         "\\function test (x : E) (y : D x) : Nat => \\elim y | d0 => 0 | d1 => 1 | d2 => 2", 3);
   }
 
@@ -114,7 +114,7 @@ public class ElimTest extends TypeCheckingTestCase {
   public void elimUnknownIndex6() {
     typeCheckClass(
         "\\data E | A | B | C\n" +
-        "\\data D (x : E) | D A => d0 | D B => d1 | D _ => d2\n" +
+        "\\data D E \\with | A => d0 | B => d1 | _ => d2\n" +
         "\\function test (x : E) (y : D x) : Nat => \\elim y | d0 => 0 | d1 => 1 | _ => 2", 2);
   }
 
@@ -122,8 +122,8 @@ public class ElimTest extends TypeCheckingTestCase {
   public void elimUnknownIndex7() {
     typeCheckClass(
         "\\data E | A | B | C\n" +
-        "\\data D (x : E) | D A => d0 | D B => d1 | D _ => d2\n" +
-        "\\function test (x : E) (y : D x) : Nat => \\elim y | _ => 0", 0);
+        "\\data D E | A => d0 | B => d1 | _ => d2\n" +
+        "\\function test (x : E) (y : D x) : Nat => \\elim y | _ => 0");
   }
 
   @Test
@@ -162,8 +162,8 @@ public class ElimTest extends TypeCheckingTestCase {
   @Test
   public void elim9() {
     typeCheckClass(
-        "\\data D Nat | D (suc n) => d1 | D _ => d | D zero => d0\n" +
-        "\\function test (n : Nat) (a : D (suc n)) : Nat => \\elim a | d => 0", 1);
+        "\\data D Nat \\with | suc n => { d1 | d1' } | zero => { d0 | d0' }\n" +
+        "\\function test (n : Nat) (a : D (suc n)) : Nat => \\elim a | d1' => 0", 1);
   }
 
   @Test
@@ -180,14 +180,14 @@ public class ElimTest extends TypeCheckingTestCase {
   @Test
   public void elimEmptyBranch() {
     typeCheckClass(
-        "\\data D Nat | D (suc n) => dsuc\n" +
+        "\\data D Nat \\with | suc n => dsuc\n" +
         "\\function test (n : Nat) (d : D n) : Nat => \\elim n, d | zero, () | suc n, dsuc => 0");
   }
 
   @Test
   public void elimEmptyBranchError() {
     typeCheckClass(
-        "\\data D Nat | D (suc n) => dsuc\n" +
+        "\\data D Nat \\with | suc n => dsuc\n" +
         "\\function test (n : Nat) (d : D n) : Nat => \\elim n, d | suc n, () | zero, ()", 1);
   }
 
@@ -206,7 +206,7 @@ public class ElimTest extends TypeCheckingTestCase {
   @Test
   public void testAuto1() {
     typeCheckClass(
-        "\\data Geq Nat Nat | Geq _ zero => Geq-zero | Geq (suc n) (suc m) => Geq-suc (Geq n m)\n" +
+        "\\data Geq Nat Nat \\with | _, zero => Geq-zero | suc n, suc m => Geq-suc (Geq n m)\n" +
         "\\function test (n m : Nat) (p : Geq n m) : Nat => \\elim n, m, p\n" +
         "  | _, zero, Geq-zero => 0\n" +
         "  | suc n, suc m, Geq-suc p => 1");
@@ -215,7 +215,7 @@ public class ElimTest extends TypeCheckingTestCase {
   @Test
   public void testAutoNonData() {
     typeCheckClass(
-        "\\data D Nat | D zero => dcons\n" +
+        "\\data D Nat \\with | zero => dcons\n" +
         "\\data E (n : Nat) (Nat -> Nat) (D n) | econs\n" +
         "\\function test (n : Nat) (d : D n) (e : E n (\\lam x => x) d) : Nat => \\elim n, d, e\n" +
         "  | zero, dcons, econs => 1");
@@ -224,7 +224,7 @@ public class ElimTest extends TypeCheckingTestCase {
   @Test
   public void testElimNeedNormalize() {
     typeCheckClass(
-      "\\data D Nat | D (suc n) => c\n" +
+      "\\data D Nat \\with | suc n => c\n" +
       "\\function f => D (suc zero)\n" +
       "\\function test (x : f) : Nat => \\elim x\n" +
       "  | c => 0"
@@ -246,9 +246,9 @@ public class ElimTest extends TypeCheckingTestCase {
   @Test
   public void testSmthing() {
     typeCheckClass(
-        "\\data Geq (x y : Nat)\n" +
-        "  | Geq m zero => EqBase \n" +
-        "  | Geq (suc n) (suc m) => EqSuc (p : Geq n m)\n" +
+        "\\data Geq Nat Nat \\with\n" +
+        "  | m, zero => EqBase \n" +
+        "  | suc n, suc m => EqSuc (p : Geq n m)\n" +
         "\n" +
         "\\function f (x y : Nat) (p : Geq x y) : Nat =>\n" +
         "  \\case x, y, p\n" +
@@ -260,9 +260,9 @@ public class ElimTest extends TypeCheckingTestCase {
   @Test
   public void testElimOrderError() {
     typeCheckClass("\\data \\infix 4\n" +
-                   "(=<) (n m : Nat)\n" +
-                   "  | (=<) zero m => le_z\n" +
-                   "  | (=<) (suc n) (suc m) => le_ss (n =< m)\n" +
+                   "(=<) Nat Nat \\with\n" +
+                   "  | zero, m => le_z\n" +
+                   "  | suc n, suc m => le_ss (n =< m)\n" +
                    "\n" +
                    "\\function\n" +
                    "leq-trans {n m k : Nat} (nm : n =< m) (mk : m =< k) : n =< k => \\elim n, nm, m\n" +
@@ -273,7 +273,7 @@ public class ElimTest extends TypeCheckingTestCase {
   @Test
   public void testEmptyNoElimError() {
     typeCheckClass(
-        "\\data D Nat | D zero => d0\n" +
+        "\\data D Nat \\with | zero => d0\n" +
         "\\function test (x : Nat) (d : D x) : Nat => \\elim d\n" +
         "  | () => 0", 1);
   }
@@ -332,21 +332,21 @@ public class ElimTest extends TypeCheckingTestCase {
   @Test
   public void emptyAfterAFewError() {
     typeCheckClass(
-        "\\data D Nat | D zero => d\n" +
+        "\\data D Nat \\with | zero => d\n" +
         "\\function test (x : Nat) (y : \\Pi(z : Nat) -> x = z) (a : D (suc x)) : Nat => \\elim x\n", 1);
   }
 
   @Test
   public void emptyAfterAFew() {
     typeCheckClass(
-        "\\data D Nat | D zero => d\n" +
+        "\\data D Nat \\with | zero => d\n" +
         "\\function test (x : Nat) (y : \\Pi(z : Nat) -> x = z) (a : D (suc x)) : Nat => \\elim a\n");
   }
 
   @Test
   public void testElimEmpty1() {
     typeCheckClass(
-        "\\data D Nat | D zero => d1 | D (suc zero) => d2 \n" +
+        "\\data D Nat \\with | zero => d1 | suc zero => d2 \n" +
         "\\data E (n : Nat) | e (D n)\n" +
         "\\function test (n : Nat) (e : E n) : Nat => \\elim n, e\n" +
         "  | zero, _ => 0\n" +

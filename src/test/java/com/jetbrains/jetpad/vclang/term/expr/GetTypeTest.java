@@ -95,7 +95,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
   @Test
   public void patternConstructor1() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\data C (n : Nat) | C (zero) => c1 | C (suc n) => c2 Nat");
+        "\\data C Nat \\with | zero => c1 | suc n => c2 Nat");
     DataDefinition data = (DataDefinition) result.getDefinition("C");
     List<DependentLink> c1Params = new ArrayList<>();
     Expression c1Type = data.getConstructor("c1").getTypeWithParams(c1Params, Sort.SET0);
@@ -112,8 +112,8 @@ public class GetTypeTest extends TypeCheckingTestCase {
   @Test
   public void patternConstructor2() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\data Vec \\Set0 Nat | Vec A zero => Nil | Vec A (suc n) => Cons A (Vec A n)" +
-        "\\data D (n : Nat) (Vec Nat n) | D zero _ => dzero | D (suc n) _ => done");
+        "\\data Vec (A : \\Set0) (n : Nat) => \\elim n | zero => Nil | suc n => Cons A (Vec A n)" +
+        "\\data D (n : Nat) (Vec Nat n) => \\elim n | zero => dzero | suc n => done");
     DataDefinition vec = (DataDefinition) result.getDefinition("Vec");
     DataDefinition d = (DataDefinition) result.getDefinition("D");
     List<DependentLink> dzeroParams = new ArrayList<>();
@@ -142,7 +142,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
   public void patternConstructor3() {
     TypeCheckClassResult result = typeCheckClass(
         "\\data D | d \\Type0\n" +
-        "\\data C D | C (d A) => c A");
+        "\\data C D \\with | d A => c A");
     DataDefinition d = (DataDefinition) result.getDefinition("D");
     DataDefinition c = (DataDefinition) result.getDefinition("C");
     DependentLink A = c.getConstructor("c").getDataTypeParameters();
@@ -158,7 +158,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
   public void patternConstructorDep() {
     TypeCheckClassResult result = typeCheckClass(
         "\\data Box (n : Nat) | box\n" +
-        "\\data D (n : Nat) (Box n) | D (zero) _ => d");
+        "\\data D (n : Nat) (Box n) => \\elim n | zero => d");
     DataDefinition d = (DataDefinition) result.getDefinition("D");
     List<DependentLink> dParams = new ArrayList<>();
     Expression dType = d.getConstructor("d").getTypeWithParams(dParams, Sort.SET0);

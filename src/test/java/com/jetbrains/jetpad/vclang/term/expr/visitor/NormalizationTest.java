@@ -436,9 +436,9 @@ public class NormalizationTest extends TypeCheckingTestCase {
   public void testConCallEta() {
     TypeCheckClassResult result = typeCheckClass(
         "\\function ($) {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
-        "\\data Fin (n : Nat)\n" +
-        "  | Fin (suc n) => fzero\n" +
-        "  | Fin (suc n) => fsuc (Fin n)\n" +
+        "\\data Fin Nat \\with\n" +
+        "  | suc n => fzero\n" +
+        "  | suc n => fsuc (Fin n)\n" +
         "\\function f (n : Nat) (x : Fin n) => fsuc $ x");
     FunctionDefinition f = (FunctionDefinition) result.getDefinition("f");
     Expression term = ((LeafElimTree) f.getElimTree()).getExpression().normalize(NormalizeVisitor.Mode.NF);

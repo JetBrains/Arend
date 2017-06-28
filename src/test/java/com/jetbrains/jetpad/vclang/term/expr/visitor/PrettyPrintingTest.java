@@ -94,7 +94,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
 
   @Test
   public void prettyPrintingPatternDataDef() {
-    Concrete.Definition def = parseDef("\\data LE (n m : Nat) | LE (zero) m => LE-zero | LE (suc n) (suc m) => LE-suc (LE n m)");
+    Concrete.Definition def = parseDef("\\data LE Nat Nat \\with | zero, m => LE-zero | suc n, suc m => LE-suc (LE n m)");
     assertNotNull(def);
     def.accept(new PrettyPrintVisitor(new StringBuilder(), Abstract.Expression.PREC), null);
   }

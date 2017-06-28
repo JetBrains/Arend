@@ -59,42 +59,42 @@ public class DefinitionTest extends TypeCheckingTestCase {
 
   @Test
   public void patternVector() {
-    typeCheckDef("\\data Vec \\Type0 Nat | Vec _ zero => Nil | Vec A (suc m) => Cons A (Vec A m)");
+    typeCheckDef("\\data Vec (A : \\Type0) (n : Nat) => \\elim n | zero => Nil | suc m => Cons A (Vec A m)");
   }
 
   @Test
   public void patternDepParams() {
     typeCheckClass(
-        "\\data D (n : Nat) (n = n) | D zero _ => d\n" +
-        "\\data C {n : Nat} {p : n = n} (D n p) | C {zero} {p} d => c (p = p)");
+        "\\data D (n : Nat) (n = n) => \\elim n | zero => d\n" +
+        "\\data C {n : Nat} {p : n = n} (D n p) => \\elim n | zero => c (p = p)");
   }
 
   @Test
   public void patternDepParamsError() {
     typeCheckClass(
-        "\\data D (n : Nat) (n = n) | D zero _ => d\n" +
-        "\\data C {n : Nat} {p : n = n} (D n p) | C {_} {p} d => c (p = p)", 1);
+        "\\data D (n : Nat) (n = n) => \\elim n | zero => d\n" +
+        "\\data C {n : Nat} {p : n = n} (D n p) | c (p = p)", 1);
   }
 
   @Test
   public void patternNested() {
-    typeCheckDef("\\data C (n : Nat) | C (suc (suc n)) => c2 (n = n)");
+    typeCheckDef("\\data C Nat \\with | suc (suc n) => c2 (n = n)");
   }
 
   @Test
   public void patternDataLE() {
-    typeCheckDef("\\data LE (n m : Nat) | LE zero m => LE-zero | LE (suc n) (suc m) => LE-suc (LE n m)");
+    typeCheckDef("\\data LE Nat Nat \\with | zero, m => LE-zero | suc n, suc m => LE-suc (LE n m)");
   }
 
   @Test
   public void patternImplicitError() {
-    typeCheckDef("\\data D (A : Nat) | D {A} => d", 1);
+    typeCheckDef("\\data D Nat \\with | {A} => d", 1);
   }
 
   @Test
   public void patternConstructorCall() {
     typeCheckClass(
-        "\\data D {n : Nat} | D {zero} => d\n" +
+        "\\data D {Nat} \\with | {zero} => d\n" +
         "\\function test => d");
   }
 
@@ -103,58 +103,58 @@ public class DefinitionTest extends TypeCheckingTestCase {
     typeCheckClass(
         "\\data Wheel | wheel\n" +
         "\\data VehicleType | bikeType | carType\n" +
-        "\\data Vehicle (t : VehicleType)\n" +
-        "  | Vehicle (carType) => car Wheel Wheel Wheel Wheel" +
-        "  | Vehicle (bikeType) => bike Wheel Wheel");
+        "\\data Vehicle VehicleType \\with\n" +
+        "  | carType => car Wheel Wheel Wheel Wheel" +
+        "  | bikeType => bike Wheel Wheel");
   }
 
   @Test
   public void patternUnknownConstructorError() {
-    typeCheckDef("\\data D (n : Nat) | D (suc (luc m)) => d", 1);
+    typeCheckDef("\\data D Nat \\with | suc (luc m) => d", 1);
   }
 
   @Test
   public void patternLift() {
     typeCheckClass(
-        "\\data D (n : Nat) | D (zero) => d\n" +
-        "\\data C (m : Nat) (n : Nat) (D m) | C (zero) (zero) (d) => c");
+        "\\data D Nat \\with | zero => d\n" +
+        "\\data C (m n : Nat) (d : D m) => \\elim m, n | zero, zero => c");
   }
 
   @Test
   public void patternLiftError() {
     typeCheckClass(
-        "\\data D (n : Nat) | D (zero) => d\n" +
-        "\\data C (m : Nat) (n : Nat) (D m) | C _ (zero) (d) => c", 1);
+        "\\data D Nat \\with | zero => d\n" +
+        "\\data C (m n : Nat) (D m) => \\elim n | zero => c", 1);
   }
 
   @Test
   public void patternMultipleSubst() {
     typeCheckClass(
-        "\\data D (n : Nat) (m : Nat) | d (n = n) (m = m)\n" +
+        "\\data D (n m : Nat) | d (n = n) (m = m)\n" +
         "\\data C | c (n m : Nat) (D n m)\n" +
-        "\\data E C | E (c (zero) (suc (zero)) (d _ _)) => e\n" +
+        "\\data E C \\with | E (c zero (suc zero) (d _ _)) => e\n" +
         "\\function test => (E (c 0 1 (d (path (\\lam _ => 0)) (path (\\lam _ => 1))))).e");
   }
 
   @Test
   public void patternConstructorDefCall() {
     typeCheckClass(
-        "\\data D (n : Nat) (m : Nat) | D (suc n) (suc m) => d (n = n) (m = m)\n" +
+        "\\data D (n m : Nat) => \\elim n, m | suc n, suc m => d (n = n) (m = m)\n" +
         "\\function test => d (path (\\lam _ => 1)) (path (\\lam _ => 0))");
   }
 
   @Test
   public void patternConstructorDefCallError() {
     typeCheckClass(
-        "\\data D (n : Nat) | D (zero) => d\n" +
+        "\\data D Nat \\with | zero => d\n" +
         "\\function test (n : Nat) : D n => d", 1);
   }
 
   @Test
   public void patternSubstTest() {
     typeCheckClass(
-        "\\data E (n : Nat) | E (zero) => e\n" +
-        "\\data D (n : Nat) (E n) | D (zero) (e) => d\n" +
+        "\\data E Nat \\with | zero => e\n" +
+        "\\data D (n : Nat) (E n) => \\elim n | zero => d\n" +
         "\\function test => d");
   }
 
@@ -162,7 +162,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
   public void patternExpandArgsTest() {
     typeCheckClass(
         "\\data D (n : Nat) | d (n = n)\n" +
-        "\\data C (D 1) | C (d p) => c\n" +
+        "\\data C (D 1) \\with | d p => c\n" +
         "\\function test : C (d (path (\\lam _ => 1))) => c");
   }
 
@@ -170,8 +170,8 @@ public class DefinitionTest extends TypeCheckingTestCase {
   public void patternNormalizeTest() {
     typeCheckClass(
         "\\data E (x : 0 = 0) | e\n" +
-        "\\data C (n m : Nat) | C (suc n) (suc (suc n)) => c (n = n)\n" +
-        "\\data D ((\\lam (x : \\Type0) => x) (C 1 2)) | D (c p) => x (E p)\n" +
+        "\\data C (n m : Nat) => \\elim n, m | suc n, suc (suc n) => c (n = n)\n" +
+        "\\data D ((\\lam (x : \\Type0) => x) (C 1 2)) \\with | c p => x (E p)\n" +
         "\\function test => x (E (path (\\lam _ => 0))).e");
   }
 
@@ -179,15 +179,15 @@ public class DefinitionTest extends TypeCheckingTestCase {
   public void patternNormalizeTest1() {
     typeCheckClass(
         "\\data E (x : 0 = 0) | e\n" +
-        "\\data C (n m : Nat) | C (suc n) (suc (suc n)) => c (n = n)\n" +
-        "\\data D ((\\lam (x : \\Type0) => x) (C 1 1)) | D (c p) => x (E p)", 1);
+        "\\data C Nat Nat \\with | suc n, suc (suc n) => c (n = n)\n" +
+        "\\data D ((\\lam (x : \\Type0) => x) (C 1 1)) \\with | c p => x (E p)", 1);
   }
 
   @Test
   public void patternTypeCheck() {
     typeCheckClass(
         "\\function f (x : Nat -> Nat) => x 0\n" +
-        "\\data Test (A : \\Set0)\n" +
+        "\\data Test (A : \\Set0) \\with\n" +
         "  | Test (suc n) => foo (f n)", 1);
   }
 }

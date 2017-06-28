@@ -258,7 +258,7 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void elimLess() {
     typeCheckClass(
-      "\\data D Nat | D (suc n) => dsuc\n" +
+      "\\data D Nat \\with | suc n => dsuc\n" +
       "\\function tests (n : Nat) (d : D n) : Nat => \\elim n, d\n" +
       "  | suc n => 0\n" +
       "  | zero => 0", 1);
@@ -267,7 +267,7 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void withoutElimLess() {
     typeCheckClass(
-      "\\data D Nat | D (suc n) => dsuc\n" +
+      "\\data D Nat \\with | suc n => dsuc\n" +
       "\\function tests (n : Nat) (d : D n) : Nat\n" +
       "  | suc n => 0\n" +
       "  | zero => 0", 2);

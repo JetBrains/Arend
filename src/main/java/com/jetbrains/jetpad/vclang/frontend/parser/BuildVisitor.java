@@ -396,17 +396,37 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.DataDefinition visitDefData(DefDataContext ctx) {
     Concrete.Expression universe = ctx.expr() == null ? null : (Concrete.Expression) visit(ctx.expr());
-    List<Concrete.Constructor> constructors = new ArrayList<>(ctx.constructorDef().size());
+    List<Concrete.Constructor> constructors = new ArrayList<>();
     List<Concrete.Condition> conditions = ctx.conditionDef() != null ? visitConditionDef(ctx.conditionDef()) : null;
     Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(tokenPosition(ctx.getStart()), visitName(ctx.name()), visitPrecedence(ctx.precedence()), visitTeles(ctx.tele()), ctx.isTruncated() instanceof TruncatedContext, universe, constructors, conditions);
-    for (ConstructorDefContext constructorDefContext : ctx.constructorDef()) {
+    visitDataBody(ctx.dataBody(), dataDefinition);
+    return dataDefinition;
+  }
+
+  private void visitDataBody(DataBodyContext ctx, Concrete.DataDefinition def) {
+    if (ctx instanceof DataClausesContext) {
+      for (ConstructorClauseContext clauseCtx : ((DataClausesContext) ctx).constructorClause()) {
+        try {
+          List<Abstract.Pattern> patterns = clauseCtx.pattern().stream().map(this::visitPattern).collect(Collectors.toList());
+          List<ConstructorContext> conContexts = clauseCtx.constructorList() instanceof ConstructorsWithBracesContext ? ((ConstructorsWithBracesContext) clauseCtx.constructorList()).constructor() : ((ConstructorsWithoutBracesContext) clauseCtx.constructorList()).constructor();
+          visitConstructors(conContexts, def, patterns);
+        } catch (ParseException ignored) {
+
+        }
+      }
+    } else if (ctx instanceof DataConstructorsContext) {
+      visitConstructors(((DataConstructorsContext) ctx).constructor(), def, null);
+    }
+  }
+
+  private void visitConstructors(List<ConstructorContext> conContexts, Concrete.DataDefinition def, List<Abstract.Pattern> patterns) {
+    for (ConstructorContext conCtx : conContexts) {
       try {
-        visitConstructorDef(constructorDefContext, dataDefinition);
+        def.getConstructors().add(new Concrete.Constructor(tokenPosition(conCtx.start), visitName(conCtx.name()), visitPrecedence(conCtx.precedence()), visitTeles(conCtx.tele()), def, patterns));
       } catch (ParseException ignored) {
 
       }
     }
-    return dataDefinition;
   }
 
   @Override
@@ -439,28 +459,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.Condition visitCondition(ConditionContext ctx) {
     Pair<String, List<Abstract.Pattern>> splitPattern = splitPattern(visitPattern(ctx.pattern()));
     return new Concrete.Condition(tokenPosition(ctx.start), splitPattern.proj1, splitPattern.proj2, visitExpr(ctx.expr()));
-  }
-
-  private void visitConstructorDef(ConstructorDefContext ctx, Concrete.DataDefinition def) {
-    List<Abstract.Pattern> patterns = null;
-
-    if (ctx instanceof WithPatternsContext) {
-      WithPatternsContext wpCtx = (WithPatternsContext) ctx;
-      Concrete.Pattern pattern = visitPattern(wpCtx.pattern());
-      Pair<String, List<Abstract.Pattern>> splitPattern = splitPattern(pattern);
-      patterns = splitPattern.proj2;
-      if (!def.getName().equals(splitPattern.proj1)) {
-        myErrorReporter.report(new ParserError(pattern.getPosition(), "Expected a data type name: " + def.getName()));
-        return;
-      }
-    }
-
-    List<ConstructorContext> constructorCtxs = ctx instanceof WithPatternsContext ?
-        ((WithPatternsContext) ctx).constructor() : Collections.singletonList(((NoPatternsContext) ctx).constructor());
-
-    for (ConstructorContext conCtx : constructorCtxs) {
-      def.getConstructors().add(new Concrete.Constructor(tokenPosition(conCtx.name().getStart()), visitName(conCtx.name()), visitPrecedence(conCtx.precedence()), visitTeles(conCtx.tele()), def, patterns));
-    }
   }
 
   private void misplacedDefinitionError(Concrete.Position position) {
@@ -956,7 +954,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private List<Concrete.Clause> visitClauses(ClausesContext ctx) {
-    List<ClauseContext> clauses = ctx instanceof WithBracesContext ? ((WithBracesContext) ctx).clause() : ((WithoutBracesContext) ctx).clause();
+    List<ClauseContext> clauses = ctx instanceof ClausesWithBracesContext ? ((ClausesWithBracesContext) ctx).clause() : ((ClausesWithoutBracesContext) ctx).clause();
     return clauses.stream().map(this::visitClause).collect(Collectors.toList());
   }
 

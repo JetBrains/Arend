@@ -15,7 +15,7 @@ nsCmdRoot : modulePath | name;
 definition  : '\\function' precedence name tele* (':' expr)? functionBody where?                          # defFunction
             | '\\field' precedence name ':' expr                                                          # defAbstract
             | '\\implement' name '=>' expr                                                                # defImplement
-            | isTruncated '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef?        # defData
+            | isTruncated '\\data' precedence name tele* (':' expr)? dataBody conditionDef?               # defData
             | '\\class' ID tele* ('\\extends' expr (',' expr)*)? ('{' statements '}')? where?             # defClass
             | '\\view' ID '\\on' expr '\\by' name '{' classViewField* '}'                                 # defClassView
             | defaultInst '\\instance' ID tele* '=>' expr                                                 # defInstance
@@ -24,6 +24,16 @@ definition  : '\\function' precedence name tele* (':' expr)? functionBody where?
 functionBody  : '=>' expr     # withoutElim
               | elim? clauses # withElim
               ;
+
+dataBody : elim constructorClause*                      # dataClauses
+         | ('=>' '|'? constructor)? ('|' constructor)*  # dataConstructors
+         ;
+
+constructorClause : '|' pattern (',' pattern)* '=>' constructorList;
+
+constructorList : '|'? constructor ('|' constructor)*         # constructorsWithoutBraces
+                | '{' '|'? constructor ('|' constructor)* '}' # constructorsWithBraces
+                ;
 
 elim : '\\with' | '=>' '\\elim' expr? (',' expr)*;
 
@@ -46,10 +56,6 @@ where : '\\where' ('{' statements '}' | statement);
 nsCmd : '\\open'                        # openCmd
       | '\\export'                      # exportCmd
       ;
-
-constructorDef : '|' pattern '=>' constructor ('|' constructor)* ';'? # withPatterns
-               | '|' constructor                                      # noPatterns
-               ;
 
 pattern : atomPattern             # patternAtom
         | name atomPatternOrID*   # patternConstructor
@@ -89,8 +95,8 @@ expr  : (binOpLeft+ | ) binOpArg                            # binOp
       | '\\case' expr (',' expr)* clauses                   # case
       ;
 
-clauses : clause*         # withoutBraces
-        | '{' clause* '}' # withBraces
+clauses : clause*         # clausesWithoutBraces
+        | '{' clause* '}' # clausesWithBraces
         ;
 
 letClause : ID tele* typeAnnotation? '=>' expr;

@@ -109,29 +109,16 @@ public class ConditionsTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void conditionsInLet() {
-    typeCheckClass(
-        "\\data Z | pos Nat | neg Nat \n" +
-        "\\with | neg zero => pos zero\n" +
-        "\\function test (x : Z) =>" +
-            "\\let | f (x : Z) : Nat => \\elim x\n" +
-            "          | pos x => 1\n" +
-            "          | neg x => 0\n" +
-            "\\in f x"
-    , 1);
-  }
-
-  @Test
   public void dataTypeWithIndices() {
     typeCheckClass(
         "\\data S | base | loop I \n" +
         "  \\with | loop left => base\n" +
         "         | loop right => base\n" +
-        "\\data D Nat | D zero => di I | D _ => d\n" +
-        "  \\with | di left => d | di right => d\n" +
+        "\\data D Nat \\with | zero => {di I | dz} | _ => d\n" +
+        "  \\with | di left => dz | di right => dz\n" +
         "\\function test (x : Nat) (y : D x) : S => \\elim x, y\n" +
         "  | suc _, d => base\n" +
-        "  | zero, d => base\n" +
+        "  | zero, dz => base\n" +
         "  | zero, di i => loop i\n"
     );
   }
@@ -245,7 +232,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
 
   @Test
   public void dataIntervalCondition() {
-    typeCheckClass("\\data D I | D left => c", 1);
+    typeCheckClass("\\data D I \\with | left => c", 1);
   }
 
   @Test
@@ -255,8 +242,8 @@ public class ConditionsTest extends TypeCheckingTestCase {
       "  \\with\n" +
       "    | l left => c\n" +
       "    | l right => c'\n" +
-      "\\data E D\n" +
-      " | E c => e");
+      "\\data E D \\with\n" +
+      " | c => e");
   }
 
   @Test
@@ -266,8 +253,8 @@ public class ConditionsTest extends TypeCheckingTestCase {
       "  \\with\n" +
       "    | l left => c\n" +
       "    | l right => c'\n" +
-      "\\data E D\n" +
-      " | E (l i) => e", 1);
+      "\\data E D \\with\n" +
+      " | l i => e", 1);
   }
 
   @Test
@@ -277,7 +264,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
       "  \\with\n" +
       "    | l left => c\n" +
       "    | l right => c'\n" +
-      "\\data E D\n" +
-      " | E () => e", 1);
+      "\\data E D \\with\n" +
+      " | () => e", 1);
   }
 }

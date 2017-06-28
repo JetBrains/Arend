@@ -143,7 +143,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   public void constructorExpectedTypeMismatch() {
     typeCheckClass(
         "\\data Foo\n" +
-        "\\data Bar (n : Nat) | Bar (suc n) => bar (n = n)\n" +
+        "\\data Bar Nat \\with | suc n => bar (n = n)\n" +
         "\\function foo : Foo => bar (path (\\lam _ => zero))", 1);
   }
 }

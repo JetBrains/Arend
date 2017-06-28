@@ -12,19 +12,19 @@ public class CoverageTest extends TypeCheckingTestCase {
   @Test
   public void coverageTest() {
     typeCheckClass(
-        "\\data Fin (n : Nat) | Fin n => fzero | Fin (suc n) => fsuc (Fin n)\n" +
+        "\\data Fin Nat \\with | zero => fzero | suc n => szero | fsuc (Fin n)\n" +
         "\\function unsuc {n : Nat} (x : Fin n) : Fin n => \\elim n, x\n" +
         "  | zero, fzero => fzero\n" +
-        "  | suc n, fzero => fzero\n" +
+        "  | suc n, szero => szero\n" +
         "  | suc n, fsuc x => fsuc (unsuc x)");
   }
 
   @Test
   public void coverageTest2() {
     typeCheckClass(
-        "\\data Fin (n : Nat) | Fin n => fzero | Fin (suc n) => fsuc (Fin n)\n" +
+        "\\data Fin Nat \\with | zero => fzero | suc n => szero | fsuc (Fin n)\n" +
         "\\function unsuc {n : Nat} (x : Fin n) : Fin n => \\elim n, x\n" +
         "  | _, fzero => fzero\n" +
-        "  | suc n, fsuc x => fsuc (unsuc x)");
+        "  | suc n, fsuc x => fsuc (unsuc x)", 1);
   }
 }
