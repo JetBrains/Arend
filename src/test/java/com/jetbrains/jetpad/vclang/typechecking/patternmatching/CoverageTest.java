@@ -25,6 +25,6 @@ public class CoverageTest extends TypeCheckingTestCase {
         "\\data Fin (n : Nat) | Fin n => fzero | Fin (suc n) => fsuc (Fin n)\n" +
         "\\function unsuc {n : Nat} (x : Fin n) : Fin n => \\elim n, x\n" +
         "  | _, fzero => fzero\n" +
-        "  | suc n, fsuc x => fsuc (unsuc x)", 1);
+        "  | suc n, fsuc x => fsuc (unsuc x)");
   }
 }

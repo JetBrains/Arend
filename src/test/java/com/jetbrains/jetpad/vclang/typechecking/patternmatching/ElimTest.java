@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
+import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
@@ -38,7 +39,7 @@ public class ElimTest extends TypeCheckingTestCase {
         "  | con2 x y z t, con1 s => x\n" +
         "  | con1 _, con1 s => s\n" +
         "  | con1 s, con2 x y z t => x q\n" +
-        "  | con2 _ y z t, con2 x y z t => x");
+        "  | con2 _ y z t, con2 x y' z' t' => x");
   }
 
   @Test
@@ -187,7 +188,7 @@ public class ElimTest extends TypeCheckingTestCase {
   public void elimEmptyBranchError() {
     typeCheckClass(
         "\\data D Nat | D (suc n) => dsuc\n" +
-        "\\function test (n : Nat) (d : D n) : Nat => \\elim n, d | suc n, () | zero, () => 0", 1);
+        "\\function test (n : Nat) (d : D n) : Nat => \\elim n, d | suc n, () | zero, ()", 1);
   }
 
   @Test
@@ -235,8 +236,8 @@ public class ElimTest extends TypeCheckingTestCase {
       typeCheckClass("\\function\n" +
                      "test (x y : Nat) : y = 0 => \\elim x, y\n" +
                      "  | _, zero => path (\\lam _ => zero)\n" +
-                     "  | zero, suc y' => test x y'\n" +
-                     "  | suc x', suc y' => test x y'\n" +
+                     "  | zero, suc y' => test zero y'\n" +
+                     "  | suc x', suc y' => test (suc x') y'\n" +
                      "\n" +
                      "\\function\n" +
                      "zero-is-one : 1 = 0 => test 0 1", 3);
@@ -281,13 +282,40 @@ public class ElimTest extends TypeCheckingTestCase {
   public void testElimTranslationSubst() {
     FunctionDefinition def = (FunctionDefinition) typeCheckDef(
       "\\function test (n m : Nat) : Nat => \\elim m\n" +
+        " | _ => n"
+    );
+    assertEquals(new LeafElimTree(def.getParameters(), Ref(def.getParameters())), def.getElimTree());
+  }
+
+  @Test
+  public void testElimTranslationSubst2() {
+    FunctionDefinition def = (FunctionDefinition) typeCheckDef(
+      "\\function test (n m : Nat) : Nat => \\elim m\n" +
       " | zero => n\n" +
-      " | _ => n\n"
+      " | _ => n"
     );
     DependentLink nParam = def.getParameters().subst(new ExprSubstitution(), LevelSubstitution.EMPTY, 1);
     Map<BranchElimTree.Pattern, ElimTree> children = new HashMap<>();
     children.put(Prelude.ZERO, new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nParam)));
-    children.put(BranchElimTree.Pattern.ANY, new LeafElimTree(param("m", Nat()), Ref(nParam)));
+    children.put(Prelude.SUC, new LeafElimTree(param("m", Nat()), Ref(nParam)));
+    assertEquals(new BranchElimTree(nParam, children), def.getElimTree());
+  }
+
+  @Test
+  public void testElimTranslationSubst3() {
+    TypeCheckClassResult result = typeCheckClass(
+      "\\data D | A | B | C\n" +
+      "\\function f (n m : D) : D => \\elim m\n" +
+      " | A => n\n" +
+      " | _ => n"
+    );
+    FunctionDefinition def = (FunctionDefinition) result.getDefinition("f");
+    DataDefinition dataDef = (DataDefinition) result.getDefinition("D");
+    DependentLink nParam = def.getParameters().subst(new ExprSubstitution(), LevelSubstitution.EMPTY, 1);
+    Map<BranchElimTree.Pattern, ElimTree> children = new HashMap<>();
+    children.put(dataDef.getConstructor("A"), new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nParam)));
+    children.put(dataDef.getConstructor("B"), new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nParam)));
+    children.put(dataDef.getConstructor("C"), new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nParam)));
     assertEquals(new BranchElimTree(nParam, children), def.getElimTree());
   }
 

@@ -5,11 +5,9 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
+import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.elimtree.*;
-import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
+import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.GetTypeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
@@ -193,6 +191,16 @@ public class ElimTypechecking {
         constructors = someConPattern.getConstructor().getDataType().getConstructors();
       }
 
+      DataDefinition dataType = someConPattern.getConstructor().getDataType();
+      if (someConPattern.getConstructor().getDataType().isTruncated()) {
+        if (!myExpectedType.getType().isLessOrEquals(new UniverseExpression(dataType.getSort()), myVisitor.getEquations(), conClauseData.clause)) {
+          LocalTypeCheckingError error = new LocalTypeCheckingError("Data " + dataType.getName() + " is truncated to the universe "
+            + dataType.getSort() + " which does not fit in the universe of " +
+            myExpectedType + " - the type of eliminator", conClauseData.clause);
+          myVisitor.getErrorReporter().report(error);
+        }
+      }
+
       boolean hasVars = false;
       Map<Constructor, List<ClauseData>> constructorMap = new LinkedHashMap<>();
       for (ClauseData clauseData : clauseDataList) {
@@ -229,9 +237,12 @@ public class ElimTypechecking {
       }
 
       Map<BranchElimTree.Pattern, ElimTree> children = new HashMap<>();
-      for (Map.Entry<Constructor, List<ClauseData>> entry : constructorMap.entrySet()) {
-        List<ClauseData> conClauseDataList = entry.getValue();
-        myContext.push(new Util.ConstructorClauseElem(entry.getKey()));
+      for (Constructor constructor : constructors) {
+        List<ClauseData> conClauseDataList = constructorMap.get(constructor);
+        if (conClauseDataList == null) {
+          continue;
+        }
+        myContext.push(new Util.ConstructorClauseElem(constructor));
 
         for (int i = 0; i < conClauseDataList.size(); i++) {
           List<Pattern> patterns = new ArrayList<>();
@@ -239,7 +250,7 @@ public class ElimTypechecking {
           if (oldPatterns.get(index) instanceof ConstructorPattern) {
             patterns.addAll(((ConstructorPattern) oldPatterns.get(index)).getPatterns());
           } else {
-            DependentLink conParameters = DependentLink.Helper.subst(entry.getKey().getParameters(), new ExprSubstitution());
+            DependentLink conParameters = DependentLink.Helper.subst(constructor.getParameters(), new ExprSubstitution());
             for (DependentLink link = conParameters; link.hasNext(); link = link.getNext()) {
               patterns.add(new BindingPattern(link));
             }
@@ -252,7 +263,7 @@ public class ElimTypechecking {
             if (conCalls != null) {
               ConCallExpression conCall = null;
               for (ConCallExpression conCall1 : conCalls) {
-                if (conCall1.getDefinition() == entry.getKey()) {
+                if (conCall1.getDefinition() == constructor) {
                   conCall = conCall1;
                   break;
                 }
@@ -260,7 +271,7 @@ public class ElimTypechecking {
               assert conCall != null;
               substExpr = new ConCallExpression(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), arguments);
             } else {
-              substExpr = new ConCallExpression(entry.getKey(), someConPattern.getSortArgument(), someConPattern.getDataTypeArguments(), arguments);
+              substExpr = new ConCallExpression(constructor, someConPattern.getSortArgument(), someConPattern.getDataTypeArguments(), arguments);
             }
             conClauseDataList.get(i).substitution.add(((BindingPattern) oldPatterns.get(index)).getBinding(), substExpr);
           }
@@ -272,7 +283,7 @@ public class ElimTypechecking {
         if (elimTree == null) {
           myOK = false;
         } else {
-          children.put(entry.getKey(), elimTree);
+          children.put(constructor, elimTree);
         }
 
         myContext.pop();
