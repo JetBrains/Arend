@@ -59,7 +59,14 @@ class PatternTypechecking {
       }
       result = doTypechecking(patterns, DependentLink.Helper.subst(parameters, new ExprSubstitution()), clause, true);
     } else {
-      result = doTypechecking(clause.getPatterns(), DependentLink.Helper.subst(parameters, new ExprSubstitution()), clause, false);
+      if (visitor.getTypeCheckingDefCall().getThisClass() != null) {
+        List<Abstract.Pattern> patterns = new ArrayList<>(clause.getPatterns().size() + 1);
+        patterns.add(null);
+        patterns.addAll(clause.getPatterns());
+        result = doTypechecking(patterns, DependentLink.Helper.subst(parameters, new ExprSubstitution()), clause, false);
+      } else {
+        result = doTypechecking(clause.getPatterns(), DependentLink.Helper.subst(parameters, new ExprSubstitution()), clause, false);
+      }
     }
     if (result == null) {
       return null;
@@ -151,7 +158,7 @@ class PatternTypechecking {
         return null;
       }
 
-      if (!fullList) {
+      if (!fullList && pattern != null) {
         if (pattern.isExplicit()) {
           while (!parameters.isExplicit()) {
             addPattern(result, new BindingPattern(parameters));

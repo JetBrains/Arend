@@ -245,11 +245,7 @@ class DefinitionTypechecking {
 
       if (body instanceof Abstract.ElimFunctionBody) {
         if (expectedType != null) {
-          DependentLink parameters = typedDef.getParameters();
-          if (typedDef.getThisClass() != null) {
-            parameters = parameters.getNext();
-          }
-          ElimTree elimTree = new ElimTypechecking(visitor, expectedType, true).typecheckElim(((Abstract.ElimFunctionBody) body), parameters);
+          ElimTree elimTree = new ElimTypechecking(visitor, expectedType, true).typecheckElim(((Abstract.ElimFunctionBody) body), typedDef.getParameters());
           if (elimTree != null) {
             typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
             if (ConditionsChecking.check(elimTree)) {

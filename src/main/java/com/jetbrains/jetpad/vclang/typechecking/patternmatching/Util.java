@@ -90,14 +90,14 @@ public class Util {
       for (DependentLink link = DependentLink.Helper.get(parameters, clauseElems.size()); link.hasNext(); link = link.getNext()) {
         clauseElems.add(new PatternClauseElem(new BindingPattern(link)));
       }
-    }
 
-    if (elimParams != null) {
-      DependentLink link = parameters;
-      for (int i = 0; i < elimParams.size(); i++, link = link.getNext()) {
-        while (link != elimParams.get(i)) {
-          clauseElems.remove(i);
-          link = link.getNext();
+      if (elimParams != null) {
+        DependentLink link = parameters;
+        for (int i = 0; i < elimParams.size(); i++, link = link.getNext()) {
+          while (link != elimParams.get(i)) {
+            clauseElems.remove(i);
+            link = link.getNext();
+          }
         }
       }
     }

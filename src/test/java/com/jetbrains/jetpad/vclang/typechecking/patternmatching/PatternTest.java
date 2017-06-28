@@ -334,6 +334,14 @@ public class PatternTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void withThisAndElim() {
+    typeCheckClass(
+      "\\function tests (n : Nat) : Nat => \\elim n\n" +
+      "  | suc n => 0\n" +
+      "  | zero => 0", "");
+  }
+
+  @Test
   public void nonEliminatedAvailable() {
     typeCheckClass(
       "\\function tests {n : Nat} (m : Nat) : Nat => \\elim m\n" +
