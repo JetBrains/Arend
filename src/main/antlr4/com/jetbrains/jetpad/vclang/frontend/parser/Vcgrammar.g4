@@ -29,11 +29,7 @@ dataBody : elim constructorClause*                      # dataClauses
          | ('=>' '|'? constructor)? ('|' constructor)*  # dataConstructors
          ;
 
-constructorClause : '|' pattern (',' pattern)* '=>' constructorList;
-
-constructorList : '|'? constructor ('|' constructor)*         # constructorsWithoutBraces
-                | '{' '|'? constructor ('|' constructor)* '}' # constructorsWithBraces
-                ;
+constructorClause : '|' pattern (',' pattern)* '=>' (constructor | '{' '|'? constructor ('|' constructor)* '}');
 
 elim : '\\with' | '=>' '\\elim' expr? (',' expr)*;
 

@@ -188,6 +188,6 @@ public class DefinitionTest extends TypeCheckingTestCase {
     typeCheckClass(
         "\\function f (x : Nat -> Nat) => x 0\n" +
         "\\data Test (A : \\Set0) \\with\n" +
-        "  | Test (suc n) => foo (f n)", 1);
+        "  | suc n => foo (f n)", 1);
   }
 }

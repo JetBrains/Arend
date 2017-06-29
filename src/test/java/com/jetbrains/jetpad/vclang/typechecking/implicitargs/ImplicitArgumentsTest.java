@@ -398,10 +398,9 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void etaExpansionTest() {
     typeCheckClass(
         "\\function ($) {A B : \\Set0} (f : A -> B) (a : A) => f a\n" +
-        "\\data Fin Nat \\with | zero => fzero | suc n => szero | fsuc (Fin n)\n" +
+        "\\data Fin Nat \\with | n => fzero | suc n => fsuc (Fin n)\n" +
         "\\function unsuc {n : Nat} (x : Fin (suc n)) : Fin n => \\elim n, x\n" +
-        "  | zero, szero => fzero\n" +
-        "  | suc n, szero => szero\n" +
+        "  | _, fzero => fzero\n" +
         "  | zero, fsuc x => fzero\n" +
         "  | suc n, fsuc x => fsuc (unsuc x)\n" +
         "\\function foo {n : Nat} (x : Fin n) : Nat => \\elim n\n" +

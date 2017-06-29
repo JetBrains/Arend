@@ -407,9 +407,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (ctx instanceof DataClausesContext) {
       for (ConstructorClauseContext clauseCtx : ((DataClausesContext) ctx).constructorClause()) {
         try {
-          List<Abstract.Pattern> patterns = clauseCtx.pattern().stream().map(this::visitPattern).collect(Collectors.toList());
-          List<ConstructorContext> conContexts = clauseCtx.constructorList() instanceof ConstructorsWithBracesContext ? ((ConstructorsWithBracesContext) clauseCtx.constructorList()).constructor() : ((ConstructorsWithoutBracesContext) clauseCtx.constructorList()).constructor();
-          visitConstructors(conContexts, def, patterns);
+          visitConstructors(clauseCtx.constructor(), def, clauseCtx.pattern().stream().map(this::visitPattern).collect(Collectors.toList()));
         } catch (ParseException ignored) {
 
         }

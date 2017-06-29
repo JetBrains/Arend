@@ -114,11 +114,11 @@ public class ConditionsTest extends TypeCheckingTestCase {
         "\\data S | base | loop I \n" +
         "  \\with | loop left => base\n" +
         "         | loop right => base\n" +
-        "\\data D Nat \\with | zero => {di I | dz} | _ => d\n" +
-        "  \\with | di left => dz | di right => dz\n" +
+        "\\data D Nat \\with | zero => di I | _ => d\n" +
+        "  \\with | di left => d | di right => d\n" +
         "\\function test (x : Nat) (y : D x) : S => \\elim x, y\n" +
         "  | suc _, d => base\n" +
-        "  | zero, dz => base\n" +
+        "  | zero, d => base\n" +
         "  | zero, di i => loop i\n"
     );
   }

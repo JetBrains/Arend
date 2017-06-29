@@ -106,7 +106,7 @@ public class ElimTest extends TypeCheckingTestCase {
   public void elimUnknownIndex5() {
     typeCheckClass(
         "\\data E | A | B | C\n" +
-        "\\data D E \\with | A => d0 | B => d1 | C => d2\n" +
+        "\\data D E \\with | A => d0 | B => d1 | _ => d2\n" +
         "\\function test (x : E) (y : D x) : Nat => \\elim y | d0 => 0 | d1 => 1 | d2 => 2", 3);
   }
 
@@ -162,8 +162,8 @@ public class ElimTest extends TypeCheckingTestCase {
   @Test
   public void elim9() {
     typeCheckClass(
-        "\\data D Nat \\with | suc n => { d1 | d1' } | zero => { d0 | d0' }\n" +
-        "\\function test (n : Nat) (a : D (suc n)) : Nat => \\elim a | d1' => 0", 1);
+        "\\data D Nat \\with | suc n => d1 | _ => d | zero => d0\n" +
+        "\\function test (n : Nat) (a : D (suc n)) : Nat => \\elim a | d => 0", 1);
   }
 
   @Test
