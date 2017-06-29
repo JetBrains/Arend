@@ -97,7 +97,8 @@ public class DefinitionStateSerialization {
     for (Constructor constructor : definition.getConstructors()) {
       DefinitionProtos.Definition.DataData.Constructor.Builder cBuilder = DefinitionProtos.Definition.DataData.Constructor.newBuilder();
       if (constructor.getPatterns() != null) {
-        cBuilder.setPatterns(defSerializer.writePatterns(constructor.getPatterns()));
+        // TODO[newElim]
+        // cBuilder.setPatterns(defSerializer.writePatterns(constructor.getPatterns()));
       }
       cBuilder.addAllParam(defSerializer.writeParameters(constructor.getParameters()));
       if (constructor.getCondition() != null) {

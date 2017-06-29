@@ -4,14 +4,9 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class ConstructorPattern extends Pattern {
@@ -43,6 +38,7 @@ public class ConstructorPattern extends Pattern {
 
   @Override
   public Expression toExpression(ExprSubstitution subst) {
+  /*
     List<Expression> params = new ArrayList<>();
     for (DependentLink link = myConstructor.getDataTypeParameters(); link.hasNext(); link = link.getNext()) {
       Expression param = subst.get(link);
@@ -75,11 +71,15 @@ public class ConstructorPattern extends Pattern {
     }
     DependentLink.Helper.freeSubsts(constructorParameters, subst);
     return new ConCallExpression(myConstructor, Sort.STD, params, arguments);
+  */
+    return null;
   }
 
+  /*
   public ExprSubstitution getMatchedArguments(List<Expression> dataTypeArguments) {
     return DependentLink.Helper.toSubstitution(myConstructor.getDataTypeParameters(), myConstructor.matchDataTypeArguments(dataTypeArguments));
   }
+  */
 
   @Override
   public MatchResult match(Expression expr, boolean normalize) {
@@ -95,9 +95,6 @@ public class ConstructorPattern extends Pattern {
       return new MatchFailedResult(this, expr);
     }
 
-    if (conCall.getDefCallArguments().size() != myArguments.getPatterns().size()) {
-      throw new IllegalStateException();
-    }
     return myArguments.match(conCall.getDefCallArguments(), normalize);
   }
 }

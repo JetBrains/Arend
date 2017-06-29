@@ -58,7 +58,7 @@ public class PatternTest extends TypeCheckingTestCase {
         Abstract.ConstructorPattern conPattern1 = (Abstract.ConstructorPattern) pattern1;
         ConstructorPattern conPattern2 = (ConstructorPattern) patterns.get(j);
         assertEquals(conPattern1.getConstructor(), conPattern2.getConstructor().getAbstractDefinition());
-        checkPatterns(conPattern1.getArguments(), conPattern2.getPatterns(), expected, actual, hasImplicit);
+        checkPatterns(conPattern1.getArguments(), conPattern2.getArguments(), expected, actual, hasImplicit);
       } else {
         throw new IllegalStateException();
       }
@@ -90,8 +90,8 @@ public class PatternTest extends TypeCheckingTestCase {
         last = link;
       } else
       if (pattern instanceof ConstructorPattern) {
-        for (int i = ((ConstructorPattern) pattern).getPatterns().size() - 1; i >= 0; i--) {
-          patternStack.push(((ConstructorPattern) pattern).getPatterns().get(i));
+        for (int i = ((ConstructorPattern) pattern).getArguments().size() - 1; i >= 0; i--) {
+          patternStack.push(((ConstructorPattern) pattern).getArguments().get(i));
         }
       } else
       if (pattern instanceof EmptyPattern) {

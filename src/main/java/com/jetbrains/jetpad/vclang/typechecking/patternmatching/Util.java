@@ -45,7 +45,10 @@ public class Util {
         myStack.push(new PatternClauseElem(new BindingPattern(link)));
       }
       if (elimTree instanceof LeafElimTree) {
-        myConsumer.accept(unflattenMissingClause(new ArrayList<>(myStack)), ((LeafElimTree) elimTree).getExpression());
+        Expression expression = ((LeafElimTree) elimTree).getExpression();
+        if (expression != null) {
+          myConsumer.accept(unflattenClauses(new ArrayList<>(myStack)), expression);
+        }
       } else {
         for (Map.Entry<BranchElimTree.Pattern, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
           if (entry.getKey() instanceof Constructor) {
@@ -63,11 +66,11 @@ public class Util {
     }
   }
 
-  public static List<Expression> unflattenMissingClause(List<ClauseElem> clauseElems) {
-    return unflattenMissingClause(clauseElems, null, null);
+  public static List<Expression> unflattenClauses(List<ClauseElem> clauseElems) {
+    return unflattenClauses(clauseElems, null, null);
   }
 
-  public static List<Expression> unflattenMissingClause(List<ClauseElem> clauseElems, DependentLink parameters, List<DependentLink> elimParams) {
+  public static List<Expression> unflattenClauses(List<ClauseElem> clauseElems, DependentLink parameters, List<DependentLink> elimParams) {
     for (int i = clauseElems.size() - 1; i >= 0; i--) {
       if (clauseElems.get(i) instanceof ConstructorClauseElem) {
         Constructor constructor = ((ConstructorClauseElem) clauseElems.get(i)).constructor;
@@ -82,7 +85,7 @@ public class Util {
           }
         }
         clauseElems.subList(i, Math.min(i + size + 1, clauseElems.size())).clear();
-        clauseElems.add(i, new PatternClauseElem(new ConstructorPattern(new ConCallExpression(constructor, Sort.STD, DependentLink.Helper.toList(constructor.getDataTypeParameters()).stream().map(ReferenceExpression::new).collect(Collectors.toList()), Collections.emptyList()), patterns)));
+        clauseElems.add(i, new PatternClauseElem(new ConstructorPattern(new ConCallExpression(constructor, Sort.STD, DependentLink.Helper.toList(constructor.getDataTypeParameters()).stream().map(ReferenceExpression::new).collect(Collectors.toList()), Collections.emptyList()), new Patterns(patterns))));
       }
     }
 

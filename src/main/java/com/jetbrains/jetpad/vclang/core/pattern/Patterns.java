@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.core.pattern;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,14 +41,13 @@ public class Patterns {
       Pattern.MatchResult subMatch = myPatterns.get(i).match(exprs.get(i), normalize);
       if (subMatch instanceof Pattern.MatchFailedResult) {
         return subMatch;
-      } else
-      if (subMatch instanceof Pattern.MatchMaybeResult) {
-        if (maybe == null) {
+      }
+      if (maybe == null) {
+        if (subMatch instanceof Pattern.MatchMaybeResult) {
           maybe = (Pattern.MatchMaybeResult) subMatch;
+        } else if (subMatch instanceof Pattern.MatchOKResult) {
+          result.addAll(((Pattern.MatchOKResult) subMatch).expressions);
         }
-      } else
-      if (subMatch instanceof Pattern.MatchOKResult) {
-        result.addAll(((Pattern.MatchOKResult) subMatch).expressions);
       }
     }
 

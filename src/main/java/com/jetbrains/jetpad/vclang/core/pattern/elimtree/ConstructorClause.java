@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.core.pattern.elimtree;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
@@ -63,7 +62,7 @@ public class ConstructorClause implements Clause {
       arguments.add(new ReferenceExpression(link));
     }
     DataCallExpression dataCall = myParent.getReference().getType().getExpr().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
-    result.add(myParent.getReference(), new ConCallExpression(myConstructor, dataCall.getSortArgument(), myConstructor.matchDataTypeArguments(new ArrayList<>(dataCall.getDefCallArguments())), arguments));
+    // result.add(myParent.getReference(), new ConCallExpression(myConstructor, dataCall.getSortArgument(), myConstructor.matchDataTypeArguments(new ArrayList<>(dataCall.getDefCallArguments())), arguments));
 
     for (int i = 0; i < myParent.getContextTail().size(); i++) {
       result.add(myParent.getContextTail().get(i), new ReferenceExpression(myTailBindings.get(i)));

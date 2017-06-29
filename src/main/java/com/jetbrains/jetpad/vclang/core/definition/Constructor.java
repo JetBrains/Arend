@@ -2,24 +2,22 @@ package com.jetbrains.jetpad.vclang.core.definition;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.Pattern;
+import com.jetbrains.jetpad.vclang.core.elimtree.Patterns;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
-import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.core.pattern.ConstructorPattern;
-import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
-import com.jetbrains.jetpad.vclang.core.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.EmptyElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Constructor extends Definition implements Function, BranchElimTree.Pattern {
   private final DataDefinition myDataType;
@@ -77,7 +75,7 @@ public class Constructor extends Definition implements Function, BranchElimTree.
 
   public DependentLink getDataTypeParameters() {
     assert myParameters != null && myDataType.status().headerIsOK();
-    return myPatterns == null ? myDataType.getParameters() : myPatterns.getParameters();
+    return myPatterns == null ? myDataType.getParameters() : myPatterns.getFirstBinding();
   }
 
   public List<Expression> matchDataTypeArguments(List<Expression> arguments) {
@@ -85,61 +83,40 @@ public class Constructor extends Definition implements Function, BranchElimTree.
     if (myPatterns == null) {
       return arguments;
     } else {
-      Pattern.MatchResult result = myPatterns.match(arguments);
-      if (result instanceof Pattern.MatchOKResult) {
-        return ((Pattern.MatchOKResult) result).expressions;
-      } else {
-        return null;
-      }
+      List<Expression> result = new ArrayList<>();
+      return myPatterns.match(arguments, result) == Pattern.MatchResult.OK ? result : null;
     }
   }
 
   public DataCallExpression getDataTypeExpression(Sort sortArgument) {
-    return getDataTypeExpression(null, sortArgument);
+    return getDataTypeExpression(sortArgument, null);
   }
 
-  public DataCallExpression getDataTypeExpression(ExprSubstitution substitution, Sort sortArgument) {
+  public DataCallExpression getDataTypeExpression(Sort sortArgument, List<? extends Expression> dataTypeArguments) {
     assert myParameters != null && myDataType.status().headerIsOK();
 
     List<Expression> arguments;
     if (myPatterns == null) {
-      // TODO: Why substitution is not applied?
-      arguments = new ArrayList<>();
-      for (DependentLink link = myDataType.getParameters(); link.hasNext(); link = link.getNext()) {
-        arguments.add(new ReferenceExpression(link));
+      if (dataTypeArguments == null) {
+        arguments = new ArrayList<>();
+        for (DependentLink link = getDataTypeParameters(); link.hasNext(); link = link.getNext()) {
+          arguments.add(new ReferenceExpression(link));
+        }
+      } else {
+        arguments = new ArrayList<>(dataTypeArguments);
       }
     } else {
-      ExprSubstitution subst = new ExprSubstitution();
-
-      DependentLink dataTypeParams = myDataType.getParameters();
-      LevelSubstitution levelSubst = sortArgument == null ? LevelSubstitution.EMPTY : sortArgument.toLevelSubstitution();
-      arguments = new ArrayList<>(myPatterns.getPatterns().size());
-      for (Pattern patternArg : myPatterns.getPatterns()) {
-        ExprSubstitution innerSubst = new ExprSubstitution();
-        LevelSubstitution innerLevelSubst;
-
-        if (patternArg instanceof ConstructorPattern) {
-          DataCallExpression dataCall = dataTypeParams.getType().getExpr().subst(subst).normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
-          List<? extends Expression> argDataTypeParams = dataCall.getDefCallArguments();
-          innerSubst = ((ConstructorPattern) patternArg).getMatchedArguments(new ArrayList<>(argDataTypeParams));
-          innerLevelSubst = new StdLevelSubstitution(dataCall.getSortArgument());
-        } else {
-          innerLevelSubst = LevelSubstitution.EMPTY;
+      if (dataTypeArguments == null) {
+        arguments = myPatterns.getPatternList().stream().map(Pattern::toExpression).collect(Collectors.toList());
+      } else {
+        ExprSubstitution substitution = new ExprSubstitution();
+        DependentLink link = myPatterns.getFirstBinding();
+        for (Expression argument : dataTypeArguments) {
+          substitution.add(link, argument);
+          link = link.getNext();
         }
-
-        if (substitution != null) {
-          innerSubst.addAll(substitution);
-        }
-        Expression expr = patternArg.toExpression(innerSubst).subst(innerLevelSubst).subst(levelSubst);
-
-        subst.add(dataTypeParams, expr);
-        arguments.add(expr);
-        dataTypeParams = dataTypeParams.getNext();
+        arguments = myPatterns.getPatternList().stream().map(pattern -> pattern.toExpression().subst(substitution)).collect(Collectors.toList());
       }
-    }
-
-    if (sortArgument == null) {
-      sortArgument = Sort.STD;
     }
 
     return myDataType.getDefCall(sortArgument, arguments);

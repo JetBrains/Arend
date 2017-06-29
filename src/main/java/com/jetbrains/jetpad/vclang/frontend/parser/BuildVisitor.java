@@ -343,19 +343,24 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
+  public List<Concrete.ReferenceExpression> visitElim(ElimContext ctx) {
+    List<Concrete.ReferenceExpression> elimExprs = Collections.emptyList();
+    if (ctx != null && ctx.expr() != null && !ctx.expr().isEmpty()) {
+      elimExprs = checkElimExpressions(ctx.expr().stream().map(this::visitExpr).collect(Collectors.toList()));
+      if (elimExprs == null) {
+        return null;
+      }
+    }
+    return elimExprs;
+  }
+
+  @Override
   public Concrete.FunctionDefinition visitDefFunction(DefFunctionContext ctx) {
     Concrete.Expression resultType = ctx.expr() != null ? visitExpr(ctx.expr()) : null;
     Concrete.FunctionBody body;
     if (ctx.functionBody() instanceof WithElimContext) {
       WithElimContext elimCtx = ((WithElimContext) ctx.functionBody());
-      List<Concrete.ReferenceExpression> elimExprs = Collections.emptyList();
-      if (elimCtx.elim() != null && elimCtx.elim().expr() != null && !elimCtx.elim().expr().isEmpty()) {
-        elimExprs = checkElimExpressions(elimCtx.elim().expr().stream().map(this::visitExpr).collect(Collectors.toList()));
-        if (elimExprs == null) {
-          return null;
-        }
-      }
-      body = new Concrete.ElimFunctionBody(tokenPosition(elimCtx.start), elimExprs, visitClauses(elimCtx.clauses()));
+      body = new Concrete.ElimFunctionBody(tokenPosition(elimCtx.start), visitElim(elimCtx.elim()), visitClauses(elimCtx.clauses()));
     } else {
       body = new Concrete.TermFunctionBody(tokenPosition(ctx.start), visitExpr(((WithoutElimContext) ctx.functionBody()).expr()));
     }
@@ -398,7 +403,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Concrete.Expression universe = ctx.expr() == null ? null : (Concrete.Expression) visit(ctx.expr());
     List<Concrete.Constructor> constructors = new ArrayList<>();
     List<Concrete.Condition> conditions = ctx.conditionDef() != null ? visitConditionDef(ctx.conditionDef()) : null;
-    Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(tokenPosition(ctx.getStart()), visitName(ctx.name()), visitPrecedence(ctx.precedence()), visitTeles(ctx.tele()), ctx.isTruncated() instanceof TruncatedContext, universe, constructors, conditions);
+    List<Concrete.ReferenceExpression> eliminatedReferences = visitElim(ctx.dataBody() instanceof DataClausesContext ? ((DataClausesContext) ctx.dataBody()).elim() : null);
+    Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(tokenPosition(ctx.getStart()), visitName(ctx.name()), visitPrecedence(ctx.precedence()), visitTeles(ctx.tele()), eliminatedReferences, ctx.isTruncated() instanceof TruncatedContext, universe, constructors, conditions);
     visitDataBody(ctx.dataBody(), dataDefinition);
     return dataDefinition;
   }

@@ -134,7 +134,8 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
       DefinitionProtos.Definition.DataData.Constructor constructorProto = entry.getValue();
       Constructor constructor = getTypechecked(state, entry.getKey());
       if (constructorProto.hasPatterns()) {
-        constructor.setPatterns(defDeserializer.readPatterns(constructorProto.getPatterns()));
+        // TODO[newElim]
+        // constructor.setPatterns(defDeserializer.readPatterns(constructorProto.getPatterns()));
       }
       constructor.setParameters(defDeserializer.readParameters(constructorProto.getParamList()));
       if (constructorProto.hasCondition()) {

@@ -3,11 +3,11 @@ package com.jetbrains.jetpad.vclang.core.expr;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.core.elimtree.Pattern;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.StripVisitor;
-import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
@@ -95,17 +95,15 @@ public class DataCallExpression extends DefCallExpression implements Type {
       return true;
     }
 
-    List<? extends Expression> matchedParameters;
+    List<Expression> matchedParameters;
     if (constructor.getPatterns() != null) {
-      Pattern.MatchResult matchResult = constructor.getPatterns().match(myArguments);
-      if (matchResult instanceof Pattern.MatchMaybeResult) {
+      matchedParameters = new ArrayList<>();
+      Pattern.MatchResult matchResult = constructor.getPatterns().match(myArguments, matchedParameters);
+      if (matchResult == Pattern.MatchResult.MAYBE) {
         return false;
-      } else if (matchResult instanceof Pattern.MatchFailedResult) {
+      }
+      if (matchResult == Pattern.MatchResult.FAIL) {
         return true;
-      } else if (matchResult instanceof Pattern.MatchOKResult) {
-        matchedParameters = ((Pattern.MatchOKResult) matchResult).expressions;
-      } else {
-        throw new IllegalStateException();
       }
     } else {
       matchedParameters = myArguments;

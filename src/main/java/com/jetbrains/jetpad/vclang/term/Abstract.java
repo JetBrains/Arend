@@ -341,6 +341,7 @@ public final class Abstract {
 
   public interface DataDefinition extends Definition {
     List<? extends TypeArgument> getParameters();
+    List<? extends ReferenceExpression> getEliminatedReferences();
     List<? extends Constructor> getConstructors();
     Collection<? extends Condition> getConditions();
     boolean isTruncated();

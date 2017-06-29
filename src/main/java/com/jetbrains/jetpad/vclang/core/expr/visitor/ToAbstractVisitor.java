@@ -19,7 +19,6 @@ import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 
@@ -70,7 +69,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       return myFactory.makeEmptyPattern(isExplicit);
     }
     if (pattern instanceof ConstructorPattern) {
-      return myFactory.makeConPattern(isExplicit, ((ConstructorPattern) pattern).getConstructor().getAbstractDefinition(), visitPatterns(((ConstructorPattern) pattern).getPatterns(), ((ConstructorPattern) pattern).getConstructor().getParameters()));
+      return myFactory.makeConPattern(isExplicit, ((ConstructorPattern) pattern).getConstructor().getAbstractDefinition(), visitPatterns(((ConstructorPattern) pattern).getArguments(), ((ConstructorPattern) pattern).getConstructor().getParameters()));
     }
     throw new IllegalStateException();
   }
@@ -212,12 +211,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
     Abstract.Expression conParams = null;
     if (expr.getDefinition().status().headerIsOK() && myFlags.contains(Flag.SHOW_CON_PARAMS) && (!expr.getDataTypeArguments().isEmpty() || myFlags.contains(Flag.SHOW_CON_DATA_TYPE))) {
-      ExprSubstitution substitution = new ExprSubstitution();
-      DependentLink link = expr.getDefinition().getDataTypeParameters();
-      for (int i = 0; i < expr.getDataTypeArguments().size() && link.hasNext(); i++, link = link.getNext()) {
-        substitution.add(link, expr.getDataTypeArguments().get(i));
-      }
-      conParams = expr.getDefinition().getDataTypeExpression(substitution, expr.getSortArgument()).accept(this, null);
+      conParams = expr.getDataTypeExpression().accept(this, null);
     }
     return visitArguments(myFactory.makeDefCall(conParams, expr.getDefinition().getAbstractDefinition()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
   }

@@ -4,10 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.elimtree.BindingPattern;
-import com.jetbrains.jetpad.vclang.core.elimtree.ConstructorPattern;
-import com.jetbrains.jetpad.vclang.core.elimtree.EmptyPattern;
-import com.jetbrains.jetpad.vclang.core.elimtree.Pattern;
+import com.jetbrains.jetpad.vclang.core.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
@@ -24,12 +21,12 @@ import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
 
-class PatternTypechecking {
+public class PatternTypechecking {
   private final LocalErrorReporter myErrorReporter;
   private final boolean myAllowInterval;
   private Map<Abstract.ReferableSourceNode, Binding> myContext;
 
-  PatternTypechecking(LocalErrorReporter errorReporter, boolean allowInterval) {
+  public PatternTypechecking(LocalErrorReporter errorReporter, boolean allowInterval) {
     myErrorReporter = errorReporter;
     myAllowInterval = allowInterval;
   }
@@ -39,35 +36,14 @@ class PatternTypechecking {
       if (pattern instanceof BindingPattern) {
         bindings.add(((BindingPattern) pattern).getBinding());
       } else if (pattern instanceof ConstructorPattern) {
-        collectBindings(((ConstructorPattern) pattern).getPatterns(), bindings);
+        collectBindings(((ConstructorPattern) pattern).getArguments(), bindings);
       }
     }
   }
 
   Pair<List<Pattern>, CheckTypeVisitor.Result> typecheckClause(Abstract.Clause clause, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType, CheckTypeVisitor visitor, boolean isFinal) {
-    myContext = visitor.getContext();
-
     // Typecheck patterns
-    Pair<List<Pattern>, List<Expression>> result;
-    if (elimParams != null) {
-      // Put patterns in the correct order
-      // If some parameters are not eliminated (i.e. absent in elimParams), then we put null in corresponding patterns
-      List<Abstract.Pattern> patterns = new ArrayList<>();
-      for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
-        int index = elimParams.indexOf(link);
-        patterns.add(index < 0 ? null : clause.getPatterns().get(index));
-      }
-      result = doTypechecking(patterns, DependentLink.Helper.subst(parameters, new ExprSubstitution()), clause, true);
-    } else {
-      if (visitor.getTypeCheckingDefCall().getThisClass() != null) {
-        List<Abstract.Pattern> patterns = new ArrayList<>(clause.getPatterns().size() + 1);
-        patterns.add(null);
-        patterns.addAll(clause.getPatterns());
-        result = doTypechecking(patterns, DependentLink.Helper.subst(parameters, new ExprSubstitution()), clause, false);
-      } else {
-        result = doTypechecking(clause.getPatterns(), DependentLink.Helper.subst(parameters, new ExprSubstitution()), clause, false);
-      }
-    }
+    Pair<List<Pattern>, List<Expression>> result = typecheckPatterns(clause.getPatterns(), elimParams, parameters, clause, visitor.getTypeCheckingDefCall().getThisClass() != null, visitor);
     if (result == null) {
       return null;
     }
@@ -113,6 +89,32 @@ class PatternTypechecking {
     return tcResult == null ? null : new Pair<>(result.proj1, tcResult);
   }
 
+  public Pair<List<Pattern>, List<Expression>> typecheckPatterns(List<? extends Abstract.Pattern> patterns, List<DependentLink> elimParams, DependentLink parameters, Abstract.SourceNode sourceNode, boolean withThis, CheckTypeVisitor visitor) {
+    myContext = visitor.getContext();
+
+    Pair<List<Pattern>, List<Expression>> result;
+    if (elimParams != null) {
+      // Put patterns in the correct order
+      // If some parameters are not eliminated (i.e. absent in elimParams), then we put null in corresponding patterns
+      List<Abstract.Pattern> patterns1 = new ArrayList<>();
+      for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
+        int index = elimParams.indexOf(link);
+        patterns1.add(index < 0 ? null : patterns.get(index));
+      }
+      result = doTypechecking(patterns1, DependentLink.Helper.subst(parameters, new ExprSubstitution()), sourceNode, true);
+    } else {
+      if (withThis) {
+        List<Abstract.Pattern> patterns1 = new ArrayList<>(patterns.size() + 1);
+        patterns1.add(null);
+        patterns1.addAll(patterns);
+        result = doTypechecking(patterns1, DependentLink.Helper.subst(parameters, new ExprSubstitution()), sourceNode, false);
+      } else {
+        result = doTypechecking(patterns, DependentLink.Helper.subst(parameters, new ExprSubstitution()), sourceNode, false);
+      }
+    }
+    return result;
+  }
+
   Pair<List<Pattern>, Map<Abstract.ReferableSourceNode, Binding>> typecheckPatterns(List<? extends Abstract.Pattern> patterns, DependentLink parameters, Abstract.SourceNode sourceNode, boolean fullList) {
     myContext = new HashMap<>();
     Pair<List<Pattern>, List<Expression>> result = doTypechecking(patterns, parameters, sourceNode, fullList);
@@ -128,7 +130,7 @@ class PatternTypechecking {
         return ((BindingPattern) patterns.get(i)).getBinding();
       } else
       if (patterns.get(i) instanceof ConstructorPattern) {
-        DependentLink last = getBinding(((ConstructorPattern) patterns.get(i)).getPatterns(), first);
+        DependentLink last = getBinding(((ConstructorPattern) patterns.get(i)).getArguments(), first);
         if (last != null) {
           return last;
         }
@@ -243,12 +245,12 @@ class PatternTypechecking {
         return null;
       }
 
-      addPattern(result, new ConstructorPattern(conCall, conResult.proj1));
+      addPattern(result, new ConstructorPattern(conCall, new Patterns(conResult.proj1)));
       if (conResult.proj2 == null) {
         exprs = null;
         parameters = parameters.getNext();
       } else {
-        conCall.addArguments(conResult.proj2);
+        conCall = new ConCallExpression(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), conResult.proj2);
         exprs.add(conCall);
         parameters = DependentLink.Helper.subst(parameters.getNext(), new ExprSubstitution(parameters, conCall));
       }

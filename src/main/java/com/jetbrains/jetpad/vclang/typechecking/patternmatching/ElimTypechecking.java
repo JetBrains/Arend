@@ -41,37 +41,43 @@ public class ElimTypechecking {
     myAllowInterval = allowInterval;
   }
 
-  public ElimTree typecheckElim(Abstract.ElimFunctionBody body, DependentLink patternTypes) {
-    List<DependentLink> elimParams = null;
-    if (!body.getExpressions().isEmpty()) {
-      int expectedNumberOfPatterns = body.getExpressions().size();
-      for (Abstract.Clause clause : body.getClauses()) {
+  public static List<DependentLink> getEliminatedParameters(List<? extends Abstract.ReferenceExpression> expressions, List<? extends Abstract.Clause> clauses, DependentLink parameters, CheckTypeVisitor visitor) {
+    List<DependentLink> elimParams = Collections.emptyList();
+    if (!expressions.isEmpty()) {
+      int expectedNumberOfPatterns = expressions.size();
+      for (Abstract.Clause clause : clauses) {
         if (clause.getPatterns().size() != expectedNumberOfPatterns) {
-          myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Expected " + expectedNumberOfPatterns + " patterns, but got " + clause.getPatterns().size(), clause));
+          visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected " + expectedNumberOfPatterns + " patterns, but got " + clause.getPatterns().size(), clause));
           return null;
         }
       }
 
-      DependentLink link = patternTypes;
-      elimParams = new ArrayList<>(body.getExpressions().size());
-      for (Abstract.Expression expr : body.getExpressions()) {
-        if (expr instanceof Abstract.ReferenceExpression) {
-          DependentLink elimParam = (DependentLink) myVisitor.getContext().remove(((Abstract.ReferenceExpression) expr).getReferent());
-          while (elimParam != link) {
-            if (!link.hasNext()) {
-              myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Variable elimination must be in the order of variable introduction", expr));
-              return null;
-            }
-            link = link.getNext();
+      DependentLink link = parameters;
+      elimParams = new ArrayList<>(expressions.size());
+      for (Abstract.ReferenceExpression expr : expressions) {
+        DependentLink elimParam = (DependentLink) visitor.getContext().remove(expr.getReferent());
+        while (elimParam != link) {
+          if (!link.hasNext()) {
+            visitor.getErrorReporter().report(new LocalTypeCheckingError("Variable elimination must be in the order of variable introduction", expr));
+            return null;
           }
-          elimParams.add(elimParam);
-        } else {
-          myVisitor.getErrorReporter().report(new LocalTypeCheckingError("\\elim can be applied only to a local variable", expr));
-          return null;
+          link = link.getNext();
         }
+        elimParams.add(elimParam);
       }
     } else {
-      myVisitor.getContext().clear();
+      visitor.getContext().clear();
+    }
+    return elimParams;
+  }
+
+  public ElimTree typecheckElim(Abstract.ElimFunctionBody body, DependentLink patternTypes) {
+    List<DependentLink> elimParams = getEliminatedParameters(body.getExpressions(), body.getClauses(), patternTypes, myVisitor);
+    if (elimParams == null) {
+      return null;
+    }
+    if (elimParams.isEmpty()) {
+      elimParams = null;
     }
 
     List<ClauseData> clauses = new ArrayList<>(body.getClauses().size());
@@ -103,7 +109,7 @@ public class ElimTypechecking {
 
     if (myMissingClauses != null && !myMissingClauses.isEmpty()) {
       final List<DependentLink> finalElimParams = elimParams;
-      myVisitor.getErrorReporter().report(new MissingClausesError(myMissingClauses.stream().map(missingClause -> Util.unflattenMissingClause(missingClause, patternTypes, finalElimParams)).collect(Collectors.toList()), body));
+      myVisitor.getErrorReporter().report(new MissingClausesError(myMissingClauses.stream().map(missingClause -> Util.unflattenClauses(missingClause, patternTypes, finalElimParams)).collect(Collectors.toList()), body));
     }
     if (!myOK) {
       return null;
@@ -248,7 +254,7 @@ public class ElimTypechecking {
           List<Pattern> patterns = new ArrayList<>();
           List<Pattern> oldPatterns = conClauseDataList.get(i).patterns;
           if (oldPatterns.get(index) instanceof ConstructorPattern) {
-            patterns.addAll(((ConstructorPattern) oldPatterns.get(index)).getPatterns());
+            patterns.addAll(((ConstructorPattern) oldPatterns.get(index)).getArguments());
           } else {
             DependentLink conParameters = DependentLink.Helper.subst(constructor.getParameters(), new ExprSubstitution());
             for (DependentLink link = conParameters; link.hasNext(); link = link.getNext()) {

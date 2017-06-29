@@ -461,6 +461,7 @@ public class TypeCheckingElim {
 
       List<Expression> matchedParameters = null;
       if (constructor.getPatterns() != null) {
+        /*
         Pattern.MatchResult matchResult = constructor.getPatterns().match(parameters);
         if (matchResult instanceof Pattern.MatchMaybeResult) {
           throw new IllegalStateException();
@@ -472,6 +473,7 @@ public class TypeCheckingElim {
         } else {
           throw new IllegalStateException();
         }
+        */
 
         if (error != null) {
           myVisitor.getErrorReporter().report(error);

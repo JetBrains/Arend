@@ -38,12 +38,14 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingErr
 import com.jetbrains.jetpad.vclang.typechecking.error.local.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ConditionsChecking;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ElimTypechecking;
+import com.jetbrains.jetpad.vclang.typechecking.patternmatching.PatternTypechecking;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.CompositeInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.GlobalInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.LocalInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CollectDefCallsVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.FindMatchOnIntervalVisitor;
+import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -331,21 +333,31 @@ class DefinitionTypechecking {
     }
 
     boolean dataOk = true;
-    boolean universeOk = true;
-    for (Abstract.Constructor constructor : def.getConstructors()) {
-      visitor.getContext().clear();
-      Sort conSort = typeCheckConstructor(constructor, dataDefinition, visitor, dataDefinitions);
-      if (conSort == null) {
-        dataOk = false;
-        conSort = Sort.PROP;
+    List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(def.getEliminatedReferences(), Collections.emptyList(), dataDefinition.getParameters(), visitor);
+    if (elimParams == null) {
+      dataOk = false;
+    } else {
+      if (elimParams.isEmpty()) {
+        elimParams = null;
       }
+    }
 
-      inferredSort = inferredSort.max(conSort);
-      if (userSort != null) {
-        if (!def.isTruncated() && !conSort.isLessOrEquals(userSort)) {
-          String msg = "Universe " + conSort + " of constructor '" + constructor.getName() + "' is not compatible with expected universe " + userSort;
-          visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, constructor));
-          universeOk = false;
+    boolean universeOk = true;
+    if (dataOk) {
+      for (Abstract.Constructor constructor : def.getConstructors()) {
+        Sort conSort = typeCheckConstructor(constructor, elimParams, dataDefinition, visitor, dataDefinitions);
+        if (conSort == null) {
+          dataOk = false;
+          conSort = Sort.PROP;
+        }
+
+        inferredSort = inferredSort.max(conSort);
+        if (userSort != null) {
+          if (!def.isTruncated() && !conSort.isLessOrEquals(userSort)) {
+            String msg = "Universe " + conSort + " of constructor '" + constructor.getName() + "' is not compatible with expected universe " + userSort;
+            visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, constructor));
+            universeOk = false;
+          }
         }
       }
     }
@@ -453,7 +465,7 @@ class DefinitionTypechecking {
 
         for (Abstract.Condition cond : condMap.get(constructor)) {
           try (Utils.SetContextSaver saver = new Utils.SetContextSaver<>(visitor.getContext())) {
-            List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getDataTypeExpression(null)));
+            List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getDataTypeExpression(Sort.STD)));
             DependentLink params = constructor.getParameters();
             List<Abstract.Pattern> processedPatterns = processImplicitPatterns(cond, params, cond.getPatterns(), visitor.getErrorReporter());
             if (processedPatterns == null)
@@ -528,14 +540,14 @@ class DefinitionTypechecking {
     return null;
   }
 
-  private static Sort typeCheckConstructor(Abstract.Constructor def, DataDefinition dataDefinition, CheckTypeVisitor visitor, Set<DataDefinition> dataDefinitions) {
+  private static Sort typeCheckConstructor(Abstract.Constructor def, List<DependentLink> elimParams, DataDefinition dataDefinition, CheckTypeVisitor visitor, Set<DataDefinition> dataDefinitions) {
     Sort sort = Sort.PROP;
     try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(visitor.getContext())) {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
       Constructor constructor = new Constructor(def, dataDefinition);
       visitor.getTypecheckingState().record(def, constructor);
       List<? extends Abstract.Pattern> patterns = def.getPatterns();
-      Patterns typedPatterns = null;
+      com.jetbrains.jetpad.vclang.core.elimtree.Patterns typedPatterns = null;
       if (patterns != null) {
         List<Abstract.Pattern> processedPatterns = new ArrayList<>(patterns);
         if (dataDefinition.getThisClass() != null) {
@@ -551,10 +563,11 @@ class DefinitionTypechecking {
           referableList.add(null);
         }
         getReferableList(dataDefinition.getAbstractDefinition().getParameters(), referableList);
-        typedPatterns = visitor.getTypeCheckingElim().visitPatternArgs(processedPatterns, referableList, dataDefinition.getParameters(), Collections.emptyList(), TypeCheckingElim.PatternExpansionMode.DATATYPE);
-        if (typedPatterns == null) {
+        Pair<List<com.jetbrains.jetpad.vclang.core.elimtree.Pattern>, List<Expression>> result = new PatternTypechecking(visitor.getErrorReporter(), false).typecheckPatterns(def.getPatterns(), elimParams, dataDefinition.getParameters(), def, visitor.getTypeCheckingDefCall().getThisClass() != null, visitor);
+        if (result == null) {
           return null;
         }
+        typedPatterns = new com.jetbrains.jetpad.vclang.core.elimtree.Patterns(result.proj1);
       } else {
         List<Abstract.ReferableSourceNode> referableList = new ArrayList<>();
         if (dataDefinition.getThisClass() != null) {
@@ -571,7 +584,7 @@ class DefinitionTypechecking {
       }
 
       if (dataDefinition.getThisClass() != null && typedPatterns != null) {
-        visitor.setThis(dataDefinition.getThisClass(), typedPatterns.getParameters());
+        visitor.setThis(dataDefinition.getThisClass(), typedPatterns.getFirstBinding());
       }
 
       LinkList list = new LinkList();

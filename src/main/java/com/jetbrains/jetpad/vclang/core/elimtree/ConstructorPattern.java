@@ -1,8 +1,10 @@
 package com.jetbrains.jetpad.vclang.core.elimtree;
 
+import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.ArrayList;
@@ -10,9 +12,9 @@ import java.util.List;
 
 public class ConstructorPattern implements Pattern {
   private final ConCallExpression myConCall;
-  private final List<Pattern> myPatterns;
+  private final Patterns myPatterns;
 
-  public ConstructorPattern(ConCallExpression conCall, List<Pattern> patterns) {
+  public ConstructorPattern(ConCallExpression conCall, Patterns patterns) {
     myConCall = conCall;
     myPatterns = patterns;
   }
@@ -21,8 +23,8 @@ public class ConstructorPattern implements Pattern {
     return myConCall.getDefinition();
   }
 
-  public List<Pattern> getPatterns() {
-    return myPatterns;
+  public List<Pattern> getArguments() {
+    return myPatterns.getPatternList();
   }
 
   public Sort getSortArgument() {
@@ -35,8 +37,8 @@ public class ConstructorPattern implements Pattern {
 
   @Override
   public ConCallExpression toExpression() {
-    List<Expression> arguments = new ArrayList<>(myPatterns.size());
-    for (Pattern pattern : myPatterns) {
+    List<Expression> arguments = new ArrayList<>(myPatterns.getPatternList().size());
+    for (Pattern pattern : myPatterns.getPatternList()) {
       Expression argument = pattern.toExpression();
       if (argument == null) {
         return null;
@@ -44,5 +46,23 @@ public class ConstructorPattern implements Pattern {
       arguments.add(argument);
     }
     return new ConCallExpression(myConCall.getDefinition(), myConCall.getSortArgument(), myConCall.getDataTypeArguments(), arguments);
+  }
+
+  @Override
+  public DependentLink getFirstBinding() {
+    return myPatterns.getFirstBinding();
+  }
+
+  @Override
+  public MatchResult match(Expression expression, List<Expression> result) {
+    expression = expression.normalize(NormalizeVisitor.Mode.WHNF);
+    ConCallExpression conCall = expression.toConCall();
+    if (conCall == null) {
+      return MatchResult.MAYBE;
+    }
+    if (conCall.getDefinition() != myConCall.getDefinition()) {
+      return MatchResult.FAIL;
+    }
+    return myPatterns.match(conCall.getDefCallArguments(), result);
   }
 }

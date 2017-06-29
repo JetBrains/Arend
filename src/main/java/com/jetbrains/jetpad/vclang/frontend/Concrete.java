@@ -1133,15 +1133,17 @@ public final class Concrete {
   }
 
   public static class DataDefinition extends Definition implements Abstract.DataDefinition {
-    private final List<Constructor> myConstructors;
     private final List<TypeArgument> myParameters;
+    private final List<ReferenceExpression> myEliminatedReferences;
+    private final List<Constructor> myConstructors;
     private final List<Condition> myConditions;
     private final boolean myIsTruncated;
     private final Expression myUniverse;
 
-    public DataDefinition(Position position, String name, Abstract.Precedence precedence, List<TypeArgument> parameters, boolean isTruncated, Expression universe, List<Concrete.Constructor> constructors, List<Condition> conditions) {
+    public DataDefinition(Position position, String name, Abstract.Precedence precedence, List<TypeArgument> parameters, List<ReferenceExpression> eliminatedReferences, boolean isTruncated, Expression universe, List<Concrete.Constructor> constructors, List<Condition> conditions) {
       super(position, name, precedence);
       myParameters = parameters;
+      myEliminatedReferences = eliminatedReferences;
       myConstructors = constructors;
       myConditions = conditions;
       myIsTruncated = isTruncated;
@@ -1151,6 +1153,11 @@ public final class Concrete {
     @Override
     public List<TypeArgument> getParameters() {
       return myParameters;
+    }
+
+    @Override
+    public List<? extends Abstract.ReferenceExpression> getEliminatedReferences() {
+      return myEliminatedReferences;
     }
 
     @Override

@@ -54,6 +54,10 @@ public class ConCallExpression extends DefCallExpression {
     return this;
   }
 
+  public DataCallExpression getDataTypeExpression() {
+    return getDefinition().getDataTypeExpression(mySortArgument, myDataTypeArguments);
+  }
+
   public DependentLink getConstructorParameters() {
     ExprSubstitution substitution = new ExprSubstitution();
     int i = 0;
@@ -63,16 +67,11 @@ public class ConCallExpression extends DefCallExpression {
     return DependentLink.Helper.subst(getDefinition().getParameters(), substitution);
   }
 
+  // TODO[newElim]: Remove this function
   public void addArgument(Expression argument) {
     assert myDataTypeArguments.size() >= DependentLink.Helper.size(getDefinition().getDataTypeParameters());
     assert myArguments.size() < DependentLink.Helper.size(getDefinition().getParameters());
     myArguments.add(argument);
-  }
-
-  public void addArguments(List<? extends Expression> arguments) {
-    assert myDataTypeArguments.size() >= DependentLink.Helper.size(getDefinition().getDataTypeParameters());
-    assert myArguments.size() + arguments.size() <= DependentLink.Helper.size(getDefinition().getParameters());
-    myArguments.addAll(arguments);
   }
 
   @Override
