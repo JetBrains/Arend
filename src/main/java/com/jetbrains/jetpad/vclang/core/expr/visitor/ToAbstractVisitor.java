@@ -514,8 +514,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return expr.getExpression().accept(this, null);
   }
 
-  private List<Abstract.Clause> visitBranch(BranchElimTreeNode branchNode) {
-    List<Abstract.Clause> clauses = new ArrayList<>(branchNode.getConstructorClauses().size());
+  private List<Abstract.FunctionClause> visitBranch(BranchElimTreeNode branchNode) {
+    List<Abstract.FunctionClause> clauses = new ArrayList<>(branchNode.getConstructorClauses().size());
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
       List<Abstract.Pattern> args = new ArrayList<>();
       for (DependentLink link = clause.getConstructor().getParameters(); link.hasNext(); link = link.getNext()) {

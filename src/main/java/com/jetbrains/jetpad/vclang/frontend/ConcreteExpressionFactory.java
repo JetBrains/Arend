@@ -168,12 +168,12 @@ public class ConcreteExpressionFactory {
     return new Concrete.NewExpression(POSITION, expr);
   }
 
-  public static Concrete.CaseExpression cCase(List<Concrete.Expression> expressions, List<Concrete.Clause> clauses) {
+  public static Concrete.CaseExpression cCase(List<Concrete.Expression> expressions, List<Concrete.FunctionClause> clauses) {
     return new Concrete.CaseExpression(POSITION, expressions, clauses);
   }
 
-  public static Concrete.Clause cClause(List<Concrete.Pattern> patterns, Concrete.Expression expr) {
-    return new Concrete.Clause(POSITION, patterns, expr);
+  public static Concrete.FunctionClause cClause(List<Concrete.Pattern> patterns, Concrete.Expression expr) {
+    return new Concrete.FunctionClause(POSITION, patterns, expr);
   }
 
   public static Concrete.UniverseExpression cUniverseInf(int level) {

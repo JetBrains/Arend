@@ -169,7 +169,7 @@ public class ExpressionResolveInstanceVisitor implements AbstractExpressionVisit
     for (Abstract.Expression expression : expr.getExpressions()) {
       expression.accept(this, null);
     }
-    for (Abstract.Clause clause : expr.getClauses()) {
+    for (Abstract.FunctionClause clause : expr.getClauses()) {
       if (clause.getExpression() != null) {
         clause.getExpression().accept(this, null);
       }

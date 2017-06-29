@@ -168,7 +168,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     return null;
   }
 
-  private void visitPatterns(List<Abstract.Pattern> patterns, ExpressionResolveNameVisitor exprVisitor) {
+  private void visitPatterns(List<? extends Abstract.Pattern> patterns, ExpressionResolveNameVisitor exprVisitor) {
     for (int i = 0; i < patterns.size(); i++) {
       Abstract.Constructor constructor = exprVisitor.visitPattern(patterns.get(i), new HashSet<>());
       if (constructor != null) {

@@ -661,9 +661,9 @@ public final class Concrete {
 
   public static class CaseExpression extends Expression implements Abstract.CaseExpression {
     private final List<Expression> myExpressions;
-    private final List<Clause> myClauses;
+    private final List<FunctionClause> myClauses;
 
-    public CaseExpression(Position position, List<Expression> expressions, List<Clause> clauses) {
+    public CaseExpression(Position position, List<Expression> expressions, List<FunctionClause> clauses) {
       super(position);
       myExpressions = expressions;
       myClauses = clauses;
@@ -675,7 +675,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<Clause> getClauses() {
+    public List<FunctionClause> getClauses() {
       return myClauses;
     }
 
@@ -685,11 +685,11 @@ public final class Concrete {
     }
   }
 
-  public static class Clause extends SourceNode implements Abstract.Clause {
+  public static class FunctionClause extends SourceNode implements Abstract.FunctionClause {
     private final List<Pattern> myPatterns;
     private final Expression myExpression;
 
-    public Clause(Position position, List<Pattern> patterns, Expression expression) {
+    public FunctionClause(Position position, List<Pattern> patterns, Expression expression) {
       super(position);
       myPatterns = patterns;
       myExpression = expression;
@@ -1087,9 +1087,9 @@ public final class Concrete {
 
   public static class ElimFunctionBody extends FunctionBody implements Abstract.ElimFunctionBody {
     private final List<ReferenceExpression> myExpressions;
-    private final List<Clause> myClauses;
+    private final List<FunctionClause> myClauses;
 
-    public ElimFunctionBody(Position position, List<ReferenceExpression> expressions, List<Clause> clauses) {
+    public ElimFunctionBody(Position position, List<ReferenceExpression> expressions, List<FunctionClause> clauses) {
       super(position);
       myExpressions = expressions;
       myClauses = clauses;
@@ -1101,7 +1101,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<? extends Clause> getClauses() {
+    public List<? extends FunctionClause> getClauses() {
       return myClauses;
     }
   }
@@ -1189,9 +1189,9 @@ public final class Concrete {
   public static class Constructor extends Definition implements Abstract.Constructor {
     private final DataDefinition myDataType;
     private final List<TypeArgument> myArguments;
-    private final List<Abstract.Pattern> myPatterns;
+    private final List<Pattern> myPatterns;
 
-    public Constructor(Position position, String name, Abstract.Precedence precedence, List<TypeArgument> arguments, DataDefinition dataType, List<Abstract.Pattern> patterns) {
+    public Constructor(Position position, String name, Abstract.Precedence precedence, List<TypeArgument> arguments, DataDefinition dataType, List<Pattern> patterns) {
       super(position, name, precedence);
       myArguments = arguments;
       myDataType = dataType;
@@ -1199,7 +1199,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<Abstract.Pattern> getPatterns() {
+    public List<Pattern> getPatterns() {
       return myPatterns;
     }
 

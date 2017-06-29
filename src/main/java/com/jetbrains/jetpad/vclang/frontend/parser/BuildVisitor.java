@@ -423,7 +423,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
   }
 
-  private void visitConstructors(List<ConstructorContext> conContexts, Concrete.DataDefinition def, List<Abstract.Pattern> patterns) {
+  private void visitConstructors(List<ConstructorContext> conContexts, Concrete.DataDefinition def, List<Concrete.Pattern> patterns) {
     for (ConstructorContext conCtx : conContexts) {
       try {
         def.getConstructors().add(new Concrete.Constructor(tokenPosition(conCtx.start), visitName(conCtx.name()), visitPrecedence(conCtx.precedence()), visitTeles(conCtx.tele()), def, patterns));
@@ -957,15 +957,15 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return ctx.BIN_OP().getText();
   }
 
-  private List<Concrete.Clause> visitClauses(ClausesContext ctx) {
+  private List<Concrete.FunctionClause> visitClauses(ClausesContext ctx) {
     List<ClauseContext> clauses = ctx instanceof ClausesWithBracesContext ? ((ClausesWithBracesContext) ctx).clause() : ((ClausesWithoutBracesContext) ctx).clause();
     return clauses.stream().map(this::visitClause).collect(Collectors.toList());
   }
 
   @Override
-  public Concrete.Clause visitClause(ClauseContext clauseCtx) {
+  public Concrete.FunctionClause visitClause(ClauseContext clauseCtx) {
     List<Concrete.Pattern> patterns = clauseCtx.pattern().stream().map(this::visitPattern).collect(Collectors.toList());
-    return new Concrete.Clause(tokenPosition(clauseCtx.start), patterns, clauseCtx.expr() == null ? null : visitExpr(clauseCtx.expr()));
+    return new Concrete.FunctionClause(tokenPosition(clauseCtx.start), patterns, clauseCtx.expr() == null ? null : visitExpr(clauseCtx.expr()));
   }
 
   private List<Concrete.ReferenceExpression> checkElimExpressions(List<? extends Concrete.Expression> expressions) {
@@ -983,7 +983,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.Expression visitCase(CaseContext ctx) {
     List<Concrete.Expression> elimExprs = ctx.expr().stream().map(this::visitExpr).collect(Collectors.toList());
-    List<Concrete.Clause> clauses = visitClauses(ctx.clauses());
+    List<Concrete.FunctionClause> clauses = visitClauses(ctx.clauses());
 
     return new Concrete.CaseExpression(tokenPosition(ctx.getStart()), elimExprs, clauses);
   }

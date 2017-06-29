@@ -67,7 +67,7 @@ public class Util {
   }
 
   public static List<Expression> unflattenClauses(List<ClauseElem> clauseElems) {
-    return unflattenClauses(clauseElems, null, null);
+    return unflattenClauses(clauseElems, null, Collections.emptyList());
   }
 
   public static List<Expression> unflattenClauses(List<ClauseElem> clauseElems, DependentLink parameters, List<DependentLink> elimParams) {
@@ -94,13 +94,11 @@ public class Util {
         clauseElems.add(new PatternClauseElem(new BindingPattern(link)));
       }
 
-      if (elimParams != null) {
-        DependentLink link = parameters;
-        for (int i = 0; i < elimParams.size(); i++, link = link.getNext()) {
-          while (link != elimParams.get(i)) {
-            clauseElems.remove(i);
-            link = link.getNext();
-          }
+      DependentLink link = parameters;
+      for (int i = 0; i < elimParams.size(); i++, link = link.getNext()) {
+        while (link != elimParams.get(i)) {
+          clauseElems.remove(i);
+          link = link.getNext();
         }
       }
     }

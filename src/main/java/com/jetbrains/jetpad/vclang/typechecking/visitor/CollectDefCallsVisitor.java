@@ -138,7 +138,7 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, V
     for (Abstract.Expression caseExpr : expr.getExpressions()) {
       caseExpr.accept(this, null);
     }
-    for (Abstract.Clause clause : expr.getClauses()) {
+    for (Abstract.FunctionClause clause : expr.getClauses()) {
       if (clause.getExpression() != null)
         clause.getExpression().accept(this, null);
     }

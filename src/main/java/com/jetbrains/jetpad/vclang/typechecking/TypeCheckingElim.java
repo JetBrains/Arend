@@ -197,7 +197,7 @@ public class TypeCheckingElim {
     final List<List<Pattern>> patterns = new ArrayList<>();
     final List<Expression> expressions = new ArrayList<>();
     clause_loop:
-    for (Abstract.Clause clause : expr.getClauses()) {
+    for (Abstract.FunctionClause clause : expr.getClauses()) {
       try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myVisitor.getContext())) {
         List<Pattern> clausePatterns = new ArrayList<>(dummyPatterns);
         Expression clauseExpectedType = expectedType;

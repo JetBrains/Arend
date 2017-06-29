@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 
 public class ElimTypechecking {
   private final CheckTypeVisitor myVisitor;
-  private Set<Abstract.Clause> myUnusedClauses;
+  private Set<Abstract.FunctionClause> myUnusedClauses;
   private final boolean myAllowInterval;
   private Expression myExpectedType;
   private boolean myOK;
@@ -46,7 +46,7 @@ public class ElimTypechecking {
     if (!expressions.isEmpty()) {
       int expectedNumberOfPatterns = expressions.size();
       for (Abstract.Clause clause : clauses) {
-        if (clause.getPatterns().size() != expectedNumberOfPatterns) {
+        if (clause.getPatterns() != null && clause.getPatterns().size() != expectedNumberOfPatterns) {
           visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected " + expectedNumberOfPatterns + " patterns, but got " + clause.getPatterns().size(), clause));
           return null;
         }
@@ -58,7 +58,11 @@ public class ElimTypechecking {
         DependentLink elimParam = (DependentLink) visitor.getContext().remove(expr.getReferent());
         while (elimParam != link) {
           if (!link.hasNext()) {
-            visitor.getErrorReporter().report(new LocalTypeCheckingError("Variable elimination must be in the order of variable introduction", expr));
+            link = parameters;
+            while (link.hasNext() && link != elimParam) {
+              link = link.getNext();
+            }
+            visitor.getErrorReporter().report(new LocalTypeCheckingError(link == elimParam ? "Variable elimination must be in the order of variable introduction" : "Only parameters can be eliminated", expr));
             return null;
           }
           link = link.getNext();
@@ -76,14 +80,11 @@ public class ElimTypechecking {
     if (elimParams == null) {
       return null;
     }
-    if (elimParams.isEmpty()) {
-      elimParams = null;
-    }
 
     List<ClauseData> clauses = new ArrayList<>(body.getClauses().size());
     PatternTypechecking patternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), myAllowInterval);
     myOK = true;
-    for (Abstract.Clause clause : body.getClauses()) {
+    for (Abstract.FunctionClause clause : body.getClauses()) {
       Map<Abstract.ReferableSourceNode, Binding> originalContext = new HashMap<>(myVisitor.getContext());
       Pair<List<Pattern>, CheckTypeVisitor.Result> result = patternTypechecking.typecheckClause(clause, patternTypes, elimParams, myExpectedType, myVisitor, true);
       myVisitor.setContext(originalContext);
@@ -114,7 +115,7 @@ public class ElimTypechecking {
     if (!myOK) {
       return null;
     }
-    for (Abstract.Clause clause : myUnusedClauses) {
+    for (Abstract.FunctionClause clause : myUnusedClauses) {
       myVisitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, "This clause is redundant", clause));
     }
     return elimTree;
@@ -124,9 +125,9 @@ public class ElimTypechecking {
     List<Pattern> patterns;
     Expression expression;
     ExprSubstitution substitution;
-    Abstract.Clause clause;
+    Abstract.FunctionClause clause;
 
-    ClauseData(List<Pattern> patterns, Expression expression, ExprSubstitution substitution, Abstract.Clause clause) {
+    ClauseData(List<Pattern> patterns, Expression expression, ExprSubstitution substitution, Abstract.FunctionClause clause) {
       this.patterns = patterns;
       this.expression = expression;
       this.substitution = substitution;

@@ -70,15 +70,16 @@ public class ConcreteResolveListener implements ResolveListener {
     ((Concrete.BinOpSequenceExpression) binOpExpr).replace(expression);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
-  public void replaceWithConstructor(List<Abstract.Pattern> patterns, int index, Abstract.Constructor constructor) {
+  public void replaceWithConstructor(List<? extends Abstract.Pattern> patterns, int index, Abstract.Constructor constructor) {
     Concrete.Pattern pattern = ((Concrete.Pattern) patterns.get(index));
-    patterns.set(index, new Concrete.ConstructorPattern(pattern.getPosition(), pattern.isExplicit(), constructor, Collections.emptyList()));
+    ((List<Concrete.Pattern>) patterns).set(index, new Concrete.ConstructorPattern(pattern.getPosition(), pattern.isExplicit(), constructor, Collections.emptyList()));
   }
 
   @Override
-  public void replaceWithConstructor(Abstract.Clause clause, int index, Abstract.Constructor constructor) {
-    ((Concrete.Clause) clause).replaceWithConstructor(index, constructor);
+  public void replaceWithConstructor(Abstract.FunctionClause clause, int index, Abstract.Constructor constructor) {
+    ((Concrete.FunctionClause) clause).replaceWithConstructor(index, constructor);
   }
 
   @Override

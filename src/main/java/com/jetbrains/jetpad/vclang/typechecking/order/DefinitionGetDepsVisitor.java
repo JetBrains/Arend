@@ -37,7 +37,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
         ((Abstract.TermFunctionBody) body).getTerm().accept(visitor, null);
       }
       if (body instanceof Abstract.ElimFunctionBody) {
-        for (Abstract.Clause clause : ((Abstract.ElimFunctionBody) body).getClauses()) {
+        for (Abstract.FunctionClause clause : ((Abstract.ElimFunctionBody) body).getClauses()) {
           if (clause.getExpression() != null) {
             clause.getExpression().accept(visitor, null);
           }

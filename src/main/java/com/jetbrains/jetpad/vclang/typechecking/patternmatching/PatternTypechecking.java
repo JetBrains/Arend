@@ -41,9 +41,9 @@ public class PatternTypechecking {
     }
   }
 
-  Pair<List<Pattern>, CheckTypeVisitor.Result> typecheckClause(Abstract.Clause clause, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType, CheckTypeVisitor visitor, boolean isFinal) {
+  Pair<List<Pattern>, CheckTypeVisitor.Result> typecheckClause(Abstract.FunctionClause clause, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType, CheckTypeVisitor visitor, boolean isFinal) {
     // Typecheck patterns
-    Pair<List<Pattern>, List<Expression>> result = typecheckPatterns(clause.getPatterns(), elimParams, parameters, clause, visitor.getTypeCheckingDefCall().getThisClass() != null, visitor);
+    Pair<List<Pattern>, List<Expression>> result = typecheckPatterns(clause.getPatterns(), elimParams, parameters, clause, visitor);
     if (result == null) {
       return null;
     }
@@ -89,11 +89,11 @@ public class PatternTypechecking {
     return tcResult == null ? null : new Pair<>(result.proj1, tcResult);
   }
 
-  public Pair<List<Pattern>, List<Expression>> typecheckPatterns(List<? extends Abstract.Pattern> patterns, List<DependentLink> elimParams, DependentLink parameters, Abstract.SourceNode sourceNode, boolean withThis, CheckTypeVisitor visitor) {
+  public Pair<List<Pattern>, List<Expression>> typecheckPatterns(List<? extends Abstract.Pattern> patterns, List<DependentLink> elimParams, DependentLink parameters, Abstract.SourceNode sourceNode, CheckTypeVisitor visitor) {
     myContext = visitor.getContext();
 
     Pair<List<Pattern>, List<Expression>> result;
-    if (elimParams != null) {
+    if (!elimParams.isEmpty()) {
       // Put patterns in the correct order
       // If some parameters are not eliminated (i.e. absent in elimParams), then we put null in corresponding patterns
       List<Abstract.Pattern> patterns1 = new ArrayList<>();
@@ -103,7 +103,7 @@ public class PatternTypechecking {
       }
       result = doTypechecking(patterns1, DependentLink.Helper.subst(parameters, new ExprSubstitution()), sourceNode, true);
     } else {
-      if (withThis) {
+      if (visitor.getTypeCheckingDefCall().getThisClass() != null) {
         List<Abstract.Pattern> patterns1 = new ArrayList<>(patterns.size() + 1);
         patterns1.add(null);
         patterns1.addAll(patterns);
@@ -256,12 +256,14 @@ public class PatternTypechecking {
       }
     }
 
-    while (!parameters.isExplicit()) {
-      addPattern(result, new BindingPattern(parameters));
-      if (exprs != null) {
-        exprs.add(new ReferenceExpression(parameters));
+    if (!fullList) {
+      while (!parameters.isExplicit()) {
+        addPattern(result, new BindingPattern(parameters));
+        if (exprs != null) {
+          exprs.add(new ReferenceExpression(parameters));
+        }
+        parameters = parameters.getNext();
       }
-      parameters = parameters.getNext();
     }
 
     if (parameters.hasNext()) {

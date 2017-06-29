@@ -163,12 +163,12 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.Expression makeCase(List<? extends Abstract.Expression> expressions, List<? extends Abstract.Clause> clauses) {
-    return cCase((List<Concrete.Expression>) expressions, (List<Concrete.Clause>) clauses);
+  public Abstract.Expression makeCase(List<? extends Abstract.Expression> expressions, List<? extends Abstract.FunctionClause> clauses) {
+    return cCase((List<Concrete.Expression>) expressions, (List<Concrete.FunctionClause>) clauses);
   }
 
   @Override
-  public Abstract.Clause makeClause(List<? extends Abstract.Pattern> patterns, Abstract.Expression expr) {
+  public Abstract.FunctionClause makeClause(List<? extends Abstract.Pattern> patterns, Abstract.Expression expr) {
     return cClause((List<Concrete.Pattern>) patterns, (Concrete.Expression) expr);
   }
 

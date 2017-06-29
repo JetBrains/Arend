@@ -56,7 +56,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
       for (Abstract.Expression expression : ((Abstract.ElimFunctionBody) body).getExpressions()) {
         expression.accept(exprVisitor, null);
       }
-      for (Abstract.Clause clause : ((Abstract.ElimFunctionBody) body).getClauses()) {
+      for (Abstract.FunctionClause clause : ((Abstract.ElimFunctionBody) body).getClauses()) {
         if (clause.getExpression() != null) {
           clause.getExpression().accept(exprVisitor, null);
         }

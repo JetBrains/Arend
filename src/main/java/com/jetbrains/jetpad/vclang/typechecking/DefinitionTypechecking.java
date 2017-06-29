@@ -333,13 +333,9 @@ class DefinitionTypechecking {
     }
 
     boolean dataOk = true;
-    List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(def.getEliminatedReferences(), Collections.emptyList(), dataDefinition.getParameters(), visitor);
+    List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(def.getEliminatedReferences(), def.getConstructors(), dataDefinition.getParameters(), visitor);
     if (elimParams == null) {
       dataOk = false;
-    } else {
-      if (elimParams.isEmpty()) {
-        elimParams = null;
-      }
     }
 
     boolean universeOk = true;
@@ -563,7 +559,7 @@ class DefinitionTypechecking {
           referableList.add(null);
         }
         getReferableList(dataDefinition.getAbstractDefinition().getParameters(), referableList);
-        Pair<List<com.jetbrains.jetpad.vclang.core.elimtree.Pattern>, List<Expression>> result = new PatternTypechecking(visitor.getErrorReporter(), false).typecheckPatterns(def.getPatterns(), elimParams, dataDefinition.getParameters(), def, visitor.getTypeCheckingDefCall().getThisClass() != null, visitor);
+        Pair<List<com.jetbrains.jetpad.vclang.core.elimtree.Pattern>, List<Expression>> result = new PatternTypechecking(visitor.getErrorReporter(), false).typecheckPatterns(def.getPatterns(), elimParams, dataDefinition.getParameters(), def, visitor);
         if (result == null) {
           return null;
         }

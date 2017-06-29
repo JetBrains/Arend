@@ -39,8 +39,8 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       ((Abstract.Definition) node).accept(this, null);
       return true;
     }
-    if (node instanceof Abstract.Clause) {
-      prettyPrintClause((Abstract.Clause) node);
+    if (node instanceof Abstract.FunctionClause) {
+      prettyPrintClause((Abstract.FunctionClause) node);
       return true;
     }
     if (node instanceof Abstract.LetClause) {
@@ -457,7 +457,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
-  public void prettyPrintClause(final Abstract.Clause clause) {
+  public void prettyPrintClause(final Abstract.FunctionClause clause) {
     if (clause == null) return;
 
     printIndent();
@@ -497,7 +497,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myBuilder.append('\n');
   }
 
-  private void prettyPrintClauses(List<? extends Abstract.Expression> expressions, List<? extends Abstract.Clause> clauses) {
+  private void prettyPrintClauses(List<? extends Abstract.Expression> expressions, List<? extends Abstract.FunctionClause> clauses) {
     for (int i = 0; i < expressions.size(); i++) {
       myBuilder.append(" ");
       expressions.get(i).accept(this, Abstract.Expression.PREC);
@@ -508,7 +508,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     if (!clauses.isEmpty()) {
       myBuilder.append(" {\n");
       myIndent += INDENT;
-      for (Abstract.Clause clause : clauses) {
+      for (Abstract.FunctionClause clause : clauses) {
         prettyPrintClause(clause);
       }
 

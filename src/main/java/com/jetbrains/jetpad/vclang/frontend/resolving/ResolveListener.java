@@ -18,7 +18,7 @@ public interface ResolveListener extends ErrorReporter {
   Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Abstract.Definition binOp, Abstract.ReferenceExpression var, Abstract.Expression right);
   Abstract.Expression makeError(Abstract.BinOpSequenceExpression binOpExpr, Abstract.SourceNode node);
   void replaceBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression expression);
-  void replaceWithConstructor(List<Abstract.Pattern> patterns, int index, Abstract.Constructor constructor);
-  void replaceWithConstructor(Abstract.Clause clause, int index, Abstract.Constructor constructor);
+  void replaceWithConstructor(List<? extends Abstract.Pattern> patterns, int index, Abstract.Constructor constructor);
+  void replaceWithConstructor(Abstract.FunctionClause clause, int index, Abstract.Constructor constructor);
   void patternResolved(Abstract.ConstructorPattern pattern, Abstract.Constructor definition);
 }

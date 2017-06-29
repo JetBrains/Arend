@@ -186,7 +186,7 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
     return pattern1 instanceof Abstract.EmptyPattern && pattern2 instanceof Abstract.EmptyPattern;
   }
 
-  private boolean compareClause(Abstract.Clause clause1, Abstract.Clause clause2) {
+  private boolean compareClause(Abstract.FunctionClause clause1, Abstract.FunctionClause clause2) {
     if (!(clause1.getExpression().accept(this, clause2.getExpression()) && clause1.getPatterns().size() == clause2.getPatterns().size())) return false;
     for (int i = 0; i < clause1.getPatterns().size(); i++) {
       if (!comparePattern(clause1.getPatterns().get(i), clause2.getPatterns().get(i))) {

@@ -223,9 +223,9 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
     return null;
   }
 
-  void visitClauses(List<? extends Abstract.Clause> clauses, List<? extends Abstract.Argument> arguments) {
+  void visitClauses(List<? extends Abstract.FunctionClause> clauses, List<? extends Abstract.Argument> arguments) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      for (Abstract.Clause clause : clauses) {
+      for (Abstract.FunctionClause clause : clauses) {
         Set<String> usedNames = new HashSet<>();
         for (int i = 0; i < clause.getPatterns().size(); i++) {
           Abstract.Constructor constructor = visitPattern(clause.getPatterns().get(i), usedNames);

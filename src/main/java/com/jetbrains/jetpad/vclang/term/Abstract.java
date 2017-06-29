@@ -225,7 +225,7 @@ public final class Abstract {
   public interface CaseExpression extends Expression {
     byte PREC = -8;
     List<? extends Expression> getExpressions();
-    List<? extends Clause> getClauses();
+    List<? extends FunctionClause> getClauses();
   }
 
   public interface ProjExpression extends Expression {
@@ -236,6 +236,9 @@ public final class Abstract {
 
   public interface Clause extends SourceNode {
     List<? extends Pattern> getPatterns();
+  }
+
+  public interface FunctionClause extends Clause {
     Expression getExpression();
   }
 
@@ -330,7 +333,7 @@ public final class Abstract {
 
   public interface ElimFunctionBody extends FunctionBody {
     List<? extends ReferenceExpression> getExpressions();
-    List<? extends Clause> getClauses();
+    List<? extends FunctionClause> getClauses();
   }
 
   public interface FunctionDefinition extends Definition, StatementCollection {
@@ -427,8 +430,7 @@ public final class Abstract {
 
   public interface EmptyPattern extends Pattern {}
 
-  public interface Constructor extends Definition {
-    List<Pattern> getPatterns();
+  public interface Constructor extends Definition, Clause {
     List<? extends TypeArgument> getArguments();
     DataDefinition getDataType();
   }
