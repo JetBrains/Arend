@@ -306,13 +306,13 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
         referredClass = myNameResolver.resolveDefinition(parentScope, stat.getPath());
       } else {
         ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(stat.getModulePath());
-        Abstract.ClassDefinition moduleClass = moduleNamespace != null ? moduleNamespace.getRegisteredClass() : null;
-        if (moduleClass == null) {
+        if (moduleNamespace == null) {
           myResolveListener.report(new GeneralError("Module not found: " + stat.getModulePath(), stat));
           return parentScope;
         }
+        Abstract.ClassDefinition moduleClass = moduleNamespace.getRegisteredClass();
         if (stat.getPath().isEmpty()) {
-          referredClass = moduleNamespace.getRegisteredClass();
+          referredClass = moduleClass;
         } else {
           referredClass = myNameResolver.resolveDefinition(new NamespaceScope(myNameResolver.nsProviders.statics.forDefinition(moduleClass)), stat.getPath());
         }
