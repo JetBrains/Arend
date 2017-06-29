@@ -102,8 +102,10 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     @Override
     public Void visitData(Abstract.DataDefinition def, Map<String, Abstract.Definition> params) {
       params.put(getIdFor(def), def);
-      for (Abstract.Constructor constructor : def.getConstructors()) {
-        constructor.accept(this, params);
+      for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
+        for (Abstract.Constructor constructor : clause.getConstructors()) {
+          constructor.accept(this, params);
+        }
       }
       return null;
     }

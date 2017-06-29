@@ -1135,16 +1135,16 @@ public final class Concrete {
   public static class DataDefinition extends Definition implements Abstract.DataDefinition {
     private final List<TypeArgument> myParameters;
     private final List<ReferenceExpression> myEliminatedReferences;
-    private final List<Constructor> myConstructors;
+    private final List<ConstructorClause> myConstructorClauses;
     private final List<Condition> myConditions;
     private final boolean myIsTruncated;
     private final Expression myUniverse;
 
-    public DataDefinition(Position position, String name, Abstract.Precedence precedence, List<TypeArgument> parameters, List<ReferenceExpression> eliminatedReferences, boolean isTruncated, Expression universe, List<Concrete.Constructor> constructors, List<Condition> conditions) {
+    public DataDefinition(Position position, String name, Abstract.Precedence precedence, List<TypeArgument> parameters, List<ReferenceExpression> eliminatedReferences, boolean isTruncated, Expression universe, List<ConstructorClause> constructorClauses, List<Condition> conditions) {
       super(position, name, precedence);
       myParameters = parameters;
       myEliminatedReferences = eliminatedReferences;
-      myConstructors = constructors;
+      myConstructorClauses = constructorClauses;
       myConditions = conditions;
       myIsTruncated = isTruncated;
       myUniverse = universe;
@@ -1161,8 +1161,8 @@ public final class Concrete {
     }
 
     @Override
-    public List<Constructor> getConstructors() {
-      return myConstructors;
+    public List<ConstructorClause> getConstructorClauses() {
+      return myConstructorClauses;
     }
 
     @Override
@@ -1186,21 +1186,35 @@ public final class Concrete {
     }
   }
 
-  public static class Constructor extends Definition implements Abstract.Constructor {
-    private final DataDefinition myDataType;
-    private final List<TypeArgument> myArguments;
+  public static class ConstructorClause extends SourceNode implements Abstract.ConstructorClause {
     private final List<Pattern> myPatterns;
+    private final List<Constructor> myConstructors;
 
-    public Constructor(Position position, String name, Abstract.Precedence precedence, List<TypeArgument> arguments, DataDefinition dataType, List<Pattern> patterns) {
-      super(position, name, precedence);
-      myArguments = arguments;
-      myDataType = dataType;
+    public ConstructorClause(Position position, List<Pattern> patterns, List<Constructor> constructors) {
+      super(position);
       myPatterns = patterns;
+      myConstructors = constructors;
     }
 
     @Override
     public List<Pattern> getPatterns() {
       return myPatterns;
+    }
+
+    @Override
+    public List<Constructor> getConstructors() {
+      return myConstructors;
+    }
+  }
+
+  public static class Constructor extends Definition implements Abstract.Constructor {
+    private final DataDefinition myDataType;
+    private final List<TypeArgument> myArguments;
+
+    public Constructor(Position position, String name, Abstract.Precedence precedence, List<TypeArgument> arguments, DataDefinition dataType) {
+      super(position, name, precedence);
+      myArguments = arguments;
+      myDataType = dataType;
     }
 
     @Override

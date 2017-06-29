@@ -53,8 +53,8 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
       ((Abstract.TermFunctionBody) body).getTerm().accept(exprVisitor, null);
     }
     if (body instanceof Abstract.ElimFunctionBody) {
-      for (Abstract.Expression expression : ((Abstract.ElimFunctionBody) body).getExpressions()) {
-        expression.accept(exprVisitor, null);
+      for (Abstract.ReferenceExpression ref : ((Abstract.ElimFunctionBody) body).getExpressions()) {
+        exprVisitor.visitReference(ref, null);
       }
       for (Abstract.FunctionClause clause : ((Abstract.ElimFunctionBody) body).getClauses()) {
         if (clause.getExpression() != null) {
@@ -81,8 +81,15 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
     ExpressionResolveInstanceVisitor exprVisitor = new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider);
     exprVisitor.visitArguments(def.getParameters());
 
-    for (Abstract.Constructor constructor : def.getConstructors()) {
-      visitConstructor(constructor, parentScope);
+    if (def.getEliminatedReferences() != null) {
+      for (Abstract.ReferenceExpression ref : def.getEliminatedReferences()) {
+        exprVisitor.visitReference(ref, null);
+      }
+    }
+    for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
+      for (Abstract.Constructor constructor : clause.getConstructors()) {
+        visitConstructor(constructor, parentScope);
+      }
     }
 
     if (def.getConditions() != null) {

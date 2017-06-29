@@ -130,12 +130,17 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
         }
       }
 
-      for (Abstract.Constructor constructor : def.getConstructors()) {
-        if (constructor.getPatterns() == null) {
-          visitConstructor(constructor, parentScope);
+      for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
+        if (clause.getPatterns() == null) {
+          for (Abstract.Constructor constructor : clause.getConstructors()) {
+            visitConstructor(constructor, parentScope);
+          }
         } else {
           myContext = saver.getOldContext();
-          visitConstructor(constructor, parentScope);
+          visitPatterns(clause.getPatterns(), exprVisitor);
+          for (Abstract.Constructor constructor : clause.getConstructors()) {
+            visitConstructor(constructor, parentScope);
+          }
           myContext = saver.getCurrentContext();
         }
       }
@@ -159,12 +164,8 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
   public Void visitConstructor(Abstract.Constructor def, Scope parentScope) {
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myNsProviders, parentScope, myContext, myNameResolver, myResolveListener);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      if (def.getPatterns() != null) {
-        visitPatterns(def.getPatterns(), exprVisitor);
-      }
       exprVisitor.visitArguments(def.getArguments());
     }
-
     return null;
   }
 

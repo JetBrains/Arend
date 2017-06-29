@@ -401,10 +401,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.DataDefinition visitDefData(DefDataContext ctx) {
     Concrete.Expression universe = ctx.expr() == null ? null : (Concrete.Expression) visit(ctx.expr());
-    List<Concrete.Constructor> constructors = new ArrayList<>();
     List<Concrete.Condition> conditions = ctx.conditionDef() != null ? visitConditionDef(ctx.conditionDef()) : null;
-    List<Concrete.ReferenceExpression> eliminatedReferences = visitElim(ctx.dataBody() instanceof DataClausesContext ? ((DataClausesContext) ctx.dataBody()).elim() : null);
-    Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(tokenPosition(ctx.getStart()), visitName(ctx.name()), visitPrecedence(ctx.precedence()), visitTeles(ctx.tele()), eliminatedReferences, ctx.isTruncated() instanceof TruncatedContext, universe, constructors, conditions);
+    List<Concrete.ReferenceExpression> eliminatedReferences = ctx.dataBody() instanceof DataClausesContext ? visitElim(((DataClausesContext) ctx.dataBody()).elim()) : null;
+    Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(tokenPosition(ctx.getStart()), visitName(ctx.name()), visitPrecedence(ctx.precedence()), visitTeles(ctx.tele()), eliminatedReferences, ctx.isTruncated() instanceof TruncatedContext, universe, new ArrayList<>(), conditions);
     visitDataBody(ctx.dataBody(), dataDefinition);
     return dataDefinition;
   }
@@ -413,24 +412,26 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (ctx instanceof DataClausesContext) {
       for (ConstructorClauseContext clauseCtx : ((DataClausesContext) ctx).constructorClause()) {
         try {
-          visitConstructors(clauseCtx.constructor(), def, clauseCtx.pattern().stream().map(this::visitPattern).collect(Collectors.toList()));
+          def.getConstructorClauses().add(new Concrete.ConstructorClause(tokenPosition(clauseCtx.start), clauseCtx.pattern().stream().map(this::visitPattern).collect(Collectors.toList()), visitConstructors(clauseCtx.constructor(), def)));
         } catch (ParseException ignored) {
 
         }
       }
     } else if (ctx instanceof DataConstructorsContext) {
-      visitConstructors(((DataConstructorsContext) ctx).constructor(), def, null);
+      def.getConstructorClauses().add(new Concrete.ConstructorClause(tokenPosition(ctx.start), null, visitConstructors(((DataConstructorsContext) ctx).constructor(), def)));
     }
   }
 
-  private void visitConstructors(List<ConstructorContext> conContexts, Concrete.DataDefinition def, List<Concrete.Pattern> patterns) {
+  private List<Concrete.Constructor> visitConstructors(List<ConstructorContext> conContexts, Concrete.DataDefinition def) {
+    List<Concrete.Constructor> result = new ArrayList<>(conContexts.size());
     for (ConstructorContext conCtx : conContexts) {
       try {
-        def.getConstructors().add(new Concrete.Constructor(tokenPosition(conCtx.start), visitName(conCtx.name()), visitPrecedence(conCtx.precedence()), visitTeles(conCtx.tele()), def, patterns));
+        result.add(new Concrete.Constructor(tokenPosition(conCtx.start), visitName(conCtx.name()), visitPrecedence(conCtx.precedence()), visitTeles(conCtx.tele()), def));
       } catch (ParseException ignored) {
 
       }
     }
+    return result;
   }
 
   @Override

@@ -345,10 +345,26 @@ public final class Abstract {
   public interface DataDefinition extends Definition {
     List<? extends TypeArgument> getParameters();
     List<? extends ReferenceExpression> getEliminatedReferences();
-    List<? extends Constructor> getConstructors();
+    List<? extends ConstructorClause> getConstructorClauses();
     Collection<? extends Condition> getConditions();
     boolean isTruncated();
     Expression getUniverse();
+  }
+
+  public interface ConstructorClause extends Clause {
+    List<? extends Constructor> getConstructors();
+  }
+
+  public interface Constructor extends Definition {
+    List<? extends TypeArgument> getArguments();
+    DataDefinition getDataType();
+  }
+
+  public interface Condition extends SourceNode {
+    List<Pattern> getPatterns();
+    String getConstructorName();
+    Expression getTerm();
+    void setWellTyped(ElimTreeNode condition);
   }
 
   public interface SuperClass extends SourceNode {
@@ -429,18 +445,6 @@ public final class Abstract {
   }
 
   public interface EmptyPattern extends Pattern {}
-
-  public interface Constructor extends Definition, Clause {
-    List<? extends TypeArgument> getArguments();
-    DataDefinition getDataType();
-  }
-
-  public interface Condition extends SourceNode {
-    List<Pattern> getPatterns();
-    String getConstructorName();
-    Expression getTerm();
-    void setWellTyped(ElimTreeNode condition);
-  }
 
 
   public static class Precedence {

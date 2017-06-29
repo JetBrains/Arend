@@ -40,7 +40,15 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       return true;
     }
     if (node instanceof Abstract.FunctionClause) {
-      prettyPrintClause((Abstract.FunctionClause) node);
+      prettyPrintFunctionClause((Abstract.FunctionClause) node);
+      return true;
+    }
+    if (node instanceof Abstract.ConstructorClause) {
+      prettyPrintConstructorClause((Abstract.ConstructorClause) node);
+      return true;
+    }
+    if (node instanceof Abstract.Clause) {
+      prettyPrintClause((Abstract.Clause) node);
       return true;
     }
     if (node instanceof Abstract.LetClause) {
@@ -457,7 +465,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
-  public void prettyPrintClause(final Abstract.FunctionClause clause) {
+  public void prettyPrintFunctionClause(final Abstract.FunctionClause clause) {
     if (clause == null) return;
 
     printIndent();
@@ -467,12 +475,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       new BinOpLayout(){
         @Override
         void printLeft(PrettyPrintVisitor pp) {
-          for (int i = 0; i < clause.getPatterns().size(); i++) {
-            pp.prettyPrintPattern(clause.getPatterns().get(i), Abstract.Pattern.PREC);
-            if (i != clause.getPatterns().size() - 1) {
-              pp.myBuilder.append(", ");
-            }
-          }
+          pp.prettyPrintClause(clause);
         }
 
         @Override
@@ -509,7 +512,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       myBuilder.append(" {\n");
       myIndent += INDENT;
       for (Abstract.FunctionClause clause : clauses) {
-        prettyPrintClause(clause);
+        prettyPrintFunctionClause(clause);
       }
 
       printIndent();
@@ -802,11 +805,35 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
     myIndent += INDENT;
 
-    for (Abstract.Constructor constructor : def.getConstructors()) {
-      myBuilder.append('\n');
-      printIndent();
-      myBuilder.append("| ");
-      constructor.accept(this, null);
+    if (def.getEliminatedReferences() != null) {
+      if (def.getEliminatedReferences().isEmpty()) {
+        myBuilder.append(" \\with");
+      } else {
+        myBuilder.append(" => \\elim ");
+        boolean first = true;
+        for (Abstract.ReferenceExpression ref : def.getEliminatedReferences()) {
+          if (first) {
+            first = false;
+          } else {
+            myBuilder.append(", ");
+          }
+          myBuilder.append(ref.getName());
+        }
+      }
+    }
+
+    for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
+      if (clause.getPatterns() == null) {
+        for (Abstract.Constructor constructor : clause.getConstructors()) {
+          myBuilder.append('\n');
+          printIndent();
+          myBuilder.append("| ");
+          constructor.accept(this, null);
+        }
+      } else {
+        myBuilder.append('\n');
+        prettyPrintClause(clause);
+      }
     }
     if (def.getConditions() != null) {
       myBuilder.append("\n\\with");
@@ -819,6 +846,41 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
     myIndent -= INDENT;
     return null;
+  }
+
+  private void prettyPrintConstructorClause(Abstract.ConstructorClause clause) {
+    printIndent();
+    myBuilder.append("| ");
+    prettyPrintClause(clause);
+    myBuilder.append(" => ");
+
+    if (clause.getConstructors().size() > 1) {
+      myBuilder.append("{ ");
+    }
+    boolean first = true;
+    for (Abstract.Constructor constructor : clause.getConstructors()) {
+      if (first) {
+        first = false;
+      } else {
+        myBuilder.append(" | ");
+      }
+      constructor.accept(this, null);
+    }
+    if (clause.getConstructors().size() > 1) {
+      myBuilder.append(" }");
+    }
+  }
+
+  private void prettyPrintClause(Abstract.Clause clause) {
+    boolean first = true;
+    for (Abstract.Pattern pattern : clause.getPatterns()) {
+      if (first) {
+        first = false;
+      } else {
+        myBuilder.append(", ");
+      }
+      prettyPrintPattern(pattern, Abstract.Pattern.PREC);
+    }
   }
 
   public void prettyPrintPattern(Abstract.Pattern pattern, byte prec) {
@@ -854,16 +916,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitConstructor(Abstract.Constructor def, Void ignored) {
-    List<? extends Abstract.Pattern> patternArgs = def.getPatterns();
-    if (patternArgs != null) {
-      myBuilder.append(def.getDataType().getName()).append(' ');
-      for (Abstract.Pattern patternArg : patternArgs) {
-        prettyPrintPattern(patternArg, Abstract.Pattern.PREC);
-        myBuilder.append(' ');
-      }
-      myBuilder.append("=> ");
-    }
-
     prettyPrintNameWithPrecedence(def);
     List<? extends Abstract.TypeArgument> arguments = def.getArguments();
     if (arguments == null) {

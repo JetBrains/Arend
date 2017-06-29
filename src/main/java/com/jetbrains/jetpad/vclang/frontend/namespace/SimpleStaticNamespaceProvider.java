@@ -24,8 +24,10 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
   }
 
   private static void forData(Abstract.DataDefinition def, SimpleNamespace ns) {
-    for (Abstract.Constructor constructor : def.getConstructors()) {
-      ns.addDefinition(constructor);
+    for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
+      for (Abstract.Constructor constructor : clause.getConstructors()) {
+        ns.addDefinition(constructor);
+      }
     }
   }
 

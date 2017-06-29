@@ -11,7 +11,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   private final ClassViewInstanceProvider myInstanceProvider;
   private final Set<Abstract.Definition> myDependencies;
 
-  public DefinitionGetDepsVisitor(ClassViewInstanceProvider instanceProvider, Set<Abstract.Definition> dependencies) {
+  DefinitionGetDepsVisitor(ClassViewInstanceProvider instanceProvider, Set<Abstract.Definition> dependencies) {
     myInstanceProvider = instanceProvider;
     myDependencies = dependencies;
   }
@@ -71,8 +71,15 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
         universe.accept(visitor, null);
       }
     } else {
-      for (Abstract.Constructor constructor : def.getConstructors()) {
-        visitConstructor(constructor, null);
+      for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
+        if (clause.getPatterns() != null) {
+          for (Abstract.Pattern pattern : clause.getPatterns()) {
+            visitPattern(pattern);
+          }
+        }
+        for (Abstract.Constructor constructor : clause.getConstructors()) {
+          visitConstructor(constructor, null);
+        }
       }
 
       if (def.getConditions() != null) {
@@ -100,12 +107,6 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   @Override
   public Void visitConstructor(Abstract.Constructor def, Boolean params) {
     CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myDependencies);
-
-    if (def.getPatterns() != null) {
-      for (Abstract.Pattern pattern : def.getPatterns()) {
-        visitPattern(pattern);
-      }
-    }
 
     for (Abstract.TypeArgument arg : def.getArguments()) {
       arg.getType().accept(visitor, null);

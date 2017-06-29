@@ -32,8 +32,10 @@ public class DefinitionSourceInfoVisitor<SourceIdT extends SourceId> implements 
 
   @Override
   public Void visitData(Abstract.DataDefinition def, FullName fullName) {
-    for (Abstract.Constructor constructor : def.getConstructors()) {
-      visitConstructor(constructor, fullName);
+    for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
+      for (Abstract.Constructor constructor : clause.getConstructors()) {
+        visitConstructor(constructor, fullName);
+      }
     }
     return null;
 
