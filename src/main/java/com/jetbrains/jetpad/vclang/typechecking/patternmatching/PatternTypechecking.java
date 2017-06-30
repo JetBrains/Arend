@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
@@ -12,6 +11,7 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -172,37 +172,6 @@ public class PatternTypechecking {
     return null;
   }
 
-  private static boolean setLastBinding(List<Pattern> patterns, DependentLink next) {
-    for (int i = patterns.size() - 1; i >= 0; i--) {
-      if (patterns.get(i) instanceof EmptyPattern) {
-        return true;
-      }
-      if (patterns.get(i) instanceof BindingPattern) {
-        DependentLink link = ((BindingPattern) patterns.get(i)).getBinding();
-        if (link.getNext() != next) {
-          if (link instanceof UntypedDependentLink) {
-            patterns.set(i, new BindingPattern(new TypedDependentLink(link.isExplicit(), link.getName(), link.getType(), next)));
-          } else {
-            link.setNext(next);
-          }
-        }
-        return true;
-      }
-      if (patterns.get(i) instanceof ConstructorPattern && setLastBinding(((ConstructorPattern) patterns.get(i)).getArguments(), next)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private void addPattern(List<Pattern> patterns, Pattern pattern) {
-    DependentLink first = getFirstBinding(Collections.singletonList(pattern));
-    if (first != null) {
-      setLastBinding(patterns, first);
-    }
-    patterns.add(pattern);
-  }
-
   private Pair<List<Pattern>, List<Expression>> doTypechecking(List<? extends Abstract.Pattern> patterns, DependentLink parameters, Abstract.SourceNode sourceNode, boolean fullList) {
     List<Pattern> result = new ArrayList<>();
     List<Expression> exprs = new ArrayList<>();
@@ -216,7 +185,7 @@ public class PatternTypechecking {
       if (!fullList && pattern != null) {
         if (pattern.isExplicit()) {
           while (!parameters.isExplicit()) {
-            addPattern(result, new BindingPattern(parameters));
+            result.add(new BindingPattern(parameters));
             if (exprs != null) {
               exprs.add(new ReferenceExpression(parameters));
             }
@@ -238,7 +207,7 @@ public class PatternTypechecking {
         if (!(pattern == null || pattern instanceof Abstract.NamePattern)) {
           myErrorReporter.report(new LocalTypeCheckingError(Error.Level.WARNING, "This pattern is ignored", pattern));
         }
-        addPattern(result, new BindingPattern(parameters));
+        result.add(new BindingPattern(parameters));
         if (exprs != null) {
           exprs.add(new ReferenceExpression(parameters));
           if (pattern != null && ((Abstract.NamePattern) pattern).getReferent() != null) {
@@ -269,7 +238,7 @@ public class PatternTypechecking {
           myErrorReporter.report(new LocalTypeCheckingError("Data type " + expr + " is not empty, available constructors: " + conCalls, pattern));
           return null;
         }
-        addPattern(result, EmptyPattern.INSTANCE);
+        result.add(EmptyPattern.INSTANCE);
         exprs = null;
         parameters = parameters.getNext();
         continue;
@@ -298,7 +267,7 @@ public class PatternTypechecking {
         return null;
       }
 
-      addPattern(result, new ConstructorPattern(conCall, new Patterns(conResult.proj1)));
+      result.add(new ConstructorPattern(conCall, new Patterns(conResult.proj1)));
       if (conResult.proj2 == null) {
         exprs = null;
         parameters = parameters.getNext();
@@ -311,7 +280,7 @@ public class PatternTypechecking {
 
     if (!fullList) {
       while (!parameters.isExplicit()) {
-        addPattern(result, new BindingPattern(parameters));
+        result.add(new BindingPattern(parameters));
         if (exprs != null) {
           exprs.add(new ReferenceExpression(parameters));
         }
@@ -324,7 +293,79 @@ public class PatternTypechecking {
       return null;
     }
 
-    setLastBinding(result, EmptyDependentLink.getInstance());
+    ExprSubstitution substitution = new ExprSubstitution();
+    fixPatterns(result, substitution);
+    if (!substitution.isEmpty()) {
+      if (exprs != null) {
+        for (int i = 0; i < exprs.size(); i++) {
+          exprs.set(i, exprs.get(i).subst(substitution));
+        }
+      }
+
+      for (Map.Entry<Abstract.ReferableSourceNode, Binding> entry : myContext.entrySet()) {
+        Expression expr = substitution.get(entry.getValue());
+        if (expr != null) {
+          entry.setValue(((ReferenceExpression) expr).getBinding());
+        }
+      }
+
+      DependentLink link = getFirstBinding(result);
+      if (link != null && link.hasNext()) {
+        link = link.getNext();
+        for (; link.hasNext(); link = link.getNext()) {
+          link = link.getNextTyped(null);
+          link.setType(link.getType().subst(substitution, LevelSubstitution.EMPTY));
+        }
+      }
+    }
+
     return new Pair<>(result, exprs);
+  }
+
+  // Chains the bindings in the leaves of patterns
+  private void fixPatterns(List<Pattern> patterns, ExprSubstitution substitution) {
+    List<DependentLink> leaves = new ArrayList<>();
+    getLeaves(patterns, leaves);
+
+    for (int i = 0; i < leaves.size(); i++) {
+      DependentLink next = i < leaves.size() - 1 ? leaves.get(i + 1) : EmptyDependentLink.getInstance();
+      DependentLink leaf = leaves.get(i);
+      if (leaf.getNext() == next) {
+        continue;
+      }
+      if (leaf instanceof TypedDependentLink) {
+        leaf.setNext(next);
+      } else {
+        TypedDependentLink newLeaf = new TypedDependentLink(leaf.isExplicit(), leaf.getName(), leaf.getType(), next);
+        substitution.add(leaf, new ReferenceExpression(newLeaf));
+        leaves.set(i, newLeaf);
+      }
+    }
+
+    if (!substitution.isEmpty()) {
+      setLeaves(patterns, leaves, 0);
+    }
+  }
+
+  private void getLeaves(List<Pattern> patterns, List<DependentLink> leaves) {
+    for (Pattern pattern : patterns) {
+      if (pattern instanceof ConstructorPattern) {
+        getLeaves(((ConstructorPattern) pattern).getArguments(), leaves);
+      } else if (pattern instanceof BindingPattern) {
+        leaves.add(((BindingPattern) pattern).getBinding());
+      }
+    }
+  }
+
+  private int setLeaves(List<Pattern> patterns, List<DependentLink> leaves, int j) {
+    for (int i = 0; i < patterns.size(); i++) {
+      Pattern pattern = patterns.get(i);
+      if (pattern instanceof BindingPattern) {
+        patterns.set(i, new BindingPattern(leaves.get(j++)));
+      } else if (pattern instanceof ConstructorPattern) {
+        j = setLeaves(((ConstructorPattern) pattern).getArguments(), leaves, j);
+      }
+    }
+    return j;
   }
 }

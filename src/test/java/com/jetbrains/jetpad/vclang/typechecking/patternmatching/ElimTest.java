@@ -61,7 +61,7 @@ public class ElimTest extends TypeCheckingTestCase {
       "  | con2 _ {y} {z} {t}, con1 s => q t\n" +
       "  | con1 {z} _, con1 s => z\n" +
       "  | con1 s, con2 y => y s\n" +
-      "  | con2 _ {a} {zero} {c}, con2 y => y (q c)\n" +
+      "  | con2 _ {a} {zero} {c}, con2 y => y (q a)\n" +
       "  | con2 _ {a} {suc b} {c}, con2 y => y (q b)");
   }
 
