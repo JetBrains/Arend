@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.patternmatching;
 
 import com.jetbrains.jetpad.vclang.core.context.Utils;
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
@@ -55,7 +54,7 @@ public class ElimTypechecking {
       DependentLink link = parameters;
       elimParams = new ArrayList<>(expressions.size());
       for (Abstract.ReferenceExpression expr : expressions) {
-        DependentLink elimParam = (DependentLink) visitor.getContext().remove(expr.getReferent());
+        DependentLink elimParam = (DependentLink) visitor.getContext().get(expr.getReferent());
         while (elimParam != link) {
           if (!link.hasNext()) {
             link = parameters;
@@ -69,14 +68,12 @@ public class ElimTypechecking {
         }
         elimParams.add(elimParam);
       }
-    } else {
-      visitor.getContext().clear();
     }
     return elimParams;
   }
 
-  public ElimTree typecheckElim(Abstract.ElimFunctionBody body, DependentLink patternTypes) {
-    List<DependentLink> elimParams = getEliminatedParameters(body.getExpressions(), body.getClauses(), patternTypes, myVisitor);
+  public ElimTree typecheckElim(Abstract.ElimFunctionBody body, List<? extends Abstract.Argument> abstractParameters, DependentLink parameters) {
+    List<DependentLink> elimParams = getEliminatedParameters(body.getExpressions(), body.getClauses(), parameters, myVisitor);
     if (elimParams == null) {
       return null;
     }
@@ -85,10 +82,7 @@ public class ElimTypechecking {
     PatternTypechecking patternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), myAllowInterval);
     myOK = true;
     for (Abstract.FunctionClause clause : body.getClauses()) {
-      Map<Abstract.ReferableSourceNode, Binding> originalContext = new HashMap<>(myVisitor.getContext());
-      Pair<List<Pattern>, CheckTypeVisitor.Result> result = patternTypechecking.typecheckClause(clause, patternTypes, elimParams, myExpectedType, myVisitor, true);
-      myVisitor.setContext(originalContext);
-
+      Pair<List<Pattern>, CheckTypeVisitor.Result> result = patternTypechecking.typecheckClause(clause, abstractParameters, parameters, elimParams, myExpectedType, myVisitor);
       if (result == null) {
         myOK = false;
       } else {
@@ -110,7 +104,7 @@ public class ElimTypechecking {
 
     if (myMissingClauses != null && !myMissingClauses.isEmpty()) {
       final List<DependentLink> finalElimParams = elimParams;
-      myVisitor.getErrorReporter().report(new MissingClausesError(myMissingClauses.stream().map(missingClause -> Util.unflattenClauses(missingClause, patternTypes, finalElimParams)).collect(Collectors.toList()), body));
+      myVisitor.getErrorReporter().report(new MissingClausesError(myMissingClauses.stream().map(missingClause -> Util.unflattenClauses(missingClause, parameters, finalElimParams)).collect(Collectors.toList()), body));
     }
     if (!myOK) {
       return null;

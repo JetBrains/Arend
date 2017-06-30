@@ -74,4 +74,62 @@ public class PatternTest extends NameResolverTestCase {
       "  | suc _ => zero\n" +
       "  | zero => n");
   }
+
+  @Test
+  public void patternWrongDefinition() {
+    resolveNamesClass(
+        "\\data Nat | zero | suc Nat\n" +
+        "\\data D (n m : Nat) | d\n" +
+        "\\data C | c (n m : Nat) (D n m)\n" +
+        "\\data E C \\with | E (c zero (suc zero) d) => e", 1);
+  }
+
+  @Test
+  public void patternUnknownConstructor() {
+    resolveNamesClass(
+      "\\data Nat | zero | suc Nat\n" +
+      "\\data D Nat \\with | suc (luc m) => d", 1);
+  }
+
+  @Test
+  public void functionPatternUnknownConstructor() {
+    resolveNamesClass(
+      "\\data Nat | zero | suc Nat\n" +
+      "\\function test (x : Nat) : Nat | zero a => 0 | sucs n => 1", 1);
+  }
+
+  @Test
+  public void functionPatternWrongDefinition() {
+    resolveNamesClass(
+      "\\data Nat | zero | suc Nat\n" +
+      "\\function test (x : Nat) : Nat | zero a => 0 | Nat => 1", 1);
+  }
+
+  @Test
+  public void elimPatternUnknownConstructor() {
+    resolveNamesClass(
+      "\\data Nat | zero | suc Nat\n" +
+      "\\function test (x : Nat) : Nat => \\elim x | zero a => 0 | sucs n => 1", 1);
+  }
+
+  @Test
+  public void elimPatternWrongDefinition() {
+    resolveNamesClass(
+      "\\data Nat | zero | suc Nat\n" +
+      "\\function test (x : Nat) : Nat => \\elim x | zero a => 0 | Nat => 1", 1);
+  }
+
+  @Test
+  public void casePatternUnknownConstructor() {
+    resolveNamesClass(
+      "\\data Nat | zero | suc Nat\n" +
+      "\\function test (x : Nat) : Nat => \\case x | zero a => 0 | sucs n => 1", 1);
+  }
+
+  @Test
+  public void casePatternWrongDefinition() {
+    resolveNamesClass(
+      "\\data Nat | zero | suc Nat\n" +
+      "\\function test (x : Nat) : Nat => \\case x | zero a => 0 | Nat => 1", 1);
+  }
 }

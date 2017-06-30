@@ -152,7 +152,9 @@ public class ParserTest extends NameResolverTestCase {
 
   @Test
   public void parserCase() {
-    resolveNamesExpr("\\case 2 | zero => zero | suc x' => x'");
+    resolveNamesClass(
+      "\\data Nat | zero | suc Nat\n" +
+      "\\function f => \\case 2 | zero => zero | suc x' => x'");
   }
 
   @Test

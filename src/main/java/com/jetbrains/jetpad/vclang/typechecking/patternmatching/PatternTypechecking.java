@@ -3,6 +3,8 @@ package com.jetbrains.jetpad.vclang.typechecking.patternmatching;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
@@ -41,9 +43,9 @@ public class PatternTypechecking {
     }
   }
 
-  Pair<List<Pattern>, CheckTypeVisitor.Result> typecheckClause(Abstract.FunctionClause clause, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType, CheckTypeVisitor visitor, boolean isFinal) {
+  Pair<List<Pattern>, CheckTypeVisitor.Result> typecheckClause(Abstract.FunctionClause clause, List<? extends Abstract.Argument> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType, CheckTypeVisitor visitor) {
     // Typecheck patterns
-    Pair<List<Pattern>, List<Expression>> result = typecheckPatterns(clause.getPatterns(), elimParams, parameters, clause, visitor);
+    Pair<List<Pattern>, List<Expression>> result = typecheckPatterns(clause.getPatterns(), abstractParameters, parameters, elimParams, clause, visitor);
     if (result == null) {
       return null;
     }
@@ -76,12 +78,7 @@ public class PatternTypechecking {
 
     // Typecheck the RHS
     CheckTypeVisitor.Result tcResult;
-    if (isFinal) {
-      visitor.getFreeBindings().clear();
-      collectBindings(result.proj1, visitor.getFreeBindings());
-      if (visitor.getTypeCheckingDefCall().getThisClass() != null) {
-        visitor.setThis(visitor.getTypeCheckingDefCall().getThisClass(), getBinding(result.proj1, true));
-      }
+    if (abstractParameters != null) {
       tcResult = visitor.finalCheckExpr(clause.getExpression(), expectedType);
     } else {
       tcResult = visitor.checkExpr(clause.getExpression(), expectedType);
@@ -89,9 +86,11 @@ public class PatternTypechecking {
     return tcResult == null ? null : new Pair<>(result.proj1, tcResult);
   }
 
-  public Pair<List<Pattern>, List<Expression>> typecheckPatterns(List<? extends Abstract.Pattern> patterns, List<DependentLink> elimParams, DependentLink parameters, Abstract.SourceNode sourceNode, CheckTypeVisitor visitor) {
+  public Pair<List<Pattern>, List<Expression>> typecheckPatterns(List<? extends Abstract.Pattern> patterns, List<? extends Abstract.Argument> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Abstract.SourceNode sourceNode, CheckTypeVisitor visitor) {
     myContext = visitor.getContext();
+    myContext.clear();
 
+    // Typecheck patterns
     Pair<List<Pattern>, List<Expression>> result;
     if (!elimParams.isEmpty()) {
       // Put patterns in the correct order
@@ -112,6 +111,41 @@ public class PatternTypechecking {
         result = doTypechecking(patterns, DependentLink.Helper.subst(parameters, new ExprSubstitution()), sourceNode, false);
       }
     }
+
+    // Compute the context and the set of free bindings for CheckTypeVisitor
+    if (result != null && result.proj2 != null && abstractParameters != null) {
+      int i = 0;
+      DependentLink link = parameters;
+      if (visitor.getTypeCheckingDefCall().getThisClass() != null) {
+        visitor.setThis(visitor.getTypeCheckingDefCall().getThisClass(), getFirstBinding(result.proj1));
+        i = 1;
+        link = link.getNext();
+      }
+
+      if (!elimParams.isEmpty()) {
+        for (Abstract.Argument parameter : abstractParameters) {
+          if (parameter instanceof Abstract.TelescopeArgument) {
+            for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeArgument) parameter).getReferableList()) {
+              if (!elimParams.contains(link)) {
+                myContext.put(referable, ((BindingPattern) result.proj1.get(i)).getBinding());
+              }
+              link = link.getNext();
+              i++;
+            }
+          } else if (parameter instanceof Abstract.NameArgument) {
+            if (!elimParams.contains(link)) {
+              myContext.put(((Abstract.NameArgument) parameter).getReferable(), ((BindingPattern) result.proj1.get(i)).getBinding());
+            }
+            link = link.getNext();
+            i++;
+          }
+        }
+      }
+
+      visitor.getFreeBindings().clear();
+      collectBindings(result.proj1, visitor.getFreeBindings());
+    }
+
     return result;
   }
 
@@ -121,16 +155,15 @@ public class PatternTypechecking {
     return result == null ? null : new Pair<>(result.proj1, result.proj2 == null ? null : myContext);
   }
 
-  private static DependentLink getBinding(List<Pattern> patterns, boolean first) {
-    for (int i = first ? 0 : patterns.size() - 1; first ? i < patterns.size() : i >= 0; i += first ? 1 : -1) {
-      if (patterns.get(i) instanceof EmptyPattern) {
+  private static DependentLink getFirstBinding(List<Pattern> patterns) {
+    for (Pattern pattern : patterns) {
+      if (pattern instanceof EmptyPattern) {
         return EmptyDependentLink.getInstance();
       }
-      if (patterns.get(i) instanceof BindingPattern) {
-        return ((BindingPattern) patterns.get(i)).getBinding();
-      } else
-      if (patterns.get(i) instanceof ConstructorPattern) {
-        DependentLink last = getBinding(((ConstructorPattern) patterns.get(i)).getArguments(), first);
+      if (pattern instanceof BindingPattern) {
+        return ((BindingPattern) pattern).getBinding();
+      } else if (pattern instanceof ConstructorPattern) {
+        DependentLink last = getFirstBinding(((ConstructorPattern) pattern).getArguments());
         if (last != null) {
           return last;
         }
@@ -139,13 +172,33 @@ public class PatternTypechecking {
     return null;
   }
 
-  private void addPattern(List<Pattern> patterns, Pattern pattern) {
-    DependentLink last = getBinding(patterns, false);
-    if (last != null && last.hasNext()) {
-      DependentLink first = getBinding(Collections.singletonList(pattern), true);
-      if (first != null) {
-        last.setNext(first);
+  private static boolean setLastBinding(List<Pattern> patterns, DependentLink next) {
+    for (int i = patterns.size() - 1; i >= 0; i--) {
+      if (patterns.get(i) instanceof EmptyPattern) {
+        return true;
       }
+      if (patterns.get(i) instanceof BindingPattern) {
+        DependentLink link = ((BindingPattern) patterns.get(i)).getBinding();
+        if (link.getNext() != next) {
+          if (link instanceof UntypedDependentLink) {
+            patterns.set(i, new BindingPattern(new TypedDependentLink(link.isExplicit(), link.getName(), link.getType(), next)));
+          } else {
+            link.setNext(next);
+          }
+        }
+        return true;
+      }
+      if (patterns.get(i) instanceof ConstructorPattern && setLastBinding(((ConstructorPattern) patterns.get(i)).getArguments(), next)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private void addPattern(List<Pattern> patterns, Pattern pattern) {
+    DependentLink first = getFirstBinding(Collections.singletonList(pattern));
+    if (first != null) {
+      setLastBinding(patterns, first);
     }
     patterns.add(pattern);
   }
@@ -271,6 +324,7 @@ public class PatternTypechecking {
       return null;
     }
 
+    setLastBinding(result, EmptyDependentLink.getInstance());
     return new Pair<>(result, exprs);
   }
 }

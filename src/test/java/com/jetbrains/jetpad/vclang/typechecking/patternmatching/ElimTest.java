@@ -54,6 +54,18 @@ public class ElimTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void elim3_() {
+    typeCheckClass(
+      "\\data D (x : Nat -> Nat) (y : Nat) | con1 {Nat} Nat | con2 (Nat -> Nat) {a b c : Nat}\n" +
+      "\\function test (q : Nat -> Nat) (e : D q 0) (r : D (\\lam x => x) (q 1)) : Nat => \\elim e, r\n" +
+      "  | con2 _ {y} {z} {t}, con1 s => q t\n" +
+      "  | con1 {z} _, con1 s => z\n" +
+      "  | con1 s, con2 y => y s\n" +
+      "  | con2 _ {a} {zero} {c}, con2 y => y (q c)\n" +
+      "  | con2 _ {a} {suc b} {c}, con2 y => y (q b)");
+  }
+
+  @Test
   public void elim4() {
     typeCheckClass(
         "\\function test (x : Nat) : Nat => \\elim x | zero => 0 | _ => 1\n" +
@@ -72,12 +84,6 @@ public class ElimTest extends TypeCheckingTestCase {
     typeCheckClass(
         "\\data D Nat \\with | zero => d0 | suc _ => d1\n" +
         "\\function test (x : Nat) (y : D x) : Nat => \\elim y | d0 => 0 | d1 => 1", 2);
-  }
-
-  @Test
-  public void elimTest() {
-    typeCheckClass(
-        "\\function test (x : Nat) : Nat => \\case x | zero a => 0 | sucs n => 1", 2);
   }
 
   @Test

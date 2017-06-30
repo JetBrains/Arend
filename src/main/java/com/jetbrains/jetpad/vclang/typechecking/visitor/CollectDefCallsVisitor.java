@@ -46,7 +46,8 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, V
         }
       }
       myDependencies.add((Abstract.Definition) expr.getReferent());
-    } else if (expr.getExpression() != null) {
+    }
+    if (expr.getExpression() != null) {
       expr.getExpression().accept(this, null);
     }
     return null;

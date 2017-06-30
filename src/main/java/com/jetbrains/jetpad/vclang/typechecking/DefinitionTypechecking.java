@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.core.context.LinkList;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
@@ -247,7 +246,7 @@ class DefinitionTypechecking {
 
       if (body instanceof Abstract.ElimFunctionBody) {
         if (expectedType != null) {
-          ElimTree elimTree = new ElimTypechecking(visitor, expectedType, false).typecheckElim(((Abstract.ElimFunctionBody) body), typedDef.getParameters());
+          ElimTree elimTree = new ElimTypechecking(visitor, expectedType, false).typecheckElim(((Abstract.ElimFunctionBody) body), def.getArguments(), typedDef.getParameters());
           if (elimTree != null) {
             typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
             if (ConditionsChecking.check(elimTree)) {
@@ -280,9 +279,7 @@ class DefinitionTypechecking {
     Sort userSort = null;
     boolean paramsOk;
     Abstract.DataDefinition def = dataDefinition.getAbstractDefinition();
-    try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(visitor.getContext())) {
-      paramsOk = typeCheckParameters(def.getParameters(), list, visitor, localInstancePool, classifyingFields);
-    }
+    paramsOk = typeCheckParameters(def.getParameters(), list, visitor, localInstancePool, classifyingFields);
 
     if (def.getUniverse() != null) {
       if (def.getUniverse() instanceof Abstract.UniverseExpression) {
@@ -344,42 +341,56 @@ class DefinitionTypechecking {
     }
 
     boolean universeOk = true;
-    if (dataOk) {
-      Map<Abstract.ReferableSourceNode, Binding> originalContext = new HashMap<>(visitor.getContext());
-      for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
-        visitor.setContext(originalContext);
-        Pair<List<com.jetbrains.jetpad.vclang.core.elimtree.Pattern>, List<Expression>> result = null;
-        if (clause.getPatterns() != null) {
-          result = new PatternTypechecking(visitor.getErrorReporter(), false).typecheckPatterns(clause.getPatterns(), elimParams, dataDefinition.getParameters(), def, visitor);
-          if (result == null) {
-            for (Abstract.Constructor constructor : clause.getConstructors()) {
-              visitor.getTypecheckingState().record(constructor, new Constructor(constructor, dataDefinition));
-            }
-            continue;
+    for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
+      // Typecheck patterns and compute free bindings
+      Pair<List<com.jetbrains.jetpad.vclang.core.elimtree.Pattern>, List<Expression>> result = null;
+      if (clause.getPatterns() != null) {
+        if (def.getEliminatedReferences() == null) {
+          visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected a constructor without patterns", clause));
+          dataOk = false;
+        }
+        if (elimParams != null) {
+          result = new PatternTypechecking(visitor.getErrorReporter(), false).typecheckPatterns(clause.getPatterns(), def.getParameters(), dataDefinition.getParameters(), elimParams, def, visitor);
+          if (result != null && result.proj2 == null) {
+            visitor.getErrorReporter().report(new LocalTypeCheckingError("This clause is redundant", clause));
+            result = null;
           }
         }
-
-        for (Abstract.Constructor constructor : clause.getConstructors()) {
-          com.jetbrains.jetpad.vclang.core.elimtree.Patterns patterns = result == null ? null : new com.jetbrains.jetpad.vclang.core.elimtree.Patterns(result.proj1);
-          Sort conSort = typeCheckConstructor(constructor, patterns, dataDefinition, visitor, dataDefinitions);
-          if (conSort == null) {
-            dataOk = false;
-            conSort = Sort.PROP;
+        if (result == null) {
+          for (Abstract.Constructor constructor : clause.getConstructors()) {
+            visitor.getTypecheckingState().record(constructor, new Constructor(constructor, dataDefinition));
           }
+          continue;
+        }
+      } else {
+        if (def.getEliminatedReferences() != null) {
+          visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected constructors with patterns", clause));
+          dataOk = false;
+        }
+      }
 
-          inferredSort = inferredSort.max(conSort);
-          if (userSort != null) {
-            if (!def.isTruncated() && !conSort.isLessOrEquals(userSort)) {
-              String msg = "Universe " + conSort + " of constructor '" + constructor.getName() + "' is not compatible with expected universe " + userSort;
-              visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, constructor));
-              universeOk = false;
-            }
+      // Typecheck constructors
+      for (Abstract.Constructor constructor : clause.getConstructors()) {
+        com.jetbrains.jetpad.vclang.core.elimtree.Patterns patterns = result == null ? null : new com.jetbrains.jetpad.vclang.core.elimtree.Patterns(result.proj1);
+        Sort conSort = typeCheckConstructor(constructor, patterns, dataDefinition, visitor, dataDefinitions);
+        if (conSort == null) {
+          dataOk = false;
+          conSort = Sort.PROP;
+        }
+
+        inferredSort = inferredSort.max(conSort);
+        if (userSort != null) {
+          if (!def.isTruncated() && !conSort.isLessOrEquals(userSort)) {
+            String msg = "Universe " + conSort + " of constructor '" + constructor.getName() + "' is not compatible with expected universe " + userSort;
+            visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, constructor));
+            universeOk = false;
           }
         }
       }
     }
     dataDefinition.setStatus(dataOk ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
 
+    // Typecheck conditions
     visitor.getContext().clear();
     if (def.getConditions() != null) {
       List<Constructor> cycle = typeCheckConditions(visitor, dataDefinition, def);
@@ -411,6 +422,7 @@ class DefinitionTypechecking {
       }
     }
 
+    // Find covariant parameters
     int index = 0;
     for (DependentLink link = dataDefinition.getParameters(); link.hasNext(); link = link.getNext(), index++) {
       boolean isCovariant = true;
@@ -431,6 +443,7 @@ class DefinitionTypechecking {
       }
     }
 
+    // Check truncatedness
     if (def.isTruncated()) {
       if (userSort == null) {
         String msg = "The data type cannot be truncated since its universe is not specified";
@@ -563,37 +576,6 @@ class DefinitionTypechecking {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
       Constructor constructor = new Constructor(def, dataDefinition);
       visitor.getTypecheckingState().record(def, constructor);
-
-      if (patterns != null) {
-        DependentLink link = patterns.getFirstBinding();
-        if (visitor.getTypeCheckingDefCall().getThisClass() != null) {
-          visitor.setThis(visitor.getTypeCheckingDefCall().getThisClass(), link);
-        }
-        visitor.getFreeBindings().clear();
-        for (; link.hasNext(); link = link.getNext()) {
-          visitor.getFreeBindings().add(link);
-        }
-      } else {
-        List<Abstract.ReferableSourceNode> referableList = new ArrayList<>();
-        if (dataDefinition.getThisClass() != null) {
-          referableList.add(null);
-        }
-        getReferableList(dataDefinition.getAbstractDefinition().getParameters(), referableList);
-        int i = 0;
-        for (DependentLink link = dataDefinition.getParameters(); link.hasNext(); link = link.getNext(), i++) {
-          if (referableList.get(i) != null) {
-            visitor.getContext().put(referableList.get(i), link);
-          }
-        }
-        visitor.getFreeBindings().clear();
-        for (DependentLink link = dataDefinition.getParameters(); link.hasNext(); link = link.getNext()) {
-          visitor.getFreeBindings().add(link);
-        }
-
-        if (dataDefinition.getThisClass() != null) {
-          visitor.setThis(dataDefinition.getThisClass(), dataDefinition.getParameters());
-        }
-      }
 
       LinkList list = new LinkList();
       for (Abstract.TypeArgument argument : arguments) {

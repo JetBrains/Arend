@@ -109,11 +109,6 @@ public class DefinitionTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void patternUnknownConstructorError() {
-    typeCheckDef("\\data D Nat \\with | suc (luc m) => d", 1);
-  }
-
-  @Test
   public void patternLift() {
     typeCheckClass(
         "\\data D Nat \\with | zero => d\n" +
@@ -132,7 +127,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     typeCheckClass(
         "\\data D (n m : Nat) | d (n = n) (m = m)\n" +
         "\\data C | c (n m : Nat) (D n m)\n" +
-        "\\data E C \\with | E (c zero (suc zero) (d _ _)) => e\n" +
+        "\\data E C \\with | c zero (suc zero) (d _ _) => e\n" +
         "\\function test => (E (c 0 1 (d (path (\\lam _ => 0)) (path (\\lam _ => 1))))).e");
   }
 

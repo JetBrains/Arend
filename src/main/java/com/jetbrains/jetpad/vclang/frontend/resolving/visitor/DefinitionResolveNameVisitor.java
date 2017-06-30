@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<Scope, Void>, AbstractStatementVisitor<Scope, Scope> {
   private final NamespaceProviders myNsProviders;
@@ -77,31 +78,34 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     if (body instanceof Abstract.ElimFunctionBody) {
       try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
         List<? extends Abstract.ReferenceExpression> references = ((Abstract.ElimFunctionBody) body).getExpressions();
-        if (!references.isEmpty()) {
-          Set<Abstract.ReferableSourceNode> referables = new HashSet<>();
-          for (Abstract.ReferenceExpression reference : references) {
-            referables.add(reference.getReferent());
-          }
-          for (Abstract.Argument argument : def.getArguments()) {
-            if (argument instanceof Abstract.TelescopeArgument) {
-              for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeArgument) argument).getReferableList()) {
-                if (referable != null && referable.getName() != null && !referable.getName().equals("_") && !referables.contains(referable)) {
-                  myContext.add(referable);
-                }
-              }
-            } else if (argument instanceof Abstract.NameArgument) {
-              Abstract.ReferableSourceNode referable = ((Abstract.NameArgument) argument).getReferable();
-              if (referable != null && referable.getName() != null && !referable.getName().equals("_") && !referables.contains(referable)) {
-                myContext.add(referable);
-              }
-            }
-          }
-        }
-        exprVisitor.visitClauses(((Abstract.ElimFunctionBody) body).getClauses(), references.isEmpty() ? def.getArguments() : null);
+        addNotEliminatedArguments(def.getArguments(), references);
+        exprVisitor.visitClauses(((Abstract.ElimFunctionBody) body).getClauses());
       }
     }
 
     return null;
+  }
+
+  private void addNotEliminatedArguments(List<? extends Abstract.Argument> arguments, List<? extends Abstract.ReferenceExpression> eliminated) {
+    if (eliminated.isEmpty()) {
+      return;
+    }
+
+    Set<Abstract.ReferableSourceNode> referables = eliminated.stream().map(Abstract.ReferenceExpression::getReferent).collect(Collectors.toSet());
+    for (Abstract.Argument argument : arguments) {
+      if (argument instanceof Abstract.TelescopeArgument) {
+        for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeArgument) argument).getReferableList()) {
+          if (referable != null && referable.getName() != null && !referable.getName().equals("_") && !referables.contains(referable)) {
+            myContext.add(referable);
+          }
+        }
+      } else if (argument instanceof Abstract.NameArgument) {
+        Abstract.ReferableSourceNode referable = ((Abstract.NameArgument) argument).getReferable();
+        if (referable != null && referable.getName() != null && !referable.getName().equals("_") && !referables.contains(referable)) {
+          myContext.add(referable);
+        }
+      }
+    }
   }
 
   @Override
@@ -119,29 +123,19 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
   public Void visitData(Abstract.DataDefinition def, Scope parentScope) {
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myNsProviders, parentScope, myContext, myNameResolver, myResolveListener);
     try (Utils.CompleteContextSaver<Abstract.ReferableSourceNode> saver = new Utils.CompleteContextSaver<>(myContext)) {
-      for (Abstract.TypeArgument parameter : def.getParameters()) {
-        parameter.getType().accept(exprVisitor, null);
-        if (parameter instanceof Abstract.TelescopeArgument) {
-          for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeArgument) parameter).getReferableList()) {
-            if (referable != null && referable.getName() != null && !referable.getName().equals("_")) {
-              myContext.add(referable);
-            }
-          }
-        }
+      exprVisitor.visitArguments(def.getParameters());
+      if (def.getUniverse() != null) {
+        def.getUniverse().accept(exprVisitor, null);
       }
-
-      for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
-        if (clause.getPatterns() == null) {
+      if (def.getEliminatedReferences() != null) {
+        for (Abstract.ReferenceExpression ref : def.getEliminatedReferences()) {
+          exprVisitor.visitReference(ref, null);
+        }
+      } else {
+        for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
           for (Abstract.Constructor constructor : clause.getConstructors()) {
             visitConstructor(constructor, parentScope);
           }
-        } else {
-          myContext = saver.getOldContext();
-          visitPatterns(clause.getPatterns(), exprVisitor);
-          for (Abstract.Constructor constructor : clause.getConstructors()) {
-            visitConstructor(constructor, parentScope);
-          }
-          myContext = saver.getCurrentContext();
         }
       }
 
@@ -152,6 +146,22 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
           try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
             visitPatterns(cond.getPatterns(), exprVisitor);
             cond.getTerm().accept(exprVisitor, null);
+          }
+        }
+      }
+    }
+
+    if (def.getEliminatedReferences() != null) {
+      try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
+        addNotEliminatedArguments(def.getParameters(), def.getEliminatedReferences());
+        for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
+          try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
+            if (clause.getPatterns() != null) {
+              visitPatterns(clause.getPatterns(), exprVisitor);
+            }
+            for (Abstract.Constructor constructor : clause.getConstructors()) {
+              visitConstructor(constructor, parentScope);
+            }
           }
         }
       }
