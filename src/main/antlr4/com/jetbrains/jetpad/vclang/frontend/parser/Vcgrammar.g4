@@ -15,7 +15,7 @@ nsCmdRoot : modulePath | name;
 definition  : '\\function' precedence name tele* (':' expr)? functionBody where?                          # defFunction
             | '\\field' precedence name ':' expr                                                          # defAbstract
             | '\\implement' name '=>' expr                                                                # defImplement
-            | isTruncated '\\data' precedence name tele* (':' expr)? dataBody conditionDef?               # defData
+            | isTruncated '\\data' precedence name tele* (':' expr)? dataBody                             # defData
             | '\\class' ID tele* ('\\extends' expr (',' expr)*)? ('{' statements '}')? where?             # defClass
             | '\\view' ID '\\on' expr '\\by' name '{' classViewField* '}'                                 # defClassView
             | defaultInst '\\instance' ID tele* '=>' expr                                                 # defInstance
@@ -43,10 +43,6 @@ defaultInst :             # noDefault
 
 classViewField : name ('=>' precedence name)? ;
 
-conditionDef : '\\with' '|'? condition ('|' condition)*;
-
-condition : pattern '=>' expr;
-
 where : '\\where' ('{' statements '}' | statement);
 
 nsCmd : '\\open'                        # openCmd
@@ -67,7 +63,7 @@ atomPatternOrID : atomPattern     # patternOrIDAtom
                 | ID              # patternID
                 ;
 
-constructor : precedence name tele*;
+constructor : precedence name tele* (elim clauses)?;
 
 precedence :                            # noPrecedence
            | associativity NUMBER       # withPrecedence
@@ -88,7 +84,7 @@ expr  : (binOpLeft+ | ) binOpArg                            # binOp
       | '\\Sigma' tele+                                     # sigma
       | '\\lam' tele+ '=>' expr                             # lam
       | '\\let' '|'? letClause ('|' letClause)* '\\in' expr # let
-      | '\\case' expr (',' expr)* clauses                   # case
+      | '\\case' expr (',' expr)* '\\with'? clauses         # case
       ;
 
 clauses : clause*         # clausesWithoutBraces

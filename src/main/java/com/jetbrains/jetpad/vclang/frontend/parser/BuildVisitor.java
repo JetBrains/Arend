@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.util.Pair;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -401,9 +400,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.DataDefinition visitDefData(DefDataContext ctx) {
     Concrete.Expression universe = ctx.expr() == null ? null : (Concrete.Expression) visit(ctx.expr());
-    List<Concrete.Condition> conditions = ctx.conditionDef() != null ? visitConditionDef(ctx.conditionDef()) : null;
     List<Concrete.ReferenceExpression> eliminatedReferences = ctx.dataBody() instanceof DataClausesContext ? visitElim(((DataClausesContext) ctx.dataBody()).elim()) : null;
-    Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(tokenPosition(ctx.getStart()), visitName(ctx.name()), visitPrecedence(ctx.precedence()), visitTeles(ctx.tele()), eliminatedReferences, ctx.isTruncated() instanceof TruncatedContext, universe, new ArrayList<>(), conditions);
+    Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(tokenPosition(ctx.getStart()), visitName(ctx.name()), visitPrecedence(ctx.precedence()), visitTeles(ctx.tele()), eliminatedReferences, ctx.isTruncated() instanceof TruncatedContext, universe, new ArrayList<>());
     visitDataBody(ctx.dataBody(), dataDefinition);
     return dataDefinition;
   }
@@ -426,44 +424,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<Concrete.Constructor> result = new ArrayList<>(conContexts.size());
     for (ConstructorContext conCtx : conContexts) {
       try {
-        result.add(new Concrete.Constructor(tokenPosition(conCtx.start), visitName(conCtx.name()), visitPrecedence(conCtx.precedence()), visitTeles(conCtx.tele()), def));
+        result.add(new Concrete.Constructor(tokenPosition(conCtx.start), visitName(conCtx.name()), visitPrecedence(conCtx.precedence()), def, visitTeles(conCtx.tele()), conCtx.elim() != null ? visitElim(conCtx.elim()) : null, conCtx.clauses() == null ? null : visitClauses(conCtx.clauses())));
       } catch (ParseException ignored) {
 
       }
     }
     return result;
-  }
-
-  @Override
-  public List<Concrete.Condition> visitConditionDef(ConditionDefContext ctx) {
-    List<Concrete.Condition> result = new ArrayList<>(ctx.condition().size());
-    for (ConditionContext conditionCtx : ctx.condition()) {
-      try {
-        result.add(visitCondition(conditionCtx));
-      } catch (ParseException ignored) {
-
-      }
-    }
-    return result;
-  }
-
-  private static Pair<String, List<Abstract.Pattern>> splitPattern(Concrete.Pattern pattern) {
-    String name = null;
-    List<Abstract.Pattern> patterns = Collections.emptyList();
-    if (pattern instanceof Concrete.NamePattern) {
-      name = ((Concrete.NamePattern) pattern).getName();
-    } else
-    if (pattern instanceof Concrete.ConstructorPattern) {
-      name = ((Concrete.ConstructorPattern) pattern).getConstructorName();
-      patterns = ((Concrete.ConstructorPattern) pattern).getArguments();
-    }
-    return new Pair<>(name, patterns);
-  }
-
-  @Override
-  public Concrete.Condition visitCondition(ConditionContext ctx) {
-    Pair<String, List<Abstract.Pattern>> splitPattern = splitPattern(visitPattern(ctx.pattern()));
-    return new Concrete.Condition(tokenPosition(ctx.start), splitPattern.proj1, splitPattern.proj2, visitExpr(ctx.expr()));
   }
 
   private void misplacedDefinitionError(Concrete.Position position) {

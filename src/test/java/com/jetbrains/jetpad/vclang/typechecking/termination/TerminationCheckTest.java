@@ -167,7 +167,7 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
   @Test
   public void nonMonomialCallMatrixTest() {
     typeCheckClass(
-      "\\data Int : \\Set0 | pos Nat | neg Nat \\with neg zero => pos zero\n" +
+      "\\data Int : \\Set0 | pos Nat | neg Nat \\with zero => pos zero\n" +
       "\\function \\infixl 6 (+$) (n m : Int) : Int => \\elim n\n" +
       "  | pos zero => m\n" +
       "  | pos (suc n) => (pos n) +$ m\n" +

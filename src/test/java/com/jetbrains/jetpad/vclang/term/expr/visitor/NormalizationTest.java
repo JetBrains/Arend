@@ -104,8 +104,8 @@ public class NormalizationTest extends TypeCheckingTestCase {
 
   private void initializeBDList() {
     TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
-        "\\data BD-list (A : \\Set0) | nil | cons A (BD-list A) | snoc (BD-list A) A\n" +
-        "  \\with | snoc (cons x xs) x => cons x (snoc xs x) | snoc nil x => cons x nil\n"
+        "\\data BD-list (A : \\Set0) | nil | cons A (BD-list A) | snoc (xs : BD-list A) (y : A)\n" +
+        "  => \\elim xs | cons x xs => cons x (snoc xs y) | nil => cons y nil\n"
     );
     bdList = (DataDefinition) result.getDefinition("BD-list");
     bdNil = bdList.getConstructor("nil");
@@ -291,7 +291,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void testConditionNormalization() {
     typeCheckClass(
-        "\\data Z | pos Nat | neg Nat \\with | pos zero => neg 0\n" +
+        "\\data Z | neg Nat | pos Nat \\with zero => neg 0\n" +
         "\\function only-one-zero : pos 0 = neg 0 => path (\\lam _ => pos 0)"
     );
   }

@@ -346,7 +346,6 @@ public final class Abstract {
     List<? extends TypeArgument> getParameters();
     List<? extends ReferenceExpression> getEliminatedReferences();
     List<? extends ConstructorClause> getConstructorClauses();
-    Collection<? extends Condition> getConditions();
     boolean isTruncated();
     Expression getUniverse();
   }
@@ -356,8 +355,10 @@ public final class Abstract {
   }
 
   public interface Constructor extends Definition {
-    List<? extends TypeArgument> getArguments();
     DataDefinition getDataType();
+    List<? extends TypeArgument> getArguments();
+    List<? extends ReferenceExpression> getEliminatedReferences();
+    List<? extends FunctionClause> getClauses();
   }
 
   public interface Condition extends SourceNode {

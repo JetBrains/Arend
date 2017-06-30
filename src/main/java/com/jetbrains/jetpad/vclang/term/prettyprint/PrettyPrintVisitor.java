@@ -501,11 +501,14 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   private void prettyPrintClauses(List<? extends Abstract.Expression> expressions, List<? extends Abstract.FunctionClause> clauses) {
-    for (int i = 0; i < expressions.size(); i++) {
+    if (!expressions.isEmpty()) {
       myBuilder.append(" ");
-      expressions.get(i).accept(this, Abstract.Expression.PREC);
-      if (i != expressions.size() - 1)
-        myBuilder.append(",");
+      for (int i = 0; i < expressions.size(); i++) {
+        expressions.get(i).accept(this, Abstract.Expression.PREC);
+        if (i != expressions.size() - 1) {
+          myBuilder.append(", ");
+        }
+      }
     }
 
     if (!clauses.isEmpty()) {
@@ -674,9 +677,9 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     if (body instanceof Abstract.TermFunctionBody) {
       ((Abstract.TermFunctionBody) body).getTerm().accept(this, Abstract.Expression.PREC);
     } else {
-      myBuilder.append("\\elim");
       Abstract.ElimFunctionBody elimFunctionBody = (Abstract.ElimFunctionBody) body;
-      prettyPrintClauses(elimFunctionBody.getExpressions(), elimFunctionBody.getClauses());
+      prettyPrintEliminatedReferences(elimFunctionBody.getExpressions());
+      prettyPrintClauses(Collections.emptyList(), elimFunctionBody.getClauses());
     }
   }
 
@@ -805,22 +808,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
     myIndent += INDENT;
 
-    if (def.getEliminatedReferences() != null) {
-      if (def.getEliminatedReferences().isEmpty()) {
-        myBuilder.append(" \\with");
-      } else {
-        myBuilder.append(" => \\elim ");
-        boolean first = true;
-        for (Abstract.ReferenceExpression ref : def.getEliminatedReferences()) {
-          if (first) {
-            first = false;
-          } else {
-            myBuilder.append(", ");
-          }
-          myBuilder.append(ref.getName());
-        }
-      }
-    }
+    prettyPrintEliminatedReferences(def.getEliminatedReferences());
 
     for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
       if (clause.getPatterns() == null) {
@@ -835,17 +823,27 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
         prettyPrintClause(clause);
       }
     }
-    if (def.getConditions() != null) {
-      myBuilder.append("\n\\with");
-      for (Abstract.Condition condition : def.getConditions()) {
-        myBuilder.append('\n');
-        printIndent();
-        myBuilder.append("| ");
-        prettyPrintCondition(condition);
-      }
-    }
     myIndent -= INDENT;
     return null;
+  }
+
+  private void prettyPrintEliminatedReferences(List<? extends Abstract.ReferenceExpression> references) {
+    if (references != null) {
+      if (references.isEmpty()) {
+        myBuilder.append(" \\with");
+      } else {
+        myBuilder.append(" => \\elim ");
+        boolean first = true;
+        for (Abstract.ReferenceExpression ref : references) {
+          if (first) {
+            first = false;
+          } else {
+            myBuilder.append(", ");
+          }
+          myBuilder.append(ref.getName());
+        }
+      }
+    }
   }
 
   private void prettyPrintConstructorClause(Abstract.ConstructorClause clause) {
@@ -925,6 +923,11 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
         myBuilder.append(' ');
         prettyPrintArgument(argument, Abstract.ReferenceExpression.PREC);
       }
+    }
+
+    if (def.getEliminatedReferences() != null) {
+      prettyPrintEliminatedReferences(def.getEliminatedReferences());
+      prettyPrintClauses(Collections.emptyList(), def.getClauses());
     }
     return null;
   }

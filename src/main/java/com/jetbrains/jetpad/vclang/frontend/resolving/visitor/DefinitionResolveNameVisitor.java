@@ -121,7 +121,8 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
 
   @Override
   public Void visitData(Abstract.DataDefinition def, Scope parentScope) {
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myNsProviders, parentScope, myContext, myNameResolver, myResolveListener);
+    Scope scope = new DataScope(parentScope, new NamespaceScope(myNsProviders.statics.forDefinition(def)));
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myNsProviders, scope, myContext, myNameResolver, myResolveListener);
     try (Utils.CompleteContextSaver<Abstract.ReferableSourceNode> saver = new Utils.CompleteContextSaver<>(myContext)) {
       exprVisitor.visitArguments(def.getParameters());
       if (def.getUniverse() != null) {
@@ -134,18 +135,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
       } else {
         for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
           for (Abstract.Constructor constructor : clause.getConstructors()) {
-            visitConstructor(constructor, parentScope);
-          }
-        }
-      }
-
-      if (def.getConditions() != null) {
-        Scope scope = new DataScope(parentScope, new NamespaceScope(myNsProviders.statics.forDefinition(def)));
-        exprVisitor = new ExpressionResolveNameVisitor(myNsProviders, scope, myContext, myNameResolver, myResolveListener);
-        for (Abstract.Condition cond : def.getConditions()) {
-          try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
-            visitPatterns(cond.getPatterns(), exprVisitor);
-            cond.getTerm().accept(exprVisitor, null);
+            visitConstructor(constructor, scope);
           }
         }
       }
@@ -160,7 +150,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
               visitPatterns(clause.getPatterns(), exprVisitor);
             }
             for (Abstract.Constructor constructor : clause.getConstructors()) {
-              visitConstructor(constructor, parentScope);
+              visitConstructor(constructor, scope);
             }
           }
         }
@@ -175,6 +165,18 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myNsProviders, parentScope, myContext, myNameResolver, myResolveListener);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       exprVisitor.visitArguments(def.getArguments());
+      if (def.getEliminatedReferences() != null) {
+        for (Abstract.ReferenceExpression ref : def.getEliminatedReferences()) {
+          exprVisitor.visitReference(ref, null);
+        }
+      }
+    }
+
+    if (def.getEliminatedReferences() != null) {
+      try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
+        addNotEliminatedArguments(def.getArguments(), def.getEliminatedReferences());
+        exprVisitor.visitClauses(def.getClauses());
+      }
     }
     return null;
   }

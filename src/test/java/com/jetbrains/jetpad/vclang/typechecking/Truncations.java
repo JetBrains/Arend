@@ -32,13 +32,12 @@ public class Truncations extends TypeCheckingTestCase {
   public void setTruncationTests() {
     typeCheckClass(
         "\\data TrS' (A : \\Type0)\n" +
-        "    | inS' A\n" +
-        "    | truncS' (a a' : TrS' A) (p q : a = a') I I\n" +
-        "  \\with\n" +
-        "    | truncS' a _ _ _ left _ => a\n" +
-        "    | truncS' _ a' _ _ right _ => a'\n" +
-        "    | truncS' _ _ p _ i left => p @ i\n" +
-        "    | truncS' _ _ _ q i right => q @ i\n" +
+        "  | inS' A\n" +
+        "  | truncS' (a a' : TrS' A) (p q : a = a') (i j : I) => \\elim i, j\n" +
+        "    | left, _ => a\n" +
+        "    | right, _ => a'\n" +
+        "    | i, left => p @ i\n" +
+        "    | i, right => q @ i\n" +
         "\n" +
         "\\function\n" +
         "set-trunc-test (A : \\Type0) (a a' : TrS' A) (p q : a = a') : TrS' A => truncS' a a' p q left left\n" +
@@ -51,13 +50,12 @@ public class Truncations extends TypeCheckingTestCase {
   public void dynamicSetTruncationTests() {
     typeCheckClass(
         "\\data TrS' (A : \\Type0)\n" +
-        "    | inS' A\n" +
-        "    | truncS' (a a' : TrS' A) (p q : a = a') I I\n" +
-        "  \\with\n" +
-        "    | truncS' a _ _ _ left _ => a\n" +
-        "    | truncS' _ a' _ _ right _ => a'\n" +
-        "    | truncS' _ _ p _ i left => p @ i\n" +
-        "    | truncS' _ _ _ q i right => q @ i\n" +
+        "  | inS' A\n" +
+        "  | truncS' (a a' : TrS' A) (p q : a = a') (i j : I) => \\elim i, j\n" +
+        "    | left, _ => a\n" +
+        "    | right, _ => a'\n" +
+        "    | i, left => p @ i\n" +
+        "    | i, right => q @ i\n" +
         "\n" +
         "\\function\n" +
         "set-trunc-test (A : \\Type0) (a a' : TrS' A) (p q : a = a') : TrS' A => truncS' a a' p q left left\n" +
@@ -69,10 +67,9 @@ public class Truncations extends TypeCheckingTestCase {
   @Test
   public void S1Level() {
     DataDefinition definition = (DataDefinition) typeCheckDef(
-        "\\data S1 | base | loop I\n" +
-        "\\with\n" +
-        "  | loop left => base\n" +
-        "  | loop right => base");
+        "\\data S1 | base | loop I \\with\n" +
+        "  | left => base\n" +
+        "  | right => base");
     assertTrue(definition.getSort().getPLevel().isClosed() && definition.getSort().getPLevel().getConstant() == 0);
     assertTrue(definition.getSort().getHLevel().isInfinity());
   }

@@ -1136,16 +1136,14 @@ public final class Concrete {
     private final List<TypeArgument> myParameters;
     private final List<ReferenceExpression> myEliminatedReferences;
     private final List<ConstructorClause> myConstructorClauses;
-    private final List<Condition> myConditions;
     private final boolean myIsTruncated;
     private final Expression myUniverse;
 
-    public DataDefinition(Position position, String name, Abstract.Precedence precedence, List<TypeArgument> parameters, List<ReferenceExpression> eliminatedReferences, boolean isTruncated, Expression universe, List<ConstructorClause> constructorClauses, List<Condition> conditions) {
+    public DataDefinition(Position position, String name, Abstract.Precedence precedence, List<TypeArgument> parameters, List<ReferenceExpression> eliminatedReferences, boolean isTruncated, Expression universe, List<ConstructorClause> constructorClauses) {
       super(position, name, precedence);
       myParameters = parameters;
       myEliminatedReferences = eliminatedReferences;
       myConstructorClauses = constructorClauses;
-      myConditions = conditions;
       myIsTruncated = isTruncated;
       myUniverse = universe;
     }
@@ -1156,18 +1154,13 @@ public final class Concrete {
     }
 
     @Override
-    public List<? extends Abstract.ReferenceExpression> getEliminatedReferences() {
+    public List<ReferenceExpression> getEliminatedReferences() {
       return myEliminatedReferences;
     }
 
     @Override
     public List<ConstructorClause> getConstructorClauses() {
       return myConstructorClauses;
-    }
-
-    @Override
-    public List<? extends Abstract.Condition> getConditions() {
-      return myConditions;
     }
 
     @Override
@@ -1210,16 +1203,30 @@ public final class Concrete {
   public static class Constructor extends Definition implements Abstract.Constructor {
     private final DataDefinition myDataType;
     private final List<TypeArgument> myArguments;
+    private final List<ReferenceExpression> myEliminatedReferences;
+    private final List<FunctionClause> myClauses;
 
-    public Constructor(Position position, String name, Abstract.Precedence precedence, List<TypeArgument> arguments, DataDefinition dataType) {
+    public Constructor(Position position, String name, Abstract.Precedence precedence, DataDefinition dataType, List<TypeArgument> arguments, List<ReferenceExpression> eliminatedReferences, List<FunctionClause> clauses) {
       super(position, name, precedence);
-      myArguments = arguments;
       myDataType = dataType;
+      myArguments = arguments;
+      myEliminatedReferences = eliminatedReferences;
+      myClauses = clauses;
     }
 
     @Override
     public List<TypeArgument> getArguments() {
       return myArguments;
+    }
+
+    @Override
+    public List<ReferenceExpression> getEliminatedReferences() {
+      return myEliminatedReferences;
+    }
+
+    @Override
+    public List<FunctionClause> getClauses() {
+      return myClauses;
     }
 
     @Override

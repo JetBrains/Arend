@@ -16,11 +16,6 @@ import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.StripVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
-import com.jetbrains.jetpad.vclang.core.pattern.Patterns;
-import com.jetbrains.jetpad.vclang.core.pattern.Utils.ProcessImplicitResult;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.PatternsToElimTreeConversion;
-import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
@@ -34,7 +29,6 @@ import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ConditionsChecking;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ElimTypechecking;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.PatternTypechecking;
@@ -42,8 +36,6 @@ import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.CompositeInstance
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.GlobalInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.LocalInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.visitor.CollectDefCallsVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.visitor.FindMatchOnIntervalVisitor;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
@@ -52,8 +44,6 @@ import java.util.stream.Collectors;
 import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.toContext;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FieldCall;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.parameter;
-import static com.jetbrains.jetpad.vclang.core.pattern.Utils.processImplicit;
-import static com.jetbrains.jetpad.vclang.term.Util.getReferableList;
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.typeOfFunctionArg;
 
 class DefinitionTypechecking {
@@ -391,6 +381,7 @@ class DefinitionTypechecking {
     dataDefinition.setStatus(dataOk ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
 
     // Typecheck conditions
+    /*
     visitor.getContext().clear();
     if (def.getConditions() != null) {
       List<Constructor> cycle = typeCheckConditions(visitor, dataDefinition, def);
@@ -421,6 +412,7 @@ class DefinitionTypechecking {
         }
       }
     }
+    */
 
     // Find covariant parameters
     int index = 0;
@@ -466,6 +458,7 @@ class DefinitionTypechecking {
     return universeOk;
   }
 
+  /*
   private static List<Constructor> typeCheckConditions(CheckTypeVisitor visitor, DataDefinition dataDefinition, Abstract.DataDefinition def) {
     Map<Constructor, List<Abstract.Condition>> condMap = new HashMap<>();
     for (Abstract.Condition cond : def.getConditions()) {
@@ -569,6 +562,24 @@ class DefinitionTypechecking {
     visited.add(constructor);
     return null;
   }
+
+  private static List<Abstract.Pattern> processImplicitPatterns(Abstract.SourceNode expression, DependentLink parameters, List<? extends Abstract.Pattern> patterns, LocalErrorReporter errorReporter) {
+    List<Abstract.Pattern> processedPatterns = null;
+    ProcessImplicitResult processImplicitResult = processImplicit(patterns, parameters);
+    if (processImplicitResult.patterns == null) {
+      if (processImplicitResult.numExcessive != 0) {
+        errorReporter.report(new LocalTypeCheckingError("Too many arguments: " + processImplicitResult.numExcessive + " excessive", expression));
+      } else if (processImplicitResult.wrongImplicitPosition < patterns.size()) {
+        errorReporter.report(new LocalTypeCheckingError("Unexpected implicit argument", patterns.get(processImplicitResult.wrongImplicitPosition)));
+      } else {
+        errorReporter.report(new LocalTypeCheckingError("Too few explicit arguments, expected: " + processImplicitResult.numExplicit, expression));
+      }
+    } else {
+      processedPatterns = processImplicitResult.patterns;
+    }
+    return processedPatterns;
+  }
+  */
 
   private static Sort typeCheckConstructor(Abstract.Constructor def, com.jetbrains.jetpad.vclang.core.elimtree.Patterns patterns, DataDefinition dataDefinition, CheckTypeVisitor visitor, Set<DataDefinition> dataDefinitions) {
     Sort sort = Sort.PROP;
@@ -696,23 +707,6 @@ class DefinitionTypechecking {
     String msg = "Non-positive recursive occurrence of data type " + ((DataDefinition) def).getName() + " in constructor " + constructor.getName();
     errorReporter.report(new LocalTypeCheckingError(msg, argument == null ? constructor : argument));
     return false;
-  }
-
-  private static List<Abstract.Pattern> processImplicitPatterns(Abstract.SourceNode expression, DependentLink parameters, List<? extends Abstract.Pattern> patterns, LocalErrorReporter errorReporter) {
-    List<Abstract.Pattern> processedPatterns = null;
-    ProcessImplicitResult processImplicitResult = processImplicit(patterns, parameters);
-    if (processImplicitResult.patterns == null) {
-      if (processImplicitResult.numExcessive != 0) {
-        errorReporter.report(new LocalTypeCheckingError("Too many arguments: " + processImplicitResult.numExcessive + " excessive", expression));
-      } else if (processImplicitResult.wrongImplicitPosition < patterns.size()) {
-        errorReporter.report(new LocalTypeCheckingError("Unexpected implicit argument", patterns.get(processImplicitResult.wrongImplicitPosition)));
-      } else {
-        errorReporter.report(new LocalTypeCheckingError("Too few explicit arguments, expected: " + processImplicitResult.numExplicit, expression));
-      }
-    } else {
-      processedPatterns = processImplicitResult.patterns;
-    }
-    return processedPatterns;
   }
 
   private static void typeCheckClass(ClassDefinition typedDef, ClassDefinition enclosingClass, CheckTypeVisitor visitor) {

@@ -38,6 +38,9 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
       }
       if (body instanceof Abstract.ElimFunctionBody) {
         for (Abstract.FunctionClause clause : ((Abstract.ElimFunctionBody) body).getClauses()) {
+          for (Abstract.Pattern pattern : clause.getPatterns()) {
+            visitPattern(pattern);
+          }
           if (clause.getExpression() != null) {
             clause.getExpression().accept(visitor, null);
           }
@@ -81,12 +84,6 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
           visitConstructor(constructor, null);
         }
       }
-
-      if (def.getConditions() != null) {
-        for (Abstract.Condition cond : def.getConditions()) {
-          cond.getTerm().accept(visitor, null);
-        }
-      }
     }
 
     return null;
@@ -110,6 +107,16 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
 
     for (Abstract.TypeArgument arg : def.getArguments()) {
       arg.getType().accept(visitor, null);
+    }
+    if (def.getEliminatedReferences() != null) {
+      for (Abstract.FunctionClause clause : def.getClauses()) {
+        for (Abstract.Pattern pattern : clause.getPatterns()) {
+          visitPattern(pattern);
+        }
+        if (clause.getExpression() != null) {
+          clause.getExpression().accept(visitor, null);
+        }
+      }
     }
 
     return null;
