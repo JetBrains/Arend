@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import net.harawata.appdirs.AppDirsFactory;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -87,13 +88,13 @@ public class LibStorage implements Storage<LibStorage.SourceId> {
   }
 
   @Override
-  public boolean isAvailable(SourceId sourceId) {
+  public boolean isAvailable(@Nonnull SourceId sourceId) {
     if (sourceId.getLibStorage() != this) return false;
     return sourceId.myFileStorage.isAvailable(sourceId.fileSourceId);
   }
 
   @Override
-  public Abstract.ClassDefinition loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
+  public Abstract.ClassDefinition loadSource(@Nonnull SourceId sourceId, @Nonnull ErrorReporter errorReporter) {
     if (sourceId.getLibStorage() != this) return null;
     return sourceId.myFileStorage.loadSource(sourceId.fileSourceId, errorReporter);
   }

@@ -21,7 +21,7 @@ public class NameResolutionOnLoadTest extends NameResolverTestCase {
   public void initialize() {
     storage = new MemoryStorage(moduleNsProvider, nameResolver);
     moduleLoader = new SimpleModuleLoader<>(storage, errorReporter);
-    nameResolver.setModuleResolver(modulePath -> moduleLoader.load(storage.locateModule(modulePath)));
+    nameResolver.setModuleResolver(storage, errorReporter);
   }
 
   private void setupSources() {

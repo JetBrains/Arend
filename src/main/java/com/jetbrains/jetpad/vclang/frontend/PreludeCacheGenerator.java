@@ -91,7 +91,7 @@ public class PreludeCacheGenerator {
     }
   }
 
-  public static void main(String[] args) throws IOException, CachePersistenceException {
+  public static void main(String[] args) throws CachePersistenceException {
     final ListErrorReporter errorReporter = new ListErrorReporter();
     final StaticNamespaceProvider staticNsProvider = new SimpleStaticNamespaceProvider();
     final DynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();

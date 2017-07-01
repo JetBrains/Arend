@@ -4,20 +4,20 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
-import java.io.IOException;
+import javax.annotation.Nonnull;
 import java.util.Objects;
 
 public class CompositeSourceSupplier<SourceId1T extends SourceId, SourceId2T extends SourceId> implements SourceSupplier<CompositeSourceSupplier<SourceId1T, SourceId2T>.SourceId> {
-  private final SourceSupplier<SourceId1T> mySup1;
-  private final SourceSupplier<SourceId2T> mySup2;
+  private final @Nonnull SourceSupplier<SourceId1T> mySup1;
+  private final @Nonnull SourceSupplier<SourceId2T> mySup2;
 
-  public CompositeSourceSupplier(SourceSupplier<SourceId1T> supplier1, SourceSupplier<SourceId2T> supplier2) {
+  public CompositeSourceSupplier(@Nonnull SourceSupplier<SourceId1T> supplier1, @Nonnull SourceSupplier<SourceId2T> supplier2) {
     mySup1 = supplier1;
     mySup2 = supplier2;
   }
 
   @Override
-  public SourceId locateModule(ModulePath modulePath) {
+  public SourceId locateModule(@Nonnull ModulePath modulePath) {
     SourceId1T source1 = mySup1.locateModule(modulePath);
     if (source1 != null) {
       return idFromFirst(source1);
@@ -32,7 +32,7 @@ public class CompositeSourceSupplier<SourceId1T extends SourceId, SourceId2T ext
   }
 
   @Override
-  public boolean isAvailable(SourceId sourceId) {
+  public boolean isAvailable(@Nonnull SourceId sourceId) {
     if (sourceId.getSourceSupplier() != this) return false;
     if (sourceId.source1 != null) {
       return mySup1.isAvailable(sourceId.source1);
@@ -42,7 +42,7 @@ public class CompositeSourceSupplier<SourceId1T extends SourceId, SourceId2T ext
   }
 
   @Override
-  public Abstract.ClassDefinition loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
+  public Abstract.ClassDefinition loadSource(@Nonnull SourceId sourceId, @Nonnull ErrorReporter errorReporter) {
     if (sourceId.getSourceSupplier() != this) return null;
     if (sourceId.source1 != null) {
       return mySup1.loadSource(sourceId.source1, errorReporter);

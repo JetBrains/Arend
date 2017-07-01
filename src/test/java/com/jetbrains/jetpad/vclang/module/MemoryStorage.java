@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
+import javax.annotation.Nonnull;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -43,21 +44,25 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId> {
   }
 
   @Override
-  public SourceId locateModule(ModulePath modulePath) {
+  public SourceId locateModule(@Nonnull ModulePath modulePath) {
     String data = mySources.get(modulePath);
     return data != null ? new SourceId(modulePath, data) : null;
   }
 
   @Override
-  public boolean isAvailable(SourceId sourceId) {
+  public boolean isAvailable(@Nonnull SourceId sourceId) {
     String myData = mySources.get(sourceId.getModulePath());
     //noinspection StringEquality
     return myData == sourceId.myData;
   }
 
   @Override
-  public Abstract.ClassDefinition loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
-    return isAvailable(sourceId) ? new ParseSource(sourceId, new StringReader(sourceId.myData)) {}.load(errorReporter, myModuleRegistry, myGlobalScope, myNameResolver) : null;
+  public Abstract.ClassDefinition loadSource(@Nonnull SourceId sourceId, @Nonnull ErrorReporter errorReporter) {
+    try {
+      return isAvailable(sourceId) ? new ParseSource(sourceId, new StringReader(sourceId.myData)) {}.load(errorReporter, myModuleRegistry, myGlobalScope, myNameResolver) : null;
+    } catch (IOException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   @Override

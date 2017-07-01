@@ -53,7 +53,7 @@ public class CachingTestCase extends NameResolverTestCase {
         return result;
       }
     };
-    nameResolver.setModuleResolver(moduleLoader);
+    nameResolver.setModuleResolver(storage, errorReporter);
     cacheManager = new CacheManager<>(peristenceProvider, storage, srcInfoCollector.sourceInfoProvider);
     tcState = cacheManager.getTypecheckerState();
     typechecking = new Typechecking(tcState, staticNsProvider, dynamicNsProvider, errorReporter, new TypecheckedReporter() {

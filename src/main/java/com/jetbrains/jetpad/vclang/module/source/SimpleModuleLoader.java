@@ -4,8 +4,6 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
-import java.io.IOException;
-
 public class SimpleModuleLoader<SourceIdT extends SourceId> implements SourceModuleLoader<SourceIdT> {
   private final SourceSupplier<SourceIdT> mySourceSupplier;
   protected final ErrorReporter myErrorReporter;
@@ -32,10 +30,6 @@ public class SimpleModuleLoader<SourceIdT extends SourceId> implements SourceMod
       throw new IllegalStateException("Source <" + sourceId + "> is not available");
     }
 
-    try {
-      return mySourceSupplier.loadSource(sourceId, myErrorReporter);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    return mySourceSupplier.loadSource(sourceId, myErrorReporter);
   }
 }

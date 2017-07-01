@@ -15,6 +15,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
+import javax.annotation.Nonnull;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -89,7 +90,7 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
     }
 
     @Override
-    public SourceId locateModule(ModulePath modulePath) {
+    public SourceId locateModule(@Nonnull ModulePath modulePath) {
       Path file = sourceFile(baseFile(myRoot, modulePath));
       try {
         if (Files.exists(file)) {
@@ -101,7 +102,7 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
     }
 
     @Override
-    public boolean isAvailable(SourceId sourceId) {
+    public boolean isAvailable(@Nonnull SourceId sourceId) {
       if (sourceId.getStorage() != FileStorage.this) return false;
       Path file = sourceFileForSource(sourceId);
       try {
@@ -112,16 +113,20 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
     }
 
     @Override
-    public Concrete.ClassDefinition loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
-      if (!isAvailable(sourceId)) return null;
+    public Concrete.ClassDefinition loadSource(@Nonnull SourceId sourceId, @Nonnull ErrorReporter errorReporter) {
+      try {
+        if (!isAvailable(sourceId)) return null;
 
-      Path file = sourceFileForSource(sourceId);
-      FileSource fileSource = new FileSource(sourceId, file);
-      Concrete.ClassDefinition result = fileSource.load(errorReporter, myModuleRegistry, myGlobalScope, myNameResolver);
+        Path file = sourceFileForSource(sourceId);
+        FileSource fileSource = new FileSource(sourceId, file);
+        Concrete.ClassDefinition result = fileSource.load(errorReporter, myModuleRegistry, myGlobalScope, myNameResolver);
 
-      // Make sure we loaded the right revision
-      if (getLastModifiedTime(file) != sourceId.myMtime) return null;
-      return result;
+        // Make sure we loaded the right revision
+        if (getLastModifiedTime(file) != sourceId.myMtime) return null;
+        return result;
+      } catch (IOException e) {
+        throw new IllegalStateException(e);
+      }
     }
   }
 
@@ -179,21 +184,21 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
   }
 
   @Override
-  public SourceId locateModule(ModulePath modulePath) {
+  public SourceId locateModule(@Nonnull ModulePath modulePath) {
     return mySourceSupplier.locateModule(modulePath);
   }
 
-  public SourceId locateModule(ModulePath modulePath, long mtime) {
+  public SourceId locateModule(@Nonnull ModulePath modulePath, long mtime) {
     return new SourceId(modulePath, mtime);
   }
 
   @Override
-  public boolean isAvailable(SourceId sourceId) {
+  public boolean isAvailable(@Nonnull SourceId sourceId) {
     return mySourceSupplier.isAvailable(sourceId);
   }
 
   @Override
-  public Abstract.ClassDefinition loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
+  public Abstract.ClassDefinition loadSource(@Nonnull SourceId sourceId, @Nonnull ErrorReporter errorReporter) {
     return mySourceSupplier.loadSource(sourceId, errorReporter);
   }
 

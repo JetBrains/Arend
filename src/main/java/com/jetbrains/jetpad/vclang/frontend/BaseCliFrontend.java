@@ -13,9 +13,7 @@ import com.jetbrains.jetpad.vclang.module.caching.CacheLoadingException;
 import com.jetbrains.jetpad.vclang.module.caching.CacheManager;
 import com.jetbrains.jetpad.vclang.module.caching.CachePersistenceException;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
-import com.jetbrains.jetpad.vclang.module.source.SimpleModuleLoader;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.module.source.SourceModuleLoader;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
@@ -41,7 +39,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   protected final Storage<SourceIdT> storage;
 
   // Modules
-  protected final SourceModuleLoader<SourceIdT> moduleLoader;
+  protected final ModuleWatch moduleWatch;
   protected final Map<SourceIdT, Abstract.ClassDefinition> loadedSources = new HashMap<>();
   private final Set<SourceIdT> requestedSources = new LinkedHashSet<>();
 
@@ -60,7 +58,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     this.storage = storage;
 
-    moduleLoader = new ModuleWatch(new SimpleModuleLoader<>(storage, errorReporter), srcInfoCollector);
+    moduleWatch = new ModuleWatch(storage, srcInfoCollector);
     state = cacheManager.getTypecheckerState();
   }
 
@@ -155,13 +153,13 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
   }
 
-  class ModuleWatch implements SourceModuleLoader<SourceIdT> {
-    private final SourceModuleLoader<SourceIdT> myModuleLoader;
+  class ModuleWatch {
+    private final Storage<SourceIdT> myStorage;
     private final OneshotSourceInfoCollector<SourceIdT> mySrcInfoCollector;
     private final DefinitionIdsCollector defIdCollector = new DefinitionIdsCollector();
 
-    ModuleWatch(SourceModuleLoader<SourceIdT> moduleLoader, OneshotSourceInfoCollector<SourceIdT> srcInfoCollector) {
-      myModuleLoader = moduleLoader;
+    ModuleWatch(Storage<SourceIdT> storage, OneshotSourceInfoCollector<SourceIdT> srcInfoCollector) {
+      myStorage = storage;
       mySrcInfoCollector = srcInfoCollector;
     }
 
@@ -181,20 +179,10 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
       System.out.println("[Failed] " + displaySource(module, false));
     }
 
-    @Override
-    public SourceIdT locateModule(ModulePath modulePath) {
-      return myModuleLoader.locateModule(modulePath);
-    }
-
-    @Override
-    public boolean isAvailable(SourceIdT sourceId) {
-      return myModuleLoader.isAvailable(sourceId);
-    }
-
-    @Override
     public Abstract.ClassDefinition load(SourceIdT sourceId) {
       if (loadedSources.containsKey(sourceId)) throw new IllegalStateException();
-      Abstract.ClassDefinition result = myModuleLoader.load(sourceId);
+      final Abstract.ClassDefinition result;
+      result = myStorage.loadSource(sourceId, errorReporter);
 
       if (result != null) {
         loadingSucceeded(sourceId, result);
@@ -207,11 +195,11 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   }
 
   protected Abstract.ClassDefinition loadPrelude() {
-    Abstract.ClassDefinition prelude = moduleLoader.load(moduleLoader.locateModule(PreludeStorage.PRELUDE_MODULE_PATH));
+    Abstract.ClassDefinition prelude = moduleWatch.load(storage.locateModule(PreludeStorage.PRELUDE_MODULE_PATH));
     assert errorReporter.getErrorList().isEmpty();
     boolean cacheLoaded;
     try {
-      cacheLoaded = cacheManager.loadCache(moduleLoader.locateModule(PreludeStorage.PRELUDE_MODULE_PATH), prelude);
+      cacheLoaded = cacheManager.loadCache(storage.locateModule(PreludeStorage.PRELUDE_MODULE_PATH), prelude);
     } catch (CacheLoadingException e) {
       cacheLoaded = false;
     }
@@ -256,7 +244,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     for (SourceIdT source : sources) {
       Abstract.ClassDefinition definition = loadedSources.get(source);
       if (definition == null){
-        definition = moduleLoader.load(source);
+        definition = moduleWatch.load(source);
         if (definition == null) {
           results.put(source, ModuleResult.NOT_LOADED);
           continue;
