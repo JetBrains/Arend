@@ -67,7 +67,7 @@ public class LibStorage implements Storage<LibStorage.SourceId> {
   }
 
   @Override
-  public SourceId locateModule(ModulePath modulePath) {
+  public SourceId locateModule(@Nonnull ModulePath modulePath) {
     LibStorage.SourceId result = null;
     for (Map.Entry<String, FileStorage> entry : myLibStorages.entrySet()) {
       FileStorage.SourceId sourceId = entry.getValue().locateModule(modulePath);
