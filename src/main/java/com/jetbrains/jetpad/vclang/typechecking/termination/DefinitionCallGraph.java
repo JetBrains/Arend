@@ -28,10 +28,6 @@ public class DefinitionCallGraph extends BaseCallGraph<Definition> {
     super(cg);
   }
 
-  public void add(FunctionDefinition def) {
-    add(def, null);
-  }
-
   public void add(FunctionDefinition def, Set<? extends Definition> cycle) {
     add(new CollectCallVisitor(def, cycle).getResult());
   }

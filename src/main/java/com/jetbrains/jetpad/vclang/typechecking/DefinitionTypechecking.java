@@ -8,9 +8,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
-import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
-import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
-import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
@@ -335,10 +333,16 @@ class DefinitionTypechecking {
       }
     }
 
+    for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
+      for (Abstract.Constructor constructor : clause.getConstructors()) {
+        visitor.getTypecheckingState().record(constructor, new Constructor(constructor, dataDefinition));
+      }
+    }
+
     boolean universeOk = true;
     for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
       // Typecheck patterns and compute free bindings
-      Pair<List<com.jetbrains.jetpad.vclang.core.elimtree.Pattern>, List<Expression>> result = null;
+      Pair<List<Pattern>, List<Expression>> result = null;
       if (clause.getPatterns() != null) {
         if (def.getEliminatedReferences() == null) {
           visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected a constructor without patterns", clause));
@@ -352,9 +356,6 @@ class DefinitionTypechecking {
           }
         }
         if (result == null) {
-          for (Abstract.Constructor constructor : clause.getConstructors()) {
-            visitor.getTypecheckingState().record(constructor, new Constructor(constructor, dataDefinition));
-          }
           continue;
         }
       } else {
@@ -366,7 +367,7 @@ class DefinitionTypechecking {
 
       // Typecheck constructors
       for (Abstract.Constructor constructor : clause.getConstructors()) {
-        com.jetbrains.jetpad.vclang.core.elimtree.Patterns patterns = result == null ? null : new com.jetbrains.jetpad.vclang.core.elimtree.Patterns(result.proj1);
+        Patterns patterns = result == null ? null : new Patterns(result.proj1);
         Sort conSort = typeCheckConstructor(constructor, patterns, dataDefinition, visitor, dataDefinitions);
         if (conSort == null) {
           dataOk = false;
@@ -407,6 +408,9 @@ class DefinitionTypechecking {
     for (DependentLink link = dataDefinition.getParameters(); link.hasNext(); link = link.getNext(), index++) {
       boolean isCovariant = true;
       for (Constructor constructor : dataDefinition.getConstructors()) {
+        if (!constructor.status().headerIsOK()) {
+          continue;
+        }
         for (DependentLink link1 = constructor.getParameters(); link1.hasNext(); link1 = link1.getNext()) {
           link1 = link1.getNextTyped(null);
           if (!checkPositiveness(link1.getType().getExpr(), index, null, null, null, Collections.singleton(link))) {
@@ -585,10 +589,11 @@ class DefinitionTypechecking {
   }
   */
 
-  private static Sort typeCheckConstructor(Abstract.Constructor def, com.jetbrains.jetpad.vclang.core.elimtree.Patterns patterns, DataDefinition dataDefinition, CheckTypeVisitor visitor, Set<DataDefinition> dataDefinitions) {
+  private static Sort typeCheckConstructor(Abstract.Constructor def, Patterns patterns, DataDefinition dataDefinition, CheckTypeVisitor visitor, Set<DataDefinition> dataDefinitions) {
     try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(visitor.getContext())) {
       Constructor constructor = new Constructor(def, dataDefinition);
       visitor.getTypecheckingState().record(def, constructor);
+      dataDefinition.addConstructor(constructor);
 
       LinkList list = new LinkList();
       Sort sort = typeCheckParameters(def.getArguments(), list, visitor, null, null);
@@ -605,7 +610,6 @@ class DefinitionTypechecking {
       constructor.setPatterns(patterns);
       constructor.setThisClass(dataDefinition.getThisClass());
       constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-      dataDefinition.addConstructor(constructor);
 
       if (def.getClauses() != null) {
         constructor.setElimTree(new ElimTypechecking(visitor, constructor.getDataTypeExpression(Sort.STD), false).typecheckElim(def, def.getArguments(), constructor.getParameters()));

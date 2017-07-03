@@ -105,8 +105,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   private void initializeBDList() {
     TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
         "\\data BD-list (A : \\Set0) | nil | cons A (BD-list A) | snoc (xs : BD-list A) (y : A)\n" +
-        "  => \\elim xs | cons x xs => cons x (snoc xs y) | nil => cons y nil\n"
-    );
+        "  => \\elim xs { | cons x xs => cons x (snoc xs y) | nil => cons y nil }");
     bdList = (DataDefinition) result.getDefinition("BD-list");
     bdNil = bdList.getConstructor("nil");
     bdCons = bdList.getConstructor("cons");
