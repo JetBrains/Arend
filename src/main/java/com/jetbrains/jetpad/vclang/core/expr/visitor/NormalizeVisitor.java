@@ -118,7 +118,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     return visitCallableCall(expr, expr.getSortArgument().toLevelSubstitution(), mode);
   }
 
-  private Expression visitFunction(CallableCallExpression expr, LevelSubstitution levelSubstitution, Mode mode) {
+  private Expression visitCallableCall(CallableCallExpression expr, LevelSubstitution levelSubstitution, Mode mode) {
     if (expr.getDefinition() == Prelude.COERCE) {
       Expression result = null;
 
@@ -150,9 +150,21 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
     }
 
+    ElimTree elimTree = ((Function) expr.getDefinition()).getElimTree();
+    if (elimTree == null) {
+      return applyDefCall(expr, mode);
+    }
+
     Expression result = null;
     ExprSubstitution substitution = new ExprSubstitution();
-    ElimTree elimTree = ((FunctionDefinition) expr.getDefinition()).getElimTree();
+    if (expr instanceof ConCallExpression) {
+      int i = 0;
+      List<? extends Expression> args = ((ConCallExpression) expr).getDataTypeArguments();
+      for (DependentLink link = ((ConCallExpression) expr).getDefinition().getDataTypeParameters(); link.hasNext(); link = link.getNext()) {
+        substitution.add(link, args.get(i++));
+      }
+    }
+
     Stack<Expression> stack = new Stack<>();
     for (int i = expr.getDefCallArguments().size() - 1; i >= 0; i--) {
       stack.push(expr.getDefCallArguments().get(i));
@@ -201,27 +213,6 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     return result == null ? applyDefCall(expr, mode) : result.normalize(mode);
   }
 
-  private Expression visitCallableCall(CallableCallExpression expr, LevelSubstitution polySubst, Mode mode) {
-    DependentLink params = EmptyDependentLink.getInstance();
-    List<? extends Expression> paramArgs = Collections.emptyList();
-    if (expr instanceof ConCallExpression) {
-      params = ((ConCallExpression) expr).getDefinition().getDataTypeParameters();
-      paramArgs = ((ConCallExpression) expr).getDataTypeArguments();
-    }
-
-    Expression result = myNormalizer.normalize((Function) expr.getDefinition(), polySubst, params, paramArgs, expr.getDefCallArguments(), mode);
-
-    if (Thread.interrupted()) {
-      throw new ComputationInterruptedException();
-    }
-
-    if (result == null) {
-      return applyDefCall(expr, mode);
-    }
-
-    return result;
-  }
-
   @Override
   public Expression visitDefCall(DefCallExpression expr, Mode mode) {
     if (!expr.getDefinition().status().bodyIsOK()) {
@@ -247,9 +238,6 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     if (expr.getDefinition() instanceof Function) {
       return visitCallableCall(expr, expr.getSortArgument().toLevelSubstitution(), mode);
     }
-    if (expr.getDefinition() instanceof FunctionDefinition) {
-      return visitFunction(expr, expr.getSortArgument().toLevelSubstitution(), mode);
-    }
 
     return applyDefCall(expr, mode);
   }
@@ -269,7 +257,17 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitLetClauseCall(LetClauseCallExpression expr, Mode mode) {
-    return visitCallableCall(expr, LevelSubstitution.EMPTY, mode);
+    Expression result = myNormalizer.normalize(expr.getDefinition(), LevelSubstitution.EMPTY, EmptyDependentLink.getInstance(), Collections.emptyList(), expr.getDefCallArguments(), mode);
+
+    if (Thread.interrupted()) {
+      throw new ComputationInterruptedException();
+    }
+
+    if (result == null) {
+      return applyDefCall(expr, mode);
+    }
+
+    return result;
   }
 
   @Override

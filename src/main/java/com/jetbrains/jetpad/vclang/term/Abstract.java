@@ -331,9 +331,12 @@ public final class Abstract {
     Expression getTerm();
   }
 
-  public interface ElimFunctionBody extends FunctionBody {
-    List<? extends ReferenceExpression> getExpressions();
+  public interface ElimBody extends SourceNode {
+    List<? extends ReferenceExpression> getEliminatedReferences();
     List<? extends FunctionClause> getClauses();
+  }
+
+  public interface ElimFunctionBody extends FunctionBody, ElimBody {
   }
 
   public interface FunctionDefinition extends Definition, StatementCollection {
@@ -354,11 +357,9 @@ public final class Abstract {
     List<? extends Constructor> getConstructors();
   }
 
-  public interface Constructor extends Definition {
+  public interface Constructor extends Definition, ElimBody {
     DataDefinition getDataType();
     List<? extends TypeArgument> getArguments();
-    List<? extends ReferenceExpression> getEliminatedReferences();
-    List<? extends FunctionClause> getClauses();
   }
 
   public interface Condition extends SourceNode {

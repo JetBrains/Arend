@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
+import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
@@ -16,6 +17,7 @@ import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.StripVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
+import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
@@ -25,6 +27,7 @@ import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
@@ -41,7 +44,6 @@ import com.jetbrains.jetpad.vclang.util.Pair;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.toContext;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FieldCall;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.parameter;
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.typeOfFunctionArg;
@@ -139,8 +141,8 @@ class DefinitionTypechecking {
     return parameter("\\this", new ClassCallExpression(enclosingClass, Sort.STD));
   }
 
-  private static boolean typeCheckParameters(List<? extends Abstract.Argument> arguments, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool, Map<Integer, ClassField> classifyingFields) {
-    boolean ok = true;
+  private static Sort typeCheckParameters(List<? extends Abstract.Argument> arguments, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool, Map<Integer, ClassField> classifyingFields) {
+    Sort sort = Sort.PROP;
     int index = 0;
 
     for (Abstract.Argument argument : arguments) {
@@ -148,8 +150,10 @@ class DefinitionTypechecking {
         Abstract.TypeArgument typeArgument = (Abstract.TypeArgument) argument;
         Type paramResult = visitor.finalCheckType(typeArgument.getType());
         if (paramResult == null) {
-          ok = false;
+          sort = null;
           paramResult = new TypeExpression(new ErrorExpression(null, null), Sort.SET0);
+        } else if (sort != null) {
+          sort = sort.max(paramResult.getSortOfType());
         }
 
         DependentLink param;
@@ -183,14 +187,16 @@ class DefinitionTypechecking {
         }
 
         list.append(param);
-        visitor.getFreeBindings().addAll(toContext(param));
+        for (; param.hasNext(); param = param.getNext()) {
+          visitor.getFreeBindings().add(param);
+        }
       } else {
         visitor.getErrorReporter().report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, new Expression[0]));
-        ok = false;
+        sort = null;
       }
     }
 
-    return ok;
+    return sort;
   }
 
   private static LinkList initializeThisParam(CheckTypeVisitor visitor, ClassDefinition enclosingClass) {
@@ -209,7 +215,7 @@ class DefinitionTypechecking {
 
     Map<Integer, ClassField> classifyingFields = new HashMap<>();
     Abstract.FunctionDefinition def = (Abstract.FunctionDefinition) typedDef.getAbstractDefinition();
-    boolean paramsOk = typeCheckParameters(def.getArguments(), list, visitor, localInstancePool, classifyingFields);
+    boolean paramsOk = typeCheckParameters(def.getArguments(), list, visitor, localInstancePool, classifyingFields) != null;
     Expression expectedType = null;
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
@@ -267,9 +273,8 @@ class DefinitionTypechecking {
 
     Map<Integer, ClassField> classifyingFields = new HashMap<>();
     Sort userSort = null;
-    boolean paramsOk;
     Abstract.DataDefinition def = dataDefinition.getAbstractDefinition();
-    paramsOk = typeCheckParameters(def.getParameters(), list, visitor, localInstancePool, classifyingFields);
+    boolean paramsOk = typeCheckParameters(def.getParameters(), list, visitor, localInstancePool, classifyingFields) != null;
 
     if (def.getUniverse() != null) {
       if (def.getUniverse() instanceof Abstract.UniverseExpression) {
@@ -380,39 +385,22 @@ class DefinitionTypechecking {
     }
     dataDefinition.setStatus(dataOk ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
 
-    // Typecheck conditions
-    /*
-    visitor.getContext().clear();
-    if (def.getConditions() != null) {
-      List<Constructor> cycle = typeCheckConditions(visitor, dataDefinition, def);
-      if (cycle != null) {
-        StringBuilder cycleConditionsError = new StringBuilder();
-        cycleConditionsError.append("Conditions form a cycle: ");
-        for (Constructor constructor : cycle) {
-          cycleConditionsError.append(constructor.getName()).append(" - ");
-        }
-        cycleConditionsError.append(cycle.get(0).getName());
-        LocalTypeCheckingError error = new LocalTypeCheckingError(cycleConditionsError.toString(), def);
-        visitor.getErrorReporter().report(error);
-      }
-
-      for (Constructor constructor : dataDefinition.getConstructors()) {
-        if (constructor.getCondition() != null) {
-          LocalTypeCheckingError error = TypeCheckingElim.checkConditions(constructor.getName(), def, constructor.getParameters(), constructor.getCondition());
-          if (error != null) {
-            visitor.getErrorReporter().report(error);
-            constructor.setCondition(null);
-            dataDefinition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
-          } else {
-            if (!dataDefinition.matchesOnInterval() && constructor.getCondition().accept(new FindMatchOnIntervalVisitor(), null)) {
-              dataDefinition.setMatchesOnInterval();
-              inferredSort = inferredSort.max(new Sort(inferredSort.getPLevel(), Level.INFINITY));
-            }
+    // Check conditions
+    for (Constructor constructor : dataDefinition.getConstructors()) {
+      if (constructor.getElimTree() != null) {
+        LocalTypeCheckingError error = null; // TypeCheckingElim.checkConditions(constructor.getName(), def, constructor.getParameters(), constructor.getElimTree());
+        if (error != null) {
+          visitor.getErrorReporter().report(error);
+          constructor.setElimTree(null);
+          dataDefinition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+        } else {
+          if (!dataDefinition.matchesOnInterval() && findMatchOnInterval(constructor.getElimTree())) {
+            dataDefinition.setMatchesOnInterval();
+            inferredSort = inferredSort.max(new Sort(inferredSort.getPLevel(), Level.INFINITY));
           }
         }
       }
     }
-    */
 
     // Find covariant parameters
     int index = 0;
@@ -456,6 +444,22 @@ class DefinitionTypechecking {
 
     dataDefinition.setSort(universeOk && userSort != null ? userSort : inferredSort);
     return universeOk;
+  }
+
+  private static boolean findMatchOnInterval(ElimTree elimTree) {
+    if (elimTree instanceof BranchElimTree) {
+      for (Map.Entry<BranchElimTree.Pattern, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
+        if (entry.getKey() == Prelude.LEFT || entry.getKey() == Prelude.RIGHT) {
+          return true;
+        }
+      }
+      for (Map.Entry<BranchElimTree.Pattern, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
+        if (findMatchOnInterval(entry.getValue())) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   /*
@@ -582,40 +586,17 @@ class DefinitionTypechecking {
   */
 
   private static Sort typeCheckConstructor(Abstract.Constructor def, com.jetbrains.jetpad.vclang.core.elimtree.Patterns patterns, DataDefinition dataDefinition, CheckTypeVisitor visitor, Set<DataDefinition> dataDefinitions) {
-    Sort sort = Sort.PROP;
     try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(visitor.getContext())) {
-      List<? extends Abstract.TypeArgument> arguments = def.getArguments();
       Constructor constructor = new Constructor(def, dataDefinition);
       visitor.getTypecheckingState().record(def, constructor);
 
       LinkList list = new LinkList();
-      for (Abstract.TypeArgument argument : arguments) {
-        Type paramResult = visitor.finalCheckType(argument.getType());
-        if (paramResult == null) {
-          return null;
-        }
-
-        sort = sort.max(paramResult.getSortOfType());
-
-        DependentLink param;
-        if (argument instanceof Abstract.TelescopeArgument) {
-          List<? extends Abstract.ReferableSourceNode> referableList = ((Abstract.TelescopeArgument) argument).getReferableList();
-          param = parameter(argument.getExplicit(), referableList.stream().map(r -> r == null ? null : r.getName()).collect(Collectors.toList()), paramResult);
-          int i = 0;
-          for (DependentLink link = param; link.hasNext(); link = link.getNext(), i++) {
-            visitor.getContext().put(referableList.get(i), link);
-          }
-        } else {
-          param = parameter(argument.getExplicit(), (String) null, paramResult);
-        }
-        list.append(param);
-        visitor.getFreeBindings().addAll(toContext(param));
-      }
+      Sort sort = typeCheckParameters(def.getArguments(), list, visitor, null, null);
 
       int index = 0;
       for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext(), index++) {
         link = link.getNextTyped(null);
-        if (!checkPositiveness(link.getType().getExpr(), index, arguments, def, visitor.getErrorReporter(), dataDefinitions)) {
+        if (!checkPositiveness(link.getType().getExpr(), index, def.getArguments(), def, visitor.getErrorReporter(), dataDefinitions)) {
           return null;
         }
       }
@@ -625,6 +606,11 @@ class DefinitionTypechecking {
       constructor.setThisClass(dataDefinition.getThisClass());
       constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
       dataDefinition.addConstructor(constructor);
+
+      if (def.getClauses() != null) {
+        constructor.setElimTree(new ElimTypechecking(visitor, constructor.getDataTypeExpression(Sort.STD), true).typecheckElim(def, def.getArguments(), constructor.getParameters()));
+      }
+
       return sort;
     }
   }
@@ -825,7 +811,7 @@ class DefinitionTypechecking {
 
     LinkList list = new LinkList();
     Abstract.ClassViewInstance def = (Abstract.ClassViewInstance) typedDef.getAbstractDefinition();
-    boolean paramsOk = typeCheckParameters(def.getArguments(), list, visitor, null, null);
+    boolean paramsOk = typeCheckParameters(def.getArguments(), list, visitor, null, null) != null;
     typedDef.setParameters(list.getFirst());
     typedDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
     state.record(def, typedDef);

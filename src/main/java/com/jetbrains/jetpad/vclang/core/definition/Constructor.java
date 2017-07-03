@@ -2,14 +2,13 @@ package com.jetbrains.jetpad.vclang.core.definition;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.Pattern;
 import com.jetbrains.jetpad.vclang.core.elimtree.Patterns;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.EmptyElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
@@ -23,7 +22,7 @@ public class Constructor extends Definition implements Function, BranchElimTree.
   private final DataDefinition myDataType;
   private DependentLink myParameters;
   private Patterns myPatterns;
-  private ElimTreeNode myCondition;
+  private ElimTree myConditions;
 
   public Constructor(Abstract.Constructor abstractDef, DataDefinition dataType) {
     super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -31,12 +30,8 @@ public class Constructor extends Definition implements Function, BranchElimTree.
     myParameters = null;
   }
 
-  public ElimTreeNode getCondition() {
-    return myCondition;
-  }
-
-  public void setCondition(ElimTreeNode condition) {
-    myCondition = condition;
+  public void setElimTree(ElimTree condition) {
+    myConditions = condition;
   }
 
   public Patterns getPatterns() {
@@ -54,8 +49,8 @@ public class Constructor extends Definition implements Function, BranchElimTree.
   }
 
   @Override
-  public ElimTreeNode getElimTree() {
-    return myCondition == null ? EmptyElimTreeNode.getInstance() : myCondition;
+  public ElimTree getElimTree() {
+    return myConditions;
   }
 
   @Override

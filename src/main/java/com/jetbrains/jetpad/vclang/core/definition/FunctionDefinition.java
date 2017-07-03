@@ -13,7 +13,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FunctionDefinition extends Definition {
+public class FunctionDefinition extends Definition implements Function {
   private DependentLink myParameters;
   private Expression myResultType;
   private ElimTree myElimTree;
@@ -23,6 +23,7 @@ public class FunctionDefinition extends Definition {
     myParameters = EmptyDependentLink.getInstance();
   }
 
+  @Override
   public ElimTree getElimTree() {
     return myElimTree;
   }

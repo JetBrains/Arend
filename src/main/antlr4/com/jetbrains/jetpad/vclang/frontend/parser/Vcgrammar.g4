@@ -87,15 +87,15 @@ expr  : (binOpLeft+ | ) binOpArg                            # binOp
       | '\\case' expr (',' expr)* '\\with'? clauses         # case
       ;
 
-clauses : clause*         # clausesWithoutBraces
-        | '{' clause* '}' # clausesWithBraces
+clauses : ('|' clause)*                 # clausesWithoutBraces
+        | '{' clause? ('|' clause)* '}' # clausesWithBraces
         ;
 
 letClause : ID tele* typeAnnotation? '=>' expr;
 
 typeAnnotation : ':' expr;
 
-clause : '|' pattern (',' pattern)* ('=>' expr)?;
+clause : pattern (',' pattern)* ('=>' expr)?;
 
 levelAtom : '\\lp'              # pLevel
           | '\\lh'              # hLevel

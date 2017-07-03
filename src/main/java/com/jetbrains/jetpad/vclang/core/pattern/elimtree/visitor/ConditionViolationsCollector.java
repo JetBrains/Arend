@@ -1,24 +1,15 @@
 package com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor;
 
 import com.jetbrains.jetpad.vclang.core.context.Utils;
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
-import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 
-import java.util.ArrayList;
 import java.util.List;
-
-import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.toContext;
-import static com.jetbrains.jetpad.vclang.core.context.param.DependentLink.Helper.toSubstitution;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Left;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Right;
 
 public class ConditionViolationsCollector implements ElimTreeNodeVisitor<ExprSubstitution, Void>  {
   public interface ConditionViolationChecker {
@@ -42,6 +33,7 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<ExprSub
       if (branchNode.getClause(conCall.getDefinition()) != null) {
         Clause clause = branchNode.getClause(conCall.getDefinition());
         clause.getChild().accept(this, clause.getSubst().compose(argSubst));
+        /*
         if (conCall.getDefinition().getCondition() != null) {
           ExprSubstitution subst = toSubstitution(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments());
           final DependentLink constructorArgs = DependentLink.Helper.subst(conCall.getDefinition().getParameters(), subst);
@@ -68,6 +60,7 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<ExprSub
             }
           });
         }
+        */
       }
     }
     return null;

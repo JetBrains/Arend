@@ -1,13 +1,10 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
+import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.BranchElimTreeNode;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 
 import java.util.List;
 
@@ -58,15 +55,6 @@ public class ConCallExpression extends DefCallExpression {
     return getDefinition().getDataTypeExpression(mySortArgument, myDataTypeArguments);
   }
 
-  public DependentLink getConstructorParameters() {
-    ExprSubstitution substitution = new ExprSubstitution();
-    int i = 0;
-    for (DependentLink link = getDefinition().getDataTypeParameters(); link.hasNext(); link = link.getNext(), i++) {
-      substitution.add(link, myDataTypeArguments.get(i));
-    }
-    return DependentLink.Helper.subst(getDefinition().getParameters(), substitution);
-  }
-
   // TODO[newElim]: Remove this function
   public void addArgument(Expression argument) {
     assert myDataTypeArguments.size() >= DependentLink.Helper.size(getDefinition().getDataTypeParameters());
@@ -76,18 +64,11 @@ public class ConCallExpression extends DefCallExpression {
 
   @Override
   public Expression getStuckExpression() {
-    ElimTreeNode condition = getDefinition().getCondition();
-    if (condition == null || !(condition instanceof BranchElimTreeNode)) {
+    if ((getDefinition().getElimTree() instanceof BranchElimTree)) {
+      // TODO: What if we stuck on another argument?
+      return myArguments.get(DependentLink.Helper.size(getDefinition().getElimTree().getParameters())).getStuckExpression();
+    } else {
       return null;
     }
-    Binding binding = ((BranchElimTreeNode) condition).getReference();
-    int i = 0;
-    for (DependentLink param = getDefinition().getParameters(); param.hasNext(); param = param.getNext()) {
-      if (param == binding) {
-        return myArguments.get(i).getStuckExpression();
-      }
-      i++;
-    }
-    return null;
   }
 }

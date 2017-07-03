@@ -72,8 +72,8 @@ public class ElimTypechecking {
     return elimParams;
   }
 
-  public ElimTree typecheckElim(Abstract.ElimFunctionBody body, List<? extends Abstract.Argument> abstractParameters, DependentLink parameters) {
-    List<DependentLink> elimParams = getEliminatedParameters(body.getExpressions(), body.getClauses(), parameters, myVisitor);
+  public ElimTree typecheckElim(Abstract.ElimBody body, List<? extends Abstract.Argument> abstractParameters, DependentLink parameters) {
+    List<DependentLink> elimParams = getEliminatedParameters(body.getEliminatedReferences(), body.getClauses(), parameters, myVisitor);
     if (elimParams == null) {
       return null;
     }

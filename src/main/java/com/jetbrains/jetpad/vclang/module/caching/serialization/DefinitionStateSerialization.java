@@ -101,9 +101,11 @@ public class DefinitionStateSerialization {
         // cBuilder.setPatterns(defSerializer.writePatterns(constructor.getPatterns()));
       }
       cBuilder.addAllParam(defSerializer.writeParameters(constructor.getParameters()));
+      /* TODO[newElim]
       if (constructor.getCondition() != null) {
         cBuilder.setCondition(defSerializer.writeElimTreeNode(constructor.getCondition()));
       }
+      */
 
       builder.putConstructors(myPersistenceProvider.getIdFor(constructor.getAbstractDefinition()), cBuilder.build());
     }

@@ -1096,7 +1096,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<? extends ReferenceExpression> getExpressions() {
+    public List<? extends ReferenceExpression> getEliminatedReferences() {
       return myExpressions;
     }
 

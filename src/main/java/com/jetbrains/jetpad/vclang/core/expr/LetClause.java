@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.NamedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Callable;
-import com.jetbrains.jetpad.vclang.core.definition.Function;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
@@ -13,7 +12,7 @@ import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 
 import java.util.List;
 
-public class LetClause extends NamedBinding implements Function, Callable {
+public class LetClause extends NamedBinding implements Callable {
   private List<Sort> mySorts;
   private List<SingleDependentLink> myParameters;
   private ElimTreeNode myElimTree;
@@ -28,7 +27,6 @@ public class LetClause extends NamedBinding implements Function, Callable {
     myElimTree = elimTree;
   }
 
-  @Override
   public ElimTreeNode getElimTree() {
     return myElimTree;
   }

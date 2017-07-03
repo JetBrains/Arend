@@ -403,7 +403,7 @@ public class TypeCheckingElim {
         boolean ok = pattern instanceof Abstract.ConstructorPattern;
         if (ok) {
           for (Constructor constructor : dataType.getConstructors()) {
-            if (constructor.getCondition() != null && constructor.getName().equals(((Abstract.ConstructorPattern) pattern).getConstructorName())) {
+            if (constructor.getElimTree() != null && constructor.getName().equals(((Abstract.ConstructorPattern) pattern).getConstructorName())) {
               ok = false;
               break;
             }

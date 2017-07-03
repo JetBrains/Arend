@@ -69,7 +69,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
         ((Abstract.TermFunctionBody) body).getTerm().accept(exprVisitor, null);
       }
       if (body instanceof Abstract.ElimFunctionBody) {
-        for (Abstract.ReferenceExpression expression : ((Abstract.ElimFunctionBody) body).getExpressions()) {
+        for (Abstract.ReferenceExpression expression : ((Abstract.ElimFunctionBody) body).getEliminatedReferences()) {
           exprVisitor.visitReference(expression, null);
         }
       }
@@ -77,7 +77,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
 
     if (body instanceof Abstract.ElimFunctionBody) {
       try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-        List<? extends Abstract.ReferenceExpression> references = ((Abstract.ElimFunctionBody) body).getExpressions();
+        List<? extends Abstract.ReferenceExpression> references = ((Abstract.ElimFunctionBody) body).getEliminatedReferences();
         addNotEliminatedArguments(def.getArguments(), references);
         exprVisitor.visitClauses(((Abstract.ElimFunctionBody) body).getClauses());
       }

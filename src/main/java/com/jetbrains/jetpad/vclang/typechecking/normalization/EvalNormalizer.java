@@ -3,11 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.normalization;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
-import com.jetbrains.jetpad.vclang.core.definition.Function;
-import com.jetbrains.jetpad.vclang.core.expr.AppExpression;
-import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.LamExpression;
-import com.jetbrains.jetpad.vclang.core.expr.LetExpression;
+import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
@@ -41,7 +37,7 @@ public class EvalNormalizer implements Normalizer {
   }
 
   @Override
-  public Expression normalize(Function fun, LevelSubstitution polySubst, DependentLink params, List<? extends Expression> paramArgs, List<? extends Expression> arguments, NormalizeVisitor.Mode mode) {
+  public Expression normalize(LetClause fun, LevelSubstitution polySubst, DependentLink params, List<? extends Expression> paramArgs, List<? extends Expression> arguments, NormalizeVisitor.Mode mode) {
     List<Expression> matchedArguments = new ArrayList<>(arguments);
     LeafElimTreeNode leaf = fun.getElimTree().subst(new ExprSubstitution(), polySubst).match(matchedArguments);
     if (leaf == null) {

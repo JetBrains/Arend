@@ -53,7 +53,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
       ((Abstract.TermFunctionBody) body).getTerm().accept(exprVisitor, null);
     }
     if (body instanceof Abstract.ElimFunctionBody) {
-      for (Abstract.ReferenceExpression ref : ((Abstract.ElimFunctionBody) body).getExpressions()) {
+      for (Abstract.ReferenceExpression ref : ((Abstract.ElimFunctionBody) body).getEliminatedReferences()) {
         exprVisitor.visitReference(ref, null);
       }
       for (Abstract.FunctionClause clause : ((Abstract.ElimFunctionBody) body).getClauses()) {

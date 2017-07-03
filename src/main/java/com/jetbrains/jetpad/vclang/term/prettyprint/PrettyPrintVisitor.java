@@ -678,7 +678,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       ((Abstract.TermFunctionBody) body).getTerm().accept(this, Abstract.Expression.PREC);
     } else {
       Abstract.ElimFunctionBody elimFunctionBody = (Abstract.ElimFunctionBody) body;
-      prettyPrintEliminatedReferences(elimFunctionBody.getExpressions());
+      prettyPrintEliminatedReferences(elimFunctionBody.getEliminatedReferences());
       prettyPrintClauses(Collections.emptyList(), elimFunctionBody.getClauses());
     }
   }

@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.core.expr;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
-import com.jetbrains.jetpad.vclang.core.definition.Callable;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.BranchElimTreeNode;
 
@@ -54,7 +53,7 @@ public class LetClauseCallExpression extends Expression implements CallableCallE
   }
 
   @Override
-  public Callable getDefinition() {
+  public LetClause getDefinition() {
     return myLetClause;
   }
 }
