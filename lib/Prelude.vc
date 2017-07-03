@@ -29,14 +29,16 @@ iso {A B : \Type} (f : A -> B) (g : B -> A) (p : \Pi (x : A) -> g (f x) = x) (q 
 
 \data TrP (A : \Type)
     | inP A
-    | truncP (a a' : TrP A) (i : I) => \elim i
+    | truncP (a a' : TrP A) (i : I) => \elim i {
         | left  => a
         | right => a'
+    }
 
 \data TrS (A : \Type)
     | inS A
-    | truncS (a a' : TrS A) (p p' : a = a') (i j : I) => \elim i, j
+    | truncS (a a' : TrS A) (p p' : a = a') (i j : I) => \elim i, j {
         | i, left  => p @ i
         | i, right => p' @ i
         | left,  _ => a
         | right, _ => a'
+    }

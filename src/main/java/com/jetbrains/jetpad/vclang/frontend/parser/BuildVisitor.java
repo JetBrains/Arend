@@ -423,8 +423,16 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   private List<Concrete.Constructor> visitConstructors(List<ConstructorContext> conContexts, Concrete.DataDefinition def) {
     List<Concrete.Constructor> result = new ArrayList<>(conContexts.size());
     for (ConstructorContext conCtx : conContexts) {
+      boolean hasConditions = conCtx.elim() != null || !conCtx.clause().isEmpty();
       try {
-        result.add(new Concrete.Constructor(tokenPosition(conCtx.start), visitName(conCtx.name()), visitPrecedence(conCtx.precedence()), def, visitTeles(conCtx.tele()), conCtx.elim() != null ? visitElim(conCtx.elim()) : null, conCtx.clauses() == null ? null : visitClauses(conCtx.clauses())));
+        result.add(new Concrete.Constructor(
+          tokenPosition(conCtx.start),
+          visitName(conCtx.name()),
+          visitPrecedence(conCtx.precedence()),
+          def,
+          visitTeles(conCtx.tele()),
+          hasConditions ? visitElim(conCtx.elim()) : null,
+          hasConditions ? conCtx.clause().stream().map(this::visitClause).collect(Collectors.toList()) : null));
       } catch (ParseException ignored) {
 
       }

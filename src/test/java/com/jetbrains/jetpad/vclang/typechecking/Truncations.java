@@ -33,12 +33,12 @@ public class Truncations extends TypeCheckingTestCase {
     typeCheckClass(
         "\\data TrS' (A : \\Type0)\n" +
         "  | inS' A\n" +
-        "  | truncS' (a a' : TrS' A) (p q : a = a') (i j : I) => \\elim i, j\n" +
+        "  | truncS' (a a' : TrS' A) (p q : a = a') (i j : I) => \\elim i, j {\n" +
         "    | left, _ => a\n" +
         "    | right, _ => a'\n" +
         "    | i, left => p @ i\n" +
         "    | i, right => q @ i\n" +
-        "\n" +
+        "  }\n" +
         "\\function\n" +
         "set-trunc-test (A : \\Type0) (a a' : TrS' A) (p q : a = a') : TrS' A => truncS' a a' p q left left\n" +
         "\n" +
@@ -51,12 +51,12 @@ public class Truncations extends TypeCheckingTestCase {
     typeCheckClass(
         "\\data TrS' (A : \\Type0)\n" +
         "  | inS' A\n" +
-        "  | truncS' (a a' : TrS' A) (p q : a = a') (i j : I) => \\elim i, j\n" +
+        "  | truncS' (a a' : TrS' A) (p q : a = a') (i j : I) => \\elim i, j {\n" +
         "    | left, _ => a\n" +
         "    | right, _ => a'\n" +
         "    | i, left => p @ i\n" +
         "    | i, right => q @ i\n" +
-        "\n" +
+        "  }\n" +
         "\\function\n" +
         "set-trunc-test (A : \\Type0) (a a' : TrS' A) (p q : a = a') : TrS' A => truncS' a a' p q left left\n" +
         "\n" +
@@ -67,9 +67,12 @@ public class Truncations extends TypeCheckingTestCase {
   @Test
   public void S1Level() {
     DataDefinition definition = (DataDefinition) typeCheckDef(
-        "\\data S1 | base | loop I \\with\n" +
-        "  | left => base\n" +
-        "  | right => base");
+        "\\data S1\n" +
+        "  | base\n" +
+        "  | loop I {\n" +
+        "    | left => base\n" +
+        "    | right => base\n" +
+        "  }");
     assertTrue(definition.getSort().getPLevel().isClosed() && definition.getSort().getPLevel().getConstant() == 0);
     assertTrue(definition.getSort().getHLevel().isInfinity());
   }

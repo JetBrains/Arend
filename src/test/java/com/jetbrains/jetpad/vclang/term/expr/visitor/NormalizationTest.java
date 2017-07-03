@@ -291,7 +291,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void testConditionNormalization() {
     typeCheckClass(
-        "\\data Z | neg Nat | pos Nat \\with zero => neg 0\n" +
+        "\\data Z | neg Nat | pos Nat { zero => neg 0 }\n" +
         "\\function only-one-zero : pos 0 = neg 0 => path (\\lam _ => pos 0)"
     );
   }

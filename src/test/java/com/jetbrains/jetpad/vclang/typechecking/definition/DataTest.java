@@ -150,14 +150,14 @@ public class DataTest extends TypeCheckingTestCase {
   @Test
   public void truncatedDataElimOk() {
     typeCheckClass(
-      "\\truncated \\data S : \\Set | base | loop I \\with left => base | right => base\n"+
+      "\\truncated \\data S : \\Set | base | loop I { | left => base | right => base }\n"+
       "\\function f (x : S) : Nat => \\elim x | base => 0 | loop _ => 0");
   }
 
   @Test
   public void truncatedDataElimError() {
     typeCheckClass(
-      "\\truncated \\data S : \\Prop | base | loop I \\with left => base | right => base\n"+
+      "\\truncated \\data S : \\Prop | base | loop I { | left => base | right => base }\n"+
       "\\function f (x : S) : Nat => \\elim x | base => 0 | loop _ => 0", 1);
   }
 }

@@ -63,7 +63,7 @@ atomPatternOrID : atomPattern     # patternOrIDAtom
                 | ID              # patternID
                 ;
 
-constructor : precedence name tele* (elim clauses)?;
+constructor : precedence name tele* (elim? '{' clause? ('|' clause)* '}')?;
 
 precedence :                            # noPrecedence
            | associativity NUMBER       # withPrecedence

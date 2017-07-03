@@ -101,7 +101,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
 
   @Test
   public void prettyPrintingDataWithConditions() {
-    Concrete.Definition def = parseDef("\\data Z | neg Nat | pos Nat \\with | zero => neg zero");
+    Concrete.Definition def = parseDef("\\data Z | neg Nat | pos Nat { zero => neg zero }");
     assertNotNull(def);
     def.accept(new PrettyPrintVisitor(new StringBuilder(), Abstract.Expression.PREC), null);
   }
