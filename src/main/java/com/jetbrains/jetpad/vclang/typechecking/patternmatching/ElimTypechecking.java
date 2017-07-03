@@ -27,6 +27,7 @@ public class ElimTypechecking {
   private final CheckTypeVisitor myVisitor;
   private Set<Abstract.FunctionClause> myUnusedClauses;
   private final boolean myAllowInterval;
+  private final boolean myCheckCoverage;
   private Expression myExpectedType;
   private boolean myOK;
   private Stack<Util.ClauseElem> myContext;
@@ -34,10 +35,18 @@ public class ElimTypechecking {
   private static final int MISSING_CLAUSES_LIST_SIZE = 10;
   private List<List<Util.ClauseElem>> myMissingClauses;
 
-  public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, boolean allowInterval) {
+  public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, boolean isTotal) {
+    myVisitor = visitor;
+    myExpectedType = expectedType;
+    myAllowInterval = !isTotal;
+    myCheckCoverage = isTotal;
+  }
+
+  public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, boolean allowInterval, boolean checkCoverage) {
     myVisitor = visitor;
     myExpectedType = expectedType;
     myAllowInterval = allowInterval;
+    myCheckCoverage = checkCoverage;
   }
 
   public static List<DependentLink> getEliminatedParameters(List<? extends Abstract.ReferenceExpression> expressions, List<? extends Abstract.Clause> clauses, DependentLink parameters, CheckTypeVisitor visitor) {
@@ -215,7 +224,7 @@ public class ElimTypechecking {
         }
       }
 
-      if (!hasVars && constructors.size() > constructorMap.size()) {
+      if (myCheckCoverage && !hasVars && constructors.size() > constructorMap.size()) {
         for (Constructor constructor : constructors) {
           if (!constructorMap.containsKey(constructor)) {
             if (constructor == Prelude.PROP_TRUNC_PATH_CON) {

@@ -242,7 +242,7 @@ class DefinitionTypechecking {
 
       if (body instanceof Abstract.ElimFunctionBody) {
         if (expectedType != null) {
-          ElimTree elimTree = new ElimTypechecking(visitor, expectedType, false).typecheckElim(((Abstract.ElimFunctionBody) body), def.getArguments(), typedDef.getParameters());
+          ElimTree elimTree = new ElimTypechecking(visitor, expectedType, true).typecheckElim(((Abstract.ElimFunctionBody) body), def.getArguments(), typedDef.getParameters());
           if (elimTree != null) {
             typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
             if (ConditionsChecking.check(elimTree)) {
@@ -608,7 +608,7 @@ class DefinitionTypechecking {
       dataDefinition.addConstructor(constructor);
 
       if (def.getClauses() != null) {
-        constructor.setElimTree(new ElimTypechecking(visitor, constructor.getDataTypeExpression(Sort.STD), true).typecheckElim(def, def.getArguments(), constructor.getParameters()));
+        constructor.setElimTree(new ElimTypechecking(visitor, constructor.getDataTypeExpression(Sort.STD), false).typecheckElim(def, def.getArguments(), constructor.getParameters()));
       }
 
       return sort;
