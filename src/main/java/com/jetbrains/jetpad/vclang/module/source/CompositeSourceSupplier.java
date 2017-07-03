@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.module.source;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
@@ -42,12 +41,22 @@ public class CompositeSourceSupplier<SourceId1T extends SourceId, SourceId2T ext
   }
 
   @Override
-  public Abstract.ClassDefinition loadSource(@Nonnull SourceId sourceId, @Nonnull ErrorReporter errorReporter) {
+  public LoadResult loadSource(@Nonnull SourceId sourceId, @Nonnull ErrorReporter errorReporter) {
     if (sourceId.getSourceSupplier() != this) return null;
     if (sourceId.source1 != null) {
       return mySup1.loadSource(sourceId.source1, errorReporter);
     } else {
       return mySup2.loadSource(sourceId.source2, errorReporter);
+    }
+  }
+
+  @Override
+  public long getAvailableVersion(@Nonnull SourceId sourceId) {
+    if (sourceId.getSourceSupplier() != this) return 0;
+    if (sourceId.source1 != null) {
+      return mySup1.getAvailableVersion(sourceId.source1);
+    } else {
+      return mySup2.getAvailableVersion(sourceId.source2);
     }
   }
 

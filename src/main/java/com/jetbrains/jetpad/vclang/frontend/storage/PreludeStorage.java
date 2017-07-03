@@ -1,12 +1,12 @@
 package com.jetbrains.jetpad.vclang.frontend.storage;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.frontend.parser.ParseSource;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 
 import javax.annotation.Nonnull;
@@ -23,7 +23,7 @@ public class PreludeStorage implements Storage<PreludeStorage.SourceId> {
   // (and bugs in JDK), therefore all that is left is to be careful in keeping all these paths synced.
   private static Path BASE_PATH = Paths.get("lib", "Prelude");
   public static Path SOURCE_PATH = FileStorage.sourceFile(BASE_PATH);
-  public static Path CACHE_PATH = FileStorage.cacheFile(BASE_PATH, 0);
+  public static Path CACHE_PATH = FileStorage.cacheFile(BASE_PATH);
   public static String SOURCE_RESOURCE_PATH = "/lib/" + SOURCE_PATH.getFileName();
   public static String CACHE_RESOURCE_PATH = "/lib/" + CACHE_PATH.getFileName();
 
@@ -63,18 +63,25 @@ public class PreludeStorage implements Storage<PreludeStorage.SourceId> {
   }
 
   @Override
-  public Abstract.ClassDefinition loadSource(@Nonnull SourceId sourceId, @Nonnull ErrorReporter errorReporter) {
+  public LoadResult loadSource(@Nonnull SourceId sourceId, @Nonnull ErrorReporter errorReporter) {
     try {
       if (sourceId != preludeSourceId) return null;
       InputStream stream = Prelude.class.getResourceAsStream(SOURCE_RESOURCE_PATH);
       if (stream == null) {
         throw new IllegalStateException("Prelude source resource not found");
       }
-      return new ParseSource(preludeSourceId, new InputStreamReader(stream, StandardCharsets.UTF_8)) {
-      }.load(errorReporter, null, new EmptyScope(), myNameResolver);
+      Concrete.ClassDefinition result = new ParseSource(preludeSourceId, new InputStreamReader(stream, StandardCharsets.UTF_8)) {}.load(
+          errorReporter, null, new EmptyScope(), myNameResolver);
+      return LoadResult.make(result, 1);
     } catch (IOException e) {
       throw new IllegalStateException(e);
     }
+  }
+
+  @Override
+  public long getAvailableVersion(@Nonnull SourceId sourceId) {
+    if (sourceId != preludeSourceId) return 0;
+    return 1;  // TODO: no really
   }
 
 

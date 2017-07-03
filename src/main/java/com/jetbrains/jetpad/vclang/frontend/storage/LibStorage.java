@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import net.harawata.appdirs.AppDirsFactory;
 
 import javax.annotation.Nonnull;
@@ -81,10 +80,10 @@ public class LibStorage implements Storage<LibStorage.SourceId> {
     return result;
   }
 
-  public SourceId locateModule(String libName, ModulePath modulePath, long mtime) {
+  public SourceId locateModule(String libName, ModulePath modulePath) {
     FileStorage fileStorage = myLibStorages.get(libName);
     if (fileStorage == null) return null;
-    return new SourceId(libName, fileStorage, fileStorage.locateModule(modulePath, mtime));
+    return new SourceId(libName, fileStorage, fileStorage.locateModule(modulePath));
   }
 
   @Override
@@ -94,9 +93,15 @@ public class LibStorage implements Storage<LibStorage.SourceId> {
   }
 
   @Override
-  public Abstract.ClassDefinition loadSource(@Nonnull SourceId sourceId, @Nonnull ErrorReporter errorReporter) {
+  public LoadResult loadSource(@Nonnull SourceId sourceId, @Nonnull ErrorReporter errorReporter) {
     if (sourceId.getLibStorage() != this) return null;
     return sourceId.myFileStorage.loadSource(sourceId.fileSourceId, errorReporter);
+  }
+
+  @Override
+  public long getAvailableVersion(@Nonnull SourceId sourceId) {
+    if (sourceId.getLibStorage() != this) return 0;
+    return sourceId.myFileStorage.getAvailableVersion(sourceId.fileSourceId);
   }
 
   @Override

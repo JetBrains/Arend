@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.ModuleLoader;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
+import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.ModuleResolver;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -24,16 +25,16 @@ public class BaseModuleLoader<SourceIdT extends SourceId> implements ModuleLoade
 
   @Override
   public Abstract.ClassDefinition load(SourceIdT sourceId) {
-    final Abstract.ClassDefinition result;
+    final SourceSupplier.LoadResult result;
     result = myStorage.loadSource(sourceId, myErrorReporter);
 
     if (result != null) {
-      loadingSucceeded(sourceId, result);
+      loadingSucceeded(sourceId, result.definition);
+      return result.definition;
     } else {
       loadingFailed(sourceId);
+      return null;
     }
-
-    return result;
   }
 
   @Override

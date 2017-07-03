@@ -57,12 +57,20 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId> {
   }
 
   @Override
-  public Abstract.ClassDefinition loadSource(@Nonnull SourceId sourceId, @Nonnull ErrorReporter errorReporter) {
+  public LoadResult loadSource(@Nonnull SourceId sourceId, @Nonnull ErrorReporter errorReporter) {
+    if (!isAvailable(sourceId)) return null;
     try {
-      return isAvailable(sourceId) ? new ParseSource(sourceId, new StringReader(sourceId.myData)) {}.load(errorReporter, myModuleRegistry, myGlobalScope, myNameResolver) : null;
+        Abstract.ClassDefinition result = new ParseSource(sourceId, new StringReader(sourceId.myData)) {}.load(
+            errorReporter, myModuleRegistry, myGlobalScope, myNameResolver);
+        return LoadResult.make(result, 1);
     } catch (IOException e) {
       throw new IllegalStateException(e);
     }
+  }
+
+  @Override
+  public long getAvailableVersion(@Nonnull SourceId sourceId) {
+    return 1;
   }
 
   @Override

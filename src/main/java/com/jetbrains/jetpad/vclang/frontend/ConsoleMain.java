@@ -136,14 +136,14 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
           scheme = "file";
           root = "";
           relPath = sourceId.source1.getRelativeFilePath();
-          query = "" + sourceId.source1.getLastModified();
+          query = "";
         } else {
           if (sourceId.source2 == null) throw new IllegalStateException();
           if (sourceId.source2.source1 != null) {  // Lib source
             scheme = "lib";
             root = sourceId.source2.source1.getLibraryName();
             relPath = sourceId.source2.source1.fileSourceId.getRelativeFilePath();
-            query = "" + sourceId.source2.source1.fileSourceId.getLastModified();
+            query = "";
           } else {  // Prelude source
             if (sourceId.source2.source2 == null) throw new IllegalStateException();
             scheme = "prelude";
@@ -169,8 +169,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
           ModulePath modulePath = FileStorage.modulePath(path.getRoot().relativize(path));
           if (modulePath == null) return null;
 
-          long mtime = Long.parseLong(sourceUri.getQuery());
-          FileStorage.SourceId fileSourceId = storageManager.projectStorage.locateModule(modulePath, mtime);
+          FileStorage.SourceId fileSourceId = storageManager.projectStorage.locateModule(modulePath);
           return fileSourceId != null ? storageManager.idForProjectSource(fileSourceId) : null;
         } catch (URISyntaxException | NumberFormatException e) {
           return null;
@@ -184,8 +183,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
           ModulePath modulePath = FileStorage.modulePath(path.getRoot().relativize(path));
           if (modulePath == null) return null;
 
-          long mtime = Long.parseLong(sourceUri.getQuery());
-          LibStorage.SourceId libSourceId = storageManager.libStorage.locateModule(libName, modulePath, mtime);
+          LibStorage.SourceId libSourceId = storageManager.libStorage.locateModule(libName, modulePath);
           return libSourceId != null ? storageManager.idForLibSource(libSourceId) : null;
         } catch (URISyntaxException | NumberFormatException e) {
           return null;

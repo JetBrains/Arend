@@ -46,7 +46,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
       PreludeStorage preludeStorage = new PreludeStorage(nameResolver);
 
       ListErrorReporter internalErrorReporter = new ListErrorReporter();
-      LOADED_PRELUDE = preludeStorage.loadSource(preludeStorage.preludeSourceId, internalErrorReporter);
+      LOADED_PRELUDE = preludeStorage.loadSource(preludeStorage.preludeSourceId, internalErrorReporter).definition;
       assertThat("Failed loading Prelude", internalErrorReporter.getErrorList(), containsErrors(0));
     }
 
