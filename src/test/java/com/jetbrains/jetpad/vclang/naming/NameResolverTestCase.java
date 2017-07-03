@@ -13,7 +13,6 @@ import com.jetbrains.jetpad.vclang.frontend.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.frontend.resolving.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.frontend.resolving.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
-import com.jetbrains.jetpad.vclang.module.source.SimpleModuleLoader;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
 import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
@@ -47,7 +46,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
       PreludeStorage preludeStorage = new PreludeStorage(nameResolver);
 
       ListErrorReporter internalErrorReporter = new ListErrorReporter();
-      LOADED_PRELUDE = new SimpleModuleLoader<>(preludeStorage, internalErrorReporter).load(preludeStorage.preludeSourceId);
+      LOADED_PRELUDE = preludeStorage.loadSource(preludeStorage.preludeSourceId, internalErrorReporter).definition;
       assertThat("Failed loading Prelude", internalErrorReporter.getErrorList(), containsErrors(0));
     }
 

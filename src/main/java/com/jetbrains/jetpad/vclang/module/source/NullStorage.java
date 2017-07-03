@@ -2,9 +2,8 @@ package com.jetbrains.jetpad.vclang.module.source;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 
-import java.io.IOException;
+import javax.annotation.Nonnull;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -20,17 +19,22 @@ public class NullStorage<SourceIdT extends SourceId> implements Storage<SourceId
   }
 
   @Override
-  public SourceIdT locateModule(ModulePath modulePath) {
+  public SourceIdT locateModule(@Nonnull ModulePath modulePath) {
     return null;
   }
 
   @Override
-  public boolean isAvailable(SourceIdT sourceId) {
+  public boolean isAvailable(@Nonnull SourceIdT sourceId) {
     return false;
   }
 
   @Override
-  public Abstract.ClassDefinition loadSource(SourceIdT sourceId, ErrorReporter errorReporter) throws IOException {
+  public LoadResult loadSource(@Nonnull SourceIdT sourceId, @Nonnull ErrorReporter errorReporter) {
     return null;
+  }
+
+  @Override
+  public long getAvailableVersion(@Nonnull SourceIdT sourceId) {
+    return 0;
   }
 }

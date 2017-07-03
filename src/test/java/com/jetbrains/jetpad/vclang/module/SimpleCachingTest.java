@@ -1,14 +1,15 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
+import com.jetbrains.jetpad.vclang.module.caching.CacheLoadingException;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.typechecking.Matchers.*;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 public class SimpleCachingTest extends CachingTestCase {
   @Test
@@ -82,8 +83,8 @@ public class SimpleCachingTest extends CachingTestCase {
     Abstract.ClassDefinition aClass = moduleLoader.load(a);
 
     typecheck(aClass, 2);
-    assertThatErrorsAre(typecheckingError(), hasErrors(get(aClass, "a")));
 
+    assertThatErrorsAre(typecheckingError(), hasErrors(get(aClass, "a")));
     errorList.clear();
 
     persist(a);
@@ -99,5 +100,65 @@ public class SimpleCachingTest extends CachingTestCase {
     assertThat(tcState.getTypechecked(get(aClass, "D")), is(notNullValue()));
     assertThat(tcState.getTypechecked(get(aClass, "a")), is(nullValue()));
     assertThat(tcState.getTypechecked(get(aClass, "b")), is(notNullValue()));
+  }
+
+  @Test
+  public void sourceChanged() {
+    MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "\\data D\n");
+    Abstract.ClassDefinition aClass = moduleLoader.load(a);
+    typecheck(aClass);
+
+    persist(a);
+    tcState.reset();
+
+    storage.incVersion(ModulePath.moduleName("A"));
+    try {
+      tryLoad(a, aClass, false);
+      fail("Exception expected");
+    } catch (CacheLoadingException e) {
+      assertThat(e.getMessage(), is(equalTo("Source has changed")));
+    }
+  }
+
+  @Test
+  public void dependencySourceChanged() {
+    MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "\\data D\n");
+    MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "\\function f : \\Type0 => ::A.D\n");
+    Abstract.ClassDefinition bClass = moduleLoader.load(b);
+    typecheck(bClass);
+
+    persist(b);
+    tcState.reset();
+
+    storage.incVersion(ModulePath.moduleName("A"));
+    try {
+      tryLoad(b, bClass, false);
+      fail("Exception expected");
+    } catch (CacheLoadingException e) {
+      assertThat(e.getMessage(), is(equalTo("Source has changed")));
+    }
+  }
+
+  @Test
+  public void dependencySourceChangedWithUnload() {
+    storage.add(ModulePath.moduleName("A"), "" + "\\function a : \\Set0 => \\Prop");
+    MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "" + "\\function b : \\Set0 => ::A.a");
+
+    Abstract.ClassDefinition bClass = moduleLoader.load(b);
+    typecheck(bClass);
+    persist(b);
+    tcState.reset();
+
+    moduleNsProvider.unregisterModule(ModulePath.moduleName("A"));
+    moduleNsProvider.unregisterModule(ModulePath.moduleName("B"));
+
+    storage.incVersion(ModulePath.moduleName("A"));
+    bClass = moduleLoader.load(b);
+    try {
+      tryLoad(b, bClass, false);
+      fail("Exception expected");
+    } catch (CacheLoadingException e) {
+      assertThat(e.getMessage(), is(equalTo("Source has changed")));
+    }
   }
 }
