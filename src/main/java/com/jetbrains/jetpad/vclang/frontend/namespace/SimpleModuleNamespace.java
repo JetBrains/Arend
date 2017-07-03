@@ -35,4 +35,9 @@ public class SimpleModuleNamespace implements ModuleNamespace {
   public Abstract.ClassDefinition getRegisteredClass() {
     return myRegisteredClass;
   }
+
+  void unregisterClass() {
+    if (myRegisteredClass == null) throw new IllegalStateException();
+    myRegisteredClass = null;
+  }
 }

@@ -138,4 +138,27 @@ public class SimpleCachingTest extends CachingTestCase {
       assertThat(e.getMessage(), is(equalTo("Source has changed")));
     }
   }
+
+  @Test
+  public void dependencySourceChangedWithUnload() {
+    storage.add(ModulePath.moduleName("A"), "" + "\\function a : \\Set0 => \\Prop");
+    MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "" + "\\function b : \\Set0 => ::A.a");
+
+    Abstract.ClassDefinition bClass = moduleLoader.load(b);
+    typecheck(bClass);
+    persist(b);
+    tcState.reset();
+
+    moduleNsProvider.unregisterModule(ModulePath.moduleName("A"));
+    moduleNsProvider.unregisterModule(ModulePath.moduleName("B"));
+
+    storage.incVersion(ModulePath.moduleName("A"));
+    bClass = moduleLoader.load(b);
+    try {
+      tryLoad(b, bClass, false);
+      fail("Exception expected");
+    } catch (CacheLoadingException e) {
+      assertThat(e.getMessage(), is(equalTo("Source has changed")));
+    }
+  }
 }
