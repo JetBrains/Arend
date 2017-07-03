@@ -45,7 +45,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
   private ConsoleMain(StorageManager storageManager, boolean recompile) {
     super(storageManager.storage, recompile);
     this.storageManager = storageManager;
-    storageManager.nameResolver.setModuleResolver(storage, errorReporter);
+    storageManager.nameResolver.setModuleResolver(moduleTracker);
   }
 
   @Override

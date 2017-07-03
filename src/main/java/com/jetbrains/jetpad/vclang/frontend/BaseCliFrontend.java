@@ -36,10 +36,8 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   protected final ListErrorReporter errorReporter = new ListErrorReporter();
   private final ErrorFormatter errf;
 
-  protected final Storage<SourceIdT> storage;
-
   // Modules
-  protected final ModuleWatch moduleWatch;
+  protected final ModuleTracker moduleTracker;
   protected final Map<SourceIdT, Abstract.ClassDefinition> loadedSources = new HashMap<>();
   private final Set<SourceIdT> requestedSources = new LinkedHashSet<>();
 
@@ -47,19 +45,67 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   private final CacheManager<SourceIdT> cacheManager;
 
   // Typechecking
+  private final boolean useCache;
   private final TypecheckerState state;
 
 
   public BaseCliFrontend(Storage<SourceIdT> storage, boolean recompile) {
-    OneshotSourceInfoCollector<SourceIdT> srcInfoCollector = new OneshotSourceInfoCollector<>();
-    srcInfoProvider = srcInfoCollector.sourceInfoProvider;
-    cacheManager = new CacheManager<>(createPersistenceProvider(), storage, srcInfoProvider);
+    useCache = !recompile;
+
+    moduleTracker = new ModuleTracker(storage);
+    srcInfoProvider = moduleTracker.sourceInfoCollector.sourceInfoProvider;
+
     errf = new ErrorFormatter(srcInfoProvider);
 
-    this.storage = storage;
-
-    moduleWatch = new ModuleWatch(storage, srcInfoCollector);
+    cacheManager = new CacheManager<>(createPersistenceProvider(), storage, srcInfoProvider);
     state = cacheManager.getTypecheckerState();
+  }
+
+  class ModuleTracker extends BaseModuleLoader<SourceIdT> {
+    private final DefinitionIdsCollector defIdCollector = new DefinitionIdsCollector();
+    private final OneshotSourceInfoCollector<SourceIdT> sourceInfoCollector = new OneshotSourceInfoCollector<>();
+
+    ModuleTracker(Storage<SourceIdT> storage) {
+      super(storage, errorReporter);
+    }
+
+    @Override
+    protected void loadingSucceeded(SourceIdT module, Abstract.ClassDefinition abstractDefinition) {
+      super.loadingSucceeded(module, abstractDefinition);
+      if (!definitionIds.containsKey(module)) {
+        definitionIds.put(module, new HashMap<>());
+      }
+      defIdCollector.visitClass(abstractDefinition, definitionIds.get(module));
+      sourceInfoCollector.visitModule(module, abstractDefinition);
+      loadedSources.put(module, abstractDefinition);
+      System.out.println("[Loaded] " + displaySource(module, false));
+    }
+
+    @Override
+    protected void loadingFailed(SourceIdT module) {
+      System.out.println("[Failed] " + displaySource(module, false));
+    }
+
+    @Override
+    public Abstract.ClassDefinition load(SourceIdT sourceId) {
+      assert !loadedSources.containsKey(sourceId);
+      return super.load(sourceId);
+    }
+
+    @Override
+    public Abstract.ClassDefinition load(ModulePath modulePath) {
+      return load(locateModule(modulePath));
+    }
+
+    public SourceIdT locateModule(ModulePath modulePath) {
+      SourceIdT sourceId = myStorage.locateModule(modulePath);
+      if (sourceId == null) throw new IllegalStateException();
+      return sourceId;
+    }
+
+    public boolean isAvailable(SourceIdT sourceId) {
+      return myStorage.isAvailable(sourceId);
+    }
   }
 
   static class DefinitionIdsCollector implements AbstractDefinitionVisitor<Map<String, Abstract.Definition>, Void>, AbstractStatementVisitor<Map<String, Abstract.Definition>, Void> {
@@ -153,53 +199,13 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
   }
 
-  class ModuleWatch {
-    private final Storage<SourceIdT> myStorage;
-    private final OneshotSourceInfoCollector<SourceIdT> mySrcInfoCollector;
-    private final DefinitionIdsCollector defIdCollector = new DefinitionIdsCollector();
-
-    ModuleWatch(Storage<SourceIdT> storage, OneshotSourceInfoCollector<SourceIdT> srcInfoCollector) {
-      myStorage = storage;
-      mySrcInfoCollector = srcInfoCollector;
-    }
-
-
-    private void loadingSucceeded(SourceIdT module, Abstract.ClassDefinition abstractDefinition) {
-      assert abstractDefinition != null;
-      if (!definitionIds.containsKey(module)) {
-        definitionIds.put(module, new HashMap<>());
-      }
-      defIdCollector.visitClass(abstractDefinition, definitionIds.get(module));
-      mySrcInfoCollector.visitModule(module, abstractDefinition);
-      loadedSources.put(module, abstractDefinition);
-      System.out.println("[Loaded] " + displaySource(module, false));
-    }
-
-    private void loadingFailed(SourceIdT module) {
-      System.out.println("[Failed] " + displaySource(module, false));
-    }
-
-    public Abstract.ClassDefinition load(SourceIdT sourceId) {
-      if (loadedSources.containsKey(sourceId)) throw new IllegalStateException();
-      final Abstract.ClassDefinition result;
-      result = myStorage.loadSource(sourceId, errorReporter);
-
-      if (result != null) {
-        loadingSucceeded(sourceId, result);
-      } else {
-        loadingFailed(sourceId);
-      }
-
-      return result;
-    }
-  }
-
   protected Abstract.ClassDefinition loadPrelude() {
-    Abstract.ClassDefinition prelude = moduleWatch.load(storage.locateModule(PreludeStorage.PRELUDE_MODULE_PATH));
+    SourceIdT sourceId = moduleTracker.locateModule(PreludeStorage.PRELUDE_MODULE_PATH);
+    Abstract.ClassDefinition prelude = moduleTracker.load(sourceId);
     assert errorReporter.getErrorList().isEmpty();
     boolean cacheLoaded;
     try {
-      cacheLoaded = cacheManager.loadCache(storage.locateModule(PreludeStorage.PRELUDE_MODULE_PATH), prelude);
+      cacheLoaded = cacheManager.loadCache(sourceId, prelude);
     } catch (CacheLoadingException e) {
       cacheLoaded = false;
     }
@@ -227,8 +233,8 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
       System.err.println("[Not found] " + path + " is an illegal module path");
       return;
     }
-    SourceIdT sourceId = storage.locateModule(modulePath);
-    if (sourceId == null || !storage.isAvailable(sourceId)) {
+    SourceIdT sourceId = moduleTracker.locateModule(modulePath);
+    if (sourceId == null || !moduleTracker.isAvailable(sourceId)) {
       System.err.println("[Not found] " + path + " is not available");
       return;
     }
@@ -244,16 +250,20 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     for (SourceIdT source : sources) {
       Abstract.ClassDefinition definition = loadedSources.get(source);
       if (definition == null){
-        definition = moduleWatch.load(source);
+        definition = moduleTracker.load(source);
         if (definition == null) {
           results.put(source, ModuleResult.NOT_LOADED);
           continue;
         }
-        try {
-          cacheManager.loadCache(source, definition);
-        } catch (CacheLoadingException e) {
-          e.printStackTrace();
+
+        if (useCache) {
+          try {
+            cacheManager.loadCache(source, definition);
+          } catch (CacheLoadingException e) {
+            e.printStackTrace();
+          }
         }
+
         flushErrors();
       }
       modulesToTypeCheck.add(definition);

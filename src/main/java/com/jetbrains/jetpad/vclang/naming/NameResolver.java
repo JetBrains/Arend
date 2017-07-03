@@ -1,10 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming;
 
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
@@ -28,13 +25,6 @@ public class NameResolver {
 
   public void setModuleResolver(ModuleResolver moduleResolver) {
     myModuleResolver = moduleResolver;
-  }
-
-  public <SourceIdT extends SourceId> void setModuleResolver(Storage<SourceIdT> storage, ErrorReporter errorReporter) {
-    setModuleResolver(modulePath -> {
-      SourceIdT sourceId = storage.locateModule(modulePath);
-      return sourceId != null ? storage.loadSource(sourceId, errorReporter) : null;
-    });
   }
 
   public ModuleNamespace resolveModuleNamespace(final ModulePath modulePath) {
