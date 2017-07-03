@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.typechecking.Matchers.*;
@@ -82,8 +81,8 @@ public class SimpleCachingTest extends CachingTestCase {
     Abstract.ClassDefinition aClass = moduleLoader.load(a);
 
     typecheck(aClass, 2);
-    assertThatErrorsAre(typecheckingError(), hasErrors(get(aClass, "a")));
 
+    assertThatErrorsAre(typecheckingError(), hasErrors(get(aClass, "a")));
     errorList.clear();
 
     persist(a);
@@ -99,5 +98,32 @@ public class SimpleCachingTest extends CachingTestCase {
     assertThat(tcState.getTypechecked(get(aClass, "D")), is(notNullValue()));
     assertThat(tcState.getTypechecked(get(aClass, "a")), is(nullValue()));
     assertThat(tcState.getTypechecked(get(aClass, "b")), is(notNullValue()));
+  }
+
+  @Test
+  public void sourceChanged() {
+    MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "\\data D\n");
+    Abstract.ClassDefinition aClass = moduleLoader.load(a);
+    typecheck(aClass);
+
+    persist(a);
+    tcState.reset();
+
+    storage.incVersion(ModulePath.moduleName("A"));
+    tryLoad(a, aClass, false);
+  }
+
+  @Test
+  public void dependencySourceChanged() {
+    MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "\\data D\n");
+    MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "\\function f : \\Type0 => ::A.D\n");
+    Abstract.ClassDefinition bClass = moduleLoader.load(b);
+    typecheck(bClass);
+
+    persist(b);
+    tcState.reset();
+
+    storage.incVersion(ModulePath.moduleName("A"));
+    tryLoad(b, bClass, false);
   }
 }

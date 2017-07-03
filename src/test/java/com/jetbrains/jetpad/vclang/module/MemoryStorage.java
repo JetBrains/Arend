@@ -17,11 +17,21 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MemoryStorage implements Storage<MemoryStorage.SourceId> {
-  private final Map<ModulePath, String> mySources = new HashMap<>();
+  private final Map<ModulePath, Source> mySources = new HashMap<>();
   private final Map<SourceId, ByteArrayOutputStream> myCaches = new HashMap<>();
   private final ModuleRegistry myModuleRegistry;
   private Scope myGlobalScope = new EmptyScope();
   private final NameResolver myNameResolver;
+
+  static class Source {
+    long version;
+    String data;
+
+    Source(String data) {
+      this.version = 1;
+      this.data = data;
+    }
+  }
 
   public MemoryStorage(ModuleRegistry moduleRegistry, NameResolver nameResolver) {
     myModuleRegistry = moduleRegistry;
@@ -33,36 +43,41 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId> {
   }
 
   public SourceId add(ModulePath modulePath, String source) {
-    String old = mySources.put(modulePath, source);
+    Source old = mySources.put(modulePath, new Source(source));
     assert old == null;
     return locateModule(modulePath);
   }
 
   public void remove(ModulePath modulePath) {
-    String old = mySources.remove(modulePath);
+    Source old = mySources.remove(modulePath);
     assert old != null;
+  }
+
+  public void incVersion(ModulePath modulePath) {
+    Source source = mySources.get(modulePath);
+    assert source != null;
+    source.version += 1;
   }
 
   @Override
   public SourceId locateModule(@Nonnull ModulePath modulePath) {
-    String data = mySources.get(modulePath);
-    return data != null ? new SourceId(modulePath, data) : null;
+    Source source = mySources.get(modulePath);
+    return source != null ? new SourceId(modulePath) : null;
   }
 
   @Override
   public boolean isAvailable(@Nonnull SourceId sourceId) {
-    String myData = mySources.get(sourceId.getModulePath());
-    //noinspection StringEquality
-    return myData == sourceId.myData;
+    return mySources.containsKey(sourceId.getModulePath());
   }
 
   @Override
   public LoadResult loadSource(@Nonnull SourceId sourceId, @Nonnull ErrorReporter errorReporter) {
     if (!isAvailable(sourceId)) return null;
     try {
-        Abstract.ClassDefinition result = new ParseSource(sourceId, new StringReader(sourceId.myData)) {}.load(
-            errorReporter, myModuleRegistry, myGlobalScope, myNameResolver);
-        return LoadResult.make(result, 1);
+      Source source = mySources.get(sourceId.getModulePath());
+      Abstract.ClassDefinition result = new ParseSource(sourceId, new StringReader(source.data)) {}.load(
+          errorReporter, myModuleRegistry, myGlobalScope, myNameResolver);
+      return LoadResult.make(result, source.version);
     } catch (IOException e) {
       throw new IllegalStateException(e);
     }
@@ -70,7 +85,7 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId> {
 
   @Override
   public long getAvailableVersion(@Nonnull SourceId sourceId) {
-    return 1;
+    return mySources.get(sourceId.getModulePath()).version;
   }
 
   @Override
@@ -88,11 +103,9 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId> {
 
   public class SourceId implements com.jetbrains.jetpad.vclang.module.source.SourceId {
     private final ModulePath myPath;
-    private final String myData;
 
-    private SourceId(ModulePath path, String data) {
+    private SourceId(ModulePath path) {
       myPath = path;
-      myData = data;
     }
 
     @Override

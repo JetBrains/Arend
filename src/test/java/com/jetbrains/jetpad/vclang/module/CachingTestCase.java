@@ -103,14 +103,18 @@ public class CachingTestCase extends NameResolverTestCase {
     assertThat(errorList, size > 0 ? hasSize(size) : is(empty()));
   }
 
-  protected void load(MemoryStorage.SourceId sourceId, Abstract.ClassDefinition classDefinition) {
+  protected void tryLoad(MemoryStorage.SourceId sourceId, Abstract.ClassDefinition classDefinition, boolean shouldLoad) {
     try {
       boolean loaded = cacheManager.loadCache(sourceId, classDefinition);
-      assertThat(loaded, is(true));
+      assertThat(loaded, is(shouldLoad));
     } catch (CacheLoadingException e) {
       throw new IllegalStateException();
     }
     assertThat(errorList, is(empty()));
+  }
+
+  protected void load(MemoryStorage.SourceId sourceId, Abstract.ClassDefinition classDefinition) {
+    tryLoad(sourceId, classDefinition, true);
   }
 
   protected void persist(MemoryStorage.SourceId sourceId) {
