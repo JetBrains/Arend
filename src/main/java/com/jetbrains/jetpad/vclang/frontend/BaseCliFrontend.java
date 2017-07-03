@@ -14,6 +14,7 @@ import com.jetbrains.jetpad.vclang.module.caching.CacheManager;
 import com.jetbrains.jetpad.vclang.module.caching.CachePersistenceException;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
+import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
@@ -38,7 +39,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
   // Modules
   protected final ModuleTracker moduleTracker;
-  protected final Map<SourceIdT, Abstract.ClassDefinition> loadedSources = new HashMap<>();
+  protected final Map<SourceIdT, SourceSupplier.LoadResult> loadedSources = new HashMap<>();
   private final Set<SourceIdT> requestedSources = new LinkedHashSet<>();
 
   private final SourceInfoProvider<SourceIdT> srcInfoProvider;
@@ -70,14 +71,13 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
     @Override
-    protected void loadingSucceeded(SourceIdT module, Abstract.ClassDefinition abstractDefinition) {
-      super.loadingSucceeded(module, abstractDefinition);
+    protected void loadingSucceeded(SourceIdT module, SourceSupplier.LoadResult result) {
       if (!definitionIds.containsKey(module)) {
         definitionIds.put(module, new HashMap<>());
       }
-      defIdCollector.visitClass(abstractDefinition, definitionIds.get(module));
-      sourceInfoCollector.visitModule(module, abstractDefinition);
-      loadedSources.put(module, abstractDefinition);
+      defIdCollector.visitClass(result.definition, definitionIds.get(module));
+      sourceInfoCollector.visitModule(module, result.definition);
+      loadedSources.put(module, result);
       System.out.println("[Loaded] " + displaySource(module, false));
     }
 
@@ -248,8 +248,9 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     final Set<Abstract.ClassDefinition> modulesToTypeCheck = new LinkedHashSet<>();
     for (SourceIdT source : sources) {
-      Abstract.ClassDefinition definition = loadedSources.get(source);
-      if (definition == null){
+      final Abstract.ClassDefinition definition;
+      SourceSupplier.LoadResult result = loadedSources.get(source);
+      if (result == null){
         definition = moduleTracker.load(source);
         if (definition == null) {
           results.put(source, ModuleResult.NOT_LOADED);
@@ -265,6 +266,8 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
         }
 
         flushErrors();
+      } else {
+        definition = result.definition;
       }
       modulesToTypeCheck.add(definition);
     }

@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.module.caching.CacheManager;
 import com.jetbrains.jetpad.vclang.module.caching.CachePersistenceException;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
+import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -44,9 +45,9 @@ public class CachingTestCase extends NameResolverTestCase {
     srcInfoCollector = new OneshotSourceInfoCollector<>();
     moduleLoader = new BaseModuleLoader<MemoryStorage.SourceId>(storage, errorReporter) {
       @Override
-      protected void loadingSucceeded(MemoryStorage.SourceId module, Abstract.ClassDefinition abstractDefinition) {
-        if (abstractDefinition == null) throw new IllegalStateException("Could not load module");
-        srcInfoCollector.visitModule(module, abstractDefinition);
+      protected void loadingSucceeded(MemoryStorage.SourceId module, SourceSupplier.LoadResult result) {
+        if (result == null) throw new IllegalStateException("Could not load module");
+        srcInfoCollector.visitModule(module, result.definition);
       }
     };
     nameResolver.setModuleResolver(moduleLoader);

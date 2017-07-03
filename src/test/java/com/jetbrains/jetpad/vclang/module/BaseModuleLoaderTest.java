@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.VclangTestCase;
 import com.jetbrains.jetpad.vclang.frontend.BaseModuleLoader;
+import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,8 +27,8 @@ public class BaseModuleLoaderTest extends VclangTestCase {
     storage = new MemoryStorage(null, null);
     moduleLoader = new BaseModuleLoader<MemoryStorage.SourceId>(storage, errorReporter) {
       @Override
-      protected void loadingSucceeded(MemoryStorage.SourceId module, Abstract.ClassDefinition abstractDefinition) {
-        Abstract.ClassDefinition old = loadedModules.put(module, abstractDefinition);
+      protected void loadingSucceeded(MemoryStorage.SourceId module, SourceSupplier.LoadResult result) {
+        Abstract.ClassDefinition old = loadedModules.put(module, result.definition);
         assertThat(old, is(nullValue()));
       }
 

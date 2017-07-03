@@ -19,7 +19,7 @@ public class BaseModuleLoader<SourceIdT extends SourceId> implements ModuleLoade
   }
 
 
-  protected void loadingSucceeded(SourceIdT module, Abstract.ClassDefinition abstractDefinition) {}
+  protected void loadingSucceeded(SourceIdT module, SourceSupplier.LoadResult result) {}
 
   protected void loadingFailed(SourceIdT module) {}
 
@@ -29,7 +29,7 @@ public class BaseModuleLoader<SourceIdT extends SourceId> implements ModuleLoade
     result = myStorage.loadSource(sourceId, myErrorReporter);
 
     if (result != null) {
-      loadingSucceeded(sourceId, result.definition);
+      loadingSucceeded(sourceId, result);
       return result.definition;
     } else {
       loadingFailed(sourceId);
