@@ -45,11 +45,6 @@ public class NormalizationTest extends TypeCheckingTestCase {
   // \function nelim (z : Nat) (s : Nat -> Nat -> Nat) (x : Nat) : Nat => elim x | zero => z | suc x' => s x' (nelim z s x')
   private final FunctionDefinition nelim;
 
-  private DataDefinition bdList;
-  private Constructor bdNil;
-  private Constructor bdCons;
-  private Constructor bdSnoc;
-
   public NormalizationTest() throws IOException {
     DependentLink xPlus = param("x", Nat());
     DependentLink yPlus = param("y", Nat());
@@ -100,16 +95,6 @@ public class NormalizationTest extends TypeCheckingTestCase {
     nelimChildren.put(Prelude.SUC, new LeafElimTree(xNElim, Apps(Ref(nelimParams.getNext()), Ref(xNElim), FunCall(nelim, Sort.SET0, Ref(nelimParams), Ref(nelimParams.getNext()), Ref(xNElim)))));
     nelim.setElimTree(new BranchElimTree(nelimParams, nelimChildren));
     nelim.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-  }
-
-  private void initializeBDList() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
-        "\\data BD-list (A : \\Set0) | nil | cons A (BD-list A) | snoc (xs : BD-list A) (y : A)\n" +
-        "  => \\elim xs { | cons x xs => cons x (snoc xs y) | nil => cons y nil }");
-    bdList = (DataDefinition) result.getDefinition("BD-list");
-    bdNil = bdList.getConstructor("nil");
-    bdCons = bdList.getConstructor("cons");
-    bdSnoc = bdList.getConstructor("snoc");
   }
 
   @Test
@@ -297,7 +282,13 @@ public class NormalizationTest extends TypeCheckingTestCase {
 
   @Test
   public void testConCallNormFull() {
-    initializeBDList();
+    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+      "\\data BD-list (A : \\Set0) | nil | cons A (BD-list A) | snoc (xs : BD-list A) (y : A)\n" +
+        "  => \\elim xs { | cons x xs => cons x (snoc xs y) | nil => cons y nil }");
+    DataDefinition bdList = (DataDefinition) result.getDefinition("BD-list");
+    Constructor bdNil = bdList.getConstructor("nil");
+    Constructor bdCons = bdList.getConstructor("cons");
+    Constructor bdSnoc = bdList.getConstructor("snoc");
     Expression expr1 = ConCall(bdSnoc, Sort.SET0, Collections.singletonList(Nat()), ConCall(bdNil, Sort.SET0, Collections.singletonList(Nat())), Zero());
     assertEquals(ConCall(bdCons, Sort.SET0, Collections.singletonList(Nat()), Zero(), ConCall(bdNil, Sort.SET0, Collections.singletonList(Nat()))), expr1.normalize(NormalizeVisitor.Mode.NF));
   }

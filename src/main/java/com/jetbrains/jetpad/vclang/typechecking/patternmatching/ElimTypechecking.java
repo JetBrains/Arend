@@ -26,8 +26,7 @@ import java.util.stream.Collectors;
 public class ElimTypechecking {
   private final CheckTypeVisitor myVisitor;
   private Set<Abstract.FunctionClause> myUnusedClauses;
-  private final boolean myAllowInterval;
-  private final boolean myCheckCoverage;
+  private final EnumSet<PatternTypechecking.Flag> myFlags;
   private Expression myExpectedType;
   private boolean myOK;
   private Stack<Util.ClauseElem> myContext;
@@ -35,18 +34,10 @@ public class ElimTypechecking {
   private static final int MISSING_CLAUSES_LIST_SIZE = 10;
   private List<List<Util.ClauseElem>> myMissingClauses;
 
-  public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, boolean isTotal) {
+  public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, EnumSet<PatternTypechecking.Flag> flags) {
     myVisitor = visitor;
     myExpectedType = expectedType;
-    myAllowInterval = !isTotal;
-    myCheckCoverage = isTotal;
-  }
-
-  public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, boolean allowInterval, boolean checkCoverage) {
-    myVisitor = visitor;
-    myExpectedType = expectedType;
-    myAllowInterval = allowInterval;
-    myCheckCoverage = checkCoverage;
+    myFlags = flags;
   }
 
   public static List<DependentLink> getEliminatedParameters(List<? extends Abstract.ReferenceExpression> expressions, List<? extends Abstract.Clause> clauses, DependentLink parameters, CheckTypeVisitor visitor) {
@@ -81,14 +72,9 @@ public class ElimTypechecking {
     return elimParams;
   }
 
-  public ElimTree typecheckElim(Abstract.ElimBody body, List<? extends Abstract.Argument> abstractParameters, DependentLink parameters) {
-    List<DependentLink> elimParams = getEliminatedParameters(body.getEliminatedReferences(), body.getClauses(), parameters, myVisitor);
-    if (elimParams == null) {
-      return null;
-    }
-
+  public ElimTree typecheckElim(Abstract.ElimBody body, List<? extends Abstract.Argument> abstractParameters, DependentLink parameters, List<DependentLink> elimParams) {
     List<ClauseData> clauses = new ArrayList<>(body.getClauses().size());
-    PatternTypechecking patternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), myAllowInterval);
+    PatternTypechecking patternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), myFlags);
     myOK = true;
     for (Abstract.FunctionClause clause : body.getClauses()) {
       Pair<List<Pattern>, CheckTypeVisitor.Result> result = patternTypechecking.typecheckClause(clause, abstractParameters, parameters, elimParams, myExpectedType, myVisitor);
@@ -224,7 +210,7 @@ public class ElimTypechecking {
         }
       }
 
-      if (myCheckCoverage && !hasVars && constructors.size() > constructorMap.size()) {
+      if (myFlags.contains(PatternTypechecking.Flag.CHECK_COVERAGE) && !hasVars && constructors.size() > constructorMap.size()) {
         for (Constructor constructor : constructors) {
           if (!constructorMap.containsKey(constructor)) {
             if (constructor == Prelude.PROP_TRUNC_PATH_CON) {

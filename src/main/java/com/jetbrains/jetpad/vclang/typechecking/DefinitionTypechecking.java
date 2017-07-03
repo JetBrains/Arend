@@ -240,7 +240,9 @@ class DefinitionTypechecking {
 
       if (body instanceof Abstract.ElimFunctionBody) {
         if (expectedType != null) {
-          ElimTree elimTree = new ElimTypechecking(visitor, expectedType, true).typecheckElim(((Abstract.ElimFunctionBody) body), def.getArguments(), typedDef.getParameters());
+          Abstract.ElimFunctionBody elimBody = (Abstract.ElimFunctionBody) body;
+          List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), visitor);
+          ElimTree elimTree = elimParams == null ? null : new ElimTypechecking(visitor, expectedType, EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.IS_FINAL)).typecheckElim(elimBody, def.getArguments(), typedDef.getParameters(), elimParams);
           if (elimTree != null) {
             typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
             if (ConditionsChecking.check(elimTree)) {
@@ -340,6 +342,7 @@ class DefinitionTypechecking {
     }
 
     boolean universeOk = true;
+    PatternTypechecking dataPatternTypechecking = new PatternTypechecking(visitor.getErrorReporter(), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.IS_FINAL));
     for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
       // Typecheck patterns and compute free bindings
       Pair<List<Pattern>, List<Expression>> result = null;
@@ -349,7 +352,7 @@ class DefinitionTypechecking {
           dataOk = false;
         }
         if (elimParams != null) {
-          result = new PatternTypechecking(visitor.getErrorReporter(), false).typecheckPatterns(clause.getPatterns(), def.getParameters(), dataDefinition.getParameters(), elimParams, def, visitor);
+          result = dataPatternTypechecking.typecheckPatterns(clause.getPatterns(), def.getParameters(), dataDefinition.getParameters(), elimParams, def, visitor);
           if (result != null && result.proj2 == null) {
             visitor.getErrorReporter().report(new LocalTypeCheckingError("This clause is redundant", clause));
             result = null;
@@ -590,33 +593,46 @@ class DefinitionTypechecking {
   */
 
   private static Sort typeCheckConstructor(Abstract.Constructor def, Patterns patterns, DataDefinition dataDefinition, CheckTypeVisitor visitor, Set<DataDefinition> dataDefinitions) {
-    try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(visitor.getContext())) {
-      Constructor constructor = new Constructor(def, dataDefinition);
-      visitor.getTypecheckingState().record(def, constructor);
-      dataDefinition.addConstructor(constructor);
+    Constructor constructor = new Constructor(def, dataDefinition);
+    List<DependentLink> elimParams = null;
+    Sort sort;
 
-      LinkList list = new LinkList();
-      Sort sort = typeCheckParameters(def.getArguments(), list, visitor, null, null);
+    try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(visitor.getFreeBindings())) {
+      try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(visitor.getContext())) {
+        visitor.getTypecheckingState().record(def, constructor);
+        dataDefinition.addConstructor(constructor);
 
-      int index = 0;
-      for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext(), index++) {
-        link = link.getNextTyped(null);
-        if (!checkPositiveness(link.getType().getExpr(), index, def.getArguments(), def, visitor.getErrorReporter(), dataDefinitions)) {
-          return null;
+        LinkList list = new LinkList();
+        sort = typeCheckParameters(def.getArguments(), list, visitor, null, null);
+
+        int index = 0;
+        for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext(), index++) {
+          link = link.getNextTyped(null);
+          if (!checkPositiveness(link.getType().getExpr(), index, def.getArguments(), def, visitor.getErrorReporter(), dataDefinitions)) {
+            return null;
+          }
+        }
+
+        constructor.setParameters(list.getFirst());
+        constructor.setPatterns(patterns);
+        constructor.setThisClass(dataDefinition.getThisClass());
+        constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+
+        if (def.getClauses() != null) {
+          elimParams = ElimTypechecking.getEliminatedParameters(def.getEliminatedReferences(), def.getClauses(), constructor.getParameters(), visitor);
         }
       }
-
-      constructor.setParameters(list.getFirst());
-      constructor.setPatterns(patterns);
-      constructor.setThisClass(dataDefinition.getThisClass());
-      constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-
-      if (def.getClauses() != null) {
-        constructor.setElimTree(new ElimTypechecking(visitor, constructor.getDataTypeExpression(Sort.STD), false).typecheckElim(def, def.getArguments(), constructor.getParameters()));
-      }
-
-      return sort;
     }
+
+    if (elimParams != null) {
+      try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(visitor.getFreeBindings())) {
+        try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(visitor.getContext())) {
+          constructor.setElimTree(new ElimTypechecking(visitor, constructor.getDataTypeExpression(Sort.STD), EnumSet.of(PatternTypechecking.Flag.ALLOW_INTERVAL)).typecheckElim(def, def.getArguments(), constructor.getParameters(), elimParams));
+        }
+      }
+    }
+
+    return sort;
   }
 
   private static boolean checkPositiveness(Expression type, int index, List<? extends Abstract.Argument> arguments, Abstract.Constructor constructor, LocalErrorReporter errorReporter, Set<? extends Variable> variables) {

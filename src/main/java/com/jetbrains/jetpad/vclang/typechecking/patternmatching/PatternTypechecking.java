@@ -25,12 +25,14 @@ import java.util.*;
 
 public class PatternTypechecking {
   private final LocalErrorReporter myErrorReporter;
-  private final boolean myAllowInterval;
+  private final EnumSet<Flag> myFlags;
   private Map<Abstract.ReferableSourceNode, Binding> myContext;
 
-  public PatternTypechecking(LocalErrorReporter errorReporter, boolean allowInterval) {
+  public enum Flag { ALLOW_INTERVAL, HAS_THIS, CHECK_COVERAGE, IS_FINAL }
+
+  public PatternTypechecking(LocalErrorReporter errorReporter, EnumSet<Flag> flags) {
     myErrorReporter = errorReporter;
-    myAllowInterval = allowInterval;
+    myFlags = flags;
   }
 
   private void collectBindings(List<Pattern> patterns, Collection<? super DependentLink> bindings) {
@@ -88,7 +90,9 @@ public class PatternTypechecking {
 
   public Pair<List<Pattern>, List<Expression>> typecheckPatterns(List<? extends Abstract.Pattern> patterns, List<? extends Abstract.Argument> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Abstract.SourceNode sourceNode, CheckTypeVisitor visitor) {
     myContext = visitor.getContext();
-    myContext.clear();
+    if (myFlags.contains(Flag.IS_FINAL)) {
+      myContext.clear();
+    }
 
     // Typecheck patterns
     Pair<List<Pattern>, List<Expression>> result;
@@ -102,7 +106,7 @@ public class PatternTypechecking {
       }
       result = doTypechecking(patterns1, DependentLink.Helper.subst(parameters, new ExprSubstitution()), sourceNode, true);
     } else {
-      if (visitor.getTypeCheckingDefCall().getThisClass() != null) {
+      if (myFlags.contains(Flag.HAS_THIS) && visitor.getTypeCheckingDefCall().getThisClass() != null) {
         List<Abstract.Pattern> patterns1 = new ArrayList<>(patterns.size() + 1);
         patterns1.add(null);
         patterns1.addAll(patterns);
@@ -116,7 +120,7 @@ public class PatternTypechecking {
     if (result != null && result.proj2 != null && abstractParameters != null) {
       int i = 0;
       DependentLink link = parameters;
-      if (visitor.getTypeCheckingDefCall().getThisClass() != null) {
+      if (myFlags.contains(Flag.HAS_THIS) && visitor.getTypeCheckingDefCall().getThisClass() != null) {
         visitor.setThis(visitor.getTypeCheckingDefCall().getThisClass(), getFirstBinding(result.proj1));
         i = 1;
         link = link.getNext();
@@ -142,7 +146,9 @@ public class PatternTypechecking {
         }
       }
 
-      visitor.getFreeBindings().clear();
+      if (myFlags.contains(Flag.IS_FINAL)) {
+        visitor.getFreeBindings().clear();
+      }
       collectBindings(result.proj1, visitor.getFreeBindings());
     }
 
@@ -223,7 +229,7 @@ public class PatternTypechecking {
         myErrorReporter.report(new LocalTypeCheckingError("Expected a data type, actual type: " + expr, pattern));
         return null;
       }
-      if (!myAllowInterval && expr.toDataCall().getDefinition() == Prelude.INTERVAL) {
+      if (!myFlags.contains(Flag.ALLOW_INTERVAL) && expr.toDataCall().getDefinition() == Prelude.INTERVAL) {
         myErrorReporter.report(new LocalTypeCheckingError("Pattern matching on the interval is not allowed here", pattern));
         return null;
       }
