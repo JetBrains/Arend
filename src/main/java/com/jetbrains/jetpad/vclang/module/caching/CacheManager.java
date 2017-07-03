@@ -19,14 +19,17 @@ import java.util.zip.GZIPOutputStream;
 public class CacheManager<SourceIdT extends SourceId> {
   private final PersistenceProvider<SourceIdT> myPersistenceProvider;
   private final CacheStorageSupplier<SourceIdT> myCacheSupplier;
+  private final SourceVersionTracker<SourceIdT> myVersionTracker;
   private final DefinitionLocator<SourceIdT> myDefLocator;
 
   private final LocalizedTypecheckerState<SourceIdT> myTcState;
   private final Set<SourceIdT> myStubsLoaded = new HashSet<>();
 
-  public CacheManager(PersistenceProvider<SourceIdT> persistenceProvider, CacheStorageSupplier<SourceIdT> cacheSupplier, DefinitionLocator<SourceIdT> defLocator) {
+  public CacheManager(PersistenceProvider<SourceIdT> persistenceProvider, CacheStorageSupplier<SourceIdT> cacheSupplier,
+                      SourceVersionTracker<SourceIdT> versionTracker, DefinitionLocator<SourceIdT> defLocator) {
     myPersistenceProvider = persistenceProvider;
     myCacheSupplier = cacheSupplier;
+    myVersionTracker = versionTracker;
     myDefLocator = defLocator;
     myTcState = new LocalizedTypecheckerState<>(defLocator);
   }
@@ -87,8 +90,12 @@ public class CacheManager<SourceIdT extends SourceId> {
   }
 
   private void readModule(SourceIdT sourceId, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState localState, ModuleProtos.Module moduleProto) throws CacheLoadingException {
-    DefinitionStateDeserialization<SourceIdT> defStateDeserialization = new DefinitionStateDeserialization<>(sourceId, myPersistenceProvider);
+    if (!myVersionTracker.ensureLoaded(sourceId, moduleProto.getVersion())) {
+      throw new CacheLoadingException(sourceId, "Source has changed");
+    }
+
     try {
+      DefinitionStateDeserialization<SourceIdT> defStateDeserialization = new DefinitionStateDeserialization<>(sourceId, myPersistenceProvider);
       defStateDeserialization.readStubs(moduleProto.getDefinitionState(), localState);
       myStubsLoaded.add(sourceId);
       ReadCalltargets calltargets = new ReadCalltargets(sourceId, moduleProto.getReferredDefinitionList());
@@ -181,6 +188,8 @@ public class CacheManager<SourceIdT extends SourceId> {
     localState.sync();
     // now write the call-target registry
     out.addAllReferredDefinition(calltargets.write());
+
+    out.setVersion(myVersionTracker.getCurrentVersion(sourceId));
     return out.build();
   }
 

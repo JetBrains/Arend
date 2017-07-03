@@ -9,10 +9,7 @@ import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotSourceInfoCollector
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.module.caching.CacheLoadingException;
-import com.jetbrains.jetpad.vclang.module.caching.CacheManager;
-import com.jetbrains.jetpad.vclang.module.caching.CachePersistenceException;
-import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
+import com.jetbrains.jetpad.vclang.module.caching.*;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
@@ -26,6 +23,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TerminationCheckError;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -58,11 +56,11 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     errf = new ErrorFormatter(srcInfoProvider);
 
-    cacheManager = new CacheManager<>(createPersistenceProvider(), storage, srcInfoProvider);
+    cacheManager = new CacheManager<>(createPersistenceProvider(), storage, moduleTracker, srcInfoProvider);
     state = cacheManager.getTypecheckerState();
   }
 
-  class ModuleTracker extends BaseModuleLoader<SourceIdT> {
+  class ModuleTracker extends BaseModuleLoader<SourceIdT> implements SourceVersionTracker<SourceIdT> {
     private final DefinitionIdsCollector defIdCollector = new DefinitionIdsCollector();
     private final OneshotSourceInfoCollector<SourceIdT> sourceInfoCollector = new OneshotSourceInfoCollector<>();
 
@@ -105,6 +103,18 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     public boolean isAvailable(SourceIdT sourceId) {
       return myStorage.isAvailable(sourceId);
+    }
+
+    @Override
+    public long getCurrentVersion(@Nonnull SourceIdT sourceId) {
+      return loadedSources.get(sourceId).version;
+    }
+
+    @Override
+    public boolean ensureLoaded(@Nonnull SourceIdT sourceId, long version) {
+      SourceSupplier.LoadResult result = loadedSources.get(sourceId);
+      if (result == null) throw new IllegalStateException("Cache manager trying to load a new module");
+      return result.version == version;
     }
   }
 
@@ -261,7 +271,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
           try {
             cacheManager.loadCache(source, definition);
           } catch (CacheLoadingException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
           }
         }
 

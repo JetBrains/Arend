@@ -28,6 +28,7 @@ import java.util.*;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 public class CachingTestCase extends NameResolverTestCase {
   protected final MemoryStorage storage = new MemoryStorage(moduleNsProvider, nameResolver);
@@ -51,7 +52,8 @@ public class CachingTestCase extends NameResolverTestCase {
       }
     };
     nameResolver.setModuleResolver(moduleLoader);
-    cacheManager = new CacheManager<>(peristenceProvider, storage, srcInfoCollector.sourceInfoProvider);
+    // It is a little odd to use the storage itself as a version tracker as it knows nothing about loaded modules
+    cacheManager = new CacheManager<>(peristenceProvider, storage, storage, srcInfoCollector.sourceInfoProvider);
     tcState = cacheManager.getTypecheckerState();
     typechecking = new Typechecking(tcState, staticNsProvider, dynamicNsProvider, errorReporter, new TypecheckedReporter() {
       @Override
@@ -103,18 +105,18 @@ public class CachingTestCase extends NameResolverTestCase {
     assertThat(errorList, size > 0 ? hasSize(size) : is(empty()));
   }
 
-  protected void tryLoad(MemoryStorage.SourceId sourceId, Abstract.ClassDefinition classDefinition, boolean shouldLoad) {
-    try {
-      boolean loaded = cacheManager.loadCache(sourceId, classDefinition);
-      assertThat(loaded, is(shouldLoad));
-    } catch (CacheLoadingException e) {
-      throw new IllegalStateException();
-    }
+  protected void tryLoad(MemoryStorage.SourceId sourceId, Abstract.ClassDefinition classDefinition, boolean shouldLoad) throws CacheLoadingException {
+    boolean loaded = cacheManager.loadCache(sourceId, classDefinition);
+    assertThat(loaded, is(shouldLoad));
     assertThat(errorList, is(empty()));
   }
 
   protected void load(MemoryStorage.SourceId sourceId, Abstract.ClassDefinition classDefinition) {
-    tryLoad(sourceId, classDefinition, true);
+    try {
+      tryLoad(sourceId, classDefinition, true);
+    } catch (CacheLoadingException e) {
+      fail(e.toString());
+    }
   }
 
   protected void persist(MemoryStorage.SourceId sourceId) {
@@ -128,7 +130,7 @@ public class CachingTestCase extends NameResolverTestCase {
   }
 
 
-  public static class MemoryPersistenceProvider<SourceIdT extends SourceId> implements PersistenceProvider<SourceIdT> {
+  public class MemoryPersistenceProvider<SourceIdT extends SourceId> implements PersistenceProvider<SourceIdT> {
     private final Map<String, Object> memMap = new HashMap<>();
 
     @Override

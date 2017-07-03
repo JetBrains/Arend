@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
+import com.jetbrains.jetpad.vclang.module.caching.CacheLoadingException;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import org.junit.Test;
 
@@ -8,6 +9,7 @@ import static com.jetbrains.jetpad.vclang.typechecking.Matchers.*;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 public class SimpleCachingTest extends CachingTestCase {
   @Test
@@ -110,7 +112,12 @@ public class SimpleCachingTest extends CachingTestCase {
     tcState.reset();
 
     storage.incVersion(ModulePath.moduleName("A"));
-    tryLoad(a, aClass, false);
+    try {
+      tryLoad(a, aClass, false);
+      fail("Exception expected");
+    } catch (CacheLoadingException e) {
+      assertThat(e.getMessage(), is(equalTo("Source has changed")));
+    }
   }
 
   @Test
@@ -124,6 +131,11 @@ public class SimpleCachingTest extends CachingTestCase {
     tcState.reset();
 
     storage.incVersion(ModulePath.moduleName("A"));
-    tryLoad(b, bClass, false);
+    try {
+      tryLoad(b, bClass, false);
+      fail("Exception expected");
+    } catch (CacheLoadingException e) {
+      assertThat(e.getMessage(), is(equalTo("Source has changed")));
+    }
   }
 }

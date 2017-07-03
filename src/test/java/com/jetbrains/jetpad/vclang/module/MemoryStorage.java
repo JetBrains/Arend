@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.module;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.namespace.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.frontend.parser.ParseSource;
+import com.jetbrains.jetpad.vclang.module.caching.SourceVersionTracker;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
@@ -16,7 +17,7 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MemoryStorage implements Storage<MemoryStorage.SourceId> {
+public class MemoryStorage implements Storage<MemoryStorage.SourceId>, SourceVersionTracker<MemoryStorage.SourceId> {
   private final Map<ModulePath, Source> mySources = new HashMap<>();
   private final Map<SourceId, ByteArrayOutputStream> myCaches = new HashMap<>();
   private final ModuleRegistry myModuleRegistry;
@@ -86,6 +87,16 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId> {
   @Override
   public long getAvailableVersion(@Nonnull SourceId sourceId) {
     return mySources.get(sourceId.getModulePath()).version;
+  }
+
+  @Override
+  public long getCurrentVersion(@Nonnull SourceId sourceId) {
+    return getAvailableVersion(sourceId);
+  }
+
+  @Override
+  public boolean ensureLoaded(@Nonnull SourceId sourceId, long version) {
+    return getCurrentVersion(sourceId) == version;
   }
 
   @Override
