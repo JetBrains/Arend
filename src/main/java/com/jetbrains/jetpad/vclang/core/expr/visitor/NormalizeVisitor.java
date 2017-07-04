@@ -180,8 +180,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
 
       Expression argument = stack.peek().accept(this, Mode.WHNF);
-      if (argument instanceof ConCallExpression) {
-        ElimTree newElimTree = ((BranchElimTree) elimTree).getChild(((ConCallExpression) argument).getDefinition());
+      if (argument.toConCall() != null) {
+        ElimTree newElimTree = ((BranchElimTree) elimTree).getChild(argument.toConCall().getDefinition());
         if (newElimTree == null) {
           newElimTree = ((BranchElimTree) elimTree).getChild(BranchElimTree.Pattern.ANY);
           if (newElimTree == null) {
@@ -190,19 +190,17 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
           stack.set(stack.size() - 1, argument);
         } else {
           stack.pop();
-          for (int i = ((ConCallExpression) argument).getDefCallArguments().size() - 1; i >= 0; i--) {
-            stack.push(((ConCallExpression) argument).getDefCallArguments().get(i));
+          for (int i = argument.toConCall().getDefCallArguments().size() - 1; i >= 0; i--) {
+            stack.push(argument.toConCall().getDefCallArguments().get(i));
           }
         }
         elimTree = newElimTree;
-      } else if (expr.getDefinition() == Prelude.AT) {
+      } else {
         elimTree = ((BranchElimTree) elimTree).getChild(BranchElimTree.Pattern.ANY);
         if (elimTree == null) {
           break;
         }
         stack.set(stack.size() - 1, argument);
-      } else {
-        break;
       }
     }
 

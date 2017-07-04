@@ -332,7 +332,7 @@ public class ElimTest extends TypeCheckingTestCase {
         "  | left => 0\n" +
         "  | right => 1\n"  +
         "  | _ => 0\n"
-    , 2);
+    , 1);
   }
 
   @Test

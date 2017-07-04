@@ -365,4 +365,12 @@ public class PatternTest extends TypeCheckingTestCase {
       "  | zero => n\n" +
       "\\function g : f 1 0 = 1 => path (\\lam _ => 1)");
   }
+
+  @Test
+  public void redundantPattern() {
+    typeCheckDef(
+      "\\function f (n : Nat) : Nat\n" +
+      "  | _ => 0\n" +
+      "  | zero => 1", 1);
+  }
 }

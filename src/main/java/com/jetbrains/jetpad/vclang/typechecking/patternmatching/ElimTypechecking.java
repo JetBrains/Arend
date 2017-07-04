@@ -95,7 +95,7 @@ public class ElimTypechecking {
 
     myUnusedClauses = new HashSet<>(body.getClauses());
     myContext = new Stack<>();
-    ElimTree elimTree = clausesToElimTree(clauses);
+    ElimTree elimTree = clausesToElimTree(clauses, myFlags.contains(PatternTypechecking.Flag.ALLOW_INTERVAL) && !myFlags.contains(PatternTypechecking.Flag.CHECK_COVERAGE) && hasIntervals(clauses));
 
     if (myMissingClauses != null && !myMissingClauses.isEmpty()) {
       final List<DependentLink> finalElimParams = elimParams;
@@ -124,13 +124,21 @@ public class ElimTypechecking {
     }
   }
 
-  private ElimTree clausesToElimTree(List<ClauseData> clauseDataList) {
+  private ElimTree clausesToElimTree(List<ClauseData> clauseDataList, boolean allowInterval) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       int index = 0;
       loop:
       for (; index < clauseDataList.get(0).patterns.size(); index++) {
         for (ClauseData clauseData : clauseDataList) {
           if (!(clauseData.patterns.get(index) instanceof BindingPattern)) {
+            if (clauseDataList.get(0).patterns.get(index) instanceof BindingPattern && clauseData.patterns.get(index) instanceof ConstructorPattern) {
+              Constructor constructor = ((ConstructorPattern) clauseData.patterns.get(index)).getConstructor();
+              if (constructor == Prelude.LEFT || constructor == Prelude.RIGHT) {
+                final int finalIndex = index;
+                clauseDataList = clauseDataList.stream().filter(clauseData1 -> clauseData1.patterns.get(finalIndex) instanceof BindingPattern).collect(Collectors.toList());
+                continue loop;
+              }
+            }
             break loop;
           }
         }
@@ -180,6 +188,7 @@ public class ElimTypechecking {
         conCalls = dataCall.getMatchedConstructors();
         if (conCalls == null) {
           myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", conClauseData.clause));
+          myOK = false;
           return null;
         }
         constructors = conCalls.stream().map(ConCallExpression::getDefinition).collect(Collectors.toList());
@@ -188,12 +197,19 @@ public class ElimTypechecking {
       }
 
       DataDefinition dataType = someConPattern.getConstructor().getDataType();
+      if (!allowInterval && dataType == Prelude.INTERVAL) {
+        myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Pattern matching on the interval is not allowed here", conClauseData.clause));
+        myOK = false;
+        return null;
+      }
+
       if (someConPattern.getConstructor().getDataType().isTruncated()) {
         if (!myExpectedType.getType().isLessOrEquals(new UniverseExpression(dataType.getSort()), myVisitor.getEquations(), conClauseData.clause)) {
           LocalTypeCheckingError error = new LocalTypeCheckingError("Data " + dataType.getName() + " is truncated to the universe "
             + dataType.getSort() + " which does not fit in the universe of " +
             myExpectedType + " - the type of eliminator", conClauseData.clause);
           myVisitor.getErrorReporter().report(error);
+          myOK = false;
         }
       }
 
@@ -210,7 +226,7 @@ public class ElimTypechecking {
         }
       }
 
-      if (myFlags.contains(PatternTypechecking.Flag.CHECK_COVERAGE) && !hasVars && constructors.size() > constructorMap.size()) {
+      if (!allowInterval && myFlags.contains(PatternTypechecking.Flag.CHECK_COVERAGE) && !hasVars && constructors.size() > constructorMap.size()) {
         for (Constructor constructor : constructors) {
           if (!constructorMap.containsKey(constructor)) {
             if (constructor == Prelude.PROP_TRUNC_PATH_CON) {
@@ -275,7 +291,7 @@ public class ElimTypechecking {
           conClauseDataList.set(i, new ClauseData(patterns, conClauseDataList.get(i).expression, conClauseDataList.get(i).substitution, conClauseDataList.get(i).clause));
         }
 
-        ElimTree elimTree = clausesToElimTree(conClauseDataList);
+        ElimTree elimTree = clausesToElimTree(conClauseDataList, allowInterval);
         if (elimTree == null) {
           myOK = false;
         } else {
@@ -285,27 +301,64 @@ public class ElimTypechecking {
         myContext.pop();
       }
 
-      if (hasVars && constructors.size() > constructorMap.size()) {
-        List<ClauseData> varClauseDataList = new ArrayList<>();
-        for (ClauseData clauseData : clauseDataList) {
-          if (clauseData.patterns.get(index) instanceof BindingPattern) {
-            varClauseDataList.add(clauseData);
+      if (hasVars && myFlags.contains(PatternTypechecking.Flag.ALLOW_INTERVAL)) {
+        final int finalIndex = index;
+        List<ClauseData> varClauseDataList = clauseDataList.stream().filter(clauseData -> clauseData.patterns.get(finalIndex) instanceof BindingPattern).collect(Collectors.toList());
+        if (allowInterval && index < varClauseDataList.get(0).patterns.size() - 1 || hasIntervals(varClauseDataList)) {
+          for (ClauseData clauseData : varClauseDataList) {
             clauseData.substitution.remove(((BindingPattern) clauseData.patterns.get(index)).getBinding());
+            clauseData.patterns.subList(0, index).clear();
+          }
+
+          ElimTree elimTree = clausesToElimTree(varClauseDataList, true);
+          if (elimTree == null) {
+            myOK = false;
+          } else {
+            children.put(BranchElimTree.Pattern.ANY, elimTree);
           }
         }
-
-        myContext.push(new Util.PatternClauseElem(varClauseDataList.get(0).patterns.get(index)));
-        ElimTree elimTree = clausesToElimTree(varClauseDataList);
-        if (elimTree == null) {
-          myOK = false;
-        } else {
-          children.put(BranchElimTree.Pattern.ANY, elimTree);
-        }
-        myContext.pop();
       }
 
       return new BranchElimTree(vars, children);
     }
+  }
+
+  private boolean hasIntervals(List<ClauseData> clauseDataList) {
+    for (int i = 0; i < clauseDataList.get(0).patterns.size(); i++) {
+      for (ClauseData clauseData : clauseDataList) {
+        if (clauseData.patterns.get(i) instanceof BindingPattern) {
+          continue;
+        }
+        if (clauseData.patterns.get(i) instanceof ConstructorPattern) {
+          Constructor constructor = ((ConstructorPattern) clauseData.patterns.get(i)).getConstructor();
+          return (constructor == Prelude.LEFT || constructor == Prelude.RIGHT) && hasOnlyIntervals(clauseDataList, i);
+        } else {
+          return false;
+        }
+      }
+    }
+    return false;
+  }
+
+  // check that all columns pattern match on the interval and only on the interval
+  private boolean hasOnlyIntervals(List<ClauseData> clauseDataList, int i) {
+    loop:
+    for (; i < clauseDataList.get(0).patterns.size(); i++) {
+      for (ClauseData clauseData : clauseDataList) {
+        if (clauseData.patterns.get(i) instanceof BindingPattern) {
+          continue;
+        }
+        if (clauseData.patterns.get(i) instanceof ConstructorPattern) {
+          Constructor constructor = ((ConstructorPattern) clauseData.patterns.get(i)).getConstructor();
+          if (constructor == Prelude.LEFT || constructor == Prelude.RIGHT) {
+            continue loop;
+          }
+        }
+        return false;
+      }
+      return false;
+    }
+    return true;
   }
 
   private void addMissingClause(List<Util.ClauseElem> clause) {

@@ -242,7 +242,7 @@ class DefinitionTypechecking {
         if (expectedType != null) {
           Abstract.ElimFunctionBody elimBody = (Abstract.ElimFunctionBody) body;
           List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), visitor);
-          ElimTree elimTree = elimParams == null ? null : new ElimTypechecking(visitor, expectedType, EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.IS_FINAL)).typecheckElim(elimBody, def.getArguments(), typedDef.getParameters(), elimParams);
+          ElimTree elimTree = elimParams == null ? null : new ElimTypechecking(visitor, expectedType, EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.IS_FINAL, PatternTypechecking.Flag.ALLOW_INTERVAL)).typecheckElim(elimBody, def.getArguments(), typedDef.getParameters(), elimParams);
           if (elimTree != null) {
             typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
             if (ConditionsChecking.check(elimTree)) {
