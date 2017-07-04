@@ -557,20 +557,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   private List<Concrete.Argument> visitLamTele(TeleContext tele) {
     List<Concrete.Argument> arguments = new ArrayList<>(3);
-    if (tele instanceof TeleLiteralContext) {
-      LiteralContext literalContext = ((TeleLiteralContext) tele).literal();
-      if (literalContext instanceof IdContext && ((IdContext) literalContext).name() instanceof NameIdContext) {
-        TerminalNode id = ((NameIdContext) ((IdContext) literalContext).name()).ID();
-        Concrete.Position position = tokenPosition(id.getSymbol());
-        arguments.add(new Concrete.NameArgument(position, true, new Concrete.LocalVariable(position, id.getText())));
-      } else
-      if (literalContext instanceof UnknownContext) {
-        arguments.add(new Concrete.NameArgument(tokenPosition(literalContext.getStart()), true, null));
-      } else {
-        myErrorReporter.report(new ParserError(tokenPosition(literalContext.getStart()), "Unexpected token. Expected an identifier."));
-        throw new ParseException();
-      }
-    } else {
+    if (tele instanceof ExplicitContext || tele instanceof ImplicitContext) {
       boolean explicit = tele instanceof ExplicitContext;
       TypedExprContext typedExpr = explicit ? ((ExplicitContext) tele).typedExpr() : ((ImplicitContext) tele).typedExpr();
       ExprContext varsExpr;
@@ -598,6 +585,24 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           args.add(var.getReferable());
         }
         arguments.add(new Concrete.TelescopeArgument(tokenPosition(tele.getStart()), explicit, args, typeExpr));
+      }
+    } else {
+      boolean ok = tele instanceof TeleLiteralContext;
+      if (ok) {
+        LiteralContext literalContext = ((TeleLiteralContext) tele).literal();
+        if (literalContext instanceof IdContext && ((IdContext) literalContext).name() instanceof NameIdContext) {
+          TerminalNode id = ((NameIdContext) ((IdContext) literalContext).name()).ID();
+          Concrete.Position position = tokenPosition(id.getSymbol());
+          arguments.add(new Concrete.NameArgument(position, true, new Concrete.LocalVariable(position, id.getText())));
+        } else if (literalContext instanceof UnknownContext) {
+          arguments.add(new Concrete.NameArgument(tokenPosition(literalContext.getStart()), true, null));
+        } else {
+          ok = false;
+        }
+      }
+      if (!ok) {
+        myErrorReporter.report(new ParserError(tokenPosition(tele.start), "Unexpected token, expected an identifier"));
+        throw new ParseException();
       }
     }
     return arguments;
