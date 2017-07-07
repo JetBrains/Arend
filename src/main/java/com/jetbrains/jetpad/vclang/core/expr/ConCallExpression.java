@@ -10,10 +10,10 @@ import java.util.List;
 
 public class ConCallExpression extends DefCallExpression {
   private final Sort mySortArgument;
-  private final List<? extends Expression> myDataTypeArguments;
+  private final List<Expression> myDataTypeArguments;
   private final List<Expression> myArguments;
 
-  public ConCallExpression(Constructor definition, Sort sortArgument, List<? extends Expression> dataTypeArguments, List<Expression> arguments) {
+  public ConCallExpression(Constructor definition, Sort sortArgument, List<Expression> dataTypeArguments, List<Expression> arguments) {
     super(definition);
     assert dataTypeArguments != null;
     assert definition.status().headerIsOK();
@@ -22,7 +22,7 @@ public class ConCallExpression extends DefCallExpression {
     myArguments = arguments;
   }
 
-  public List<? extends Expression> getDataTypeArguments() {
+  public List<Expression> getDataTypeArguments() {
     return myDataTypeArguments;
   }
 

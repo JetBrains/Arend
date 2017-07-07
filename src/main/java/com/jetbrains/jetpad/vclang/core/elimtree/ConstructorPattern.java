@@ -31,7 +31,7 @@ public class ConstructorPattern implements Pattern {
     return myConCall.getSortArgument();
   }
 
-  public List<? extends Expression> getDataTypeArguments() {
+  public List<Expression> getDataTypeArguments() {
     return myConCall.getDataTypeArguments();
   }
 

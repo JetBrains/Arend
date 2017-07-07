@@ -109,7 +109,7 @@ public class DataCallExpression extends DefCallExpression implements Type {
       matchedParameters = myArguments;
     }
 
-    conCalls.add(new ConCallExpression(constructor, mySortArgument, new ArrayList<>(matchedParameters), new ArrayList<>()));
+    conCalls.add(new ConCallExpression(constructor, mySortArgument, matchedParameters, new ArrayList<>()));
     return true;
   }
 }

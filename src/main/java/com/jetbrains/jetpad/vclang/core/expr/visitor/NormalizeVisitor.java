@@ -86,7 +86,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       for (Expression arg : expr.getDefCallArguments()) {
         args.add(arg.accept(this, mode));
       }
-      return new ConCallExpression((Constructor) expr.getDefinition(), ((ConCallExpression) expr).getSortArgument(), new ArrayList<>(((ConCallExpression) expr).getDataTypeArguments()), args);
+      return new ConCallExpression((Constructor) expr.getDefinition(), ((ConCallExpression) expr).getSortArgument(), ((ConCallExpression) expr).getDataTypeArguments(), args);
     }
 
     if (expr instanceof LetClauseCallExpression) {
@@ -159,7 +159,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     ExprSubstitution substitution = new ExprSubstitution();
     if (expr instanceof ConCallExpression) {
       int i = 0;
-      List<? extends Expression> args = ((ConCallExpression) expr).getDataTypeArguments();
+      List<Expression> args = ((ConCallExpression) expr).getDataTypeArguments();
       for (DependentLink link = ((ConCallExpression) expr).getDefinition().getDataTypeParameters(); link.hasNext(); link = link.getNext()) {
         substitution.add(link, args.get(i++));
       }
