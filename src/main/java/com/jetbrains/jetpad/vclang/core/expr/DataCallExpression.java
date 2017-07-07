@@ -36,7 +36,7 @@ public class DataCallExpression extends DefCallExpression implements Type {
   }
 
   @Override
-  public List<? extends Expression> getDefCallArguments() {
+  public List<Expression> getDefCallArguments() {
     return myArguments;
   }
 

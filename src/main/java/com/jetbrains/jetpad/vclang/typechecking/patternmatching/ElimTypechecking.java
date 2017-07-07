@@ -172,7 +172,7 @@ public class ElimTypechecking {
         Pattern pattern = clauseData.patterns.get(index);
         if (pattern instanceof EmptyPattern) {
           myUnusedClauses.remove(clauseData.clause);
-          return new BranchElimTree(vars, Collections.emptyMap());
+          return new BranchElimTree(null, null, vars, Collections.emptyMap());
         }
         if (conClauseData == null && pattern instanceof ConstructorPattern) {
           conClauseData = clauseData;
@@ -183,8 +183,8 @@ public class ElimTypechecking {
       ConstructorPattern someConPattern = (ConstructorPattern) conClauseData.patterns.get(index);
       List<ConCallExpression> conCalls = null;
       List<Constructor> constructors;
+      DataCallExpression dataCall = new GetTypeVisitor().visitConCall(new SubstVisitor(conClauseData.substitution, LevelSubstitution.EMPTY).visitConCall(someConPattern.getConCall(), null), null);
       if (someConPattern.getConstructor().getDataType().hasIndexedConstructors()) {
-        DataCallExpression dataCall = new GetTypeVisitor().visitConCall(new SubstVisitor(conClauseData.substitution, LevelSubstitution.EMPTY).visitConCall(someConPattern.toExpression(), null), null);
         conCalls = dataCall.getMatchedConstructors();
         if (conCalls == null) {
           myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", conClauseData.clause));
@@ -196,7 +196,7 @@ public class ElimTypechecking {
         constructors = someConPattern.getConstructor().getDataType().getConstructors();
       }
 
-      DataDefinition dataType = someConPattern.getConstructor().getDataType();
+      DataDefinition dataType = dataCall.getDefinition();
       if (!allowInterval && dataType == Prelude.INTERVAL) {
         myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Pattern matching on the interval is not allowed here", conClauseData.clause));
         myOK = false;
@@ -319,7 +319,7 @@ public class ElimTypechecking {
         }
       }
 
-      return new BranchElimTree(vars, children);
+      return new BranchElimTree(dataCall.getSortArgument(), dataCall.getDefCallArguments(), vars, children);
     }
   }
 

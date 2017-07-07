@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.*;
@@ -13,7 +12,7 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 public class Util {
-  public interface ClauseElem {
+  interface ClauseElem {
   }
 
   public static class PatternClauseElem implements ClauseElem {
@@ -25,9 +24,19 @@ public class Util {
   }
 
   public static class ConstructorClauseElem implements ClauseElem {
+    Sort sort;
+    List<Expression> dataArguments;
     public Constructor constructor;
 
+    ConstructorClauseElem(Sort sort, List<Expression> dataArguments, Constructor constructor) {
+      this.sort = sort;
+      this.dataArguments = dataArguments;
+      this.constructor = constructor;
+    }
+
     ConstructorClauseElem(Constructor constructor) {
+      this.sort = Sort.STD;
+      this.dataArguments = constructor.getDataTypeExpression(Sort.STD).getDefCallArguments();
       this.constructor = constructor;
     }
   }
@@ -50,9 +59,10 @@ public class Util {
           myConsumer.accept(unflattenClauses(new ArrayList<>(myStack)), expression);
         }
       } else {
-        for (Map.Entry<BranchElimTree.Pattern, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
+        BranchElimTree branchElimTree = (BranchElimTree) elimTree;
+        for (Map.Entry<BranchElimTree.Pattern, ElimTree> entry : branchElimTree.getChildren()) {
           if (entry.getKey() instanceof Constructor) {
-            myStack.push(new ConstructorClauseElem((Constructor) entry.getKey()));
+            myStack.push(new ConstructorClauseElem(branchElimTree.getSortArgument(), ((Constructor) entry.getKey()).matchDataTypeArguments(branchElimTree.getDataArguments()), (Constructor) entry.getKey()));
           }
           walk(entry.getValue());
           if (entry.getKey() instanceof Constructor) {
@@ -66,14 +76,15 @@ public class Util {
     }
   }
 
-  public static List<Expression> unflattenClauses(List<ClauseElem> clauseElems) {
+  static List<Expression> unflattenClauses(List<ClauseElem> clauseElems) {
     return unflattenClauses(clauseElems, null, Collections.emptyList());
   }
 
-  public static List<Expression> unflattenClauses(List<ClauseElem> clauseElems, DependentLink parameters, List<DependentLink> elimParams) {
+  static List<Expression> unflattenClauses(List<ClauseElem> clauseElems, DependentLink parameters, List<DependentLink> elimParams) {
     for (int i = clauseElems.size() - 1; i >= 0; i--) {
       if (clauseElems.get(i) instanceof ConstructorClauseElem) {
-        Constructor constructor = ((ConstructorClauseElem) clauseElems.get(i)).constructor;
+        ConstructorClauseElem conClauseElem = (ConstructorClauseElem) clauseElems.get(i);
+        Constructor constructor = conClauseElem.constructor;
         int size = DependentLink.Helper.size(constructor.getParameters());
         List<Pattern> patterns = new ArrayList<>(size);
         for (int j = i + 1; j < clauseElems.size() && patterns.size() < size; j++) {
@@ -85,7 +96,7 @@ public class Util {
           }
         }
         clauseElems.subList(i, Math.min(i + size + 1, clauseElems.size())).clear();
-        clauseElems.add(i, new PatternClauseElem(new ConstructorPattern(new ConCallExpression(constructor, Sort.STD, DependentLink.Helper.toList(constructor.getDataTypeParameters()).stream().map(ReferenceExpression::new).collect(Collectors.toList()), Collections.emptyList()), new Patterns(patterns))));
+        clauseElems.add(i, new PatternClauseElem(new ConstructorPattern(new ConCallExpression(constructor, conClauseElem.sort, conClauseElem.dataArguments, Collections.emptyList()), new Patterns(patterns))));
       }
     }
 

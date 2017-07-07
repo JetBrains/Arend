@@ -35,6 +35,10 @@ public class ConstructorPattern implements Pattern {
     return myConCall.getDataTypeArguments();
   }
 
+  public ConCallExpression getConCall() {
+    return myConCall;
+  }
+
   @Override
   public ConCallExpression toExpression() {
     List<Expression> arguments = new ArrayList<>(myPatterns.getPatternList().size());

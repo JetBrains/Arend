@@ -1,15 +1,22 @@
 package com.jetbrains.jetpad.vclang.core.elimtree;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 public class BranchElimTree extends ElimTree {
-  private Map<Pattern, ElimTree> myChildren;
+  private final Sort mySortArgument;
+  private final List<Expression> myDataArguments;
+  private final Map<Pattern, ElimTree> myChildren;
 
-  public BranchElimTree(DependentLink parameters, Map<Pattern, ElimTree> children) {
+  public BranchElimTree(Sort sortArgument, List<Expression> dataArguments, DependentLink parameters, Map<Pattern, ElimTree> children) {
     super(parameters);
+    mySortArgument = sortArgument;
+    myDataArguments = dataArguments;
     myChildren = children;
   }
 
@@ -19,6 +26,14 @@ public class BranchElimTree extends ElimTree {
 
   public Collection<Map.Entry<Pattern, ElimTree>> getChildren() {
     return myChildren.entrySet();
+  }
+
+  public Sort getSortArgument() {
+    return mySortArgument;
+  }
+
+  public List<Expression> getDataArguments() {
+    return myDataArguments;
   }
 
   public interface Pattern {

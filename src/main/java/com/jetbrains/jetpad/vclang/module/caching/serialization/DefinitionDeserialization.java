@@ -237,7 +237,7 @@ class DefinitionDeserialization {
         if (proto.getBranch().hasOtherwiseClause()) {
           children.put(BranchElimTree.Pattern.ANY, readElimTree(proto.getBranch().getOtherwiseClause()));
         }
-        return new BranchElimTree(readParameters(proto.getParamList()), children);
+        return new BranchElimTree(children.isEmpty() ? null : readSort(proto.getBranch().getSortArgument()), children.isEmpty() ? null : readExprList(proto.getBranch().getDataArgumentsList()), readParameters(proto.getParamList()), children);
       }
       case LEAF:
         return new LeafElimTree(readParameters(proto.getParamList()), readExpr(proto.getLeaf().getExpr()));
