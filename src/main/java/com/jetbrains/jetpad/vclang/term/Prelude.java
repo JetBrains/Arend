@@ -87,13 +87,13 @@ public class Prelude {
       pathChildren.put(BranchElimTree.Pattern.ANY, new LeafElimTree(iParam, new AppExpression(new ReferenceExpression(pathParam), new ReferenceExpression(iParam))));
       children.put(PATH_CON, new BranchElimTree(Sort.STD, Collections.emptyList(), pathParam, pathChildren));
       children.put(BranchElimTree.Pattern.ANY, new BranchElimTree(Sort.STD, Collections.emptyList(), parameter("p", new DataCallExpression(PATH, Sort.STD, Arrays.asList(new ReferenceExpression(atParams), new ReferenceExpression(atParams.getNext()), new ReferenceExpression(atParams.getNext().getNext())))), anyChildren));
-      AT.setElimTree(new BranchElimTree(Sort.STD, Arrays.asList(new ReferenceExpression(atParams), new ReferenceExpression(atParams.getNext()), new ReferenceExpression(atParams.getNext().getNext())), atParams, children));
+      AT.setBody(new BranchElimTree(Sort.STD, Arrays.asList(new ReferenceExpression(atParams), new ReferenceExpression(atParams.getNext()), new ReferenceExpression(atParams.getNext().getNext())), atParams, children));
       AT.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     } else
     if (abstractDef.getName().equals("coe")) {
       COERCE = (FunctionDefinition) definition;
       DependentLink coeParams = COERCE.getParameters().subst(new ExprSubstitution(), LevelSubstitution.EMPTY, 2);
-      COERCE.setElimTree(new BranchElimTree(Sort.STD, Collections.emptyList(), coeParams, Collections.singletonMap(LEFT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(coeParams.getNext())))));
+      COERCE.setBody(new BranchElimTree(Sort.STD, Collections.emptyList(), coeParams, Collections.singletonMap(LEFT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(coeParams.getNext())))));
       COERCE.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     } else
     if (abstractDef.getName().equals("iso")) {
@@ -102,7 +102,7 @@ public class Prelude {
       Map<BranchElimTree.Pattern, ElimTree> children = new HashMap<>();
       children.put(LEFT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(isoParams)));
       children.put(RIGHT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(isoParams.getNext())));
-      ISO.setElimTree(new BranchElimTree(Sort.STD, Collections.emptyList(), isoParams, children));
+      ISO.setBody(new BranchElimTree(Sort.STD, Collections.emptyList(), isoParams, children));
       ISO.setResultType(new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR))));
       ISO.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     } else

@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 
 import java.util.HashMap;
 
-public abstract class ElimTree {
+public abstract class ElimTree implements Body {
   private DependentLink myParameters;
 
   ElimTree(DependentLink parameters) {

@@ -17,7 +17,6 @@ import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
-import com.jetbrains.jetpad.vclang.core.pattern.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
@@ -94,44 +93,6 @@ class DefinitionSerialization {
     }
   }
 
-
-  // Patterns
-
-  DefinitionProtos.Definition.DataData.Constructor.Patterns writePatterns(Patterns patterns) {
-    DefinitionProtos.Definition.DataData.Constructor.Patterns.Builder builder = DefinitionProtos.Definition.DataData.Constructor.Patterns.newBuilder();
-    for (Pattern pattern : patterns.getPatterns()) {
-      DefinitionProtos.Definition.DataData.Constructor.PatternArgument.Builder paBuilder = DefinitionProtos.Definition.DataData.Constructor.PatternArgument.newBuilder();
-      paBuilder.setNotExplicit(!pattern.isExplicit());
-      paBuilder.setPattern(writePattern(pattern));
-      builder.addPatternArgument(paBuilder.build());
-    }
-    return builder.build();
-  }
-
-  private DefinitionProtos.Definition.DataData.Constructor.Pattern writePattern(Pattern pattern) {
-    DefinitionProtos.Definition.DataData.Constructor.Pattern.Builder builder = DefinitionProtos.Definition.DataData.Constructor.Pattern.newBuilder();
-    if (pattern instanceof NamePattern) {
-      builder.setName(
-          DefinitionProtos.Definition.DataData.Constructor.Pattern.Name.newBuilder()
-            .setVar(writeParameter((TypedDependentLink) pattern.getParameters())) // TODO: This cast is potentially dangerous
-      );
-    } else if (pattern instanceof EmptyPattern) {
-      builder.setAnyConstructor(
-          DefinitionProtos.Definition.DataData.Constructor.Pattern.AnyConstructor.newBuilder()
-              .setVar(writeParameter(((EmptyPattern) pattern).getParameters()))
-      );
-    } else if (pattern instanceof ConstructorPattern) {
-      DefinitionProtos.Definition.DataData.Constructor.Pattern.ConstructorRef.Builder pBuilder = DefinitionProtos.Definition.DataData.Constructor.Pattern.ConstructorRef.newBuilder();
-      pBuilder.setConstructorRef(myCalltargetIndexProvider.getDefIndex(((ConstructorPattern) pattern).getConstructor()));
-      pBuilder.setPatterns(writePatterns(((ConstructorPattern) pattern).getPatterns()));
-      builder.setConstructor(pBuilder.build());
-    } else {
-      throw new IllegalArgumentException();
-    }
-    return builder.build();
-  }
-
-
   // Sorts and levels
 
   private LevelProtos.Level writeLevel(Level level) {
@@ -191,13 +152,15 @@ class DefinitionSerialization {
     return tBuilder.build();
   }
 
-  ExpressionProtos.SingleParameter writeParameter(TypedDependentLink link) {
+  ExpressionProtos.SingleParameter writeParameter(DependentLink link) {
     ExpressionProtos.SingleParameter.Builder builder = ExpressionProtos.SingleParameter.newBuilder();
     if (link.getName() != null) {
       builder.setName(link.getName());
     }
     builder.setIsNotExplicit(!link.isExplicit());
-    builder.setType(writeType(link.getType()));
+    if (link instanceof TypedDependentLink) {
+      builder.setType(writeType(link.getType()));
+    }
     registerBinding(link);
     return builder.build();
   }

@@ -7,9 +7,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Created by user on 12/16/16.
- */
 public class DefinitionCallGraph extends BaseCallGraph<Definition> {
   public Map<Definition, Set<RecursiveBehavior<Definition>>> myErrorInfo = new HashMap<>();
 
@@ -29,6 +26,6 @@ public class DefinitionCallGraph extends BaseCallGraph<Definition> {
   }
 
   public void add(FunctionDefinition def, Set<? extends Definition> cycle) {
-    add(new CollectCallVisitor(def, cycle).getResult());
+    add(new CollectCallVisitor(def, cycle).collect());
   }
 }

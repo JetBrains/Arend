@@ -30,16 +30,16 @@ import static org.junit.Assert.assertNotNull;
 
 public class DefCall extends TypeCheckingTestCase {
   private void test(Expression expected, TypeCheckClassResult result) {
-    assertEquals(expected, ((LeafElimTree) ((FunctionDefinition) result.getDefinition("test")).getElimTree()).getExpression());
+    assertEquals(expected, ((LeafElimTree) ((FunctionDefinition) result.getDefinition("test")).getBody()).getExpression());
   }
 
   private void testFI(Expression expected, TypeCheckClassResult result) {
-    assertEquals(expected, ((LeafElimTree) ((FunctionDefinition) result.getDefinition("Test.test")).getElimTree()).getExpression());
+    assertEquals(expected, ((LeafElimTree) ((FunctionDefinition) result.getDefinition("Test.test")).getBody()).getExpression());
   }
 
   private void testType(Expression expected, TypeCheckClassResult result) {
     assertEquals(expected, ((FunctionDefinition) result.getDefinition("test")).getResultType());
-    assertEquals(expected, ((LeafElimTree) ((FunctionDefinition) result.getDefinition("test")).getElimTree()).getExpression().getType());
+    assertEquals(expected, ((LeafElimTree) ((FunctionDefinition) result.getDefinition("test")).getBody()).getExpression().getType());
   }
 
   private DependentLink getThis(TypeCheckClassResult result) {

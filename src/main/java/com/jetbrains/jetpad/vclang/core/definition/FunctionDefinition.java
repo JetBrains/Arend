@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.core.definition;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.Body;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.FunCallExpression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
@@ -16,7 +16,7 @@ import java.util.List;
 public class FunctionDefinition extends Definition implements Function {
   private DependentLink myParameters;
   private Expression myResultType;
-  private ElimTree myElimTree;
+  private Body myBody;
 
   public FunctionDefinition(Abstract.Definition abstractDef) {
     super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -24,12 +24,12 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   @Override
-  public ElimTree getElimTree() {
-    return myElimTree;
+  public Body getBody() {
+    return myBody;
   }
 
-  public void setElimTree(ElimTree elimTree) {
-    myElimTree = elimTree;
+  public void setBody(Body body) {
+    myBody = body;
   }
 
   @Override

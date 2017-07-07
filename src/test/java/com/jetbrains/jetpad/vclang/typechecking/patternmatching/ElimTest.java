@@ -290,7 +290,7 @@ public class ElimTest extends TypeCheckingTestCase {
       "\\function test (n m : Nat) : Nat => \\elim m\n" +
         " | _ => n"
     );
-    assertEquals(new LeafElimTree(def.getParameters(), Ref(def.getParameters())), def.getElimTree());
+    assertEquals(new LeafElimTree(def.getParameters(), Ref(def.getParameters())), def.getBody());
   }
 
   @Test
@@ -304,7 +304,7 @@ public class ElimTest extends TypeCheckingTestCase {
     Map<BranchElimTree.Pattern, ElimTree> children = new HashMap<>();
     children.put(Prelude.ZERO, new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nParam)));
     children.put(Prelude.SUC, new LeafElimTree(param("m", Nat()), Ref(nParam)));
-    assertEquals(new BranchElimTree(Sort.STD, Collections.emptyList(), nParam, children), def.getElimTree());
+    assertEquals(new BranchElimTree(Sort.STD, Collections.emptyList(), nParam, children), def.getBody());
   }
 
   @Test
@@ -322,7 +322,7 @@ public class ElimTest extends TypeCheckingTestCase {
     children.put(dataDef.getConstructor("A"), new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nParam)));
     children.put(dataDef.getConstructor("B"), new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nParam)));
     children.put(dataDef.getConstructor("C"), new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nParam)));
-    assertEquals(new BranchElimTree(Sort.STD, Collections.emptyList(), nParam, children), def.getElimTree());
+    assertEquals(new BranchElimTree(Sort.STD, Collections.emptyList(), nParam, children), def.getBody());
   }
 
   @Test

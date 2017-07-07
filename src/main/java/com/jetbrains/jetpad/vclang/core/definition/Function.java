@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
-import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.Body;
 
 public interface Function {
-  ElimTree getElimTree();
+  Body getBody();
 }

@@ -5,10 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
-import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.*;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
@@ -17,7 +14,6 @@ import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.core.pattern.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.EmptyElimTreeNode;
@@ -89,42 +85,6 @@ class DefinitionDeserialization {
     }
   }
 
-
-  // Patterns
-
-  Patterns readPatterns(DefinitionProtos.Definition.DataData.Constructor.Patterns proto) throws DeserializationError {
-    return readPatterns(proto, new LinkList());
-  }
-
-  private Patterns readPatterns(DefinitionProtos.Definition.DataData.Constructor.Patterns proto, LinkList list) throws DeserializationError {
-    List<Pattern> args = new ArrayList<>();
-    for (DefinitionProtos.Definition.DataData.Constructor.PatternArgument argProto : proto.getPatternArgumentList()) {
-      Pattern pattern = readPattern(argProto.getPattern(), list);
-      pattern.setExplicit(!argProto.getNotExplicit());
-      args.add(pattern);
-    }
-    return new Patterns(args);
-  }
-
-  private Pattern readPattern(DefinitionProtos.Definition.DataData.Constructor.Pattern proto, LinkList list) throws DeserializationError {
-    switch (proto.getKindCase()) {
-      case NAME:
-        DependentLink param = readParameter(proto.getName().getVar());
-        list.append(param);
-        return new NamePattern(param);
-      case ANY_CONSTRUCTOR:
-        TypedDependentLink param1 = readParameter(proto.getAnyConstructor().getVar());
-        list.append(param1);
-        return new EmptyPattern(param1);
-      case CONSTRUCTOR:
-        return new ConstructorPattern(myCalltargetProvider.getCalltarget(proto.getConstructor().getConstructorRef(), Constructor.class), readPatterns(proto.getConstructor().getPatterns(), list));
-      default:
-        throw new DeserializationError("Unknown Pattern kind: " + proto.getKindCase());
-    }
-  }
-
-
-
   // Sorts and levels
 
   private Level readLevel(LevelProtos.Level proto) throws DeserializationError {
@@ -183,9 +143,14 @@ class DefinitionDeserialization {
     return tele;
   }
 
-  TypedDependentLink readParameter(ExpressionProtos.SingleParameter proto) throws DeserializationError {
+  DependentLink readParameter(ExpressionProtos.SingleParameter proto) throws DeserializationError {
     Type type = readType(proto.getType());
-    TypedDependentLink link = new TypedDependentLink(!proto.getIsNotExplicit(), proto.getName(), type, EmptyDependentLink.getInstance());
+    DependentLink link;
+    if (proto.hasType()) {
+      link = new TypedDependentLink(!proto.getIsNotExplicit(), proto.getName(), type, EmptyDependentLink.getInstance());
+    } else {
+      link = new UntypedDependentLink(proto.getName(), EmptyDependentLink.getInstance());
+    }
     registerBinding(link);
     return link;
   }
@@ -201,7 +166,7 @@ class DefinitionDeserialization {
     for (Map.Entry<Integer, ExpressionProtos.FieldSet.Implementation> entry : proto.getImplementationsMap().entrySet()) {
       final TypedDependentLink thisParam;
       if (entry.getValue().hasThisParam()) {
-        thisParam = readParameter(entry.getValue().getThisParam());
+        thisParam = (TypedDependentLink) readParameter(entry.getValue().getThisParam());
       } else {
         thisParam = null;
       }
@@ -289,8 +254,8 @@ class DefinitionDeserialization {
     }
   }
 
-  private List<Expression> readExprList(List<ExpressionProtos.Expression> protos) throws DeserializationError {
-    List<Expression> result = new ArrayList<>();
+  List<Expression> readExprList(List<ExpressionProtos.Expression> protos) throws DeserializationError {
+    List<Expression> result = new ArrayList<>(protos.size());
     for (ExpressionProtos.Expression proto : protos) {
       result.add(readExpr(proto));
     }

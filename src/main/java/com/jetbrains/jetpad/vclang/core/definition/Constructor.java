@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.elimtree.Body;
 import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
-import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.Pattern;
 import com.jetbrains.jetpad.vclang.core.elimtree.Patterns;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
@@ -22,7 +22,7 @@ public class Constructor extends Definition implements Function, BranchElimTree.
   private final DataDefinition myDataType;
   private DependentLink myParameters;
   private Patterns myPatterns;
-  private ElimTree myConditions;
+  private Body myConditions;
 
   public Constructor(Abstract.Constructor abstractDef, DataDefinition dataType) {
     super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -30,8 +30,8 @@ public class Constructor extends Definition implements Function, BranchElimTree.
     myParameters = null;
   }
 
-  public void setElimTree(ElimTree condition) {
-    myConditions = condition;
+  public void setBody(Body conditions) {
+    myConditions = conditions;
   }
 
   public Patterns getPatterns() {
@@ -49,7 +49,7 @@ public class Constructor extends Definition implements Function, BranchElimTree.
   }
 
   @Override
-  public ElimTree getElimTree() {
+  public Body getBody() {
     return myConditions;
   }
 

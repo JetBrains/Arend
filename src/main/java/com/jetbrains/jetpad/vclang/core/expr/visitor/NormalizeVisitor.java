@@ -7,9 +7,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
-import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
-import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
-import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
@@ -150,12 +148,41 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
     }
 
-    ElimTree elimTree = ((Function) expr.getDefinition()).getElimTree();
+    ElimTree elimTree;
+    Body body = ((Function) expr.getDefinition()).getBody();
+    if (body instanceof IntervalElim) {
+      IntervalElim elim = (IntervalElim) body;
+      int i0 = expr.getDefCallArguments().size() - elim.getCases().size();
+      for (int i = i0; i < expr.getDefCallArguments().size(); i++) {
+        Expression arg = expr.getDefCallArguments().get(i).accept(this, Mode.WHNF);
+        if (arg.toConCall() != null) {
+          ExprSubstitution substitution = new ExprSubstitution();
+          DependentLink link = elim.getParameters();
+          for (int j = 0; j < expr.getDefCallArguments().size(); j++) {
+            if (j != i) {
+              substitution.add(link, expr.getDefCallArguments().get(j));
+            }
+            link = link.getNext();
+          }
+
+          if (arg.toConCall().getDefinition() == Prelude.LEFT) {
+            return elim.getCases().get(i - i0).proj1.subst(substitution).accept(this, mode);
+          }
+          if (arg.toConCall().getDefinition() == Prelude.RIGHT) {
+            return elim.getCases().get(i - i0).proj2.subst(substitution).accept(this, mode);
+          }
+          throw new IllegalStateException();
+        }
+      }
+      elimTree = elim.getOtherwise();
+    } else {
+      elimTree = (ElimTree) body;
+    }
+
     if (elimTree == null) {
       return applyDefCall(expr, mode);
     }
 
-    Expression result = null;
     ExprSubstitution substitution = new ExprSubstitution();
     if (expr instanceof ConCallExpression) {
       int i = 0;
@@ -170,6 +197,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       stack.push(expr.getDefCallArguments().get(i));
     }
 
+    Expression result = null;
     while (true) {
       for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
         substitution.add(link, stack.pop());
@@ -208,7 +236,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       throw new ComputationInterruptedException();
     }
 
-    return result == null ? applyDefCall(expr, mode) : result.normalize(mode);
+    return result == null ? applyDefCall(expr, mode) : result.accept(this, mode);
   }
 
   @Override

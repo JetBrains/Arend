@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
@@ -215,7 +216,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\function test (n : Nat) : Nat => \\case n, n | zero, _ => 0 | suc y, _ => y");
     FunctionDefinition def2 = (FunctionDefinition) typeCheckDef("\\function test (n : Nat) => \\let | caseF (caseA : Nat) (caseB : Nat) : Nat => \\elim caseA, caseB | zero, _ => 0 | suc y, _ => y \\in caseF n n");
     assertTrue(CompareVisitor.compare(new HashMap<>(Collections.singletonMap(def.getParameters(), def2.getParameters())),
-        DummyEquations.getInstance(), Equations.CMP.EQ, def.getElimTree(), def2.getElimTree()));
+        DummyEquations.getInstance(), Equations.CMP.EQ, (LeafElimTree) def.getBody(), (LeafElimTree) def2.getBody()));
   }
 
   @Test

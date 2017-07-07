@@ -246,7 +246,7 @@ class DefinitionTypechecking {
           if (elimTree != null) {
             typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
             if (ConditionsChecking.check(elimTree)) {
-              typedDef.setElimTree(elimTree);
+              typedDef.setBody(elimTree);
             }
           }
         } else {
@@ -257,7 +257,7 @@ class DefinitionTypechecking {
       } else {
         CheckTypeVisitor.Result termResult = visitor.finalCheckExpr(((Abstract.TermFunctionBody) body).getTerm(), expectedType);
         if (termResult != null) {
-          typedDef.setElimTree(new LeafElimTree(typedDef.getParameters(), termResult.expression));
+          typedDef.setBody(new LeafElimTree(typedDef.getParameters(), termResult.expression));
           if (expectedType == null) {
             typedDef.setResultType(termResult.type);
           }
@@ -265,7 +265,7 @@ class DefinitionTypechecking {
       }
     }
 
-    typedDef.setStatus(typedDef.getResultType() == null ? Definition.TypeCheckingStatus.HEADER_HAS_ERRORS : typedDef.getElimTree() == null ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS);
+    typedDef.setStatus(typedDef.getResultType() == null ? Definition.TypeCheckingStatus.HEADER_HAS_ERRORS : typedDef.getBody() == null ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS);
   }
 
   private static void typeCheckDataHeader(DataDefinition dataDefinition, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
@@ -391,14 +391,14 @@ class DefinitionTypechecking {
 
     // Check conditions
     for (Constructor constructor : dataDefinition.getConstructors()) {
-      if (constructor.getElimTree() != null) {
+      if (constructor.getBody() != null) {
         LocalTypeCheckingError error = null; // TypeCheckingElim.checkConditions(constructor.getName(), def, constructor.getParameters(), constructor.getElimTree());
         if (error != null) {
           visitor.getErrorReporter().report(error);
-          constructor.setElimTree(null);
+          constructor.setBody(null);
           dataDefinition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
         } else {
-          if (!dataDefinition.matchesOnInterval() && findMatchOnInterval(constructor.getElimTree())) {
+          if (!dataDefinition.matchesOnInterval() && (constructor.getBody() instanceof IntervalElim || findMatchOnInterval((ElimTree) constructor.getBody()))) {
             dataDefinition.setMatchesOnInterval();
             inferredSort = inferredSort.max(new Sort(inferredSort.getPLevel(), Level.INFINITY));
           }
@@ -453,6 +453,7 @@ class DefinitionTypechecking {
     return universeOk;
   }
 
+  // TODO[newElim]: remove this function
   private static boolean findMatchOnInterval(ElimTree elimTree) {
     if (elimTree instanceof BranchElimTree) {
       for (Map.Entry<BranchElimTree.Pattern, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
@@ -627,7 +628,7 @@ class DefinitionTypechecking {
     if (elimParams != null) {
       try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(visitor.getFreeBindings())) {
         try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(visitor.getContext())) {
-          constructor.setElimTree(new ElimTypechecking(visitor, constructor.getDataTypeExpression(Sort.STD), EnumSet.of(PatternTypechecking.Flag.ALLOW_INTERVAL)).typecheckElim(def, def.getArguments(), constructor.getParameters(), elimParams));
+          constructor.setBody(new ElimTypechecking(visitor, constructor.getDataTypeExpression(Sort.STD), EnumSet.of(PatternTypechecking.Flag.ALLOW_INTERVAL)).typecheckElim(def, def.getArguments(), constructor.getParameters(), elimParams));
         }
       }
     }
@@ -880,7 +881,7 @@ class DefinitionTypechecking {
     }
 
     typedDef.setResultType(term);
-    typedDef.setElimTree(new LeafElimTree(list.getFirst(), new NewExpression(term)));
+    typedDef.setBody(new LeafElimTree(list.getFirst(), new NewExpression(term)));
     typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
   }
 }

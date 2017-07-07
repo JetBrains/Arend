@@ -2,11 +2,14 @@ package com.jetbrains.jetpad.vclang.module.caching.serialization;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
+import com.jetbrains.jetpad.vclang.core.elimtree.*;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.module.caching.LocalizedTypecheckerState;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -97,15 +100,14 @@ public class DefinitionStateSerialization {
     for (Constructor constructor : definition.getConstructors()) {
       DefinitionProtos.Definition.DataData.Constructor.Builder cBuilder = DefinitionProtos.Definition.DataData.Constructor.newBuilder();
       if (constructor.getPatterns() != null) {
-        // TODO[newElim]
-        // cBuilder.setPatterns(defSerializer.writePatterns(constructor.getPatterns()));
+        for (Pattern pattern : constructor.getPatterns().getPatternList()) {
+          cBuilder.addPattern(writePattern(defSerializer, pattern));
+        }
       }
       cBuilder.addAllParam(defSerializer.writeParameters(constructor.getParameters()));
-      /* TODO[newElim]
-      if (constructor.getCondition() != null) {
-        cBuilder.setCondition(defSerializer.writeElimTreeNode(constructor.getCondition()));
+      if (constructor.getBody() != null) {
+        cBuilder.setConditions(writeBody(defSerializer, constructor.getBody()));
       }
-      */
 
       builder.putConstructors(myPersistenceProvider.getIdFor(constructor.getAbstractDefinition()), cBuilder.build());
     }
@@ -119,16 +121,59 @@ public class DefinitionStateSerialization {
     return builder.build();
   }
 
+  private DefinitionProtos.Definition.DataData.Constructor.Pattern writePattern(DefinitionSerialization defSerializer, Pattern pattern) {
+    DefinitionProtos.Definition.DataData.Constructor.Pattern.Builder builder = DefinitionProtos.Definition.DataData.Constructor.Pattern.newBuilder();
+    if (pattern instanceof BindingPattern) {
+      builder.setBinding(DefinitionProtos.Definition.DataData.Constructor.Pattern.Binding.newBuilder()
+        .setVar(defSerializer.writeParameter(((BindingPattern) pattern).getBinding())));
+    } else if (pattern instanceof EmptyPattern) {
+      builder.setEmpty(DefinitionProtos.Definition.DataData.Constructor.Pattern.Empty.newBuilder());
+    } else if (pattern instanceof ConstructorPattern) {
+      DefinitionProtos.Definition.DataData.Constructor.Pattern.ConstructorRef.Builder pBuilder = DefinitionProtos.Definition.DataData.Constructor.Pattern.ConstructorRef.newBuilder();
+      pBuilder.setConstructorRef(myCalltargetIndexProvider.getDefIndex(((ConstructorPattern) pattern).getConstructor()));
+      for (Pattern patternArgument : ((ConstructorPattern) pattern).getArguments()) {
+        pBuilder.addPattern(writePattern(defSerializer, patternArgument));
+      }
+      builder.setConstructor(pBuilder.build());
+    } else {
+      throw new IllegalArgumentException();
+    }
+    return builder.build();
+  }
+
   private DefinitionProtos.Definition.FunctionData writeFunctionDefinition(DefinitionSerialization defSerializer, FunctionDefinition definition) {
     DefinitionProtos.Definition.FunctionData.Builder builder = DefinitionProtos.Definition.FunctionData.newBuilder();
 
     builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
     builder.setType(defSerializer.writeExpr(definition.getResultType()));
-    if (definition.getElimTree() != null) {
-      builder.setElimTree(defSerializer.writeElimTree(definition.getElimTree()));
+    if (definition.getBody() != null) {
+      builder.setBody(writeBody(defSerializer, definition.getBody()));
     }
 
     return builder.build();
+  }
+
+  private DefinitionProtos.Body writeBody(DefinitionSerialization defSerializer, Body body) {
+    DefinitionProtos.Body.Builder bodyBuilder = DefinitionProtos.Body.newBuilder();
+    if (body instanceof IntervalElim) {
+      IntervalElim intervalElim = (IntervalElim) body;
+      DefinitionProtos.Body.IntervalElim.Builder intervalBuilder = DefinitionProtos.Body.IntervalElim.newBuilder();
+      intervalBuilder.addAllParam(defSerializer.writeParameters(intervalElim.getParameters()));
+      for (Pair<Expression, Expression> pair : intervalElim.getCases()) {
+        intervalBuilder.addCase(DefinitionProtos.Body.ExpressionPair.newBuilder()
+          .setLeft(defSerializer.writeExpr(pair.proj1))
+          .setRight(defSerializer.writeExpr(pair.proj2)));
+      }
+      if (intervalElim.getOtherwise() != null) {
+        intervalBuilder.setOtherwise(defSerializer.writeElimTree(intervalElim.getOtherwise()));
+      }
+      bodyBuilder.setIntervalElim(intervalBuilder);
+    } else if (body instanceof ElimTree) {
+      bodyBuilder.setElimTree(defSerializer.writeElimTree((ElimTree) body));
+    } else {
+      throw new IllegalStateException();
+    }
+    return bodyBuilder.build();
   }
 
   private List<DefinitionProtos.Definition.ClassifyingFields> writeClassifyingFields(Definition definition) {

@@ -1,32 +1,67 @@
 package com.jetbrains.jetpad.vclang.typechecking.termination;
 
+import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.IntervalElim;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.Util;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.ProcessDefCallsVisitor;
+import com.jetbrains.jetpad.vclang.util.Pair;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
-public class CollectCallVisitor extends ProcessDefCallsVisitor<List<Expression>> {
-  private final Set<BaseCallMatrix<Definition>> myCollectedCalls = new HashSet<>();
+public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
+  private Set<BaseCallMatrix<Definition>> myCollectedCalls;
   private final FunctionDefinition myDefinition;
   private final Set<? extends Definition> myCycle;
+  private List<Expression> myVector;
 
   CollectCallVisitor(FunctionDefinition def, Set<? extends Definition> cycle) {
     assert cycle != null;
     myDefinition = def;
     myCycle = cycle;
-    if (def.getElimTree() != null)  {
-      Util.ElimTreeWalker walker = new Util.ElimTreeWalker((list, expr) -> expr.accept(this, list));
-      walker.walk(def.getElimTree());
-    }
   }
 
-  public Set<BaseCallMatrix<Definition>> getResult() {
+  public Set<BaseCallMatrix<Definition>> collect() {
+    if (myDefinition.getBody() == null) {
+      return Collections.emptySet();
+    }
+    myCollectedCalls = new HashSet<>();
+
+    ElimTree elimTree;
+    if (myDefinition.getBody() instanceof IntervalElim) {
+      IntervalElim elim = (IntervalElim) myDefinition.getBody();
+      myVector = new ArrayList<>();
+      for (DependentLink link = elim.getParameters(); link.hasNext(); link = link.getNext()) {
+        myVector.add(new ReferenceExpression(link));
+      }
+
+      int i = myVector.size() - elim.getCases().size();
+      for (Pair<Expression, Expression> pair : elim.getCases()) {
+        Expression old = myVector.get(i);
+        myVector.set(i, ExpressionFactory.Left());
+        pair.proj1.accept(this, null);
+        myVector.set(i, ExpressionFactory.Right());
+        pair.proj2.accept(this, null);
+        myVector.set(i, old);
+      }
+
+      elimTree = elim.getOtherwise();
+    } else {
+      elimTree = (ElimTree) myDefinition.getBody();
+    }
+
+    if (elimTree != null) {
+      Util.ElimTreeWalker walker = new Util.ElimTreeWalker((list, expr) -> {
+        myVector = list;
+        expr.accept(this, null);
+      });
+      walker.walk((ElimTree) myDefinition.getBody());
+    }
+
     return myCollectedCalls;
   }
 
@@ -69,16 +104,16 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<List<Expression>>
   }
 
   @Override
-  protected boolean processDefCall(DefCallExpression expression, List<Expression> vector) {
+  protected boolean processDefCall(DefCallExpression expression, Void param) {
     if (!myCycle.contains(expression.getDefinition())) {
       return false;
     }
 
     BaseCallMatrix<Definition> cm = new CallMatrix(myDefinition, expression);
-    assert cm.getHeight() == vector.size();
-    for (int i = 0; i < vector.size(); i++) {
+    assert cm.getHeight() == myVector.size();
+    for (int i = 0; i < myVector.size(); i++) {
       for (int j = 0; j < expression.getDefCallArguments().size(); j++) {
-        cm.set(i, j, compare(expression.getDefCallArguments().get(j), vector.get(i)));
+        cm.set(i, j, compare(expression.getDefCallArguments().get(j), myVector.get(i)));
       }
     }
 

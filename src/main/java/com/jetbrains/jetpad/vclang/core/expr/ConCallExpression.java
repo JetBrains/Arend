@@ -64,9 +64,9 @@ public class ConCallExpression extends DefCallExpression {
 
   @Override
   public Expression getStuckExpression() {
-    if ((getDefinition().getElimTree() instanceof BranchElimTree)) {
+    if ((getDefinition().getBody() instanceof BranchElimTree)) {
       // TODO: What if we stuck on another argument?
-      return myArguments.get(DependentLink.Helper.size(getDefinition().getElimTree().getParameters())).getStuckExpression();
+      return myArguments.get(DependentLink.Helper.size(((BranchElimTree) getDefinition().getBody()).getParameters())).getStuckExpression();
     } else {
       return null;
     }

@@ -43,33 +43,27 @@ message Definition {
         repeated bool covariant_parameter = 8;
 
         message Constructor {
-            Patterns patterns = 1;
+            repeated Pattern pattern = 5;
             repeated Telescope param = 2;
-            ElimTreeNode condition = 3;
+            Body conditions = 4;
 
-            message Patterns {
-                repeated PatternArgument pattern_argument = 1;
-            }
-            message PatternArgument {
-                bool not_explicit = 1;
-                Pattern pattern = 3;
-            }
             message Pattern {
                 oneof kind {
-                    Name name = 1;
-                    ConstructorRef constructor = 2;
-                    AnyConstructor any_constructor = 3;
+                    Binding binding = 4;
+                    ConstructorRef constructor = 5;
+                    Empty empty = 6;
                 }
 
-                message Name {
+                message Binding {
                     SingleParameter var = 1;
                 }
                 message ConstructorRef {
+                    Sort sortArgument = 4;
+                    repeated Expression data_type_argument = 5;
                     int32 constructor_ref = 1;
-                    Patterns patterns = 2;
+                    repeated Pattern pattern = 3;
                 }
-                message AnyConstructor {
-                    SingleParameter var = 1;
+                message Empty {
                 }
             }
         }
@@ -77,6 +71,23 @@ message Definition {
     message FunctionData {
         repeated Telescope param = 2;
         Expression type = 5;
-        ElimTree elim_tree = 6;
+        Body body = 6;
+    }
+}
+
+message Body {
+    oneof kind {
+        ElimTree elim_tree = 1;
+        IntervalElim interval_elim = 2;
+    }
+
+    message ExpressionPair {
+        Expression left = 1;
+        Expression right = 2;
+    }
+    message IntervalElim {
+        repeated Telescope param = 3;
+        repeated ExpressionPair case = 1;
+        ElimTree otherwise = 2;
     }
 }
