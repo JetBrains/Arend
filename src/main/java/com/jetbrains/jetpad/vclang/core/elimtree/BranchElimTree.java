@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.core.elimtree;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
@@ -11,20 +12,20 @@ import java.util.Map;
 public class BranchElimTree extends ElimTree {
   private final Sort mySortArgument;
   private final List<Expression> myDataArguments;
-  private final Map<Pattern, ElimTree> myChildren;
+  private final Map<Constructor, ElimTree> myChildren;
 
-  public BranchElimTree(Sort sortArgument, List<Expression> dataArguments, DependentLink parameters, Map<Pattern, ElimTree> children) {
+  public BranchElimTree(DependentLink parameters, Sort sortArgument, List<Expression> dataArguments, Map<Constructor, ElimTree> children) {
     super(parameters);
     mySortArgument = sortArgument;
     myDataArguments = dataArguments;
     myChildren = children;
   }
 
-  public ElimTree getChild(Pattern pattern) {
-    return myChildren.get(pattern);
+  public ElimTree getChild(Constructor constructor) {
+    return myChildren.get(constructor);
   }
 
-  public Collection<Map.Entry<Pattern, ElimTree>> getChildren() {
+  public Collection<Map.Entry<Constructor, ElimTree>> getChildren() {
     return myChildren.entrySet();
   }
 
@@ -34,14 +35,5 @@ public class BranchElimTree extends ElimTree {
 
   public List<Expression> getDataArguments() {
     return myDataArguments;
-  }
-
-  public interface Pattern {
-    Pattern ANY = new Pattern() {
-      @Override
-      public String toString() {
-        return "ANY";
-      }
-    };
   }
 }

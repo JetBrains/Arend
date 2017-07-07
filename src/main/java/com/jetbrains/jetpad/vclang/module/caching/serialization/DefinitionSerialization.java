@@ -218,12 +218,8 @@ class DefinitionSerialization {
           branchBuilder.addDataArguments(arg.accept(myVisitor, null));
         }
       }
-      for (Map.Entry<BranchElimTree.Pattern, ElimTree> entry : branchElimTree.getChildren()) {
-        if (entry.getKey() instanceof Constructor) {
-          branchBuilder.putClauses(myCalltargetIndexProvider.getDefIndex((Constructor) entry.getKey()), writeElimTree(entry.getValue()));
-        } else {
-          branchBuilder.setOtherwiseClause(writeElimTree(entry.getValue()));
-        }
+      for (Map.Entry<Constructor, ElimTree> entry : branchElimTree.getChildren()) {
+        branchBuilder.putClauses(myCalltargetIndexProvider.getDefIndex(entry.getKey()), writeElimTree(entry.getValue()));
       }
 
       builder.setBranch(branchBuilder);

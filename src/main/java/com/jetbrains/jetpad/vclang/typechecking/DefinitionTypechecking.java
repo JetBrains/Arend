@@ -25,7 +25,6 @@ import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
@@ -242,11 +241,11 @@ class DefinitionTypechecking {
         if (expectedType != null) {
           Abstract.ElimFunctionBody elimBody = (Abstract.ElimFunctionBody) body;
           List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), visitor);
-          ElimTree elimTree = elimParams == null ? null : new ElimTypechecking(visitor, expectedType, EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.IS_FINAL, PatternTypechecking.Flag.ALLOW_INTERVAL)).typecheckElim(elimBody, def.getArguments(), typedDef.getParameters(), elimParams);
-          if (elimTree != null) {
+          Body typedBody = elimParams == null ? null : new ElimTypechecking(visitor, expectedType, EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.CONTEXT_FREE, PatternTypechecking.Flag.ALLOW_INTERVAL)).typecheckElim(elimBody, def.getArguments(), typedDef.getParameters(), elimParams);
+          if (typedBody != null) {
             typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-            if (ConditionsChecking.check(elimTree)) {
-              typedDef.setBody(elimTree);
+            if (ConditionsChecking.check(typedBody)) {
+              typedDef.setBody(typedBody);
             }
           }
         } else {
@@ -342,7 +341,7 @@ class DefinitionTypechecking {
     }
 
     boolean universeOk = true;
-    PatternTypechecking dataPatternTypechecking = new PatternTypechecking(visitor.getErrorReporter(), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.IS_FINAL));
+    PatternTypechecking dataPatternTypechecking = new PatternTypechecking(visitor.getErrorReporter(), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE));
     for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
       // Typecheck patterns and compute free bindings
       Pair<List<Pattern>, List<Expression>> result = null;
@@ -389,19 +388,12 @@ class DefinitionTypechecking {
     }
     dataDefinition.setStatus(dataOk ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
 
-    // Check conditions
+    // Check if constructors pattern match on the interval
     for (Constructor constructor : dataDefinition.getConstructors()) {
       if (constructor.getBody() != null) {
-        LocalTypeCheckingError error = null; // TypeCheckingElim.checkConditions(constructor.getName(), def, constructor.getParameters(), constructor.getElimTree());
-        if (error != null) {
-          visitor.getErrorReporter().report(error);
-          constructor.setBody(null);
-          dataDefinition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
-        } else {
-          if (!dataDefinition.matchesOnInterval() && (constructor.getBody() instanceof IntervalElim || findMatchOnInterval((ElimTree) constructor.getBody()))) {
-            dataDefinition.setMatchesOnInterval();
-            inferredSort = inferredSort.max(new Sort(inferredSort.getPLevel(), Level.INFINITY));
-          }
+        if (!dataDefinition.matchesOnInterval() && constructor.getBody() instanceof IntervalElim) {
+          dataDefinition.setMatchesOnInterval();
+          inferredSort = inferredSort.max(new Sort(inferredSort.getPLevel(), Level.INFINITY));
         }
       }
     }
@@ -451,23 +443,6 @@ class DefinitionTypechecking {
 
     dataDefinition.setSort(universeOk && userSort != null ? userSort : inferredSort);
     return universeOk;
-  }
-
-  // TODO[newElim]: remove this function
-  private static boolean findMatchOnInterval(ElimTree elimTree) {
-    if (elimTree instanceof BranchElimTree) {
-      for (Map.Entry<BranchElimTree.Pattern, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        if (entry.getKey() == Prelude.LEFT || entry.getKey() == Prelude.RIGHT) {
-          return true;
-        }
-      }
-      for (Map.Entry<BranchElimTree.Pattern, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        if (findMatchOnInterval(entry.getValue())) {
-          return true;
-        }
-      }
-    }
-    return false;
   }
 
   /*
@@ -628,7 +603,10 @@ class DefinitionTypechecking {
     if (elimParams != null) {
       try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(visitor.getFreeBindings())) {
         try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(visitor.getContext())) {
-          constructor.setBody(new ElimTypechecking(visitor, constructor.getDataTypeExpression(Sort.STD), EnumSet.of(PatternTypechecking.Flag.ALLOW_INTERVAL)).typecheckElim(def, def.getArguments(), constructor.getParameters(), elimParams));
+          Body body = new ElimTypechecking(visitor, constructor.getDataTypeExpression(Sort.STD), EnumSet.of(PatternTypechecking.Flag.ALLOW_INTERVAL)).typecheckElim(def, def.getArguments(), constructor.getParameters(), elimParams);
+          if (ConditionsChecking.check(body)) {
+            constructor.setBody(body);
+          }
         }
       }
     }

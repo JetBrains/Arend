@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.core.definition;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.elimtree.Body;
-import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.Pattern;
 import com.jetbrains.jetpad.vclang.core.elimtree.Patterns;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
@@ -18,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class Constructor extends Definition implements Function, BranchElimTree.Pattern {
+public class Constructor extends Definition implements Function {
   private final DataDefinition myDataType;
   private DependentLink myParameters;
   private Patterns myPatterns;

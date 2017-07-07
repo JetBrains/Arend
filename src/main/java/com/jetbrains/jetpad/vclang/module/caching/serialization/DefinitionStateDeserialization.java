@@ -168,7 +168,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
       case INTERVAL_ELIM:
         List<Pair<Expression, Expression>> cases = new ArrayList<>(proto.getIntervalElim().getCaseCount());
         for (DefinitionProtos.Body.ExpressionPair pairProto : proto.getIntervalElim().getCaseList()) {
-          cases.add(new Pair<>(defDeserializer.readExpr(pairProto.getLeft()), defDeserializer.readExpr(pairProto.getRight())));
+          cases.add(new Pair<>(pairProto.hasLeft() ? defDeserializer.readExpr(pairProto.getLeft()) : null, pairProto.hasRight() ? defDeserializer.readExpr(pairProto.getRight()) : null));
         }
         ElimTree elimTree = null;
         if (proto.getIntervalElim().hasOtherwise()) {

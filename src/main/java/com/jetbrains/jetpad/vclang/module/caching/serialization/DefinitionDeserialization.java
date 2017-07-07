@@ -195,14 +195,11 @@ class DefinitionDeserialization {
   ElimTree readElimTree(ExpressionProtos.ElimTree proto) throws DeserializationError {
     switch (proto.getKindCase()) {
       case BRANCH: {
-        Map<BranchElimTree.Pattern, ElimTree> children = new HashMap<>();
+        Map<Constructor, ElimTree> children = new HashMap<>();
         for (Map.Entry<Integer, ExpressionProtos.ElimTree> entry : proto.getBranch().getClausesMap().entrySet()) {
           children.put(myCalltargetProvider.getCalltarget(entry.getKey(), Constructor.class), readElimTree(entry.getValue()));
         }
-        if (proto.getBranch().hasOtherwiseClause()) {
-          children.put(BranchElimTree.Pattern.ANY, readElimTree(proto.getBranch().getOtherwiseClause()));
-        }
-        return new BranchElimTree(children.isEmpty() ? null : readSort(proto.getBranch().getSortArgument()), children.isEmpty() ? null : readExprList(proto.getBranch().getDataArgumentsList()), readParameters(proto.getParamList()), children);
+        return new BranchElimTree(readParameters(proto.getParamList()), children.isEmpty() ? null : readSort(proto.getBranch().getSortArgument()), children.isEmpty() ? null : readExprList(proto.getBranch().getDataArgumentsList()), children);
       }
       case LEAF:
         return new LeafElimTree(readParameters(proto.getParamList()), readExpr(proto.getLeaf().getExpr()));

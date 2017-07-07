@@ -28,7 +28,7 @@ public class PatternTypechecking {
   private final EnumSet<Flag> myFlags;
   private Map<Abstract.ReferableSourceNode, Binding> myContext;
 
-  public enum Flag { ALLOW_INTERVAL, HAS_THIS, CHECK_COVERAGE, IS_FINAL }
+  public enum Flag { ALLOW_INTERVAL, HAS_THIS, CHECK_COVERAGE, CONTEXT_FREE }
 
   public PatternTypechecking(LocalErrorReporter errorReporter, EnumSet<Flag> flags) {
     myErrorReporter = errorReporter;
@@ -90,7 +90,7 @@ public class PatternTypechecking {
 
   public Pair<List<Pattern>, List<Expression>> typecheckPatterns(List<? extends Abstract.Pattern> patterns, List<? extends Abstract.Argument> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Abstract.SourceNode sourceNode, CheckTypeVisitor visitor) {
     myContext = visitor.getContext();
-    if (myFlags.contains(Flag.IS_FINAL)) {
+    if (myFlags.contains(Flag.CONTEXT_FREE)) {
       myContext.clear();
     }
 
@@ -146,7 +146,7 @@ public class PatternTypechecking {
         }
       }
 
-      if (myFlags.contains(Flag.IS_FINAL)) {
+      if (myFlags.contains(Flag.CONTEXT_FREE)) {
         visitor.getFreeBindings().clear();
       }
       collectBindings(result.proj1, visitor.getFreeBindings());

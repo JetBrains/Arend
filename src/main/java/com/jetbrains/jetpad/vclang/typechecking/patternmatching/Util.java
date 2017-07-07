@@ -60,10 +60,8 @@ public class Util {
         }
       } else {
         BranchElimTree branchElimTree = (BranchElimTree) elimTree;
-        for (Map.Entry<BranchElimTree.Pattern, ElimTree> entry : branchElimTree.getChildren()) {
-          if (entry.getKey() instanceof Constructor) {
-            myStack.push(new ConstructorClauseElem(branchElimTree.getSortArgument(), ((Constructor) entry.getKey()).matchDataTypeArguments(branchElimTree.getDataArguments()), (Constructor) entry.getKey()));
-          }
+        for (Map.Entry<Constructor, ElimTree> entry : branchElimTree.getChildren()) {
+          myStack.push(new ConstructorClauseElem(branchElimTree.getSortArgument(), entry.getKey().matchDataTypeArguments(branchElimTree.getDataArguments()), entry.getKey()));
           walk(entry.getValue());
           if (entry.getKey() instanceof Constructor) {
             myStack.pop();

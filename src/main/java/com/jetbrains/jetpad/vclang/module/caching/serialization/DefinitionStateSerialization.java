@@ -160,9 +160,14 @@ public class DefinitionStateSerialization {
       DefinitionProtos.Body.IntervalElim.Builder intervalBuilder = DefinitionProtos.Body.IntervalElim.newBuilder();
       intervalBuilder.addAllParam(defSerializer.writeParameters(intervalElim.getParameters()));
       for (Pair<Expression, Expression> pair : intervalElim.getCases()) {
-        intervalBuilder.addCase(DefinitionProtos.Body.ExpressionPair.newBuilder()
-          .setLeft(defSerializer.writeExpr(pair.proj1))
-          .setRight(defSerializer.writeExpr(pair.proj2)));
+        DefinitionProtos.Body.ExpressionPair.Builder pairBuilder = DefinitionProtos.Body.ExpressionPair.newBuilder();
+        if (pair.proj1 != null) {
+          pairBuilder.setLeft(defSerializer.writeExpr(pair.proj1));
+        }
+        if (pair.proj2 != null) {
+          pairBuilder.setRight(defSerializer.writeExpr(pair.proj2));
+        }
+        intervalBuilder.addCase(pairBuilder);
       }
       if (intervalElim.getOtherwise() != null) {
         intervalBuilder.setOtherwise(defSerializer.writeElimTree(intervalElim.getOtherwise()));

@@ -165,13 +165,15 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
             link = link.getNext();
           }
 
+          Expression result;
           if (arg.toConCall().getDefinition() == Prelude.LEFT) {
-            return elim.getCases().get(i - i0).proj1.subst(substitution).accept(this, mode);
+            result = elim.getCases().get(i - i0).proj1;
+          } else if (arg.toConCall().getDefinition() == Prelude.RIGHT) {
+            result = elim.getCases().get(i - i0).proj2;
+          } else {
+            throw new IllegalStateException();
           }
-          if (arg.toConCall().getDefinition() == Prelude.RIGHT) {
-            return elim.getCases().get(i - i0).proj2.subst(substitution).accept(this, mode);
-          }
-          throw new IllegalStateException();
+          return result == null ? applyDefCall(expr, mode) : result.subst(substitution).accept(this, mode);
         }
       }
       elimTree = elim.getOtherwise();
@@ -208,27 +210,18 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
 
       Expression argument = stack.peek().accept(this, Mode.WHNF);
-      if (argument.toConCall() != null) {
-        ElimTree newElimTree = ((BranchElimTree) elimTree).getChild(argument.toConCall().getDefinition());
-        if (newElimTree == null) {
-          newElimTree = ((BranchElimTree) elimTree).getChild(BranchElimTree.Pattern.ANY);
-          if (newElimTree == null) {
-            break;
-          }
-          stack.set(stack.size() - 1, argument);
-        } else {
-          stack.pop();
-          for (int i = argument.toConCall().getDefCallArguments().size() - 1; i >= 0; i--) {
-            stack.push(argument.toConCall().getDefCallArguments().get(i));
-          }
-        }
-        elimTree = newElimTree;
-      } else {
-        elimTree = ((BranchElimTree) elimTree).getChild(BranchElimTree.Pattern.ANY);
-        if (elimTree == null) {
-          break;
-        }
-        stack.set(stack.size() - 1, argument);
+      if (argument.toConCall() == null) {
+        break;
+      }
+
+      elimTree = ((BranchElimTree) elimTree).getChild(argument.toConCall().getDefinition());
+      if (elimTree == null) {
+        break;
+      }
+
+      stack.pop();
+      for (int i = argument.toConCall().getDefCallArguments().size() - 1; i >= 0; i--) {
+        stack.push(argument.toConCall().getDefCallArguments().get(i));
       }
     }
 

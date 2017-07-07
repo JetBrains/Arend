@@ -160,7 +160,6 @@ message ElimTree {
         Sort sortArgument = 3;
         repeated Expression dataArguments = 4;
         map<int32, ElimTree> clauses = 1;
-        ElimTree otherwise_clause = 2;
     }
 }
 

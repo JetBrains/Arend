@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVaria
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
+import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
@@ -91,7 +92,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       BranchElimTree branchElimTree2 = (BranchElimTree) elimTree2;
       if (branchElimTree1.getChildren().size() == branchElimTree2.getChildren().size()) {
         ok = true;
-        for (Map.Entry<BranchElimTree.Pattern, ElimTree> entry : branchElimTree1.getChildren()) {
+        for (Map.Entry<Constructor, ElimTree> entry : branchElimTree1.getChildren()) {
           ElimTree elimTree = branchElimTree2.getChild(entry.getKey());
           if (elimTree == null) {
             ok = false;

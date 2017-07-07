@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.IntervalElim;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
@@ -19,6 +20,7 @@ import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
+import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -78,31 +80,25 @@ public class Prelude {
       DependentLink atParams = AT.getParameters().subst(new ExprSubstitution(), LevelSubstitution.EMPTY, 3);
       SingleDependentLink intervalParam = new TypedSingleDependentLink(true, "i", ExpressionFactory.Interval());
       DependentLink pathParam = parameter("f", new PiExpression(Sort.STD, intervalParam, new AppExpression(new ReferenceExpression(atParams), new ReferenceExpression(intervalParam))));
-      DependentLink iParam = parameter("i", ExpressionFactory.Interval());
-      Map<BranchElimTree.Pattern, ElimTree> children = new HashMap<>();
-      Map<BranchElimTree.Pattern, ElimTree> anyChildren = new HashMap<>();
-      anyChildren.put(LEFT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(atParams.getNext())));
-      anyChildren.put(RIGHT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(atParams.getNext().getNext())));
-      Map<BranchElimTree.Pattern, ElimTree> pathChildren = new HashMap<>(anyChildren);
-      pathChildren.put(BranchElimTree.Pattern.ANY, new LeafElimTree(iParam, new AppExpression(new ReferenceExpression(pathParam), new ReferenceExpression(iParam))));
-      children.put(PATH_CON, new BranchElimTree(Sort.STD, Collections.emptyList(), pathParam, pathChildren));
-      children.put(BranchElimTree.Pattern.ANY, new BranchElimTree(Sort.STD, Collections.emptyList(), parameter("p", new DataCallExpression(PATH, Sort.STD, Arrays.asList(new ReferenceExpression(atParams), new ReferenceExpression(atParams.getNext()), new ReferenceExpression(atParams.getNext().getNext())))), anyChildren));
-      AT.setBody(new BranchElimTree(Sort.STD, Arrays.asList(new ReferenceExpression(atParams), new ReferenceExpression(atParams.getNext()), new ReferenceExpression(atParams.getNext().getNext())), atParams, children));
+      pathParam.setNext(parameter("i", ExpressionFactory.Interval()));
+      Map<Constructor, ElimTree> children = Collections.singletonMap(PATH_CON, new LeafElimTree(pathParam, new AppExpression(new ReferenceExpression(pathParam), new ReferenceExpression(pathParam.getNext()))));
+      ElimTree otherwise = new BranchElimTree(atParams, Sort.STD, Arrays.asList(new ReferenceExpression(atParams), new ReferenceExpression(atParams.getNext()), new ReferenceExpression(atParams.getNext().getNext())), children);
+      AT.setBody(new IntervalElim(AT.getParameters(), Collections.singletonList(new Pair<>(new ReferenceExpression(AT.getParameters().getNext()), new ReferenceExpression(AT.getParameters().getNext().getNext()))), otherwise));
       AT.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     } else
     if (abstractDef.getName().equals("coe")) {
       COERCE = (FunctionDefinition) definition;
       DependentLink coeParams = COERCE.getParameters().subst(new ExprSubstitution(), LevelSubstitution.EMPTY, 2);
-      COERCE.setBody(new BranchElimTree(Sort.STD, Collections.emptyList(), coeParams, Collections.singletonMap(LEFT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(coeParams.getNext())))));
+      COERCE.setBody(new BranchElimTree(coeParams, Sort.STD, Collections.emptyList(), Collections.singletonMap(LEFT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(coeParams.getNext())))));
       COERCE.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     } else
     if (abstractDef.getName().equals("iso")) {
       ISO = (FunctionDefinition) definition;
       DependentLink isoParams = ISO.getParameters().subst(new ExprSubstitution(), LevelSubstitution.EMPTY, 6);
-      Map<BranchElimTree.Pattern, ElimTree> children = new HashMap<>();
+      Map<Constructor, ElimTree> children = new HashMap<>();
       children.put(LEFT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(isoParams)));
       children.put(RIGHT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(isoParams.getNext())));
-      ISO.setBody(new BranchElimTree(Sort.STD, Collections.emptyList(), isoParams, children));
+      ISO.setBody(new BranchElimTree(isoParams, Sort.STD, Collections.emptyList(), children));
       ISO.setResultType(new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR))));
       ISO.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     } else
