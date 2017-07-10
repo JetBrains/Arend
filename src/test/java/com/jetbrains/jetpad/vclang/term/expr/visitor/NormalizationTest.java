@@ -56,7 +56,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     Map<Constructor, ElimTree> plusChildren = new HashMap<>();
     plusChildren.put(Prelude.ZERO, new LeafElimTree(yPlus, Ref(yPlus)));
     plusChildren.put(Prelude.SUC, new LeafElimTree(xPlus, Suc(FunCall(plus, Sort.SET0, Ref(xPlus), Ref(yPlus)))));
-    plus.setBody(new BranchElimTree(EmptyDependentLink.getInstance(), Sort.STD, Collections.emptyList(), plusChildren));
+    plus.setBody(new BranchElimTree(EmptyDependentLink.getInstance(), plusChildren));
     plus.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
     DependentLink xMul = param("x", Nat());
@@ -68,7 +68,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     Map<Constructor, ElimTree> mulChildren = new HashMap<>();
     mulChildren.put(Prelude.ZERO, new LeafElimTree(yMul, Zero()));
     mulChildren.put(Prelude.SUC, new LeafElimTree(xMul, FunCall(plus, Sort.SET0, Ref(yMul), FunCall(mul, Sort.SET0, Ref(xMul), Ref(yMul)))));
-    mul.setBody(new BranchElimTree(EmptyDependentLink.getInstance(), Sort.STD, Collections.emptyList(), mulChildren));
+    mul.setBody(new BranchElimTree(EmptyDependentLink.getInstance(), mulChildren));
     mul.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
     DependentLink xFac = param("x", Nat());
@@ -79,7 +79,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     Map<Constructor, ElimTree> facChildren = new HashMap<>();
     facChildren.put(Prelude.ZERO, new LeafElimTree(EmptyDependentLink.getInstance(), Suc(Zero())));
     facChildren.put(Prelude.SUC, new LeafElimTree(xFac, FunCall(mul, Sort.SET0, Suc(Ref(xFac)), FunCall(fac, Sort.SET0, Ref(xFac)))));
-    fac.setBody(new BranchElimTree(EmptyDependentLink.getInstance(), Sort.STD, Collections.emptyList(), facChildren));
+    fac.setBody(new BranchElimTree(EmptyDependentLink.getInstance(), facChildren));
     fac.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
     DependentLink zNElim = param("z", Nat());
@@ -93,7 +93,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     Map<Constructor, ElimTree> nelimChildren = new HashMap<>();
     nelimChildren.put(Prelude.ZERO, new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nelimParams)));
     nelimChildren.put(Prelude.SUC, new LeafElimTree(xNElim, Apps(Ref(nelimParams.getNext()), Ref(xNElim), FunCall(nelim, Sort.SET0, Ref(nelimParams), Ref(nelimParams.getNext()), Ref(xNElim)))));
-    nelim.setBody(new BranchElimTree(nelimParams, Sort.STD, Collections.emptyList(), nelimChildren));
+    nelim.setBody(new BranchElimTree(nelimParams, nelimChildren));
     nelim.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
   }
 

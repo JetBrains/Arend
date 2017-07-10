@@ -157,8 +157,6 @@ message ElimTree {
         Expression expr = 1;
     }
     message Branch {
-        Sort sortArgument = 3;
-        repeated Expression dataArguments = 4;
         map<int32, ElimTree> clauses = 1;
     }
 }

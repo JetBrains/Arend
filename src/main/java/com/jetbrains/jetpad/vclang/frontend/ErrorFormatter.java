@@ -132,13 +132,13 @@ public class ErrorFormatter {
         .append("  Actual: ");
       ((ExpressionMismatchError) error).actual.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, text.length());
     } else if (error instanceof ConditionsError) {
-      builder.append(((ConditionsError) error).expr1)
-        .append(" evaluates to ")
-        .append(((ConditionsError) error).evaluatedExpr1)
-        .append('\n')
-        .append(((ConditionsError) error).expr2)
-        .append(" evaluates to ")
-        .append(((ConditionsError) error).evaluatedExpr2);
+      ((ConditionsError) error).expr1.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0);
+      builder.append(" evaluates to ");
+      ((ConditionsError) error).evaluatedExpr1.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0);
+      builder.append('\n');
+      ((ConditionsError) error).expr2.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0);
+      builder.append(" evaluates to ");
+      ((ConditionsError) error).evaluatedExpr2.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0);
     } else if (error instanceof SolveEquationError) {
       String text = "1st expression: ";
       builder.append(text);

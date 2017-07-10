@@ -199,7 +199,7 @@ class DefinitionDeserialization {
         for (Map.Entry<Integer, ExpressionProtos.ElimTree> entry : proto.getBranch().getClausesMap().entrySet()) {
           children.put(myCalltargetProvider.getCalltarget(entry.getKey(), Constructor.class), readElimTree(entry.getValue()));
         }
-        return new BranchElimTree(readParameters(proto.getParamList()), children.isEmpty() ? null : readSort(proto.getBranch().getSortArgument()), children.isEmpty() ? null : readExprList(proto.getBranch().getDataArgumentsList()), children);
+        return new BranchElimTree(readParameters(proto.getParamList()), children);
       }
       case LEAF:
         return new LeafElimTree(readParameters(proto.getParamList()), readExpr(proto.getLeaf().getExpr()));

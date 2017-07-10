@@ -2,7 +2,10 @@ package com.jetbrains.jetpad.vclang.typechecking.patternmatching;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
-import com.jetbrains.jetpad.vclang.core.elimtree.*;
+import com.jetbrains.jetpad.vclang.core.elimtree.BindingPattern;
+import com.jetbrains.jetpad.vclang.core.elimtree.Body;
+import com.jetbrains.jetpad.vclang.core.elimtree.IntervalElim;
+import com.jetbrains.jetpad.vclang.core.elimtree.Pattern;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
@@ -10,7 +13,6 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ConditionsError;
@@ -25,7 +27,6 @@ import java.util.stream.Collectors;
 public class ConditionsChecking {
   public static boolean check(Body body, List<ElimTypechecking.ClauseData> clauses, Definition definition, LocalErrorReporter errorReporter) {
     boolean ok;
-    ElimTree elimTree;
     if (body instanceof IntervalElim) {
       ok = checkIntervals((IntervalElim) body, definition, errorReporter);
       for (ElimTypechecking.ClauseData clause : clauses) {
@@ -33,13 +34,17 @@ public class ConditionsChecking {
           ok = false;
         }
       }
-      elimTree = ((IntervalElim) body).getOtherwise();
     } else {
       ok = true;
-      elimTree = (ElimTree) body;
     }
 
-    return checkElimTree(elimTree, errorReporter) && ok;
+    for (ElimTypechecking.ClauseData clause : clauses) {
+      if (!checkClause(clause, body, errorReporter)) {
+        ok = false;
+      }
+    }
+
+    return ok;
   }
 
   private static boolean checkIntervals(IntervalElim elim, Definition definition, LocalErrorReporter errorReporter) {
@@ -125,7 +130,8 @@ public class ConditionsChecking {
     return true;
   }
 
-  private static boolean checkElimTree(ElimTree elimTree, ErrorReporter errorReporter) {
+  private static boolean checkClause(ElimTypechecking.ClauseData clause, Body body, LocalErrorReporter errorReporter) {
+
     return true;
   }
 }

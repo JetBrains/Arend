@@ -304,7 +304,7 @@ public class ElimTest extends TypeCheckingTestCase {
     Map<Constructor, ElimTree> children = new HashMap<>();
     children.put(Prelude.ZERO, new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nParam)));
     children.put(Prelude.SUC, new LeafElimTree(param("m", Nat()), Ref(nParam)));
-    assertEquals(new BranchElimTree(nParam, Sort.STD, Collections.emptyList(), children), def.getBody());
+    assertEquals(new BranchElimTree(nParam, children), def.getBody());
   }
 
   @Test
@@ -322,7 +322,7 @@ public class ElimTest extends TypeCheckingTestCase {
     children.put(dataDef.getConstructor("A"), new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nParam)));
     children.put(dataDef.getConstructor("B"), new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nParam)));
     children.put(dataDef.getConstructor("C"), new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nParam)));
-    assertEquals(new BranchElimTree(nParam, Sort.STD, Collections.emptyList(), children), def.getBody());
+    assertEquals(new BranchElimTree(nParam, children), def.getBody());
   }
 
   @Test

@@ -6,7 +6,10 @@ import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.elimtree.*;
-import com.jetbrains.jetpad.vclang.core.expr.*;
+import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
+import com.jetbrains.jetpad.vclang.core.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.GetTypeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
@@ -300,7 +303,7 @@ public class ElimTypechecking {
         Pattern pattern = clauseData.patterns.get(index);
         if (pattern instanceof EmptyPattern) {
           myUnusedClauses.remove(clauseData.clause);
-          return new BranchElimTree(vars, null, null, Collections.emptyMap());
+          return new BranchElimTree(vars, Collections.emptyMap());
         }
         if (conClauseData == null && pattern instanceof ConstructorPattern) {
           conClauseData = clauseData;
@@ -311,9 +314,8 @@ public class ElimTypechecking {
       ConstructorPattern someConPattern = (ConstructorPattern) conClauseData.patterns.get(index);
       List<ConCallExpression> conCalls = null;
       List<Constructor> constructors;
-      DataCallExpression dataCall = new GetTypeVisitor().visitConCall(new SubstVisitor(conClauseData.substitution, LevelSubstitution.EMPTY).visitConCall(someConPattern.getConCall(), null), null);
       if (someConPattern.getConstructor().getDataType().hasIndexedConstructors()) {
-        conCalls = dataCall.getMatchedConstructors();
+        conCalls = new GetTypeVisitor().visitConCall(new SubstVisitor(conClauseData.substitution, LevelSubstitution.EMPTY).visitConCall(someConPattern.getConCall(), null), null).getMatchedConstructors();
         if (conCalls == null) {
           myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", conClauseData.clause));
           myOK = false;
@@ -324,7 +326,7 @@ public class ElimTypechecking {
         constructors = someConPattern.getConstructor().getDataType().getConstructors();
       }
 
-      DataDefinition dataType = dataCall.getDefinition();
+      DataDefinition dataType = someConPattern.getConstructor().getDataType();
       if (dataType == Prelude.INTERVAL) {
         myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Pattern matching on the interval is not allowed here", conClauseData.clause));
         myOK = false;
@@ -429,7 +431,7 @@ public class ElimTypechecking {
         myContext.pop();
       }
 
-      return new BranchElimTree(vars, dataCall.getSortArgument(), dataCall.getDefCallArguments(), children);
+      return new BranchElimTree(vars, children);
     }
   }
 

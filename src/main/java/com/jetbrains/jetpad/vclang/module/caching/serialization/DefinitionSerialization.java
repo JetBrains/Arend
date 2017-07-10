@@ -210,14 +210,6 @@ class DefinitionSerialization {
       BranchElimTree branchElimTree = (BranchElimTree) elimTree;
       ExpressionProtos.ElimTree.Branch.Builder branchBuilder = ExpressionProtos.ElimTree.Branch.newBuilder();
 
-      if (branchElimTree.getSortArgument() != null) {
-        branchBuilder.setSortArgument(writeSort(branchElimTree.getSortArgument()));
-      }
-      if (branchElimTree.getDataArguments() != null) {
-        for (Expression arg : branchElimTree.getDataArguments()) {
-          branchBuilder.addDataArguments(arg.accept(myVisitor, null));
-        }
-      }
       for (Map.Entry<Constructor, ElimTree> entry : branchElimTree.getChildren()) {
         branchBuilder.putClauses(myCalltargetIndexProvider.getDefIndex(entry.getKey()), writeElimTree(entry.getValue()));
       }
