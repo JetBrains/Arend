@@ -109,7 +109,7 @@ public class ElimTypechecking {
         hasNonIntervals = true;
         break;
       }
-      if (hasNonIntervals) {
+      if (hasNonIntervals || intervals == 0) {
         nonIntervalClauses.add(clause);
       } else {
         if (intervals > 1) {
@@ -185,25 +185,43 @@ public class ElimTypechecking {
 
       for (ClauseData clauseData : clauseDataList) {
         if (clauseData.patterns.get(i) instanceof ConstructorPattern) {
+          boolean found = false;
           Constructor constructor = ((ConstructorPattern) clauseData.patterns.get(i)).getConstructor();
           if (constructor == Prelude.LEFT) {
             if (left == null) {
-              left = clauseData.expression;
-              myUnusedClauses.remove(clauseData.clause);
-              if (right != null) {
-                break;
-              }
+              found = true;
             }
           } else if (constructor == Prelude.RIGHT) {
             if (right == null) {
-              right = clauseData.expression;
-              myUnusedClauses.remove(clauseData.clause);
-              if (left != null) {
-                break;
-              }
+              found = true;
             }
           } else {
             throw new IllegalStateException();
+          }
+
+          if (found) {
+            myUnusedClauses.remove(clauseData.clause);
+
+            ExprSubstitution substitution = new ExprSubstitution();
+            DependentLink oldLink = new Patterns(clauseData.patterns).getFirstBinding();
+            DependentLink newLink = parameters;
+            for (int j = 0; newLink.hasNext(); j++, newLink = newLink.getNext()) {
+              if (j == i) {
+                continue;
+              }
+              substitution.add(oldLink, new ReferenceExpression(newLink));
+              oldLink = oldLink.getNext();
+            }
+
+            if (constructor == Prelude.LEFT) {
+              left = clauseData.expression.subst(substitution);
+            } else {
+              right = clauseData.expression.subst(substitution);
+            }
+          }
+
+          if (left != null && right != null) {
+            break;
           }
         }
       }

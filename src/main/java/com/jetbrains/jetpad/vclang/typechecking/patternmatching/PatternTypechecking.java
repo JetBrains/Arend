@@ -28,7 +28,7 @@ public class PatternTypechecking {
   private final EnumSet<Flag> myFlags;
   private Map<Abstract.ReferableSourceNode, Binding> myContext;
 
-  public enum Flag { ALLOW_INTERVAL, HAS_THIS, CHECK_COVERAGE, CONTEXT_FREE }
+  public enum Flag { ALLOW_INTERVAL, ALLOW_CONDITIONS, HAS_THIS, CHECK_COVERAGE, CONTEXT_FREE }
 
   public PatternTypechecking(LocalErrorReporter errorReporter, EnumSet<Flag> flags) {
     myErrorReporter = errorReporter;
@@ -262,6 +262,10 @@ public class PatternTypechecking {
         return null;
       }
       ConCallExpression conCall = conCalls.get(0);
+      if (!myFlags.contains(Flag.ALLOW_CONDITIONS) && conCall.getDefinition().getBody() != null) {
+        myErrorReporter.report(new LocalTypeCheckingError("Pattern matching on a constructor with conditions is not allowed here", pattern));
+        return null;
+      }
 
       ExprSubstitution substitution = new ExprSubstitution();
       int i = 0;
@@ -345,6 +349,9 @@ public class PatternTypechecking {
         TypedDependentLink newLeaf = new TypedDependentLink(leaf.isExplicit(), leaf.getName(), leaf.getType(), next);
         substitution.add(leaf, new ReferenceExpression(newLeaf));
         leaves.set(i, newLeaf);
+        if (i > 0) {
+          leaves.get(i - 1).setNext(newLeaf);
+        }
       }
     }
 

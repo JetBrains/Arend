@@ -45,7 +45,7 @@ public class IntervalTest extends TypeCheckingTestCase {
       "  | suc _, _, _ => 0\n" +
       "  | _, left, _ => 0\n" +
       "  | _, _, right => 0\n" +
-      "\\function g (n : Nat) (k : I) : f n left k = f n k right => path (\\lam _ => 0)", 2);
+      "\\function g (n : Nat) (k : I) : f n left k = f n k right => path (\\lam _ => 0)", 1);
   }
 
   @Test
@@ -104,7 +104,7 @@ public class IntervalTest extends TypeCheckingTestCase {
       "  | _, suc _, _ => 0\n" +
       "  | _, _, left => 0\n" +
       "  | _, _, right => 0\n" +
-      "\\function g (n : Nat) : f zero n left = 0 => path (\\lam _ => 0)");
+      "\\function g (n : Nat) (i : I) : f zero n i = 0 => path (\\lam _ => 0)");
   }
 
   @Test
@@ -116,6 +116,24 @@ public class IntervalTest extends TypeCheckingTestCase {
       "  | _, suc _, _ => 0\n" +
       "  | _, _, left => 0\n" +
       "  | _, _, right => 0\n" +
-      "\\function g (n : Nat) : f n zero left = 0 => path (\\lam _ => 0)", 1);
+      "\\function g (n : Nat) (i : I) : f n zero i = 0 => path (\\lam _ => 0)", 1);
+  }
+
+  @Test
+  public void testElimOnInterval() {
+    typeCheckDef(
+      "\\function test (i : I) : Nat\n" +
+      "  | left => 0\n" +
+      "  | right => 0\n"  +
+      "  | _ => 0");
+  }
+
+  @Test
+  public void testElimOnIntervalError() {
+    typeCheckDef(
+      "\\function test (i : I) : Nat\n" +
+      "  | left => 0\n" +
+      "  | right => 0\n"  +
+      "  | _ => 1", 1);
   }
 }

@@ -156,7 +156,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       for (int i = i0; i < expr.getDefCallArguments().size(); i++) {
         Expression arg = expr.getDefCallArguments().get(i).accept(this, Mode.WHNF);
         if (arg.toConCall() != null) {
-          ExprSubstitution substitution = new ExprSubstitution();
+          ExprSubstitution substitution = getDataTypeArgumentsSubstitution(expr);
           DependentLink link = elim.getParameters();
           for (int j = 0; j < expr.getDefCallArguments().size(); j++) {
             if (j != i) {
@@ -185,15 +185,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return applyDefCall(expr, mode);
     }
 
-    ExprSubstitution substitution = new ExprSubstitution();
-    if (expr instanceof ConCallExpression) {
-      int i = 0;
-      List<Expression> args = ((ConCallExpression) expr).getDataTypeArguments();
-      for (DependentLink link = ((ConCallExpression) expr).getDefinition().getDataTypeParameters(); link.hasNext(); link = link.getNext()) {
-        substitution.add(link, args.get(i++));
-      }
-    }
-
+    ExprSubstitution substitution = getDataTypeArgumentsSubstitution(expr);
     Stack<Expression> stack = new Stack<>();
     for (int i = expr.getDefCallArguments().size() - 1; i >= 0; i--) {
       stack.push(expr.getDefCallArguments().get(i));
@@ -230,6 +222,18 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
 
     return result == null ? applyDefCall(expr, mode) : result.accept(this, mode);
+  }
+
+  private ExprSubstitution getDataTypeArgumentsSubstitution(CallableCallExpression expr) {
+    ExprSubstitution substitution = new ExprSubstitution();
+    if (expr instanceof ConCallExpression) {
+      int i = 0;
+      List<Expression> args = ((ConCallExpression) expr).getDataTypeArguments();
+      for (DependentLink link = ((ConCallExpression) expr).getDefinition().getDataTypeParameters(); link.hasNext(); link = link.getNext()) {
+        substitution.add(link, args.get(i++));
+      }
+    }
+    return substitution;
   }
 
   @Override

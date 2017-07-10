@@ -326,16 +326,6 @@ public class ElimTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void testElimOnIntervalError() {
-    typeCheckDef(
-        "\\function test (i : I) : Nat => \\elim i\n" +
-        "  | left => 0\n" +
-        "  | right => 1\n"  +
-        "  | _ => 0\n"
-    , 1);
-  }
-
-  @Test
   public void emptyAfterAFewError() {
     typeCheckClass(
         "\\data D Nat \\with | zero => d\n" +
@@ -409,5 +399,35 @@ public class ElimTest extends TypeCheckingTestCase {
   @Test
   public void numberElim2() {
     typeCheckClass("\\function f (n : Nat) : Nat => \\elim n | 0 => 1 | 1 => 2 | suc (suc (suc n)) => n", 1);
+  }
+
+  @Test
+  public void threePatterns() {
+    typeCheckClass(
+      "\\function f (n m k : Nat) : Nat\n" +
+      "  | zero, _, zero => 1\n" +
+      "  | _, zero, suc _ => 2\n" +
+      "  | _, _, _ => 0\n" +
+      "\\function g (n : Nat) : f 0 n 0 = 1 => path (\\lam _ => 1)", 1);
+  }
+
+  @Test
+  public void threePatterns2() {
+    typeCheckClass(
+      "\\function f (n m k : Nat) : Nat\n" +
+      "  | zero, zero, _ => 1\n" +
+      "  | _, zero, zero => 2\n" +
+      "  | _, _, _ => 0\n" +
+      "\\function g (n : Nat) : f 0 0 n = 1 => path (\\lam _ => 1)", 1);
+  }
+
+  @Test
+  public void threePatternsError() {
+    typeCheckClass(
+      "\\function f (n m k : Nat) : Nat\n" +
+      "  | _, zero, zero => 1\n" +
+      "  | zero, zero, _ => 2\n" +
+      "  | _, _, _ => 0\n" +
+      "\\function g (n : Nat) : f 0 0 n = 2 => path (\\lam _ => 2)", 1);
   }
 }
