@@ -58,8 +58,6 @@ public abstract class Definition implements Variable, Callable, PrettyPrintable 
   @Override
   public abstract DefCallExpression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> args);
 
-  public abstract Expression getDefCall(Sort sortArgument, List<Expression> args);
-
   public ClassDefinition getThisClass() {
     return myThisClass;
   }

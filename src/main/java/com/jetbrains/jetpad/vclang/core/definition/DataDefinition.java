@@ -131,9 +131,4 @@ public class DataDefinition extends Definition {
       return new DataCallExpression(this, sortArgument, args);
     }
   }
-
-  @Override
-  public DataCallExpression getDefCall(Sort sortArgument, List<Expression> args) {
-    return new DataCallExpression(this, sortArgument, args);
-  }
 }

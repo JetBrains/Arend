@@ -71,9 +71,4 @@ public class FunctionDefinition extends Definition implements Function {
       return new FunCallExpression(this, sortArgument, args);
     }
   }
-
-  @Override
-  public FunCallExpression getDefCall(Sort sortArgument, List<Expression> args) {
-    return new FunCallExpression(this, sortArgument, args);
-  }
 }

@@ -113,7 +113,7 @@ public class Constructor extends Definition implements Function {
       }
     }
 
-    return myDataType.getDefCall(sortArgument, arguments);
+    return myDataType.getDefCall(sortArgument, null, arguments);
   }
 
   @Override
@@ -154,10 +154,5 @@ public class Constructor extends Definition implements Function {
     }
     dataTypeArgs.addAll(args.subList(0, dataTypeArgsNumber));
     return new ConCallExpression(this, sortArgument, dataTypeArgs, args.subList(dataTypeArgsNumber, args.size()));
-  }
-
-  @Override
-  public ConCallExpression getDefCall(Sort sortArgument, List<Expression> args) {
-    throw new IllegalStateException();
   }
 }

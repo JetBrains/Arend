@@ -12,8 +12,6 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FieldCall;
-
 public class ClassField extends Definition {
   private TypedDependentLink myThisParameter;
   private Expression myType;
@@ -73,12 +71,6 @@ public class ClassField extends Definition {
   @Override
   public DefCallExpression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> args) {
     return new FieldCallExpression(this, thisExpr);
-  }
-
-  @Override
-  public Expression getDefCall(Sort sortArgument, List<Expression> args) {
-    assert args.size() == 1;
-    return FieldCall(this, args.get(0));
   }
 
   public void setBaseType(Expression type) {

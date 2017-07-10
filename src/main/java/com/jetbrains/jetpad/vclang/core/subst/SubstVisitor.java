@@ -36,7 +36,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     for (Expression arg : expr.getDefCallArguments()) {
       args.add(arg.accept(this, null));
     }
-    return expr.getDefinition().getDefCall(expr.getSortArgument().subst(myLevelSubstitution), args);
+    return expr.getDefinition().getDefCall(expr.getSortArgument().subst(myLevelSubstitution), null, args);
   }
 
   @Override
