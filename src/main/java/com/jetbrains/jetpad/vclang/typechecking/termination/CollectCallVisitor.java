@@ -5,16 +5,22 @@ import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.IntervalElim;
+import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.Pattern;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.typechecking.patternmatching.Util;
+import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ElimTypechecking;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.ProcessDefCallsVisitor;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
-  private Set<BaseCallMatrix<Definition>> myCollectedCalls;
+  private final Set<BaseCallMatrix<Definition>> myCollectedCalls;
   private final FunctionDefinition myDefinition;
   private final Set<? extends Definition> myCycle;
   private List<Expression> myVector;
@@ -23,14 +29,12 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
     assert cycle != null;
     myDefinition = def;
     myCycle = cycle;
-  }
-
-  public Set<BaseCallMatrix<Definition>> collect() {
-    if (myDefinition.getBody() == null) {
-      return Collections.emptySet();
-    }
     myCollectedCalls = new HashSet<>();
 
+    collectIntervals();
+  }
+
+  private void collectIntervals() {
     ElimTree elimTree;
     if (myDefinition.getBody() instanceof IntervalElim) {
       IntervalElim elim = (IntervalElim) myDefinition.getBody();
@@ -54,14 +58,23 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
       elimTree = (ElimTree) myDefinition.getBody();
     }
 
-    if (elimTree != null) {
-      Util.ElimTreeWalker walker = new Util.ElimTreeWalker((list, expr) -> {
-        myVector = list;
-        expr.accept(this, null);
-      });
-      walker.walk((ElimTree) myDefinition.getBody());
+    if (elimTree instanceof LeafElimTree) {
+      myVector = new ArrayList<>();
+      for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
+        myVector.add(new ReferenceExpression(link));
+      }
+      ((LeafElimTree) elimTree).getExpression().accept(this, null);
     }
+  }
 
+  public void collect(ElimTypechecking.ClauseData clause) {
+    if (clause.expression != null) {
+      myVector = clause.patterns.stream().map(Pattern::toExpression).collect(Collectors.toList());
+      clause.expression.accept(this, null);
+    }
+  }
+
+  public Set<BaseCallMatrix<Definition>> getResult() {
     return myCollectedCalls;
   }
 

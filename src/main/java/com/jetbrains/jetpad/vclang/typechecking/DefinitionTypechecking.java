@@ -46,7 +46,7 @@ import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.parameter;
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.typeOfFunctionArg;
 
 class DefinitionTypechecking {
-  static Definition typeCheckHeader(CheckTypeVisitor visitor, GlobalInstancePool instancePool, Abstract.Definition definition, Abstract.ClassDefinition enclosingClass) {
+  static Definition typecheckHeader(CheckTypeVisitor visitor, GlobalInstancePool instancePool, Abstract.Definition definition, Abstract.ClassDefinition enclosingClass) {
     LocalInstancePool localInstancePool = new LocalInstancePool();
     visitor.setClassViewInstancePool(new CompositeInstancePool(localInstancePool, instancePool));
     ClassDefinition typedEnclosingClass = enclosingClass == null ? null : (ClassDefinition) visitor.getTypecheckingState().getTypechecked(enclosingClass);
@@ -74,9 +74,9 @@ class DefinitionTypechecking {
     }
   }
 
-  static void typeCheckBody(Definition definition, CheckTypeVisitor exprVisitor, Set<DataDefinition> dataDefinitions) {
+  static List<ElimTypechecking.ClauseData> typecheckBody(Definition definition, CheckTypeVisitor exprVisitor, Set<DataDefinition> dataDefinitions) {
     if (definition instanceof FunctionDefinition) {
-      typeCheckFunctionBody((FunctionDefinition) definition, exprVisitor);
+      return typeCheckFunctionBody((FunctionDefinition) definition, exprVisitor);
     } else
     if (definition instanceof DataDefinition) {
       if (!typeCheckDataBody((DataDefinition) definition, exprVisitor, false, dataDefinitions)) {
@@ -85,9 +85,10 @@ class DefinitionTypechecking {
     } else {
       throw new IllegalStateException();
     }
+    return null;
   }
 
-  static Definition typeCheck(TypecheckerState state, GlobalInstancePool instancePool, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckingUnit unit, boolean recursive, LocalErrorReporter errorReporter) {
+  static List<ElimTypechecking.ClauseData> typecheck(TypecheckerState state, GlobalInstancePool instancePool, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckingUnit unit, boolean recursive, LocalErrorReporter errorReporter) {
     CheckTypeVisitor visitor = new CheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, new LinkedHashMap<>(), errorReporter, instancePool);
     ClassDefinition enclosingClass = unit.getEnclosingClass() == null ? null : (ClassDefinition) state.getTypechecked(unit.getEnclosingClass());
     Definition typechecked = state.getTypechecked(unit.getDefinition());
@@ -95,12 +96,12 @@ class DefinitionTypechecking {
     if (unit.getDefinition() instanceof Abstract.ClassDefinition) {
       ClassDefinition definition = typechecked != null ? (ClassDefinition) typechecked : new ClassDefinition((Abstract.ClassDefinition) unit.getDefinition());
       typeCheckClass(definition, enclosingClass, visitor);
-      return definition;
+      return null;
     } else
     if (unit.getDefinition() instanceof Abstract.ClassViewInstance) {
       FunctionDefinition definition = typechecked != null ? (FunctionDefinition) typechecked : new FunctionDefinition(unit.getDefinition());
       typeCheckClassViewInstance(definition, visitor);
-      return definition;
+      return null;
     }
 
     LocalInstancePool localInstancePool = new LocalInstancePool();
@@ -115,11 +116,10 @@ class DefinitionTypechecking {
           if (((Abstract.FunctionDefinition) unit.getDefinition()).getResultType() == null) {
             errorReporter.report(new LocalTypeCheckingError("Cannot infer the result type of a recursive function", unit.getDefinition()));
           }
-          return definition;
+          return null;
         }
       }
-      typeCheckFunctionBody(definition, visitor);
-      return definition;
+      return typeCheckFunctionBody(definition, visitor);
     } else
     if (unit.getDefinition() instanceof Abstract.DataDefinition) {
       DataDefinition definition = typechecked != null ? (DataDefinition) typechecked : new DataDefinition((Abstract.DataDefinition) unit.getDefinition());
@@ -127,7 +127,7 @@ class DefinitionTypechecking {
       if (definition.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
         typeCheckDataBody(definition, visitor, true, Collections.singleton(definition));
       }
-      return definition;
+      return null;
     } else {
       throw new IllegalStateException();
     }
@@ -230,7 +230,8 @@ class DefinitionTypechecking {
     typedDef.setStatus(paramsOk ? Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING : Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
   }
 
-  private static void typeCheckFunctionBody(FunctionDefinition typedDef, CheckTypeVisitor visitor) {
+  private static List<ElimTypechecking.ClauseData> typeCheckFunctionBody(FunctionDefinition typedDef, CheckTypeVisitor visitor) {
+    List<ElimTypechecking.ClauseData> clauses = null;
     Abstract.FunctionDefinition def = (Abstract.FunctionDefinition) typedDef.getAbstractDefinition();
     Abstract.FunctionBody body = def.getBody();
 
@@ -241,12 +242,17 @@ class DefinitionTypechecking {
         if (expectedType != null) {
           Abstract.ElimFunctionBody elimBody = (Abstract.ElimFunctionBody) body;
           List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), visitor);
-          Body typedBody = elimParams == null ? null : new ElimTypechecking(visitor, expectedType, EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.CONTEXT_FREE, PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(elimBody, def.getArguments(), typedDef.getParameters(), elimParams);
+          clauses = new ArrayList<>();
+          Body typedBody = elimParams == null ? null : new ElimTypechecking(visitor, expectedType, EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.CONTEXT_FREE, PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(elimBody, def.getArguments(), typedDef.getParameters(), elimParams, clauses);
           if (typedBody != null) {
-            typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-            if (ConditionsChecking.check(typedBody, typedDef, visitor.getErrorReporter())) {
-              typedDef.setBody(typedBody);
+            typedDef.setBody(typedBody);
+            if (ConditionsChecking.check(typedBody, clauses, typedDef, visitor.getErrorReporter())) {
+              typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+            } else {
+              typedDef.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
             }
+          } else {
+            clauses = null;
           }
         } else {
           if (def.getResultType() == null) {
@@ -260,11 +266,13 @@ class DefinitionTypechecking {
           if (expectedType == null) {
             typedDef.setResultType(termResult.type);
           }
+          clauses = Collections.emptyList();
         }
       }
     }
 
     typedDef.setStatus(typedDef.getResultType() == null ? Definition.TypeCheckingStatus.HEADER_HAS_ERRORS : typedDef.getBody() == null ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS);
+    return clauses;
   }
 
   private static void typeCheckDataHeader(DataDefinition dataDefinition, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
@@ -480,10 +488,10 @@ class DefinitionTypechecking {
     if (elimParams != null) {
       try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(visitor.getFreeBindings())) {
         try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(visitor.getContext())) {
-          Body body = new ElimTypechecking(visitor, constructor.getDataTypeExpression(Sort.STD), EnumSet.of(PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(def, def.getArguments(), constructor.getParameters(), elimParams);
-          if (ConditionsChecking.check(body, constructor, visitor.getErrorReporter())) {
-            constructor.setBody(body);
-          }
+          List<ElimTypechecking.ClauseData> clauses = new ArrayList<>();
+          Body body = new ElimTypechecking(visitor, constructor.getDataTypeExpression(Sort.STD), EnumSet.of(PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(def, def.getArguments(), constructor.getParameters(), elimParams, clauses);
+          constructor.setBody(body);
+          ConditionsChecking.check(body, clauses, constructor, visitor.getErrorReporter());
         }
       }
     }

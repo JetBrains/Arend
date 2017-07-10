@@ -2,9 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking.patternmatching;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
-import com.jetbrains.jetpad.vclang.core.elimtree.Body;
-import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
-import com.jetbrains.jetpad.vclang.core.elimtree.IntervalElim;
+import com.jetbrains.jetpad.vclang.core.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
@@ -13,6 +11,7 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ConditionsError;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
@@ -21,13 +20,19 @@ import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ConditionsChecking {
-  public static boolean check(Body body, Definition definition, LocalErrorReporter errorReporter) {
+  public static boolean check(Body body, List<ElimTypechecking.ClauseData> clauses, Definition definition, LocalErrorReporter errorReporter) {
     boolean ok;
     ElimTree elimTree;
     if (body instanceof IntervalElim) {
-      ok = checkInterval((IntervalElim) body, definition, errorReporter);
+      ok = checkIntervals((IntervalElim) body, definition, errorReporter);
+      for (ElimTypechecking.ClauseData clause : clauses) {
+        if (!checkIntervalClause((IntervalElim) body, clause, definition, errorReporter)) {
+          ok = false;
+        }
+      }
       elimTree = ((IntervalElim) body).getOtherwise();
     } else {
       ok = true;
@@ -37,7 +42,7 @@ public class ConditionsChecking {
     return checkElimTree(elimTree, errorReporter) && ok;
   }
 
-  private static boolean checkInterval(IntervalElim elim, Definition definition, LocalErrorReporter errorReporter) {
+  private static boolean checkIntervals(IntervalElim elim, Definition definition, LocalErrorReporter errorReporter) {
     DependentLink link = DependentLink.Helper.get(elim.getParameters(), DependentLink.Helper.size(elim.getParameters()) - elim.getCases().size());
     List<Pair<Expression, Expression>> cases = elim.getCases();
     for (int i = 0; i < cases.size(); i++) {
@@ -72,8 +77,52 @@ public class ConditionsChecking {
       for (DependentLink link3 = parameters; link3.hasNext(); link3 = link3.getNext()) {
         defCallArgs2.add(link3 == link2 ? (isLeft2 ? ExpressionFactory.Left() : ExpressionFactory.Right()) : new ReferenceExpression(link3));
       }
-      errorReporter.report(new ConditionsError(definition.getAbstractDefinition(), definition.getDefCall(Sort.STD, null, defCallArgs1), definition.getDefCall(Sort.STD, null, defCallArgs2), evaluatedExpr1, evaluatedExpr2));
+      errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, null, defCallArgs1), definition.getDefCall(Sort.STD, null, defCallArgs2), evaluatedExpr1, evaluatedExpr2, definition.getAbstractDefinition()));
     }
+  }
+
+  private static boolean checkIntervalClause(IntervalElim elim, ElimTypechecking.ClauseData clause, Definition definition, LocalErrorReporter errorReporter) {
+    boolean ok = true;
+    List<Pair<Expression, Expression>> cases = elim.getCases();
+    int prefixLength = DependentLink.Helper.size(elim.getParameters()) - elim.getCases().size();
+    for (int i = 0; i < cases.size(); i++) {
+      if (!checkIntervalClauseCondition(cases.get(i), true, elim.getParameters(), prefixLength + i, clause, definition, clause.clause, errorReporter)) {
+        ok = false;
+      }
+      if (!checkIntervalClauseCondition(cases.get(i), false, elim.getParameters(), prefixLength + i, clause, definition, clause.clause, errorReporter)) {
+        ok = false;
+      }
+    }
+    return ok;
+  }
+
+  private static boolean checkIntervalClauseCondition(Pair<Expression, Expression> pair, boolean isLeft, DependentLink parameters, int index, ElimTypechecking.ClauseData clause, Definition definition, Abstract.SourceNode sourceNode, LocalErrorReporter errorReporter) {
+    Expression expr = isLeft ? pair.proj1 : pair.proj2;
+    if (expr == null || clause.expression == null) {
+      return true;
+    }
+
+    ExprSubstitution substitution = new ExprSubstitution();
+    DependentLink link = parameters;
+    for (int i = 0; i < clause.patterns.size(); i++) {
+      if (i != index) {
+        substitution.add(link, clause.patterns.get(i).toExpression());
+      }
+      link = link.getNext();
+    }
+    Expression evaluatedExpr1 = expr.subst(substitution).normalize(NormalizeVisitor.Mode.NF);
+    Expression evaluatedExpr2 = clause.expression.subst(new ExprSubstitution(((BindingPattern) clause.patterns.get(index)).getBinding(), isLeft ? ExpressionFactory.Left() : ExpressionFactory.Right())).normalize(NormalizeVisitor.Mode.NF);
+    if (!CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null)) {
+      List<Expression> defCallArgs1 = new ArrayList<>();
+      int i = 0;
+      for (link = parameters; link.hasNext(); link = link.getNext(), i++) {
+        defCallArgs1.add(i == index ? (isLeft ? ExpressionFactory.Left() : ExpressionFactory.Right()) : new ReferenceExpression(link));
+      }
+      List<Expression> defCallArgs2 = clause.patterns.stream().map(Pattern::toExpression).collect(Collectors.toList());
+      errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, null, defCallArgs1), definition.getDefCall(Sort.STD, null, defCallArgs2), evaluatedExpr1, evaluatedExpr2, clause.clause));
+    }
+
+    return true;
   }
 
   private static boolean checkElimTree(ElimTree elimTree, ErrorReporter errorReporter) {

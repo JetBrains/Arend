@@ -34,7 +34,7 @@ public class IntervalTest extends TypeCheckingTestCase {
       "  | zero, _ => 0\n" +
       "  | suc _, _ => 1\n" +
       "  | _, left => 0\n" +
-      "  | _, right => 0", 1);
+      "  | _, right => 0", 2);
   }
 
   @Test
@@ -134,6 +134,6 @@ public class IntervalTest extends TypeCheckingTestCase {
       "\\function test (i : I) : Nat\n" +
       "  | left => 0\n" +
       "  | right => 0\n"  +
-      "  | _ => 1", 1);
+      "  | _ => 1", 2);
   }
 }

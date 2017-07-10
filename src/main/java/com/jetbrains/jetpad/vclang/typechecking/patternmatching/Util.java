@@ -2,13 +2,17 @@ package com.jetbrains.jetpad.vclang.typechecking.patternmatching;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.elimtree.*;
+import com.jetbrains.jetpad.vclang.core.elimtree.BindingPattern;
+import com.jetbrains.jetpad.vclang.core.elimtree.ConstructorPattern;
+import com.jetbrains.jetpad.vclang.core.elimtree.Pattern;
+import com.jetbrains.jetpad.vclang.core.elimtree.Patterns;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
-import java.util.*;
-import java.util.function.BiConsumer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class Util {
@@ -28,54 +32,11 @@ public class Util {
     List<Expression> dataArguments;
     public Constructor constructor;
 
-    ConstructorClauseElem(Sort sort, List<Expression> dataArguments, Constructor constructor) {
-      this.sort = sort;
-      this.dataArguments = dataArguments;
-      this.constructor = constructor;
-    }
-
     ConstructorClauseElem(Constructor constructor) {
       this.sort = Sort.STD;
       this.dataArguments = constructor.getDataTypeExpression(Sort.STD).getDefCallArguments();
       this.constructor = constructor;
     }
-  }
-
-  public static class ElimTreeWalker {
-    private final Stack<ClauseElem> myStack = new Stack<>();
-    private final BiConsumer<List<Expression>, Expression> myConsumer;
-
-    public ElimTreeWalker(BiConsumer<List<Expression>, Expression> consumer) {
-      myConsumer = consumer;
-    }
-
-    public void walk(ElimTree elimTree) {
-      for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
-        myStack.push(new PatternClauseElem(new BindingPattern(link)));
-      }
-      if (elimTree instanceof LeafElimTree) {
-        Expression expression = ((LeafElimTree) elimTree).getExpression();
-        if (expression != null) {
-          myConsumer.accept(unflattenClauses(new ArrayList<>(myStack)), expression);
-        }
-      } else {
-        BranchElimTree branchElimTree = (BranchElimTree) elimTree;
-        for (Map.Entry<Constructor, ElimTree> entry : branchElimTree.getChildren()) {
-          myStack.push(new ConstructorClauseElem(branchElimTree.getSortArgument(), entry.getKey().matchDataTypeArguments(branchElimTree.getDataArguments()), entry.getKey()));
-          walk(entry.getValue());
-          if (entry.getKey() instanceof Constructor) {
-            myStack.pop();
-          }
-        }
-      }
-      for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
-        myStack.pop();
-      }
-    }
-  }
-
-  static List<Expression> unflattenClauses(List<ClauseElem> clauseElems) {
-    return unflattenClauses(clauseElems, null, Collections.emptyList());
   }
 
   static List<Expression> unflattenClauses(List<ClauseElem> clauseElems, DependentLink parameters, List<DependentLink> elimParams) {

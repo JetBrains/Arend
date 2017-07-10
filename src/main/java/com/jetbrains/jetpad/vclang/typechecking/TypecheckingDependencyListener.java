@@ -16,6 +16,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.TerminationCheckErro
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import com.jetbrains.jetpad.vclang.typechecking.order.Ordering;
 import com.jetbrains.jetpad.vclang.typechecking.order.SCC;
+import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ElimTypechecking;
 import com.jetbrains.jetpad.vclang.typechecking.termination.DefinitionCallGraph;
 import com.jetbrains.jetpad.vclang.typechecking.termination.RecursiveBehavior;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.GlobalInstancePool;
@@ -148,7 +149,7 @@ class TypecheckingDependencyListener implements DependencyListener {
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
       LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter));
       CheckTypeVisitor visitor = new CheckTypeVisitor(myState, myStaticNsProvider, myDynamicNsProvider, new LinkedHashMap<>(), localErrorReporter, null);
-      Definition typechecked = DefinitionTypechecking.typeCheckHeader(visitor, new GlobalInstancePool(myState, myInstanceProvider), unit.getDefinition(), unit.getEnclosingClass());
+      Definition typechecked = DefinitionTypechecking.typecheckHeader(visitor, new GlobalInstancePool(myState, myInstanceProvider), unit.getDefinition(), unit.getEnclosingClass());
       if (typechecked.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
         mySuspensions.put(unit.getDefinition(), new Suspension(visitor, countingErrorReporter));
       }
@@ -186,6 +187,7 @@ class TypecheckingDependencyListener implements DependencyListener {
 
   private void typecheckBodies(List<Abstract.Definition> definitions, boolean headersAreOK) {
     Set<FunctionDefinition> functionDefinitions = new HashSet<>();
+    Map<FunctionDefinition, List<ElimTypechecking.ClauseData>> clausesMap = new HashMap<>();
     Set<DataDefinition> dataDefinitions = new HashSet<>();
     for (Abstract.Definition definition : definitions) {
       Definition typechecked = myState.getTypechecked(definition);
@@ -199,9 +201,10 @@ class TypecheckingDependencyListener implements DependencyListener {
       Suspension suspension = mySuspensions.remove(definition);
       if (headersAreOK && suspension != null) {
         Definition def = myState.getTypechecked(definition);
-        DefinitionTypechecking.typeCheckBody(def, suspension.visitor, dataDefinitions);
-        if (def instanceof FunctionDefinition) {
+        List<ElimTypechecking.ClauseData> clauses = DefinitionTypechecking.typecheckBody(def, suspension.visitor, dataDefinitions);
+        if (clauses != null) {
           functionDefinitions.add((FunctionDefinition) def);
+          clausesMap.put((FunctionDefinition) def, clauses);
         }
       }
 
@@ -211,7 +214,9 @@ class TypecheckingDependencyListener implements DependencyListener {
     boolean ok = true;
     if (!functionDefinitions.isEmpty()) {
       DefinitionCallGraph definitionCallGraph = new DefinitionCallGraph();
-      for (FunctionDefinition fDef : functionDefinitions) definitionCallGraph.add(fDef, functionDefinitions);
+      for (FunctionDefinition fDef : functionDefinitions) {
+        definitionCallGraph.add(fDef, clausesMap.get(fDef), functionDefinitions);
+      }
       DefinitionCallGraph callCategory = new DefinitionCallGraph(definitionCallGraph);
       if (!callCategory.checkTermination()) {
         ok = false;
@@ -241,11 +246,12 @@ class TypecheckingDependencyListener implements DependencyListener {
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
     CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(myErrorReporter, countingErrorReporter);
     LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), compositeErrorReporter);
-    Definition typechecked = DefinitionTypechecking.typeCheck(myState, new GlobalInstancePool(myState, myInstanceProvider), myStaticNsProvider, myDynamicNsProvider, unit, recursive, localErrorReporter);
+    List<ElimTypechecking.ClauseData> clauses = DefinitionTypechecking.typecheck(myState, new GlobalInstancePool(myState, myInstanceProvider), myStaticNsProvider, myDynamicNsProvider, unit, recursive, localErrorReporter);
+    Definition typechecked = myState.getTypechecked(unit.getDefinition());
 
-    if (recursive && typechecked instanceof FunctionDefinition) {
+    if (recursive && clauses != null) {
       DefinitionCallGraph definitionCallGraph = new DefinitionCallGraph();
-      definitionCallGraph.add((FunctionDefinition) typechecked, Collections.singleton(typechecked));
+      definitionCallGraph.add((FunctionDefinition) typechecked, clauses, Collections.singleton(typechecked));
       DefinitionCallGraph callCategory = new DefinitionCallGraph(definitionCallGraph);
       if (!callCategory.checkTermination()) {
         typechecked.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
