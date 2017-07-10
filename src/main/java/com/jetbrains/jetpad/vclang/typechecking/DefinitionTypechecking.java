@@ -244,7 +244,7 @@ class DefinitionTypechecking {
           Body typedBody = elimParams == null ? null : new ElimTypechecking(visitor, expectedType, EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.CONTEXT_FREE, PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(elimBody, def.getArguments(), typedDef.getParameters(), elimParams);
           if (typedBody != null) {
             typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-            if (ConditionsChecking.check(typedBody)) {
+            if (ConditionsChecking.check(typedBody, typedDef, visitor.getErrorReporter())) {
               typedDef.setBody(typedBody);
             }
           }
@@ -445,129 +445,6 @@ class DefinitionTypechecking {
     return universeOk;
   }
 
-  /*
-  private static List<Constructor> typeCheckConditions(CheckTypeVisitor visitor, DataDefinition dataDefinition, Abstract.DataDefinition def) {
-    Map<Constructor, List<Abstract.Condition>> condMap = new HashMap<>();
-    for (Abstract.Condition cond : def.getConditions()) {
-      Constructor constructor = dataDefinition.getConstructor(cond.getConstructorName());
-      if (constructor == null) {
-        visitor.getErrorReporter().report(new NotInScopeError(def, cond.getConstructorName()));  // TODO: refer by reference
-        continue;
-      }
-      if (!constructor.status().headerIsOK()) {
-        continue;
-      }
-      if (!condMap.containsKey(constructor)) {
-        condMap.put(constructor, new ArrayList<>());
-      }
-      condMap.get(constructor).add(cond);
-    }
-    List<Constructor> cycle = searchConditionCycle(condMap, visitor.getTypecheckingState());
-    if (cycle != null) {
-      return cycle;
-    }
-    for (Constructor constructor : condMap.keySet()) {
-      try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(visitor.getContext())) {
-        List<List<Pattern>> patterns = new ArrayList<>();
-        List<Expression> expressions = new ArrayList<>();
-        visitor.getFreeBindings().addAll(toContext(constructor.getDataTypeParameters()));
-        // visitor.getContext().addAll(toContext(constructor.getDataTypeParameters())); // TODO[context]
-
-        for (Abstract.Condition cond : condMap.get(constructor)) {
-          try (Utils.SetContextSaver saver = new Utils.SetContextSaver<>(visitor.getContext())) {
-            List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getDataTypeExpression(Sort.STD)));
-            DependentLink params = constructor.getParameters();
-            List<Abstract.Pattern> processedPatterns = processImplicitPatterns(cond, params, cond.getPatterns(), visitor.getErrorReporter());
-            if (processedPatterns == null)
-              continue;
-
-            List<Abstract.ReferableSourceNode> referableList = new ArrayList<>();
-            getReferableList(constructor.getAbstractDefinition().getArguments(), referableList);
-            Patterns typedPatterns = visitor.getTypeCheckingElim().visitPatternArgs(processedPatterns, referableList, constructor.getParameters(), resultType, TypeCheckingElim.PatternExpansionMode.CONDITION);
-            if (typedPatterns == null) {
-              continue;
-            }
-
-            CheckTypeVisitor.Result result = visitor.finalCheckExpr(cond.getTerm(), resultType.get(0));
-            if (result == null)
-              continue;
-
-            patterns.add(typedPatterns.getPatterns());
-            expressions.add(result.expression.normalize(NormalizeVisitor.Mode.NF));
-          }
-        }
-
-        PatternsToElimTreeConversion.OKResult elimTreeResult = (PatternsToElimTreeConversion.OKResult) PatternsToElimTreeConversion.convert(constructor.getParameters(), patterns, expressions);
-
-        if (!elimTreeResult.elimTree.accept(new TerminationCheckVisitor(constructor, constructor.getDataTypeParameters(), constructor.getParameters()), null)) {
-          visitor.getErrorReporter().report(new LocalTypeCheckingError("Termination check failed", null));
-          continue;
-        }
-
-        constructor.setCondition(elimTreeResult.elimTree);
-        for (Abstract.Condition cond : condMap.get(constructor)) {
-          cond.setWellTyped(elimTreeResult.elimTree);
-        }
-      }
-    }
-    return null;
-  }
-
-  private static List<Constructor> searchConditionCycle(Map<Constructor, List<Abstract.Condition>> condMap, TypecheckerState state) {
-    Set<Constructor> visited = new HashSet<>();
-    List<Constructor> visiting = new ArrayList<>();
-    for (Constructor constructor : condMap.keySet()) {
-      List<Constructor> cycle = searchConditionCycle(condMap, constructor, visited, visiting, state);
-      if (cycle != null)
-        return cycle;
-    }
-    return null;
-  }
-
-  private static List<Constructor> searchConditionCycle(Map<Constructor, List<Abstract.Condition>> condMap, Constructor constructor, Set<Constructor> visited, List<Constructor> visiting, TypecheckerState state) {
-    if (visited.contains(constructor))
-      return null;
-    if (visiting.contains(constructor)) {
-      return visiting.subList(visiting.lastIndexOf(constructor), visiting.size());
-    }
-    visiting.add(constructor);
-    if (condMap.containsKey(constructor)) {
-      for (Abstract.Condition condition : condMap.get(constructor)) {
-        Set<Abstract.Definition> dependencies = new HashSet<>();
-        condition.getTerm().accept(new CollectDefCallsVisitor(null, dependencies), null);
-        for (Abstract.Definition def : dependencies) {
-          Definition typeCheckedDef = state.getTypechecked(def);
-          if (typeCheckedDef != null && typeCheckedDef != constructor && typeCheckedDef instanceof Constructor && ((Constructor) typeCheckedDef).getDataType().equals(constructor.getDataType())) {
-            List<Constructor> cycle = searchConditionCycle(condMap, (Constructor) typeCheckedDef, visited, visiting, state);
-            if (cycle != null)
-              return cycle;
-          }
-        }
-      }
-    }
-    visiting.remove(visiting.size() - 1);
-    visited.add(constructor);
-    return null;
-  }
-
-  private static List<Abstract.Pattern> processImplicitPatterns(Abstract.SourceNode expression, DependentLink parameters, List<? extends Abstract.Pattern> patterns, LocalErrorReporter errorReporter) {
-    List<Abstract.Pattern> processedPatterns = null;
-    ProcessImplicitResult processImplicitResult = processImplicit(patterns, parameters);
-    if (processImplicitResult.patterns == null) {
-      if (processImplicitResult.numExcessive != 0) {
-        errorReporter.report(new LocalTypeCheckingError("Too many arguments: " + processImplicitResult.numExcessive + " excessive", expression));
-      } else if (processImplicitResult.wrongImplicitPosition < patterns.size()) {
-        errorReporter.report(new LocalTypeCheckingError("Unexpected implicit argument", patterns.get(processImplicitResult.wrongImplicitPosition)));
-      } else {
-        errorReporter.report(new LocalTypeCheckingError("Too few explicit arguments, expected: " + processImplicitResult.numExplicit, expression));
-      }
-    } else {
-      processedPatterns = processImplicitResult.patterns;
-    }
-    return processedPatterns;
-  }
-  */
-
   private static Sort typeCheckConstructor(Abstract.Constructor def, Patterns patterns, DataDefinition dataDefinition, CheckTypeVisitor visitor, Set<DataDefinition> dataDefinitions) {
     Constructor constructor = new Constructor(def, dataDefinition);
     List<DependentLink> elimParams = null;
@@ -604,7 +481,7 @@ class DefinitionTypechecking {
       try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(visitor.getFreeBindings())) {
         try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(visitor.getContext())) {
           Body body = new ElimTypechecking(visitor, constructor.getDataTypeExpression(Sort.STD), EnumSet.of(PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(def, def.getArguments(), constructor.getParameters(), elimParams);
-          if (ConditionsChecking.check(body)) {
+          if (ConditionsChecking.check(body, constructor, visitor.getErrorReporter())) {
             constructor.setBody(body);
           }
         }

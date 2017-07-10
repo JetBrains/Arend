@@ -104,7 +104,7 @@ public class IntervalTest extends TypeCheckingTestCase {
       "  | _, suc _, _ => 0\n" +
       "  | _, _, left => 0\n" +
       "  | _, _, right => 0\n" +
-      "\\function g (n : Nat) (i : I) : f zero n i = 0 => path (\\lam _ => 0)");
+      "\\function g (n : Nat) (i : I) : f zero n i = 0 => path (\\lam _ => 0)", 1);
   }
 
   @Test
