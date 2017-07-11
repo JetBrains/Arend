@@ -29,7 +29,7 @@ public class ElimTypechecking {
   private final CheckTypeVisitor myVisitor;
   private Set<Abstract.FunctionClause> myUnusedClauses;
   private final EnumSet<PatternTypechecking.Flag> myFlags;
-  private Expression myExpectedType;
+  private final Expression myExpectedType;
   private boolean myOK;
   private Stack<Util.ClauseElem> myContext;
 

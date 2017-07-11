@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class DefinitionCallGraph extends BaseCallGraph<Definition> {
-  public Map<Definition, Set<RecursiveBehavior<Definition>>> myErrorInfo = new HashMap<>();
+  public final Map<Definition, Set<RecursiveBehavior<Definition>>> myErrorInfo = new HashMap<>();
 
   protected String getLabel(Definition vertex) {
     return vertex.getName();

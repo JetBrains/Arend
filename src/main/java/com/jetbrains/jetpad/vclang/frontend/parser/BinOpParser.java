@@ -16,10 +16,10 @@ public class BinOpParser {
   }
 
   public class StackElem {
-    public Abstract.Expression argument;
-    public Abstract.Definition binOp;
-    public Abstract.Precedence prec;
-    public Abstract.ReferenceExpression var;
+    public final Abstract.Expression argument;
+    public final Abstract.Definition binOp;
+    public final Abstract.Precedence prec;
+    public final Abstract.ReferenceExpression var;
 
     public StackElem(Abstract.Expression argument, Abstract.Definition binOp, Abstract.Precedence prec, Abstract.ReferenceExpression var) {
       this.argument = argument;

@@ -1,29 +1,8 @@
 package com.jetbrains.jetpad.vclang.core.context;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
-
 import java.util.*;
 
 public class Utils {
-  public static void removeFromList(List<?> list, Abstract.Argument argument) {
-    if (argument instanceof Abstract.TelescopeArgument) {
-      for (Object ignored : ((Abstract.TelescopeArgument) argument).getReferableList()) {
-        list.remove(list.size() - 1);
-      }
-    } else {
-      list.remove(list.size() - 1);
-    }
-  }
-
-  public static void removeFromList(List<?> list, List<? extends Abstract.Argument> arguments) {
-    for (Abstract.Argument argument : arguments) {
-      removeFromList(list, argument);
-    }
-  }
-
   public static void trimToSize(List<?> list, int size) {
     if (size < list.size()) {
       list.subList(size, list.size()).clear();
@@ -93,17 +72,5 @@ public class Utils {
       myContext.clear();
       myContext.addAll(myOldContext);
     }
-  }
-
-  public static ExprSubstitution matchParameters(DependentLink link, List<Expression> parameters) {
-    ExprSubstitution substs = new ExprSubstitution();
-    for (Expression parameter : parameters) {
-      if (!link.hasNext()) {
-        return null;
-      }
-      substs.add(link, parameter);
-      link = link.getNext();
-    }
-    return substs;
   }
 }

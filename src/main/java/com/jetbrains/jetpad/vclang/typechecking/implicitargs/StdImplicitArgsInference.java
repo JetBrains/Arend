@@ -185,7 +185,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
   public CheckTypeVisitor.TResult inferTail(CheckTypeVisitor.TResult result, ExpectedType expectedType, Abstract.Expression expr) {
     List<? extends DependentLink> actualParams = result.getImplicitParameters();
     List<SingleDependentLink> expectedParams = new ArrayList<>(actualParams.size());
-    expectedType.getPiParameters(expectedParams, true, true);
+    expectedType.getPiParameters(expectedParams, true);
     if (expectedParams.size() > actualParams.size()) {
       CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations());
       LocalTypeCheckingError error = new TypeMismatchError(expectedType, result1.type, expr);

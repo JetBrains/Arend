@@ -9,7 +9,7 @@ import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 public class InferenceReferenceExpression extends Expression {
-  private InferenceVariable myVar;
+  private final InferenceVariable myVar;
   private Expression mySubstExpression;
 
   public InferenceReferenceExpression(InferenceVariable binding, Equations equations) {

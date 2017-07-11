@@ -81,7 +81,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     private final List<Expression> myArguments;
     private List<DependentLink> myParameters;
     private Expression myResultType;
-    private Expression myThisExpr;
+    private final Expression myThisExpr;
 
     private DefCallResult(Abstract.ReferenceExpression defCall, Callable definition, Sort sortArgument, List<Expression> arguments, List<DependentLink> parameters, Expression resultType, Expression thisExpr) {
       myDefCall = defCall;
@@ -240,7 +240,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     @Override
     public List<SingleDependentLink> getImplicitParameters() {
       List<SingleDependentLink> params = new ArrayList<>();
-      type.getPiParameters(params, true, true);
+      type.getPiParameters(params, true);
       return params;
     }
   }
@@ -287,16 +287,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     myClassViewInstancePool = pool;
   }
 
-  public TypeCheckingElim getTypeCheckingElim() {
-    return myTypeCheckingElim;
-  }
-
   public Map<Abstract.ReferableSourceNode, Binding> getContext() {
     return myContext;
-  }
-
-  public void setContext(Map<Abstract.ReferableSourceNode, Binding> context) {
-    myContext = context;
   }
 
   public Set<Binding> getFreeBindings() {

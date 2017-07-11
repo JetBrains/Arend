@@ -13,7 +13,10 @@ import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -25,7 +28,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
   private TypecheckerState state = new SimpleTypecheckerState();
 
-  protected LocalErrorReporter localErrorReporter = new TestLocalErrorReporter(errorReporter);
+  protected final LocalErrorReporter localErrorReporter = new TestLocalErrorReporter(errorReporter);
 
   public TypeCheckingTestCase() {
     typeCheckPrelude();

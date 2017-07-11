@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.frontend;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.*;
@@ -942,7 +941,7 @@ public final class Concrete {
   }
 
   public static class SuperClass extends SourceNode implements Abstract.SuperClass {
-    private Expression mySuperClass;
+    private final Expression mySuperClass;
 
     public SuperClass(Position position, Expression superClass) {
       super(position);
@@ -1237,39 +1236,6 @@ public final class Concrete {
     @Override
     public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitConstructor(this, params);
-    }
-  }
-
-  public static class Condition extends SourceNode implements Abstract.Condition {
-    private final String myConstructorName;
-    private final List<Abstract.Pattern> myPatterns;
-    private final Expression myTerm;
-
-    public Condition(Position position, String constructorName, List<Abstract.Pattern> patterns, Expression term) {
-      super(position);
-      myConstructorName = constructorName;
-      myPatterns = patterns;
-      myTerm = term;
-    }
-
-    @Override
-    public String getConstructorName() {
-      return myConstructorName;
-    }
-
-    @Override
-    public List<Abstract.Pattern> getPatterns() {
-      return myPatterns;
-    }
-
-    @Override
-    public Expression getTerm() {
-      return myTerm;
-    }
-
-    @Override
-    public void setWellTyped(ElimTreeNode condition) {
-
     }
   }
 

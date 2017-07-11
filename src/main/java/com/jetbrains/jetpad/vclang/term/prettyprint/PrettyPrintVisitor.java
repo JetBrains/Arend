@@ -55,10 +55,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       prettyPrintLetClause((Abstract.LetClause) node, false);
       return true;
     }
-    if (node instanceof Abstract.Condition) {
-      prettyPrintCondition((Abstract.Condition) node);
-      return true;
-    }
     if (node instanceof Abstract.Pattern) {
       prettyPrintPattern((Abstract.Pattern) node, prec);
       return true;
@@ -774,16 +770,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
 
     return null;
-  }
-
-  public void prettyPrintCondition(Abstract.Condition condition) {
-    myBuilder.append(condition.getConstructorName());
-    for (Abstract.Pattern patternArg : condition.getPatterns()) {
-      myBuilder.append(" ");
-      prettyPrintPattern(patternArg, Abstract.Pattern.PREC);
-    }
-    myBuilder.append(" => ");
-    condition.getTerm().accept(this, Abstract.Expression.PREC);
   }
 
   @Override

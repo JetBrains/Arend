@@ -50,7 +50,7 @@ public abstract class Definition implements Variable, Callable, PrettyPrintable 
   }
 
   public void setClassifyingFieldsOfParameters(Map<Integer, ClassField> fields) {
-    myClassifyingFields = fields.isEmpty() ? Collections.<Integer, ClassField>emptyMap() : fields;
+    myClassifyingFields = fields.isEmpty() ? Collections.emptyMap() : fields;
   }
 
   public abstract Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument);

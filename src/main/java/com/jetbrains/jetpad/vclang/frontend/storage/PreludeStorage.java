@@ -21,13 +21,13 @@ import java.nio.file.Paths;
 public class PreludeStorage implements Storage<PreludeStorage.SourceId> {
   // It is difficult to handle this in a uniform way due to differences in OS file systems
   // (and bugs in JDK), therefore all that is left is to be careful in keeping all these paths synced.
-  private static Path BASE_PATH = Paths.get("lib", "Prelude");
-  public static Path SOURCE_PATH = FileStorage.sourceFile(BASE_PATH);
-  public static Path CACHE_PATH = FileStorage.cacheFile(BASE_PATH);
-  public static String SOURCE_RESOURCE_PATH = "/lib/" + SOURCE_PATH.getFileName();
-  public static String CACHE_RESOURCE_PATH = "/lib/" + CACHE_PATH.getFileName();
+  private static final Path BASE_PATH = Paths.get("lib", "Prelude");
+  public static final Path SOURCE_PATH = FileStorage.sourceFile(BASE_PATH);
+  public static final Path CACHE_PATH = FileStorage.cacheFile(BASE_PATH);
+  public static final String SOURCE_RESOURCE_PATH = "/lib/" + SOURCE_PATH.getFileName();
+  public static final String CACHE_RESOURCE_PATH = "/lib/" + CACHE_PATH.getFileName();
 
-  public static ModulePath PRELUDE_MODULE_PATH = new ModulePath("Prelude");
+  public static final ModulePath PRELUDE_MODULE_PATH = new ModulePath("Prelude");
   public final SourceId preludeSourceId = new SourceId();
   private final NameResolver myNameResolver;
 

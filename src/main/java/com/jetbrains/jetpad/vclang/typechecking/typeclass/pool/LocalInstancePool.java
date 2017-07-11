@@ -9,9 +9,9 @@ import java.util.List;
 
 public class LocalInstancePool implements ClassViewInstancePool {
   static private class Pair {
-    Expression key;
-    Abstract.ClassView classView;
-    Expression value;
+    final Expression key;
+    final Abstract.ClassView classView;
+    final Expression value;
 
     public Pair(Expression key, Abstract.ClassView classView, Expression value) {
       this.key = key;

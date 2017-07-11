@@ -291,7 +291,7 @@ public class TypeCheckingDefCall {
     if (definition instanceof DataDefinition && !sortArgument.isProp()) {
       hLevel = ((DataDefinition) definition).getSort().getHLevel();
     } else if (definition instanceof FunctionDefinition && !sortArgument.isProp()) {
-      UniverseExpression universe = ((FunctionDefinition) definition).getResultType().getPiParameters(null, true, false).toUniverse();
+      UniverseExpression universe = ((FunctionDefinition) definition).getResultType().getPiParameters(null, false).toUniverse();
       if (universe != null) {
         hLevel = universe.getSort().getHLevel();
       }

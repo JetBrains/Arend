@@ -21,9 +21,6 @@ import org.junit.Test;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Created by user on 10/28/16.
- */
 public class TerminationCheckTest extends TypeCheckingTestCase {
 
   @Test

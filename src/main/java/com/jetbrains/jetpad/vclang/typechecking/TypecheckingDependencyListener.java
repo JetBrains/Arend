@@ -38,8 +38,8 @@ class TypecheckingDependencyListener implements DependencyListener {
   private boolean myTypecheckingHeaders = false;
 
   private static class Suspension {
-    public CheckTypeVisitor visitor;
-    public CountingErrorReporter countingErrorReporter;
+    public final CheckTypeVisitor visitor;
+    public final CountingErrorReporter countingErrorReporter;
 
     public Suspension(CheckTypeVisitor visitor, CountingErrorReporter countingErrorReporter) {
       this.visitor = visitor;

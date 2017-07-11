@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 
 public class LeafElimTree extends ElimTree {
-  private Expression myExpression;
+  private final Expression myExpression;
 
   public LeafElimTree(DependentLink parameters, Expression expression) {
     super(parameters);

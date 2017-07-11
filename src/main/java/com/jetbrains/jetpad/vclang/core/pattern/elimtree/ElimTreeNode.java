@@ -2,13 +2,10 @@ package com.jetbrains.jetpad.vclang.core.pattern.elimtree;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.List;
 
@@ -23,7 +20,7 @@ public abstract class ElimTreeNode {
 
   @Override
   public boolean equals(Object obj) {
-    return this == obj || obj instanceof ElimTreeNode && CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, this, (ElimTreeNode) obj);
+    return this == obj || obj instanceof ElimTreeNode;
   }
 
   public ElimTreeNode subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst) {

@@ -3,11 +3,9 @@ package com.jetbrains.jetpad.vclang.term;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -52,15 +50,6 @@ public final class Abstract {
     byte PREC = 11;
     Expression getFunction();
     ArgumentExpression getArgument();
-  }
-
-  public static Expression getFunction(Expression expr, List<ArgumentExpression> arguments) {
-    while (expr instanceof AppExpression) {
-      arguments.add(((AppExpression) expr).getArgument());
-      expr = ((AppExpression) expr).getFunction();
-    }
-    Collections.reverse(arguments);
-    return expr;
   }
 
   public interface ModuleCallExpression extends Expression {
@@ -165,18 +154,6 @@ public final class Abstract {
     Expression getCodomain();
   }
 
-  public static Expression getCodomain(Expression expr, List<TypeArgument> arguments) {
-    Expression codomain = expr;
-
-    while (codomain instanceof PiExpression) {
-      PiExpression pi = (PiExpression)codomain;
-      codomain = pi.getCodomain();
-      arguments.addAll(pi.getArguments());
-    }
-
-    return codomain;
-  }
-
   public interface BinOpExpression extends ReferenceExpression {
     Expression getLeft();
     Expression getRight();
@@ -191,8 +168,8 @@ public final class Abstract {
   }
 
   public static class BinOpSequenceElem {
-    public ReferenceExpression binOp;
-    public Expression argument;
+    public final ReferenceExpression binOp;
+    public final Expression argument;
 
     public BinOpSequenceElem(ReferenceExpression binOp, Expression argument) {
       this.binOp = binOp;
@@ -362,13 +339,6 @@ public final class Abstract {
     List<? extends TypeArgument> getArguments();
   }
 
-  public interface Condition extends SourceNode {
-    List<Pattern> getPatterns();
-    String getConstructorName();
-    Expression getTerm();
-    void setWellTyped(ElimTreeNode condition);
-  }
-
   public interface SuperClass extends SourceNode {
     Expression getSuperClass();
   }
@@ -452,7 +422,7 @@ public final class Abstract {
   public static class Precedence {
     public enum Associativity { LEFT_ASSOC, RIGHT_ASSOC, NON_ASSOC }
 
-    public static Precedence DEFAULT = new Precedence(Associativity.RIGHT_ASSOC, (byte) 10);
+    public static final Precedence DEFAULT = new Precedence(Associativity.RIGHT_ASSOC, (byte) 10);
 
     public final Associativity associativity;
     public final byte priority;

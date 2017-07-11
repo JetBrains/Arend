@@ -108,8 +108,8 @@ public abstract class Expression implements ExpectedType {
   }
 
   @Override
-  public Expression getPiParameters(List<SingleDependentLink> params, boolean normalize, boolean implicitOnly) {
-    Expression cod = normalize ? normalize(NormalizeVisitor.Mode.WHNF) : this;
+  public Expression getPiParameters(List<SingleDependentLink> params, boolean implicitOnly) {
+    Expression cod = normalize(NormalizeVisitor.Mode.WHNF);
     PiExpression piCod = cod.toPi();
     while (piCod != null) {
       if (implicitOnly) {
@@ -132,10 +132,7 @@ public abstract class Expression implements ExpectedType {
         }
       }
 
-      cod = piCod.getCodomain();
-      if (normalize) {
-        cod = cod.normalize(NormalizeVisitor.Mode.WHNF);
-      }
+      cod = piCod.getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
       piCod = cod.toPi();
     }
     return cod;

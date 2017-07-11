@@ -13,7 +13,6 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
@@ -217,7 +216,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\function test (n : Nat) : Nat => \\case n, n | zero, _ => 0 | suc y, _ => y");
     FunctionDefinition def2 = (FunctionDefinition) typeCheckDef("\\function test (n : Nat) => \\let | caseF (caseA : Nat) (caseB : Nat) : Nat => \\elim caseA, caseB | zero, _ => 0 | suc y, _ => y \\in caseF n n");
     assertTrue(CompareVisitor.compare(new HashMap<>(Collections.singletonMap(def.getParameters(), def2.getParameters())),
-        DummyEquations.getInstance(), Equations.CMP.EQ, (LeafElimTree) def.getBody(), (LeafElimTree) def2.getBody()));
+        DummyEquations.getInstance(), (LeafElimTree) def.getBody(), (LeafElimTree) def2.getBody()));
   }
 
   @Test

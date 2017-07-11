@@ -14,7 +14,7 @@ public class SimpleClassViewInstanceProvider implements ClassViewInstanceProvide
   @Override
   public Collection<? extends Abstract.ClassViewInstance> getInstances(Abstract.ReferenceExpression defCall, int paramIndex) {
     Collection<? extends Abstract.ClassViewInstance> instances = myInstances.get(new Pair<>(defCall, paramIndex));
-    return instances == null ? Collections.<Abstract.ClassViewInstance>emptyList() : instances;
+    return instances == null ? Collections.emptyList() : instances;
   }
 
   public void addInstances(Abstract.ReferenceExpression defCall, int paramIndex, Collection<? extends Abstract.ClassViewInstance> instances) {

@@ -44,10 +44,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     myCMP = cmp;
   }
 
-  public static boolean compare(Equations equations, List<DependentLink> params1, List<DependentLink> params2, Abstract.SourceNode sourceNode) {
-    return new CompareVisitor(equations, Equations.CMP.EQ, sourceNode).compareParameters(params1, params2);
-  }
-
   public static boolean compare(Equations equations, Equations.CMP cmp, Expression expr1, Expression expr2, Abstract.SourceNode sourceNode) {
     return new CompareVisitor(equations, cmp, sourceNode).compare(expr1, expr2);
   }
@@ -56,16 +52,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     return new CompareVisitor(equations, cmp, null).compare(tree1, tree2);
   }
 
-  public static boolean compare(Map<Binding, Binding> substitution, Equations equations, Equations.CMP cmp, ElimTreeNode tree1, ElimTreeNode tree2) {
-    return new CompareVisitor(substitution, equations, cmp).compare(tree1, tree2);
-  }
-
-  public static boolean compare(Map<Binding, Binding> substitution, Equations equations, Equations.CMP cmp, ElimTree tree1, ElimTree tree2) {
-    return new CompareVisitor(substitution, equations, cmp).compare(tree1, tree2);
-  }
-
-  public static boolean compare(Map<Binding, Binding> substitution, Equations equations, Equations.CMP cmp, Expression expr1, Expression expr2) {
-    return new CompareVisitor(substitution, equations, cmp).compare(expr1, expr2);
+  public static boolean compare(Map<Binding, Binding> substitution, Equations equations, ElimTree tree1, ElimTree tree2) {
+    return new CompareVisitor(substitution, equations, Equations.CMP.EQ).compare(tree1, tree2);
   }
 
   public Boolean compare(ElimTreeNode tree1, ElimTreeNode tree2) {

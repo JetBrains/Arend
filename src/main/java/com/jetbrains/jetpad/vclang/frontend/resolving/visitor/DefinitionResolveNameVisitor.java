@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<Scope, Void>, AbstractStatementVisitor<Scope, Scope> {
-  private List<Abstract.ReferableSourceNode> myContext;
+  private final List<Abstract.ReferableSourceNode> myContext;
   private final NameResolver myNameResolver;
   private final ResolveListener myResolveListener;
 
@@ -121,7 +121,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
   public Void visitData(Abstract.DataDefinition def, Scope parentScope) {
     Scope scope = new DataScope(parentScope, new NamespaceScope(myNameResolver.nsProviders.statics.forDefinition(def)));
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(scope, myContext, myNameResolver, myResolveListener);
-    try (Utils.CompleteContextSaver<Abstract.ReferableSourceNode> saver = new Utils.CompleteContextSaver<>(myContext)) {
+    try (Utils.CompleteContextSaver<Abstract.ReferableSourceNode> ignored = new Utils.CompleteContextSaver<>(myContext)) {
       exprVisitor.visitArguments(def.getParameters());
       if (def.getUniverse() != null) {
         def.getUniverse().accept(exprVisitor, null);

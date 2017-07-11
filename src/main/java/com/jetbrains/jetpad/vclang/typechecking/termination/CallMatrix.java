@@ -5,8 +5,8 @@ import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.DefCallExpression;
 
 class CallMatrix extends LabeledCallMatrix {
-  private DefCallExpression myCallExpression;
-  private Definition myEnclosingDefinition;
+  private final DefCallExpression myCallExpression;
+  private final Definition myEnclosingDefinition;
 
   CallMatrix(Definition enclosingDefinition, DefCallExpression call) {
     super(DependentLink.Helper.size(call.getDefinition().getParameters()), DependentLink.Helper.size(enclosingDefinition.getParameters()));

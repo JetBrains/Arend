@@ -52,9 +52,7 @@ public class FieldSet implements ReadonlyFieldSet {
   }
 
   public void addFieldsFrom(ReadonlyFieldSet other) {
-    for (ClassField field : other.getFields()) {
-      myFields.add(field);
-    }
+    myFields.addAll(other.getFields());
   }
 
   public boolean implementField(ClassField field, Implementation impl) {

@@ -20,7 +20,7 @@ public class Util {
   }
 
   public static class PatternClauseElem implements ClauseElem {
-    public Pattern pattern;
+    public final Pattern pattern;
 
     PatternClauseElem(Pattern pattern) {
       this.pattern = pattern;
@@ -28,9 +28,9 @@ public class Util {
   }
 
   public static class ConstructorClauseElem implements ClauseElem {
-    Sort sort;
-    List<Expression> dataArguments;
-    public Constructor constructor;
+    public final Sort sort;
+    public final List<Expression> dataArguments;
+    public final Constructor constructor;
 
     ConstructorClauseElem(Constructor constructor) {
       this.sort = Sort.STD;

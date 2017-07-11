@@ -23,7 +23,7 @@ import com.jetbrains.jetpad.vclang.util.Pair;
 import java.util.*;
 
 public class TwoStageEquations implements Equations {
-  private List<Equation> myEquations;
+  private final List<Equation> myEquations;
   private final LevelEquations<InferenceLevelVariable> myPLevelEquations;
   private final LevelEquations<InferenceLevelVariable> myBasedPLevelEquations;
   private final LevelEquations<InferenceLevelVariable> myHLevelEquations;
@@ -304,12 +304,6 @@ public class TwoStageEquations implements Equations {
       addLevelEquation(level2.getVar(), level1.getVar(), level1.getConstant() - level2.getConstant(), level1.getMaxAddedConstant() - level2.getConstant(), sourceNode);
       addLevelEquation(null, level1.getVar(), level1.getConstant() - level2.getMaxAddedConstant(), level1.getMaxAddedConstant() - level2.getMaxAddedConstant(), sourceNode);
     }
-    return true;
-  }
-
-  @Override
-  public boolean add(Expression type, Expression expr, Abstract.SourceNode sourceNode, InferenceVariable stuckVar) {
-    addEquation(type, expr, CMP.LE, sourceNode, stuckVar);
     return true;
   }
 

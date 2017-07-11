@@ -504,7 +504,7 @@ class DefinitionTypechecking {
 
   private static boolean checkPositiveness(Expression type, int index, List<? extends Abstract.Argument> arguments, Abstract.Constructor constructor, LocalErrorReporter errorReporter, Set<? extends Variable> variables) {
     List<SingleDependentLink> piParams = new ArrayList<>();
-    type = type.getPiParameters(piParams, true, false);
+    type = type.getPiParameters(piParams, false);
     for (DependentLink piParam : piParams) {
       if (piParam instanceof UntypedDependentLink) {
         continue;

@@ -66,14 +66,6 @@ public class ExprSubstitution {
     }
   }
 
-  public List<Expression> substExprs(List<Expression> expressions) {
-    List<Expression> result = new ArrayList<>();
-    for (Expression expr : expressions) {
-      result.add(expr.subst(this));
-    }
-    return result;
-  }
-
   public ExprSubstitution compose(ExprSubstitution subst) {
     ExprSubstitution result = new ExprSubstitution();
     for (Map.Entry<Variable, Expression> entry : subst.mySubstExprs.entrySet()) {
