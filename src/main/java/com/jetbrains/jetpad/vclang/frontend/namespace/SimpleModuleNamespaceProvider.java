@@ -21,6 +21,7 @@ public class SimpleModuleNamespaceProvider extends BaseModuleNamespaceProvider i
     return ns;
   }
 
+  @Override
   public void unregisterModule(ModulePath path) {
     SimpleModuleNamespace ns = ensureModuleNamespace(root(), path);
     ns.unregisterClass();

@@ -53,7 +53,7 @@ public abstract class ParseSource {
       return null;
     }
 
-    List<Concrete.Statement> statements = new BuildVisitor(mySourceId, errorReporter).visitStatements(tree);
+    List<Concrete.Statement> statements = new BuildVisitor(mySourceId, compositeErrorReporter).visitStatements(tree);
 
     Concrete.ClassDefinition result = new Concrete.ClassDefinition(new Concrete.Position(mySourceId, 0, 0), mySourceId.getModulePath().getName(), statements);
 
@@ -61,7 +61,13 @@ public abstract class ParseSource {
       moduleRegistry.registerModule(mySourceId.getModulePath(), result);
     }
     if (nameResolver != null) {
-      OneshotNameResolver.visitModule(result, globalScope, nameResolver, new ConcreteResolveListener(errorReporter));
+      OneshotNameResolver.visitModule(result, globalScope, nameResolver, new ConcreteResolveListener(compositeErrorReporter));
+    }
+    if (countingErrorReporter.getErrorsNumber() > 0) {
+      if (moduleRegistry != null) {
+        moduleRegistry.unregisterModule(mySourceId.getModulePath());
+      }
+      return null;
     }
     return result;
   }
