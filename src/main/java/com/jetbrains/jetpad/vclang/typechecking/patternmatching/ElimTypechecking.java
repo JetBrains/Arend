@@ -6,10 +6,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.elimtree.*;
-import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
-import com.jetbrains.jetpad.vclang.core.expr.UniverseExpression;
+import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.GetTypeVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
@@ -150,7 +147,27 @@ public class ElimTypechecking {
     }
 
     if (nonIntervalClauses.isEmpty()) {
-      if (myFlags.contains(PatternTypechecking.Flag.CHECK_COVERAGE)) {
+      boolean ok = false;
+      if (elimParams != null) {
+        for (DependentLink link : elimParams) {
+          DataCallExpression dataCall = link.getType().getExpr().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
+          if (dataCall != null && dataCall.getMatchedConstructors().isEmpty()) {
+            ok = true;
+            break;
+          }
+        }
+      } else {
+        for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
+          link = link.getNextTyped(null);
+          DataCallExpression dataCall = link.getType().getExpr().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
+          if (dataCall != null && dataCall.getMatchedConstructors().isEmpty()) {
+            ok = true;
+            break;
+          }
+        }
+      }
+
+      if (!ok && myFlags.contains(PatternTypechecking.Flag.CHECK_COVERAGE)) {
         myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Coverage check failed", body));
       }
       return cases == null ? null : new IntervalElim(parameters, cases, null);
@@ -161,12 +178,34 @@ public class ElimTypechecking {
 
     if (myMissingClauses != null && !myMissingClauses.isEmpty()) {
       List<List<Expression>> missingClauses = new ArrayList<>(myMissingClauses.size());
+      loop:
       for (Pair<List<Util.ClauseElem>, Boolean> missingClause : myMissingClauses) {
         List<Expression> expressions = Util.unflattenClauses(missingClause.proj1, parameters, elimParams);
         if (!missingClause.proj2) {
           if (elimTree != null && new NormalizeVisitor(new EvalNormalizer()).eval(elimTree, expressions, new ExprSubstitution(), LevelSubstitution.EMPTY) != null) {
             continue;
           }
+
+          int i = expressions.size() - 1;
+          for (; i >= 0; i--) {
+            if (!(expressions.get(i) instanceof ReferenceExpression)) {
+              break;
+            }
+          }
+          DependentLink link = parameters;
+          ExprSubstitution substitution = new ExprSubstitution();
+          for (int j = 0; j < i + 1; j++) {
+            substitution.add(link, expressions.get(j));
+            link = link.getNext();
+          }
+          for (; link.hasNext(); link = link.getNext()) {
+            link = link.getNextTyped(null);
+            DataCallExpression dataCall = link.getType().getExpr().subst(substitution).normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
+            if (dataCall != null && dataCall.getMatchedConstructors().isEmpty()) {
+              continue loop;
+            }
+          }
+
           myOK = false;
         }
         missingClauses.add(expressions);
