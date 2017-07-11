@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking.termination;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ElimTypechecking;
+import com.jetbrains.jetpad.vclang.core.elimtree.Clause;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -27,9 +27,9 @@ public class DefinitionCallGraph extends BaseCallGraph<Definition> {
     super(cg);
   }
 
-  public void add(FunctionDefinition def, Collection<? extends ElimTypechecking.ClauseData> clauses, Set<? extends Definition> cycle) {
+  public void add(FunctionDefinition def, Collection<? extends Clause> clauses, Set<? extends Definition> cycle) {
     CollectCallVisitor visitor = new CollectCallVisitor(def, cycle);
-    for (ElimTypechecking.ClauseData clause : clauses) {
+    for (Clause clause : clauses) {
       visitor.collect(clause);
     }
     add(visitor.getResult());

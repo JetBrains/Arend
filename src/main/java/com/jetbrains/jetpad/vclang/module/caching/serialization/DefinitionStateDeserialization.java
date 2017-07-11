@@ -140,6 +140,13 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
       if (constructorProto.getPatternCount() > 0) {
         constructor.setPatterns(readPatterns(defDeserializer, calltargetProvider, constructorProto.getPatternList(), new LinkList()));
       }
+      if (constructorProto.getClauseCount() > 0) {
+        List<ClauseBase> clauses = new ArrayList<>(constructorProto.getClauseCount());
+        for (DefinitionProtos.Definition.Clause clause : constructorProto.getClauseList()) {
+          clauses.add(readClause(defDeserializer, calltargetProvider, clause));
+        }
+        constructor.setClauses(clauses);
+      }
       constructor.setParameters(defDeserializer.readParameters(constructorProto.getParamList()));
       if (constructorProto.hasConditions()) {
         constructor.setBody(readBody(defDeserializer, constructorProto.getConditions()));
@@ -161,6 +168,10 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
     }
   }
 
+  private ClauseBase readClause(DefinitionDeserialization defDeserializer, CalltargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.Clause clause) throws DeserializationError {
+    return new ClauseBase(readPatterns(defDeserializer, calltargetProvider, clause.getPatternList(), new LinkList()).getPatternList(), defDeserializer.readExpr(clause.getExpression()));
+  }
+
   private Body readBody(DefinitionDeserialization defDeserializer, DefinitionProtos.Body proto) throws DeserializationError {
     switch (proto.getKindCase()) {
       case ELIM_TREE:
@@ -180,15 +191,15 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
     }
   }
 
-  private Patterns readPatterns(DefinitionDeserialization defDeserializer, CalltargetProvider.Typed calltargetProvider, List<DefinitionProtos.Definition.DataData.Constructor.Pattern> protos, LinkList list) throws DeserializationError {
+  private Patterns readPatterns(DefinitionDeserialization defDeserializer, CalltargetProvider.Typed calltargetProvider, List<DefinitionProtos.Definition.Pattern> protos, LinkList list) throws DeserializationError {
     List<Pattern> patterns = new ArrayList<>(protos.size());
-    for (DefinitionProtos.Definition.DataData.Constructor.Pattern proto : protos) {
+    for (DefinitionProtos.Definition.Pattern proto : protos) {
       patterns.add(readPattern(defDeserializer, calltargetProvider, proto, list));
     }
     return new Patterns(patterns);
   }
 
-  private Pattern readPattern(DefinitionDeserialization defDeserializer, CalltargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.DataData.Constructor.Pattern proto, LinkList list) throws DeserializationError {
+  private Pattern readPattern(DefinitionDeserialization defDeserializer, CalltargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.Pattern proto, LinkList list) throws DeserializationError {
     switch (proto.getKindCase()) {
       case BINDING:
         DependentLink param = defDeserializer.readParameter(proto.getBinding().getVar());

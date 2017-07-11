@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +18,10 @@ public class ConstructorPattern implements Pattern {
   public ConstructorPattern(ConCallExpression conCall, Patterns patterns) {
     myConCall = conCall;
     myPatterns = patterns;
+  }
+
+  public Patterns getPatterns() {
+    return myPatterns;
   }
 
   public Constructor getConstructor() {
@@ -68,5 +73,20 @@ public class ConstructorPattern implements Pattern {
       return MatchResult.FAIL;
     }
     return myPatterns.match(conCall.getDefCallArguments(), result);
+  }
+
+  @Override
+  public boolean unify(Pattern other, ExprSubstitution substitution1, ExprSubstitution substitution2) {
+    if (other instanceof BindingPattern) {
+      substitution2.add(((BindingPattern) other).getBinding(), toExpression());
+      return true;
+    }
+
+    if (other instanceof ConstructorPattern) {
+      ConstructorPattern conPattern = (ConstructorPattern) other;
+      return myConCall.getDefinition() == conPattern.myConCall.getDefinition() && myPatterns.unify(conPattern.myPatterns, substitution1, substitution2);
+    }
+
+    return false;
   }
 }

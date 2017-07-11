@@ -104,6 +104,9 @@ public class DefinitionStateSerialization {
           cBuilder.addPattern(writePattern(defSerializer, pattern));
         }
       }
+      for (ClauseBase clause : constructor.getClauses()) {
+        cBuilder.addClause(writeClause(defSerializer, clause));
+      }
       cBuilder.addAllParam(defSerializer.writeParameters(constructor.getParameters()));
       if (constructor.getBody() != null) {
         cBuilder.setConditions(writeBody(defSerializer, constructor.getBody()));
@@ -121,15 +124,24 @@ public class DefinitionStateSerialization {
     return builder.build();
   }
 
-  private DefinitionProtos.Definition.DataData.Constructor.Pattern writePattern(DefinitionSerialization defSerializer, Pattern pattern) {
-    DefinitionProtos.Definition.DataData.Constructor.Pattern.Builder builder = DefinitionProtos.Definition.DataData.Constructor.Pattern.newBuilder();
+  private DefinitionProtos.Definition.Clause writeClause(DefinitionSerialization defSerializer, ClauseBase clause) {
+    DefinitionProtos.Definition.Clause.Builder builder = DefinitionProtos.Definition.Clause.newBuilder();
+    for (Pattern pattern : clause.patterns) {
+      builder.addPattern(writePattern(defSerializer, pattern));
+    }
+    builder.setExpression(defSerializer.writeExpr(clause.expression));
+    return builder.build();
+  }
+
+  private DefinitionProtos.Definition.Pattern writePattern(DefinitionSerialization defSerializer, Pattern pattern) {
+    DefinitionProtos.Definition.Pattern.Builder builder = DefinitionProtos.Definition.Pattern.newBuilder();
     if (pattern instanceof BindingPattern) {
-      builder.setBinding(DefinitionProtos.Definition.DataData.Constructor.Pattern.Binding.newBuilder()
+      builder.setBinding(DefinitionProtos.Definition.Pattern.Binding.newBuilder()
         .setVar(defSerializer.writeParameter(((BindingPattern) pattern).getBinding())));
     } else if (pattern instanceof EmptyPattern) {
-      builder.setEmpty(DefinitionProtos.Definition.DataData.Constructor.Pattern.Empty.newBuilder());
+      builder.setEmpty(DefinitionProtos.Definition.Pattern.Empty.newBuilder());
     } else if (pattern instanceof ConstructorPattern) {
-      DefinitionProtos.Definition.DataData.Constructor.Pattern.ConstructorRef.Builder pBuilder = DefinitionProtos.Definition.DataData.Constructor.Pattern.ConstructorRef.newBuilder();
+      DefinitionProtos.Definition.Pattern.ConstructorRef.Builder pBuilder = DefinitionProtos.Definition.Pattern.ConstructorRef.newBuilder();
       pBuilder.setConstructorRef(myCalltargetIndexProvider.getDefIndex(((ConstructorPattern) pattern).getConstructor()));
       for (Pattern patternArgument : ((ConstructorPattern) pattern).getArguments()) {
         pBuilder.addPattern(writePattern(defSerializer, patternArgument));

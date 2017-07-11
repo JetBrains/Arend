@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.core.elimtree;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 
 import java.util.List;
 
@@ -24,5 +25,10 @@ public class EmptyPattern implements Pattern {
   @Override
   public MatchResult match(Expression expression, List<Expression> result) {
     return MatchResult.FAIL;
+  }
+
+  @Override
+  public boolean unify(Pattern other, ExprSubstitution substitution1, ExprSubstitution substitution2) {
+    return other instanceof EmptyPattern || other instanceof BindingPattern;
   }
 }

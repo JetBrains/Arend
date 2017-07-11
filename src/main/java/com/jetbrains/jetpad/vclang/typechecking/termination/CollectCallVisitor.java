@@ -3,13 +3,9 @@ package com.jetbrains.jetpad.vclang.typechecking.termination;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
-import com.jetbrains.jetpad.vclang.core.elimtree.IntervalElim;
-import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
-import com.jetbrains.jetpad.vclang.core.elimtree.Pattern;
+import com.jetbrains.jetpad.vclang.core.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ElimTypechecking;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.ProcessDefCallsVisitor;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
@@ -67,7 +63,7 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
     }
   }
 
-  public void collect(ElimTypechecking.ClauseData clause) {
+  public void collect(Clause clause) {
     if (clause.expression != null) {
       myVector = clause.patterns.stream().map(Pattern::toExpression).collect(Collectors.toList());
       clause.expression.accept(this, null);

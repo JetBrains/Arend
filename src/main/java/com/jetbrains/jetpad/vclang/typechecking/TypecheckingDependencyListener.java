@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.core.elimtree.Clause;
 import com.jetbrains.jetpad.vclang.error.CompositeErrorReporter;
 import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
@@ -16,7 +17,6 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.TerminationCheckErro
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import com.jetbrains.jetpad.vclang.typechecking.order.Ordering;
 import com.jetbrains.jetpad.vclang.typechecking.order.SCC;
-import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ElimTypechecking;
 import com.jetbrains.jetpad.vclang.typechecking.termination.DefinitionCallGraph;
 import com.jetbrains.jetpad.vclang.typechecking.termination.RecursiveBehavior;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.GlobalInstancePool;
@@ -187,7 +187,7 @@ class TypecheckingDependencyListener implements DependencyListener {
 
   private void typecheckBodies(List<Abstract.Definition> definitions, boolean headersAreOK) {
     Set<FunctionDefinition> functionDefinitions = new HashSet<>();
-    Map<FunctionDefinition, List<ElimTypechecking.ClauseData>> clausesMap = new HashMap<>();
+    Map<FunctionDefinition, List<Clause>> clausesMap = new HashMap<>();
     Set<DataDefinition> dataDefinitions = new HashSet<>();
     for (Abstract.Definition definition : definitions) {
       Definition typechecked = myState.getTypechecked(definition);
@@ -201,7 +201,7 @@ class TypecheckingDependencyListener implements DependencyListener {
       Suspension suspension = mySuspensions.remove(definition);
       if (headersAreOK && suspension != null) {
         Definition def = myState.getTypechecked(definition);
-        List<ElimTypechecking.ClauseData> clauses = DefinitionTypechecking.typecheckBody(def, suspension.visitor, dataDefinitions);
+        List<Clause> clauses = DefinitionTypechecking.typecheckBody(def, suspension.visitor, dataDefinitions);
         if (clauses != null) {
           functionDefinitions.add((FunctionDefinition) def);
           clausesMap.put((FunctionDefinition) def, clauses);
@@ -246,7 +246,7 @@ class TypecheckingDependencyListener implements DependencyListener {
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
     CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(myErrorReporter, countingErrorReporter);
     LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), compositeErrorReporter);
-    List<ElimTypechecking.ClauseData> clauses = DefinitionTypechecking.typecheck(myState, new GlobalInstancePool(myState, myInstanceProvider), myStaticNsProvider, myDynamicNsProvider, unit, recursive, localErrorReporter);
+    List<Clause> clauses = DefinitionTypechecking.typecheck(myState, new GlobalInstancePool(myState, myInstanceProvider), myStaticNsProvider, myDynamicNsProvider, unit, recursive, localErrorReporter);
     Definition typechecked = myState.getTypechecked(unit.getDefinition());
 
     if (recursive && clauses != null) {

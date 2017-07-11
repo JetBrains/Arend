@@ -21,6 +21,31 @@ message Definition {
         FunctionData function = 7;
     }
 
+    message Clause {
+        repeated Pattern pattern = 1;
+        Expression expression = 2;
+    }
+
+    message Pattern {
+        oneof kind {
+            Binding binding = 4;
+            ConstructorRef constructor = 5;
+            Empty empty = 6;
+        }
+
+        message Binding {
+            SingleParameter var = 1;
+        }
+        message ConstructorRef {
+            Sort sortArgument = 4;
+            repeated Expression data_type_argument = 5;
+            int32 constructor_ref = 1;
+            repeated Pattern pattern = 3;
+        }
+        message Empty {
+        }
+    }
+
     message ClassifyingFields {
         repeated int32 field_ref = 1;
     }
@@ -45,27 +70,8 @@ message Definition {
         message Constructor {
             repeated Pattern pattern = 5;
             repeated Telescope param = 2;
+            repeated Clause clause = 6;
             Body conditions = 4;
-
-            message Pattern {
-                oneof kind {
-                    Binding binding = 4;
-                    ConstructorRef constructor = 5;
-                    Empty empty = 6;
-                }
-
-                message Binding {
-                    SingleParameter var = 1;
-                }
-                message ConstructorRef {
-                    Sort sortArgument = 4;
-                    repeated Expression data_type_argument = 5;
-                    int32 constructor_ref = 1;
-                    repeated Pattern pattern = 3;
-                }
-                message Empty {
-                }
-            }
         }
     }
     message FunctionData {

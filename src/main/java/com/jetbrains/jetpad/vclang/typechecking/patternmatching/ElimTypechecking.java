@@ -75,8 +75,8 @@ public class ElimTypechecking {
     return elimParams;
   }
 
-  public Body typecheckElim(Abstract.ElimBody body, List<? extends Abstract.Argument> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, List<ClauseData> resultClauses) {
-    List<ExtClauseData> clauses = new ArrayList<>(body.getClauses().size());
+  public Body typecheckElim(Abstract.ElimBody body, List<? extends Abstract.Argument> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, List<Clause> resultClauses) {
+    List<ExtClause> clauses = new ArrayList<>(body.getClauses().size());
     PatternTypechecking patternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), myFlags);
     myOK = true;
     for (Abstract.FunctionClause clause : body.getClauses()) {
@@ -84,7 +84,7 @@ public class ElimTypechecking {
       if (result == null) {
         myOK = false;
       } else {
-        clauses.add(new ExtClauseData(result.proj1, result.proj2 == null ? null : result.proj2.expression, new ExprSubstitution(), clause));
+        clauses.add(new ExtClause(result.proj1, result.proj2 == null ? null : result.proj2.expression, new ExprSubstitution(), clause));
       }
     }
     if (!myOK) {
@@ -93,9 +93,9 @@ public class ElimTypechecking {
 
     myUnusedClauses = new HashSet<>(body.getClauses());
 
-    List<ExtClauseData> intervalClauses = new ArrayList<>();
-    List<ExtClauseData> nonIntervalClauses = new ArrayList<>();
-    for (ExtClauseData clause : clauses) {
+    List<ExtClause> intervalClauses = new ArrayList<>();
+    List<ExtClause> nonIntervalClauses = new ArrayList<>();
+    for (ExtClause clause : clauses) {
       boolean hasNonIntervals = false;
       int intervals = 0;
       for (Pattern pattern : clause.patterns) {
@@ -115,7 +115,7 @@ public class ElimTypechecking {
       if (hasNonIntervals || intervals == 0) {
         nonIntervalClauses.add(clause);
         if (resultClauses != null) {
-          resultClauses.add(new ClauseData(clause.patterns, clause.expression, clause.clause));
+          resultClauses.add(new Clause(clause.patterns, clause.expression, clause.clause));
         }
       } else {
         if (intervals > 1) {
@@ -137,7 +137,7 @@ public class ElimTypechecking {
       }
       cases = cases.subList(i, cases.size());
 
-      for (ExtClauseData clause : nonIntervalClauses) {
+      for (ExtClause clause : nonIntervalClauses) {
         for (int j = i; j < clause.patterns.size(); j++) {
           if (!(clause.patterns.get(j) instanceof BindingPattern)) {
             myVisitor.getErrorReporter().report(new LocalTypeCheckingError("A pattern matching on a data type is allowed only before the pattern matching on the interval", clause.clause));
@@ -169,34 +169,22 @@ public class ElimTypechecking {
     return cases == null ? elimTree : new IntervalElim(parameters, cases, elimTree);
   }
 
-  public class ClauseData {
-    public final List<Pattern> patterns;
-    public final Expression expression;
-    public final Abstract.FunctionClause clause;
-
-    ClauseData(List<Pattern> patterns, Expression expression, Abstract.FunctionClause clause) {
-      this.patterns = patterns;
-      this.expression = expression;
-      this.clause = clause;
-    }
-  }
-
-  private class ExtClauseData extends ClauseData {
+  private class ExtClause extends Clause {
     final ExprSubstitution substitution;
 
-    ExtClauseData(List<Pattern> patterns, Expression expression, ExprSubstitution substitution, Abstract.FunctionClause clause) {
+    ExtClause(List<Pattern> patterns, Expression expression, ExprSubstitution substitution, Abstract.FunctionClause clause) {
       super(patterns, expression, clause);
       this.substitution = substitution;
     }
   }
 
-  private List<Pair<Expression, Expression>> clausesToIntervalElim(List<ExtClauseData> clauseDataList, DependentLink parameters) {
+  private List<Pair<Expression, Expression>> clausesToIntervalElim(List<ExtClause> clauseDataList, DependentLink parameters) {
     List<Pair<Expression, Expression>> result = new ArrayList<>(clauseDataList.get(0).patterns.size());
     for (int i = 0; i < clauseDataList.get(0).patterns.size(); i++) {
       Expression left = null;
       Expression right = null;
 
-      for (ExtClauseData clauseData : clauseDataList) {
+      for (ExtClause clauseData : clauseDataList) {
         if (clauseData.patterns.get(i) instanceof ConstructorPattern) {
           boolean found = false;
           Constructor constructor = ((ConstructorPattern) clauseData.patterns.get(i)).getConstructor();
@@ -255,12 +243,12 @@ public class ElimTypechecking {
     return result;
   }
 
-  private ElimTree clausesToElimTree(List<ExtClauseData> clauseDataList) {
+  private ElimTree clausesToElimTree(List<ExtClause> clauseDataList) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       int index = 0;
       loop:
       for (; index < clauseDataList.get(0).patterns.size(); index++) {
-        for (ExtClauseData clauseData : clauseDataList) {
+        for (ExtClause clauseData : clauseDataList) {
           if (!(clauseData.patterns.get(index) instanceof BindingPattern)) {
             if (clauseDataList.get(0).patterns.get(index) instanceof BindingPattern && clauseData.patterns.get(index) instanceof ConstructorPattern) {
               Constructor constructor = ((ConstructorPattern) clauseData.patterns.get(index)).getConstructor();
@@ -277,7 +265,7 @@ public class ElimTypechecking {
 
       // If all patterns are variables
       if (index == clauseDataList.get(0).patterns.size()) {
-        ExtClauseData clauseData = clauseDataList.get(0);
+        ExtClause clauseData = clauseDataList.get(0);
         myUnusedClauses.remove(clauseData.clause);
         return new LeafElimTree(clauseData.patterns.isEmpty() ? EmptyDependentLink.getInstance() : ((BindingPattern) clauseData.patterns.get(0)).getBinding(), clauseData.expression.subst(clauseData.substitution));
       }
@@ -298,8 +286,8 @@ public class ElimTypechecking {
         }
       }
 
-      ExtClauseData conClauseData = null;
-      for (ExtClauseData clauseData : clauseDataList) {
+      ExtClause conClauseData = null;
+      for (ExtClause clauseData : clauseDataList) {
         Pattern pattern = clauseData.patterns.get(index);
         if (pattern instanceof EmptyPattern) {
           myUnusedClauses.remove(clauseData.clause);
@@ -344,8 +332,8 @@ public class ElimTypechecking {
       }
 
       boolean hasVars = false;
-      Map<Constructor, List<ExtClauseData>> constructorMap = new LinkedHashMap<>();
-      for (ExtClauseData clauseData : clauseDataList) {
+      Map<Constructor, List<ExtClause>> constructorMap = new LinkedHashMap<>();
+      for (ExtClause clauseData : clauseDataList) {
         if (clauseData.patterns.get(index) instanceof BindingPattern) {
           hasVars = true;
           for (Constructor constructor : constructors) {
@@ -380,7 +368,7 @@ public class ElimTypechecking {
 
       Map<Constructor, ElimTree> children = new HashMap<>();
       for (Constructor constructor : constructors) {
-        List<ExtClauseData> conClauseDataList = constructorMap.get(constructor);
+        List<ExtClause> conClauseDataList = constructorMap.get(constructor);
         if (conClauseDataList == null) {
           continue;
         }
@@ -418,7 +406,7 @@ public class ElimTypechecking {
             conClauseDataList.get(i).substitution.add(((BindingPattern) oldPatterns.get(index)).getBinding(), substExpr);
           }
           patterns.addAll(oldPatterns.subList(index + 1, oldPatterns.size()));
-          conClauseDataList.set(i, new ExtClauseData(patterns, conClauseDataList.get(i).expression, conClauseDataList.get(i).substitution, conClauseDataList.get(i).clause));
+          conClauseDataList.set(i, new ExtClause(patterns, conClauseDataList.get(i).expression, conClauseDataList.get(i).substitution, conClauseDataList.get(i).clause));
         }
 
         ElimTree elimTree = clausesToElimTree(conClauseDataList);

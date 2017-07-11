@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.core.elimtree;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 
 import java.util.List;
 
@@ -42,5 +43,15 @@ public class Patterns {
     }
 
     return matchResult;
+  }
+
+  public boolean unify(Patterns other, ExprSubstitution substitution1, ExprSubstitution substitution2) {
+    assert myPatterns.size() == other.myPatterns.size();
+    for (int i = 0; i < myPatterns.size(); i++) {
+      if (!myPatterns.get(i).unify(other.myPatterns.get(i), substitution1, substitution2)) {
+        return false;
+      }
+    }
+    return true;
   }
 }

@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.core.definition;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.elimtree.Body;
+import com.jetbrains.jetpad.vclang.core.elimtree.ClauseBase;
 import com.jetbrains.jetpad.vclang.core.elimtree.Pattern;
 import com.jetbrains.jetpad.vclang.core.elimtree.Patterns;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
@@ -14,6 +15,7 @@ import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,11 +24,13 @@ public class Constructor extends Definition implements Function {
   private DependentLink myParameters;
   private Patterns myPatterns;
   private Body myConditions;
+  private List<ClauseBase> myClauses;
 
   public Constructor(Abstract.Constructor abstractDef, DataDefinition dataType) {
     super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
     myDataType = dataType;
     myParameters = null;
+    myClauses = Collections.emptyList();
   }
 
   public void setBody(Body conditions) {
@@ -40,6 +44,14 @@ public class Constructor extends Definition implements Function {
 
   public void setPatterns(Patterns patterns) {
     myPatterns = patterns;
+  }
+
+  public List<? extends ClauseBase> getClauses() {
+    return myClauses;
+  }
+
+  public void setClauses(List<? extends ClauseBase> clauses) {
+    myClauses = new ArrayList<>(clauses);
   }
 
   @Override

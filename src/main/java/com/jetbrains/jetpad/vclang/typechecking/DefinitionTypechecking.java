@@ -74,7 +74,7 @@ class DefinitionTypechecking {
     }
   }
 
-  static List<ElimTypechecking.ClauseData> typecheckBody(Definition definition, CheckTypeVisitor exprVisitor, Set<DataDefinition> dataDefinitions) {
+  static List<Clause> typecheckBody(Definition definition, CheckTypeVisitor exprVisitor, Set<DataDefinition> dataDefinitions) {
     if (definition instanceof FunctionDefinition) {
       return typeCheckFunctionBody((FunctionDefinition) definition, exprVisitor);
     } else
@@ -88,7 +88,7 @@ class DefinitionTypechecking {
     return null;
   }
 
-  static List<ElimTypechecking.ClauseData> typecheck(TypecheckerState state, GlobalInstancePool instancePool, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckingUnit unit, boolean recursive, LocalErrorReporter errorReporter) {
+  static List<Clause> typecheck(TypecheckerState state, GlobalInstancePool instancePool, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckingUnit unit, boolean recursive, LocalErrorReporter errorReporter) {
     CheckTypeVisitor visitor = new CheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, new LinkedHashMap<>(), errorReporter, instancePool);
     ClassDefinition enclosingClass = unit.getEnclosingClass() == null ? null : (ClassDefinition) state.getTypechecked(unit.getEnclosingClass());
     Definition typechecked = state.getTypechecked(unit.getDefinition());
@@ -230,8 +230,8 @@ class DefinitionTypechecking {
     typedDef.setStatus(paramsOk ? Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING : Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
   }
 
-  private static List<ElimTypechecking.ClauseData> typeCheckFunctionBody(FunctionDefinition typedDef, CheckTypeVisitor visitor) {
-    List<ElimTypechecking.ClauseData> clauses = null;
+  private static List<Clause> typeCheckFunctionBody(FunctionDefinition typedDef, CheckTypeVisitor visitor) {
+    List<Clause> clauses = null;
     Abstract.FunctionDefinition def = (Abstract.FunctionDefinition) typedDef.getAbstractDefinition();
     Abstract.FunctionBody body = def.getBody();
 
@@ -489,17 +489,10 @@ class DefinitionTypechecking {
     if (elimParams != null) {
       try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(visitor.getFreeBindings())) {
         try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(visitor.getContext())) {
-          List<ElimTypechecking.ClauseData> clauses = new ArrayList<>();
+          List<Clause> clauses = new ArrayList<>();
           Body body = new ElimTypechecking(visitor, constructor.getDataTypeExpression(Sort.STD), EnumSet.of(PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(def, def.getArguments(), constructor.getParameters(), elimParams, clauses);
           constructor.setBody(body);
-          /* TODO[newElim]
-          if (!(body == null || body instanceof IntervalElim && ((IntervalElim) body).getOtherwise() == null)) {
-            visitor.getErrorReporter().report(new LocalTypeCheckingError("Non-interval conditions are not supported", def));
-          }
-          if (body instanceof IntervalElim) {
-            constructor.setBody(((IntervalElim) body).getOtherwise() != null ? new IntervalElim(((IntervalElim) body).getParameters(), ((IntervalElim) body).getCases(), null) : body);
-          }
-          */
+          constructor.setClauses(clauses);
           ConditionsChecking.check(body, clauses, constructor, visitor.getErrorReporter());
         }
       }

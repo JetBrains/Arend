@@ -176,7 +176,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
       "\\data Z | pos Nat | neg Nat { zero => pos zero }\n" +
       "\\function test (z : Z) : Nat\n" +
       "  | pos (suc n) => 0\n" +
-      "  | neg n => 1", 1);
+      "  | neg n => 1", 2);
   }
 
   @Test
