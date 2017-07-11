@@ -108,7 +108,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
 
   @Test
   public void testSelfConditionsError() {
-    typeCheckDef(
+    typeCheckClass(
       "\\data Unit | unit\n" +
       "\\data D\n" +
       "  | nil0\n" +
@@ -120,7 +120,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
 
   @Test
   public void testSelfConditions() {
-    typeCheckDef(
+    typeCheckClass(
       "\\data Unit | unit\n" +
       "\\data D\n" +
       "  | nil0\n" +
@@ -151,18 +151,14 @@ public class ConditionsTest extends TypeCheckingTestCase {
         "\\field loop' : I -> S'\n" +
         "\\function test (s : S) : S'\n" +
         "  | base => base'\n" +
-        "  | loop i => loop' i", "", 1);
+        "  | loop i => loop' i", "", 2);
   }
 
   @Test
   public void constructorArgumentWithCondition() {
     typeCheckClass(
-        "\\data S | base | loop I\n" +
-        "  { left => base\n" +
-        "  | right => base\n" +
-        "  }\n" +
-        "\\data D | cons' | cons S { loop left => cons' }\n" +
-        "\\function condTest : cons' = cons' => path (\\lam _ => cons (loop left))");
+        "\\data S | base | loop Nat { zero => base }\n" +
+        "\\data D | cons' | cons S { loop zero => cons' }", 1);
   }
 
   @Test

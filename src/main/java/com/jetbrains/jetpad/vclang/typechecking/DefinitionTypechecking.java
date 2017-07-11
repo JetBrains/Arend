@@ -246,6 +246,7 @@ class DefinitionTypechecking {
           Body typedBody = elimParams == null ? null : new ElimTypechecking(visitor, expectedType, EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.CONTEXT_FREE, PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(elimBody, def.getArguments(), typedDef.getParameters(), elimParams, clauses);
           if (typedBody != null) {
             typedDef.setBody(typedBody);
+            typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
             if (ConditionsChecking.check(typedBody, clauses, typedDef, visitor.getErrorReporter())) {
               typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
             } else {
@@ -349,7 +350,7 @@ class DefinitionTypechecking {
     }
 
     boolean universeOk = true;
-    PatternTypechecking dataPatternTypechecking = new PatternTypechecking(visitor.getErrorReporter(), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE, PatternTypechecking.Flag.ALLOW_CONDITIONS));
+    PatternTypechecking dataPatternTypechecking = new PatternTypechecking(visitor.getErrorReporter(), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE));
     for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
       // Typecheck patterns and compute free bindings
       Pair<List<Pattern>, List<Expression>> result = null;
@@ -491,6 +492,14 @@ class DefinitionTypechecking {
           List<ElimTypechecking.ClauseData> clauses = new ArrayList<>();
           Body body = new ElimTypechecking(visitor, constructor.getDataTypeExpression(Sort.STD), EnumSet.of(PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(def, def.getArguments(), constructor.getParameters(), elimParams, clauses);
           constructor.setBody(body);
+          /* TODO[newElim]
+          if (!(body == null || body instanceof IntervalElim && ((IntervalElim) body).getOtherwise() == null)) {
+            visitor.getErrorReporter().report(new LocalTypeCheckingError("Non-interval conditions are not supported", def));
+          }
+          if (body instanceof IntervalElim) {
+            constructor.setBody(((IntervalElim) body).getOtherwise() != null ? new IntervalElim(((IntervalElim) body).getParameters(), ((IntervalElim) body).getCases(), null) : body);
+          }
+          */
           ConditionsChecking.check(body, clauses, constructor, visitor.getErrorReporter());
         }
       }
