@@ -88,7 +88,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
         "\\function length {A : \\Type0} (x : BD-list A) : Nat => \\elim x\n" +
         "  | nil => 0\n" +
         "  | cons x xs => suc (length xs)\n" +
-        "  | snoc xs x => suc (length xs)");
+        "  | snoc xs x => suc (length xs)", 1);
   }
 
   @Test

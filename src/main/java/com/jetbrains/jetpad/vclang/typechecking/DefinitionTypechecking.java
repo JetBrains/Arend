@@ -478,7 +478,6 @@ class DefinitionTypechecking {
         constructor.setParameters(list.getFirst());
         constructor.setPatterns(patterns);
         constructor.setThisClass(dataDefinition.getThisClass());
-        constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
         if (def.getClauses() != null) {
           elimParams = ElimTypechecking.getEliminatedParameters(def.getEliminatedReferences(), def.getClauses(), constructor.getParameters(), visitor);
@@ -493,11 +492,13 @@ class DefinitionTypechecking {
           Body body = new ElimTypechecking(visitor, constructor.getDataTypeExpression(Sort.STD), EnumSet.of(PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(def, def.getArguments(), constructor.getParameters(), elimParams, clauses);
           constructor.setBody(body);
           constructor.setClauses(clauses);
+          constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
           ConditionsChecking.check(body, clauses, constructor, visitor.getErrorReporter());
         }
       }
     }
 
+    constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     return sort;
   }
 

@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
@@ -278,19 +277,6 @@ public class NormalizationTest extends TypeCheckingTestCase {
         "\\data Z | neg Nat | pos Nat { zero => neg 0 }\n" +
         "\\function only-one-zero : pos 0 = neg 0 => path (\\lam _ => pos 0)"
     );
-  }
-
-  @Test
-  public void testConCallNormFull() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
-      "\\data BD-list (A : \\Set0) | nil | cons A (BD-list A) | snoc (xs : BD-list A) (y : A)\n" +
-        "  => \\elim xs { | cons x xs => cons x (snoc xs y) | nil => cons y nil }");
-    DataDefinition bdList = (DataDefinition) result.getDefinition("BD-list");
-    Constructor bdNil = bdList.getConstructor("nil");
-    Constructor bdCons = bdList.getConstructor("cons");
-    Constructor bdSnoc = bdList.getConstructor("snoc");
-    Expression expr1 = ConCall(bdSnoc, Sort.SET0, Collections.singletonList(Nat()), ConCall(bdNil, Sort.SET0, Collections.singletonList(Nat())), Zero());
-    assertEquals(ConCall(bdCons, Sort.SET0, Collections.singletonList(Nat()), Zero(), ConCall(bdNil, Sort.SET0, Collections.singletonList(Nat()))), expr1.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test

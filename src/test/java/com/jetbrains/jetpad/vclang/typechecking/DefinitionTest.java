@@ -70,10 +70,10 @@ public class DefinitionTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void patternDepParamsError() {
+  public void patternDepParams2() {
     typeCheckClass(
         "\\data D (n : Nat) (n = n) => \\elim n | zero => d\n" +
-        "\\data C {n : Nat} {p : n = n} (D n p) | c (p = p)", 1);
+        "\\data C {n : Nat} {p : n = n} (D n p) | c (p = p)");
   }
 
   @Test
@@ -116,10 +116,10 @@ public class DefinitionTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void patternLiftError() {
+  public void patternLift2() {
     typeCheckClass(
         "\\data D Nat \\with | zero => d\n" +
-        "\\data C (m n : Nat) (D m) => \\elim n | zero => c", 1);
+        "\\data C (m n : Nat) (D m) => \\elim n | zero => c");
   }
 
   @Test
