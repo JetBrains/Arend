@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory;
@@ -11,16 +10,8 @@ import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
-import com.jetbrains.jetpad.vclang.typechecking.order.BaseDependencyListener;
+import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
-import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 import java.util.*;
 
@@ -34,7 +25,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
   private TypecheckerState state = new SimpleTypecheckerState();
 
-  protected LocalErrorReporter localErrorReporter = new ProxyErrorReporter(null, errorReporter);
+  protected LocalErrorReporter localErrorReporter = new TestLocalErrorReporter(errorReporter);
 
   public TypeCheckingTestCase() {
     typeCheckPrelude();
@@ -46,7 +37,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     if (PRELUDE_TYPECHECKER_STATE == null) {
       ListErrorReporter internalErrorReporter = new ListErrorReporter();
       PRELUDE_TYPECHECKER_STATE = new SimpleTypecheckerState();
-      new Typechecking(PRELUDE_TYPECHECKER_STATE, staticNsProvider, dynamicNsProvider, internalErrorReporter, new Prelude.UpdatePreludeReporter(PRELUDE_TYPECHECKER_STATE), new BaseDependencyListener()).typecheckModules(Collections.singletonList(prelude));
+      new Typechecking(PRELUDE_TYPECHECKER_STATE, staticNsProvider, dynamicNsProvider, internalErrorReporter, new Prelude.UpdatePreludeReporter(PRELUDE_TYPECHECKER_STATE), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
       //assertThat(internalErrorReporter.getErrorList(), is(empty()));  // does not type-check by design
     }
 
@@ -100,7 +91,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   private Definition typeCheckDef(Concrete.Definition definition, int errors) {
-    new Typechecking(state, staticNsProvider, dynamicNsProvider, errorReporter, new TypecheckedReporter.Dummy(), new BaseDependencyListener()).typecheckDefinitions(Collections.singletonList(definition));
+    new Typechecking(state, staticNsProvider, dynamicNsProvider, errorReporter, new TypecheckedReporter.Dummy(), new DependencyListener() {}).typecheckDefinitions(Collections.singletonList(definition));
     assertThat(errorList, containsErrors(errors));
     return state.getTypechecked(definition);
   }
@@ -115,7 +106,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   private TypecheckerState typeCheckClass(Concrete.ClassDefinition classDefinition, int errors) {
-    new Typechecking(state, staticNsProvider, dynamicNsProvider, localErrorReporter, new TypecheckedReporter.Dummy(), new BaseDependencyListener()).typecheckModules(Collections.singletonList(classDefinition));
+    new Typechecking(state, staticNsProvider, dynamicNsProvider, localErrorReporter, new TypecheckedReporter.Dummy(), new DependencyListener() {}).typecheckModules(Collections.singletonList(classDefinition));
     assertThat(errorList, containsErrors(errors));
     return state;
   }
@@ -158,92 +149,5 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
   protected TypeCheckClassResult typeCheckClass(String instance, String global) {
     return typeCheckClass(instance, global, 0);
-  }
-
-
-  protected abstract static class TypeCheckingErrorMatcher extends TypeSafeDiagnosingMatcher<GeneralError> {
-    @Override
-    protected boolean matchesSafely(GeneralError generalError, Description description) {
-      if (generalError instanceof TypeCheckingError) {
-        description.appendText("TC error ");
-        return matchesTypeCheckingError(((TypeCheckingError) generalError).localError, description);
-      } else {
-        description.appendText("not a TC error");
-        return false;
-      }
-    }
-
-    protected abstract boolean matchesTypeCheckingError(LocalTypeCheckingError error, Description description);
-  }
-
-  protected static Matcher<? super GeneralError> typecheckingError(final Class<? extends LocalTypeCheckingError> type) {
-    return new TypeCheckingErrorMatcher() {
-      @Override
-      protected boolean matchesTypeCheckingError(LocalTypeCheckingError error, Description description) {
-        if (type.isInstance(error)) {
-          description.appendText(type.getName());
-          return true;
-        } else {
-          description.appendText("not a " + type.getName());
-          return false;
-        }
-      }
-
-      @Override
-      public void describeTo(Description description) {
-        description.appendText("should be a " + type.getName());
-      }
-    };
-  }
-
-  protected static Matcher<? super GeneralError> typeMismatchError() {
-    return new TypeCheckingErrorMatcher() {
-      @Override
-      protected boolean matchesTypeCheckingError(LocalTypeCheckingError error, Description description) {
-          if (error instanceof TypeMismatchError) {
-            description.appendText("type mismatch");
-            return true;
-          } else {
-            description.appendText("not a type mismatch");
-            return false;
-          }
-      }
-
-      @Override
-      public void describeTo(Description description) {
-        description.appendText("should be a type mismatch");
-      }
-    };
-  }
-
-  protected static Matcher<GeneralError> goal(final int expectedSize) {
-    return new TypeCheckingErrorMatcher() {
-      @Override
-      protected boolean matchesTypeCheckingError(LocalTypeCheckingError error, Description description) {
-        if (error instanceof GoalError) {
-          description.appendText("goal with ");
-          int size = ((GoalError) error).context.size();
-          if (size == 0) {
-            description.appendText("empty context");
-          } else {
-            description.appendText("context of size ").appendValue(size);
-          }
-          return size == expectedSize;
-        } else {
-          description.appendText("not a goal");
-          return false;
-        }
-      }
-
-      @Override
-      public void describeTo(Description description) {
-        description.appendText("should be a goal with ");
-        if (expectedSize == 0) {
-          description.appendText("empty context");
-        } else {
-          description.appendText("context of size ").appendValue(expectedSize);
-        }
-      }
-    };
   }
 }

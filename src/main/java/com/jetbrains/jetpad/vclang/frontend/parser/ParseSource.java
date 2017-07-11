@@ -3,11 +3,16 @@ package com.jetbrains.jetpad.vclang.frontend.parser;
 import com.jetbrains.jetpad.vclang.error.CompositeErrorReporter;
 import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
+import com.jetbrains.jetpad.vclang.frontend.ConcreteResolveListener;
+import com.jetbrains.jetpad.vclang.frontend.namespace.ModuleRegistry;
+import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotNameResolver;
+import com.jetbrains.jetpad.vclang.module.source.SourceId;
+import com.jetbrains.jetpad.vclang.naming.NameResolver;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import org.antlr.v4.runtime.*;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
@@ -21,7 +26,7 @@ public abstract class ParseSource {
     myStream = stream;
   }
 
-  public Abstract.ClassDefinition load(ErrorReporter errorReporter) throws IOException {
+  public @Nullable Concrete.ClassDefinition load(ErrorReporter errorReporter, ModuleRegistry moduleRegistry, Scope globalScope, NameResolver nameResolver) throws IOException {
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
     final CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
 
@@ -49,6 +54,15 @@ public abstract class ParseSource {
     }
 
     List<Concrete.Statement> statements = new BuildVisitor(mySourceId, errorReporter).visitStatements(tree);
-    return new Concrete.ClassDefinition(new Concrete.Position(mySourceId, 0, 0), mySourceId.getModulePath().getName(), statements);
+
+    Concrete.ClassDefinition result = new Concrete.ClassDefinition(new Concrete.Position(mySourceId, 0, 0), mySourceId.getModulePath().getName(), statements);
+
+    if (moduleRegistry != null) {
+      moduleRegistry.registerModule(mySourceId.getModulePath(), result);
+    }
+    if (nameResolver != null) {
+      OneshotNameResolver.visitModule(result, globalScope, nameResolver, new ConcreteResolveListener(errorReporter));
+    }
+    return result;
   }
 }

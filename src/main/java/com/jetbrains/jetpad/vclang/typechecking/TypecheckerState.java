@@ -6,4 +6,5 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 public interface TypecheckerState {
   void record(Abstract.Definition def, Definition res);
   Definition getTypechecked(Abstract.Definition def);
+  void reset();
 }

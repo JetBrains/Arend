@@ -29,6 +29,13 @@ public class BranchElimTreeNode extends ElimTreeNode {
 
   private final List<Binding> myContextTail;
 
+  // This constructor is to be used in deserialization only
+  public BranchElimTreeNode(Binding reference, List<Binding> contextTail, boolean isInterval) {
+    myReference = reference;
+    myContextTail = contextTail;
+    myIsInterval = isInterval;
+  }
+
   public BranchElimTreeNode(Binding reference, List<Binding> contextTail) {
     myReference = reference;
     myContextTail = contextTail;
@@ -182,5 +189,9 @@ public class BranchElimTreeNode extends ElimTreeNode {
     expressions.remove(idx);
     expressions.addAll(idx, conFunc.getDefCallArguments());
     return clause.getChild().match(expressions);
+  }
+
+  public boolean isInterval() {
+    return myIsInterval;
   }
 }

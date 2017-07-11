@@ -28,22 +28,44 @@ public class DefinitionStateSerialization {
     for (Abstract.Definition definition : state.getTypecheckedDefinitions()) {
       Definition typechecked = state.getTypechecked(definition);
       if (typechecked instanceof Constructor || typechecked instanceof ClassField) continue;
-      builder.putDefinition(myPersistenceProvider.getIdFor(definition), writeDefinitionStub(typechecked, state));
+
+      if (canBeReferred(typechecked)) {
+        builder.putDefinition(myPersistenceProvider.getIdFor(definition), writeDefinition(typechecked, state));
+      }
     }
     return builder.build();
   }
 
-  private DefinitionProtos.DefinitionStub writeDefinitionStub(Definition definition, LocalizedTypecheckerState<? extends SourceId>.LocalTypecheckerState state) {
-    DefinitionProtos.DefinitionStub.Builder out = DefinitionProtos.DefinitionStub.newBuilder();
-    if (definition.status() == Definition.TypeCheckingStatus.NO_ERRORS) {
-      out.setDefinition(writeDefinition(definition, state));
-    }
-    return out.build();
+  private boolean canBeReferred(Definition typechecked) {
+    return typechecked.status().headerIsOK();
   }
 
   // TODO: HACK. Second parameter should not be needed
   private DefinitionProtos.Definition writeDefinition(Definition definition, LocalizedTypecheckerState<? extends SourceId>.LocalTypecheckerState state) {
     final DefinitionProtos.Definition.Builder out = DefinitionProtos.Definition.newBuilder();
+
+    switch (definition.status()) {
+      case HEADER_HAS_ERRORS:
+        out.setStatus(DefinitionProtos.Definition.Status.HEADER_HAS_ERRORS);
+        break;
+      case BODY_HAS_ERRORS:
+        out.setStatus(DefinitionProtos.Definition.Status.BODY_HAS_ERRORS);
+        break;
+      case HEADER_NEEDS_TYPE_CHECKING:
+        out.setStatus(DefinitionProtos.Definition.Status.HEADER_NEEDS_TYPE_CHECKING);
+        break;
+      case BODY_NEEDS_TYPE_CHECKING:
+        out.setStatus(DefinitionProtos.Definition.Status.BODY_NEEDS_TYPE_CHECKING);
+        break;
+      case HAS_ERRORS:
+        out.setStatus(DefinitionProtos.Definition.Status.HAS_ERRORS);
+        break;
+      case NO_ERRORS:
+        out.setStatus(DefinitionProtos.Definition.Status.NO_ERRORS);
+        break;
+      default:
+        throw new IllegalStateException("Unknown typechecking status");
+    }
 
     if (definition.getThisClass() != null) {
       out.setThisClassRef(myCalltargetIndexProvider.getDefIndex(definition.getThisClass()));

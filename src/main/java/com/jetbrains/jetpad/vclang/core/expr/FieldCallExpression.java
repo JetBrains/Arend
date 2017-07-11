@@ -12,7 +12,6 @@ public class FieldCallExpression extends DefCallExpression {
 
   public FieldCallExpression(ClassField definition, Expression expression) {
     super(definition);
-    assert definition.status().headerIsOK();
     myExpression = expression;
   }
 

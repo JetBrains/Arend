@@ -28,7 +28,8 @@ public class SimpleTypecheckerState implements TypecheckerState {
     return myTypechecked.get(def);
   }
 
-  public void clear() {
+  @Override
+  public void reset() {
     myTypechecked.clear();
   }
 }

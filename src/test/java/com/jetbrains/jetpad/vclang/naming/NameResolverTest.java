@@ -268,18 +268,18 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void testPreludeSuc() {
     loadPrelude();
-    resolveNamesDef("\\function test' => ::Prelude.suc");
+    resolveNamesDef("\\function test' => suc");
   }
 
   @Test
   public void testPreludeNonExistentMember() {
     loadPrelude();
-    resolveNamesDef("\\function test' => ::Prelude.foo", 1);
+    resolveNamesDef("\\function test' => foo", 1);
   }
 
   @Test
   public void testPreludeNotLoaded() {
-    resolveNamesDef("\\function test' => ::Prelude.suc", 1);
+    resolveNamesDef("\\function test' => suc", 1);
   }
 
   @Test

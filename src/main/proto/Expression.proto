@@ -176,6 +176,7 @@ message ElimTreeNode {
     }
     message Branch {
         int32 reference_ref = 1;
+        bool is_interval = 5;
         map<int32, ConstructorClause> constructor_clauses = 2;
         ElimTreeNode otherwise_clause = 3;
         repeated int32 context_tail_item_ref = 4;

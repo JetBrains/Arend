@@ -258,7 +258,10 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
         result = myFactory.makeApp(result, link.isExplicit(), arg.accept(this, null));
         link = link.getNext();
         if (!link.hasNext()) {
-          link = expr.getLetClause().getParameters().get(++i);
+          if (++i >= expr.getLetClause().getParameters().size()) {
+            break;
+          }
+          link = expr.getLetClause().getParameters().get(i);
         }
       }
     }

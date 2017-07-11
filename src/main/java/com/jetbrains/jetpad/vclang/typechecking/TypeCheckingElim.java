@@ -26,7 +26,6 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.HasErrors;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.*;
@@ -448,7 +447,7 @@ public class TypeCheckingElim {
       }
 
       if (constructor == null) {
-        error = new NotInScopeError(pattern, constructorPattern.getConstructorName());  // TODO: refer by reference
+        // error = new ConstructorNotInScopeError(constructorPattern.getConstructorName(), pattern);  // TODO: refer by reference
         myVisitor.getErrorReporter().report(error);
         return new ExpandPatternErrorResult(error);
       }
