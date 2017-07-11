@@ -193,16 +193,17 @@ class DefinitionDeserialization {
   }
 
   ElimTree readElimTree(ExpressionProtos.ElimTree proto) throws DeserializationError {
+    DependentLink parameters = readParameters(proto.getParamList());
     switch (proto.getKindCase()) {
       case BRANCH: {
         Map<Constructor, ElimTree> children = new HashMap<>();
         for (Map.Entry<Integer, ExpressionProtos.ElimTree> entry : proto.getBranch().getClausesMap().entrySet()) {
           children.put(myCalltargetProvider.getCalltarget(entry.getKey(), Constructor.class), readElimTree(entry.getValue()));
         }
-        return new BranchElimTree(readParameters(proto.getParamList()), children);
+        return new BranchElimTree(parameters, children);
       }
       case LEAF:
-        return new LeafElimTree(readParameters(proto.getParamList()), readExpr(proto.getLeaf().getExpr()));
+        return new LeafElimTree(parameters, readExpr(proto.getLeaf().getExpr()));
       default:
         throw new DeserializationError("Unknown ElimTreeNode kind: " + proto.getKindCase());
     }

@@ -177,6 +177,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
       case ELIM_TREE:
         return defDeserializer.readElimTree(proto.getElimTree());
       case INTERVAL_ELIM:
+        DependentLink parameters = defDeserializer.readParameters(proto.getIntervalElim().getParamList());
         List<Pair<Expression, Expression>> cases = new ArrayList<>(proto.getIntervalElim().getCaseCount());
         for (DefinitionProtos.Body.ExpressionPair pairProto : proto.getIntervalElim().getCaseList()) {
           cases.add(new Pair<>(pairProto.hasLeft() ? defDeserializer.readExpr(pairProto.getLeft()) : null, pairProto.hasRight() ? defDeserializer.readExpr(pairProto.getRight()) : null));
@@ -185,7 +186,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
         if (proto.getIntervalElim().hasOtherwise()) {
           elimTree = defDeserializer.readElimTree(proto.getIntervalElim().getOtherwise());
         }
-        return new IntervalElim(defDeserializer.readParameters(proto.getIntervalElim().getParamList()), cases, elimTree);
+        return new IntervalElim(parameters, cases, elimTree);
       default:
         throw new DeserializationError("Unknown body kind: " + proto.getKindCase());
     }
