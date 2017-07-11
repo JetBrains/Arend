@@ -70,7 +70,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     return resolveNamesExpr(parentScope, new ArrayList<>(), text, errors);
   }
 
-  Concrete.Expression resolveNamesExpr(String text, int errors) {
+  protected Concrete.Expression resolveNamesExpr(String text, int errors) {
     return resolveNamesExpr(globalScope, new ArrayList<>(), text, errors);
   }
 
