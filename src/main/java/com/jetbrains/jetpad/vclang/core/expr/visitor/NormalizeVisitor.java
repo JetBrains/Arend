@@ -185,30 +185,37 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return applyDefCall(expr, mode);
     }
 
-    ExprSubstitution substitution = getDataTypeArgumentsSubstitution(expr);
-    Stack<Expression> stack = new Stack<>();
-    for (int i = expr.getDefCallArguments().size() - 1; i >= 0; i--) {
-      stack.push(expr.getDefCallArguments().get(i));
+    Expression result = eval(elimTree, expr.getDefCallArguments(), getDataTypeArgumentsSubstitution(expr), levelSubstitution);
+
+    if (Thread.interrupted()) {
+      throw new ComputationInterruptedException();
     }
 
-    Expression result = null;
+    return result == null ? applyDefCall(expr, mode) : result.accept(this, mode);
+  }
+
+  public Expression eval(ElimTree elimTree, List<? extends Expression> arguments, ExprSubstitution substitution, LevelSubstitution levelSubstitution) {
+    Stack<Expression> stack = new Stack<>();
+    for (int i = arguments.size() - 1; i >= 0; i--) {
+      stack.push(arguments.get(i));
+    }
+
     while (true) {
       for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
         substitution.add(link, stack.pop());
       }
       if (elimTree instanceof LeafElimTree) {
-        result = ((LeafElimTree) elimTree).getExpression().subst(substitution, levelSubstitution);
-        break;
+        return ((LeafElimTree) elimTree).getExpression().subst(substitution, levelSubstitution);
       }
 
       Expression argument = stack.peek().accept(this, Mode.WHNF);
       if (argument.toConCall() == null) {
-        break;
+        return null;
       }
 
       elimTree = ((BranchElimTree) elimTree).getChild(argument.toConCall().getDefinition());
       if (elimTree == null) {
-        break;
+        return null;
       }
 
       stack.pop();
@@ -216,12 +223,6 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         stack.push(argument.toConCall().getDefCallArguments().get(i));
       }
     }
-
-    if (Thread.interrupted()) {
-      throw new ComputationInterruptedException();
-    }
-
-    return result == null ? applyDefCall(expr, mode) : result.accept(this, mode);
   }
 
   private ExprSubstitution getDataTypeArgumentsSubstitution(CallableCallExpression expr) {

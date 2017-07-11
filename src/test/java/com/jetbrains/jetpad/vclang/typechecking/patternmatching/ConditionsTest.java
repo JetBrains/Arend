@@ -66,7 +66,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
         "  | positive (suc n), m => n\n" +
         "  | positive zero, m => m\n" +
         "  | negative n, zero => zero\n" +
-        "  | negative n, suc m => suc m");
+        "  | negative n, suc m => suc m", 1);
   }
 
   @Test
@@ -184,7 +184,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
     typeCheckClass(
       "\\data D | snd | fst Nat { | zero => snd | suc _ => snd }\n" +
       "\\function test (d : D) : Nat\n" +
-      "  | snd => zero");
+      "  | snd => zero", 1);
   }
 
   @Test

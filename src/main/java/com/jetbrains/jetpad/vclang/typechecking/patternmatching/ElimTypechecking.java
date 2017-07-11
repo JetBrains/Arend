@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.GetTypeVisitor;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
@@ -20,6 +21,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.MissingClausesError;
+import com.jetbrains.jetpad.vclang.typechecking.normalization.EvalNormalizer;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
@@ -35,7 +37,7 @@ public class ElimTypechecking {
   private Stack<Util.ClauseElem> myContext;
 
   private static final int MISSING_CLAUSES_LIST_SIZE = 10;
-  private List<List<Util.ClauseElem>> myMissingClauses;
+  private List<Pair<List<Util.ClauseElem>, Boolean>> myMissingClauses;
 
   public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, EnumSet<PatternTypechecking.Flag> flags) {
     myVisitor = visitor;
@@ -158,9 +160,23 @@ public class ElimTypechecking {
     ElimTree elimTree = clausesToElimTree(nonIntervalClauses);
 
     if (myMissingClauses != null && !myMissingClauses.isEmpty()) {
-      final List<DependentLink> finalElimParams = elimParams;
-      myVisitor.getErrorReporter().report(new MissingClausesError(myMissingClauses.stream().map(missingClause -> Util.unflattenClauses(missingClause, parameters, finalElimParams)).collect(Collectors.toList()), body));
+      List<List<Expression>> missingClauses = new ArrayList<>(myMissingClauses.size());
+      for (Pair<List<Util.ClauseElem>, Boolean> missingClause : myMissingClauses) {
+        List<Expression> expressions = Util.unflattenClauses(missingClause.proj1, parameters, elimParams);
+        if (!missingClause.proj2) {
+          if (elimTree != null && new NormalizeVisitor(new EvalNormalizer()).eval(elimTree, expressions, new ExprSubstitution(), LevelSubstitution.EMPTY) != null) {
+            continue;
+          }
+          myOK = false;
+        }
+        missingClauses.add(expressions);
+      }
+
+      if (!missingClauses.isEmpty()) {
+        myVisitor.getErrorReporter().report(new MissingClausesError(missingClauses, body));
+      }
     }
+
     if (myOK) {
       for (Abstract.FunctionClause clause : myUnusedClauses) {
         myVisitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, "This clause is redundant", clause));
@@ -359,9 +375,13 @@ public class ElimTypechecking {
               }
             }
 
-            myContext.push(new Util.ConstructorClauseElem(constructor));
-            addMissingClause(new ArrayList<>(myContext), false);
-            myContext.pop();
+            try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
+              myContext.push(new Util.ConstructorClauseElem(constructor));
+              for (DependentLink link = constructor.getDataTypeParameters(); link.hasNext(); link = link.getNext()) {
+                myContext.push(new Util.PatternClauseElem(new BindingPattern(link)));
+              }
+              addMissingClause(new ArrayList<>(myContext), false);
+            }
           }
         }
       }
@@ -423,17 +443,14 @@ public class ElimTypechecking {
     }
   }
 
-  private void addMissingClause(List<Util.ClauseElem> clause, boolean ok) {
-    if (!ok) {
-      myOK = false;
-    }
+  private void addMissingClause(List<Util.ClauseElem> clause, boolean isInterval) {
     if (myMissingClauses == null) {
       myMissingClauses = new ArrayList<>(MISSING_CLAUSES_LIST_SIZE);
     }
     if (myMissingClauses.size() == MISSING_CLAUSES_LIST_SIZE) {
       myMissingClauses.set(MISSING_CLAUSES_LIST_SIZE - 1, null);
     } else {
-      myMissingClauses.add(clause);
+      myMissingClauses.add(new Pair<>(clause, isInterval));
     }
   }
 }
