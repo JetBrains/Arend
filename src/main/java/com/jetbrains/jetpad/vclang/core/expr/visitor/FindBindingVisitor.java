@@ -178,6 +178,11 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> im
       return result;
     }
 
+    result = visitDependentLink(expr.getParameters());
+    if (result != null) {
+      return result;
+    }
+
     return findBindingInElimTree(expr.getElimTree());
   }
 

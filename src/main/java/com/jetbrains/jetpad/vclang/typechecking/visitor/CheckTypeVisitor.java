@@ -888,7 +888,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
     ConditionsChecking.check(resultClauses, elimTree, myErrorReporter);
 
-    Expression caseResult = new CaseExpression((Expression) expectedType, elimTree, expressions);
+    Expression caseResult = new CaseExpression(list.getFirst(), (Expression) expectedType, elimTree, expressions);
     expr.setWellTyped(myContext, caseResult);
     return new Result(caseResult, (Expression) expectedType);
   }

@@ -90,6 +90,7 @@ message Expression {
     }
     message Case {
         ElimTree elim_tree = 4;
+        repeated Telescope param = 5;
         Expression result_type = 2;
         repeated Expression argument = 3;
     }

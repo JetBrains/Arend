@@ -239,7 +239,10 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   @Override
   public Expression visitCase(CaseExpression expr, Void params) {
     List<Expression> arguments = expr.getArguments().stream().map(arg -> arg.accept(this, null)).collect(Collectors.toList());
-    return new CaseExpression(expr.getResultType().accept(this, null), substElimTree(expr.getElimTree()), arguments);
+    DependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), myExprSubstitution, myLevelSubstitution);
+    Expression type = expr.getResultType().accept(this, null);
+    DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
+    return new CaseExpression(parameters, type, substElimTree(expr.getElimTree()), arguments);
   }
 
   private ElimTree substElimTree(ElimTree elimTree) {

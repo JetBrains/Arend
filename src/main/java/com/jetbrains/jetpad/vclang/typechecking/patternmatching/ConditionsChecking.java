@@ -148,7 +148,7 @@ public class ConditionsChecking {
           children.put(Prelude.LEFT, new LeafElimTree(EmptyDependentLink.getInstance(), conPattern.getDataTypeArguments().get(1)));
           children.put(Prelude.RIGHT, new LeafElimTree(EmptyDependentLink.getInstance(), conPattern.getDataTypeArguments().get(2)));
           children.put(null, new LeafElimTree(lamParam, new AppExpression(conPattern.getArguments().get(0).toExpression(), lamRef)));
-          substitution.add(((BindingPattern) conPattern.getArguments().get(0)).getBinding(), new LamExpression(conPattern.getSortArgument(), lamParam, new CaseExpression(new AppExpression(conPattern.getDataTypeArguments().get(0), lamRef), new BranchElimTree(EmptyDependentLink.getInstance(), children), Collections.singletonList(lamRef))));
+          substitution.add(((BindingPattern) conPattern.getArguments().get(0)).getBinding(), new LamExpression(conPattern.getSortArgument(), lamParam, new CaseExpression(lamParam, new AppExpression(conPattern.getDataTypeArguments().get(0), lamRef), new BranchElimTree(EmptyDependentLink.getInstance(), children), Collections.singletonList(lamRef))));
         }
       }
     }
@@ -176,7 +176,7 @@ public class ConditionsChecking {
       Expression evaluatedExpr2 = clause.expression.subst(pair.proj2).normalize(NormalizeVisitor.Mode.NF);
       if (evaluatedExpr1 == null || !CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null)) {
         List<Expression> args = clause.patterns.stream().map(Pattern::toExpression).collect(Collectors.toList());
-        Expression expr1 = definition == null ? new CaseExpression(null, null, args) : definition.getDefCall(Sort.STD, null, args);
+        Expression expr1 = definition == null ? new CaseExpression(null, null, null, args) : definition.getDefCall(Sort.STD, null, args);
         errorReporter.report(new ConditionsError(expr1, clause.expression, evaluatedExpr1, evaluatedExpr2, clause.clause));
         ok = false;
       }

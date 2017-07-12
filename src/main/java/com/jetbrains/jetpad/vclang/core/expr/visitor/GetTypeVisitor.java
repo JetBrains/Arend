@@ -128,7 +128,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitCase(CaseExpression expr, Void params) {
-    return expr.getResultType();
+    return expr.getResultType().subst(DependentLink.Helper.toSubstitution(expr.getParameters(), expr.getArguments()));
   }
 
   @Override

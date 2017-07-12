@@ -358,12 +358,16 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return expr;
     }
 
-    DependentLink link = DependentLink.Helper.subst(expr.getParameters(), new ExprSubstitution());
+    return new SigmaExpression(expr.getSort(), normalizeParameters(expr.getParameters(), mode, new ExprSubstitution()));
+  }
+
+  private DependentLink normalizeParameters(DependentLink parameters, Mode mode, ExprSubstitution substitution) {
+    DependentLink link = DependentLink.Helper.subst(parameters, substitution);
     for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
       link1 = link1.getNextTyped(null);
       link1.setType(link1.getType().normalize(mode));
     }
-    return new SigmaExpression(expr.getSort(), link);
+    return link;
   }
 
   @Override
@@ -397,7 +401,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
 
     List<Expression> args = expr.getArguments().stream().map(arg -> arg.accept(this, mode)).collect(Collectors.toList());
-    return new CaseExpression(expr.getResultType().accept(this, mode), normalizeElimTree(expr.getElimTree()), args);
+    ExprSubstitution substitution = new ExprSubstitution();
+    DependentLink parameters = normalizeParameters(expr.getParameters(), mode, substitution);
+    return new CaseExpression(parameters, expr.getResultType().subst(substitution).accept(this, mode), normalizeElimTree(expr.getElimTree()), args);
   }
 
   private ElimTree normalizeElimTree(ElimTree elimTree) {
