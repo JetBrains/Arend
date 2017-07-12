@@ -39,7 +39,7 @@ public class Util {
     }
   }
 
-  static List<Expression> unflattenClauses(List<ClauseElem> clauseElems, DependentLink parameters, List<DependentLink> elimParams) {
+  static List<Expression> unflattenClauses(List<ClauseElem> clauseElems, DependentLink parameters) {
     for (int i = clauseElems.size() - 1; i >= 0; i--) {
       if (clauseElems.get(i) instanceof ConstructorClauseElem) {
         ConstructorClauseElem conClauseElem = (ConstructorClauseElem) clauseElems.get(i);
@@ -63,7 +63,13 @@ public class Util {
       for (DependentLink link = DependentLink.Helper.get(parameters, clauseElems.size()); link.hasNext(); link = link.getNext()) {
         clauseElems.add(new PatternClauseElem(new BindingPattern(link)));
       }
+    }
 
+    return clauseElems.stream().map(clauseElem -> ((PatternClauseElem) clauseElem).pattern.toExpression()).collect(Collectors.toList());
+  }
+
+  static void removeArguments(List<?> clauseElems, DependentLink parameters, List<DependentLink> elimParams) {
+    if (parameters != null && elimParams != null) {
       DependentLink link = parameters;
       for (int i = 0; i < elimParams.size(); i++, link = link.getNext()) {
         while (link != elimParams.get(i)) {
@@ -72,7 +78,5 @@ public class Util {
         }
       }
     }
-
-    return clauseElems.stream().map(clauseElem -> ((PatternClauseElem) clauseElem).pattern.toExpression()).collect(Collectors.toList());
   }
 }

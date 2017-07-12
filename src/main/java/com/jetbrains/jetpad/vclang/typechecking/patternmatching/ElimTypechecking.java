@@ -147,30 +147,46 @@ public class ElimTypechecking {
     }
 
     if (nonIntervalClauses.isEmpty()) {
-      boolean ok = false;
+      DependentLink emptyLink = null;
       if (elimParams != null) {
         for (DependentLink link : elimParams) {
           DataCallExpression dataCall = link.getType().getExpr().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
-          if (dataCall != null && dataCall.getMatchedConstructors().isEmpty()) {
-            ok = true;
-            break;
+          if (dataCall != null) {
+            List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
+            if (conCalls != null && conCalls.isEmpty()) {
+              emptyLink = link;
+              break;
+            }
           }
         }
       } else {
         for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
           link = link.getNextTyped(null);
           DataCallExpression dataCall = link.getType().getExpr().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
-          if (dataCall != null && dataCall.getMatchedConstructors().isEmpty()) {
-            ok = true;
-            break;
+          if (dataCall != null) {
+            List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
+            if (conCalls != null && conCalls.isEmpty()) {
+              emptyLink = link;
+              break;
+            }
           }
         }
       }
 
-      if (!ok && myFlags.contains(PatternTypechecking.Flag.CHECK_COVERAGE)) {
+      if (emptyLink == null && myFlags.contains(PatternTypechecking.Flag.CHECK_COVERAGE)) {
         myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Coverage check failed", body));
       }
-      return cases == null ? null : new IntervalElim(parameters, cases, null);
+
+      ElimTree elimTree = null;
+      if (emptyLink != null) {
+        int index = 0;
+        for (DependentLink link = parameters; link != emptyLink; link = link.getNext()) {
+          index++;
+        }
+        elimTree = new BranchElimTree(parameters.subst(new ExprSubstitution(), LevelSubstitution.EMPTY, index), Collections.emptyMap());
+      }
+
+      return cases == null ? elimTree : new IntervalElim(parameters, cases, elimTree);
     }
 
     myContext = new Stack<>();
@@ -180,7 +196,7 @@ public class ElimTypechecking {
       List<List<Expression>> missingClauses = new ArrayList<>(myMissingClauses.size());
       loop:
       for (Pair<List<Util.ClauseElem>, Boolean> missingClause : myMissingClauses) {
-        List<Expression> expressions = Util.unflattenClauses(missingClause.proj1, parameters, elimParams);
+        List<Expression> expressions = Util.unflattenClauses(missingClause.proj1, parameters);
         if (!missingClause.proj2) {
           if (elimTree != null && new NormalizeVisitor(new EvalNormalizer()).eval(elimTree, expressions, new ExprSubstitution(), LevelSubstitution.EMPTY) != null) {
             continue;
@@ -201,13 +217,18 @@ public class ElimTypechecking {
           for (; link.hasNext(); link = link.getNext()) {
             link = link.getNextTyped(null);
             DataCallExpression dataCall = link.getType().getExpr().subst(substitution).normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
-            if (dataCall != null && dataCall.getMatchedConstructors().isEmpty()) {
-              continue loop;
+            if (dataCall != null) {
+              List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
+              if (conCalls != null && conCalls.isEmpty()) {
+                continue loop;
+              }
             }
           }
 
           myOK = false;
         }
+
+        Util.removeArguments(expressions, parameters, elimParams);
         missingClauses.add(expressions);
       }
 
@@ -322,11 +343,14 @@ public class ElimTypechecking {
       if (index == clauseDataList.get(0).patterns.size()) {
         ExtClause clauseData = clauseDataList.get(0);
         myUnusedClauses.remove(clauseData.clause);
-        return new LeafElimTree(clauseData.patterns.isEmpty() ? EmptyDependentLink.getInstance() : ((BindingPattern) clauseData.patterns.get(0)).getBinding(), clauseData.expression.subst(clauseData.substitution));
+        DependentLink vars = clauseData.patterns.isEmpty() ? EmptyDependentLink.getInstance() : DependentLink.Helper.subst(((BindingPattern) clauseData.patterns.get(0)).getBinding(), clauseData.substitution);
+        clauseData.substitution.subst(clauseData.substitution);
+        return new LeafElimTree(vars, clauseData.expression.subst(clauseData.substitution));
       }
 
       // Make new list of variables
       DependentLink vars = index == 0 ? EmptyDependentLink.getInstance() : ((BindingPattern) clauseDataList.get(0).patterns.get(0)).getBinding().subst(clauseDataList.get(0).substitution, LevelSubstitution.EMPTY, index);
+      clauseDataList.get(0).substitution.subst(clauseDataList.get(0).substitution);
       for (DependentLink link = vars; link.hasNext(); link = link.getNext()) {
         myContext.push(new Util.PatternClauseElem(new BindingPattern(link)));
       }
@@ -416,7 +440,7 @@ public class ElimTypechecking {
 
             try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
               myContext.push(new Util.ConstructorClauseElem(constructor));
-              for (DependentLink link = constructor.getDataTypeParameters(); link.hasNext(); link = link.getNext()) {
+              for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext()) {
                 myContext.push(new Util.PatternClauseElem(new BindingPattern(link)));
               }
               addMissingClause(new ArrayList<>(myContext), false);
@@ -439,16 +463,9 @@ public class ElimTypechecking {
           if (oldPatterns.get(index) instanceof ConstructorPattern) {
             patterns.addAll(((ConstructorPattern) oldPatterns.get(index)).getArguments());
           } else {
-            DependentLink conParameters = DependentLink.Helper.subst(constructor.getParameters(), new ExprSubstitution());
-            for (DependentLink link = conParameters; link.hasNext(); link = link.getNext()) {
-              patterns.add(new BindingPattern(link));
-            }
-
             Expression substExpr;
+            List<Expression> dataTypesArgs;
             List<Expression> arguments = new ArrayList<>(patterns.size());
-            for (DependentLink link = conParameters; link.hasNext(); link = link.getNext()) {
-              arguments.add(new ReferenceExpression(link));
-            }
             if (conCalls != null) {
               ConCallExpression conCall = null;
               for (ConCallExpression conCall1 : conCalls) {
@@ -458,10 +475,20 @@ public class ElimTypechecking {
                 }
               }
               assert conCall != null;
-              substExpr = new ConCallExpression(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), arguments);
+              dataTypesArgs = conCall.getDataTypeArguments();
+              substExpr = new ConCallExpression(conCall.getDefinition(), conCall.getSortArgument(), dataTypesArgs, arguments);
             } else {
-              substExpr = new ConCallExpression(constructor, someConPattern.getSortArgument(), someConPattern.getDataTypeArguments(), arguments);
+              final ExtClause finalConClauseData = conClauseData;
+              dataTypesArgs = someConPattern.getDataTypeArguments().stream().map(expr -> expr.subst(finalConClauseData.substitution)).collect(Collectors.toList());
+              substExpr = new ConCallExpression(constructor, someConPattern.getSortArgument(), dataTypesArgs, arguments);
             }
+
+            DependentLink conParameters = DependentLink.Helper.subst(constructor.getParameters(), DependentLink.Helper.toSubstitution(constructor.getDataTypeParameters(), dataTypesArgs));
+            for (DependentLink link = conParameters; link.hasNext(); link = link.getNext()) {
+              patterns.add(new BindingPattern(link));
+              arguments.add(new ReferenceExpression(link));
+            }
+
             conClauseDataList.get(i).substitution.add(((BindingPattern) oldPatterns.get(index)).getBinding(), substExpr);
           }
           patterns.addAll(oldPatterns.subList(index + 1, oldPatterns.size()));

@@ -497,7 +497,7 @@ public class TypeCheckingElim {
       List<Abstract.Pattern> patterns = implicitResult.patterns;
 
       DependentLink constructorArgs = DependentLink.Helper.subst(constructor.getParameters(),
-        toSubstitution(constructor.getDataTypeParameters(), matchedParameters),
+        matchedParameters == null ? new ExprSubstitution() : toSubstitution(constructor.getDataTypeParameters(), matchedParameters),
         dataCall.getSortArgument().toLevelSubstitution());
 
       List<Pattern> resultPatterns = new ArrayList<>();
