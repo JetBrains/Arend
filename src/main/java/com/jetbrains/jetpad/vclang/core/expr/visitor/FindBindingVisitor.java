@@ -4,6 +4,10 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
+import com.jetbrains.jetpad.vclang.core.definition.Constructor;
+import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.BranchElimTreeNode;
@@ -174,12 +178,27 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> im
       return result;
     }
 
-    result = expr.getElimTree().accept(this, null);
+    return findBindingInElimTree(expr.getElimTree());
+  }
+
+  private Variable findBindingInElimTree(ElimTree elimTree) {
+    Variable result = visitDependentLink(elimTree.getParameters());
     if (result != null) {
       return result;
     }
 
-    return null;
+    if (elimTree instanceof LeafElimTree) {
+      result = ((LeafElimTree) elimTree).getExpression().accept(this, null);
+    } else {
+      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
+        result = findBindingInElimTree(entry.getValue());
+        if (result != null) {
+          return result;
+        }
+      }
+    }
+
+    return result;
   }
 
   @Override

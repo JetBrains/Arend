@@ -3,6 +3,10 @@ package com.jetbrains.jetpad.vclang.core.subst;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.Constructor;
+import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.BaseExpressionVisitor;
@@ -12,8 +16,9 @@ import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVis
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implements ElimTreeNodeVisitor<Void, ElimTreeNode> {
@@ -233,17 +238,23 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public Expression visitCase(CaseExpression expr, Void params) {
-    List<Expression> arguments = new ArrayList<>(expr.getArguments().size());
-    for (Expression argument : expr.getArguments()) {
-      arguments.add(argument.accept(this, null));
-    }
+    List<Expression> arguments = expr.getArguments().stream().map(arg -> arg.accept(this, null)).collect(Collectors.toList());
+    return new CaseExpression(expr.getResultType().accept(this, null), substElimTree(expr.getElimTree()), arguments);
+  }
 
-    Binding binding = expr.getElimTree().getReference();
-    Binding newBinding = ExpressionFactory.singleParams(true, Collections.singletonList(binding.getName()), binding.getType().subst(myExprSubstitution, myLevelSubstitution));
-    myExprSubstitution.add(binding, new ReferenceExpression(newBinding));
-    CaseExpression result = new CaseExpression(expr.getResultType().accept(this, null), visitBranch(expr.getElimTree(), null), arguments);
-    myExprSubstitution.remove(binding);
-    return result;
+  private ElimTree substElimTree(ElimTree elimTree) {
+    DependentLink vars = DependentLink.Helper.subst(elimTree.getParameters(), myExprSubstitution, myLevelSubstitution);
+    if (elimTree instanceof LeafElimTree) {
+      elimTree = new LeafElimTree(vars, ((LeafElimTree) elimTree).getExpression().accept(this, null));
+    } else {
+      Map<Constructor, ElimTree> children = new HashMap<>();
+      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
+        children.put(entry.getKey(), substElimTree(entry.getValue()));
+      }
+      elimTree = new BranchElimTree(vars, children);
+    }
+    DependentLink.Helper.freeSubsts(elimTree.getParameters(), myExprSubstitution);
+    return elimTree;
   }
 
   @Override

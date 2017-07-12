@@ -351,7 +351,7 @@ class DefinitionDeserialization {
     for (ExpressionProtos.Expression argument : proto.getArgumentList()) {
       arguments.add(readExpr(argument));
     }
-    return new CaseExpression(readExpr(proto.getResultType()), readBranch(proto.getElimTree()), arguments);
+    return new CaseExpression(readExpr(proto.getResultType()), readElimTree(proto.getElimTree()), arguments);
   }
 
   private FieldCallExpression readFieldCall(ExpressionProtos.Expression.FieldCall proto) throws DeserializationError {

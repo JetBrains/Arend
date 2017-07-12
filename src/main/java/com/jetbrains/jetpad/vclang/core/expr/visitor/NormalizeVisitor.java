@@ -10,17 +10,14 @@ import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.normalization.Normalizer;
 import com.jetbrains.jetpad.vclang.util.ComputationInterruptedException;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mode, Expression>  {
   private final Normalizer myNormalizer;
@@ -393,22 +390,30 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitCase(CaseExpression expr, Mode mode) {
-    List<Expression> matchedArguments = new ArrayList<>(expr.getArguments());
-    LeafElimTreeNode leaf = expr.getElimTree().match(matchedArguments);
-    if (leaf == null) {
-      if (mode != Mode.NF) {
-        return expr;
-      }
-
-      List<Expression> args = new ArrayList<>();
-      for (Expression argument : expr.getArguments()) {
-        args.add(argument.accept(this, mode));
-      }
-
-      return new CaseExpression(expr.getResultType().accept(this, mode), expr.getElimTree() /* TODO: normalize elim tree */, args);
+    Expression result = eval(expr.getElimTree(), expr.getArguments(), new ExprSubstitution(), LevelSubstitution.EMPTY);
+    if (result != null) {
+      return result;
     }
-    ExprSubstitution subst = leaf.matchedToSubst(matchedArguments);
-    return leaf.getExpression().subst(subst).accept(this, mode);
+    if (mode != Mode.NF) {
+      return expr;
+    }
+
+    List<Expression> args = expr.getArguments().stream().map(arg -> arg.accept(this, mode)).collect(Collectors.toList());
+    return new CaseExpression(expr.getResultType().accept(this, mode), normalizeElimTree(expr.getElimTree()), args);
+  }
+
+  private ElimTree normalizeElimTree(ElimTree elimTree) {
+    ExprSubstitution substitution = new ExprSubstitution();
+    DependentLink vars = DependentLink.Helper.subst(elimTree.getParameters(), substitution);
+    if (elimTree instanceof LeafElimTree) {
+      return new LeafElimTree(vars, ((LeafElimTree) elimTree).getExpression().subst(substitution).accept(this, Mode.NF));
+    } else {
+      Map<Constructor, ElimTree> children = new HashMap<>();
+      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
+        children.put(entry.getKey(), normalizeElimTree(entry.getValue()));
+      }
+      return new BranchElimTree(vars, children);
+    }
   }
 
   @Override

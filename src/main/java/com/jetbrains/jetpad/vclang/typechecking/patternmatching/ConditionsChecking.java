@@ -3,19 +3,18 @@ package com.jetbrains.jetpad.vclang.typechecking.patternmatching;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.elimtree.*;
-import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
-import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
+import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ConditionsError;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
+import com.jetbrains.jetpad.vclang.typechecking.normalization.EvalNormalizer;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.ArrayList;
@@ -38,7 +37,7 @@ public class ConditionsChecking {
     }
 
     for (Clause clause : clauses) {
-      if (clause.expression != null && !checkClause(clause, definition, errorReporter)) {
+      if (clause.expression != null && !checkClause(clause, null, definition, errorReporter)) {
         ok = false;
       }
     }
@@ -130,13 +129,30 @@ public class ConditionsChecking {
     }
   }
 
-  private static boolean checkClause(Clause clause, Definition definition, LocalErrorReporter errorReporter) {
+  public static boolean check(List<Clause> clauses, ElimTree elimTree, LocalErrorReporter errorReporter) {
+    boolean ok = true;
+    for (Clause clause : clauses) {
+      if (clause.expression != null && !checkClause(clause, elimTree, null, errorReporter)) {
+        ok = false;
+      }
+    }
+    return ok;
+  }
+
+  private static boolean checkClause(Clause clause, ElimTree elimTree, Definition definition, LocalErrorReporter errorReporter) {
     boolean ok = true;
     for (Pair<List<Expression>, ExprSubstitution> pair : collectPatterns(clause.patterns)) {
-      Expression evaluatedExpr1 = definition.getDefCall(Sort.STD, null, pair.proj1).normalize(NormalizeVisitor.Mode.NF);
+      Expression evaluatedExpr1;
+      if (definition == null) {
+        evaluatedExpr1 = new NormalizeVisitor(new EvalNormalizer()).eval(elimTree, pair.proj1, new ExprSubstitution(), LevelSubstitution.EMPTY);
+      } else {
+        evaluatedExpr1 = definition.getDefCall(Sort.STD, null, pair.proj1).normalize(NormalizeVisitor.Mode.NF);
+      }
       Expression evaluatedExpr2 = clause.expression.subst(pair.proj2).normalize(NormalizeVisitor.Mode.NF);
-      if (!CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null)) {
-        errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, null, clause.patterns.stream().map(Pattern::toExpression).collect(Collectors.toList())), clause.expression, evaluatedExpr1, evaluatedExpr2, clause.clause));
+      if (evaluatedExpr1 == null || !CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null)) {
+        List<Expression> args = clause.patterns.stream().map(Pattern::toExpression).collect(Collectors.toList());
+        Expression expr1 = definition == null ? new CaseExpression(null, null, args) : definition.getDefCall(Sort.STD, null, args);
+        errorReporter.report(new ConditionsError(expr1, clause.expression, evaluatedExpr1, evaluatedExpr2, clause.clause));
         ok = false;
       }
     }

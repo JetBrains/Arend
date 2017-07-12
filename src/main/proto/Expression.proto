@@ -89,7 +89,7 @@ message Expression {
         }
     }
     message Case {
-        ElimTreeNode.Branch elim_tree = 1;
+        ElimTree elim_tree = 4;
         Expression result_type = 2;
         repeated Expression argument = 3;
     }

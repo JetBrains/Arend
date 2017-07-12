@@ -132,13 +132,18 @@ public class ErrorFormatter {
         .append("  Actual: ");
       ((ExpressionMismatchError) error).actual.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, text.length());
     } else if (error instanceof ConditionsError) {
-      ((ConditionsError) error).expr1.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0);
-      builder.append(" evaluates to ");
-      ((ConditionsError) error).evaluatedExpr1.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0);
+      ConditionsError condError = (ConditionsError) error;
+      condError.expr1.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0);
+      if (condError.evaluatedExpr1 != null) {
+        builder.append(" evaluates to ");
+        condError.evaluatedExpr1.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0);
+      }
       builder.append('\n');
-      ((ConditionsError) error).expr2.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0);
-      builder.append(" evaluates to ");
-      ((ConditionsError) error).evaluatedExpr2.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0);
+      condError.expr2.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0);
+      if (condError.evaluatedExpr2 != null) {
+        builder.append(" evaluates to ");
+        condError.evaluatedExpr2.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0);
+      }
     } else if (error instanceof SolveEquationError) {
       String text = "1st expression: ";
       builder.append(text);

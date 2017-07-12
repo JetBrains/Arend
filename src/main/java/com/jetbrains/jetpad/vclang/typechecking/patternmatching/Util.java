@@ -2,17 +2,13 @@ package com.jetbrains.jetpad.vclang.typechecking.patternmatching;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.elimtree.BindingPattern;
-import com.jetbrains.jetpad.vclang.core.elimtree.ConstructorPattern;
-import com.jetbrains.jetpad.vclang.core.elimtree.Pattern;
-import com.jetbrains.jetpad.vclang.core.elimtree.Patterns;
+import com.jetbrains.jetpad.vclang.core.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 public class Util {
@@ -39,7 +35,42 @@ public class Util {
     }
   }
 
-  static List<Expression> unflattenClauses(List<ClauseElem> clauseElems, DependentLink parameters) {
+  public static class ElimTreeWalker {
+    private final Stack<ClauseElem> myStack = new Stack<>();
+    private final BiConsumer<List<Pattern>, Expression> myConsumer;
+
+    public ElimTreeWalker(BiConsumer<List<Pattern>, Expression> consumer) {
+      myConsumer = consumer;
+    }
+
+    public void walk(ElimTree elimTree) {
+      for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
+        myStack.push(new PatternClauseElem(new BindingPattern(link)));
+      }
+      if (elimTree instanceof LeafElimTree) {
+        Expression expression = ((LeafElimTree) elimTree).getExpression();
+        if (expression != null) {
+          myConsumer.accept(unflattenClausesPatterns(new ArrayList<>(myStack)), expression);
+        }
+      } else {
+        BranchElimTree branchElimTree = (BranchElimTree) elimTree;
+        for (Map.Entry<Constructor, ElimTree> entry : branchElimTree.getChildren()) {
+          myStack.push(new ConstructorClauseElem(entry.getKey()));
+          walk(entry.getValue());
+          myStack.pop();
+        }
+      }
+      for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
+        myStack.pop();
+      }
+    }
+  }
+
+  private static List<Pattern> unflattenClausesPatterns(List<ClauseElem> clauseElems) {
+    return unflattenClausesPatterns(clauseElems, null);
+  }
+
+  private static List<Pattern> unflattenClausesPatterns(List<ClauseElem> clauseElems, DependentLink parameters) {
     for (int i = clauseElems.size() - 1; i >= 0; i--) {
       if (clauseElems.get(i) instanceof ConstructorClauseElem) {
         ConstructorClauseElem conClauseElem = (ConstructorClauseElem) clauseElems.get(i);
@@ -65,7 +96,11 @@ public class Util {
       }
     }
 
-    return clauseElems.stream().map(clauseElem -> ((PatternClauseElem) clauseElem).pattern.toExpression()).collect(Collectors.toList());
+    return clauseElems.stream().map(clauseElem -> ((PatternClauseElem) clauseElem).pattern).collect(Collectors.toList());
+  }
+
+  static List<Expression> unflattenClauses(List<ClauseElem> clauseElems, DependentLink parameters) {
+    return unflattenClausesPatterns(clauseElems, parameters).stream().map(Pattern::toExpression).collect(Collectors.toList());
   }
 
   static void removeArguments(List<?> clauseElems, DependentLink parameters, List<DependentLink> elimParams) {

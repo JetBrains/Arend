@@ -13,6 +13,8 @@ import com.jetbrains.jetpad.vclang.core.definition.Callable;
 import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
+import com.jetbrains.jetpad.vclang.core.elimtree.Clause;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.ExpectedType;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
@@ -20,7 +22,6 @@ import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
@@ -46,6 +47,9 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.ImplicitArgsInferen
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.StdImplicitArgsInference;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.TwoStageEquations;
+import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ConditionsChecking;
+import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ElimTypechecking;
+import com.jetbrains.jetpad.vclang.typechecking.patternmatching.PatternTypechecking;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.ClassViewInstancePool;
 
 import java.util.*;
@@ -62,7 +66,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   private final Set<Binding> myFreeBindings;
   private final LocalErrorReporter myErrorReporter;
   private final TypeCheckingDefCall myTypeCheckingDefCall;
-  private final TypeCheckingElim myTypeCheckingElim;
   private final ImplicitArgsInference myArgsInference;
   private final Equations myEquations;
   private ClassViewInstancePool myClassViewInstancePool;
@@ -253,7 +256,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     myFreeBindings = new HashSet<>();
     myErrorReporter = errorReporter;
     myTypeCheckingDefCall = new TypeCheckingDefCall(this);
-    myTypeCheckingElim = new TypeCheckingElim(this);
     myArgsInference = new StdImplicitArgsInference(this);
     myEquations = new TwoStageEquations(this);
     myClassViewInstancePool = pool;
@@ -868,48 +870,27 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       expectedType = new UniverseExpression(Sort.generateInferVars(myEquations, expr));
     }
 
-    Result caseResult = new Result(null, (Expression) expectedType);
-    List<? extends Abstract.Expression> expressions = expr.getExpressions();
-
-    List<SingleDependentLink> links = new ArrayList<>();
-    List<Expression> letArguments = new ArrayList<>(expressions.size());
-    for (Abstract.Expression expression : expressions) {
+    List<? extends Abstract.Expression> abstractExprs = expr.getExpressions();
+    LinkList list = new LinkList();
+    List<Expression> expressions = new ArrayList<>(abstractExprs.size());
+    for (Abstract.Expression expression : abstractExprs) {
       Result exprResult = checkExpr(expression, null);
       if (exprResult == null) return null;
-      links.add(ExpressionFactory.singleParams(true, Collections.singletonList(null), new TypeExpression(exprResult.type, getSortOf(exprResult.type.getType()))));
-      letArguments.add(exprResult.expression);
+      list.append(ExpressionFactory.parameter(null, new TypeExpression(exprResult.type, getSortOf(exprResult.type.getType()))));
+      expressions.add(exprResult.expression);
     }
 
-    if (links.size() > 1) { // TODO: Fix this
-      LocalTypeCheckingError error = new LocalTypeCheckingError("Expected exactly one argument", expr);
-      myErrorReporter.report(error);
-      expr.setWellTyped(myContext, new ErrorExpression(null, error));
+    List<Clause> resultClauses = new ArrayList<>();
+    ElimTree elimTree = new ElimTypechecking(this, (Expression) expectedType, EnumSet.of(PatternTypechecking.Flag.ALLOW_CONDITIONS, PatternTypechecking.Flag.CHECK_COVERAGE)).typecheckElim(expr.getClauses(), expr, list.getFirst(), resultClauses);
+    if (elimTree == null) {
       return null;
     }
 
-    ElimTreeNode elimTree = myTypeCheckingElim.typeCheckElim(expr, links.isEmpty() ? Collections.emptyList() : Collections.singletonList(null), links.isEmpty() ? EmptyDependentLink.getInstance() : links.get(0), (Expression) expectedType, true, false);
-    if (elimTree == null) return null;
-    if (!(elimTree instanceof BranchElimTreeNode)) {  // TODO
-      LocalTypeCheckingError error = new LocalTypeCheckingError("Cannot typecheck empty \\case", expr);
-      myErrorReporter.report(error);
-      expr.setWellTyped(myContext, new ErrorExpression(null, error));
-      return null;
-    }
+    ConditionsChecking.check(resultClauses, elimTree, myErrorReporter);
 
-    LocalTypeCheckingError error = TypeCheckingElim.checkCoverage("\\case", expr, links, elimTree, (Expression) expectedType);
-    if (error != null) {
-      myErrorReporter.report(error);
-      return null;
-    }
-    error = TypeCheckingElim.checkConditions("\\case", expr, links, elimTree);
-    if (error != null) {
-      myErrorReporter.report(error);
-      return null;
-    }
-
-    caseResult.expression = new CaseExpression(caseResult.type, (BranchElimTreeNode) elimTree, letArguments);
-    expr.setWellTyped(myContext, caseResult.expression);
-    return caseResult;
+    Expression caseResult = new CaseExpression((Expression) expectedType, elimTree, expressions);
+    expr.setWellTyped(myContext, caseResult);
+    return new Result(caseResult, (Expression) expectedType);
   }
 
   private List<Sort> generateUpperBounds(List<Sort> domSorts, Sort codSort, Abstract.SourceNode sourceNode) {

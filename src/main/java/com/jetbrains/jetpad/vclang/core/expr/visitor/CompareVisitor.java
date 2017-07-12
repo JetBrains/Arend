@@ -545,9 +545,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       }
     }
 
-    mySubstitution.put(case1.getElimTree().getReference(), case2.getElimTree().getReference());
     boolean ok = compare(case1.getElimTree(), case2.getElimTree());
-    mySubstitution.remove(case1.getElimTree().getReference());
     myCMP = oldCMP;
     return ok;
   }

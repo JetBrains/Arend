@@ -3,6 +3,10 @@ package com.jetbrains.jetpad.vclang.core.expr.visitor;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.Constructor;
+import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
@@ -10,10 +14,7 @@ import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVis
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.Stack;
+import java.util.*;
 
 public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTreeNodeVisitor<Void, ElimTreeNode> {
   private final Set<Binding> myBounds;
@@ -212,12 +213,26 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
 
   @Override
   public Expression visitCase(CaseExpression expr, Void params) {
-    BranchElimTreeNode elimTree = visitBranch(expr.getElimTree(), null);
-    myBounds.remove(expr.getElimTree().getReference());
+    ElimTree elimTree = stripElimTree(expr.getElimTree());
     for (int i = 0; i < expr.getArguments().size(); i++) {
       expr.getArguments().set(i, expr.getArguments().get(i).accept(this, null));
     }
     return new CaseExpression(expr.getResultType().accept(this, null), elimTree, expr.getArguments());
+  }
+
+  private ElimTree stripElimTree(ElimTree elimTree) {
+    visitArguments(elimTree.getParameters());
+    if (elimTree instanceof LeafElimTree) {
+      elimTree = new LeafElimTree(elimTree.getParameters(), ((LeafElimTree) elimTree).getExpression().accept(this, null));
+    } else {
+      Map<Constructor, ElimTree> children = new HashMap<>();
+      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
+        children.put(entry.getKey(), stripElimTree(entry.getValue()));
+      }
+      elimTree = new BranchElimTree(elimTree.getParameters(), children);
+    }
+    freeArguments(elimTree.getParameters());
+    return elimTree;
   }
 
   @Override

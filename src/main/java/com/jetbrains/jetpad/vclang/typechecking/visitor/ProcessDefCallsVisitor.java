@@ -51,7 +51,7 @@ public abstract class ProcessDefCallsVisitor<P> extends BaseExpressionVisitor<P,
 
   @Override
   public Boolean visitCase(CaseExpression expr, P param) {
-    return visitElimTreeNode(expr.getElimTree(), param) || expr.getResultType().accept(this, param) || expr.getArguments().stream().anyMatch(arg -> arg.accept(this, param));
+    return visitElimTree(expr.getElimTree(), param) || expr.getResultType().accept(this, param) || expr.getArguments().stream().anyMatch(arg -> arg.accept(this, param));
   }
 
   private boolean visitElimTreeNode(ElimTreeNode elimTree, P param) {
@@ -59,7 +59,10 @@ public abstract class ProcessDefCallsVisitor<P> extends BaseExpressionVisitor<P,
     return false;
   }
 
-  public boolean visitElimTree(ElimTree elimTree, P param) {
+  private boolean visitElimTree(ElimTree elimTree, P param) {
+    if (visitDependentLink(elimTree.getParameters(), param)) {
+      return true;
+    }
     if (elimTree instanceof LeafElimTree) {
       return ((LeafElimTree) elimTree).getExpression().accept(this, param);
     } else {

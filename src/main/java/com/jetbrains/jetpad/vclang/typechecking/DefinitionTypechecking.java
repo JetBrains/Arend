@@ -243,7 +243,7 @@ class DefinitionTypechecking {
           Abstract.ElimFunctionBody elimBody = (Abstract.ElimFunctionBody) body;
           List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), visitor);
           clauses = new ArrayList<>();
-          Body typedBody = elimParams == null ? null : new ElimTypechecking(visitor, expectedType, EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.CONTEXT_FREE, PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(elimBody, def.getArguments(), typedDef.getParameters(), elimParams, clauses);
+          Body typedBody = elimParams == null ? null : new ElimTypechecking(visitor, expectedType, EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.CONTEXT_FREE, PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(elimBody.getClauses(), def, def.getArguments(), typedDef.getParameters(), elimParams, clauses);
           if (typedBody != null) {
             typedDef.setBody(typedBody);
             typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
@@ -489,7 +489,7 @@ class DefinitionTypechecking {
       try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(visitor.getFreeBindings())) {
         try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(visitor.getContext())) {
           List<Clause> clauses = new ArrayList<>();
-          Body body = new ElimTypechecking(visitor, constructor.getDataTypeExpression(Sort.STD), EnumSet.of(PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(def, def.getArguments(), constructor.getParameters(), elimParams, clauses);
+          Body body = new ElimTypechecking(visitor, constructor.getDataTypeExpression(Sort.STD), EnumSet.of(PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(def.getClauses(), def, def.getArguments(), constructor.getParameters(), elimParams, clauses);
           constructor.setBody(body);
           constructor.setClauses(clauses);
           constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);

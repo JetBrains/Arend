@@ -3,20 +3,19 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
-import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
@@ -209,14 +208,6 @@ public class ExpressionTest extends TypeCheckingTestCase {
     Concrete.Expression expr = cLet(clets(x), cVar(x));
     CheckTypeVisitor.Result result = typeCheckExpr(expr, null);
     assertEquals(result.type.normalize(NormalizeVisitor.Mode.WHNF), Pi(Nat(), Nat()));
-  }
-
-  @Test
-  public void caseTranslation() {
-    FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\function test (n : Nat) : Nat => \\case n, n | zero, _ => 0 | suc y, _ => y");
-    FunctionDefinition def2 = (FunctionDefinition) typeCheckDef("\\function test (n : Nat) => \\let | caseF (caseA : Nat) (caseB : Nat) : Nat => \\elim caseA, caseB | zero, _ => 0 | suc y, _ => y \\in caseF n n");
-    assertTrue(CompareVisitor.compare(new HashMap<>(Collections.singletonMap(def.getParameters(), def2.getParameters())),
-        DummyEquations.getInstance(), (LeafElimTree) def.getBody(), (LeafElimTree) def2.getBody()));
   }
 
   @Test

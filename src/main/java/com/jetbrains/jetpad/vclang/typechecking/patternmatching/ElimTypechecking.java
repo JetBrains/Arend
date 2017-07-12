@@ -74,11 +74,16 @@ public class ElimTypechecking {
     return elimParams;
   }
 
-  public Body typecheckElim(Abstract.ElimBody body, List<? extends Abstract.Argument> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, List<Clause> resultClauses) {
-    List<ExtClause> clauses = new ArrayList<>(body.getClauses().size());
+  public ElimTree typecheckElim(List<? extends Abstract.FunctionClause> funClauses, Abstract.SourceNode sourceNode, DependentLink parameters, List<Clause> resultClauses) {
+    assert !myFlags.contains(PatternTypechecking.Flag.ALLOW_INTERVAL);
+    return (ElimTree) typecheckElim(funClauses, sourceNode, null, parameters, Collections.emptyList(), resultClauses);
+  }
+
+  public Body typecheckElim(List<? extends Abstract.FunctionClause> funClauses, Abstract.SourceNode sourceNode, List<? extends Abstract.Argument> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, List<Clause> resultClauses) {
+    List<ExtClause> clauses = new ArrayList<>(funClauses.size());
     PatternTypechecking patternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), myFlags);
     myOK = true;
-    for (Abstract.FunctionClause clause : body.getClauses()) {
+    for (Abstract.FunctionClause clause : funClauses) {
       Pair<List<Pattern>, CheckTypeVisitor.Result> result = patternTypechecking.typecheckClause(clause, abstractParameters, parameters, elimParams, myExpectedType, myVisitor);
       if (result == null) {
         myOK = false;
@@ -90,38 +95,42 @@ public class ElimTypechecking {
       return null;
     }
 
-    myUnusedClauses = new HashSet<>(body.getClauses());
+    myUnusedClauses = new HashSet<>(funClauses);
 
-    List<ExtClause> intervalClauses = new ArrayList<>();
-    List<ExtClause> nonIntervalClauses = new ArrayList<>();
-    for (ExtClause clause : clauses) {
-      boolean hasNonIntervals = false;
-      int intervals = 0;
-      for (Pattern pattern : clause.patterns) {
-        if (pattern instanceof BindingPattern) {
-          continue;
-        }
-        if (pattern instanceof ConstructorPattern) {
-          Constructor constructor = ((ConstructorPattern) pattern).getConstructor();
-          if (constructor == Prelude.LEFT || constructor == Prelude.RIGHT) {
-            intervals++;
+    List<ExtClause> intervalClauses = Collections.emptyList();
+    List<ExtClause> nonIntervalClauses = clauses;
+    if (myFlags.contains(PatternTypechecking.Flag.ALLOW_INTERVAL)) {
+      intervalClauses = new ArrayList<>();
+      nonIntervalClauses = new ArrayList<>();
+      for (ExtClause clause : clauses) {
+        boolean hasNonIntervals = false;
+        int intervals = 0;
+        for (Pattern pattern : clause.patterns) {
+          if (pattern instanceof BindingPattern) {
             continue;
           }
+          if (pattern instanceof ConstructorPattern) {
+            Constructor constructor = ((ConstructorPattern) pattern).getConstructor();
+            if (constructor == Prelude.LEFT || constructor == Prelude.RIGHT) {
+              intervals++;
+              continue;
+            }
+          }
+          hasNonIntervals = true;
+          break;
         }
-        hasNonIntervals = true;
-        break;
-      }
-      if (hasNonIntervals || intervals == 0) {
-        nonIntervalClauses.add(clause);
-        if (resultClauses != null) {
-          resultClauses.add(new Clause(clause.patterns, clause.expression, clause.clause));
-        }
-      } else {
-        if (intervals > 1) {
-          myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Only a single interval pattern per row is allowed", clause.clause));
-          myUnusedClauses.remove(clause.clause);
+        if (hasNonIntervals || intervals == 0) {
+          nonIntervalClauses.add(clause);
+          if (resultClauses != null) {
+            resultClauses.add(new Clause(clause.patterns, clause.expression, clause.clause));
+          }
         } else {
-          intervalClauses.add(clause);
+          if (intervals > 1) {
+            myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Only a single interval pattern per row is allowed", clause.clause));
+            myUnusedClauses.remove(clause.clause);
+          } else {
+            intervalClauses.add(clause);
+          }
         }
       }
     }
@@ -174,7 +183,7 @@ public class ElimTypechecking {
       }
 
       if (emptyLink == null && myFlags.contains(PatternTypechecking.Flag.CHECK_COVERAGE)) {
-        myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Coverage check failed", body));
+        myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Coverage check failed", sourceNode));
       }
 
       ElimTree elimTree = null;
@@ -233,7 +242,7 @@ public class ElimTypechecking {
       }
 
       if (!missingClauses.isEmpty()) {
-        myVisitor.getErrorReporter().report(new MissingClausesError(missingClauses, body));
+        myVisitor.getErrorReporter().report(new MissingClausesError(missingClauses, sourceNode));
       }
     }
 

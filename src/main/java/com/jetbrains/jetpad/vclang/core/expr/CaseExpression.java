@@ -1,16 +1,16 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.BranchElimTreeNode;
 
 import java.util.List;
 
 public class CaseExpression extends Expression {
   private final Expression myResultType;
-  private final BranchElimTreeNode myElimTree;
+  private final ElimTree myElimTree;
   private final List<Expression> myArguments;
 
-  public CaseExpression(Expression resultType, BranchElimTreeNode elimTree, List<Expression> arguments) {
+  public CaseExpression(Expression resultType, ElimTree elimTree, List<Expression> arguments) {
     myElimTree = elimTree;
     myResultType = resultType;
     myArguments = arguments;
@@ -20,7 +20,7 @@ public class CaseExpression extends Expression {
     return myResultType;
   }
 
-  public BranchElimTreeNode getElimTree() {
+  public ElimTree getElimTree() {
     return myElimTree;
   }
 

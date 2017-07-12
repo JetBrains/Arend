@@ -8,10 +8,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Name;
-import com.jetbrains.jetpad.vclang.core.elimtree.BindingPattern;
-import com.jetbrains.jetpad.vclang.core.elimtree.ConstructorPattern;
-import com.jetbrains.jetpad.vclang.core.elimtree.EmptyPattern;
-import com.jetbrains.jetpad.vclang.core.elimtree.Pattern;
+import com.jetbrains.jetpad.vclang.core.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.factory.AbstractExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
@@ -21,6 +18,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.typechecking.patternmatching.Util;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -479,7 +477,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     for (LetClause clause : letExpression.getClauses()) {
       List<Abstract.TypeArgument> arguments = clause.getParameters().stream().map(this::visitSingleDependentLink).collect(Collectors.toList());
       Abstract.Expression resultType = clause.getResultType().getExpr().accept(this, null);
-      Abstract.Expression term = visitElimTree(clause.getElimTree(), clause.getParameters());
+      Abstract.Expression term = visitElimTreeNode(clause.getElimTree(), clause.getParameters());
       clause.getParameters().forEach(this::freeVars);
       clauses.add(myFactory.makeLetClause(makeReferable(clause), arguments, resultType, term));
     }
@@ -489,16 +487,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return result;
   }
 
-  @Override
-  public Abstract.Expression visitCase(CaseExpression expr, Void params) {
-    List<Abstract.Expression> arguments = new ArrayList<>(expr.getArguments().size());
-    for (Expression argument : expr.getArguments()) {
-      arguments.add(argument.accept(this, null));
-    }
-    return myFactory.makeCase(arguments, visitBranch(expr.getElimTree()));
-  }
-
-  private Abstract.Expression visitElimTree(ElimTreeNode elimTree, List<SingleDependentLink> params) {
+  private Abstract.Expression visitElimTreeNode(ElimTreeNode elimTree, List<SingleDependentLink> params) {
     if (elimTree == EmptyElimTreeNode.getInstance()) {
       List<Abstract.Expression> exprs = new ArrayList<>();
       for (SingleDependentLink param : params) {
@@ -510,6 +499,21 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       return null; // myFactory.makeElim(exprs, Collections.emptyList());
     }
     return elimTree.accept(this, null);
+  }
+
+  @Override
+  public Abstract.Expression visitCase(CaseExpression expr, Void params) {
+    List<Abstract.Expression> arguments = new ArrayList<>(expr.getArguments().size());
+    for (Expression argument : expr.getArguments()) {
+      arguments.add(argument.accept(this, null));
+    }
+    return myFactory.makeCase(arguments, expr.getElimTree() != null ? visitElimTree(expr.getElimTree()) : Collections.emptyList());
+  }
+
+  private List<Abstract.FunctionClause> visitElimTree(ElimTree elimTree) {
+    List<Abstract.FunctionClause> clauses = new ArrayList<>();
+    new Util.ElimTreeWalker((patterns, expr) -> clauses.add(myFactory.makeClause(visitPatterns(patterns, new Patterns(patterns).getFirstBinding()), expr.accept(this, null)))).walk(elimTree);
+    return clauses;
   }
 
   @Override
