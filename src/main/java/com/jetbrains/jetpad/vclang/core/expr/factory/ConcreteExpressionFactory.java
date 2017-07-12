@@ -173,8 +173,8 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.Pattern makeConPattern(boolean isExplicit, Abstract.Constructor constructor, List<Abstract.Pattern> args) {
-    return cConPattern(isExplicit, constructor.getName(), args);
+  public Abstract.Pattern makeConPattern(boolean isExplicit, Abstract.Constructor constructor, List<? extends Abstract.Pattern> args) {
+    return cConPattern(isExplicit, constructor.getName(), (List<Concrete.Pattern>) args);
   }
 
   @Override

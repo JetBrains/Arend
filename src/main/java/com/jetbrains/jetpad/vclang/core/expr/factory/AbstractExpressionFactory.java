@@ -40,7 +40,7 @@ public interface AbstractExpressionFactory {
   Abstract.LetClause makeLetClause(Abstract.ReferableSourceNode referable, List<? extends Abstract.Argument> arguments, Abstract.Expression resultType, Abstract.Expression term);
   Abstract.Expression makeCase(List<? extends Abstract.Expression> expressions, List<? extends Abstract.FunctionClause> clauses);
   Abstract.FunctionClause makeClause(List<? extends Abstract.Pattern> pattern, Abstract.Expression expr);
-  Abstract.Pattern makeConPattern(boolean isExplicit, Abstract.Constructor constructor, List<Abstract.Pattern> args);
+  Abstract.Pattern makeConPattern(boolean isExplicit, Abstract.Constructor constructor, List<? extends Abstract.Pattern> args);
   Abstract.Pattern makeNamePattern(boolean isExplicit, Abstract.ReferableSourceNode name);
   Abstract.Pattern makeEmptyPattern(boolean isExplicit);
 }

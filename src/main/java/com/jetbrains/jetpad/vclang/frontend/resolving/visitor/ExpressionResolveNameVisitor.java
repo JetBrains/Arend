@@ -272,7 +272,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
       }
       return null;
     } else if (pattern instanceof Abstract.ConstructorPattern) {
-      List<Abstract.Pattern> patterns = ((Abstract.ConstructorPattern) pattern).getArguments();
+      List<? extends Abstract.Pattern> patterns = ((Abstract.ConstructorPattern) pattern).getArguments();
       for (int i = 0; i < patterns.size(); i++) {
         Abstract.Constructor constructor = visitPattern(patterns.get(i), usedNames);
         if (constructor != null) {

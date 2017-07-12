@@ -1506,29 +1506,29 @@ public final class Concrete {
   public static class ConstructorPattern extends Pattern implements Abstract.ConstructorPattern {
     private final String myConstructorName;
     private Abstract.Constructor myConstructor;
-    private final List<Abstract.Pattern> myArguments;
+    private final List<Pattern> myArguments;
 
-    public ConstructorPattern(Position position, String constructorName, List<Abstract.Pattern> arguments) {
+    public ConstructorPattern(Position position, String constructorName, List<Pattern> arguments) {
       super(position);
       myConstructorName = constructorName;
       myArguments = arguments;
     }
 
-    public ConstructorPattern(Position position, boolean isExplicit, String constructorName, List<Abstract.Pattern> arguments) {
+    public ConstructorPattern(Position position, boolean isExplicit, String constructorName, List<Pattern> arguments) {
       super(position);
       setExplicit(isExplicit);
       myConstructorName = constructorName;
       myArguments = arguments;
     }
 
-    public ConstructorPattern(Position position, Abstract.Constructor constructor, List<Abstract.Pattern> arguments) {
+    public ConstructorPattern(Position position, Abstract.Constructor constructor, List<Pattern> arguments) {
       super(position);
       myConstructor = constructor;
       myConstructorName = constructor.getName();
       myArguments = arguments;
     }
 
-    public ConstructorPattern(Position position, boolean isExplicit, Abstract.Constructor constructor, List<Abstract.Pattern> arguments) {
+    public ConstructorPattern(Position position, boolean isExplicit, Abstract.Constructor constructor, List<Pattern> arguments) {
       super(position);
       setExplicit(isExplicit);
       myConstructor = constructor;
@@ -1551,7 +1551,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<Abstract.Pattern> getArguments() {
+    public List<Pattern> getArguments() {
       return myArguments;
     }
   }

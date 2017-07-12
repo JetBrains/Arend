@@ -188,7 +188,7 @@ public class ConcreteExpressionFactory {
     return new Concrete.UniverseExpression(POSITION, pLevel, hLevel);
   }
 
-  public static Concrete.ConstructorPattern cConPattern(boolean isExplicit, String name, List<Abstract.Pattern> patternArgs) {
+  public static Concrete.ConstructorPattern cConPattern(boolean isExplicit, String name, List<Concrete.Pattern> patternArgs) {
     return new Concrete.ConstructorPattern(POSITION, isExplicit, name, patternArgs);
   }
 
