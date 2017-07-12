@@ -1,6 +1,10 @@
 package com.jetbrains.jetpad.vclang.typechecking.patternmatching;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.TypedSingleDependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
@@ -17,9 +21,7 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 import com.jetbrains.jetpad.vclang.typechecking.normalization.EvalNormalizer;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ConditionsChecking {
@@ -105,16 +107,22 @@ public class ConditionsChecking {
       return true;
     }
 
+    ExprSubstitution pathSubstitution = new ExprSubstitution();
+    collectPaths(clause.patterns, pathSubstitution);
+
     ExprSubstitution substitution = new ExprSubstitution();
     DependentLink link = parameters;
     for (int i = 0; i < clause.patterns.size(); i++) {
       if (i != index) {
-        substitution.add(link, clause.patterns.get(i).toExpression());
+        substitution.add(link, clause.patterns.get(i).toExpression().subst(pathSubstitution));
       }
       link = link.getNext();
     }
+
+    pathSubstitution.add(((BindingPattern) clause.patterns.get(index)).getBinding(), isLeft ? ExpressionFactory.Left() : ExpressionFactory.Right());
+
     Expression evaluatedExpr1 = expr.subst(substitution).normalize(NormalizeVisitor.Mode.NF);
-    Expression evaluatedExpr2 = clause.expression.subst(new ExprSubstitution(((BindingPattern) clause.patterns.get(index)).getBinding(), isLeft ? ExpressionFactory.Left() : ExpressionFactory.Right())).normalize(NormalizeVisitor.Mode.NF);
+    Expression evaluatedExpr2 = clause.expression.subst(pathSubstitution).normalize(NormalizeVisitor.Mode.NF);
     if (!CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null)) {
       List<Expression> defCallArgs1 = new ArrayList<>();
       int i = 0;
@@ -126,6 +134,23 @@ public class ConditionsChecking {
       return false;
     } else {
       return true;
+    }
+  }
+
+  private static void collectPaths(List<Pattern> patterns, ExprSubstitution substitution) {
+    for (Pattern pattern : patterns) {
+      if (pattern instanceof ConstructorPattern) {
+        ConstructorPattern conPattern = (ConstructorPattern) pattern;
+        if (conPattern.getConstructor() == Prelude.PATH_CON) {
+          SingleDependentLink lamParam = new TypedSingleDependentLink(true, "i", ExpressionFactory.Interval());
+          Expression lamRef = new ReferenceExpression(lamParam);
+          Map<Constructor, ElimTree> children = new HashMap<>();
+          children.put(Prelude.LEFT, new LeafElimTree(EmptyDependentLink.getInstance(), conPattern.getDataTypeArguments().get(1)));
+          children.put(Prelude.RIGHT, new LeafElimTree(EmptyDependentLink.getInstance(), conPattern.getDataTypeArguments().get(2)));
+          children.put(null, new LeafElimTree(lamParam, new AppExpression(conPattern.getArguments().get(0).toExpression(), lamRef)));
+          substitution.add(((BindingPattern) conPattern.getArguments().get(0)).getBinding(), new LamExpression(conPattern.getSortArgument(), lamParam, new CaseExpression(new AppExpression(conPattern.getDataTypeArguments().get(0), lamRef), new BranchElimTree(EmptyDependentLink.getInstance(), children), Collections.singletonList(lamRef))));
+        }
+      }
     }
   }
 

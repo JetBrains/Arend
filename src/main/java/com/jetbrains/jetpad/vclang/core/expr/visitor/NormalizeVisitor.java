@@ -206,18 +206,16 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
 
       Expression argument = stack.peek().accept(this, Mode.WHNF);
-      if (argument.toConCall() == null) {
-        return null;
-      }
-
-      elimTree = ((BranchElimTree) elimTree).getChild(argument.toConCall().getDefinition());
+      elimTree = ((BranchElimTree) elimTree).getChild(argument.toConCall() == null ? null : argument.toConCall().getDefinition());
       if (elimTree == null) {
         return null;
       }
 
-      stack.pop();
-      for (int i = argument.toConCall().getDefCallArguments().size() - 1; i >= 0; i--) {
-        stack.push(argument.toConCall().getDefCallArguments().get(i));
+      if (argument.toConCall() != null) {
+        stack.pop();
+        for (int i = argument.toConCall().getDefCallArguments().size() - 1; i >= 0; i--) {
+          stack.push(argument.toConCall().getDefCallArguments().get(i));
+        }
       }
     }
   }
