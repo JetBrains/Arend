@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.elimtree.*;
@@ -13,19 +12,12 @@ import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.typechecking.normalization.Normalizer;
 import com.jetbrains.jetpad.vclang.util.ComputationInterruptedException;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mode, Expression>  {
-  private final Normalizer myNormalizer;
-
-  public NormalizeVisitor(Normalizer normalizer) {
-    myNormalizer = normalizer;
-  }
-
   public enum Mode { WHNF, NF, HUMAN_NF }
 
   @Override
@@ -39,7 +31,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     Collections.reverse(args);
 
     if (function.toLam() != null) {
-      return myNormalizer.normalize(function.toLam(), args, mode);
+      return normalizeLam(function.toLam(), args).accept(this, mode);
     }
 
     if (mode == Mode.NF) {
@@ -49,6 +41,26 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       function = new AppExpression(function, mode == Mode.NF ? arg.accept(this, mode) : arg);
     }
     return function;
+  }
+
+  private Expression normalizeLam(LamExpression fun, List<? extends Expression> arguments) {
+    int i = 0;
+    SingleDependentLink link = fun.getParameters();
+    ExprSubstitution subst = new ExprSubstitution();
+    while (link.hasNext() && i < arguments.size()) {
+      subst.add(link, arguments.get(i++));
+      link = link.getNext();
+    }
+
+    Expression result = fun.getBody();
+    if (link.hasNext()) {
+      result = new LamExpression(fun.getResultSort(), link, result);
+    }
+    result = result.subst(subst);
+    for (; i < arguments.size(); i++) {
+      result = new AppExpression(result, arguments.get(i));
+    }
+    return result;
   }
 
   private Expression applyDefCall(CallableCallExpression expr, Mode mode) {
@@ -308,17 +320,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitLetClauseCall(LetClauseCallExpression expr, Mode mode) {
-    Expression result = myNormalizer.normalize(expr.getDefinition(), LevelSubstitution.EMPTY, EmptyDependentLink.getInstance(), Collections.emptyList(), expr.getDefCallArguments(), mode);
-
-    if (Thread.interrupted()) {
-      throw new ComputationInterruptedException();
-    }
-
-    if (result == null) {
-      return applyDefCall(expr, mode);
-    }
-
-    return result;
+    return expr.getLetClause().getExpression().accept(this, mode);
   }
 
   @Override
@@ -419,7 +421,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitLet(LetExpression letExpression, Mode mode) {
-    return myNormalizer.normalize(letExpression);
+    ExprSubstitution substitution = new ExprSubstitution();
+    for (LetClause clause : letExpression.getClauses()) {
+      substitution.add(clause, clause.getExpression());
+    }
+    return letExpression.getExpression().subst(substitution).accept(this, mode);
   }
 
   @Override

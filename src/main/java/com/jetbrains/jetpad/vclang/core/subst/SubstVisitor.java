@@ -8,12 +8,10 @@ import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.BaseExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
-import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -227,7 +225,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   public LetExpression visitLet(LetExpression letExpression, Void params) {
     List<LetClause> clauses = new ArrayList<>(letExpression.getClauses().size());
     for (LetClause clause : letExpression.getClauses()) {
-      LetClause newClause = visitLetClause(clause);
+      LetClause newClause = new LetClause(clause.getName(), clause.getExpression().accept(this, null));
       clauses.add(newClause);
       myExprSubstitution.add(clause, new ReferenceExpression(newClause));
     }
@@ -263,17 +261,5 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   @Override
   public Expression visitOfType(OfTypeExpression expr, Void params) {
     return new OfTypeExpression(expr.getExpression().accept(this, null), expr.getTypeOf().accept(this, null));
-  }
-
-  public LetClause visitLetClause(LetClause clause) {
-    List<SingleDependentLink> parameters = new ArrayList<>(clause.getParameters().size());
-    parameters.addAll(clause.getParameters().stream().map(link -> DependentLink.Helper.subst(link, myExprSubstitution, myLevelSubstitution)).collect(Collectors.toList()));
-    List<Sort> sorts = clause.getSortList().stream().map(sort -> sort.subst(myLevelSubstitution)).collect(Collectors.toList());
-    Type resultType = clause.getResultType() == null ? null : clause.getResultType().subst(myExprSubstitution, myLevelSubstitution);
-    ElimTreeNode elimTree = clause.getElimTree().accept(this, null);
-    for (SingleDependentLink link : clause.getParameters()) {
-      DependentLink.Helper.freeSubsts(link, myExprSubstitution);
-    }
-    return new LetClause(clause.getName(), sorts, parameters, resultType, elimTree);
   }
 }

@@ -110,13 +110,13 @@ public class SubstTest extends TypeCheckingTestCase {
 
   @Test
   public void substLet() {
-    // \let | x (z : N) => z | y (w : N) => a \in a [a := zero] = \let | x (z : N) => z | y (w : N) => zero \in zero
+    // \let | x => \lam (z : N) => z | y => \lam (w : N) => a \in a [a := zero] = \let | x => \lam (z : N) => z | y => \lam (w : N) => zero \in zero
     Binding a = new TypedBinding("a", Nat());
     SingleDependentLink z = singleParam("z", Nat());
     SingleDependentLink w = singleParam("w", Nat());
 
-    Expression expr1 = new LetExpression(lets(let("x", z, Ref(z)), let("y", w, Ref(a))), Ref(a));
-    Expression expr2 = new LetExpression(lets(let("x", z, Ref(z)), let("y", w, Zero())), Zero());
+    Expression expr1 = new LetExpression(lets(let("x", Lam(z, Ref(z))), let("y", Lam(w, Ref(a)))), Ref(a));
+    Expression expr2 = new LetExpression(lets(let("x", Lam(z, Ref(z))), let("y", Lam(w, Zero()))), Zero());
     assertEquals(expr2, expr1.subst(a, Zero()));
   }
 }

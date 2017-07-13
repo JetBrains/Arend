@@ -1,13 +1,11 @@
 package com.jetbrains.jetpad.vclang.typechecking.visitor;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.BaseExpressionVisitor;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 
 public abstract class ProcessDefCallsVisitor<P> extends BaseExpressionVisitor<P, Boolean> {
   protected abstract boolean processDefCall(DefCallExpression expression, P param);
@@ -34,15 +32,7 @@ public abstract class ProcessDefCallsVisitor<P> extends BaseExpressionVisitor<P,
     }
 
     for (LetClause lc : expression.getClauses()) {
-      if (lc.getResultType().getExpr().accept(this, param)) {
-        return true;
-      }
-      for (SingleDependentLink link : lc.getParameters()) {
-        if (visitDependentLink(link, param)) {
-          return true;
-        }
-      }
-      if (visitElimTreeNode(lc.getElimTree(), param)) {
+      if (lc.getExpression().accept(this, param)) {
         return true;
       }
     }
@@ -52,11 +42,6 @@ public abstract class ProcessDefCallsVisitor<P> extends BaseExpressionVisitor<P,
   @Override
   public Boolean visitCase(CaseExpression expr, P param) {
     return visitElimTree(expr.getElimTree(), param) || visitDependentLink(expr.getParameters(), param) || expr.getResultType().accept(this, param) || expr.getArguments().stream().anyMatch(arg -> arg.accept(this, param));
-  }
-
-  private boolean visitElimTreeNode(ElimTreeNode elimTree, P param) {
-    // TODO[newElim]
-    return false;
   }
 
   private boolean visitElimTree(ElimTree elimTree, P param) {
@@ -80,7 +65,7 @@ public abstract class ProcessDefCallsVisitor<P> extends BaseExpressionVisitor<P,
     return expr.getDefCallArguments().stream().anyMatch(arg -> arg.accept(this, param));
   }
 
-  public boolean visitDependentLink(DependentLink link, P param) {
+  private boolean visitDependentLink(DependentLink link, P param) {
     for (; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
       if (link.getType().getExpr().accept(this, param)) {

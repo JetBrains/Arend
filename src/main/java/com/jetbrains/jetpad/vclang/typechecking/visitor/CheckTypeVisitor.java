@@ -22,8 +22,6 @@ import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
@@ -36,7 +34,6 @@ import com.jetbrains.jetpad.vclang.term.AbstractLevelExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.prettyprint.StringPrettyPrintable;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
-import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingElim;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.error.DummyLocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.InconsistentModel;
@@ -494,6 +491,42 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     return new Result(new ClassCallExpression((ClassDefinition) typeChecked, Sort.PROP), new UniverseExpression(((ClassDefinition) typeChecked).getSort().subst(Sort.PROP.toLevelSubstitution())));
   }
 
+  private TypedSingleDependentLink visitNameArgument(Abstract.NameArgument param, int argIndex, Abstract.SourceNode sourceNode) {
+    Abstract.ReferableSourceNode referable = param.getReferable();
+    String name = referable == null ? null : referable.getName();
+
+    InferenceLevelVariable pLvl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, sourceNode);
+    InferenceLevelVariable hLvl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, sourceNode);
+    myEquations.addVariable(pLvl);
+    myEquations.addVariable(hLvl);
+    Sort sort = new Sort(new Level(pLvl), new Level(hLvl));
+    InferenceVariable inferenceVariable = new LambdaInferenceVariable(name == null ? "_" : "type-of-" + name, new UniverseExpression(sort), argIndex, sourceNode, false);
+    Expression argType = new InferenceReferenceExpression(inferenceVariable, myEquations);
+
+    TypedSingleDependentLink link = new TypedSingleDependentLink(param.getExplicit(), name, new TypeExpression(argType, sort));
+    myContext.put(referable, link);
+    return link;
+  }
+
+  private SingleDependentLink visitTypeArgument(Abstract.TypeArgument param) {
+    Abstract.Expression paramType = param.getType();
+    Type argResult = checkType(paramType);
+    if (argResult == null) return null;
+
+    if (param instanceof Abstract.TelescopeArgument) {
+      List<? extends Abstract.ReferableSourceNode> referableList = ((Abstract.TelescopeArgument) param).getReferableList();
+      List<String> names = referableList.stream().map(r -> r == null ? null : r.getName()).collect(Collectors.toList());
+      SingleDependentLink link = ExpressionFactory.singleParams(param.getExplicit(), names, argResult);
+      int i = 0;
+      for (SingleDependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
+        myContext.put(referableList.get(i), link1);
+      }
+      return link;
+    } else {
+      return ExpressionFactory.singleParams(param.getExplicit(), Collections.singletonList(null), argResult);
+    }
+  }
+
   private Result visitLam(List<? extends Abstract.Argument> parameters, Abstract.LamExpression expr, Expression expectedType, int argIndex) {
     if (parameters.isEmpty()) {
       return checkExpr(expr.getBody(), expectedType);
@@ -501,32 +534,23 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
     Abstract.Argument param = parameters.get(0);
     if (param instanceof Abstract.NameArgument) {
-      Abstract.ReferableSourceNode referable = ((Abstract.NameArgument) param).getReferable();
-      String name = referable == null ? null : referable.getName();
       if (expectedType != null) {
         expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
       }
 
       if (expectedType == null || expectedType.toPi() == null) {
-        InferenceLevelVariable pLvl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, expr);
-        InferenceLevelVariable hLvl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, expr);
-        myEquations.addVariable(pLvl);
-        myEquations.addVariable(hLvl);
-        Sort sort = new Sort(new Level(pLvl), new Level(hLvl));
-        InferenceVariable inferenceVariable = new LambdaInferenceVariable(name == null ? "_" : "type-of-" + name, new UniverseExpression(sort), argIndex, expr, false);
-        Expression argType = new InferenceReferenceExpression(inferenceVariable, myEquations);
-
-        SingleDependentLink link = new TypedSingleDependentLink(param.getExplicit(), name, new TypeExpression(argType, sort));
-        myContext.put(referable, link);
+        TypedSingleDependentLink link = visitNameArgument((Abstract.NameArgument) param, argIndex, expr);
         Result bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, null, argIndex + 1);
         if (bodyResult == null) return null;
-        sort = PiExpression.generateUpperBound(sort, getSortOf(bodyResult.type.getType()), myEquations, expr);
+        Sort sort = PiExpression.generateUpperBound(link.getType().getSortOfType(), getSortOf(bodyResult.type.getType()), myEquations, expr);
         Result result = new Result(new LamExpression(sort, link, bodyResult.expression), new PiExpression(sort, link, bodyResult.type));
         if (expectedType != null && !compare(result, expectedType, expr)) {
           return null;
         }
         return result;
       } else {
+        Abstract.ReferableSourceNode referable = ((Abstract.NameArgument) param).getReferable();
+        String name = referable == null ? null : referable.getName();
         SingleDependentLink piParams = expectedType.toPi().getParameters();
         if (piParams.isExplicit() != param.getExplicit()) {
           myErrorReporter.report(new LocalTypeCheckingError(ordinal(argIndex) + " argument of the lambda should be " + (piParams.isExplicit() ? "explicit" : "implicit"), expr));
@@ -540,28 +564,18 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
         return new Result(new LamExpression(sort, link, bodyResult.expression), new PiExpression(sort, link, bodyResult.type));
       }
     } else if (param instanceof Abstract.TypeArgument) {
-      Abstract.Expression paramType = ((Abstract.TypeArgument) param).getType();
-      Type argResult = checkType(paramType);
-      if (argResult == null) return null;
-
-      int namesCount;
-      SingleDependentLink link;
-      if (param instanceof Abstract.TelescopeArgument) {
-        List<? extends Abstract.ReferableSourceNode> referableList = ((Abstract.TelescopeArgument) param).getReferableList();
-        List<String> names = referableList.stream().map(r -> r == null ? null : r.getName()).collect(Collectors.toList());
-        link = ExpressionFactory.singleParams(param.getExplicit(), names, argResult);
-        namesCount = 0;
-        for (SingleDependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), namesCount++) {
-          myContext.put(referableList.get(namesCount), link1);
-        }
-      } else {
-        link = ExpressionFactory.singleParams(param.getExplicit(), Collections.singletonList(null), argResult);
-        namesCount = 1;
+      SingleDependentLink link = visitTypeArgument((Abstract.TypeArgument) param);
+      if (link == null) {
+        return null;
       }
 
       SingleDependentLink actualLink = null;
       Expression expectedBodyType = null;
+      int namesCount = param instanceof Abstract.TelescopeArgument ? ((Abstract.TelescopeArgument) param).getReferableList().size() : 1;
       if (expectedType != null) {
+        Abstract.Expression paramType = ((Abstract.TypeArgument) param).getType();
+        Expression argType = link.getType().getExpr();
+
         SingleDependentLink lamLink = link;
         ExprSubstitution substitution = new ExprSubstitution();
         Expression argExpr = null;
@@ -577,12 +591,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
             break;
           }
           if (argExpr == null) {
-            argExpr = argResult.getExpr().normalize(NormalizeVisitor.Mode.NF);
+            argExpr = argType.normalize(NormalizeVisitor.Mode.NF);
           }
 
           Expression argExpectedType = expectedType.toPi().getParameters().getType().getExpr().subst(substitution);
           if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, argExpectedType.normalize(NormalizeVisitor.Mode.NF), argExpr, paramType)) {
-            LocalTypeCheckingError error = new TypeMismatchError(argExpectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), argResult.getExpr().normalize(NormalizeVisitor.Mode.HUMAN_NF), paramType);
+            LocalTypeCheckingError error = new TypeMismatchError(argExpectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), argType.normalize(NormalizeVisitor.Mode.HUMAN_NF), paramType);
             myErrorReporter.report(error);
             return null;
           }
@@ -1126,59 +1140,50 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     }
   }
 
-  private LetClause typeCheckLetClause(Abstract.LetClause clause) {
-    List<SingleDependentLink> links = new ArrayList<>(clause.getArguments().size());
-    Type resultType;
-    ElimTreeNode elimTree;
-    LetClause letResult;
-    List<Sort> domSorts = new ArrayList<>(clause.getArguments().size());
-
-    Abstract.ReferableSourceNode referable = null;
-    try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myContext)) {
-      for (Abstract.Argument arg : clause.getArguments()) {
-        if (arg instanceof Abstract.TelescopeArgument) {
-          Abstract.TelescopeArgument teleArg = (Abstract.TelescopeArgument) arg;
-          Type result = checkType(teleArg.getType());
-          if (result == null) return null;
-          List<? extends Abstract.ReferableSourceNode> referableList = teleArg.getReferableList();
-          links.add(ExpressionFactory.singleParams(teleArg.getExplicit(), referableList.stream().map(r -> r == null ? null : r.getName()).collect(Collectors.toList()), result));
-          referable = referableList.get(referableList.size() - 1);
-          domSorts.add(result.getSortOfType());
-          int i = 0;
-          for (SingleDependentLink link = links.get(links.size() - 1); link.hasNext(); link = link.getNext(), i++) {
-            myContext.put(referableList.get(i), link);
-          }
-        } else {
-          myErrorReporter.report(new LocalTypeCheckingError("Expected a typed parameter", arg));
-          return null;
-        }
-      }
-
-      Type expectedType = null;
-      if (clause.getResultType() != null) {
-        expectedType = checkType(clause.getResultType());
-        if (expectedType == null) return null;
-      }
-
-      Result termResult = checkExpr(clause.getTerm(), expectedType == null ? null : expectedType.getExpr());
-      if (termResult == null) return null;
-      elimTree = ExpressionFactory.top(links, new LeafElimTreeNode(termResult.expression));
-      resultType = expectedType != null ? expectedType : new TypeExpression(termResult.type, getSortOf(termResult.type.getType()));
-
-      LocalTypeCheckingError error = TypeCheckingElim.checkCoverage(clause.getName(), clause, links, elimTree, expectedType == null ? null : expectedType.getExpr());
-      if (error != null) {
-        myErrorReporter.report(error);
-        return null;
-      }
-      error = TypeCheckingElim.checkConditions(clause, links, elimTree);
-      if (error != null) {
-        myErrorReporter.report(error);
-        return null;
+  private Result typecheckLetClause(List<? extends Abstract.Argument> parameters, Abstract.LetClause letClause, int argIndex) {
+    if (parameters.isEmpty()) {
+      Abstract.Expression letResult = letClause.getResultType();
+      if (letResult != null) {
+        Type type = checkType(letResult);
+        if (type == null) return null;
+        return checkExpr(letClause.getTerm(), type.getExpr());
+      } else {
+        return checkExpr(letClause.getTerm(), null);
       }
     }
 
-    List<Sort> sorts = generateUpperBounds(domSorts, resultType.getSortOfType(), clause);
-    letResult = new LetClause(clause.getName(), sorts, links, resultType, elimTree);
+    Abstract.Argument param = parameters.get(0);
+    if (param instanceof Abstract.NameArgument) {
+      TypedSingleDependentLink link = visitNameArgument((Abstract.NameArgument) param, argIndex, letClause);
+      Result bodyResult = typecheckLetClause(parameters.subList(1, parameters.size()), letClause, argIndex + 1);
+      if (bodyResult == null) return null;
+      Sort sort = PiExpression.generateUpperBound(link.getType().getSortOfType(), getSortOf(bodyResult.type.getType()), myEquations, letClause);
+      return new Result(new LamExpression(sort, link, bodyResult.expression), new PiExpression(sort, link, bodyResult.type));
+    } else if (param instanceof Abstract.TypeArgument) {
+      int namesCount = param instanceof Abstract.TelescopeArgument ? ((Abstract.TelescopeArgument) param).getReferableList().size() : 1;
+      SingleDependentLink link = visitTypeArgument((Abstract.TypeArgument) param);
+      if (link == null) {
+        return null;
+      }
+
+      Result bodyResult = typecheckLetClause(parameters.subList(1, parameters.size()), letClause, argIndex + namesCount);
+      if (bodyResult == null) return null;
+      Sort sort = PiExpression.generateUpperBound(link.getType().getSortOfType(), getSortOf(bodyResult.type.getType()), myEquations, letClause);
+      return new Result(new LamExpression(sort, link, bodyResult.expression), new PiExpression(sort, link, bodyResult.type));
+    } else {
+      throw new IllegalStateException();
+    }
+  }
+
+  private LetClause typecheckLetClause(Abstract.LetClause clause) {
+    LetClause letResult;
+    try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myContext)) {
+      Result result = typecheckLetClause(clause.getArguments(), clause, 1);
+      if (result == null) {
+        return null;
+      }
+      letResult = new LetClause(clause.getName(), result.expression);
+    }
     myContext.put(clause, letResult);
     return letResult;
   }
@@ -1186,14 +1191,21 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   @Override
   public Result visitLet(Abstract.LetExpression expr, ExpectedType expectedType) {
     try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myContext)) {
-      List<LetClause> clauses = new ArrayList<>();
-      for (int i = 0; i < expr.getClauses().size(); i++) {
-        LetClause clauseResult = typeCheckLetClause(expr.getClauses().get(i));
-        if (clauseResult == null) return null;
-        clauses.add(clauseResult);
+      List<? extends Abstract.LetClause> abstractClauses = expr.getClauses();
+      List<LetClause> clauses = new ArrayList<>(abstractClauses.size());
+      for (Abstract.LetClause clause : abstractClauses) {
+        LetClause letClause = typecheckLetClause(clause);
+        if (letClause == null) {
+          return null;
+        }
+        myContext.put(clause, letClause);
+        clauses.add(letClause);
       }
+
       Result result = checkExpr(expr.getExpression(), expectedType);
-      if (result == null) return null;
+      if (result == null) {
+        return null;
+      }
 
       LetExpression letExpr = new LetExpression(clauses, result.expression);
       return new Result(letExpr, new LetExpression(letExpr.getClauses(), result.type));

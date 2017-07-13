@@ -11,7 +11,6 @@ import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.normalization.EvalNormalizer;
 
 import java.util.Set;
 
@@ -65,6 +64,6 @@ public class SigmaExpression extends Expression implements Type {
 
   @Override
   public SigmaExpression normalize(NormalizeVisitor.Mode mode) {
-    return new NormalizeVisitor(new EvalNormalizer()).visitSigma(this, mode);
+    return new NormalizeVisitor().visitSigma(this, mode);
   }
 }

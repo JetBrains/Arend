@@ -14,7 +14,6 @@ import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
@@ -26,7 +25,10 @@ import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
@@ -267,7 +269,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
 
   @Test
   public void letNormalizationContext() {
-    LetClause let = let("x", Collections.emptyList(), Nat(), top(EmptyDependentLink.getInstance(), new LeafElimTreeNode(Zero())));
+    LetClause let = let("x", Zero());
     new LetExpression(lets(let), Ref(let)).normalize(NormalizeVisitor.Mode.NF);
   }
 

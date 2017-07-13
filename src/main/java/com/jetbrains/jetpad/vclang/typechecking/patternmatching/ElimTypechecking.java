@@ -18,7 +18,6 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.MissingClausesError;
-import com.jetbrains.jetpad.vclang.typechecking.normalization.EvalNormalizer;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
@@ -207,7 +206,7 @@ public class ElimTypechecking {
       for (Pair<List<Util.ClauseElem>, Boolean> missingClause : myMissingClauses) {
         List<Expression> expressions = Util.unflattenClauses(missingClause.proj1);
         if (!missingClause.proj2) {
-          if (elimTree != null && new NormalizeVisitor(new EvalNormalizer()).doesEvaluate(elimTree, expressions)) {
+          if (elimTree != null && new NormalizeVisitor().doesEvaluate(elimTree, expressions)) {
             continue;
           }
 

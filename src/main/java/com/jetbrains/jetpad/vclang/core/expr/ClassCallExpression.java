@@ -14,7 +14,6 @@ import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.normalization.EvalNormalizer;
 
 import java.util.Collection;
 import java.util.Map;
@@ -77,7 +76,7 @@ public class ClassCallExpression extends DefCallExpression implements Type {
 
   @Override
   public ClassCallExpression normalize(NormalizeVisitor.Mode mode) {
-    return new NormalizeVisitor(new EvalNormalizer()).visitClassCall(this, mode);
+    return new NormalizeVisitor().visitClassCall(this, mode);
   }
 
   public Sort getSort() {

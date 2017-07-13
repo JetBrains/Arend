@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.core.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
@@ -156,7 +155,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> im
   @Override
   public Variable visitLet(LetExpression letExpression, Void params) {
     for (LetClause clause : letExpression.getClauses()) {
-      Variable result = visitLetClause(clause);
+      Variable result = clause.getExpression().accept(this, null);
       if (result != null) {
         return result;
       }
@@ -210,22 +209,6 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> im
   public Variable visitOfType(OfTypeExpression expr, Void params) {
     Variable result = expr.getExpression().accept(this, null);
     return result != null ? result : expr.getTypeOf().accept(this, null);
-  }
-
-  public Variable visitLetClause(LetClause clause) {
-    for (SingleDependentLink link : clause.getParameters()) {
-      Variable result = visitDependentLink(link);
-      if (result != null) {
-        return result;
-      }
-    }
-    if (clause.getResultType() != null) {
-      Variable result = clause.getResultType().getExpr().accept(this, null);
-      if (result != null) {
-        return result;
-      }
-    }
-    return clause.getElimTree().accept(this, null);
   }
 
   @Override

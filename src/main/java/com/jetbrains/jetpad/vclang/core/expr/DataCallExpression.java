@@ -13,7 +13,6 @@ import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.normalization.EvalNormalizer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -76,7 +75,7 @@ public class DataCallExpression extends DefCallExpression implements Type {
 
   @Override
   public DataCallExpression normalize(NormalizeVisitor.Mode mode) {
-    return new NormalizeVisitor(new EvalNormalizer()).visitDataCall(this, mode);
+    return new NormalizeVisitor().visitDataCall(this, mode);
   }
 
   public List<ConCallExpression> getMatchedConstructors() {

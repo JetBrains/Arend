@@ -197,12 +197,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
   @Override
   public LetExpression visitLet(LetExpression expr, Void params) {
     for (LetClause clause : expr.getClauses()) {
-      clause.getParameters().forEach(this::visitArguments);
-      if (clause.getResultType() != null) {
-        clause.setResultType(clause.getResultType().strip(myBounds, myErrorReporter));
-      }
-      clause.setElimTree(clause.getElimTree().accept(this, null));
-      clause.getParameters().forEach(this::freeArguments);
+      clause.setExpression(clause.getExpression().accept(this, null));
       myBounds.add(clause);
     }
 

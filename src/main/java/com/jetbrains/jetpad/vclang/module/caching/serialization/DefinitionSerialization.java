@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
@@ -381,17 +380,9 @@ class DefinitionSerialization {
     public ExpressionProtos.Expression visitLet(LetExpression letExpression, Void params) {
       ExpressionProtos.Expression.Let.Builder builder = ExpressionProtos.Expression.Let.newBuilder();
       for (LetClause letClause : letExpression.getClauses()) {
-        ExpressionProtos.Expression.Let.Clause.Builder cBuilder = ExpressionProtos.Expression.Let.Clause.newBuilder();
-        cBuilder.setName(letClause.getName());
-        for (Sort sort : letClause.getSortList()) {
-          cBuilder.addSort(writeSort(sort));
-        }
-        for (SingleDependentLink link : letClause.getParameters()) {
-          cBuilder.addParam(writeSingleParameter(link));
-        }
-        cBuilder.setResultType(writeType(letClause.getResultType()));
-        cBuilder.setElimTree(writeElimTreeNode(letClause.getElimTree()));
-        builder.addClause(cBuilder);
+        builder.addClause(ExpressionProtos.Expression.Let.Clause.newBuilder()
+          .setName(letClause.getName())
+          .setExpression(writeExpr(letClause.getExpression())));
         registerBinding(letClause);
       }
       builder.setExpression(letExpression.getExpression().accept(this, null));

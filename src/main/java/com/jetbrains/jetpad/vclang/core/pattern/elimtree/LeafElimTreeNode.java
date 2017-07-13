@@ -2,8 +2,6 @@ package com.jetbrains.jetpad.vclang.core.pattern.elimtree;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
-import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 
@@ -37,11 +35,6 @@ public class LeafElimTreeNode extends ElimTreeNode {
 
     getParent().setChild(replacement);
     return root;
-  }
-
-  @Override
-  public String toString() {
-    return accept(new ToAbstractVisitor(new ConcreteExpressionFactory()), null).toString();
   }
 
   @Override

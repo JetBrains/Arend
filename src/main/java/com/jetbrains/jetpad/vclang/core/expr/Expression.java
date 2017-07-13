@@ -16,7 +16,6 @@ import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
-import com.jetbrains.jetpad.vclang.typechecking.normalization.EvalNormalizer;
 
 import java.util.Collections;
 import java.util.List;
@@ -96,7 +95,7 @@ public abstract class Expression implements ExpectedType {
 
   @Override
   public Expression normalize(NormalizeVisitor.Mode mode) {
-    return accept(new NormalizeVisitor(new EvalNormalizer()), mode);
+    return accept(new NormalizeVisitor(), mode);
   }
 
   public static boolean compare(Expression expr1, Expression expr2, Equations.CMP cmp) {

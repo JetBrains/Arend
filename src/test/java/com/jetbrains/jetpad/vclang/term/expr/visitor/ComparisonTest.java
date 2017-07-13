@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
@@ -15,7 +14,6 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.Collections;
 
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
@@ -130,10 +128,10 @@ public class ComparisonTest extends TypeCheckingTestCase {
   @Test
   public void letsNotEqual() {
     SingleDependentLink y = singleParam("y", Nat());
-    LetClause let1 = let("x", y, Nat(), Ref(y));
+    LetClause let1 = let("x", Lam(y, Ref(y)));
     Expression expr1 = new LetExpression(lets(let1), Apps(Ref(let1), Zero()));
     SingleDependentLink y_ = singleParam("y", Universe(0));
-    LetClause let2 = let("x", y_, Universe(0), Ref(y_));
+    LetClause let2 = let("x", Lam(y_, Ref(y_)));
     Expression expr2 = new LetExpression(lets(let2), Apps(Ref(let2), Nat()));
     assertNotEquals(expr1, expr2);
   }
@@ -144,33 +142,19 @@ public class ComparisonTest extends TypeCheckingTestCase {
     SingleDependentLink yz = singleParam(true, vars("y", "z"), Ref(A));
     SingleDependentLink y = singleParam("y", Ref(A));
     SingleDependentLink z = singleParam("z", Ref(A));
-    LetClause let1 = let("x", yz, Universe(0), Ref(A));
+    LetClause let1 = let("x", Lam(yz, Ref(A)));
     Expression expr1 = new LetExpression(lets(let1), Apps(Ref(let1), Zero()));
-    LetClause let2 = let("x", Arrays.asList(y, z), Universe(0), Ref(A));
+    LetClause let2 = let("x", Lam(y, Lam(z, Ref(A))));
     Expression expr2 = new LetExpression(lets(let2), Apps(Ref(let2), Zero()));
     assertEquals(expr1, expr2);
     assertEquals(expr2, expr1);
   }
 
   @Test
-  public void letsTelesNotEqual() {
-    DependentLink A = param(null, Universe(0));
-    SingleDependentLink yz = singleParam(true, vars("y", "z"), Ref(A));
-    SingleDependentLink y = singleParam("y", Ref(A));
-    SingleDependentLink z = singleParam("z", Ref(y));
-    LetClause let1 = let("x", yz, Universe(0), Ref(A));
-    Expression expr1 = new LetExpression(lets(let1), Apps(Ref(let1), Zero()));
-    LetClause let2 = let("x", Arrays.asList(y, z), Universe(0), Ref(A));
-    Expression expr2 = new LetExpression(lets(let2), Apps(Ref(let2), Zero()));
-    assertNotEquals(expr1, expr2);
-    assertNotEquals(expr2, expr1);
-  }
-
-  @Test
   public void letsNotEquiv() {
-    LetClause let1 = let("x", EmptyDependentLink.getInstance(), Universe(1), Universe(0));
+    LetClause let1 = let("x", Universe(0));
     Expression expr1 = new LetExpression(lets(let1), Ref(let1));
-    LetClause let2 = let("x", EmptyDependentLink.getInstance(), Universe(2), Universe(1));
+    LetClause let2 = let("x", Universe(1));
     Expression expr2 = new LetExpression(lets(let2), Ref(let2));
     assertNotEquals(expr1, expr2);
   }

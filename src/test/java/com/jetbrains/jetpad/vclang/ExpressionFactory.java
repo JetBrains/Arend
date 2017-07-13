@@ -9,8 +9,6 @@ import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
@@ -18,7 +16,6 @@ import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 public class ExpressionFactory {
@@ -54,24 +51,8 @@ public class ExpressionFactory {
     return Arrays.asList(letClauses);
   }
 
-  public static LetClause let(String name, Expression expr) {
-    return let(name, Collections.emptyList(), null, new LeafElimTreeNode(expr));
-  }
-
-  public static LetClause let(String name, SingleDependentLink param, Expression expr) {
-    return let(name, Collections.singletonList(param), null, new LeafElimTreeNode(expr));
-  }
-
-  public static LetClause let(String name, SingleDependentLink param, Expression resultType, Expression expr) {
-    return let(name, Collections.singletonList(param), resultType, new LeafElimTreeNode(expr));
-  }
-
-  public static LetClause let(String name, List<SingleDependentLink> params, Expression resultType, Expression expr) {
-    return let(name, params, resultType, new LeafElimTreeNode(expr));
-  }
-
-  public static LetClause let(String name, List<SingleDependentLink> params, Expression resultType, ElimTreeNode elimTree) {
-    return new LetClause(name, Collections.nCopies(params.size(), Sort.SET0), params, resultType == null ? null : new TypeExpression(resultType, Sort.SET0), elimTree);
+  public static LetClause let(String name, Expression expression) {
+    return new LetClause(name, expression);
   }
 
   public static List<String> vars(String... vars) {

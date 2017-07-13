@@ -501,10 +501,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
     CompareVisitor visitor = new CompareVisitor(mySubstitution, myEquations, Equations.CMP.EQ);
     for (int i = 0; i < letExpr1.getClauses().size(); i++) {
-      if (!visitor.compareParameters(DependentLink.Helper.toList(letExpr1.getClauses().get(i).getParameters()), DependentLink.Helper.toList(letExpr2.getClauses().get(i).getParameters()))) {
-        return false;
-      }
-      if (!visitor.compare(letExpr1.getClauses().get(i).getElimTree(), letExpr2.getClauses().get(i).getElimTree())) {
+      if (!visitor.compare(letExpr1.getClauses().get(i).getExpression(), letExpr2.getClauses().get(i).getExpression())) {
         return false;
       }
       mySubstitution.put(letExpr1.getClauses().get(i), letExpr2.getClauses().get(i));
@@ -515,11 +512,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return false;
     }
     for (int i = 0; i < letExpr1.getClauses().size(); i++) {
-      for (SingleDependentLink param : letExpr1.getClauses().get(i).getParameters()) {
-        for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
-          mySubstitution.remove(link);
-        }
-      }
       mySubstitution.remove(letExpr1.getClauses().get(i));
     }
     return true;

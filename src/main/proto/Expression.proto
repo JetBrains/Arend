@@ -82,10 +82,7 @@ message Expression {
 
         message Clause {
             string name = 1;
-            repeated Sort sort = 7;
-            repeated Telescope param = 2;
-            ElimTreeNode elim_tree = 3;
-            Type result_type = 6;
+            Expression expression = 8;
         }
     }
     message Case {

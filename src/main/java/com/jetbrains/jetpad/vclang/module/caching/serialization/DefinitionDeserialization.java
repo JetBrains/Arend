@@ -331,15 +331,7 @@ class DefinitionDeserialization {
   private LetExpression readLet(ExpressionProtos.Expression.Let proto) throws DeserializationError {
     List<LetClause> clauses = new ArrayList<>();
     for (ExpressionProtos.Expression.Let.Clause cProto : proto.getClauseList()) {
-      List<Sort> sorts = new ArrayList<>(cProto.getSortCount());
-      for (LevelProtos.Sort sort : cProto.getSortList()) {
-        sorts.add(readSort(sort));
-      }
-      List<SingleDependentLink> parameters = new ArrayList<>(cProto.getParamCount());
-      for (ExpressionProtos.Telescope telescope : cProto.getParamList()) {
-        parameters.add(readSingleParameter(telescope));
-      }
-      LetClause clause = new LetClause(cProto.getName(), sorts, parameters, readType(cProto.getResultType()), readElimTreeNode(cProto.getElimTree()));
+      LetClause clause = new LetClause(cProto.getName(), readExpr(cProto.getExpression()));
       registerBinding(clause);
       clauses.add(clause);
     }

@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.LetClause;
 import com.jetbrains.jetpad.vclang.core.expr.LetExpression;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.EmptyElimTreeNode;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -13,7 +12,6 @@ import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -77,17 +75,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     // \let x {A : Type0} (y : A) : A => y \in x Zero()
     SingleDependentLink A = singleParam("A", Universe(0));
     SingleDependentLink y = singleParam("y", Ref(A));
-    LetClause clause = let("x", Arrays.asList(A, y), Ref(A), Ref(y));
-    LetExpression expr = new LetExpression(lets(clause), Apps(Ref(clause), Zero()));
-    expr.prettyPrint(new StringBuilder(), new ArrayList<>(), Abstract.Expression.PREC, 0);
-  }
-
-  @Test
-  public void prettyPrintingLetEmpty() {
-    // \let x {A : Type0} (y ; A) : A => \elim y
-    SingleDependentLink A = singleParam("A", Universe(0));
-    SingleDependentLink y = singleParam("y", Ref(A));
-    LetClause clause = let("x", Arrays.asList(A, y), Ref(A), EmptyElimTreeNode.getInstance());
+    LetClause clause = let("x", Lam(A, Lam(y, Ref(y))));
     LetExpression expr = new LetExpression(lets(clause), Apps(Ref(clause), Zero()));
     expr.prettyPrint(new StringBuilder(), new ArrayList<>(), Abstract.Expression.PREC, 0);
   }
