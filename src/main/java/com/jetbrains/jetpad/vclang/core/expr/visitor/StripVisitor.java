@@ -86,11 +86,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitLetClauseCall(LetClauseCallExpression expr, Void params) {
     if (myBounds.contains(expr.getLetClause())) {
-      List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
-      for (Expression arg : expr.getDefCallArguments()) {
-        args.add(arg.accept(this, null));
-      }
-      return new LetClauseCallExpression(expr.getLetClause(), args);
+      return new LetClauseCallExpression(expr.getLetClause());
     } else {
       return cannotInferError(expr);
     }

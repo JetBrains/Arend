@@ -9,7 +9,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevel
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.LambdaInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.*;
-import com.jetbrains.jetpad.vclang.core.definition.Callable;
 import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
@@ -76,14 +75,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
   public static class DefCallResult implements TResult {
     private final Abstract.ReferenceExpression myDefCall;
-    private final Callable myDefinition;
+    private final Definition myDefinition;
     private final Sort mySortArgument;
     private final List<Expression> myArguments;
     private List<DependentLink> myParameters;
     private Expression myResultType;
     private final Expression myThisExpr;
 
-    private DefCallResult(Abstract.ReferenceExpression defCall, Callable definition, Sort sortArgument, List<Expression> arguments, List<DependentLink> parameters, Expression resultType, Expression thisExpr) {
+    private DefCallResult(Abstract.ReferenceExpression defCall, Definition definition, Sort sortArgument, List<Expression> arguments, List<DependentLink> parameters, Expression resultType, Expression thisExpr) {
       myDefCall = defCall;
       myDefinition = definition;
       mySortArgument = sortArgument;
@@ -93,7 +92,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       myThisExpr = thisExpr;
     }
 
-    public static TResult makeTResult(Abstract.ReferenceExpression defCall, Callable definition, Sort sortArgument, Expression thisExpr) {
+    public static TResult makeTResult(Abstract.ReferenceExpression defCall, Definition definition, Sort sortArgument, Expression thisExpr) {
       List<DependentLink> parameters = new ArrayList<>();
       Expression resultType = definition.getTypeWithParams(parameters, sortArgument);
       if (thisExpr != null) {
@@ -197,7 +196,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       return myDefCall;
     }
 
-    public Callable getDefinition() {
+    public Definition getDefinition() {
       return myDefinition;
     }
 
@@ -450,7 +449,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       throw new InconsistentModel();
     }
     if (def instanceof LetClause) {
-      return DefCallResult.makeTResult(expr, (LetClause) def, Sort.PROP, null);
+      return new Result(new LetClauseCallExpression((LetClause) def), def.getType().getExpr());
     } else {
       return new Result(new ReferenceExpression(def), def.getType().getExpr());
     }

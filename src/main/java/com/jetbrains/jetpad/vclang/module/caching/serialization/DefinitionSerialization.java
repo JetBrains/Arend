@@ -269,9 +269,6 @@ class DefinitionSerialization {
     public ExpressionProtos.Expression visitLetClauseCall(LetClauseCallExpression expr, Void params) {
       ExpressionProtos.Expression.LetClauseCall.Builder builder = ExpressionProtos.Expression.LetClauseCall.newBuilder();
       builder.setLetClauseRef(writeBindingRef(expr.getLetClause()));
-      for (Expression arg : expr.getDefCallArguments()) {
-        builder.addArgument(arg.accept(this, null));
-      }
       return ExpressionProtos.Expression.newBuilder().setLetClauseCall(builder).build();
     }
 

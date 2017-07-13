@@ -245,7 +245,7 @@ class DefinitionDeserialization {
   }
 
   private LetClauseCallExpression readLetClauseCall(ExpressionProtos.Expression.LetClauseCall proto) throws DeserializationError {
-    return new LetClauseCallExpression((LetClause) readBindingRef(proto.getLetClauseRef()), readExprList(proto.getArgumentList()));
+    return new LetClauseCallExpression((LetClause) readBindingRef(proto.getLetClauseRef()));
   }
 
   private ConCallExpression readConCall(ExpressionProtos.Expression.ConCall proto) throws DeserializationError {

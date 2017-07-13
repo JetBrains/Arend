@@ -274,17 +274,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     if (subst1 != null) {
       binding1 = subst1;
     }
-    if (binding1 != letClauseCall2.getLetClause() || expr1.getDefCallArguments().size() != letClauseCall2.getDefCallArguments().size()) {
-      return false;
-    }
 
-    for (int i = 0; i < expr1.getDefCallArguments().size(); i++) {
-      if (!compare(expr1.getDefCallArguments().get(i), letClauseCall2.getDefCallArguments().get(i))) {
-        return false;
-      }
-    }
-
-    return true;
+    return binding1 == letClauseCall2.getLetClause();
   }
 
   private boolean compareInferenceReference(InferenceReferenceExpression expr1, Expression expr2, boolean first) {

@@ -69,7 +69,6 @@ message Expression {
     }
     message LetClauseCall {
         int32 let_clause_ref = 1;
-        repeated Expression argument = 2;
     }
     message Lam {
         Sort resultSort = 5;

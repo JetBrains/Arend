@@ -96,14 +96,6 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return new ConCallExpression((Constructor) expr.getDefinition(), ((ConCallExpression) expr).getSortArgument(), ((ConCallExpression) expr).getDataTypeArguments(), args);
     }
 
-    if (expr instanceof LetClauseCallExpression) {
-      List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
-      for (Expression arg : expr.getDefCallArguments()) {
-        args.add(arg.accept(this, mode));
-      }
-      return new LetClauseCallExpression(((LetClauseCallExpression) expr).getLetClause(), args);
-    }
-
     throw new IllegalStateException();
   }
 

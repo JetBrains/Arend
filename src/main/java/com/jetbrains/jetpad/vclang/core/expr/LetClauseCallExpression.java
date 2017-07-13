@@ -2,24 +2,15 @@ package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 
-import java.util.List;
-
-public class LetClauseCallExpression extends Expression implements CallableCallExpression {
+public class LetClauseCallExpression extends Expression {
   private final LetClause myLetClause;
-  private final List<Expression> myArguments;
 
-  public LetClauseCallExpression(LetClause letClause, List<Expression> arguments) {
+  public LetClauseCallExpression(LetClause letClause) {
     myLetClause = letClause;
-    myArguments = arguments;
   }
 
   public LetClause getLetClause() {
     return myLetClause;
-  }
-
-  @Override
-  public List<? extends Expression> getDefCallArguments() {
-    return myArguments;
   }
 
   @Override
@@ -32,7 +23,6 @@ public class LetClauseCallExpression extends Expression implements CallableCallE
     return this;
   }
 
-  @Override
   public LetClause getDefinition() {
     return myLetClause;
   }

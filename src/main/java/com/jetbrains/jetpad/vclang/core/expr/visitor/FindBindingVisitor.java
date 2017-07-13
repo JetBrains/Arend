@@ -64,18 +64,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
 
   @Override
   public Variable visitLetClauseCall(LetClauseCallExpression expr, Void params) {
-    if (myBindings.contains(expr.getLetClause())) {
-      return expr.getLetClause();
-    }
-
-    for (Expression arg : expr.getDefCallArguments()) {
-      Variable result = arg.accept(this, null);
-      if (result != null) {
-        return result;
-      }
-    }
-
-    return null;
+    return myBindings.contains(expr.getLetClause()) ? expr.getLetClause() : null;
   }
 
   @Override

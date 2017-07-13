@@ -71,23 +71,15 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitLetClauseCall(LetClauseCallExpression expr, Void params) {
-    List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
-    for (Expression arg : expr.getDefCallArguments()) {
-      args.add(arg.accept(this, null));
-    }
-
     Expression subst = myExprSubstitution.get(expr.getLetClause());
     if (subst != null) {
       if (subst.toReference() != null && subst.toReference().getBinding() instanceof LetClause) {
-        return new LetClauseCallExpression((LetClause) subst.toReference().getBinding(), args);
+        return new LetClauseCallExpression((LetClause) subst.toReference().getBinding());
       } else {
-        for (Expression arg : args) {
-          subst = new AppExpression(subst, arg);
-        }
         return subst;
       }
     } else {
-      return new LetClauseCallExpression(expr.getLetClause(), args);
+      return expr;
     }
   }
 

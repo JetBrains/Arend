@@ -40,10 +40,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitLetClauseCall(LetClauseCallExpression expr, Void params) {
-    List<DependentLink> defParams = new ArrayList<>();
-    Expression type = expr.getLetClause().getTypeWithParams(defParams, null);
-    assert expr.getDefCallArguments().size() == defParams.size();
-    return type.subst(DependentLink.Helper.toSubstitution(defParams, expr.getDefCallArguments()));
+    return expr.getLetClause().getType().getExpr();
   }
 
   @Override
