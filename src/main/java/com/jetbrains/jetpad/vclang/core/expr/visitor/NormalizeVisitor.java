@@ -63,9 +63,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     return result;
   }
 
-  private Expression applyDefCall(CallableCallExpression expr, Mode mode) {
+  private Expression applyDefCall(DefCallExpression expr, Mode mode) {
     if (expr.getDefCallArguments().isEmpty() || (mode != Mode.NF && mode != Mode.HUMAN_NF)) {
-      return (Expression) expr;
+      return expr;
     }
 
     if (expr instanceof FieldCallExpression) {
@@ -77,7 +77,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       for (Expression arg : expr.getDefCallArguments()) {
         args.add(arg.accept(this, mode));
       }
-      return new FunCallExpression((FunctionDefinition) expr.getDefinition(), ((FunCallExpression) expr).getSortArgument(), args);
+      return new FunCallExpression((FunctionDefinition) expr.getDefinition(), expr.getSortArgument(), args);
     }
 
     if (expr instanceof DataCallExpression) {
@@ -85,7 +85,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       for (Expression arg : expr.getDefCallArguments()) {
         args.add(arg.accept(this, mode));
       }
-      return new DataCallExpression((DataDefinition) expr.getDefinition(), ((DataCallExpression) expr).getSortArgument(), args);
+      return new DataCallExpression((DataDefinition) expr.getDefinition(), expr.getSortArgument(), args);
     }
 
     if (expr instanceof ConCallExpression) {
@@ -93,7 +93,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       for (Expression arg : expr.getDefCallArguments()) {
         args.add(arg.accept(this, mode));
       }
-      return new ConCallExpression((Constructor) expr.getDefinition(), ((ConCallExpression) expr).getSortArgument(), ((ConCallExpression) expr).getDataTypeArguments(), args);
+      return new ConCallExpression((Constructor) expr.getDefinition(), expr.getSortArgument(), ((ConCallExpression) expr).getDataTypeArguments(), args);
     }
 
     throw new IllegalStateException();
@@ -117,7 +117,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     return visitCallableCall(expr, expr.getSortArgument().toLevelSubstitution(), mode);
   }
 
-  private Expression visitCallableCall(CallableCallExpression expr, LevelSubstitution levelSubstitution, Mode mode) {
+  private Expression visitCallableCall(DefCallExpression expr, LevelSubstitution levelSubstitution, Mode mode) {
     if (expr.getDefinition() == Prelude.COERCE) {
       Expression result = null;
 
@@ -256,7 +256,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
   }
 
-  private ExprSubstitution getDataTypeArgumentsSubstitution(CallableCallExpression expr) {
+  private ExprSubstitution getDataTypeArgumentsSubstitution(DefCallExpression expr) {
     ExprSubstitution substitution = new ExprSubstitution();
     if (expr instanceof ConCallExpression) {
       int i = 0;

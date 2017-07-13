@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import java.util.Collections;
 import java.util.List;
 
-public abstract class DefCallExpression extends Expression implements CallableCallExpression {
+public abstract class DefCallExpression extends Expression {
   private final Definition myDefinition;
 
   public DefCallExpression(Definition definition) {
@@ -16,14 +16,12 @@ public abstract class DefCallExpression extends Expression implements CallableCa
     myDefinition = definition;
   }
 
-  @Override
   public List<? extends Expression> getDefCallArguments() {
     return Collections.emptyList();
   }
 
   public abstract Sort getSortArgument();
 
-  @Override
   public Definition getDefinition() {
     return myDefinition;
   }

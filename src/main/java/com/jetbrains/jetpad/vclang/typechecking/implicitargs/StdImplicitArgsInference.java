@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedSingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.ExpectedType;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
@@ -42,10 +41,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       InferenceVariable infVar = null;
       if (result instanceof CheckTypeVisitor.DefCallResult) {
         CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
-        ClassField classifyingField = null;
-        if (defCallResult.getDefinition() instanceof Definition) {
-          classifyingField = ((Definition) defCallResult.getDefinition()).getClassifyingFieldOfParameter(defCallResult.getArguments().size());
-        }
+        ClassField classifyingField = defCallResult.getDefinition().getClassifyingFieldOfParameter(defCallResult.getArguments().size());
         if (classifyingField != null) {
           infVar = new TypeClassInferenceVariable(parameter.getName(), type.getExpr(), defCallResult.getDefCall(), i, null, classifyingField);
         }

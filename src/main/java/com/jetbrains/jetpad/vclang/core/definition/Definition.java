@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class Definition implements Variable, Callable, PrettyPrintable {
+public abstract class Definition implements Variable, PrettyPrintable {
   private ClassDefinition myThisClass;
   private Abstract.Definition myAbstractDefinition;
   private Map<Integer, ClassField> myClassifyingFields = Collections.emptyMap();
@@ -55,7 +55,6 @@ public abstract class Definition implements Variable, Callable, PrettyPrintable 
 
   public abstract Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument);
 
-  @Override
   public abstract DefCallExpression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> args);
 
   public ClassDefinition getThisClass() {
