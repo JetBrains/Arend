@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.*;
@@ -55,9 +56,11 @@ public class Util {
       } else {
         BranchElimTree branchElimTree = (BranchElimTree) elimTree;
         for (Map.Entry<Constructor, ElimTree> entry : branchElimTree.getChildren()) {
-          myStack.push(new ConstructorClauseElem(entry.getKey()));
-          walk(entry.getValue());
-          myStack.pop();
+          if (entry.getKey() != null) {
+            myStack.push(new ConstructorClauseElem(entry.getKey()));
+            walk(entry.getValue());
+            myStack.pop();
+          }
         }
       }
       for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
@@ -67,10 +70,6 @@ public class Util {
   }
 
   private static List<Pattern> unflattenClausesPatterns(List<ClauseElem> clauseElems) {
-    return unflattenClausesPatterns(clauseElems, null);
-  }
-
-  private static List<Pattern> unflattenClausesPatterns(List<ClauseElem> clauseElems, DependentLink parameters) {
     for (int i = clauseElems.size() - 1; i >= 0; i--) {
       if (clauseElems.get(i) instanceof ConstructorClauseElem) {
         ConstructorClauseElem conClauseElem = (ConstructorClauseElem) clauseElems.get(i);
@@ -90,17 +89,11 @@ public class Util {
       }
     }
 
-    if (parameters != null) {
-      for (DependentLink link = DependentLink.Helper.get(parameters, clauseElems.size()); link.hasNext(); link = link.getNext()) {
-        clauseElems.add(new PatternClauseElem(new BindingPattern(link)));
-      }
-    }
-
     return clauseElems.stream().map(clauseElem -> ((PatternClauseElem) clauseElem).pattern).collect(Collectors.toList());
   }
 
-  static List<Expression> unflattenClauses(List<ClauseElem> clauseElems, DependentLink parameters) {
-    return unflattenClausesPatterns(clauseElems, parameters).stream().map(Pattern::toExpression).collect(Collectors.toList());
+  static List<Expression> unflattenClauses(List<ClauseElem> clauseElems) {
+    return unflattenClausesPatterns(clauseElems).stream().map(Pattern::toExpression).collect(Collectors.toList());
   }
 
   static void removeArguments(List<?> clauseElems, DependentLink parameters, List<DependentLink> elimParams) {
@@ -112,6 +105,12 @@ public class Util {
           link = link.getNext();
         }
       }
+    }
+  }
+
+  static void addArguments(List<Expression> expressions, DependentLink parameters) {
+    for (DependentLink link = DependentLink.Helper.get(parameters, expressions.size()); link.hasNext(); link = link.getNext()) {
+      expressions.add(new ReferenceExpression(link));
     }
   }
 }

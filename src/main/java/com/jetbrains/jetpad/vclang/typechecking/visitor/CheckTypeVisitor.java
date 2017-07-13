@@ -408,9 +408,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     return result.subst(new ExprSubstitution(), myEquations.solve(expr)).strip(new HashSet<>(myFreeBindings), myErrorReporter);
   }
 
-  private boolean compareExpressions(Result result, Expression expected, Expression actual, Abstract.Expression expr) {
+  private boolean compareExpressions(boolean isLeft, Result result, Expression expected, Expression actual, Abstract.Expression expr) {
     if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, expected.normalize(NormalizeVisitor.Mode.NF), actual.normalize(NormalizeVisitor.Mode.NF), expr)) {
-      LocalTypeCheckingError error = new ExpressionMismatchError(expected.normalize(NormalizeVisitor.Mode.HUMAN_NF), actual.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
+      LocalTypeCheckingError error = new PathEndpointMismatchError(isLeft, expected.normalize(NormalizeVisitor.Mode.HUMAN_NF), actual.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
       expr.setWellTyped(myContext, new ErrorExpression(result.expression, error));
       myErrorReporter.report(error);
       return false;
@@ -428,8 +428,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     if (result instanceof Result) {
       ConCallExpression conCall = ((Result) result).expression.toConCall();
       if (conCall != null && conCall.getDefinition() == Prelude.PATH_CON) {
-        if (!compareExpressions((Result) result, conCall.getDataTypeArguments().get(1), new AppExpression(conCall.getDefCallArguments().get(0), ExpressionFactory.Left()), expr) ||
-          !compareExpressions((Result) result, conCall.getDataTypeArguments().get(2), new AppExpression(conCall.getDefCallArguments().get(0), ExpressionFactory.Right()), expr)) {
+        if (!compareExpressions(true, (Result) result, conCall.getDataTypeArguments().get(1), new AppExpression(conCall.getDefCallArguments().get(0), ExpressionFactory.Left()), expr) ||
+          !compareExpressions(false, (Result) result, conCall.getDataTypeArguments().get(2), new AppExpression(conCall.getDefCallArguments().get(0), ExpressionFactory.Right()), expr)) {
           return false;
         }
       }

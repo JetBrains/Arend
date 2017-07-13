@@ -47,6 +47,7 @@ public abstract class InferenceVariable implements Variable {
     return myReference == null;
   }
 
+  @Override
   public String getName() {
     return myName;
   }

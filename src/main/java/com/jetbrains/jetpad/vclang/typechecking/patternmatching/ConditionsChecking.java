@@ -72,8 +72,10 @@ public class ConditionsChecking {
       return true;
     }
 
-    Expression evaluatedExpr1 = case1.subst(new ExprSubstitution(link2, isLeft2 ? ExpressionFactory.Left() : ExpressionFactory.Right())).normalize(NormalizeVisitor.Mode.NF);
-    Expression evaluatedExpr2 = case2.subst(new ExprSubstitution(link1, isLeft1 ? ExpressionFactory.Left() : ExpressionFactory.Right())).normalize(NormalizeVisitor.Mode.NF);
+    ExprSubstitution substitution1 = new ExprSubstitution(link2, isLeft2 ? ExpressionFactory.Left() : ExpressionFactory.Right());
+    Expression evaluatedExpr1 = case1.subst(substitution1).normalize(NormalizeVisitor.Mode.NF);
+    ExprSubstitution substitution2 = new ExprSubstitution(link1, isLeft1 ? ExpressionFactory.Left() : ExpressionFactory.Right());
+    Expression evaluatedExpr2 = case2.subst(substitution2).normalize(NormalizeVisitor.Mode.NF);
     if (!CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null)) {
       List<Expression> defCallArgs1 = new ArrayList<>();
       for (DependentLink link3 = parameters; link3.hasNext(); link3 = link3.getNext()) {
@@ -83,7 +85,7 @@ public class ConditionsChecking {
       for (DependentLink link3 = parameters; link3.hasNext(); link3 = link3.getNext()) {
         defCallArgs2.add(link3 == link2 ? (isLeft2 ? ExpressionFactory.Left() : ExpressionFactory.Right()) : new ReferenceExpression(link3));
       }
-      errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, null, defCallArgs1), definition.getDefCall(Sort.STD, null, defCallArgs2), evaluatedExpr1, evaluatedExpr2, definition.getAbstractDefinition()));
+      errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, null, defCallArgs1), definition.getDefCall(Sort.STD, null, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, definition.getAbstractDefinition()));
       return false;
     } else {
       return true;
@@ -110,27 +112,38 @@ public class ConditionsChecking {
     ExprSubstitution pathSubstitution = new ExprSubstitution();
     collectPaths(clause.patterns, pathSubstitution);
 
-    ExprSubstitution substitution = new ExprSubstitution();
+    ExprSubstitution substitution1 = new ExprSubstitution();
     DependentLink link = parameters;
     for (int i = 0; i < clause.patterns.size(); i++) {
       if (i != index) {
-        substitution.add(link, clause.patterns.get(i).toExpression().subst(pathSubstitution));
+        substitution1.add(link, clause.patterns.get(i).toExpression().subst(pathSubstitution));
       }
       link = link.getNext();
     }
 
-    pathSubstitution.add(((BindingPattern) clause.patterns.get(index)).getBinding(), isLeft ? ExpressionFactory.Left() : ExpressionFactory.Right());
+    ExprSubstitution substitution2 = new ExprSubstitution(((BindingPattern) clause.patterns.get(index)).getBinding(), isLeft ? ExpressionFactory.Left() : ExpressionFactory.Right());
+    pathSubstitution.addAll(substitution2);
 
-    Expression evaluatedExpr1 = expr.subst(substitution).normalize(NormalizeVisitor.Mode.NF);
+    Expression evaluatedExpr1 = expr.subst(substitution1).normalize(NormalizeVisitor.Mode.NF);
     Expression evaluatedExpr2 = clause.expression.subst(pathSubstitution).normalize(NormalizeVisitor.Mode.NF);
     if (!CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null)) {
+      if (!pathSubstitution.isEmpty()) {
+        link = parameters;
+        for (int i = 0; i < clause.patterns.size(); i++) {
+          if (i != index) {
+            substitution1.add(link, clause.patterns.get(i).toExpression());
+          }
+          link = link.getNext();
+        }
+      }
+
       List<Expression> defCallArgs1 = new ArrayList<>();
       int i = 0;
       for (link = parameters; link.hasNext(); link = link.getNext(), i++) {
         defCallArgs1.add(i == index ? (isLeft ? ExpressionFactory.Left() : ExpressionFactory.Right()) : new ReferenceExpression(link));
       }
       List<Expression> defCallArgs2 = clause.patterns.stream().map(Pattern::toExpression).collect(Collectors.toList());
-      errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, null, defCallArgs1), definition.getDefCall(Sort.STD, null, defCallArgs2), evaluatedExpr1, evaluatedExpr2, clause.clause));
+      errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, null, defCallArgs1), definition.getDefCall(Sort.STD, null, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, clause.clause));
       return false;
     } else {
       return true;
@@ -177,7 +190,7 @@ public class ConditionsChecking {
       if (evaluatedExpr1 == null || !CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null)) {
         List<Expression> args = clause.patterns.stream().map(Pattern::toExpression).collect(Collectors.toList());
         Expression expr1 = definition == null ? new CaseExpression(null, null, null, args) : definition.getDefCall(Sort.STD, null, args);
-        errorReporter.report(new ConditionsError(expr1, clause.expression, evaluatedExpr1, evaluatedExpr2, clause.clause));
+        errorReporter.report(new ConditionsError(expr1, clause.expression, pair.proj2, pair.proj2, evaluatedExpr1, evaluatedExpr2, clause.clause));
         ok = false;
       }
     }
@@ -221,9 +234,11 @@ public class ConditionsChecking {
         ExprSubstitution substitution = new ExprSubstitution();
         int j = 0;
         for (DependentLink link = elim.getParameters(); link.hasNext(); link = link.getNext(), j++) {
-          if (j != i) {
-            substitution.add(link, conPattern.getArguments().get(j).toExpression());
-          }
+          substitution.add(link, conPattern.getArguments().get(j).toExpression());
+        }
+        j = 0;
+        for (DependentLink link = conPattern.getConstructor().getDataTypeParameters(); link.hasNext(); link = link.getNext(), j++) {
+          substitution.add(link, conPattern.getDataTypeArguments().get(j));
         }
 
         Pattern pattern1 = conPattern.getArguments().get(prefixLength + i);

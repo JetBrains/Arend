@@ -27,4 +27,15 @@ public class CoverageTest extends TypeCheckingTestCase {
         "  | _, fzero => fzero\n" +
         "  | suc n, fsuc x => fsuc (unsuc x)");
   }
+
+  @Test
+  public void conditionsCoverage() {
+    typeCheckClass(
+      "\\data Z | pos Nat | neg Nat { zero => pos zero }\n" +
+      "\\function f (z : Z) (n : Nat) : Nat\n" +
+      "  | pos zero, zero => zero\n" +
+      "  | pos zero, suc n => n\n" +
+      "  | pos (suc k), _ => k\n" +
+      "  | neg (suc k), _ => k");
+  }
 }

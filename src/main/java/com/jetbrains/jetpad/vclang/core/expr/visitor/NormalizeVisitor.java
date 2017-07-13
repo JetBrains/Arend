@@ -220,6 +220,38 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
   }
 
+  public boolean doesEvaluate(ElimTree elimTree, List<? extends Expression> arguments) {
+    Stack<Expression> stack = new Stack<>();
+    for (int i = arguments.size() - 1; i >= 0; i--) {
+      stack.push(arguments.get(i));
+    }
+
+    while (true) {
+      for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
+        if (stack.isEmpty()) {
+          return true;
+        }
+        stack.pop();
+      }
+      if (elimTree instanceof LeafElimTree || stack.isEmpty()) {
+        return true;
+      }
+
+      Expression argument = stack.peek().accept(this, Mode.WHNF);
+      elimTree = ((BranchElimTree) elimTree).getChild(argument.toConCall() == null ? null : argument.toConCall().getDefinition());
+      if (elimTree == null) {
+        return false;
+      }
+
+      if (argument.toConCall() != null) {
+        stack.pop();
+        for (int i = argument.toConCall().getDefCallArguments().size() - 1; i >= 0; i--) {
+          stack.push(argument.toConCall().getDefCallArguments().get(i));
+        }
+      }
+    }
+  }
+
   private ExprSubstitution getDataTypeArgumentsSubstitution(CallableCallExpression expr) {
     ExprSubstitution substitution = new ExprSubstitution();
     if (expr instanceof ConCallExpression) {

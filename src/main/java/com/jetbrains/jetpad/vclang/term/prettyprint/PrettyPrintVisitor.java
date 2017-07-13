@@ -671,6 +671,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   private void prettyPrintBody(Abstract.FunctionBody body) {
     if (body instanceof Abstract.TermFunctionBody) {
+      myBuilder.append(" => ");
       ((Abstract.TermFunctionBody) body).getTerm().accept(this, Abstract.Expression.PREC);
     } else {
       Abstract.ElimFunctionBody elimFunctionBody = (Abstract.ElimFunctionBody) body;
@@ -711,7 +712,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     final BinOpLayout r = new BinOpLayout(){
       @Override
       String getOpText() {
-        return "=>";
+        return "";
       }
 
       @Override

@@ -157,8 +157,9 @@ public class ElimTypechecking {
 
     if (nonIntervalClauses.isEmpty()) {
       DependentLink emptyLink = null;
-      if (elimParams != null) {
-        for (DependentLink link : elimParams) {
+      if (elimParams.isEmpty()) {
+        for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
+          link = link.getNextTyped(null);
           DataCallExpression dataCall = link.getType().getExpr().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
           if (dataCall != null) {
             List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
@@ -169,8 +170,7 @@ public class ElimTypechecking {
           }
         }
       } else {
-        for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
-          link = link.getNextTyped(null);
+        for (DependentLink link : elimParams) {
           DataCallExpression dataCall = link.getType().getExpr().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
           if (dataCall != null) {
             List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
@@ -205,11 +205,13 @@ public class ElimTypechecking {
       List<List<Expression>> missingClauses = new ArrayList<>(myMissingClauses.size());
       loop:
       for (Pair<List<Util.ClauseElem>, Boolean> missingClause : myMissingClauses) {
-        List<Expression> expressions = Util.unflattenClauses(missingClause.proj1, parameters);
+        List<Expression> expressions = Util.unflattenClauses(missingClause.proj1);
         if (!missingClause.proj2) {
-          if (elimTree != null && new NormalizeVisitor(new EvalNormalizer()).eval(elimTree, expressions, new ExprSubstitution(), LevelSubstitution.EMPTY) != null) {
+          if (elimTree != null && new NormalizeVisitor(new EvalNormalizer()).doesEvaluate(elimTree, expressions)) {
             continue;
           }
+
+          Util.addArguments(expressions, parameters);
 
           int i = expressions.size() - 1;
           for (; i >= 0; i--) {
