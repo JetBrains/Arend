@@ -9,16 +9,11 @@ import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.BranchElimTreeNode;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ConstructorClause;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.EmptyElimTreeNode;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.Map;
 import java.util.Set;
 
-public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> implements ElimTreeNodeVisitor<Void, Variable> {
+public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
   private final Set<? extends Variable> myBindings;
 
   public FindBindingVisitor(Set<? extends Variable> binding) {
@@ -209,32 +204,5 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> im
   public Variable visitOfType(OfTypeExpression expr, Void params) {
     Variable result = expr.getExpression().accept(this, null);
     return result != null ? result : expr.getTypeOf().accept(this, null);
-  }
-
-  @Override
-  public Variable visitBranch(BranchElimTreeNode branchNode, Void params) {
-    for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-      Variable result = clause.getChild().accept(this, null);
-      if (result != null) {
-        return result;
-      }
-    }
-    if (branchNode.getOtherwiseClause() != null) {
-      Variable result = branchNode.getOtherwiseClause().getChild().accept(this, null);
-      if (result != null) {
-        return result;
-      }
-    }
-    return null;
-  }
-
-  @Override
-  public Variable visitLeaf(LeafElimTreeNode leafNode, Void params) {
-    return leafNode.getExpression().accept(this, null);
-  }
-
-  @Override
-  public Variable visitEmpty(EmptyElimTreeNode emptyNode, Void params) {
-    return null;
   }
 }

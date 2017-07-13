@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.core.elimtree;
+package com.jetbrains.jetpad.vclang.core.pattern;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;

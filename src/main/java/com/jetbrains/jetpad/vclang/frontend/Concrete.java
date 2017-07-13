@@ -1473,11 +1473,6 @@ public final class Concrete {
     public void setExplicit(boolean isExplicit) {
       myExplicit = isExplicit;
     }
-
-    @Override
-    public void setWellTyped(com.jetbrains.jetpad.vclang.core.pattern.Pattern pattern) {
-
-    }
   }
 
   public static class NamePattern extends Pattern implements Abstract.NamePattern {

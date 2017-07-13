@@ -5,11 +5,11 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
-import com.jetbrains.jetpad.vclang.core.elimtree.BindingPattern;
-import com.jetbrains.jetpad.vclang.core.elimtree.ConstructorPattern;
-import com.jetbrains.jetpad.vclang.core.elimtree.EmptyPattern;
-import com.jetbrains.jetpad.vclang.core.elimtree.Pattern;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
+import com.jetbrains.jetpad.vclang.core.pattern.BindingPattern;
+import com.jetbrains.jetpad.vclang.core.pattern.ConstructorPattern;
+import com.jetbrains.jetpad.vclang.core.pattern.EmptyPattern;
+import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -35,7 +35,7 @@ public class PatternTest extends TypeCheckingTestCase {
         while (hasImplicit && patterns.get(j) instanceof BindingPattern) {
           j++;
         }
-        assertTrue(patterns.get(j) instanceof com.jetbrains.jetpad.vclang.core.elimtree.EmptyPattern);
+        assertTrue(patterns.get(j) instanceof EmptyPattern);
         for (j++; j < patterns.size(); j++) {
           assertTrue(patterns.get(j) instanceof BindingPattern);
         }

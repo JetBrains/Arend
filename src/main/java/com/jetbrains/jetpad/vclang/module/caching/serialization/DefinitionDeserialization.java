@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.module.caching.serialization;
 import com.jetbrains.jetpad.vclang.core.context.LinkList;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
-import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.*;
 import com.jetbrains.jetpad.vclang.core.definition.*;
@@ -14,10 +13,6 @@ import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.BranchElimTreeNode;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.EmptyElimTreeNode;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
@@ -59,13 +54,6 @@ class DefinitionDeserialization {
 
   private void registerBinding(Binding binding) {
     myBindings.add(binding);
-  }
-
-  TypedBinding readTypedBinding(ExpressionProtos.Binding.TypedBinding proto) throws DeserializationError {
-    Type type = readType(proto.getType());
-    TypedBinding typedBinding = new TypedBinding(proto.getName(), type);
-    registerBinding(typedBinding);
-    return typedBinding;
   }
 
   Type readType(ExpressionProtos.Type proto) throws DeserializationError {
@@ -178,19 +166,6 @@ class DefinitionDeserialization {
 
 
   // Expressions and ElimTrees
-
-  ElimTreeNode readElimTreeNode(ExpressionProtos.ElimTreeNode proto) throws DeserializationError {
-    switch (proto.getKindCase()) {
-      case BRANCH:
-        return readBranch(proto.getBranch());
-      case LEAF:
-        return readLeaf(proto.getLeaf());
-      case EMPTY:
-        return readEmpty(proto.getEmpty());
-      default:
-        throw new DeserializationError("Unknown ElimTreeNode kind: " + proto.getKindCase());
-    }
-  }
 
   ElimTree readElimTree(ExpressionProtos.ElimTree proto) throws DeserializationError {
     DependentLink parameters = readParameters(proto.getParamList());
@@ -351,41 +326,5 @@ class DefinitionDeserialization {
 
   private FieldCallExpression readFieldCall(ExpressionProtos.Expression.FieldCall proto) throws DeserializationError {
     return new FieldCallExpression(myCalltargetProvider.getCalltarget(proto.getFieldRef(), ClassField.class), readExpr(proto.getExpression()));
-  }
-
-
-  private BranchElimTreeNode readBranch(ExpressionProtos.ElimTreeNode.Branch proto) throws DeserializationError {
-    List<Binding> contextTail = new ArrayList<>();
-    for (int ref : proto.getContextTailItemRefList()) {
-      contextTail.add((Binding)readBindingRef(ref));
-    }
-    BranchElimTreeNode result = new BranchElimTreeNode((Binding)readBindingRef(proto.getReferenceRef()), contextTail, proto.getIsInterval());
-    for (Map.Entry<Integer, ExpressionProtos.ElimTreeNode.ConstructorClause> entry : proto.getConstructorClausesMap().entrySet()) {
-      ExpressionProtos.ElimTreeNode.ConstructorClause cProto = entry.getValue();
-      DependentLink constructorParams = readParameters(cProto.getParamList());
-      List<TypedBinding> tailBindings = new ArrayList<>();
-      for (ExpressionProtos.Binding.TypedBinding bProto : cProto.getTailBindingList()) {
-        tailBindings.add(readTypedBinding(bProto));
-      }
-      result.addClause(myCalltargetProvider.getCalltarget(entry.getKey(), Constructor.class), constructorParams, tailBindings, readElimTreeNode(cProto.getChild()));
-    }
-    if (proto.hasOtherwiseClause()) {
-      result.addOtherwiseClause(readElimTreeNode(proto.getOtherwiseClause()));
-    }
-    return result;
-  }
-
-  private LeafElimTreeNode readLeaf(ExpressionProtos.ElimTreeNode.Leaf proto) throws DeserializationError {
-    List<Binding> context = new ArrayList<>();
-    for (int ref : proto.getMatchedRefList()) {
-      context.add((Binding)readBindingRef(ref));
-    }
-    LeafElimTreeNode result = new LeafElimTreeNode(readExpr(proto.getExpr()));
-    result.setMatched(context);
-    return result;
-  }
-
-  private EmptyElimTreeNode readEmpty(ExpressionProtos.ElimTreeNode.Empty proto) {
-    return EmptyElimTreeNode.getInstance();
   }
 }

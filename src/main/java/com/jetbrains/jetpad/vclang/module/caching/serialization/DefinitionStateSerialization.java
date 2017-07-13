@@ -2,8 +2,15 @@ package com.jetbrains.jetpad.vclang.module.caching.serialization;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
-import com.jetbrains.jetpad.vclang.core.elimtree.*;
+import com.jetbrains.jetpad.vclang.core.elimtree.Body;
+import com.jetbrains.jetpad.vclang.core.elimtree.ClauseBase;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.IntervalElim;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.pattern.BindingPattern;
+import com.jetbrains.jetpad.vclang.core.pattern.ConstructorPattern;
+import com.jetbrains.jetpad.vclang.core.pattern.EmptyPattern;
+import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.module.caching.LocalizedTypecheckerState;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;

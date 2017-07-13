@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.core.elimtree;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
 
 import java.util.List;
 

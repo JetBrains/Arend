@@ -1,15 +1,12 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.param.*;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -84,19 +81,5 @@ public class ExpressionFactory {
 
   public static ConCallExpression Suc(Expression expr) {
     return new ConCallExpression(Prelude.SUC, Sort.SET0, Collections.emptyList(), Collections.singletonList(expr));
-  }
-
-  public static ElimTreeNode top(DependentLink parameters, ElimTreeNode tree) {
-    tree.updateLeavesMatched(DependentLink.Helper.toContext(parameters));
-    return tree;
-  }
-
-  public static ElimTreeNode top(List<SingleDependentLink> parameters, ElimTreeNode tree) {
-    List<Binding> context = new ArrayList<>();
-    for (SingleDependentLink link : parameters) {
-      context.addAll(DependentLink.Helper.toContext(link));
-    }
-    tree.updateLeavesMatched(context);
-    return tree;
   }
 }

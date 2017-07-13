@@ -159,34 +159,6 @@ message ElimTree {
     }
 }
 
-message ElimTreeNode {
-    oneof kind {
-        Empty empty = 1;
-        Leaf leaf = 2;
-        Branch branch = 3;
-    }
-
-    message Empty {
-    }
-    message Leaf {
-        repeated int32 matched_ref = 1;
-        Expression expr = 3;
-    }
-    message Branch {
-        int32 reference_ref = 1;
-        bool is_interval = 5;
-        map<int32, ConstructorClause> constructor_clauses = 2;
-        ElimTreeNode otherwise_clause = 3;
-        repeated int32 context_tail_item_ref = 4;
-    }
-
-    message ConstructorClause {
-        repeated Telescope param = 1;
-        ElimTreeNode child = 3;
-        repeated Binding.TypedBinding tail_binding = 4;
-    }
-}
-
 message FieldSet {
     repeated int32 class_field_ref = 1;
     map<int32, Implementation> implementations = 2;

@@ -3,8 +3,8 @@ package com.jetbrains.jetpad.vclang.core.pattern;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class Patterns {
@@ -14,13 +14,13 @@ public class Patterns {
     myPatterns = patterns;
   }
 
-  public List<Pattern> getPatterns() {
+  public List<Pattern> getPatternList() {
     return myPatterns;
   }
 
-  public DependentLink getParameters() {
+  public DependentLink getFirstBinding() {
     for (Pattern pattern : myPatterns) {
-      DependentLink result = pattern.getParameters();
+      DependentLink result = pattern.getFirstBinding();
       if (result.hasNext()) {
         return result;
       }
@@ -28,29 +28,30 @@ public class Patterns {
     return EmptyDependentLink.getInstance();
   }
 
-  public Pattern.MatchResult match(List<? extends Expression> exprs) {
-    return match(exprs, true);
-  }
+  public Pattern.MatchResult match(List<? extends Expression> expressions, List<Expression> result) {
+    assert myPatterns.size() == expressions.size();
 
-  public Pattern.MatchResult match(List<? extends Expression> exprs, boolean normalize) {
-    assert myPatterns.size() == exprs.size();
-    List<Expression> result = new ArrayList<>();
-
-    Pattern.MatchMaybeResult maybe = null;
+    Pattern.MatchResult matchResult = Pattern.MatchResult.OK;
     for (int i = 0; i < myPatterns.size(); i++) {
-      Pattern.MatchResult subMatch = myPatterns.get(i).match(exprs.get(i), normalize);
-      if (subMatch instanceof Pattern.MatchFailedResult) {
+      Pattern.MatchResult subMatch = myPatterns.get(i).match(expressions.get(i), result);
+      if (subMatch == Pattern.MatchResult.FAIL) {
         return subMatch;
       }
-      if (maybe == null) {
-        if (subMatch instanceof Pattern.MatchMaybeResult) {
-          maybe = (Pattern.MatchMaybeResult) subMatch;
-        } else if (subMatch instanceof Pattern.MatchOKResult) {
-          result.addAll(((Pattern.MatchOKResult) subMatch).expressions);
-        }
+      if (subMatch == Pattern.MatchResult.MAYBE) {
+        matchResult = Pattern.MatchResult.MAYBE;
       }
     }
 
-    return maybe != null ? maybe : new Pattern.MatchOKResult(result);
+    return matchResult;
+  }
+
+  public boolean unify(Patterns other, ExprSubstitution substitution1, ExprSubstitution substitution2) {
+    assert myPatterns.size() == other.myPatterns.size();
+    for (int i = 0; i < myPatterns.size(); i++) {
+      if (!myPatterns.get(i).unify(other.myPatterns.get(i), substitution1, substitution2)) {
+        return false;
+      }
+    }
+    return true;
   }
 }

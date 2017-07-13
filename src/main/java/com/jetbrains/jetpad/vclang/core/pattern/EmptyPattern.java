@@ -1,39 +1,34 @@
 package com.jetbrains.jetpad.vclang.core.pattern;
 
-import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
-import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 
-import java.util.Collections;
+import java.util.List;
 
-public class EmptyPattern extends Pattern implements Abstract.EmptyPattern {
-  private final TypedDependentLink myLink;
+public class EmptyPattern implements Pattern {
+  public final static EmptyPattern INSTANCE = new EmptyPattern();
 
-  public EmptyPattern(TypedDependentLink link) {
-    assert link != null;
-    myLink = link;
+  private EmptyPattern() {}
+
+  @Override
+  public Expression toExpression() {
+    return null;
   }
 
   @Override
-  public TypedDependentLink getParameters() {
-    return myLink;
+  public DependentLink getFirstBinding() {
+    return EmptyDependentLink.getInstance();
   }
 
   @Override
-  public Expression toExpression(ExprSubstitution subst) {
-    Expression result = subst.get(myLink);
-    return result == null ? new ReferenceExpression(myLink) : result;
+  public MatchResult match(Expression expression, List<Expression> result) {
+    return MatchResult.FAIL;
   }
 
   @Override
-  public MatchResult match(Expression expr, boolean normalize) {
-    if ((normalize ? expr.normalize(NormalizeVisitor.Mode.WHNF) : expr).toConCall() == null) {
-      return new MatchMaybeResult(this, expr);
-    } else {
-      return new MatchOKResult(Collections.singletonList(expr));
-    }
+  public boolean unify(Pattern other, ExprSubstitution substitution1, ExprSubstitution substitution2) {
+    return other instanceof EmptyPattern || other instanceof BindingPattern;
   }
 }

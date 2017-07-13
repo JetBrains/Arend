@@ -1,12 +1,12 @@
 package com.jetbrains.jetpad.vclang.core.subst;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class ExprSubstitution {
   private Map<Variable, Expression> mySubstExprs;
@@ -40,10 +40,6 @@ public class ExprSubstitution {
     mySubstExprs.remove(variable);
   }
 
-  public void removeAll(Collection<? extends Variable> variables) {
-    mySubstExprs.keySet().removeAll(variables);
-  }
-
   public void add(Variable binding, Expression expression) {
     if (mySubstExprs.isEmpty()) {
       mySubstExprs = new HashMap<>();
@@ -64,31 +60,6 @@ public class ExprSubstitution {
     for (Map.Entry<Variable, Expression> entry : mySubstExprs.entrySet()) {
       entry.setValue(entry.getValue().subst(subst));
     }
-  }
-
-  public ExprSubstitution compose(ExprSubstitution subst) {
-    ExprSubstitution result = new ExprSubstitution();
-    for (Map.Entry<Variable, Expression> entry : subst.mySubstExprs.entrySet()) {
-      result.add(entry.getKey(), entry.getValue().subst(this));
-    }
-    return result;
-  }
-
-  public List<TypedBinding> extendBy(List<Binding> context) {
-    List<TypedBinding> result = new ArrayList<>();
-    for (Binding binding : context) {
-      result.add(new TypedBinding(binding.getName(), binding.getType().subst(this, LevelSubstitution.EMPTY)));
-      add(binding, new ReferenceExpression(result.get(result.size() - 1)));
-    }
-    return result;
-  }
-
-  public static ExprSubstitution getIdentity(List<? extends Binding> bindings) {
-    ExprSubstitution result = new ExprSubstitution();
-    for (Binding binding : bindings) {
-      result.add(binding, new ReferenceExpression(binding));
-    }
-    return result;
   }
 
   public String toString() {

@@ -907,28 +907,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     return new Result(caseResult, (Expression) expectedType);
   }
 
-  private List<Sort> generateUpperBounds(List<Sort> domSorts, Sort codSort, Abstract.SourceNode sourceNode) {
-    if (domSorts.isEmpty()) {
-      return Collections.emptyList();
-    }
-
-    List<Sort> resultSorts = new ArrayList<>(domSorts.size());
-    for (Sort domSort : domSorts) {
-      Sort sort = Sort.generateInferVars(myEquations, sourceNode);
-      myEquations.add(domSort.getPLevel(), sort.getPLevel(), Equations.CMP.LE, sourceNode);
-      myEquations.add(domSort.getHLevel(), sort.getHLevel(), Equations.CMP.LE, sourceNode);
-      if (!resultSorts.isEmpty()) {
-        myEquations.add(resultSorts.get(resultSorts.size() - 1).getPLevel(), sort.getPLevel(), Equations.CMP.LE, sourceNode);
-        myEquations.add(resultSorts.get(resultSorts.size() - 1).getHLevel(), sort.getHLevel(), Equations.CMP.LE, sourceNode);
-      }
-      resultSorts.add(sort);
-    }
-
-    myEquations.add(codSort.getPLevel(), resultSorts.get(resultSorts.size() - 1).getPLevel(), Equations.CMP.LE, sourceNode);
-    myEquations.add(codSort.getHLevel(), resultSorts.get(resultSorts.size() - 1).getHLevel(), Equations.CMP.LE, sourceNode);
-    return resultSorts;
-  }
-
   private static Sort generateUniqueUpperBound(List<Sort> sorts) {
     LevelVariable pVar = null;
     LevelVariable hVar = null;

@@ -54,13 +54,6 @@ public class ConCallExpression extends DefCallExpression {
     return getDefinition().getDataTypeExpression(mySortArgument, myDataTypeArguments);
   }
 
-  // TODO[newElim]: Remove this function
-  public void addArgument(Expression argument) {
-    assert myDataTypeArguments.size() >= DependentLink.Helper.size(getDefinition().getDataTypeParameters());
-    assert myArguments.size() < DependentLink.Helper.size(getDefinition().getParameters());
-    myArguments.add(argument);
-  }
-
   @Override
   public Expression getStuckExpression() {
     if ((getDefinition().getBody() instanceof BranchElimTree)) {

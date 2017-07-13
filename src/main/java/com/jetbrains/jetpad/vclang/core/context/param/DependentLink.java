@@ -44,22 +44,6 @@ public interface DependentLink extends Binding {
       return result;
     }
 
-    public static List<Binding> toContext(DependentLink link) {
-      List<Binding> result = new ArrayList<>();
-      for (; link.hasNext(); link = link.getNext()) {
-        result.add(link);
-      }
-      return result;
-    }
-
-    public static List<String> toNames(DependentLink link) {
-      List<String> result = new ArrayList<>();
-      for (; link.hasNext(); link = link.getNext()) {
-        result.add(link.getName());
-      }
-      return result;
-    }
-
     public static int size(DependentLink link) {
       int result = 0;
       for (; link.hasNext(); link = link.getNext()) {
@@ -90,16 +74,6 @@ public interface DependentLink extends Binding {
       List<DependentLink> result = new ArrayList<>();
       for (; link.hasNext(); link = link.getNext()) {
         result.add(link);
-      }
-      return result;
-    }
-
-    public static List<DependentLink> toList(List<SingleDependentLink> links) {
-      List<DependentLink> result = new ArrayList<>();
-      for (SingleDependentLink link : links) {
-        for (; link.hasNext(); link = link.getNext()) {
-          result.add(link);
-        }
       }
       return result;
     }

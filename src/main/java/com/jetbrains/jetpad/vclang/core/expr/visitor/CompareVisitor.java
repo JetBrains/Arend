@@ -12,8 +12,6 @@ import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -24,7 +22,7 @@ import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FieldCall;
 
-public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> implements ElimTreeNodeVisitor<ElimTreeNode,Boolean> {
+public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   private final Map<Binding, Binding> mySubstitution;
   private final Equations myEquations;
   private final Abstract.SourceNode mySourceNode;
@@ -48,19 +46,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     return new CompareVisitor(equations, cmp, sourceNode).compare(expr1, expr2);
   }
 
-  public static boolean compare(Equations equations, Equations.CMP cmp, ElimTreeNode tree1, ElimTreeNode tree2) {
-    return new CompareVisitor(equations, cmp, null).compare(tree1, tree2);
-  }
-
   public static boolean compare(Map<Binding, Binding> substitution, Equations equations, ElimTree tree1, ElimTree tree2) {
     return new CompareVisitor(substitution, equations, Equations.CMP.EQ).compare(tree1, tree2);
-  }
-
-  public Boolean compare(ElimTreeNode tree1, ElimTreeNode tree2) {
-    if (tree1 == tree2) {
-      return true;
-    }
-    return tree1.accept(this, tree2);
   }
 
   public Boolean compare(ElimTree elimTree1, ElimTree elimTree2) {
@@ -545,87 +532,5 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   @Override
   public Boolean visitOfType(OfTypeExpression expr, Expression params) {
     return expr.getExpression().accept(this, params);
-  }
-
-  @Override
-  public Boolean visitBranch(BranchElimTreeNode branchNode, ElimTreeNode node) {
-    if (!(node instanceof BranchElimTreeNode))
-      return false;
-    BranchElimTreeNode other = (BranchElimTreeNode) node;
-
-    Binding binding1 = mySubstitution.get(branchNode.getReference());
-    if (binding1 == null) {
-      binding1 = branchNode.getReference();
-    }
-    if (other.getReference() != binding1) {
-      return false;
-    }
-
-    if (branchNode.getContextTail().size() != other.getContextTail().size()) {
-      return false;
-    }
-    for (int i = 0; i < branchNode.getContextTail().size(); i++) {
-      binding1 = mySubstitution.get(branchNode.getContextTail().get(i));
-      if (binding1 == null) {
-        binding1 = branchNode.getContextTail().get(i);
-      }
-      if (binding1 != other.getContextTail().get(i)) {
-        return false;
-      }
-    }
-
-    for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-      Clause clause1 = other.getClause(clause.getConstructor());
-      if (!(clause1 instanceof ConstructorClause))
-        return false;
-      ConstructorClause otherClause = (ConstructorClause) clause1;
-
-      for (DependentLink link1 = clause.getParameters(), link2 = otherClause.getParameters(); link1.hasNext() && link2.hasNext(); link1 = link1.getNext(), link2 = link2.getNext()) {
-        mySubstitution.put(link1, link2);
-      }
-      for (int i = 0; i < clause.getTailBindings().size() && i < otherClause.getTailBindings().size(); i++) {
-        mySubstitution.put(clause.getTailBindings().get(i), otherClause.getTailBindings().get(i));
-      }
-
-      if (!new CompareVisitor(mySubstitution, myEquations, Equations.CMP.EQ).compare(clause.getChild(), otherClause.getChild())) {
-        return false;
-      }
-
-      for (DependentLink link = clause.getParameters(); link.hasNext(); link = link.getNext()) {
-        mySubstitution.remove(link);
-      }
-      for (int i = 0; i < clause.getTailBindings().size() && i < otherClause.getTailBindings().size(); i++) {
-        mySubstitution.remove(clause.getTailBindings().get(i));
-      }
-    }
-
-    for (ConstructorClause clause : other.getConstructorClauses()) {
-      if (!(branchNode.getClause(clause.getConstructor()) instanceof ConstructorClause)) {
-        return false;
-      }
-    }
-    if ((branchNode.getOtherwiseClause() == null) != (((BranchElimTreeNode) node).getOtherwiseClause() == null)) {
-      return false;
-    }
-    if (branchNode.getOtherwiseClause() != null) {
-      if (!compare(branchNode.getOtherwiseClause().getChild(), ((BranchElimTreeNode) node).getOtherwiseClause().getChild())) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  @Override
-  public Boolean visitLeaf(LeafElimTreeNode leafNode, ElimTreeNode node) {
-    if (node instanceof LeafElimTreeNode) {
-      return compare(leafNode.getExpression(), ((LeafElimTreeNode) node).getExpression());
-    }
-    return false;
-  }
-
-  @Override
-  public Boolean visitEmpty(EmptyElimTreeNode emptyNode, ElimTreeNode node) {
-    return node instanceof EmptyElimTreeNode;
   }
 }
