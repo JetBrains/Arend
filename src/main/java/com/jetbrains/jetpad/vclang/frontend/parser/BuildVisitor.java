@@ -970,7 +970,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.LetClause visitLetClause(LetClauseContext ctx) {
-    List<Concrete.Argument> arguments = visitFunctionArguments(ctx.tele());
+    List<Concrete.Argument> arguments = visitLamTeles(ctx.tele());
     Concrete.Expression resultType = ctx.typeAnnotation() == null ? null : visitExpr(ctx.typeAnnotation().expr());
     return new Concrete.LetClause(tokenPosition(ctx.getStart()), ctx.ID().getText(), arguments, resultType, visitExpr(ctx.expr()));
   }
