@@ -60,11 +60,6 @@ public abstract class ProcessDefCallsVisitor<P> extends BaseExpressionVisitor<P,
     return visitDefCall(expression, param) || expression.getFieldSet().getImplemented().stream().anyMatch(entry -> entry.getValue().term.accept(this, param));
   }
 
-  @Override
-  public Boolean visitLetClauseCall(LetClauseCallExpression expr, P param) {
-    return false;
-  }
-
   private boolean visitDependentLink(DependentLink link, P param) {
     for (; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);

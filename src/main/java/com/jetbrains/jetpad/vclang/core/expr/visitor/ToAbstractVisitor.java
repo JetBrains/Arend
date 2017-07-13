@@ -240,11 +240,6 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     }
   }
 
-  @Override
-  public Abstract.Expression visitLetClauseCall(LetClauseCallExpression expr, Void params) {
-    return visitBinding(expr.getLetClause());
-  }
-
   private Abstract.Expression visitBinding(Binding var) {
     Abstract.ReferableSourceNode referable = myNames.get(var);
     return myFactory.makeVar(referable != null ? referable : myFactory.makeReferable(var.getName() == null ? "_" : var.getName()));

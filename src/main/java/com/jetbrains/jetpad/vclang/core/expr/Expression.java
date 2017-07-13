@@ -188,10 +188,6 @@ public abstract class Expression implements ExpectedType {
     return null;
   }
 
-  public LetClauseCallExpression toLetClauseCall() {
-    return null;
-  }
-
   public ErrorExpression toError() {
     return null;
   }

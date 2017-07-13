@@ -311,13 +311,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   @Override
-  public Expression visitLetClauseCall(LetClauseCallExpression expr, Mode mode) {
-    return expr.getLetClause().getExpression().accept(this, mode);
-  }
-
-  @Override
   public Expression visitReference(ReferenceExpression expr, Mode mode) {
-    return expr;
+    return expr.getBinding() instanceof LetClause ? ((LetClause) expr.getBinding()).getExpression().accept(this, mode) : expr;
   }
 
   @Override

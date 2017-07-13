@@ -55,6 +55,7 @@ class DefinitionSerialization {
     }
   }
 
+  @SuppressWarnings("UnusedReturnValue")
   private int registerBinding(Binding binding) {
     int index = myBindings.size();
     myBindings.add(binding);
@@ -263,13 +264,6 @@ class DefinitionSerialization {
     @Override
     public ExpressionProtos.Expression visitClassCall(ClassCallExpression expr, Void params) {
       return ExpressionProtos.Expression.newBuilder().setClassCall(writeClassCall(expr)).build();
-    }
-
-    @Override
-    public ExpressionProtos.Expression visitLetClauseCall(LetClauseCallExpression expr, Void params) {
-      ExpressionProtos.Expression.LetClauseCall.Builder builder = ExpressionProtos.Expression.LetClauseCall.newBuilder();
-      builder.setLetClauseRef(writeBindingRef(expr.getLetClause()));
-      return ExpressionProtos.Expression.newBuilder().setLetClauseCall(builder).build();
     }
 
     @Override

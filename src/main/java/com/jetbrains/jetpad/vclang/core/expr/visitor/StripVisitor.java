@@ -84,15 +84,6 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   }
 
   @Override
-  public Expression visitLetClauseCall(LetClauseCallExpression expr, Void params) {
-    if (myBounds.contains(expr.getLetClause())) {
-      return new LetClauseCallExpression(expr.getLetClause());
-    } else {
-      return cannotInferError(expr);
-    }
-  }
-
-  @Override
   public Expression visitReference(ReferenceExpression expr, Void params) {
     if (myBounds.contains(expr.getBinding())) {
       return expr;

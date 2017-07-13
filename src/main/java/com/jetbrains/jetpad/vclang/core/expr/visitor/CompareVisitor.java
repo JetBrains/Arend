@@ -138,7 +138,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   }
 
   // TODO: should we check other stuck terms?
-  public static InferenceVariable checkIsInferVar(Expression expr) {
+  private static InferenceVariable checkIsInferVar(Expression expr) {
     while (expr.toApp() != null) {
       expr = expr.toApp().getFunction();
     }
@@ -262,23 +262,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     return implAllOf1Test && implAllOf2Test;
   }
 
-  @Override
-  public Boolean visitLetClauseCall(LetClauseCallExpression expr1, Expression expr2) {
-    if (expr2.toLetClauseCall() == null) {
-      return false;
-    }
-
-    LetClauseCallExpression letClauseCall2 = (LetClauseCallExpression) expr2;
-    Binding binding1 = expr1.getLetClause();
-    Binding subst1 = mySubstitution.get(binding1);
-    if (subst1 != null) {
-      binding1 = subst1;
-    }
-
-    return binding1 == letClauseCall2.getLetClause();
-  }
-
   private boolean compareInferenceReference(InferenceReferenceExpression expr1, Expression expr2, boolean first) {
+    //noinspection SimplifiableIfStatement
     if (expr2.toInferenceReference() != null && expr1.getVariable() == expr2.toInferenceReference().getVariable()) {
       return true;
     }

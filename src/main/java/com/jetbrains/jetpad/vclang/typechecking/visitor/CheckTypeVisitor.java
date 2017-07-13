@@ -448,11 +448,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     if (def == null) {
       throw new InconsistentModel();
     }
-    if (def instanceof LetClause) {
-      return new Result(new LetClauseCallExpression((LetClause) def), def.getType().getExpr());
-    } else {
-      return new Result(new ReferenceExpression(def), def.getType().getExpr());
-    }
+    return new Result(new ReferenceExpression(def), def.getType().getExpr());
   }
 
   @Override
@@ -1070,6 +1066,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     return checkResult(expectedType, new Result(resultExpr, new UniverseExpression(resultExpr instanceof ClassCallExpression ? ((ClassCallExpression) resultExpr).getSort() : Sort.PROP)), expr);
   }
 
+  @SuppressWarnings("UnusedReturnValue")
   public CheckTypeVisitor.Result implementField(FieldSet fieldSet, ClassField field, Abstract.Expression implBody, ClassCallExpression fieldSetClass) {
     CheckTypeVisitor.Result result = checkExpr(implBody, field.getBaseType(fieldSetClass.getSortArgument()).subst(field.getThisParameter(), new NewExpression(fieldSetClass)));
     fieldSet.implementField(field, new FieldSet.Implementation(null, result != null ? result.expression : new ErrorExpression(null, null)));

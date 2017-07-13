@@ -16,7 +16,6 @@ message Expression {
         Error error = 6;
         FieldCall field_call = 7;
         FunCall fun_call = 8;
-        LetClauseCall let_clause_call = 19;
         Lam lam = 9;
         Let let = 10;
         Case case = 20;
@@ -66,9 +65,6 @@ message Expression {
         Level pLevel = 2;
         Level hLevel = 4;
         repeated Expression argument = 3;
-    }
-    message LetClauseCall {
-        int32 let_clause_ref = 1;
     }
     message Lam {
         Sort resultSort = 5;
