@@ -160,7 +160,7 @@ public class ElimTypechecking {
       if (elimParams.isEmpty()) {
         for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
           link = link.getNextTyped(null);
-          DataCallExpression dataCall = link.getType().getExpr().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
+          DataCallExpression dataCall = link.getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
           if (dataCall != null) {
             List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
             if (conCalls != null && conCalls.isEmpty()) {
@@ -171,7 +171,7 @@ public class ElimTypechecking {
         }
       } else {
         for (DependentLink link : elimParams) {
-          DataCallExpression dataCall = link.getType().getExpr().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
+          DataCallExpression dataCall = link.getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
           if (dataCall != null) {
             List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
             if (conCalls != null && conCalls.isEmpty()) {
@@ -227,7 +227,7 @@ public class ElimTypechecking {
           }
           for (; link.hasNext(); link = link.getNext()) {
             link = link.getNextTyped(null);
-            DataCallExpression dataCall = link.getType().getExpr().subst(substitution).normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
+            DataCallExpression dataCall = link.getTypeExpr().subst(substitution).normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
             if (dataCall != null) {
               List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
               if (conCalls != null && conCalls.isEmpty()) {

@@ -19,6 +19,11 @@ public interface DependentLink extends Binding {
   DependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size);
   TypedDependentLink getNextTyped(List<String> names);
   boolean hasNext();
+  Type getType();
+
+  default Expression getTypeExpr() {
+    return getType().getExpr();
+  }
 
   class Helper {
     public static void freeSubsts(DependentLink link, ExprSubstitution substitution) {
@@ -107,5 +112,10 @@ public interface DependentLink extends Binding {
     public static SingleDependentLink subst(SingleDependentLink link, ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
       return link.subst(exprSubst, levelSubst, Integer.MAX_VALUE);
     }
+  }
+
+  static String toString(DependentLink binding) {
+    Type type = binding.getType();
+    return (binding.getName() == null ? "_" : binding.getName()) + (type == null ? "" : " : " + type.getExpr());
   }
 }

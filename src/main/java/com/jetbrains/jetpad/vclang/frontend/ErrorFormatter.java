@@ -97,7 +97,7 @@ public class ErrorFormatter {
         List<String> names = new ArrayList<>(((GoalError) error).context.size());
         for (Binding binding : ((GoalError) error).context.values()) {
           builder.append("\n  ").append(binding.getName() == null ? "_" : binding.getName()).append(" : ");
-          Expression type = binding.getType().getExpr();
+          Expression type = binding.getTypeExpr();
           if (type != null) {
             type.prettyPrint(builder, names, Abstract.Expression.PREC, 0);
           } else {

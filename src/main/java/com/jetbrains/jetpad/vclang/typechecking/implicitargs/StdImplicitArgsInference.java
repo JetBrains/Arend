@@ -10,7 +10,6 @@ import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.ExpectedType;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
@@ -37,17 +36,17 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     ExprSubstitution substitution = new ExprSubstitution();
     int i = 0;
     for (DependentLink parameter : implicitParameters) {
-      Type type = parameter.getType().subst(substitution, LevelSubstitution.EMPTY).normalize(NormalizeVisitor.Mode.WHNF);
+      Expression type = parameter.getTypeExpr().subst(substitution, LevelSubstitution.EMPTY).normalize(NormalizeVisitor.Mode.WHNF);
       InferenceVariable infVar = null;
       if (result instanceof CheckTypeVisitor.DefCallResult) {
         CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
         ClassField classifyingField = defCallResult.getDefinition().getClassifyingFieldOfParameter(defCallResult.getArguments().size());
         if (classifyingField != null) {
-          infVar = new TypeClassInferenceVariable(parameter.getName(), type.getExpr(), defCallResult.getDefCall(), i, null, classifyingField);
+          infVar = new TypeClassInferenceVariable(parameter.getName(), type, defCallResult.getDefCall(), i, null, classifyingField);
         }
       }
       if (infVar == null) {
-        infVar = new FunctionInferenceVariable(parameter.getName(), type.getExpr(), i + 1, result instanceof CheckTypeVisitor.DefCallResult ? ((CheckTypeVisitor.DefCallResult) result).getDefinition() : null, expr);
+        infVar = new FunctionInferenceVariable(parameter.getName(), type, i + 1, result instanceof CheckTypeVisitor.DefCallResult ? ((CheckTypeVisitor.DefCallResult) result).getDefinition() : null, expr);
       }
       Expression binding = new InferenceReferenceExpression(infVar, myVisitor.getEquations());
       result = result.applyExpression(binding);
@@ -95,7 +94,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       return null;
     }
 
-    CheckTypeVisitor.Result argResult = myVisitor.checkExpr(arg, param.getType().getExpr());
+    CheckTypeVisitor.Result argResult = myVisitor.checkExpr(arg, param.getTypeExpr());
     if (argResult == null) {
       return null;
     }

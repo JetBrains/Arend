@@ -63,7 +63,7 @@ public abstract class ProcessDefCallsVisitor<P> extends BaseExpressionVisitor<P,
   private boolean visitDependentLink(DependentLink link, P param) {
     for (; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
-      if (link.getType().getExpr().accept(this, param)) {
+      if (link.getTypeExpr().accept(this, param)) {
         return true;
       }
     }

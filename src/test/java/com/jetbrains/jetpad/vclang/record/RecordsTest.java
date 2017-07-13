@@ -205,7 +205,7 @@ public class RecordsTest extends TypeCheckingTestCase {
     assertNotNull(arg0);
     PiExpression arg0Body = arg0.getBody().toPi();
     assertNotNull(arg0Body);
-    Expression domFunction = arg0Body.getParameters().getType().getExpr();
+    Expression domFunction = arg0Body.getParameters().getTypeExpr();
     assertEquals(Prelude.PATH, domFunction.toDataCall().getDefinition());
     List<? extends Expression> domArguments = domFunction.toDataCall().getDefCallArguments();
     assertEquals(3, domArguments.size());
@@ -236,7 +236,7 @@ public class RecordsTest extends TypeCheckingTestCase {
     Expression xCall = FieldCall((ClassField) result.getDefinition("A.x"), Ref(testFun.getParameters()));
     PiExpression resultTypePi = testFun.getResultType().toPi();
     assertNotNull(resultTypePi);
-    Expression function = resultTypePi.getParameters().getType().getExpr().normalize(NormalizeVisitor.Mode.NF);
+    Expression function = resultTypePi.getParameters().getTypeExpr().normalize(NormalizeVisitor.Mode.NF);
     assertEquals(Prelude.PATH, function.toDataCall().getDefinition());
     List<? extends Expression> arguments = function.toDataCall().getDefCallArguments();
     assertEquals(3, arguments.size());

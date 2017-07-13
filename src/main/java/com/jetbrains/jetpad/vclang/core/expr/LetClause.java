@@ -1,9 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.NamedBinding;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
-import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 public class LetClause extends NamedBinding {
   private Expression myExpression;
@@ -22,8 +19,7 @@ public class LetClause extends NamedBinding {
   }
 
   @Override
-  public Type getType() {
-    // TODO[newElim]
-    return new TypeExpression(myExpression.getType(), Sort.SET0);
+  public Expression getTypeExpr() {
+    return myExpression.getType();
   }
 }

@@ -448,7 +448,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     if (def == null) {
       throw new InconsistentModel();
     }
-    return new Result(new ReferenceExpression(def), def.getType().getExpr());
+    return new Result(new ReferenceExpression(def), def.getTypeExpr());
   }
 
   @Override
@@ -569,7 +569,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       int namesCount = param instanceof Abstract.TelescopeArgument ? ((Abstract.TelescopeArgument) param).getReferableList().size() : 1;
       if (expectedType != null) {
         Abstract.Expression paramType = ((Abstract.TypeArgument) param).getType();
-        Expression argType = link.getType().getExpr();
+        Expression argType = link.getTypeExpr();
 
         SingleDependentLink lamLink = link;
         ExprSubstitution substitution = new ExprSubstitution();
@@ -589,7 +589,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
             argExpr = argType.normalize(NormalizeVisitor.Mode.NF);
           }
 
-          Expression argExpectedType = expectedType.toPi().getParameters().getType().getExpr().subst(substitution);
+          Expression argExpectedType = expectedType.toPi().getParameters().getTypeExpr().subst(substitution);
           if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, argExpectedType.normalize(NormalizeVisitor.Mode.NF), argExpr, paramType)) {
             LocalTypeCheckingError error = new TypeMismatchError(argExpectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), argType.normalize(NormalizeVisitor.Mode.HUMAN_NF), paramType);
             myErrorReporter.report(error);
@@ -791,7 +791,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
         Result tupleResult = new Result(new TupleExpression(fields, expectedTypeSigma), (Expression) expectedType);
         ExprSubstitution substitution = new ExprSubstitution();
         for (Abstract.Expression field : expr.getFields()) {
-          Expression expType = sigmaParams.getType().getExpr().subst(substitution);
+          Expression expType = sigmaParams.getTypeExpr().subst(substitution);
           Result result = checkExpr(field, expType);
           if (result == null) return null;
           fields.add(result.expression);
@@ -978,7 +978,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     }
 
     exprResult.expression = new ProjExpression(exprResult.expression, expr.getField());
-    exprResult.type = fieldLink.getType().subst(substitution, LevelSubstitution.EMPTY).getExpr();
+    exprResult.type = fieldLink.getTypeExpr().subst(substitution);
     return checkResult(expectedType, exprResult, expr);
   }
 

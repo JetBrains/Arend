@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.core.expr.visitor;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
 
 import java.util.ArrayList;
@@ -40,7 +39,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitReference(ReferenceExpression expr, Void params) {
-    return expr.getBinding().getType().getExpr().copy();
+    return expr.getBinding().getTypeExpr().copy();
   }
 
   @Override
@@ -93,7 +92,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
     if (sigma == null) return null;
     DependentLink params = sigma.getParameters();
     if (expr.getField() == 0) {
-      return params.getType().getExpr();
+      return params.getTypeExpr();
     }
 
     ExprSubstitution subst = new ExprSubstitution();
@@ -101,7 +100,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
       subst.add(params, new ProjExpression(expr.getExpression(), i));
       params = params.getNext();
     }
-    return params.getType().subst(subst, LevelSubstitution.EMPTY).getExpr();
+    return params.getTypeExpr().subst(subst);
   }
 
   @Override

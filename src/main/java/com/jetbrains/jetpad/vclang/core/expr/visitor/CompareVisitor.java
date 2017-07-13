@@ -319,7 +319,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
     Equations.CMP oldCMP = myCMP;
     myCMP = Equations.CMP.EQ;
-    if (!compare(expr1.getParameters().getType().getExpr(), piExpr2.getParameters().getType().getExpr())) {
+    if (!compare(expr1.getParameters().getTypeExpr(), piExpr2.getParameters().getTypeExpr())) {
       return false;
     }
     myCMP = oldCMP;
@@ -345,7 +345,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     }
 
     for (int i = 0; i < params1.size() && i < params2.size(); ++i) {
-      if (!compare(params1.get(i).getType().getExpr(), params2.get(i).getType().getExpr())) {
+      if (!compare(params1.get(i).getTypeExpr(), params2.get(i).getTypeExpr())) {
         return false;
       }
       mySubstitution.put(params1.get(i), params2.get(i));

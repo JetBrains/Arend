@@ -305,13 +305,13 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
       DependentLink link1 = link.getNextTyped(null);
       if (link1 == link && link.getName() == null) {
-        args.add(myFactory.makeTypeArgument(link.isExplicit(), link.getType().getExpr().accept(this, null)));
+        args.add(myFactory.makeTypeArgument(link.isExplicit(), link.getTypeExpr().accept(this, null)));
       } else {
         for (; link != link1; link = link.getNext()) {
           referableList.add(makeReferable(link));
         }
         referableList.add(makeReferable(link));
-        args.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(referableList), link.getType().getExpr().accept(this, null)));
+        args.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(referableList), link.getTypeExpr().accept(this, null)));
         referableList.clear();
       }
     }

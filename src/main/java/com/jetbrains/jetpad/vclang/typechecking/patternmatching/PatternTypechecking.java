@@ -155,7 +155,7 @@ public class PatternTypechecking {
     return result;
   }
 
-  Pair<List<Pattern>, Map<Abstract.ReferableSourceNode, Binding>> typecheckPatterns(List<? extends Abstract.Pattern> patterns, DependentLink parameters, Abstract.SourceNode sourceNode, boolean fullList) {
+  Pair<List<Pattern>, Map<Abstract.ReferableSourceNode, Binding>> typecheckPatterns(List<? extends Abstract.Pattern> patterns, DependentLink parameters, Abstract.SourceNode sourceNode, @SuppressWarnings("SameParameterValue") boolean fullList) {
     myContext = new HashMap<>();
     Pair<List<Pattern>, List<Expression>> result = doTypechecking(patterns, parameters, sourceNode, fullList);
     return result == null ? null : new Pair<>(result.proj1, result.proj2 == null ? null : myContext);
@@ -224,7 +224,7 @@ public class PatternTypechecking {
         continue;
       }
 
-      Expression expr = parameters.getType().getExpr().normalize(NormalizeVisitor.Mode.WHNF);
+      Expression expr = parameters.getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF);
       if (expr.toDataCall() == null) {
         myErrorReporter.report(new LocalTypeCheckingError("Expected a data type, actual type: " + expr, pattern));
         return null;

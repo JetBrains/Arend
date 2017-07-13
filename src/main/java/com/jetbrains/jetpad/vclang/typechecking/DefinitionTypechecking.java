@@ -422,7 +422,7 @@ class DefinitionTypechecking {
         }
         for (DependentLink link1 = constructor.getParameters(); link1.hasNext(); link1 = link1.getNext()) {
           link1 = link1.getNextTyped(null);
-          if (!checkPositiveness(link1.getType().getExpr(), index, null, null, null, Collections.singleton(link))) {
+          if (!checkPositiveness(link1.getTypeExpr(), index, null, null, null, Collections.singleton(link))) {
             isCovariant = false;
             break;
           }
@@ -475,7 +475,7 @@ class DefinitionTypechecking {
         int index = 0;
         for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext(), index++) {
           link = link.getNextTyped(null);
-          if (!checkPositiveness(link.getType().getExpr(), index, def.getArguments(), def, visitor.getErrorReporter(), dataDefinitions)) {
+          if (!checkPositiveness(link.getTypeExpr(), index, def.getArguments(), def, visitor.getErrorReporter(), dataDefinitions)) {
             return null;
           }
         }
@@ -514,7 +514,7 @@ class DefinitionTypechecking {
       if (piParam instanceof UntypedDependentLink) {
         continue;
       }
-      if (!checkNonPositiveError(piParam.getType().getExpr(), index, arguments, constructor, errorReporter, variables)) {
+      if (!checkNonPositiveError(piParam.getTypeExpr(), index, arguments, constructor, errorReporter, variables)) {
         return false;
       }
     }
@@ -582,7 +582,7 @@ class DefinitionTypechecking {
       }
     }
 
-    String msg = "Non-positive recursive occurrence of data type " + ((DataDefinition) def).getName() + " in constructor " + constructor.getName();
+    String msg = "Non-positive recursive occurrence of data type " + def.getName() + " in constructor " + constructor.getName();
     errorReporter.report(new LocalTypeCheckingError(msg, argument == null ? constructor : argument));
     return false;
   }
@@ -682,6 +682,7 @@ class DefinitionTypechecking {
     return result;
   }
 
+  @SuppressWarnings("UnusedReturnValue")
   private static ClassField typeCheckClassField(Abstract.ClassField def, ClassDefinition enclosingClass, FieldSet fieldSet, CheckTypeVisitor visitor) {
     TypedDependentLink thisParameter = createThisParam(enclosingClass);
     visitor.getFreeBindings().add(thisParameter);

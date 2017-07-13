@@ -5,9 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.PiExpression;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
@@ -181,7 +179,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     // I : Type1 -> Type1, i : I Type0, f : {A : Type0} -> I A -> Nat |- f i : Nat
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("I", Pi(Universe(1), Universe(1))));
-    context.add(new TypedBinding("i", new TypeExpression(Apps(Ref(context.get(0)), Universe(0)), Sort.SET0)));
+    context.add(new TypedBinding("i", Apps(Ref(context.get(0)), Universe(0))));
     SingleDependentLink A = singleParams(false, vars("A"), Universe(0));
     context.add(new TypedBinding("f", Pi(A, Pi(Apps(Ref(context.get(0)), Ref(A)), Nat()))));
 

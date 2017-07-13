@@ -118,7 +118,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
   private Variable visitDependentLink(DependentLink link) {
     for (; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
-      Variable result = link.getType().getExpr().accept(this, null);
+      Variable result = link.getTypeExpr().accept(this, null);
       if (result != null) {
         return result;
       }

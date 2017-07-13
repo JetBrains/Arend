@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.core.context.param;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
@@ -89,6 +88,6 @@ public class TypedDependentLink implements DependentLink {
 
   @Override
   public String toString() {
-    return Binding.Helper.toString(this);
+    return DependentLink.toString(this);
   }
 }

@@ -70,7 +70,7 @@ public class ExpressionFactory {
     return new TypedDependentLink(true, var, new TypeExpression(type, Sort.SET0), EmptyDependentLink.getInstance());
   }
 
-  public static DependentLink paramExpr(String var, Expression type) {
+  public static DependentLink paramExpr(@SuppressWarnings("SameParameterValue") String var, Expression type) {
     return new TypedDependentLink(true, var, new TypeExpression(type, Sort.SET0), EmptyDependentLink.getInstance());
   }
 
@@ -131,7 +131,7 @@ public class ExpressionFactory {
 
       names.add(link.getName());
       if (link instanceof TypedDependentLink) {
-        SingleDependentLink parameter = singleParam(link.isExplicit(), names, link.getType().getExpr().subst(substitution, LevelSubstitution.EMPTY));
+        SingleDependentLink parameter = singleParam(link.isExplicit(), names, link.getTypeExpr().subst(substitution, LevelSubstitution.EMPTY));
         parameters.add(parameter);
         names.clear();
 
