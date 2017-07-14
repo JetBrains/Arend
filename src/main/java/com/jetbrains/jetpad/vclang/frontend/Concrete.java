@@ -3,14 +3,23 @@ package com.jetbrains.jetpad.vclang.frontend;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
+import com.jetbrains.jetpad.vclang.frontend.resolving.OpenCommand;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.term.*;
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.AbstractLevelExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 
+import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class Concrete {
   private Concrete() {}
@@ -954,7 +963,7 @@ public final class Concrete {
     }
   }
 
-  public static class ClassDefinition extends Definition implements Abstract.ClassDefinition {
+  public static class ClassDefinition extends Definition implements Abstract.ClassDefinition, StatementCollection {
     private final List<TypeArgument> myPolyParameters;
     private final List<SuperClass> mySuperClasses;
     private final List<ClassField> myFields;
@@ -1002,13 +1011,13 @@ public final class Concrete {
     }
 
     @Override
-    public List<Statement> getGlobalStatements() {
-      return myGlobalStatements;
+    public List<Definition> getInstanceDefinitions() {
+      return myInstanceDefinitions;
     }
 
     @Override
-    public List<Definition> getInstanceDefinitions() {
-      return myInstanceDefinitions;
+    public List<? extends Statement> getGlobalStatements() {
+      return myGlobalStatements;
     }
   }
 
@@ -1105,7 +1114,7 @@ public final class Concrete {
     }
   }
 
-  public static class FunctionDefinition extends SignatureDefinition implements Abstract.FunctionDefinition {
+  public static class FunctionDefinition extends SignatureDefinition implements Abstract.FunctionDefinition, StatementCollection {
     private final FunctionBody myBody;
     private final List<Statement> myStatements;
 
@@ -1116,13 +1125,13 @@ public final class Concrete {
     }
 
     @Override
-    public List<Statement> getGlobalStatements() {
-      return myStatements;
+    public FunctionBody getBody() {
+      return myBody;
     }
 
     @Override
-    public FunctionBody getBody() {
-      return myBody;
+    public List<? extends Statement> getGlobalStatements() {
+      return myStatements;
     }
 
     @Override
@@ -1372,13 +1381,13 @@ public final class Concrete {
 
   // Statements
 
-  public static abstract class Statement extends SourceNode implements Abstract.Statement {
+  public static abstract class Statement extends SourceNode {
     public Statement(Position position) {
       super(position);
     }
   }
 
-  public static class DefineStatement extends Statement implements Abstract.DefineStatement {
+  public static class DefineStatement extends Statement {
     private final Definition myDefinition;
 
     public DefineStatement(Position position, Definition definition) {
@@ -1386,19 +1395,12 @@ public final class Concrete {
       myDefinition = definition;
     }
 
-    @Override
     public Definition getDefinition() {
       return myDefinition;
     }
-
-    @Override
-    public <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitDefine(this, params);
-    }
   }
 
-  public static class NamespaceCommandStatement extends Statement implements Abstract.NamespaceCommandStatement {
-    private final Kind myKind;
+  public static class NamespaceCommandStatement extends Statement implements OpenCommand {
     private Abstract.Definition myDefinition;
     private final ModulePath myModulePath;
     private final List<String> myPath;
@@ -1407,17 +1409,11 @@ public final class Concrete {
 
     public NamespaceCommandStatement(Position position, Kind kind, List<String> modulePath, List<String> path, boolean isHiding, List<String> names) {
       super(position);
-      myKind = kind;
       myDefinition = null;
       myModulePath = modulePath != null ? new ModulePath(modulePath) : null;
       myPath = path;
       myHiding = isHiding;
       myNames = names;
-    }
-
-    @Override
-    public Kind getKind() {
-      return myKind;
     }
 
     @Override
@@ -1430,7 +1426,7 @@ public final class Concrete {
       return myPath;
     }
 
-    public void setResolvedClass(Abstract.Definition resolvedClass) {
+    void setResolvedClass(Abstract.Definition resolvedClass) {
       myDefinition = resolvedClass;
     }
 
@@ -1449,9 +1445,36 @@ public final class Concrete {
       return myNames;
     }
 
+    public enum Kind { OPEN, EXPORT }
+
+    public final static Function<Abstract.Definition, Iterable<OpenCommand>> GET = def -> {
+      if (def instanceof StatementCollection) {
+        return ((StatementCollection) def).getGlobalStatements().stream().flatMap(s -> {
+          if (s instanceof NamespaceCommandStatement) {
+            return Stream.of((NamespaceCommandStatement) s);
+          } else {
+            return Stream.empty();
+          }
+        }).collect(Collectors.toList());
+      } else {
+        return Collections.emptySet();
+      }
+    };
+  }
+
+  interface StatementCollection extends Abstract.DefinitionCollection {
+    List<? extends Statement> getGlobalStatements();
+
+    @Nonnull
     @Override
-    public <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitNamespaceCommand(this, params);
+    default Collection<? extends Abstract.Definition> getGlobalDefinitions() {
+      return getGlobalStatements().stream().flatMap(s -> {
+        if (s instanceof DefineStatement) {
+          return Stream.of(((DefineStatement) s).getDefinition());
+        } else {
+          return Stream.empty();
+        }
+      }).collect(Collectors.toList());
     }
   }
 

@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.naming.scope;
+package com.jetbrains.jetpad.vclang.naming.scope.primitive;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 

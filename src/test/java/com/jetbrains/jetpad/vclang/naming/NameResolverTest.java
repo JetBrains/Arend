@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
-import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
+import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -205,8 +205,8 @@ public class NameResolverTest extends NameResolverTestCase {
   }
 
   @Test
-  public void defineExistingTestError() {
-    resolveNamesDef("\\class Test { \\function A => 0 \\function B => A } \\where { \\class A { } }", 1);
+  public void useExistingTestError() {
+    resolveNamesDef("\\class Test { \\function A => 0 \\function B => A } \\where { \\class A { } }", 2);
   }
 
   @Test
@@ -222,13 +222,13 @@ public class NameResolverTest extends NameResolverTestCase {
   @Ignore
   @Test
   public void exportExistingTestError() {
-    resolveNamesClass("\\class A \\where { \\class B \\where { \\function x => 0 } } \\export A \\class B \\where { \\function y => 0 }", 1);
+    resolveNamesClass("\\class A \\where { \\class B \\where { \\function x => 0 } } \\export A \\class B \\where { \\function y => 0 }", 2);
   }
 
   @Ignore
   @Test
   public void exportExistingTestError2() {
-    resolveNamesClass("\\class B \\where { \\function y => 0 } \\class A \\where { \\class B \\where { \\function x => 0 } } \\export A", 1);
+    resolveNamesClass("\\class B \\where { \\function y => 0 } \\class A \\where { \\class B \\where { \\function x => 0 } } \\export A", 2);
   }
 
   @Test
@@ -288,7 +288,7 @@ public class NameResolverTest extends NameResolverTestCase {
         "\\function f => \\Type0\n" +
         "\\class X \\where { \\function f => \\Type0 }\n" +
         "\\open X\n" +
-        "\\function g => f", 1);
+        "\\function g => f", 2);
   }
 
   @Test
@@ -298,7 +298,7 @@ public class NameResolverTest extends NameResolverTestCase {
         "\\class Y \\where { \\function f => \\Type0 }\n" +
         "\\open X\n" +
         "\\open Y\n" +
-        "\\function g => f", 1);
+        "\\function g => f", 2);
   }
 
   @Test

@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevel
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -298,8 +299,8 @@ public final class Abstract {
     ClassDefinition getParentDefinition();
   }
 
-  public interface StatementCollection {
-    Collection<? extends Statement> getGlobalStatements();
+  public interface DefinitionCollection {
+    @Nonnull Collection<? extends Definition> getGlobalDefinitions();
   }
 
   public interface FunctionBody extends SourceNode {}
@@ -316,7 +317,7 @@ public final class Abstract {
   public interface ElimFunctionBody extends FunctionBody, ElimBody {
   }
 
-  public interface FunctionDefinition extends Definition, StatementCollection {
+  public interface FunctionDefinition extends Definition, DefinitionCollection {
     FunctionBody getBody();
     List<? extends Argument> getArguments();
     Expression getResultType();
@@ -343,7 +344,7 @@ public final class Abstract {
     Expression getSuperClass();
   }
 
-  public interface ClassDefinition extends Definition, StatementCollection {
+  public interface ClassDefinition extends Definition, DefinitionCollection {
     List<? extends TypeArgument> getPolyParameters();
     Collection<? extends SuperClass> getSuperClasses();
     Collection<? extends ClassField> getFields();
@@ -372,29 +373,6 @@ public final class Abstract {
     ReferenceExpression getClassView();
     Definition getClassifyingDefinition();
     Collection<? extends ClassFieldImpl> getClassFieldImpls();
-  }
-
-  // Statements
-
-  public interface Statement extends SourceNode {
-    <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params);
-  }
-
-  public interface DefineStatement extends Statement {
-    Definition getDefinition();
-  }
-
-  public interface NamespaceCommandStatement extends Statement {
-    enum Kind { OPEN, EXPORT }
-
-    Kind getKind();
-    ModulePath getModulePath();
-    List<String> getPath();
-
-    Definition getResolvedClass();
-
-    boolean isHiding();
-    List<String> getNames();
   }
 
   // Patterns

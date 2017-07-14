@@ -9,7 +9,7 @@ import com.jetbrains.jetpad.vclang.naming.error.NoSuchFieldError;
 import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.error.UnknownConstructor;
 import com.jetbrains.jetpad.vclang.naming.error.WrongDefinition;
-import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
 
@@ -54,7 +54,12 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
       }
 
       if (ref == null) {
-        ref = myNameResolver.resolveReference(myParentScope, expr);
+        try {
+          ref = myNameResolver.resolveReference(myParentScope, expr);
+        } catch (Scope.InvalidScopeException e) {
+          myResolveListener.report(e.toError());
+          return null;
+        }
       }
 
       if (ref != null) {

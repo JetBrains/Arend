@@ -20,7 +20,7 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
   }
 
   private static void forFunction(Abstract.FunctionDefinition def, SimpleNamespace ns) {
-    forStatements(def.getGlobalStatements(), ns);
+    forDefinitions(def.getGlobalDefinitions(), ns);
   }
 
   private static void forData(Abstract.DataDefinition def, SimpleNamespace ns) {
@@ -32,7 +32,7 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
   }
 
   private static void forClass(Abstract.ClassDefinition def, SimpleNamespace ns) {
-    forStatements(def.getGlobalStatements(), ns);
+    forDefinitions(def.getGlobalDefinitions(), ns);
   }
 
   private static void forClassView(Abstract.ClassView def, SimpleNamespace ns) {
@@ -41,17 +41,15 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
     }
   }
 
-  private static void forStatements(Collection<? extends Abstract.Statement> statements, SimpleNamespace ns) {
-    for (Abstract.Statement statement : statements) {
-      if (!(statement instanceof Abstract.DefineStatement)) continue;
-      Abstract.DefineStatement defst = (Abstract.DefineStatement) statement;
-      if (defst.getDefinition() instanceof Abstract.ClassView) {
-        ns.addDefinition(defst.getDefinition());
-        forClassView((Abstract.ClassView) defst.getDefinition(), ns);
+  private static void forDefinitions(Collection<? extends Abstract.Definition> definitions, SimpleNamespace ns) {
+    for (Abstract.Definition definition : definitions) {
+      if (definition instanceof Abstract.ClassView) {
+        ns.addDefinition(definition);
+        forClassView((Abstract.ClassView) definition, ns);
       } else {
-        ns.addDefinition(defst.getDefinition());
-        if (defst.getDefinition() instanceof Abstract.DataDefinition) {
-          forData((Abstract.DataDefinition) defst.getDefinition(), ns);  // constructors
+        ns.addDefinition(definition);
+        if (definition instanceof Abstract.DataDefinition) {
+          forData((Abstract.DataDefinition) definition, ns);  // constructors
         }
       }
     }

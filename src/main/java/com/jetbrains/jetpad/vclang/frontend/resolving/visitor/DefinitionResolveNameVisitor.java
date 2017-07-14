@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.frontend.resolving.visitor;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.frontend.resolving.OpenCommand;
 import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateDefinitionError;
@@ -11,46 +12,52 @@ import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.error.WrongDefinition;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
-import com.jetbrains.jetpad.vclang.naming.scope.*;
+import com.jetbrains.jetpad.vclang.naming.scope.DataScope;
+import com.jetbrains.jetpad.vclang.naming.scope.DynamicClassScope;
+import com.jetbrains.jetpad.vclang.naming.scope.FunctionScope;
+import com.jetbrains.jetpad.vclang.naming.scope.StaticClassScope;
+import com.jetbrains.jetpad.vclang.naming.scope.primitive.FilteredScope;
+import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
+import com.jetbrains.jetpad.vclang.naming.scope.primitive.OverridingScope;
+import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
-import com.jetbrains.jetpad.vclang.term.AbstractStatementVisitor;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
-public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<Scope, Void>, AbstractStatementVisitor<Scope, Scope> {
+public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<Scope, Void> {
   private final List<Abstract.ReferableSourceNode> myContext;
   private final NameResolver myNameResolver;
+  private final Function<Abstract.Definition, Iterable<OpenCommand>> myOpens;
   private final ResolveListener myResolveListener;
 
-  public DefinitionResolveNameVisitor(NameResolver nameResolver, ResolveListener resolveListener) {
-    this(new ArrayList<>(), nameResolver, resolveListener);
+  public DefinitionResolveNameVisitor(NameResolver nameResolver, Function<Abstract.Definition, Iterable<OpenCommand>> opens, ResolveListener resolveListener) {
+    this(new ArrayList<>(), nameResolver, opens, resolveListener);
   }
 
-  private DefinitionResolveNameVisitor(List<Abstract.ReferableSourceNode> context,
-                                       NameResolver nameResolver, ResolveListener resolveListener) {
+  private DefinitionResolveNameVisitor(List<Abstract.ReferableSourceNode> context, NameResolver nameResolver,
+                                       Function<Abstract.Definition, Iterable<OpenCommand>> opens, ResolveListener resolveListener) {
     myContext = context;
     myNameResolver = nameResolver;
+    myOpens = opens;
     myResolveListener = resolveListener;
   }
 
   @Override
   public Void visitFunction(Abstract.FunctionDefinition def, Scope parentScope) {
-    Scope scope = new FunctionScope(parentScope, new NamespaceScope(myNameResolver.nsProviders.statics.forDefinition(def)));
+    Iterable<Scope> extraScopes = getExtraScopes(def, new OverridingScope(parentScope, new NamespaceScope(myNameResolver.nsProviders.statics.forDefinition(def))));
+    FunctionScope scope = new FunctionScope(parentScope, new NamespaceScope(myNameResolver.nsProviders.statics.forDefinition(def)), extraScopes);
+    scope.findIntroducedDuplicateNames(this::warnDuplicate);
 
-    for (Abstract.Statement statement : def.getGlobalStatements()) {
-      if (statement instanceof Abstract.NamespaceCommandStatement) {
-        scope = statement.accept(this, scope);
-      }
-    }
-    for (Abstract.Statement statement : def.getGlobalStatements()) {
-      if (!(statement instanceof Abstract.NamespaceCommandStatement)) {
-        scope = statement.accept(this, scope);
-      }
+    for (Abstract.Definition definition : def.getGlobalDefinitions()) {
+      definition.accept(this, scope);
     }
 
     Abstract.FunctionBody body = def.getBody();
@@ -189,20 +196,6 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     }
   }
 
-  private void mergeNames(Scope parent, Scope child) {
-    Set<String> parentNames = parent.getNames();
-    if (!parentNames.isEmpty()) {
-      Set<String> childNames = child.getNames();
-      if (!childNames.isEmpty()) {
-        for (String name : parentNames) {
-          if (childNames.contains(name)) {
-            myResolveListener.report(new DuplicateDefinitionError(Error.Level.WARNING, parent.resolveName(name), child.resolveName(name)));
-          }
-        }
-      }
-    }
-  }
-
   @Override
   public Void visitClass(Abstract.ClassDefinition def, Scope parentScope) {
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(parentScope, myContext, myNameResolver, myResolveListener);
@@ -211,17 +204,12 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     }
 
     try {
-      Scope staticNamespace = new NamespaceScope(myNameResolver.nsProviders.statics.forDefinition(def));
-      Scope staticScope = new StaticClassScope(parentScope, staticNamespace);
-      for (Abstract.Statement statement : def.getGlobalStatements()) {
-        if (statement instanceof Abstract.NamespaceCommandStatement) {
-          staticScope = statement.accept(this, staticScope);
-        }
-      }
-      for (Abstract.Statement statement : def.getGlobalStatements()) {
-        if (!(statement instanceof Abstract.NamespaceCommandStatement)) {
-          staticScope = statement.accept(this, staticScope);
-        }
+      Iterable<Scope> extraScopes = getExtraScopes(def, new OverridingScope(parentScope, new NamespaceScope(myNameResolver.nsProviders.statics.forDefinition(def))));
+      StaticClassScope staticScope = new StaticClassScope(parentScope, new NamespaceScope(myNameResolver.nsProviders.statics.forDefinition(def)), extraScopes);
+      staticScope.findIntroducedDuplicateNames(this::warnDuplicate);
+
+      for (Abstract.Definition definition : def.getGlobalDefinitions()) {
+        definition.accept(this, staticScope);
       }
 
       try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
@@ -236,9 +224,8 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
           }
         }
 
-        Scope child = new NamespaceScope(myNameResolver.nsProviders.dynamics.forClass(def));
-        mergeNames(staticNamespace, child);
-        Scope dynamicScope = new DynamicClassScope(staticScope, child);
+        DynamicClassScope dynamicScope = new DynamicClassScope(parentScope, new NamespaceScope(myNameResolver.nsProviders.statics.forDefinition(def)), new NamespaceScope(myNameResolver.nsProviders.dynamics.forClass(def)), extraScopes);
+        dynamicScope.findIntroducedDuplicateNames(this::warnDuplicate);
 
         for (Abstract.ClassField field : def.getFields()) {
           field.accept(this, dynamicScope);
@@ -340,52 +327,51 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     return null;
   }
 
-  @Override
-  public Scope visitDefine(Abstract.DefineStatement stat, Scope parentScope) {
-    stat.getDefinition().accept(this, parentScope);
-    return parentScope;
+  private Iterable<Scope> getExtraScopes(Abstract.Definition def, Scope currentScope) {
+    return StreamSupport.stream(myOpens.apply(def).spliterator(), false)
+        .flatMap(cmd -> processOpenCommand(cmd, currentScope))
+        .collect(Collectors.toList());
   }
 
-  @Override
-  public Scope visitNamespaceCommand(Abstract.NamespaceCommandStatement stat, Scope parentScope) {
-    if (stat.getResolvedClass() == null) {
+  private Stream<Scope> processOpenCommand(OpenCommand cmd, Scope currentScope) {
+    if (cmd.getResolvedClass() == null) {
       final Abstract.Definition referredClass;
-      if (stat.getModulePath() == null) {
-        if (stat.getPath().isEmpty()) {
-          myResolveListener.report(new GeneralError("Structure error: empty namespace command", stat));
-          return parentScope;
+      if (cmd.getModulePath() == null) {
+        if (cmd.getPath().isEmpty()) {
+          myResolveListener.report(new GeneralError("Structure error: empty namespace command", cmd));
+          return Stream.empty();
         }
-        referredClass = myNameResolver.resolveDefinition(parentScope, stat.getPath());
+        referredClass = myNameResolver.resolveDefinition(currentScope, cmd.getPath());
       } else {
-        ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(stat.getModulePath());
+        ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(cmd.getModulePath());
         Abstract.ClassDefinition moduleClass = moduleNamespace != null ? moduleNamespace.getRegisteredClass() : null;
         if (moduleClass == null) {
-          myResolveListener.report(new GeneralError("Module not found: " + stat.getModulePath(), stat));
-          return parentScope;
+          myResolveListener.report(new GeneralError("Module not found: " + cmd.getModulePath(), cmd));
+          return Stream.empty();
         }
-        if (stat.getPath().isEmpty()) {
+        if (cmd.getPath().isEmpty()) {
           referredClass = moduleNamespace.getRegisteredClass();
         } else {
-          referredClass = myNameResolver.resolveDefinition(new NamespaceScope(myNameResolver.nsProviders.statics.forDefinition(moduleClass)), stat.getPath());
+          referredClass = myNameResolver.resolveDefinition(new NamespaceScope(myNameResolver.nsProviders.statics.forDefinition(moduleClass)), cmd.getPath());
         }
       }
 
       if (referredClass == null) {
-        myResolveListener.report(new GeneralError("Class not found", stat));
-        return parentScope;
+        myResolveListener.report(new GeneralError("Class not found", cmd));
+        return Stream.empty();
       }
-      myResolveListener.nsCmdResolved(stat, referredClass);
+      myResolveListener.openCmdResolved(cmd, referredClass);
     }
 
-    if (stat.getKind().equals(Abstract.NamespaceCommandStatement.Kind.OPEN)) {
-      Scope scope = new NamespaceScope(myNameResolver.nsProviders.statics.forDefinition(stat.getResolvedClass()));
-      if (stat.getNames() != null) {
-        scope = new FilteredScope(scope, new HashSet<>(stat.getNames()), !stat.isHiding());
-      }
-      mergeNames(scope, parentScope);
-      parentScope = new OverridingScope(scope, parentScope);
+    Scope scope = new NamespaceScope(myNameResolver.nsProviders.statics.forDefinition(cmd.getResolvedClass()));
+    if (cmd.getNames() != null) {
+      scope = new FilteredScope(scope, new HashSet<>(cmd.getNames()), !cmd.isHiding());
     }
 
-    return parentScope;
+    return Stream.of(scope);
+  }
+
+  private void warnDuplicate(Abstract.Definition ref1, Abstract.Definition ref2) {
+    myResolveListener.report(new DuplicateDefinitionError(Error.Level.WARNING, ref1, ref2));
   }
 }

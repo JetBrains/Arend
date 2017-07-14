@@ -13,10 +13,10 @@ import com.jetbrains.jetpad.vclang.frontend.resolving.visitor.DefinitionResolveN
 import com.jetbrains.jetpad.vclang.frontend.resolving.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
-import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
-import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
-import com.jetbrains.jetpad.vclang.naming.scope.OverridingScope;
-import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.naming.scope.primitive.EmptyScope;
+import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
+import com.jetbrains.jetpad.vclang.naming.scope.primitive.OverridingScope;
+import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
@@ -89,7 +89,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
 
   private void resolveNamesDef(Concrete.Definition definition, int errors) {
-    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(nameResolver, new ConcreteResolveListener(errorReporter));
+    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(nameResolver, Concrete.NamespaceCommandStatement.GET, new ConcreteResolveListener(errorReporter));
     definition.accept(visitor, new OverridingScope(globalScope, new NamespaceScope(new SimpleNamespace(definition))));
     assertThat(errorList, containsErrors(errors));
   }

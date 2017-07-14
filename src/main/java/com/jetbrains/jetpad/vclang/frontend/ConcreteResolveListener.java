@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.frontend.resolving.OpenCommand;
 import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
@@ -26,8 +27,8 @@ public class ConcreteResolveListener implements ResolveListener {
   }
 
   @Override
-  public void nsCmdResolved(Abstract.NamespaceCommandStatement nsCmdStatement, Abstract.Definition definition) {
-    ((Concrete.NamespaceCommandStatement) nsCmdStatement).setResolvedClass(definition);
+  public void openCmdResolved(OpenCommand openCmd, Abstract.Definition definition) {
+    ((Concrete.NamespaceCommandStatement) openCmd).setResolvedClass(definition);
   }
 
   @Override

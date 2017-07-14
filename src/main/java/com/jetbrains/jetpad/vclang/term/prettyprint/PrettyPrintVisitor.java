@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.term.*;
 
 import java.util.*;
 
-public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>, AbstractLevelExpressionVisitor<Byte, Void>, AbstractDefinitionVisitor<Void, Void>, AbstractStatementVisitor<Void, Void> {
+public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>, AbstractLevelExpressionVisitor<Byte, Void>, AbstractDefinitionVisitor<Void, Void> {
   private final StringBuilder myBuilder;
   private Map<InferenceLevelVariable, Integer> myPVariables = Collections.emptyMap();
   private Map<InferenceLevelVariable, Integer> myHVariables = Collections.emptyMap();
@@ -751,10 +751,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
     r.doPrettyPrint(this);
 
-    if (!def.getGlobalStatements().isEmpty()) {
+    if (!def.getGlobalDefinitions().isEmpty()) {
       myBuilder.append("\n");
       printIndent();
-      visitWhere(def.getGlobalStatements());
+      visitWhere(def.getGlobalDefinitions());
     }
     return null;
   }
@@ -919,13 +919,13 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
-  private void visitWhere(Collection<? extends Abstract.Statement> statements) {
+  private void visitWhere(Collection<? extends Abstract.Definition> definitions) {
     myBuilder.append("\\where {");
     myIndent += INDENT;
-    for (Abstract.Statement statement : statements) {
+    for (Abstract.Definition definition : definitions) {
       myBuilder.append("\n");
       printIndent();
-      statement.accept(this, null);
+      definition.accept(this, null);
       myBuilder.append("\n");
     }
     myIndent -= INDENT;
@@ -954,7 +954,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
     Collection<? extends Abstract.ClassField> fields = def.getFields();
     Collection<? extends Abstract.Implementation> implementations = def.getImplementations();
-    Collection<? extends Abstract.Statement> globalStatements = def.getGlobalStatements();
+    Collection<? extends Abstract.Definition> globalDefinitions = def.getGlobalDefinitions();
     Collection<? extends Abstract.Definition> instanceDefinitions = def.getInstanceDefinitions();
 
     if (fields != null && !fields.isEmpty() || implementations != null && !implementations.isEmpty() || instanceDefinitions != null && !instanceDefinitions.isEmpty()) {
@@ -993,9 +993,9 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       myBuilder.append("}");
     }
 
-    if (globalStatements != null && !globalStatements.isEmpty()) {
+    if (globalDefinitions != null && !globalDefinitions.isEmpty()) {
       myBuilder.append(" ");
-      visitWhere(globalStatements);
+      visitWhere(globalDefinitions);
     }
 
     return null;
@@ -1205,51 +1205,5 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       }
       if (ii) ppv_default.myIndent-=INDENT;
     }
-  }
-
-  @Override
-  public Void visitDefine(Abstract.DefineStatement stat, Void params) {
-    stat.getDefinition().accept(this, null);
-    return null;
-  }
-
-  @Override
-  public Void visitNamespaceCommand(Abstract.NamespaceCommandStatement stat, Void params) {
-    switch (stat.getKind()) {
-      case OPEN:
-        myBuilder.append("\\open ");
-        break;
-      case EXPORT:
-        myBuilder.append("\\export ");
-        break;
-      default:
-        throw new IllegalStateException();
-    }
-
-    if (stat.getModulePath() != null) {
-      myBuilder.append(stat.getModulePath());
-    }
-
-    if (!stat.getPath().isEmpty()){
-      myBuilder.append(stat.getPath().get(0));
-      for (int i = 1; i < stat.getPath().size(); i++) {
-        myBuilder.append('.').append(stat.getPath().get(i));
-      }
-    }
-
-    if (stat.getNames() != null) {
-      if (stat.isHiding()) {
-        myBuilder.append(" \\hiding");
-      }
-      myBuilder.append(" (");
-      if (!stat.getNames().isEmpty()) {
-        myBuilder.append(new Name(stat.getNames().get(0)).getPrefixName());
-        for (int i = 1; i < stat.getNames().size(); i++) {
-          myBuilder.append(", ").append(new Name(stat.getNames().get(i)).getPrefixName());
-        }
-      }
-      myBuilder.append(')');
-    }
-    return null;
   }
 }

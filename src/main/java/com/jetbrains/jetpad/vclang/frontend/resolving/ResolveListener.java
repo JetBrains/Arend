@@ -8,7 +8,7 @@ import java.util.List;
 public interface ResolveListener extends ErrorReporter {
   void nameResolved(Abstract.ReferenceExpression referenceExpression, Abstract.ReferableSourceNode referable);
   void moduleResolved(Abstract.ModuleCallExpression moduleCallExpression, Abstract.Definition definition);
-  void nsCmdResolved(Abstract.NamespaceCommandStatement nsCmdStatement, Abstract.Definition definition);
+  void openCmdResolved(OpenCommand openCmd, Abstract.Definition definition);
   void implementResolved(Abstract.Implementation identifier, Abstract.ClassField definition);
   void implementResolved(Abstract.ClassFieldImpl identifier, Abstract.ClassField definition);
   void classViewResolved(Abstract.ClassView classView, Abstract.ClassField classifyingField);

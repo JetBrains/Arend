@@ -25,7 +25,7 @@ public class BaseResolveListener implements ResolveListener {
   }
 
   @Override
-  public void nsCmdResolved(Abstract.NamespaceCommandStatement nsCmdStatement, Abstract.Definition definition) {
+  public void openCmdResolved(OpenCommand openCmd, Abstract.Definition definition) {
 
   }
 

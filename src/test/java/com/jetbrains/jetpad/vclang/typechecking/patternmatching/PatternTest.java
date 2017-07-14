@@ -141,8 +141,8 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\data D | con\n" +
       "\\function f (n : Nat) (d : D) (k : Nat) => \\elim n, d, k\n" +
       "  | suc n, zero, suc k => k");
-    Abstract.DataDefinition dataDef = (Abstract.DataDefinition) ((Abstract.DefineStatement) classDef.getGlobalStatements().get(0)).getDefinition();
-    Abstract.FunctionDefinition funDef = (Abstract.FunctionDefinition) ((Abstract.DefineStatement) classDef.getGlobalStatements().get(1)).getDefinition();
+    Abstract.DataDefinition dataDef = (Abstract.DataDefinition) ((Concrete.DefineStatement) classDef.getGlobalStatements().get(0)).getDefinition();
+    Abstract.FunctionDefinition funDef = (Abstract.FunctionDefinition) ((Concrete.DefineStatement) classDef.getGlobalStatements().get(1)).getDefinition();
     DataDefinition data = new DataDefinition(dataDef);
     data.setParameters(EmptyDependentLink.getInstance());
     data.setSort(Sort.STD);
@@ -194,8 +194,8 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\data D\n" +
       "\\function f (n : Nat) (d : D) (k : Nat) => \\elim n, d, k\n" +
       "  | suc n, (), k => k");
-    Abstract.DataDefinition dataDef = (Abstract.DataDefinition) ((Abstract.DefineStatement) classDef.getGlobalStatements().get(0)).getDefinition();
-    Abstract.FunctionDefinition funDef = (Abstract.FunctionDefinition) ((Abstract.DefineStatement) classDef.getGlobalStatements().get(1)).getDefinition();
+    Abstract.DataDefinition dataDef = (Abstract.DataDefinition) ((Concrete.DefineStatement) classDef.getGlobalStatements().get(0)).getDefinition();
+    Abstract.FunctionDefinition funDef = (Abstract.FunctionDefinition) ((Concrete.DefineStatement) classDef.getGlobalStatements().get(1)).getDefinition();
     DataDefinition data = new DataDefinition(dataDef);
     data.setParameters(EmptyDependentLink.getInstance());
     data.setSort(Sort.STD);
@@ -214,8 +214,8 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\data D\n" +
       "\\function f (n : Nat) (d : D) (k : Nat) => \\elim n, d, k\n" +
       "  | suc n, (), suc k => k");
-    Abstract.DataDefinition dataDef = (Abstract.DataDefinition) ((Abstract.DefineStatement) classDef.getGlobalStatements().get(0)).getDefinition();
-    Abstract.FunctionDefinition funDef = (Abstract.FunctionDefinition) ((Abstract.DefineStatement) classDef.getGlobalStatements().get(1)).getDefinition();
+    Abstract.DataDefinition dataDef = (Abstract.DataDefinition) ((Concrete.DefineStatement) classDef.getGlobalStatements().get(0)).getDefinition();
+    Abstract.FunctionDefinition funDef = (Abstract.FunctionDefinition) ((Concrete.DefineStatement) classDef.getGlobalStatements().get(1)).getDefinition();
     DataDefinition data = new DataDefinition(dataDef);
     data.setParameters(EmptyDependentLink.getInstance());
     data.setSort(Sort.STD);

@@ -118,23 +118,13 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
   }
 
-  static class DefinitionIdsCollector implements AbstractDefinitionVisitor<Map<String, Abstract.Definition>, Void>, AbstractStatementVisitor<Map<String, Abstract.Definition>, Void> {
-    @Override
-    public Void visitDefine(Abstract.DefineStatement stat, Map<String, Abstract.Definition> params) {
-      Abstract.Definition definition = stat.getDefinition();
-      return definition.accept(this, params);
-    }
-
-    @Override
-    public Void visitNamespaceCommand(Abstract.NamespaceCommandStatement stat, Map<String, Abstract.Definition> params) {
-      return null;
-    }
+  static class DefinitionIdsCollector implements AbstractDefinitionVisitor<Map<String, Abstract.Definition>, Void> {
 
     @Override
     public Void visitFunction(Abstract.FunctionDefinition def, Map<String, Abstract.Definition> params) {
       params.put(getIdFor(def), def);
-      for (Abstract.Statement statement : def.getGlobalStatements()) {
-        statement.accept(this, params);
+      for (Abstract.Definition definition : def.getGlobalDefinitions()) {
+        definition.accept(this, params);
       }
       return null;
     }
@@ -165,8 +155,8 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     @Override
     public Void visitClass(Abstract.ClassDefinition def, Map<String, Abstract.Definition> params) {
       params.put(getIdFor(def), def);
-      for (Abstract.Statement statement : def.getGlobalStatements()) {
-        statement.accept(this, params);
+      for (Abstract.Definition definition : def.getGlobalDefinitions()) {
+        definition.accept(this, params);
       }
       for (Abstract.Definition definition : def.getInstanceDefinitions()) {
         definition.accept(this, params);
@@ -224,7 +214,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     if (!cacheLoaded) {
       throw new IllegalStateException("Prelude cache is not available");
     }
-    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(state), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
+    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), Concrete.NamespaceCommandStatement.GET, new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(state), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
     return prelude;
   }
 
@@ -338,7 +328,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
     ResultTracker resultTracker = new ResultTracker();
 
-    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), resultTracker, resultTracker, resultTracker).typecheckModules(modulesToTypeCheck);
+    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), Concrete.NamespaceCommandStatement.GET, resultTracker, resultTracker, resultTracker).typecheckModules(modulesToTypeCheck);
 
     return results;
   }

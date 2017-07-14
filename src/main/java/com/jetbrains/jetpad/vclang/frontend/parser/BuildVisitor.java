@@ -147,7 +147,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.NamespaceCommandStatement visitStatCmd(StatCmdContext ctx) {
-    Abstract.NamespaceCommandStatement.Kind kind = (Abstract.NamespaceCommandStatement.Kind) visit(ctx.nsCmd());
+    Concrete.NamespaceCommandStatement.Kind kind = (Concrete.NamespaceCommandStatement.Kind) visit(ctx.nsCmd());
     List<String> modulePath = ctx.nsCmdRoot().modulePath() == null ? null : visitModulePath(ctx.nsCmdRoot().modulePath());
     List<String> path = new ArrayList<>();
     if (ctx.nsCmdRoot().name() != null) {
@@ -174,13 +174,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Abstract.NamespaceCommandStatement.Kind visitOpenCmd(OpenCmdContext ctx) {
-    return Abstract.NamespaceCommandStatement.Kind.OPEN;
+  public Concrete.NamespaceCommandStatement.Kind visitOpenCmd(OpenCmdContext ctx) {
+    return Concrete.NamespaceCommandStatement.Kind.OPEN;
   }
 
   @Override
-  public Abstract.NamespaceCommandStatement.Kind visitExportCmd(ExportCmdContext ctx) {
-    return Abstract.NamespaceCommandStatement.Kind.EXPORT;
+  public Concrete.NamespaceCommandStatement.Kind visitExportCmd(ExportCmdContext ctx) {
+    return Concrete.NamespaceCommandStatement.Kind.EXPORT;
   }
 
   private Abstract.Precedence visitPrecedence(PrecedenceContext ctx) {
