@@ -1,9 +1,9 @@
 grammar Vcgrammar;
 
-statements : statement*;
+statements : statement* EOF;
 
-statement : definition                                                        # statDef
-          | nsCmd nsCmdRoot fieldAcc* (hidingOpt '(' name (',' name)* ')')?   # statCmd
+statement : definition                                                            # statDef
+          | nsCmd nsCmdRoot ('.' fieldAcc)* (hidingOpt '(' name (',' name)* ')')? # statCmd
           ;
 
 hidingOpt : '\\hiding'  # withHiding
@@ -16,7 +16,7 @@ definition  : '\\function' precedence name tele* (':' expr)? functionBody where?
             | '\\field' precedence name ':' expr                                                          # defAbstract
             | '\\implement' name '=>' expr                                                                # defImplement
             | isTruncated '\\data' precedence name tele* (':' expr)? dataBody                             # defData
-            | '\\class' ID tele* ('\\extends' expr0 (',' expr0)*)? ('{' statements '}')? where?           # defClass
+            | '\\class' ID tele* ('\\extends' expr0 (',' expr0)*)? ('{' statement* '}')? where?           # defClass
             | '\\view' ID '\\on' expr '\\by' name '{' classViewField* '}'                                 # defClassView
             | defaultInst '\\instance' ID tele* '=>' expr                                                 # defInstance
             ;
@@ -43,7 +43,7 @@ defaultInst :             # noDefault
 
 classViewField : name ('=>' precedence name)? ;
 
-where : '\\where' ('{' statements '}' | statement);
+where : '\\where' ('{' statement* '}' | statement);
 
 nsCmd : '\\open'                        # openCmd
       | '\\export'                      # exportCmd
@@ -86,7 +86,7 @@ expr  : binOpLeft* maybeNew binOpArg implementStatements?   # binOp
       | '\\Sigma' tele+                                     # sigma
       | '\\lam' tele+ '=>' expr                             # lam
       | '\\let' '|'? letClause ('|' letClause)* '\\in' expr # let
-      | '\\case' expr0 (',' expr0)* '\\with'? clauses       # case
+      | '\\case' expr0 (',' expr0)* '\\with'? '{' clause? ('|' clause)* '}' # case
       ;
 
 clauses : ('|' clause)*                 # clausesWithoutBraces
@@ -122,8 +122,8 @@ maybeNew :                              # noNew
          | '\\new'                      # withNew
          ;
 
-fieldAcc : '.' name                     # classField
-         | '.' NUMBER                   # sigmaField
+fieldAcc : name                     # classField
+         | NUMBER                   # sigmaField
          ;
 
 infix : BIN_OP                      # infixBinOp
@@ -138,7 +138,7 @@ atom  : literal                         # atomLiteral
       | modulePath                      # atomModuleCall
       ;
 
-atomFieldsAcc : atom fieldAcc*;
+atomFieldsAcc : atom ('.' fieldAcc)*;
 
 implementStatements : '{' implementStatement? ('|' implementStatement)* '}';
 
@@ -181,6 +181,6 @@ LINE_COMMENT : '--' ~[\r\n]* -> skip;
 COMMENT : '{-' .*? '-}' -> skip;
 fragment BIN_OP_CHAR : [~!@#$%^&*\-+=<>?/|.:];
 BIN_OP : BIN_OP_CHAR+;
-fragment ID_FRAGMENT : [a-zA-Z_] [a-zA-Z0-9_\']* | BIN_OP_CHAR+;
+fragment ID_FRAGMENT : [a-zA-Z_] [a-zA-Z0-9_']* | BIN_OP_CHAR+;
 ID : ID_FRAGMENT ('-' ID_FRAGMENT)*;
 ERROR_CHAR : .;

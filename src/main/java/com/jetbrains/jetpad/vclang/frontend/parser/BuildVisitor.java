@@ -329,28 +329,16 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public List<Concrete.Statement> visitWhere(WhereContext ctx) {
-    if (ctx == null) {
-      return Collections.emptyList();
-    }
-    if (ctx.statements() != null) {
-      return visitStatementList(ctx.statements().statement());
-    }
-    if (ctx.statement() != null) {
-      return visitStatementList(Collections.singletonList(ctx.statement()));
-    }
-    return Collections.emptyList();
+    return ctx == null || ctx.statement().isEmpty() ? Collections.emptyList() : visitStatementList(ctx.statement());
   }
 
   @Override
   public List<Concrete.ReferenceExpression> visitElim(ElimContext ctx) {
-    List<Concrete.ReferenceExpression> elimExprs = Collections.emptyList();
     if (ctx != null && ctx.expr0() != null && !ctx.expr0().isEmpty()) {
-      elimExprs = checkElimExpressions(ctx.expr0().stream().map(this::visitExpr).collect(Collectors.toList()));
-      if (elimExprs == null) {
-        return null;
-      }
+      return checkElimExpressions(ctx.expr0().stream().map(this::visitExpr).collect(Collectors.toList()));
+    } else {
+      return Collections.emptyList();
     }
-    return elimExprs;
   }
 
   @Override
@@ -492,9 +480,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<Concrete.Implementation> implementations = new ArrayList<>();
     List<Concrete.Statement> globalStatements = visitWhere(ctx.where());
     List<Concrete.Definition> instanceDefinitions =
-        ctx.statements() == null ?
+        ctx.statement().isEmpty() ?
         Collections.emptyList() :
-        visitInstanceStatements(ctx.statements().statement(), fields, implementations);
+        visitInstanceStatements(ctx.statement(), fields, implementations);
     for (Expr0Context exprCtx : ctx.expr0()) {
       superClasses.add(new Concrete.SuperClass(tokenPosition(exprCtx.getStart()), visitExpr(exprCtx)));
     }
@@ -973,7 +961,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.Expression visitCase(CaseContext ctx) {
     List<Concrete.Expression> elimExprs = ctx.expr0().stream().map(this::visitExpr).collect(Collectors.toList());
-    List<Concrete.FunctionClause> clauses = visitClauses(ctx.clauses()); // ctx.clause().stream().map(this::visitClause).collect(Collectors.toList());
+    List<Concrete.FunctionClause> clauses = ctx.clause().stream().map(this::visitClause).collect(Collectors.toList());
     return new Concrete.CaseExpression(tokenPosition(ctx.getStart()), elimExprs, clauses);
   }
 

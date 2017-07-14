@@ -123,13 +123,13 @@ public class PatternTest extends NameResolverTestCase {
   public void casePatternUnknownConstructor() {
     resolveNamesClass(
       "\\data Nat | zero | suc Nat\n" +
-      "\\function test (x : Nat) : Nat => \\case x | zero a => 0 | sucs n => 1", 1);
+      "\\function test (x : Nat) : Nat => \\case x { zero a => 0 | sucs n => 1 }", 1);
   }
 
   @Test
   public void casePatternWrongDefinition() {
     resolveNamesClass(
       "\\data Nat | zero | suc Nat\n" +
-      "\\function test (x : Nat) : Nat => \\case x | zero a => 0 | Nat => 1", 1);
+      "\\function test (x : Nat) : Nat => \\case x { zero a => 0 | Nat => 1 }", 1);
   }
 }

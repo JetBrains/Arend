@@ -263,10 +263,11 @@ public class ElimTest extends TypeCheckingTestCase {
         "  | suc n, suc m => EqSuc (p : Geq n m)\n" +
         "\n" +
         "\\function f (x y : Nat) (p : Geq x y) : Nat =>\n" +
-        "  \\case x, y, p\n" +
+        "  \\case x, y, p {\n" +
         "    | m, zero, EqBase => zero \n" +
         "    | zero, suc _, ()\n" +
-        "    | suc _, suc _, EqSuc q => suc zero", 3);
+        "    | suc _, suc _, EqSuc q => suc zero\n" +
+        "  }", 3);
   }
 
   @Test
@@ -370,7 +371,7 @@ public class ElimTest extends TypeCheckingTestCase {
   public void testEmptyCase() {
     typeCheckClass(
         "\\data D\n" +
-        "\\function test (d : D) : 0 = 1 => \\case d | ()"
+        "\\function test (d : D) : 0 = 1 => \\case d { () }"
     );
   }
 

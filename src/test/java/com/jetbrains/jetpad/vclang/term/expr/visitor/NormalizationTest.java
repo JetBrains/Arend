@@ -244,7 +244,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   public void normalizeCaseStuck() {
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("n", Nat()));
-    CheckTypeVisitor.Result result = typeCheckExpr(context, "\\case n | zero => zero | suc _ => zero", Nat());
+    CheckTypeVisitor.Result result = typeCheckExpr(context, "\\case n { zero => zero | suc _ => zero }", Nat());
     assertEquals(result.expression, result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
