@@ -175,12 +175,13 @@ public class ElimTest extends TypeCheckingTestCase {
   @Test
   public void elim10() {
     typeCheckClass("\\data Bool | true | false\n" +
-                   "\\function tp : \\Pi (x : Bool) -> \\oo-Type0 => \\lam x => \\case x\n" +
-                   "| true => Bool\n" +
-                   "| false => Nat\n" +
-                   "\\function f (x : Bool) : tp x => \\elim x\n" +
-                   "| true => true\n" +
-                   "| false => zero\n");
+                   "\\function tp : \\Pi (x : Bool) -> \\oo-Type0 => \\lam x => \\case x {\n" +
+                   "  | true => Bool\n" +
+                   "  | false => Nat\n" +
+                   "}\n" +
+                   "\\function f (x : Bool) : tp x\n" +
+                   "  | true => true\n" +
+                   "  | false => zero\n");
   }
 
   @Test
@@ -200,6 +201,11 @@ public class ElimTest extends TypeCheckingTestCase {
   @Test
   public void testNoPatterns() {
     typeCheckClass("\\function test (n : Nat) : 0 = 1 => \\elim n", 1);
+  }
+
+  @Test
+  public void testAbsurdPattern() {
+    typeCheckClass("\\function test (n : Nat) : 0 = 1 => \\elim n | ()", 1);
   }
 
   @Test

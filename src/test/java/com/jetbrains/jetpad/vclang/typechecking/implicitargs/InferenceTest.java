@@ -11,9 +11,10 @@ public class InferenceTest extends TypeCheckingTestCase {
     String text =
         "\\data B | t | f\n" +
         "\\data D Nat | con Nat\n" +
-        "\\function h : D 0 => con (\\case t\n" +
+        "\\function h : D 0 => con (\\case t {\n" +
         "  | t => {?}\n" +
-        "  | f => {?})";
+        "  | f => {?}\n" +
+        "})";
     typeCheckClass(text, 2);
     assertThatErrorsAre(goal(0), goal(0));
   }

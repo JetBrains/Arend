@@ -1,6 +1,9 @@
 package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.VclangTestCase;
+import com.jetbrains.jetpad.vclang.frontend.AbstractCompareVisitor;
+import com.jetbrains.jetpad.vclang.frontend.Concrete;
+import com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.frontend.parser.BuildVisitor;
 import com.jetbrains.jetpad.vclang.frontend.parser.ParserError;
 import com.jetbrains.jetpad.vclang.frontend.parser.VcgrammarLexer;
@@ -8,9 +11,6 @@ import com.jetbrains.jetpad.vclang.frontend.parser.VcgrammarParser;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
-import com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory;
-import com.jetbrains.jetpad.vclang.frontend.AbstractCompareVisitor;
 import org.antlr.v4.runtime.*;
 
 import static org.junit.Assert.assertThat;
@@ -47,6 +47,8 @@ public abstract class ParserTestCase extends VclangTestCase {
         errorReporter.report(new ParserError(new Concrete.Position(SOURCE_ID, line, pos), msg));
       }
     });
+    // parser.addErrorListener(new DiagnosticErrorListener());
+    // parser.getInterpreter().setPredictionMode(PredictionMode.LL_EXACT_AMBIG_DETECTION);
     return parser;
   }
 

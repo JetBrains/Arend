@@ -181,7 +181,7 @@ public class ParserTest extends NameResolverTestCase {
 
   @Test
   public void incorrectDefinitionName() {
-    parseDef("\\function (|) => \\Prop", 1);
+    parseDef("\\function (|) => \\Prop", -1);
   }
 
   @Test
@@ -207,5 +207,12 @@ public class ParserTest extends NameResolverTestCase {
   @Test
   public void testSide() {
     parseDef("\\function test (n : Nat) => suc (\\elim n | suc n => n | zero => 0)", 1);
+  }
+
+  @Test
+  public void insideBody() {
+    parseClass("test",
+      "\\function test (n : Nat)\n" +
+      "  | zero => \\lam _ -> zero", 2);
   }
 }

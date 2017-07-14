@@ -16,7 +16,7 @@ definition  : '\\function' precedence name tele* (':' expr)? functionBody where?
             | '\\field' precedence name ':' expr                                                          # defAbstract
             | '\\implement' name '=>' expr                                                                # defImplement
             | isTruncated '\\data' precedence name tele* (':' expr)? dataBody                             # defData
-            | '\\class' ID tele* ('\\extends' expr (',' expr)*)? ('{' statements '}')? where?             # defClass
+            | '\\class' ID tele* ('\\extends' expr0 (',' expr0)*)? ('{' statements '}')? where?           # defClass
             | '\\view' ID '\\on' expr '\\by' name '{' classViewField* '}'                                 # defClassView
             | defaultInst '\\instance' ID tele* '=>' expr                                                 # defInstance
             ;
@@ -31,7 +31,7 @@ dataBody : elim constructorClause*                      # dataClauses
 
 constructorClause : '|' pattern (',' pattern)* '=>' (constructor | '{' '|'? constructor ('|' constructor)* '}');
 
-elim : '\\with' | '=>' '\\elim' expr? (',' expr)*;
+elim : '\\with' | '=>' '\\elim' expr0 (',' expr0)*;
 
 isTruncated : '\\truncated' # truncated
             |               # notTruncated
@@ -78,13 +78,15 @@ name  : ID                              # nameId
       | '(' BIN_OP ')'                  # nameBinOp
       ;
 
-expr  : (binOpLeft+ | ) binOpArg                            # binOp
+expr0 : binOpLeft* binOpArg;
+
+expr  : binOpLeft* maybeNew binOpArg implementStatements?   # binOp
       | <assoc=right> expr '->' expr                        # arr
       | '\\Pi' tele+ '->' expr                              # pi
       | '\\Sigma' tele+                                     # sigma
       | '\\lam' tele+ '=>' expr                             # lam
       | '\\let' '|'? letClause ('|' letClause)* '\\in' expr # let
-      | '\\case' expr (',' expr)* '\\with'? clauses         # case
+      | '\\case' expr0 (',' expr0)* '\\with'? clauses       # case
       ;
 
 clauses : ('|' clause)*                 # clausesWithoutBraces
@@ -108,13 +110,13 @@ levelExpr : levelAtom                     # atomLevelExpr
           | '\\max' levelAtom levelAtom   # maxLevelExpr
           ;
 
-binOpArg : maybeNew atomFieldsAcc argument*       # binOpArgument
+binOpArg : atomFieldsAcc argument*                # binOpArgument
          | TRUNCATED_UNIVERSE levelAtom?          # truncatedUniverse
-         | UNIVERSE levelAtom? levelAtom?         # universe
+         | UNIVERSE (levelAtom levelAtom?)?       # universe
          | SET levelAtom?                         # setUniverse
          ;
 
-binOpLeft : binOpArg infix;
+binOpLeft : maybeNew binOpArg implementStatements? infix;
 
 maybeNew :                              # noNew
          | '\\new'                      # withNew
@@ -136,11 +138,11 @@ atom  : literal                         # atomLiteral
       | modulePath                      # atomModuleCall
       ;
 
-atomFieldsAcc : atom fieldAcc* implementStatements?;
+atomFieldsAcc : atom fieldAcc*;
 
-implementStatements : '{' implementStatement* '}';
+implementStatements : '{' implementStatement? ('|' implementStatement)* '}';
 
-implementStatement : '|'? name '=>' expr;
+implementStatement : name '=>' expr;
 
 argument : atomFieldsAcc                # argumentExplicit
          | universeAtom                 # argumentUniverse

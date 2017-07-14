@@ -22,6 +22,7 @@ import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class PatternTypechecking {
   private final LocalErrorReporter myErrorReporter;
@@ -241,7 +242,7 @@ public class PatternTypechecking {
           return null;
         }
         if (!conCalls.isEmpty()) {
-          myErrorReporter.report(new LocalTypeCheckingError("Data type " + expr + " is not empty, available constructors: " + conCalls, pattern));
+          myErrorReporter.report(new LocalTypeCheckingError("Data type " + expr + " is not empty, available constructors: " + conCalls.stream().map(ConCallExpression::getDefinition).collect(Collectors.toList()), pattern));
           return null;
         }
         result.add(EmptyPattern.INSTANCE);
