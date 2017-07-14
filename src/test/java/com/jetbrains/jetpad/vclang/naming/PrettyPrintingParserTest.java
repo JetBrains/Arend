@@ -22,7 +22,7 @@ import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class PrettyPrintingParserTest extends NameResolverTest {
+public class PrettyPrintingParserTest extends NameResolverTestCase {
   private void testExpr(Abstract.Expression expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
     List<String> context = new ArrayList<>();
