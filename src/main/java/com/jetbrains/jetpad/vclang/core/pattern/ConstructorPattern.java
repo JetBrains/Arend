@@ -4,100 +4,89 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ConstructorPattern extends Pattern {
-  private final Constructor myConstructor;
-  private final Patterns myArguments;
+public class ConstructorPattern implements Pattern {
+  private final ConCallExpression myConCall;
+  private final Patterns myPatterns;
 
-  public ConstructorPattern(Constructor constructor, Patterns arguments) {
-    assert constructor.status().headerIsOK();
-    myConstructor = constructor;
-    myArguments = arguments;
-  }
-
-  public Constructor getConstructor() {
-    return myConstructor;
+  public ConstructorPattern(ConCallExpression conCall, Patterns patterns) {
+    myConCall = conCall;
+    myPatterns = patterns;
   }
 
   public Patterns getPatterns() {
-    return myArguments;
+    return myPatterns;
   }
 
-  public List<PatternArgument> getArguments() {
-    return myArguments.getPatterns();
+  public Constructor getConstructor() {
+    return myConCall.getDefinition();
+  }
+
+  public List<Pattern> getArguments() {
+    return myPatterns.getPatternList();
+  }
+
+  public Sort getSortArgument() {
+    return myConCall.getSortArgument();
+  }
+
+  public List<Expression> getDataTypeArguments() {
+    return myConCall.getDataTypeArguments();
+  }
+
+  public ConCallExpression getConCall() {
+    return myConCall;
   }
 
   @Override
-  public DependentLink getParameters() {
-    return myArguments.getParameters();
-  }
-
-  @Override
-  public Expression toExpression(ExprSubstitution subst) {
-    List<Expression> params = new ArrayList<>();
-    for (DependentLink link = myConstructor.getDataTypeParameters(); link.hasNext(); link = link.getNext()) {
-      Expression param = subst.get(link);
-      params.add(param == null ? new ReferenceExpression(link) : param);
-    }
-
-    DependentLink constructorParameters = myConstructor.getParameters();
-    DependentLink link = constructorParameters;
-    List<Expression> arguments = new ArrayList<>();
-    for (PatternArgument patternArgument : myArguments.getPatterns()) {
-      assert link.hasNext();
-      LevelSubstitution levelSubst;
-      if (patternArgument.getPattern() instanceof ConstructorPattern) {
-        Expression type = link.getType().getExpr().subst(subst).normalize(NormalizeVisitor.Mode.WHNF);
-        assert type.toDataCall() != null && type.toDataCall().getDefinition() == ((ConstructorPattern) patternArgument.getPattern()).getConstructor().getDataType();
-        ExprSubstitution subSubst = ((ConstructorPattern) patternArgument.getPattern()).getMatchedArguments(new ArrayList<>(type.toDataCall().getDefCallArguments()));
-        levelSubst = new StdLevelSubstitution(type.toDataCall().getSortArgument().getPLevel(), type.toDataCall().getSortArgument().getHLevel());
-        subst.addAll(subSubst);
-      } else {
-        levelSubst = LevelSubstitution.EMPTY;
+  public ConCallExpression toExpression() {
+    List<Expression> arguments = new ArrayList<>(myPatterns.getPatternList().size());
+    for (Pattern pattern : myPatterns.getPatternList()) {
+      Expression argument = pattern.toExpression();
+      if (argument == null) {
+        return null;
       }
-      Expression param = patternArgument.getPattern().toExpression(subst).subst(levelSubst);
-      if (patternArgument.getPattern() instanceof ConstructorPattern) {
-        DependentLink.Helper.freeSubsts(getParameters(), subst);
-      }
-
-      arguments.add(param);
-      subst.add(link, param);
-      link = link.getNext();
+      arguments.add(argument);
     }
-    DependentLink.Helper.freeSubsts(constructorParameters, subst);
-    return new ConCallExpression(myConstructor, Sort.STD, params, arguments);
-  }
-
-  public ExprSubstitution getMatchedArguments(List<Expression> dataTypeArguments) {
-    return DependentLink.Helper.toSubstitution(myConstructor.getDataTypeParameters(), myConstructor.matchDataTypeArguments(dataTypeArguments));
+    return new ConCallExpression(myConCall.getDefinition(), myConCall.getSortArgument(), myConCall.getDataTypeArguments(), arguments);
   }
 
   @Override
-  public MatchResult match(Expression expr, boolean normalize) {
-    if (normalize) {
-      expr = expr.normalize(NormalizeVisitor.Mode.WHNF);
-    }
+  public DependentLink getFirstBinding() {
+    return myPatterns.getFirstBinding();
+  }
 
-    ConCallExpression conCall = expr.toConCall();
+  @Override
+  public MatchResult match(Expression expression, List<Expression> result) {
+    expression = expression.normalize(NormalizeVisitor.Mode.WHNF);
+    ConCallExpression conCall = expression.toConCall();
     if (conCall == null) {
-      return new MatchMaybeResult(this, expr);
+      return MatchResult.MAYBE;
     }
-    if (conCall.getDefinition() != myConstructor) {
-      return new MatchFailedResult(this, expr);
+    if (conCall.getDefinition() != myConCall.getDefinition()) {
+      return MatchResult.FAIL;
+    }
+    return myPatterns.match(conCall.getDefCallArguments(), result);
+  }
+
+  @Override
+  public boolean unify(Pattern other, ExprSubstitution substitution1, ExprSubstitution substitution2) {
+    if (other instanceof BindingPattern) {
+      substitution2.add(((BindingPattern) other).getBinding(), toExpression());
+      return true;
     }
 
-    if (conCall.getDefCallArguments().size() != myArguments.getPatterns().size()) {
-      throw new IllegalStateException();
+    if (other instanceof ConstructorPattern) {
+      ConstructorPattern conPattern = (ConstructorPattern) other;
+      return myConCall.getDefinition() == conPattern.myConCall.getDefinition() && myPatterns.unify(conPattern.myPatterns, substitution1, substitution2);
     }
-    return myArguments.match(conCall.getDefCallArguments(), normalize);
+
+    return false;
   }
 }

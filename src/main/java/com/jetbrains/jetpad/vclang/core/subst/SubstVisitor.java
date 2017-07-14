@@ -1,21 +1,22 @@
 package com.jetbrains.jetpad.vclang.core.subst;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.Constructor;
+import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.BaseExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
-import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implements ElimTreeNodeVisitor<Void, ElimTreeNode> {
+public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   private final ExprSubstitution myExprSubstitution;
   private final LevelSubstitution myLevelSubstitution;
 
@@ -35,7 +36,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     for (Expression arg : expr.getDefCallArguments()) {
       args.add(arg.accept(this, null));
     }
-    return expr.getDefinition().getDefCall(expr.getSortArgument().subst(myLevelSubstitution), args);
+    return expr.getDefinition().getDefCall(expr.getSortArgument().subst(myLevelSubstitution), null, args);
   }
 
   @Override
@@ -66,28 +67,6 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
     FieldSet fieldSet = FieldSet.applyVisitorToImplemented(expr.getFieldSet(), expr.getDefinition().getFieldSet(), this, null);
     return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), fieldSet);
-  }
-
-  @Override
-  public Expression visitLetClauseCall(LetClauseCallExpression expr, Void params) {
-    List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
-    for (Expression arg : expr.getDefCallArguments()) {
-      args.add(arg.accept(this, null));
-    }
-
-    Expression subst = myExprSubstitution.get(expr.getLetClause());
-    if (subst != null) {
-      if (subst.toReference() != null && subst.toReference().getBinding() instanceof LetClause) {
-        return new LetClauseCallExpression((LetClause) subst.toReference().getBinding(), args);
-      } else {
-        for (Expression arg : args) {
-          subst = new AppExpression(subst, arg);
-        }
-        return subst;
-      }
-    } else {
-      return new LetClauseCallExpression(expr.getLetClause(), args);
-    }
   }
 
   @Override
@@ -142,53 +121,6 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   }
 
   @Override
-  public BranchElimTreeNode visitBranch(BranchElimTreeNode branchNode, Void params) {
-    Binding newReference = visitReference(new ReferenceExpression(branchNode.getReference()), null).toReference().getBinding();
-    List<Binding> newContextTail = branchNode.getContextTail().stream().map(binding -> visitReference(new ReferenceExpression(binding), null).toReference().getBinding()).collect(Collectors.toList());
-    BranchElimTreeNode newNode = new BranchElimTreeNode(newReference, newContextTail);
-    for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-      ConstructorClause newClause = newNode.addClause(clause.getConstructor(), DependentLink.Helper.toNames(clause.getParameters()));
-      for (DependentLink linkOld = clause.getParameters(), linkNew = newClause.getParameters(); linkOld.hasNext(); linkOld = linkOld.getNext(), linkNew = linkNew.getNext()) {
-        myExprSubstitution.add(linkOld, new ReferenceExpression(linkNew));
-      }
-      for (int i = 0; i < clause.getTailBindings().size(); i++) {
-        myExprSubstitution.add(clause.getTailBindings().get(i), new ReferenceExpression(newClause.getTailBindings().get(i)));
-      }
-
-      newClause.setChild(clause.getChild().accept(this, null));
-
-      myExprSubstitution.removeAll(DependentLink.Helper.toContext(clause.getParameters()));
-      myExprSubstitution.removeAll(clause.getTailBindings());
-    }
-
-    if (branchNode.getOtherwiseClause() != null) {
-      OtherwiseClause newClause = newNode.addOtherwiseClause();
-      newClause.setChild(branchNode.getOtherwiseClause().getChild().accept(this, null));
-    }
-
-    return newNode;
-  }
-
-  @Override
-  public LeafElimTreeNode visitLeaf(LeafElimTreeNode leafNode, Void params) {
-    LeafElimTreeNode result = new LeafElimTreeNode(leafNode.getArrow(), leafNode.getExpression().accept(this, null));
-    if (leafNode.getMatched() != null) {
-      List<Binding> matched = new ArrayList<>(leafNode.getMatched().size());
-      for (Binding binding : leafNode.getMatched()) {
-        Expression replacement = myExprSubstitution.get(binding);
-        matched.add(replacement != null ? replacement.toReference().getBinding() : binding);
-      }
-      result.setMatched(matched);
-    }
-    return result;
-  }
-
-  @Override
-  public ElimTreeNode visitEmpty(EmptyElimTreeNode emptyNode, Void params) {
-    return emptyNode;
-  }
-
-  @Override
   public UniverseExpression visitUniverse(UniverseExpression expr, Void params) {
     return myLevelSubstitution.isEmpty() ? expr : new UniverseExpression(expr.getSort().subst(myLevelSubstitution));
   }
@@ -221,7 +153,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   public LetExpression visitLet(LetExpression letExpression, Void params) {
     List<LetClause> clauses = new ArrayList<>(letExpression.getClauses().size());
     for (LetClause clause : letExpression.getClauses()) {
-      LetClause newClause = visitLetClause(clause);
+      LetClause newClause = new LetClause(clause.getName(), clause.getExpression().accept(this, null));
       clauses.add(newClause);
       myExprSubstitution.add(clause, new ReferenceExpression(newClause));
     }
@@ -231,19 +163,31 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   }
 
   @Override
-  public Expression visitOfType(OfTypeExpression expr, Void params) {
-    return new OfTypeExpression(expr.getExpression().accept(this, null), expr.getTypeOf().accept(this, null));
+  public Expression visitCase(CaseExpression expr, Void params) {
+    List<Expression> arguments = expr.getArguments().stream().map(arg -> arg.accept(this, null)).collect(Collectors.toList());
+    DependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), myExprSubstitution, myLevelSubstitution);
+    Expression type = expr.getResultType().accept(this, null);
+    DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
+    return new CaseExpression(parameters, type, substElimTree(expr.getElimTree()), arguments);
   }
 
-  public LetClause visitLetClause(LetClause clause) {
-    List<SingleDependentLink> parameters = new ArrayList<>(clause.getParameters().size());
-    parameters.addAll(clause.getParameters().stream().map(link -> DependentLink.Helper.subst(link, myExprSubstitution, myLevelSubstitution)).collect(Collectors.toList()));
-    List<Sort> sorts = clause.getSortList().stream().map(sort -> sort.subst(myLevelSubstitution)).collect(Collectors.toList());
-    Type resultType = clause.getResultType() == null ? null : clause.getResultType().subst(myExprSubstitution, myLevelSubstitution);
-    ElimTreeNode elimTree = clause.getElimTree().accept(this, null);
-    for (SingleDependentLink link : clause.getParameters()) {
-      DependentLink.Helper.freeSubsts(link, myExprSubstitution);
+  private ElimTree substElimTree(ElimTree elimTree) {
+    DependentLink vars = DependentLink.Helper.subst(elimTree.getParameters(), myExprSubstitution, myLevelSubstitution);
+    if (elimTree instanceof LeafElimTree) {
+      elimTree = new LeafElimTree(vars, ((LeafElimTree) elimTree).getExpression().accept(this, null));
+    } else {
+      Map<Constructor, ElimTree> children = new HashMap<>();
+      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
+        children.put(entry.getKey(), substElimTree(entry.getValue()));
+      }
+      elimTree = new BranchElimTree(vars, children);
     }
-    return new LetClause(clause.getName(), sorts, parameters, resultType, elimTree);
+    DependentLink.Helper.freeSubsts(elimTree.getParameters(), myExprSubstitution);
+    return elimTree;
+  }
+
+  @Override
+  public Expression visitOfType(OfTypeExpression expr, Void params) {
+    return new OfTypeExpression(expr.getExpression().accept(this, null), expr.getTypeOf().accept(this, null));
   }
 }

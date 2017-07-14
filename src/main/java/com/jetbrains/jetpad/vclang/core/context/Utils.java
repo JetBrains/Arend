@@ -1,33 +1,31 @@
 package com.jetbrains.jetpad.vclang.core.context;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
-
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class Utils {
-  public static void removeFromList(List<?> list, Abstract.Argument argument) {
-    if (argument instanceof Abstract.TelescopeArgument) {
-      for (String ignored : ((Abstract.TelescopeArgument) argument).getNames()) {
-        list.remove(list.size() - 1);
-      }
-    } else {
-      list.remove(list.size() - 1);
-    }
-  }
-
-  public static void removeFromList(List<?> list, List<? extends Abstract.Argument> arguments) {
-    for (Abstract.Argument argument : arguments) {
-      removeFromList(list, argument);
-    }
-  }
-
   public static void trimToSize(List<?> list, int size) {
     if (size < list.size()) {
       list.subList(size, list.size()).clear();
+    }
+  }
+
+  public static class SetContextSaver<K> implements AutoCloseable {
+    private final Set<K> mySet;
+    private final Set<K> myOriginalSet;
+
+    public SetContextSaver(Set<K> set) {
+      mySet = set;
+      myOriginalSet = new HashSet<>(mySet);
+    }
+
+    public SetContextSaver(Map<K, ?> map) {
+      mySet = map.keySet();
+      myOriginalSet = new HashSet<>(mySet);
+    }
+
+    @Override
+    public void close() {
+      mySet.retainAll(myOriginalSet);
     }
   }
 
@@ -74,17 +72,5 @@ public class Utils {
       myContext.clear();
       myContext.addAll(myOldContext);
     }
-  }
-
-  public static ExprSubstitution matchParameters(DependentLink link, List<Expression> parameters) {
-    ExprSubstitution substs = new ExprSubstitution();
-    for (Expression parameter : parameters) {
-      if (!link.hasNext()) {
-        return null;
-      }
-      substs.add(link, parameter);
-      link = link.getNext();
-    }
-    return substs;
   }
 }

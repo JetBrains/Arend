@@ -1,10 +1,9 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.List;
@@ -46,17 +45,11 @@ public class FunCallExpression extends DefCallExpression {
 
   @Override
   public Expression getStuckExpression() {
-    if (!(getDefinition().getElimTree() instanceof BranchElimTreeNode)) {
+    if ((getDefinition().getBody() instanceof BranchElimTree)) {
+      // TODO: What if we stuck on another argument?
+      return myArguments.get(DependentLink.Helper.size(((BranchElimTree) getDefinition().getBody()).getParameters())).getStuckExpression();
+    } else {
       return null;
     }
-    Binding binding = ((BranchElimTreeNode) getDefinition().getElimTree()).getReference();
-    int i = 0;
-    for (DependentLink param = getDefinition().getParameters(); param.hasNext(); param = param.getNext()) {
-      if (param == binding) {
-        return myArguments.get(i).getStuckExpression();
-      }
-      i++;
-    }
-    return null;
   }
 }

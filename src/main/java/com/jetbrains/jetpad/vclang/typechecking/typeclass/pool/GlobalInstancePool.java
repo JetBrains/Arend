@@ -23,7 +23,7 @@ public class GlobalInstancePool implements ClassViewInstancePool {
     myInstanceProvider = instanceProvider;
   }
 
-  private Expression findInstance(Abstract.DefCallExpression defCall, int paramIndex, Expression classifyingExpression, Abstract.Definition classView) {
+  private Expression findInstance(Abstract.ReferenceExpression defCall, int paramIndex, Expression classifyingExpression, Abstract.Definition classView) {
     DefCallExpression classifyingDefCall = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF).toDefCall();
     if (classifyingDefCall == null) {
       return null;
@@ -33,7 +33,7 @@ public class GlobalInstancePool implements ClassViewInstancePool {
     for (Abstract.ClassViewInstance instance : instances) {
       if ((classView instanceof Abstract.ClassView && instance.getClassView().getReferent() == classView ||
            classView instanceof Abstract.ClassDefinition &&
-             ((Abstract.ClassView) instance.getClassView().getReferent()).getUnderlyingClassDefCall().getReferent() == classView) &&
+             ((Abstract.ClassView) instance.getClassView().getReferent()).getUnderlyingClassReference().getReferent() == classView) &&
           instance.getClassifyingDefinition() == classifyingDefCall.getDefinition().getAbstractDefinition()) {
         Definition definition = myTypecheckerState.getTypechecked(instance);
         if (definition.status().headerIsOK()) {
@@ -45,12 +45,12 @@ public class GlobalInstancePool implements ClassViewInstancePool {
   }
 
   @Override
-  public Expression getInstance(Abstract.DefCallExpression defCall, Expression classifyingExpression, Abstract.ClassView classView) {
+  public Expression getInstance(Abstract.ReferenceExpression defCall, Expression classifyingExpression, Abstract.ClassView classView) {
     return findInstance(defCall, 0, classifyingExpression, classView);
   }
 
   @Override
-  public Expression getInstance(Abstract.DefCallExpression defCall, int paramIndex, Expression classifyingExpression, Abstract.ClassDefinition classDefinition) {
+  public Expression getInstance(Abstract.ReferenceExpression defCall, int paramIndex, Expression classifyingExpression, Abstract.ClassDefinition classDefinition) {
     return findInstance(defCall, paramIndex, classifyingExpression, classDefinition);
   }
 }

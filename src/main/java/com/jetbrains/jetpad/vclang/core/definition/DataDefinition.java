@@ -1,11 +1,9 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.UniverseExpression;
-import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
@@ -75,30 +73,13 @@ public class DataDefinition extends Definition {
     return myConstructors;
   }
 
-  public List<ConCallExpression> getMatchedConstructors(DataCallExpression dataCall) {
-    List<ConCallExpression> result = new ArrayList<>();
+  public Constructor getConstructor(Abstract.Constructor abstractCon) {
     for (Constructor constructor : myConstructors) {
-      if (!constructor.status().headerIsOK())
-        continue;
-      List<? extends Expression> matchedParameters;
-      if (constructor.getPatterns() != null) {
-        Pattern.MatchResult matchResult = constructor.getPatterns().match(dataCall.getDefCallArguments());
-        if (matchResult instanceof Pattern.MatchMaybeResult) {
-          return null;
-        } else if (matchResult instanceof Pattern.MatchFailedResult) {
-          continue;
-        } else if (matchResult instanceof Pattern.MatchOKResult) {
-          matchedParameters = ((Pattern.MatchOKResult) matchResult).expressions;
-        } else {
-          throw new IllegalStateException();
-        }
-      } else {
-        matchedParameters = dataCall.getDefCallArguments();
+      if (constructor.getAbstractDefinition().equals(abstractCon)) {
+        return constructor;
       }
-
-      result.add(new ConCallExpression(constructor, dataCall.getSortArgument(), new ArrayList<>(matchedParameters), new ArrayList<>()));
     }
-    return result;
+    return null;
   }
 
   public Constructor getConstructor(String name) {
@@ -117,6 +98,15 @@ public class DataDefinition extends Definition {
   public boolean matchesOnInterval() { return myMatchesOnInterval; }
 
   public void setMatchesOnInterval() { myMatchesOnInterval = true; }
+
+  public boolean hasIndexedConstructors() {
+    for (Constructor constructor : myConstructors) {
+      if (constructor.getPatterns() != null) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   @Override
   public Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument) {
@@ -140,10 +130,5 @@ public class DataDefinition extends Definition {
       args.addAll(arguments);
       return new DataCallExpression(this, sortArgument, args);
     }
-  }
-
-  @Override
-  public DataCallExpression getDefCall(Sort sortArgument, List<Expression> args) {
-    return new DataCallExpression(this, sortArgument, args);
   }
 }

@@ -52,9 +52,7 @@ public class FieldSet implements ReadonlyFieldSet {
   }
 
   public void addFieldsFrom(ReadonlyFieldSet other) {
-    for (ClassField field : other.getFields()) {
-      myFields.add(field);
-    }
+    myFields.addAll(other.getFields());
   }
 
   public boolean implementField(ClassField field, Implementation impl) {
@@ -107,7 +105,10 @@ public class FieldSet implements ReadonlyFieldSet {
 
     DependentLink thisParam = ExpressionFactory.parameter("\\this", thisClass);
     Expression expr = baseType.subst(field.getThisParameter(), new ReferenceExpression(thisParam)).normalize(NormalizeVisitor.Mode.WHNF);
-    mySort = mySort.max(expr.getType().toSort());
+    Sort sort = expr.getType().toSort();
+    if (sort != null) {
+      mySort = mySort.max(sort);
+    }
   }
 
   public static <P> FieldSet applyVisitorToImplemented(ReadonlyFieldSet fieldSet, ReadonlyFieldSet parentFieldSet, ExpressionVisitor<P, Expression> visitor, P arg) {

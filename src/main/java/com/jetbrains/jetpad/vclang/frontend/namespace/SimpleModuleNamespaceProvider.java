@@ -21,6 +21,12 @@ public class SimpleModuleNamespaceProvider extends BaseModuleNamespaceProvider i
     return ns;
   }
 
+  @Override
+  public void unregisterModule(ModulePath path) {
+    SimpleModuleNamespace ns = ensureModuleNamespace(root(), path);
+    ns.unregisterClass();
+  }
+
   private SimpleModuleNamespace registerModuleNs(ModulePath modulePath, Abstract.ClassDefinition module) {
     if (myMap.get(module) != null) throw new IllegalStateException();
     SimpleModuleNamespace ns = ensureModuleNamespace(root(), modulePath);

@@ -4,11 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Created by user on 12/16/16.
- */
 public class TestCallGraph extends BaseCallGraph<TestVertex> {
-  public Map<TestVertex, Set<RecursiveBehavior<TestVertex>>> myErrorInfo = new HashMap<>();
+  public final Map<TestVertex, Set<RecursiveBehavior<TestVertex>>> myErrorInfo = new HashMap<>();
 
   public TestCallGraph(Set<BaseCallMatrix<TestVertex>> graph) {
     add(graph);

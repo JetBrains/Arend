@@ -1,14 +1,15 @@
 package com.jetbrains.jetpad.vclang.frontend.storage;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.frontend.parser.ParseSource;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -20,13 +21,13 @@ import java.nio.file.Paths;
 public class PreludeStorage implements Storage<PreludeStorage.SourceId> {
   // It is difficult to handle this in a uniform way due to differences in OS file systems
   // (and bugs in JDK), therefore all that is left is to be careful in keeping all these paths synced.
-  private static Path BASE_PATH = Paths.get("lib", "Prelude");
-  public static Path SOURCE_PATH = FileStorage.sourceFile(BASE_PATH);
-  public static Path CACHE_PATH = FileStorage.cacheFile(BASE_PATH, 0);
-  public static String SOURCE_RESOURCE_PATH = "/lib/" + SOURCE_PATH.getFileName();
-  public static String CACHE_RESOURCE_PATH = "/lib/" + CACHE_PATH.getFileName();
+  private static final Path BASE_PATH = Paths.get("lib", "Prelude");
+  public static final Path SOURCE_PATH = FileStorage.sourceFile(BASE_PATH);
+  public static final Path CACHE_PATH = FileStorage.cacheFile(BASE_PATH);
+  public static final String SOURCE_RESOURCE_PATH = "/lib/" + SOURCE_PATH.getFileName();
+  public static final String CACHE_RESOURCE_PATH = "/lib/" + CACHE_PATH.getFileName();
 
-  public static ModulePath PRELUDE_MODULE_PATH = new ModulePath("Prelude");
+  public static final ModulePath PRELUDE_MODULE_PATH = new ModulePath("Prelude");
   public final SourceId preludeSourceId = new SourceId();
   private final NameResolver myNameResolver;
 
@@ -48,7 +49,7 @@ public class PreludeStorage implements Storage<PreludeStorage.SourceId> {
   }
 
   @Override
-  public SourceId locateModule(ModulePath modulePath) {
+  public SourceId locateModule(@Nonnull ModulePath modulePath) {
     if (modulePath.getParent().toList().isEmpty() && modulePath.getName().equals("Prelude")) {
       return preludeSourceId;
     } else {
@@ -57,18 +58,30 @@ public class PreludeStorage implements Storage<PreludeStorage.SourceId> {
   }
 
   @Override
-  public boolean isAvailable(SourceId sourceId) {
+  public boolean isAvailable(@Nonnull SourceId sourceId) {
     return sourceId == preludeSourceId;
   }
 
   @Override
-  public Abstract.ClassDefinition loadSource(SourceId sourceId, ErrorReporter errorReporter) throws IOException {
-    if (sourceId != preludeSourceId) return null;
-    InputStream stream = Prelude.class.getResourceAsStream(SOURCE_RESOURCE_PATH);
-    if (stream == null) {
-      throw new IllegalStateException("Prelude source resource not found");
+  public LoadResult loadSource(@Nonnull SourceId sourceId, @Nonnull ErrorReporter errorReporter) {
+    try {
+      if (sourceId != preludeSourceId) return null;
+      InputStream stream = Prelude.class.getResourceAsStream(SOURCE_RESOURCE_PATH);
+      if (stream == null) {
+        throw new IllegalStateException("Prelude source resource not found");
+      }
+      Concrete.ClassDefinition result = new ParseSource(preludeSourceId, new InputStreamReader(stream, StandardCharsets.UTF_8)) {}.load(
+          errorReporter, null, new EmptyScope(), myNameResolver);
+      return LoadResult.make(result, 1);
+    } catch (IOException e) {
+      throw new IllegalStateException(e);
     }
-    return new ParseSource(preludeSourceId, new InputStreamReader(stream, StandardCharsets.UTF_8)) {}.load(errorReporter, null, new EmptyScope(), myNameResolver);
+  }
+
+  @Override
+  public long getAvailableVersion(@Nonnull SourceId sourceId) {
+    if (sourceId != preludeSourceId) return 0;
+    return 1;  // TODO: no really
   }
 
 

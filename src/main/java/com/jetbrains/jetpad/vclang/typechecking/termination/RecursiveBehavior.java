@@ -6,9 +6,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-/**
- * Created by user on 12/16/16.
- */
 public class RecursiveBehavior<T> {
   public List<BaseCallMatrix.R> myBehavior;
   public List<String> myLabels;

@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.frontend.parser.VcgrammarParser.*;
 
@@ -29,10 +30,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
     LiteralContext literal = ((AtomLiteralContext) ctx.atom()).literal();
     if (literal instanceof UnknownContext) {
-      return new Concrete.NameArgument(tokenPosition(literal.getStart()), true, "_");
+      Concrete.Position position = tokenPosition(literal.getStart());
+      return new Concrete.NameArgument(position, true, new Concrete.LocalVariable(position, "_"));
     }
     if (literal instanceof IdContext && ((IdContext) literal).name() instanceof NameIdContext) {
-      return new Concrete.NameArgument(tokenPosition(literal.getStart()), true, ((NameIdContext) ((IdContext) literal).name()).ID().getText());
+      Concrete.Position position = tokenPosition(literal.getStart());
+      return new Concrete.NameArgument(position, true, new Concrete.LocalVariable(position, ((NameIdContext) ((IdContext) literal).name()).ID().getText()));
     }
     return null;
   }
@@ -86,15 +89,15 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return (Concrete.Expression) visit(expr);
   }
 
-  public Concrete.Expression visitExpr(AtomContext expr) {
+  private Concrete.Expression visitExpr(AtomContext expr) {
     return (Concrete.Expression) visit(expr);
   }
 
-  public Concrete.Expression visitExpr(LiteralContext expr) {
+  private Concrete.Expression visitExpr(LiteralContext expr) {
     return (Concrete.Expression) visit(expr);
   }
 
-  public Concrete.UniverseExpression visitExpr(UniverseAtomContext expr) {
+  private Concrete.UniverseExpression visitExpr(UniverseAtomContext expr) {
     return (Concrete.UniverseExpression) visit(expr);
   }
 
@@ -180,17 +183,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return Abstract.NamespaceCommandStatement.Kind.EXPORT;
   }
 
-  public Abstract.Definition.Arrow visitArrow(ArrowContext arrowCtx) {
-    if (arrowCtx instanceof ArrowLeftContext) {
-      return Abstract.Definition.Arrow.LEFT;
-    }
-    if (arrowCtx instanceof ArrowRightContext) {
-      return Abstract.Definition.Arrow.RIGHT;
-    }
-    throw new IllegalStateException();
-  }
-
-  public Abstract.Precedence visitPrecedence(PrecedenceContext ctx) {
+  private Abstract.Precedence visitPrecedence(PrecedenceContext ctx) {
     return (Abstract.Precedence) visit(ctx);
   }
 
@@ -230,56 +223,62 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return Abstract.Precedence.Associativity.RIGHT_ASSOC;
   }
 
-  @Override
-  public Concrete.NamePattern visitAnyPatternAny(AnyPatternAnyContext ctx) {
-    return new Concrete.NamePattern(tokenPosition(ctx.start), null);
+  private Concrete.Pattern visitPattern(PatternContext ctx) {
+    return (Concrete.Pattern) visit(ctx);
   }
 
   @Override
-  public Concrete.AnyConstructorPattern visitAnyPatternConstructor(AnyPatternConstructorContext ctx) {
-    return new Concrete.AnyConstructorPattern(tokenPosition(ctx.start));
-  }
-
-  @Override
-  public Concrete.Pattern visitPatternAny(PatternAnyContext ctx) {
-    return (Concrete.Pattern) visit(ctx.anyPattern());
+  public Concrete.Pattern visitPatternAtom(PatternAtomContext ctx) {
+    return (Concrete.Pattern) visit(ctx.atomPattern());
   }
 
   @Override
   public Concrete.Pattern visitPatternConstructor(PatternConstructorContext ctx) {
-    if (ctx.name() instanceof NameIdContext && ctx.patternArg().size() == 0) {
-      return new Concrete.NamePattern(tokenPosition(ctx.start), ((NameIdContext) ctx.name()).ID().getText());
+    if (ctx.name() instanceof NameIdContext && ctx.atomPatternOrID().size() == 0) {
+      return new Concrete.NamePattern(tokenPosition(ctx.start), new Concrete.LocalVariable(tokenPosition(((NameIdContext) ctx.name()).ID().getSymbol()), ((NameIdContext) ctx.name()).ID().getText()));
     } else {
-      return new Concrete.ConstructorPattern(tokenPosition(ctx.start), visitName(ctx.name()), visitPatternArgs(ctx.patternArg()));
+      return new Concrete.ConstructorPattern(tokenPosition(ctx.start), visitName(ctx.name()), ctx.atomPatternOrID().stream().map(this::visitAtomPattern).collect(Collectors.toList()));
     }
   }
 
-  @Override
-  public Concrete.PatternArgument visitPatternArgExplicit(PatternArgExplicitContext ctx) {
-    return new Concrete.PatternArgument(tokenPosition(ctx.start), (Concrete.Pattern) visit(ctx.pattern()), true, false);
+  private Concrete.Pattern visitAtomPattern(AtomPatternOrIDContext ctx) {
+    return (Concrete.Pattern) visit(ctx);
   }
 
   @Override
-  public Concrete.PatternArgument visitPatternArgImplicit(PatternArgImplicitContext ctx) {
-    return new Concrete.PatternArgument(tokenPosition(ctx.start), (Concrete.Pattern) visit(ctx.pattern()), false, false);
+  public Concrete.Pattern visitPatternExplicit(PatternExplicitContext ctx) {
+    return visitPattern(ctx.pattern());
   }
 
   @Override
-  public Concrete.PatternArgument visitPatternArgAny(PatternArgAnyContext ctx) {
-    return new Concrete.PatternArgument(tokenPosition(ctx.start), (Concrete.Pattern) visit(ctx.anyPattern()), true, false);
-  }
-
-  @Override
-  public Concrete.PatternArgument visitPatternArgID(PatternArgIDContext ctx) {
-    return new Concrete.PatternArgument(tokenPosition(ctx.start), new Concrete.NamePattern(tokenPosition(ctx.start), ctx.ID().getText()), true, false);
-  }
-
-  private List<Concrete.PatternArgument> visitPatternArgs(List<PatternArgContext> patternArgContexts) {
-    List<Concrete.PatternArgument> patterns = new ArrayList<>();
-    for (PatternArgContext patternArgCtx : patternArgContexts) {
-      patterns.add((Concrete.PatternArgument) visit(patternArgCtx));
+  public Concrete.Pattern visitPatternImplicit(PatternImplicitContext ctx) {
+    Concrete.Pattern pattern = visitPattern(ctx.pattern());
+    if (pattern != null) {
+      pattern.setExplicit(false);
     }
-    return patterns;
+    return pattern;
+  }
+
+  @Override
+  public Concrete.Pattern visitPatternEmpty(PatternEmptyContext ctx) {
+    return new Concrete.EmptyPattern(tokenPosition(ctx.getStart()));
+  }
+
+  @Override
+  public Concrete.Pattern visitPatternOrIDAtom(PatternOrIDAtomContext ctx) {
+    return (Concrete.Pattern) visit(ctx.atomPattern());
+  }
+
+  @Override
+  public Concrete.Pattern visitPatternID(PatternIDContext ctx) {
+    Concrete.Position position = tokenPosition(ctx.getStart());
+    return new Concrete.NamePattern(position, new Concrete.LocalVariable(position, ctx.ID().getText()));
+  }
+
+  @Override
+  public Concrete.Pattern visitPatternAny(PatternAnyContext ctx) {
+    Concrete.Position position = tokenPosition(ctx.getStart());
+    return new Concrete.NamePattern(position, new Concrete.LocalVariable(position, "_"));
   }
 
   @Override
@@ -292,12 +291,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<Concrete.ClassViewField> fields = new ArrayList<>(ctx.classViewField().size());
 
     Concrete.Expression expr = visitExpr(ctx.expr());
-    if (!(expr instanceof Concrete.DefCallExpression)) {
+    if (!(expr instanceof Concrete.ReferenceExpression)) {
       myErrorReporter.report(new ParserError(expr.getPosition(), "Expected a class"));
       throw new ParseException();
     }
 
-    Concrete.ClassView classView = new Concrete.ClassView(tokenPosition(ctx.getStart()), ctx.ID().getText(), (Concrete.DefCallExpression) expr, visitName(ctx.name()), fields);
+    Concrete.ClassView classView = new Concrete.ClassView(tokenPosition(ctx.getStart()), ctx.ID().getText(), (Concrete.ReferenceExpression) expr, visitName(ctx.name()), fields);
     for (ClassViewFieldContext classViewFieldContext : ctx.classViewField()) {
       fields.add(visitClassViewField(classViewFieldContext, classView));
     }
@@ -318,8 +317,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       Concrete.Expression type = ((Concrete.NewExpression) term).getExpression();
       if (type instanceof Concrete.ClassExtExpression) {
         Concrete.ClassExtExpression classExt = (Concrete.ClassExtExpression) type;
-        if (classExt.getBaseClassExpression() instanceof Concrete.DefCallExpression) {
-          return new Concrete.ClassViewInstance(tokenPosition(ctx.getStart()), ctx.defaultInst() instanceof WithDefaultContext, ctx.ID().getText(), Abstract.Precedence.DEFAULT, arguments, (Concrete.DefCallExpression) classExt.getBaseClassExpression(), classExt.getStatements());
+        if (classExt.getBaseClassExpression() instanceof Concrete.ReferenceExpression) {
+          return new Concrete.ClassViewInstance(tokenPosition(ctx.getStart()), ctx.defaultInst() instanceof WithDefaultContext, ctx.ID().getText(), Abstract.Precedence.DEFAULT, arguments, (Concrete.ReferenceExpression) classExt.getBaseClassExpression(), classExt.getStatements());
         }
       }
     }
@@ -343,11 +342,29 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
+  public List<Concrete.ReferenceExpression> visitElim(ElimContext ctx) {
+    List<Concrete.ReferenceExpression> elimExprs = Collections.emptyList();
+    if (ctx != null && ctx.expr() != null && !ctx.expr().isEmpty()) {
+      elimExprs = checkElimExpressions(ctx.expr().stream().map(this::visitExpr).collect(Collectors.toList()));
+      if (elimExprs == null) {
+        return null;
+      }
+    }
+    return elimExprs;
+  }
+
+  @Override
   public Concrete.FunctionDefinition visitDefFunction(DefFunctionContext ctx) {
-    Concrete.Expression resultType = ctx.expr().size() == 2 ? visitExpr(ctx.expr(0)) : null;
-    Concrete.Expression term = visitExpr(ctx.expr().size() == 2 ? ctx.expr(1) : ctx.expr(0));
+    Concrete.Expression resultType = ctx.expr() != null ? visitExpr(ctx.expr()) : null;
+    Concrete.FunctionBody body;
+    if (ctx.functionBody() instanceof WithElimContext) {
+      WithElimContext elimCtx = ((WithElimContext) ctx.functionBody());
+      body = new Concrete.ElimFunctionBody(tokenPosition(elimCtx.start), visitElim(elimCtx.elim()), visitClauses(elimCtx.clauses()));
+    } else {
+      body = new Concrete.TermFunctionBody(tokenPosition(ctx.start), visitExpr(((WithoutElimContext) ctx.functionBody()).expr()));
+    }
     List<Concrete.Statement> statements = visitWhere(ctx.where());
-    Concrete.FunctionDefinition result = new Concrete.FunctionDefinition(tokenPosition(ctx.getStart()), visitName(ctx.name()), visitPrecedence(ctx.precedence()), visitFunctionArguments(ctx.tele()), resultType, visitArrow(ctx.arrow()), term, statements);
+    Concrete.FunctionDefinition result = new Concrete.FunctionDefinition(tokenPosition(ctx.getStart()), visitName(ctx.name()), visitPrecedence(ctx.precedence()), visitFunctionArguments(ctx.tele()), resultType, body, statements);
 
     for (Iterator<Concrete.Statement> iterator = statements.iterator(); iterator.hasNext(); ) {
       Concrete.Statement statement = iterator.next();
@@ -383,57 +400,44 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.DataDefinition visitDefData(DefDataContext ctx) {
     Concrete.Expression universe = ctx.expr() == null ? null : (Concrete.Expression) visit(ctx.expr());
-    List<Concrete.Constructor> constructors = new ArrayList<>(ctx.constructorDef().size());
-    List<Concrete.Condition> conditions = ctx.conditionDef() != null ? visitConditionDef(ctx.conditionDef()) : null;
-    Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(tokenPosition(ctx.getStart()), visitName(ctx.name()), visitPrecedence(ctx.precedence()), visitTeles(ctx.tele()), ctx.isTruncated() instanceof TruncatedContext, universe, constructors, conditions);
-    for (ConstructorDefContext constructorDefContext : ctx.constructorDef()) {
-      try {
-        visitConstructorDef(constructorDefContext, dataDefinition);
-      } catch (ParseException ignored) {
-
-      }
-    }
+    List<Concrete.ReferenceExpression> eliminatedReferences = ctx.dataBody() instanceof DataClausesContext ? visitElim(((DataClausesContext) ctx.dataBody()).elim()) : null;
+    Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(tokenPosition(ctx.getStart()), visitName(ctx.name()), visitPrecedence(ctx.precedence()), visitTeles(ctx.tele()), eliminatedReferences, ctx.isTruncated() instanceof TruncatedContext, universe, new ArrayList<>());
+    visitDataBody(ctx.dataBody(), dataDefinition);
     return dataDefinition;
   }
 
-  @Override
-  public List<Concrete.Condition> visitConditionDef(ConditionDefContext ctx) {
-    List<Concrete.Condition> result = new ArrayList<>(ctx.condition().size());
-    for (ConditionContext conditionCtx : ctx.condition()) {
+  private void visitDataBody(DataBodyContext ctx, Concrete.DataDefinition def) {
+    if (ctx instanceof DataClausesContext) {
+      for (ConstructorClauseContext clauseCtx : ((DataClausesContext) ctx).constructorClause()) {
+        try {
+          def.getConstructorClauses().add(new Concrete.ConstructorClause(tokenPosition(clauseCtx.start), clauseCtx.pattern().stream().map(this::visitPattern).collect(Collectors.toList()), visitConstructors(clauseCtx.constructor(), def)));
+        } catch (ParseException ignored) {
+
+        }
+      }
+    } else if (ctx instanceof DataConstructorsContext) {
+      def.getConstructorClauses().add(new Concrete.ConstructorClause(tokenPosition(ctx.start), null, visitConstructors(((DataConstructorsContext) ctx).constructor(), def)));
+    }
+  }
+
+  private List<Concrete.Constructor> visitConstructors(List<ConstructorContext> conContexts, Concrete.DataDefinition def) {
+    List<Concrete.Constructor> result = new ArrayList<>(conContexts.size());
+    for (ConstructorContext conCtx : conContexts) {
+      boolean hasConditions = conCtx.elim() != null || !conCtx.clause().isEmpty();
       try {
-        result.add(visitCondition(conditionCtx));
+        result.add(new Concrete.Constructor(
+          tokenPosition(conCtx.start),
+          visitName(conCtx.name()),
+          visitPrecedence(conCtx.precedence()),
+          def,
+          visitTeles(conCtx.tele()),
+          hasConditions ? visitElim(conCtx.elim()) : null,
+          hasConditions ? conCtx.clause().stream().map(this::visitClause).collect(Collectors.toList()) : null));
       } catch (ParseException ignored) {
 
       }
     }
     return result;
-  }
-
-  @Override
-  public Concrete.Condition visitCondition(ConditionContext ctx) {
-    return new Concrete.Condition(tokenPosition(ctx.start), visitName(ctx.name()), visitPatternArgs(ctx.patternArg()), visitExpr(ctx.expr()));
-  }
-
-  private void visitConstructorDef(ConstructorDefContext ctx, Concrete.DataDefinition def) {
-    List<Concrete.PatternArgument> patterns = null;
-
-    if (ctx instanceof WithPatternsContext) {
-      WithPatternsContext wpCtx = (WithPatternsContext) ctx;
-      String dataDefName = visitName(wpCtx.name());
-      if (!def.getName().equals(dataDefName)) {
-        myErrorReporter.report(new ParserError(tokenPosition(wpCtx.name().getStart()), "Expected a data type name: " + def.getName()));
-        return;
-      }
-
-      patterns = visitPatternArgs(wpCtx.patternArg());
-    }
-
-    List<ConstructorContext> constructorCtxs = ctx instanceof WithPatternsContext ?
-        ((WithPatternsContext) ctx).constructor() : Collections.singletonList(((NoPatternsContext) ctx).constructor());
-
-    for (ConstructorContext conCtx : constructorCtxs) {
-      def.getConstructors().add(new Concrete.Constructor(tokenPosition(conCtx.name().getStart()), visitName(conCtx.name()), visitPrecedence(conCtx.precedence()), visitTeles(conCtx.tele()), def, patterns));
-    }
   }
 
   private void misplacedDefinitionError(Concrete.Position position) {
@@ -553,19 +557,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   private List<Concrete.Argument> visitLamTele(TeleContext tele) {
     List<Concrete.Argument> arguments = new ArrayList<>(3);
-    if (tele instanceof TeleLiteralContext) {
-      LiteralContext literalContext = ((TeleLiteralContext) tele).literal();
-      if (literalContext instanceof IdContext && ((IdContext) literalContext).name() instanceof NameIdContext) {
-        TerminalNode id = ((NameIdContext) ((IdContext) literalContext).name()).ID();
-        arguments.add(new Concrete.NameArgument(tokenPosition(id.getSymbol()), true, id.getText()));
-      } else
-      if (literalContext instanceof UnknownContext) {
-        arguments.add(new Concrete.NameArgument(tokenPosition(literalContext.getStart()), true, null));
-      } else {
-        myErrorReporter.report(new ParserError(tokenPosition(literalContext.getStart()), "Unexpected token. Expected an identifier."));
-        throw new ParseException();
-      }
-    } else {
+    if (tele instanceof ExplicitContext || tele instanceof ImplicitContext) {
       boolean explicit = tele instanceof ExplicitContext;
       TypedExprContext typedExpr = explicit ? ((ExplicitContext) tele).typedExpr() : ((ImplicitContext) tele).typedExpr();
       ExprContext varsExpr;
@@ -584,15 +576,33 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           arguments.addAll(vars);
         } else {
           for (Concrete.NameArgument var : vars) {
-            arguments.add(new Concrete.NameArgument(var.getPosition(), false, var.getName()));
+            arguments.add(new Concrete.NameArgument(var.getPosition(), false, var.getReferable()));
           }
         }
       } else {
-        List<String> args = new ArrayList<>(vars.size());
+        List<Abstract.ReferableSourceNode> args = new ArrayList<>(vars.size());
         for (Concrete.NameArgument var : vars) {
-          args.add(var.getName());
+          args.add(var.getReferable());
         }
         arguments.add(new Concrete.TelescopeArgument(tokenPosition(tele.getStart()), explicit, args, typeExpr));
+      }
+    } else {
+      boolean ok = tele instanceof TeleLiteralContext;
+      if (ok) {
+        LiteralContext literalContext = ((TeleLiteralContext) tele).literal();
+        if (literalContext instanceof IdContext && ((IdContext) literalContext).name() instanceof NameIdContext) {
+          TerminalNode id = ((NameIdContext) ((IdContext) literalContext).name()).ID();
+          Concrete.Position position = tokenPosition(id.getSymbol());
+          arguments.add(new Concrete.NameArgument(position, true, new Concrete.LocalVariable(position, id.getText())));
+        } else if (literalContext instanceof UnknownContext) {
+          arguments.add(new Concrete.NameArgument(tokenPosition(literalContext.getStart()), true, null));
+        } else {
+          ok = false;
+        }
+      }
+      if (!ok) {
+        myErrorReporter.report(new ParserError(tokenPosition(tele.start), "Unexpected token, expected an identifier"));
+        throw new ParseException();
       }
     }
     return arguments;
@@ -612,8 +622,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.DefCallExpression visitId(IdContext ctx) {
-    return new Concrete.DefCallExpression(tokenPosition(ctx.name().getStart()), null, visitName(ctx.name()));
+  public Concrete.ReferenceExpression visitId(IdContext ctx) {
+    return new Concrete.ReferenceExpression(tokenPosition(ctx.name().getStart()), null, visitName(ctx.name()));
   }
 
   @Override
@@ -731,7 +741,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return new Concrete.UniverseExpression(pos, new Concrete.NumberLevelExpression(pos, 0), new Concrete.NumberLevelExpression(pos, -1));
   }
 
-  public Concrete.LevelExpression visitLevel(LevelAtomContext ctx) {
+  private Concrete.LevelExpression visitLevel(LevelAtomContext ctx) {
     return (Concrete.LevelExpression) visit(ctx);
   }
 
@@ -794,9 +804,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
       if (typedExpr instanceof TypedContext) {
         List<Concrete.NameArgument> args = getVars(((TypedContext) typedExpr).expr(0));
-        List<String> vars = new ArrayList<>(args.size());
+        List<Abstract.ReferableSourceNode> vars = new ArrayList<>(args.size());
         for (Concrete.NameArgument arg : args) {
-          vars.add(arg.getName());
+          vars.add(arg.getReferable());
         }
         arguments.add(new Concrete.TelescopeArgument(tokenPosition(tele.getStart()), explicit, vars, visitExpr(((TypedContext) typedExpr).expr(1))));
       } else {
@@ -854,7 +864,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.Expression visitBinOp(BinOpContext ctx) {
     Concrete.Expression left = null;
-    Concrete.DefCallExpression binOp = null;
+    Concrete.ReferenceExpression binOp = null;
     List<Abstract.BinOpSequenceElem> sequence = new ArrayList<>(ctx.binOpLeft().size());
 
     for (BinOpLeftContext leftContext : ctx.binOpLeft()) {
@@ -866,7 +876,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       } else {
         sequence.add(new Abstract.BinOpSequenceElem(binOp, expr));
       }
-      binOp = new Concrete.DefCallExpression(tokenPosition(leftContext.infix().getStart()), null, name);
+      binOp = new Concrete.ReferenceExpression(tokenPosition(leftContext.infix().getStart()), null, name);
     }
 
     Concrete.Expression expr = (Concrete.Expression)visit(ctx.binOpArg());
@@ -884,7 +894,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Concrete.Expression expression = visitExpr(ctx.atom());
     for (FieldAccContext fieldAccContext : ctx.fieldAcc()) {
       if (fieldAccContext instanceof ClassFieldContext) {
-        expression = new Concrete.DefCallExpression(tokenPosition(fieldAccContext.getStart()), expression, visitName(((ClassFieldContext) fieldAccContext).name()));
+        expression = new Concrete.ReferenceExpression(tokenPosition(fieldAccContext.getStart()), expression, visitName(((ClassFieldContext) fieldAccContext).name()));
       } else
       if (fieldAccContext instanceof SigmaFieldContext) {
         expression = new Concrete.ProjExpression(tokenPosition(fieldAccContext.getStart()), expression, Integer.parseInt(((SigmaFieldContext) fieldAccContext).NUMBER().getText()) - 1);
@@ -927,52 +937,42 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return ctx.BIN_OP().getText();
   }
 
+  private List<Concrete.FunctionClause> visitClauses(ClausesContext ctx) {
+    List<ClauseContext> clauses = ctx instanceof ClausesWithBracesContext ? ((ClausesWithBracesContext) ctx).clause() : ((ClausesWithoutBracesContext) ctx).clause();
+    return clauses.stream().map(this::visitClause).collect(Collectors.toList());
+  }
+
   @Override
-  public Concrete.Expression visitExprElim(ExprElimContext ctx) {
-    List<Concrete.Clause> clauses = new ArrayList<>(ctx.clause().size());
-    List<Concrete.Expression> elimExprs = new ArrayList<>();
-    for (ExprContext exprCtx : ctx.expr()) {
-      elimExprs.add(visitExpr(exprCtx));
-    }
+  public Concrete.FunctionClause visitClause(ClauseContext clauseCtx) {
+    List<Concrete.Pattern> patterns = clauseCtx.pattern().stream().map(this::visitPattern).collect(Collectors.toList());
+    return new Concrete.FunctionClause(tokenPosition(clauseCtx.start), patterns, clauseCtx.expr() == null ? null : visitExpr(clauseCtx.expr()));
+  }
 
-    if (ctx.elimCase() instanceof ElimContext) {
-      for (Concrete.Expression elimExpr : elimExprs) {
-        if (!(elimExpr instanceof Concrete.DefCallExpression && ((Concrete.DefCallExpression) elimExpr).getExpression() == null)) {
-          myErrorReporter.report(new ParserError(elimExpr.getPosition(), "\\elim can be applied only to a local variable"));
-          return null;
-        }
-      }
-    }
-
-    for (ClauseContext clauseCtx : ctx.clause()) {
-      List<Concrete.Pattern> patterns = new ArrayList<>();
-      for (PatternContext patternCtx : clauseCtx.pattern()) {
-        patterns.add((Concrete.Pattern) visit(patternCtx));
-      }
-
-      if (patterns.size() != ctx.expr().size()) {
-        myErrorReporter.report(new ParserError(tokenPosition(clauseCtx.getStart()), "Expected: " + ctx.expr().size() + " patterns, got: " + patterns.size()));
+  private List<Concrete.ReferenceExpression> checkElimExpressions(List<? extends Concrete.Expression> expressions) {
+    List<Concrete.ReferenceExpression> result = new ArrayList<>(expressions.size());
+    for (Concrete.Expression elimExpr : expressions) {
+      if (!(elimExpr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) elimExpr).getExpression() == null)) {
+        myErrorReporter.report(new ParserError(elimExpr.getPosition(), "\\elim can be applied only to a local variable"));
         return null;
       }
-
-      if (clauseCtx.arrow() == null) {
-        clauses.add(new Concrete.Clause(tokenPosition(clauseCtx.start), patterns, null, null));
-      } else {
-        Abstract.Definition.Arrow arrow = clauseCtx.arrow() instanceof ArrowRightContext ? Abstract.Definition.Arrow.RIGHT : Abstract.Definition.Arrow.LEFT;
-        clauses.add(new Concrete.Clause(tokenPosition(clauseCtx.getStart()), patterns, arrow, visitExpr(clauseCtx.expr())));
-      }
+      result.add((Concrete.ReferenceExpression) elimExpr);
     }
+    return result;
+  }
 
-    return ctx.elimCase() instanceof CaseContext ?
-      new Concrete.CaseExpression(tokenPosition(ctx.getStart()), elimExprs, clauses) :
-      new Concrete.ElimExpression(tokenPosition(ctx.getStart()), elimExprs, clauses);
+  @Override
+  public Concrete.Expression visitCase(CaseContext ctx) {
+    List<Concrete.Expression> elimExprs = ctx.expr().stream().map(this::visitExpr).collect(Collectors.toList());
+    List<Concrete.FunctionClause> clauses = visitClauses(ctx.clauses());
+
+    return new Concrete.CaseExpression(tokenPosition(ctx.getStart()), elimExprs, clauses);
   }
 
   @Override
   public Concrete.LetClause visitLetClause(LetClauseContext ctx) {
-    List<Concrete.Argument> arguments = visitFunctionArguments(ctx.tele());
+    List<Concrete.Argument> arguments = visitLamTeles(ctx.tele());
     Concrete.Expression resultType = ctx.typeAnnotation() == null ? null : visitExpr(ctx.typeAnnotation().expr());
-    return new Concrete.LetClause(tokenPosition(ctx.getStart()), ctx.ID().getText(), arguments, resultType, visitArrow(ctx.arrow()), visitExpr(ctx.expr()));
+    return new Concrete.LetClause(tokenPosition(ctx.getStart()), ctx.ID().getText(), arguments, resultType, visitExpr(ctx.expr()));
   }
 
   @Override

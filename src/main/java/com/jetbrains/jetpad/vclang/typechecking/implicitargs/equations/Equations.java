@@ -11,7 +11,6 @@ public interface Equations {
   boolean add(Expression expr1, Expression expr2, CMP cmp, Abstract.SourceNode sourceNode, InferenceVariable stuckVar);
   boolean solve(Expression type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode);
   boolean add(Level level1, Level level2, CMP cmp, Abstract.SourceNode sourceNode);
-  boolean add(Expression type, Expression expr, Abstract.SourceNode sourceNode, InferenceVariable stuckVar);
   boolean addVariable(InferenceLevelVariable var);
   void bindVariables(InferenceLevelVariable pVar, InferenceLevelVariable hVar);
   void remove(Equation equation);

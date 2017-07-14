@@ -48,10 +48,21 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
       resultType.accept(exprVisitor, null);
     }
 
-    Abstract.Expression term = def.getTerm();
-    if (term != null) {
-      term.accept(exprVisitor, null);
+    Abstract.FunctionBody body = def.getBody();
+    if (body instanceof Abstract.TermFunctionBody) {
+      ((Abstract.TermFunctionBody) body).getTerm().accept(exprVisitor, null);
     }
+    if (body instanceof Abstract.ElimFunctionBody) {
+      for (Abstract.ReferenceExpression ref : ((Abstract.ElimFunctionBody) body).getEliminatedReferences()) {
+        exprVisitor.visitReference(ref, null);
+      }
+      for (Abstract.FunctionClause clause : ((Abstract.ElimFunctionBody) body).getClauses()) {
+        if (clause.getExpression() != null) {
+          clause.getExpression().accept(exprVisitor, null);
+        }
+      }
+    }
+
 
     return null;
   }
@@ -67,18 +78,18 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
 
   @Override
   public Void visitData(Abstract.DataDefinition def, Scope parentScope) {
-    ExpressionResolveInstanceVisitor exprVisitor = new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider);
+    Scope scope = new DataScope(parentScope, myScopeProvider.forDefinition(def));
+    ExpressionResolveInstanceVisitor exprVisitor = new ExpressionResolveInstanceVisitor(scope, myInstanceProvider);
     exprVisitor.visitArguments(def.getParameters());
 
-    for (Abstract.Constructor constructor : def.getConstructors()) {
-      visitConstructor(constructor, parentScope);
+    if (def.getEliminatedReferences() != null) {
+      for (Abstract.ReferenceExpression ref : def.getEliminatedReferences()) {
+        exprVisitor.visitReference(ref, null);
+      }
     }
-
-    if (def.getConditions() != null) {
-      Scope scope = new DataScope(parentScope, myScopeProvider.forDefinition(def));
-      exprVisitor = new ExpressionResolveInstanceVisitor(scope, myInstanceProvider);
-      for (Abstract.Condition cond : def.getConditions()) {
-        cond.getTerm().accept(exprVisitor, null);
+    for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
+      for (Abstract.Constructor constructor : clause.getConstructors()) {
+        visitConstructor(constructor, scope);
       }
     }
 
@@ -87,7 +98,18 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
 
   @Override
   public Void visitConstructor(Abstract.Constructor def, Scope parentScope) {
-    new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider).visitArguments(def.getArguments());
+    ExpressionResolveInstanceVisitor exprVisitor = new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider);
+    exprVisitor.visitArguments(def.getArguments());
+    if (def.getEliminatedReferences() != null) {
+      for (Abstract.ReferenceExpression ref : def.getEliminatedReferences()) {
+        exprVisitor.visitReference(ref, null);
+      }
+      for (Abstract.FunctionClause clause : def.getClauses()) {
+        if (clause.getExpression() != null) {
+          clause.getExpression().accept(exprVisitor, null);
+        }
+      }
+    }
     return null;
   }
 
@@ -137,7 +159,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
 
   @Override
   public Void visitClassView(Abstract.ClassView def, Scope parentScope) {
-    new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider).visitDefCall(def.getUnderlyingClassDefCall(), null);
+    new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider).visitReference(def.getUnderlyingClassReference(), null);
     return null;
   }
 
@@ -150,7 +172,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
   public Void visitClassViewInstance(Abstract.ClassViewInstance def, Scope parentScope) {
     ExpressionResolveInstanceVisitor exprVisitor = new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider);
     exprVisitor.visitArguments(def.getArguments());
-    exprVisitor.visitDefCall(def.getClassView(), null);
+    exprVisitor.visitReference(def.getClassView(), null);
     for (Abstract.ClassFieldImpl impl : def.getClassFieldImpls()) {
       impl.getImplementation().accept(exprVisitor, null);
     }

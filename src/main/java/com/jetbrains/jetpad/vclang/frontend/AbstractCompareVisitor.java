@@ -3,20 +3,33 @@ package com.jetbrains.jetpad.vclang.frontend;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstract.Expression, Boolean> {
+  private final Map<Abstract.ReferableSourceNode, Abstract.ReferableSourceNode> mySubstitution = new HashMap<>();
+
   @Override
   public Boolean visitApp(Abstract.AppExpression expr1, Abstract.Expression expr2) {
     return expr2 instanceof Abstract.AppExpression && expr1.getFunction().accept(this, ((Abstract.AppExpression) expr2).getFunction()) && expr1.getArgument().getExpression().accept(this, ((Abstract.AppExpression) expr2).getArgument().getExpression());
   }
 
   @Override
-  public Boolean visitDefCall(Abstract.DefCallExpression expr1, Abstract.Expression expr2) {
-    if (!(expr2 instanceof Abstract.DefCallExpression)) return false;
-    Abstract.DefCallExpression defCallExpr2 = (Abstract.DefCallExpression) expr2;
-    return expr1.getName().equals(defCallExpr2.getName());
+  public Boolean visitReference(Abstract.ReferenceExpression expr1, Abstract.Expression expr2) {
+    if (!(expr2 instanceof Abstract.ReferenceExpression)) return false;
+    Abstract.ReferenceExpression defCallExpr2 = (Abstract.ReferenceExpression) expr2;
+    Abstract.ReferableSourceNode ref1 = mySubstitution.get(expr1.getReferent());
+    if (ref1 == null) {
+      ref1 = expr1.getReferent();
+    }
+    return ref1.equals(defCallExpr2.getReferent());
+  }
+
+  @Override
+  public Boolean visitInferenceReference(Abstract.InferenceReferenceExpression expr, Abstract.Expression expr2) {
+    return expr2 instanceof Abstract.InferenceReferenceExpression && expr.getVariable() == ((Abstract.InferenceReferenceExpression) expr2).getVariable();
   }
 
   @Override
@@ -28,13 +41,25 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
     if (arg1.getExplicit() != arg2.getExplicit()) {
       return false;
     }
-    if (arg1 instanceof Abstract.TelescopeArgument) {
-      return arg2 instanceof Abstract.TelescopeArgument && ((Abstract.TelescopeArgument) arg1).getNames().equals(((Abstract.TelescopeArgument) arg2).getNames()) && ((Abstract.TelescopeArgument) arg1).getType().accept(this, ((Abstract.TelescopeArgument) arg2).getType());
+    if (arg1 instanceof Abstract.TelescopeArgument && arg2 instanceof Abstract.TelescopeArgument) {
+      List<? extends Abstract.ReferableSourceNode> list1 = ((Abstract.TelescopeArgument) arg1).getReferableList();
+      List<? extends Abstract.ReferableSourceNode> list2 = ((Abstract.TelescopeArgument) arg2).getReferableList();
+      if (list1.size() != list2.size()) {
+        return false;
+      }
+      for (int i = 0; i < list1.size(); i++) {
+        mySubstitution.put(list1.get(i), list2.get(i));
+      }
+      return ((Abstract.TelescopeArgument) arg1).getType().accept(this, ((Abstract.TelescopeArgument) arg2).getType());
     }
-    if (arg1 instanceof Abstract.TypeArgument) {
-      return arg2 instanceof Abstract.TypeArgument && ((Abstract.TypeArgument) arg1).getType().accept(this, ((Abstract.TypeArgument) arg2).getType());
+    if (arg1 instanceof Abstract.TypeArgument && arg2 instanceof Abstract.TypeArgument) {
+      return ((Abstract.TypeArgument) arg1).getType().accept(this, ((Abstract.TypeArgument) arg2).getType());
     }
-    return arg1 instanceof Abstract.NameArgument && arg2 instanceof Abstract.NameArgument && ((Abstract.NameArgument) arg1).getName().equals(((Abstract.NameArgument) arg2).getName());
+    if (arg1 instanceof Abstract.NameArgument && arg2 instanceof Abstract.NameArgument) {
+      mySubstitution.put(((Abstract.NameArgument) arg1).getReferable(), ((Abstract.NameArgument) arg2).getReferable());
+      return true;
+    }
+    return false;
   }
 
   private boolean compareArgs(List<? extends Abstract.Argument> args1, List<? extends Abstract.Argument> args2) {
@@ -153,16 +178,16 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
 
   private boolean comparePattern(Abstract.Pattern pattern1, Abstract.Pattern pattern2) {
     if (pattern1 instanceof Abstract.NamePattern) {
-      return pattern2 instanceof Abstract.NamePattern && ((Abstract.NamePattern) pattern1).getName().equals(((Abstract.NamePattern) pattern2).getName());
+      return pattern2 instanceof Abstract.NamePattern && ((Abstract.NamePattern) pattern1).getReferent().equals(((Abstract.NamePattern) pattern2).getReferent());
     }
     if (pattern1 instanceof Abstract.ConstructorPattern) {
       return pattern2 instanceof Abstract.ConstructorPattern && ((Abstract.ConstructorPattern) pattern1).getConstructorName().equals(((Abstract.ConstructorPattern) pattern2).getConstructorName());
     }
-    return pattern1 instanceof Abstract.AnyConstructorPattern && pattern2 instanceof Abstract.AnyConstructorPattern;
+    return pattern1 instanceof Abstract.EmptyPattern && pattern2 instanceof Abstract.EmptyPattern;
   }
 
-  private boolean compareClause(Abstract.Clause clause1, Abstract.Clause clause2) {
-    if (!(clause1.getArrow() == clause2.getArrow() && clause1.getExpression().accept(this, clause2.getExpression()) && clause1.getPatterns().size() == clause2.getPatterns().size())) return false;
+  private boolean compareClause(Abstract.FunctionClause clause1, Abstract.FunctionClause clause2) {
+    if (!(clause1.getExpression().accept(this, clause2.getExpression()) && clause1.getPatterns().size() == clause2.getPatterns().size())) return false;
     for (int i = 0; i < clause1.getPatterns().size(); i++) {
       if (!comparePattern(clause1.getPatterns().get(i), clause2.getPatterns().get(i))) {
         return false;
@@ -171,7 +196,7 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
     return true;
   }
 
-  private boolean compareElimCase(Abstract.ElimCaseExpression expr1, Abstract.ElimCaseExpression expr2) {
+  private boolean compareElimCase(Abstract.CaseExpression expr1, Abstract.CaseExpression expr2) {
     if (!(expr1.getExpressions().size() == expr2.getExpressions().size() && expr1.getClauses().size() == expr2.getClauses().size())) return false;
     for (int i = 0; i < expr1.getExpressions().size(); i++) {
       if (!expr1.getExpressions().get(i).accept(this, expr2.getExpressions().get(i))) {
@@ -184,11 +209,6 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
       }
     }
     return true;
-  }
-
-  @Override
-  public Boolean visitElim(Abstract.ElimExpression expr1, Abstract.Expression expr2) {
-    return expr2 instanceof Abstract.ElimExpression && compareElimCase(expr1, (Abstract.ElimExpression) expr2);
   }
 
   @Override
@@ -224,20 +244,23 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
   }
 
   private boolean compareLetClause(Abstract.LetClause clause1, Abstract.LetClause clause2) {
-    return clause1.getArrow() == clause2.getArrow() && compareArgs(clause1.getArguments(), clause2.getArguments()) && clause1.getTerm().accept(this, clause2.getTerm()) && (clause1.getResultType() == null && clause2.getResultType() == null || clause1.getResultType() != null && clause2.getResultType() != null && clause1.getResultType().accept(this, clause2.getResultType()));
+    return compareArgs(clause1.getArguments(), clause2.getArguments()) && clause1.getTerm().accept(this, clause2.getTerm()) && (clause1.getResultType() == null && clause2.getResultType() == null || clause1.getResultType() != null && clause2.getResultType() != null && clause1.getResultType().accept(this, clause2.getResultType()));
   }
 
   @Override
   public Boolean visitLet(Abstract.LetExpression expr1, Abstract.Expression expr2) {
     if (!(expr2 instanceof Abstract.LetExpression)) return false;
     Abstract.LetExpression letExpr2 = (Abstract.LetExpression) expr2;
-    if (!(expr1.getExpression().accept(this, letExpr2.getExpression()) && expr1.getClauses().size() == letExpr2.getClauses().size())) return false;
+    if (expr1.getClauses().size() != letExpr2.getClauses().size()) {
+      return false;
+    }
     for (int i = 0; i < expr1.getClauses().size(); i++) {
       if (!compareLetClause(expr1.getClauses().get(i), letExpr2.getClauses().get(i))) {
         return false;
       }
+      mySubstitution.put(expr1.getClauses().get(i), letExpr2.getClauses().get(i));
     }
-    return true;
+    return expr1.getExpression().accept(this, letExpr2.getExpression());
   }
 
   @Override

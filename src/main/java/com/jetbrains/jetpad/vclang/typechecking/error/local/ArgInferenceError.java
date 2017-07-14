@@ -39,10 +39,6 @@ public class ArgInferenceError extends LocalTypeCheckingError {
     return "Cannot infer level of the type of the " + ordinal(index) + " parameter of lambda";
   }
 
-  public static String parameter(int index) {
-    return "Cannot infer the " + ordinal(index) + " parameter to constructor";
-  }
-
   public static String expression() {
     return "Cannot infer an expression";
   }

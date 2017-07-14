@@ -5,6 +5,8 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
+import java.util.List;
+
 public class BaseResolveListener implements ResolveListener {
   private final ErrorReporter myErrorReporter;
 
@@ -13,7 +15,7 @@ public class BaseResolveListener implements ResolveListener {
   }
 
   @Override
-  public void nameResolved(Abstract.DefCallExpression defCallExpression, Abstract.Definition resolvedDefinition) {
+  public void nameResolved(Abstract.ReferenceExpression referenceExpression, Abstract.ReferableSourceNode referable) {
 
   }
 
@@ -53,7 +55,7 @@ public class BaseResolveListener implements ResolveListener {
   }
 
   @Override
-  public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Abstract.Definition definition, Abstract.DefCallExpression var, Abstract.Expression right) {
+  public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Abstract.Definition definition, Abstract.ReferenceExpression var, Abstract.Expression right) {
     return null;
   }
 
@@ -68,12 +70,12 @@ public class BaseResolveListener implements ResolveListener {
   }
 
   @Override
-  public void replaceWithConstructor(Abstract.PatternArgument patternArg) {
+  public void replaceWithConstructor(List<? extends Abstract.Pattern> patterns, int index, Abstract.Constructor constructor) {
 
   }
 
   @Override
-  public void replaceWithConstructor(Abstract.PatternContainer container, int index) {
+  public void replaceWithConstructor(Abstract.FunctionClause clause, int index, Abstract.Constructor constructor) {
 
   }
 

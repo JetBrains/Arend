@@ -65,16 +65,16 @@ public abstract class BaseCallGraph<T> {
 
   @Override
   public String toString() {
-    String result = "";
+    StringBuilder result = new StringBuilder();
     for (T vDom : myGraph.keySet()) {
       for (T vCodom : myGraph.get(vDom).keySet()) {
-        result += getLabel(vDom) + " -> " + getLabel(vCodom) + "\n ";
+        result.append(getLabel(vDom)).append(" -> ").append(getLabel(vCodom)).append("\n ");
         for (BaseCallMatrix cm : myGraph.get(vDom).get(vCodom)) {
-          result += cm.toString() + "\n";
+          result.append(cm.toString()).append("\n");
         }
       }
     }
-    return result;
+    return result.toString();
   }
 
   private static <T> boolean append(BaseCallMatrix<T> cm, HashMap<T, HashMap<T, HashSet<BaseCallMatrix<T>>>> graph) {

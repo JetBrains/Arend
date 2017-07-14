@@ -13,12 +13,7 @@ public class CollectingDependencyListener implements DependencyListener {
 
   @Override
   public void dependsOn(Typecheckable unit, Abstract.Definition def) {
-    Set<Typecheckable> deps = myDependencies.get(def);
-    if (deps == null) {
-      deps = new HashSet<>();
-      myDependencies.put(def, deps);
-    }
-    deps.add(unit);
+    myDependencies.computeIfAbsent(def, k -> new HashSet<>()).add(unit);
   }
 
   public Map<Abstract.Definition, Set<Typecheckable>> getDependencies() {

@@ -32,11 +32,6 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public boolean add(Expression type, Expression expr, Abstract.SourceNode sourceNode, InferenceVariable stuckVar) {
-    return false;
-  }
-
-  @Override
   public boolean addVariable(InferenceLevelVariable var) {
     return false;
   }

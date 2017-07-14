@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.core.expr.visitor;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
 
 import java.util.ArrayList;
@@ -25,18 +24,12 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public UniverseExpression visitDataCall(DataCallExpression expr, Void params) {
-    return new UniverseExpression(expr.getDefinition().getSort().subst(new StdLevelSubstitution(expr.getSortArgument().getPLevel(), expr.getSortArgument().getHLevel())));
+    return new UniverseExpression(expr.getDefinition().getSort().subst(new StdLevelSubstitution(expr.getSortArgument())));
   }
 
   @Override
-  public Expression visitConCall(ConCallExpression expr, Void params) {
-    List<DependentLink> defParams = new ArrayList<>();
-    Expression type = expr.getDefinition().getTypeWithParams(defParams, expr.getSortArgument());
-    assert expr.getDataTypeArguments().size() + expr.getDefCallArguments().size() == defParams.size();
-    ExprSubstitution subst = DependentLink.Helper.toSubstitution(defParams, expr.getDataTypeArguments());
-    defParams = defParams.subList(expr.getDataTypeArguments().size(), defParams.size());
-    subst.addAll(DependentLink.Helper.toSubstitution(defParams, expr.getDefCallArguments()));
-    return type.subst(subst, LevelSubstitution.EMPTY);
+  public DataCallExpression visitConCall(ConCallExpression expr, Void params) {
+    return expr.getDefinition().getDataTypeExpression(expr.getSortArgument(), expr.getDataTypeArguments());
   }
 
   @Override
@@ -45,16 +38,8 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
   }
 
   @Override
-  public Expression visitLetClauseCall(LetClauseCallExpression expr, Void params) {
-    List<DependentLink> defParams = new ArrayList<>();
-    Expression type = expr.getLetClause().getTypeWithParams(defParams, null);
-    assert expr.getDefCallArguments().size() == defParams.size();
-    return type.subst(DependentLink.Helper.toSubstitution(defParams, expr.getDefCallArguments()));
-  }
-
-  @Override
   public Expression visitReference(ReferenceExpression expr, Void params) {
-    return expr.getBinding().getType().getExpr().copy();
+    return expr.getBinding().getTypeExpr().copy();
   }
 
   @Override
@@ -107,7 +92,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
     if (sigma == null) return null;
     DependentLink params = sigma.getParameters();
     if (expr.getField() == 0) {
-      return params.getType().getExpr();
+      return params.getTypeExpr();
     }
 
     ExprSubstitution subst = new ExprSubstitution();
@@ -115,7 +100,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
       subst.add(params, new ProjExpression(expr.getExpression(), i));
       params = params.getNext();
     }
-    return params.getType().subst(subst, LevelSubstitution.EMPTY).getExpr();
+    return params.getTypeExpr().subst(subst);
   }
 
   @Override
@@ -130,6 +115,11 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
       return type;
     }
     return new LetExpression(expr.getClauses(), type);
+  }
+
+  @Override
+  public Expression visitCase(CaseExpression expr, Void params) {
+    return expr.getResultType().subst(DependentLink.Helper.toSubstitution(expr.getParameters(), expr.getArguments()));
   }
 
   @Override

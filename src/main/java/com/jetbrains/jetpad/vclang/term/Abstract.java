@@ -2,12 +2,12 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public final class Abstract {
   private Abstract() {}
@@ -21,7 +21,7 @@ public final class Abstract {
   }
 
   public interface NameArgument extends Argument {
-    String getName();
+    ReferableSourceNode getReferable();
   }
 
   public interface TypeArgument extends Argument {
@@ -29,7 +29,7 @@ public final class Abstract {
   }
 
   public interface TelescopeArgument extends TypeArgument {
-    List<String> getNames();
+    List<? extends ReferableSourceNode> getReferableList();
   }
 
   // Expressions
@@ -37,7 +37,7 @@ public final class Abstract {
   public interface Expression extends SourceNode {
     byte PREC = -12;
     <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
-    void setWellTyped(List<Binding> context, com.jetbrains.jetpad.vclang.core.expr.Expression wellTyped);
+    void setWellTyped(Map<ReferableSourceNode, Binding> context, com.jetbrains.jetpad.vclang.core.expr.Expression wellTyped);
   }
 
   public interface ArgumentExpression extends SourceNode {
@@ -52,26 +52,21 @@ public final class Abstract {
     ArgumentExpression getArgument();
   }
 
-  public static Expression getFunction(Expression expr, List<ArgumentExpression> arguments) {
-    while (expr instanceof AppExpression) {
-      arguments.add(((AppExpression) expr).getArgument());
-      expr = ((AppExpression) expr).getFunction();
-    }
-    Collections.reverse(arguments);
-    return expr;
-  }
-
   public interface ModuleCallExpression extends Expression {
     byte PREC = 12;
     ModulePath getPath();
     Definition getModule();
   }
 
-  public interface DefCallExpression extends Expression {
+  public interface ReferenceExpression extends Expression {
     byte PREC = 12;
     String getName();
     Expression getExpression();
-    Definition getReferent();
+    ReferableSourceNode getReferent();
+  }
+
+  public interface InferenceReferenceExpression extends Expression {
+    InferenceVariable getVariable();
   }
 
   public interface ClassExtExpression extends Expression {
@@ -87,13 +82,13 @@ public final class Abstract {
   }
 
   public static ClassDefinition getUnderlyingClassDef(Expression expr) {
-    if (expr instanceof DefCallExpression) {
-      Definition definition = ((DefCallExpression) expr).getReferent();
+    if (expr instanceof ReferenceExpression) {
+      ReferableSourceNode definition = ((ReferenceExpression) expr).getReferent();
       if (definition instanceof ClassDefinition) {
         return (ClassDefinition) definition;
       }
       if (definition instanceof ClassView) {
-        return (ClassDefinition) ((ClassView) definition).getUnderlyingClassDefCall().getReferent();
+        return (ClassDefinition) ((ClassView) definition).getUnderlyingClassReference().getReferent();
       }
     }
 
@@ -105,8 +100,8 @@ public final class Abstract {
   }
 
   public static ClassView getUnderlyingClassView(Expression expr) {
-    if (expr instanceof DefCallExpression) {
-      Definition definition = ((DefCallExpression) expr).getReferent();
+    if (expr instanceof ReferenceExpression) {
+      ReferableSourceNode definition = ((ReferenceExpression) expr).getReferent();
       if (definition instanceof ClassView) {
         return (ClassView) definition;
       }
@@ -130,7 +125,10 @@ public final class Abstract {
     Expression getBody();
   }
 
-  public interface LetClause extends Function {
+  public interface LetClause extends ReferableSourceNode {
+    Expression getTerm();
+    List<? extends Argument> getArguments();
+    Expression getResultType();
   }
 
   public interface LetExpression extends Expression {
@@ -156,21 +154,12 @@ public final class Abstract {
     Expression getCodomain();
   }
 
-  public static Expression getCodomain(Expression expr, List<TypeArgument> arguments) {
-    Expression codomain = expr;
-
-    while (codomain instanceof PiExpression) {
-      PiExpression pi = (PiExpression)codomain;
-      codomain = pi.getCodomain();
-      arguments.addAll(pi.getArguments());
-    }
-
-    return codomain;
-  }
-
-  public interface BinOpExpression extends DefCallExpression {
+  public interface BinOpExpression extends ReferenceExpression {
     Expression getLeft();
     Expression getRight();
+
+    @Override
+    Definition getReferent();
 
     @Override
     default Expression getExpression() {
@@ -179,10 +168,10 @@ public final class Abstract {
   }
 
   public static class BinOpSequenceElem {
-    public DefCallExpression binOp;
-    public Expression argument;
+    public final ReferenceExpression binOp;
+    public final Expression argument;
 
-    public BinOpSequenceElem(DefCallExpression binOp, Expression argument) {
+    public BinOpSequenceElem(ReferenceExpression binOp, Expression argument) {
       this.binOp = binOp;
       this.argument = argument;
     }
@@ -210,18 +199,10 @@ public final class Abstract {
     Expression getExpr();
   }
 
-  public interface ElimCaseExpression extends Expression {
+  public interface CaseExpression extends Expression {
     byte PREC = -8;
     List<? extends Expression> getExpressions();
-    List<? extends Clause> getClauses();
-  }
-
-  public interface CaseExpression extends ElimCaseExpression {
-    String FUNCTION_NAME = "\\caseF";
-    String ARGUMENT_NAME = "\\caseA";
-  }
-
-  public interface ElimExpression extends ElimCaseExpression {
+    List<? extends FunctionClause> getClauses();
   }
 
   public interface ProjExpression extends Expression {
@@ -230,12 +211,11 @@ public final class Abstract {
     int getField();
   }
 
-  public interface PatternContainer {
+  public interface Clause extends SourceNode {
     List<? extends Pattern> getPatterns();
   }
 
-  public interface Clause extends SourceNode, PatternContainer {
-    Definition.Arrow getArrow();
+  public interface FunctionClause extends Clause {
     Expression getExpression();
   }
 
@@ -278,7 +258,9 @@ public final class Abstract {
   // Definitions
 
   public interface ReferableSourceNode extends SourceNode {
-    String getName();
+    default String getName() {
+      return toString();
+    }
   }
 
   public static Collection<? extends Abstract.Argument> getArguments(Abstract.Definition definition) {
@@ -295,18 +277,10 @@ public final class Abstract {
   }
 
   public interface Definition extends ReferableSourceNode {
-    enum Arrow { LEFT, RIGHT }
     Precedence getPrecedence();
     Definition getParentDefinition();
     boolean isStatic();
     <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params);
-  }
-
-  public interface Function extends ReferableSourceNode {
-    Definition.Arrow getArrow();
-    Expression getTerm();
-    List<? extends Argument> getArguments();
-    Expression getResultType();
   }
 
   public interface ClassField extends Definition {
@@ -328,15 +302,41 @@ public final class Abstract {
     Collection<? extends Statement> getGlobalStatements();
   }
 
-  public interface FunctionDefinition extends Definition, Function, StatementCollection {
+  public interface FunctionBody extends SourceNode {}
+
+  public interface TermFunctionBody extends FunctionBody {
+    Expression getTerm();
+  }
+
+  public interface ElimBody extends SourceNode {
+    List<? extends ReferenceExpression> getEliminatedReferences();
+    List<? extends FunctionClause> getClauses();
+  }
+
+  public interface ElimFunctionBody extends FunctionBody, ElimBody {
+  }
+
+  public interface FunctionDefinition extends Definition, StatementCollection {
+    FunctionBody getBody();
+    List<? extends Argument> getArguments();
+    Expression getResultType();
   }
 
   public interface DataDefinition extends Definition {
     List<? extends TypeArgument> getParameters();
-    List<? extends Constructor> getConstructors();
-    Collection<? extends Condition> getConditions();
+    List<? extends ReferenceExpression> getEliminatedReferences();
+    List<? extends ConstructorClause> getConstructorClauses();
     boolean isTruncated();
     Expression getUniverse();
+  }
+
+  public interface ConstructorClause extends Clause {
+    List<? extends Constructor> getConstructors();
+  }
+
+  public interface Constructor extends Definition, ElimBody {
+    DataDefinition getDataType();
+    List<? extends TypeArgument> getArguments();
   }
 
   public interface SuperClass extends SourceNode {
@@ -354,7 +354,7 @@ public final class Abstract {
   // ClassViews
 
   public interface ClassView extends Definition {
-    DefCallExpression getUnderlyingClassDefCall();
+    ReferenceExpression getUnderlyingClassReference();
     String getClassifyingFieldName();
     ClassField getClassifyingField();
     List<? extends ClassViewField> getFields();
@@ -369,7 +369,7 @@ public final class Abstract {
   public interface ClassViewInstance extends Definition {
     boolean isDefault();
     List<? extends Argument> getArguments();
-    DefCallExpression getClassView();
+    ReferenceExpression getClassView();
     Definition getClassifyingDefinition();
     Collection<? extends ClassFieldImpl> getClassFieldImpls();
   }
@@ -399,46 +399,29 @@ public final class Abstract {
 
   // Patterns
 
-  public interface PatternArgument extends SourceNode {
-    boolean isHidden();
-    boolean isExplicit();
-    Pattern getPattern();
-  }
-
   public interface Pattern extends SourceNode {
-    void setWellTyped(com.jetbrains.jetpad.vclang.core.pattern.Pattern pattern);
+    byte PREC = 11;
+    boolean isExplicit();
   }
 
   public interface NamePattern extends Pattern {
     String getName();
+    ReferableSourceNode getReferent();
   }
 
   public interface ConstructorPattern extends Pattern {
-    List<? extends PatternArgument> getArguments();
+    List<? extends Pattern> getArguments();
     String getConstructorName();
     Abstract.Constructor getConstructor();
   }
 
-  public interface AnyConstructorPattern extends Pattern {}
-
-  public interface Constructor extends Definition {
-    List<? extends PatternArgument> getPatterns();
-    List<? extends TypeArgument> getArguments();
-    DataDefinition getDataType();
-  }
-
-  public interface Condition extends SourceNode {
-    List<? extends PatternArgument> getPatterns();
-    String getConstructorName();
-    Expression getTerm();
-    void setWellTyped(ElimTreeNode condition);
-  }
+  public interface EmptyPattern extends Pattern {}
 
 
   public static class Precedence {
     public enum Associativity { LEFT_ASSOC, RIGHT_ASSOC, NON_ASSOC }
 
-    public static Precedence DEFAULT = new Precedence(Associativity.RIGHT_ASSOC, (byte) 10);
+    public static final Precedence DEFAULT = new Precedence(Associativity.RIGHT_ASSOC, (byte) 10);
 
     public final Associativity associativity;
     public final byte priority;

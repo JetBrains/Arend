@@ -4,31 +4,30 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
-import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Name;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.factory.AbstractExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
+import com.jetbrains.jetpad.vclang.core.pattern.*;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.typechecking.patternmatching.Util;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
-public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expression> implements ElimTreeNodeVisitor<Void, Abstract.Expression> {
-  public enum Flag { SHOW_CON_DATA_TYPE, SHOW_CON_PARAMS, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS }
+public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expression> {
+  public enum Flag {SHOW_CON_DATA_TYPE, SHOW_CON_PARAMS, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS}
+
   public static final EnumSet<Flag> DEFAULT = EnumSet.of(Flag.SHOW_IMPLICIT_ARGS);
 
   private final AbstractExpressionFactory myFactory;
-  private final Map<Variable, String> myNames;
+  private final Map<Variable, Abstract.ReferableSourceNode> myNames;
   private final Stack<String> myFreeNames;
   private EnumSet<Flag> myFlags;
 
@@ -57,6 +56,30 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     }
     myFlags.add(flag);
     return this;
+  }
+
+  public Abstract.Pattern visitPattern(Pattern pattern, boolean isExplicit) {
+    if (pattern instanceof BindingPattern) {
+      return myFactory.makeNamePattern(isExplicit, myFactory.makeReferable(((BindingPattern) pattern).getBinding().getName()));
+    }
+    if (pattern instanceof EmptyPattern) {
+      return myFactory.makeEmptyPattern(isExplicit);
+    }
+    if (pattern instanceof ConstructorPattern) {
+      return myFactory.makeConPattern(isExplicit, ((ConstructorPattern) pattern).getConstructor().getAbstractDefinition(), visitPatterns(((ConstructorPattern) pattern).getArguments(), ((ConstructorPattern) pattern).getConstructor().getParameters()));
+    }
+    throw new IllegalStateException();
+  }
+
+  private List<Abstract.Pattern> visitPatterns(List<Pattern> patterns, DependentLink parameters) {
+    List<Abstract.Pattern> result = new ArrayList<>(patterns.size());
+    for (Pattern pattern : patterns) {
+      result.add(visitPattern(pattern, !parameters.hasNext() || parameters.isExplicit()));
+      if (parameters.hasNext()) {
+        parameters = parameters.getNext();
+      }
+    }
+    return result;
   }
 
   private Abstract.Expression checkPath(DataCallExpression expr) {
@@ -143,7 +166,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   private void getArgumentsExplicitness(Expression expr, boolean[] isExplicit, int i) {
     List<SingleDependentLink> params = new ArrayList<>(isExplicit.length - i);
-    expr.getType().getPiParameters(params, true, false);
+    expr.getType().getPiParameters(params, false);
     for (int j = 0; i < isExplicit.length; i++, j++) {
       isExplicit[i] = j >= params.size() || params.get(j).isExplicit();
     }
@@ -185,12 +208,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
     Abstract.Expression conParams = null;
     if (expr.getDefinition().status().headerIsOK() && myFlags.contains(Flag.SHOW_CON_PARAMS) && (!expr.getDataTypeArguments().isEmpty() || myFlags.contains(Flag.SHOW_CON_DATA_TYPE))) {
-      ExprSubstitution substitution = new ExprSubstitution();
-      DependentLink link = expr.getDefinition().getDataTypeParameters();
-      for (int i = 0; i < expr.getDataTypeArguments().size() && link.hasNext(); i++, link = link.getNext()) {
-        substitution.add(link, expr.getDataTypeArguments().get(i));
-      }
-      conParams = expr.getDefinition().getDataTypeExpression(substitution, expr.getSortArgument()).accept(this, null);
+      conParams = expr.getDataTypeExpression().accept(this, null);
     }
     return visitArguments(myFactory.makeDefCall(conParams, expr.getDefinition().getAbstractDefinition()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
   }
@@ -222,41 +240,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     }
   }
 
-  @Override
-  public Abstract.Expression visitLetClauseCall(LetClauseCallExpression expr, Void params) {
-    Abstract.Expression result = checkBinOp(expr);
-    if (result != null) {
-      return result;
-    }
-
-    result = visitBinding(expr.getLetClause());
-    if (!expr.getLetClause().getParameters().isEmpty()) {
-      int i = 0;
-      DependentLink link = expr.getLetClause().getParameters().get(0);
-      for (Expression arg : expr.getDefCallArguments()) {
-        result = myFactory.makeApp(result, link.isExplicit(), arg.accept(this, null));
-        link = link.getNext();
-        if (!link.hasNext()) {
-          link = expr.getLetClause().getParameters().get(++i);
-        }
-      }
-    }
-    return result;
-  }
-
-  private Abstract.Expression visitVariable(Variable var, String varName) {
-    String name = myNames.get(var);
-    if (name == null) {
-      name = varName;
-    }
-    if (name == null) {
-      name = "_";
-    }
-    return myFactory.makeVar((var instanceof InferenceVariable && !name.equals("_") ? "?" : "") + name);
-  }
-
   private Abstract.Expression visitBinding(Binding var) {
-    return visitVariable(var, var.getName());
+    Abstract.ReferableSourceNode referable = myNames.get(var);
+    return myFactory.makeVar(referable != null ? referable : myFactory.makeReferable(var.getName() == null ? "_" : var.getName()));
   }
 
   @Override
@@ -266,21 +252,22 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
-    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : visitVariable(expr.getVariable(), expr.getVariable().getName());
+    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : myFactory.makeInferVar(expr.getVariable());
   }
 
-  private String renameVar(Binding var) {
+  private Abstract.ReferableSourceNode makeReferable(Binding var) {
     String name = var.getName();
     if (name == null || name.equals("_")) {
-      return "_";
+      return null;
     }
 
     while (myFreeNames.contains(name)) {
       name = name + "'";
     }
     myFreeNames.push(name);
-    myNames.put(var, name);
-    return name;
+    Abstract.ReferableSourceNode referable = myFactory.makeReferable(name);
+    myNames.put(var, referable);
+    return referable;
   }
 
   private void freeVars(DependentLink link) {
@@ -298,22 +285,10 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     Expression expr = lamExpr;
     for (; expr.toLam() != null; expr = expr.toLam().getBody()) {
       if (myFlags.contains(Flag.SHOW_TYPES_IN_LAM)) {
-        List<String> names = new ArrayList<>(3);
-        for (DependentLink link = expr.toLam().getParameters(); link.hasNext(); link = link.getNext()) {
-          DependentLink link1 = link.getNextTyped(null);
-          for (; link != link1; link = link.getNext()) {
-            names.add(renameVar(link));
-          }
-          names.add(renameVar(link));
-          if (names.isEmpty()) {
-            names.add(null);
-          }
-          arguments.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(names), link.getType().getExpr().accept(this, null)));
-          names.clear();
-        }
+        visitDependentLink(expr.toLam().getParameters(), arguments);
       } else {
         for (DependentLink link = expr.toLam().getParameters(); link.hasNext(); link = link.getNext()) {
-          arguments.add(myFactory.makeNameArgument(link.isExplicit(), renameVar(link)));
+          arguments.add(myFactory.makeNameArgument(link.isExplicit(), makeReferable(link)));
         }
       }
     }
@@ -325,37 +300,21 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return result;
   }
 
-  private Abstract.TypeArgument visitTypeArgument(SingleDependentLink arguments) {
-    List<String> names = new ArrayList<>(3);
-    DependentLink link = arguments.getNextTyped(null);
-    for (; arguments != link; arguments = arguments.getNext()) {
-      names.add(renameVar(arguments));
-    }
-    names.add(renameVar(arguments));
-    if (names.isEmpty() || names.get(0).equals("_")) {
-      return myFactory.makeTypeArgument(arguments.isExplicit(), arguments.getType().getExpr().accept(this, null));
-    } else {
-      return myFactory.makeTelescopeArgument(arguments.isExplicit(), new ArrayList<>(names), arguments.getType().getExpr().accept(this, null));
-    }
-  }
-
-  public List<Abstract.TypeArgument> visitTypeArguments(DependentLink arguments) {
-    List<Abstract.TypeArgument> args = new ArrayList<>();
-    List<String> names = new ArrayList<>(3);
-    for (DependentLink link = arguments; link.hasNext(); link = link.getNext()) {
+  private void visitDependentLink(DependentLink parameters, List<? super Abstract.TypeArgument> args) {
+    List<Abstract.ReferableSourceNode> referableList = new ArrayList<>(3);
+    for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
       DependentLink link1 = link.getNextTyped(null);
-      for (; link != link1; link = link.getNext()) {
-        names.add(renameVar(link));
-      }
-      names.add(renameVar(link));
-      if (names.get(0).equals("_")) {
-        args.add(myFactory.makeTypeArgument(link.isExplicit(), link.getType().getExpr().accept(this, null)));
+      if (link1 == link && link.getName() == null) {
+        args.add(myFactory.makeTypeArgument(link.isExplicit(), link.getTypeExpr().accept(this, null)));
       } else {
-        args.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(names), link.getType().getExpr().accept(this, null)));
-        names.clear();
+        for (; link != link1; link = link.getNext()) {
+          referableList.add(makeReferable(link));
+        }
+        referableList.add(makeReferable(link));
+        args.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(referableList), link.getTypeExpr().accept(this, null)));
+        referableList.clear();
       }
     }
-    return args;
   }
 
   @Override
@@ -363,7 +322,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     List<List<Abstract.TypeArgument>> arguments = new ArrayList<>();
     Expression expr = piExpr;
     for (; expr.toPi() != null; expr = expr.toPi().getCodomain()) {
-      List<Abstract.TypeArgument> args = visitTypeArguments(expr.toPi().getParameters());
+      List<Abstract.TypeArgument> args = new ArrayList<>();
+      visitDependentLink(expr.toPi().getParameters(), args);
       if (!arguments.isEmpty() && arguments.get(arguments.size() - 1) instanceof Abstract.TelescopeArgument && !args.isEmpty() && args.get(0) instanceof Abstract.TelescopeArgument) {
         arguments.get(arguments.size() - 1).addAll(args);
       } else {
@@ -421,11 +381,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     Abstract.LevelExpression result;
     if (level.getVar() == LevelVariable.PVAR) {
       result = myFactory.makePLevel();
-    } else
-    if (level.getVar() == LevelVariable.HVAR) {
+    } else if (level.getVar() == LevelVariable.HVAR) {
       result = myFactory.makeHLevel();
-    } else
-    if (level.getVar() instanceof InferenceLevelVariable) {
+    } else if (level.getVar() instanceof InferenceLevelVariable) {
       result = myFactory.makeInferVarLevel((InferenceLevelVariable) level.getVar());
     } else {
       throw new IllegalStateException();
@@ -458,7 +416,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitSigma(SigmaExpression expr, Void params) {
-    Abstract.Expression result = myFactory.makeSigma(visitTypeArguments(expr.getParameters()));
+    List<Abstract.TypeArgument> args = new ArrayList<>();
+    visitDependentLink(expr.getParameters(), args);
+    Abstract.Expression result = myFactory.makeSigma(args);
     freeVars(expr.getParameters());
     return result;
   }
@@ -473,103 +433,36 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return myFactory.makeNew(expr.getExpression().accept(this, null));
   }
 
-  private Abstract.Expression checkCase(LetExpression letExpression) {
-    if (letExpression.getClauses().size() == 1 && Abstract.CaseExpression.FUNCTION_NAME.equals(letExpression.getClauses().get(0).getName()) && letExpression.getClauses().get(0).getElimTree() instanceof BranchElimTreeNode) {
-      LetClauseCallExpression clauseCall = letExpression.getExpression().toLetClauseCall();
-      if (clauseCall != null && clauseCall.getLetClause() == letExpression.getClauses().get(0)) {
-        List<? extends Expression> args = clauseCall.getDefCallArguments();
-        for (Expression arg : args) {
-          if (arg.findBinding(letExpression.getClauses().get(0))) {
-            return null;
-          }
-        }
-
-        List<Abstract.Expression> caseArgs = new ArrayList<>(args.size());
-        for (int i = args.size() - 1; i >= 0; i--) {
-          caseArgs.add(args.get(i).accept(this, null));
-        }
-        return myFactory.makeCase(caseArgs, visitBranch((BranchElimTreeNode) letExpression.getClauses().get(0).getElimTree()));
-      }
-    }
-    return null;
-  }
-
   @Override
   public Abstract.Expression visitLet(LetExpression letExpression, Void params) {
-    Abstract.Expression result = checkCase(letExpression);
-    if (result != null) {
-      return result;
-    }
-
     List<Abstract.LetClause> clauses = new ArrayList<>(letExpression.getClauses().size());
     for (LetClause clause : letExpression.getClauses()) {
-      List<Abstract.TypeArgument> arguments = clause.getParameters().stream().map(this::visitTypeArgument).collect(Collectors.toList());
-      Abstract.Expression resultType = clause.getResultType().getExpr().accept(this, null);
-      Abstract.Expression term = visitElimTree(clause.getElimTree(), clause.getParameters());
-      clause.getParameters().forEach(this::freeVars);
-      clauses.add(myFactory.makeLetClause(renameVar(clause), arguments, resultType, getTopLevelArrow(clause.getElimTree()), term));
+      Abstract.Expression term = clause.getExpression().accept(this, null);
+      clauses.add(myFactory.makeLetClause(makeReferable(clause), Collections.emptyList(), null, term));
     }
 
-    result = myFactory.makeLet(clauses, letExpression.getExpression().accept(this, null));
+    Abstract.Expression result = myFactory.makeLet(clauses, letExpression.getExpression().accept(this, null));
     letExpression.getClauses().forEach(myNames::remove);
     return result;
   }
 
-  private Abstract.Expression visitElimTree(ElimTreeNode elimTree, List<SingleDependentLink> params) {
-    if (elimTree == EmptyElimTreeNode.getInstance()) {
-      List<Abstract.Expression> exprs = new ArrayList<>();
-      for (SingleDependentLink param : params) {
-        for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
-          exprs.add(visitBinding(link));
-        }
-      }
-      return myFactory.makeElim(exprs, Collections.emptyList());
+  @Override
+  public Abstract.Expression visitCase(CaseExpression expr, Void params) {
+    List<Abstract.Expression> arguments = new ArrayList<>(expr.getArguments().size());
+    for (Expression argument : expr.getArguments()) {
+      arguments.add(argument.accept(this, null));
     }
-    return elimTree.accept(this, null);
+    return myFactory.makeCase(arguments, expr.getElimTree() != null ? visitElimTree(expr.getElimTree()) : Collections.emptyList());
+  }
+
+  private List<Abstract.FunctionClause> visitElimTree(ElimTree elimTree) {
+    List<Abstract.FunctionClause> clauses = new ArrayList<>();
+    new Util.ElimTreeWalker((patterns, expr) -> clauses.add(myFactory.makeClause(visitPatterns(patterns, new Patterns(patterns).getFirstBinding()), expr.accept(this, null)))).walk(elimTree);
+    return clauses;
   }
 
   @Override
   public Abstract.Expression visitOfType(OfTypeExpression expr, Void params) {
     return expr.getExpression().accept(this, null);
-  }
-
-  private List<Abstract.Clause> visitBranch(BranchElimTreeNode branchNode) {
-    List<Abstract.Clause> clauses = new ArrayList<>(branchNode.getConstructorClauses().size());
-    for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-      List<Abstract.PatternArgument> args = new ArrayList<>();
-      for (DependentLink link = clause.getConstructor().getParameters(); link.hasNext(); link = link.getNext()) {
-        args.add(myFactory.makePatternArgument(myFactory.makeNamePattern(renameVar(link)), link.isExplicit()));
-      }
-      clauses.add(myFactory.makeClause(Collections.singletonList(myFactory.makeConPattern(clause.getConstructor().getName(), args)), clause.getChild().getArrow(), clause.getChild() == EmptyElimTreeNode.getInstance() ? null : clause.getChild().accept(this, null)));
-      freeVars(clause.getConstructor().getParameters());
-    }
-    if (branchNode.getOtherwiseClause() != null) {
-      clauses.add(myFactory.makeClause(Collections.singletonList(myFactory.makeNamePattern(null)), branchNode.getOtherwiseClause().getChild().getArrow(), branchNode.getOtherwiseClause().getChild() == EmptyElimTreeNode.getInstance() ? null : branchNode.getOtherwiseClause().getChild().accept(this, null)));
-    }
-    return clauses;
-  }
-
-  @SuppressWarnings("SuspiciousNameCombination")
-  private Abstract.Definition.Arrow getTopLevelArrow(ElimTreeNode elimTreeNode) {
-    if (elimTreeNode == EmptyElimTreeNode.getInstance()) {
-      return Abstract.Definition.Arrow.RIGHT;
-    } else {
-      return elimTreeNode.getArrow();
-    }
-  }
-
-  @Override
-  public Abstract.Expression visitBranch(BranchElimTreeNode branchNode, Void params) {
-    return myFactory.makeElim(Collections.singletonList(visitBinding(branchNode.getReference())), visitBranch(branchNode));
-  }
-
-  @Override
-  public Abstract.Expression visitLeaf(LeafElimTreeNode leafNode, Void params) {
-    return leafNode.getExpression() != null ? leafNode.getExpression().accept(this, null) : myFactory.makeError(null);
-  }
-
-  @Override
-  public Abstract.Expression visitEmpty(EmptyElimTreeNode emptyNode, Void params) {
-    throw new IllegalStateException();
   }
 }

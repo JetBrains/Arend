@@ -77,11 +77,6 @@ public class OfTypeExpression extends Expression {
   }
 
   @Override
-  public LetClauseCallExpression toLetClauseCall() {
-    return myExpression.toLetClauseCall();
-  }
-
-  @Override
   public LamExpression toLam() {
     return myExpression.toLam();
   }

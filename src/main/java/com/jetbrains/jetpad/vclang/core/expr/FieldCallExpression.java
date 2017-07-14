@@ -8,7 +8,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class FieldCallExpression extends DefCallExpression {
-  private Expression myExpression;
+  private final Expression myExpression;
 
   public FieldCallExpression(ClassField definition, Expression expression) {
     super(definition);

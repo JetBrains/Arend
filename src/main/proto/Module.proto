@@ -8,9 +8,9 @@ import "Definition.proto";
 
 
 message Module {
+    int64 version = 4;
     DefinitionState definition_state = 1;
     InstanceState instance_state = 2;
-
     repeated DefinitionReference referred_definition = 3;
     message DefinitionReference {
         string source_url = 1;

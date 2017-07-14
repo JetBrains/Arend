@@ -19,6 +19,11 @@ public interface DependentLink extends Binding {
   DependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size);
   TypedDependentLink getNextTyped(List<String> names);
   boolean hasNext();
+  Type getType();
+
+  default Expression getTypeExpr() {
+    return getType().getExpr();
+  }
 
   class Helper {
     public static void freeSubsts(DependentLink link, ExprSubstitution substitution) {
@@ -40,22 +45,6 @@ public interface DependentLink extends Binding {
       ExprSubstitution result = new ExprSubstitution();
       for (int i = 0; i < Math.min(links.size(), expressions.size()); ++i) {
         result.add(links.get(i), expressions.get(i));
-      }
-      return result;
-    }
-
-    public static List<Binding> toContext(DependentLink link) {
-      List<Binding> result = new ArrayList<>();
-      for (; link.hasNext(); link = link.getNext()) {
-        result.add(link);
-      }
-      return result;
-    }
-
-    public static List<String> toNames(DependentLink link) {
-      List<String> result = new ArrayList<>();
-      for (; link.hasNext(); link = link.getNext()) {
-        result.add(link.getName());
       }
       return result;
     }
@@ -94,16 +83,6 @@ public interface DependentLink extends Binding {
       return result;
     }
 
-    public static List<DependentLink> toList(List<SingleDependentLink> links) {
-      List<DependentLink> result = new ArrayList<>();
-      for (SingleDependentLink link : links) {
-        for (; link.hasNext(); link = link.getNext()) {
-          result.add(link);
-        }
-      }
-      return result;
-    }
-
     public static DependentLink subst(DependentLink link, ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
       return link.subst(exprSubst, levelSubst, Integer.MAX_VALUE);
     }
@@ -133,5 +112,10 @@ public interface DependentLink extends Binding {
     public static SingleDependentLink subst(SingleDependentLink link, ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
       return link.subst(exprSubst, levelSubst, Integer.MAX_VALUE);
     }
+  }
+
+  static String toString(DependentLink binding) {
+    Type type = binding.getType();
+    return (binding.getName() == null ? "_" : binding.getName()) + (type == null ? "" : " : " + type.getExpr());
   }
 }

@@ -93,7 +93,7 @@ public class Matchers {
       protected boolean matchesTypeCheckingError(LocalTypeCheckingError error, Description description) {
         if (error instanceof HasErrors) {
           description.appendText("has errors with ");
-          Abstract.Definition actualCause = ((Abstract.DefCallExpression) ((HasErrors) error).cause).getReferent();
+          Abstract.ReferableSourceNode actualCause = ((Abstract.ReferenceExpression) ((HasErrors) error).cause).getReferent();
           description.appendText(actualCause == cause ? "the write " : "a wrong ");
           description.appendText("cause");
           return actualCause == cause;

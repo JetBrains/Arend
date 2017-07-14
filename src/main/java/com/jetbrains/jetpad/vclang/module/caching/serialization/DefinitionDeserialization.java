@@ -3,27 +3,21 @@ package com.jetbrains.jetpad.vclang.module.caching.serialization;
 import com.jetbrains.jetpad.vclang.core.context.LinkList;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
-import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
-import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.*;
 import com.jetbrains.jetpad.vclang.core.definition.*;
+import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.core.pattern.*;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.BranchElimTreeNode;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.ElimTreeNode;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.EmptyElimTreeNode;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -62,13 +56,6 @@ class DefinitionDeserialization {
     myBindings.add(binding);
   }
 
-  TypedBinding readTypedBinding(ExpressionProtos.Binding.TypedBinding proto) throws DeserializationError {
-    Type type = readType(proto.getType());
-    TypedBinding typedBinding = new TypedBinding(proto.getName(), type);
-    registerBinding(typedBinding);
-    return typedBinding;
-  }
-
   Type readType(ExpressionProtos.Type proto) throws DeserializationError {
     Expression expr = readExpr(proto.getExpr());
     return expr instanceof Type ? (Type) expr : new TypeExpression(expr, readSort(proto.getSort()));
@@ -85,40 +72,6 @@ class DefinitionDeserialization {
       return binding;
     }
   }
-
-
-  // Patterns
-
-  Patterns readPatterns(DefinitionProtos.Definition.DataData.Constructor.Patterns proto) throws DeserializationError {
-    return readPatterns(proto, new LinkList());
-  }
-
-  private Patterns readPatterns(DefinitionProtos.Definition.DataData.Constructor.Patterns proto, LinkList list) throws DeserializationError {
-    List<PatternArgument> args = new ArrayList<>();
-    for (DefinitionProtos.Definition.DataData.Constructor.PatternArgument argProto : proto.getPatternArgumentList()) {
-      args.add(new PatternArgument(readPattern(argProto.getPattern(), list), !argProto.getNotExplicit(), argProto.getHidden()));
-    }
-    return new Patterns(args);
-  }
-
-  private Pattern readPattern(DefinitionProtos.Definition.DataData.Constructor.Pattern proto, LinkList list) throws DeserializationError {
-    switch (proto.getKindCase()) {
-      case NAME:
-        DependentLink param = readParameter(proto.getName().getVar());
-        list.append(param);
-        return new NamePattern(param);
-      case ANY_CONSTRUCTOR:
-        TypedDependentLink param1 = readParameter(proto.getAnyConstructor().getVar());
-        list.append(param1);
-        return new AnyConstructorPattern(param1);
-      case CONSTRUCTOR:
-        return new ConstructorPattern(myCalltargetProvider.getCalltarget(proto.getConstructor().getConstructorRef(), Constructor.class), readPatterns(proto.getConstructor().getPatterns(), list));
-      default:
-        throw new DeserializationError("Unknown Pattern kind: " + proto.getKindCase());
-    }
-  }
-
-
 
   // Sorts and levels
 
@@ -178,9 +131,14 @@ class DefinitionDeserialization {
     return tele;
   }
 
-  TypedDependentLink readParameter(ExpressionProtos.SingleParameter proto) throws DeserializationError {
+  DependentLink readParameter(ExpressionProtos.SingleParameter proto) throws DeserializationError {
     Type type = readType(proto.getType());
-    TypedDependentLink link = new TypedDependentLink(!proto.getIsNotExplicit(), proto.getName(), type, EmptyDependentLink.getInstance());
+    DependentLink link;
+    if (proto.hasType()) {
+      link = new TypedDependentLink(!proto.getIsNotExplicit(), proto.getName(), type, EmptyDependentLink.getInstance());
+    } else {
+      link = new UntypedDependentLink(proto.getName(), EmptyDependentLink.getInstance());
+    }
     registerBinding(link);
     return link;
   }
@@ -196,7 +154,7 @@ class DefinitionDeserialization {
     for (Map.Entry<Integer, ExpressionProtos.FieldSet.Implementation> entry : proto.getImplementationsMap().entrySet()) {
       final TypedDependentLink thisParam;
       if (entry.getValue().hasThisParam()) {
-        thisParam = readParameter(entry.getValue().getThisParam());
+        thisParam = (TypedDependentLink) readParameter(entry.getValue().getThisParam());
       } else {
         thisParam = null;
       }
@@ -209,14 +167,18 @@ class DefinitionDeserialization {
 
   // Expressions and ElimTrees
 
-  ElimTreeNode readElimTree(ExpressionProtos.ElimTreeNode proto) throws DeserializationError {
+  ElimTree readElimTree(ExpressionProtos.ElimTree proto) throws DeserializationError {
+    DependentLink parameters = readParameters(proto.getParamList());
     switch (proto.getKindCase()) {
-      case BRANCH:
-        return readBranch(proto.getBranch());
+      case BRANCH: {
+        Map<Constructor, ElimTree> children = new HashMap<>();
+        for (Map.Entry<Integer, ExpressionProtos.ElimTree> entry : proto.getBranch().getClausesMap().entrySet()) {
+          children.put(myCalltargetProvider.getCalltarget(entry.getKey(), Constructor.class), readElimTree(entry.getValue()));
+        }
+        return new BranchElimTree(parameters, children);
+      }
       case LEAF:
-        return readLeaf(proto.getLeaf());
-      case EMPTY:
-        return readEmpty(proto.getEmpty());
+        return new LeafElimTree(parameters, readExpr(proto.getLeaf().getExpr()));
       default:
         throw new DeserializationError("Unknown ElimTreeNode kind: " + proto.getKindCase());
     }
@@ -234,8 +196,6 @@ class DefinitionDeserialization {
         return readDataCall(proto.getDataCall());
       case CLASS_CALL:
         return readClassCall(proto.getClassCall());
-      case LET_CLAUSE_CALL:
-        return readLetClauseCall(proto.getLetClauseCall());
       case REFERENCE:
         return readReference(proto.getReference());
       case LAM:
@@ -256,6 +216,8 @@ class DefinitionDeserialization {
         return readNew(proto.getNew());
       case LET:
         return readLet(proto.getLet());
+      case CASE:
+        return readCase(proto.getCase());
       case FIELD_CALL:
         return readFieldCall(proto.getFieldCall());
       default:
@@ -263,8 +225,8 @@ class DefinitionDeserialization {
     }
   }
 
-  private List<Expression> readExprList(List<ExpressionProtos.Expression> protos) throws DeserializationError {
-    List<Expression> result = new ArrayList<>();
+  List<Expression> readExprList(List<ExpressionProtos.Expression> protos) throws DeserializationError {
+    List<Expression> result = new ArrayList<>(protos.size());
     for (ExpressionProtos.Expression proto : protos) {
       result.add(readExpr(proto));
     }
@@ -278,10 +240,6 @@ class DefinitionDeserialization {
 
   private FunCallExpression readFunCall(ExpressionProtos.Expression.FunCall proto) throws DeserializationError {
     return new FunCallExpression(myCalltargetProvider.getCalltarget(proto.getFunRef(), FunctionDefinition.class), new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExprList(proto.getArgumentList()));
-  }
-
-  private LetClauseCallExpression readLetClauseCall(ExpressionProtos.Expression.LetClauseCall proto) throws DeserializationError {
-    return new LetClauseCallExpression((LetClause) readBindingRef(proto.getLetClauseRef()), readExprList(proto.getArgumentList()));
   }
 
   private ConCallExpression readConCall(ExpressionProtos.Expression.ConCall proto) throws DeserializationError {
@@ -342,58 +300,25 @@ class DefinitionDeserialization {
   private LetExpression readLet(ExpressionProtos.Expression.Let proto) throws DeserializationError {
     List<LetClause> clauses = new ArrayList<>();
     for (ExpressionProtos.Expression.Let.Clause cProto : proto.getClauseList()) {
-      List<Sort> sorts = new ArrayList<>(cProto.getSortCount());
-      for (LevelProtos.Sort sort : cProto.getSortList()) {
-        sorts.add(readSort(sort));
-      }
-      List<SingleDependentLink> parameters = new ArrayList<>(cProto.getParamCount());
-      for (ExpressionProtos.Telescope telescope : cProto.getParamList()) {
-        parameters.add(readSingleParameter(telescope));
-      }
-      LetClause clause = new LetClause(cProto.getName(), sorts, parameters, readType(cProto.getResultType()), readElimTree(cProto.getElimTree()));
+      LetClause clause = new LetClause(cProto.getName(), readExpr(cProto.getExpression()));
       registerBinding(clause);
       clauses.add(clause);
     }
     return new LetExpression(clauses, readExpr(proto.getExpression()));
   }
 
+  private CaseExpression readCase(ExpressionProtos.Expression.Case proto) throws DeserializationError {
+    List<Expression> arguments = new ArrayList<>(proto.getArgumentCount());
+    ElimTree elimTree = readElimTree(proto.getElimTree());
+    DependentLink parameters = readParameters(proto.getParamList());
+    Expression type = readExpr(proto.getResultType());
+    for (ExpressionProtos.Expression argument : proto.getArgumentList()) {
+      arguments.add(readExpr(argument));
+    }
+    return new CaseExpression(parameters, type, elimTree, arguments);
+  }
+
   private FieldCallExpression readFieldCall(ExpressionProtos.Expression.FieldCall proto) throws DeserializationError {
     return new FieldCallExpression(myCalltargetProvider.getCalltarget(proto.getFieldRef(), ClassField.class), readExpr(proto.getExpression()));
-  }
-
-
-  private BranchElimTreeNode readBranch(ExpressionProtos.ElimTreeNode.Branch proto) throws DeserializationError {
-    List<Binding> contextTail = new ArrayList<>();
-    for (int ref : proto.getContextTailItemRefList()) {
-      contextTail.add((Binding)readBindingRef(ref));
-    }
-    BranchElimTreeNode result = new BranchElimTreeNode((Binding)readBindingRef(proto.getReferenceRef()), contextTail, proto.getIsInterval());
-    for (Map.Entry<Integer, ExpressionProtos.ElimTreeNode.ConstructorClause> entry : proto.getConstructorClausesMap().entrySet()) {
-      ExpressionProtos.ElimTreeNode.ConstructorClause cProto = entry.getValue();
-      DependentLink constructorParams = readParameters(cProto.getParamList());
-      List<TypedBinding> tailBindings = new ArrayList<>();
-      for (ExpressionProtos.Binding.TypedBinding bProto : cProto.getTailBindingList()) {
-        tailBindings.add(readTypedBinding(bProto));
-      }
-      result.addClause(myCalltargetProvider.getCalltarget(entry.getKey(), Constructor.class), constructorParams, tailBindings, readElimTree(cProto.getChild()));
-    }
-    if (proto.hasOtherwiseClause()) {
-      result.addOtherwiseClause(readElimTree(proto.getOtherwiseClause()));
-    }
-    return result;
-  }
-
-  private LeafElimTreeNode readLeaf(ExpressionProtos.ElimTreeNode.Leaf proto) throws DeserializationError {
-    List<Binding> context = new ArrayList<>();
-    for (int ref : proto.getMatchedRefList()) {
-      context.add((Binding)readBindingRef(ref));
-    }
-    LeafElimTreeNode result = new LeafElimTreeNode(proto.getArrowLeft() ? Abstract.Definition.Arrow.LEFT : Abstract.Definition.Arrow.RIGHT, readExpr(proto.getExpr()));
-    result.setMatched(context);
-    return result;
-  }
-
-  private EmptyElimTreeNode readEmpty(ExpressionProtos.ElimTreeNode.Empty proto) {
-    return EmptyElimTreeNode.getInstance();
   }
 }

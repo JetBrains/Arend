@@ -35,8 +35,10 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
 
   private static SimpleNamespace forData(Abstract.DataDefinition def) {
     SimpleNamespace ns = new SimpleNamespace();
-    for (Abstract.Constructor constructor : def.getConstructors()) {
-      ns.addDefinition(constructor);
+    for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
+      for (Abstract.Constructor constructor : clause.getConstructors()) {
+        ns.addDefinition(constructor);
+      }
     }
     return ns;
   }

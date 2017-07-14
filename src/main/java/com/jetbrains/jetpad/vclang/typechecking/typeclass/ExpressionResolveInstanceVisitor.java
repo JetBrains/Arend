@@ -26,13 +26,13 @@ public class ExpressionResolveInstanceVisitor implements AbstractExpressionVisit
   }
 
   @Override
-  public Void visitDefCall(Abstract.DefCallExpression expr, Void params) {
+  public Void visitReference(Abstract.ReferenceExpression expr, Void params) {
     Abstract.Expression expression = expr.getExpression();
     if (expression != null) {
       expression.accept(this, null);
     }
 
-    Abstract.Definition definition = expr.getReferent();
+    Abstract.ReferableSourceNode definition = expr.getReferent();
     if (definition instanceof Abstract.ClassViewField) {
       Abstract.ClassView classView = ((Abstract.ClassViewField) definition).getOwnView();
       Collection<? extends Abstract.ClassViewInstance> instances = myParentScope.getInstances();
@@ -43,8 +43,8 @@ public class ExpressionResolveInstanceVisitor implements AbstractExpressionVisit
         }
       }
       myInstanceProvider.addInstances(expr, 0, filteredInstances);
-    } else {
-      Collection<? extends Abstract.Argument> arguments = Abstract.getArguments(definition);
+    } else if (definition instanceof Abstract.Definition) {
+      Collection<? extends Abstract.Argument> arguments = Abstract.getArguments((Abstract.Definition) definition);
       if (arguments != null) {
         checkArguments(expr, arguments);
       }
@@ -52,20 +52,25 @@ public class ExpressionResolveInstanceVisitor implements AbstractExpressionVisit
     return null;
   }
 
-  private void checkArguments(Abstract.DefCallExpression defCall, Collection<? extends Abstract.Argument> args) {
+  @Override
+  public Void visitInferenceReference(Abstract.InferenceReferenceExpression expr, Void params) {
+    return null;
+  }
+
+  private void checkArguments(Abstract.ReferenceExpression defCall, Collection<? extends Abstract.Argument> args) {
     int i = 0;
     for (Abstract.Argument arg : args) {
       if (arg instanceof Abstract.NameArgument) {
         i++;
       } else
       if (arg instanceof Abstract.TypeArgument) {
-        int size = i + (arg instanceof Abstract.TelescopeArgument ? ((Abstract.TelescopeArgument) arg).getNames().size() : 1);
+        int size = i + (arg instanceof Abstract.TelescopeArgument ? ((Abstract.TelescopeArgument) arg).getReferableList().size() : 1);
         Abstract.ClassView classView = Abstract.getUnderlyingClassView(((Abstract.TypeArgument) arg).getType());
         if (classView != null) {
           Collection<? extends Abstract.ClassViewInstance> instances = myParentScope.getInstances();
           List<Abstract.ClassViewInstance> filteredInstances = new ArrayList<>();
           for (Abstract.ClassViewInstance instance : instances) {
-            if (instance.isDefault() && ((Abstract.ClassView) instance.getClassView().getReferent()).getUnderlyingClassDefCall().getReferent() == classView.getUnderlyingClassDefCall().getReferent()) {
+            if (instance.isDefault() && ((Abstract.ClassView) instance.getClassView().getReferent()).getUnderlyingClassReference().getReferent() == classView.getUnderlyingClassReference().getReferent()) {
               filteredInstances.add(instance);
             }
           }
@@ -153,33 +158,23 @@ public class ExpressionResolveInstanceVisitor implements AbstractExpressionVisit
   public Void visitBinOpSequence(Abstract.BinOpSequenceExpression expr, Void params) {
     expr.getLeft().accept(this, null);
     for (Abstract.BinOpSequenceElem elem : expr.getSequence()) {
-      visitDefCall(elem.binOp, null);
+      visitReference(elem.binOp, null);
       elem.argument.accept(this, null);
     }
     return null;
   }
 
   @Override
-  public Void visitElim(Abstract.ElimExpression expr, Void params) {
-    visitElimCase(expr);
-    return null;
-  }
-
-  @Override
   public Void visitCase(Abstract.CaseExpression expr, Void params) {
-    visitElimCase(expr);
-    return null;
-  }
-
-  private void visitElimCase(Abstract.ElimCaseExpression expr) {
     for (Abstract.Expression expression : expr.getExpressions()) {
       expression.accept(this, null);
     }
-    for (Abstract.Clause clause : expr.getClauses()) {
+    for (Abstract.FunctionClause clause : expr.getClauses()) {
       if (clause.getExpression() != null) {
         clause.getExpression().accept(this, null);
       }
     }
+    return null;
   }
 
   @Override

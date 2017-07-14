@@ -1,21 +1,19 @@
 package com.jetbrains.jetpad.vclang.core.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.Constructor;
+import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.Stack;
+import java.util.*;
 
-public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTreeNodeVisitor<Void, ElimTreeNode> {
+public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   private final Set<Binding> myBounds;
   private final LocalErrorReporter myErrorReporter;
   private final Stack<InferenceReferenceExpression> myVariables;
@@ -83,19 +81,6 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
     LocalTypeCheckingError error = myVariables.empty() ? new LocalTypeCheckingError("Cannot infer some expressions", null) : myVariables.peek().getOriginalVariable().getErrorInfer(myVariables.peek().getSubstExpression());
     myErrorReporter.report(error);
     return new ErrorExpression(expr, error);
-  }
-
-  @Override
-  public Expression visitLetClauseCall(LetClauseCallExpression expr, Void params) {
-    if (myBounds.contains(expr.getLetClause())) {
-      List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
-      for (Expression arg : expr.getDefCallArguments()) {
-        args.add(arg.accept(this, null));
-      }
-      return new LetClauseCallExpression(expr.getLetClause(), args);
-    } else {
-      return cannotInferError(expr);
-    }
   }
 
   @Override
@@ -196,12 +181,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
   @Override
   public LetExpression visitLet(LetExpression expr, Void params) {
     for (LetClause clause : expr.getClauses()) {
-      clause.getParameters().forEach(this::visitArguments);
-      if (clause.getResultType() != null) {
-        clause.setResultType(clause.getResultType().strip(myBounds, myErrorReporter));
-      }
-      clause.setElimTree(clause.getElimTree().accept(this, null));
-      clause.getParameters().forEach(this::freeArguments);
+      clause.setExpression(clause.getExpression().accept(this, null));
       myBounds.add(clause);
     }
 
@@ -211,41 +191,34 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
   }
 
   @Override
+  public Expression visitCase(CaseExpression expr, Void params) {
+    ElimTree elimTree = stripElimTree(expr.getElimTree());
+    for (int i = 0; i < expr.getArguments().size(); i++) {
+      expr.getArguments().set(i, expr.getArguments().get(i).accept(this, null));
+    }
+    visitArguments(expr.getParameters());
+    Expression type = expr.getResultType().accept(this, null);
+    freeArguments(expr.getParameters());
+    return new CaseExpression(expr.getParameters(), type, elimTree, expr.getArguments());
+  }
+
+  private ElimTree stripElimTree(ElimTree elimTree) {
+    visitArguments(elimTree.getParameters());
+    if (elimTree instanceof LeafElimTree) {
+      elimTree = new LeafElimTree(elimTree.getParameters(), ((LeafElimTree) elimTree).getExpression().accept(this, null));
+    } else {
+      Map<Constructor, ElimTree> children = new HashMap<>();
+      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
+        children.put(entry.getKey(), stripElimTree(entry.getValue()));
+      }
+      elimTree = new BranchElimTree(elimTree.getParameters(), children);
+    }
+    freeArguments(elimTree.getParameters());
+    return elimTree;
+  }
+
+  @Override
   public Expression visitOfType(OfTypeExpression expr, Void params) {
     return expr.getExpression().accept(this, null);
-  }
-
-  @Override
-  public BranchElimTreeNode visitBranch(BranchElimTreeNode branchNode, Void params) {
-    myBounds.remove(branchNode.getReference());
-    for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-      visitArguments(clause.getParameters());
-      for (TypedBinding binding : clause.getTailBindings()) {
-        binding.setType(binding.getType().strip(myBounds, myErrorReporter));
-        myBounds.add(binding);
-      }
-
-      clause.setChild(clause.getChild().accept(this, null));
-
-      freeArguments(clause.getParameters());
-      clause.getTailBindings().forEach(myBounds::remove);
-    }
-
-    myBounds.add(branchNode.getReference());
-    if (branchNode.getOtherwiseClause() != null) {
-      branchNode.getOtherwiseClause().setChild(branchNode.getOtherwiseClause().getChild().accept(this, null));
-    }
-    return branchNode;
-  }
-
-  @Override
-  public LeafElimTreeNode visitLeaf(LeafElimTreeNode leafNode, Void params) {
-    leafNode.setExpression(leafNode.getExpression().accept(this, null));
-    return leafNode;
-  }
-
-  @Override
-  public EmptyElimTreeNode visitEmpty(EmptyElimTreeNode emptyNode, Void params) {
-    return emptyNode;
   }
 }

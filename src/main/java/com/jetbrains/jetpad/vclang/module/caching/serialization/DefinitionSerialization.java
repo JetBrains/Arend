@@ -2,23 +2,21 @@ package com.jetbrains.jetpad.vclang.module.caching.serialization;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
-import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
+import com.jetbrains.jetpad.vclang.core.definition.Constructor;
+import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
-import com.jetbrains.jetpad.vclang.core.pattern.*;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.*;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,21 +55,12 @@ class DefinitionSerialization {
     }
   }
 
+  @SuppressWarnings("UnusedReturnValue")
   private int registerBinding(Binding binding) {
     int index = myBindings.size();
     myBindings.add(binding);
     myBindingsMap.put(binding, index);
     return index;
-  }
-
-  ExpressionProtos.Binding.TypedBinding createTypedBinding(TypedBinding binding) {
-    ExpressionProtos.Binding.TypedBinding.Builder builder = ExpressionProtos.Binding.TypedBinding.newBuilder();
-    if (binding.getName() != null) {
-      builder.setName(binding.getName());
-    }
-    builder.setType(writeType(binding.getType()));
-    registerBinding(binding);
-    return builder.build();
   }
 
   private ExpressionProtos.Type writeType(Type type) {
@@ -90,45 +79,6 @@ class DefinitionSerialization {
       return myBindingsMap.get(binding) + 1;  // zero is reserved for null
     }
   }
-
-
-  // Patterns
-
-  DefinitionProtos.Definition.DataData.Constructor.Patterns writePatterns(Patterns patterns) {
-    DefinitionProtos.Definition.DataData.Constructor.Patterns.Builder builder = DefinitionProtos.Definition.DataData.Constructor.Patterns.newBuilder();
-    for (PatternArgument patternArg : patterns.getPatterns()) {
-      DefinitionProtos.Definition.DataData.Constructor.PatternArgument.Builder paBuilder = DefinitionProtos.Definition.DataData.Constructor.PatternArgument.newBuilder();
-      paBuilder.setNotExplicit(!patternArg.isExplicit());
-      paBuilder.setHidden(patternArg.isHidden());
-      paBuilder.setPattern(writePattern(patternArg.getPattern()));
-      builder.addPatternArgument(paBuilder.build());
-    }
-    return builder.build();
-  }
-
-  private DefinitionProtos.Definition.DataData.Constructor.Pattern writePattern(Pattern pattern) {
-    DefinitionProtos.Definition.DataData.Constructor.Pattern.Builder builder = DefinitionProtos.Definition.DataData.Constructor.Pattern.newBuilder();
-    if (pattern instanceof NamePattern) {
-      builder.setName(
-          DefinitionProtos.Definition.DataData.Constructor.Pattern.Name.newBuilder()
-            .setVar(writeParameter((TypedDependentLink) pattern.getParameters())) // TODO: This cast is potentially dangerous
-      );
-    } else if (pattern instanceof AnyConstructorPattern) {
-      builder.setAnyConstructor(
-          DefinitionProtos.Definition.DataData.Constructor.Pattern.AnyConstructor.newBuilder()
-              .setVar(writeParameter(((AnyConstructorPattern) pattern).getParameters()))
-      );
-    } else if (pattern instanceof ConstructorPattern) {
-      DefinitionProtos.Definition.DataData.Constructor.Pattern.ConstructorRef.Builder pBuilder = DefinitionProtos.Definition.DataData.Constructor.Pattern.ConstructorRef.newBuilder();
-      pBuilder.setConstructorRef(myCalltargetIndexProvider.getDefIndex(((ConstructorPattern) pattern).getConstructor()));
-      pBuilder.setPatterns(writePatterns(((ConstructorPattern) pattern).getPatterns()));
-      builder.setConstructor(pBuilder.build());
-    } else {
-      throw new IllegalArgumentException();
-    }
-    return builder.build();
-  }
-
 
   // Sorts and levels
 
@@ -189,13 +139,15 @@ class DefinitionSerialization {
     return tBuilder.build();
   }
 
-  ExpressionProtos.SingleParameter writeParameter(TypedDependentLink link) {
+  ExpressionProtos.SingleParameter writeParameter(DependentLink link) {
     ExpressionProtos.SingleParameter.Builder builder = ExpressionProtos.SingleParameter.newBuilder();
     if (link.getName() != null) {
       builder.setName(link.getName());
     }
     builder.setIsNotExplicit(!link.isExplicit());
-    builder.setType(writeType(link.getType()));
+    if (link instanceof TypedDependentLink) {
+      builder.setType(writeType(link.getType()));
+    }
     registerBinding(link);
     return builder.build();
   }
@@ -229,12 +181,30 @@ class DefinitionSerialization {
     return expr.accept(myVisitor, null);
   }
 
-  ExpressionProtos.ElimTreeNode writeElimTree(ElimTreeNode elimTree) {
-    return elimTree.accept(myVisitor, null);
+  ExpressionProtos.ElimTree writeElimTree(ElimTree elimTree) {
+    ExpressionProtos.ElimTree.Builder builder = ExpressionProtos.ElimTree.newBuilder();
+    builder.addAllParam(writeParameters(elimTree.getParameters()));
+
+    if (elimTree instanceof LeafElimTree) {
+      ExpressionProtos.ElimTree.Leaf.Builder leafBuilder = ExpressionProtos.ElimTree.Leaf.newBuilder();
+      leafBuilder.setExpr(((LeafElimTree) elimTree).getExpression().accept(myVisitor, null));
+      builder.setLeaf(leafBuilder);
+    } else {
+      BranchElimTree branchElimTree = (BranchElimTree) elimTree;
+      ExpressionProtos.ElimTree.Branch.Builder branchBuilder = ExpressionProtos.ElimTree.Branch.newBuilder();
+
+      for (Map.Entry<Constructor, ElimTree> entry : branchElimTree.getChildren()) {
+        branchBuilder.putClauses(myCalltargetIndexProvider.getDefIndex(entry.getKey()), writeElimTree(entry.getValue()));
+      }
+
+      builder.setBranch(branchBuilder);
+    }
+
+    return builder.build();
   }
 
 
-  private class SerializeVisitor implements ExpressionVisitor<Void, ExpressionProtos.Expression>, ElimTreeNodeVisitor<Void, ExpressionProtos.ElimTreeNode> {
+  private class SerializeVisitor implements ExpressionVisitor<Void, ExpressionProtos.Expression> {
     @Override
     public ExpressionProtos.Expression visitApp(AppExpression expr, Void params) {
       ExpressionProtos.Expression.App.Builder builder = ExpressionProtos.Expression.App.newBuilder();
@@ -294,16 +264,6 @@ class DefinitionSerialization {
     @Override
     public ExpressionProtos.Expression visitClassCall(ClassCallExpression expr, Void params) {
       return ExpressionProtos.Expression.newBuilder().setClassCall(writeClassCall(expr)).build();
-    }
-
-    @Override
-    public ExpressionProtos.Expression visitLetClauseCall(LetClauseCallExpression expr, Void params) {
-      ExpressionProtos.Expression.LetClauseCall.Builder builder = ExpressionProtos.Expression.LetClauseCall.newBuilder();
-      builder.setLetClauseRef(writeBindingRef(expr.getLetClause()));
-      for (Expression arg : expr.getDefCallArguments()) {
-        builder.addArgument(arg.accept(this, null));
-      }
-      return ExpressionProtos.Expression.newBuilder().setLetClauseCall(builder).build();
     }
 
     @Override
@@ -394,21 +354,25 @@ class DefinitionSerialization {
     public ExpressionProtos.Expression visitLet(LetExpression letExpression, Void params) {
       ExpressionProtos.Expression.Let.Builder builder = ExpressionProtos.Expression.Let.newBuilder();
       for (LetClause letClause : letExpression.getClauses()) {
-        ExpressionProtos.Expression.Let.Clause.Builder cBuilder = ExpressionProtos.Expression.Let.Clause.newBuilder();
-        cBuilder.setName(letClause.getName());
-        for (Sort sort : letClause.getSortList()) {
-          cBuilder.addSort(writeSort(sort));
-        }
-        for (SingleDependentLink link : letClause.getParameters()) {
-          cBuilder.addParam(writeSingleParameter(link));
-        }
-        cBuilder.setResultType(writeType(letClause.getResultType()));
-        cBuilder.setElimTree(writeElimTree(letClause.getElimTree()));
-        builder.addClause(cBuilder);
+        builder.addClause(ExpressionProtos.Expression.Let.Clause.newBuilder()
+          .setName(letClause.getName())
+          .setExpression(writeExpr(letClause.getExpression())));
         registerBinding(letClause);
       }
       builder.setExpression(letExpression.getExpression().accept(this, null));
       return ExpressionProtos.Expression.newBuilder().setLet(builder).build();
+    }
+
+    @Override
+    public ExpressionProtos.Expression visitCase(CaseExpression expr, Void params) {
+      ExpressionProtos.Expression.Case.Builder builder = ExpressionProtos.Expression.Case.newBuilder();
+      builder.setElimTree(writeElimTree(expr.getElimTree()));
+      builder.addAllParam(writeParameters(expr.getParameters()));
+      builder.setResultType(writeExpr(expr.getResultType()));
+      for (Expression argument : expr.getArguments()) {
+        builder.addArgument(writeExpr(argument));
+      }
+      return ExpressionProtos.Expression.newBuilder().setCase(builder).build();
     }
 
     @Override
@@ -424,51 +388,6 @@ class DefinitionSerialization {
       builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
       builder.setExpression(expr.getExpression().accept(this, null));
       return ExpressionProtos.Expression.newBuilder().setFieldCall(builder).build();
-    }
-
-
-    @Override
-    public ExpressionProtos.ElimTreeNode visitBranch(BranchElimTreeNode branchNode, Void params) {
-      ExpressionProtos.ElimTreeNode.Branch.Builder builder = ExpressionProtos.ElimTreeNode.Branch.newBuilder();
-
-      builder.setReferenceRef(writeBindingRef(branchNode.getReference()));
-
-      builder.setIsInterval(branchNode.isInterval());
-
-      for (Binding binding : branchNode.getContextTail()) {
-        builder.addContextTailItemRef(writeBindingRef(binding));
-      }
-      for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-        ExpressionProtos.ElimTreeNode.ConstructorClause.Builder ccBuilder = ExpressionProtos.ElimTreeNode.ConstructorClause.newBuilder();
-
-        ccBuilder.addAllParam(writeParameters(clause.getParameters()));
-        for (TypedBinding binding : clause.getTailBindings()) {
-          ccBuilder.addTailBinding(createTypedBinding(binding));
-        }
-        ccBuilder.setChild(writeElimTree(clause.getChild()));
-
-        builder.putConstructorClauses(myCalltargetIndexProvider.getDefIndex(clause.getConstructor()), ccBuilder.build());
-      }
-      if (branchNode.getOtherwiseClause() != null) {
-        builder.setOtherwiseClause(writeElimTree(branchNode.getOtherwiseClause().getChild()));
-      }
-      return ExpressionProtos.ElimTreeNode.newBuilder().setBranch(builder).build();
-    }
-
-    @Override
-    public ExpressionProtos.ElimTreeNode visitLeaf(LeafElimTreeNode leafNode, Void params) {
-      ExpressionProtos.ElimTreeNode.Leaf.Builder builder = ExpressionProtos.ElimTreeNode.Leaf.newBuilder();
-      builder.setArrowLeft(Abstract.Definition.Arrow.LEFT.equals(leafNode.getArrow()));
-      for (Binding binding : leafNode.getMatched()) {
-        builder.addMatchedRef(writeBindingRef(binding));
-      }
-      builder.setExpr(leafNode.getExpression().accept(this, null));
-      return ExpressionProtos.ElimTreeNode.newBuilder().setLeaf(builder).build();
-    }
-
-    @Override
-    public ExpressionProtos.ElimTreeNode visitEmpty(EmptyElimTreeNode emptyNode, Void params) {
-      return ExpressionProtos.ElimTreeNode.newBuilder().setEmpty(ExpressionProtos.ElimTreeNode.Empty.newBuilder()).build();
     }
   }
 }

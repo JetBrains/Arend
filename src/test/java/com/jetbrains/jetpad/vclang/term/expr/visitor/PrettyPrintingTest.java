@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.LetClause;
 import com.jetbrains.jetpad.vclang.core.expr.LetExpression;
-import com.jetbrains.jetpad.vclang.core.pattern.elimtree.EmptyElimTreeNode;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -13,7 +12,6 @@ import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -64,9 +62,11 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   public void prettyPrintingFunDef() {
     // f (X : Type0) (x : X) : X => x;
     List<Concrete.Argument> arguments = new ArrayList<>(2);
-    arguments.add(cTele(cvars("X"), cUniverseStd(0)));
-    arguments.add(cTele(cvars("x"), cVar("X")));
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(ConcreteExpressionFactory.POSITION, "f", Abstract.Precedence.DEFAULT, arguments, cVar("X"), Abstract.Definition.Arrow.RIGHT, cLam("X", cLam("x", cVar("x"))), Collections.<Concrete.Statement>emptyList());
+    Concrete.ReferableSourceNode X = ref("X");
+    Concrete.ReferableSourceNode x = ref("X");
+    arguments.add(cTele(cvars(X), cUniverseStd(0)));
+    arguments.add(cTele(cvars(x), cVar(X)));
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(ConcreteExpressionFactory.POSITION, "f", Abstract.Precedence.DEFAULT, arguments, cVar(X), body(cVar(x)), Collections.emptyList());
     def.accept(new PrettyPrintVisitor(new StringBuilder(), 0), null);
   }
 
@@ -75,31 +75,21 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     // \let x {A : Type0} (y : A) : A => y \in x Zero()
     SingleDependentLink A = singleParam("A", Universe(0));
     SingleDependentLink y = singleParam("y", Ref(A));
-    LetClause clause = let("x", Arrays.asList(A, y), Ref(A), Ref(y));
-    LetExpression expr = new LetExpression(lets(clause), Apps(Ref(clause), Zero()));
-    expr.prettyPrint(new StringBuilder(), new ArrayList<>(), Abstract.Expression.PREC, 0);
-  }
-
-  @Test
-  public void prettyPrintingLetEmpty() {
-    // \let x {A : Type0} (y ; A) : A <= \elim y
-    SingleDependentLink A = singleParam("A", Universe(0));
-    SingleDependentLink y = singleParam("y", Ref(A));
-    LetClause clause = let("x", Arrays.asList(A, y), Ref(A), EmptyElimTreeNode.getInstance());
+    LetClause clause = let("x", Lam(A, Lam(y, Ref(y))));
     LetExpression expr = new LetExpression(lets(clause), Apps(Ref(clause), Zero()));
     expr.prettyPrint(new StringBuilder(), new ArrayList<>(), Abstract.Expression.PREC, 0);
   }
 
   @Test
   public void prettyPrintingPatternDataDef() {
-    Concrete.Definition def = parseDef("\\data LE (n m : Nat) | LE (zero) m => LE-zero | LE (suc n) (suc m) => LE-suc (LE n m)");
+    Concrete.Definition def = parseDef("\\data LE Nat Nat \\with | zero, m => LE-zero | suc n, suc m => LE-suc (LE n m)");
     assertNotNull(def);
     def.accept(new PrettyPrintVisitor(new StringBuilder(), Abstract.Expression.PREC), null);
   }
 
   @Test
   public void prettyPrintingDataWithConditions() {
-    Concrete.Definition def = parseDef("\\data Z | neg Nat | pos Nat \\with | pos zero => neg zero");
+    Concrete.Definition def = parseDef("\\data Z | neg Nat | pos Nat { zero => neg zero }");
     assertNotNull(def);
     def.accept(new PrettyPrintVisitor(new StringBuilder(), Abstract.Expression.PREC), null);
   }

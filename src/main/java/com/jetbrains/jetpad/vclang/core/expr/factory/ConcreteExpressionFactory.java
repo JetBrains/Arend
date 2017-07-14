@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.core.expr.factory;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -9,10 +10,11 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 
+@SuppressWarnings("unchecked")
 public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   @Override
   public Abstract.Expression makeApp(Abstract.Expression fun, boolean explicit, Abstract.Expression arg) {
-    return cApps((Concrete.Expression) fun, (Concrete.Expression) arg, explicit, false);
+    return cApps((Concrete.Expression) fun, (Concrete.Expression) arg, explicit);
   }
 
   @Override
@@ -36,13 +38,23 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.Expression makeVar(String name) {
-    return cVar(name);
+  public Abstract.ReferableSourceNode makeReferable(String name) {
+    return new Concrete.LocalVariable(POSITION, name);
   }
 
   @Override
-  public Abstract.Argument makeNameArgument(boolean explicit, String name) {
-    return cName(explicit, name);
+  public Abstract.Expression makeVar(Abstract.ReferableSourceNode referable) {
+    return cVar(referable);
+  }
+
+  @Override
+  public Abstract.Expression makeInferVar(InferenceVariable variable) {
+    return new Concrete.InferenceReferenceExpression(POSITION, variable);
+  }
+
+  @Override
+  public Abstract.Argument makeNameArgument(boolean explicit, Abstract.ReferableSourceNode referable) {
+    return cName(explicit, referable);
   }
 
   @Override
@@ -51,8 +63,8 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.TypeArgument makeTelescopeArgument(boolean explicit, List<String> names, Abstract.Expression type) {
-    return cTele(explicit, names, (Concrete.Expression) type);
+  public Abstract.TypeArgument makeTelescopeArgument(boolean explicit, List<? extends Abstract.ReferableSourceNode> referableList, Abstract.Expression type) {
+    return cTele(explicit, referableList, (Concrete.Expression) type);
   }
 
   @Override
@@ -146,37 +158,32 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.LetClause makeLetClause(String name, List<? extends Abstract.Argument> arguments, Abstract.Expression resultType, Abstract.Definition.Arrow arrow, Abstract.Expression term) {
-    return clet(name, (List<Concrete.Argument>) arguments, (Concrete.Expression) resultType, arrow, (Concrete.Expression) term);
+  public Abstract.LetClause makeLetClause(Abstract.ReferableSourceNode referable, List<? extends Abstract.Argument> arguments, Abstract.Expression resultType, Abstract.Expression term) {
+    return clet(referable.getName(), (List<Concrete.Argument>) arguments, (Concrete.Expression) resultType, (Concrete.Expression) term);
   }
 
   @Override
-  public Abstract.Expression makeElim(List<? extends Abstract.Expression> exprs, List<? extends Abstract.Clause> clauses) {
-    return cElim((List<Concrete.Expression>) exprs, (List<Concrete.Clause>) clauses);
+  public Abstract.Expression makeCase(List<? extends Abstract.Expression> expressions, List<? extends Abstract.FunctionClause> clauses) {
+    return cCase((List<Concrete.Expression>) expressions, (List<Concrete.FunctionClause>) clauses);
   }
 
   @Override
-  public Abstract.Expression makeCase(List<? extends Abstract.Expression> expressions, List<? extends Abstract.Clause> clauses) {
-    return cCase((List<Concrete.Expression>) expressions, (List<Concrete.Clause>) clauses);
+  public Abstract.FunctionClause makeClause(List<? extends Abstract.Pattern> patterns, Abstract.Expression expr) {
+    return cClause((List<Concrete.Pattern>) patterns, (Concrete.Expression) expr);
   }
 
   @Override
-  public Abstract.Clause makeClause(List<? extends Abstract.Pattern> patterns, Abstract.Definition.Arrow arrow, Abstract.Expression expr) {
-    return cClause((List<Concrete.Pattern>) patterns, arrow, (Concrete.Expression) expr);
+  public Abstract.Pattern makeConPattern(boolean isExplicit, Abstract.Constructor constructor, List<? extends Abstract.Pattern> args) {
+    return cConPattern(isExplicit, constructor.getName(), (List<Concrete.Pattern>) args);
   }
 
   @Override
-  public Abstract.Pattern makeConPattern(String name, List<? extends Abstract.PatternArgument> args) {
-    return cConPattern(name, (List<Concrete.PatternArgument>) args);
+  public Abstract.Pattern makeNamePattern(boolean isExplicit, Abstract.ReferableSourceNode referable) {
+    return cNamePattern(isExplicit, referable);
   }
 
   @Override
-  public Abstract.Pattern makeNamePattern(String name) {
-    return cNamePattern(name);
-  }
-
-  @Override
-  public Abstract.PatternArgument makePatternArgument(Abstract.Pattern pattern, boolean explicit) {
-    return cPatternArg((Concrete.Pattern) pattern, explicit, false);
+  public Abstract.Pattern makeEmptyPattern(boolean isExplicit) {
+    return cEmptyPattern(isExplicit);
   }
 }

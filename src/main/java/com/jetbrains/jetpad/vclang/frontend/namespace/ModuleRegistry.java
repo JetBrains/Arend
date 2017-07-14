@@ -6,4 +6,5 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 
 public interface ModuleRegistry {
   ModuleNamespace registerModule(ModulePath modulePath, Abstract.ClassDefinition module);
+  void unregisterModule(ModulePath path);
 }

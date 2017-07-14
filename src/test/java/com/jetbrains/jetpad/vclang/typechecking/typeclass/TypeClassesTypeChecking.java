@@ -9,20 +9,20 @@ import static org.hamcrest.Matchers.instanceOf;
 public class TypeClassesTypeChecking extends TypeCheckingTestCase {
   @Test
   public void classViewFieldNotInScope() {
-    typeCheckClass(
+    resolveNamesClass(
         "\\class X {\n" +
         "  \\field A : \\Type0\n" +
         "}\n" +
-        "\\view Foo \\on X \\by A { B }", 1, 0);
+        "\\view Foo \\on X \\by A { B }", 1);
   }
 
   @Test
   public void classifyingFieldNotInScope() {
-    typeCheckClass(
+    resolveNamesClass(
         "\\class X {\n" +
         "  \\field A : \\Type0\n" +
         "}\n" +
-        "\\view Foo \\on X \\by Y { }", 1, 0);
+        "\\view Foo \\on X \\by Y { }", 1);
   }
 
   @Test

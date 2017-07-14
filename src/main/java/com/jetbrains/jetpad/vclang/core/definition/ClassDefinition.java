@@ -86,11 +86,6 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
-  public ClassCallExpression getDefCall(Sort sortArgument, List<Expression> args) {
-    return new ClassCallExpression(this, sortArgument, myFieldSet);
-  }
-
-  @Override
   public void setThisClass(ClassDefinition enclosingClass) {
     assert myEnclosingThisField == null;
     super.setThisClass(enclosingClass);

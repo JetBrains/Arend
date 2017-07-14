@@ -8,23 +8,23 @@ import static org.junit.Assert.assertTrue;
 public class Truncations extends TypeCheckingTestCase {
   @Test
   public void elimInProp() {
-    typeCheckDef("\\function inP-inv (P : \\Prop) (p : TrP P) : P <= \\elim p | inP p => p");
+    typeCheckDef("\\function inP-inv (P : \\Prop) (p : TrP P) : P => \\elim p | inP p => p");
   }
 
   @Test
   public void elimInSet1() {
-    typeCheckDef("\\function inS-inv (A : \\Set) (x : TrS A) : A <= \\elim x | inS x => x");
+    typeCheckDef("\\function inS-inv (A : \\Set) (x : TrS A) : A => \\elim x | inS x => x");
   }
 
   @Test
   public void elimInSet2() {
-    typeCheckDef("\\function trSToNat (A : \\Type) (x : TrS A) : Nat <= \\elim x | inS x => 0");
+    typeCheckDef("\\function trSToNat (A : \\Type) (x : TrS A) : Nat => \\elim x | inS x => 0");
   }
 
   @Test
   public void truncPEval() {
     typeCheckClass(
-        "\\function inP-inv (P : \\Prop) (p : TrP P) : P <= \\elim p | inP p => p\n" +
+        "\\function inP-inv (P : \\Prop) (p : TrP P) : P => \\elim p | inP p => p\n" +
         "\\function trunc-eval (P : \\Prop) (p : TrP P) : (Path (\\lam _ => TrP P) ((TrP P).inP (inP-inv P p)) p) => path ((TrP P).truncP ((TrP P).inP (inP-inv P p)) p)");
   }
 
@@ -32,14 +32,13 @@ public class Truncations extends TypeCheckingTestCase {
   public void setTruncationTests() {
     typeCheckClass(
         "\\data TrS' (A : \\Type0)\n" +
-        "    | inS' A\n" +
-        "    | truncS' (a a' : TrS' A) (p q : a = a') I I\n" +
-        "  \\with\n" +
-        "    | truncS' a _ _ _ left _ => a\n" +
-        "    | truncS' _ a' _ _ right _ => a'\n" +
-        "    | truncS' _ _ p _ i left => p @ i\n" +
-        "    | truncS' _ _ _ q i right => q @ i\n" +
-        "\n" +
+        "  | inS' A\n" +
+        "  | truncS' (a a' : TrS' A) (p q : a = a') (i j : I) => \\elim i, j {\n" +
+        "    | left, _ => a\n" +
+        "    | right, _ => a'\n" +
+        "    | i, left => p @ i\n" +
+        "    | i, right => q @ i\n" +
+        "  }\n" +
         "\\function\n" +
         "set-trunc-test (A : \\Type0) (a a' : TrS' A) (p q : a = a') : TrS' A => truncS' a a' p q left left\n" +
         "\n" +
@@ -51,14 +50,13 @@ public class Truncations extends TypeCheckingTestCase {
   public void dynamicSetTruncationTests() {
     typeCheckClass(
         "\\data TrS' (A : \\Type0)\n" +
-        "    | inS' A\n" +
-        "    | truncS' (a a' : TrS' A) (p q : a = a') I I\n" +
-        "  \\with\n" +
-        "    | truncS' a _ _ _ left _ => a\n" +
-        "    | truncS' _ a' _ _ right _ => a'\n" +
-        "    | truncS' _ _ p _ i left => p @ i\n" +
-        "    | truncS' _ _ _ q i right => q @ i\n" +
-        "\n" +
+        "  | inS' A\n" +
+        "  | truncS' (a a' : TrS' A) (p q : a = a') (i j : I) => \\elim i, j {\n" +
+        "    | left, _ => a\n" +
+        "    | right, _ => a'\n" +
+        "    | i, left => p @ i\n" +
+        "    | i, right => q @ i\n" +
+        "  }\n" +
         "\\function\n" +
         "set-trunc-test (A : \\Type0) (a a' : TrS' A) (p q : a = a') : TrS' A => truncS' a a' p q left left\n" +
         "\n" +
@@ -69,10 +67,12 @@ public class Truncations extends TypeCheckingTestCase {
   @Test
   public void S1Level() {
     DataDefinition definition = (DataDefinition) typeCheckDef(
-        "\\data S1 | base | loop I\n" +
-        "\\with\n" +
-        "  | loop left => base\n" +
-        "  | loop right => base");
+        "\\data S1\n" +
+        "  | base\n" +
+        "  | loop I {\n" +
+        "    | left => base\n" +
+        "    | right => base\n" +
+        "  }");
     assertTrue(definition.getSort().getPLevel().isClosed() && definition.getSort().getPLevel().getConstant() == 0);
     assertTrue(definition.getSort().getHLevel().isInfinity());
   }

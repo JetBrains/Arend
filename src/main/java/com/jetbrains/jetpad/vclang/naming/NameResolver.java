@@ -2,8 +2,6 @@ package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.frontend.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.module.source.SourceModuleLoader;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
@@ -27,13 +25,6 @@ public class NameResolver {
 
   public void setModuleResolver(ModuleResolver moduleResolver) {
     myModuleResolver = moduleResolver;
-  }
-
-  public <SourceIdT extends SourceId> void setModuleResolver(SourceModuleLoader<SourceIdT> moduleLoader) {
-    setModuleResolver(modulePath -> {
-      SourceIdT sourceId = moduleLoader.locateModule(modulePath);
-      return sourceId != null ? moduleLoader.load(sourceId) : null;
-    });
   }
 
   public ModuleNamespace resolveModuleNamespace(final ModulePath modulePath) {
@@ -75,33 +66,33 @@ public class NameResolver {
     }
   }
 
-  public Abstract.Definition resolveDefCall(final Scope currentScope, final Abstract.DefCallExpression defCall) {
-    if (defCall.getReferent() != null) {
-      return defCall.getReferent();
+  public Abstract.ReferableSourceNode resolveReference(final Scope currentScope, final Abstract.ReferenceExpression reference) {
+    if (reference.getReferent() != null) {
+      return reference.getReferent();
     }
-    if (defCall.getName() == null) {
+    if (reference.getName() == null) {
       throw new IllegalArgumentException();
     }
 
-    if (defCall.getExpression() == null) {
-      return currentScope.resolveName(defCall.getName());
-    } else if (defCall.getExpression() instanceof Abstract.DefCallExpression) {
-      Abstract.Definition exprTarget = resolveDefCall(currentScope, (Abstract.DefCallExpression) defCall.getExpression());
+    if (reference.getExpression() == null) {
+      return currentScope.resolveName(reference.getName());
+    } else if (reference.getExpression() instanceof Abstract.ReferenceExpression) {
+      Abstract.ReferableSourceNode exprTarget = resolveReference(currentScope, (Abstract.ReferenceExpression) reference.getExpression());
       final Namespace ns;
-      if (exprTarget != null) {
-        ns = nsProviders.statics.forDefinition(exprTarget);
+      if (exprTarget instanceof Abstract.Definition) {
+        ns = nsProviders.statics.forDefinition((Abstract.Definition) exprTarget);
       } else {
         // TODO: implement this coherently
-        // ns = resolveModuleNamespace((Abstract.DefCallExpression) defCall.getExpression());
+        // ns = resolveModuleNamespace((Abstract.DefCallExpression) reference.getExpression());
         ns = null;
       }
       // TODO: throw MemberNotFoundError
-      return ns != null ? ns.resolveName(defCall.getName()) : null;
-    } else if (defCall.getExpression() instanceof Abstract.ModuleCallExpression) {
-      Abstract.Definition module = resolveModuleCall(currentScope, (Abstract.ModuleCallExpression) defCall.getExpression());
+      return ns != null ? ns.resolveName(reference.getName()) : null;
+    } else if (reference.getExpression() instanceof Abstract.ModuleCallExpression) {
+      Abstract.Definition module = resolveModuleCall(currentScope, (Abstract.ModuleCallExpression) reference.getExpression());
       if (module != null) {
         Namespace moduleNamespace = nsProviders.statics.forDefinition(module);
-        return moduleNamespace.resolveName(defCall.getName());
+        return moduleNamespace.resolveName(reference.getName());
       }
       return null;
     } else {

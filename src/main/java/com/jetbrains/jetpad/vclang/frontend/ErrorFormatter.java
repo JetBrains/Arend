@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.frontend.parser.ParserError;
 import com.jetbrains.jetpad.vclang.module.error.ModuleCycleError;
@@ -20,6 +21,7 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.LevelEqua
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ErrorFormatter {
@@ -86,22 +88,22 @@ public class ErrorFormatter {
         String text = "Expected type: ";
         builder.append(text);
         List<String> names = new ArrayList<>(((GoalError) error).context.size());
-        names.addAll(((GoalError) error).context.stream().map(binding -> binding.getName() == null ? null : binding.getName()).collect(Collectors.toList()));
+        names.addAll(((GoalError) error).context.values().stream().map(Binding::getName).collect(Collectors.toList()));
         ((GoalError) error).type.prettyPrint(builder, names, Abstract.Expression.PREC, text.length());
       }
       if (printContext) {
         if (printType) builder.append('\n');
         builder.append("Context:");
         List<String> names = new ArrayList<>(((GoalError) error).context.size());
-        for (Binding binding : ((GoalError) error).context) {
+        for (Binding binding : ((GoalError) error).context.values()) {
           builder.append("\n  ").append(binding.getName() == null ? "_" : binding.getName()).append(" : ");
-          Expression type = binding.getType().getExpr();
+          Expression type = binding.getTypeExpr();
           if (type != null) {
             type.prettyPrint(builder, names, Abstract.Expression.PREC, 0);
           } else {
             builder.append("{!error}");
           }
-          names.add(binding.getName() == null ? null : binding.getName());
+          names.add(binding.getName());
         }
       }
     } else if (error instanceof TypeMismatchError) {
@@ -111,13 +113,47 @@ public class ErrorFormatter {
       builder.append('\n')
         .append("  Actual type: ");
       ((TypeMismatchError) error).actual.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, text.length());
-    } else if (error instanceof ExpressionMismatchError) {
+    } else if (error instanceof MissingClausesError) {
+      for (List<Expression> missingClause : ((MissingClausesError) error).getMissingClauses()) {
+        boolean first = true;
+        for (Expression expression : missingClause) {
+          if (first) {
+            first = false;
+          } else {
+            builder.append(", ");
+          }
+          expression.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0);
+        }
+        builder.append('\n');
+      }
+    } else if (error instanceof PathEndpointMismatchError) {
       String text = "Expected: ";
       builder.append(text);
-      ((ExpressionMismatchError) error).expected.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, text.length());
+      ((PathEndpointMismatchError) error).expected.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, text.length());
       builder.append('\n')
         .append("  Actual: ");
-      ((ExpressionMismatchError) error).actual.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, text.length());
+      ((PathEndpointMismatchError) error).actual.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, text.length());
+    } else if (error instanceof ConditionsError) {
+      ConditionsError condError = (ConditionsError) error;
+      condError.expr1.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0);
+      if (condError.substitution1 != null && !condError.substitution1.isEmpty()) {
+        builder.append(" with ");
+        printSubstitution(builder, condError.substitution1);
+      }
+      if (condError.evaluatedExpr1 != null) {
+        builder.append(" evaluates to ");
+        condError.evaluatedExpr1.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0);
+      }
+      builder.append('\n');
+      condError.expr2.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0);
+      if (condError.substitution2 != null && !condError.substitution2.isEmpty()) {
+        builder.append(" with ");
+        printSubstitution(builder, condError.substitution2);
+      }
+      if (condError.evaluatedExpr2 != null) {
+        builder.append(" evaluates to ");
+        condError.evaluatedExpr2.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0);
+      }
     } else if (error instanceof SolveEquationError) {
       String text = "1st expression: ";
       builder.append(text);
@@ -173,6 +209,19 @@ public class ErrorFormatter {
       }
     } else if (error instanceof MemberNotFoundError) {
       builder.append(((MemberNotFoundError) error).name).append(" of ").append("some compiled definition called ").append(((MemberNotFoundError) error).targetDefinition.getName());
+    }
+  }
+
+  private void printSubstitution(StringBuilder builder, ExprSubstitution substitution) {
+    boolean first = true;
+    for (Map.Entry<Variable, Expression> entry : substitution.getEntries()) {
+      if (first) {
+        first = false;
+      } else {
+        builder.append(", ");
+      }
+      builder.append(entry.getKey().getName()).append(" = ");
+      entry.getValue().prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0);
     }
   }
 

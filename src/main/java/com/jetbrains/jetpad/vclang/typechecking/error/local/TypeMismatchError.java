@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
-import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
 
 public class TypeMismatchError extends LocalTypeCheckingError {
   public final PrettyPrintable expected;

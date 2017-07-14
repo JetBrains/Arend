@@ -11,7 +11,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   private final ClassViewInstanceProvider myInstanceProvider;
   private final Set<Abstract.Definition> myDependencies;
 
-  public DefinitionGetDepsVisitor(ClassViewInstanceProvider instanceProvider, Set<Abstract.Definition> dependencies) {
+  DefinitionGetDepsVisitor(ClassViewInstanceProvider instanceProvider, Set<Abstract.Definition> dependencies) {
     myInstanceProvider = instanceProvider;
     myDependencies = dependencies;
   }
@@ -32,9 +32,19 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
         resultType.accept(visitor, null);
       }
     } else {
-      Abstract.Expression term = def.getTerm();
-      if (term != null) {
-        term.accept(visitor, null);
+      Abstract.FunctionBody body = def.getBody();
+      if (body instanceof Abstract.TermFunctionBody) {
+        ((Abstract.TermFunctionBody) body).getTerm().accept(visitor, null);
+      }
+      if (body instanceof Abstract.ElimFunctionBody) {
+        for (Abstract.FunctionClause clause : ((Abstract.ElimFunctionBody) body).getClauses()) {
+          for (Abstract.Pattern pattern : clause.getPatterns()) {
+            visitPattern(pattern);
+          }
+          if (clause.getExpression() != null) {
+            clause.getExpression().accept(visitor, null);
+          }
+        }
       }
     }
 
@@ -64,13 +74,14 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
         universe.accept(visitor, null);
       }
     } else {
-      for (Abstract.Constructor constructor : def.getConstructors()) {
-        visitConstructor(constructor, null);
-      }
-
-      if (def.getConditions() != null) {
-        for (Abstract.Condition cond : def.getConditions()) {
-          cond.getTerm().accept(visitor, null);
+      for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
+        if (clause.getPatterns() != null) {
+          for (Abstract.Pattern pattern : clause.getPatterns()) {
+            visitPattern(pattern);
+          }
+        }
+        for (Abstract.Constructor constructor : clause.getConstructors()) {
+          visitConstructor(constructor, null);
         }
       }
     }
@@ -78,14 +89,14 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
     return null;
   }
 
-  private void visitPatternArgument(Abstract.PatternArgument patternArgument) {
-    if (patternArgument.getPattern() instanceof Abstract.ConstructorPattern) {
-      Abstract.ConstructorPattern conPattern = (Abstract.ConstructorPattern) patternArgument.getPattern();
+  private void visitPattern(Abstract.Pattern pattern) {
+    if (pattern instanceof Abstract.ConstructorPattern) {
+      Abstract.ConstructorPattern conPattern = (Abstract.ConstructorPattern) pattern;
       if (conPattern.getConstructor() != null) {
         myDependencies.add(conPattern.getConstructor());
       }
-      for (Abstract.PatternArgument argument : conPattern.getArguments()) {
-        visitPatternArgument(argument);
+      for (Abstract.Pattern patternArg : conPattern.getArguments()) {
+        visitPattern(patternArg);
       }
     }
   }
@@ -94,14 +105,18 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   public Void visitConstructor(Abstract.Constructor def, Boolean params) {
     CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myDependencies);
 
-    if (def.getPatterns() != null) {
-      for (Abstract.PatternArgument patternArgument : def.getPatterns()) {
-        visitPatternArgument(patternArgument);
-      }
-    }
-
     for (Abstract.TypeArgument arg : def.getArguments()) {
       arg.getType().accept(visitor, null);
+    }
+    if (def.getEliminatedReferences() != null) {
+      for (Abstract.FunctionClause clause : def.getClauses()) {
+        for (Abstract.Pattern pattern : clause.getPatterns()) {
+          visitPattern(pattern);
+        }
+        if (clause.getExpression() != null) {
+          clause.getExpression().accept(visitor, null);
+        }
+      }
     }
 
     return null;

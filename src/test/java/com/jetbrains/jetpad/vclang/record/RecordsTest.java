@@ -37,14 +37,14 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void parentCallTest() {
-    typeCheckClass(
+    resolveNamesClass(
         "\\class A {\n" +
         "  \\field c : Nat -> Nat -> Nat\n" +
         "  \\field f : Nat -> Nat\n" +
         "}\n" +
         "\\function B => A {\n" +
         "  f => \\lam n => c n n\n" +
-        "}", 1, 1);
+        "}", 1);
   }
 
   @Test
@@ -104,7 +104,7 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void mutualRecursionTestError() {
-    typeCheckClass(
+    resolveNamesClass(
         "\\class Point {\n" +
         "  \\field x : Nat\n" +
         "  \\field y : Nat\n" +
@@ -112,7 +112,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\function test => Point {\n" +
         "  | x => y\n" +
         "  | y => x\n" +
-        "}", 2, 2);
+        "}", 2);
   }
 
   @Test
@@ -205,7 +205,7 @@ public class RecordsTest extends TypeCheckingTestCase {
     assertNotNull(arg0);
     PiExpression arg0Body = arg0.getBody().toPi();
     assertNotNull(arg0Body);
-    Expression domFunction = arg0Body.getParameters().getType().getExpr();
+    Expression domFunction = arg0Body.getParameters().getTypeExpr();
     assertEquals(Prelude.PATH, domFunction.toDataCall().getDefinition());
     List<? extends Expression> domArguments = domFunction.toDataCall().getDefCallArguments();
     assertEquals(3, domArguments.size());
@@ -236,7 +236,7 @@ public class RecordsTest extends TypeCheckingTestCase {
     Expression xCall = FieldCall((ClassField) result.getDefinition("A.x"), Ref(testFun.getParameters()));
     PiExpression resultTypePi = testFun.getResultType().toPi();
     assertNotNull(resultTypePi);
-    Expression function = resultTypePi.getParameters().getType().getExpr().normalize(NormalizeVisitor.Mode.NF);
+    Expression function = resultTypePi.getParameters().getTypeExpr().normalize(NormalizeVisitor.Mode.NF);
     assertEquals(Prelude.PATH, function.toDataCall().getDefinition());
     List<? extends Expression> arguments = function.toDataCall().getDefCallArguments();
     assertEquals(3, arguments.size());

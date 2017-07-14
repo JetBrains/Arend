@@ -5,6 +5,9 @@ import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
+import java.util.Collections;
+import java.util.List;
+
 public class ConcreteResolveListener implements ResolveListener {
   private final ErrorReporter myErrorReporter;
 
@@ -13,8 +16,8 @@ public class ConcreteResolveListener implements ResolveListener {
   }
 
   @Override
-  public void nameResolved(Abstract.DefCallExpression defCallExpression, Abstract.Definition definition) {
-    ((Concrete.DefCallExpression) defCallExpression).setResolvedDefinition(definition);
+  public void nameResolved(Abstract.ReferenceExpression referenceExpression, Abstract.ReferableSourceNode referable) {
+    ((Concrete.ReferenceExpression) referenceExpression).setResolvedReferent(referable);
   }
 
   @Override
@@ -53,7 +56,7 @@ public class ConcreteResolveListener implements ResolveListener {
   }
 
   @Override
-  public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Abstract.Definition binOp, Abstract.DefCallExpression var, Abstract.Expression right) {
+  public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Abstract.Definition binOp, Abstract.ReferenceExpression var, Abstract.Expression right) {
     return ((Concrete.BinOpSequenceExpression) binOpExpr).makeBinOp(left, binOp, var, right);
   }
 
@@ -67,14 +70,16 @@ public class ConcreteResolveListener implements ResolveListener {
     ((Concrete.BinOpSequenceExpression) binOpExpr).replace(expression);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
-  public void replaceWithConstructor(Abstract.PatternArgument patternArg) {
-    ((Concrete.PatternArgument) patternArg).replaceWithConstructor();
+  public void replaceWithConstructor(List<? extends Abstract.Pattern> patterns, int index, Abstract.Constructor constructor) {
+    Concrete.Pattern pattern = ((Concrete.Pattern) patterns.get(index));
+    ((List<Concrete.Pattern>) patterns).set(index, new Concrete.ConstructorPattern(pattern.getPosition(), pattern.isExplicit(), constructor, Collections.emptyList()));
   }
 
   @Override
-  public void replaceWithConstructor(Abstract.PatternContainer container, int index) {
-    ((Concrete.PatternContainer) container).replaceWithConstructor(index);
+  public void replaceWithConstructor(Abstract.FunctionClause clause, int index, Abstract.Constructor constructor) {
+    ((Concrete.FunctionClause) clause).replaceWithConstructor(index, constructor);
   }
 
   @Override

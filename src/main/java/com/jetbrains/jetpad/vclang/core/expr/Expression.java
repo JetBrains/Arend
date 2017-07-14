@@ -16,7 +16,6 @@ import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
-import com.jetbrains.jetpad.vclang.typechecking.normalization.EvalNormalizer;
 
 import java.util.Collections;
 import java.util.List;
@@ -96,7 +95,7 @@ public abstract class Expression implements ExpectedType {
 
   @Override
   public Expression normalize(NormalizeVisitor.Mode mode) {
-    return accept(new NormalizeVisitor(new EvalNormalizer()), mode);
+    return accept(new NormalizeVisitor(), mode);
   }
 
   public static boolean compare(Expression expr1, Expression expr2, Equations.CMP cmp) {
@@ -108,8 +107,8 @@ public abstract class Expression implements ExpectedType {
   }
 
   @Override
-  public Expression getPiParameters(List<SingleDependentLink> params, boolean normalize, boolean implicitOnly) {
-    Expression cod = normalize ? normalize(NormalizeVisitor.Mode.WHNF) : this;
+  public Expression getPiParameters(List<SingleDependentLink> params, boolean implicitOnly) {
+    Expression cod = normalize(NormalizeVisitor.Mode.WHNF);
     PiExpression piCod = cod.toPi();
     while (piCod != null) {
       if (implicitOnly) {
@@ -132,10 +131,7 @@ public abstract class Expression implements ExpectedType {
         }
       }
 
-      cod = piCod.getCodomain();
-      if (normalize) {
-        cod = cod.normalize(NormalizeVisitor.Mode.WHNF);
-      }
+      cod = piCod.getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
       piCod = cod.toPi();
     }
     return cod;
@@ -157,7 +153,11 @@ public abstract class Expression implements ExpectedType {
   }
 
   public Expression applyExpression(Expression expression) {
-    PiExpression piExpr = normalize(NormalizeVisitor.Mode.WHNF).toPi();
+    Expression normExpr = normalize(NormalizeVisitor.Mode.WHNF);
+    if (normExpr.toError() != null) {
+      return normExpr;
+    }
+    PiExpression piExpr = normExpr.toPi();
     SingleDependentLink link = piExpr.getParameters();
     ExprSubstitution subst = new ExprSubstitution(link, expression);
     link = link.getNext();
@@ -188,10 +188,6 @@ public abstract class Expression implements ExpectedType {
     return null;
   }
 
-  public LetClauseCallExpression toLetClauseCall() {
-    return null;
-  }
-
   public ErrorExpression toError() {
     return null;
   }
@@ -209,6 +205,10 @@ public abstract class Expression implements ExpectedType {
   }
 
   public LetExpression toLet() {
+    return null;
+  }
+
+  public CaseExpression toCase() {
     return null;
   }
 

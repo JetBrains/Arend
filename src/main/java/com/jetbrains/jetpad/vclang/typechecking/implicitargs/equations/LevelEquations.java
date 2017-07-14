@@ -13,7 +13,7 @@ public class LevelEquations<Var> {
     return myEquations;
   }
 
-  public void addVariable(Var var) {
+  void addVariable(Var var) {
     myVariables.add(var);
   }
 
@@ -22,7 +22,7 @@ public class LevelEquations<Var> {
     myEquations.addAll(equations.myEquations);
   }
 
-  public void addEquation(LevelEquation<Var> equation) {
+  void addEquation(LevelEquation<Var> equation) {
     myEquations.add(equation);
   }
 
@@ -39,10 +39,10 @@ public class LevelEquations<Var> {
     Map<Var, List<LevelEquation<Var>>> paths = new HashMap<>();
 
     solution.put(null, 0);
-    paths.put(null, new ArrayList<LevelEquation<Var>>());
+    paths.put(null, new ArrayList<>());
     for (Var var : myVariables) {
       solution.put(var, 0);
-      paths.put(var, new ArrayList<LevelEquation<Var>>());
+      paths.put(var, new ArrayList<>());
     }
 
     for (int i = myVariables.size(); i >= 0; i--) {

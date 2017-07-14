@@ -12,14 +12,26 @@ hidingOpt : '\\hiding'  # withHiding
 
 nsCmdRoot : modulePath | name;
 
-definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?                            # defFunction
+definition  : '\\function' precedence name tele* (':' expr)? functionBody where?                          # defFunction
             | '\\field' precedence name ':' expr                                                          # defAbstract
             | '\\implement' name '=>' expr                                                                # defImplement
-            | isTruncated '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef?        # defData
+            | isTruncated '\\data' precedence name tele* (':' expr)? dataBody                             # defData
             | '\\class' ID tele* ('\\extends' expr (',' expr)*)? ('{' statements '}')? where?             # defClass
             | '\\view' ID '\\on' expr '\\by' name '{' classViewField* '}'                                 # defClassView
             | defaultInst '\\instance' ID tele* '=>' expr                                                 # defInstance
             ;
+
+functionBody  : '=>' expr     # withoutElim
+              | elim? clauses # withElim
+              ;
+
+dataBody : elim constructorClause*                      # dataClauses
+         | ('=>' '|'? constructor)? ('|' constructor)*  # dataConstructors
+         ;
+
+constructorClause : '|' pattern (',' pattern)* '=>' (constructor | '{' '|'? constructor ('|' constructor)* '}');
+
+elim : '\\with' | '=>' '\\elim' expr? (',' expr)*;
 
 isTruncated : '\\truncated' # truncated
             |               # notTruncated
@@ -31,39 +43,27 @@ defaultInst :             # noDefault
 
 classViewField : name ('=>' precedence name)? ;
 
-conditionDef : '\\with' '|'? condition ('|' condition)*;
-
-condition : name patternArg* '=>' expr;
-
 where : '\\where' ('{' statements '}' | statement);
 
 nsCmd : '\\open'                        # openCmd
       | '\\export'                      # exportCmd
       ;
 
-arrow : '<='                            # arrowLeft
-      | '=>'                            # arrowRight
-      ;
-
-constructorDef : '|' name patternArg* '=>' constructor ('|' constructor)* ';'? # withPatterns
-               | '|' constructor                                               # noPatterns
-               ;
-
-anyPattern : '_'  # anyPatternAny
-           | '_!' # anyPatternConstructor
-           ;
-
-pattern : anyPattern       # patternAny
-        | name patternArg* # patternConstructor
+pattern : atomPattern             # patternAtom
+        | name atomPatternOrID*   # patternConstructor
         ;
 
-patternArg : '(' pattern ')'    # patternArgExplicit
-           | '{' pattern '}'    # patternArgImplicit
-           | anyPattern         # patternArgAny
-           | ID                 # patternArgID
-           ;
+atomPattern : '(' pattern ')'     # patternExplicit
+            | '{' pattern '}'     # patternImplicit
+            | '()'                # patternEmpty
+            | '_'                 # patternAny
+            ;
 
-constructor : precedence name tele*;
+atomPatternOrID : atomPattern     # patternOrIDAtom
+                | ID              # patternID
+                ;
+
+constructor : precedence name tele* (elim? '{' clause? ('|' clause)* '}')?;
 
 precedence :                            # noPrecedence
            | associativity NUMBER       # withPrecedence
@@ -75,7 +75,7 @@ associativity : '\\infix'               # nonAssoc
               ;
 
 name  : ID                              # nameId
-      | '(' BIN_OP ')'               # nameBinOp
+      | '(' BIN_OP ')'                  # nameBinOp
       ;
 
 expr  : (binOpLeft+ | ) binOpArg                            # binOp
@@ -84,18 +84,18 @@ expr  : (binOpLeft+ | ) binOpArg                            # binOp
       | '\\Sigma' tele+                                     # sigma
       | '\\lam' tele+ '=>' expr                             # lam
       | '\\let' '|'? letClause ('|' letClause)* '\\in' expr # let
-      | elimCase expr (',' expr)* clause* ';'?              # exprElim
+      | '\\case' expr (',' expr)* '\\with'? clauses         # case
       ;
 
-letClause : ID tele* typeAnnotation? arrow expr;
+clauses : ('|' clause)*                 # clausesWithoutBraces
+        | '{' clause? ('|' clause)* '}' # clausesWithBraces
+        ;
+
+letClause : ID tele* typeAnnotation? '=>' expr;
 
 typeAnnotation : ':' expr;
 
-clause : '|' pattern (',' pattern)* (arrow expr)?;
-
-elimCase : '\\elim'                     # elim
-         | '\\case'                     # case
-         ;
+clause : pattern (',' pattern)* ('=>' expr)?;
 
 levelAtom : '\\lp'              # pLevel
           | '\\lh'              # hLevel

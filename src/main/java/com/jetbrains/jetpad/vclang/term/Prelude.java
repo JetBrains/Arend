@@ -3,24 +3,34 @@ package com.jetbrains.jetpad.vclang.term;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.TypedSingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.core.expr.AppExpression;
-import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
-import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
-import com.jetbrains.jetpad.vclang.core.expr.UniverseExpression;
+import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.IntervalElim;
+import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
+import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
+import com.jetbrains.jetpad.vclang.util.Pair;
 
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.clause;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.parameter;
 
 public class Prelude {
   public static DataDefinition INTERVAL;
-  public static Constructor LEFT, RIGHT, ABSTRACT;
+  public static Constructor LEFT, RIGHT;
 
   public static DataDefinition NAT;
   public static Constructor ZERO, SUC;
@@ -66,26 +76,28 @@ public class Prelude {
     } else
     if (abstractDef.getName().equals("@")) {
       AT = (FunctionDefinition) definition;
-      DependentLink param4 = AT.getParameters().getNext().getNext().getNext();
-      DependentLink atPath = ExpressionFactory.parameter("f", PATH_CON.getParameters().getType());
-      AT.setElimTree(ExpressionFactory.top(AT.getParameters(), ExpressionFactory.branch(param4.getNext(), ExpressionFactory.tail(),
-        clause(LEFT, EmptyDependentLink.getInstance(), new ReferenceExpression(AT.getParameters().getNext())),
-        clause(RIGHT, EmptyDependentLink.getInstance(), new ReferenceExpression(AT.getParameters().getNext().getNext())),
-        ExpressionFactory.clause(ExpressionFactory.branch(param4, ExpressionFactory.tail(param4.getNext()),
-            ExpressionFactory.clause(PATH_CON, atPath, new AppExpression(new ReferenceExpression(atPath), new ReferenceExpression(param4.getNext()))))))));
+      DependentLink atParams = AT.getParameters().subst(new ExprSubstitution(), LevelSubstitution.EMPTY, 3);
+      SingleDependentLink intervalParam = new TypedSingleDependentLink(true, "i", ExpressionFactory.Interval());
+      DependentLink pathParam = parameter("f", new PiExpression(Sort.STD, intervalParam, new AppExpression(new ReferenceExpression(atParams), new ReferenceExpression(intervalParam))));
+      pathParam.setNext(parameter("i", ExpressionFactory.Interval()));
+      Map<Constructor, ElimTree> children = Collections.singletonMap(PATH_CON, new LeafElimTree(pathParam, new AppExpression(new ReferenceExpression(pathParam), new ReferenceExpression(pathParam.getNext()))));
+      ElimTree otherwise = new BranchElimTree(atParams, children);
+      AT.setBody(new IntervalElim(AT.getParameters(), Collections.singletonList(new Pair<>(new ReferenceExpression(AT.getParameters().getNext()), new ReferenceExpression(AT.getParameters().getNext().getNext()))), otherwise));
       AT.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     } else
     if (abstractDef.getName().equals("coe")) {
       COERCE = (FunctionDefinition) definition;
-      COERCE.setElimTree(ExpressionFactory.top(COERCE.getParameters(), ExpressionFactory.branch(COERCE.getParameters().getNext().getNext(), ExpressionFactory.tail(),
-        ExpressionFactory.clause(LEFT, EmptyDependentLink.getInstance(), Abstract.Definition.Arrow.RIGHT, new ReferenceExpression(COERCE.getParameters().getNext())))));
+      DependentLink coeParams = COERCE.getParameters().subst(new ExprSubstitution(), LevelSubstitution.EMPTY, 2);
+      COERCE.setBody(new BranchElimTree(coeParams, Collections.singletonMap(LEFT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(coeParams.getNext())))));
       COERCE.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     } else
     if (abstractDef.getName().equals("iso")) {
       ISO = (FunctionDefinition) definition;
-      ISO.setElimTree(ExpressionFactory.top(ISO.getParameters(), ExpressionFactory.branch(ISO.getParameters().getNext().getNext().getNext().getNext().getNext().getNext(), ExpressionFactory.tail(),
-        clause(LEFT, EmptyDependentLink.getInstance(), new ReferenceExpression(ISO.getParameters())),
-        clause(RIGHT, EmptyDependentLink.getInstance(), new ReferenceExpression(ISO.getParameters().getNext())))));
+      DependentLink isoParams = ISO.getParameters().subst(new ExprSubstitution(), LevelSubstitution.EMPTY, 6);
+      Map<Constructor, ElimTree> children = new HashMap<>();
+      children.put(LEFT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(isoParams)));
+      children.put(RIGHT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(isoParams.getNext())));
+      ISO.setBody(new BranchElimTree(isoParams, children));
       ISO.setResultType(new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR))));
       ISO.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     } else

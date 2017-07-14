@@ -3,8 +3,8 @@ package com.jetbrains.jetpad.vclang.core.definition;
 public class Name {
   public enum Fixity { PREFIX, INFIX }
 
-  public String name;
-  public Fixity fixity;
+  public final String name;
+  public final Fixity fixity;
 
   public Name(String name) {
     this.name = name;

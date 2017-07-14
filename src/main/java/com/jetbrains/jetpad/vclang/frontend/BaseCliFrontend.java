@@ -9,13 +9,9 @@ import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotSourceInfoCollector
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.module.caching.CacheLoadingException;
-import com.jetbrains.jetpad.vclang.module.caching.CacheManager;
-import com.jetbrains.jetpad.vclang.module.caching.CachePersistenceException;
-import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
-import com.jetbrains.jetpad.vclang.module.source.SimpleModuleLoader;
+import com.jetbrains.jetpad.vclang.module.caching.*;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.module.source.SourceModuleLoader;
+import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
@@ -27,6 +23,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TerminationCheckError;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -38,30 +35,87 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   protected final ListErrorReporter errorReporter = new ListErrorReporter();
   private final ErrorFormatter errf;
 
-  protected final Storage<SourceIdT> storage;
-
   // Modules
-  protected final SourceModuleLoader<SourceIdT> moduleLoader;
-  protected final Map<SourceIdT, Abstract.ClassDefinition> loadedSources = new HashMap<>();
+  protected final ModuleTracker moduleTracker;
+  protected final Map<SourceIdT, SourceSupplier.LoadResult> loadedSources = new HashMap<>();
   private final Set<SourceIdT> requestedSources = new LinkedHashSet<>();
 
   private final SourceInfoProvider<SourceIdT> srcInfoProvider;
   private final CacheManager<SourceIdT> cacheManager;
 
   // Typechecking
+  private final boolean useCache;
   private final TypecheckerState state;
 
 
   public BaseCliFrontend(Storage<SourceIdT> storage, boolean recompile) {
-    OneshotSourceInfoCollector<SourceIdT> srcInfoCollector = new OneshotSourceInfoCollector<>();
-    srcInfoProvider = srcInfoCollector.sourceInfoProvider;
-    cacheManager = new CacheManager<>(createPersistenceProvider(), storage, srcInfoProvider);
+    useCache = !recompile;
+
+    moduleTracker = new ModuleTracker(storage);
+    srcInfoProvider = moduleTracker.sourceInfoCollector.sourceInfoProvider;
+
     errf = new ErrorFormatter(srcInfoProvider);
 
-    this.storage = storage;
-
-    moduleLoader = new ModuleWatch(new SimpleModuleLoader<>(storage, errorReporter), srcInfoCollector);
+    cacheManager = new CacheManager<>(createPersistenceProvider(), storage, moduleTracker, srcInfoProvider);
     state = cacheManager.getTypecheckerState();
+  }
+
+  class ModuleTracker extends BaseModuleLoader<SourceIdT> implements SourceVersionTracker<SourceIdT> {
+    private final DefinitionIdsCollector defIdCollector = new DefinitionIdsCollector();
+    private final OneshotSourceInfoCollector<SourceIdT> sourceInfoCollector = new OneshotSourceInfoCollector<>();
+
+    ModuleTracker(Storage<SourceIdT> storage) {
+      super(storage, errorReporter);
+    }
+
+    @Override
+    protected void loadingSucceeded(SourceIdT module, SourceSupplier.LoadResult result) {
+      if (!definitionIds.containsKey(module)) {
+        definitionIds.put(module, new HashMap<>());
+      }
+      defIdCollector.visitClass(result.definition, definitionIds.get(module));
+      sourceInfoCollector.visitModule(module, result.definition);
+      loadedSources.put(module, result);
+      System.out.println("[Loaded] " + displaySource(module, false));
+    }
+
+    @Override
+    protected void loadingFailed(SourceIdT module) {
+      System.out.println("[Failed] " + displaySource(module, false));
+    }
+
+    @Override
+    public Abstract.ClassDefinition load(SourceIdT sourceId) {
+      assert !loadedSources.containsKey(sourceId);
+      return super.load(sourceId);
+    }
+
+    @Override
+    public Abstract.ClassDefinition load(ModulePath modulePath) {
+      return load(locateModule(modulePath));
+    }
+
+    public SourceIdT locateModule(ModulePath modulePath) {
+      SourceIdT sourceId = myStorage.locateModule(modulePath);
+      if (sourceId == null) throw new IllegalStateException();
+      return sourceId;
+    }
+
+    public boolean isAvailable(SourceIdT sourceId) {
+      return myStorage.isAvailable(sourceId);
+    }
+
+    @Override
+    public long getCurrentVersion(@Nonnull SourceIdT sourceId) {
+      return loadedSources.get(sourceId).version;
+    }
+
+    @Override
+    public boolean ensureLoaded(@Nonnull SourceIdT sourceId, long version) {
+      SourceSupplier.LoadResult result = loadedSources.get(sourceId);
+      if (result == null) throw new IllegalStateException("Cache manager trying to load a new module");
+      return result.version == version;
+    }
   }
 
   static class DefinitionIdsCollector implements AbstractDefinitionVisitor<Map<String, Abstract.Definition>, Void>, AbstractStatementVisitor<Map<String, Abstract.Definition>, Void> {
@@ -94,8 +148,10 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     @Override
     public Void visitData(Abstract.DataDefinition def, Map<String, Abstract.Definition> params) {
       params.put(getIdFor(def), def);
-      for (Abstract.Constructor constructor : def.getConstructors()) {
-        constructor.accept(this, params);
+      for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
+        for (Abstract.Constructor constructor : clause.getConstructors()) {
+          constructor.accept(this, params);
+        }
       }
       return null;
     }
@@ -155,63 +211,13 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
   }
 
-  class ModuleWatch implements SourceModuleLoader<SourceIdT> {
-    private final SourceModuleLoader<SourceIdT> myModuleLoader;
-    private final OneshotSourceInfoCollector<SourceIdT> mySrcInfoCollector;
-    private final DefinitionIdsCollector defIdCollector = new DefinitionIdsCollector();
-
-    ModuleWatch(SourceModuleLoader<SourceIdT> moduleLoader, OneshotSourceInfoCollector<SourceIdT> srcInfoCollector) {
-      myModuleLoader = moduleLoader;
-      mySrcInfoCollector = srcInfoCollector;
-    }
-
-
-    private void loadingSucceeded(SourceIdT module, Abstract.ClassDefinition abstractDefinition) {
-      assert abstractDefinition != null;
-      if (!definitionIds.containsKey(module)) {
-        definitionIds.put(module, new HashMap<>());
-      }
-      defIdCollector.visitClass(abstractDefinition, definitionIds.get(module));
-      mySrcInfoCollector.visitModule(module, abstractDefinition);
-      loadedSources.put(module, abstractDefinition);
-      System.out.println("[Loaded] " + displaySource(module, false));
-    }
-
-    private void loadingFailed(SourceIdT module) {
-      System.out.println("[Failed] " + displaySource(module, false));
-    }
-
-    @Override
-    public SourceIdT locateModule(ModulePath modulePath) {
-      return myModuleLoader.locateModule(modulePath);
-    }
-
-    @Override
-    public boolean isAvailable(SourceIdT sourceId) {
-      return myModuleLoader.isAvailable(sourceId);
-    }
-
-    @Override
-    public Abstract.ClassDefinition load(SourceIdT sourceId) {
-      if (loadedSources.containsKey(sourceId)) throw new IllegalStateException();
-      Abstract.ClassDefinition result = myModuleLoader.load(sourceId);
-
-      if (result != null) {
-        loadingSucceeded(sourceId, result);
-      } else {
-        loadingFailed(sourceId);
-      }
-
-      return result;
-    }
-  }
-
   protected Abstract.ClassDefinition loadPrelude() {
-    Abstract.ClassDefinition prelude = moduleLoader.load(moduleLoader.locateModule(PreludeStorage.PRELUDE_MODULE_PATH));
+    SourceIdT sourceId = moduleTracker.locateModule(PreludeStorage.PRELUDE_MODULE_PATH);
+    Abstract.ClassDefinition prelude = moduleTracker.load(sourceId);
     assert errorReporter.getErrorList().isEmpty();
     boolean cacheLoaded;
     try {
-      cacheLoaded = cacheManager.loadCache(moduleLoader.locateModule(PreludeStorage.PRELUDE_MODULE_PATH), prelude);
+      cacheLoaded = cacheManager.loadCache(sourceId, prelude);
     } catch (CacheLoadingException e) {
       cacheLoaded = false;
     }
@@ -239,8 +245,8 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
       System.err.println("[Not found] " + path + " is an illegal module path");
       return;
     }
-    SourceIdT sourceId = storage.locateModule(modulePath);
-    if (sourceId == null || !storage.isAvailable(sourceId)) {
+    SourceIdT sourceId = moduleTracker.locateModule(modulePath);
+    if (sourceId == null || !moduleTracker.isAvailable(sourceId)) {
       System.err.println("[Not found] " + path + " is not available");
       return;
     }
@@ -254,19 +260,26 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     final Set<Abstract.ClassDefinition> modulesToTypeCheck = new LinkedHashSet<>();
     for (SourceIdT source : sources) {
-      Abstract.ClassDefinition definition = loadedSources.get(source);
-      if (definition == null){
-        definition = moduleLoader.load(source);
+      final Abstract.ClassDefinition definition;
+      SourceSupplier.LoadResult result = loadedSources.get(source);
+      if (result == null){
+        definition = moduleTracker.load(source);
         if (definition == null) {
           results.put(source, ModuleResult.NOT_LOADED);
           continue;
         }
-        try {
-          cacheManager.loadCache(source, definition);
-        } catch (CacheLoadingException e) {
-          e.printStackTrace();
+
+        if (useCache) {
+          try {
+            cacheManager.loadCache(source, definition);
+          } catch (CacheLoadingException e) {
+            //e.printStackTrace();
+          }
         }
+
         flushErrors();
+      } else {
+        definition = result.definition;
       }
       modulesToTypeCheck.add(definition);
     }

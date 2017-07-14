@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import org.antlr.v4.runtime.*;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
@@ -25,7 +26,7 @@ public abstract class ParseSource {
     myStream = stream;
   }
 
-  public Concrete.ClassDefinition load(ErrorReporter errorReporter, ModuleRegistry moduleRegistry, Scope globalScope, NameResolver nameResolver) throws IOException {
+  public @Nullable Concrete.ClassDefinition load(ErrorReporter errorReporter, ModuleRegistry moduleRegistry, Scope globalScope, NameResolver nameResolver) throws IOException {
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
     final CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
 
@@ -52,7 +53,7 @@ public abstract class ParseSource {
       return null;
     }
 
-    List<Concrete.Statement> statements = new BuildVisitor(mySourceId, errorReporter).visitStatements(tree);
+    List<Concrete.Statement> statements = new BuildVisitor(mySourceId, compositeErrorReporter).visitStatements(tree);
 
     Concrete.ClassDefinition result = new Concrete.ClassDefinition(new Concrete.Position(mySourceId, 0, 0), mySourceId.getModulePath().getName(), statements);
 
@@ -60,7 +61,13 @@ public abstract class ParseSource {
       moduleRegistry.registerModule(mySourceId.getModulePath(), result);
     }
     if (nameResolver != null) {
-      OneshotNameResolver.visitModule(result, globalScope, nameResolver, new ConcreteResolveListener(errorReporter));
+      OneshotNameResolver.visitModule(result, globalScope, nameResolver, new ConcreteResolveListener(compositeErrorReporter));
+    }
+    if (countingErrorReporter.getErrorsNumber() > 0) {
+      if (moduleRegistry != null) {
+        moduleRegistry.unregisterModule(mySourceId.getModulePath());
+      }
+      return null;
     }
     return result;
   }

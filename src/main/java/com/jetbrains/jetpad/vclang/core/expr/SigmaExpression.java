@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
@@ -11,12 +10,8 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
-import com.jetbrains.jetpad.vclang.typechecking.normalization.EvalNormalizer;
 
-import java.util.List;
 import java.util.Set;
 
 public class SigmaExpression extends Expression implements Type {
@@ -69,6 +64,6 @@ public class SigmaExpression extends Expression implements Type {
 
   @Override
   public SigmaExpression normalize(NormalizeVisitor.Mode mode) {
-    return new NormalizeVisitor(new EvalNormalizer()).visitSigma(this, mode);
+    return new NormalizeVisitor().visitSigma(this, mode);
   }
 }

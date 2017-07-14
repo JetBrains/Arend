@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
@@ -26,20 +27,28 @@ import java.util.List;
 public class TypeCheckingDefCall {
   private final CheckTypeVisitor myVisitor;
   private ClassDefinition myThisClass;
-  private Expression myThisExpr;
+  private Binding myThisBinding;
 
   public TypeCheckingDefCall(CheckTypeVisitor visitor) {
     myVisitor = visitor;
   }
 
-  public void setThisClass(ClassDefinition thisClass, Expression thisExpr) {
+  public ClassDefinition getThisClass() {
+    return myThisClass;
+  }
+
+  public Binding getThisBinding() {
+    return myThisBinding;
+  }
+
+  public void setThis(ClassDefinition thisClass, Binding thisBinding) {
     myThisClass = thisClass;
-    myThisExpr = thisExpr;
+    myThisBinding = thisBinding;
   }
 
   private Definition getTypeCheckedDefinition(Abstract.Definition definition, Abstract.Expression expr) {
     while (definition instanceof Abstract.ClassView) {
-      definition = ((Abstract.ClassView) definition).getUnderlyingClassDefCall().getReferent();
+      definition = (Abstract.Definition) ((Abstract.ClassView) definition).getUnderlyingClassReference().getReferent();
     }
     if (definition instanceof Abstract.ClassViewField) {
       definition = ((Abstract.ClassViewField) definition).getUnderlyingField();
@@ -61,9 +70,9 @@ public class TypeCheckingDefCall {
     }
   }
 
-  public CheckTypeVisitor.TResult typeCheckDefCall(Abstract.DefCallExpression expr) {
+  public CheckTypeVisitor.TResult typeCheckDefCall(Abstract.ReferenceExpression expr) {
     Abstract.Expression left = expr.getExpression();
-    Abstract.Definition resolvedDefinition = expr.getReferent();
+    Abstract.Definition resolvedDefinition = expr.getReferent() instanceof Abstract.Definition ? (Abstract.Definition) expr.getReferent() : null;
     Definition typeCheckedDefinition = null;
     if (resolvedDefinition != null) {
       typeCheckedDefinition = getTypeCheckedDefinition(resolvedDefinition, expr);
@@ -73,7 +82,7 @@ public class TypeCheckingDefCall {
     }
 
     CheckTypeVisitor.Result result = null;
-    if (left != null && (typeCheckedDefinition == null || !(left instanceof Abstract.DefCallExpression || left instanceof Abstract.ModuleCallExpression))) {
+    if (left != null && (typeCheckedDefinition == null || !(left instanceof Abstract.ReferenceExpression || left instanceof Abstract.ModuleCallExpression))) {
       result = left.accept(myVisitor, null);
       if (result == null) {
         return null;
@@ -85,7 +94,7 @@ public class TypeCheckingDefCall {
       Expression thisExpr = null;
       if (typeCheckedDefinition.getThisClass() != null) {
         if (myThisClass != null) {
-          thisExpr = findParent(myThisClass, typeCheckedDefinition, myThisExpr);
+          thisExpr = findParent(myThisClass, typeCheckedDefinition, new ReferenceExpression(myThisBinding));
         }
 
         if (thisExpr == null) {
@@ -268,7 +277,7 @@ public class TypeCheckingDefCall {
     return makeResult(typeCheckedDefinition, thisExpr, expr);
   }
 
-  private CheckTypeVisitor.TResult makeResult(Definition definition, Expression thisExpr, Abstract.DefCallExpression expr) {
+  private CheckTypeVisitor.TResult makeResult(Definition definition, Expression thisExpr, Abstract.ReferenceExpression expr) {
     Sort sortArgument = (definition instanceof DataDefinition || definition instanceof FunctionDefinition) && !definition.getParameters().hasNext() ? Sort.PROP : Sort.generateInferVars(myVisitor.getEquations(), expr);
 
     if (thisExpr == null && definition instanceof ClassField) {
@@ -282,7 +291,7 @@ public class TypeCheckingDefCall {
     if (definition instanceof DataDefinition && !sortArgument.isProp()) {
       hLevel = ((DataDefinition) definition).getSort().getHLevel();
     } else if (definition instanceof FunctionDefinition && !sortArgument.isProp()) {
-      UniverseExpression universe = ((FunctionDefinition) definition).getResultType().getPiParameters(null, true, false).toUniverse();
+      UniverseExpression universe = ((FunctionDefinition) definition).getResultType().getPiParameters(null, false).toUniverse();
       if (universe != null) {
         hLevel = universe.getSort().getHLevel();
       }

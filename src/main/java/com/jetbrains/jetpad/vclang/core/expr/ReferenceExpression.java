@@ -7,12 +7,13 @@ import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 
 public class ReferenceExpression extends Expression {
-  protected Binding myBinding;
+  private final Binding myBinding;
 
   public ReferenceExpression(Binding binding) {
     assert !(binding instanceof Definition);
     assert !(binding instanceof InferenceVariable);
     assert binding != EmptyDependentLink.getInstance();
+    assert binding != null;
     myBinding = binding;
   }
 
