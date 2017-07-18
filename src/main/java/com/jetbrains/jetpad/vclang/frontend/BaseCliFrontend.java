@@ -277,7 +277,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     System.out.println("--- Checking ---");
 
     class ResultTracker extends ErrorClassifier implements DependencyListener, TypecheckedReporter {
-      public ResultTracker() {
+      ResultTracker() {
         super(errorReporter);
       }
 
@@ -369,12 +369,12 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
           @Override
           public FileVisitResult visitFileFailed(Path path, IOException e) throws IOException {
-            System.err.println(GeneralError.ioError(e));
+            System.err.println(e.getMessage());
             return FileVisitResult.CONTINUE;
           }
         });
       } catch (IOException e) {
-        System.err.println(GeneralError.ioError(e));
+        System.err.println(e.getMessage());
       }
     } else {
       for (String fileName : argFiles) {
