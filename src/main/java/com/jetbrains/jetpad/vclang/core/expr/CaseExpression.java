@@ -39,9 +39,4 @@ public class CaseExpression extends Expression {
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitCase(this, params);
   }
-
-  @Override
-  public CaseExpression toCase() {
-    return this;
-  }
 }

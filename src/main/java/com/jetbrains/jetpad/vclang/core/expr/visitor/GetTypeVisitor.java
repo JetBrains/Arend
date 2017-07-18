@@ -84,13 +84,14 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitProj(ProjExpression expr, Void ignored) {
     Expression type = expr.getExpression().accept(this, null).normalize(NormalizeVisitor.Mode.WHNF);
-    if (type.toError() != null) {
+    if (type.isInstance(ErrorExpression.class)) {
       return type;
     }
 
-    SigmaExpression sigma = type.toSigma();
-    if (sigma == null) return null;
-    DependentLink params = sigma.getParameters();
+    if (!type.isInstance(SigmaExpression.class)) {
+      return null;
+    }
+    DependentLink params = type.cast(SigmaExpression.class).getParameters();
     if (expr.getField() == 0) {
       return params.getTypeExpr();
     }
@@ -111,7 +112,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitLet(LetExpression expr, Void params) {
     Expression type = expr.getExpression().accept(this, null).normalize(NormalizeVisitor.Mode.WHNF);
-    if (type.toError() != null) {
+    if (type.isInstance(ErrorExpression.class)) {
       return type;
     }
     return new LetExpression(expr.getClauses(), type);

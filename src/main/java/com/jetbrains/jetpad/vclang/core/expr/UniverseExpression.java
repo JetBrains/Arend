@@ -29,20 +29,6 @@ public class UniverseExpression extends Expression implements Type {
   }
 
   @Override
-  public UniverseExpression toUniverse() {
-    return this;
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (!(obj instanceof UniverseExpression)) {
-      return false;
-    }
-    UniverseExpression expr = (UniverseExpression)obj;
-    return mySort.equals(expr.getSort());
-  }
-
-  @Override
   public Expression getExpr() {
     return this;
   }

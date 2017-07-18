@@ -26,11 +26,6 @@ public class ErrorExpression extends Expression {
   }
 
   @Override
-  public ErrorExpression toError() {
-    return this;
-  }
-
-  @Override
   public Expression getStuckExpression() {
     return this;
   }

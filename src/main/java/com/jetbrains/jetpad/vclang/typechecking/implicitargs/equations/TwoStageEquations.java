@@ -46,8 +46,8 @@ public class TwoStageEquations implements Equations {
   }
 
   private void addEquation(Expression expr1, Expression expr2, CMP cmp, Abstract.SourceNode sourceNode, InferenceVariable stuckVar) {
-    InferenceVariable inf1 = expr1.toInferenceReference() != null ? expr1.toInferenceReference().getVariable() : null;
-    InferenceVariable inf2 = expr2.toInferenceReference() != null ? expr2.toInferenceReference().getVariable() : null;
+    InferenceVariable inf1 = expr1.isInstance(InferenceReferenceExpression.class) ? expr1.cast(InferenceReferenceExpression.class).getVariable() : null;
+    InferenceVariable inf2 = expr2.isInstance(InferenceReferenceExpression.class) ? expr2.cast(InferenceReferenceExpression.class).getVariable() : null;
 
     // expr1 == expr2 == ?x
     if (inf1 == inf2 && inf1 != null) {
@@ -58,31 +58,33 @@ public class TwoStageEquations implements Equations {
       // TODO: correctly check for stuck expressions
       // expr1 /= stuck, expr2 /= stuck
       Expression fun1 = expr1;
-      while (fun1.toApp() != null) {
-        fun1 = fun1.toApp().getFunction();
+      while (fun1.isInstance(AppExpression.class)) {
+        fun1 = fun1.cast(AppExpression.class).getFunction();
       }
       Expression fun2 = expr2;
-      while (fun2.toApp() != null) {
-        fun2 = fun2.toApp().getFunction();
+      while (fun2.isInstance(AppExpression.class)) {
+        fun2 = fun2.cast(AppExpression.class).getFunction();
       }
-      if ((fun1.toInferenceReference() == null || fun1.toInferenceReference().getVariable() == null) && (fun2.toInferenceReference() == null || fun2.toInferenceReference().getVariable() == null)) {
+      if ((!fun1.isInstance(InferenceReferenceExpression.class) || fun1.cast(InferenceReferenceExpression.class).getVariable() == null) && (!fun2.isInstance(InferenceReferenceExpression.class) || fun2.cast(InferenceReferenceExpression.class).getVariable() == null)) {
         InferenceVariable variable = null;
         Expression result = null;
 
         // expr1 == field call
-        if (expr1.toFieldCall() != null && expr1.toFieldCall().getExpression().toInferenceReference() != null) {
-          variable = expr1.toFieldCall().getExpression().toInferenceReference().getVariable();
+        FieldCallExpression fieldCall1 = expr1.checkedCast(FieldCallExpression.class);
+        if (fieldCall1 != null && fieldCall1.getExpression().isInstance(InferenceReferenceExpression.class)) {
+          variable = fieldCall1.getExpression().cast(InferenceReferenceExpression.class).getVariable();
           // expr1 == view field call
-          if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassifyingField() == expr1.toFieldCall().getDefinition()) {
+          if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassifyingField() == fieldCall1.getDefinition()) {
             result = ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getClassViewInstancePool(), expr2);
           }
         }
 
         // expr2 == field call
-        if (variable == null && expr2.toFieldCall() != null && expr2.toFieldCall().getExpression().toInferenceReference() != null) {
-          variable = expr2.toFieldCall().getExpression().toInferenceReference().getVariable();
+        FieldCallExpression fieldCall2 = expr2.checkedCast(FieldCallExpression.class);
+        if (variable == null && fieldCall2 != null && fieldCall2.getExpression().isInstance(InferenceReferenceExpression.class)) {
+          variable = fieldCall2.getExpression().cast(InferenceReferenceExpression.class).getVariable();
           // expr2 == view field call
-          if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassifyingField() == expr2.toFieldCall().getDefinition()) {
+          if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassifyingField() == fieldCall2.getDefinition()) {
             result = ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getClassViewInstancePool(), expr1);
           }
         }
@@ -101,9 +103,9 @@ public class TwoStageEquations implements Equations {
       cType = cType.normalize(NormalizeVisitor.Mode.WHNF);
 
       // cType /= Pi, cType /= Type, cType /= Class, cType /= stuck on ?X
-      if (cType.toPi() == null && cType.toUniverse() == null && cType.toClassCall() == null) {
+      if (!cType.isInstance(PiExpression.class) && !cType.isInstance(UniverseExpression.class) && !cType.isInstance(ClassCallExpression.class)) {
         Expression stuck = cType.getStuckExpression();
-        if (stuck == null || stuck.toInferenceReference() == null) {
+        if (stuck == null || !stuck.isInstance(InferenceReferenceExpression.class)) {
           cmp = CMP.EQ;
         }
       }
@@ -112,7 +114,7 @@ public class TwoStageEquations implements Equations {
         cmp = cmp.not();
       }
 
-      if (cType.toUniverse() != null && cType.toUniverse().getSort().isProp()) {
+      if (cType.isInstance(UniverseExpression.class) && cType.cast(UniverseExpression.class).getSort().isProp()) {
         if (cmp == CMP.LE) {
           myProps.add(cInf);
           return;
@@ -128,8 +130,8 @@ public class TwoStageEquations implements Equations {
       }
 
       // ?x <> Pi
-      PiExpression pi = cType.toPi();
-      if (pi != null) {
+      if (cType.isInstance(PiExpression.class)) {
+        PiExpression pi = cType.cast(PiExpression.class);
         Sort domSort = pi.getParameters().getType().getSortOfType();
         Sort codSort = Sort.generateInferVars(this, sourceNode);
         Sort piSort = PiExpression.generateUpperBound(domSort, codSort, this, sourceNode);
@@ -161,7 +163,7 @@ public class TwoStageEquations implements Equations {
     }
 
     Equation equation;
-    if (expr2.toInferenceReference() == null && expr1.toInferenceReference() != null) {
+    if (!expr2.isInstance(InferenceReferenceExpression.class) && expr1.isInstance(InferenceReferenceExpression.class)) {
       equation = new Equation(expr2, expr1, cmp.not(), sourceNode);
     } else {
       equation = new Equation(expr1, expr2, cmp, sourceNode);
@@ -409,11 +411,11 @@ public class TwoStageEquations implements Equations {
     for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
       Equation equation = iterator.next();
       Expression stuckExpr = equation.expr.getStuckExpression();
-      if (stuckExpr instanceof InferenceReferenceExpression || stuckExpr instanceof ErrorExpression) {
+      if (stuckExpr != null && (stuckExpr.isInstance(InferenceReferenceExpression.class) || stuckExpr.isInstance(ErrorExpression.class))) {
         iterator.remove();
       } else {
         stuckExpr = equation.type.getStuckExpression();
-        if (stuckExpr instanceof InferenceReferenceExpression || stuckExpr instanceof ErrorExpression) {
+        if (stuckExpr != null && (stuckExpr.isInstance(InferenceReferenceExpression.class) || stuckExpr.isInstance(ErrorExpression.class))) {
           iterator.remove();
         }
       }
@@ -437,16 +439,16 @@ public class TwoStageEquations implements Equations {
     List<Equation> lowerBounds = new ArrayList<>(myEquations.size());
     for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
       Equation equation = iterator.next();
-      if (equation.expr.toInferenceReference() != null && equation.expr.toInferenceReference().getSubstExpression() == null) {
-        Expression expr = equation.type;
-        if (expr.toInferenceReference() != null && expr.toInferenceReference().getSubstExpression() == null || expr.toClassCall() != null && !(equation.cmp == CMP.GE && expr.toClassCall() != null)) {
+      if (equation.expr.isInstance(InferenceReferenceExpression.class) && equation.expr.cast(InferenceReferenceExpression.class).getSubstExpression() == null) {
+        Expression type = equation.type;
+        if (type.isInstance(InferenceReferenceExpression.class) && type.cast(InferenceReferenceExpression.class).getSubstExpression() == null || type.isInstance(ClassCallExpression.class) && equation.cmp != CMP.GE) {
           if (equation.cmp == CMP.LE) {
             lowerBounds.add(equation);
           } else if (equation.cmp == CMP.GE) {
-            lowerBounds.add(new Equation(equation.expr, expr, CMP.LE, equation.sourceNode));
+            lowerBounds.add(new Equation(equation.expr, type, CMP.LE, equation.sourceNode));
           } else {
             lowerBounds.add(new Equation(equation.type, equation.expr, CMP.LE, equation.sourceNode));
-            lowerBounds.add(new Equation(equation.expr, expr, CMP.LE, equation.sourceNode));
+            lowerBounds.add(new Equation(equation.expr, type, CMP.LE, equation.sourceNode));
           }
           iterator.remove();
         }
@@ -458,10 +460,10 @@ public class TwoStageEquations implements Equations {
     Map<InferenceVariable, Expression> result = new HashMap<>();
     for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
       Equation equation = iterator.next();
-      if (equation.expr.toInferenceReference() != null && equation.expr.toInferenceReference().getSubstExpression() == null) {
+      if (equation.expr.isInstance(InferenceReferenceExpression.class) && equation.expr.cast(InferenceReferenceExpression.class).getSubstExpression() == null) {
         Expression newResult = equation.type;
-        if (newResult.toInferenceReference() != null && newResult.toInferenceReference().getSubstExpression() == null || newResult.toClassCall() != null && equation.cmp == CMP.GE && newResult.toClassCall() != null) {
-          InferenceVariable var = equation.expr.toInferenceReference().getVariable();
+        if (newResult.isInstance(InferenceReferenceExpression.class) && newResult.cast(InferenceReferenceExpression.class).getSubstExpression() == null || newResult.isInstance(ClassCallExpression.class) && equation.cmp == CMP.GE) {
+          InferenceVariable var = equation.expr.cast(InferenceReferenceExpression.class).getVariable();
           Expression oldResult = result.get(var);
           if (oldResult == null || newResult.isLessOrEquals(oldResult, DummyEquations.getInstance(), var.getSourceNode())) {
             result.put(var, newResult);
@@ -488,11 +490,11 @@ public class TwoStageEquations implements Equations {
       boolean updated = false;
       for (Equation equation : lowerBounds) {
         Expression newSolution = equation.type;
-        if (newSolution.toInferenceReference() != null && newSolution.toInferenceReference().getSubstExpression() == null) {
-          newSolution = solutions.get(newSolution.toInferenceReference().getVariable());
+        if (newSolution.isInstance(InferenceReferenceExpression.class) && newSolution.cast(InferenceReferenceExpression.class).getSubstExpression() == null) {
+          newSolution = solutions.get(newSolution.cast(InferenceReferenceExpression.class).getVariable());
         }
         if (newSolution != null) {
-          InferenceVariable var = equation.expr.toInferenceReference().getVariable();
+          InferenceVariable var = equation.expr.cast(InferenceReferenceExpression.class).getVariable();
           Expression oldSolution = solutions.get(var);
           if (oldSolution == null) {
             solutions.put(var, newSolution);
@@ -522,9 +524,10 @@ public class TwoStageEquations implements Equations {
     }
   }
 
+  @SuppressWarnings("UnusedReturnValue")
   private boolean solve(InferenceVariable var, Expression expr) {
     expr = expr.normalize(NormalizeVisitor.Mode.WHNF);
-    if (expr.toInferenceReference() != null && expr.toInferenceReference().getVariable() == var) {
+    if (expr.isInstance(InferenceReferenceExpression.class) && expr.cast(InferenceReferenceExpression.class).getVariable() == var) {
       return true;
     }
     if (expr.findBinding(var)) {

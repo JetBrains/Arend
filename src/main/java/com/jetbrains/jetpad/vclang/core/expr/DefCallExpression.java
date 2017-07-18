@@ -25,9 +25,4 @@ public abstract class DefCallExpression extends Expression {
   public Definition getDefinition() {
     return myDefinition;
   }
-
-  @Override
-  public DefCallExpression toDefCall() {
-    return this;
-  }
 }

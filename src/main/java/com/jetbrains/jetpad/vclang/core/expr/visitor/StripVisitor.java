@@ -64,8 +64,8 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    if (expr.getExpression().toNew() != null) {
-      return expr.getExpression().toNew().getExpression().getFieldSet().getImplementation(expr.getDefinition()).term.accept(this, null);
+    if (expr.getExpression().isInstance(NewExpression.class)) {
+      return expr.getExpression().cast(NewExpression.class).getExpression().getFieldSet().getImplementation(expr.getDefinition()).term.accept(this, null);
     } else {
       return ExpressionFactory.FieldCall(expr.getDefinition(), expr.getExpression().accept(this, null));
     }

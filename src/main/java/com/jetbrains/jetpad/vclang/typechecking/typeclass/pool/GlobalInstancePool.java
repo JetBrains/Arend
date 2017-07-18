@@ -24,7 +24,7 @@ public class GlobalInstancePool implements ClassViewInstancePool {
   }
 
   private Expression findInstance(Abstract.ReferenceExpression defCall, int paramIndex, Expression classifyingExpression, Abstract.Definition classView) {
-    DefCallExpression classifyingDefCall = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF).toDefCall();
+    DefCallExpression classifyingDefCall = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DefCallExpression.class);
     if (classifyingDefCall == null) {
       return null;
     }

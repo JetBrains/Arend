@@ -25,11 +25,6 @@ public class ProjExpression extends Expression {
   }
 
   @Override
-  public ProjExpression toProj() {
-    return this;
-  }
-
-  @Override
   public Expression getStuckExpression() {
     return myExpression.getStuckExpression();
   }

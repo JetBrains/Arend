@@ -48,11 +48,6 @@ public class SigmaExpression extends Expression implements Type {
   }
 
   @Override
-  public SigmaExpression toSigma() {
-    return this;
-  }
-
-  @Override
   public SigmaExpression subst(ExprSubstitution exprSubstitution, LevelSubstitution levelSubstitution) {
     return new SubstVisitor(exprSubstitution, levelSubstitution).visitSigma(this, null);
   }

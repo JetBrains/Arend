@@ -14,17 +14,14 @@ import java.util.List;
 
 public class EtaNormalization {
   public static Expression normalize(Expression expression) {
-    LamExpression lam = expression.toLam();
-    if (lam != null) {
-      return normalizeLam(lam);
+    if (expression.isInstance(LamExpression.class)) {
+      return normalizeLam(expression.cast(LamExpression.class));
     }
-    ConCallExpression conCall = expression.toConCall();
-    if (conCall != null) {
-      return normalizePath(conCall);
+    if (expression.isInstance(ConCallExpression.class)) {
+      return normalizePath(expression.cast(ConCallExpression.class));
     }
-    TupleExpression tuple = expression.toTuple();
-    if (tuple != null) {
-      return normalizeTuple(tuple);
+    if (expression.isInstance(TupleExpression.class)) {
+      return normalizeTuple(expression.cast(TupleExpression.class));
     }
     return expression;
   }
@@ -34,10 +31,11 @@ public class EtaNormalization {
     Expression body = normalize(expression.getBody());
     int index = params.size() - 1;
     for (; index >= 0; index--) {
-      if (body.toApp() != null) {
-        ReferenceExpression argRef = normalize(body.toApp().getArgument()).toReference();
-        if (argRef != null && argRef.getBinding() == params.get(index) && !body.toApp().getFunction().findBinding(argRef.getBinding())) {
-          body = body.toApp().getFunction();
+      if (body.isInstance(AppExpression.class)) {
+        AppExpression appBody = body.cast(AppExpression.class);
+        ReferenceExpression argRef = normalize(appBody.getArgument()).checkedCast(ReferenceExpression.class);
+        if (argRef != null && argRef.getBinding() == params.get(index) && !appBody.getFunction().findBinding(argRef.getBinding())) {
+          body = appBody.getFunction();
           continue;
         }
       }
@@ -57,15 +55,19 @@ public class EtaNormalization {
   public static Expression normalizePath(ConCallExpression expr) {
     if (expr.getDefinition() == Prelude.PATH_CON) {
       Expression arg = normalize(expr.getDefCallArguments().get(0));
-      if (arg.toLam() != null && !arg.toLam().getParameters().getNext().hasNext() && arg.toLam().getBody().toFunCall() != null && arg.toLam().getBody().toFunCall().getDefinition() == Prelude.AT) {
-        List<? extends Expression> args = arg.toLam().getBody().toFunCall().getDefCallArguments();
-        if (args.get(4).toReference() != null && args.get(4).toReference().getBinding() == arg.toLam().getParameters()) {
-          for (int i = 0; i < 4; i++) {
-            if (args.get(i).findBinding(arg.toLam().getParameters())) {
-              return expr;
+      LamExpression lamArg = arg.checkedCast(LamExpression.class);
+      if (lamArg != null && !lamArg.getParameters().getNext().hasNext()) {
+        FunCallExpression funCall = lamArg.getBody().checkedCast(FunCallExpression.class);
+        if (funCall != null && funCall.getDefinition() == Prelude.AT) {
+          List<? extends Expression> args = funCall.getDefCallArguments();
+          if (args.get(4).isInstance(ReferenceExpression.class) && args.get(4).cast(ReferenceExpression.class).getBinding() == lamArg.getParameters()) {
+            for (int i = 0; i < 4; i++) {
+              if (args.get(i).findBinding(lamArg.getParameters())) {
+                return expr;
+              }
             }
+            return normalize(args.get(3));
           }
-          return normalize(args.get(3));
         }
       }
     }
@@ -80,7 +82,7 @@ public class EtaNormalization {
     int index = 0;
     Expression[] fields = new Expression[tuple.getFields().size()];
     for (Expression field : tuple.getFields()) {
-      ProjExpression projField = normalize(field).toProj();
+      ProjExpression projField = normalize(field).checkedCast(ProjExpression.class);
       if (!(projField != null && projField.getField() == index)) {
         return tuple;
       }

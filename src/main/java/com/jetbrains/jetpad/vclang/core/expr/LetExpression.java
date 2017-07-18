@@ -14,12 +14,13 @@ public class LetExpression extends Expression {
     myExpression = expression;
   }
 
+  // TODO[cmpNorm]: Remove this method
   public LetExpression mergeNestedLets() {
     List<LetClause> clauses = new ArrayList<>(myClauses);
     Expression expression = myExpression;
-    while (expression.toLet() != null) {
-      clauses.addAll(expression.toLet().getClauses());
-      expression = expression.toLet().getExpression();
+    while (expression.isInstance(LetExpression.class)) {
+      clauses.addAll(expression.cast(LetExpression.class).getClauses());
+      expression = expression.cast(LetExpression.class).getExpression();
     }
     return new LetExpression(clauses, expression);
   }
@@ -35,11 +36,6 @@ public class LetExpression extends Expression {
   @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitLet(this, params);
-  }
-
-  @Override
-  public LetExpression toLet() {
-    return this;
   }
 
   @Override

@@ -45,11 +45,6 @@ public class ConCallExpression extends DefCallExpression {
     return visitor.visitConCall(this, params);
   }
 
-  @Override
-  public ConCallExpression toConCall() {
-    return this;
-  }
-
   public DataCallExpression getDataTypeExpression() {
     return getDefinition().getDataTypeExpression(mySortArgument, myDataTypeArguments);
   }

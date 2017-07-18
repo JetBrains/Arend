@@ -519,15 +519,16 @@ class DefinitionTypechecking {
       }
     }
 
-    if (type.toDataCall() != null) {
-      List<? extends Expression> exprs = type.toDataCall().getDefCallArguments();
-      DataDefinition typeDef = type.toDataCall().getDefinition();
+    DataCallExpression dataCall = type.checkedCast(DataCallExpression.class);
+    if (dataCall != null) {
+      List<? extends Expression> exprs = dataCall.getDefCallArguments();
+      DataDefinition typeDef = dataCall.getDefinition();
 
       for (int i = 0; i < exprs.size(); i++) {
         if (typeDef.isCovariant(i)) {
           Expression expr = exprs.get(i).normalize(NormalizeVisitor.Mode.WHNF);
-          while (expr.toLam() != null) {
-            expr = expr.toLam().getBody().normalize(NormalizeVisitor.Mode.WHNF);
+          while (expr.isInstance(LamExpression.class)) {
+            expr = expr.cast(LamExpression.class).getBody().normalize(NormalizeVisitor.Mode.WHNF);
           }
           if (!checkPositiveness(expr, index, arguments, constructor, errorReporter, variables)) {
             return false;
@@ -538,13 +539,13 @@ class DefinitionTypechecking {
           }
         }
       }
-    } else if (type.toApp() != null) {
-      for (; type.toApp() != null; type = type.toApp().getFunction()) {
-        if (!checkNonPositiveError(type.toApp().getArgument(), index, arguments, constructor, errorReporter, variables)) {
+    } else if (type.isInstance(AppExpression.class)) {
+      for (; type.isInstance(AppExpression.class); type = type.cast(AppExpression.class).getFunction()) {
+        if (!checkNonPositiveError(type.cast(AppExpression.class).getArgument(), index, arguments, constructor, errorReporter, variables)) {
           return false;
         }
       }
-      if (type.toReference() == null) {
+      if (!type.isInstance(ReferenceExpression.class)) {
         if (!checkNonPositiveError(type, index, arguments, constructor, errorReporter, variables)) {
           return false;
         }
@@ -615,7 +616,7 @@ class DefinitionTypechecking {
           continue;
         }
 
-        ClassCallExpression typeCheckedSuperClass = result.expression.normalize(NormalizeVisitor.Mode.WHNF).toClassCall();
+        ClassCallExpression typeCheckedSuperClass = result.expression.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class);
         if (typeCheckedSuperClass == null) {
           errorReporter.report(new LocalTypeCheckingError("Parent must be a class", aSuperClass.getSuperClass()));
           classOk = false;
@@ -660,7 +661,7 @@ class DefinitionTypechecking {
           visitor.getFreeBindings().add(thisParameter);
           visitor.setThis(typedDef, thisParameter);
           CheckTypeVisitor.Result result = implementField(fieldSet, field, implementation.getImplementation(), visitor, thisParameter);
-          if (result == null || result.expression.toError() != null) {
+          if (result == null || result.expression.isInstance(ErrorExpression.class)) {
             classOk = false;
           }
         }
@@ -746,7 +747,7 @@ class DefinitionTypechecking {
     term = new StripVisitor(new HashSet<>(visitor.getFreeBindings()), visitor.getErrorReporter()).visitClassCall(term, null);
 
     FieldSet.Implementation impl = fieldSet.getImplementation((ClassField) state.getTypechecked(classView.getClassifyingField()));
-    DefCallExpression defCall = impl.term.normalize(NormalizeVisitor.Mode.WHNF).toDefCall();
+    DefCallExpression defCall = impl.term.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DefCallExpression.class);
     if (defCall == null || !defCall.getDefCallArguments().isEmpty()) {
       errorReporter.report(new LocalTypeCheckingError("Expected a definition in the classifying field", def));
       return;

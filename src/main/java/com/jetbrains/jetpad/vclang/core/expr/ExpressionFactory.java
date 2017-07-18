@@ -23,15 +23,17 @@ public class ExpressionFactory {
   }
 
   public static Expression FieldCall(ClassField definition, Expression thisExpr) {
-    if (thisExpr.toNew() != null) {
-      FieldSet.Implementation impl = thisExpr.toNew().getExpression().getFieldSet().getImplementation(definition);
+    if (thisExpr.isInstance(NewExpression.class)) {
+      FieldSet.Implementation impl = thisExpr.cast(NewExpression.class).getExpression().getFieldSet().getImplementation(definition);
       assert impl != null;
       return impl.term;
-    } else
-    if (thisExpr.toError() != null && thisExpr.toError().getExpr() != null) {
-      return new FieldCallExpression(definition, new ErrorExpression(null, thisExpr.toError().getError()));
     } else {
-      return new FieldCallExpression(definition, thisExpr);
+      ErrorExpression errorExpr = thisExpr.checkedCast(ErrorExpression.class);
+      if (errorExpr != null && errorExpr.getExpr() != null) {
+        return new FieldCallExpression(definition, new ErrorExpression(null, errorExpr.getError()));
+      } else {
+        return new FieldCallExpression(definition, thisExpr);
+      }
     }
   }
 

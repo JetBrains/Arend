@@ -129,8 +129,8 @@ public class TypeCheckingDefCall {
 
     // Field call
     Expression type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
-    if (type.toClassCall() != null) {
-      ClassDefinition classDefinition = type.toClassCall().getDefinition();
+    if (type.isInstance(ClassCallExpression.class)) {
+      ClassDefinition classDefinition = type.cast(ClassCallExpression.class).getDefinition();
 
       if (typeCheckedDefinition == null) {
         Abstract.Definition member = myVisitor.getDynamicNamespaceProvider().forClass(classDefinition.getAbstractDefinition()).resolveName(name);
@@ -169,17 +169,17 @@ public class TypeCheckingDefCall {
 
     int lamSize = 0;
     Expression lamExpr = result.expression;
-    while (lamExpr.toLam() != null) {
-      lamSize += DependentLink.Helper.size(lamExpr.toLam().getParameters());
-      lamExpr = lamExpr.toLam().getBody();
+    while (lamExpr.isInstance(LamExpression.class)) {
+      lamSize += DependentLink.Helper.size(lamExpr.cast(LamExpression.class).getParameters());
+      lamExpr = lamExpr.cast(LamExpression.class).getBody();
     }
 
     // Constructor call
-    DataCallExpression dataCall = lamExpr.toDataCall();
+    DataCallExpression dataCall = lamExpr.checkedCast(DataCallExpression.class);
     if (dataCall != null) {
       DataDefinition dataDefinition = dataCall.getDefinition();
       List<? extends Expression> args = dataCall.getDefCallArguments();
-      if (result.expression.toLam() != null) {
+      if (result.expression.isInstance(LamExpression.class)) {
         args = args.subList(0, args.size() - lamSize);
       }
 
@@ -218,7 +218,7 @@ public class TypeCheckingDefCall {
     Expression thisExpr = null;
     final Definition leftDefinition;
     Abstract.Definition member = null;
-    ClassCallExpression classCall = result.expression.toClassCall();
+    ClassCallExpression classCall = result.expression.checkedCast(ClassCallExpression.class);
     if (classCall != null) {
       // Static call
       leftDefinition = classCall.getDefinition();
@@ -240,9 +240,10 @@ public class TypeCheckingDefCall {
       }
     } else {
       // Dynamic call
-      if (result.expression.toDefCall() != null) {
-        thisExpr = result.expression.toDefCall().getDefCallArguments().size() == 1 ? result.expression.toDefCall().getDefCallArguments().get(0) : null;
-        leftDefinition = result.expression.toDefCall().getDefinition();
+      if (result.expression.isInstance(DefCallExpression.class)) {
+        DefCallExpression defCall = result.expression.cast(DefCallExpression.class);
+        thisExpr = defCall.getDefCallArguments().size() == 1 ? defCall.getDefCallArguments().get(0) : null;
+        leftDefinition = defCall.getDefinition();
       } else {
         LocalTypeCheckingError error = new LocalTypeCheckingError("Expected a definition", expr);
         expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
@@ -291,7 +292,7 @@ public class TypeCheckingDefCall {
     if (definition instanceof DataDefinition && !sortArgument.isProp()) {
       hLevel = ((DataDefinition) definition).getSort().getHLevel();
     } else if (definition instanceof FunctionDefinition && !sortArgument.isProp()) {
-      UniverseExpression universe = ((FunctionDefinition) definition).getResultType().getPiParameters(null, false).toUniverse();
+      UniverseExpression universe = ((FunctionDefinition) definition).getResultType().getPiParameters(null, false).checkedCast(UniverseExpression.class);
       if (universe != null) {
         hLevel = universe.getSort().getHLevel();
       }
@@ -311,7 +312,7 @@ public class TypeCheckingDefCall {
     if (parentField == null) {
       return null;
     }
-    ClassCallExpression classCall = parentField.getBaseType(Sort.STD).toClassCall();
+    ClassCallExpression classCall = parentField.getBaseType(Sort.STD).checkedCast(ClassCallExpression.class);
     if (classCall == null) {
       return null;
     }

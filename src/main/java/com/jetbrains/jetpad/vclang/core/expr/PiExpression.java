@@ -62,11 +62,6 @@ public class PiExpression extends Expression implements Type {
   }
 
   @Override
-  public PiExpression toPi() {
-    return this;
-  }
-
-  @Override
   public PiExpression getExpr() {
     return this;
   }

@@ -40,11 +40,6 @@ public class FieldCallExpression extends DefCallExpression {
   }
 
   @Override
-  public FieldCallExpression toFieldCall() {
-    return this;
-  }
-
-  @Override
   public Expression getStuckExpression() {
     return myExpression.getStuckExpression();
   }

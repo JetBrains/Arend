@@ -53,7 +53,7 @@ public abstract class Expression implements ExpectedType {
   }
 
   public Sort toSort() {
-    UniverseExpression universe = normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
+    UniverseExpression universe = normalize(NormalizeVisitor.Mode.WHNF).checkedCast(UniverseExpression.class);
     return universe == null ? null : universe.getSort();
   }
 
@@ -109,8 +109,8 @@ public abstract class Expression implements ExpectedType {
   @Override
   public Expression getPiParameters(List<SingleDependentLink> params, boolean implicitOnly) {
     Expression cod = normalize(NormalizeVisitor.Mode.WHNF);
-    PiExpression piCod = cod.toPi();
-    while (piCod != null) {
+    while (cod.isInstance(PiExpression.class)) {
+      PiExpression piCod = cod.cast(PiExpression.class);
       if (implicitOnly) {
         if (piCod.getParameters().isExplicit()) {
           break;
@@ -132,32 +132,30 @@ public abstract class Expression implements ExpectedType {
       }
 
       cod = piCod.getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
-      piCod = cod.toPi();
     }
     return cod;
   }
 
   public Expression getLamParameters(List<DependentLink> params) {
     Expression body = this;
-    LamExpression lamBody = body.toLam();
-    while (lamBody != null) {
+    while (body.isInstance(LamExpression.class)) {
+      LamExpression lamBody = body.cast(LamExpression.class);
       if (params != null) {
         for (DependentLink link = lamBody.getParameters(); link.hasNext(); link = link.getNext()) {
           params.add(link);
         }
       }
       body = lamBody.getBody();
-      lamBody = body.toLam();
     }
     return body;
   }
 
   public Expression applyExpression(Expression expression) {
     Expression normExpr = normalize(NormalizeVisitor.Mode.WHNF);
-    if (normExpr.toError() != null) {
+    if (normExpr.isInstance(ErrorExpression.class)) {
       return normExpr;
     }
-    PiExpression piExpr = normExpr.toPi();
+    PiExpression piExpr = normExpr.cast(PiExpression.class);
     SingleDependentLink link = piExpr.getParameters();
     ExprSubstitution subst = new ExprSubstitution(link, expression);
     link = link.getNext();
@@ -168,84 +166,16 @@ public abstract class Expression implements ExpectedType {
     return result.subst(subst);
   }
 
-  public AppExpression toApp() {
-    return null;
+  public <T extends Expression> T cast(Class<T> clazz) {
+    return clazz.cast(this);
   }
 
-  public ClassCallExpression toClassCall() {
-    return null;
+  public <T extends Expression> boolean isInstance(Class<T> clazz) {
+    return clazz.isInstance(this);
   }
 
-  public ConCallExpression toConCall() {
-    return null;
-  }
-
-  public DataCallExpression toDataCall() {
-    return null;
-  }
-
-  public DefCallExpression toDefCall() {
-    return null;
-  }
-
-  public ErrorExpression toError() {
-    return null;
-  }
-
-  public FieldCallExpression toFieldCall() {
-    return null;
-  }
-
-  public FunCallExpression toFunCall() {
-    return null;
-  }
-
-  public LamExpression toLam() {
-    return null;
-  }
-
-  public LetExpression toLet() {
-    return null;
-  }
-
-  public CaseExpression toCase() {
-    return null;
-  }
-
-  public NewExpression toNew() {
-    return null;
-  }
-
-  public OfTypeExpression toOfType() {
-    return null;
-  }
-
-  public PiExpression toPi() {
-    return null;
-  }
-
-  public ProjExpression toProj() {
-    return null;
-  }
-
-  public ReferenceExpression toReference() {
-    return null;
-  }
-
-  public InferenceReferenceExpression toInferenceReference() {
-    return null;
-  }
-
-  public SigmaExpression toSigma() {
-    return null;
-  }
-
-  public TupleExpression toTuple() {
-    return null;
-  }
-
-  public UniverseExpression toUniverse() {
-    return null;
+  public <T extends Expression> T checkedCast(Class<T> clazz) {
+    return isInstance(clazz) ? cast(clazz) : null;
   }
 
   public Expression getStuckExpression() {

@@ -27,11 +27,6 @@ public class ReferenceExpression extends Expression {
   }
 
   @Override
-  public ReferenceExpression toReference() {
-    return this;
-  }
-
-  @Override
   public Expression getStuckExpression() {
     return this;
   }

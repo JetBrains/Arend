@@ -226,7 +226,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     @Override
     public DependentLink getParameter() {
       type = type.normalize(NormalizeVisitor.Mode.WHNF);
-      return type instanceof PiExpression ? ((PiExpression) type).getParameters() : EmptyDependentLink.getInstance();
+      return type.isInstance(PiExpression.class) ? type.cast(PiExpression.class).getParameters() : EmptyDependentLink.getInstance();
     }
 
     @Override
@@ -304,7 +304,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   private static Sort getSortOf(Expression expr) {
     Sort sort = expr.toSort();
     if (sort == null) {
-      assert expr.toError() != null;
+      assert expr.isInstance(ErrorExpression.class);
       return Sort.PROP;
     } else {
       return sort;
@@ -387,7 +387,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     }
 
     // TODO: if result.type is stuck, add an equation
-    UniverseExpression universe = result.type.normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
+    UniverseExpression universe = result.type.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(UniverseExpression.class);
     if (universe == null) {
       LocalTypeCheckingError error = new TypeMismatchError(new StringPrettyPrintable("a universe"), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
       expr.setWellTyped(myContext, new ErrorExpression(result.expression, error));
@@ -422,7 +422,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       return false;
     }
     if (result instanceof Result) {
-      ConCallExpression conCall = ((Result) result).expression.toConCall();
+      ConCallExpression conCall = ((Result) result).expression.checkedCast(ConCallExpression.class);
       if (conCall != null && conCall.getDefinition() == Prelude.PATH_CON) {
         if (!compareExpressions(true, (Result) result, conCall.getDataTypeArguments().get(1), new AppExpression(conCall.getDefCallArguments().get(0), ExpressionFactory.Left()), expr) ||
           !compareExpressions(false, (Result) result, conCall.getDataTypeArguments().get(2), new AppExpression(conCall.getDefCallArguments().get(0), ExpressionFactory.Right()), expr)) {
@@ -533,7 +533,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
         expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
       }
 
-      if (expectedType == null || expectedType.toPi() == null) {
+      if (expectedType == null || !expectedType.isInstance(PiExpression.class)) {
         TypedSingleDependentLink link = visitNameArgument((Abstract.NameArgument) param, argIndex, expr);
         Result bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, null, argIndex + 1);
         if (bodyResult == null) return null;
@@ -544,16 +544,17 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
         }
         return result;
       } else {
+        PiExpression piExpectedType = expectedType.cast(PiExpression.class);
         Abstract.ReferableSourceNode referable = ((Abstract.NameArgument) param).getReferable();
         String name = referable == null ? null : referable.getName();
-        SingleDependentLink piParams = expectedType.toPi().getParameters();
+        SingleDependentLink piParams = piExpectedType.getParameters();
         if (piParams.isExplicit() != param.getExplicit()) {
           myErrorReporter.report(new LocalTypeCheckingError(ordinal(argIndex) + " argument of the lambda should be " + (piParams.isExplicit() ? "explicit" : "implicit"), expr));
         }
         SingleDependentLink link = new TypedSingleDependentLink(piParams.isExplicit(), name, piParams.getType());
         myContext.put(referable, link);
-        Expression codomain = expectedType.toPi().getCodomain().subst(piParams, new ReferenceExpression(link));
-        Result bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, piParams.getNext().hasNext() ? new PiExpression(expectedType.toPi().getResultSort(), piParams.getNext(), codomain) : codomain, argIndex + 1);
+        Expression codomain = piExpectedType.getCodomain().subst(piParams, new ReferenceExpression(link));
+        Result bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, piParams.getNext().hasNext() ? new PiExpression(piExpectedType.getResultSort(), piParams.getNext(), codomain) : codomain, argIndex + 1);
         if (bodyResult == null) return null;
         Sort sort = PiExpression.generateUpperBound(link.getType().getSortOfType(), getSortOf(bodyResult.type.getType()), myEquations, expr);
         return new Result(new LamExpression(sort, link, bodyResult.expression), new PiExpression(sort, link, bodyResult.type));
@@ -577,7 +578,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
         int checked = 0;
         while (true) {
           expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
-          if (expectedType.toPi() == null) {
+          if (!expectedType.isInstance(PiExpression.class)) {
             actualLink = link;
             for (int i = 0; i < checked; i++) {
               actualLink = actualLink.getNext();
@@ -589,7 +590,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
             argExpr = argType.normalize(NormalizeVisitor.Mode.NF);
           }
 
-          Expression argExpectedType = expectedType.toPi().getParameters().getTypeExpr().subst(substitution);
+          PiExpression piExpectedType = expectedType.cast(PiExpression.class);
+          Expression argExpectedType = piExpectedType.getParameters().getTypeExpr().subst(substitution);
           if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, argExpectedType.normalize(NormalizeVisitor.Mode.NF), argExpr, paramType)) {
             LocalTypeCheckingError error = new TypeMismatchError(argExpectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), argType.normalize(NormalizeVisitor.Mode.HUMAN_NF), paramType);
             myErrorReporter.report(error);
@@ -597,7 +599,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
           }
 
           int parametersCount = 0;
-          for (DependentLink link1 = expectedType.toPi().getParameters(); link1.hasNext(); link1 = link1.getNext()) {
+          for (DependentLink link1 = piExpectedType.getParameters(); link1.hasNext(); link1 = link1.getNext()) {
             parametersCount++;
             if (lamLink.hasNext()) {
               substitution.add(link1, new ReferenceExpression(lamLink));
@@ -608,18 +610,18 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
           checked += parametersCount;
           if (checked >= namesCount) {
             if (checked == namesCount) {
-              expectedBodyType = expectedType.toPi().getCodomain().subst(substitution);
+              expectedBodyType = piExpectedType.getCodomain().subst(substitution);
             } else {
               int skip = parametersCount - (checked - namesCount);
-              SingleDependentLink link1 = expectedType.toPi().getParameters();
+              SingleDependentLink link1 = piExpectedType.getParameters();
               for (int i = 0; i < skip; i++) {
                 link1 = link1.getNext();
               }
-              expectedBodyType = new PiExpression(expectedType.toPi().getResultSort(), link1, expectedType.toPi().getCodomain()).subst(substitution);
+              expectedBodyType = new PiExpression(piExpectedType.getResultSort(), link1, piExpectedType.getCodomain()).subst(substitution);
             }
             break;
           }
-          expectedType = expectedType.toPi().getCodomain();
+          expectedType = piExpectedType.getCodomain();
         }
       }
 
@@ -775,8 +777,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     Expression expectedTypeNorm = null;
     if (expectedType instanceof Expression) {
       expectedTypeNorm = ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF);
-      SigmaExpression expectedTypeSigma = expectedTypeNorm.toSigma();
-      if (expectedTypeSigma != null) {
+      if (expectedTypeNorm.isInstance(SigmaExpression.class)) {
+        SigmaExpression expectedTypeSigma = expectedTypeNorm.cast(SigmaExpression.class);
         DependentLink sigmaParams = expectedTypeSigma.getParameters();
         int sigmaParamsSize = DependentLink.Helper.size(sigmaParams);
 
@@ -955,15 +957,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     Result exprResult = checkExpr(expr1, null);
     if (exprResult == null) return null;
     exprResult.type = exprResult.type.normalize(NormalizeVisitor.Mode.WHNF);
-    SigmaExpression sigmaType = exprResult.type.toSigma();
-    if (sigmaType == null) {
+    if (!exprResult.type.isInstance(SigmaExpression.class)) {
       LocalTypeCheckingError error = new TypeMismatchError(new StringPrettyPrintable("A sigma type"), exprResult.type, expr1);
       expr.setWellTyped(myContext, new ErrorExpression(null, error));
       myErrorReporter.report(error);
       return null;
     }
 
-    DependentLink sigmaParams = sigmaType.getParameters();
+    DependentLink sigmaParams = exprResult.type.cast(SigmaExpression.class).getParameters();
     DependentLink fieldLink = DependentLink.Helper.get(sigmaParams, expr.getField());
     if (!fieldLink.hasNext()) {
       LocalTypeCheckingError error = new LocalTypeCheckingError("Index " + (expr.getField() + 1) + " out of range", expr);
@@ -990,13 +991,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       return null;
     }
     Expression normalizedBaseClassExpr = typeCheckedBaseClass.expression.normalize(NormalizeVisitor.Mode.WHNF);
-    ClassCallExpression classCallExpr = normalizedBaseClassExpr.toClassCall();
-    if (classCallExpr == null) {
+    if (!normalizedBaseClassExpr.isInstance(ClassCallExpression.class)) {
       LocalTypeCheckingError error = new LocalTypeCheckingError("Expected a class", baseClassExpr);
       expr.setWellTyped(myContext, new ErrorExpression(normalizedBaseClassExpr, error));
       myErrorReporter.report(error);
       return null;
     }
+    ClassCallExpression classCallExpr = normalizedBaseClassExpr.cast(ClassCallExpression.class);
 
     ClassDefinition baseClass = classCallExpr.getDefinition();
     if (!baseClass.status().bodyIsOK()) {
@@ -1036,8 +1037,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
         Abstract.ClassFieldImpl impl = classFieldMap.get(field);
         if (impl != null) {
-          if (resultExpr instanceof ClassCallExpression) {
-            implementField(fieldSet, field, impl.getImplementation(), (ClassCallExpression) resultExpr);
+          if (resultExpr.isInstance(ClassCallExpression.class)) {
+            implementField(fieldSet, field, impl.getImplementation(), resultExpr.cast(ClassCallExpression.class));
           }
           classFieldMap.remove(field);
           if (classFieldMap.isEmpty()) {
@@ -1045,7 +1046,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
           }
         } else {
           LocalTypeCheckingError error = new LocalTypeCheckingError("Field '" + field.getName() + "' is not implemented", expr);
-          if (resultExpr instanceof ClassCallExpression) {
+          if (resultExpr.isInstance(ClassCallExpression.class)) {
             resultExpr = new ErrorExpression(resultExpr, error);
           }
           myErrorReporter.report(error);
@@ -1058,12 +1059,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     for (ClassField field : fieldSet.getFields()) {
       if (fieldSet.isImplemented(field)) continue;
       Expression baseType = field.getBaseType(classCallExpr.getSortArgument());
-      if (baseType.toError() != null) continue;
+      if (baseType.isInstance(ErrorExpression.class)) continue;
       sorts.add(getSortOf(baseType.subst(field.getThisParameter(), new ReferenceExpression(thisParam)).normalize(NormalizeVisitor.Mode.WHNF).getType()));
     }
 
     fieldSet.setSort(generateUpperBound(sorts, expr));
-    return checkResult(expectedType, new Result(resultExpr, new UniverseExpression(resultExpr instanceof ClassCallExpression ? ((ClassCallExpression) resultExpr).getSort() : Sort.PROP)), expr);
+    return checkResult(expectedType, new Result(resultExpr, new UniverseExpression(resultExpr.isInstance(ClassCallExpression.class) ? resultExpr.cast(ClassCallExpression.class).getSort() : Sort.PROP)), expr);
   }
 
   @SuppressWarnings("UnusedReturnValue")
@@ -1078,16 +1079,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     Result exprResult = checkExpr(expr.getExpression(), null);
     if (exprResult == null) return null;
     Expression normExpr = exprResult.expression.normalize(NormalizeVisitor.Mode.WHNF);
-    ClassCallExpression classCallExpr = normExpr.toClassCall();
+    ClassCallExpression classCallExpr = normExpr.checkedCast(ClassCallExpression.class);
     if (classCallExpr == null) {
-      classCallExpr = normExpr.toError().getExpr().normalize(NormalizeVisitor.Mode.WHNF).toClassCall();
+      classCallExpr = normExpr.isInstance(ErrorExpression.class) ? normExpr.cast(ErrorExpression.class).getExpr().normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class) : null;
       if (classCallExpr == null) {
         LocalTypeCheckingError error = new LocalTypeCheckingError("Expected a class", expr.getExpression());
         expr.setWellTyped(myContext, new ErrorExpression(normExpr, error));
         myErrorReporter.report(error);
         return null;
       } else {
-        exprResult.expression = new ErrorExpression(new NewExpression(classCallExpr), normExpr.toError().getError());
+        exprResult.expression = new ErrorExpression(new NewExpression(classCallExpr), normExpr.cast(ErrorExpression.class).getError());
         exprResult.type = normExpr;
         return exprResult;
       }

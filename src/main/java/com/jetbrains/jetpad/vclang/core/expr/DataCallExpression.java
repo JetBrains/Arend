@@ -49,11 +49,6 @@ public class DataCallExpression extends DefCallExpression implements Type {
   }
 
   @Override
-  public DataCallExpression toDataCall() {
-    return this;
-  }
-
-  @Override
   public Expression getExpr() {
     return this;
   }

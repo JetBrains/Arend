@@ -39,11 +39,6 @@ public class FunCallExpression extends DefCallExpression {
   }
 
   @Override
-  public FunCallExpression toFunCall() {
-    return this;
-  }
-
-  @Override
   public Expression getStuckExpression() {
     if ((getDefinition().getBody() instanceof BranchElimTree)) {
       // TODO: What if we stuck on another argument?

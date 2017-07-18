@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
+import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
@@ -74,7 +75,7 @@ public class PatternTypechecking {
     for (Map.Entry<Abstract.ReferableSourceNode, Binding> entry : myContext.entrySet()) {
       Expression expr = substitution.get(entry.getValue());
       if (expr != null) {
-        entry.setValue(expr.toReference().getBinding());
+        entry.setValue(expr.cast(ReferenceExpression.class).getBinding());
       }
     }
     expectedType = expectedType.subst(substitution);
@@ -226,17 +227,18 @@ public class PatternTypechecking {
       }
 
       Expression expr = parameters.getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF);
-      if (expr.toDataCall() == null) {
+      if (!expr.isInstance(DataCallExpression.class)) {
         myErrorReporter.report(new LocalTypeCheckingError("Expected a data type, actual type: " + expr, pattern));
         return null;
       }
-      if (!myFlags.contains(Flag.ALLOW_INTERVAL) && expr.toDataCall().getDefinition() == Prelude.INTERVAL) {
+      DataCallExpression dataCall = expr.cast(DataCallExpression.class);
+      if (!myFlags.contains(Flag.ALLOW_INTERVAL) && dataCall.getDefinition() == Prelude.INTERVAL) {
         myErrorReporter.report(new LocalTypeCheckingError("Pattern matching on the interval is not allowed here", pattern));
         return null;
       }
 
       if (pattern instanceof Abstract.EmptyPattern) {
-        List<ConCallExpression> conCalls = expr.toDataCall().getMatchedConstructors();
+        List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
         if (conCalls == null) {
           myErrorReporter.report(new LocalTypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", pattern));
           return null;
@@ -256,9 +258,9 @@ public class PatternTypechecking {
       }
       Abstract.ConstructorPattern conPattern = (Abstract.ConstructorPattern) pattern;
 
-      Constructor constructor = expr.toDataCall().getDefinition().getConstructor(conPattern.getConstructor());
+      Constructor constructor = dataCall.getDefinition().getConstructor(conPattern.getConstructor());
       List<ConCallExpression> conCalls = new ArrayList<>(1);
-      if (constructor == null || !expr.toDataCall().getMatchedConCall(constructor, conCalls) || conCalls.isEmpty() ) {
+      if (constructor == null || !dataCall.getMatchedConCall(constructor, conCalls) || conCalls.isEmpty() ) {
         myErrorReporter.report(new LocalTypeCheckingError("'" + conPattern.getConstructor() + "' is not a constructor of data type '" + expr + "'", pattern));
         return null;
       }
