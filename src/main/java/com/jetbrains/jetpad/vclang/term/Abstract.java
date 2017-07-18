@@ -328,7 +328,7 @@ public final class Abstract {
     List<? extends ReferenceExpression> getEliminatedReferences();
     List<? extends ConstructorClause> getConstructorClauses();
     boolean isTruncated();
-    Expression getUniverse();
+    UniverseExpression getUniverse();
   }
 
   public interface ConstructorClause extends Clause {

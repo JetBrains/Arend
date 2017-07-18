@@ -387,7 +387,18 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.DataDefinition visitDefData(DefDataContext ctx) {
-    Concrete.Expression universe = ctx.expr() == null ? null : (Concrete.Expression) visit(ctx.expr());
+    final Concrete.UniverseExpression universe;
+    if (ctx.expr() != null) {
+      Object expr = visit(ctx.expr());
+      if (expr instanceof Concrete.UniverseExpression) {
+        universe = (Concrete.UniverseExpression) expr;
+      } else {
+        myErrorReporter.report(new ParserError(tokenPosition(ctx.expr().getStart()), "Specified type of the data definition is not a universe"));
+        universe = null;
+      }
+    } else {
+      universe = null;
+    }
     List<Concrete.ReferenceExpression> eliminatedReferences = ctx.dataBody() instanceof DataClausesContext ? visitElim(((DataClausesContext) ctx.dataBody()).elim()) : null;
     Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(tokenPosition(ctx.getStart()), visitName(ctx.name()), visitPrecedence(ctx.precedence()), visitTeles(ctx.tele()), eliminatedReferences, ctx.isTruncated() instanceof TruncatedContext, universe, new ArrayList<>());
     visitDataBody(ctx.dataBody(), dataDefinition);

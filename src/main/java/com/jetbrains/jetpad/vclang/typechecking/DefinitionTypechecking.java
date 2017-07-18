@@ -30,7 +30,6 @@ import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
@@ -290,17 +289,12 @@ class DefinitionTypechecking {
     boolean paramsOk = typeCheckParameters(def.getParameters(), list, visitor, localInstancePool, classifyingFields) != null;
 
     if (def.getUniverse() != null) {
-      if (def.getUniverse() instanceof Abstract.UniverseExpression) {
-        Type userTypeResult = visitor.finalCheckType(def.getUniverse());
-        if (userTypeResult != null) {
-          userSort = userTypeResult.getExpr().toSort();
-          if (userSort == null) {
-            visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected a universe", def.getUniverse()));
-          }
+      Type userTypeResult = visitor.finalCheckType(def.getUniverse());
+      if (userTypeResult != null) {
+        userSort = userTypeResult.getExpr().toSort();
+        if (userSort == null) {
+          visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected a universe", def.getUniverse()));
         }
-      } else {
-        String msg = "Specified type " + PrettyPrintVisitor.prettyPrint(def.getUniverse(), 0) + " of '" + def.getName() + "' is not a universe";
-        visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, def.getUniverse()));
       }
     }
 

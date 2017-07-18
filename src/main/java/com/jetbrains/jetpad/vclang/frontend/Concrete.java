@@ -1145,9 +1145,9 @@ public final class Concrete {
     private final List<ReferenceExpression> myEliminatedReferences;
     private final List<ConstructorClause> myConstructorClauses;
     private final boolean myIsTruncated;
-    private final Expression myUniverse;
+    private final UniverseExpression myUniverse;
 
-    public DataDefinition(Position position, String name, Abstract.Precedence precedence, List<TypeArgument> parameters, List<ReferenceExpression> eliminatedReferences, boolean isTruncated, Expression universe, List<ConstructorClause> constructorClauses) {
+    public DataDefinition(Position position, String name, Abstract.Precedence precedence, List<TypeArgument> parameters, List<ReferenceExpression> eliminatedReferences, boolean isTruncated, UniverseExpression universe, List<ConstructorClause> constructorClauses) {
       super(position, name, precedence);
       myParameters = parameters;
       myEliminatedReferences = eliminatedReferences;
@@ -1177,7 +1177,7 @@ public final class Concrete {
     }
 
     @Override
-    public Expression getUniverse() {
+    public UniverseExpression getUniverse() {
       return myUniverse;
     }
 
