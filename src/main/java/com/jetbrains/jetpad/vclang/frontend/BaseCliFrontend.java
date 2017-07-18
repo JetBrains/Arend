@@ -1,10 +1,7 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
-import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.error.*;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotSourceInfoCollector;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
@@ -15,7 +12,10 @@ import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
-import com.jetbrains.jetpad.vclang.term.*;
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
@@ -276,24 +276,19 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     System.out.println("--- Checking ---");
 
-    class ResultTracker implements ErrorReporter, DependencyListener, TypecheckedReporter {
+    class ResultTracker extends ErrorClassifier implements DependencyListener, TypecheckedReporter {
+      public ResultTracker() {
+        super(errorReporter);
+      }
+
       @Override
-      public void report(GeneralError error) {
-        final ModuleResult newResult;
-        switch (error.level) {
-          case ERROR:
-            newResult = ModuleResult.ERRORS;
-            break;
-          case GOAL:
-            newResult = ModuleResult.GOALS;
-            break;
-          default:
-            newResult = ModuleResult.OK;
-        }
+      protected void reportedError(GeneralError error) {
+        updateSourceResult(srcInfoProvider.sourceOf(sourceDefinitionOf(error)), ModuleResult.ERRORS);
+      }
 
-        updateSourceResult(srcInfoProvider.sourceOf(sourceDefinitionOf(error)), newResult);
-
-        errorReporter.report(error);
+      @Override
+      protected void reportedGoal(GeneralError error) {
+        updateSourceResult(srcInfoProvider.sourceOf(sourceDefinitionOf(error)), ModuleResult.GOALS);
       }
 
       @Override
