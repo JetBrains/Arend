@@ -61,7 +61,7 @@ public abstract class ParseSource {
       moduleRegistry.registerModule(mySourceId.getModulePath(), result);
     }
     if (nameResolver != null) {
-      OneshotNameResolver.visitModule(result, globalScope, nameResolver, Concrete.NamespaceCommandStatement.GET, new ConcreteResolveListener(compositeErrorReporter));
+      OneshotNameResolver.visitModule(result, globalScope, nameResolver, Concrete.NamespaceCommandStatement.GET, new ConcreteResolveListener(), compositeErrorReporter);
     }
     if (countingErrorReporter.getErrorsNumber() > 0) {
       if (moduleRegistry != null) {
