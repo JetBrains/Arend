@@ -85,4 +85,14 @@ public class PiExpression extends Expression implements Type {
   public PiExpression normalize(NormalizeVisitor.Mode mode) {
     return new NormalizeVisitor().visitPi(this, mode);
   }
+
+  @Override
+  public boolean isWHNF() {
+    return true;
+  }
+
+  @Override
+  public Expression getStuckExpression() {
+    return null;
+  }
 }

@@ -26,6 +26,11 @@ public class ErrorExpression extends Expression {
   }
 
   @Override
+  public boolean isWHNF() {
+    return true;
+  }
+
+  @Override
   public Expression getStuckExpression() {
     return this;
   }

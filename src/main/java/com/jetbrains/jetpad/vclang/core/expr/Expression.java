@@ -178,7 +178,8 @@ public abstract class Expression implements ExpectedType {
     return isInstance(clazz) ? cast(clazz) : null;
   }
 
-  public Expression getStuckExpression() {
-    return null;
-  }
+  public abstract boolean isWHNF();
+
+  // Returns null of the expression is a constructor or not in WHNF
+  public abstract Expression getStuckExpression();
 }

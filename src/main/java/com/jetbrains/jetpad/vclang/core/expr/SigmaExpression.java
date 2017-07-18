@@ -61,4 +61,14 @@ public class SigmaExpression extends Expression implements Type {
   public SigmaExpression normalize(NormalizeVisitor.Mode mode) {
     return new NormalizeVisitor().visitSigma(this, mode);
   }
+
+  @Override
+  public boolean isWHNF() {
+    return true;
+  }
+
+  @Override
+  public Expression getStuckExpression() {
+    return null;
+  }
 }

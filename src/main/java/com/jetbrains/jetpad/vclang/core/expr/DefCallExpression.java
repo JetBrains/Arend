@@ -25,4 +25,14 @@ public abstract class DefCallExpression extends Expression {
   public Definition getDefinition() {
     return myDefinition;
   }
+
+  @Override
+  public boolean isWHNF() {
+    return true;
+  }
+
+  @Override
+  public Expression getStuckExpression() {
+    return null;
+  }
 }

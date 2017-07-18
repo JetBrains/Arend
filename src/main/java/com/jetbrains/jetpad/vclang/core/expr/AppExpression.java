@@ -23,4 +23,14 @@ public class AppExpression extends Expression {
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitApp(this, params);
   }
+
+  @Override
+  public boolean isWHNF() {
+    return myFunction.isWHNF() && !myFunction.isInstance(LamExpression.class);
+  }
+
+  @Override
+  public Expression getStuckExpression() {
+    return myFunction.getStuckExpression();
+  }
 }

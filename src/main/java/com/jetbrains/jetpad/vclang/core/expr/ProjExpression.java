@@ -25,6 +25,11 @@ public class ProjExpression extends Expression {
   }
 
   @Override
+  public boolean isWHNF() {
+    return myExpression.isWHNF() && !myExpression.isInstance(TupleExpression.class);
+  }
+
+  @Override
   public Expression getStuckExpression() {
     return myExpression.getStuckExpression();
   }

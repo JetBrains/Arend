@@ -47,6 +47,11 @@ public class OfTypeExpression extends Expression {
   }
 
   @Override
+  public boolean isWHNF() {
+    return myExpression.isWHNF();
+  }
+
+  @Override
   public Expression getStuckExpression() {
     return myExpression.getStuckExpression();
   }

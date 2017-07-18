@@ -39,4 +39,14 @@ public class CaseExpression extends Expression {
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitCase(this, params);
   }
+
+  @Override
+  public boolean isWHNF() {
+    return myElimTree.isWHNF(myArguments);
+  }
+
+  @Override
+  public Expression getStuckExpression() {
+    return myElimTree.getStuckExpression(myArguments, this);
+  }
 }

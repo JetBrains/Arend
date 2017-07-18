@@ -52,4 +52,14 @@ public class UniverseExpression extends Expression implements Type {
   public UniverseExpression normalize(NormalizeVisitor.Mode mode) {
     return this;
   }
+
+  @Override
+  public boolean isWHNF() {
+    return true;
+  }
+
+  @Override
+  public Expression getStuckExpression() {
+    return null;
+  }
 }

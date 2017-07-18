@@ -39,7 +39,12 @@ public class LetExpression extends Expression {
   }
 
   @Override
+  public boolean isWHNF() {
+    return false;
+  }
+
+  @Override
   public Expression getStuckExpression() {
-    return myExpression.getStuckExpression();
+    return null;
   }
 }

@@ -27,7 +27,12 @@ public class ReferenceExpression extends Expression {
   }
 
   @Override
+  public boolean isWHNF() {
+    return true;
+  }
+
+  @Override
   public Expression getStuckExpression() {
-    return this;
+    return null;
   }
 }
