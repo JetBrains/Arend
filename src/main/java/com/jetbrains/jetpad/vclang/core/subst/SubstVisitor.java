@@ -32,10 +32,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitDefCall(DefCallExpression expr, Void params) {
-    List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
-    for (Expression arg : expr.getDefCallArguments()) {
-      args.add(arg.accept(this, null));
-    }
+    List<Expression> args = expr.getDefCallArguments().stream().map(arg -> arg.accept(this, null)).collect(Collectors.toList());
     return expr.getDefinition().getDefCall(expr.getSortArgument().subst(myLevelSubstitution), null, args);
   }
 
@@ -46,20 +43,8 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public ConCallExpression visitConCall(ConCallExpression expr, Void params) {
-    List<Expression> dataTypeArgs = new ArrayList<>(expr.getDataTypeArguments().size());
-    for (Expression parameter : expr.getDataTypeArguments()) {
-      Expression expr2 = parameter.accept(this, null);
-      if (expr2 == null) {
-        return null;
-      }
-      dataTypeArgs.add(expr2);
-    }
-
-    List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
-    for (Expression arg : expr.getDefCallArguments()) {
-      args.add(arg.accept(this, null));
-    }
-
+    List<Expression> dataTypeArgs = expr.getDataTypeArguments().stream().map(arg -> arg.accept(this, null)).collect(Collectors.toList());
+    List<Expression> args = expr.getDefCallArguments().stream().map(arg -> arg.accept(this, null)).collect(Collectors.toList());
     return new ConCallExpression(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), dataTypeArgs, args);
   }
 
@@ -132,10 +117,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public TupleExpression visitTuple(TupleExpression expr, Void params) {
-    List<Expression> fields = new ArrayList<>(expr.getFields().size());
-    for (Expression field : expr.getFields()) {
-      fields.add(field.accept(this, null));
-    }
+    List<Expression> fields = expr.getFields().stream().map(field -> field.accept(this, null)).collect(Collectors.toList());
     return new TupleExpression(fields, visitSigma(expr.getSigmaType(), null));
   }
 

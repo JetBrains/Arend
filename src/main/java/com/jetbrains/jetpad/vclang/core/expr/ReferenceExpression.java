@@ -28,11 +28,11 @@ public class ReferenceExpression extends Expression {
 
   @Override
   public boolean isWHNF() {
-    return true;
+    return !(myBinding instanceof LetClause);
   }
 
   @Override
   public Expression getStuckExpression() {
-    return null;
+    return myBinding instanceof LetClause ? null : this;
   }
 }
