@@ -310,4 +310,16 @@ public class NameResolverTest extends NameResolverTestCase {
         "\\open Y \\hiding (f)\n" +
         "\\function g => f");
   }
+
+  @Test
+  public void conditionsTest() {
+    resolveNamesClass(
+      "\\data I | left | right\n" +
+      "\\data D (A : \\Type)\n" +
+      "  | con1 A\n" +
+      "  | con2 (D A) I {\n" +
+      "    | left => d\n" +
+      "    | right => d\n" +
+      "  }", 2);
+  }
 }
