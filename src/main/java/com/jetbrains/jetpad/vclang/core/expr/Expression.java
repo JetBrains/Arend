@@ -38,7 +38,7 @@ public abstract class Expression implements ExpectedType {
 
   @Override
   public boolean equals(Object obj) {
-    return this == obj || obj instanceof Expression && compare(this, (Expression) obj);
+    return this == obj || obj instanceof Expression && compare(this, (Expression) obj, Equations.CMP.EQ);
   }
 
   @Override
@@ -49,7 +49,7 @@ public abstract class Expression implements ExpectedType {
   }
 
   public boolean isLessOrEquals(Expression type, Equations equations, Abstract.SourceNode sourceNode) {
-    return CompareVisitor.compare(equations, Equations.CMP.LE, normalize(NormalizeVisitor.Mode.NF), type.normalize(NormalizeVisitor.Mode.NF), sourceNode);
+    return CompareVisitor.compare(equations, Equations.CMP.LE, this, type, sourceNode);
   }
 
   public Sort toSort() {
@@ -100,10 +100,6 @@ public abstract class Expression implements ExpectedType {
 
   public static boolean compare(Expression expr1, Expression expr2, Equations.CMP cmp) {
     return CompareVisitor.compare(DummyEquations.getInstance(), cmp, expr1, expr2, null);
-  }
-
-  public static boolean compare(Expression expr1, Expression expr2) {
-    return compare(expr1, expr2, Equations.CMP.EQ);
   }
 
   @Override

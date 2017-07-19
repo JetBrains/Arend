@@ -404,7 +404,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   }
 
   private boolean compareExpressions(boolean isLeft, Result result, Expression expected, Expression actual, Abstract.Expression expr) {
-    if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, expected.normalize(NormalizeVisitor.Mode.NF), actual.normalize(NormalizeVisitor.Mode.NF), expr)) {
+    if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, expected, actual, expr)) {
       LocalTypeCheckingError error = new PathEndpointMismatchError(isLeft, expected.normalize(NormalizeVisitor.Mode.HUMAN_NF), actual.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
       expr.setWellTyped(myContext, new ErrorExpression(result.expression, error));
       myErrorReporter.report(error);
@@ -589,12 +589,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
             break;
           }
           if (argExpr == null) {
-            argExpr = argType.normalize(NormalizeVisitor.Mode.NF);
+            argExpr = argType;
           }
 
           PiExpression piExpectedType = expectedType.cast(PiExpression.class);
           Expression argExpectedType = piExpectedType.getParameters().getTypeExpr().subst(substitution);
-          if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, argExpectedType.normalize(NormalizeVisitor.Mode.NF), argExpr, paramType)) {
+          if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, argExpectedType, argExpr, paramType)) {
             LocalTypeCheckingError error = new TypeMismatchError(argExpectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), argType.normalize(NormalizeVisitor.Mode.HUMAN_NF), paramType);
             myErrorReporter.report(error);
             return null;

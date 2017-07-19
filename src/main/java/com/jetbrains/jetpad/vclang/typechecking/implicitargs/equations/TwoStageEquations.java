@@ -276,7 +276,7 @@ public class TwoStageEquations implements Equations {
 
   @Override
   public boolean solve(Expression type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode) {
-    if (!CompareVisitor.compare(this, cmp, type.normalize(NormalizeVisitor.Mode.NF), expr.normalize(NormalizeVisitor.Mode.NF), sourceNode)) {
+    if (!CompareVisitor.compare(this, cmp, type, expr, sourceNode)) {
       myVisitor.getErrorReporter().report(new SolveEquationError<>(type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr.normalize(NormalizeVisitor.Mode.HUMAN_NF), sourceNode));
       return false;
     } else {

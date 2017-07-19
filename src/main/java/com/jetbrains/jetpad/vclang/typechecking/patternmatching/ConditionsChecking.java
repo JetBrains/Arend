@@ -75,9 +75,9 @@ public class ConditionsChecking {
     }
 
     ExprSubstitution substitution1 = new ExprSubstitution(link2, isLeft2 ? ExpressionFactory.Left() : ExpressionFactory.Right());
-    Expression evaluatedExpr1 = case1.subst(substitution1).normalize(NormalizeVisitor.Mode.NF);
+    Expression evaluatedExpr1 = case1.subst(substitution1);
     ExprSubstitution substitution2 = new ExprSubstitution(link1, isLeft1 ? ExpressionFactory.Left() : ExpressionFactory.Right());
-    Expression evaluatedExpr2 = case2.subst(substitution2).normalize(NormalizeVisitor.Mode.NF);
+    Expression evaluatedExpr2 = case2.subst(substitution2);
     if (!CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null)) {
       List<Expression> defCallArgs1 = new ArrayList<>();
       for (DependentLink link3 = parameters; link3.hasNext(); link3 = link3.getNext()) {
@@ -126,8 +126,8 @@ public class ConditionsChecking {
     ExprSubstitution substitution2 = new ExprSubstitution(((BindingPattern) clause.patterns.get(index)).getBinding(), isLeft ? ExpressionFactory.Left() : ExpressionFactory.Right());
     pathSubstitution.addAll(substitution2);
 
-    Expression evaluatedExpr1 = expr.subst(substitution1).normalize(NormalizeVisitor.Mode.NF);
-    Expression evaluatedExpr2 = clause.expression.subst(pathSubstitution).normalize(NormalizeVisitor.Mode.NF);
+    Expression evaluatedExpr1 = expr.subst(substitution1);
+    Expression evaluatedExpr2 = clause.expression.subst(pathSubstitution);
     if (!CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null)) {
       if (!pathSubstitution.isEmpty()) {
         link = parameters;
@@ -190,9 +190,9 @@ public class ConditionsChecking {
       if (definition == null) {
         evaluatedExpr1 = new NormalizeVisitor().eval(elimTree, pair.proj1, new ExprSubstitution(), LevelSubstitution.EMPTY);
       } else {
-        evaluatedExpr1 = definition.getDefCall(Sort.STD, null, pair.proj1).normalize(NormalizeVisitor.Mode.NF);
+        evaluatedExpr1 = definition.getDefCall(Sort.STD, null, pair.proj1);
       }
-      Expression evaluatedExpr2 = clause.expression.subst(pair.proj2).normalize(NormalizeVisitor.Mode.NF);
+      Expression evaluatedExpr2 = clause.expression.subst(pair.proj2);
       if (evaluatedExpr1 == null || !CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null)) {
         List<Expression> args = new ArrayList<>(clause.patterns.size());
         for (Pattern pattern : clause.patterns) {
