@@ -1,11 +1,10 @@
 package com.jetbrains.jetpad.vclang.frontend.resolving;
 
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.List;
 
-public interface ResolveListener extends ErrorReporter {
+public interface ResolveListener {
   void nameResolved(Abstract.ReferenceExpression referenceExpression, Abstract.ReferableSourceNode referable);
   void moduleResolved(Abstract.ModuleCallExpression moduleCallExpression, Abstract.Definition definition);
   void openCmdResolved(OpenCommand openCmd, Abstract.Definition definition);

@@ -45,7 +45,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
     }
 
     ExpressionResolveInstanceVisitor exprVisitor = new ExpressionResolveInstanceVisitor(scope, myInstanceProvider);
-    exprVisitor.visitArguments(def.getArguments());
+    exprVisitor.visitParameters(def.getParameters());
 
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
@@ -84,7 +84,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
   public Void visitData(Abstract.DataDefinition def, Scope parentScope) {
     Scope scope = new DataScope(parentScope, myScopeProvider.forDefinition(def));
     ExpressionResolveInstanceVisitor exprVisitor = new ExpressionResolveInstanceVisitor(scope, myInstanceProvider);
-    exprVisitor.visitArguments(def.getParameters());
+    exprVisitor.visitParameters(def.getParameters());
 
     if (def.getEliminatedReferences() != null) {
       for (Abstract.ReferenceExpression ref : def.getEliminatedReferences()) {
@@ -103,7 +103,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
   @Override
   public Void visitConstructor(Abstract.Constructor def, Scope parentScope) {
     ExpressionResolveInstanceVisitor exprVisitor = new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider);
-    exprVisitor.visitArguments(def.getArguments());
+    exprVisitor.visitParameters(def.getParameters());
     if (def.getEliminatedReferences() != null) {
       for (Abstract.ReferenceExpression ref : def.getEliminatedReferences()) {
         exprVisitor.visitReference(ref, null);
@@ -133,7 +133,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
         definition.accept(this, staticScope);
       }
 
-      exprVisitor.visitArguments(def.getPolyParameters());
+      exprVisitor.visitParameters(def.getPolyParameters());
 
       for (Abstract.ClassField field : def.getFields()) {
         field.accept(this, staticScope);
@@ -171,7 +171,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
   @Override
   public Void visitClassViewInstance(Abstract.ClassViewInstance def, Scope parentScope) {
     ExpressionResolveInstanceVisitor exprVisitor = new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider);
-    exprVisitor.visitArguments(def.getArguments());
+    exprVisitor.visitParameters(def.getParameters());
     exprVisitor.visitReference(def.getClassView(), null);
     for (Abstract.ClassFieldImpl impl : def.getClassFieldImpls()) {
       impl.getImplementation().accept(exprVisitor, null);

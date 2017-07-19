@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
+import com.google.common.base.Objects;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
 
@@ -37,32 +38,32 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
     return expr2 instanceof Abstract.ModuleCallExpression && expr1.getPath().equals(((Abstract.ModuleCallExpression) expr2).getPath());
   }
 
-  private boolean compareArg(Abstract.Argument arg1, Abstract.Argument arg2) {
+  private boolean compareArg(Abstract.Parameter arg1, Abstract.Parameter arg2) {
     if (arg1.getExplicit() != arg2.getExplicit()) {
       return false;
     }
-    if (arg1 instanceof Abstract.TelescopeArgument && arg2 instanceof Abstract.TelescopeArgument) {
-      List<? extends Abstract.ReferableSourceNode> list1 = ((Abstract.TelescopeArgument) arg1).getReferableList();
-      List<? extends Abstract.ReferableSourceNode> list2 = ((Abstract.TelescopeArgument) arg2).getReferableList();
+    if (arg1 instanceof Abstract.TelescopeParameter && arg2 instanceof Abstract.TelescopeParameter) {
+      List<? extends Abstract.ReferableSourceNode> list1 = ((Abstract.TelescopeParameter) arg1).getReferableList();
+      List<? extends Abstract.ReferableSourceNode> list2 = ((Abstract.TelescopeParameter) arg2).getReferableList();
       if (list1.size() != list2.size()) {
         return false;
       }
       for (int i = 0; i < list1.size(); i++) {
         mySubstitution.put(list1.get(i), list2.get(i));
       }
-      return ((Abstract.TelescopeArgument) arg1).getType().accept(this, ((Abstract.TelescopeArgument) arg2).getType());
+      return ((Abstract.TelescopeParameter) arg1).getType().accept(this, ((Abstract.TelescopeParameter) arg2).getType());
     }
-    if (arg1 instanceof Abstract.TypeArgument && arg2 instanceof Abstract.TypeArgument) {
-      return ((Abstract.TypeArgument) arg1).getType().accept(this, ((Abstract.TypeArgument) arg2).getType());
+    if (arg1 instanceof Abstract.TypeParameter && arg2 instanceof Abstract.TypeParameter) {
+      return ((Abstract.TypeParameter) arg1).getType().accept(this, ((Abstract.TypeParameter) arg2).getType());
     }
-    if (arg1 instanceof Abstract.NameArgument && arg2 instanceof Abstract.NameArgument) {
-      mySubstitution.put(((Abstract.NameArgument) arg1).getReferable(), ((Abstract.NameArgument) arg2).getReferable());
+    if (arg1 instanceof Abstract.NameParameter && arg2 instanceof Abstract.NameParameter) {
+      mySubstitution.put((Abstract.NameParameter) arg1, (Abstract.NameParameter) arg2);
       return true;
     }
     return false;
   }
 
-  private boolean compareArgs(List<? extends Abstract.Argument> args1, List<? extends Abstract.Argument> args2) {
+  private boolean compareArgs(List<? extends Abstract.Parameter> args1, List<? extends Abstract.Parameter> args2) {
     if (args1.size() != args2.size()) return false;
     for (int i = 0; i < args1.size(); i++) {
       if (!compareArg(args1.get(i), args2.get(i))) {
@@ -74,12 +75,12 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
 
   @Override
   public Boolean visitLam(Abstract.LamExpression expr1, Abstract.Expression expr2) {
-    return expr2 instanceof Abstract.LamExpression && compareArgs(expr1.getArguments(), ((Abstract.LamExpression) expr2).getArguments()) && expr1.getBody().accept(this, ((Abstract.LamExpression) expr2).getBody());
+    return expr2 instanceof Abstract.LamExpression && compareArgs(expr1.getParameters(), ((Abstract.LamExpression) expr2).getParameters()) && expr1.getBody().accept(this, ((Abstract.LamExpression) expr2).getBody());
   }
 
   @Override
   public Boolean visitPi(Abstract.PiExpression expr1, Abstract.Expression expr2) {
-    return expr2 instanceof Abstract.PiExpression && compareArgs(expr1.getArguments(), ((Abstract.PiExpression) expr2).getArguments()) && expr1.getCodomain().accept(this, ((Abstract.PiExpression) expr2).getCodomain());
+    return expr2 instanceof Abstract.PiExpression && compareArgs(expr1.getParameters(), ((Abstract.PiExpression) expr2).getParameters()) && expr1.getCodomain().accept(this, ((Abstract.PiExpression) expr2).getCodomain());
   }
 
   @Override
@@ -146,7 +147,7 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
 
   @Override
   public Boolean visitSigma(Abstract.SigmaExpression expr1, Abstract.Expression expr2) {
-    return expr2 instanceof Abstract.SigmaExpression && compareArgs(expr1.getArguments(), ((Abstract.SigmaExpression) expr2).getArguments());
+    return expr2 instanceof Abstract.SigmaExpression && compareArgs(expr1.getParameters(), ((Abstract.SigmaExpression) expr2).getParameters());
   }
 
   @Override
@@ -178,7 +179,7 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
 
   private boolean comparePattern(Abstract.Pattern pattern1, Abstract.Pattern pattern2) {
     if (pattern1 instanceof Abstract.NamePattern) {
-      return pattern2 instanceof Abstract.NamePattern && ((Abstract.NamePattern) pattern1).getReferent().equals(((Abstract.NamePattern) pattern2).getReferent());
+      return pattern2 instanceof Abstract.NamePattern && Objects.equal(pattern1, pattern2);
     }
     if (pattern1 instanceof Abstract.ConstructorPattern) {
       return pattern2 instanceof Abstract.ConstructorPattern && ((Abstract.ConstructorPattern) pattern1).getConstructorName().equals(((Abstract.ConstructorPattern) pattern2).getConstructorName());
@@ -244,7 +245,7 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
   }
 
   private boolean compareLetClause(Abstract.LetClause clause1, Abstract.LetClause clause2) {
-    return compareArgs(clause1.getArguments(), clause2.getArguments()) && clause1.getTerm().accept(this, clause2.getTerm()) && (clause1.getResultType() == null && clause2.getResultType() == null || clause1.getResultType() != null && clause2.getResultType() != null && clause1.getResultType().accept(this, clause2.getResultType()));
+    return compareArgs(clause1.getParameters(), clause2.getParameters()) && clause1.getTerm().accept(this, clause2.getTerm()) && (clause1.getResultType() == null && clause2.getResultType() == null || clause1.getResultType() != null && clause2.getResultType() != null && clause1.getResultType().accept(this, clause2.getResultType()));
   }
 
   @Override

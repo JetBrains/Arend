@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.frontend.parser;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -9,10 +10,12 @@ import java.util.List;
 public class BinOpParser {
   private final Abstract.BinOpSequenceExpression myBinOpExpression;
   private final ResolveListener myResolveListener;
+  private final ErrorReporter myErrorReporter;
 
-  public BinOpParser(Abstract.BinOpSequenceExpression binOpExpression, ResolveListener resolveListener) {
+  public BinOpParser(Abstract.BinOpSequenceExpression binOpExpression, ResolveListener resolveListener, ErrorReporter errorReporter) {
     myBinOpExpression = binOpExpression;
     myResolveListener = resolveListener;
+    myErrorReporter = errorReporter;
   }
 
   public class StackElem {
@@ -45,7 +48,7 @@ public class BinOpParser {
 
     if (!(topElem.prec.priority > elem.prec.priority || (topElem.prec.priority == elem.prec.priority && topElem.prec.associativity == Abstract.Precedence.Associativity.LEFT_ASSOC && elem.prec.associativity == Abstract.Precedence.Associativity.LEFT_ASSOC))) {
       String msg = "Precedence parsing error: cannot mix (" + topElem.binOp.getName() + ") [" + topElem.prec + "] and (" + elem.binOp.getName() + ") [" + elem.prec + "] in the same infix expression";
-      myResolveListener.report(new GeneralError(msg, elem.var));
+      myErrorReporter.report(new GeneralError(msg, elem.var));
     }
     stack.remove(stack.size() - 1);
     pushOnStack(stack, myResolveListener.makeBinOp(myBinOpExpression, topElem.argument, topElem.binOp, topElem.var, elem.argument), elem.binOp, elem.prec, elem.var);

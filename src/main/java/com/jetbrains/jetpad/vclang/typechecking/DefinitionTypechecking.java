@@ -30,7 +30,6 @@ import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
@@ -142,14 +141,14 @@ class DefinitionTypechecking {
     return parameter("\\this", new ClassCallExpression(enclosingClass, Sort.STD));
   }
 
-  private static Sort typeCheckParameters(List<? extends Abstract.Argument> arguments, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool, Map<Integer, ClassField> classifyingFields) {
+  private static Sort typeCheckParameters(List<? extends Abstract.Parameter> arguments, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool, Map<Integer, ClassField> classifyingFields) {
     Sort sort = Sort.PROP;
     int index = 0;
 
-    for (Abstract.Argument argument : arguments) {
-      if (argument instanceof Abstract.TypeArgument) {
-        Abstract.TypeArgument typeArgument = (Abstract.TypeArgument) argument;
-        Type paramResult = visitor.finalCheckType(typeArgument.getType());
+    for (Abstract.Parameter parameter : arguments) {
+      if (parameter instanceof Abstract.TypeParameter) {
+        Abstract.TypeParameter typeParameter = (Abstract.TypeParameter) parameter;
+        Type paramResult = visitor.finalCheckType(typeParameter.getType());
         if (paramResult == null) {
           sort = null;
           paramResult = new TypeExpression(new ErrorExpression(null, null), Sort.SET0);
@@ -158,13 +157,13 @@ class DefinitionTypechecking {
         }
 
         DependentLink param;
-        if (argument instanceof Abstract.TelescopeArgument) {
-          List<? extends Abstract.ReferableSourceNode> referableList = ((Abstract.TelescopeArgument) argument).getReferableList();
+        if (parameter instanceof Abstract.TelescopeParameter) {
+          List<? extends Abstract.ReferableSourceNode> referableList = ((Abstract.TelescopeParameter) parameter).getReferableList();
           List<String> names = new ArrayList<>(referableList.size());
           for (Abstract.ReferableSourceNode referable : referableList) {
             names.add(referable == null ? null : referable.getName());
           }
-          param = parameter(argument.getExplicit(), names, paramResult);
+          param = parameter(parameter.getExplicit(), names, paramResult);
           index += names.size();
 
           int i = 0;
@@ -172,19 +171,19 @@ class DefinitionTypechecking {
             visitor.getContext().put(referableList.get(i), link);
           }
         } else {
-          param = parameter(argument.getExplicit(), (String) null, paramResult);
+          param = parameter(parameter.getExplicit(), (String) null, paramResult);
           index++;
         }
 
         if (classifyingFields != null && localInstancePool != null) {
-          Abstract.ClassView classView = Abstract.getUnderlyingClassView(typeArgument.getType());
+          Abstract.ClassView classView = Abstract.getUnderlyingClassView(typeParameter.getType());
           if (classView != null && classView.getClassifyingField() != null) {
             ClassField classifyingField = (ClassField) visitor.getTypecheckingState().getTypechecked(classView.getClassifyingField());
             classifyingFields.put(index - 1, classifyingField);
             for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
               ReferenceExpression reference = new ReferenceExpression(link);
               if (!localInstancePool.addInstance(FieldCall(classifyingField, reference).normalize(NormalizeVisitor.Mode.NF), classView, reference)) {
-                visitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, "Duplicate instance", argument)); // FIXME[error] better error message
+                visitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, "Duplicate instance", parameter)); // FIXME[error] better error message
               }
             }
           }
@@ -195,7 +194,7 @@ class DefinitionTypechecking {
           visitor.getFreeBindings().add(param);
         }
       } else {
-        visitor.getErrorReporter().report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, new Expression[0]));
+        visitor.getErrorReporter().report(new ArgInferenceError(typeOfFunctionArg(index + 1), parameter, new Expression[0]));
         sort = null;
       }
     }
@@ -219,7 +218,7 @@ class DefinitionTypechecking {
 
     Map<Integer, ClassField> classifyingFields = new HashMap<>();
     Abstract.FunctionDefinition def = (Abstract.FunctionDefinition) typedDef.getAbstractDefinition();
-    boolean paramsOk = typeCheckParameters(def.getArguments(), list, visitor, localInstancePool, classifyingFields) != null;
+    boolean paramsOk = typeCheckParameters(def.getParameters(), list, visitor, localInstancePool, classifyingFields) != null;
     Expression expectedType = null;
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
@@ -250,7 +249,7 @@ class DefinitionTypechecking {
           Abstract.ElimFunctionBody elimBody = (Abstract.ElimFunctionBody) body;
           List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), visitor);
           clauses = new ArrayList<>();
-          Body typedBody = elimParams == null ? null : new ElimTypechecking(visitor, expectedType, EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.CONTEXT_FREE, PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(elimBody.getClauses(), def, def.getArguments(), typedDef.getParameters(), elimParams, clauses);
+          Body typedBody = elimParams == null ? null : new ElimTypechecking(visitor, expectedType, EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.CONTEXT_FREE, PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(elimBody.getClauses(), def, def.getParameters(), typedDef.getParameters(), elimParams, clauses);
           if (typedBody != null) {
             typedDef.setBody(typedBody);
             typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
@@ -292,17 +291,12 @@ class DefinitionTypechecking {
     boolean paramsOk = typeCheckParameters(def.getParameters(), list, visitor, localInstancePool, classifyingFields) != null;
 
     if (def.getUniverse() != null) {
-      if (def.getUniverse() instanceof Abstract.UniverseExpression) {
-        Type userTypeResult = visitor.finalCheckType(def.getUniverse());
-        if (userTypeResult != null) {
-          userSort = userTypeResult.getExpr().toSort();
-          if (userSort == null) {
-            visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected a universe", def.getUniverse()));
-          }
+      Type userTypeResult = visitor.finalCheckType(def.getUniverse());
+      if (userTypeResult != null) {
+        userSort = userTypeResult.getExpr().toSort();
+        if (userSort == null) {
+          visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected a universe", def.getUniverse()));
         }
-      } else {
-        String msg = "Specified type " + PrettyPrintVisitor.prettyPrint(def.getUniverse(), 0) + " of '" + def.getName() + "' is not a universe";
-        visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, def.getUniverse()));
       }
     }
 
@@ -472,12 +466,12 @@ class DefinitionTypechecking {
         dataDefinition.addConstructor(constructor);
 
         LinkList list = new LinkList();
-        sort = typeCheckParameters(def.getArguments(), list, visitor, null, null);
+        sort = typeCheckParameters(def.getParameters(), list, visitor, null, null);
 
         int index = 0;
         for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext(), index++) {
           link = link.getNextTyped(null);
-          if (!checkPositiveness(link.getTypeExpr(), index, def.getArguments(), def, visitor.getErrorReporter(), dataDefinitions)) {
+          if (!checkPositiveness(link.getTypeExpr(), index, def.getParameters(), def, visitor.getErrorReporter(), dataDefinitions)) {
             return null;
           }
         }
@@ -496,7 +490,7 @@ class DefinitionTypechecking {
       try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(visitor.getFreeBindings())) {
         try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(visitor.getContext())) {
           List<Clause> clauses = new ArrayList<>();
-          Body body = new ElimTypechecking(visitor, constructor.getDataTypeExpression(Sort.STD), EnumSet.of(PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(def.getClauses(), def, def.getArguments(), constructor.getParameters(), elimParams, clauses);
+          Body body = new ElimTypechecking(visitor, constructor.getDataTypeExpression(Sort.STD), EnumSet.of(PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(def.getClauses(), def, def.getParameters(), constructor.getParameters(), elimParams, clauses);
           constructor.setBody(body);
           constructor.setClauses(clauses);
           constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
@@ -509,7 +503,7 @@ class DefinitionTypechecking {
     return sort;
   }
 
-  private static boolean checkPositiveness(Expression type, int index, List<? extends Abstract.Argument> arguments, Abstract.Constructor constructor, LocalErrorReporter errorReporter, Set<? extends Variable> variables) {
+  private static boolean checkPositiveness(Expression type, int index, List<? extends Abstract.Parameter> arguments, Abstract.Constructor constructor, LocalErrorReporter errorReporter, Set<? extends Variable> variables) {
     List<SingleDependentLink> piParams = new ArrayList<>();
     type = type.getPiParameters(piParams, false);
     for (DependentLink piParam : piParams) {
@@ -561,7 +555,7 @@ class DefinitionTypechecking {
     return true;
   }
 
-  private static boolean checkNonPositiveError(Expression expr, int index, List<? extends Abstract.Argument> args, Abstract.Constructor constructor, LocalErrorReporter errorReporter, Set<? extends Variable> variables) {
+  private static boolean checkNonPositiveError(Expression expr, int index, List<? extends Abstract.Parameter> args, Abstract.Constructor constructor, LocalErrorReporter errorReporter, Set<? extends Variable> variables) {
     Variable def = expr.findBinding(variables);
     if (def == null) {
       return true;
@@ -572,21 +566,21 @@ class DefinitionTypechecking {
     }
 
     int i = 0;
-    Abstract.Argument argument = null;
-    for (Abstract.Argument arg : args) {
-      if (arg instanceof Abstract.TelescopeArgument) {
-        i += ((Abstract.TelescopeArgument) arg).getReferableList().size();
+    Abstract.Parameter parameter = null;
+    for (Abstract.Parameter arg : args) {
+      if (arg instanceof Abstract.TelescopeParameter) {
+        i += ((Abstract.TelescopeParameter) arg).getReferableList().size();
       } else {
         i++;
       }
       if (i > index) {
-        argument = arg;
+        parameter = arg;
         break;
       }
     }
 
     String msg = "Non-positive recursive occurrence of data type " + def.getName() + " in constructor " + constructor.getName();
-    errorReporter.report(new LocalTypeCheckingError(msg, argument == null ? constructor : argument));
+    errorReporter.report(new LocalTypeCheckingError(msg, parameter == null ? constructor : parameter));
     return false;
   }
 
@@ -707,7 +701,7 @@ class DefinitionTypechecking {
 
     LinkList list = new LinkList();
     Abstract.ClassViewInstance def = (Abstract.ClassViewInstance) typedDef.getAbstractDefinition();
-    boolean paramsOk = typeCheckParameters(def.getArguments(), list, visitor, null, null) != null;
+    boolean paramsOk = typeCheckParameters(def.getParameters(), list, visitor, null, null) != null;
     typedDef.setParameters(list.getFirst());
     typedDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
     state.record(def, typedDef);

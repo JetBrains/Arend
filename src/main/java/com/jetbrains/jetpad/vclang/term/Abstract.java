@@ -15,21 +15,21 @@ public final class Abstract {
 
   public interface SourceNode {}
 
-  // Arguments
+  // Parameters
 
-  public interface Argument extends SourceNode {
+  public interface Parameter extends SourceNode {
     boolean getExplicit();
   }
 
-  public interface NameArgument extends Argument {
-    ReferableSourceNode getReferable();
+  public interface NameParameter extends Parameter, ReferableSourceNode {
+    String getName();
   }
 
-  public interface TypeArgument extends Argument {
+  public interface TypeParameter extends Parameter {
     Expression getType();
   }
 
-  public interface TelescopeArgument extends TypeArgument {
+  public interface TelescopeParameter extends TypeParameter {
     List<? extends ReferableSourceNode> getReferableList();
   }
 
@@ -41,16 +41,15 @@ public final class Abstract {
     void setWellTyped(Map<ReferableSourceNode, Binding> context, com.jetbrains.jetpad.vclang.core.expr.Expression wellTyped);
   }
 
-  public interface ArgumentExpression extends SourceNode {
+  public interface Argument extends SourceNode {
     Expression getExpression();
     boolean isExplicit();
-    boolean isHidden();
   }
 
   public interface AppExpression extends Expression {
     byte PREC = 11;
     Expression getFunction();
-    ArgumentExpression getArgument();
+    Argument getArgument();
   }
 
   public interface ModuleCallExpression extends Expression {
@@ -122,13 +121,13 @@ public final class Abstract {
 
   public interface LamExpression extends Expression {
     byte PREC = -5;
-    List<? extends Argument> getArguments();
+    List<? extends Parameter> getParameters();
     Expression getBody();
   }
 
   public interface LetClause extends ReferableSourceNode {
     Expression getTerm();
-    List<? extends Argument> getArguments();
+    List<? extends Parameter> getParameters();
     Expression getResultType();
   }
 
@@ -146,12 +145,12 @@ public final class Abstract {
 
   public interface SigmaExpression extends Expression {
     byte PREC = -3;
-    List<? extends TypeArgument> getArguments();
+    List<? extends TypeParameter> getParameters();
   }
 
   public interface PiExpression extends Expression {
     byte PREC = -4;
-    List<? extends TypeArgument> getArguments();
+    List<? extends TypeParameter> getParameters();
     Expression getCodomain();
   }
 
@@ -264,15 +263,15 @@ public final class Abstract {
     }
   }
 
-  public static Collection<? extends Abstract.Argument> getArguments(Abstract.Definition definition) {
+  public static Collection<? extends Parameter> getParameters(Abstract.Definition definition) {
     if (definition instanceof Abstract.FunctionDefinition) {
-      return ((FunctionDefinition) definition).getArguments();
+      return ((FunctionDefinition) definition).getParameters();
     }
     if (definition instanceof Abstract.DataDefinition) {
       return ((DataDefinition) definition).getParameters();
     }
     if (definition instanceof Abstract.Constructor) {
-      return ((Constructor) definition).getArguments();
+      return ((Constructor) definition).getParameters();
     }
     return null;
   }
@@ -319,16 +318,16 @@ public final class Abstract {
 
   public interface FunctionDefinition extends Definition, DefinitionCollection {
     FunctionBody getBody();
-    List<? extends Argument> getArguments();
+    List<? extends Parameter> getParameters();
     Expression getResultType();
   }
 
   public interface DataDefinition extends Definition {
-    List<? extends TypeArgument> getParameters();
+    List<? extends TypeParameter> getParameters();
     List<? extends ReferenceExpression> getEliminatedReferences();
     List<? extends ConstructorClause> getConstructorClauses();
     boolean isTruncated();
-    Expression getUniverse();
+    UniverseExpression getUniverse();
   }
 
   public interface ConstructorClause extends Clause {
@@ -337,7 +336,7 @@ public final class Abstract {
 
   public interface Constructor extends Definition, ElimBody {
     DataDefinition getDataType();
-    List<? extends TypeArgument> getArguments();
+    List<? extends TypeParameter> getParameters();
   }
 
   public interface SuperClass extends SourceNode {
@@ -345,7 +344,7 @@ public final class Abstract {
   }
 
   public interface ClassDefinition extends Definition, DefinitionCollection {
-    List<? extends TypeArgument> getPolyParameters();
+    List<? extends TypeParameter> getPolyParameters();
     Collection<? extends SuperClass> getSuperClasses();
     Collection<? extends ClassField> getFields();
     Collection<? extends Implementation> getImplementations();
@@ -369,7 +368,7 @@ public final class Abstract {
 
   public interface ClassViewInstance extends Definition {
     boolean isDefault();
-    List<? extends Argument> getArguments();
+    List<? extends Parameter> getParameters();
     ReferenceExpression getClassView();
     Definition getClassifyingDefinition();
     Collection<? extends ClassFieldImpl> getClassFieldImpls();
@@ -382,9 +381,8 @@ public final class Abstract {
     boolean isExplicit();
   }
 
-  public interface NamePattern extends Pattern {
+  public interface NamePattern extends Pattern, ReferableSourceNode {
     String getName();
-    ReferableSourceNode getReferent();
   }
 
   public interface ConstructorPattern extends Pattern {

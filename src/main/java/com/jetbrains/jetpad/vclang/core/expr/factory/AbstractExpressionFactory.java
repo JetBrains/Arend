@@ -16,11 +16,11 @@ public interface AbstractExpressionFactory {
   Abstract.ReferableSourceNode makeReferable(String name);
   Abstract.Expression makeVar(Abstract.ReferableSourceNode referable);
   Abstract.Expression makeInferVar(InferenceVariable variable);
-  Abstract.Argument makeNameArgument(boolean explicit, Abstract.ReferableSourceNode referable);
-  Abstract.TypeArgument makeTypeArgument(boolean explicit, Abstract.Expression type);
-  Abstract.TypeArgument makeTelescopeArgument(boolean explicit, List<? extends Abstract.ReferableSourceNode> referableList, Abstract.Expression type);
-  Abstract.Expression makeLam(List<? extends Abstract.Argument> arguments, Abstract.Expression body);
-  Abstract.Expression makePi(List<? extends Abstract.TypeArgument> arguments, Abstract.Expression codomain);
+  Abstract.NameParameter makeNameParameter(boolean explicit, String name);
+  Abstract.TypeParameter makeTypeParameter(boolean explicit, Abstract.Expression type);
+  Abstract.TypeParameter makeTelescopeParameter(boolean explicit, List<? extends Abstract.ReferableSourceNode> referableList, Abstract.Expression type);
+  Abstract.Expression makeLam(List<? extends Abstract.Parameter> arguments, Abstract.Expression body);
+  Abstract.Expression makePi(List<? extends Abstract.TypeParameter> arguments, Abstract.Expression codomain);
   Abstract.Expression makeUniverse(Abstract.LevelExpression pLevel, Abstract.LevelExpression hLevel);
   Abstract.LevelExpression makeInferVarLevel(InferenceLevelVariable variable);
   Abstract.LevelExpression makePLevel();
@@ -32,15 +32,15 @@ public interface AbstractExpressionFactory {
   Abstract.Expression makeInferHole();
   Abstract.Expression makeError(Abstract.Expression expr);
   Abstract.Expression makeTuple(List<? extends Abstract.Expression> fields);
-  Abstract.Expression makeSigma(List<? extends Abstract.TypeArgument> arguments);
+  Abstract.Expression makeSigma(List<? extends Abstract.TypeParameter> arguments);
   Abstract.Expression makeProj(Abstract.Expression expr, int field);
   Abstract.Expression makeNew(Abstract.Expression expr);
   Abstract.Expression makeNumericalLiteral(int num);
   Abstract.Expression makeLet(List<? extends Abstract.LetClause> clauses, Abstract.Expression expr);
-  Abstract.LetClause makeLetClause(Abstract.ReferableSourceNode referable, List<? extends Abstract.Argument> arguments, Abstract.Expression resultType, Abstract.Expression term);
+  Abstract.LetClause makeLetClause(Abstract.ReferableSourceNode referable, List<? extends Abstract.Parameter> arguments, Abstract.Expression resultType, Abstract.Expression term);
   Abstract.Expression makeCase(List<? extends Abstract.Expression> expressions, List<? extends Abstract.FunctionClause> clauses);
   Abstract.FunctionClause makeClause(List<? extends Abstract.Pattern> pattern, Abstract.Expression expr);
   Abstract.Pattern makeConPattern(boolean isExplicit, Abstract.Constructor constructor, List<? extends Abstract.Pattern> args);
-  Abstract.Pattern makeNamePattern(boolean isExplicit, Abstract.ReferableSourceNode name);
+  Abstract.Pattern makeNamePattern(boolean isExplicit, String name);
   Abstract.Pattern makeEmptyPattern(boolean isExplicit);
 }

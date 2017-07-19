@@ -46,7 +46,7 @@ public class PatternTypechecking {
     }
   }
 
-  Pair<List<Pattern>, CheckTypeVisitor.Result> typecheckClause(Abstract.FunctionClause clause, List<? extends Abstract.Argument> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType, CheckTypeVisitor visitor) {
+  Pair<List<Pattern>, CheckTypeVisitor.Result> typecheckClause(Abstract.FunctionClause clause, List<? extends Abstract.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType, CheckTypeVisitor visitor) {
     // Typecheck patterns
     Pair<List<Pattern>, List<Expression>> result = typecheckPatterns(clause.getPatterns(), abstractParameters, parameters, elimParams, clause, visitor);
     if (result == null) {
@@ -89,7 +89,7 @@ public class PatternTypechecking {
     return tcResult == null ? null : new Pair<>(result.proj1, tcResult);
   }
 
-  public Pair<List<Pattern>, List<Expression>> typecheckPatterns(List<? extends Abstract.Pattern> patterns, List<? extends Abstract.Argument> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Abstract.SourceNode sourceNode, CheckTypeVisitor visitor) {
+  public Pair<List<Pattern>, List<Expression>> typecheckPatterns(List<? extends Abstract.Pattern> patterns, List<? extends Abstract.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Abstract.SourceNode sourceNode, CheckTypeVisitor visitor) {
     myContext = visitor.getContext();
     if (myFlags.contains(Flag.CONTEXT_FREE)) {
       myContext.clear();
@@ -128,18 +128,18 @@ public class PatternTypechecking {
       }
 
       if (!elimParams.isEmpty()) {
-        for (Abstract.Argument parameter : abstractParameters) {
-          if (parameter instanceof Abstract.TelescopeArgument) {
-            for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeArgument) parameter).getReferableList()) {
+        for (Abstract.Parameter parameter : abstractParameters) {
+          if (parameter instanceof Abstract.TelescopeParameter) {
+            for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeParameter) parameter).getReferableList()) {
               if (!elimParams.contains(link)) {
                 myContext.put(referable, ((BindingPattern) result.proj1.get(i)).getBinding());
               }
               link = link.getNext();
               i++;
             }
-          } else if (parameter instanceof Abstract.NameArgument) {
+          } else if (parameter instanceof Abstract.NameParameter) {
             if (!elimParams.contains(link)) {
-              myContext.put(((Abstract.NameArgument) parameter).getReferable(), ((BindingPattern) result.proj1.get(i)).getBinding());
+              myContext.put((Abstract.NameParameter) parameter, ((BindingPattern) result.proj1.get(i)).getBinding());
             }
             link = link.getNext();
             i++;
@@ -217,8 +217,8 @@ public class PatternTypechecking {
         result.add(new BindingPattern(parameters));
         if (exprs != null) {
           exprs.add(new ReferenceExpression(parameters));
-          if (pattern != null && ((Abstract.NamePattern) pattern).getReferent() != null) {
-            myContext.put(((Abstract.NamePattern) pattern).getReferent(), parameters);
+          if (pattern != null) {
+            myContext.put((Abstract.NamePattern) pattern, parameters);
           }
         }
         parameters = parameters.getNext();

@@ -20,9 +20,9 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   public Void visitFunction(Abstract.FunctionDefinition def, Boolean isHeader) {
     CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myDependencies);
 
-    for (Abstract.Argument arg : def.getArguments()) {
-      if (arg instanceof Abstract.TypeArgument) {
-        ((Abstract.TypeArgument) arg).getType().accept(visitor, null);
+    for (Abstract.Parameter arg : def.getParameters()) {
+      if (arg instanceof Abstract.TypeParameter) {
+        ((Abstract.TypeParameter) arg).getType().accept(visitor, null);
       }
     }
 
@@ -65,7 +65,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
     CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myDependencies);
 
     if (isHeader) {
-      for (Abstract.TypeArgument param : def.getParameters()) {
+      for (Abstract.TypeParameter param : def.getParameters()) {
         param.getType().accept(visitor, null);
       }
 
@@ -105,7 +105,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   public Void visitConstructor(Abstract.Constructor def, Boolean params) {
     CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myDependencies);
 
-    for (Abstract.TypeArgument arg : def.getArguments()) {
+    for (Abstract.TypeParameter arg : def.getParameters()) {
       arg.getType().accept(visitor, null);
     }
     if (def.getEliminatedReferences() != null) {
@@ -161,9 +161,9 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   public Void visitClassViewInstance(Abstract.ClassViewInstance def, Boolean params) {
     CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myDependencies);
 
-    for (Abstract.Argument arg : def.getArguments()) {
-      if (arg instanceof Abstract.TypeArgument) {
-        ((Abstract.TypeArgument) arg).getType().accept(visitor, null);
+    for (Abstract.Parameter arg : def.getParameters()) {
+      if (arg instanceof Abstract.TypeParameter) {
+        ((Abstract.TypeParameter) arg).getType().accept(visitor, null);
       }
     }
 

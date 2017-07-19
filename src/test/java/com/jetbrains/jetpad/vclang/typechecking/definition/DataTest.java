@@ -115,8 +115,8 @@ public class DataTest extends TypeCheckingTestCase {
     DataDefinition def = (DataDefinition) typeCheckDef("\\data D (A : \\1-Type0) | con (B : \\1-Type1) A B");
 
     Constructor con = def.getConstructor("con");
-    Concrete.ReferableSourceNode f = ref("f");
-    Concrete.ReferableSourceNode x = ref("x");
+    Concrete.LocalVariable f = ref("f");
+    Concrete.NameParameter x = cName("x");
     Concrete.Expression expr = cApps(cVar(f), cApps(cDefCall(con.getAbstractDefinition()), cNat(), cLam(x, cVar(x)), cZero()));
     Map<Abstract.ReferableSourceNode, Binding> localContext = new HashMap<>();
     localContext.put(f, new TypedBinding(f.getName(), Pi(DataCall(def, Sort.SET0, Pi(Nat(), Nat())), Nat())));
@@ -130,7 +130,7 @@ public class DataTest extends TypeCheckingTestCase {
     DataDefinition def = (DataDefinition) typeCheckDef("\\data D (A : \\1-Type0) | con A");
 
     Constructor con = def.getConstructor("con");
-    Concrete.ReferableSourceNode f = ref("f");
+    Concrete.LocalVariable f = ref("f");
     Concrete.Expression expr = cApps(cVar(f), cDefCall(con.getAbstractDefinition()));
     Map<Abstract.ReferableSourceNode, Binding> localContext = new HashMap<>();
     localContext.put(f, new TypedBinding(f.getName(), Pi(Pi(Nat(), DataCall(def, Sort.SET0, Nat())), Pi(Nat(), Nat()))));

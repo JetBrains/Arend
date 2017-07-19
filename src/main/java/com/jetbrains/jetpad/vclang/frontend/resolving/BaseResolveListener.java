@@ -83,9 +83,4 @@ public class BaseResolveListener implements ResolveListener {
   public void patternResolved(Abstract.ConstructorPattern pattern, Abstract.Constructor definition) {
 
   }
-
-  @Override
-  public void report(GeneralError error) {
-    myErrorReporter.report(error);
-  }
 }
