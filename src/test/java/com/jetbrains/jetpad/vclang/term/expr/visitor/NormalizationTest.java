@@ -250,7 +250,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizeLetElimNoStuck() {
     // normalize (\let | x (y : N) : \oo-Type2 => \Type0 \in x zero) = \Type0
-    Concrete.ReferableSourceNode y = ref("y");
+    Concrete.LocalVariable y = ref("y");
     Concrete.LetClause x = clet("x", cargs(cTele(cvars(y), cNat())), cUniverseInf(2), cUniverseStd(0));
     CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(x), cApps(cVar(x), cZero())), null);
     assertEquals(Universe(new Level(0), new Level(LevelVariable.HVAR)), result.expression.normalize(NormalizeVisitor.Mode.NF));

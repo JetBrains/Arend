@@ -114,7 +114,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void typeCheckingInferPiIndex() {
     // (X : Type1) -> X -> X : Type2
-    Concrete.ReferableSourceNode X = ref("X");
+    Concrete.LocalVariable X = ref("X");
     Concrete.Expression expr = cPi(X, cUniverseInf(1), cPi(cVar(X), cVar(X)));
     assertThat(typeCheckExpr(expr, null).type, is(Universe(2)));
   }
@@ -122,7 +122,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void typeCheckingUniverse() {
     // (f : Type1 -> Type1) -> f Type1
-    Concrete.ReferableSourceNode f = ref("f");
+    Concrete.LocalVariable f = ref("f");
     Concrete.Expression expr = cPi(f, cPi(cUniverseStd(1), cUniverseStd(1)), cApps(cVar(f), cUniverseStd(1)));
     typeCheckExpr(expr, null, 1);
     assertThatErrorsAre(typeMismatchError());
@@ -131,7 +131,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void typeCheckingTwoErrors() {
     // f : Nat -> Nat -> Nat |- f S (f 0 S) : Nat
-    Concrete.ReferableSourceNode f = ref("f");
+    Concrete.LocalVariable f = ref("f");
     Concrete.Expression expr = cApps(cVar(f), cSuc(), cApps(cVar(f), cZero(), cSuc()));
     Map<Abstract.ReferableSourceNode, Binding> defs = new HashMap<>();
     defs.put(f, new TypedBinding(f.getName(), Pi(Nat(), Pi(Nat(), Nat()))));
@@ -141,7 +141,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void typedLambda() {
     // \x:Nat. x : Nat -> Nat
-    Concrete.ReferableSourceNode x = ref("x");
+    Concrete.LocalVariable x = ref("x");
     Concrete.Expression expr = cLam(cargs(cTele(true, cvars(x), cNat())), cVar(x));
     assertEquals(typeCheckExpr(expr, null).type, Pi(Nat(), Nat()));
   }
@@ -192,8 +192,8 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void letDependentType() {
     // \lam (F : \Pi N -> \Type0) (f : \Pi (x : N) -> F x) => \\let | x => 0 \\in f x");
-    Concrete.ReferableSourceNode F = ref("F");
-    Concrete.ReferableSourceNode f = ref("f");
+    Concrete.LocalVariable F = ref("F");
+    Concrete.LocalVariable f = ref("f");
     Concrete.LetClause x = clet("x", cZero());
     Concrete.Expression expr = cLam(cargs(cTele(cvars(F), cPi(cNat(), cUniverseStd(0))), cTele(cvars(f), cPi(ctypeArgs(cTele(cvars(x), cNat())), cApps(cVar(F), cVar(x))))),
             cLet(clets(x), cApps(cVar(f), cVar(x))));
@@ -203,7 +203,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void letArrowType() {
     // \let | x (y : Nat) => Zero \in x : Nat -> Nat
-    Concrete.ReferableSourceNode y = ref("y");
+    Concrete.LocalVariable y = ref("y");
     Concrete.LetClause x = clet("x", cargs(cTele(cvars(y), cNat())), cZero());
     Concrete.Expression expr = cLet(clets(x), cVar(x));
     CheckTypeVisitor.Result result = typeCheckExpr(expr, null);

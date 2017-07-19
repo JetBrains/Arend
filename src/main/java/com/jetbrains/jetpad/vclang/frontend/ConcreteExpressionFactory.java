@@ -92,7 +92,7 @@ public class ConcreteExpressionFactory {
     return new Concrete.LocalVariable(POSITION, name);
   }
 
-  public static List<Concrete.ReferableSourceNode> cvars(Concrete.ReferableSourceNode... vars) {
+  public static List<Abstract.ReferableSourceNode> cvars(Abstract.ReferableSourceNode... vars) {
     return Arrays.asList(vars);
   }
 
@@ -120,7 +120,7 @@ public class ConcreteExpressionFactory {
     return new Concrete.TypeArgument(true, type);
   }
 
-  public static Concrete.TelescopeArgument cTele(List<Concrete.ReferableSourceNode> referableList, Concrete.Expression type) {
+  public static Concrete.TelescopeArgument cTele(List<Abstract.ReferableSourceNode> referableList, Concrete.Expression type) {
     return new Concrete.TelescopeArgument(POSITION, true, referableList, type);
   }
 
@@ -136,11 +136,11 @@ public class ConcreteExpressionFactory {
     return arguments.isEmpty() ? codomain : new Concrete.PiExpression(POSITION, arguments, codomain);
   }
 
-  public static Concrete.PiExpression cPi(boolean explicit, Concrete.ReferableSourceNode var, Concrete.Expression domain, Concrete.Expression codomain) {
+  public static Concrete.PiExpression cPi(boolean explicit, Abstract.ReferableSourceNode var, Concrete.Expression domain, Concrete.Expression codomain) {
     return (Concrete.PiExpression) cPi(ctypeArgs(cTele(explicit, cvars(var), domain)), codomain);
   }
 
-  public static Concrete.PiExpression cPi(Concrete.ReferableSourceNode var, Concrete.Expression domain, Concrete.Expression codomain) {
+  public static Concrete.PiExpression cPi(Abstract.ReferableSourceNode var, Concrete.Expression domain, Concrete.Expression codomain) {
     return cPi(true, var, domain, codomain);
   }
 

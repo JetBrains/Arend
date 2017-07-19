@@ -497,16 +497,23 @@ public final class Concrete {
     }
   }
 
-  public static class LetClause extends ReferableSourceNode implements Abstract.LetClause {
+  public static class LetClause extends SourceNode implements Abstract.LetClause, Abstract.ReferableSourceNode {
     private final List<Argument> myArguments;
     private final Expression myResultType;
     private final Expression myTerm;
+    private final String myName;
 
     public LetClause(Position position, String name, List<Argument> arguments, Expression resultType, Expression term) {
-      super(position, name);
+      super(position);
       myArguments = arguments;
       myResultType = resultType;
       myTerm = term;
+      myName = name;
+    }
+
+    @Override
+    public String getName() {
+      return myName;
     }
 
     @Override
@@ -866,37 +873,29 @@ public final class Concrete {
 
   // Definitions
 
-  public static abstract class ReferableSourceNode extends SourceNode implements Abstract.ReferableSourceNode {
+  public static class LocalVariable extends SourceNode implements Abstract.ReferableSourceNode {
     private final String myName;
 
-    public ReferableSourceNode(Position position, String name) {
+    public LocalVariable(Position position, String name) {
       super(position);
       myName = name;
     }
 
+    @Override
     public String getName() {
       return myName;
     }
-
-    @Override
-    public String toString() {
-      return myName;
-    }
   }
 
-  public static class LocalVariable extends ReferableSourceNode {
-    public LocalVariable(Position position, String name) {
-      super(position, name);
-    }
-  }
-
-  public static abstract class Definition extends ReferableSourceNode implements Abstract.Definition {
+  public static abstract class Definition extends SourceNode implements Abstract.Definition, Abstract.ReferableSourceNode {
     private final Abstract.Precedence myPrecedence;
     private Definition myParent;
     private boolean myStatic;
+    private final String myName;
 
     public Definition(Position position, String name, Abstract.Precedence precedence) {
-      super(position, name);
+      super(position);
+      myName = name;
       myStatic = true;
       myPrecedence = precedence;
     }
@@ -925,8 +924,13 @@ public final class Concrete {
     }
 
     @Override
+    public String getName() {
+      return myName;
+    }
+
+    @Override
     public String toString() {
-      return getName();
+      return myName;
     }
   }
 
