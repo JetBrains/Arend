@@ -858,7 +858,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       } else {
         throw new IllegalStateException();
       }
-      expr = new Concrete.AppExpression(expr.getPosition(), expr, new Concrete.ArgumentExpression(expr1, !(argument instanceof ArgumentImplicitContext), false));
+      expr = new Concrete.AppExpression(expr.getPosition(), expr, new Concrete.Argument(expr1, !(argument instanceof ArgumentImplicitContext)));
     }
     return expr;
   }

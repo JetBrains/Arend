@@ -82,17 +82,11 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       @Override
       void printRight(PrettyPrintVisitor pp) {
         if (expr.getArgument().isExplicit()) {
-          if (expr.getArgument().isHidden()) {
-            pp.myBuilder.append('_');
-          } else {
-            expr.getArgument().getExpression().accept(pp, (byte) (Abstract.AppExpression.PREC + 1));
-          }
+          expr.getArgument().getExpression().accept(pp, (byte) (Abstract.AppExpression.PREC + 1));
         } else {
-          if (!expr.getArgument().isHidden()) {
-            pp.myBuilder.append("{");
-            expr.getArgument().getExpression().accept(pp, Abstract.Expression.PREC);
-            pp.myBuilder.append('}');
-          }
+          pp.myBuilder.append("{");
+          expr.getArgument().getExpression().accept(pp, Abstract.Expression.PREC);
+          pp.myBuilder.append('}');
         }
       }
 

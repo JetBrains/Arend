@@ -112,7 +112,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
   protected CheckTypeVisitor.TResult inferArg(Abstract.Expression fun, Abstract.Expression arg, boolean isExplicit, ExpectedType expectedType) {
     CheckTypeVisitor.TResult result;
     if (fun instanceof Abstract.AppExpression) {
-      Abstract.ArgumentExpression argument = ((Abstract.AppExpression) fun).getArgument();
+      Abstract.Argument argument = ((Abstract.AppExpression) fun).getArgument();
       result = checkBinOpInferArg(((Abstract.AppExpression) fun).getFunction(), argument.getExpression(), argument.isExplicit(), expectedType);
     } else {
       if (fun instanceof Abstract.ReferenceExpression) {
@@ -167,7 +167,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
   @Override
   public CheckTypeVisitor.TResult infer(Abstract.AppExpression expr, ExpectedType expectedType) {
-    Abstract.ArgumentExpression arg = expr.getArgument();
+    Abstract.Argument arg = expr.getArgument();
     return checkBinOpInferArg(expr.getFunction(), arg.getExpression(), arg.isExplicit(), expectedType);
   }
 

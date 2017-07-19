@@ -47,13 +47,13 @@ public class ConcreteExpressionFactory {
 
   public static Concrete.Expression cApps(Concrete.Expression expr, Concrete.Expression... exprs) {
     for (Concrete.Expression expr1 : exprs) {
-      expr = new Concrete.AppExpression(POSITION, expr, new Concrete.ArgumentExpression(expr1, true, false));
+      expr = new Concrete.AppExpression(POSITION, expr, new Concrete.Argument(expr1, true));
     }
     return expr;
   }
 
   public static Concrete.Expression cApps(Concrete.Expression expr, Concrete.Expression arg, boolean explicit) {
-    return new Concrete.AppExpression(POSITION, expr, new Concrete.ArgumentExpression(arg, explicit, false));
+    return new Concrete.AppExpression(POSITION, expr, new Concrete.Argument(arg, explicit));
   }
 
   public static Concrete.ReferenceExpression cNat() {

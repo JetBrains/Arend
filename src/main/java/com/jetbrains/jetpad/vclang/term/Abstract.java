@@ -41,16 +41,15 @@ public final class Abstract {
     void setWellTyped(Map<ReferableSourceNode, Binding> context, com.jetbrains.jetpad.vclang.core.expr.Expression wellTyped);
   }
 
-  public interface ArgumentExpression extends SourceNode {
+  public interface Argument extends SourceNode {
     Expression getExpression();
     boolean isExplicit();
-    boolean isHidden();
   }
 
   public interface AppExpression extends Expression {
     byte PREC = 11;
     Expression getFunction();
-    ArgumentExpression getArgument();
+    Argument getArgument();
   }
 
   public interface ModuleCallExpression extends Expression {

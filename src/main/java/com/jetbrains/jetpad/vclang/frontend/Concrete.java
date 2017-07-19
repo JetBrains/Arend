@@ -145,15 +145,13 @@ public final class Concrete {
     }
   }
 
-  public static class ArgumentExpression implements Abstract.ArgumentExpression {
+  public static class Argument implements Abstract.Argument {
     private final Expression myExpression;
     private final boolean myExplicit;
-    private final boolean myHidden;
 
-    public ArgumentExpression(Expression expression, boolean explicit, boolean hidden) {
+    public Argument(Expression expression, boolean explicit) {
       myExpression = expression;
       myExplicit = explicit;
-      myHidden = hidden;
     }
 
     @Override
@@ -165,18 +163,13 @@ public final class Concrete {
     public boolean isExplicit() {
       return myExplicit;
     }
-
-    @Override
-    public boolean isHidden() {
-      return myHidden;
-    }
   }
 
   public static class AppExpression extends Expression implements Abstract.AppExpression {
     private final Expression myFunction;
-    private final ArgumentExpression myArgument;
+    private final Argument myArgument;
 
-    public AppExpression(Position position, Expression function, ArgumentExpression argument) {
+    public AppExpression(Position position, Expression function, Argument argument) {
       super(position);
       myFunction = function;
       myArgument = argument;
@@ -188,7 +181,7 @@ public final class Concrete {
     }
 
     @Override
-    public ArgumentExpression getArgument() {
+    public Argument getArgument() {
       return myArgument;
     }
 
