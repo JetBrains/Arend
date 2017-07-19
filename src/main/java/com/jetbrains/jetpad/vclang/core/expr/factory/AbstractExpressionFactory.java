@@ -16,7 +16,7 @@ public interface AbstractExpressionFactory {
   Abstract.ReferableSourceNode makeReferable(String name);
   Abstract.Expression makeVar(Abstract.ReferableSourceNode referable);
   Abstract.Expression makeInferVar(InferenceVariable variable);
-  Abstract.Argument makeNameArgument(boolean explicit, Abstract.ReferableSourceNode referable);
+  Abstract.NameArgument makeNameArgument(boolean explicit, String name);
   Abstract.TypeArgument makeTypeArgument(boolean explicit, Abstract.Expression type);
   Abstract.TypeArgument makeTelescopeArgument(boolean explicit, List<? extends Abstract.ReferableSourceNode> referableList, Abstract.Expression type);
   Abstract.Expression makeLam(List<? extends Abstract.Argument> arguments, Abstract.Expression body);

@@ -140,7 +140,7 @@ public class PatternTypechecking {
             }
           } else if (parameter instanceof Abstract.NameArgument) {
             if (!elimParams.contains(link)) {
-              myContext.put(((Abstract.NameArgument) parameter).getReferable(), ((BindingPattern) result.proj1.get(i)).getBinding());
+              myContext.put((Abstract.NameArgument) parameter, ((BindingPattern) result.proj1.get(i)).getBinding());
             }
             link = link.getNext();
             i++;

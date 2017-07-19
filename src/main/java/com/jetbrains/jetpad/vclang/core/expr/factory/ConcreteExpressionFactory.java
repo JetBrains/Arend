@@ -53,8 +53,8 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.Argument makeNameArgument(boolean explicit, Abstract.ReferableSourceNode referable) {
-    return cName(explicit, referable);
+  public Abstract.NameArgument makeNameArgument(boolean explicit, String name) {
+    return cName(explicit, name);
   }
 
   @Override

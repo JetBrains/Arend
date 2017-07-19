@@ -19,8 +19,8 @@ public class ConcreteExpressionFactory {
     return new Concrete.LamExpression(POSITION, arguments, body);
   }
 
-  public static Concrete.LamExpression cLam(Concrete.ReferableSourceNode var, Concrete.Expression body) {
-    return cLam(cargs(cName(var)), body);
+  public static Concrete.LamExpression cLam(Concrete.NameArgument var, Concrete.Expression body) {
+    return cLam(cargs(var), body);
   }
 
   public static Concrete.ReferenceExpression cVar(Abstract.ReferableSourceNode referable) {
@@ -104,12 +104,12 @@ public class ConcreteExpressionFactory {
     return Arrays.asList(args);
   }
 
-  public static Concrete.NameArgument cName(Concrete.ReferableSourceNode referable) {
-    return new Concrete.NameArgument(POSITION, true, referable);
+  public static Concrete.NameArgument cName(String name) {
+    return new Concrete.NameArgument(POSITION, true, name);
   }
 
-  public static Concrete.NameArgument cName(boolean explicit, Abstract.ReferableSourceNode referable) {
-    return new Concrete.NameArgument(POSITION, explicit, referable);
+  public static Concrete.NameArgument cName(boolean explicit, String name) {
+    return new Concrete.NameArgument(POSITION, explicit, name);
   }
 
   public static Concrete.TypeArgument cTypeArg(boolean explicit, Concrete.Expression type) {

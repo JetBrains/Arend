@@ -21,8 +21,8 @@ public final class Abstract {
     boolean getExplicit();
   }
 
-  public interface NameArgument extends Argument {
-    ReferableSourceNode getReferable();
+  public interface NameArgument extends Argument, ReferableSourceNode {
+    String getName();
   }
 
   public interface TypeArgument extends Argument {

@@ -108,10 +108,10 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
     // f {x : \Type1} (A : \Type1 -> \Type0) : A x -> (\Type1 -> \Type1) -> \Type1 -> \Type1 => \t y z. y z;
     Concrete.ReferableSourceNode x = ref("x");
     Concrete.ReferableSourceNode A = ref("A");
-    Concrete.ReferableSourceNode t = ref("t");
-    Concrete.ReferableSourceNode y = ref("y");
-    Concrete.ReferableSourceNode z = ref("z");
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(POSITION, "f", Abstract.Precedence.DEFAULT, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), body(cLam(cargs(cName(t), cName(y), cName(z)), cApps(cVar(y), cVar(z)))), Collections.emptyList());
+    Concrete.NameArgument t = cName("t");
+    Concrete.NameArgument y = cName("y");
+    Concrete.NameArgument z = cName("z");
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(POSITION, "f", Abstract.Precedence.DEFAULT, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), body(cLam(cargs(t, y, z), cApps(cVar(y), cVar(z)))), Collections.emptyList());
     testDef(def, def);
   }
 
@@ -132,7 +132,7 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
     Concrete.ReferableSourceNode ca = ref("a");
     Concrete.ReferableSourceNode cA = ref("A");
     Concrete.ReferableSourceNode cD = ref("D");
-    Concrete.Expression expected = cPi(cA, cUniverseInf(0), cPi(ca, cVar(cA), cPi(cD, cPi(cPi(cVar(cA), cVar(cA)), cPi(cVar(cA), cVar(cA))), cPi(cx, cPi(cy, cVar(cA), cVar(cA)), cApps(cVar(cD), cVar(cx), cLam(cy, cVar(ca)))))));
+    Concrete.Expression expected = cPi(cA, cUniverseInf(0), cPi(ca, cVar(cA), cPi(cD, cPi(cPi(cVar(cA), cVar(cA)), cPi(cVar(cA), cVar(cA))), cPi(cx, cPi(cy, cVar(cA), cVar(cA)), cApps(cVar(cD), cVar(cx), cLam(cName("y"), cVar(ca)))))));
     testExpr(expected, actual, null);
   }
 }

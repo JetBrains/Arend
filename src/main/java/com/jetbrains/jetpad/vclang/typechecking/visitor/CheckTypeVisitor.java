@@ -487,8 +487,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   }
 
   private TypedSingleDependentLink visitNameArgument(Abstract.NameArgument param, int argIndex, Abstract.SourceNode sourceNode) {
-    Abstract.ReferableSourceNode referable = param.getReferable();
-    String name = referable == null ? null : referable.getName();
+    String name = param.getName();
 
     InferenceLevelVariable pLvl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, sourceNode);
     InferenceLevelVariable hLvl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, sourceNode);
@@ -499,7 +498,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     Expression argType = new InferenceReferenceExpression(inferenceVariable, myEquations);
 
     TypedSingleDependentLink link = new TypedSingleDependentLink(param.getExplicit(), name, new TypeExpression(argType, sort));
-    myContext.put(referable, link);
+    myContext.put(param, link);
     return link;
   }
 
@@ -545,13 +544,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
         return result;
       } else {
         PiExpression piExpectedType = expectedType.cast(PiExpression.class);
-        Abstract.ReferableSourceNode referable = ((Abstract.NameArgument) param).getReferable();
-        String name = referable == null ? null : referable.getName();
+        Abstract.ReferableSourceNode referable = (Abstract.NameArgument) param;
         SingleDependentLink piParams = piExpectedType.getParameters();
         if (piParams.isExplicit() != param.getExplicit()) {
           myErrorReporter.report(new LocalTypeCheckingError(ordinal(argIndex) + " argument of the lambda should be " + (piParams.isExplicit() ? "explicit" : "implicit"), expr));
         }
-        SingleDependentLink link = new TypedSingleDependentLink(piParams.isExplicit(), name, piParams.getType());
+        SingleDependentLink link = new TypedSingleDependentLink(piParams.isExplicit(), referable.getName(), piParams.getType());
         myContext.put(referable, link);
         Expression codomain = piExpectedType.getCodomain().subst(piParams, new ReferenceExpression(link));
         Result bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, piParams.getNext().hasNext() ? new PiExpression(piExpectedType.getResultSort(), piParams.getNext(), codomain) : codomain, argIndex + 1);

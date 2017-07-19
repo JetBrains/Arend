@@ -57,7 +57,7 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
       return ((Abstract.TypeArgument) arg1).getType().accept(this, ((Abstract.TypeArgument) arg2).getType());
     }
     if (arg1 instanceof Abstract.NameArgument && arg2 instanceof Abstract.NameArgument) {
-      mySubstitution.put(((Abstract.NameArgument) arg1).getReferable(), ((Abstract.NameArgument) arg2).getReferable());
+      mySubstitution.put((Abstract.NameArgument) arg1, (Abstract.NameArgument) arg2);
       return true;
     }
     return false;

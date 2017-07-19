@@ -14,7 +14,7 @@ public class ParserTest extends NameResolverTestCase {
   public void parserLetToTheRight() {
     Concrete.Expression expr = resolveNamesExpr("\\lam x => \\let | x => \\Type0 \\in x x");
     Concrete.Expression expr1 = resolveNamesExpr("\\let | x => \\Type0 \\in \\lam x => x x");
-    Concrete.ReferableSourceNode x = ref("x");
+    Concrete.NameArgument x = cName("x");
     Concrete.LetClause x1 = clet("x", cargs(), cUniverseStd(0));
     assertTrue(compareAbstract(cLam(x, cLet(clets(x1), cApps(cVar(x1), cVar(x1)))), expr));
     assertTrue(compareAbstract(cLet(clets(x1), cLam(x, cApps(cVar(x), cVar(x)))), expr1));
@@ -38,34 +38,34 @@ public class ParserTest extends NameResolverTestCase {
   @Test
   public void parserLam() {
     Concrete.Expression expr = resolveNamesExpr("\\lam x y z => y");
-    Concrete.ReferableSourceNode x = ref("x");
-    Concrete.ReferableSourceNode y = ref("y");
-    Concrete.ReferableSourceNode z = ref("z");
-    boolean res = compareAbstract(cLam(cargs(cName(x), cName(y), cName(z)), cVar(y)), expr);
+    Concrete.NameArgument x = cName("x");
+    Concrete.NameArgument y = cName("y");
+    Concrete.NameArgument z = cName("z");
+    boolean res = compareAbstract(cLam(cargs(x, y, z), cVar(y)), expr);
     assertTrue(res);
   }
 
   @Test
   public void parserLam2() {
     Concrete.Expression expr = resolveNamesExpr("\\lam x y => (\\lam z w => y z) y");
-    Concrete.ReferableSourceNode x = ref("x");
-    Concrete.ReferableSourceNode y = ref("y");
-    Concrete.ReferableSourceNode z = ref("z");
-    Concrete.ReferableSourceNode w = ref("w");
-    assertTrue(compareAbstract(cLam(cargs(cName(x), cName(y)), cApps(cLam(cargs(cName(z), cName(w)), cApps(cVar(y), cVar(z))), cVar(y))), expr));
+    Concrete.NameArgument x = cName("x");
+    Concrete.NameArgument y = cName("y");
+    Concrete.NameArgument z = cName("z");
+    Concrete.NameArgument w = cName("w");
+    assertTrue(compareAbstract(cLam(cargs(x, y), cApps(cLam(cargs(z, w), cApps(cVar(y), cVar(z))), cVar(y))), expr));
   }
 
   @Test
   public void parserLamTele() {
     Concrete.Expression expr = resolveNamesExpr("\\lam p {x t : \\Type0} {y} (a : \\Type0 -> \\Type0) => (\\lam (z w : \\Type0) => y z) y");
-    Concrete.ReferableSourceNode p = ref("p");
+    Concrete.NameArgument p = cName("p");
     Concrete.ReferableSourceNode x = ref("x");
     Concrete.ReferableSourceNode t = ref("t");
-    Concrete.ReferableSourceNode y = ref("y");
+    Concrete.NameArgument y = cName(false, "y");
     Concrete.ReferableSourceNode a = ref("a");
     Concrete.ReferableSourceNode z = ref("z");
     Concrete.ReferableSourceNode w = ref("w");
-    assertTrue(compareAbstract(cLam(cargs(cName(p), cTele(false, cvars(x, t), cUniverseStd(0)), cName(false, y), cTele(cvars(a), cPi(cUniverseStd(0), cUniverseStd(0)))), cApps(cLam(cargs(cTele(cvars(z, w), cUniverseStd(0))), cApps(cVar(y), cVar(z))), cVar(y))), expr));
+    assertTrue(compareAbstract(cLam(cargs(p, cTele(false, cvars(x, t), cUniverseStd(0)), y, cTele(cvars(a), cPi(cUniverseStd(0), cUniverseStd(0)))), cApps(cLam(cargs(cTele(cvars(z, w), cUniverseStd(0))), cApps(cVar(y), cVar(z))), cVar(y))), expr));
   }
 
   @Test

@@ -115,8 +115,8 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
         }
       } else
       if (argument instanceof Abstract.NameArgument) {
-        Abstract.ReferableSourceNode referable = ((Abstract.NameArgument) argument).getReferable();
-        if (referable != null && referable.getName() != null && !referable.getName().equals("_")) {
+        Abstract.ReferableSourceNode referable = (Abstract.NameArgument) argument;
+        if (referable.getName() != null && !referable.getName().equals("_")) {
           myContext.add(referable);
         }
       }

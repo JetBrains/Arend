@@ -73,17 +73,17 @@ public final class Concrete {
     }
   }
 
-  public static class NameArgument extends Argument implements Abstract.NameArgument {
-    private final Abstract.ReferableSourceNode myReferable;
+  public static class NameArgument extends Argument implements Abstract.NameArgument, Abstract.ReferableSourceNode {
+    private final String myName;
 
-    public NameArgument(Position position, boolean explicit, Abstract.ReferableSourceNode referableSourceNode) {
+    public NameArgument(Position position, boolean explicit, String name) {
       super(position, explicit);
-      myReferable = referableSourceNode;
+      myName = name;
     }
 
     @Override
-    public Abstract.ReferableSourceNode getReferable() {
-      return myReferable;
+    public String getName() {
+      return myName;
     }
   }
 

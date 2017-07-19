@@ -20,6 +20,7 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.Util;
 
 import java.util.*;
+import java.util.function.Function;
 
 public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expression> {
   public enum Flag {SHOW_CON_DATA_TYPE, SHOW_CON_PARAMS, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS}
@@ -255,7 +256,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : myFactory.makeInferVar(expr.getVariable());
   }
 
-  private Abstract.ReferableSourceNode makeReferable(Binding var) {
+  private <T extends Abstract.ReferableSourceNode> T makeReferable(Binding var, Function<String, T> fun) {
     String name = var.getName();
     if (name == null || name.equals("_")) {
       return null;
@@ -265,9 +266,13 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       name = name + "'";
     }
     myFreeNames.push(name);
-    Abstract.ReferableSourceNode referable = myFactory.makeReferable(name);
+    T referable = fun.apply(name);
     myNames.put(var, referable);
     return referable;
+  }
+
+  private Abstract.ReferableSourceNode makeReferable(Binding var) {
+    return makeReferable(var, myFactory::makeReferable);
   }
 
   private void freeVars(DependentLink link) {
@@ -288,7 +293,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
         visitDependentLink(expr.cast(LamExpression.class).getParameters(), arguments);
       } else {
         for (DependentLink link = expr.cast(LamExpression.class).getParameters(); link.hasNext(); link = link.getNext()) {
-          arguments.add(myFactory.makeNameArgument(link.isExplicit(), makeReferable(link)));
+          final DependentLink finalLink = link;
+          arguments.add(makeReferable(link, name -> myFactory.makeNameArgument(finalLink.isExplicit(), name)));
         }
       }
     }

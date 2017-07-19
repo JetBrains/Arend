@@ -153,8 +153,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   public void prettyPrintArgument(Abstract.Argument argument, byte prec) {
     if (argument instanceof Abstract.NameArgument) {
-      Abstract.ReferableSourceNode referable = ((Abstract.NameArgument) argument).getReferable();
-      String name = referable == null ? "_" : referable.getName();
+      String name = ((Abstract.NameArgument) argument).getName();
       if (name == null) {
         name = "_";
       }

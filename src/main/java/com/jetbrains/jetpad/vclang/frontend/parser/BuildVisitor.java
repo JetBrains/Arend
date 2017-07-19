@@ -31,11 +31,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     LiteralContext literal = ((AtomLiteralContext) ctx.atom()).literal();
     if (literal instanceof UnknownContext) {
       Concrete.Position position = tokenPosition(literal.getStart());
-      return new Concrete.NameArgument(position, true, new Concrete.LocalVariable(position, "_"));
+      return new Concrete.NameArgument(position, true, "_");
     }
     if (literal instanceof IdContext && ((IdContext) literal).name() instanceof NameIdContext) {
       Concrete.Position position = tokenPosition(literal.getStart());
-      return new Concrete.NameArgument(position, true, new Concrete.LocalVariable(position, ((NameIdContext) ((IdContext) literal).name()).ID().getText()));
+      return new Concrete.NameArgument(position, true, ((NameIdContext) ((IdContext) literal).name()).ID().getText());
     }
     return null;
   }
@@ -575,15 +575,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           arguments.addAll(vars);
         } else {
           for (Concrete.NameArgument var : vars) {
-            arguments.add(new Concrete.NameArgument(var.getPosition(), false, var.getReferable()));
+            arguments.add(new Concrete.NameArgument(var.getPosition(), false, var.getName()));
           }
         }
       } else {
-        List<Abstract.ReferableSourceNode> args = new ArrayList<>(vars.size());
-        for (Concrete.NameArgument var : vars) {
-          args.add(var.getReferable());
-        }
-        arguments.add(new Concrete.TelescopeArgument(tokenPosition(tele.getStart()), explicit, args, typeExpr));
+        arguments.add(new Concrete.TelescopeArgument(tokenPosition(tele.getStart()), explicit, vars, typeExpr));
       }
     } else {
       boolean ok = tele instanceof TeleLiteralContext;
@@ -592,7 +588,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         if (literalContext instanceof IdContext && ((IdContext) literalContext).name() instanceof NameIdContext) {
           TerminalNode id = ((NameIdContext) ((IdContext) literalContext).name()).ID();
           Concrete.Position position = tokenPosition(id.getSymbol());
-          arguments.add(new Concrete.NameArgument(position, true, new Concrete.LocalVariable(position, id.getText())));
+          arguments.add(new Concrete.NameArgument(position, true, id.getText()));
         } else if (literalContext instanceof UnknownContext) {
           arguments.add(new Concrete.NameArgument(tokenPosition(literalContext.getStart()), true, null));
         } else {
@@ -814,12 +810,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         typedExpr = ((ImplicitContext) tele).typedExpr();
       }
       if (typedExpr instanceof TypedContext) {
-        List<Concrete.NameArgument> args = getVars(((TypedContext) typedExpr).expr(0));
-        List<Abstract.ReferableSourceNode> vars = new ArrayList<>(args.size());
-        for (Concrete.NameArgument arg : args) {
-          vars.add(arg.getReferable());
-        }
-        arguments.add(new Concrete.TelescopeArgument(tokenPosition(tele.getStart()), explicit, vars, visitExpr(((TypedContext) typedExpr).expr(1))));
+        arguments.add(new Concrete.TelescopeArgument(tokenPosition(tele.getStart()), explicit, getVars(((TypedContext) typedExpr).expr(0)), visitExpr(((TypedContext) typedExpr).expr(1))));
       } else {
         arguments.add(new Concrete.TypeArgument(explicit, visitExpr(((NotTypedContext) typedExpr).expr())));
       }

@@ -106,8 +106,8 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
           }
         }
       } else if (argument instanceof Abstract.NameArgument) {
-        Abstract.ReferableSourceNode referable = ((Abstract.NameArgument) argument).getReferable();
-        if (referable != null && referable.getName() != null && !referable.getName().equals("_") && !referables.contains(referable)) {
+        Abstract.ReferableSourceNode referable = (Abstract.NameArgument) argument;
+        if (referable.getName() != null && !referable.getName().equals("_") && !referables.contains(referable)) {
           myContext.add(referable);
         }
       }
