@@ -16,7 +16,6 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 
 public class Util {
   interface ClauseElem {
@@ -95,11 +94,20 @@ public class Util {
       }
     }
 
-    return clauseElems.stream().map(clauseElem -> ((PatternClauseElem) clauseElem).pattern).collect(Collectors.toList());
+    List<Pattern> result = new ArrayList<>(clauseElems.size());
+    for (ClauseElem clauseElem : clauseElems) {
+      result.add(((PatternClauseElem) clauseElem).pattern);
+    }
+    return result;
   }
 
   static List<Expression> unflattenClauses(List<ClauseElem> clauseElems) {
-    return unflattenClausesPatterns(clauseElems).stream().map(Pattern::toExpression).collect(Collectors.toList());
+    List<Pattern> patterns = unflattenClausesPatterns(clauseElems);
+    List<Expression> result = new ArrayList<>(patterns.size());
+    for (Pattern pattern : patterns) {
+      result.add(pattern.toExpression());
+    }
+    return result;
   }
 
   static void removeArguments(List<?> clauseElems, DependentLink parameters, List<DependentLink> elimParams) {

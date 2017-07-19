@@ -44,7 +44,6 @@ import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FieldCall;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.parameter;
@@ -161,7 +160,10 @@ class DefinitionTypechecking {
         DependentLink param;
         if (argument instanceof Abstract.TelescopeArgument) {
           List<? extends Abstract.ReferableSourceNode> referableList = ((Abstract.TelescopeArgument) argument).getReferableList();
-          List<String> names = referableList.stream().map(r -> r == null ? null : r.getName()).collect(Collectors.toList());
+          List<String> names = new ArrayList<>(referableList.size());
+          for (Abstract.ReferableSourceNode referable : referableList) {
+            names.add(referable == null ? null : referable.getName());
+          }
           param = parameter(argument.getExplicit(), names, paramResult);
           index += names.size();
 

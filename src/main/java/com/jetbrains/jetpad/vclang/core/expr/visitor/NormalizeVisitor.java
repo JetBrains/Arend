@@ -15,7 +15,6 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.util.ComputationInterruptedException;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mode, Expression>  {
   public enum Mode { WHNF, NF, HUMAN_NF }
@@ -409,7 +408,10 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return expr;
     }
 
-    List<Expression> args = expr.getArguments().stream().map(arg -> arg.accept(this, mode)).collect(Collectors.toList());
+    List<Expression> args = new ArrayList<>(expr.getArguments().size());
+    for (Expression arg : expr.getArguments()) {
+      args.add(arg.accept(this, mode));
+    }
     ExprSubstitution substitution = new ExprSubstitution();
     DependentLink parameters = normalizeParameters(expr.getParameters(), mode, substitution);
     return new CaseExpression(parameters, expr.getResultType().subst(substitution).accept(this, mode), normalizeElimTree(expr.getElimTree()), args);

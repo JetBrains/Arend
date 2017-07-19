@@ -49,7 +49,6 @@ import com.jetbrains.jetpad.vclang.typechecking.patternmatching.PatternTypecheck
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.ClassViewInstancePool;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.expression;
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.ordinal;
@@ -510,7 +509,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
     if (param instanceof Abstract.TelescopeArgument) {
       List<? extends Abstract.ReferableSourceNode> referableList = ((Abstract.TelescopeArgument) param).getReferableList();
-      List<String> names = referableList.stream().map(r -> r == null ? null : r.getName()).collect(Collectors.toList());
+      List<String> names = new ArrayList<>(referableList.size());
+      for (Abstract.ReferableSourceNode referable : referableList) {
+        names.add(referable == null ? null : referable.getName());
+      }
       SingleDependentLink link = ExpressionFactory.singleParams(param.getExplicit(), names, argResult);
       int i = 0;
       for (SingleDependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
@@ -668,7 +670,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
         if (arg instanceof Abstract.TelescopeArgument) {
           List<? extends Abstract.ReferableSourceNode> referableList = ((Abstract.TelescopeArgument) arg).getReferableList();
-          SingleDependentLink link = ExpressionFactory.singleParams(arg.getExplicit(), referableList.stream().map(r -> r == null ? null : r.getName()).collect(Collectors.toList()), result);
+          List<String> names = new ArrayList<>(referableList.size());
+          for (Abstract.ReferableSourceNode referable : referableList) {
+            names.add(referable == null ? null : referable.getName());
+          }
+          SingleDependentLink link = ExpressionFactory.singleParams(arg.getExplicit(), names, result);
           list.add(link);
           int i = 0;
           for (SingleDependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
@@ -831,7 +837,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
         if (arg instanceof Abstract.TelescopeArgument) {
           List<? extends Abstract.ReferableSourceNode> referableList = ((Abstract.TelescopeArgument) arg).getReferableList();
-          DependentLink link = ExpressionFactory.parameter(arg.getExplicit(), referableList.stream().map(r -> r == null ? null : r.getName()).collect(Collectors.toList()), result);
+          List<String> names = new ArrayList<>(referableList.size());
+          for (Abstract.ReferableSourceNode referable : referableList) {
+            names.add(referable == null ? null : referable.getName());
+          }
+          DependentLink link = ExpressionFactory.parameter(arg.getExplicit(), names, result);
           list.append(link);
           int i = 0;
           for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
