@@ -1,19 +1,8 @@
 package com.jetbrains.jetpad.vclang.frontend.resolving;
 
-import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
-import java.util.List;
-
 public class BaseResolveListener implements ResolveListener {
-  private final ErrorReporter myErrorReporter;
-
-  public BaseResolveListener(ErrorReporter errorReporter) {
-    myErrorReporter = errorReporter != null ? errorReporter : new DummyErrorReporter();
-  }
-
   @Override
   public void nameResolved(Abstract.ReferenceExpression referenceExpression, Abstract.ReferableSourceNode referable) {
 
@@ -70,12 +59,7 @@ public class BaseResolveListener implements ResolveListener {
   }
 
   @Override
-  public void replaceWithConstructor(List<? extends Abstract.Pattern> patterns, int index, Abstract.Constructor constructor) {
-
-  }
-
-  @Override
-  public void replaceWithConstructor(Abstract.FunctionClause clause, int index, Abstract.Constructor constructor) {
+  public void replaceWithConstructor(Abstract.PatternContainer container, int index, Abstract.Constructor constructor) {
 
   }
 

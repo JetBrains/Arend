@@ -7,8 +7,10 @@ import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OpenCommand;
 import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.error.*;
+import com.jetbrains.jetpad.vclang.naming.error.DuplicateDefinitionError;
 import com.jetbrains.jetpad.vclang.naming.error.NoSuchFieldError;
+import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
+import com.jetbrains.jetpad.vclang.naming.error.WrongDefinition;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.scope.DataScope;
@@ -153,7 +155,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
         for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
           try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
             if (clause.getPatterns() != null) {
-              visitPatterns(clause.getPatterns(), exprVisitor);
+              visitConstructorClause(clause, exprVisitor);
             }
             for (Abstract.Constructor constructor : clause.getConstructors()) {
               visitConstructor(constructor, scope);
@@ -187,11 +189,12 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     return null;
   }
 
-  private void visitPatterns(List<? extends Abstract.Pattern> patterns, ExpressionResolveNameVisitor exprVisitor) {
+  private void visitConstructorClause(Abstract.ConstructorClause clause, ExpressionResolveNameVisitor exprVisitor) {
+    List<? extends Abstract.Pattern> patterns = clause.getPatterns();
     for (int i = 0; i < patterns.size(); i++) {
       Abstract.Constructor constructor = exprVisitor.visitPattern(patterns.get(i), new HashSet<>());
       if (constructor != null) {
-        myResolveListener.replaceWithConstructor(patterns, i, constructor);
+        myResolveListener.replaceWithConstructor(clause, i, constructor);
       }
       exprVisitor.resolvePattern(patterns.get(i));
     }

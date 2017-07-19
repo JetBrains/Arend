@@ -693,7 +693,19 @@ public final class Concrete {
     }
   }
 
-  public static class FunctionClause extends SourceNode implements Abstract.FunctionClause {
+  public interface PatternContainer extends Abstract.PatternContainer {
+    @Override
+    List<Pattern> getPatterns();
+
+    default void replaceWithConstructor(int index, Abstract.Constructor constructor) {
+      Pattern old = getPatterns().get(index);
+      Pattern newPattern = new ConstructorPattern(old.getPosition(), constructor, Collections.emptyList());
+      newPattern.setExplicit(old.isExplicit());
+      getPatterns().set(index, newPattern);
+    }
+  }
+
+  public static class FunctionClause extends SourceNode implements Abstract.FunctionClause, PatternContainer {
     private final List<Pattern> myPatterns;
     private final Expression myExpression;
 
@@ -711,13 +723,6 @@ public final class Concrete {
     @Override
     public Expression getExpression() {
       return myExpression;
-    }
-
-    public void replaceWithConstructor(int index, Abstract.Constructor constructor) {
-      Pattern old = myPatterns.get(index);
-      Pattern newPattern = new ConstructorPattern(old.getPosition(), constructor, Collections.emptyList());
-      newPattern.setExplicit(old.isExplicit());
-      myPatterns.set(index, newPattern);
     }
   }
 
@@ -1184,7 +1189,7 @@ public final class Concrete {
     }
   }
 
-  public static class ConstructorClause extends SourceNode implements Abstract.ConstructorClause {
+  public static class ConstructorClause extends SourceNode implements Abstract.ConstructorClause, PatternContainer {
     private final List<Pattern> myPatterns;
     private final List<Constructor> myConstructors;
 
@@ -1515,7 +1520,7 @@ public final class Concrete {
     }
   }
 
-  public static class ConstructorPattern extends Pattern implements Abstract.ConstructorPattern {
+  public static class ConstructorPattern extends Pattern implements Abstract.ConstructorPattern, PatternContainer {
     private final String myConstructorName;
     private Abstract.Constructor myConstructor;
     private final List<Pattern> myArguments;
@@ -1563,7 +1568,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<Pattern> getArguments() {
+    public List<Pattern> getPatterns() {
       return myArguments;
     }
   }

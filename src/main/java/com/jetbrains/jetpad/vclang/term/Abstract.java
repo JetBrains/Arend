@@ -211,8 +211,11 @@ public final class Abstract {
     int getField();
   }
 
-  public interface Clause extends SourceNode {
+  public interface PatternContainer {
     List<? extends Pattern> getPatterns();
+  }
+
+  public interface Clause extends SourceNode, PatternContainer {
   }
 
   public interface FunctionClause extends Clause {
@@ -385,8 +388,7 @@ public final class Abstract {
     String getName();
   }
 
-  public interface ConstructorPattern extends Pattern {
-    List<? extends Pattern> getArguments();
+  public interface ConstructorPattern extends Pattern, PatternContainer {
     String getConstructorName();
     Abstract.Constructor getConstructor();
   }

@@ -275,7 +275,7 @@ public class PatternTypechecking {
       for (DependentLink link = constructor.getDataTypeParameters(); link.hasNext(); link = link.getNext(), i++) {
         substitution.add(link, conCall.getDataTypeArguments().get(i));
       }
-      Pair<List<Pattern>, List<Expression>> conResult = doTypechecking(conPattern.getArguments(), DependentLink.Helper.subst(constructor.getParameters(), substitution, new StdLevelSubstitution(conCall.getSortArgument())), conPattern, false);
+      Pair<List<Pattern>, List<Expression>> conResult = doTypechecking(conPattern.getPatterns(), DependentLink.Helper.subst(constructor.getParameters(), substitution, new StdLevelSubstitution(conCall.getSortArgument())), conPattern, false);
       if (conResult == null) {
         return null;
       }

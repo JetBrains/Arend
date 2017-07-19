@@ -879,15 +879,15 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       myBuilder.append("()");
     } else if (pattern instanceof Abstract.ConstructorPattern) {
       Abstract.ConstructorPattern conPattern = (Abstract.ConstructorPattern) pattern;
-      if (!conPattern.getArguments().isEmpty() && prec > Abstract.Pattern.PREC && pattern.isExplicit()) myBuilder.append('(');
+      if (!conPattern.getPatterns().isEmpty() && prec > Abstract.Pattern.PREC && pattern.isExplicit()) myBuilder.append('(');
 
       myBuilder.append(new Name(conPattern.getConstructorName()).getPrefixName());
-      for (Abstract.Pattern patternArg : conPattern.getArguments()) {
+      for (Abstract.Pattern patternArg : conPattern.getPatterns()) {
         myBuilder.append(' ');
         prettyPrintPattern(patternArg, (byte) (Abstract.Pattern.PREC + 1));
       }
 
-      if (!conPattern.getArguments().isEmpty() && prec > Abstract.Pattern.PREC && pattern.isExplicit()) myBuilder.append(')');
+      if (!conPattern.getPatterns().isEmpty() && prec > Abstract.Pattern.PREC && pattern.isExplicit()) myBuilder.append(')');
     }
 
     if (!pattern.isExplicit()) {

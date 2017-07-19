@@ -95,7 +95,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
       if (conPattern.getConstructor() != null) {
         myDependencies.add(conPattern.getConstructor());
       }
-      for (Abstract.Pattern patternArg : conPattern.getArguments()) {
+      for (Abstract.Pattern patternArg : conPattern.getPatterns()) {
         visitPattern(patternArg);
       }
     }
