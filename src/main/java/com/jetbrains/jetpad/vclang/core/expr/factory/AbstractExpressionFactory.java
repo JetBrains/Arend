@@ -41,6 +41,6 @@ public interface AbstractExpressionFactory {
   Abstract.Expression makeCase(List<? extends Abstract.Expression> expressions, List<? extends Abstract.FunctionClause> clauses);
   Abstract.FunctionClause makeClause(List<? extends Abstract.Pattern> pattern, Abstract.Expression expr);
   Abstract.Pattern makeConPattern(boolean isExplicit, Abstract.Constructor constructor, List<? extends Abstract.Pattern> args);
-  Abstract.Pattern makeNamePattern(boolean isExplicit, Abstract.ReferableSourceNode name);
+  Abstract.Pattern makeNamePattern(boolean isExplicit, String name);
   Abstract.Pattern makeEmptyPattern(boolean isExplicit);
 }

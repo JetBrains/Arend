@@ -258,7 +258,8 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
 
   Abstract.Constructor visitPattern(Abstract.Pattern pattern, Set<String> usedNames) {
     if (pattern instanceof Abstract.NamePattern) {
-      String name = ((Abstract.NamePattern) pattern).getName();
+      Abstract.NamePattern namePattern = (Abstract.NamePattern) pattern;
+      String name = namePattern.getName();
       if (name == null) return null;
       Abstract.Definition ref = myParentScope.resolveName(name);
       if (ref != null) {
@@ -268,12 +269,11 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
           myErrorReporter.report(new WrongDefinition("Expected a constructor", ref, pattern));
         }
       }
-      Abstract.ReferableSourceNode referable = ((Abstract.NamePattern) pattern).getReferent();
-      if (referable != null && referable.getName() != null && !referable.getName().equals("_")) {
-        if (!usedNames.add(referable.getName())) {
-          myErrorReporter.report(new DuplicateName(referable));
+      if (!name.equals("_")) {
+        if (!usedNames.add(name)) {
+          myErrorReporter.report(new DuplicateName(namePattern));
         }
-        myContext.add(referable);
+        myContext.add(namePattern);
       }
       return null;
     } else if (pattern instanceof Abstract.ConstructorPattern) {

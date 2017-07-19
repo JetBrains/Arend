@@ -218,8 +218,8 @@ public class PatternTypechecking {
         result.add(new BindingPattern(parameters));
         if (exprs != null) {
           exprs.add(new ReferenceExpression(parameters));
-          if (pattern != null && ((Abstract.NamePattern) pattern).getReferent() != null) {
-            myContext.put(((Abstract.NamePattern) pattern).getReferent(), parameters);
+          if (pattern != null) {
+            myContext.put((Abstract.NamePattern) pattern, parameters);
           }
         }
         parameters = parameters.getNext();

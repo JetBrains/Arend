@@ -235,7 +235,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.Pattern visitPatternConstructor(PatternConstructorContext ctx) {
     if (ctx.name() instanceof NameIdContext && ctx.atomPatternOrID().size() == 0) {
-      return new Concrete.NamePattern(tokenPosition(ctx.start), new Concrete.LocalVariable(tokenPosition(((NameIdContext) ctx.name()).ID().getSymbol()), ((NameIdContext) ctx.name()).ID().getText()));
+      return new Concrete.NamePattern(tokenPosition(ctx.start), ((NameIdContext) ctx.name()).ID().getText());
     } else {
       return new Concrete.ConstructorPattern(tokenPosition(ctx.start), visitName(ctx.name()), ctx.atomPatternOrID().stream().map(this::visitAtomPattern).collect(Collectors.toList()));
     }
@@ -272,13 +272,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.Pattern visitPatternID(PatternIDContext ctx) {
     Concrete.Position position = tokenPosition(ctx.getStart());
-    return new Concrete.NamePattern(position, new Concrete.LocalVariable(position, ctx.ID().getText()));
+    return new Concrete.NamePattern(position, ctx.ID().getText());
   }
 
   @Override
   public Concrete.Pattern visitPatternAny(PatternAnyContext ctx) {
     Concrete.Position position = tokenPosition(ctx.getStart());
-    return new Concrete.NamePattern(position, new Concrete.LocalVariable(position, "_"));
+    return new Concrete.NamePattern(position, "_");
   }
 
   @Override

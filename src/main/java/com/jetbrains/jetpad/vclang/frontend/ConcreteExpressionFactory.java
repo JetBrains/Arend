@@ -192,8 +192,8 @@ public class ConcreteExpressionFactory {
     return new Concrete.ConstructorPattern(POSITION, isExplicit, name, patternArgs);
   }
 
-  public static Concrete.NamePattern cNamePattern(boolean isExplicit, Abstract.ReferableSourceNode referable) {
-    return new Concrete.NamePattern(POSITION, isExplicit, referable);
+  public static Concrete.NamePattern cNamePattern(boolean isExplicit, String name) {
+    return new Concrete.NamePattern(POSITION, isExplicit, name);
   }
 
   public static Concrete.EmptyPattern cEmptyPattern(boolean isExplicit) {

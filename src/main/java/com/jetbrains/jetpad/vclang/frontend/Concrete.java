@@ -1498,31 +1498,23 @@ public final class Concrete {
     }
   }
 
-  public static class NamePattern extends Pattern implements Abstract.NamePattern {
+  public static class NamePattern extends Pattern implements Abstract.NamePattern, Abstract.ReferableSourceNode {
     private final String myName;
-    private final Abstract.ReferableSourceNode myReferent;
 
-    public NamePattern(Position position, Abstract.ReferableSourceNode referent) {
+    public NamePattern(Position position, String name) {
       super(position);
-      myReferent = referent;
-      myName = referent.getName();
+      myName = name;
     }
 
-    public NamePattern(Position position, boolean isExplicit, Abstract.ReferableSourceNode referent) {
+    public NamePattern(Position position, boolean isExplicit, String name) {
       super(position);
       setExplicit(isExplicit);
-      myReferent = referent;
-      myName = referent.getName();
+      myName = name;
     }
 
     @Override
     public String getName() {
       return myName;
-    }
-
-    @Override
-    public Abstract.ReferableSourceNode getReferent() {
-      return myReferent;
     }
   }
 

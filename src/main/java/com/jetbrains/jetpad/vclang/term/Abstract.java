@@ -382,9 +382,8 @@ public final class Abstract {
     boolean isExplicit();
   }
 
-  public interface NamePattern extends Pattern {
+  public interface NamePattern extends Pattern, ReferableSourceNode {
     String getName();
-    ReferableSourceNode getReferent();
   }
 
   public interface ConstructorPattern extends Pattern {

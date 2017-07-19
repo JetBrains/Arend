@@ -178,8 +178,8 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.Pattern makeNamePattern(boolean isExplicit, Abstract.ReferableSourceNode referable) {
-    return cNamePattern(isExplicit, referable);
+  public Abstract.Pattern makeNamePattern(boolean isExplicit, String name) {
+    return cNamePattern(isExplicit, name);
   }
 
   @Override

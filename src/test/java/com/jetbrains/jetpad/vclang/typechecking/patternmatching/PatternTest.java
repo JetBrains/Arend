@@ -42,7 +42,7 @@ public class PatternTest extends TypeCheckingTestCase {
         return false;
       } else
       if (pattern1 instanceof Abstract.NamePattern) {
-        Abstract.ReferableSourceNode referable = ((Abstract.NamePattern) pattern1).getReferent();
+        Abstract.ReferableSourceNode referable = (Abstract.NamePattern) pattern1;
         while (hasImplicit && patterns.get(j) instanceof BindingPattern && expected.get(referable) != ((BindingPattern) patterns.get(j)).getBinding()) {
           j++;
         }

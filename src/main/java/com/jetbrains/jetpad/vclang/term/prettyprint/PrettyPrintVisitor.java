@@ -3,7 +3,10 @@ package com.jetbrains.jetpad.vclang.term.prettyprint;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.definition.Name;
-import com.jetbrains.jetpad.vclang.term.*;
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.AbstractLevelExpressionVisitor;
 
 import java.util.*;
 
@@ -874,7 +877,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
 
     if (pattern instanceof Abstract.NamePattern) {
-      String name = ((Abstract.NamePattern) pattern).getReferent().getName();
+      String name = ((Abstract.NamePattern) pattern).getName();
       if (name == null) {
         name = "_";
       }
@@ -993,7 +996,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       myBuilder.append("}");
     }
 
-    if (globalDefinitions != null && !globalDefinitions.isEmpty()) {
+    if (!globalDefinitions.isEmpty()) {
       myBuilder.append(" ");
       visitWhere(globalDefinitions);
     }

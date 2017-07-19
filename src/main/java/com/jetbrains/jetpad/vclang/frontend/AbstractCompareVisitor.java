@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
+import com.google.common.base.Objects;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
 
@@ -178,7 +179,7 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
 
   private boolean comparePattern(Abstract.Pattern pattern1, Abstract.Pattern pattern2) {
     if (pattern1 instanceof Abstract.NamePattern) {
-      return pattern2 instanceof Abstract.NamePattern && ((Abstract.NamePattern) pattern1).getReferent().equals(((Abstract.NamePattern) pattern2).getReferent());
+      return pattern2 instanceof Abstract.NamePattern && Objects.equal(pattern1, pattern2);
     }
     if (pattern1 instanceof Abstract.ConstructorPattern) {
       return pattern2 instanceof Abstract.ConstructorPattern && ((Abstract.ConstructorPattern) pattern1).getConstructorName().equals(((Abstract.ConstructorPattern) pattern2).getConstructorName());

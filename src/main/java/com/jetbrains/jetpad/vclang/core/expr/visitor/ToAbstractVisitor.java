@@ -60,7 +60,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   public Abstract.Pattern visitPattern(Pattern pattern, boolean isExplicit) {
     if (pattern instanceof BindingPattern) {
-      return myFactory.makeNamePattern(isExplicit, myFactory.makeReferable(((BindingPattern) pattern).getBinding().getName()));
+      return myFactory.makeNamePattern(isExplicit, ((BindingPattern) pattern).getBinding().getName());
     }
     if (pattern instanceof EmptyPattern) {
       return myFactory.makeEmptyPattern(isExplicit);
