@@ -94,15 +94,15 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
     return null;
   }
 
-  void visitArguments(List<? extends Abstract.Argument> arguments) {
-    for (Abstract.Argument argument : arguments) {
-      if (argument instanceof Abstract.TypeArgument) {
-        ((Abstract.TypeArgument) argument).getType().accept(this, null);
+  void visitParameters(List<? extends Abstract.Parameter> parameters) {
+    for (Abstract.Parameter parameter : parameters) {
+      if (parameter instanceof Abstract.TypeParameter) {
+        ((Abstract.TypeParameter) parameter).getType().accept(this, null);
       }
-      if (argument instanceof Abstract.TelescopeArgument) {
-        for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeArgument) argument).getReferableList()) {
+      if (parameter instanceof Abstract.TelescopeParameter) {
+        for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeParameter) parameter).getReferableList()) {
           if (referable != null && referable.getName() != null && !referable.getName().equals("_")) {
-            for (Abstract.ReferableSourceNode referable1 : ((Abstract.TelescopeArgument) argument).getReferableList()) {
+            for (Abstract.ReferableSourceNode referable1 : ((Abstract.TelescopeParameter) parameter).getReferableList()) {
               if (referable1 == referable) {
                 break;
               }
@@ -114,8 +114,8 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
           }
         }
       } else
-      if (argument instanceof Abstract.NameArgument) {
-        Abstract.ReferableSourceNode referable = (Abstract.NameArgument) argument;
+      if (parameter instanceof Abstract.NameParameter) {
+        Abstract.ReferableSourceNode referable = (Abstract.NameParameter) parameter;
         if (referable.getName() != null && !referable.getName().equals("_")) {
           myContext.add(referable);
         }
@@ -126,7 +126,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   @Override
   public Void visitLam(Abstract.LamExpression expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      visitArguments(expr.getArguments());
+      visitParameters(expr.getParameters());
       expr.getBody().accept(this, null);
     }
     return null;
@@ -135,7 +135,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   @Override
   public Void visitPi(Abstract.PiExpression expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      visitArguments(expr.getArguments());
+      visitParameters(expr.getParameters());
       expr.getCodomain().accept(this, null);
     }
     return null;
@@ -171,7 +171,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   @Override
   public Void visitSigma(Abstract.SigmaExpression expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      visitArguments(expr.getArguments());
+      visitParameters(expr.getParameters());
     }
     return null;
   }
@@ -361,7 +361,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       for (Abstract.LetClause clause : expr.getClauses()) {
         try (Utils.ContextSaver ignored1 = new Utils.ContextSaver(myContext)) {
-          visitArguments(clause.getArguments());
+          visitParameters(clause.getParameters());
 
           if (clause.getResultType() != null) {
             clause.getResultType().accept(this, null);

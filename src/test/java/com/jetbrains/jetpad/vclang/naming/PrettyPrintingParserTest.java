@@ -44,19 +44,19 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
     def.accept(new PrettyPrintVisitor(builder, 0), null);
 
     Concrete.FunctionDefinition result = (Concrete.FunctionDefinition) resolveNamesDef(builder.toString());
-    List<Concrete.TypeArgument> expectedArguments = new ArrayList<>();
-    for (Concrete.Argument argument : expected.getArguments()) {
-      expectedArguments.add((Concrete.TypeArgument) argument);
+    List<Concrete.TypeParameter> expectedArguments = new ArrayList<>();
+    for (Concrete.Parameter argument : expected.getParameters()) {
+      expectedArguments.add((Concrete.TypeParameter) argument);
     }
-    List<Concrete.TypeArgument> actualArguments = new ArrayList<>();
-    for (Concrete.Argument argument : result.getArguments()) {
-      actualArguments.add((Concrete.TypeArgument) argument);
+    List<Concrete.TypeParameter> actualArguments = new ArrayList<>();
+    for (Concrete.Parameter argument : result.getParameters()) {
+      actualArguments.add((Concrete.TypeParameter) argument);
     }
     Concrete.Expression expectedType = cPi(expectedArguments, expected.getResultType());
     Concrete.Expression actualType = cPi(actualArguments, result.getResultType());
     assertTrue(compareAbstract(expectedType, actualType));
     assertTrue(result.getBody() instanceof Abstract.TermFunctionBody);
-    assertEquals(cLam(new ArrayList<>(expected.getArguments()), ((Concrete.TermFunctionBody) expected.getBody()).getTerm()), cLam(new ArrayList<>(result.getArguments()), ((Concrete.TermFunctionBody) result.getBody()).getTerm()));
+    assertEquals(cLam(new ArrayList<>(expected.getParameters()), ((Concrete.TermFunctionBody) expected.getBody()).getTerm()), cLam(new ArrayList<>(result.getParameters()), ((Concrete.TermFunctionBody) result.getBody()).getTerm()));
   }
 
   @Test
@@ -108,9 +108,9 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
     // f {x : \Type1} (A : \Type1 -> \Type0) : A x -> (\Type1 -> \Type1) -> \Type1 -> \Type1 => \t y z. y z;
     Concrete.LocalVariable x = ref("x");
     Concrete.LocalVariable A = ref("A");
-    Concrete.NameArgument t = cName("t");
-    Concrete.NameArgument y = cName("y");
-    Concrete.NameArgument z = cName("z");
+    Concrete.NameParameter t = cName("t");
+    Concrete.NameParameter y = cName("y");
+    Concrete.NameParameter z = cName("z");
     Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(POSITION, "f", Abstract.Precedence.DEFAULT, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), body(cLam(cargs(t, y, z), cApps(cVar(y), cVar(z)))), Collections.emptyList());
     testDef(def, def);
   }

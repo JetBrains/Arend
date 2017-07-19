@@ -44,9 +44,9 @@ public class ExpressionResolveInstanceVisitor implements AbstractExpressionVisit
       }
       myInstanceProvider.addInstances(expr, 0, filteredInstances);
     } else if (definition instanceof Abstract.Definition) {
-      Collection<? extends Abstract.Argument> arguments = Abstract.getArguments((Abstract.Definition) definition);
+      Collection<? extends Abstract.Parameter> arguments = Abstract.getParameters((Abstract.Definition) definition);
       if (arguments != null) {
-        checkArguments(expr, arguments);
+        checkParameters(expr, arguments);
       }
     }
     return null;
@@ -57,15 +57,15 @@ public class ExpressionResolveInstanceVisitor implements AbstractExpressionVisit
     return null;
   }
 
-  private void checkArguments(Abstract.ReferenceExpression defCall, Collection<? extends Abstract.Argument> args) {
+  private void checkParameters(Abstract.ReferenceExpression defCall, Collection<? extends Abstract.Parameter> parameters) {
     int i = 0;
-    for (Abstract.Argument arg : args) {
-      if (arg instanceof Abstract.NameArgument) {
+    for (Abstract.Parameter parameter : parameters) {
+      if (parameter instanceof Abstract.NameParameter) {
         i++;
       } else
-      if (arg instanceof Abstract.TypeArgument) {
-        int size = i + (arg instanceof Abstract.TelescopeArgument ? ((Abstract.TelescopeArgument) arg).getReferableList().size() : 1);
-        Abstract.ClassView classView = Abstract.getUnderlyingClassView(((Abstract.TypeArgument) arg).getType());
+      if (parameter instanceof Abstract.TypeParameter) {
+        int size = i + (parameter instanceof Abstract.TelescopeParameter ? ((Abstract.TelescopeParameter) parameter).getReferableList().size() : 1);
+        Abstract.ClassView classView = Abstract.getUnderlyingClassView(((Abstract.TypeParameter) parameter).getType());
         if (classView != null) {
           Collection<? extends Abstract.ClassViewInstance> instances = myParentScope.getInstances();
           List<Abstract.ClassViewInstance> filteredInstances = new ArrayList<>();
@@ -92,24 +92,24 @@ public class ExpressionResolveInstanceVisitor implements AbstractExpressionVisit
     return null;
   }
 
-  public void visitArguments(List<? extends Abstract.Argument> arguments) {
-    for (Abstract.Argument argument : arguments) {
-      if (argument instanceof Abstract.TypeArgument) {
-        ((Abstract.TypeArgument) argument).getType().accept(this, null);
+  public void visitParameters(List<? extends Abstract.Parameter> parameters) {
+    for (Abstract.Parameter parameter : parameters) {
+      if (parameter instanceof Abstract.TypeParameter) {
+        ((Abstract.TypeParameter) parameter).getType().accept(this, null);
       }
     }
   }
 
   @Override
   public Void visitLam(Abstract.LamExpression expr, Void params) {
-    visitArguments(expr.getArguments());
+    visitParameters(expr.getParameters());
     expr.getBody().accept(this, null);
     return null;
   }
 
   @Override
   public Void visitPi(Abstract.PiExpression expr, Void params) {
-    visitArguments(expr.getArguments());
+    visitParameters(expr.getParameters());
     expr.getCodomain().accept(this, null);
     return null;
   }
@@ -143,7 +143,7 @@ public class ExpressionResolveInstanceVisitor implements AbstractExpressionVisit
 
   @Override
   public Void visitSigma(Abstract.SigmaExpression expr, Void params) {
-    visitArguments(expr.getArguments());
+    visitParameters(expr.getParameters());
     return null;
   }
 
@@ -201,7 +201,7 @@ public class ExpressionResolveInstanceVisitor implements AbstractExpressionVisit
   @Override
   public Void visitLet(Abstract.LetExpression expr, Void params) {
     for (Abstract.LetClause clause : expr.getClauses()) {
-      visitArguments(clause.getArguments());
+      visitParameters(clause.getParameters());
       if (clause.getResultType() != null) {
         clause.getResultType().accept(this, null);
       }

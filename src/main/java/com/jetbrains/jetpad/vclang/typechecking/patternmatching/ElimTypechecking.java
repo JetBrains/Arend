@@ -79,7 +79,7 @@ public class ElimTypechecking {
     return (ElimTree) typecheckElim(funClauses, sourceNode, null, parameters, Collections.emptyList(), resultClauses);
   }
 
-  public Body typecheckElim(List<? extends Abstract.FunctionClause> funClauses, Abstract.SourceNode sourceNode, List<? extends Abstract.Argument> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, List<Clause> resultClauses) {
+  public Body typecheckElim(List<? extends Abstract.FunctionClause> funClauses, Abstract.SourceNode sourceNode, List<? extends Abstract.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, List<Clause> resultClauses) {
     List<ExtClause> clauses = new ArrayList<>(funClauses.size());
     PatternTypechecking patternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), myFlags);
     myOK = true;

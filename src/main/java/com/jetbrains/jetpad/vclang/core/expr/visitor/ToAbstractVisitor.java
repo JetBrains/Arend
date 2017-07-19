@@ -178,7 +178,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return arg != null ? myFactory.makeApp(function, isExplicit, arg) : function;
   }
 
-  private Abstract.Expression visitArguments(Abstract.Expression expr, DependentLink parameters, List<? extends Expression> arguments) {
+  private Abstract.Expression visitParameters(Abstract.Expression expr, DependentLink parameters, List<? extends Expression> arguments) {
     for (Expression arg : arguments) {
       expr = myFactory.makeApp(expr, parameters.isExplicit(), arg.accept(this, null));
       parameters = parameters.getNext();
@@ -192,7 +192,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     if (result != null) {
       return result;
     }
-    return visitArguments(myFactory.makeDefCall(null, expr.getDefinition().getAbstractDefinition()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
+    return visitParameters(myFactory.makeDefCall(null, expr.getDefinition().getAbstractDefinition()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
   }
 
   @Override
@@ -211,7 +211,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     if (expr.getDefinition().status().headerIsOK() && myFlags.contains(Flag.SHOW_CON_PARAMS) && (!expr.getDataTypeArguments().isEmpty() || myFlags.contains(Flag.SHOW_CON_DATA_TYPE))) {
       conParams = expr.getDataTypeExpression().accept(this, null);
     }
-    return visitArguments(myFactory.makeDefCall(conParams, expr.getDefinition().getAbstractDefinition()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
+    return visitParameters(myFactory.makeDefCall(conParams, expr.getDefinition().getAbstractDefinition()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
   }
 
   @Override
@@ -286,38 +286,38 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitLam(LamExpression lamExpr, Void params) {
-    List<Abstract.Argument> arguments = new ArrayList<>();
+    List<Abstract.Parameter> parameters = new ArrayList<>();
     Expression expr = lamExpr;
     for (; expr.isInstance(LamExpression.class); expr = expr.cast(LamExpression.class).getBody()) {
       if (myFlags.contains(Flag.SHOW_TYPES_IN_LAM)) {
-        visitDependentLink(expr.cast(LamExpression.class).getParameters(), arguments);
+        visitDependentLink(expr.cast(LamExpression.class).getParameters(), parameters);
       } else {
         for (DependentLink link = expr.cast(LamExpression.class).getParameters(); link.hasNext(); link = link.getNext()) {
           final DependentLink finalLink = link;
-          arguments.add(makeReferable(link, name -> myFactory.makeNameArgument(finalLink.isExplicit(), name)));
+          parameters.add(makeReferable(link, name -> myFactory.makeNameParameter(finalLink.isExplicit(), name)));
         }
       }
     }
 
-    Abstract.Expression result = myFactory.makeLam(arguments, expr.accept(this, null));
+    Abstract.Expression result = myFactory.makeLam(parameters, expr.accept(this, null));
     for (expr = lamExpr; expr.isInstance(LamExpression.class); expr = expr.cast(LamExpression.class).getBody()) {
       freeVars(expr.cast(LamExpression.class).getParameters());
     }
     return result;
   }
 
-  private void visitDependentLink(DependentLink parameters, List<? super Abstract.TypeArgument> args) {
+  private void visitDependentLink(DependentLink parameters, List<? super Abstract.TypeParameter> args) {
     List<Abstract.ReferableSourceNode> referableList = new ArrayList<>(3);
     for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
       DependentLink link1 = link.getNextTyped(null);
       if (link1 == link && link.getName() == null) {
-        args.add(myFactory.makeTypeArgument(link.isExplicit(), link.getTypeExpr().accept(this, null)));
+        args.add(myFactory.makeTypeParameter(link.isExplicit(), link.getTypeExpr().accept(this, null)));
       } else {
         for (; link != link1; link = link.getNext()) {
           referableList.add(makeReferable(link));
         }
         referableList.add(makeReferable(link));
-        args.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(referableList), link.getTypeExpr().accept(this, null)));
+        args.add(myFactory.makeTelescopeParameter(link.isExplicit(), new ArrayList<>(referableList), link.getTypeExpr().accept(this, null)));
         referableList.clear();
       }
     }
@@ -325,12 +325,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitPi(PiExpression piExpr, Void params) {
-    List<List<Abstract.TypeArgument>> arguments = new ArrayList<>();
+    List<List<Abstract.TypeParameter>> arguments = new ArrayList<>();
     Expression expr = piExpr;
     for (; expr.isInstance(PiExpression.class); expr = expr.cast(PiExpression.class).getCodomain()) {
-      List<Abstract.TypeArgument> args = new ArrayList<>();
+      List<Abstract.TypeParameter> args = new ArrayList<>();
       visitDependentLink(expr.cast(PiExpression.class).getParameters(), args);
-      if (!arguments.isEmpty() && arguments.get(arguments.size() - 1) instanceof Abstract.TelescopeArgument && !args.isEmpty() && args.get(0) instanceof Abstract.TelescopeArgument) {
+      if (!arguments.isEmpty() && arguments.get(arguments.size() - 1) instanceof Abstract.TelescopeParameter && !args.isEmpty() && args.get(0) instanceof Abstract.TelescopeParameter) {
         arguments.get(arguments.size() - 1).addAll(args);
       } else {
         arguments.add(args);
@@ -423,7 +423,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitSigma(SigmaExpression expr, Void params) {
-    List<Abstract.TypeArgument> args = new ArrayList<>();
+    List<Abstract.TypeParameter> args = new ArrayList<>();
     visitDependentLink(expr.getParameters(), args);
     Abstract.Expression result = myFactory.makeSigma(args);
     freeVars(expr.getParameters());

@@ -486,7 +486,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     return new Result(new ClassCallExpression((ClassDefinition) typeChecked, Sort.PROP), new UniverseExpression(((ClassDefinition) typeChecked).getSort().subst(Sort.PROP.toLevelSubstitution())));
   }
 
-  private TypedSingleDependentLink visitNameArgument(Abstract.NameArgument param, int argIndex, Abstract.SourceNode sourceNode) {
+  private TypedSingleDependentLink visitNameParameter(Abstract.NameParameter param, int argIndex, Abstract.SourceNode sourceNode) {
     String name = param.getName();
 
     InferenceLevelVariable pLvl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, sourceNode);
@@ -502,13 +502,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     return link;
   }
 
-  private SingleDependentLink visitTypeArgument(Abstract.TypeArgument param) {
+  private SingleDependentLink visitTypeParameter(Abstract.TypeParameter param) {
     Abstract.Expression paramType = param.getType();
     Type argResult = checkType(paramType);
     if (argResult == null) return null;
 
-    if (param instanceof Abstract.TelescopeArgument) {
-      List<? extends Abstract.ReferableSourceNode> referableList = ((Abstract.TelescopeArgument) param).getReferableList();
+    if (param instanceof Abstract.TelescopeParameter) {
+      List<? extends Abstract.ReferableSourceNode> referableList = ((Abstract.TelescopeParameter) param).getReferableList();
       List<String> names = referableList.stream().map(r -> r == null ? null : r.getName()).collect(Collectors.toList());
       SingleDependentLink link = ExpressionFactory.singleParams(param.getExplicit(), names, argResult);
       int i = 0;
@@ -521,19 +521,19 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     }
   }
 
-  private Result visitLam(List<? extends Abstract.Argument> parameters, Abstract.LamExpression expr, Expression expectedType, int argIndex) {
+  private Result visitLam(List<? extends Abstract.Parameter> parameters, Abstract.LamExpression expr, Expression expectedType, int argIndex) {
     if (parameters.isEmpty()) {
       return checkExpr(expr.getBody(), expectedType);
     }
 
-    Abstract.Argument param = parameters.get(0);
-    if (param instanceof Abstract.NameArgument) {
+    Abstract.Parameter param = parameters.get(0);
+    if (param instanceof Abstract.NameParameter) {
       if (expectedType != null) {
         expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
       }
 
       if (expectedType == null || !expectedType.isInstance(PiExpression.class)) {
-        TypedSingleDependentLink link = visitNameArgument((Abstract.NameArgument) param, argIndex, expr);
+        TypedSingleDependentLink link = visitNameParameter((Abstract.NameParameter) param, argIndex, expr);
         Result bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, null, argIndex + 1);
         if (bodyResult == null) return null;
         Sort sort = PiExpression.generateUpperBound(link.getType().getSortOfType(), getSortOf(bodyResult.type.getType()), myEquations, expr);
@@ -544,7 +544,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
         return result;
       } else {
         PiExpression piExpectedType = expectedType.cast(PiExpression.class);
-        Abstract.ReferableSourceNode referable = (Abstract.NameArgument) param;
+        Abstract.ReferableSourceNode referable = (Abstract.NameParameter) param;
         SingleDependentLink piParams = piExpectedType.getParameters();
         if (piParams.isExplicit() != param.getExplicit()) {
           myErrorReporter.report(new LocalTypeCheckingError(ordinal(argIndex) + " argument of the lambda should be " + (piParams.isExplicit() ? "explicit" : "implicit"), expr));
@@ -557,17 +557,17 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
         Sort sort = PiExpression.generateUpperBound(link.getType().getSortOfType(), getSortOf(bodyResult.type.getType()), myEquations, expr);
         return new Result(new LamExpression(sort, link, bodyResult.expression), new PiExpression(sort, link, bodyResult.type));
       }
-    } else if (param instanceof Abstract.TypeArgument) {
-      SingleDependentLink link = visitTypeArgument((Abstract.TypeArgument) param);
+    } else if (param instanceof Abstract.TypeParameter) {
+      SingleDependentLink link = visitTypeParameter((Abstract.TypeParameter) param);
       if (link == null) {
         return null;
       }
 
       SingleDependentLink actualLink = null;
       Expression expectedBodyType = null;
-      int namesCount = param instanceof Abstract.TelescopeArgument ? ((Abstract.TelescopeArgument) param).getReferableList().size() : 1;
+      int namesCount = param instanceof Abstract.TelescopeParameter ? ((Abstract.TelescopeParameter) param).getReferableList().size() : 1;
       if (expectedType != null) {
-        Abstract.Expression paramType = ((Abstract.TypeArgument) param).getType();
+        Abstract.Expression paramType = ((Abstract.TypeParameter) param).getType();
         Expression argType = link.getTypeExpr();
 
         SingleDependentLink lamLink = link;
@@ -641,7 +641,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   @Override
   public Result visitLam(Abstract.LamExpression expr, ExpectedType expectedType) {
     try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myContext)) {
-      Result result = visitLam(expr.getArguments(), expr, expectedType instanceof Expression ? (Expression) expectedType : null, 1);
+      Result result = visitLam(expr.getParameters(), expr, expectedType instanceof Expression ? (Expression) expectedType : null, 1);
       if (result != null) {
         expr.setWellTyped(myContext, result.expression);
         if (expectedType != null && !(expectedType instanceof Expression)) {
@@ -657,15 +657,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   @Override
   public Result visitPi(Abstract.PiExpression expr, ExpectedType expectedType) {
     List<SingleDependentLink> list = new ArrayList<>();
-    List<Sort> sorts = new ArrayList<>(expr.getArguments().size());
+    List<Sort> sorts = new ArrayList<>(expr.getParameters().size());
 
     try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myContext)) {
-      for (Abstract.TypeArgument arg : expr.getArguments()) {
+      for (Abstract.TypeParameter arg : expr.getParameters()) {
         Type result = checkType(arg.getType());
         if (result == null) return null;
 
-        if (arg instanceof Abstract.TelescopeArgument) {
-          List<? extends Abstract.ReferableSourceNode> referableList = ((Abstract.TelescopeArgument) arg).getReferableList();
+        if (arg instanceof Abstract.TelescopeParameter) {
+          List<? extends Abstract.ReferableSourceNode> referableList = ((Abstract.TelescopeParameter) arg).getReferableList();
           SingleDependentLink link = ExpressionFactory.singleParams(arg.getExplicit(), referableList.stream().map(r -> r == null ? null : r.getName()).collect(Collectors.toList()), result);
           list.add(link);
           int i = 0;
@@ -819,16 +819,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     return tupleResult;
   }
 
-  private DependentLink visitArguments(List<? extends Abstract.TypeArgument> arguments, List<Sort> resultSorts) {
+  private DependentLink visitParameters(List<? extends Abstract.TypeParameter> parameters, List<Sort> resultSorts) {
     LinkList list = new LinkList();
 
     try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myContext)) {
-      for (Abstract.TypeArgument arg : arguments) {
+      for (Abstract.TypeParameter arg : parameters) {
         Type result = checkType(arg.getType());
         if (result == null) return null;
 
-        if (arg instanceof Abstract.TelescopeArgument) {
-          List<? extends Abstract.ReferableSourceNode> referableList = ((Abstract.TelescopeArgument) arg).getReferableList();
+        if (arg instanceof Abstract.TelescopeParameter) {
+          List<? extends Abstract.ReferableSourceNode> referableList = ((Abstract.TelescopeParameter) arg).getReferableList();
           DependentLink link = ExpressionFactory.parameter(arg.getExplicit(), referableList.stream().map(r -> r == null ? null : r.getName()).collect(Collectors.toList()), result);
           list.append(link);
           int i = 0;
@@ -849,8 +849,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
   @Override
   public Result visitSigma(Abstract.SigmaExpression expr, ExpectedType expectedType) {
-    List<Sort> sorts = new ArrayList<>(expr.getArguments().size());
-    DependentLink args = visitArguments(expr.getArguments(), sorts);
+    List<Sort> sorts = new ArrayList<>(expr.getParameters().size());
+    DependentLink args = visitParameters(expr.getParameters(), sorts);
     if (args == null || !args.hasNext()) return null;
     Sort sort = generateUpperBound(sorts, expr);
     return checkResult(expectedType, new Result(new SigmaExpression(sort, args), new UniverseExpression(sort)), expr);
@@ -1113,7 +1113,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     }
   }
 
-  private Result typecheckLetClause(List<? extends Abstract.Argument> parameters, Abstract.LetClause letClause, int argIndex) {
+  private Result typecheckLetClause(List<? extends Abstract.Parameter> parameters, Abstract.LetClause letClause, int argIndex) {
     if (parameters.isEmpty()) {
       Abstract.Expression letResult = letClause.getResultType();
       if (letResult != null) {
@@ -1125,16 +1125,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       }
     }
 
-    Abstract.Argument param = parameters.get(0);
-    if (param instanceof Abstract.NameArgument) {
-      TypedSingleDependentLink link = visitNameArgument((Abstract.NameArgument) param, argIndex, letClause);
+    Abstract.Parameter param = parameters.get(0);
+    if (param instanceof Abstract.NameParameter) {
+      TypedSingleDependentLink link = visitNameParameter((Abstract.NameParameter) param, argIndex, letClause);
       Result bodyResult = typecheckLetClause(parameters.subList(1, parameters.size()), letClause, argIndex + 1);
       if (bodyResult == null) return null;
       Sort sort = PiExpression.generateUpperBound(link.getType().getSortOfType(), getSortOf(bodyResult.type.getType()), myEquations, letClause);
       return new Result(new LamExpression(sort, link, bodyResult.expression), new PiExpression(sort, link, bodyResult.type));
-    } else if (param instanceof Abstract.TypeArgument) {
-      int namesCount = param instanceof Abstract.TelescopeArgument ? ((Abstract.TelescopeArgument) param).getReferableList().size() : 1;
-      SingleDependentLink link = visitTypeArgument((Abstract.TypeArgument) param);
+    } else if (param instanceof Abstract.TypeParameter) {
+      int namesCount = param instanceof Abstract.TelescopeParameter ? ((Abstract.TelescopeParameter) param).getReferableList().size() : 1;
+      SingleDependentLink link = visitTypeParameter((Abstract.TypeParameter) param);
       if (link == null) {
         return null;
       }
@@ -1151,7 +1151,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   private LetClause typecheckLetClause(Abstract.LetClause clause) {
     LetClause letResult;
     try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myContext)) {
-      Result result = typecheckLetClause(clause.getArguments(), clause, 1);
+      Result result = typecheckLetClause(clause.getParameters(), clause, 1);
       if (result == null) {
         return null;
       }

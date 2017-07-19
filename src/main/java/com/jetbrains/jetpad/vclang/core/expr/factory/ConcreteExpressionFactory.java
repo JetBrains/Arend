@@ -53,28 +53,28 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.NameArgument makeNameArgument(boolean explicit, String name) {
+  public Abstract.NameParameter makeNameParameter(boolean explicit, String name) {
     return cName(explicit, name);
   }
 
   @Override
-  public Abstract.TypeArgument makeTypeArgument(boolean explicit, Abstract.Expression type) {
+  public Abstract.TypeParameter makeTypeParameter(boolean explicit, Abstract.Expression type) {
     return cTypeArg(explicit, (Concrete.Expression) type);
   }
 
   @Override
-  public Abstract.TypeArgument makeTelescopeArgument(boolean explicit, List<? extends Abstract.ReferableSourceNode> referableList, Abstract.Expression type) {
+  public Abstract.TypeParameter makeTelescopeParameter(boolean explicit, List<? extends Abstract.ReferableSourceNode> referableList, Abstract.Expression type) {
     return cTele(explicit, referableList, (Concrete.Expression) type);
   }
 
   @Override
-  public Abstract.Expression makeLam(List<? extends Abstract.Argument> arguments, Abstract.Expression body) {
-    return cLam((List<Concrete.Argument>) arguments, (Concrete.Expression) body);
+  public Abstract.Expression makeLam(List<? extends Abstract.Parameter> arguments, Abstract.Expression body) {
+    return cLam((List<Concrete.Parameter>) arguments, (Concrete.Expression) body);
   }
 
   @Override
-  public Abstract.Expression makePi(List<? extends Abstract.TypeArgument> arguments, Abstract.Expression codomain) {
-    return cPi((List<Concrete.TypeArgument>) arguments, (Concrete.Expression) codomain);
+  public Abstract.Expression makePi(List<? extends Abstract.TypeParameter> arguments, Abstract.Expression codomain) {
+    return cPi((List<Concrete.TypeParameter>) arguments, (Concrete.Expression) codomain);
   }
 
   @Override
@@ -133,8 +133,8 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.Expression makeSigma(List<? extends Abstract.TypeArgument> arguments) {
-    return cSigma((List<Concrete.TypeArgument>) arguments);
+  public Abstract.Expression makeSigma(List<? extends Abstract.TypeParameter> arguments) {
+    return cSigma((List<Concrete.TypeParameter>) arguments);
   }
 
   @Override
@@ -158,8 +158,8 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.LetClause makeLetClause(Abstract.ReferableSourceNode referable, List<? extends Abstract.Argument> arguments, Abstract.Expression resultType, Abstract.Expression term) {
-    return clet(referable.getName(), (List<Concrete.Argument>) arguments, (Concrete.Expression) resultType, (Concrete.Expression) term);
+  public Abstract.LetClause makeLetClause(Abstract.ReferableSourceNode referable, List<? extends Abstract.Parameter> arguments, Abstract.Expression resultType, Abstract.Expression term) {
+    return clet(referable.getName(), (List<Concrete.Parameter>) arguments, (Concrete.Expression) resultType, (Concrete.Expression) term);
   }
 
   @Override

@@ -64,7 +64,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     Abstract.FunctionBody body = def.getBody();
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(scope, myContext, myNameResolver, myResolveListener, myErrorReporter);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      exprVisitor.visitArguments(def.getArguments());
+      exprVisitor.visitParameters(def.getParameters());
 
       Abstract.Expression resultType = def.getResultType();
       if (resultType != null) {
@@ -84,7 +84,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     if (body instanceof Abstract.ElimFunctionBody) {
       try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
         List<? extends Abstract.ReferenceExpression> references = ((Abstract.ElimFunctionBody) body).getEliminatedReferences();
-        addNotEliminatedArguments(def.getArguments(), references);
+        addNotEliminatedParameters(def.getParameters(), references);
         exprVisitor.visitClauses(((Abstract.ElimFunctionBody) body).getClauses());
       }
     }
@@ -92,21 +92,21 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     return null;
   }
 
-  private void addNotEliminatedArguments(List<? extends Abstract.Argument> arguments, List<? extends Abstract.ReferenceExpression> eliminated) {
+  private void addNotEliminatedParameters(List<? extends Abstract.Parameter> parameters, List<? extends Abstract.ReferenceExpression> eliminated) {
     if (eliminated.isEmpty()) {
       return;
     }
 
     Set<Abstract.ReferableSourceNode> referables = eliminated.stream().map(Abstract.ReferenceExpression::getReferent).collect(Collectors.toSet());
-    for (Abstract.Argument argument : arguments) {
-      if (argument instanceof Abstract.TelescopeArgument) {
-        for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeArgument) argument).getReferableList()) {
+    for (Abstract.Parameter parameter : parameters) {
+      if (parameter instanceof Abstract.TelescopeParameter) {
+        for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeParameter) parameter).getReferableList()) {
           if (referable != null && referable.getName() != null && !referable.getName().equals("_") && !referables.contains(referable)) {
             myContext.add(referable);
           }
         }
-      } else if (argument instanceof Abstract.NameArgument) {
-        Abstract.ReferableSourceNode referable = (Abstract.NameArgument) argument;
+      } else if (parameter instanceof Abstract.NameParameter) {
+        Abstract.ReferableSourceNode referable = (Abstract.NameParameter) parameter;
         if (referable.getName() != null && !referable.getName().equals("_") && !referables.contains(referable)) {
           myContext.add(referable);
         }
@@ -130,7 +130,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     Scope scope = new DataScope(parentScope, new NamespaceScope(myNameResolver.nsProviders.statics.forDefinition(def)));
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(scope, myContext, myNameResolver, myResolveListener, myErrorReporter);
     try (Utils.CompleteContextSaver<Abstract.ReferableSourceNode> ignored = new Utils.CompleteContextSaver<>(myContext)) {
-      exprVisitor.visitArguments(def.getParameters());
+      exprVisitor.visitParameters(def.getParameters());
       if (def.getUniverse() != null) {
         def.getUniverse().accept(exprVisitor, null);
       }
@@ -149,7 +149,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
 
     if (def.getEliminatedReferences() != null) {
       try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-        addNotEliminatedArguments(def.getParameters(), def.getEliminatedReferences());
+        addNotEliminatedParameters(def.getParameters(), def.getEliminatedReferences());
         for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
           try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
             if (clause.getPatterns() != null) {
@@ -170,7 +170,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
   public Void visitConstructor(Abstract.Constructor def, Scope parentScope) {
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(parentScope, myContext, myNameResolver, myResolveListener, myErrorReporter);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      exprVisitor.visitArguments(def.getArguments());
+      exprVisitor.visitParameters(def.getParameters());
       if (def.getEliminatedReferences() != null) {
         for (Abstract.ReferenceExpression ref : def.getEliminatedReferences()) {
           exprVisitor.visitReference(ref, null);
@@ -180,7 +180,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
 
     if (def.getEliminatedReferences() != null) {
       try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-        addNotEliminatedArguments(def.getArguments(), def.getEliminatedReferences());
+        addNotEliminatedParameters(def.getParameters(), def.getEliminatedReferences());
         exprVisitor.visitClauses(def.getClauses());
       }
     }
@@ -214,10 +214,10 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
       }
 
       try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-        for (Abstract.TypeArgument polyParam : def.getPolyParameters()) {
+        for (Abstract.TypeParameter polyParam : def.getPolyParameters()) {
           polyParam.getType().accept(exprVisitor, null);
-          if (polyParam instanceof Abstract.TelescopeArgument) {
-            for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeArgument) polyParam).getReferableList()) {
+          if (polyParam instanceof Abstract.TelescopeParameter) {
+            for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeParameter) polyParam).getReferableList()) {
               if (referable != null && referable.getName() != null && referable.getName().equals("_")) {
                 myContext.add(referable);
               }
@@ -298,7 +298,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
   public Void visitClassViewInstance(Abstract.ClassViewInstance def, Scope parentScope) {
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(parentScope, myContext, myNameResolver, myResolveListener, myErrorReporter);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      exprVisitor.visitArguments(def.getArguments());
+      exprVisitor.visitParameters(def.getParameters());
       exprVisitor.visitReference(def.getClassView(), null);
       if (def.getClassView().getReferent() instanceof Abstract.ClassView) {
         exprVisitor.visitClassFieldImpls(def.getClassFieldImpls(), (Abstract.ClassView) def.getClassView().getReferent(), null);
