@@ -170,7 +170,12 @@ public class TwoStageEquations implements Equations {
     }
 
     myEquations.add(equation);
-    stuckVar.addListener(equation);
+    if (expr1.isInstance(InferenceReferenceExpression.class) && expr2.isInstance(InferenceReferenceExpression.class)) {
+      expr1.cast(InferenceReferenceExpression.class).getVariable().addListener(equation);
+      expr2.cast(InferenceReferenceExpression.class).getVariable().addListener(equation);
+    } else {
+      stuckVar.addListener(equation);
+    }
   }
 
   @Override

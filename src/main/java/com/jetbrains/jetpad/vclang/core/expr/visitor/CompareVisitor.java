@@ -88,13 +88,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   }
 
   private Boolean compare(Expression expr1, Expression expr2) {
-    if (expr1 == expr2 || expr1.isInstance(ErrorExpression.class) || expr2.isInstance(ErrorExpression.class)) {
-      return true;
-    }
-
-    expr1 = EtaNormalization.normalize(expr1);
-    expr2 = EtaNormalization.normalize(expr2);
-
     while (expr1.isInstance(InferenceReferenceExpression.class) && expr1.cast(InferenceReferenceExpression.class).getSubstExpression() != null || expr1.isInstance(OfTypeExpression.class)) {
       if (expr1.isInstance(OfTypeExpression.class)) {
         expr1 = expr1.cast(OfTypeExpression.class).getExpression();
@@ -110,55 +103,46 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       }
     }
 
-    if (expr2.isInstance(InferenceReferenceExpression.class)) {
-      return compareInferenceReference(expr2.cast(InferenceReferenceExpression.class), expr1, false);
+    expr1 = EtaNormalization.normalize(expr1);
+    expr2 = EtaNormalization.normalize(expr2);
+
+    Expression stuck1 = expr1.getStuckExpression();
+    Expression stuck2 = expr2.getStuckExpression();
+    if (stuck1 != null && stuck1.isInstance(ErrorExpression.class) && (stuck2 == null || stuck2.isInstance(ErrorExpression.class)) ||
+      stuck2 != null && stuck2.isInstance(ErrorExpression.class) && (stuck1 == null || stuck1.isInstance(ErrorExpression.class))) {
+      return true;
     }
+
     if (expr1.isInstance(InferenceReferenceExpression.class)) {
-      return compareInferenceReference(expr1.cast(InferenceReferenceExpression.class), expr2, true);
+      InferenceVariable variable = expr1.cast(InferenceReferenceExpression.class).getVariable();
+      return myEquations.add(expr1, expr2, myCMP, variable.getSourceNode(), variable);
+    }
+    if (expr2.isInstance(InferenceReferenceExpression.class)) {
+      InferenceVariable variable = expr2.cast(InferenceReferenceExpression.class).getVariable();
+      return myEquations.add(expr1.subst(getSubstitution()), expr2, myCMP, variable.getSourceNode(), variable);
     }
 
-    FieldCallExpression fieldCall1 = expr1.checkedCast(FieldCallExpression.class);
-    if (fieldCall1 != null) {
-      InferenceReferenceExpression ref1 = fieldCall1.getExpression().checkedCast(InferenceReferenceExpression.class);
-      if (ref1 != null && ref1.getSubstExpression() == null) {
-        InferenceVariable variable = ref1.getVariable();
-        return myEquations.add(expr1, expr2, myCMP, variable.getSourceNode(), variable);
-      }
-    }
-
-    FieldCallExpression fieldCall2 = expr2.checkedCast(FieldCallExpression.class);
-    if (fieldCall2 != null) {
-      InferenceReferenceExpression ref2 = fieldCall2.getExpression().checkedCast(InferenceReferenceExpression.class);
-      if (ref2 != null && ref2.getSubstExpression() == null) {
-        InferenceVariable variable = ref2.getVariable();
-        return myEquations.add(expr1, expr2, myCMP, variable.getSourceNode(), variable);
-      }
-    }
-
-    NewExpression new1 = expr1.checkedCast(NewExpression.class);
     NewExpression new2 = expr2.checkedCast(NewExpression.class);
-    if (new1 != null && new2 == null) {
-      return new1.accept(this, expr2);
-    }
-    if (new2 != null && new1 == null) {
-      myCMP = myCMP.not();
-      return new2.accept(this, expr1);
+    if (new2 != null ? visitNew(new2, expr1) : expr1.accept(this, expr2)) {
+      return true;
     }
 
-    return expr1.accept(this, expr2);
-  }
-
-  // TODO: should we check other stuck terms?
-  private static InferenceVariable checkIsInferVar(Expression expr) {
-    while (expr.isInstance(AppExpression.class)) {
-      expr = expr.cast(AppExpression.class).getFunction();
+    InferenceVariable variable;
+    if (stuck1 != null && stuck1.isInstance(InferenceReferenceExpression.class)) {
+      variable = stuck1.cast(InferenceReferenceExpression.class).getVariable();
+    } else
+    if (stuck2 != null && stuck2.isInstance(InferenceReferenceExpression.class)) {
+      variable = stuck2.cast(InferenceReferenceExpression.class).getVariable();
+    } else {
+      return false;
     }
-    InferenceReferenceExpression ref = expr.checkedCast(InferenceReferenceExpression.class);
-    return ref != null && ref.getSubstExpression() == null ? ref.getVariable() : null;
+
+    return myEquations.add(expr1.subst(getSubstitution()), expr2, myCMP, variable.getSourceNode(), variable);
   }
 
   private boolean checkIsInferVar(Expression fun, Expression expr1, Expression expr2) {
-    InferenceVariable binding = checkIsInferVar(fun);
+    InferenceReferenceExpression ref = fun.checkedCast(InferenceReferenceExpression.class);
+    InferenceVariable binding = ref != null && ref.getSubstExpression() == null ? ref.getVariable() : null;
     return binding != null && myEquations.add(expr1.subst(getSubstitution()), expr2, myCMP, binding.getSourceNode(), binding);
   }
 
@@ -199,30 +183,15 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     Equations.CMP cmp = myCMP;
     myCMP = Equations.CMP.EQ;
     if (!compare(fun1, fun2)) {
+      myCMP = cmp;
       return false;
     }
     Collections.reverse(args1);
     Collections.reverse(args2);
 
-    int i = 0;
-    if (fun1.isInstance(DataCallExpression.class) && fun2.isInstance(DataCallExpression.class)) {
-      if (args1.isEmpty()) {
-        myCMP = cmp;
-        return true;
-      }
-      if (fun1.cast(DataCallExpression.class).getDefinition().getThisClass() != null) {
-        if (!compare(args1.get(i), args2.get(i))) {
-          return false;
-        }
-        if (++i >= args1.size()) {
-          myCMP = cmp;
-          return true;
-        }
-      }
-    }
-
-    for (; i < args1.size(); i++) {
+    for (int i = 0; i < args1.size(); i++) {
       if (!compare(args1.get(i), args2.get(i))) {
+        myCMP = cmp;
         return false;
       }
     }
@@ -245,15 +214,45 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     return true;
   }
 
+  @Override
+  public Boolean visitFieldCall(FieldCallExpression fieldCall1, Expression expr2) {
+    FieldCallExpression fieldCall2 = expr2.checkedCast(FieldCallExpression.class);
+    if (fieldCall2 == null || fieldCall1.getDefinition() != fieldCall2.getDefinition()) {
+      return false;
+    }
+
+    InferenceVariable variable = null;
+    InferenceReferenceExpression ref1 = fieldCall1.getExpression().checkedCast(InferenceReferenceExpression.class);
+    if (ref1 != null && ref1.getSubstExpression() == null) {
+      variable = ref1.getVariable();
+    } else {
+      InferenceReferenceExpression ref2 = fieldCall2.getExpression().checkedCast(InferenceReferenceExpression.class);
+      if (ref2 != null && ref2.getSubstExpression() == null) {
+        variable = ref2.getVariable();
+      }
+    }
+    if (variable != null) {
+      return myEquations.add(fieldCall1.subst(getSubstitution()), fieldCall2, myCMP, variable.getSourceNode(), variable);
+    }
+
+    return compare(fieldCall1.getExpression(), fieldCall2.getExpression());
+  }
+
   private boolean checkSubclassImpl(ReadonlyFieldSet fieldSet1, ClassCallExpression classCall2) {
+    Equations.CMP oldCMP = myCMP;
+    myCMP = Equations.CMP.EQ;
     for (Map.Entry<ClassField, FieldSet.Implementation> entry : classCall2.getImplementedHere()) {
       FieldSet.Implementation impl1 = fieldSet1.getImplementation(entry.getKey());
-      if (impl1 == null) return false;
-      Equations.CMP oldCMP = myCMP;
-      myCMP = Equations.CMP.EQ;
-      if (!compare(impl1.term, entry.getValue().term)) return false;
-      myCMP = oldCMP;
+      if (impl1 == null) {
+        myCMP = oldCMP;
+        return false;
+      }
+      if (!compare(impl1.term, entry.getValue().term)) {
+        myCMP = oldCMP;
+        return false;
+      }
     }
+    myCMP = oldCMP;
     return true;
   }
 
@@ -277,15 +276,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     return implAllOf1Test && implAllOf2Test;
   }
 
-  private boolean compareInferenceReference(InferenceReferenceExpression expr1, Expression expr2, boolean first) {
-    //noinspection SimplifiableIfStatement
-    if (expr2.isInstance(InferenceReferenceExpression.class) && expr1.getVariable() == expr2.cast(InferenceReferenceExpression.class).getVariable()) {
-      return true;
-    }
-
-    return myEquations.add(expr1, expr2.subst(getSubstitution()), first ? myCMP : myCMP.not(), expr1.getVariable().getSourceNode(), expr1.getVariable());
-  }
-
   @Override
   public Boolean visitReference(ReferenceExpression expr1, Expression expr2) {
     if (!expr2.isInstance(ReferenceExpression.class)) {
@@ -302,11 +292,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
   @Override
   public Boolean visitInferenceReference(InferenceReferenceExpression expr1, Expression expr2) {
-    if (expr1.getSubstExpression() != null) {
-      return compare(expr1.getSubstExpression(), expr2);
-    } else {
-      return compareInferenceReference(expr1, expr2, true);
-    }
+    return false;
   }
 
   @Override
@@ -336,6 +322,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     Equations.CMP oldCMP = myCMP;
     myCMP = Equations.CMP.EQ;
     if (!compare(expr1.getParameters().getTypeExpr(), piExpr2.getParameters().getTypeExpr())) {
+      myCMP = oldCMP;
       return false;
     }
     myCMP = oldCMP;
@@ -395,6 +382,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     myCMP = Equations.CMP.EQ;
     for (int i = 0; i < expr1.getFields().size(); i++) {
       if (!compare(expr1.getFields().get(i), tuple2.getFields().get(i))) {
+        myCMP = cmp;
         return false;
       }
     }
@@ -434,7 +422,22 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     return result;
   }
 
-  // TODO: WTF is this? Eta equivalence?
+  @Override
+  public Boolean visitNew(NewExpression expr1, Expression expr2) {
+    Equations.CMP cmp = myCMP;
+    myCMP = Equations.CMP.EQ;
+
+    boolean result;
+    if (expr2.isInstance(NewExpression.class)) {
+      result = compare(expr1.getExpression(), expr2.cast(NewExpression.class).getExpression());
+    } else {
+      result = compareNew(expr1.cast(NewExpression.class), expr2);
+    }
+
+    myCMP = cmp;
+    return result;
+  }
+
   private boolean compareNew(NewExpression expr1, Expression expr2) {
     ClassCallExpression classCall = expr1.getExpression().checkedCast(ClassCallExpression.class);
     if (classCall == null) {
@@ -454,19 +457,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     }
 
     return true;
-  }
-
-  @Override
-  public Boolean visitNew(NewExpression expr1, Expression expr2) {
-    if (!expr2.isInstance(NewExpression.class)) {
-      return compareNew(expr1, expr2);
-    }
-
-    Equations.CMP cmp = myCMP;
-    myCMP = Equations.CMP.EQ;
-    boolean result = compare(expr1.getExpression(), expr2.cast(NewExpression.class).getExpression());
-    myCMP = cmp;
-    return result;
   }
 
   @Override

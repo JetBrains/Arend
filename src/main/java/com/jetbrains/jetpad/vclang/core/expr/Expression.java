@@ -176,6 +176,7 @@ public abstract class Expression implements ExpectedType {
 
   public abstract boolean isWHNF();
 
-  // Returns null of the expression is a constructor or not in WHNF
+  // This function assumes that the expression is in a WHNF.
+  // If the expression is a constructor, then the function returns null.
   public abstract Expression getStuckExpression();
 }

@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.Collections;
@@ -41,7 +42,19 @@ public class FieldCallExpression extends DefCallExpression {
 
   @Override
   public boolean isWHNF() {
-    return false;
+    if (myExpression.isInstance(NewExpression.class)) {
+      return false;
+    }
+    Expression type = myExpression.getType();
+    if (type == null) {
+      return true;
+    }
+    type = type.normalize(NormalizeVisitor.Mode.WHNF);
+    //noinspection SimplifiableIfStatement
+    if (!type.isInstance(ClassCallExpression.class)) {
+      return true;
+    }
+    return !type.cast(ClassCallExpression.class).getFieldSet().isImplemented(getDefinition());
   }
 
   @Override
