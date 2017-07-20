@@ -27,7 +27,12 @@ public class TupleExpression extends Expression {
   }
 
   @Override
-  public TupleExpression toTuple() {
-    return this;
+  public boolean isWHNF() {
+    return true;
+  }
+
+  @Override
+  public Expression getStuckExpression() {
+    return null;
   }
 }

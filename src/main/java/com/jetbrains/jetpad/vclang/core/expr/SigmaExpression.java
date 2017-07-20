@@ -48,11 +48,6 @@ public class SigmaExpression extends Expression implements Type {
   }
 
   @Override
-  public SigmaExpression toSigma() {
-    return this;
-  }
-
-  @Override
   public SigmaExpression subst(ExprSubstitution exprSubstitution, LevelSubstitution levelSubstitution) {
     return new SubstVisitor(exprSubstitution, levelSubstitution).visitSigma(this, null);
   }
@@ -65,5 +60,15 @@ public class SigmaExpression extends Expression implements Type {
   @Override
   public SigmaExpression normalize(NormalizeVisitor.Mode mode) {
     return new NormalizeVisitor().visitSigma(this, mode);
+  }
+
+  @Override
+  public boolean isWHNF() {
+    return true;
+  }
+
+  @Override
+  public Expression getStuckExpression() {
+    return null;
   }
 }

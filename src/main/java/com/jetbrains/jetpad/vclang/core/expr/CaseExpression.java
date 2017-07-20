@@ -41,7 +41,12 @@ public class CaseExpression extends Expression {
   }
 
   @Override
-  public CaseExpression toCase() {
-    return this;
+  public boolean isWHNF() {
+    return myElimTree.isWHNF(myArguments);
+  }
+
+  @Override
+  public Expression getStuckExpression() {
+    return myElimTree.getStuckExpression(myArguments, this);
   }
 }

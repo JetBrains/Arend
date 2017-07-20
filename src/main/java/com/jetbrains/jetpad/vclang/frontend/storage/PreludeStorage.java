@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.frontend.parser.ParseSource;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
+import com.jetbrains.jetpad.vclang.naming.scope.primitive.EmptyScope;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 
 import javax.annotation.Nonnull;

@@ -12,10 +12,10 @@ public class OfTypeExpression extends Expression {
   }
 
   public static Expression make(Expression expression, Expression actualType, Expression expectedType) {
-    if ((expectedType instanceof PiExpression || expectedType instanceof SigmaExpression || expectedType instanceof ClassCallExpression) &&
-        !(actualType instanceof PiExpression || actualType instanceof SigmaExpression || actualType instanceof ClassCallExpression)) {
-      while (expression.toOfType() != null) {
-        expression = expression.toOfType().myExpression;
+    if ((expectedType.isInstance(PiExpression.class) || expectedType.isInstance(SigmaExpression.class) || expectedType.isInstance(ClassCallExpression.class)) &&
+        !(actualType.isInstance(PiExpression.class) || actualType.isInstance(SigmaExpression.class) || actualType.isInstance(ClassCallExpression.class))) {
+      while (expression.isInstance(OfTypeExpression.class)) {
+        expression = expression.cast(OfTypeExpression.class).myExpression;
       }
       return new OfTypeExpression(expression, expectedType);
     } else {
@@ -37,93 +37,18 @@ public class OfTypeExpression extends Expression {
   }
 
   @Override
-  public AppExpression toApp() {
-    return myExpression.toApp();
+  public <T extends Expression> T cast(Class<T> clazz) {
+    return clazz.isInstance(this) ? clazz.cast(this) : myExpression.cast(clazz);
   }
 
   @Override
-  public ClassCallExpression toClassCall() {
-    return myExpression.toClassCall();
+  public <T extends Expression> boolean isInstance(Class<T> clazz) {
+    return clazz.isInstance(myExpression) || clazz.isInstance(this);
   }
 
   @Override
-  public ConCallExpression toConCall() {
-    return myExpression.toConCall();
-  }
-
-  @Override
-  public DataCallExpression toDataCall() {
-    return myExpression.toDataCall();
-  }
-
-  @Override
-  public DefCallExpression toDefCall() {
-    return myExpression.toDefCall();
-  }
-
-  @Override
-  public ErrorExpression toError() {
-    return myExpression.toError();
-  }
-
-  @Override
-  public FieldCallExpression toFieldCall() {
-    return myExpression.toFieldCall();
-  }
-
-  @Override
-  public FunCallExpression toFunCall() {
-    return myExpression.toFunCall();
-  }
-
-  @Override
-  public LamExpression toLam() {
-    return myExpression.toLam();
-  }
-
-  @Override
-  public LetExpression toLet() {
-    return myExpression.toLet();
-  }
-
-  @Override
-  public NewExpression toNew() {
-    return myExpression.toNew();
-  }
-
-  @Override
-  public OfTypeExpression toOfType() {
-    return this;
-  }
-
-  @Override
-  public PiExpression toPi() {
-    return myExpression.toPi();
-  }
-
-  @Override
-  public ProjExpression toProj() {
-    return myExpression.toProj();
-  }
-
-  @Override
-  public ReferenceExpression toReference() {
-    return myExpression.toReference();
-  }
-
-  @Override
-  public SigmaExpression toSigma() {
-    return myExpression.toSigma();
-  }
-
-  @Override
-  public TupleExpression toTuple() {
-    return myExpression.toTuple();
-  }
-
-  @Override
-  public UniverseExpression toUniverse() {
-    return myExpression.toUniverse();
+  public boolean isWHNF() {
+    return myExpression.isWHNF();
   }
 
   @Override

@@ -25,7 +25,12 @@ public class AppExpression extends Expression {
   }
 
   @Override
-  public AppExpression toApp() {
-    return this;
+  public boolean isWHNF() {
+    return myFunction.isWHNF() && !myFunction.isInstance(LamExpression.class);
+  }
+
+  @Override
+  public Expression getStuckExpression() {
+    return myFunction.getStuckExpression();
   }
 }

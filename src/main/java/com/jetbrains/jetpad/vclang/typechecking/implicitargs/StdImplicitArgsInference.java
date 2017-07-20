@@ -57,7 +57,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
   }
 
   protected CheckTypeVisitor.TResult inferArg(CheckTypeVisitor.TResult result, Abstract.Expression arg, boolean isExplicit, Abstract.Expression fun) {
-    if (result == null || result instanceof CheckTypeVisitor.Result && ((CheckTypeVisitor.Result) result).expression.toError() != null) {
+    if (result == null || result instanceof CheckTypeVisitor.Result && ((CheckTypeVisitor.Result) result).expression.isInstance(ErrorExpression.class)) {
       return result;
     }
 
@@ -112,7 +112,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
   protected CheckTypeVisitor.TResult inferArg(Abstract.Expression fun, Abstract.Expression arg, boolean isExplicit, ExpectedType expectedType) {
     CheckTypeVisitor.TResult result;
     if (fun instanceof Abstract.AppExpression) {
-      Abstract.ArgumentExpression argument = ((Abstract.AppExpression) fun).getArgument();
+      Abstract.Argument argument = ((Abstract.AppExpression) fun).getArgument();
       result = checkBinOpInferArg(((Abstract.AppExpression) fun).getFunction(), argument.getExpression(), argument.isExplicit(), expectedType);
     } else {
       if (fun instanceof Abstract.ReferenceExpression) {
@@ -125,7 +125,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       if (result instanceof CheckTypeVisitor.DefCallResult && isExplicit && expectedType != null) {
         CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
         if (defCallResult.getDefinition() instanceof Constructor && defCallResult.getArguments().size() < DependentLink.Helper.size(((Constructor) defCallResult.getDefinition()).getDataTypeParameters())) {
-          DataCallExpression dataCall = expectedType instanceof Expression ? ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF).toDataCall() : null;
+          DataCallExpression dataCall = expectedType instanceof Expression ? ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DataCallExpression.class) : null;
           if (dataCall != null) {
             if (((Constructor) defCallResult.getDefinition()).getDataType() != dataCall.getDefinition()) {
               LocalTypeCheckingError error = new TypeMismatchError(dataCall, ((Constructor) defCallResult.getDefinition()).getDataType(), fun);
@@ -167,7 +167,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
   @Override
   public CheckTypeVisitor.TResult infer(Abstract.AppExpression expr, ExpectedType expectedType) {
-    Abstract.ArgumentExpression arg = expr.getArgument();
+    Abstract.Argument arg = expr.getArgument();
     return checkBinOpInferArg(expr.getFunction(), arg.getExpression(), arg.isExplicit(), expectedType);
   }
 

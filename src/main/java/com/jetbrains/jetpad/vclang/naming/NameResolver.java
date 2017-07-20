@@ -4,8 +4,8 @@ import com.jetbrains.jetpad.vclang.frontend.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
-import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
-import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
+import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.List;

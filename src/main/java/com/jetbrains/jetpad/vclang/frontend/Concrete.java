@@ -3,14 +3,23 @@ package com.jetbrains.jetpad.vclang.frontend;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
+import com.jetbrains.jetpad.vclang.frontend.resolving.OpenCommand;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.term.*;
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.AbstractLevelExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 
+import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class Concrete {
   private Concrete() {}
@@ -44,12 +53,12 @@ public final class Concrete {
     }
   }
 
-  // Arguments
+  // Parameters
 
-  public static class Argument extends SourceNode implements Abstract.Argument {
+  public static class Parameter extends SourceNode implements Abstract.Parameter {
     private boolean myExplicit;
 
-    public Argument(Position position, boolean explicit) {
+    public Parameter(Position position, boolean explicit) {
       super(position);
       myExplicit = explicit;
     }
@@ -64,29 +73,29 @@ public final class Concrete {
     }
   }
 
-  public static class NameArgument extends Argument implements Abstract.NameArgument {
-    private final Abstract.ReferableSourceNode myReferable;
+  public static class NameParameter extends Parameter implements Abstract.NameParameter, Abstract.ReferableSourceNode {
+    private final String myName;
 
-    public NameArgument(Position position, boolean explicit, Abstract.ReferableSourceNode referableSourceNode) {
+    public NameParameter(Position position, boolean explicit, String name) {
       super(position, explicit);
-      myReferable = referableSourceNode;
+      myName = name;
     }
 
     @Override
-    public Abstract.ReferableSourceNode getReferable() {
-      return myReferable;
+    public String getName() {
+      return myName;
     }
   }
 
-  public static class TypeArgument extends Argument implements Abstract.TypeArgument {
+  public static class TypeParameter extends Parameter implements Abstract.TypeParameter {
     private final Expression myType;
 
-    public TypeArgument(Position position, boolean explicit, Expression type) {
+    public TypeParameter(Position position, boolean explicit, Expression type) {
       super(position, explicit);
       myType = type;
     }
 
-    public TypeArgument(boolean explicit, Expression type) {
+    public TypeParameter(boolean explicit, Expression type) {
       this(type.getPosition(), explicit, type);
     }
 
@@ -96,10 +105,10 @@ public final class Concrete {
     }
   }
 
-  public static class TelescopeArgument extends TypeArgument implements Abstract.TelescopeArgument {
+  public static class TelescopeParameter extends TypeParameter implements Abstract.TelescopeParameter {
     private final List<? extends Abstract.ReferableSourceNode> myReferableList;
 
-    public TelescopeArgument(Position position, boolean explicit, List<? extends Abstract.ReferableSourceNode> referableList, Expression type) {
+    public TelescopeParameter(Position position, boolean explicit, List<? extends Abstract.ReferableSourceNode> referableList, Expression type) {
       super(position, explicit, type);
       myReferableList = referableList;
     }
@@ -136,15 +145,13 @@ public final class Concrete {
     }
   }
 
-  public static class ArgumentExpression implements Abstract.ArgumentExpression {
+  public static class Argument implements Abstract.Argument {
     private final Expression myExpression;
     private final boolean myExplicit;
-    private final boolean myHidden;
 
-    public ArgumentExpression(Expression expression, boolean explicit, boolean hidden) {
+    public Argument(Expression expression, boolean explicit) {
       myExpression = expression;
       myExplicit = explicit;
-      myHidden = hidden;
     }
 
     @Override
@@ -156,18 +163,13 @@ public final class Concrete {
     public boolean isExplicit() {
       return myExplicit;
     }
-
-    @Override
-    public boolean isHidden() {
-      return myHidden;
-    }
   }
 
   public static class AppExpression extends Expression implements Abstract.AppExpression {
     private final Expression myFunction;
-    private final ArgumentExpression myArgument;
+    private final Argument myArgument;
 
-    public AppExpression(Position position, Expression function, ArgumentExpression argument) {
+    public AppExpression(Position position, Expression function, Argument argument) {
       super(position);
       myFunction = function;
       myArgument = argument;
@@ -179,7 +181,7 @@ public final class Concrete {
     }
 
     @Override
-    public ArgumentExpression getArgument() {
+    public Argument getArgument() {
       return myArgument;
     }
 
@@ -463,17 +465,17 @@ public final class Concrete {
   }
 
   public static class LamExpression extends Expression implements Abstract.LamExpression {
-    private final List<Argument> myArguments;
+    private final List<Parameter> myArguments;
     private final Expression myBody;
 
-    public LamExpression(Position position, List<Argument> arguments, Expression body) {
+    public LamExpression(Position position, List<Parameter> arguments, Expression body) {
       super(position);
       myArguments = arguments;
       myBody = body;
     }
 
     @Override
-    public List<Argument> getArguments() {
+    public List<Parameter> getParameters() {
       return myArguments;
     }
 
@@ -488,16 +490,23 @@ public final class Concrete {
     }
   }
 
-  public static class LetClause extends ReferableSourceNode implements Abstract.LetClause {
-    private final List<Argument> myArguments;
+  public static class LetClause extends SourceNode implements Abstract.LetClause, Abstract.ReferableSourceNode {
+    private final List<Parameter> myArguments;
     private final Expression myResultType;
     private final Expression myTerm;
+    private final String myName;
 
-    public LetClause(Position position, String name, List<Argument> arguments, Expression resultType, Expression term) {
-      super(position, name);
+    public LetClause(Position position, String name, List<Parameter> arguments, Expression resultType, Expression term) {
+      super(position);
       myArguments = arguments;
       myResultType = resultType;
       myTerm = term;
+      myName = name;
+    }
+
+    @Override
+    public String getName() {
+      return myName;
     }
 
     @Override
@@ -506,7 +515,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<Argument> getArguments() {
+    public List<Parameter> getParameters() {
       return myArguments;
     }
 
@@ -543,17 +552,17 @@ public final class Concrete {
   }
 
   public static class PiExpression extends Expression implements Abstract.PiExpression {
-    private final List<TypeArgument> myArguments;
+    private final List<TypeParameter> myArguments;
     private final Expression myCodomain;
 
-    public PiExpression(Position position, List<TypeArgument> arguments, Expression codomain) {
+    public PiExpression(Position position, List<TypeParameter> arguments, Expression codomain) {
       super(position);
       myArguments = arguments;
       myCodomain = codomain;
     }
 
     @Override
-    public List<TypeArgument> getArguments() {
+    public List<TypeParameter> getParameters() {
       return myArguments;
     }
 
@@ -569,15 +578,15 @@ public final class Concrete {
   }
 
   public static class SigmaExpression extends Expression implements Abstract.SigmaExpression {
-    private final List<TypeArgument> myArguments;
+    private final List<TypeParameter> myArguments;
 
-    public SigmaExpression(Position position, List<TypeArgument> arguments) {
+    public SigmaExpression(Position position, List<TypeParameter> arguments) {
       super(position);
       myArguments = arguments;
     }
 
     @Override
-    public List<TypeArgument> getArguments() {
+    public List<TypeParameter> getParameters() {
       return myArguments;
     }
 
@@ -684,7 +693,19 @@ public final class Concrete {
     }
   }
 
-  public static class FunctionClause extends SourceNode implements Abstract.FunctionClause {
+  public interface PatternContainer extends Abstract.PatternContainer {
+    @Override
+    List<Pattern> getPatterns();
+
+    default void replaceWithConstructor(int index, Abstract.Constructor constructor) {
+      Pattern old = getPatterns().get(index);
+      Pattern newPattern = new ConstructorPattern(old.getPosition(), constructor, Collections.emptyList());
+      newPattern.setExplicit(old.isExplicit());
+      getPatterns().set(index, newPattern);
+    }
+  }
+
+  public static class FunctionClause extends SourceNode implements Abstract.FunctionClause, PatternContainer {
     private final List<Pattern> myPatterns;
     private final Expression myExpression;
 
@@ -702,13 +723,6 @@ public final class Concrete {
     @Override
     public Expression getExpression() {
       return myExpression;
-    }
-
-    public void replaceWithConstructor(int index, Abstract.Constructor constructor) {
-      Pattern old = myPatterns.get(index);
-      Pattern newPattern = new ConstructorPattern(old.getPosition(), constructor, Collections.emptyList());
-      newPattern.setExplicit(old.isExplicit());
-      myPatterns.set(index, newPattern);
     }
   }
 
@@ -857,37 +871,29 @@ public final class Concrete {
 
   // Definitions
 
-  public static abstract class ReferableSourceNode extends SourceNode implements Abstract.ReferableSourceNode {
+  public static class LocalVariable extends SourceNode implements Abstract.ReferableSourceNode {
     private final String myName;
 
-    public ReferableSourceNode(Position position, String name) {
+    public LocalVariable(Position position, String name) {
       super(position);
       myName = name;
     }
 
+    @Override
     public String getName() {
       return myName;
     }
-
-    @Override
-    public String toString() {
-      return myName;
-    }
   }
 
-  public static class LocalVariable extends ReferableSourceNode {
-    public LocalVariable(Position position, String name) {
-      super(position, name);
-    }
-  }
-
-  public static abstract class Definition extends ReferableSourceNode implements Abstract.Definition {
+  public static abstract class Definition extends SourceNode implements Abstract.Definition, Abstract.ReferableSourceNode {
     private final Abstract.Precedence myPrecedence;
     private Definition myParent;
     private boolean myStatic;
+    private final String myName;
 
     public Definition(Position position, String name, Abstract.Precedence precedence) {
-      super(position, name);
+      super(position);
+      myName = name;
       myStatic = true;
       myPrecedence = precedence;
     }
@@ -916,22 +922,27 @@ public final class Concrete {
     }
 
     @Override
+    public String getName() {
+      return myName;
+    }
+
+    @Override
     public String toString() {
-      return getName();
+      return myName;
     }
   }
 
   public static abstract class SignatureDefinition extends Definition {
-    private final List<Argument> myArguments;
+    private final List<Parameter> myArguments;
     private final Expression myResultType;
 
-    public SignatureDefinition(Position position, String name, Abstract.Precedence precedence, List<Argument> arguments, Expression resultType) {
+    public SignatureDefinition(Position position, String name, Abstract.Precedence precedence, List<Parameter> arguments, Expression resultType) {
       super(position, name, precedence);
       myArguments = arguments;
       myResultType = resultType;
     }
 
-    public List<? extends Argument> getArguments() {
+    public List<? extends Parameter> getParameters() {
       return myArguments;
     }
 
@@ -954,15 +965,15 @@ public final class Concrete {
     }
   }
 
-  public static class ClassDefinition extends Definition implements Abstract.ClassDefinition {
-    private final List<TypeArgument> myPolyParameters;
+  public static class ClassDefinition extends Definition implements Abstract.ClassDefinition, StatementCollection {
+    private final List<TypeParameter> myPolyParameters;
     private final List<SuperClass> mySuperClasses;
     private final List<ClassField> myFields;
     private final List<Implementation> myImplementations;
     private final List<Statement> myGlobalStatements;
     private final List<Definition> myInstanceDefinitions;
 
-    public ClassDefinition(Position position, String name, List<TypeArgument> polyParams, List<SuperClass> superClasses, List<ClassField> fields, List<Implementation> implementations, List<Statement> globalStatements, List<Definition> instanceDefinitions) {
+    public ClassDefinition(Position position, String name, List<TypeParameter> polyParams, List<SuperClass> superClasses, List<ClassField> fields, List<Implementation> implementations, List<Statement> globalStatements, List<Definition> instanceDefinitions) {
       super(position, name, Abstract.Precedence.DEFAULT);
       myPolyParameters = polyParams;
       mySuperClasses = superClasses;
@@ -982,7 +993,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<TypeArgument> getPolyParameters() {
+    public List<TypeParameter> getPolyParameters() {
       return myPolyParameters;
     }
 
@@ -1002,18 +1013,18 @@ public final class Concrete {
     }
 
     @Override
-    public List<Statement> getGlobalStatements() {
-      return myGlobalStatements;
+    public List<Definition> getInstanceDefinitions() {
+      return myInstanceDefinitions;
     }
 
     @Override
-    public List<Definition> getInstanceDefinitions() {
-      return myInstanceDefinitions;
+    public List<? extends Statement> getGlobalStatements() {
+      return myGlobalStatements;
     }
   }
 
   public static class ClassField extends SignatureDefinition implements Abstract.ClassField {
-    public ClassField(Position position, String name, Abstract.Precedence precedence, List<Argument> arguments, Expression resultType) {
+    public ClassField(Position position, String name, Abstract.Precedence precedence, List<Parameter> arguments, Expression resultType) {
       super(position, name, precedence, arguments, resultType);
       setIsStatic(false);
     }
@@ -1105,24 +1116,24 @@ public final class Concrete {
     }
   }
 
-  public static class FunctionDefinition extends SignatureDefinition implements Abstract.FunctionDefinition {
+  public static class FunctionDefinition extends SignatureDefinition implements Abstract.FunctionDefinition, StatementCollection {
     private final FunctionBody myBody;
     private final List<Statement> myStatements;
 
-    public FunctionDefinition(Position position, String name, Abstract.Precedence precedence, List<Argument> arguments, Expression resultType, FunctionBody body, List<Statement> statements) {
+    public FunctionDefinition(Position position, String name, Abstract.Precedence precedence, List<Parameter> arguments, Expression resultType, FunctionBody body, List<Statement> statements) {
       super(position, name, precedence, arguments, resultType);
       myBody = body;
       myStatements = statements;
     }
 
     @Override
-    public List<Statement> getGlobalStatements() {
-      return myStatements;
+    public FunctionBody getBody() {
+      return myBody;
     }
 
     @Override
-    public FunctionBody getBody() {
-      return myBody;
+    public List<? extends Statement> getGlobalStatements() {
+      return myStatements;
     }
 
     @Override
@@ -1132,13 +1143,13 @@ public final class Concrete {
   }
 
   public static class DataDefinition extends Definition implements Abstract.DataDefinition {
-    private final List<TypeArgument> myParameters;
+    private final List<TypeParameter> myParameters;
     private final List<ReferenceExpression> myEliminatedReferences;
     private final List<ConstructorClause> myConstructorClauses;
     private final boolean myIsTruncated;
-    private final Expression myUniverse;
+    private final UniverseExpression myUniverse;
 
-    public DataDefinition(Position position, String name, Abstract.Precedence precedence, List<TypeArgument> parameters, List<ReferenceExpression> eliminatedReferences, boolean isTruncated, Expression universe, List<ConstructorClause> constructorClauses) {
+    public DataDefinition(Position position, String name, Abstract.Precedence precedence, List<TypeParameter> parameters, List<ReferenceExpression> eliminatedReferences, boolean isTruncated, UniverseExpression universe, List<ConstructorClause> constructorClauses) {
       super(position, name, precedence);
       myParameters = parameters;
       myEliminatedReferences = eliminatedReferences;
@@ -1148,7 +1159,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<TypeArgument> getParameters() {
+    public List<TypeParameter> getParameters() {
       return myParameters;
     }
 
@@ -1168,7 +1179,7 @@ public final class Concrete {
     }
 
     @Override
-    public Expression getUniverse() {
+    public UniverseExpression getUniverse() {
       return myUniverse;
     }
 
@@ -1178,7 +1189,7 @@ public final class Concrete {
     }
   }
 
-  public static class ConstructorClause extends SourceNode implements Abstract.ConstructorClause {
+  public static class ConstructorClause extends SourceNode implements Abstract.ConstructorClause, PatternContainer {
     private final List<Pattern> myPatterns;
     private final List<Constructor> myConstructors;
 
@@ -1201,11 +1212,11 @@ public final class Concrete {
 
   public static class Constructor extends Definition implements Abstract.Constructor {
     private final DataDefinition myDataType;
-    private final List<TypeArgument> myArguments;
+    private final List<TypeParameter> myArguments;
     private final List<ReferenceExpression> myEliminatedReferences;
     private final List<FunctionClause> myClauses;
 
-    public Constructor(Position position, String name, Abstract.Precedence precedence, DataDefinition dataType, List<TypeArgument> arguments, List<ReferenceExpression> eliminatedReferences, List<FunctionClause> clauses) {
+    public Constructor(Position position, String name, Abstract.Precedence precedence, DataDefinition dataType, List<TypeParameter> arguments, List<ReferenceExpression> eliminatedReferences, List<FunctionClause> clauses) {
       super(position, name, precedence);
       myDataType = dataType;
       myArguments = arguments;
@@ -1214,7 +1225,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<TypeArgument> getArguments() {
+    public List<TypeParameter> getParameters() {
       return myArguments;
     }
 
@@ -1322,12 +1333,12 @@ public final class Concrete {
 
   public static class ClassViewInstance extends Definition implements Abstract.ClassViewInstance {
     private final boolean myDefault;
-    private final List<Argument> myArguments;
+    private final List<Parameter> myArguments;
     private final ReferenceExpression myClassView;
     private final List<ClassFieldImpl> myClassFieldImpls;
     private Abstract.Definition myClassifyingDefinition;
 
-    public ClassViewInstance(Position position, boolean isDefault, String name, Abstract.Precedence precedence, List<Argument> arguments, ReferenceExpression classView, List<ClassFieldImpl> classFieldImpls) {
+    public ClassViewInstance(Position position, boolean isDefault, String name, Abstract.Precedence precedence, List<Parameter> arguments, ReferenceExpression classView, List<ClassFieldImpl> classFieldImpls) {
       super(position, name, precedence);
       myDefault = isDefault;
       myArguments = arguments;
@@ -1341,7 +1352,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<Argument> getArguments() {
+    public List<Parameter> getParameters() {
       return myArguments;
     }
 
@@ -1372,13 +1383,13 @@ public final class Concrete {
 
   // Statements
 
-  public static abstract class Statement extends SourceNode implements Abstract.Statement {
+  public static abstract class Statement extends SourceNode {
     public Statement(Position position) {
       super(position);
     }
   }
 
-  public static class DefineStatement extends Statement implements Abstract.DefineStatement {
+  public static class DefineStatement extends Statement {
     private final Definition myDefinition;
 
     public DefineStatement(Position position, Definition definition) {
@@ -1386,19 +1397,12 @@ public final class Concrete {
       myDefinition = definition;
     }
 
-    @Override
     public Definition getDefinition() {
       return myDefinition;
     }
-
-    @Override
-    public <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitDefine(this, params);
-    }
   }
 
-  public static class NamespaceCommandStatement extends Statement implements Abstract.NamespaceCommandStatement {
-    private final Kind myKind;
+  public static class NamespaceCommandStatement extends Statement implements OpenCommand {
     private Abstract.Definition myDefinition;
     private final ModulePath myModulePath;
     private final List<String> myPath;
@@ -1407,17 +1411,11 @@ public final class Concrete {
 
     public NamespaceCommandStatement(Position position, Kind kind, List<String> modulePath, List<String> path, boolean isHiding, List<String> names) {
       super(position);
-      myKind = kind;
       myDefinition = null;
       myModulePath = modulePath != null ? new ModulePath(modulePath) : null;
       myPath = path;
       myHiding = isHiding;
       myNames = names;
-    }
-
-    @Override
-    public Kind getKind() {
-      return myKind;
     }
 
     @Override
@@ -1430,7 +1428,7 @@ public final class Concrete {
       return myPath;
     }
 
-    public void setResolvedClass(Abstract.Definition resolvedClass) {
+    void setResolvedClass(Abstract.Definition resolvedClass) {
       myDefinition = resolvedClass;
     }
 
@@ -1449,9 +1447,36 @@ public final class Concrete {
       return myNames;
     }
 
+    public enum Kind { OPEN, EXPORT }
+
+    public final static Function<Abstract.Definition, Iterable<OpenCommand>> GET = def -> {
+      if (def instanceof StatementCollection) {
+        return ((StatementCollection) def).getGlobalStatements().stream().flatMap(s -> {
+          if (s instanceof NamespaceCommandStatement) {
+            return Stream.of((NamespaceCommandStatement) s);
+          } else {
+            return Stream.empty();
+          }
+        }).collect(Collectors.toList());
+      } else {
+        return Collections.emptySet();
+      }
+    };
+  }
+
+  interface StatementCollection extends Abstract.DefinitionCollection {
+    List<? extends Statement> getGlobalStatements();
+
+    @Nonnull
     @Override
-    public <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitNamespaceCommand(this, params);
+    default Collection<? extends Abstract.Definition> getGlobalDefinitions() {
+      return getGlobalStatements().stream().flatMap(s -> {
+        if (s instanceof DefineStatement) {
+          return Stream.of(((DefineStatement) s).getDefinition());
+        } else {
+          return Stream.empty();
+        }
+      }).collect(Collectors.toList());
     }
   }
 
@@ -1475,35 +1500,27 @@ public final class Concrete {
     }
   }
 
-  public static class NamePattern extends Pattern implements Abstract.NamePattern {
+  public static class NamePattern extends Pattern implements Abstract.NamePattern, Abstract.ReferableSourceNode {
     private final String myName;
-    private final Abstract.ReferableSourceNode myReferent;
 
-    public NamePattern(Position position, Abstract.ReferableSourceNode referent) {
+    public NamePattern(Position position, String name) {
       super(position);
-      myReferent = referent;
-      myName = referent.getName();
+      myName = name;
     }
 
-    public NamePattern(Position position, boolean isExplicit, Abstract.ReferableSourceNode referent) {
+    public NamePattern(Position position, boolean isExplicit, String name) {
       super(position);
       setExplicit(isExplicit);
-      myReferent = referent;
-      myName = referent.getName();
+      myName = name;
     }
 
     @Override
     public String getName() {
       return myName;
     }
-
-    @Override
-    public Abstract.ReferableSourceNode getReferent() {
-      return myReferent;
-    }
   }
 
-  public static class ConstructorPattern extends Pattern implements Abstract.ConstructorPattern {
+  public static class ConstructorPattern extends Pattern implements Abstract.ConstructorPattern, PatternContainer {
     private final String myConstructorName;
     private Abstract.Constructor myConstructor;
     private final List<Pattern> myArguments;
@@ -1551,7 +1568,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<Pattern> getArguments() {
+    public List<Pattern> getPatterns() {
       return myArguments;
     }
   }

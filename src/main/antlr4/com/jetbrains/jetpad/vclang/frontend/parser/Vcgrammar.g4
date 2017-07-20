@@ -1,9 +1,9 @@
 grammar Vcgrammar;
 
-statements : statement*;
+statements : statement* EOF;
 
-statement : definition                                                        # statDef
-          | nsCmd nsCmdRoot fieldAcc* (hidingOpt '(' name (',' name)* ')')?   # statCmd
+statement : definition                                                            # statDef
+          | nsCmd nsCmdRoot ('.' fieldAcc)* (hidingOpt '(' name (',' name)* ')')? # statCmd
           ;
 
 hidingOpt : '\\hiding'  # withHiding
@@ -16,7 +16,7 @@ definition  : '\\function' precedence name tele* (':' expr)? functionBody where?
             | '\\field' precedence name ':' expr                                                          # defAbstract
             | '\\implement' name '=>' expr                                                                # defImplement
             | isTruncated '\\data' precedence name tele* (':' expr)? dataBody                             # defData
-            | '\\class' ID tele* ('\\extends' expr (',' expr)*)? ('{' statements '}')? where?             # defClass
+            | '\\class' ID tele* ('\\extends' expr0 (',' expr0)*)? ('{' statement* '}')? where?           # defClass
             | '\\view' ID '\\on' expr '\\by' name '{' classViewField* '}'                                 # defClassView
             | defaultInst '\\instance' ID tele* '=>' expr                                                 # defInstance
             ;
@@ -31,7 +31,7 @@ dataBody : elim constructorClause*                      # dataClauses
 
 constructorClause : '|' pattern (',' pattern)* '=>' (constructor | '{' '|'? constructor ('|' constructor)* '}');
 
-elim : '\\with' | '=>' '\\elim' expr? (',' expr)*;
+elim : '\\with' | '=>' '\\elim' expr0 (',' expr0)*;
 
 isTruncated : '\\truncated' # truncated
             |               # notTruncated
@@ -43,7 +43,7 @@ defaultInst :             # noDefault
 
 classViewField : name ('=>' precedence name)? ;
 
-where : '\\where' ('{' statements '}' | statement);
+where : '\\where' ('{' statement* '}' | statement);
 
 nsCmd : '\\open'                        # openCmd
       | '\\export'                      # exportCmd
@@ -78,13 +78,15 @@ name  : ID                              # nameId
       | '(' BIN_OP ')'                  # nameBinOp
       ;
 
-expr  : (binOpLeft+ | ) binOpArg                            # binOp
+expr0 : binOpLeft* binOpArg;
+
+expr  : binOpLeft* maybeNew binOpArg implementStatements?   # binOp
       | <assoc=right> expr '->' expr                        # arr
       | '\\Pi' tele+ '->' expr                              # pi
       | '\\Sigma' tele+                                     # sigma
       | '\\lam' tele+ '=>' expr                             # lam
       | '\\let' '|'? letClause ('|' letClause)* '\\in' expr # let
-      | '\\case' expr (',' expr)* '\\with'? clauses         # case
+      | '\\case' expr0 (',' expr0)* '\\with'? '{' clause? ('|' clause)* '}' # case
       ;
 
 clauses : ('|' clause)*                 # clausesWithoutBraces
@@ -108,20 +110,20 @@ levelExpr : levelAtom                     # atomLevelExpr
           | '\\max' levelAtom levelAtom   # maxLevelExpr
           ;
 
-binOpArg : maybeNew atomFieldsAcc argument*       # binOpArgument
+binOpArg : atomFieldsAcc argument*                # binOpArgument
          | TRUNCATED_UNIVERSE levelAtom?          # truncatedUniverse
-         | UNIVERSE levelAtom? levelAtom?         # universe
+         | UNIVERSE (levelAtom levelAtom?)?       # universe
          | SET levelAtom?                         # setUniverse
          ;
 
-binOpLeft : binOpArg infix;
+binOpLeft : maybeNew binOpArg implementStatements? infix;
 
 maybeNew :                              # noNew
          | '\\new'                      # withNew
          ;
 
-fieldAcc : '.' name                     # classField
-         | '.' NUMBER                   # sigmaField
+fieldAcc : name                     # classField
+         | NUMBER                   # sigmaField
          ;
 
 infix : BIN_OP                      # infixBinOp
@@ -136,11 +138,11 @@ atom  : literal                         # atomLiteral
       | modulePath                      # atomModuleCall
       ;
 
-atomFieldsAcc : atom fieldAcc* implementStatements?;
+atomFieldsAcc : atom ('.' fieldAcc)*;
 
-implementStatements : '{' implementStatement* '}';
+implementStatements : '{' implementStatement? ('|' implementStatement)* '}';
 
-implementStatement : '|'? name '=>' expr;
+implementStatement : name '=>' expr;
 
 argument : atomFieldsAcc                # argumentExplicit
          | universeAtom                 # argumentUniverse
@@ -179,6 +181,6 @@ LINE_COMMENT : '--' ~[\r\n]* -> skip;
 COMMENT : '{-' .*? '-}' -> skip;
 fragment BIN_OP_CHAR : [~!@#$%^&*\-+=<>?/|.:];
 BIN_OP : BIN_OP_CHAR+;
-fragment ID_FRAGMENT : [a-zA-Z_] [a-zA-Z0-9_\']* | BIN_OP_CHAR+;
+fragment ID_FRAGMENT : [a-zA-Z_] [a-zA-Z0-9_']* | BIN_OP_CHAR+;
 ID : ID_FRAGMENT ('-' ID_FRAGMENT)*;
 ERROR_CHAR : .;

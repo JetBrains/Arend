@@ -87,9 +87,4 @@ public class ClassCallExpression extends DefCallExpression implements Type {
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitClassCall(this, params);
   }
-
-  @Override
-  public ClassCallExpression toClassCall() {
-    return this;
-  }
 }

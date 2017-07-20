@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
+import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
@@ -22,6 +23,7 @@ import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class PatternTypechecking {
   private final LocalErrorReporter myErrorReporter;
@@ -45,7 +47,7 @@ public class PatternTypechecking {
     }
   }
 
-  Pair<List<Pattern>, CheckTypeVisitor.Result> typecheckClause(Abstract.FunctionClause clause, List<? extends Abstract.Argument> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType, CheckTypeVisitor visitor) {
+  Pair<List<Pattern>, CheckTypeVisitor.Result> typecheckClause(Abstract.FunctionClause clause, List<? extends Abstract.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType, CheckTypeVisitor visitor) {
     // Typecheck patterns
     Pair<List<Pattern>, List<Expression>> result = typecheckPatterns(clause.getPatterns(), abstractParameters, parameters, elimParams, clause, visitor);
     if (result == null) {
@@ -73,7 +75,7 @@ public class PatternTypechecking {
     for (Map.Entry<Abstract.ReferableSourceNode, Binding> entry : myContext.entrySet()) {
       Expression expr = substitution.get(entry.getValue());
       if (expr != null) {
-        entry.setValue(expr.toReference().getBinding());
+        entry.setValue(expr.cast(ReferenceExpression.class).getBinding());
       }
     }
     expectedType = expectedType.subst(substitution);
@@ -88,7 +90,7 @@ public class PatternTypechecking {
     return tcResult == null ? null : new Pair<>(result.proj1, tcResult);
   }
 
-  public Pair<List<Pattern>, List<Expression>> typecheckPatterns(List<? extends Abstract.Pattern> patterns, List<? extends Abstract.Argument> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Abstract.SourceNode sourceNode, CheckTypeVisitor visitor) {
+  public Pair<List<Pattern>, List<Expression>> typecheckPatterns(List<? extends Abstract.Pattern> patterns, List<? extends Abstract.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Abstract.SourceNode sourceNode, CheckTypeVisitor visitor) {
     myContext = visitor.getContext();
     if (myFlags.contains(Flag.CONTEXT_FREE)) {
       myContext.clear();
@@ -127,18 +129,18 @@ public class PatternTypechecking {
       }
 
       if (!elimParams.isEmpty()) {
-        for (Abstract.Argument parameter : abstractParameters) {
-          if (parameter instanceof Abstract.TelescopeArgument) {
-            for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeArgument) parameter).getReferableList()) {
+        for (Abstract.Parameter parameter : abstractParameters) {
+          if (parameter instanceof Abstract.TelescopeParameter) {
+            for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeParameter) parameter).getReferableList()) {
               if (!elimParams.contains(link)) {
                 myContext.put(referable, ((BindingPattern) result.proj1.get(i)).getBinding());
               }
               link = link.getNext();
               i++;
             }
-          } else if (parameter instanceof Abstract.NameArgument) {
+          } else if (parameter instanceof Abstract.NameParameter) {
             if (!elimParams.contains(link)) {
-              myContext.put(((Abstract.NameArgument) parameter).getReferable(), ((BindingPattern) result.proj1.get(i)).getBinding());
+              myContext.put((Abstract.NameParameter) parameter, ((BindingPattern) result.proj1.get(i)).getBinding());
             }
             link = link.getNext();
             i++;
@@ -216,8 +218,8 @@ public class PatternTypechecking {
         result.add(new BindingPattern(parameters));
         if (exprs != null) {
           exprs.add(new ReferenceExpression(parameters));
-          if (pattern != null && ((Abstract.NamePattern) pattern).getReferent() != null) {
-            myContext.put(((Abstract.NamePattern) pattern).getReferent(), parameters);
+          if (pattern != null) {
+            myContext.put((Abstract.NamePattern) pattern, parameters);
           }
         }
         parameters = parameters.getNext();
@@ -225,23 +227,24 @@ public class PatternTypechecking {
       }
 
       Expression expr = parameters.getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF);
-      if (expr.toDataCall() == null) {
+      if (!expr.isInstance(DataCallExpression.class)) {
         myErrorReporter.report(new LocalTypeCheckingError("Expected a data type, actual type: " + expr, pattern));
         return null;
       }
-      if (!myFlags.contains(Flag.ALLOW_INTERVAL) && expr.toDataCall().getDefinition() == Prelude.INTERVAL) {
+      DataCallExpression dataCall = expr.cast(DataCallExpression.class);
+      if (!myFlags.contains(Flag.ALLOW_INTERVAL) && dataCall.getDefinition() == Prelude.INTERVAL) {
         myErrorReporter.report(new LocalTypeCheckingError("Pattern matching on the interval is not allowed here", pattern));
         return null;
       }
 
       if (pattern instanceof Abstract.EmptyPattern) {
-        List<ConCallExpression> conCalls = expr.toDataCall().getMatchedConstructors();
+        List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
         if (conCalls == null) {
           myErrorReporter.report(new LocalTypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", pattern));
           return null;
         }
         if (!conCalls.isEmpty()) {
-          myErrorReporter.report(new LocalTypeCheckingError("Data type " + expr + " is not empty, available constructors: " + conCalls, pattern));
+          myErrorReporter.report(new LocalTypeCheckingError("Data type " + expr + " is not empty, available constructors: " + conCalls.stream().map(ConCallExpression::getDefinition).collect(Collectors.toList()), pattern));
           return null;
         }
         result.add(EmptyPattern.INSTANCE);
@@ -255,9 +258,9 @@ public class PatternTypechecking {
       }
       Abstract.ConstructorPattern conPattern = (Abstract.ConstructorPattern) pattern;
 
-      Constructor constructor = expr.toDataCall().getDefinition().getConstructor(conPattern.getConstructor());
+      Constructor constructor = dataCall.getDefinition().getConstructor(conPattern.getConstructor());
       List<ConCallExpression> conCalls = new ArrayList<>(1);
-      if (constructor == null || !expr.toDataCall().getMatchedConCall(constructor, conCalls) || conCalls.isEmpty() ) {
+      if (constructor == null || !dataCall.getMatchedConCall(constructor, conCalls) || conCalls.isEmpty() ) {
         myErrorReporter.report(new LocalTypeCheckingError("'" + conPattern.getConstructor() + "' is not a constructor of data type '" + expr + "'", pattern));
         return null;
       }
@@ -272,7 +275,7 @@ public class PatternTypechecking {
       for (DependentLink link = constructor.getDataTypeParameters(); link.hasNext(); link = link.getNext(), i++) {
         substitution.add(link, conCall.getDataTypeArguments().get(i));
       }
-      Pair<List<Pattern>, List<Expression>> conResult = doTypechecking(conPattern.getArguments(), DependentLink.Helper.subst(constructor.getParameters(), substitution, new StdLevelSubstitution(conCall.getSortArgument())), conPattern, false);
+      Pair<List<Pattern>, List<Expression>> conResult = doTypechecking(conPattern.getPatterns(), DependentLink.Helper.subst(constructor.getParameters(), substitution, new StdLevelSubstitution(conCall.getSortArgument())), conPattern, false);
       if (conResult == null) {
         return null;
       }

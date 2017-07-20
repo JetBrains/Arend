@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.typeclass.scope;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateInstanceError;
-import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.util.Pair;
 

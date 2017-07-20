@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.error;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 
 public abstract class Error {
   public final Abstract.SourceNode cause;
@@ -37,10 +36,5 @@ public abstract class Error {
   @Override
   public final String toString() {
     return "ERROR: " + getMessage();
-  }
-
-  @Deprecated
-  public static String ioError(IOException e) {
-    return "I/O error: " + e.getMessage();
   }
 }

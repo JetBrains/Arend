@@ -31,13 +31,13 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, V
         if (expr.getReferent() instanceof Abstract.ClassViewField) {
           myDependencies.addAll(myInstanceProvider.getInstances(expr, 0));
         } else {
-          Collection<? extends Abstract.Argument> arguments = Abstract.getArguments((Abstract.Definition) expr.getReferent());
+          Collection<? extends Abstract.Parameter> arguments = Abstract.getParameters((Abstract.Definition) expr.getReferent());
           if (arguments != null) {
             int i = 0;
-            for (Abstract.Argument arg : arguments) {
+            for (Abstract.Parameter arg : arguments) {
               myDependencies.addAll(myInstanceProvider.getInstances(expr, i));
-              if (arg instanceof Abstract.TelescopeArgument) {
-                i += ((Abstract.TelescopeArgument) arg).getReferableList().size();
+              if (arg instanceof Abstract.TelescopeParameter) {
+                i += ((Abstract.TelescopeParameter) arg).getReferableList().size();
               } else {
                 i++;
               }
@@ -67,22 +67,22 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, V
 
   @Override
   public Void visitLam(Abstract.LamExpression expr, Void ignore) {
-    visitArguments(expr.getArguments());
+    visitParameters(expr.getParameters());
     expr.getBody().accept(this, null);
     return null;
   }
 
-  private void visitArguments(List<? extends Abstract.Argument> args) {
-    for (Abstract.Argument arg : args) {
-      if (arg instanceof Abstract.TypeArgument) {
-        ((Abstract.TypeArgument) arg).getType().accept(this, null);
+  private void visitParameters(List<? extends Abstract.Parameter> args) {
+    for (Abstract.Parameter arg : args) {
+      if (arg instanceof Abstract.TypeParameter) {
+        ((Abstract.TypeParameter) arg).getType().accept(this, null);
       }
     }
   }
 
   @Override
   public Void visitPi(Abstract.PiExpression expr, Void ignore) {
-    visitArguments(expr.getArguments());
+    visitParameters(expr.getParameters());
     expr.getCodomain().accept(this, null);
     return null;
   }
@@ -112,7 +112,7 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, V
 
   @Override
   public Void visitSigma(Abstract.SigmaExpression expr, Void ignore) {
-    visitArguments(expr.getArguments());
+    visitParameters(expr.getParameters());
     return null;
   }
 
@@ -170,7 +170,7 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, V
   @Override
   public Void visitLet(Abstract.LetExpression letExpression, Void ignore) {
     for (Abstract.LetClause clause : letExpression.getClauses()) {
-      visitArguments(clause.getArguments());
+      visitParameters(clause.getParameters());
       if (clause.getResultType() != null) {
         clause.getResultType().accept(this, null);
       }

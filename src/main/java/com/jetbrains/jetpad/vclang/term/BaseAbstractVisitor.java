@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term;
 
-public class BaseAbstractVisitor<P, R> implements AbstractDefinitionVisitor<P, R>, AbstractStatementVisitor<P, R> {
+public class BaseAbstractVisitor<P, R> implements AbstractDefinitionVisitor<P, R> {
   @Override
   public R visitFunction(Abstract.FunctionDefinition def, P params) {
     return null;
@@ -43,16 +43,6 @@ public class BaseAbstractVisitor<P, R> implements AbstractDefinitionVisitor<P, R
 
   @Override
   public R visitClassViewInstance(Abstract.ClassViewInstance def, P params) {
-    return null;
-  }
-
-  @Override
-  public R visitDefine(Abstract.DefineStatement stat, P params) {
-    return null;
-  }
-
-  @Override
-  public R visitNamespaceCommand(Abstract.NamespaceCommandStatement stat, P params) {
     return null;
   }
 }

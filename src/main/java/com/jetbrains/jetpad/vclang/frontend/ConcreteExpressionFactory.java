@@ -15,12 +15,12 @@ public class ConcreteExpressionFactory {
   };
   public static final Concrete.Position POSITION = new Concrete.Position(SOURCE_ID, 0, 0);
 
-  public static Concrete.LamExpression cLam(List<Concrete.Argument> arguments, Concrete.Expression body) {
+  public static Concrete.LamExpression cLam(List<Concrete.Parameter> arguments, Concrete.Expression body) {
     return new Concrete.LamExpression(POSITION, arguments, body);
   }
 
-  public static Concrete.LamExpression cLam(Concrete.ReferableSourceNode var, Concrete.Expression body) {
-    return cLam(cargs(cName(var)), body);
+  public static Concrete.LamExpression cLam(Concrete.NameParameter var, Concrete.Expression body) {
+    return cLam(cargs(var), body);
   }
 
   public static Concrete.ReferenceExpression cVar(Abstract.ReferableSourceNode referable) {
@@ -47,13 +47,13 @@ public class ConcreteExpressionFactory {
 
   public static Concrete.Expression cApps(Concrete.Expression expr, Concrete.Expression... exprs) {
     for (Concrete.Expression expr1 : exprs) {
-      expr = new Concrete.AppExpression(POSITION, expr, new Concrete.ArgumentExpression(expr1, true, false));
+      expr = new Concrete.AppExpression(POSITION, expr, new Concrete.Argument(expr1, true));
     }
     return expr;
   }
 
   public static Concrete.Expression cApps(Concrete.Expression expr, Concrete.Expression arg, boolean explicit) {
-    return new Concrete.AppExpression(POSITION, expr, new Concrete.ArgumentExpression(arg, explicit, false));
+    return new Concrete.AppExpression(POSITION, expr, new Concrete.Argument(arg, explicit));
   }
 
   public static Concrete.ReferenceExpression cNat() {
@@ -80,11 +80,11 @@ public class ConcreteExpressionFactory {
     return new Concrete.LetClause(POSITION, name, cargs(), null, term);
   }
 
-  public static Concrete.LetClause clet(String name, List<Concrete.Argument> args, Concrete.Expression term) {
+  public static Concrete.LetClause clet(String name, List<Concrete.Parameter> args, Concrete.Expression term) {
     return new Concrete.LetClause(POSITION, name, args, null, term);
   }
 
-  public static Concrete.LetClause clet(String name, List<Concrete.Argument> args, Concrete.Expression resultType, Concrete.Expression term) {
+  public static Concrete.LetClause clet(String name, List<Concrete.Parameter> args, Concrete.Expression resultType, Concrete.Expression term) {
     return new Concrete.LetClause(POSITION, name, args, resultType, term);
   }
 
@@ -92,55 +92,55 @@ public class ConcreteExpressionFactory {
     return new Concrete.LocalVariable(POSITION, name);
   }
 
-  public static List<Concrete.ReferableSourceNode> cvars(Concrete.ReferableSourceNode... vars) {
+  public static List<Abstract.ReferableSourceNode> cvars(Abstract.ReferableSourceNode... vars) {
     return Arrays.asList(vars);
   }
 
-  public static List<Concrete.Argument> cargs(Concrete.Argument... args) {
+  public static List<Concrete.Parameter> cargs(Concrete.Parameter... args) {
     return Arrays.asList(args);
   }
 
-  public static List<Concrete.TypeArgument> ctypeArgs(Concrete.TypeArgument... args) {
+  public static List<Concrete.TypeParameter> ctypeArgs(Concrete.TypeParameter... args) {
     return Arrays.asList(args);
   }
 
-  public static Concrete.NameArgument cName(Concrete.ReferableSourceNode referable) {
-    return new Concrete.NameArgument(POSITION, true, referable);
+  public static Concrete.NameParameter cName(String name) {
+    return new Concrete.NameParameter(POSITION, true, name);
   }
 
-  public static Concrete.NameArgument cName(boolean explicit, Abstract.ReferableSourceNode referable) {
-    return new Concrete.NameArgument(POSITION, explicit, referable);
+  public static Concrete.NameParameter cName(boolean explicit, String name) {
+    return new Concrete.NameParameter(POSITION, explicit, name);
   }
 
-  public static Concrete.TypeArgument cTypeArg(boolean explicit, Concrete.Expression type) {
-    return new Concrete.TypeArgument(explicit, type);
+  public static Concrete.TypeParameter cTypeArg(boolean explicit, Concrete.Expression type) {
+    return new Concrete.TypeParameter(explicit, type);
   }
 
-  public static Concrete.TypeArgument cTypeArg(Concrete.Expression type) {
-    return new Concrete.TypeArgument(true, type);
+  public static Concrete.TypeParameter cTypeArg(Concrete.Expression type) {
+    return new Concrete.TypeParameter(true, type);
   }
 
-  public static Concrete.TelescopeArgument cTele(List<Concrete.ReferableSourceNode> referableList, Concrete.Expression type) {
-    return new Concrete.TelescopeArgument(POSITION, true, referableList, type);
+  public static Concrete.TelescopeParameter cTele(List<Abstract.ReferableSourceNode> referableList, Concrete.Expression type) {
+    return new Concrete.TelescopeParameter(POSITION, true, referableList, type);
   }
 
-  public static Concrete.TelescopeArgument cTele(boolean explicit, List<? extends Abstract.ReferableSourceNode> referableList, Concrete.Expression type) {
-    return new Concrete.TelescopeArgument(POSITION, explicit, referableList, type);
+  public static Concrete.TelescopeParameter cTele(boolean explicit, List<? extends Abstract.ReferableSourceNode> referableList, Concrete.Expression type) {
+    return new Concrete.TelescopeParameter(POSITION, explicit, referableList, type);
   }
 
   public static Concrete.PiExpression cPi(Concrete.Expression domain, Concrete.Expression codomain) {
     return new Concrete.PiExpression(POSITION, ctypeArgs(cTypeArg(domain)), codomain);
   }
 
-  public static Concrete.Expression cPi(List<Concrete.TypeArgument> arguments, Concrete.Expression codomain) {
+  public static Concrete.Expression cPi(List<Concrete.TypeParameter> arguments, Concrete.Expression codomain) {
     return arguments.isEmpty() ? codomain : new Concrete.PiExpression(POSITION, arguments, codomain);
   }
 
-  public static Concrete.PiExpression cPi(boolean explicit, Concrete.ReferableSourceNode var, Concrete.Expression domain, Concrete.Expression codomain) {
+  public static Concrete.PiExpression cPi(boolean explicit, Abstract.ReferableSourceNode var, Concrete.Expression domain, Concrete.Expression codomain) {
     return (Concrete.PiExpression) cPi(ctypeArgs(cTele(explicit, cvars(var), domain)), codomain);
   }
 
-  public static Concrete.PiExpression cPi(Concrete.ReferableSourceNode var, Concrete.Expression domain, Concrete.Expression codomain) {
+  public static Concrete.PiExpression cPi(Abstract.ReferableSourceNode var, Concrete.Expression domain, Concrete.Expression codomain) {
     return cPi(true, var, domain, codomain);
   }
 
@@ -156,7 +156,7 @@ public class ConcreteExpressionFactory {
     return new Concrete.TupleExpression(POSITION, fields);
   }
 
-  public static Concrete.SigmaExpression cSigma(List<Concrete.TypeArgument> args) {
+  public static Concrete.SigmaExpression cSigma(List<Concrete.TypeParameter> args) {
     return new Concrete.SigmaExpression(POSITION, args);
   }
 
@@ -192,8 +192,8 @@ public class ConcreteExpressionFactory {
     return new Concrete.ConstructorPattern(POSITION, isExplicit, name, patternArgs);
   }
 
-  public static Concrete.NamePattern cNamePattern(boolean isExplicit, Abstract.ReferableSourceNode referable) {
-    return new Concrete.NamePattern(POSITION, isExplicit, referable);
+  public static Concrete.NamePattern cNamePattern(boolean isExplicit, String name) {
+    return new Concrete.NamePattern(POSITION, isExplicit, name);
   }
 
   public static Concrete.EmptyPattern cEmptyPattern(boolean isExplicit) {

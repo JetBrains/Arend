@@ -40,7 +40,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     if (PRELUDE_TYPECHECKER_STATE == null) {
       ListErrorReporter internalErrorReporter = new ListErrorReporter();
       PRELUDE_TYPECHECKER_STATE = new SimpleTypecheckerState();
-      new Typechecking(PRELUDE_TYPECHECKER_STATE, staticNsProvider, dynamicNsProvider, internalErrorReporter, new Prelude.UpdatePreludeReporter(PRELUDE_TYPECHECKER_STATE), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
+      new Typechecking(PRELUDE_TYPECHECKER_STATE, staticNsProvider, dynamicNsProvider, Concrete.NamespaceCommandStatement.GET, internalErrorReporter, new Prelude.UpdatePreludeReporter(PRELUDE_TYPECHECKER_STATE), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
       //assertThat(internalErrorReporter.getErrorList(), is(empty()));  // does not type-check by design
     }
 
@@ -94,7 +94,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   private Definition typeCheckDef(Concrete.Definition definition, int errors) {
-    new Typechecking(state, staticNsProvider, dynamicNsProvider, errorReporter, new TypecheckedReporter.Dummy(), new DependencyListener() {}).typecheckDefinitions(Collections.singletonList(definition));
+    new Typechecking(state, staticNsProvider, dynamicNsProvider, Concrete.NamespaceCommandStatement.GET, errorReporter, new TypecheckedReporter.Dummy(), new DependencyListener() {}).typecheckDefinitions(Collections.singletonList(definition));
     assertThat(errorList, containsErrors(errors));
     return state.getTypechecked(definition);
   }
@@ -109,7 +109,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   private TypecheckerState typeCheckClass(Concrete.ClassDefinition classDefinition, int errors) {
-    new Typechecking(state, staticNsProvider, dynamicNsProvider, localErrorReporter, new TypecheckedReporter.Dummy(), new DependencyListener() {}).typecheckModules(Collections.singletonList(classDefinition));
+    new Typechecking(state, staticNsProvider, dynamicNsProvider, Concrete.NamespaceCommandStatement.GET, localErrorReporter, new TypecheckedReporter.Dummy(), new DependencyListener() {}).typecheckModules(Collections.singletonList(classDefinition));
     assertThat(errorList, containsErrors(errors));
     return state;
   }

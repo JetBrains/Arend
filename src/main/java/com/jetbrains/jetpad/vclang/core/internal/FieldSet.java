@@ -3,10 +3,7 @@ package com.jetbrains.jetpad.vclang.core.internal;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
-import com.jetbrains.jetpad.vclang.core.expr.ClassCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
-import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
+import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
@@ -101,7 +98,7 @@ public class FieldSet implements ReadonlyFieldSet {
     if (myImplemented.containsKey(field)) return;
 
     Expression baseType = field.getBaseType(thisClass.getSortArgument());
-    if (baseType.toError() != null) return;
+    if (baseType.isInstance(ErrorExpression.class)) return;
 
     DependentLink thisParam = ExpressionFactory.parameter("\\this", thisClass);
     Expression expr = baseType.subst(field.getThisParameter(), new ReferenceExpression(thisParam)).normalize(NormalizeVisitor.Mode.WHNF);

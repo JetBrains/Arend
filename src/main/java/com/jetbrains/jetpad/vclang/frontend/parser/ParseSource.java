@@ -9,7 +9,7 @@ import com.jetbrains.jetpad.vclang.frontend.namespace.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotNameResolver;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import org.antlr.v4.runtime.*;
 
 import javax.annotation.Nullable;
@@ -61,7 +61,7 @@ public abstract class ParseSource {
       moduleRegistry.registerModule(mySourceId.getModulePath(), result);
     }
     if (nameResolver != null) {
-      OneshotNameResolver.visitModule(result, globalScope, nameResolver, new ConcreteResolveListener(compositeErrorReporter));
+      OneshotNameResolver.visitModule(result, globalScope, nameResolver, Concrete.NamespaceCommandStatement.GET, new ConcreteResolveListener(), compositeErrorReporter);
     }
     if (countingErrorReporter.getErrorsNumber() > 0) {
       if (moduleRegistry != null) {

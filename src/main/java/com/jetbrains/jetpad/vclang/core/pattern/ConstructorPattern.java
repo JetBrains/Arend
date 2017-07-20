@@ -65,7 +65,7 @@ public class ConstructorPattern implements Pattern {
   @Override
   public MatchResult match(Expression expression, List<Expression> result) {
     expression = expression.normalize(NormalizeVisitor.Mode.WHNF);
-    ConCallExpression conCall = expression.toConCall();
+    ConCallExpression conCall = expression.checkedCast(ConCallExpression.class);
     if (conCall == null) {
       return MatchResult.MAYBE;
     }

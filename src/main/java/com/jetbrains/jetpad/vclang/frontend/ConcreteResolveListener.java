@@ -1,18 +1,14 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.frontend.resolving.OpenCommand;
 import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.Collections;
-import java.util.List;
 
 public class ConcreteResolveListener implements ResolveListener {
-  private final ErrorReporter myErrorReporter;
 
-  public ConcreteResolveListener(ErrorReporter errorReporter) {
-    myErrorReporter = errorReporter;
+  public ConcreteResolveListener() {
   }
 
   @Override
@@ -26,8 +22,8 @@ public class ConcreteResolveListener implements ResolveListener {
   }
 
   @Override
-  public void nsCmdResolved(Abstract.NamespaceCommandStatement nsCmdStatement, Abstract.Definition definition) {
-    ((Concrete.NamespaceCommandStatement) nsCmdStatement).setResolvedClass(definition);
+  public void openCmdResolved(OpenCommand openCmd, Abstract.Definition definition) {
+    ((Concrete.NamespaceCommandStatement) openCmd).setResolvedClass(definition);
   }
 
   @Override
@@ -70,25 +66,17 @@ public class ConcreteResolveListener implements ResolveListener {
     ((Concrete.BinOpSequenceExpression) binOpExpr).replace(expression);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
-  public void replaceWithConstructor(List<? extends Abstract.Pattern> patterns, int index, Abstract.Constructor constructor) {
-    Concrete.Pattern pattern = ((Concrete.Pattern) patterns.get(index));
-    ((List<Concrete.Pattern>) patterns).set(index, new Concrete.ConstructorPattern(pattern.getPosition(), pattern.isExplicit(), constructor, Collections.emptyList()));
-  }
-
-  @Override
-  public void replaceWithConstructor(Abstract.FunctionClause clause, int index, Abstract.Constructor constructor) {
-    ((Concrete.FunctionClause) clause).replaceWithConstructor(index, constructor);
+  public void replaceWithConstructor(Abstract.PatternContainer container, int index, Abstract.Constructor constructor) {
+    Concrete.PatternContainer concreteContainer = (Concrete.PatternContainer) container;
+    Concrete.Pattern old = concreteContainer.getPatterns().get(index);
+    Concrete.Pattern newPattern = new Concrete.ConstructorPattern(old.getPosition(), constructor, Collections.emptyList());
+    newPattern.setExplicit(old.isExplicit());
+    concreteContainer.getPatterns().set(index, newPattern);
   }
 
   @Override
   public void patternResolved(Abstract.ConstructorPattern pattern, Abstract.Constructor definition) {
     ((Concrete.ConstructorPattern) pattern).setConstructor(definition);
-  }
-
-  @Override
-  public void report(GeneralError error) {
-    myErrorReporter.report(error);
   }
 }

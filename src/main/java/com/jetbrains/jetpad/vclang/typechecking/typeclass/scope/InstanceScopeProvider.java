@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass.scope;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
-import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.naming.scope.primitive.EmptyScope;
+import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.Collection;
@@ -17,18 +17,16 @@ public class InstanceScopeProvider {
     myErrorReporter = errorReporter;
   }
 
-  private static void forStatements(Collection<? extends Abstract.Statement> statements, SimpleInstanceScope ns) {
-    for (Abstract.Statement statement : statements) {
-      if (!(statement instanceof Abstract.DefineStatement)) continue;
-      Abstract.DefineStatement defst = (Abstract.DefineStatement) statement;
-      if (defst.getDefinition() instanceof Abstract.ClassViewInstance) {
-        ns.addInstance((Abstract.ClassViewInstance) defst.getDefinition());
+  private static void forDefinitions(Collection<? extends Abstract.Definition> definitions, SimpleInstanceScope ns) {
+    for (Abstract.Definition definition : definitions) {
+      if (definition instanceof Abstract.ClassViewInstance) {
+        ns.addInstance((Abstract.ClassViewInstance) definition);
       }
     }
   }
 
   public Scope forDefinition(Abstract.Definition definition) {
-    if (!(definition instanceof Abstract.StatementCollection)) {
+    if (!(definition instanceof Abstract.DefinitionCollection)) {
       return new EmptyScope();
     }
 
@@ -36,7 +34,7 @@ public class InstanceScopeProvider {
     if (ns != null) return ns;
 
     SimpleInstanceScope sns = new SimpleInstanceScope(myErrorReporter);
-    forStatements(((Abstract.StatementCollection) definition).getGlobalStatements(), sns);
+    forDefinitions(((Abstract.DefinitionCollection) definition).getGlobalDefinitions(), sns);
     cache.put(definition, sns);
     return sns;
   }

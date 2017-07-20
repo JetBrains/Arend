@@ -1,8 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
-import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
@@ -45,22 +43,18 @@ public class ConCallExpression extends DefCallExpression {
     return visitor.visitConCall(this, params);
   }
 
-  @Override
-  public ConCallExpression toConCall() {
-    return this;
-  }
-
   public DataCallExpression getDataTypeExpression() {
     return getDefinition().getDataTypeExpression(mySortArgument, myDataTypeArguments);
   }
 
   @Override
+  public boolean isWHNF() {
+    //noinspection SimplifiableConditionalExpression
+    return getDefinition().getBody() != null ? getDefinition().getBody().isWHNF(myArguments) : true;
+  }
+
+  @Override
   public Expression getStuckExpression() {
-    if ((getDefinition().getBody() instanceof BranchElimTree)) {
-      // TODO: What if we stuck on another argument?
-      return myArguments.get(DependentLink.Helper.size(((BranchElimTree) getDefinition().getBody()).getParameters())).getStuckExpression();
-    } else {
-      return null;
-    }
+    return getDefinition().getBody() != null ? getDefinition().getBody().getStuckExpression(myArguments, this) : null;
   }
 }

@@ -40,8 +40,8 @@ public class FieldCallExpression extends DefCallExpression {
   }
 
   @Override
-  public FieldCallExpression toFieldCall() {
-    return this;
+  public boolean isWHNF() {
+    return myExpression.isWHNF() && !myExpression.isInstance(NewExpression.class);
   }
 
   @Override

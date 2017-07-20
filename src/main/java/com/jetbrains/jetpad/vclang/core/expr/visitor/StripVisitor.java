@@ -64,8 +64,8 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    if (expr.getExpression().toNew() != null) {
-      return expr.getExpression().toNew().getExpression().getFieldSet().getImplementation(expr.getDefinition()).term.accept(this, null);
+    if (expr.getExpression().isInstance(NewExpression.class)) {
+      return expr.getExpression().cast(NewExpression.class).getExpression().getFieldSet().getImplementation(expr.getDefinition()).term.accept(this, null);
     } else {
       return ExpressionFactory.FieldCall(expr.getDefinition(), expr.getExpression().accept(this, null));
     }
@@ -108,7 +108,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
     }
   }
 
-  private void visitArguments(DependentLink link) {
+  private void visitParameters(DependentLink link) {
     for (; link.hasNext(); link = link.getNext()) {
       DependentLink link1 = link.getNextTyped(null);
       link1.setType(link1.getType().strip(myBounds, myErrorReporter));
@@ -120,7 +120,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
     }
   }
 
-  private void freeArguments(DependentLink link) {
+  private void freeParameters(DependentLink link) {
     for (; link.hasNext(); link = link.getNext()) {
       myBounds.remove(link);
     }
@@ -128,24 +128,24 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public LamExpression visitLam(LamExpression expr, Void params) {
-    visitArguments(expr.getParameters());
+    visitParameters(expr.getParameters());
     LamExpression result = new LamExpression(expr.getResultSort(), expr.getParameters(), expr.getBody().accept(this, null));
-    freeArguments(expr.getParameters());
+    freeParameters(expr.getParameters());
     return result;
   }
 
   @Override
   public PiExpression visitPi(PiExpression expr, Void params) {
-    visitArguments(expr.getParameters());
+    visitParameters(expr.getParameters());
     PiExpression result = new PiExpression(expr.getResultSort(), expr.getParameters(), expr.getCodomain().accept(this, null));
-    freeArguments(expr.getParameters());
+    freeParameters(expr.getParameters());
     return result;
   }
 
   @Override
   public SigmaExpression visitSigma(SigmaExpression expr, Void params) {
-    visitArguments(expr.getParameters());
-    freeArguments(expr.getParameters());
+    visitParameters(expr.getParameters());
+    freeParameters(expr.getParameters());
     return expr;
   }
 
@@ -196,14 +196,14 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
     for (int i = 0; i < expr.getArguments().size(); i++) {
       expr.getArguments().set(i, expr.getArguments().get(i).accept(this, null));
     }
-    visitArguments(expr.getParameters());
+    visitParameters(expr.getParameters());
     Expression type = expr.getResultType().accept(this, null);
-    freeArguments(expr.getParameters());
+    freeParameters(expr.getParameters());
     return new CaseExpression(expr.getParameters(), type, elimTree, expr.getArguments());
   }
 
   private ElimTree stripElimTree(ElimTree elimTree) {
-    visitArguments(elimTree.getParameters());
+    visitParameters(elimTree.getParameters());
     if (elimTree instanceof LeafElimTree) {
       elimTree = new LeafElimTree(elimTree.getParameters(), ((LeafElimTree) elimTree).getExpression().accept(this, null));
     } else {
@@ -213,7 +213,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
       }
       elimTree = new BranchElimTree(elimTree.getParameters(), children);
     }
-    freeArguments(elimTree.getParameters());
+    freeParameters(elimTree.getParameters());
     return elimTree;
   }
 

@@ -24,14 +24,14 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   public Expression visitApp(AppExpression expr, Mode mode) {
     List<Expression> args = new ArrayList<>();
     Expression function = expr;
-    while (function.toApp() != null) {
-      args.add(function.toApp().getArgument());
-      function = function.toApp().getFunction().normalize(Mode.WHNF);
+    while (function.isInstance(AppExpression.class)) {
+      args.add(function.cast(AppExpression.class).getArgument());
+      function = function.cast(AppExpression.class).getFunction().normalize(Mode.WHNF);
     }
     Collections.reverse(args);
 
-    if (function.toLam() != null) {
-      return normalizeLam(function.toLam(), args).accept(this, mode);
+    if (function.isInstance(LamExpression.class)) {
+      return normalizeLam(function.cast(LamExpression.class), args).accept(this, mode);
     }
 
     if (mode == Mode.NF) {
@@ -126,8 +126,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       if (!normExpr.findBinding(binding)) {
         result = expr.getDefCallArguments().get(1);
       } else {
-        if (normExpr.toFunCall() != null && normExpr.toFunCall().getDefinition() == Prelude.ISO) {
-          List<? extends Expression> isoArgs = normExpr.toFunCall().getDefCallArguments();
+        FunCallExpression funCall = normExpr.checkedCast(FunCallExpression.class);
+        if (funCall != null && funCall.getDefinition() == Prelude.ISO) {
+          List<? extends Expression> isoArgs = funCall.getDefCallArguments();
           boolean noFreeVar = true;
           for (int i = 0; i < isoArgs.size() - 1; i++) {
             if (isoArgs.get(i).findBinding(binding)) {
@@ -136,7 +137,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
             }
           }
           if (noFreeVar) {
-            ConCallExpression normedPtCon = expr.getDefCallArguments().get(2).normalize(NormalizeVisitor.Mode.NF).toConCall();
+            ConCallExpression normedPtCon = expr.getDefCallArguments().get(2).normalize(NormalizeVisitor.Mode.NF).checkedCast(ConCallExpression.class);
             if (normedPtCon != null && normedPtCon.getDefinition() == Prelude.RIGHT) {
               result = new AppExpression(isoArgs.get(2), expr.getDefCallArguments().get(1));
             }
@@ -156,7 +157,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       int i0 = expr.getDefCallArguments().size() - elim.getCases().size();
       for (int i = i0; i < expr.getDefCallArguments().size(); i++) {
         Expression arg = expr.getDefCallArguments().get(i).accept(this, Mode.WHNF);
-        if (arg.toConCall() != null) {
+        ConCallExpression conCall = arg.checkedCast(ConCallExpression.class);
+        if (conCall != null) {
           ExprSubstitution substitution = getDataTypeArgumentsSubstitution(expr);
           DependentLink link = elim.getParameters();
           for (int j = 0; j < expr.getDefCallArguments().size(); j++) {
@@ -167,9 +169,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
           }
 
           Expression result;
-          if (arg.toConCall().getDefinition() == Prelude.LEFT) {
+          if (conCall.getDefinition() == Prelude.LEFT) {
             result = elim.getCases().get(i - i0).proj1;
-          } else if (arg.toConCall().getDefinition() == Prelude.RIGHT) {
+          } else if (conCall.getDefinition() == Prelude.RIGHT) {
             result = elim.getCases().get(i - i0).proj2;
           } else {
             throw new IllegalStateException();
@@ -210,15 +212,16 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
 
       Expression argument = stack.peek().accept(this, Mode.WHNF);
-      elimTree = ((BranchElimTree) elimTree).getChild(argument.toConCall() == null ? null : argument.toConCall().getDefinition());
+      ConCallExpression conCall = argument.checkedCast(ConCallExpression.class);
+      elimTree = ((BranchElimTree) elimTree).getChild(conCall == null ? null : conCall.getDefinition());
       if (elimTree == null) {
         return null;
       }
 
-      if (argument.toConCall() != null) {
+      if (conCall != null) {
         stack.pop();
-        for (int i = argument.toConCall().getDefCallArguments().size() - 1; i >= 0; i--) {
-          stack.push(argument.toConCall().getDefCallArguments().get(i));
+        for (int i = conCall.getDefCallArguments().size() - 1; i >= 0; i--) {
+          stack.push(conCall.getDefCallArguments().get(i));
         }
       }
     }
@@ -242,15 +245,16 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
 
       Expression argument = stack.peek().accept(this, Mode.WHNF);
-      elimTree = ((BranchElimTree) elimTree).getChild(argument.toConCall() == null ? null : argument.toConCall().getDefinition());
+      ConCallExpression conCall = argument.checkedCast(ConCallExpression.class);
+      elimTree = ((BranchElimTree) elimTree).getChild(conCall == null ? null : conCall.getDefinition());
       if (elimTree == null) {
         return false;
       }
 
-      if (argument.toConCall() != null) {
+      if (conCall != null) {
         stack.pop();
-        for (int i = argument.toConCall().getDefCallArguments().size() - 1; i >= 0; i--) {
-          stack.push(argument.toConCall().getDefCallArguments().get(i));
+        for (int i = conCall.getDefCallArguments().size() - 1; i >= 0; i--) {
+          stack.push(conCall.getDefCallArguments().get(i));
         }
       }
     }
@@ -276,8 +280,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
     if (expr instanceof FieldCallExpression) {
       Expression thisExpr = ((FieldCallExpression) expr).getExpression().normalize(Mode.WHNF);
-      if (thisExpr.toInferenceReference() == null || !(thisExpr.toInferenceReference().getVariable() instanceof TypeClassInferenceVariable)) {
-        ClassCallExpression classCall = thisExpr.getType().normalize(Mode.WHNF).toClassCall();
+      if (!thisExpr.isInstance(InferenceReferenceExpression.class) || !(thisExpr.cast(InferenceReferenceExpression.class).getVariable() instanceof TypeClassInferenceVariable)) {
+        ClassCallExpression classCall = thisExpr.getType().normalize(Mode.WHNF).checkedCast(ClassCallExpression.class);
         if (classCall != null) {
           FieldSet.Implementation impl = classCall.getFieldSet().getImplementation((ClassField) expr.getDefinition());
           if (impl != null) {
@@ -287,8 +291,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
     }
 
-    if (expr.toConCall() != null) {
-      return visitConstructorCall(expr.toConCall(), mode);
+    if (expr.isInstance(ConCallExpression.class)) {
+      return visitConstructorCall(expr.cast(ConCallExpression.class), mode);
     }
     if (expr.getDefinition() instanceof Function) {
       return visitCallableCall(expr, expr.getSortArgument().toLevelSubstitution(), mode);
@@ -393,7 +397,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitProj(ProjExpression expr, Mode mode) {
-    TupleExpression exprNorm = expr.getExpression().normalize(Mode.WHNF).toTuple();
+    TupleExpression exprNorm = expr.getExpression().normalize(Mode.WHNF).checkedCast(TupleExpression.class);
     if (exprNorm != null) {
       return exprNorm.getFields().get(expr.getField()).accept(this, mode);
     } else {

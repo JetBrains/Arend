@@ -79,7 +79,7 @@ public class ElimTypechecking {
     return (ElimTree) typecheckElim(funClauses, sourceNode, null, parameters, Collections.emptyList(), resultClauses);
   }
 
-  public Body typecheckElim(List<? extends Abstract.FunctionClause> funClauses, Abstract.SourceNode sourceNode, List<? extends Abstract.Argument> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, List<Clause> resultClauses) {
+  public Body typecheckElim(List<? extends Abstract.FunctionClause> funClauses, Abstract.SourceNode sourceNode, List<? extends Abstract.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, List<Clause> resultClauses) {
     List<ExtClause> clauses = new ArrayList<>(funClauses.size());
     PatternTypechecking patternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), myFlags);
     myOK = true;
@@ -160,7 +160,7 @@ public class ElimTypechecking {
       if (elimParams.isEmpty()) {
         for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
           link = link.getNextTyped(null);
-          DataCallExpression dataCall = link.getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
+          DataCallExpression dataCall = link.getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DataCallExpression.class);
           if (dataCall != null) {
             List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
             if (conCalls != null && conCalls.isEmpty()) {
@@ -171,7 +171,7 @@ public class ElimTypechecking {
         }
       } else {
         for (DependentLink link : elimParams) {
-          DataCallExpression dataCall = link.getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
+          DataCallExpression dataCall = link.getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DataCallExpression.class);
           if (dataCall != null) {
             List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
             if (conCalls != null && conCalls.isEmpty()) {
@@ -227,7 +227,7 @@ public class ElimTypechecking {
           }
           for (; link.hasNext(); link = link.getNext()) {
             link = link.getNextTyped(null);
-            DataCallExpression dataCall = link.getTypeExpr().subst(substitution).normalize(NormalizeVisitor.Mode.WHNF).toDataCall();
+            DataCallExpression dataCall = link.getTypeExpr().subst(substitution).normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DataCallExpression.class);
             if (dataCall != null) {
               List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
               if (conCalls != null && conCalls.isEmpty()) {

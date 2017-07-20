@@ -79,14 +79,19 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
   }
 
   private static BaseCallMatrix.R isLess(Expression expr1, Expression expr2) {
-    if (expr2.toConCall() == null) {
+    if (!(expr2 instanceof ConCallExpression)) {
       return expr1.equals(expr2) ? BaseCallMatrix.R.Equal : BaseCallMatrix.R.Unknown;
     }
-    if (expr1.toConCall() != null && expr1.toConCall().getDefinition() == expr2.toConCall().getDefinition()) {
-      BaseCallMatrix.R ord = isLess(expr1.toConCall().getDefCallArguments(), expr2.toConCall().getDefCallArguments());
-      if (ord != BaseCallMatrix.R.Unknown) return ord;
+    ConCallExpression conCall2 = (ConCallExpression) expr2;
+
+    if (expr1 instanceof ConCallExpression) {
+      ConCallExpression conCall1 = (ConCallExpression) expr1;
+      if (conCall1.getDefinition() == conCall2.getDefinition()) {
+        BaseCallMatrix.R ord = isLess(conCall1.getDefCallArguments(), conCall2.getDefCallArguments());
+        if (ord != BaseCallMatrix.R.Unknown) return ord;
+      }
     }
-    for (Expression arg : expr2.toConCall().getDefCallArguments()) {
+    for (Expression arg : conCall2.getDefCallArguments()) {
       if (isLess(expr1, arg) != BaseCallMatrix.R.Unknown) return BaseCallMatrix.R.LessThan;
     }
     return BaseCallMatrix.R.Unknown;

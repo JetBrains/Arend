@@ -34,7 +34,6 @@ import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 public class NormalizationTest extends TypeCheckingTestCase {
   // \function (+) (x y : Nat) : Nat => elim x | zero => y | suc x' => suc (x' + y)
@@ -244,14 +243,14 @@ public class NormalizationTest extends TypeCheckingTestCase {
   public void normalizeCaseStuck() {
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("n", Nat()));
-    CheckTypeVisitor.Result result = typeCheckExpr(context, "\\case n | zero => zero | suc _ => zero", Nat());
+    CheckTypeVisitor.Result result = typeCheckExpr(context, "\\case n { zero => zero | suc _ => zero }", Nat());
     assertEquals(result.expression, result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeLetElimNoStuck() {
     // normalize (\let | x (y : N) : \oo-Type2 => \Type0 \in x zero) = \Type0
-    Concrete.ReferableSourceNode y = ref("y");
+    Concrete.LocalVariable y = ref("y");
     Concrete.LetClause x = clet("x", cargs(cTele(cvars(y), cNat())), cUniverseInf(2), cUniverseStd(0));
     CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(x), cApps(cVar(x), cZero())), null);
     assertEquals(Universe(new Level(0), new Level(LevelVariable.HVAR)), result.expression.normalize(NormalizeVisitor.Mode.NF));
@@ -420,10 +419,9 @@ public class NormalizationTest extends TypeCheckingTestCase {
         "\\function f (n : Nat) (x : Fin n) => fsuc $ x");
     FunctionDefinition f = (FunctionDefinition) result.getDefinition("f");
     Expression term = ((LeafElimTree) f.getBody()).getExpression().normalize(NormalizeVisitor.Mode.NF);
-    assertNotNull(term.toConCall());
-    assertEquals(result.getDefinition("fsuc"), term.toConCall().getDefinition());
-    assertEquals(1, term.toConCall().getDefCallArguments().size());
-    assertNotNull(term.toConCall().getDefCallArguments().get(0).toReference());
-    assertEquals(f.getParameters().getNext(), term.toConCall().getDefCallArguments().get(0).toReference().getBinding());
+    ConCallExpression conCall = term.cast(ConCallExpression.class);
+    assertEquals(result.getDefinition("fsuc"), conCall.getDefinition());
+    assertEquals(1, conCall.getDefCallArguments().size());
+    assertEquals(f.getParameters().getNext(), conCall.getDefCallArguments().get(0).cast(ReferenceExpression.class).getBinding());
   }
 }

@@ -18,7 +18,6 @@ import static com.jetbrains.jetpad.vclang.ExpressionFactory.Universe;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FieldCall;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Nat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 public class RecordsTest extends TypeCheckingTestCase {
   @Test
@@ -182,45 +181,29 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\function test (p : A) => p.y");
     FunctionDefinition testFun = (FunctionDefinition) result.getDefinition("test");
     Expression function = testFun.getResultType().normalize(NormalizeVisitor.Mode.WHNF);
-    assertEquals(Prelude.PATH, function.toDataCall().getDefinition());
-    List<? extends Expression> arguments = function.toDataCall().getDefCallArguments();
+    assertEquals(Prelude.PATH, function.cast(DataCallExpression.class).getDefinition());
+    List<? extends Expression> arguments = function.cast(DataCallExpression.class).getDefCallArguments();
     assertEquals(3, arguments.size());
 
-    DataDefinition Foo = (DataDefinition) result.getDefinition("A.Foo");
-    Constructor foo = Foo.getConstructor("foo");
+    Constructor foo = ((DataDefinition) result.getDefinition("A.Foo")).getConstructor("foo");
 
-    ConCallExpression arg2 = arguments.get(2).toLam().getBody().toConCall();
-    assertNotNull(arg2);
+    ConCallExpression arg2 = arguments.get(2).cast(LamExpression.class).getBody().cast(ConCallExpression.class);
     assertEquals(1, arg2.getDataTypeArguments().size());
     assertEquals(Ref(testFun.getParameters()), arg2.getDataTypeArguments().get(0));
     assertEquals(foo, arg2.getDefinition());
 
-    ConCallExpression arg1 = arguments.get(1).toLam().getBody().toConCall();
-    assertNotNull(arg1);
+    ConCallExpression arg1 = arguments.get(1).cast(LamExpression.class).getBody().cast(ConCallExpression.class);
     assertEquals(1, arg1.getDataTypeArguments().size());
     assertEquals(Ref(testFun.getParameters()), arg1.getDataTypeArguments().get(0));
     assertEquals(foo, arg1.getDefinition());
 
-    LamExpression arg0 = arguments.get(0).toLam();
-    assertNotNull(arg0);
-    PiExpression arg0Body = arg0.getBody().toPi();
-    assertNotNull(arg0Body);
-    Expression domFunction = arg0Body.getParameters().getTypeExpr();
-    assertEquals(Prelude.PATH, domFunction.toDataCall().getDefinition());
-    List<? extends Expression> domArguments = domFunction.toDataCall().getDefCallArguments();
+    Expression domFunction = arguments.get(0).cast(LamExpression.class).getBody().cast(PiExpression.class).getParameters().getTypeExpr();
+    assertEquals(Prelude.PATH, domFunction.cast(DataCallExpression.class).getDefinition());
+    List<? extends Expression> domArguments = domFunction.cast(DataCallExpression.class).getDefCallArguments();
     assertEquals(3, domArguments.size());
-
-    LamExpression domArg0 = domArguments.get(0).toLam();
-    assertNotNull(domArg0);
-    DefCallExpression domArg0Body = domArg0.getBody().toDefCall();
-    assertNotNull(domArg0Body);
-    assertEquals(Prelude.NAT, domArg0Body.getDefinition());
-
+    assertEquals(Prelude.NAT, domArguments.get(0).cast(LamExpression.class).getBody().cast(DefCallExpression.class).getDefinition());
     assertEquals(FieldCall((ClassField) result.getDefinition("A.x"), Ref(testFun.getParameters())), domArguments.get(1));
-
-    ConCallExpression domArg2 = domArguments.get(2).toConCall();
-    assertNotNull(domArg2);
-    assertEquals(Prelude.ZERO, domArg2.getDefinition());
+    assertEquals(Prelude.ZERO, domArguments.get(2).cast(ConCallExpression.class).getDefinition());
   }
 
   @Test
@@ -234,77 +217,50 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\function test (q : A) => q.y");
     FunctionDefinition testFun = (FunctionDefinition) result.getDefinition("test");
     Expression xCall = FieldCall((ClassField) result.getDefinition("A.x"), Ref(testFun.getParameters()));
-    PiExpression resultTypePi = testFun.getResultType().toPi();
-    assertNotNull(resultTypePi);
-    Expression function = resultTypePi.getParameters().getTypeExpr().normalize(NormalizeVisitor.Mode.NF);
-    assertEquals(Prelude.PATH, function.toDataCall().getDefinition());
-    List<? extends Expression> arguments = function.toDataCall().getDefCallArguments();
+    Expression function = testFun.getResultType().cast(PiExpression.class).getParameters().getTypeExpr().normalize(NormalizeVisitor.Mode.NF);
+    assertEquals(Prelude.PATH, function.cast(DataCallExpression.class).getDefinition());
+    List<? extends Expression> arguments = function.cast(DataCallExpression.class).getDefCallArguments();
     assertEquals(3, arguments.size());
 
     DataDefinition Foo = (DataDefinition) result.getDefinition("A.Foo");
     Constructor foo = Foo.getConstructor("foo");
 
-    ConCallExpression arg2Fun = arguments.get(2).toConCall();
-    assertNotNull(arg2Fun);
+    ConCallExpression arg2Fun = arguments.get(2).cast(ConCallExpression.class);
     assertEquals(2, arg2Fun.getDataTypeArguments().size());
     assertEquals(Ref(testFun.getParameters()), arg2Fun.getDataTypeArguments().get(0));
-    ConCallExpression expr1 = arg2Fun.getDataTypeArguments().get(1).toConCall();
-    assertNotNull(expr1);
+    ConCallExpression expr1 = arg2Fun.getDataTypeArguments().get(1).cast(ConCallExpression.class);
     assertEquals(Prelude.PATH_CON, expr1.getDefinition());
-    LamExpression expr1Arg0 = expr1.getDefCallArguments().get(0).toLam();
-    assertNotNull(expr1Arg0);
-    assertEquals(xCall, expr1Arg0.getBody());
+    assertEquals(xCall, expr1.getDefCallArguments().get(0).cast(LamExpression.class).getBody());
 
     assertEquals(foo, arg2Fun.getDefinition());
-    ConCallExpression expr2 = arg2Fun.getDefCallArguments().get(0).toConCall();
-    assertNotNull(expr2);
+    ConCallExpression expr2 = arg2Fun.getDefCallArguments().get(0).cast(ConCallExpression.class);
     assertEquals(Prelude.PATH_CON, expr2.getDefinition());
-    LamExpression appPath00Arg0 = expr2.getDefCallArguments().get(0).toLam();
-    assertNotNull(appPath00Arg0);
-    ConCallExpression expr3 = appPath00Arg0.getBody().toConCall();
-    assertNotNull(expr3);
+    ConCallExpression expr3 = expr2.getDefCallArguments().get(0).cast(LamExpression.class).getBody().cast(ConCallExpression.class);
     assertEquals(Prelude.PATH_CON, expr3.getDefinition());
-    LamExpression appPath01Arg0 = expr3.getDefCallArguments().get(0).toLam();
-    assertNotNull(appPath01Arg0);
-    assertEquals(xCall, appPath01Arg0.getBody());
+    assertEquals(xCall, expr3.getDefCallArguments().get(0).cast(LamExpression.class).getBody());
 
-    ConCallExpression arg1Fun = arguments.get(1).toConCall();
-    assertNotNull(arg1Fun);
+    ConCallExpression arg1Fun = arguments.get(1).cast(ConCallExpression.class);
     assertEquals(2, arg1Fun.getDataTypeArguments().size());
     assertEquals(Ref(testFun.getParameters()), arg1Fun.getDataTypeArguments().get(0));
     assertEquals(expr1, arg1Fun.getDataTypeArguments().get(1));
     assertEquals(foo, arg1Fun.getDefinition());
-    ConCallExpression expr4 = arg1Fun.getDefCallArguments().get(0).toConCall();
-    assertNotNull(expr4);
+    ConCallExpression expr4 = arg1Fun.getDefCallArguments().get(0).cast(ConCallExpression.class);
     assertEquals(Prelude.PATH_CON, expr4.getDefinition());
-    LamExpression appPath10Arg0 = expr4.getDefCallArguments().get(0).toLam();
-    assertNotNull(appPath10Arg0);
-    ConCallExpression expr5 = appPath10Arg0.getBody().toConCall();
-    assertNotNull(expr5);
+    ConCallExpression expr5 = expr4.getDefCallArguments().get(0).cast(LamExpression.class).getBody().cast(ConCallExpression.class);
     assertEquals(Prelude.PATH_CON, expr5.getDefinition());
-    LamExpression appPath11Arg0 = expr5.getDefCallArguments().get(0).toLam();
-    assertEquals(xCall, appPath11Arg0.getBody());
+    assertEquals(xCall, expr5.getDefCallArguments().get(0).cast(LamExpression.class).getBody());
 
-    LamExpression arg0 = arguments.get(0).toLam();
-    assertNotNull(arg0);
-    assertNotNull(arg0.getBody().toDataCall());
-    assertEquals(Foo, arg0.getBody().toDataCall().getDefinition());
-    assertEquals(Ref(testFun.getParameters()), arg0.getBody().toDataCall().getDefCallArguments().get(0));
-    ConCallExpression paramConCall = arg0.getBody().toDataCall().getDefCallArguments().get(1).toConCall();
-    assertNotNull(paramConCall);
+    LamExpression arg0 = arguments.get(0).cast(LamExpression.class);
+    assertEquals(Foo, arg0.getBody().cast(DataCallExpression.class).getDefinition());
+    assertEquals(Ref(testFun.getParameters()), arg0.getBody().cast(DataCallExpression.class).getDefCallArguments().get(0));
+    ConCallExpression paramConCall = arg0.getBody().cast(DataCallExpression.class).getDefCallArguments().get(1).cast(ConCallExpression.class);
     assertEquals(Prelude.PATH_CON, paramConCall.getDefinition());
     assertEquals(1, paramConCall.getDefCallArguments().size());
-    LamExpression paramArg0 = paramConCall.getDefCallArguments().get(0).toLam();
-    assertNotNull(paramArg0);
-    assertEquals(xCall, paramArg0.getBody());
+    assertEquals(xCall, paramConCall.getDefCallArguments().get(0).cast(LamExpression.class).getBody());
 
     List<? extends Expression> parameters = paramConCall.getDataTypeArguments();
     assertEquals(3, parameters.size());
-
-    LamExpression param0 = parameters.get(0).toLam();
-    assertNotNull(param0);
-    assertEquals(Nat(), param0.getBody());
-
+    assertEquals(Nat(), parameters.get(0).cast(LamExpression.class).getBody());
     assertEquals(xCall, parameters.get(1).normalize(NormalizeVisitor.Mode.WHNF));
     assertEquals(xCall, parameters.get(2).normalize(NormalizeVisitor.Mode.WHNF));
   }

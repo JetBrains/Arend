@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
+import com.jetbrains.jetpad.vclang.core.expr.LamExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -67,6 +68,6 @@ public class EtaEquivalence extends TypeCheckingTestCase {
   @Test
   public void onlyDefCallsExpanded() {
     FunctionDefinition fun = (FunctionDefinition) typeCheckDef("\\function f (x : Nat -> Nat) => x");
-    assertTrue(((LeafElimTree) fun.getBody()).getExpression().toLam() == null);
+    assertTrue(!((LeafElimTree) fun.getBody()).getExpression().isInstance(LamExpression.class));
   }
 }

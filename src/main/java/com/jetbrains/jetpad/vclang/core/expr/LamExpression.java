@@ -33,7 +33,12 @@ public class LamExpression extends Expression {
   }
 
   @Override
-  public LamExpression toLam() {
-    return this;
+  public boolean isWHNF() {
+    return true;
+  }
+
+  @Override
+  public Expression getStuckExpression() {
+    return null;
   }
 }

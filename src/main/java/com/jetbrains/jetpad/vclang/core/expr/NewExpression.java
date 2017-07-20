@@ -19,7 +19,12 @@ public class NewExpression extends Expression {
   }
 
   @Override
-  public NewExpression toNew() {
-    return this;
+  public boolean isWHNF() {
+    return true;
+  }
+
+  @Override
+  public Expression getStuckExpression() {
+    return null;
   }
 }

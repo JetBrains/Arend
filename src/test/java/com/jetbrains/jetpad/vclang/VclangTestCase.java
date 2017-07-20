@@ -36,7 +36,7 @@ public abstract class VclangTestCase {
         } else {
           description.appendText("there were errors:\n").appendText(ERROR_FORMATTER.printErrors(errors));
         }
-        return errors.size() == n;
+        return n < 0 ? !errors.isEmpty() : errors.size() == n;
       }
 
       @Override

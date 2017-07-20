@@ -2,46 +2,50 @@ package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.frontend.resolving.OpenCommand;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateInstanceError;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
-import com.jetbrains.jetpad.vclang.naming.scope.*;
+import com.jetbrains.jetpad.vclang.naming.scope.DataScope;
+import com.jetbrains.jetpad.vclang.naming.scope.FunctionScope;
+import com.jetbrains.jetpad.vclang.naming.scope.StaticClassScope;
+import com.jetbrains.jetpad.vclang.naming.scope.primitive.FilteredScope;
+import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
-import com.jetbrains.jetpad.vclang.term.AbstractStatementVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.SimpleClassViewInstanceProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.scope.InstanceScopeProvider;
 
-import java.util.Collection;
 import java.util.HashSet;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
-public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisitor<Scope, Void>, AbstractStatementVisitor<Scope, Scope> {
+public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisitor<Scope, Void> {
   private final InstanceScopeProvider myScopeProvider;
   private final SimpleClassViewInstanceProvider myInstanceProvider;
+  private final Function<Abstract.Definition, Iterable<OpenCommand>> myOpens;
   private final ErrorReporter myErrorReporter;
 
-  public DefinitionResolveInstanceVisitor(InstanceScopeProvider scopeProvider, SimpleClassViewInstanceProvider instanceProvider, ErrorReporter errorReporter) {
+  public DefinitionResolveInstanceVisitor(InstanceScopeProvider scopeProvider, SimpleClassViewInstanceProvider instanceProvider, Function<Abstract.Definition, Iterable<OpenCommand>> opens, ErrorReporter errorReporter) {
     myScopeProvider = scopeProvider;
     myInstanceProvider = instanceProvider;
+    myOpens = opens;
     myErrorReporter = errorReporter;
   }
 
   @Override
   public Void visitFunction(Abstract.FunctionDefinition def, Scope parentScope) {
-    Scope scope = new FunctionScope(parentScope, myScopeProvider.forDefinition(def));
+    Iterable<Scope> extraScopes = getExtraScopes(def, parentScope);
+    FunctionScope scope = new FunctionScope(parentScope, myScopeProvider.forDefinition(def), extraScopes);
+    scope.findIntroducedDuplicateInstances(this::warnDuplicate);
 
-    for (Abstract.Statement statement : def.getGlobalStatements()) {
-      if (statement instanceof Abstract.NamespaceCommandStatement) {
-        scope = statement.accept(this, scope);
-      }
-    }
-    for (Abstract.Statement statement : def.getGlobalStatements()) {
-      if (!(statement instanceof Abstract.NamespaceCommandStatement)) {
-        scope = statement.accept(this, scope);
-      }
+    for (Abstract.Definition definition : def.getGlobalDefinitions()) {
+      definition.accept(this, scope);
     }
 
     ExpressionResolveInstanceVisitor exprVisitor = new ExpressionResolveInstanceVisitor(scope, myInstanceProvider);
-    exprVisitor.visitArguments(def.getArguments());
+    exprVisitor.visitParameters(def.getParameters());
 
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
@@ -80,7 +84,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
   public Void visitData(Abstract.DataDefinition def, Scope parentScope) {
     Scope scope = new DataScope(parentScope, myScopeProvider.forDefinition(def));
     ExpressionResolveInstanceVisitor exprVisitor = new ExpressionResolveInstanceVisitor(scope, myInstanceProvider);
-    exprVisitor.visitArguments(def.getParameters());
+    exprVisitor.visitParameters(def.getParameters());
 
     if (def.getEliminatedReferences() != null) {
       for (Abstract.ReferenceExpression ref : def.getEliminatedReferences()) {
@@ -99,7 +103,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
   @Override
   public Void visitConstructor(Abstract.Constructor def, Scope parentScope) {
     ExpressionResolveInstanceVisitor exprVisitor = new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider);
-    exprVisitor.visitArguments(def.getArguments());
+    exprVisitor.visitParameters(def.getParameters());
     if (def.getEliminatedReferences() != null) {
       for (Abstract.ReferenceExpression ref : def.getEliminatedReferences()) {
         exprVisitor.visitReference(ref, null);
@@ -121,28 +125,24 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
     }
 
     try {
-      Scope scope = new StaticClassScope(parentScope, myScopeProvider.forDefinition(def));
-      for (Abstract.Statement statement : def.getGlobalStatements()) {
-        if (statement instanceof Abstract.NamespaceCommandStatement) {
-          scope = statement.accept(this, scope);
-        }
-      }
-      for (Abstract.Statement statement : def.getGlobalStatements()) {
-        if (!(statement instanceof Abstract.NamespaceCommandStatement)) {
-          scope = statement.accept(this, scope);
-        }
+      Iterable<Scope> extraScopes = getExtraScopes(def, parentScope);
+      StaticClassScope staticScope = new StaticClassScope(parentScope, myScopeProvider.forDefinition(def), extraScopes);
+      staticScope.findIntroducedDuplicateInstances(this::warnDuplicate);
+
+      for (Abstract.Definition definition : def.getGlobalDefinitions()) {
+        definition.accept(this, staticScope);
       }
 
-      exprVisitor.visitArguments(def.getPolyParameters());
+      exprVisitor.visitParameters(def.getPolyParameters());
 
       for (Abstract.ClassField field : def.getFields()) {
-        field.accept(this, scope);
+        field.accept(this, staticScope);
       }
       for (Abstract.Implementation implementation : def.getImplementations()) {
-        implementation.accept(this, scope);
+        implementation.accept(this, staticScope);
       }
       for (Abstract.Definition definition : def.getInstanceDefinitions()) {
-        definition.accept(this, scope);
+        definition.accept(this, staticScope);
       }
     } catch (Namespace.InvalidNamespaceException e) {
       myErrorReporter.report(e.toError());
@@ -171,7 +171,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
   @Override
   public Void visitClassViewInstance(Abstract.ClassViewInstance def, Scope parentScope) {
     ExpressionResolveInstanceVisitor exprVisitor = new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider);
-    exprVisitor.visitArguments(def.getArguments());
+    exprVisitor.visitParameters(def.getParameters());
     exprVisitor.visitReference(def.getClassView(), null);
     for (Abstract.ClassFieldImpl impl : def.getClassFieldImpls()) {
       impl.getImplementation().accept(exprVisitor, null);
@@ -179,38 +179,21 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
     return null;
   }
 
-  @Override
-  public Scope visitDefine(Abstract.DefineStatement stat, Scope parentScope) {
-    stat.getDefinition().accept(this, parentScope);
-    return parentScope;
+  private Iterable<Scope> getExtraScopes(Abstract.Definition def, Scope currentScope) {
+    return StreamSupport.stream(myOpens.apply(def).spliterator(), false)
+        .flatMap(this::processOpenCommand)
+        .collect(Collectors.toList());
   }
 
-  @Override
-  public Scope visitNamespaceCommand(Abstract.NamespaceCommandStatement stat, Scope parentScope) {
-    if (stat.getKind().equals(Abstract.NamespaceCommandStatement.Kind.OPEN)) {
-      Scope scope = myScopeProvider.forDefinition(stat.getResolvedClass());
-      if (stat.getNames() != null) {
-        scope = new FilteredScope(scope, new HashSet<>(stat.getNames()), !stat.isHiding());
-      }
-      mergeInstances(scope, parentScope);
-      parentScope = new OverridingScope(scope, parentScope);
+  private Stream<Scope> processOpenCommand(OpenCommand cmd) {
+    Scope scope = myScopeProvider.forDefinition(cmd.getResolvedClass());
+    if (cmd.getNames() != null) {
+      scope = new FilteredScope(scope, new HashSet<>(cmd.getNames()), !cmd.isHiding());
     }
-    return parentScope;
+    return Stream.of(scope);
   }
 
-  private void mergeInstances(Scope parent, Scope child) {
-    Collection<? extends Abstract.ClassViewInstance> parentInstances = parent.getInstances();
-    if (!parentInstances.isEmpty()) {
-      Collection<? extends Abstract.ClassViewInstance> childInstances = child.getInstances();
-      if (!childInstances.isEmpty()) {
-        for (Abstract.ClassViewInstance instance : parentInstances) {
-          for (Abstract.ClassViewInstance childInstance : childInstances) {
-            if (instance.getClassView().getReferent() == childInstance.getClassView().getReferent() && instance.getClassifyingDefinition() == childInstance.getClassifyingDefinition()) {
-              myErrorReporter.report(new DuplicateInstanceError(Error.Level.WARNING, instance, childInstance));
-            }
-          }
-        }
-      }
-    }
+  private void warnDuplicate(Abstract.ClassViewInstance instance1, Abstract.ClassViewInstance instance2) {
+    myErrorReporter.report(new DuplicateInstanceError(Error.Level.WARNING, instance1, instance2));
   }
 }

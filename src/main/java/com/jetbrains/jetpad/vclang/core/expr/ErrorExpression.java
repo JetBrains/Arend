@@ -26,8 +26,8 @@ public class ErrorExpression extends Expression {
   }
 
   @Override
-  public ErrorExpression toError() {
-    return this;
+  public boolean isWHNF() {
+    return true;
   }
 
   @Override

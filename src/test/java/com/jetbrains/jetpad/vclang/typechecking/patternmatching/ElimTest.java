@@ -175,12 +175,13 @@ public class ElimTest extends TypeCheckingTestCase {
   @Test
   public void elim10() {
     typeCheckClass("\\data Bool | true | false\n" +
-                   "\\function tp : \\Pi (x : Bool) -> \\oo-Type0 => \\lam x => \\case x\n" +
-                   "| true => Bool\n" +
-                   "| false => Nat\n" +
-                   "\\function f (x : Bool) : tp x => \\elim x\n" +
-                   "| true => true\n" +
-                   "| false => zero\n");
+                   "\\function tp : \\Pi (x : Bool) -> \\oo-Type0 => \\lam x => \\case x {\n" +
+                   "  | true => Bool\n" +
+                   "  | false => Nat\n" +
+                   "}\n" +
+                   "\\function f (x : Bool) : tp x\n" +
+                   "  | true => true\n" +
+                   "  | false => zero\n");
   }
 
   @Test
@@ -200,6 +201,11 @@ public class ElimTest extends TypeCheckingTestCase {
   @Test
   public void testNoPatterns() {
     typeCheckClass("\\function test (n : Nat) : 0 = 1 => \\elim n", 1);
+  }
+
+  @Test
+  public void testAbsurdPattern() {
+    typeCheckClass("\\function test (n : Nat) : 0 = 1 => \\elim n | ()", 1);
   }
 
   @Test
@@ -257,10 +263,11 @@ public class ElimTest extends TypeCheckingTestCase {
         "  | suc n, suc m => EqSuc (p : Geq n m)\n" +
         "\n" +
         "\\function f (x y : Nat) (p : Geq x y) : Nat =>\n" +
-        "  \\case x, y, p\n" +
+        "  \\case x, y, p {\n" +
         "    | m, zero, EqBase => zero \n" +
         "    | zero, suc _, ()\n" +
-        "    | suc _, suc _, EqSuc q => suc zero", 3);
+        "    | suc _, suc _, EqSuc q => suc zero\n" +
+        "  }", 3);
   }
 
   @Test
@@ -364,7 +371,7 @@ public class ElimTest extends TypeCheckingTestCase {
   public void testEmptyCase() {
     typeCheckClass(
         "\\data D\n" +
-        "\\function test (d : D) : 0 = 1 => \\case d | ()"
+        "\\function test (d : D) : 0 = 1 => \\case d { () }"
     );
   }
 

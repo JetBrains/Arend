@@ -25,8 +25,8 @@ public class ProjExpression extends Expression {
   }
 
   @Override
-  public ProjExpression toProj() {
-    return this;
+  public boolean isWHNF() {
+    return myExpression.isWHNF() && !myExpression.isInstance(TupleExpression.class);
   }
 
   @Override
