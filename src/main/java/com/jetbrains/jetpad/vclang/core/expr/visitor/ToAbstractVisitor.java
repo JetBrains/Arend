@@ -290,7 +290,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     Expression expr = lamExpr;
     for (; expr.isInstance(LamExpression.class); expr = expr.cast(LamExpression.class).getBody()) {
       if (myFlags.contains(Flag.SHOW_TYPES_IN_LAM)) {
-        visitDependentLink(expr.cast(LamExpression.class).getParameters(), parameters);
+        visitDependentLink(expr.cast(LamExpression.class).getParameters(), parameters, true);
       } else {
         for (DependentLink link = expr.cast(LamExpression.class).getParameters(); link.hasNext(); link = link.getNext()) {
           final DependentLink finalLink = link;
@@ -306,11 +306,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return result;
   }
 
-  private void visitDependentLink(DependentLink parameters, List<? super Abstract.TypeParameter> args) {
+  private void visitDependentLink(DependentLink parameters, List<? super Abstract.TypeParameter> args, boolean isNamed) {
     List<Abstract.ReferableSourceNode> referableList = new ArrayList<>(3);
     for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
       DependentLink link1 = link.getNextTyped(null);
-      if (link1 == link && link.getName() == null) {
+      if (!isNamed && link1 == link && link.getName() == null) {
         args.add(myFactory.makeTypeParameter(link.isExplicit(), link.getTypeExpr().accept(this, null)));
       } else {
         for (; link != link1; link = link.getNext()) {
@@ -329,7 +329,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     Expression expr = piExpr;
     for (; expr.isInstance(PiExpression.class); expr = expr.cast(PiExpression.class).getCodomain()) {
       List<Abstract.TypeParameter> args = new ArrayList<>();
-      visitDependentLink(expr.cast(PiExpression.class).getParameters(), args);
+      visitDependentLink(expr.cast(PiExpression.class).getParameters(), args, false);
       if (!arguments.isEmpty() && arguments.get(arguments.size() - 1) instanceof Abstract.TelescopeParameter && !args.isEmpty() && args.get(0) instanceof Abstract.TelescopeParameter) {
         arguments.get(arguments.size() - 1).addAll(args);
       } else {
@@ -424,7 +424,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   @Override
   public Abstract.Expression visitSigma(SigmaExpression expr, Void params) {
     List<Abstract.TypeParameter> args = new ArrayList<>();
-    visitDependentLink(expr.getParameters(), args);
+    visitDependentLink(expr.getParameters(), args, false);
     Abstract.Expression result = myFactory.makeSigma(args);
     freeVars(expr.getParameters());
     return result;
