@@ -17,6 +17,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.*;
@@ -25,7 +26,7 @@ import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FieldCall;
 
 public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   private final Map<Binding, Binding> mySubstitution;
-  private final Equations myEquations;
+  private Equations myEquations;
   private final Abstract.SourceNode mySourceNode;
   private Equations.CMP myCMP;
 
@@ -44,7 +45,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   }
 
   public static boolean compare(Equations equations, Equations.CMP cmp, Expression expr1, Expression expr2, Abstract.SourceNode sourceNode) {
-    return new CompareVisitor(equations, cmp, sourceNode).compare(expr1.normalize(NormalizeVisitor.Mode.NF), expr2.normalize(NormalizeVisitor.Mode.NF));
+    return new CompareVisitor(equations, cmp, sourceNode).compare(expr1, expr2);
   }
 
   public static boolean compare(Equations equations, ElimTree tree1, ElimTree tree2, Abstract.SourceNode sourceNode) {
@@ -89,20 +90,27 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   }
 
   private Boolean compare(Expression expr1, Expression expr2) {
-    while (expr1.isInstance(InferenceReferenceExpression.class) && expr1.cast(InferenceReferenceExpression.class).getSubstExpression() != null || expr1.isInstance(OfTypeExpression.class)) {
-      if (expr1.isInstance(OfTypeExpression.class)) {
-        expr1 = expr1.cast(OfTypeExpression.class).getExpression();
-      } else {
-        expr1 = expr1.cast(InferenceReferenceExpression.class).getSubstExpression();
+    FunCallExpression funCall1 = expr1.checkedCast(FunCallExpression.class);
+    FunCallExpression funCall2 = expr2.checkedCast(FunCallExpression.class);
+    if (funCall1 != null && funCall2 != null && funCall1.getDefinition() == funCall2.getDefinition()) {
+      Equations equations = myEquations;
+      myEquations = DummyEquations.getInstance();
+      boolean ok = true;
+      for (int i = 0; i < funCall1.getDefCallArguments().size(); i++) {
+        if (!compare(funCall1.getDefCallArguments().get(i), funCall2.getDefCallArguments().get(i))) {
+          ok = false;
+          break;
+        }
+      }
+
+      myEquations = equations;
+      if (ok) {
+        return true;
       }
     }
-    while (expr2.isInstance(InferenceReferenceExpression.class) && expr2.cast(InferenceReferenceExpression.class).getSubstExpression() != null || expr2.isInstance(OfTypeExpression.class)) {
-      if (expr2.isInstance(OfTypeExpression.class)) {
-        expr2 = expr2.cast(OfTypeExpression.class).getExpression();
-      } else {
-        expr2 = expr2.cast(InferenceReferenceExpression.class).getSubstExpression();
-      }
-    }
+
+    expr1 = expr1.normalize(NormalizeVisitor.Mode.WHNF);
+    expr2 = expr2.normalize(NormalizeVisitor.Mode.WHNF);
 
     Expression stuck1 = expr1.getStuckExpression();
     Expression stuck2 = expr2.getStuckExpression();
@@ -216,7 +224,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     SingleDependentLink param = new TypedSingleDependentLink(true, "i", ExpressionFactory.Interval());
     List<Expression> args = new ArrayList<>(5);
     for (Expression arg : conCall1.getDataTypeArguments()) {
-      args.add((correctOrder ? arg.subst(getSubstitution()) : arg).normalize(NormalizeVisitor.Mode.NF));
+      args.add((correctOrder ? arg.subst(getSubstitution()) : arg));
     }
     args.add(expr2);
     args.add(new ReferenceExpression(param));

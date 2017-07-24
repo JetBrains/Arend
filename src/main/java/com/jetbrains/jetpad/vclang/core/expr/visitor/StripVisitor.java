@@ -77,10 +77,10 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
     return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), fieldSet);
   }
 
-  private Expression cannotInferError(Expression expr) {
+  private Expression cannotInferError() {
     LocalTypeCheckingError error = myVariables.empty() ? new LocalTypeCheckingError("Cannot infer some expressions", null) : myVariables.peek().getOriginalVariable().getErrorInfer(myVariables.peek().getSubstExpression());
     myErrorReporter.report(error);
-    return new ErrorExpression(expr, error);
+    return new ErrorExpression(null, error);
   }
 
   @Override
@@ -88,7 +88,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
     if (myBounds.contains(expr.getBinding())) {
       return expr;
     } else {
-      return cannotInferError(expr);
+      return cannotInferError();
     }
   }
 
@@ -102,7 +102,8 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
       return result;
     } else {
       myVariables.push(expr);
-      Expression result = expr.getSubstExpression().accept(this, null);
+      // Maybe normalization is not the best idea
+      Expression result = expr.getSubstExpression().normalize(NormalizeVisitor.Mode.NF).accept(this, null);
       myVariables.pop();
       return result;
     }
