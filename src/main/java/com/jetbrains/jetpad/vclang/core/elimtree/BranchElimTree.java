@@ -29,6 +29,9 @@ public class BranchElimTree extends ElimTree {
   @Override
   public boolean isWHNF(List<? extends Expression> arguments) {
     int index = DependentLink.Helper.size(getParameters());
+    if (!arguments.get(index).isWHNF()) {
+      return false;
+    }
     if (arguments.get(index).isInstance(ConCallExpression.class)) {
       ConCallExpression conCall = arguments.get(index).cast(ConCallExpression.class);
       ElimTree elimTree = myChildren.get(conCall.getDefinition());
@@ -43,7 +46,7 @@ public class BranchElimTree extends ElimTree {
         return elimTree != null ? elimTree.isWHNF(arguments.subList(index, arguments.size())) : true;
       }
     }
-    return arguments.get(index).isWHNF();
+    return true;
   }
 
   @Override
