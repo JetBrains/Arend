@@ -234,7 +234,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
 
   @Override
   public NewExpression visitNew(NewExpression expr, Void params) {
-    ClassCallExpression newExpr = (ClassCallExpression) findBindings(expr.getExpression(), true);
+    ClassCallExpression newExpr = visitClassCall(expr.getExpression(), null);
     return newExpr == null ? null : new NewExpression(newExpr);
   }
 

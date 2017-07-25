@@ -115,7 +115,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
             if (normedPtCon != null && normedPtCon.getDefinition() == Prelude.RIGHT) {
               boolean noFreeVar = true;
               for (int i = 0; i < isoArgs.size() - 1; i++) {
-                if (ElimBindingVisitor.findBindings(isoArgs.get(i), Collections.singleton(lamExpr.getParameters())) == null) {
+                if (NormalizingFindBindingVisitor.findBinding(isoArgs.get(i), lamExpr.getParameters())) {
                   noFreeVar = false;
                   break;
                 }
@@ -127,7 +127,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
           }
         }
 
-        if (checkSigma && ElimBindingVisitor.findBindings(body, Collections.singleton(lamExpr.getParameters())) != null) {
+        if (checkSigma && !NormalizingFindBindingVisitor.findBinding(body, lamExpr.getParameters())) {
           return expr.getDefCallArguments().get(1).accept(this, mode);
         }
       }
