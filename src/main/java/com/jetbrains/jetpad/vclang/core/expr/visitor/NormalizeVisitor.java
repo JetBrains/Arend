@@ -1,7 +1,5 @@
 package com.jetbrains.jetpad.vclang.core.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
@@ -100,34 +98,37 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   private Expression visitDefCall(DefCallExpression expr, LevelSubstitution levelSubstitution, Mode mode) {
     if (expr.getDefinition() == Prelude.COERCE) {
-      Expression result = null;
+      LamExpression lamExpr = expr.getDefCallArguments().get(0).accept(this, Mode.WHNF).checkedCast(LamExpression.class);
+      if (lamExpr != null) {
+        Expression body = lamExpr.getParameters().getNext().hasNext() ? new LamExpression(lamExpr.getResultSort(), lamExpr.getParameters().getNext(), lamExpr.getBody()) : lamExpr.getBody();
+        body = body.accept(this, Mode.WHNF);
+        FunCallExpression funCall = body.checkedCast(FunCallExpression.class);
+        boolean checkSigma = true;
 
-      Binding binding = new TypedBinding("i", ExpressionFactory.Interval());
-      Expression normExpr = new AppExpression(expr.getDefCallArguments().get(0), new ReferenceExpression(binding)).accept(this, NormalizeVisitor.Mode.NF);
-      if (!normExpr.findBinding(binding)) {
-        result = expr.getDefCallArguments().get(1);
-      } else {
-        FunCallExpression funCall = normExpr.checkedCast(FunCallExpression.class);
         if (funCall != null && funCall.getDefinition() == Prelude.ISO) {
           List<? extends Expression> isoArgs = funCall.getDefCallArguments();
-          boolean noFreeVar = true;
-          for (int i = 0; i < isoArgs.size() - 1; i++) {
-            if (isoArgs.get(i).findBinding(binding)) {
-              noFreeVar = false;
-              break;
-            }
-          }
-          if (noFreeVar) {
-            ConCallExpression normedPtCon = expr.getDefCallArguments().get(2).accept(this, NormalizeVisitor.Mode.NF).checkedCast(ConCallExpression.class);
+          ReferenceExpression refExpr = isoArgs.get(isoArgs.size() - 1).normalize(Mode.WHNF).checkedCast(ReferenceExpression.class);
+          if (refExpr != null && refExpr.getBinding() == lamExpr.getParameters()) {
+            checkSigma = false;
+            ConCallExpression normedPtCon = expr.getDefCallArguments().get(2).accept(this, Mode.WHNF).checkedCast(ConCallExpression.class);
             if (normedPtCon != null && normedPtCon.getDefinition() == Prelude.RIGHT) {
-              result = new AppExpression(isoArgs.get(2), expr.getDefCallArguments().get(1));
+              boolean noFreeVar = true;
+              for (int i = 0; i < isoArgs.size() - 1; i++) {
+                if (isoArgs.get(i).findBinding(lamExpr.getParameters())) {
+                  noFreeVar = false;
+                  break;
+                }
+              }
+              if (noFreeVar) {
+                return visitApp(new AppExpression(isoArgs.get(2), expr.getDefCallArguments().get(1)), mode);
+              }
             }
           }
         }
-      }
 
-      if (result != null) {
-        return result.accept(this, mode);
+        if (checkSigma && !body.accept(this, Mode.NF).findBinding(lamExpr.getParameters())) {
+          return expr.getDefCallArguments().get(1).accept(this, mode);
+        }
       }
     }
 

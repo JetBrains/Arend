@@ -90,6 +90,18 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   }
 
   private Boolean compare(Expression expr1, Expression expr2) {
+    /* TODO[cmpNorm]: Add other eliminators
+    if (expr1.isInstance(AppExpression.class) && expr2.isInstance(AppExpression.class) || expr1.isInstance(FunCallExpression.class) && expr2.isInstance(FunCallExpression.class) && expr1.cast(FunCallExpression.class).getDefinition() == expr2.cast(FunCallExpression.class).getDefinition()) {
+      Equations equations = myEquations;
+      myEquations = DummyEquations.getInstance();
+      boolean ok = expr1.isInstance(AppExpression.class) ? visitApp(expr1.cast(AppExpression.class), expr2.cast(AppExpression.class)) : visitDefCall(expr1.cast(FunCallExpression.class), expr2.cast(FunCallExpression.class));
+      myEquations = equations;
+      if (ok) {
+        return true;
+      }
+    }
+    */
+
     FunCallExpression funCall1 = expr1.checkedCast(FunCallExpression.class);
     FunCallExpression funCall2 = expr2.checkedCast(FunCallExpression.class);
     if (funCall1 != null && funCall2 != null && funCall1.getDefinition() == funCall2.getDefinition()) {
