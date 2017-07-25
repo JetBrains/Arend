@@ -170,7 +170,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
     return new CaseExpression(parameters, type, substElimTree(expr.getElimTree()), arguments);
   }
 
-  private ElimTree substElimTree(ElimTree elimTree) {
+  public ElimTree substElimTree(ElimTree elimTree) {
     DependentLink vars = DependentLink.Helper.subst(elimTree.getParameters(), myExprSubstitution, myLevelSubstitution);
     if (elimTree instanceof LeafElimTree) {
       elimTree = new LeafElimTree(vars, ((LeafElimTree) elimTree).getExpression().accept(this, null));

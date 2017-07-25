@@ -66,7 +66,7 @@ public abstract class Expression implements ExpectedType {
   }
 
   public Variable findBinding(Set<? extends Variable> bindings) {
-    return this.accept(new FindBindingVisitor(bindings), null);
+    return accept(new FindBindingVisitor(bindings), null);
   }
 
   public Expression strip(Set<Binding> bounds, LocalErrorReporter errorReporter) {

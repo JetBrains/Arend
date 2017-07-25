@@ -20,6 +20,10 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
     myBindings = binding;
   }
 
+  Set<? extends Variable> getBindings() {
+    return myBindings;
+  }
+
   @Override
   public Variable visitApp(AppExpression expr, Void params) {
     Variable result = expr.getFunction().accept(this, null);

@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.util.ComputationInterruptedException;
 
@@ -107,14 +108,14 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
         if (funCall != null && funCall.getDefinition() == Prelude.ISO) {
           List<? extends Expression> isoArgs = funCall.getDefCallArguments();
-          ReferenceExpression refExpr = isoArgs.get(isoArgs.size() - 1).normalize(Mode.WHNF).checkedCast(ReferenceExpression.class);
+          ReferenceExpression refExpr = isoArgs.get(isoArgs.size() - 1).accept(this, Mode.WHNF).checkedCast(ReferenceExpression.class);
           if (refExpr != null && refExpr.getBinding() == lamExpr.getParameters()) {
             checkSigma = false;
             ConCallExpression normedPtCon = expr.getDefCallArguments().get(2).accept(this, Mode.WHNF).checkedCast(ConCallExpression.class);
             if (normedPtCon != null && normedPtCon.getDefinition() == Prelude.RIGHT) {
               boolean noFreeVar = true;
               for (int i = 0; i < isoArgs.size() - 1; i++) {
-                if (isoArgs.get(i).findBinding(lamExpr.getParameters())) {
+                if (ElimBindingVisitor.findBindings(isoArgs.get(i), Collections.singleton(lamExpr.getParameters())) == null) {
                   noFreeVar = false;
                   break;
                 }
@@ -126,7 +127,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
           }
         }
 
-        if (checkSigma && !body.accept(this, Mode.NF).findBinding(lamExpr.getParameters())) {
+        if (checkSigma && ElimBindingVisitor.findBindings(body, Collections.singleton(lamExpr.getParameters())) != null) {
           return expr.getDefCallArguments().get(1).accept(this, mode);
         }
       }
@@ -271,6 +272,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
           }
         }
       }
+      return new FieldCallExpression((ClassField) expr.getDefinition(), mode == Mode.NF ? thisExpr.accept(this, mode) : thisExpr);
     }
 
     if (expr.getDefinition() instanceof Function) {
@@ -377,11 +379,12 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitProj(ProjExpression expr, Mode mode) {
-    TupleExpression exprNorm = expr.getExpression().accept(this, Mode.WHNF).checkedCast(TupleExpression.class);
+    Expression newExpr = expr.getExpression().accept(this, Mode.WHNF);
+    TupleExpression exprNorm = newExpr.checkedCast(TupleExpression.class);
     if (exprNorm != null) {
       return exprNorm.getFields().get(expr.getField()).accept(this, mode);
     } else {
-      return mode == Mode.NF || mode == Mode.HUMAN_NF ? new ProjExpression(expr.getExpression().accept(this, mode), expr.getField()) : expr;
+      return mode == Mode.NF || mode == Mode.HUMAN_NF ? new ProjExpression(expr.getExpression().accept(this, mode), expr.getField()) : new ProjExpression(newExpr, expr.getField());
     }
   }
 
@@ -425,8 +428,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return new LeafElimTree(vars, ((LeafElimTree) elimTree).getExpression().subst(substitution).accept(this, Mode.NF));
     } else {
       Map<Constructor, ElimTree> children = new HashMap<>();
+      SubstVisitor visitor = new SubstVisitor(substitution, LevelSubstitution.EMPTY);
       for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        children.put(entry.getKey(), normalizeElimTree(entry.getValue()));
+        children.put(entry.getKey(), visitor.substElimTree(normalizeElimTree(entry.getValue())));
       }
       return new BranchElimTree(vars, children);
     }
