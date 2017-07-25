@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.frontend;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
+import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OpenCommand;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
@@ -1449,22 +1450,9 @@ public final class Concrete {
 
     public enum Kind { OPEN, EXPORT }
 
-    public final static Function<Abstract.Definition, Iterable<OpenCommand>> GET = def -> {
-      if (def instanceof StatementCollection) {
-        return ((StatementCollection) def).getGlobalStatements().stream().flatMap(s -> {
-          if (s instanceof NamespaceCommandStatement) {
-            return Stream.of((NamespaceCommandStatement) s);
-          } else {
-            return Stream.empty();
-          }
-        }).collect(Collectors.toList());
-      } else {
-        return Collections.emptySet();
-      }
-    };
   }
 
-  interface StatementCollection extends Abstract.DefinitionCollection {
+  interface StatementCollection extends Abstract.DefinitionCollection, HasOpens {
     List<? extends Statement> getGlobalStatements();
 
     @Nonnull
@@ -1473,6 +1461,18 @@ public final class Concrete {
       return getGlobalStatements().stream().flatMap(s -> {
         if (s instanceof DefineStatement) {
           return Stream.of(((DefineStatement) s).getDefinition());
+        } else {
+          return Stream.empty();
+        }
+      }).collect(Collectors.toList());
+    }
+
+    @Nonnull
+    @Override
+    default Iterable<OpenCommand> getOpens() {
+      return getGlobalStatements().stream().flatMap(s -> {
+        if (s instanceof NamespaceCommandStatement) {
+          return Stream.of((NamespaceCommandStatement) s);
         } else {
           return Stream.empty();
         }

@@ -89,7 +89,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
 
   private void resolveNamesDef(Concrete.Definition definition, int errors) {
-    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(nameResolver, Concrete.NamespaceCommandStatement.GET, new ConcreteResolveListener(), errorReporter);
+    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(nameResolver, new ConcreteResolveListener(), errorReporter);
     definition.accept(visitor, new OverridingScope(globalScope, new NamespaceScope(new SimpleNamespace(definition))));
     assertThat(errorList, containsErrors(errors));
   }

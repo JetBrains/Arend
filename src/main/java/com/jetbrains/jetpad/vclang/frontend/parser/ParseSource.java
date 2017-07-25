@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteResolveListener;
 import com.jetbrains.jetpad.vclang.frontend.namespace.ModuleRegistry;
+import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotNameResolver;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
@@ -61,7 +62,7 @@ public abstract class ParseSource {
       moduleRegistry.registerModule(mySourceId.getModulePath(), result);
     }
     if (nameResolver != null) {
-      OneshotNameResolver.visitModule(result, globalScope, nameResolver, Concrete.NamespaceCommandStatement.GET, new ConcreteResolveListener(), compositeErrorReporter);
+      OneshotNameResolver.visitModule(result, globalScope, nameResolver, HasOpens.GET, new ConcreteResolveListener(), compositeErrorReporter);
     }
     if (countingErrorReporter.getErrorsNumber() > 0) {
       if (moduleRegistry != null) {
