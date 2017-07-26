@@ -11,13 +11,14 @@ import com.jetbrains.jetpad.vclang.term.AbstractLevelExpressionVisitor;
 import java.util.*;
 
 public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>, AbstractLevelExpressionVisitor<Byte, Void>, AbstractDefinitionVisitor<Void, Void> {
-  private final StringBuilder myBuilder;
-  private Map<InferenceLevelVariable, Integer> myPVariables = Collections.emptyMap();
-  private Map<InferenceLevelVariable, Integer> myHVariables = Collections.emptyMap();
-  private int myIndent;
   public static final int INDENT = 4;
   public static final int MAX_LEN = 120;
   public static final float SMALL_RATIO = (float) 0.1;
+
+  protected final StringBuilder myBuilder;
+  private Map<InferenceLevelVariable, Integer> myPVariables = Collections.emptyMap();
+  private Map<InferenceLevelVariable, Integer> myHVariables = Collections.emptyMap();
+  protected int myIndent;
 
   public PrettyPrintVisitor(StringBuilder builder, int indent) {
     myBuilder = builder;
@@ -747,11 +748,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
     r.doPrettyPrint(this);
 
-    if (!def.getGlobalDefinitions().isEmpty()) {
-      myBuilder.append("\n");
-      printIndent();
-      visitWhere(def.getGlobalDefinitions());
-    }
     return null;
   }
 
@@ -915,19 +911,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
-  private void visitWhere(Collection<? extends Abstract.Definition> definitions) {
-    myBuilder.append("\\where {");
-    myIndent += INDENT;
-    for (Abstract.Definition definition : definitions) {
-      myBuilder.append("\n");
-      printIndent();
-      definition.accept(this, null);
-      myBuilder.append("\n");
-    }
-    myIndent -= INDENT;
-    myBuilder.append("}");
-  }
-
   private void prettyPrintClassDefinitionHeader(Abstract.ClassDefinition def) {
     myBuilder.append("\\class ").append(def.getName());
     prettyPrintParameters(def.getPolyParameters(), Abstract.ReferenceExpression.PREC);
@@ -950,7 +933,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
     Collection<? extends Abstract.ClassField> fields = def.getFields();
     Collection<? extends Abstract.Implementation> implementations = def.getImplementations();
-    Collection<? extends Abstract.Definition> globalDefinitions = def.getGlobalDefinitions();
     Collection<? extends Abstract.Definition> instanceDefinitions = def.getInstanceDefinitions();
 
     if (fields != null && !fields.isEmpty() || implementations != null && !implementations.isEmpty() || instanceDefinitions != null && !instanceDefinitions.isEmpty()) {
@@ -987,11 +969,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       myIndent -= INDENT;
       printIndent();
       myBuilder.append("}");
-    }
-
-    if (!globalDefinitions.isEmpty()) {
-      myBuilder.append(" ");
-      visitWhere(globalDefinitions);
     }
 
     return null;

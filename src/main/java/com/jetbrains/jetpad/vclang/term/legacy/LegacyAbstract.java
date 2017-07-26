@@ -24,11 +24,11 @@ public class LegacyAbstract {
   }
 
   public interface DefineStatement extends Statement {
-    @Nullable Abstract.Definition getDefinition();
+    @Nonnull Abstract.Definition getDefinition();
 
     static DefineStatement create(@Nonnull Abstract.Definition definition) {
       return new DefineStatement() {
-        @Nullable
+        @Nonnull
         @Override
         public Abstract.Definition getDefinition() {
           return definition;
@@ -46,13 +46,13 @@ public class LegacyAbstract {
     enum Kind { OPEN, EXPORT }
 
     @Nonnull Kind getKind();
-    @Nonnull ModulePath getModulePath();
+    @Nullable ModulePath getModulePath();
     @Nonnull List<String> getPath();
 
     @Nullable Abstract.Definition getResolvedClass();
 
     boolean isHiding();
-    @Nonnull List<String> getNames();
+    @Nullable List<String> getNames();
 
     static NamespaceCommandStatement fromOpenCommand(@Nonnull OpenCommand openCommand) {
       return new NamespaceCommandStatement() {
@@ -62,7 +62,7 @@ public class LegacyAbstract {
           return Kind.OPEN;
         }
 
-        @Nonnull
+        @Nullable
         @Override
         public ModulePath getModulePath() {
           return openCommand.getModulePath();
@@ -85,7 +85,7 @@ public class LegacyAbstract {
           return openCommand.isHiding();
         }
 
-        @Nonnull
+        @Nullable
         @Override
         public List<String> getNames() {
           return openCommand.getNames();
