@@ -55,44 +55,38 @@ public class TwoStageEquations implements Equations {
     }
 
     if (inf1 == null && inf2 == null) {
-      // TODO: correctly check for stuck expressions
-      // expr1 /= stuck, expr2 /= stuck
-      Expression fun1 = expr1;
-      while (fun1.isInstance(AppExpression.class)) {
-        fun1 = fun1.cast(AppExpression.class).getFunction();
-      }
-      Expression fun2 = expr2;
-      while (fun2.isInstance(AppExpression.class)) {
-        fun2 = fun2.cast(AppExpression.class).getFunction();
-      }
-      if ((!fun1.isInstance(InferenceReferenceExpression.class) || fun1.cast(InferenceReferenceExpression.class).getVariable() == null) && (!fun2.isInstance(InferenceReferenceExpression.class) || fun2.cast(InferenceReferenceExpression.class).getVariable() == null)) {
-        InferenceVariable variable = null;
-        Expression result = null;
+      InferenceVariable variable = null;
+      Expression result = null;
 
-        // expr1 == field call
-        FieldCallExpression fieldCall1 = expr1.checkedCast(FieldCallExpression.class);
-        if (fieldCall1 != null && fieldCall1.getExpression().isInstance(InferenceReferenceExpression.class)) {
-          variable = fieldCall1.getExpression().cast(InferenceReferenceExpression.class).getVariable();
-          // expr1 == view field call
-          if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassifyingField() == fieldCall1.getDefinition()) {
+      // expr1 == field call
+      FieldCallExpression fieldCall1 = expr1.checkedCast(FieldCallExpression.class);
+      if (fieldCall1 != null && fieldCall1.getExpression().isInstance(InferenceReferenceExpression.class)) {
+        variable = fieldCall1.getExpression().cast(InferenceReferenceExpression.class).getVariable();
+        // expr1 == view field call
+        if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassifyingField() == fieldCall1.getDefinition()) {
+          Expression stuck2 = expr2.getStuckExpression();
+          if (stuck2 == null || !stuck2.isInstance(InferenceReferenceExpression.class) || stuck2.cast(InferenceReferenceExpression.class).getVariable() == null) {
             result = ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getClassViewInstancePool(), expr2);
           }
         }
+      }
 
-        // expr2 == field call
-        FieldCallExpression fieldCall2 = expr2.checkedCast(FieldCallExpression.class);
-        if (variable == null && fieldCall2 != null && fieldCall2.getExpression().isInstance(InferenceReferenceExpression.class)) {
-          variable = fieldCall2.getExpression().cast(InferenceReferenceExpression.class).getVariable();
-          // expr2 == view field call
-          if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassifyingField() == fieldCall2.getDefinition()) {
+      // expr2 == field call
+      FieldCallExpression fieldCall2 = expr2.checkedCast(FieldCallExpression.class);
+      if (variable == null && fieldCall2 != null && fieldCall2.getExpression().isInstance(InferenceReferenceExpression.class)) {
+        variable = fieldCall2.getExpression().cast(InferenceReferenceExpression.class).getVariable();
+        // expr2 == view field call
+        if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassifyingField() == fieldCall2.getDefinition()) {
+          Expression stuck1 = expr1.getStuckExpression();
+          if (stuck1 == null || !stuck1.isInstance(InferenceReferenceExpression.class) || stuck1.cast(InferenceReferenceExpression.class).getVariable() == null) {
             result = ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getClassViewInstancePool(), expr1);
           }
         }
+      }
 
-        if (result != null) {
-          solve(variable, result);
-          return;
-        }
+      if (result != null) {
+        solve(variable, result);
+        return;
       }
     }
 
@@ -412,7 +406,6 @@ public class TwoStageEquations implements Equations {
       result.add(entry.getKey(), constant == null || basedConstant == null ? Level.INFINITY : new Level(based.contains(entry.getKey()) ? entry.getKey().getStd() : null, -basedConstant, -constant));
     }
 
-    // TODO: Do not add equations with expressions that stuck on errors, i.e. check this in CompareVisitor
     for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
       Equation equation = iterator.next();
       Expression stuckExpr = equation.expr.getStuckExpression();

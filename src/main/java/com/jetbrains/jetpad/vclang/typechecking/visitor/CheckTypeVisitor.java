@@ -385,13 +385,22 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       return (Type) result.expression;
     }
 
-    // TODO: if result.type is stuck, add an equation
-    UniverseExpression universe = result.type.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(UniverseExpression.class);
+    Expression type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
+    UniverseExpression universe = type.checkedCast(UniverseExpression.class);
     if (universe == null) {
-      LocalTypeCheckingError error = new TypeMismatchError(new StringPrettyPrintable("a universe"), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
-      expr.setWellTyped(myContext, new ErrorExpression(result.expression, error));
-      myErrorReporter.report(error);
-      return null;
+      Expression stuck = type.getStuckExpression();
+      if (stuck == null || !stuck.isInstance(InferenceReferenceExpression.class) && !stuck.isInstance(ErrorExpression.class)) {
+        LocalTypeCheckingError error = new TypeMismatchError(new StringPrettyPrintable("a universe"), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
+        expr.setWellTyped(myContext, new ErrorExpression(result.expression, error));
+        myErrorReporter.report(error);
+        return null;
+      }
+
+      universe = new UniverseExpression(Sort.generateInferVars(myEquations, expr));
+      InferenceReferenceExpression infExpr = stuck.checkedCast(InferenceReferenceExpression.class);
+      if (infExpr != null && infExpr.getVariable() != null) {
+        myEquations.add(type, universe, Equations.CMP.LE, expr, infExpr.getVariable());
+      }
     }
 
     return new TypeExpression(result.expression, universe.getSort());
