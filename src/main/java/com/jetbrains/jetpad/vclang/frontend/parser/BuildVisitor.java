@@ -24,50 +24,47 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     myErrorReporter = errorReporter;
   }
 
-  private Concrete.NameParameter getVar(AtomFieldsAccContext ctx) {
+  private Concrete.LocalVariable getVar(AtomFieldsAccContext ctx) {
     if (!ctx.fieldAcc().isEmpty() || !(ctx.atom() instanceof AtomLiteralContext)) {
       return null;
     }
     LiteralContext literal = ((AtomLiteralContext) ctx.atom()).literal();
     if (literal instanceof UnknownContext) {
       Concrete.Position position = tokenPosition(literal.getStart());
-      return new Concrete.NameParameter(position, true, "_");
+      return new Concrete.LocalVariable(position, "_");
     }
     if (literal instanceof IdContext && ((IdContext) literal).name() instanceof NameIdContext) {
       Concrete.Position position = tokenPosition(literal.getStart());
-      return new Concrete.NameParameter(position, true, ((NameIdContext) ((IdContext) literal).name()).ID().getText());
+      return new Concrete.LocalVariable(position, ((NameIdContext) ((IdContext) literal).name()).ID().getText());
     }
     return null;
   }
 
-  private List<Concrete.NameParameter> getVarsNull(ExprContext expr) {
+  private List<Concrete.LocalVariable> getVarsNull(ExprContext expr) {
     if (!(expr instanceof BinOpContext && ((BinOpContext) expr).binOpLeft().isEmpty() && ((BinOpContext) expr).binOpArg() instanceof BinOpArgumentContext && ((BinOpContext) expr).maybeNew() instanceof NoNewContext && ((BinOpContext) expr).implementStatements() == null)) {
       return null;
     }
-    Concrete.NameParameter firstArg = getVar(((BinOpArgumentContext)((BinOpContext) expr).binOpArg()).atomFieldsAcc());
+    Concrete.LocalVariable firstArg = getVar(((BinOpArgumentContext)((BinOpContext) expr).binOpArg()).atomFieldsAcc());
     if (firstArg == null) {
       return null;
     }
 
-    List<Concrete.NameParameter> result = new ArrayList<>();
+    List<Concrete.LocalVariable> result = new ArrayList<>();
     result.add(firstArg);
     for (ArgumentContext argument : ((BinOpArgumentContext)((BinOpContext) expr).binOpArg()).argument()) {
       if (argument instanceof ArgumentExplicitContext) {
-        Concrete.NameParameter arg = getVar(((ArgumentExplicitContext) argument).atomFieldsAcc());
+        Concrete.LocalVariable arg = getVar(((ArgumentExplicitContext) argument).atomFieldsAcc());
         if (arg == null) {
           return null;
         }
         result.add(arg);
       } else
       if (argument instanceof ArgumentImplicitContext) {
-        List<Concrete.NameParameter> arguments = getVarsNull(((ArgumentImplicitContext) argument).expr());
+        List<Concrete.LocalVariable> arguments = getVarsNull(((ArgumentImplicitContext) argument).expr());
         if (arguments == null) {
           return null;
         }
-        for (Concrete.NameParameter arg : arguments) {
-          arg.setExplicit(false);
-          result.add(arg);
-        }
+        result.addAll(arguments);
       } else {
         return null;
       }
@@ -75,8 +72,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return result;
   }
 
-  private List<Concrete.NameParameter> getVars(ExprContext expr) {
-    List<Concrete.NameParameter> result = getVarsNull(expr);
+  private List<Concrete.LocalVariable> getVars(ExprContext expr) {
+    List<Concrete.LocalVariable> result = getVarsNull(expr);
     if (result == null) {
       myErrorReporter.report(new ParserError(tokenPosition(expr.getStart()), "Expected a list of variables"));
       throw new ParseException();
@@ -569,14 +566,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         typeExpr = null;
       }
 
-      List<Concrete.NameParameter> vars = getVars(varsExpr);
+      List<Concrete.LocalVariable> vars = getVars(varsExpr);
       if (typeExpr == null) {
-        if (explicit) {
-          arguments.addAll(vars);
-        } else {
-          for (Concrete.NameParameter var : vars) {
-            arguments.add(new Concrete.NameParameter(var.getPosition(), false, var.getName()));
-          }
+        for (Concrete.LocalVariable var : vars) {
+          arguments.add(new Concrete.NameParameter(var.getPosition(), explicit, var.getName()));
         }
       } else {
         arguments.add(new Concrete.TelescopeParameter(tokenPosition(tele.getStart()), explicit, vars, typeExpr));
