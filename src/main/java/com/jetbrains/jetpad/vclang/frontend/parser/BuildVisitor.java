@@ -334,8 +334,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public List<Concrete.ReferenceExpression> visitElim(ElimContext ctx) {
-    if (ctx != null && ctx.expr0() != null && !ctx.expr0().isEmpty()) {
-      return checkElimExpressions(ctx.expr0().stream().map(this::visitExpr).collect(Collectors.toList()));
+    if (ctx != null && ctx.atomFieldsAcc() != null && !ctx.atomFieldsAcc().isEmpty()) {
+      return checkElimExpressions(ctx.atomFieldsAcc().stream().map(this::visitAtomFieldsAcc).collect(Collectors.toList()));
     } else {
       return Collections.emptyList();
     }
@@ -486,7 +486,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.ClassDefinition visitDefClass(DefClassContext ctx) {
     List<Concrete.TypeParameter> polyParameters = visitTeles(ctx.tele());
-    List<Concrete.SuperClass> superClasses = new ArrayList<>(ctx.expr0().size());
+    List<Concrete.SuperClass> superClasses = new ArrayList<>(ctx.atomFieldsAcc().size());
     List<Concrete.ClassField> fields = new ArrayList<>();
     List<Concrete.Implementation> implementations = new ArrayList<>();
     List<Concrete.Statement> globalStatements = visitWhere(ctx.where());
@@ -494,8 +494,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         ctx.statement().isEmpty() ?
         Collections.emptyList() :
         visitInstanceStatements(ctx.statement(), fields, implementations);
-    for (Expr0Context exprCtx : ctx.expr0()) {
-      superClasses.add(new Concrete.SuperClass(tokenPosition(exprCtx.getStart()), visitExpr(exprCtx)));
+    for (AtomFieldsAccContext exprCtx : ctx.atomFieldsAcc()) {
+      superClasses.add(new Concrete.SuperClass(tokenPosition(exprCtx.getStart()), visitAtomFieldsAcc(exprCtx)));
     }
 
     Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), polyParameters, superClasses, fields, implementations, globalStatements, instanceDefinitions);

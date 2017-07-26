@@ -175,7 +175,7 @@ public class ElimTest extends TypeCheckingTestCase {
   @Test
   public void elim10() {
     typeCheckClass("\\data Bool | true | false\n" +
-                   "\\function tp : \\Pi (x : Bool) -> \\oo-Type0 => \\lam x => \\case x {\n" +
+                   "\\function tp : \\Pi (x : Bool) -> \\oo-Type0 => \\lam x => \\case x \\with {\n" +
                    "  | true => Bool\n" +
                    "  | false => Nat\n" +
                    "}\n" +
@@ -263,7 +263,7 @@ public class ElimTest extends TypeCheckingTestCase {
         "  | suc n, suc m => EqSuc (p : Geq n m)\n" +
         "\n" +
         "\\function f (x y : Nat) (p : Geq x y) : Nat =>\n" +
-        "  \\case x, y, p {\n" +
+        "  \\case x, y, p \\with {\n" +
         "    | m, zero, EqBase => zero \n" +
         "    | zero, suc _, ()\n" +
         "    | suc _, suc _, EqSuc q => suc zero\n" +
@@ -371,7 +371,7 @@ public class ElimTest extends TypeCheckingTestCase {
   public void testEmptyCase() {
     typeCheckClass(
         "\\data D\n" +
-        "\\function test (d : D) : 0 = 1 => \\case d { () }"
+        "\\function test (d : D) : 0 = 1 => \\case d \\with { () }"
     );
   }
 
