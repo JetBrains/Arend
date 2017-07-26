@@ -50,6 +50,11 @@ public class LocalizedTypecheckerState<SourceIdT extends SourceId> implements Ty
   }
 
   @Override
+  public void reset(Abstract.Definition def) {
+    getLocal(def).reset(def);
+  }
+
+  @Override
   public void reset() {
     myStates.clear();
   }
@@ -61,6 +66,12 @@ public class LocalizedTypecheckerState<SourceIdT extends SourceId> implements Ty
 
     public void record(Abstract.Definition def, Definition res) {
       if (myDefinitions.put(def, res) != res) {
+        myIsOutOfSync = true;
+      }
+    }
+
+    public void reset(Abstract.Definition def) {
+      if (myDefinitions.remove(def) != null) {
         myIsOutOfSync = true;
       }
     }
