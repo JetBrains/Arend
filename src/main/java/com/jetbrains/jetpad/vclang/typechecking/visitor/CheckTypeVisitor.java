@@ -781,7 +781,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   public Result visitTuple(Abstract.TupleExpression expr, ExpectedType expectedType) {
     Expression expectedTypeNorm = null;
     if (expectedType instanceof Expression) {
-      expectedTypeNorm = ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF);
+      expectedTypeNorm = ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF_WO_INF);
       if (expectedTypeNorm.isInstance(SigmaExpression.class)) {
         SigmaExpression expectedTypeSigma = expectedTypeNorm.cast(SigmaExpression.class);
         DependentLink sigmaParams = expectedTypeSigma.getParameters();
@@ -812,7 +812,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
     List<Expression> fields = new ArrayList<>(expr.getFields().size());
     LinkList list = new LinkList();
-    Result tupleResult;
     for (int i = 0; i < expr.getFields().size(); i++) {
       Result result = checkExpr(expr.getFields().get(i), null);
       if (result == null) return null;
@@ -822,8 +821,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
     Sort sortArgument = Sort.generateInferVars(myEquations, expr);
     SigmaExpression type = new SigmaExpression(sortArgument, list.getFirst());
-    tupleResult = checkResult(expectedTypeNorm, new Result(new TupleExpression(fields, type), type), expr);
-    return tupleResult;
+    return checkResult(expectedTypeNorm, new Result(new TupleExpression(fields, type), type), expr);
   }
 
   private DependentLink visitParameters(List<? extends Abstract.TypeParameter> parameters, List<Sort> resultSorts) {
@@ -1087,7 +1085,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   public Result visitNew(Abstract.NewExpression expr, ExpectedType expectedType) {
     Result exprResult = checkExpr(expr.getExpression(), null);
     if (exprResult == null) return null;
-    Expression normExpr = exprResult.expression.normalize(NormalizeVisitor.Mode.WHNF);
+    Expression normExpr = exprResult.expression.normalize(NormalizeVisitor.Mode.WHNF_WO_INF);
     ClassCallExpression classCallExpr = normExpr.checkedCast(ClassCallExpression.class);
     if (classCallExpr == null) {
       classCallExpr = normExpr.isInstance(ErrorExpression.class) ? normExpr.cast(ErrorExpression.class).getExpr().normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class) : null;

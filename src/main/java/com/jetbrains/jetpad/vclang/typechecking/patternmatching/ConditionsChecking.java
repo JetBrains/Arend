@@ -173,6 +173,7 @@ public class ConditionsChecking {
     }
   }
 
+  @SuppressWarnings("UnusedReturnValue")
   public static boolean check(List<Clause> clauses, ElimTree elimTree, LocalErrorReporter errorReporter) {
     boolean ok = true;
     for (Clause clause : clauses) {
@@ -188,7 +189,7 @@ public class ConditionsChecking {
     for (Pair<List<Expression>, ExprSubstitution> pair : collectPatterns(clause.patterns)) {
       Expression evaluatedExpr1;
       if (definition == null) {
-        evaluatedExpr1 = new NormalizeVisitor().eval(elimTree, pair.proj1, new ExprSubstitution(), LevelSubstitution.EMPTY);
+        evaluatedExpr1 = new NormalizeVisitor().eval(elimTree, pair.proj1, new ExprSubstitution(), LevelSubstitution.EMPTY, NormalizeVisitor.Mode.WHNF);
       } else {
         evaluatedExpr1 = definition.getDefCall(Sort.STD, null, pair.proj1);
       }
