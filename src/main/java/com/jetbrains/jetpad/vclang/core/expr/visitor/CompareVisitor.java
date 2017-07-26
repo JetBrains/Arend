@@ -530,32 +530,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
   @Override
   public Boolean visitLet(LetExpression letExpr1, Expression expr2) {
-    // TODO[cmpNorm]: throw new IllegalStateException();
-    if (!expr2.isInstance(LetExpression.class)) {
-      return false;
-    }
-    letExpr1 = letExpr1.mergeNestedLets();
-    LetExpression letExpr2 = expr2.cast(LetExpression.class).mergeNestedLets();
-    if (letExpr1.getClauses().size() != letExpr2.getClauses().size()) {
-      return false;
-    }
-
-    CompareVisitor visitor = new CompareVisitor(mySubstitution, myEquations, Equations.CMP.EQ, mySourceNode);
-    for (int i = 0; i < letExpr1.getClauses().size(); i++) {
-      if (!visitor.compare(letExpr1.getClauses().get(i).getExpression(), letExpr2.getClauses().get(i).getExpression())) {
-        return false;
-      }
-      mySubstitution.put(letExpr1.getClauses().get(i), letExpr2.getClauses().get(i));
-    }
-
-    visitor.myCMP = myCMP;
-    if (!visitor.compare(letExpr1.getExpression(), letExpr2.getExpression())) {
-      return false;
-    }
-    for (int i = 0; i < letExpr1.getClauses().size(); i++) {
-      mySubstitution.remove(letExpr1.getClauses().get(i));
-    }
-    return true;
+    throw new IllegalStateException();
   }
 
   @Override

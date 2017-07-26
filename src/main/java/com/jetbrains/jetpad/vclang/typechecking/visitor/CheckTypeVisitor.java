@@ -1189,8 +1189,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
         return null;
       }
 
-      LetExpression letExpr = new LetExpression(clauses, result.expression);
-      return new Result(letExpr, new LetExpression(letExpr.getClauses(), result.type));
+      ExprSubstitution substitution = new ExprSubstitution();
+      for (LetClause clause : clauses) {
+        substitution.add(clause, clause.getExpression());
+      }
+      return new Result(new LetExpression(clauses, result.expression), result.type.subst(substitution));
     }
   }
 

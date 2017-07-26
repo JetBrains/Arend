@@ -1,11 +1,11 @@
 package com.jetbrains.jetpad.vclang.core.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
@@ -20,18 +20,18 @@ import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import java.util.*;
 
 public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> {
-  private final FindBindingVisitor myVisitor;
+  private final FindMissingBindingVisitor myVisitor;
   private Variable myFoundVariable = null;
 
-  private ElimBindingVisitor(Set<? extends Variable> bindings) {
-    myVisitor = new FindBindingVisitor(bindings);
+  private ElimBindingVisitor(Set<Binding> bindings) {
+    myVisitor = new FindMissingBindingVisitor(bindings);
   }
 
   public Variable getFoundVariable() {
     return myFoundVariable;
   }
 
-  public static Expression findBindings(Expression expression, Set<? extends Variable> bindings) {
+  public static Expression findBindings(Expression expression, Set<Binding> bindings) {
     return new ElimBindingVisitor(bindings).findBindings(expression, true);
   }
 
@@ -56,11 +56,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     return new AppExpression(result, arg);
   }
 
-  private List<Expression> visitDefCallArguments(Definition definition, List<? extends Expression> args) {
-    if (myVisitor.getBindings().contains(definition)) {
-      myFoundVariable = definition;
-      return null;
-    }
+  private List<Expression> visitDefCallArguments(List<? extends Expression> args) {
     List<Expression> result = new ArrayList<>(args.size());
     for (Expression arg : args) {
       Expression newArg = findBindings(arg, true);
@@ -74,7 +70,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
 
   @Override
   public DefCallExpression visitDefCall(DefCallExpression expr, Void params) {
-    List<Expression> newArgs = visitDefCallArguments(expr.getDefinition(), expr.getDefCallArguments());
+    List<Expression> newArgs = visitDefCallArguments(expr.getDefCallArguments());
     return newArgs == null ? null : expr.getDefinition().getDefCall(expr.getSortArgument(), null, newArgs);
   }
 
@@ -86,7 +82,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
 
   @Override
   public ConCallExpression visitConCall(ConCallExpression expr, Void params) {
-    List<Expression> newArgs = visitDefCallArguments(expr.getDefinition(), expr.getDefCallArguments());
+    List<Expression> newArgs = visitDefCallArguments(expr.getDefCallArguments());
     if (newArgs == null) {
       return null;
     }
@@ -103,11 +99,6 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
 
   @Override
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
-    if (myVisitor.getBindings().contains(expr.getDefinition())) {
-      myFoundVariable = expr.getDefinition();
-      return null;
-    }
-
     FieldSet newFieldSet = new FieldSet(expr.getFieldSet().getSort());
     newFieldSet.addFieldsFrom(expr.getFieldSet());
     for (Map.Entry<ClassField, FieldSet.Implementation> entry : expr.getFieldSet().getImplemented()) {
@@ -126,7 +117,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
 
   @Override
   public ReferenceExpression visitReference(ReferenceExpression expr, Void params) {
-    if (myVisitor.getBindings().contains(expr.getBinding())) {
+    if (!myVisitor.getBindings().contains(expr.getBinding())) {
       myFoundVariable = expr.getBinding();
       return null;
     } else {
@@ -136,14 +127,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
 
   @Override
   public Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
-    if (expr.getSubstExpression() != null) {
-      return findBindings(expr.getSubstExpression(), true);
-    }
-    if (myVisitor.getBindings().contains(expr.getVariable())) {
-      myFoundVariable = expr.getVariable();
-      return null;
-    }
-    return expr;
+    return expr.getSubstExpression() != null ? findBindings(expr.getSubstExpression(), true) : expr;
   }
 
   @Override

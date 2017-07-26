@@ -16,12 +16,10 @@ import java.util.*;
 public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   private final Set<Binding> myBounds;
   private final LocalErrorReporter myErrorReporter;
-  private final Stack<InferenceReferenceExpression> myVariables;
 
   public StripVisitor(Set<Binding> bounds, LocalErrorReporter errorReporter) {
     myBounds = bounds;
     myErrorReporter = errorReporter;
-    myVariables = new Stack<>();
   }
 
   @Override
@@ -77,36 +75,28 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
     return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), fieldSet);
   }
 
-  private Expression cannotInferError() {
-    LocalTypeCheckingError error = myVariables.empty() ? new LocalTypeCheckingError("Cannot infer some expressions", null) : myVariables.peek().getOriginalVariable().getErrorInfer(myVariables.peek().getSubstExpression());
-    myErrorReporter.report(error);
-    return new ErrorExpression(null, error);
-  }
-
   @Override
   public Expression visitReference(ReferenceExpression expr, Void params) {
-    if (myBounds.contains(expr.getBinding())) {
-      return expr;
-    } else {
-      return cannotInferError();
-    }
+    return expr;
   }
 
   @Override
   public Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
+    LocalTypeCheckingError error;
     if (expr.getVariable() != null) {
-      LocalTypeCheckingError error = expr.getVariable().getErrorInfer();
-      myErrorReporter.report(error);
-      Expression result = new ErrorExpression(null, error);
-      expr.setSubstExpression(result);
-      return result;
+      error = expr.getVariable().getErrorInfer();
     } else {
-      myVariables.push(expr);
-      // Maybe normalization is not the best idea
-      Expression result = expr.getSubstExpression().normalize(NormalizeVisitor.Mode.NF).accept(this, null);
-      myVariables.pop();
-      return result;
+      Expression result = ElimBindingVisitor.findBindings(expr.getSubstExpression().accept(this, null), myBounds);
+      if (result != null) {
+        return result;
+      }
+      error = expr.getOriginalVariable().getErrorInfer(expr.getSubstExpression());
     }
+
+    myErrorReporter.report(error);
+    Expression result = new ErrorExpression(null, error);
+    expr.setSubstExpression(result);
+    return result;
   }
 
   private void visitParameters(DependentLink link) {
