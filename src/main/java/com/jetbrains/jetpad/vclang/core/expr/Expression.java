@@ -45,7 +45,7 @@ public abstract class Expression implements ExpectedType {
   public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent) {
     ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory(), names);
     visitor.addFlags(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM);
-    accept(visitor, null).accept(new PrettyPrintVisitor(builder, indent), prec);
+    normalize(NormalizeVisitor.Mode.RNF).accept(visitor, null).accept(new PrettyPrintVisitor(builder, indent), prec);
   }
 
   public boolean isLessOrEquals(Expression type, Equations equations, Abstract.SourceNode sourceNode) {

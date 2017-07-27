@@ -16,7 +16,7 @@ import com.jetbrains.jetpad.vclang.util.ComputationInterruptedException;
 import java.util.*;
 
 public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mode, Expression>  {
-  public enum Mode { WHNF, WHNF_WO_INF, NF, HUMAN_NF;
+  public enum Mode { WHNF, WHNF_WO_INF, NF, RNF;
     private Mode toWHNF() {
       return this == WHNF_WO_INF ? WHNF_WO_INF : WHNF;
     }
@@ -28,6 +28,10 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitApp(AppExpression expr, Mode mode) {
+    if (mode == Mode.RNF) {
+      return new AppExpression(expr.getFunction().accept(this, mode), expr.getArgument().accept(this, mode));
+    }
+
     List<Expression> args = new ArrayList<>();
     Expression function = expr;
     while (function.isInstance(AppExpression.class)) {
@@ -70,7 +74,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   private Expression applyDefCall(DefCallExpression expr, Mode mode) {
-    if (expr.getDefCallArguments().isEmpty() || (mode != Mode.NF && mode != Mode.HUMAN_NF)) {
+    if (mode.isWHNF() || expr.getDefCallArguments().isEmpty()) {
       return expr;
     }
 
@@ -172,7 +176,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
       elimTree = elim.getOtherwise();
     } else {
-      elimTree = (ElimTree) body;
+      elimTree = mode == Mode.RNF && body instanceof LeafElimTree ? null : (ElimTree) body;
     }
 
     if (elimTree == null) {
@@ -280,7 +284,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
           }
         }
       }
-      return new FieldCallExpression((ClassField) expr.getDefinition(), mode == Mode.NF ? thisExpr.accept(this, mode) : thisExpr);
+      return new FieldCallExpression((ClassField) expr.getDefinition(), mode.isWHNF() ? thisExpr : thisExpr.accept(this, mode));
     }
 
     if (expr.getDefinition() instanceof Function) {
@@ -305,7 +309,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitReference(ReferenceExpression expr, Mode mode) {
-    return expr.getBinding() instanceof LetClause ? ((LetClause) expr.getBinding()).getExpression().accept(this, mode) : expr;
+    return expr.getBinding() instanceof LetClause && mode != Mode.RNF ? ((LetClause) expr.getBinding()).getExpression().accept(this, mode) : expr;
   }
 
   @Override
@@ -315,7 +319,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitLam(LamExpression expr, Mode mode) {
-    if (mode == Mode.HUMAN_NF) {
+    if (mode == Mode.RNF) {
       ExprSubstitution substitution = new ExprSubstitution();
       SingleDependentLink link = normalizeSingleParameters(expr.getParameters(), mode, substitution);
       return new LamExpression(expr.getResultSort(), link, expr.getBody().subst(substitution).accept(this, mode));
@@ -329,7 +333,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public PiExpression visitPi(PiExpression expr, Mode mode) {
-    if (mode == Mode.HUMAN_NF || mode == Mode.NF) {
+    if (!mode.isWHNF()) {
       ExprSubstitution substitution = new ExprSubstitution();
       SingleDependentLink link = normalizeSingleParameters(expr.getParameters(), mode, substitution);
       return new PiExpression(expr.getResultSort(), link, expr.getCodomain().subst(substitution).accept(this, mode));
@@ -345,12 +349,12 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitError(ErrorExpression expr, Mode mode) {
-    return mode != Mode.NF && mode != Mode.HUMAN_NF || expr.getExpr() == null ? expr : new ErrorExpression(expr.getExpr().accept(this, mode), expr.getError());
+    return mode.isWHNF() || expr.getExpr() == null ? expr : new ErrorExpression(expr.getExpr().accept(this, mode), expr.getError());
   }
 
   @Override
   public Expression visitTuple(TupleExpression expr, Mode mode) {
-    if (mode != Mode.NF && mode != Mode.HUMAN_NF) return expr;
+    if (mode.isWHNF()) return expr;
     List<Expression> fields = new ArrayList<>(expr.getFields().size());
     for (Expression field : expr.getFields()) {
       fields.add(field.accept(this, mode));
@@ -360,7 +364,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public SigmaExpression visitSigma(SigmaExpression expr, Mode mode) {
-    if (mode != Mode.NF && mode != Mode.HUMAN_NF) {
+    if (mode.isWHNF()) {
       return expr;
     }
 
@@ -392,7 +396,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     if (exprNorm != null) {
       return exprNorm.getFields().get(expr.getField()).accept(this, mode);
     } else {
-      return mode == Mode.NF || mode == Mode.HUMAN_NF ? new ProjExpression(expr.getExpression().accept(this, mode), expr.getField()) : new ProjExpression(newExpr, expr.getField());
+      return mode.isWHNF() ? new ProjExpression(newExpr, expr.getField()) : new ProjExpression(expr.getExpression().accept(this, mode), expr.getField());
     }
   }
 
@@ -403,11 +407,15 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitLet(LetExpression letExpression, Mode mode) {
-    ExprSubstitution substitution = new ExprSubstitution();
-    for (LetClause clause : letExpression.getClauses()) {
-      substitution.add(clause, clause.getExpression());
+    if (mode == Mode.RNF) {
+      List<LetClause> newClauses = new ArrayList<>(letExpression.getClauses().size());
+      for (LetClause clause : letExpression.getClauses()) {
+        newClauses.add(new LetClause(clause.getName(), clause.getExpression().accept(this, mode)));
+      }
+      return new LetExpression(newClauses, letExpression.getExpression().accept(this, mode));
+    } else {
+      return letExpression.getExpression().subst(letExpression.getClausesSubstitution()).accept(this, mode);
     }
-    return letExpression.getExpression().subst(substitution).accept(this, mode);
   }
 
   @Override
@@ -416,7 +424,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     if (result != null) {
       return result;
     }
-    if (mode != Mode.NF) {
+    if (mode.isWHNF()) {
       return expr;
     }
 
@@ -426,19 +434,19 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
     ExprSubstitution substitution = new ExprSubstitution();
     DependentLink parameters = normalizeParameters(expr.getParameters(), mode, substitution);
-    return new CaseExpression(parameters, expr.getResultType().subst(substitution).accept(this, mode), normalizeElimTree(expr.getElimTree()), args);
+    return new CaseExpression(parameters, expr.getResultType().subst(substitution).accept(this, mode), normalizeElimTree(expr.getElimTree(), mode), args);
   }
 
-  private ElimTree normalizeElimTree(ElimTree elimTree) {
+  private ElimTree normalizeElimTree(ElimTree elimTree, Mode mode) {
     ExprSubstitution substitution = new ExprSubstitution();
     DependentLink vars = DependentLink.Helper.subst(elimTree.getParameters(), substitution);
     if (elimTree instanceof LeafElimTree) {
-      return new LeafElimTree(vars, ((LeafElimTree) elimTree).getExpression().subst(substitution).accept(this, Mode.NF));
+      return new LeafElimTree(vars, ((LeafElimTree) elimTree).getExpression().subst(substitution).accept(this, mode));
     } else {
       Map<Constructor, ElimTree> children = new HashMap<>();
       SubstVisitor visitor = new SubstVisitor(substitution, LevelSubstitution.EMPTY);
       for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        children.put(entry.getKey(), visitor.substElimTree(normalizeElimTree(entry.getValue())));
+        children.put(entry.getKey(), visitor.substElimTree(normalizeElimTree(entry.getValue(), mode)));
       }
       return new BranchElimTree(vars, children);
     }

@@ -182,7 +182,7 @@ class DefinitionTypechecking {
             classifyingFields.put(index - 1, classifyingField);
             for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
               ReferenceExpression reference = new ReferenceExpression(link);
-              if (!localInstancePool.addInstance(FieldCall(classifyingField, reference).normalize(NormalizeVisitor.Mode.NF), classView, reference)) {
+              if (!localInstancePool.addInstance(FieldCall(classifyingField, reference), classView, reference)) {
                 visitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, "Duplicate instance", parameter)); // FIXME[error] better error message
               }
             }

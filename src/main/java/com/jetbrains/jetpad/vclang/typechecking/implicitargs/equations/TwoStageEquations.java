@@ -276,7 +276,7 @@ public class TwoStageEquations implements Equations {
   @Override
   public boolean solve(Expression type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode) {
     if (!CompareVisitor.compare(this, cmp, type, expr, sourceNode)) {
-      myVisitor.getErrorReporter().report(new SolveEquationError<>(type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr.normalize(NormalizeVisitor.Mode.HUMAN_NF), sourceNode));
+      myVisitor.getErrorReporter().report(new SolveEquationError(type, expr, sourceNode));
       return false;
     } else {
       return true;
@@ -535,14 +535,13 @@ public class TwoStageEquations implements Equations {
       return false;
     }
 
-    Expression expectedType = var.getType().normalize(NormalizeVisitor.Mode.WHNF);
-    Expression actualType = expr.getType().normalize(NormalizeVisitor.Mode.WHNF);
+    Expression expectedType = var.getType();
+    Expression actualType = expr.getType();
     if (actualType.isLessOrEquals(expectedType, this, var.getSourceNode())) {
       var.solve(this, OfTypeExpression.make(expr, actualType, expectedType));
       return true;
     } else {
-      actualType = actualType.normalize(NormalizeVisitor.Mode.HUMAN_NF);
-      LocalTypeCheckingError error = var.getErrorMismatch(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), actualType, expr);
+      LocalTypeCheckingError error = var.getErrorMismatch(expectedType, actualType, expr);
       myVisitor.getErrorReporter().report(error);
       var.solve(this, new ErrorExpression(expr, error));
       return false;

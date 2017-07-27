@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 
 import java.util.List;
 
@@ -15,6 +16,14 @@ public class LetExpression extends Expression {
 
   public List<LetClause> getClauses() {
     return myClauses;
+  }
+
+  public ExprSubstitution getClausesSubstitution() {
+    ExprSubstitution substitution = new ExprSubstitution();
+    for (LetClause clause : myClauses) {
+      substitution.add(clause, clause.getExpression());
+    }
+    return substitution;
   }
 
   public Expression getExpression() {
