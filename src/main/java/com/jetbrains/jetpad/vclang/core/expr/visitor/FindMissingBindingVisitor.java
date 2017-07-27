@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
@@ -13,10 +14,10 @@ import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import java.util.Map;
 import java.util.Set;
 
-public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
-  private final Set<? extends Variable> myBindings;
+public class FindMissingBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
+  private final Set<Binding> myBindings;
 
-  public FindBindingVisitor(Set<? extends Variable> binding) {
+  public FindMissingBindingVisitor(Set<Binding> binding) {
     myBindings = binding;
   }
 
@@ -41,7 +42,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
         return result;
       }
     }
-    return myBindings.contains(expr.getDefinition()) ? expr.getDefinition() : null;
+    return null;
   }
 
   @Override
@@ -68,24 +69,36 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
 
   @Override
   public Variable visitReference(ReferenceExpression expr, Void params) {
-    return myBindings.contains(expr.getBinding()) ? expr.getBinding() : null;
+    return !myBindings.contains(expr.getBinding()) ? expr.getBinding() : null;
   }
 
   @Override
   public Variable visitInferenceReference(InferenceReferenceExpression expr, Void params) {
-    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : myBindings.contains(expr.getVariable()) ? expr.getVariable() : null;
+    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : null;
   }
 
   @Override
   public Variable visitLam(LamExpression expr, Void params) {
-    Variable result = visitDependentLink(expr.getParameters());
-    return result != null ? result : expr.getBody().accept(this, null);
+    Variable result = visitParameters(expr.getParameters());
+    if (result != null) {
+      return result;
+    }
+
+    result = expr.getBody().accept(this, null);
+    freeParameters(expr.getParameters());
+    return result;
   }
 
   @Override
   public Variable visitPi(PiExpression expr, Void params) {
-    Variable result = visitDependentLink(expr.getParameters());
-    return result != null ? result : expr.getCodomain().accept(this, null);
+    Variable result = visitParameters(expr.getParameters());
+    if (result != null) {
+      return result;
+    }
+
+    result = expr.getCodomain().accept(this, null);
+    freeParameters(expr.getParameters());
+    return result;
   }
 
   @Override
@@ -111,7 +124,11 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
 
   @Override
   public Variable visitSigma(SigmaExpression expr, Void params) {
-    return visitDependentLink(expr.getParameters());
+    Variable result = visitParameters(expr.getParameters());
+    if (result == null) {
+      freeParameters(expr.getParameters());
+    }
+    return result;
   }
 
   @Override
@@ -119,15 +136,29 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
     return expr.getExpression().accept(this, null);
   }
 
-  private Variable visitDependentLink(DependentLink link) {
-    for (; link.hasNext(); link = link.getNext()) {
-      link = link.getNextTyped(null);
-      Variable result = link.getTypeExpr().accept(this, null);
+  private Variable visitParameters(DependentLink parameters) {
+    for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
+      DependentLink link1 = link.getNextTyped(null);
+      Variable result = link1.getTypeExpr().accept(this, null);
       if (result != null) {
+        for (; parameters != link; parameters = parameters.getNext()) {
+          myBindings.remove(parameters);
+        }
         return result;
       }
+
+      for (; link != link1; link = link.getNext()) {
+        myBindings.add(link);
+      }
+      myBindings.add(link);
     }
     return null;
+  }
+
+  private void freeParameters(DependentLink link) {
+    for (; link.hasNext(); link = link.getNext()) {
+      myBindings.remove(link);
+    }
   }
 
   @Override
@@ -142,8 +173,11 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
       if (result != null) {
         return result;
       }
+      myBindings.add(clause);
     }
-    return letExpression.getExpression().accept(this, null);
+    Variable result = letExpression.getExpression().accept(this, null);
+    letExpression.getClauses().forEach(myBindings::remove);
+    return result;
   }
 
   @Override
@@ -155,12 +189,13 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
       }
     }
 
-    Variable result = expr.getResultType().accept(this, null);
+    Variable result = visitParameters(expr.getParameters());
     if (result != null) {
       return result;
     }
 
-    result = visitDependentLink(expr.getParameters());
+    result = expr.getResultType().accept(this, null);
+    freeParameters(expr.getParameters());
     if (result != null) {
       return result;
     }
@@ -169,7 +204,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
   }
 
   private Variable findBindingInElimTree(ElimTree elimTree) {
-    Variable result = visitDependentLink(elimTree.getParameters());
+    Variable result = visitParameters(elimTree.getParameters());
     if (result != null) {
       return result;
     }
@@ -180,11 +215,13 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
       for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
         result = findBindingInElimTree(entry.getValue());
         if (result != null) {
+          freeParameters(elimTree.getParameters());
           return result;
         }
       }
     }
 
+    freeParameters(elimTree.getParameters());
     return result;
   }
 

@@ -17,7 +17,6 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class Constructor extends Definition implements Function {
   private final DataDefinition myDataType;
@@ -113,7 +112,10 @@ public class Constructor extends Definition implements Function {
       }
     } else {
       if (dataTypeArguments == null) {
-        arguments = myPatterns.getPatternList().stream().map(Pattern::toExpression).collect(Collectors.toList());
+        arguments = new ArrayList<>(myPatterns.getPatternList().size());
+        for (Pattern pattern : myPatterns.getPatternList()) {
+          arguments.add(pattern.toExpression());
+        }
       } else {
         ExprSubstitution substitution = new ExprSubstitution();
         DependentLink link = myPatterns.getFirstBinding();
@@ -121,7 +123,11 @@ public class Constructor extends Definition implements Function {
           substitution.add(link, argument);
           link = link.getNext();
         }
-        arguments = myPatterns.getPatternList().stream().map(pattern -> pattern.toExpression().subst(substitution)).collect(Collectors.toList());
+
+        arguments = new ArrayList<>(myPatterns.getPatternList().size());
+        for (Pattern pattern : myPatterns.getPatternList()) {
+          arguments.add(pattern.toExpression().subst(substitution));
+        }
       }
     }
 

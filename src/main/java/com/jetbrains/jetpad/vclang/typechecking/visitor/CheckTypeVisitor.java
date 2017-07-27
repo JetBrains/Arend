@@ -49,7 +49,6 @@ import com.jetbrains.jetpad.vclang.typechecking.patternmatching.PatternTypecheck
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.ClassViewInstancePool;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.expression;
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.ordinal;
@@ -386,13 +385,22 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       return (Type) result.expression;
     }
 
-    // TODO: if result.type is stuck, add an equation
-    UniverseExpression universe = result.type.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(UniverseExpression.class);
+    Expression type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
+    UniverseExpression universe = type.checkedCast(UniverseExpression.class);
     if (universe == null) {
-      LocalTypeCheckingError error = new TypeMismatchError(new StringPrettyPrintable("a universe"), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
-      expr.setWellTyped(myContext, new ErrorExpression(result.expression, error));
-      myErrorReporter.report(error);
-      return null;
+      Expression stuck = type.getStuckExpression();
+      if (stuck == null || !stuck.isInstance(InferenceReferenceExpression.class) && !stuck.isInstance(ErrorExpression.class)) {
+        LocalTypeCheckingError error = new TypeMismatchError(new StringPrettyPrintable("a universe"), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
+        expr.setWellTyped(myContext, new ErrorExpression(result.expression, error));
+        myErrorReporter.report(error);
+        return null;
+      }
+
+      universe = new UniverseExpression(Sort.generateInferVars(myEquations, expr));
+      InferenceReferenceExpression infExpr = stuck.checkedCast(InferenceReferenceExpression.class);
+      if (infExpr != null && infExpr.getVariable() != null) {
+        myEquations.add(type, universe, Equations.CMP.LE, expr, infExpr.getVariable());
+      }
     }
 
     return new TypeExpression(result.expression, universe.getSort());
@@ -405,7 +413,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   }
 
   private boolean compareExpressions(boolean isLeft, Result result, Expression expected, Expression actual, Abstract.Expression expr) {
-    if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, expected.normalize(NormalizeVisitor.Mode.NF), actual.normalize(NormalizeVisitor.Mode.NF), expr)) {
+    if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, expected, actual, expr)) {
+      CompareVisitor.compare(myEquations, Equations.CMP.EQ, expected, actual, expr);
       LocalTypeCheckingError error = new PathEndpointMismatchError(isLeft, expected.normalize(NormalizeVisitor.Mode.HUMAN_NF), actual.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
       expr.setWellTyped(myContext, new ErrorExpression(result.expression, error));
       myErrorReporter.report(error);
@@ -509,7 +518,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
     if (param instanceof Abstract.TelescopeParameter) {
       List<? extends Abstract.ReferableSourceNode> referableList = ((Abstract.TelescopeParameter) param).getReferableList();
-      List<String> names = referableList.stream().map(r -> r == null ? null : r.getName()).collect(Collectors.toList());
+      List<String> names = new ArrayList<>(referableList.size());
+      for (Abstract.ReferableSourceNode referable : referableList) {
+        names.add(referable == null ? null : referable.getName());
+      }
       SingleDependentLink link = ExpressionFactory.singleParams(param.getExplicit(), names, argResult);
       int i = 0;
       for (SingleDependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
@@ -585,12 +597,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
             break;
           }
           if (argExpr == null) {
-            argExpr = argType.normalize(NormalizeVisitor.Mode.NF);
+            argExpr = argType;
           }
 
           PiExpression piExpectedType = expectedType.cast(PiExpression.class);
           Expression argExpectedType = piExpectedType.getParameters().getTypeExpr().subst(substitution);
-          if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, argExpectedType.normalize(NormalizeVisitor.Mode.NF), argExpr, paramType)) {
+          if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, argExpectedType, argExpr, paramType)) {
             LocalTypeCheckingError error = new TypeMismatchError(argExpectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), argType.normalize(NormalizeVisitor.Mode.HUMAN_NF), paramType);
             myErrorReporter.report(error);
             return null;
@@ -666,7 +678,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
         if (arg instanceof Abstract.TelescopeParameter) {
           List<? extends Abstract.ReferableSourceNode> referableList = ((Abstract.TelescopeParameter) arg).getReferableList();
-          SingleDependentLink link = ExpressionFactory.singleParams(arg.getExplicit(), referableList.stream().map(r -> r == null ? null : r.getName()).collect(Collectors.toList()), result);
+          List<String> names = new ArrayList<>(referableList.size());
+          for (Abstract.ReferableSourceNode referable : referableList) {
+            names.add(referable == null ? null : referable.getName());
+          }
+          SingleDependentLink link = ExpressionFactory.singleParams(arg.getExplicit(), names, result);
           list.add(link);
           int i = 0;
           for (SingleDependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
@@ -774,7 +790,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   public Result visitTuple(Abstract.TupleExpression expr, ExpectedType expectedType) {
     Expression expectedTypeNorm = null;
     if (expectedType instanceof Expression) {
-      expectedTypeNorm = ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF);
+      expectedTypeNorm = ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF_WO_INF);
       if (expectedTypeNorm.isInstance(SigmaExpression.class)) {
         SigmaExpression expectedTypeSigma = expectedTypeNorm.cast(SigmaExpression.class);
         DependentLink sigmaParams = expectedTypeSigma.getParameters();
@@ -805,7 +821,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
     List<Expression> fields = new ArrayList<>(expr.getFields().size());
     LinkList list = new LinkList();
-    Result tupleResult;
     for (int i = 0; i < expr.getFields().size(); i++) {
       Result result = checkExpr(expr.getFields().get(i), null);
       if (result == null) return null;
@@ -815,8 +830,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
     Sort sortArgument = Sort.generateInferVars(myEquations, expr);
     SigmaExpression type = new SigmaExpression(sortArgument, list.getFirst());
-    tupleResult = checkResult(expectedTypeNorm, new Result(new TupleExpression(fields, type), type), expr);
-    return tupleResult;
+    return checkResult(expectedTypeNorm, new Result(new TupleExpression(fields, type), type), expr);
   }
 
   private DependentLink visitParameters(List<? extends Abstract.TypeParameter> parameters, List<Sort> resultSorts) {
@@ -829,7 +843,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
         if (arg instanceof Abstract.TelescopeParameter) {
           List<? extends Abstract.ReferableSourceNode> referableList = ((Abstract.TelescopeParameter) arg).getReferableList();
-          DependentLink link = ExpressionFactory.parameter(arg.getExplicit(), referableList.stream().map(r -> r == null ? null : r.getName()).collect(Collectors.toList()), result);
+          List<String> names = new ArrayList<>(referableList.size());
+          for (Abstract.ReferableSourceNode referable : referableList) {
+            names.add(referable == null ? null : referable.getName());
+          }
+          DependentLink link = ExpressionFactory.parameter(arg.getExplicit(), names, result);
           list.append(link);
           int i = 0;
           for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
@@ -1076,7 +1094,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   public Result visitNew(Abstract.NewExpression expr, ExpectedType expectedType) {
     Result exprResult = checkExpr(expr.getExpression(), null);
     if (exprResult == null) return null;
-    Expression normExpr = exprResult.expression.normalize(NormalizeVisitor.Mode.WHNF);
+    Expression normExpr = exprResult.expression.normalize(NormalizeVisitor.Mode.WHNF_WO_INF);
     ClassCallExpression classCallExpr = normExpr.checkedCast(ClassCallExpression.class);
     if (classCallExpr == null) {
       classCallExpr = normExpr.isInstance(ErrorExpression.class) ? normExpr.cast(ErrorExpression.class).getExpr().normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class) : null;
@@ -1180,8 +1198,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
         return null;
       }
 
-      LetExpression letExpr = new LetExpression(clauses, result.expression);
-      return new Result(letExpr, new LetExpression(letExpr.getClauses(), result.type));
+      ExprSubstitution substitution = new ExprSubstitution();
+      for (LetClause clause : clauses) {
+        substitution.add(clause, clause.getExpression());
+      }
+      return new Result(new LetExpression(clauses, result.expression), result.type.subst(substitution));
     }
   }
 

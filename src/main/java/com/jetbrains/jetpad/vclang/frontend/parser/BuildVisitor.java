@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.frontend.parser.VcgrammarParser.*;
 
@@ -234,7 +233,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (ctx.name() instanceof NameIdContext && ctx.atomPatternOrID().size() == 0) {
       return new Concrete.NamePattern(tokenPosition(ctx.start), ((NameIdContext) ctx.name()).ID().getText());
     } else {
-      return new Concrete.ConstructorPattern(tokenPosition(ctx.start), visitName(ctx.name()), ctx.atomPatternOrID().stream().map(this::visitAtomPattern).collect(Collectors.toList()));
+      List<Concrete.Pattern> patterns = new ArrayList<>(ctx.atomPatternOrID().size());
+      for (AtomPatternOrIDContext atomCtx : ctx.atomPatternOrID()) {
+        patterns.add(visitAtomPattern(atomCtx));
+      }
+      return new Concrete.ConstructorPattern(tokenPosition(ctx.start), visitName(ctx.name()), patterns);
     }
   }
 
@@ -332,7 +335,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public List<Concrete.ReferenceExpression> visitElim(ElimContext ctx) {
     if (ctx != null && ctx.atomFieldsAcc() != null && !ctx.atomFieldsAcc().isEmpty()) {
-      return checkElimExpressions(ctx.atomFieldsAcc().stream().map(this::visitAtomFieldsAcc).collect(Collectors.toList()));
+      List<Concrete.Expression> expressions = new ArrayList<>(ctx.atomFieldsAcc().size());
+      for (AtomFieldsAccContext exprCtx : ctx.atomFieldsAcc()) {
+        expressions.add(visitAtomFieldsAcc(exprCtx));
+      }
+      return checkElimExpressions(expressions);
     } else {
       return Collections.emptyList();
     }
@@ -406,7 +413,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (ctx instanceof DataClausesContext) {
       for (ConstructorClauseContext clauseCtx : ((DataClausesContext) ctx).constructorClause()) {
         try {
-          def.getConstructorClauses().add(new Concrete.ConstructorClause(tokenPosition(clauseCtx.start), clauseCtx.pattern().stream().map(this::visitPattern).collect(Collectors.toList()), visitConstructors(clauseCtx.constructor(), def)));
+          List<Concrete.Pattern> patterns = new ArrayList<>(clauseCtx.pattern().size());
+          for (PatternContext patternCtx : clauseCtx.pattern()) {
+            patterns.add(visitPattern(patternCtx));
+          }
+          def.getConstructorClauses().add(new Concrete.ConstructorClause(tokenPosition(clauseCtx.start), patterns, visitConstructors(clauseCtx.constructor(), def)));
         } catch (ParseException ignored) {
 
         }
@@ -421,6 +432,16 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     for (ConstructorContext conCtx : conContexts) {
       boolean hasConditions = conCtx.elim() != null || !conCtx.clause().isEmpty();
       try {
+        List<Concrete.FunctionClause> clauses;
+        if (hasConditions) {
+          clauses = new ArrayList<>(conCtx.clause().size());
+          for (ClauseContext clauseCtx : conCtx.clause()) {
+            clauses.add(visitClause(clauseCtx));
+          }
+        } else {
+          clauses = null;
+        }
+
         result.add(new Concrete.Constructor(
           tokenPosition(conCtx.start),
           visitName(conCtx.name()),
@@ -428,7 +449,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           def,
           visitTeles(conCtx.tele()),
           hasConditions ? visitElim(conCtx.elim()) : null,
-          hasConditions ? conCtx.clause().stream().map(this::visitClause).collect(Collectors.toList()) : null));
+          clauses));
       } catch (ParseException ignored) {
 
       }
@@ -932,12 +953,19 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   private List<Concrete.FunctionClause> visitClauses(ClausesContext ctx) {
     List<ClauseContext> clauses = ctx instanceof ClausesWithBracesContext ? ((ClausesWithBracesContext) ctx).clause() : ((ClausesWithoutBracesContext) ctx).clause();
-    return clauses.stream().map(this::visitClause).collect(Collectors.toList());
+    List<Concrete.FunctionClause> result = new ArrayList<>(clauses.size());
+    for (ClauseContext clause : clauses) {
+      result.add(visitClause(clause));
+    }
+    return result;
   }
 
   @Override
   public Concrete.FunctionClause visitClause(ClauseContext clauseCtx) {
-    List<Concrete.Pattern> patterns = clauseCtx.pattern().stream().map(this::visitPattern).collect(Collectors.toList());
+    List<Concrete.Pattern> patterns = new ArrayList<>(clauseCtx.pattern().size());
+    for (PatternContext patternCtx : clauseCtx.pattern()) {
+      patterns.add(visitPattern(patternCtx));
+    }
     return new Concrete.FunctionClause(tokenPosition(clauseCtx.start), patterns, clauseCtx.expr() == null ? null : visitExpr(clauseCtx.expr()));
   }
 
@@ -955,8 +983,14 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.Expression visitCase(CaseContext ctx) {
-    List<Concrete.Expression> elimExprs = ctx.expr0().stream().map(this::visitExpr).collect(Collectors.toList());
-    List<Concrete.FunctionClause> clauses = ctx.clause().stream().map(this::visitClause).collect(Collectors.toList());
+    List<Concrete.Expression> elimExprs = new ArrayList<>(ctx.expr0().size());
+    for (Expr0Context exprCtx : ctx.expr0()) {
+      elimExprs.add(visitExpr(exprCtx));
+    }
+    List<Concrete.FunctionClause> clauses = new ArrayList<>(ctx.clause().size());
+    for (ClauseContext clauseCtx : ctx.clause()) {
+      clauses.add(visitClause(clauseCtx));
+    }
     return new Concrete.CaseExpression(tokenPosition(ctx.getStart()), elimExprs, clauses);
   }
 

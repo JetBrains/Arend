@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class LetExpression extends Expression {
@@ -12,17 +11,6 @@ public class LetExpression extends Expression {
   public LetExpression(List<LetClause> clauses, Expression expression) {
     myClauses = clauses;
     myExpression = expression;
-  }
-
-  // TODO[cmpNorm]: Remove this method
-  public LetExpression mergeNestedLets() {
-    List<LetClause> clauses = new ArrayList<>(myClauses);
-    Expression expression = myExpression;
-    while (expression.isInstance(LetExpression.class)) {
-      clauses.addAll(expression.cast(LetExpression.class).getClauses());
-      expression = expression.cast(LetExpression.class).getExpression();
-    }
-    return new LetExpression(clauses, expression);
   }
 
   public List<LetClause> getClauses() {

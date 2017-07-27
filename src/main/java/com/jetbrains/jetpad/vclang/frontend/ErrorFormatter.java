@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class ErrorFormatter {
   private final SourceInfoProvider mySrc;
@@ -88,7 +87,9 @@ public class ErrorFormatter {
         String text = "Expected type: ";
         builder.append(text);
         List<String> names = new ArrayList<>(((GoalError) error).context.size());
-        names.addAll(((GoalError) error).context.values().stream().map(Binding::getName).collect(Collectors.toList()));
+        for (Binding binding : ((GoalError) error).context.values()) {
+          names.add(binding.getName());
+        }
         ((GoalError) error).type.prettyPrint(builder, names, Abstract.Expression.PREC, text.length());
       }
       if (printContext) {

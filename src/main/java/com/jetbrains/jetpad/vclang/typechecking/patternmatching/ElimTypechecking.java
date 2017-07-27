@@ -207,7 +207,7 @@ public class ElimTypechecking {
       for (Pair<List<Util.ClauseElem>, Boolean> missingClause : myMissingClauses) {
         List<Expression> expressions = Util.unflattenClauses(missingClause.proj1);
         if (!missingClause.proj2) {
-          if (elimTree != null && new NormalizeVisitor().doesEvaluate(elimTree, expressions)) {
+          if (elimTree != null && new NormalizeVisitor().doesEvaluate(elimTree, expressions, abstractParameters == null ? NormalizeVisitor.Mode.WHNF_WO_INF : NormalizeVisitor.Mode.WHNF)) {
             continue;
           }
 
@@ -399,7 +399,10 @@ public class ElimTypechecking {
           myOK = false;
           return null;
         }
-        constructors = conCalls.stream().map(ConCallExpression::getDefinition).collect(Collectors.toList());
+        constructors = new ArrayList<>(conCalls.size());
+        for (ConCallExpression conCall : conCalls) {
+          constructors.add(conCall.getDefinition());
+        }
       } else {
         constructors = someConPattern.getConstructor().getDataType().getConstructors();
       }
@@ -489,8 +492,10 @@ public class ElimTypechecking {
               dataTypesArgs = conCall.getDataTypeArguments();
               substExpr = new ConCallExpression(conCall.getDefinition(), conCall.getSortArgument(), dataTypesArgs, arguments);
             } else {
-              final ExtClause finalConClauseData = conClauseData;
-              dataTypesArgs = someConPattern.getDataTypeArguments().stream().map(expr -> expr.subst(finalConClauseData.substitution)).collect(Collectors.toList());
+              dataTypesArgs = new ArrayList<>(someConPattern.getDataTypeArguments().size());
+              for (Expression dataTypeArg : someConPattern.getDataTypeArguments()) {
+                dataTypesArgs.add(dataTypeArg.subst(conClauseData.substitution));
+              }
               substExpr = new ConCallExpression(constructor, someConPattern.getSortArgument(), dataTypesArgs, arguments);
             }
 
