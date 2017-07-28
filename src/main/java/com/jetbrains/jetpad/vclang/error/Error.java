@@ -1,8 +1,15 @@
 package com.jetbrains.jetpad.vclang.error;
 
+import com.jetbrains.jetpad.vclang.error.doc.Doc;
+import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
+import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
+import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 
 import javax.annotation.Nonnull;
+
+import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
 public abstract class Error {
   public final Abstract.SourceNode cause;
@@ -33,8 +40,29 @@ public abstract class Error {
     return message;
   }
 
+  public LineDoc getPositionDoc(SourceInfoProvider src) {
+    return cause == null ? empty() : hEnd(text(":"), text(src.moduleOf(cause)), text(src.positionOf(cause)));
+  }
+
+  public LineDoc getHeaderDoc(SourceInfoProvider src) {
+    LineDoc doc = text("[" + level + "]");
+    return hSep(text(" "), doc, getPositionDoc(src), text(message));
+  }
+
+  public Doc getCauseDoc() {
+    return cause == null ? DocFactory.nullDoc() : hang(text("In:"), sourceNodeDoc(cause));
+  }
+
+  public Doc getBodyDoc() {
+    return DocFactory.nullDoc();
+  }
+
+  public Doc getDoc(SourceInfoProvider src) {
+    return DocFactory.hang(getHeaderDoc(src), DocFactory.vList(getBodyDoc(), getCauseDoc()));
+  }
+
   @Override
   public final String toString() {
-    return "ERROR: " + getMessage();
+    return DocStringBuilder.build(getDoc(SourceInfoProvider.Trivial.TRIVIAL));
   }
 }

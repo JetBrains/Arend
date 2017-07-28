@@ -149,6 +149,18 @@ public class ConditionsChecking {
       for (Pattern pattern : clause.patterns) {
         defCallArgs2.add(pattern.toExpression());
       }
+
+      if (!pathSubstitution.isEmpty()) {
+        substitution1 = new ExprSubstitution();
+        link = parameters;
+        for (i = 0; i < clause.patterns.size(); i++) {
+          if (i != index) {
+            substitution1.add(link, clause.patterns.get(i).toExpression());
+          }
+          link = link.getNext();
+        }
+      }
+
       errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, null, defCallArgs1), definition.getDefCall(Sort.STD, null, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, clause.clause));
       return false;
     } else {
@@ -210,8 +222,7 @@ public class ConditionsChecking {
   private static List<Pair<List<Expression>, ExprSubstitution>> collectPatterns(List<Pattern> patterns) {
     List<Pair<List<Expression>, ExprSubstitution>> result = new ArrayList<>();
     for (int i = 0; i < patterns.size(); i++) {
-      List<Pair<Expression, ExprSubstitution>> patternResult = collectPatterns(patterns.get(i));
-      for (Pair<Expression, ExprSubstitution> pair : patternResult) {
+      for (Pair<Expression, ExprSubstitution> pair : collectPatterns(patterns.get(i))) {
         List<Expression> list = new ArrayList<>(patterns.size());
         for (int j = 0; j < patterns.size(); j++) {
           if (i == j) {

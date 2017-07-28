@@ -38,7 +38,7 @@ public final class Concrete {
 
     @Override
     public String toString() {
-      return line + ":" + column;
+      return (module == null ? "" : module + ":") + line + ":" + column;
     }
   }
 

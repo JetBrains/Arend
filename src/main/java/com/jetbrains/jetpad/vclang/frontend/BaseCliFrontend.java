@@ -1,7 +1,11 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
-import com.jetbrains.jetpad.vclang.error.*;
+import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
+import com.jetbrains.jetpad.vclang.error.ErrorClassifier;
+import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
 import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotSourceInfoCollector;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
@@ -34,7 +38,6 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   protected final Map<SourceIdT, Map<String, Abstract.Definition>> definitionIds = new HashMap<>();
 
   protected final ListErrorReporter errorReporter = new ListErrorReporter();
-  private final ErrorFormatter errf;
 
   // Modules
   protected final ModuleTracker moduleTracker;
@@ -55,8 +58,6 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     moduleTracker = new ModuleTracker(storage);
     srcInfoProvider = moduleTracker.sourceInfoCollector.sourceInfoProvider;
-
-    errf = new ErrorFormatter(srcInfoProvider);
 
     cacheManager = new CacheManager<>(createPersistenceProvider(), storage, moduleTracker, srcInfoProvider);
     state = cacheManager.getTypecheckerState();
@@ -421,7 +422,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
   private void flushErrors() {
     for (GeneralError error : errorReporter.getErrorList()) {
-      System.out.println(errf.printError(error));
+      System.out.println(DocStringBuilder.build(error.getDoc(srcInfoProvider)));
     }
     errorReporter.getErrorList().clear();
   }

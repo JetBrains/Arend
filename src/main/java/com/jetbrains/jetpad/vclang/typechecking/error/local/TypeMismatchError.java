@@ -1,15 +1,24 @@
 package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
+import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
+
+import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
 public class TypeMismatchError extends LocalTypeCheckingError {
-  public final PrettyPrintable expected;
-  public final PrettyPrintable actual;
+  public final Doc expected;
+  public final Doc actual;
 
-  public TypeMismatchError(PrettyPrintable expected, PrettyPrintable actual, Abstract.Expression expression) {
+  public TypeMismatchError(Doc expected, Doc actual, Abstract.Expression expression) {
     super("Type mismatch", expression);
     this.expected = expected;
     this.actual = actual;
+  }
+
+  @Override
+  public Doc getBodyDoc() {
+    return vList(
+      hang(text("Expected type:"), expected),
+      hang(text("  Actual type:"), actual));
   }
 }

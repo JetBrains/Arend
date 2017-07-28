@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.error.Error;
+import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
@@ -158,7 +159,7 @@ public class TypeCheckingDefCall {
       }
       if (!classDefinition.isSubClassOf(typeCheckedDefinition.getThisClass())) {
         ClassCallExpression classCall = new ClassCallExpression(typeCheckedDefinition.getThisClass(), Sort.generateInferVars(myVisitor.getEquations(), expr));
-        LocalTypeCheckingError error = new TypeMismatchError(classCall, type, left);
+        LocalTypeCheckingError error = new TypeMismatchError(DocFactory.termDoc(classCall), DocFactory.termDoc(type), left);
         expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
         myVisitor.getErrorReporter().report(error);
         return null;
