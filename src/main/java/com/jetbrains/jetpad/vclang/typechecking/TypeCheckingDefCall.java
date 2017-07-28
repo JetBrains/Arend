@@ -17,10 +17,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.HasErrors;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.MemberNotFoundError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.List;
@@ -107,7 +104,7 @@ public class TypeCheckingDefCall {
           } else {
             LocalTypeCheckingError error;
             if (myThisClass != null) {
-              error = new LocalTypeCheckingError("Definition '" + typeCheckedDefinition.getName() + "' is not available in this context", expr);
+              error = new NotAvailableDefinitionError(typeCheckedDefinition, expr);
             } else {
               error = new LocalTypeCheckingError("Non-static definitions are not allowed in a static context", expr);
             }
@@ -188,7 +185,7 @@ public class TypeCheckingDefCall {
       if (typeCheckedDefinition == null) {
         constructor = dataDefinition.getConstructor(name);
         if (constructor == null && !args.isEmpty()) {
-          LocalTypeCheckingError error = new LocalTypeCheckingError("Cannot find constructor '" + name + "' of data type '" + dataDefinition.getName() + "'", expr);
+          LocalTypeCheckingError error = new MissingConstructorError(name, dataDefinition, expr);
           expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
           myVisitor.getErrorReporter().report(error);
           return null;

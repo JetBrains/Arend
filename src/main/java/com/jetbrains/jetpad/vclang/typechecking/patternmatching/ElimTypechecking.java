@@ -19,6 +19,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.MissingClausesError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.TruncatedDataError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
@@ -416,9 +417,7 @@ public class ElimTypechecking {
 
       if (someConPattern.getConstructor().getDataType().isTruncated()) {
         if (!myExpectedType.getType().isLessOrEquals(new UniverseExpression(dataType.getSort()), myVisitor.getEquations(), conClauseData.clause)) {
-          LocalTypeCheckingError error = new LocalTypeCheckingError("Data " + dataType.getName() + " is truncated to the universe "
-            + dataType.getSort() + " which does not fit in the universe of " +
-            myExpectedType + " - the type of eliminator", conClauseData.clause);
+          LocalTypeCheckingError error = new TruncatedDataError(dataType, myExpectedType, conClauseData.clause);
           myVisitor.getErrorReporter().report(error);
           myOK = false;
         }

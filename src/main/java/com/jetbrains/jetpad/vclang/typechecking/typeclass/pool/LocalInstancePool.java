@@ -45,12 +45,13 @@ public class LocalInstancePool implements ClassViewInstancePool {
     return null;
   }
 
-  public boolean addInstance(Expression classifyingExpression, Abstract.ClassView classView, Expression instance) {
-    if (getInstance(classifyingExpression, classView) != null) {
-      return false;
+  public Expression addInstance(Expression classifyingExpression, Abstract.ClassView classView, Expression instance) {
+    Expression oldInstance = getInstance(classifyingExpression, classView);
+    if (oldInstance != null) {
+      return oldInstance;
     } else {
       myPool.add(new Pair(classifyingExpression, classView, instance));
-      return true;
+      return null;
     }
   }
 }

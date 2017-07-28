@@ -31,8 +31,7 @@ import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ConditionsChecking;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ElimTypechecking;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.PatternTypechecking;
@@ -182,8 +181,9 @@ class DefinitionTypechecking {
             classifyingFields.put(index - 1, classifyingField);
             for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
               ReferenceExpression reference = new ReferenceExpression(link);
-              if (!localInstancePool.addInstance(FieldCall(classifyingField, reference), classView, reference)) {
-                visitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, "Duplicate instance", parameter)); // FIXME[error] better error message
+              Expression oldInstance = localInstancePool.addInstance(FieldCall(classifyingField, reference), classView, reference);
+              if (oldInstance != null) {
+                visitor.getErrorReporter().report(new DuplicateInstanceError(oldInstance, reference, parameter));
               }
             }
           }
@@ -389,8 +389,7 @@ class DefinitionTypechecking {
         inferredSort = inferredSort.max(conSort);
         if (userSort != null) {
           if (!def.isTruncated() && !conSort.isLessOrEquals(userSort)) {
-            String msg = "Universe " + conSort + " of constructor '" + constructor.getName() + "' is not compatible with expected universe " + userSort;
-            visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, constructor));
+            visitor.getErrorReporter().report(new ConstructorUniverseError(conSort, constructor, userSort));
             universeOk = false;
           }
         }
@@ -579,8 +578,7 @@ class DefinitionTypechecking {
       }
     }
 
-    String msg = "Non-positive recursive occurrence of data type " + def.getName() + " in constructor " + constructor.getName();
-    errorReporter.report(new LocalTypeCheckingError(msg, parameter == null ? constructor : parameter));
+    errorReporter.report(new NonPositiveDataError((DataDefinition) def, constructor, parameter == null ? constructor : parameter));
     return false;
   }
 
@@ -639,17 +637,14 @@ class DefinitionTypechecking {
 
       if (!def.getImplementations().isEmpty()) {
         typedDef.updateSorts();
+        List<Abstract.ClassField> alreadyImplementFields = new ArrayList<>();
+        Abstract.SourceNode alreadyImplementedSourceNode = null;
         for (Abstract.Implementation implementation : def.getImplementations()) {
-          Definition implementedDef = visitor.getTypecheckingState().getTypechecked(implementation.getImplementedField());
-          if (!(implementedDef instanceof ClassField)) {
-            classOk = false;
-            errorReporter.report(new LocalTypeCheckingError("'" + implementedDef.getName() + "' is not a field", implementation));
-            continue;
-          }
-          ClassField field = (ClassField) implementedDef;
+          ClassField field = (ClassField) visitor.getTypecheckingState().getTypechecked(implementation.getImplementedField());
           if (fieldSet.isImplemented(field)) {
             classOk = false;
-            errorReporter.report(new LocalTypeCheckingError("Field '" + field.getName() + "' is already implemented", implementation));
+            alreadyImplementFields.add(field.getAbstractDefinition());
+            alreadyImplementedSourceNode = implementation;
             continue;
           }
 
@@ -660,6 +655,10 @@ class DefinitionTypechecking {
           if (result == null || result.expression.isInstance(ErrorExpression.class)) {
             classOk = false;
           }
+        }
+
+        if (!alreadyImplementFields.isEmpty()) {
+          errorReporter.report(new FieldsImplementationError(true, alreadyImplementFields, alreadyImplementFields.size() > 1 ? def : alreadyImplementedSourceNode));
         }
       }
 
@@ -711,13 +710,19 @@ class DefinitionTypechecking {
 
     Abstract.ClassView classView = (Abstract.ClassView) def.getClassView().getReferent();
     Map<ClassField, Abstract.ClassFieldImpl> classFieldMap = new HashMap<>();
+    List<Abstract.ClassField> alreadyImplementedFields = new ArrayList<>();
+    Abstract.SourceNode alreadyImplementedSourceNode = null;
     for (Abstract.ClassFieldImpl classFieldImpl : def.getClassFieldImpls()) {
       ClassField field = (ClassField) visitor.getTypecheckingState().getTypechecked(classFieldImpl.getImplementedField());
       if (classFieldMap.containsKey(field)) {
-        visitor.getErrorReporter().report(new LocalTypeCheckingError("Field '" + field.getName() + "' is already implemented", classFieldImpl));
+        alreadyImplementedFields.add(field.getAbstractDefinition());
+        alreadyImplementedSourceNode = classFieldImpl;
       } else {
         classFieldMap.put(field, classFieldImpl);
       }
+    }
+    if (!alreadyImplementedFields.isEmpty()) {
+      visitor.getErrorReporter().report(new FieldsImplementationError(true, alreadyImplementedFields, alreadyImplementedFields.size() > 1 ? def : alreadyImplementedSourceNode));
     }
 
     FieldSet fieldSet = new FieldSet(Sort.PROP);
@@ -725,15 +730,21 @@ class DefinitionTypechecking {
     fieldSet.addFieldsFrom(classDef.getFieldSet());
     ClassCallExpression term = new ClassCallExpression(classDef, Sort.generateInferVars(visitor.getEquations(), def.getClassView()), fieldSet);
 
+    List<Abstract.ClassField> notImplementedFields = new ArrayList<>();
     for (ClassField field : classDef.getFieldSet().getFields()) {
       Abstract.ClassFieldImpl impl = classFieldMap.get(field);
       if (impl != null) {
-        visitor.implementField(fieldSet, field, impl.getImplementation(), term);
-        classFieldMap.remove(field);
+        if (notImplementedFields.isEmpty()) {
+          visitor.implementField(fieldSet, field, impl.getImplementation(), term);
+          classFieldMap.remove(field);
+        }
       } else {
-        visitor.getErrorReporter().report(new LocalTypeCheckingError("Field '" + field.getName() + "' is not implemented", def));
-        return;
+        notImplementedFields.add(field.getAbstractDefinition());
       }
+    }
+    if (!notImplementedFields.isEmpty()) {
+      visitor.getErrorReporter().report(new FieldsImplementationError(false, notImplementedFields, def));
+      return;
     }
 
     LevelSubstitution substitution = visitor.getEquations().solve(def);

@@ -478,10 +478,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   @Override
   public Result visitModuleCall(Abstract.ModuleCallExpression expr, ExpectedType expectedType) {
     if (expr.getModule() == null) {
-      LocalTypeCheckingError error = new UnresolvedReferenceError(expr, expr.getPath().toString());
-      expr.setWellTyped(myContext, new ErrorExpression(null, error));
-      myErrorReporter.report(error);
-      return null;
+      throw new IllegalStateException();
     }
     Definition typeChecked = myState.getTypechecked(expr.getModule());
     if (typeChecked == null) {
@@ -983,7 +980,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     DependentLink sigmaParams = exprResult.type.cast(SigmaExpression.class).getParameters();
     DependentLink fieldLink = DependentLink.Helper.get(sigmaParams, expr.getField());
     if (!fieldLink.hasNext()) {
-      LocalTypeCheckingError error = new LocalTypeCheckingError("Index " + (expr.getField() + 1) + " out of range", expr);
+      LocalTypeCheckingError error = new LocalTypeCheckingError("Index " + (expr.getField() + 1) + " is out of range", expr);
       expr.setWellTyped(myContext, new ErrorExpression(null, error));
       myErrorReporter.report(error);
       return null;
@@ -1025,7 +1022,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
     FieldSet fieldSet = new FieldSet(baseClass.getSort());
     ClassCallExpression resultClassCall = new ClassCallExpression(baseClass, classCallExpr.getSortArgument(), fieldSet);
-    Expression resultExpr = resultClassCall;
 
     fieldSet.addFieldsFrom(classCallExpr.getFieldSet());
     for (Map.Entry<ClassField, FieldSet.Implementation> entry : classCallExpr.getFieldSet().getImplemented()) {
@@ -1036,16 +1032,24 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     Collection<? extends Abstract.ClassFieldImpl> statements = expr.getStatements();
     Map<ClassField, Abstract.ClassFieldImpl> classFieldMap = new HashMap<>();
 
+    List<Abstract.ClassField> alreadyImplementedFields = new ArrayList<>();
+    Abstract.SourceNode alreadyImplementedSourceNode = null;
     for (Abstract.ClassFieldImpl statement : statements) {
       ClassField field = (ClassField) myState.getTypechecked(statement.getImplementedField());
       if (fieldSet.isImplemented(field) || classFieldMap.containsKey(field)) {
-        myErrorReporter.report(new LocalTypeCheckingError("Field '" + field.getName() + "' is already implemented", statement));
+        alreadyImplementedFields.add(field.getAbstractDefinition());
+        alreadyImplementedSourceNode = statement;
       } else {
         classFieldMap.put(field, statement);
       }
     }
 
+    if (!alreadyImplementedFields.isEmpty()) {
+      myErrorReporter.report(new FieldsImplementationError(true, alreadyImplementedFields, alreadyImplementedFields.size() > 1 ? expr : alreadyImplementedSourceNode));
+    }
+
     if (!classFieldMap.isEmpty()) {
+      List<Abstract.ClassField> notImplementedFields = new ArrayList<>();
       for (ClassField field : baseClass.getFieldSet().getFields()) {
         if (fieldSet.isImplemented(field)) {
           continue;
@@ -1053,20 +1057,21 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
         Abstract.ClassFieldImpl impl = classFieldMap.get(field);
         if (impl != null) {
-          if (resultExpr.isInstance(ClassCallExpression.class)) {
-            implementField(fieldSet, field, impl.getImplementation(), resultExpr.cast(ClassCallExpression.class));
-          }
-          classFieldMap.remove(field);
-          if (classFieldMap.isEmpty()) {
-            break;
+          if (notImplementedFields.isEmpty()) {
+            implementField(fieldSet, field, impl.getImplementation(), resultClassCall);
+            classFieldMap.remove(field);
+            if (classFieldMap.isEmpty()) {
+              break;
+            }
           }
         } else {
-          LocalTypeCheckingError error = new LocalTypeCheckingError("Field '" + field.getName() + "' is not implemented", expr);
-          if (resultExpr.isInstance(ClassCallExpression.class)) {
-            resultExpr = new ErrorExpression(resultExpr, error);
-          }
-          myErrorReporter.report(error);
+          notImplementedFields.add(field.getAbstractDefinition());
         }
+      }
+
+      if (!notImplementedFields.isEmpty()) {
+        myErrorReporter.report(new FieldsImplementationError(false, notImplementedFields, expr));
+        return null;
       }
     }
 
@@ -1080,7 +1085,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     }
 
     fieldSet.setSort(generateUpperBound(sorts, expr));
-    return checkResult(expectedType, new Result(resultExpr, new UniverseExpression(resultExpr.isInstance(ClassCallExpression.class) ? resultExpr.cast(ClassCallExpression.class).getSort() : Sort.PROP)), expr);
+    return checkResult(expectedType, new Result(resultClassCall, new UniverseExpression(resultClassCall.getSort())), expr);
   }
 
   @SuppressWarnings("UnusedReturnValue")
@@ -1120,11 +1125,17 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   }
 
   public boolean checkAllImplemented(ClassCallExpression classCall, Abstract.Expression expr) {
-    int remaining = classCall.getFieldSet().getFields().size() - classCall.getFieldSet().getImplemented().size();
-    if (remaining == 0) {
+    int notImplemented = classCall.getFieldSet().getFields().size() - classCall.getFieldSet().getImplemented().size();
+    if (notImplemented == 0) {
       return true;
     } else {
-      LocalTypeCheckingError error = new LocalTypeCheckingError("Class '" + classCall.getDefinition().getName() + "' has " + remaining + " not implemented fields", expr);
+      List<Abstract.ClassField> fields = new ArrayList<>(notImplemented);
+      for (ClassField field : classCall.getFieldSet().getFields()) {
+        if (!classCall.getFieldSet().isImplemented(field)) {
+          fields.add(field.getAbstractDefinition());
+        }
+      }
+      LocalTypeCheckingError error = new FieldsImplementationError(false, fields, expr);
       expr.setWellTyped(myContext, new ErrorExpression(null, error));
       myErrorReporter.report(error);
       return false;

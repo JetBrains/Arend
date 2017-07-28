@@ -74,7 +74,7 @@ public class LibStorage implements Storage<LibStorage.SourceId> {
       if (result == null) {
         result = new SourceId(entry.getKey(), entry.getValue(), sourceId);
       } else {
-        throw new IllegalArgumentException("Multiple libraries provide module " + modulePath);  // FIXME[error]
+        throw new ModuleInMultipleLibraries(modulePath);
       }
     }
     return result;
@@ -88,8 +88,7 @@ public class LibStorage implements Storage<LibStorage.SourceId> {
 
   @Override
   public boolean isAvailable(@Nonnull SourceId sourceId) {
-    if (sourceId.getLibStorage() != this) return false;
-    return sourceId.myFileStorage.isAvailable(sourceId.fileSourceId);
+    return sourceId.getLibStorage() == this && sourceId.myFileStorage.isAvailable(sourceId.fileSourceId);
   }
 
   @Override
@@ -157,6 +156,15 @@ public class LibStorage implements Storage<LibStorage.SourceId> {
     @Override
     public String toString() {
       return fileSourceId.toString();
+    }
+  }
+
+  public static class ModuleInMultipleLibraries extends RuntimeException {
+    public ModulePath modulePath;
+
+    ModuleInMultipleLibraries(ModulePath modulePath) {
+      super("Multiple libraries provide module " + modulePath);
+      this.modulePath = modulePath;
     }
   }
 }

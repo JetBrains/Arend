@@ -9,8 +9,8 @@ public class TypeMismatchError extends LocalTypeCheckingError {
   public final Doc expected;
   public final Doc actual;
 
-  public TypeMismatchError(Doc expected, Doc actual, Abstract.Expression expression) {
-    super("Type mismatch", expression);
+  public TypeMismatchError(Doc expected, Doc actual, Abstract.SourceNode sourceNode) {
+    super("Type mismatch", sourceNode);
     this.expected = expected;
     this.actual = actual;
   }
