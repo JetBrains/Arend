@@ -19,11 +19,16 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   private Map<InferenceLevelVariable, Integer> myPVariables = Collections.emptyMap();
   private Map<InferenceLevelVariable, Integer> myHVariables = Collections.emptyMap();
   protected int myIndent;
-  private boolean noIndent=true;
+  private boolean noIndent;
 
-  public PrettyPrintVisitor(StringBuilder builder, int indent) {
+  public PrettyPrintVisitor(StringBuilder builder, int indent, boolean noIndent) {
     myBuilder = builder;
     myIndent = indent;
+    this.noIndent = noIndent;
+  }
+
+  public PrettyPrintVisitor(StringBuilder builder, int indent) {
+    this(builder, indent, false);
   }
 
   public static String prettyPrint(Abstract.SourceNode node, int indent) {
@@ -644,12 +649,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public void printIndent() {
     for (int i = 0; i < myIndent; ++i) {
       myBuilder.append(' ');
-    }
-  }
-
-  public static void printIndent(StringBuilder builder, int indent) {
-    for (int i = 0; i < indent; i++) {
-      builder.append(' ');
     }
   }
 

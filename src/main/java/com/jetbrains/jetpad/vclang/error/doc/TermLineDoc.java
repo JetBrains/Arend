@@ -20,7 +20,7 @@ public class TermLineDoc extends LineDoc {
   public String getText() {
     if (myText == null) {
       StringBuilder builder = new StringBuilder();
-      myTerm.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0); // TODO: print in a single line
+      myTerm.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0, true);
       myText = builder.toString();
     }
     return myText;
