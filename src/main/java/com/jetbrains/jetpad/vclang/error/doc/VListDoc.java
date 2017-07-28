@@ -1,6 +1,8 @@
 package com.jetbrains.jetpad.vclang.error.doc;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 public class VListDoc extends Doc {
   private final Collection<? extends Doc> myDocs;
@@ -66,5 +68,14 @@ public class VListDoc extends Doc {
       }
     }
     return true;
+  }
+
+  @Override
+  public List<LineDoc> linearize() {
+    List<LineDoc> result = new ArrayList<>();
+    for (Doc doc : myDocs) {
+      result.addAll(doc.linearize());
+    }
+    return result;
   }
 }

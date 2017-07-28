@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.error.doc;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public abstract class CachingDoc extends Doc {
   private List<String> myText;
@@ -52,5 +53,10 @@ public abstract class CachingDoc extends Doc {
       }
     }
     return true;
+  }
+
+  @Override
+  public List<LineDoc> linearize() {
+    return getText().stream().map(DocFactory::text).collect(Collectors.toList());
   }
 }
