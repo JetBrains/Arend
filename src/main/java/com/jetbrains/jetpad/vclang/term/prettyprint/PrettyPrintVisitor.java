@@ -1045,7 +1045,9 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
     public void doPrettyPrint(PrettyPrintVisitor pp, List<? extends T> l, boolean disabled){
       if (disabled) {
+        if (l.size() > 0)
         printListElement(pp, l.get(0));
+        if (l.size() > 1)
         for (T t : l.subList(1, l.size())) {
           pp.myBuilder.append(getSeparator());
           printListElement(pp, t);
