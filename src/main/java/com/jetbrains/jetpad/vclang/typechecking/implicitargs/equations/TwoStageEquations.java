@@ -163,13 +163,7 @@ public class TwoStageEquations implements Equations {
       }
     }
 
-    Equation equation;
-    if (!expr2.isInstance(InferenceReferenceExpression.class) && expr1.isInstance(InferenceReferenceExpression.class)) {
-      equation = new Equation(expr2, expr1, cmp.not(), sourceNode);
-    } else {
-      equation = new Equation(expr1, expr2, cmp, sourceNode);
-    }
-
+    Equation equation = new Equation(expr1, expr2, cmp, sourceNode);
     myEquations.add(equation);
     if (expr1.isInstance(InferenceReferenceExpression.class) && expr2.isInstance(InferenceReferenceExpression.class)) {
       expr1.cast(InferenceReferenceExpression.class).getVariable().addListener(equation);

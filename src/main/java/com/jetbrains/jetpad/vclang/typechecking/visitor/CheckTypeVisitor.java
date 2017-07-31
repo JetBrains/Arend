@@ -418,8 +418,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   }
 
   private boolean compareExpressions(boolean isLeft, Result result, Expression expected, Expression actual, Abstract.Expression expr) {
-    if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, expected, actual, expr)) {
-      CompareVisitor.compare(myEquations, Equations.CMP.EQ, expected, actual, expr);
+    if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, actual, expected, expr)) {
+      CompareVisitor.compare(myEquations, Equations.CMP.EQ, actual, expected, expr);
       LocalTypeCheckingError error = new PathEndpointMismatchError(isLeft, expected, actual, expr);
       expr.setWellTyped(myContext, new ErrorExpression(result.expression, error));
       myErrorReporter.report(error);
@@ -604,7 +604,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
           PiExpression piExpectedType = expectedType.cast(PiExpression.class);
           Expression argExpectedType = piExpectedType.getParameters().getTypeExpr().subst(substitution);
-          if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, argExpectedType, argExpr, paramType)) {
+          if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, argExpr, argExpectedType, paramType)) {
             LocalTypeCheckingError error = new TypeMismatchError(termDoc(argExpectedType), termDoc(argType), paramType);
             myErrorReporter.report(error);
             return null;

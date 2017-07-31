@@ -37,13 +37,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     myCMP = cmp;
   }
 
-  private CompareVisitor(Map<Binding, Binding> substitution, Equations equations, Equations.CMP cmp, Abstract.SourceNode sourceNode) {
-    mySubstitution = substitution;
-    myEquations = equations;
-    mySourceNode = sourceNode;
-    myCMP = cmp;
-  }
-
   public static boolean compare(Equations equations, Equations.CMP cmp, Expression expr1, Expression expr2, Abstract.SourceNode sourceNode) {
     return new CompareVisitor(equations, cmp, sourceNode).compare(expr1, expr2);
   }
@@ -83,7 +76,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       }
     }
 
-    for (DependentLink link = elimTree1.getParameters(); link.hasNext(); link = link.getNext()) {
+    for (DependentLink link = elimTree2.getParameters(); link.hasNext(); link = link.getNext()) {
       mySubstitution.remove(link);
     }
     return ok;
@@ -107,8 +100,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
     Expression stuck1 = expr1.getStuckExpression();
     Expression stuck2 = expr2.getStuckExpression();
-    if (stuck1 != null && stuck1.isInstance(ErrorExpression.class) && (stuck2 == null || stuck2.isInstance(ErrorExpression.class)) ||
-      stuck2 != null && stuck2.isInstance(ErrorExpression.class) && (stuck1 == null || stuck1.isInstance(ErrorExpression.class))) {
+    if (stuck1 != null && stuck1.isInstance(ErrorExpression.class) && (stuck2 == null || !stuck2.isInstance(InferenceReferenceExpression.class)) ||
+      stuck2 != null && stuck2.isInstance(ErrorExpression.class) && (stuck1 == null || !stuck1.isInstance(InferenceReferenceExpression.class))) {
       return true;
     }
 
@@ -118,7 +111,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     }
     if (expr2.isInstance(InferenceReferenceExpression.class)) {
       InferenceVariable variable = expr2.cast(InferenceReferenceExpression.class).getVariable();
-      return myEquations.add(expr1.subst(getSubstitution()), expr2, myCMP, variable.getSourceNode(), variable);
+      return myEquations.add(expr1, expr2.subst(getSubstitution()), myCMP, variable.getSourceNode(), variable);
     }
 
     Equations.CMP origCMP = myCMP;
@@ -155,13 +148,13 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       return false;
     }
 
-    return myEquations.add(expr1.subst(getSubstitution()), expr2, origCMP, variable.getSourceNode(), variable);
+    return myEquations.add(expr1, expr2.subst(getSubstitution()), origCMP, variable.getSourceNode(), variable);
   }
 
   private boolean checkIsInferVar(Expression fun, Expression expr1, Expression expr2) {
     InferenceReferenceExpression ref = fun.checkedCast(InferenceReferenceExpression.class);
     InferenceVariable binding = ref != null && ref.getSubstExpression() == null ? ref.getVariable() : null;
-    return binding != null && myEquations.add(expr1.subst(getSubstitution()), expr2, myCMP, binding.getSourceNode(), binding);
+    return binding != null && myEquations.add(expr1, expr2.subst(getSubstitution()), myCMP, binding.getSourceNode(), binding);
   }
 
   private ExprSubstitution getSubstitution() {
@@ -218,7 +211,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     SingleDependentLink param = new TypedSingleDependentLink(true, "i", ExpressionFactory.Interval());
     List<Expression> args = new ArrayList<>(5);
     for (Expression arg : conCall1.getDataTypeArguments()) {
-      args.add((correctOrder ? arg.subst(getSubstitution()) : arg));
+      args.add(correctOrder ? arg : arg.subst(getSubstitution()));
     }
     args.add(expr2);
     args.add(new ReferenceExpression(param));
@@ -283,7 +276,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       }
     }
     if (variable != null) {
-      return myEquations.add(fieldCall1.subst(getSubstitution()), fieldCall2, Equations.CMP.EQ, variable.getSourceNode(), variable);
+      return myEquations.add(fieldCall1, fieldCall2.subst(getSubstitution()), Equations.CMP.EQ, variable.getSourceNode(), variable);
     }
 
     return compare(fieldCall1.getExpression(), fieldCall2.getExpression());
@@ -329,16 +322,17 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
   @Override
   public Boolean visitReference(ReferenceExpression expr1, Expression expr2) {
-    if (!expr2.isInstance(ReferenceExpression.class)) {
+    ReferenceExpression ref2 = expr2.checkedCast(ReferenceExpression.class);
+    if (ref2 == null) {
       return false;
     }
 
-    Binding binding1 = expr1.getBinding();
-    Binding subst1 = mySubstitution.get(binding1);
-    if (subst1 != null) {
-      binding1 = subst1;
+    Binding binding2 = ref2.getBinding();
+    Binding subst2 = mySubstitution.get(binding2);
+    if (subst2 != null) {
+      binding2 = subst2;
     }
-    return binding1 == expr2.cast(ReferenceExpression.class).getBinding();
+    return binding2 == expr1.getBinding();
   }
 
   @Override
@@ -353,7 +347,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     Expression body2 = expr2.getLamParameters(params2);
 
     for (int i = 0; i < params1.size() && i < params2.size(); i++) {
-      mySubstitution.put(correctOrder ? params1.get(i) : params2.get(i), correctOrder ? params2.get(i) : params1.get(i));
+      mySubstitution.put(correctOrder ? params2.get(i) : params1.get(i), correctOrder ? params1.get(i) : params2.get(i));
     }
 
     if (params1.size() < params2.size()) {
@@ -369,7 +363,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
     Boolean result = compare(correctOrder ? body1 : body2, correctOrder ? body2 : body1);
     for (int i = 0; i < params1.size() && i < params2.size(); i++) {
-      mySubstitution.remove(correctOrder ? params1.get(i) : params2.get(i), correctOrder ? params2.get(i) : params1.get(i));
+      mySubstitution.remove(correctOrder ? params2.get(i) : params1.get(i), correctOrder ? params1.get(i) : params2.get(i));
     }
     return result;
   }
@@ -394,7 +388,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
     SingleDependentLink link1 = expr1.getParameters(), link2 = piExpr2.getParameters();
     for (; link1.hasNext() && link2.hasNext(); link1 = link1.getNext(), link2 = link2.getNext()) {
-      mySubstitution.put(link1, link2);
+      mySubstitution.put(link2, link1);
     }
 
     myCMP = origCMP;
@@ -402,10 +396,10 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       return false;
     }
 
-    for (DependentLink link = expr1.getParameters(); link != link1; link = link.getNext()) {
+    for (DependentLink link = piExpr2.getParameters(); link != link2; link = link.getNext()) {
       mySubstitution.remove(link);
     }
-    mySubstitution.remove(link1);
+    mySubstitution.remove(link2);
     return true;
   }
 
@@ -418,7 +412,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       if (!compare(params1.get(i).getTypeExpr(), params2.get(i).getTypeExpr())) {
         return false;
       }
-      mySubstitution.put(params1.get(i), params2.get(i));
+      mySubstitution.put(params2.get(i), params1.get(i));
     }
 
     return true;
@@ -474,13 +468,14 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
   @Override
   public Boolean visitSigma(SigmaExpression expr1, Expression expr2) {
-    if (!expr2.isInstance(SigmaExpression.class)) {
+    SigmaExpression sigma2 = expr2.checkedCast(SigmaExpression.class);
+    if (sigma2 == null) {
       return false;
     }
-    if (!compareParameters(DependentLink.Helper.toList(expr1.getParameters()), DependentLink.Helper.toList(expr2.cast(SigmaExpression.class).getParameters()))) {
+    if (!compareParameters(DependentLink.Helper.toList(expr1.getParameters()), DependentLink.Helper.toList(sigma2.getParameters()))) {
       return false;
     }
-    for (DependentLink link = expr1.getParameters(); link.hasNext(); link = link.getNext()) {
+    for (DependentLink link = sigma2.getParameters(); link.hasNext(); link = link.getNext()) {
       mySubstitution.remove(link);
     }
     return true;
