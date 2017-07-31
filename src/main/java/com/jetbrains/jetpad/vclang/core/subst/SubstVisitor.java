@@ -86,7 +86,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
     if (expr.getSubstExpression() != null) {
-      return new InferenceReferenceExpression(expr.getOriginalVariable(), expr.getSubstExpression().accept(this, null));
+      return expr.getSubstExpression().accept(this, null);
     }
     Expression result = myExprSubstitution.get(expr.getVariable());
     return result != null ? result : expr;
