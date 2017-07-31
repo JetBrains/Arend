@@ -73,8 +73,8 @@ public abstract class Expression implements ExpectedType {
     return accept(new FindBindingVisitor(bindings), null);
   }
 
-  public Expression strip(Set<Binding> bounds, LocalErrorReporter errorReporter) {
-    return accept(new StripVisitor(bounds, errorReporter), null);
+  public Expression strip(LocalErrorReporter errorReporter) {
+    return accept(new StripVisitor(errorReporter), null);
   }
 
   public Expression copy() {

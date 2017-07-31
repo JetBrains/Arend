@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
@@ -16,7 +15,6 @@ import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 public class DataCallExpression extends DefCallExpression implements Type {
   private final Sort mySortArgument;
@@ -64,8 +62,8 @@ public class DataCallExpression extends DefCallExpression implements Type {
   }
 
   @Override
-  public DataCallExpression strip(Set<Binding> bounds, LocalErrorReporter errorReporter) {
-    return new StripVisitor(bounds, errorReporter).visitDataCall(this, null);
+  public DataCallExpression strip(LocalErrorReporter errorReporter) {
+    return new StripVisitor(errorReporter).visitDataCall(this, null);
   }
 
   @Override

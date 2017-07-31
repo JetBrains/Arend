@@ -42,11 +42,11 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
         ClassField classifyingField = defCallResult.getDefinition().getClassifyingFieldOfParameter(defCallResult.getArguments().size());
         if (classifyingField != null) {
-          infVar = new TypeClassInferenceVariable(parameter.getName(), type, defCallResult.getDefCall(), i, null, classifyingField);
+          infVar = new TypeClassInferenceVariable(parameter.getName(), type, defCallResult.getDefCall(), i, null, classifyingField, myVisitor.getAllBindings());
         }
       }
       if (infVar == null) {
-        infVar = new FunctionInferenceVariable(parameter.getName(), type, i + 1, result instanceof CheckTypeVisitor.DefCallResult ? ((CheckTypeVisitor.DefCallResult) result).getDefinition() : null, expr);
+        infVar = new FunctionInferenceVariable(parameter.getName(), type, i + 1, result instanceof CheckTypeVisitor.DefCallResult ? ((CheckTypeVisitor.DefCallResult) result).getDefinition() : null, expr, myVisitor.getAllBindings());
       }
       Expression binding = new InferenceReferenceExpression(infVar, myVisitor.getEquations());
       result = result.applyExpression(binding);
@@ -67,7 +67,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         if (defCallResult.getDefinition() == Prelude.PATH_CON && defCallResult.getArguments().isEmpty()) {
           SingleDependentLink lamParam = new TypedSingleDependentLink(true, "i", Interval());
           UniverseExpression type = new UniverseExpression(new Sort(defCallResult.getSortArgument().getPLevel(), defCallResult.getSortArgument().getHLevel().add(1)));
-          Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", type, 1, Prelude.PATH_CON, fun), myVisitor.getEquations());
+          Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", type, 1, Prelude.PATH_CON, fun, myVisitor.getAllBindings()), myVisitor.getEquations());
           Sort sort = type.getSort().succ();
           result = result.applyExpression(new LamExpression(sort, lamParam, binding));
 

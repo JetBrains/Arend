@@ -410,6 +410,6 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void freeVars() {
     typeCheckClass(
       "\\function f {n : Nat} {g : Nat -> Nat} (p : g = (\\lam x => n)) => 0\n" +
-      "\\function h => f (path (\\lam _ x => x))", 2);
+      "\\function h => f (path (\\lam _ x => x))", 1);
   }
 }

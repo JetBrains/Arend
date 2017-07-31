@@ -292,6 +292,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     return myFreeBindings;
   }
 
+  public Set<Binding> getAllBindings() {
+    Set<Binding> allBindings = new HashSet<>(myContext.values());
+    allBindings.addAll(myFreeBindings);
+    return allBindings;
+  }
+
   public LocalErrorReporter getErrorReporter() {
     return myErrorReporter;
   }
@@ -365,8 +371,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     }
 
     LocalErrorReporterCounter counter = new LocalErrorReporterCounter(myErrorReporter);
-    result.expression = result.expression.strip(new HashSet<>(myFreeBindings), counter);
-    result.type = result.type.strip(new HashSet<>(myFreeBindings), counter.getErrorsNumber() == 0 ? myErrorReporter : new DummyLocalErrorReporter());
+    result.expression = result.expression.strip(counter);
+    result.type = result.type.strip(counter.getErrorsNumber() == 0 ? myErrorReporter : new DummyLocalErrorReporter());
     return result;
   }
 
@@ -409,7 +415,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   public Type finalCheckType(Abstract.Expression expr) {
     Type result = checkType(expr);
     if (result == null) return null;
-    return result.subst(new ExprSubstitution(), myEquations.solve(expr)).strip(new HashSet<>(myFreeBindings), myErrorReporter);
+    return result.subst(new ExprSubstitution(), myEquations.solve(expr)).strip(myErrorReporter);
   }
 
   private boolean compareExpressions(boolean isLeft, Result result, Expression expected, Expression actual, Abstract.Expression expr) {
@@ -500,7 +506,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     myEquations.addVariable(pLvl);
     myEquations.addVariable(hLvl);
     Sort sort = new Sort(new Level(pLvl), new Level(hLvl));
-    InferenceVariable inferenceVariable = new LambdaInferenceVariable(name == null ? "_" : "type-of-" + name, new UniverseExpression(sort), argIndex, sourceNode, false);
+    InferenceVariable inferenceVariable = new LambdaInferenceVariable(name == null ? "_" : "type-of-" + name, new UniverseExpression(sort), argIndex, sourceNode, false, getAllBindings());
     Expression argType = new InferenceReferenceExpression(inferenceVariable, myEquations);
 
     TypedSingleDependentLink link = new TypedSingleDependentLink(param.getExplicit(), name, new TypeExpression(argType, sort));
@@ -774,7 +780,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   @Override
   public Result visitInferHole(Abstract.InferHoleExpression expr, ExpectedType expectedType) {
     if (expectedType instanceof Expression) {
-      return new Result(new InferenceReferenceExpression(new ExpressionInferenceVariable((Expression) expectedType, expr), myEquations), (Expression) expectedType);
+      return new Result(new InferenceReferenceExpression(new ExpressionInferenceVariable((Expression) expectedType, expr, getAllBindings()), myEquations), (Expression) expectedType);
     } else {
       LocalTypeCheckingError error = new ArgInferenceError(expression(), expr, new Expression[0]);
       expr.setWellTyped(myContext, new ErrorExpression(null, error));

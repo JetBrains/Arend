@@ -751,7 +751,7 @@ class DefinitionTypechecking {
     if (!substitution.isEmpty()) {
       term = new SubstVisitor(new ExprSubstitution(), substitution).visitClassCall(term, null);
     }
-    term = new StripVisitor(new HashSet<>(visitor.getFreeBindings()), visitor.getErrorReporter()).visitClassCall(term, null);
+    term = new StripVisitor(visitor.getErrorReporter()).visitClassCall(term, null);
 
     FieldSet.Implementation impl = fieldSet.getImplementation((ClassField) state.getTypechecked(classView.getClassifyingField()));
     DefCallExpression defCall = impl.term.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DefCallExpression.class);

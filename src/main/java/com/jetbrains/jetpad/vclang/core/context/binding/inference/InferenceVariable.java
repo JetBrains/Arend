@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.context.binding.inference;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.InferenceReferenceExpression;
@@ -11,6 +12,7 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Inference
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public abstract class InferenceVariable implements Variable {
   private final String myName;
@@ -18,12 +20,18 @@ public abstract class InferenceVariable implements Variable {
   private Expression myType;
   private InferenceReferenceExpression myReference;
   private List<InferenceVariableListener> myListeners;
+  private final Set<Binding> myBounds;
 
-  public InferenceVariable(String name, Expression type, Abstract.SourceNode sourceNode) {
+  public InferenceVariable(String name, Expression type, Abstract.SourceNode sourceNode, Set<Binding> bounds) {
     myName = name;
     mySourceNode = sourceNode;
     myType = type;
     myListeners = Collections.emptyList();
+    myBounds = bounds;
+  }
+
+  public Set<Binding> getBounds() {
+    return myBounds;
   }
 
   public void addListener(InferenceVariableListener listener) {

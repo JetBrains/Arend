@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
@@ -17,7 +16,6 @@ import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ClassCallExpression extends DefCallExpression implements Type {
@@ -70,8 +68,8 @@ public class ClassCallExpression extends DefCallExpression implements Type {
   }
 
   @Override
-  public ClassCallExpression strip(Set<Binding> bounds, LocalErrorReporter errorReporter) {
-    return new StripVisitor(bounds, errorReporter).visitClassCall(this, null);
+  public ClassCallExpression strip(LocalErrorReporter errorReporter) {
+    return new StripVisitor(errorReporter).visitClassCall(this, null);
   }
 
   @Override

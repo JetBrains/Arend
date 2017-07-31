@@ -1,12 +1,15 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.DerivedInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.ElimBindingVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
@@ -130,7 +133,11 @@ public class TwoStageEquations implements Equations {
         Sort codSort = Sort.generateInferVars(this, sourceNode);
         Sort piSort = PiExpression.generateUpperBound(domSort, codSort, this, sourceNode);
 
-        InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, new UniverseExpression(codSort));
+        Set<Binding> bounds = myVisitor.getAllBindings();
+        for (SingleDependentLink link = pi.getParameters(); link.hasNext(); link = link.getNext()) {
+          bounds.add(link);
+        }
+        InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, new UniverseExpression(codSort), bounds);
         Expression newRef = new InferenceReferenceExpression(infVar, this);
         solve(cInf, new PiExpression(piSort, pi.getParameters(), newRef));
         addEquation(pi.getCodomain(), newRef, cmp, sourceNode, infVar);
@@ -538,8 +545,16 @@ public class TwoStageEquations implements Equations {
     Expression expectedType = var.getType();
     Expression actualType = expr.getType();
     if (actualType.isLessOrEquals(expectedType, this, var.getSourceNode())) {
-      var.solve(this, OfTypeExpression.make(expr, actualType, expectedType));
-      return true;
+      Expression result = ElimBindingVisitor.findBindings(expr, var.getBounds());
+      if (result != null) {
+        var.solve(this, OfTypeExpression.make(result, actualType, expectedType));
+        return true;
+      } else {
+        LocalTypeCheckingError error = var.getErrorInfer(expr);
+        myVisitor.getErrorReporter().report(error);
+        var.solve(this, new ErrorExpression(null, error));
+        return false;
+      }
     } else {
       LocalTypeCheckingError error = var.getErrorMismatch(expectedType, actualType, expr);
       myVisitor.getErrorReporter().report(error);

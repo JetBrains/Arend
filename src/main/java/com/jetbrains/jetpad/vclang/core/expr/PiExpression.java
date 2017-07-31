@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
@@ -16,8 +15,6 @@ import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
-
-import java.util.Set;
 
 public class PiExpression extends Expression implements Type {
   private final Sort myResultSort;
@@ -77,8 +74,8 @@ public class PiExpression extends Expression implements Type {
   }
 
   @Override
-  public PiExpression strip(Set<Binding> bounds, LocalErrorReporter errorReporter) {
-    return new StripVisitor(bounds, errorReporter).visitPi(this, null);
+  public PiExpression strip(LocalErrorReporter errorReporter) {
+    return new StripVisitor(errorReporter).visitPi(this, null);
   }
 
   @Override
