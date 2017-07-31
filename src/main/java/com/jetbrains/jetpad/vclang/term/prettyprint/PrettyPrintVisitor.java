@@ -436,10 +436,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       boolean increaseIndent(List<String> right_strings) {
         Abstract.Expression r = expr.getRight();
         if (r instanceof Abstract.BinOpExpression) {
-          Abstract.Definition referable = ((Abstract.BinOpExpression) r).getReferent();
-          if (referable!=null) {
-            if (prec <= referable.getPrecedence().priority) return false; // no bracket drawn
-          }
+          if (prec <= ((Abstract.BinOpExpression) r).getReferent().getPrecedence().priority) return false; // no bracket drawn
         }
         return super.increaseIndent(right_strings);
       }
@@ -654,7 +651,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   private void prettyPrintNameWithPrecedence(Abstract.Definition def) {
     Abstract.Precedence precedence = def.getPrecedence();
-    if (precedence != null && !precedence.equals(Abstract.Precedence.DEFAULT)) {
+    if (!precedence.equals(Abstract.Precedence.DEFAULT)) {
       myBuilder.append("\\infix");
       if (precedence.associativity == Abstract.Precedence.Associativity.LEFT_ASSOC) myBuilder.append('l');
       if (precedence.associativity == Abstract.Precedence.Associativity.RIGHT_ASSOC) myBuilder.append('r');
@@ -692,6 +689,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
       @Override
       void printRight(PrettyPrintVisitor pp) {
+        //noinspection ConstantConditions
         def.getResultType().accept(pp, Abstract.Expression.PREC);
       }
 
@@ -714,11 +712,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
       @Override
       void printRight(PrettyPrintVisitor pp) {
-        if (def.getBody() != null) {
-          pp.prettyPrintBody(def.getBody());
-        } else {
-          pp.myBuilder.append("{!error}");
-        }
+        pp.prettyPrintBody(def.getBody());
       }
 
       @Override
@@ -755,12 +749,8 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitClassField(Abstract.ClassField def, Void params) {
     myBuilder.append("\\field ");
     prettyPrintNameWithPrecedence(def);
-
-    Abstract.Expression resultType = def.getResultType();
-    if (resultType != null) {
-      myBuilder.append(" : ");
-      resultType.accept(new PrettyPrintVisitor(myBuilder, myIndent), Abstract.Expression.PREC);
-    }
+    myBuilder.append(" : ");
+    def.getResultType().accept(new PrettyPrintVisitor(myBuilder, myIndent), Abstract.Expression.PREC);
 
     return null;
   }
@@ -771,13 +761,9 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     prettyPrintNameWithPrecedence(def);
 
     List<? extends Abstract.TypeParameter> parameters = def.getParameters();
-    if (parameters != null) {
-      for (Abstract.TypeParameter parameter : parameters) {
-        myBuilder.append(' ');
-        prettyPrintParameter(parameter, Abstract.ReferenceExpression.PREC);
-      }
-    } else {
-      myBuilder.append("{!error}");
+    for (Abstract.TypeParameter parameter : parameters) {
+      myBuilder.append(' ');
+      prettyPrintParameter(parameter, Abstract.ReferenceExpression.PREC);
     }
 
     Abstract.Expression universe = def.getUniverse();
@@ -807,21 +793,23 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   private void prettyPrintEliminatedReferences(List<? extends Abstract.ReferenceExpression> references) {
-    if (references != null) {
-      if (references.isEmpty()) {
-        myBuilder.append(" \\with");
+    if (references == null) {
+      myBuilder.append(" \\with");
+      return;
+    }
+    if (references.isEmpty()) {
+      return;
+    }
+
+    myBuilder.append(" => \\elim ");
+    boolean first = true;
+    for (Abstract.ReferenceExpression ref : references) {
+      if (first) {
+        first = false;
       } else {
-        myBuilder.append(" => \\elim ");
-        boolean first = true;
-        for (Abstract.ReferenceExpression ref : references) {
-          if (first) {
-            first = false;
-          } else {
-            myBuilder.append(", ");
-          }
-          myBuilder.append(ref.getName());
-        }
+        myBuilder.append(", ");
       }
+      myBuilder.append(ref.getName());
     }
   }
 
@@ -849,6 +837,9 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   private void prettyPrintClause(Abstract.Clause clause) {
+    if (clause.getPatterns() == null) {
+      return;
+    }
     boolean first = true;
     for (Abstract.Pattern pattern : clause.getPatterns()) {
       if (first) {
@@ -894,17 +885,12 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   @Override
   public Void visitConstructor(Abstract.Constructor def, Void ignored) {
     prettyPrintNameWithPrecedence(def);
-    List<? extends Abstract.TypeParameter> arguments = def.getParameters();
-    if (arguments == null) {
-      myBuilder.append("{!error}");
-    } else {
-      for (Abstract.TypeParameter argument : arguments) {
-        myBuilder.append(' ');
-        prettyPrintParameter(argument, Abstract.ReferenceExpression.PREC);
-      }
+    for (Abstract.TypeParameter parameter : def.getParameters()) {
+      myBuilder.append(' ');
+      prettyPrintParameter(parameter, Abstract.ReferenceExpression.PREC);
     }
 
-    if (def.getEliminatedReferences() != null) {
+    if (!def.getEliminatedReferences().isEmpty()) {
       prettyPrintEliminatedReferences(def.getEliminatedReferences());
       prettyPrintClauses(Collections.emptyList(), def.getClauses());
     }
@@ -914,7 +900,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   private void prettyPrintClassDefinitionHeader(Abstract.ClassDefinition def) {
     myBuilder.append("\\class ").append(def.getName());
     prettyPrintParameters(def.getPolyParameters(), Abstract.ReferenceExpression.PREC);
-    if (def.getSuperClasses() != null && !def.getSuperClasses().isEmpty()) {
+    if (!def.getSuperClasses().isEmpty()) {
       myBuilder.append(" \\extends");
       int i = def.getSuperClasses().size();
       for (Abstract.SuperClass superClass : def.getSuperClasses()) {
@@ -935,35 +921,29 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     Collection<? extends Abstract.Implementation> implementations = def.getImplementations();
     Collection<? extends Abstract.Definition> instanceDefinitions = def.getInstanceDefinitions();
 
-    if (fields != null && !fields.isEmpty() || implementations != null && !implementations.isEmpty() || instanceDefinitions != null && !instanceDefinitions.isEmpty()) {
+    if (!fields.isEmpty() || !implementations.isEmpty() || !instanceDefinitions.isEmpty()) {
       myBuilder.append(" {");
       myIndent += INDENT;
 
-      if (fields != null) {
-        for (Abstract.ClassField field : fields) {
-          myBuilder.append('\n');
-          printIndent();
-          field.accept(this, null);
-          myBuilder.append('\n');
-        }
+      for (Abstract.ClassField field : fields) {
+        myBuilder.append('\n');
+        printIndent();
+        field.accept(this, null);
+        myBuilder.append('\n');
       }
 
-      if (implementations != null) {
-        for (Abstract.Implementation implementation : implementations) {
-          myBuilder.append('\n');
-          printIndent();
-          implementation.accept(this, null);
-          myBuilder.append('\n');
-        }
+      for (Abstract.Implementation implementation : implementations) {
+        myBuilder.append('\n');
+        printIndent();
+        implementation.accept(this, null);
+        myBuilder.append('\n');
       }
 
-      if (instanceDefinitions != null) {
-        for (Abstract.Definition definition : instanceDefinitions) {
-          myBuilder.append('\n');
-          printIndent();
-          definition.accept(this, null);
-          myBuilder.append('\n');
-        }
+      for (Abstract.Definition definition : instanceDefinitions) {
+        myBuilder.append('\n');
+        printIndent();
+        definition.accept(this, null);
+        myBuilder.append('\n');
       }
 
       myIndent -= INDENT;
@@ -990,7 +970,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     if (!def.getFields().isEmpty()) {
       boolean hasImplemented = false;
       for (Abstract.ClassViewField field : def.getFields()) {
-        if (!field.getName().equals(field.getUnderlyingFieldName())) {
+        if (!Objects.equals(field.getName(), field.getUnderlyingFieldName())) {
           hasImplemented = true;
           break;
         }

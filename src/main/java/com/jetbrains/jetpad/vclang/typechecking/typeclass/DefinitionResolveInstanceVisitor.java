@@ -73,10 +73,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
 
   @Override
   public Void visitClassField(Abstract.ClassField def, Scope parentScope) {
-    Abstract.Expression resultType = def.getResultType();
-    if (resultType != null) {
-      resultType.accept(new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider), null);
-    }
+    def.getResultType().accept(new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider), null);
     return null;
   }
 
@@ -104,7 +101,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
   public Void visitConstructor(Abstract.Constructor def, Scope parentScope) {
     ExpressionResolveInstanceVisitor exprVisitor = new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider);
     exprVisitor.visitParameters(def.getParameters());
-    if (def.getEliminatedReferences() != null) {
+    if (!def.getEliminatedReferences().isEmpty()) {
       for (Abstract.ReferenceExpression ref : def.getEliminatedReferences()) {
         exprVisitor.visitReference(ref, null);
       }

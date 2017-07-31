@@ -178,14 +178,6 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
 
   @Override
   public Void visitBinOp(Abstract.BinOpExpression expr, Void params) {
-    if (expr.getReferent() == null) {
-      Abstract.Definition ref = myParentScope.resolveName(expr.getName());
-      if (ref != null) {
-        myResolveListener.nameResolved(expr, ref);
-      } else {
-        myErrorReporter.report(new NotInScopeError(expr, expr.getName()));
-      }
-    }
     expr.getLeft().accept(this, null);
     expr.getRight().accept(this, null);
     return null;
@@ -230,6 +222,9 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   }
 
   void visitClauses(List<? extends Abstract.FunctionClause> clauses) {
+    if (clauses.isEmpty()) {
+      return;
+    }
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       for (Abstract.FunctionClause clause : clauses) {
         Set<String> usedNames = new HashSet<>();

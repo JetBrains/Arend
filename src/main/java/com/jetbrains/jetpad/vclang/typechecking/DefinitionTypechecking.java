@@ -240,41 +240,38 @@ class DefinitionTypechecking {
     List<Clause> clauses = null;
     Abstract.FunctionDefinition def = (Abstract.FunctionDefinition) typedDef.getAbstractDefinition();
     Abstract.FunctionBody body = def.getBody();
+    Expression expectedType = typedDef.getResultType();
 
-    if (body != null) {
-      Expression expectedType = typedDef.getResultType();
-
-      if (body instanceof Abstract.ElimFunctionBody) {
-        if (expectedType != null) {
-          Abstract.ElimFunctionBody elimBody = (Abstract.ElimFunctionBody) body;
-          List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), visitor);
-          clauses = new ArrayList<>();
-          Body typedBody = elimParams == null ? null : new ElimTypechecking(visitor, expectedType, EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.CONTEXT_FREE, PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(elimBody.getClauses(), def, def.getParameters(), typedDef.getParameters(), elimParams, clauses);
-          if (typedBody != null) {
-            typedDef.setBody(typedBody);
+    if (body instanceof Abstract.ElimFunctionBody) {
+      if (expectedType != null) {
+        Abstract.ElimFunctionBody elimBody = (Abstract.ElimFunctionBody) body;
+        List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), visitor);
+        clauses = new ArrayList<>();
+        Body typedBody = elimParams == null ? null : new ElimTypechecking(visitor, expectedType, EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.CONTEXT_FREE, PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(elimBody.getClauses(), def, def.getParameters(), typedDef.getParameters(), elimParams, clauses);
+        if (typedBody != null) {
+          typedDef.setBody(typedBody);
+          typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+          if (ConditionsChecking.check(typedBody, clauses, typedDef, visitor.getErrorReporter())) {
             typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-            if (ConditionsChecking.check(typedBody, clauses, typedDef, visitor.getErrorReporter())) {
-              typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-            } else {
-              typedDef.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
-            }
           } else {
-            clauses = null;
+            typedDef.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
           }
         } else {
-          if (def.getResultType() == null) {
-            visitor.getErrorReporter().report(new LocalTypeCheckingError("Cannot infer type of the expression", body));
-          }
+          clauses = null;
         }
       } else {
-        CheckTypeVisitor.Result termResult = visitor.finalCheckExpr(((Abstract.TermFunctionBody) body).getTerm(), expectedType);
-        if (termResult != null) {
-          typedDef.setBody(new LeafElimTree(typedDef.getParameters(), termResult.expression));
-          if (expectedType == null) {
-            typedDef.setResultType(termResult.type);
-          }
-          clauses = Collections.emptyList();
+        if (def.getResultType() == null) {
+          visitor.getErrorReporter().report(new LocalTypeCheckingError("Cannot infer type of the expression", body));
         }
+      }
+    } else {
+      CheckTypeVisitor.Result termResult = visitor.finalCheckExpr(((Abstract.TermFunctionBody) body).getTerm(), expectedType);
+      if (termResult != null) {
+        typedDef.setBody(new LeafElimTree(typedDef.getParameters(), termResult.expression));
+        if (expectedType == null) {
+          typedDef.setResultType(termResult.type);
+        }
+        clauses = Collections.emptyList();
       }
     }
 
@@ -479,7 +476,7 @@ class DefinitionTypechecking {
         constructor.setPatterns(patterns);
         constructor.setThisClass(dataDefinition.getThisClass());
 
-        if (def.getClauses() != null) {
+        if (!def.getClauses().isEmpty()) {
           elimParams = ElimTypechecking.getEliminatedParameters(def.getEliminatedReferences(), def.getClauses(), constructor.getParameters(), visitor);
         }
       }
@@ -708,7 +705,6 @@ class DefinitionTypechecking {
       return;
     }
 
-    Abstract.ClassView classView = (Abstract.ClassView) def.getClassView().getReferent();
     Map<ClassField, Abstract.ClassFieldImpl> classFieldMap = new HashMap<>();
     List<Abstract.ClassField> alreadyImplementedFields = new ArrayList<>();
     Abstract.SourceNode alreadyImplementedSourceNode = null;
@@ -725,6 +721,8 @@ class DefinitionTypechecking {
       visitor.getErrorReporter().report(new FieldsImplementationError(true, alreadyImplementedFields, alreadyImplementedFields.size() > 1 ? def : alreadyImplementedSourceNode));
     }
 
+    Abstract.ClassView classView = (Abstract.ClassView) def.getClassView().getReferent();
+    assert classView != null;
     FieldSet fieldSet = new FieldSet(Sort.PROP);
     ClassDefinition classDef = (ClassDefinition) visitor.getTypecheckingState().getTypechecked((Abstract.Definition) classView.getUnderlyingClassReference().getReferent());
     fieldSet.addFieldsFrom(classDef.getFieldSet());

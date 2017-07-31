@@ -283,7 +283,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.ClassField visitDefAbstract(DefAbstractContext ctx) {
-    return new Concrete.ClassField(tokenPosition(ctx.getStart()), visitName(ctx.name()), visitPrecedence(ctx.precedence()), Collections.emptyList(), visitExpr(ctx.expr()));
+    return new Concrete.ClassField(tokenPosition(ctx.getStart()), visitName(ctx.name()), visitPrecedence(ctx.precedence()), visitExpr(ctx.expr()));
   }
 
   @Override
@@ -430,16 +430,15 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   private List<Concrete.Constructor> visitConstructors(List<ConstructorContext> conContexts, Concrete.DataDefinition def) {
     List<Concrete.Constructor> result = new ArrayList<>(conContexts.size());
     for (ConstructorContext conCtx : conContexts) {
-      boolean hasConditions = conCtx.elim() != null || !conCtx.clause().isEmpty();
       try {
         List<Concrete.FunctionClause> clauses;
-        if (hasConditions) {
+        if (conCtx.elim() != null || !conCtx.clause().isEmpty()) {
           clauses = new ArrayList<>(conCtx.clause().size());
           for (ClauseContext clauseCtx : conCtx.clause()) {
             clauses.add(visitClause(clauseCtx));
           }
         } else {
-          clauses = null;
+          clauses = Collections.emptyList();
         }
 
         result.add(new Concrete.Constructor(
@@ -448,7 +447,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           visitPrecedence(conCtx.precedence()),
           def,
           visitTeles(conCtx.tele()),
-          hasConditions ? visitElim(conCtx.elim()) : null,
+          visitElim(conCtx.elim()),
           clauses));
       } catch (ParseException ignored) {
 

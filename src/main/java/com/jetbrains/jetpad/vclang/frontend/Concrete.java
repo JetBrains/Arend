@@ -74,7 +74,7 @@ public final class Concrete {
     }
   }
 
-  public static class NameParameter extends Parameter implements Abstract.NameParameter, Abstract.ReferableSourceNode {
+  public static class NameParameter extends Parameter implements Abstract.NameParameter {
     private final String myName;
 
     public NameParameter(Position position, boolean explicit, String name) {
@@ -82,6 +82,7 @@ public final class Concrete {
       myName = name;
     }
 
+    @Nullable
     @Override
     public String getName() {
       return myName;
@@ -100,6 +101,7 @@ public final class Concrete {
       this(type.getPosition(), explicit, type);
     }
 
+    @Nonnull
     @Override
     public Expression getType() {
       return myType;
@@ -114,6 +116,7 @@ public final class Concrete {
       myReferableList = referableList;
     }
 
+    @Nonnull
     @Override
     public List<? extends Abstract.ReferableSourceNode> getReferableList() {
       return myReferableList;
@@ -155,6 +158,7 @@ public final class Concrete {
       myExplicit = explicit;
     }
 
+    @Nonnull
     @Override
     public Expression getExpression() {
       return myExpression;
@@ -176,11 +180,13 @@ public final class Concrete {
       myArgument = argument;
     }
 
+    @Nonnull
     @Override
     public Expression getFunction() {
       return myFunction;
     }
 
+    @Nonnull
     @Override
     public Argument getArgument() {
       return myArgument;
@@ -202,11 +208,13 @@ public final class Concrete {
       mySequence = sequence;
     }
 
+    @Nonnull
     @Override
     public Expression getLeft() {
       return myLeft;
     }
 
+    @Nonnull
     @Override
     public List<Abstract.BinOpSequenceElem> getSequence() {
       return mySequence;
@@ -250,16 +258,19 @@ public final class Concrete {
       return myBinOp.getName();
     }
 
+    @Nonnull
     @Override
     public Abstract.Definition getReferent() {
       return myBinOp;
     }
 
+    @Nonnull
     @Override
     public Expression getLeft() {
       return myLeft;
     }
 
+    @Nonnull
     @Override
     public Expression getRight() {
       return myRight;
@@ -272,11 +283,11 @@ public final class Concrete {
   }
 
   public static class ReferenceExpression extends Expression implements Abstract.ReferenceExpression {
-    private final Expression myExpression;
+    private final @Nullable Expression myExpression;
     private final String myName;
     private Abstract.ReferableSourceNode myReferent;
 
-    public ReferenceExpression(Position position, Expression expression, String name) {
+    public ReferenceExpression(Position position, @Nullable Expression expression, String name) {
       super(position);
       myExpression = expression;
       myName = name;
@@ -290,6 +301,7 @@ public final class Concrete {
       myReferent = referable;
     }
 
+    @Nullable
     @Override
     public Expression getExpression() {
       return myExpression;
@@ -323,6 +335,7 @@ public final class Concrete {
       myVariable = variable;
     }
 
+    @Nonnull
     public InferenceVariable getVariable() {
       return myVariable;
     }
@@ -342,6 +355,7 @@ public final class Concrete {
       this.myPath = new ModulePath(path);
     }
 
+    @Nonnull
     @Override
     public ModulePath getPath() {
       return myPath;
@@ -372,11 +386,13 @@ public final class Concrete {
       myDefinitions = definitions;
     }
 
+    @Nonnull
     @Override
     public Expression getBaseClassExpression() {
       return myBaseClassExpression;
     }
 
+    @Nonnull
     @Override
     public List<ClassFieldImpl> getStatements() {
       return myDefinitions;
@@ -399,11 +415,13 @@ public final class Concrete {
       myExpression = expression;
     }
 
+    @Nonnull
     @Override
     public String getImplementedFieldName() {
       return myName;
     }
 
+    @Nonnull
     @Override
     public Abstract.ClassField getImplementedField() {
       return myImplementedField;
@@ -413,6 +431,7 @@ public final class Concrete {
       myImplementedField = newImplementedField;
     }
 
+    @Nonnull
     @Override
     public Expression getImplementation() {
       return myExpression;
@@ -427,6 +446,7 @@ public final class Concrete {
       myExpression = expression;
     }
 
+    @Nonnull
     @Override
     public Expression getExpression() {
       return myExpression;
@@ -475,11 +495,13 @@ public final class Concrete {
       myBody = body;
     }
 
+    @Nonnull
     @Override
     public List<Parameter> getParameters() {
       return myArguments;
     }
 
+    @Nonnull
     @Override
     public Expression getBody() {
       return myBody;
@@ -510,18 +532,20 @@ public final class Concrete {
       return myName;
     }
 
+    @Nonnull
     @Override
-    public Abstract.Expression getTerm() {
+    public Expression getTerm() {
       return myTerm;
     }
 
+    @Nonnull
     @Override
     public List<Parameter> getParameters() {
       return myArguments;
     }
 
     @Override
-    public Abstract.Expression getResultType() {
+    public Expression getResultType() {
       return myResultType;
     }
   }
@@ -536,11 +560,13 @@ public final class Concrete {
       myExpression = expression;
     }
 
+    @Nonnull
     @Override
     public List<LetClause> getClauses() {
       return myClauses;
     }
 
+    @Nonnull
     @Override
     public Expression getExpression() {
       return myExpression;
@@ -562,11 +588,13 @@ public final class Concrete {
       myCodomain = codomain;
     }
 
+    @Nonnull
     @Override
     public List<TypeParameter> getParameters() {
       return myArguments;
     }
 
+    @Nonnull
     @Override
     public Expression getCodomain() {
       return myCodomain;
@@ -586,6 +614,7 @@ public final class Concrete {
       myArguments = arguments;
     }
 
+    @Nonnull
     @Override
     public List<TypeParameter> getParameters() {
       return myArguments;
@@ -605,6 +634,7 @@ public final class Concrete {
       myFields = fields;
     }
 
+    @Nonnull
     @Override
     public List<Expression> getFields() {
       return myFields;
@@ -626,11 +656,13 @@ public final class Concrete {
       myHLevel = hLevel;
     }
 
+    @Nullable
     @Override
     public LevelExpression getPLevel() {
       return myPLevel;
     }
 
+    @Nullable
     @Override
     public LevelExpression getHLevel() {
       return myHLevel;
@@ -652,6 +684,7 @@ public final class Concrete {
       myField = field;
     }
 
+    @Nonnull
     @Override
     public Expression getExpression() {
       return myExpression;
@@ -678,11 +711,13 @@ public final class Concrete {
       myClauses = clauses;
     }
 
+    @Nonnull
     @Override
     public List<Expression> getExpressions() {
       return myExpressions;
     }
 
+    @Nonnull
     @Override
     public List<FunctionClause> getClauses() {
       return myClauses;
@@ -697,13 +732,6 @@ public final class Concrete {
   public interface PatternContainer extends Abstract.PatternContainer {
     @Override
     List<Pattern> getPatterns();
-
-    default void replaceWithConstructor(int index, Abstract.Constructor constructor) {
-      Pattern old = getPatterns().get(index);
-      Pattern newPattern = new ConstructorPattern(old.getPosition(), constructor, Collections.emptyList());
-      newPattern.setExplicit(old.isExplicit());
-      getPatterns().set(index, newPattern);
-    }
   }
 
   public static class FunctionClause extends SourceNode implements Abstract.FunctionClause, PatternContainer {
@@ -716,11 +744,13 @@ public final class Concrete {
       myExpression = expression;
     }
 
+    @Nonnull
     @Override
     public List<Pattern> getPatterns() {
       return myPatterns;
     }
 
+    @Nullable
     @Override
     public Expression getExpression() {
       return myExpression;
@@ -762,6 +792,7 @@ public final class Concrete {
       myVariable = variable;
     }
 
+    @Nonnull
     @Override
     public InferenceLevelVariable getVariable() {
       return myVariable;
@@ -833,6 +864,7 @@ public final class Concrete {
       myExpression = expression;
     }
 
+    @Nonnull
     @Override
     public LevelExpression getExpression() {
       return myExpression;
@@ -854,11 +886,13 @@ public final class Concrete {
       myRight = right;
     }
 
+    @Nonnull
     @Override
     public LevelExpression getLeft() {
       return myLeft;
     }
 
+    @Nonnull
     @Override
     public LevelExpression getRight() {
       return myRight;
@@ -873,13 +907,14 @@ public final class Concrete {
   // Definitions
 
   public static class LocalVariable extends SourceNode implements Abstract.ReferableSourceNode {
-    private final String myName;
+    private final @Nullable String myName;
 
-    public LocalVariable(Position position, String name) {
+    public LocalVariable(Position position, @Nullable String name) {
       super(position);
       myName = name;
     }
 
+    @Nullable
     @Override
     public String getName() {
       return myName;
@@ -899,6 +934,7 @@ public final class Concrete {
       myPrecedence = precedence;
     }
 
+    @Nonnull
     @Override
     public Abstract.Precedence getPrecedence() {
       return myPrecedence;
@@ -933,25 +969,6 @@ public final class Concrete {
     }
   }
 
-  public static abstract class SignatureDefinition extends Definition {
-    private final List<Parameter> myArguments;
-    private final Expression myResultType;
-
-    public SignatureDefinition(Position position, String name, Abstract.Precedence precedence, List<Parameter> arguments, Expression resultType) {
-      super(position, name, precedence);
-      myArguments = arguments;
-      myResultType = resultType;
-    }
-
-    public List<? extends Parameter> getParameters() {
-      return myArguments;
-    }
-
-    public Expression getResultType() {
-      return myResultType;
-    }
-  }
-
   public static class SuperClass extends SourceNode implements Abstract.SuperClass {
     private final Expression mySuperClass;
 
@@ -960,6 +977,7 @@ public final class Concrete {
       mySuperClass = superClass;
     }
 
+    @Nonnull
     @Override
     public Expression getSuperClass() {
       return mySuperClass;
@@ -993,26 +1011,31 @@ public final class Concrete {
       return visitor.visitClass(this, params);
     }
 
+    @Nonnull
     @Override
     public List<TypeParameter> getPolyParameters() {
       return myPolyParameters;
     }
 
+    @Nonnull
     @Override
     public List<SuperClass> getSuperClasses() {
       return mySuperClasses;
     }
 
+    @Nonnull
     @Override
     public List<ClassField> getFields() {
       return myFields;
     }
 
+    @Nonnull
     @Override
     public List<Implementation> getImplementations() {
       return myImplementations;
     }
 
+    @Nonnull
     @Override
     public List<Definition> getInstanceDefinitions() {
       return myInstanceDefinitions;
@@ -1024,15 +1047,25 @@ public final class Concrete {
     }
   }
 
-  public static class ClassField extends SignatureDefinition implements Abstract.ClassField {
-    public ClassField(Position position, String name, Abstract.Precedence precedence, List<Parameter> arguments, Expression resultType) {
-      super(position, name, precedence, arguments, resultType);
+  public static class ClassField extends Definition implements Abstract.ClassField {
+    private final Expression myResultType;
+
+    public ClassField(Position position, String name, Abstract.Precedence precedence, Expression resultType) {
+      super(position, name, precedence);
       setIsStatic(false);
+      myResultType = resultType;
     }
 
+    @Nonnull
     @Override
     public ClassDefinition getParentDefinition() {
+      //noinspection ConstantConditions
       return (ClassDefinition) super.getParentDefinition();
+    }
+
+    @Nonnull
+    public Expression getResultType() {
+      return myResultType;
     }
 
     @Override
@@ -1051,6 +1084,7 @@ public final class Concrete {
       setIsStatic(false);
     }
 
+    @Nonnull
     @Override
     public Abstract.ClassField getImplementedField() {
       return myImplemented;
@@ -1060,6 +1094,7 @@ public final class Concrete {
       myImplemented = implemented;
     }
 
+    @Nonnull
     @Override
     public Expression getImplementation() {
       return myExpression;
@@ -1090,6 +1125,7 @@ public final class Concrete {
       myTerm = term;
     }
 
+    @Nonnull
     @Override
     public Expression getTerm() {
       return myTerm;
@@ -1106,27 +1142,46 @@ public final class Concrete {
       myClauses = clauses;
     }
 
+    @Nonnull
     @Override
     public List<? extends ReferenceExpression> getEliminatedReferences() {
       return myExpressions;
     }
 
+    @Nonnull
     @Override
     public List<? extends FunctionClause> getClauses() {
       return myClauses;
     }
   }
 
-  public static class FunctionDefinition extends SignatureDefinition implements Abstract.FunctionDefinition, StatementCollection {
+  public static class FunctionDefinition extends Definition implements Abstract.FunctionDefinition, StatementCollection {
+    private final List<Parameter> myParameters;
+    private final Expression myResultType;
     private final FunctionBody myBody;
     private final List<Statement> myStatements;
 
-    public FunctionDefinition(Position position, String name, Abstract.Precedence precedence, List<Parameter> arguments, Expression resultType, FunctionBody body, List<Statement> statements) {
-      super(position, name, precedence, arguments, resultType);
+    public FunctionDefinition(Position position, String name, Abstract.Precedence precedence, List<Parameter> parameters, Expression resultType, FunctionBody body, List<Statement> statements) {
+      super(position, name, precedence);
+      myParameters = parameters;
+      myResultType = resultType;
       myBody = body;
       myStatements = statements;
     }
 
+    @Nonnull
+    @Override
+    public List<Parameter> getParameters() {
+      return myParameters;
+    }
+
+    @Nullable
+    @Override
+    public Expression getResultType() {
+      return myResultType;
+    }
+
+    @Nonnull
     @Override
     public FunctionBody getBody() {
       return myBody;
@@ -1159,16 +1214,19 @@ public final class Concrete {
       myUniverse = universe;
     }
 
+    @Nonnull
     @Override
     public List<TypeParameter> getParameters() {
       return myParameters;
     }
 
+    @Nullable
     @Override
     public List<ReferenceExpression> getEliminatedReferences() {
       return myEliminatedReferences;
     }
 
+    @Nonnull
     @Override
     public List<ConstructorClause> getConstructorClauses() {
       return myConstructorClauses;
@@ -1179,6 +1237,7 @@ public final class Concrete {
       return myIsTruncated;
     }
 
+    @Nullable
     @Override
     public UniverseExpression getUniverse() {
       return myUniverse;
@@ -1205,6 +1264,7 @@ public final class Concrete {
       return myPatterns;
     }
 
+    @Nonnull
     @Override
     public List<Constructor> getConstructors() {
       return myConstructors;
@@ -1225,21 +1285,25 @@ public final class Concrete {
       myClauses = clauses;
     }
 
+    @Nonnull
     @Override
     public List<TypeParameter> getParameters() {
       return myArguments;
     }
 
+    @Nonnull
     @Override
     public List<ReferenceExpression> getEliminatedReferences() {
       return myEliminatedReferences;
     }
 
+    @Nonnull
     @Override
     public List<FunctionClause> getClauses() {
       return myClauses;
     }
 
+    @Nonnull
     @Override
     public DataDefinition getDataType() {
       return myDataType;
@@ -1266,11 +1330,13 @@ public final class Concrete {
       myClassifyingFieldName = classifyingFieldName;
     }
 
+    @Nonnull
     @Override
     public ReferenceExpression getUnderlyingClassReference() {
       return myUnderlyingClass;
     }
 
+    @Nonnull
     @Override
     public String getClassifyingFieldName() {
       return myClassifyingFieldName;
@@ -1285,6 +1351,7 @@ public final class Concrete {
       myClassifyingField = classifyingField;
     }
 
+    @Nonnull
     @Override
     public List<ClassViewField> getFields() {
       return myFields;
@@ -1307,6 +1374,7 @@ public final class Concrete {
       myOwnView = ownView;
     }
 
+    @Nonnull
     @Override
     public String getUnderlyingFieldName() {
       return myUnderlyingFieldName;
@@ -1317,6 +1385,7 @@ public final class Concrete {
       return myUnderlyingField;
     }
 
+    @Nonnull
     @Override
     public ClassView getOwnView() {
       return myOwnView;
@@ -1352,16 +1421,19 @@ public final class Concrete {
       return myDefault;
     }
 
+    @Nonnull
     @Override
     public List<Parameter> getParameters() {
       return myArguments;
     }
 
+    @Nonnull
     @Override
     public ReferenceExpression getClassView() {
       return myClassView;
     }
 
+    @Nonnull
     @Override
     public Abstract.Definition getClassifyingDefinition() {
       return myClassifyingDefinition;
@@ -1371,6 +1443,7 @@ public final class Concrete {
       myClassifyingDefinition = classifyingDefinition;
     }
 
+    @Nonnull
     @Override
     public List<ClassFieldImpl> getClassFieldImpls() {
       return myClassFieldImpls;
@@ -1500,20 +1573,21 @@ public final class Concrete {
     }
   }
 
-  public static class NamePattern extends Pattern implements Abstract.NamePattern, Abstract.ReferableSourceNode {
-    private final String myName;
+  public static class NamePattern extends Pattern implements Abstract.NamePattern {
+    private final @Nullable String myName;
 
-    public NamePattern(Position position, String name) {
+    public NamePattern(Position position, @Nullable String name) {
       super(position);
       myName = name;
     }
 
-    public NamePattern(Position position, boolean isExplicit, String name) {
+    public NamePattern(Position position, boolean isExplicit, @Nullable String name) {
       super(position);
       setExplicit(isExplicit);
       myName = name;
     }
 
+    @Nullable
     @Override
     public String getName() {
       return myName;
@@ -1553,6 +1627,7 @@ public final class Concrete {
       myArguments = arguments;
     }
 
+    @Nonnull
     @Override
     public String getConstructorName() {
       return myConstructorName;
@@ -1567,6 +1642,7 @@ public final class Concrete {
       myConstructor = constructor;
     }
 
+    @Nonnull
     @Override
     public List<Pattern> getPatterns() {
       return myArguments;

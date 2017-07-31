@@ -53,10 +53,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
 
   @Override
   public Void visitClassField(Abstract.ClassField def, Boolean params) {
-    Abstract.Expression resultType = def.getResultType();
-    if (resultType != null) {
-      resultType.accept(new CollectDefCallsVisitor(myInstanceProvider, myDependencies), null);
-    }
+    def.getResultType().accept(new CollectDefCallsVisitor(myInstanceProvider, myDependencies), null);
     return null;
   }
 
@@ -108,7 +105,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
     for (Abstract.TypeParameter arg : def.getParameters()) {
       arg.getType().accept(visitor, null);
     }
-    if (def.getEliminatedReferences() != null) {
+    if (!def.getEliminatedReferences().isEmpty()) {
       for (Abstract.FunctionClause clause : def.getClauses()) {
         for (Abstract.Pattern pattern : clause.getPatterns()) {
           visitPattern(pattern);

@@ -229,7 +229,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       if (entry.getKey().equals(expr.getDefinition().getEnclosingThisField())) {
         enclExpr = entry.getValue().term.accept(this, params);
       } else {
-        statements.add(myFactory.makeImplementStatement(entry.getKey(), null, entry.getValue().term.accept(this, params)));
+        statements.add(myFactory.makeImplementStatement(entry.getKey(), entry.getValue().term.accept(this, params)));
       }
     }
 
@@ -445,7 +445,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     List<Abstract.LetClause> clauses = new ArrayList<>(letExpression.getClauses().size());
     for (LetClause clause : letExpression.getClauses()) {
       Abstract.Expression term = clause.getExpression().accept(this, null);
-      clauses.add(myFactory.makeLetClause(makeReferable(clause), Collections.emptyList(), null, term));
+      clauses.add(myFactory.makeLetClause(makeReferable(clause), Collections.emptyList(), term));
     }
 
     Abstract.Expression result = myFactory.makeLet(clauses, letExpression.getExpression().accept(this, null));
