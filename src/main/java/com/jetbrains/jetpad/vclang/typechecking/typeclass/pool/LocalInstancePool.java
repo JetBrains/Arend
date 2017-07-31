@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass.pool;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.ArrayList;
@@ -23,9 +22,8 @@ public class LocalInstancePool implements ClassViewInstancePool {
   private final List<Pair> myPool = new ArrayList<>();
 
   private Expression getInstance(Expression classifyingExpression, Abstract.ClassView classView) {
-    Expression expr = classifyingExpression.normalize(NormalizeVisitor.Mode.NF);
     for (Pair pair : myPool) {
-      if (pair.key.equals(expr) && pair.classView == classView) {
+      if (pair.key.equals(classifyingExpression) && pair.classView == classView) {
         return pair.value;
       }
     }
@@ -39,21 +37,21 @@ public class LocalInstancePool implements ClassViewInstancePool {
 
   @Override
   public Expression getInstance(Abstract.ReferenceExpression defCall, int paramIndex, Expression classifyingExpression, Abstract.ClassDefinition classDefinition) {
-    Expression expr = classifyingExpression.normalize(NormalizeVisitor.Mode.NF);
     for (Pair pair : myPool) {
-      if (pair.key.equals(expr) && pair.classView.getUnderlyingClassReference().getReferent() == classDefinition) {
+      if (pair.key.equals(classifyingExpression) && pair.classView.getUnderlyingClassReference().getReferent() == classDefinition) {
         return pair.value;
       }
     }
     return null;
   }
 
-  public boolean addInstance(Expression classifyingExpression, Abstract.ClassView classView, Expression instance) {
-    if (getInstance(classifyingExpression, classView) != null) {
-      return false;
+  public Expression addInstance(Expression classifyingExpression, Abstract.ClassView classView, Expression instance) {
+    Expression oldInstance = getInstance(classifyingExpression, classView);
+    if (oldInstance != null) {
+      return oldInstance;
     } else {
       myPool.add(new Pair(classifyingExpression, classView, instance));
-      return true;
+      return null;
     }
   }
 }

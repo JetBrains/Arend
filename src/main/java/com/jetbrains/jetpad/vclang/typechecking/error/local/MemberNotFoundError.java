@@ -1,7 +1,10 @@
 package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
+import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
+import com.jetbrains.jetpad.vclang.term.Abstract;
+
+import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
 public class MemberNotFoundError extends LocalTypeCheckingError {
   public final Definition targetDefinition;
@@ -19,5 +22,10 @@ public class MemberNotFoundError extends LocalTypeCheckingError {
 
   public MemberNotFoundError(Definition targetDefinition, String name, boolean isStatic, Abstract.SourceNode cause) {
     this(targetDefinition, name, (isStatic ? "Static" : "Dynamic") + " member not found", cause);
+  }
+
+  @Override
+  public LineDoc getBodyDoc() {
+    return hList(text(name + " of some compiled definition called "), refDoc(targetDefinition.getAbstractDefinition()));
   }
 }

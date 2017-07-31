@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OpenCommand;
 import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
@@ -24,11 +25,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Function;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -36,19 +33,17 @@ import java.util.stream.StreamSupport;
 public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<Scope, Void> {
   private final List<Abstract.ReferableSourceNode> myContext;
   private final NameResolver myNameResolver;
-  private final Function<Abstract.Definition, Iterable<OpenCommand>> myOpens;
   private final ResolveListener myResolveListener;
   private final ErrorReporter myErrorReporter;
 
-  public DefinitionResolveNameVisitor(NameResolver nameResolver, Function<Abstract.Definition, Iterable<OpenCommand>> opens, ResolveListener resolveListener, ErrorReporter errorReporter) {
-    this(new ArrayList<>(), nameResolver, opens, resolveListener, errorReporter);
+  public DefinitionResolveNameVisitor(NameResolver nameResolver, ResolveListener resolveListener, ErrorReporter errorReporter) {
+    this(new ArrayList<>(), nameResolver, resolveListener, errorReporter);
   }
 
   private DefinitionResolveNameVisitor(List<Abstract.ReferableSourceNode> context, NameResolver nameResolver,
-                                       Function<Abstract.Definition, Iterable<OpenCommand>> opens, ResolveListener resolveListener, ErrorReporter errorReporter) {
+                                       ResolveListener resolveListener, ErrorReporter errorReporter) {
     myContext = context;
     myNameResolver = nameResolver;
-    myOpens = opens;
     myResolveListener = resolveListener;
     myErrorReporter = errorReporter;
   }
@@ -332,9 +327,13 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
   }
 
   private Iterable<Scope> getExtraScopes(Abstract.Definition def, Scope currentScope) {
-    return StreamSupport.stream(myOpens.apply(def).spliterator(), false)
-        .flatMap(cmd -> processOpenCommand(cmd, currentScope))
-        .collect(Collectors.toList());
+    if (def instanceof HasOpens) {
+      return StreamSupport.stream(((HasOpens) def).getOpens().spliterator(), false)
+          .flatMap(cmd -> processOpenCommand(cmd, currentScope))
+          .collect(Collectors.toList());
+    } else {
+      return Collections.emptySet();
+    }
   }
 
   private Stream<Scope> processOpenCommand(OpenCommand cmd, Scope currentScope) {

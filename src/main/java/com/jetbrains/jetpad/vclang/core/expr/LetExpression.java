@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class LetExpression extends Expression {
@@ -14,19 +14,16 @@ public class LetExpression extends Expression {
     myExpression = expression;
   }
 
-  // TODO[cmpNorm]: Remove this method
-  public LetExpression mergeNestedLets() {
-    List<LetClause> clauses = new ArrayList<>(myClauses);
-    Expression expression = myExpression;
-    while (expression.isInstance(LetExpression.class)) {
-      clauses.addAll(expression.cast(LetExpression.class).getClauses());
-      expression = expression.cast(LetExpression.class).getExpression();
-    }
-    return new LetExpression(clauses, expression);
-  }
-
   public List<LetClause> getClauses() {
     return myClauses;
+  }
+
+  public ExprSubstitution getClausesSubstitution() {
+    ExprSubstitution substitution = new ExprSubstitution();
+    for (LetClause clause : myClauses) {
+      substitution.add(clause, clause.getExpression());
+    }
+    return substitution;
   }
 
   public Expression getExpression() {

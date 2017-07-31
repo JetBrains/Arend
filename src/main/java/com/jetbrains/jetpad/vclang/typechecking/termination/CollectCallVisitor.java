@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
   private final Set<BaseCallMatrix<Definition>> myCollectedCalls;
@@ -69,7 +68,10 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
 
   public void collect(Clause clause) {
     if (clause.expression != null) {
-      myVector = clause.patterns.stream().map(Pattern::toExpression).collect(Collectors.toList());
+      myVector = new ArrayList<>(clause.patterns.size());
+      for (Pattern pattern : clause.patterns) {
+        myVector.add(pattern.toExpression());
+      }
       clause.expression.accept(this, null);
     }
   }

@@ -1,7 +1,12 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
-import com.jetbrains.jetpad.vclang.error.*;
+import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
+import com.jetbrains.jetpad.vclang.error.ErrorClassifier;
+import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
+import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotSourceInfoCollector;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
@@ -33,7 +38,6 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   protected final Map<SourceIdT, Map<String, Abstract.Definition>> definitionIds = new HashMap<>();
 
   protected final ListErrorReporter errorReporter = new ListErrorReporter();
-  private final ErrorFormatter errf;
 
   // Modules
   protected final ModuleTracker moduleTracker;
@@ -54,8 +58,6 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     moduleTracker = new ModuleTracker(storage);
     srcInfoProvider = moduleTracker.sourceInfoCollector.sourceInfoProvider;
-
-    errf = new ErrorFormatter(srcInfoProvider);
 
     cacheManager = new CacheManager<>(createPersistenceProvider(), storage, moduleTracker, srcInfoProvider);
     state = cacheManager.getTypecheckerState();
@@ -221,7 +223,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     if (!cacheLoaded) {
       throw new IllegalStateException("Prelude cache is not available");
     }
-    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), Concrete.NamespaceCommandStatement.GET, new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(state), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
+    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), HasOpens.GET, new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(state), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
     return prelude;
   }
 
@@ -327,7 +329,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
     ResultTracker resultTracker = new ResultTracker();
 
-    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), Concrete.NamespaceCommandStatement.GET, resultTracker, resultTracker, resultTracker).typecheckModules(modulesToTypeCheck);
+    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), HasOpens.GET, resultTracker, resultTracker, resultTracker).typecheckModules(modulesToTypeCheck);
   }
 
 
@@ -420,7 +422,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
   private void flushErrors() {
     for (GeneralError error : errorReporter.getErrorList()) {
-      System.out.println(errf.printError(error));
+      System.out.println(DocStringBuilder.build(error.getDoc(srcInfoProvider)));
     }
     errorReporter.getErrorList().clear();
   }

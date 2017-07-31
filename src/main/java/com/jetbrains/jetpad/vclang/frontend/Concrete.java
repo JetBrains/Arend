@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.frontend;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
+import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OpenCommand;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
@@ -13,11 +14,11 @@ import com.jetbrains.jetpad.vclang.term.AbstractLevelExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -37,7 +38,7 @@ public final class Concrete {
 
     @Override
     public String toString() {
-      return line + ":" + column;
+      return (module == null ? "" : module + ":") + line + ":" + column;
     }
   }
 
@@ -1419,12 +1420,12 @@ public final class Concrete {
     }
 
     @Override
-    public ModulePath getModulePath() {
+    public @Nullable ModulePath getModulePath() {
       return myModulePath;
     }
 
     @Override
-    public List<String> getPath() {
+    public @Nonnull List<String> getPath() {
       return myPath;
     }
 
@@ -1443,28 +1444,15 @@ public final class Concrete {
     }
 
     @Override
-    public List<String> getNames() {
+    public @Nullable List<String> getNames() {
       return myNames;
     }
 
     public enum Kind { OPEN, EXPORT }
 
-    public final static Function<Abstract.Definition, Iterable<OpenCommand>> GET = def -> {
-      if (def instanceof StatementCollection) {
-        return ((StatementCollection) def).getGlobalStatements().stream().flatMap(s -> {
-          if (s instanceof NamespaceCommandStatement) {
-            return Stream.of((NamespaceCommandStatement) s);
-          } else {
-            return Stream.empty();
-          }
-        }).collect(Collectors.toList());
-      } else {
-        return Collections.emptySet();
-      }
-    };
   }
 
-  interface StatementCollection extends Abstract.DefinitionCollection {
+  interface StatementCollection extends Abstract.DefinitionCollection, HasOpens {
     List<? extends Statement> getGlobalStatements();
 
     @Nonnull
@@ -1473,6 +1461,18 @@ public final class Concrete {
       return getGlobalStatements().stream().flatMap(s -> {
         if (s instanceof DefineStatement) {
           return Stream.of(((DefineStatement) s).getDefinition());
+        } else {
+          return Stream.empty();
+        }
+      }).collect(Collectors.toList());
+    }
+
+    @Nonnull
+    @Override
+    default Iterable<OpenCommand> getOpens() {
+      return getGlobalStatements().stream().flatMap(s -> {
+        if (s instanceof NamespaceCommandStatement) {
+          return Stream.of((NamespaceCommandStatement) s);
         } else {
           return Stream.empty();
         }

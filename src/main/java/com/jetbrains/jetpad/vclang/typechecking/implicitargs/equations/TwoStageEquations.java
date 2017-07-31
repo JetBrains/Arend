@@ -55,44 +55,38 @@ public class TwoStageEquations implements Equations {
     }
 
     if (inf1 == null && inf2 == null) {
-      // TODO: correctly check for stuck expressions
-      // expr1 /= stuck, expr2 /= stuck
-      Expression fun1 = expr1;
-      while (fun1.isInstance(AppExpression.class)) {
-        fun1 = fun1.cast(AppExpression.class).getFunction();
-      }
-      Expression fun2 = expr2;
-      while (fun2.isInstance(AppExpression.class)) {
-        fun2 = fun2.cast(AppExpression.class).getFunction();
-      }
-      if ((!fun1.isInstance(InferenceReferenceExpression.class) || fun1.cast(InferenceReferenceExpression.class).getVariable() == null) && (!fun2.isInstance(InferenceReferenceExpression.class) || fun2.cast(InferenceReferenceExpression.class).getVariable() == null)) {
-        InferenceVariable variable = null;
-        Expression result = null;
+      InferenceVariable variable = null;
+      Expression result = null;
 
-        // expr1 == field call
-        FieldCallExpression fieldCall1 = expr1.checkedCast(FieldCallExpression.class);
-        if (fieldCall1 != null && fieldCall1.getExpression().isInstance(InferenceReferenceExpression.class)) {
-          variable = fieldCall1.getExpression().cast(InferenceReferenceExpression.class).getVariable();
-          // expr1 == view field call
-          if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassifyingField() == fieldCall1.getDefinition()) {
+      // expr1 == field call
+      FieldCallExpression fieldCall1 = expr1.checkedCast(FieldCallExpression.class);
+      if (fieldCall1 != null && fieldCall1.getExpression().isInstance(InferenceReferenceExpression.class)) {
+        variable = fieldCall1.getExpression().cast(InferenceReferenceExpression.class).getVariable();
+        // expr1 == view field call
+        if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassifyingField() == fieldCall1.getDefinition()) {
+          Expression stuck2 = expr2.getStuckExpression();
+          if (stuck2 == null || !stuck2.isInstance(InferenceReferenceExpression.class) || stuck2.cast(InferenceReferenceExpression.class).getVariable() == null) {
             result = ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getClassViewInstancePool(), expr2);
           }
         }
+      }
 
-        // expr2 == field call
-        FieldCallExpression fieldCall2 = expr2.checkedCast(FieldCallExpression.class);
-        if (variable == null && fieldCall2 != null && fieldCall2.getExpression().isInstance(InferenceReferenceExpression.class)) {
-          variable = fieldCall2.getExpression().cast(InferenceReferenceExpression.class).getVariable();
-          // expr2 == view field call
-          if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassifyingField() == fieldCall2.getDefinition()) {
+      // expr2 == field call
+      FieldCallExpression fieldCall2 = expr2.checkedCast(FieldCallExpression.class);
+      if (variable == null && fieldCall2 != null && fieldCall2.getExpression().isInstance(InferenceReferenceExpression.class)) {
+        variable = fieldCall2.getExpression().cast(InferenceReferenceExpression.class).getVariable();
+        // expr2 == view field call
+        if (variable instanceof TypeClassInferenceVariable && ((TypeClassInferenceVariable) variable).getClassifyingField() == fieldCall2.getDefinition()) {
+          Expression stuck1 = expr1.getStuckExpression();
+          if (stuck1 == null || !stuck1.isInstance(InferenceReferenceExpression.class) || stuck1.cast(InferenceReferenceExpression.class).getVariable() == null) {
             result = ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getClassViewInstancePool(), expr1);
           }
         }
+      }
 
-        if (result != null) {
-          solve(variable, result);
-          return;
-        }
+      if (result != null) {
+        solve(variable, result);
+        return;
       }
     }
 
@@ -170,7 +164,12 @@ public class TwoStageEquations implements Equations {
     }
 
     myEquations.add(equation);
-    stuckVar.addListener(equation);
+    if (expr1.isInstance(InferenceReferenceExpression.class) && expr2.isInstance(InferenceReferenceExpression.class)) {
+      expr1.cast(InferenceReferenceExpression.class).getVariable().addListener(equation);
+      expr2.cast(InferenceReferenceExpression.class).getVariable().addListener(equation);
+    } else {
+      stuckVar.addListener(equation);
+    }
   }
 
   @Override
@@ -276,8 +275,8 @@ public class TwoStageEquations implements Equations {
 
   @Override
   public boolean solve(Expression type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode) {
-    if (!CompareVisitor.compare(this, cmp, type.normalize(NormalizeVisitor.Mode.NF), expr.normalize(NormalizeVisitor.Mode.NF), sourceNode)) {
-      myVisitor.getErrorReporter().report(new SolveEquationError<>(type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr.normalize(NormalizeVisitor.Mode.HUMAN_NF), sourceNode));
+    if (!CompareVisitor.compare(this, cmp, type, expr, sourceNode)) {
+      myVisitor.getErrorReporter().report(new SolveEquationError(type, expr, sourceNode));
       return false;
     } else {
       return true;
@@ -407,7 +406,6 @@ public class TwoStageEquations implements Equations {
       result.add(entry.getKey(), constant == null || basedConstant == null ? Level.INFINITY : new Level(based.contains(entry.getKey()) ? entry.getKey().getStd() : null, -basedConstant, -constant));
     }
 
-    // TODO: Do not add equations with expressions that stuck on errors, i.e. check this in CompareVisitor
     for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
       Equation equation = iterator.next();
       Expression stuckExpr = equation.expr.getStuckExpression();
@@ -537,14 +535,13 @@ public class TwoStageEquations implements Equations {
       return false;
     }
 
-    Expression expectedType = var.getType().normalize(NormalizeVisitor.Mode.WHNF);
-    Expression actualType = expr.getType().normalize(NormalizeVisitor.Mode.WHNF);
+    Expression expectedType = var.getType();
+    Expression actualType = expr.getType();
     if (actualType.isLessOrEquals(expectedType, this, var.getSourceNode())) {
       var.solve(this, OfTypeExpression.make(expr, actualType, expectedType));
       return true;
     } else {
-      actualType = actualType.normalize(NormalizeVisitor.Mode.HUMAN_NF);
-      LocalTypeCheckingError error = var.getErrorMismatch(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), actualType, expr);
+      LocalTypeCheckingError error = var.getErrorMismatch(expectedType, actualType, expr);
       myVisitor.getErrorReporter().report(error);
       var.solve(this, new ErrorExpression(expr, error));
       return false;

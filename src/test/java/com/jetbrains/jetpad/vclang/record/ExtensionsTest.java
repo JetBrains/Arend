@@ -157,7 +157,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
   public void superClassExpression() {
     typeCheckClass(
         "\\class A\n" +
-        "\\class B \\extends (\\lam x => x) A");
+        "\\class B \\extends ((\\lam x => x) A)");
   }
 
   @Test

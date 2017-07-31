@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   private final ExprSubstitution myExprSubstitution;
@@ -48,11 +47,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   public ConCallExpression visitConCall(ConCallExpression expr, Void params) {
     List<Expression> dataTypeArgs = new ArrayList<>(expr.getDataTypeArguments().size());
     for (Expression parameter : expr.getDataTypeArguments()) {
-      Expression expr2 = parameter.accept(this, null);
-      if (expr2 == null) {
-        return null;
-      }
-      dataTypeArgs.add(expr2);
+      dataTypeArgs.add(parameter.accept(this, null));
     }
 
     List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
@@ -164,14 +159,18 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitCase(CaseExpression expr, Void params) {
-    List<Expression> arguments = expr.getArguments().stream().map(arg -> arg.accept(this, null)).collect(Collectors.toList());
+    List<Expression> arguments = new ArrayList<>(expr.getArguments().size());
+    for (Expression arg : expr.getArguments()) {
+      arguments.add(arg.accept(this, null));
+    }
+
     DependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), myExprSubstitution, myLevelSubstitution);
     Expression type = expr.getResultType().accept(this, null);
     DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
     return new CaseExpression(parameters, type, substElimTree(expr.getElimTree()), arguments);
   }
 
-  private ElimTree substElimTree(ElimTree elimTree) {
+  public ElimTree substElimTree(ElimTree elimTree) {
     DependentLink vars = DependentLink.Helper.subst(elimTree.getParameters(), myExprSubstitution, myLevelSubstitution);
     if (elimTree instanceof LeafElimTree) {
       elimTree = new LeafElimTree(vars, ((LeafElimTree) elimTree).getExpression().accept(this, null));

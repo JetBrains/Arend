@@ -16,7 +16,6 @@ import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.prettyprint.StringPrettyPrintable;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
@@ -26,6 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
 public class StdImplicitArgsInference extends BaseImplicitArgsInference {
   public StdImplicitArgsInference(CheckTypeVisitor visitor) {
@@ -36,7 +36,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     ExprSubstitution substitution = new ExprSubstitution();
     int i = 0;
     for (DependentLink parameter : implicitParameters) {
-      Expression type = parameter.getTypeExpr().subst(substitution, LevelSubstitution.EMPTY).normalize(NormalizeVisitor.Mode.WHNF);
+      Expression type = parameter.getTypeExpr().subst(substitution, LevelSubstitution.EMPTY);
       InferenceVariable infVar = null;
       if (result instanceof CheckTypeVisitor.DefCallResult) {
         CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
@@ -88,7 +88,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     DependentLink param = result.getParameter();
     if (!param.hasNext()) {
       CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations());
-      LocalTypeCheckingError error = new TypeMismatchError(new StringPrettyPrintable("A pi type"), result1.type, fun);
+      LocalTypeCheckingError error = new TypeMismatchError(text("A pi type"), termDoc(result1.type), fun);
       fun.setWellTyped(myVisitor.getContext(), new ErrorExpression(result1.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;
@@ -125,10 +125,10 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       if (result instanceof CheckTypeVisitor.DefCallResult && isExplicit && expectedType != null) {
         CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
         if (defCallResult.getDefinition() instanceof Constructor && defCallResult.getArguments().size() < DependentLink.Helper.size(((Constructor) defCallResult.getDefinition()).getDataTypeParameters())) {
-          DataCallExpression dataCall = expectedType instanceof Expression ? ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DataCallExpression.class) : null;
+          DataCallExpression dataCall = expectedType instanceof Expression ? ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF_WO_INF).checkedCast(DataCallExpression.class) : null;
           if (dataCall != null) {
             if (((Constructor) defCallResult.getDefinition()).getDataType() != dataCall.getDefinition()) {
-              LocalTypeCheckingError error = new TypeMismatchError(dataCall, ((Constructor) defCallResult.getDefinition()).getDataType(), fun);
+              LocalTypeCheckingError error = new TypeMismatchError(termDoc(dataCall), refDoc(((Constructor) defCallResult.getDefinition()).getDataType().getAbstractDefinition()), fun);
               arg.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
               myVisitor.getErrorReporter().report(error);
               return null;
@@ -183,7 +183,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     expectedType.getPiParameters(expectedParams, true);
     if (expectedParams.size() > actualParams.size()) {
       CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations());
-      LocalTypeCheckingError error = new TypeMismatchError(expectedType, result1.type, expr);
+      LocalTypeCheckingError error = new TypeMismatchError(typeDoc(expectedType), termDoc(result1.type), expr);
       expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result1.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;

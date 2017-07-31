@@ -16,7 +16,7 @@ definition  : '\\function' precedence name tele* (':' expr)? functionBody where?
             | '\\field' precedence name ':' expr                                                          # defAbstract
             | '\\implement' name '=>' expr                                                                # defImplement
             | isTruncated '\\data' precedence name tele* (':' expr)? dataBody                             # defData
-            | '\\class' ID tele* ('\\extends' expr0 (',' expr0)*)? ('{' statement* '}')? where?           # defClass
+            | '\\class' ID tele* ('\\extends' atomFieldsAcc (',' atomFieldsAcc)*)? ('{' statement* '}')? where?           # defClass
             | '\\view' ID '\\on' expr '\\by' name '{' classViewField* '}'                                 # defClassView
             | defaultInst '\\instance' ID tele* '=>' expr                                                 # defInstance
             ;
@@ -31,7 +31,7 @@ dataBody : elim constructorClause*                      # dataClauses
 
 constructorClause : '|' pattern (',' pattern)* '=>' (constructor | '{' '|'? constructor ('|' constructor)* '}');
 
-elim : '\\with' | '=>' '\\elim' expr0 (',' expr0)*;
+elim : '\\with' | '=>' '\\elim' atomFieldsAcc (',' atomFieldsAcc)*;
 
 isTruncated : '\\truncated' # truncated
             |               # notTruncated
@@ -86,7 +86,7 @@ expr  : binOpLeft* maybeNew binOpArg implementStatements?   # binOp
       | '\\Sigma' tele+                                     # sigma
       | '\\lam' tele+ '=>' expr                             # lam
       | '\\let' '|'? letClause ('|' letClause)* '\\in' expr # let
-      | '\\case' expr0 (',' expr0)* '\\with'? '{' clause? ('|' clause)* '}' # case
+      | '\\case' expr0 (',' expr0)* '\\with' '{' clause? ('|' clause)* '}' # case
       ;
 
 clauses : ('|' clause)*                 # clausesWithoutBraces

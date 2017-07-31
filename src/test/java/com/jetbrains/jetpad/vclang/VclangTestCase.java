@@ -2,7 +2,9 @@ package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.ErrorFormatter;
+import com.jetbrains.jetpad.vclang.error.doc.Doc;
+import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
+import com.jetbrains.jetpad.vclang.frontend.resolving.SimpleSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -13,6 +15,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.text;
+import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.vList;
 import static org.junit.Assert.assertThat;
 
 public abstract class VclangTestCase {
@@ -25,7 +29,7 @@ public abstract class VclangTestCase {
   }
 
 
-  private static final ErrorFormatter ERROR_FORMATTER = new ErrorFormatter(SourceInfoProvider.TRIVIAL);
+  private static final SourceInfoProvider mySourceInfoProvider = new SimpleSourceInfoProvider();
 
   protected static Matcher<? super Collection<? extends GeneralError>> containsErrors(final int n) {
     return new TypeSafeDiagnosingMatcher<Collection<? extends GeneralError>>() {
@@ -34,7 +38,12 @@ public abstract class VclangTestCase {
         if (errors.size() == 0) {
           description.appendText("there were no errors");
         } else {
-          description.appendText("there were errors:\n").appendText(ERROR_FORMATTER.printErrors(errors));
+          List<Doc> docs = new ArrayList<>(errors.size() + 1);
+          docs.add(text("there were errors:"));
+          for (GeneralError error : errors) {
+            docs.add(error.getDoc(mySourceInfoProvider));
+          }
+          description.appendText(DocStringBuilder.build(vList(docs)));
         }
         return n < 0 ? !errors.isEmpty() : errors.size() == n;
       }

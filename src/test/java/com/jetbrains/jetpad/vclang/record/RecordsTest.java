@@ -73,13 +73,23 @@ public class RecordsTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void notImplementedTestError() {
+    typeCheckClass(
+        "\\class Point {\n" +
+        "  \\field x : Nat\n" +
+        "  \\field y : Nat\n" +
+        "}\n" +
+        "\\function diagonal => Point { y => 0 }", 1);
+  }
+
+  @Test
   public void newAbstractTestError() {
     typeCheckClass(
         "\\class Point {\n" +
         "  \\field x : Nat\n" +
         "  \\field y : Nat\n" +
         "}\n" +
-        "\\function diagonal => Point { y => 0 }\n" +
+        "\\function diagonal => Point { x => 0 }\n" +
         "\\function test => \\new diagonal", 1);
   }
 
@@ -197,7 +207,7 @@ public class RecordsTest extends TypeCheckingTestCase {
     assertEquals(Ref(testFun.getParameters()), arg1.getDataTypeArguments().get(0));
     assertEquals(foo, arg1.getDefinition());
 
-    Expression domFunction = arguments.get(0).cast(LamExpression.class).getBody().cast(PiExpression.class).getParameters().getTypeExpr();
+    Expression domFunction = arguments.get(0).cast(LamExpression.class).getBody().cast(PiExpression.class).getParameters().getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF);
     assertEquals(Prelude.PATH, domFunction.cast(DataCallExpression.class).getDefinition());
     List<? extends Expression> domArguments = domFunction.cast(DataCallExpression.class).getDefCallArguments();
     assertEquals(3, domArguments.size());

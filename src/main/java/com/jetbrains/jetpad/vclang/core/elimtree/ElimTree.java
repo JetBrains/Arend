@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 
-import java.util.HashMap;
 import java.util.List;
 
 public abstract class ElimTree implements Body {
@@ -21,7 +20,7 @@ public abstract class ElimTree implements Body {
 
   @Override
   public boolean equals(Object obj) {
-    return obj instanceof ElimTree && CompareVisitor.compare(new HashMap<>(), DummyEquations.getInstance(), this, (ElimTree) obj);
+    return obj instanceof ElimTree && CompareVisitor.compare(DummyEquations.getInstance(), this, (ElimTree) obj, null);
   }
 
   public abstract boolean isWHNF(List<? extends Expression> arguments);

@@ -100,12 +100,12 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
         ((Abstract.TypeParameter) parameter).getType().accept(this, null);
       }
       if (parameter instanceof Abstract.TelescopeParameter) {
-        for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeParameter) parameter).getReferableList()) {
+        List<? extends Abstract.ReferableSourceNode> referableList = ((Abstract.TelescopeParameter) parameter).getReferableList();
+        for (int i = 0; i < referableList.size(); i++) {
+          Abstract.ReferableSourceNode referable = referableList.get(i);
           if (referable != null && referable.getName() != null && !referable.getName().equals("_")) {
-            for (Abstract.ReferableSourceNode referable1 : ((Abstract.TelescopeParameter) parameter).getReferableList()) {
-              if (referable1 == referable) {
-                break;
-              }
+            for (int j = 0; j < i; j++) {
+              Abstract.ReferableSourceNode referable1 = referableList.get(j);
               if (referable1 != null && referable.getName().equals(referable1.getName())) {
                 myErrorReporter.report(new DuplicateName(referable1));
               }

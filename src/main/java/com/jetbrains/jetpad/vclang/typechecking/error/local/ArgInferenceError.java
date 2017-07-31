@@ -1,7 +1,14 @@
 package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.error.doc.Doc;
+import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
+import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
 public class ArgInferenceError extends LocalTypeCheckingError {
   public final Expression[] candidates;
@@ -65,5 +72,19 @@ public class ArgInferenceError extends LocalTypeCheckingError {
 
   public static String ordinal(int n) {
     return n + suffix(n);
+  }
+
+  @Override
+  public Doc getBodyDoc() {
+    return vList(
+      candidates.length == 0
+        ? nullDoc()
+        : hang(text("Candidates are:"),
+            vList(Arrays.stream(candidates).map(DocFactory::termDoc).collect(Collectors.toList()))),
+      expected == null && actual == null
+        ? nullDoc()
+        : vList(text("Since types of the candidates are not less or equal to the expected type"),
+                expected == null ? nullDoc() : hang(text("Expected type:"), termDoc(expected)),
+                actual   == null ? nullDoc() : hang(text("  Actual type:"), termDoc(actual))));
   }
 }

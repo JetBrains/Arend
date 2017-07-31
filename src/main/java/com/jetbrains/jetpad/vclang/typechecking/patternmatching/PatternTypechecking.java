@@ -15,15 +15,18 @@ import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
 import com.jetbrains.jetpad.vclang.error.Error;
+import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.DataTypeNotEmptyError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.WrongConstructorError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class PatternTypechecking {
   private final LocalErrorReporter myErrorReporter;
@@ -228,7 +231,7 @@ public class PatternTypechecking {
 
       Expression expr = parameters.getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF);
       if (!expr.isInstance(DataCallExpression.class)) {
-        myErrorReporter.report(new LocalTypeCheckingError("Expected a data type, actual type: " + expr, pattern));
+        myErrorReporter.report(new TypeMismatchError(DocFactory.text("a data type"), DocFactory.termDoc(expr), pattern));
         return null;
       }
       DataCallExpression dataCall = expr.cast(DataCallExpression.class);
@@ -244,7 +247,11 @@ public class PatternTypechecking {
           return null;
         }
         if (!conCalls.isEmpty()) {
-          myErrorReporter.report(new LocalTypeCheckingError("Data type " + expr + " is not empty, available constructors: " + conCalls.stream().map(ConCallExpression::getDefinition).collect(Collectors.toList()), pattern));
+          List<Constructor> constructors = new ArrayList<>(conCalls.size());
+          for (ConCallExpression conCall : conCalls) {
+            constructors.add(conCall.getDefinition());
+          }
+          myErrorReporter.report(new DataTypeNotEmptyError(dataCall, constructors, pattern));
           return null;
         }
         result.add(EmptyPattern.INSTANCE);
@@ -261,7 +268,7 @@ public class PatternTypechecking {
       Constructor constructor = dataCall.getDefinition().getConstructor(conPattern.getConstructor());
       List<ConCallExpression> conCalls = new ArrayList<>(1);
       if (constructor == null || !dataCall.getMatchedConCall(constructor, conCalls) || conCalls.isEmpty() ) {
-        myErrorReporter.report(new LocalTypeCheckingError("'" + conPattern.getConstructor() + "' is not a constructor of data type '" + expr + "'", pattern));
+        myErrorReporter.report(new WrongConstructorError(conPattern.getConstructor(), dataCall, pattern));
         return null;
       }
       ConCallExpression conCall = conCalls.get(0);

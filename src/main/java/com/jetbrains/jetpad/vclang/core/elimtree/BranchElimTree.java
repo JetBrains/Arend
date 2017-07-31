@@ -29,18 +29,24 @@ public class BranchElimTree extends ElimTree {
   @Override
   public boolean isWHNF(List<? extends Expression> arguments) {
     int index = DependentLink.Helper.size(getParameters());
+    if (!arguments.get(index).isWHNF()) {
+      return false;
+    }
     if (arguments.get(index).isInstance(ConCallExpression.class)) {
       ConCallExpression conCall = arguments.get(index).cast(ConCallExpression.class);
       ElimTree elimTree = myChildren.get(conCall.getDefinition());
-      if (elimTree == null) {
-        return true;
+      if (elimTree != null) {
+        List<Expression> newArguments = new ArrayList<>(conCall.getDefCallArguments().size() + arguments.size() - index - 1);
+        newArguments.addAll(conCall.getDefCallArguments());
+        newArguments.addAll(arguments.subList(index + 1, arguments.size()));
+        return elimTree.isWHNF(newArguments);
+      } else {
+        elimTree = myChildren.get(null);
+        //noinspection SimplifiableConditionalExpression
+        return elimTree != null ? elimTree.isWHNF(arguments.subList(index, arguments.size())) : true;
       }
-      List<Expression> newArguments = new ArrayList<>(conCall.getDefCallArguments().size() + arguments.size() - index - 1);
-      newArguments.addAll(conCall.getDefCallArguments());
-      newArguments.addAll(arguments.subList(index + 1, arguments.size()));
-      return elimTree.isWHNF(newArguments);
     }
-    return arguments.get(index).isWHNF();
+    return true;
   }
 
   @Override
@@ -49,13 +55,15 @@ public class BranchElimTree extends ElimTree {
     if (arguments.get(index).isInstance(ConCallExpression.class)) {
       ConCallExpression conCall = arguments.get(index).cast(ConCallExpression.class);
       ElimTree elimTree = myChildren.get(conCall.getDefinition());
-      if (elimTree == null) {
-        return expression;
+      if (elimTree != null) {
+        List<Expression> newArguments = new ArrayList<>(conCall.getDefCallArguments().size() + arguments.size() - index - 1);
+        newArguments.addAll(conCall.getDefCallArguments());
+        newArguments.addAll(arguments.subList(index + 1, arguments.size()));
+        return elimTree.getStuckExpression(newArguments, expression);
+      } else {
+        elimTree = myChildren.get(null);
+        return elimTree != null ? elimTree.getStuckExpression(arguments.subList(index, arguments.size()), expression) : expression;
       }
-      List<Expression> newArguments = new ArrayList<>(conCall.getDefCallArguments().size() + arguments.size() - index - 1);
-      newArguments.addAll(conCall.getDefCallArguments());
-      newArguments.addAll(arguments.subList(index + 1, arguments.size()));
-      return elimTree.getStuckExpression(newArguments, expression);
     }
     return arguments.get(index).getStuckExpression();
   }

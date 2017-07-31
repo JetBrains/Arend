@@ -154,7 +154,7 @@ public class ParserTest extends NameResolverTestCase {
   public void parseCase() {
     parseClass("test",
       "\\data Nat | zero | suc Nat\n" +
-      "\\function f => \\case 2 { zero => zero | suc x' => x' }");
+      "\\function f => \\case 2 \\with { zero => zero | suc x' => x' }");
   }
 
   @Test

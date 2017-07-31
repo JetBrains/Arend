@@ -38,18 +38,22 @@ public abstract class Expression implements ExpectedType {
 
   @Override
   public boolean equals(Object obj) {
-    return this == obj || obj instanceof Expression && compare(this, (Expression) obj);
+    return this == obj || obj instanceof Expression && compare(this, (Expression) obj, Equations.CMP.EQ);
+  }
+
+  public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent, boolean noIndent) {
+    ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory(), names);
+    visitor.addFlags(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM);
+    normalize(NormalizeVisitor.Mode.RNF).accept(visitor, null).accept(new PrettyPrintVisitor(builder, indent, noIndent), prec);
   }
 
   @Override
   public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent) {
-    ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory(), names);
-    visitor.addFlags(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM);
-    accept(visitor, null).accept(new PrettyPrintVisitor(builder, indent), prec);
+    prettyPrint(builder, names, prec, indent, false);
   }
 
   public boolean isLessOrEquals(Expression type, Equations equations, Abstract.SourceNode sourceNode) {
-    return CompareVisitor.compare(equations, Equations.CMP.LE, normalize(NormalizeVisitor.Mode.NF), type.normalize(NormalizeVisitor.Mode.NF), sourceNode);
+    return CompareVisitor.compare(equations, Equations.CMP.LE, this, type, sourceNode);
   }
 
   public Sort toSort() {
@@ -66,7 +70,7 @@ public abstract class Expression implements ExpectedType {
   }
 
   public Variable findBinding(Set<? extends Variable> bindings) {
-    return this.accept(new FindBindingVisitor(bindings), null);
+    return accept(new FindBindingVisitor(bindings), null);
   }
 
   public Expression strip(Set<Binding> bounds, LocalErrorReporter errorReporter) {
@@ -100,10 +104,6 @@ public abstract class Expression implements ExpectedType {
 
   public static boolean compare(Expression expr1, Expression expr2, Equations.CMP cmp) {
     return CompareVisitor.compare(DummyEquations.getInstance(), cmp, expr1, expr2, null);
-  }
-
-  public static boolean compare(Expression expr1, Expression expr2) {
-    return compare(expr1, expr2, Equations.CMP.EQ);
   }
 
   @Override
@@ -180,6 +180,7 @@ public abstract class Expression implements ExpectedType {
 
   public abstract boolean isWHNF();
 
-  // Returns null of the expression is a constructor or not in WHNF
+  // This function assumes that the expression is in a WHNF.
+  // If the expression is a constructor, then the function returns null.
   public abstract Expression getStuckExpression();
 }

@@ -25,7 +25,6 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class ConditionsChecking {
   public static boolean check(Body body, List<Clause> clauses, Definition definition, LocalErrorReporter errorReporter) {
@@ -76,9 +75,9 @@ public class ConditionsChecking {
     }
 
     ExprSubstitution substitution1 = new ExprSubstitution(link2, isLeft2 ? ExpressionFactory.Left() : ExpressionFactory.Right());
-    Expression evaluatedExpr1 = case1.subst(substitution1).normalize(NormalizeVisitor.Mode.NF);
+    Expression evaluatedExpr1 = case1.subst(substitution1);
     ExprSubstitution substitution2 = new ExprSubstitution(link1, isLeft1 ? ExpressionFactory.Left() : ExpressionFactory.Right());
-    Expression evaluatedExpr2 = case2.subst(substitution2).normalize(NormalizeVisitor.Mode.NF);
+    Expression evaluatedExpr2 = case2.subst(substitution2);
     if (!CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null)) {
       List<Expression> defCallArgs1 = new ArrayList<>();
       for (DependentLink link3 = parameters; link3.hasNext(); link3 = link3.getNext()) {
@@ -127,8 +126,8 @@ public class ConditionsChecking {
     ExprSubstitution substitution2 = new ExprSubstitution(((BindingPattern) clause.patterns.get(index)).getBinding(), isLeft ? ExpressionFactory.Left() : ExpressionFactory.Right());
     pathSubstitution.addAll(substitution2);
 
-    Expression evaluatedExpr1 = expr.subst(substitution1).normalize(NormalizeVisitor.Mode.NF);
-    Expression evaluatedExpr2 = clause.expression.subst(pathSubstitution).normalize(NormalizeVisitor.Mode.NF);
+    Expression evaluatedExpr1 = expr.subst(substitution1);
+    Expression evaluatedExpr2 = clause.expression.subst(pathSubstitution);
     if (!CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null)) {
       if (!pathSubstitution.isEmpty()) {
         link = parameters;
@@ -145,7 +144,23 @@ public class ConditionsChecking {
       for (link = parameters; link.hasNext(); link = link.getNext(), i++) {
         defCallArgs1.add(i == index ? (isLeft ? ExpressionFactory.Left() : ExpressionFactory.Right()) : new ReferenceExpression(link));
       }
-      List<Expression> defCallArgs2 = clause.patterns.stream().map(Pattern::toExpression).collect(Collectors.toList());
+
+      List<Expression> defCallArgs2 = new ArrayList<>(clause.patterns.size());
+      for (Pattern pattern : clause.patterns) {
+        defCallArgs2.add(pattern.toExpression());
+      }
+
+      if (!pathSubstitution.isEmpty()) {
+        substitution1 = new ExprSubstitution();
+        link = parameters;
+        for (i = 0; i < clause.patterns.size(); i++) {
+          if (i != index) {
+            substitution1.add(link, clause.patterns.get(i).toExpression());
+          }
+          link = link.getNext();
+        }
+      }
+
       errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, null, defCallArgs1), definition.getDefCall(Sort.STD, null, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, clause.clause));
       return false;
     } else {
@@ -170,6 +185,7 @@ public class ConditionsChecking {
     }
   }
 
+  @SuppressWarnings("UnusedReturnValue")
   public static boolean check(List<Clause> clauses, ElimTree elimTree, LocalErrorReporter errorReporter) {
     boolean ok = true;
     for (Clause clause : clauses) {
@@ -185,13 +201,16 @@ public class ConditionsChecking {
     for (Pair<List<Expression>, ExprSubstitution> pair : collectPatterns(clause.patterns)) {
       Expression evaluatedExpr1;
       if (definition == null) {
-        evaluatedExpr1 = new NormalizeVisitor().eval(elimTree, pair.proj1, new ExprSubstitution(), LevelSubstitution.EMPTY);
+        evaluatedExpr1 = new NormalizeVisitor().eval(elimTree, pair.proj1, new ExprSubstitution(), LevelSubstitution.EMPTY, NormalizeVisitor.Mode.WHNF);
       } else {
-        evaluatedExpr1 = definition.getDefCall(Sort.STD, null, pair.proj1).normalize(NormalizeVisitor.Mode.NF);
+        evaluatedExpr1 = definition.getDefCall(Sort.STD, null, pair.proj1);
       }
-      Expression evaluatedExpr2 = clause.expression.subst(pair.proj2).normalize(NormalizeVisitor.Mode.NF);
+      Expression evaluatedExpr2 = clause.expression.subst(pair.proj2);
       if (evaluatedExpr1 == null || !CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null)) {
-        List<Expression> args = clause.patterns.stream().map(Pattern::toExpression).collect(Collectors.toList());
+        List<Expression> args = new ArrayList<>(clause.patterns.size());
+        for (Pattern pattern : clause.patterns) {
+          args.add(pattern.toExpression());
+        }
         Expression expr1 = definition == null ? new CaseExpression(null, null, null, args) : definition.getDefCall(Sort.STD, null, args);
         errorReporter.report(new ConditionsError(expr1, clause.expression, pair.proj2, pair.proj2, evaluatedExpr1, evaluatedExpr2, clause.clause));
         ok = false;
@@ -203,8 +222,7 @@ public class ConditionsChecking {
   private static List<Pair<List<Expression>, ExprSubstitution>> collectPatterns(List<Pattern> patterns) {
     List<Pair<List<Expression>, ExprSubstitution>> result = new ArrayList<>();
     for (int i = 0; i < patterns.size(); i++) {
-      List<Pair<Expression, ExprSubstitution>> patternResult = collectPatterns(patterns.get(i));
-      for (Pair<Expression, ExprSubstitution> pair : patternResult) {
+      for (Pair<Expression, ExprSubstitution> pair : collectPatterns(patterns.get(i))) {
         List<Expression> list = new ArrayList<>(patterns.size());
         for (int j = 0; j < patterns.size(); j++) {
           if (i == j) {
@@ -224,7 +242,11 @@ public class ConditionsChecking {
       return Collections.emptyList();
     }
     ConstructorPattern conPattern = (ConstructorPattern) pattern;
-    List<Pair<Expression, ExprSubstitution>> result = collectPatterns(conPattern.getArguments()).stream().map(p -> new Pair<Expression, ExprSubstitution>(new ConCallExpression(conPattern.getConstructor(), conPattern.getSortArgument(), conPattern.getDataTypeArguments(), p.proj1), p.proj2)).collect(Collectors.toList());
+    List<Pair<List<Expression>, ExprSubstitution>> collectedPatterns = collectPatterns(conPattern.getArguments());
+    List<Pair<Expression, ExprSubstitution>> result = new ArrayList<>(collectedPatterns.size());
+    for (Pair<List<Expression>, ExprSubstitution> pair : collectedPatterns) {
+      result.add(new Pair<>(new ConCallExpression(conPattern.getConstructor(), conPattern.getSortArgument(), conPattern.getDataTypeArguments(), pair.proj1), pair.proj2));
+    }
 
     if (conPattern.getConstructor().getBody() instanceof IntervalElim) {
       IntervalElim elim = (IntervalElim) conPattern.getConstructor().getBody();

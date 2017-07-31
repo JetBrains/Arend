@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 class DefinitionDeserialization {
   private final CalltargetProvider.Typed myCalltargetProvider;
@@ -109,7 +108,9 @@ class DefinitionDeserialization {
     LinkList list = new LinkList();
     for (ExpressionProtos.Telescope proto : protos) {
       List<String> unfixedNames = new ArrayList<>(proto.getNameList().size());
-      unfixedNames.addAll(proto.getNameList().stream().map(name -> name.isEmpty() ? null : name).collect(Collectors.toList()));
+      for (String name : proto.getNameList()) {
+        unfixedNames.add(name.isEmpty() ? null : name);
+      }
       Type type = readType(proto.getType());
       DependentLink tele = ExpressionFactory.parameter(!proto.getIsNotExplicit(), unfixedNames, type);
       for (DependentLink link = tele; link.hasNext(); link = link.getNext()) {
@@ -122,7 +123,9 @@ class DefinitionDeserialization {
 
   SingleDependentLink readSingleParameter(ExpressionProtos.Telescope proto) throws DeserializationError {
     List<String> unfixedNames = new ArrayList<>(proto.getNameList().size());
-    unfixedNames.addAll(proto.getNameList().stream().map(name -> name.isEmpty() ? null : name).collect(Collectors.toList()));
+    for (String name : proto.getNameList()) {
+      unfixedNames.add(name.isEmpty() ? null : name);
+    }
     Type type = readType(proto.getType());
     SingleDependentLink tele = ExpressionFactory.singleParams(!proto.getIsNotExplicit(), unfixedNames, type);
     for (DependentLink link = tele; link.hasNext(); link = link.getNext()) {

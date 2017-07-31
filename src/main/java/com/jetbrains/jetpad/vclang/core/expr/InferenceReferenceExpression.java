@@ -71,8 +71,7 @@ public class InferenceReferenceExpression extends Expression {
 
   @Override
   public boolean isWHNF() {
-    //noinspection SimplifiableConditionalExpression
-    return mySubstExpression != null ? mySubstExpression.isWHNF() : true;
+    return mySubstExpression == null;
   }
 
   @Override

@@ -6,7 +6,7 @@ import org.junit.Test;
 public class CoverageTest extends TypeCheckingTestCase {
   @Test
   public void coverageInCase() {
-    typeCheckDef("\\function test : Nat => \\case 1 { zero => 0 }", 1);
+    typeCheckDef("\\function test : Nat => \\case 1 \\with { zero => 0 }", 1);
   }
 
   @Test

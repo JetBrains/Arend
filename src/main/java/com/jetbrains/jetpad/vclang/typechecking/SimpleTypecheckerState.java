@@ -29,6 +29,11 @@ public class SimpleTypecheckerState implements TypecheckerState {
   }
 
   @Override
+  public void reset(Abstract.Definition def) {
+    myTypechecked.remove(def);
+  }
+
+  @Override
   public void reset() {
     myTypechecked.clear();
   }
