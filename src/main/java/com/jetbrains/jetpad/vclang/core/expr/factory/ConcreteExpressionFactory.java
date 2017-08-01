@@ -190,8 +190,8 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
 
   @Nonnull
   @Override
-  public Abstract.LetClause makeLetClause(@Nonnull Abstract.ReferableSourceNode referable, @Nonnull List<? extends Abstract.Parameter> arguments, @Nonnull Abstract.Expression term) {
-    return clet(referable.getName(), (List<Concrete.Parameter>) arguments, null, (Concrete.Expression) term);
+  public Abstract.LetClause makeLetClause(@Nonnull String name, @Nonnull List<? extends Abstract.Parameter> arguments, @Nonnull Abstract.Expression term) {
+    return clet(name, (List<Concrete.Parameter>) arguments, null, (Concrete.Expression) term);
   }
 
   @Nonnull

@@ -25,8 +25,7 @@ import static org.junit.Assert.assertTrue;
 public class PrettyPrintingParserTest extends NameResolverTestCase {
   private void testExpr(Abstract.Expression expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
-    ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory(), flags);
-    expr.accept(visitor, null).accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
+    ToAbstractVisitor.convert(expr, new ConcreteExpressionFactory(), flags).accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
     Concrete.Expression result = resolveNamesExpr(builder.toString());
     assertEquals(expected, result);
   }

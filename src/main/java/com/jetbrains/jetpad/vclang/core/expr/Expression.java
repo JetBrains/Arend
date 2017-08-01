@@ -28,11 +28,11 @@ public abstract class Expression implements ExpectedType {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory(), EnumSet.of(
+    Abstract.Expression expr = ToAbstractVisitor.convert(this, new ConcreteExpressionFactory(), EnumSet.of(
       ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS,
       ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM,
       ToAbstractVisitor.Flag.SHOW_CON_PARAMS));
-    accept(visitor, null).accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
+    expr.accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
     return builder.toString();
   }
 
@@ -42,10 +42,10 @@ public abstract class Expression implements ExpectedType {
   }
 
   public void prettyPrint(StringBuilder builder, boolean doIndent) {
-    ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory(), EnumSet.of(
+    Abstract.Expression expr = ToAbstractVisitor.convert(normalize(NormalizeVisitor.Mode.RNF), new ConcreteExpressionFactory(), EnumSet.of(
       ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS,
       ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM));
-    normalize(NormalizeVisitor.Mode.RNF).accept(visitor, null).accept(new PrettyPrintVisitor(builder, 0, doIndent), Abstract.Expression.PREC);
+    expr.accept(new PrettyPrintVisitor(builder, 0, doIndent), Abstract.Expression.PREC);
   }
 
   public boolean isLessOrEquals(Expression type, Equations equations, Abstract.SourceNode sourceNode) {

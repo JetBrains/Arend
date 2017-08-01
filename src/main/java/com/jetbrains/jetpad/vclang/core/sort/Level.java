@@ -8,8 +8,6 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
-import java.util.EnumSet;
-
 public class Level {
   private final int myConstant;
   private final LevelVariable myVar;
@@ -126,7 +124,7 @@ public class Level {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    new ToAbstractVisitor(new ConcreteExpressionFactory(), EnumSet.noneOf(ToAbstractVisitor.Flag.class)).visitLevel(this).accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
+    ToAbstractVisitor.convert(this, new ConcreteExpressionFactory()).accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
     return builder.toString();
   }
 
