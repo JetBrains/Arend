@@ -25,38 +25,16 @@ import java.util.function.Function;
 public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expression> {
   public enum Flag {SHOW_CON_DATA_TYPE, SHOW_CON_PARAMS, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS}
 
-  public static final EnumSet<Flag> DEFAULT = EnumSet.of(Flag.SHOW_IMPLICIT_ARGS);
-
   private final AbstractExpressionFactory myFactory;
   private final Map<Variable, Abstract.ReferableSourceNode> myNames;
   private final Stack<String> myFreeNames;
-  private EnumSet<Flag> myFlags;
+  private final EnumSet<Flag> myFlags;
 
-  public ToAbstractVisitor(AbstractExpressionFactory factory) {
+  public ToAbstractVisitor(AbstractExpressionFactory factory, EnumSet<Flag> flags) {
     myFactory = factory;
-    myFlags = DEFAULT;
-    myNames = new HashMap<>();
-    myFreeNames = new Stack<>();
-  }
-
-  public ToAbstractVisitor(AbstractExpressionFactory factory, Collection<String> names) {
-    myFactory = factory;
-    myFlags = DEFAULT;
-    myNames = new HashMap<>();
-    myFreeNames = new Stack<>();
-    names.forEach(myFreeNames::push);
-  }
-
-  public void setFlags(EnumSet<Flag> flags) {
     myFlags = flags;
-  }
-
-  public ToAbstractVisitor addFlags(Flag flag) {
-    if (myFlags == DEFAULT) {
-      myFlags = DEFAULT.clone();
-    }
-    myFlags.add(flag);
-    return this;
+    myNames = new HashMap<>();
+    myFreeNames = new Stack<>();
   }
 
   public Abstract.Pattern visitPattern(Pattern pattern, boolean isExplicit) {

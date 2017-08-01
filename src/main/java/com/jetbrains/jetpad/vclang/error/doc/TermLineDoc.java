@@ -1,9 +1,6 @@
 package com.jetbrains.jetpad.vclang.error.doc;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.Abstract;
-
-import java.util.ArrayList;
 
 public class TermLineDoc extends LineDoc {
   private final Expression myTerm;
@@ -20,7 +17,7 @@ public class TermLineDoc extends LineDoc {
   public String getText() {
     if (myText == null) {
       StringBuilder builder = new StringBuilder();
-      myTerm.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0, true);
+      myTerm.prettyPrint(builder, false);
       myText = builder.toString();
     }
     return myText;

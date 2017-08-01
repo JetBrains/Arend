@@ -25,18 +25,14 @@ import static org.junit.Assert.assertTrue;
 public class PrettyPrintingParserTest extends NameResolverTestCase {
   private void testExpr(Abstract.Expression expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
-    List<String> context = new ArrayList<>();
-    ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory(), context);
-    if (flags != null) {
-      visitor.setFlags(flags);
-    }
+    ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory(), flags);
     expr.accept(visitor, null).accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
     Concrete.Expression result = resolveNamesExpr(builder.toString());
     assertEquals(expected, result);
   }
 
   private void testExpr(Abstract.Expression expected, Expression expr) throws UnsupportedEncodingException {
-    testExpr(expected, expr, EnumSet.of(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS, ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM));
+    testExpr(expected, expr, EnumSet.of(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM, ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS));
   }
 
   private void testDef(Concrete.FunctionDefinition expected, Concrete.FunctionDefinition def) throws UnsupportedEncodingException {
@@ -133,6 +129,6 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
     Concrete.LocalVariable cA = ref("A");
     Concrete.LocalVariable cD = ref("D");
     Concrete.Expression expected = cPi(cA, cUniverseInf(0), cPi(ca, cVar(cA), cPi(cD, cPi(cPi(cVar(cA), cVar(cA)), cPi(cVar(cA), cVar(cA))), cPi(cx, cPi(cy, cVar(cA), cVar(cA)), cApps(cVar(cD), cVar(cx), cLam(cName("y"), cVar(ca)))))));
-    testExpr(expected, actual, null);
+    testExpr(expected, actual, EnumSet.of(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS));
   }
 }

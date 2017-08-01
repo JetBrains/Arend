@@ -18,6 +18,7 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEqua
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
@@ -27,11 +28,10 @@ public abstract class Expression implements ExpectedType {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory());
-    visitor
-      .addFlags(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS)
-      .addFlags(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM)
-      .addFlags(ToAbstractVisitor.Flag.SHOW_CON_PARAMS);
+    ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory(), EnumSet.of(
+      ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS,
+      ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM,
+      ToAbstractVisitor.Flag.SHOW_CON_PARAMS));
     accept(visitor, null).accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
     return builder.toString();
   }
@@ -41,15 +41,11 @@ public abstract class Expression implements ExpectedType {
     return this == obj || obj instanceof Expression && compare(this, (Expression) obj, Equations.CMP.EQ);
   }
 
-  public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent, boolean noIndent) {
-    ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory(), names);
-    visitor.addFlags(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM);
-    normalize(NormalizeVisitor.Mode.RNF).accept(visitor, null).accept(new PrettyPrintVisitor(builder, indent, noIndent), prec);
-  }
-
-  @Override
-  public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent) {
-    prettyPrint(builder, names, prec, indent, false);
+  public void prettyPrint(StringBuilder builder, boolean doIndent) {
+    ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory(), EnumSet.of(
+      ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS,
+      ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM));
+    normalize(NormalizeVisitor.Mode.RNF).accept(visitor, null).accept(new PrettyPrintVisitor(builder, 0, doIndent), Abstract.Expression.PREC);
   }
 
   public boolean isLessOrEquals(Expression type, Equations equations, Abstract.SourceNode sourceNode) {

@@ -6,14 +6,11 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
-import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.EnumSet;
 
-public class Level implements PrettyPrintable {
+public class Level {
   private final int myConstant;
   private final LevelVariable myVar;
   private final int myMaxConstant;
@@ -127,15 +124,9 @@ public class Level implements PrettyPrintable {
   }
 
   @Override
-  public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent) {
-    ToAbstractVisitor toAbsVisitor = new ToAbstractVisitor(new ConcreteExpressionFactory(), names);
-    toAbsVisitor.visitLevel(this).accept(new PrettyPrintVisitor(builder, indent), prec);
-  }
-
-  @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    prettyPrint(builder, Collections.emptyList(), Abstract.Expression.PREC, 0);
+    new ToAbstractVisitor(new ConcreteExpressionFactory(), EnumSet.noneOf(ToAbstractVisitor.Flag.class)).visitLevel(this).accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
     return builder.toString();
   }
 
@@ -166,9 +157,5 @@ public class Level implements PrettyPrintable {
     } else {
       return equations.add(level1, level2, cmp, sourceNode);
     }
-  }
-
-  public boolean isLessOrEquals(Level level) {
-    return compare(this, level, Equations.CMP.LE, DummyEquations.getInstance(), null);
   }
 }

@@ -1,9 +1,6 @@
 package com.jetbrains.jetpad.vclang.error.doc;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.Abstract;
-
-import java.util.ArrayList;
 
 public class TermDoc extends CachingDoc {
   private final Expression myTerm;
@@ -19,7 +16,7 @@ public class TermDoc extends CachingDoc {
   @Override
   protected String getString() {
     StringBuilder builder = new StringBuilder();
-    myTerm.prettyPrint(builder, new ArrayList<>(), Abstract.Expression.PREC, 0);
+    myTerm.prettyPrint(builder, true);
     return builder.toString();
   }
 

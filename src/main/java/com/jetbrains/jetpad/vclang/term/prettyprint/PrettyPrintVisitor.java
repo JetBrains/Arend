@@ -21,10 +21,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   protected int myIndent;
   private boolean noIndent;
 
-  public PrettyPrintVisitor(StringBuilder builder, int indent, boolean noIndent) {
+  public PrettyPrintVisitor(StringBuilder builder, int indent, boolean doIndent) {
     myBuilder = builder;
     myIndent = indent;
-    this.noIndent = noIndent;
+    noIndent = !doIndent;
   }
 
   public PrettyPrintVisitor(StringBuilder builder, int indent) {
