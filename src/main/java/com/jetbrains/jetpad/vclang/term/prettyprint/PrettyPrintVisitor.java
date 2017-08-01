@@ -31,9 +31,9 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     this(builder, indent, false);
   }
 
-  public static String prettyPrint(Abstract.SourceNode node, int indent) {
+  public static String prettyPrint(Abstract.SourceNode node) {
     StringBuilder builder = new StringBuilder();
-    return new PrettyPrintVisitor(builder, indent).prettyPrint(node, Abstract.Expression.PREC) ? builder.toString() : null;
+    return new PrettyPrintVisitor(builder, 0).prettyPrint(node, Abstract.Expression.PREC) ? builder.toString() : null;
   }
 
   public boolean prettyPrint(Abstract.SourceNode node, byte prec) {
@@ -372,10 +372,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   @Override
-  public Void visitError(Abstract.ErrorExpression expr, Byte prec) {
+  public Void visitGoal(Abstract.GoalExpression expr, Byte prec) {
     myBuilder.append("{?");
-    if (expr.getExpr() != null) {
-      expr.getExpr().accept(this, Abstract.Expression.PREC);
+    if (expr.getName() != null) {
+      myBuilder.append(expr.getName());
     }
     myBuilder.append('}');
     return null;

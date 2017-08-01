@@ -29,7 +29,7 @@ public class ExpressionFactory {
       return impl.term;
     } else {
       ErrorExpression errorExpr = thisExpr.checkedCast(ErrorExpression.class);
-      if (errorExpr != null && errorExpr.getExpr() != null) {
+      if (errorExpr != null && errorExpr.getExpression() != null) {
         return new FieldCallExpression(definition, new ErrorExpression(null, errorExpr.getError()));
       } else {
         return new FieldCallExpression(definition, thisExpr);

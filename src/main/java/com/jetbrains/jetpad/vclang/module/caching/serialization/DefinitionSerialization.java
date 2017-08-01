@@ -306,8 +306,8 @@ class DefinitionSerialization {
     @Override
     public ExpressionProtos.Expression visitError(ErrorExpression expr, Void params) {
       ExpressionProtos.Expression.Error.Builder builder = ExpressionProtos.Expression.Error.newBuilder();
-      if (expr.getExpr() != null) {
-        builder.setExpression(expr.getExpr().accept(this, null));
+      if (expr.getExpression() != null) {
+        builder.setExpression(expr.getExpression().accept(this, null));
       }
       return ExpressionProtos.Expression.newBuilder().setError(builder).build();
     }

@@ -545,8 +545,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.ErrorExpression visitHole(HoleContext ctx) {
-    return new Concrete.ErrorExpression(tokenPosition(ctx.getStart()));
+  public Concrete.GoalExpression visitGoal(GoalContext ctx) {
+    return new Concrete.GoalExpression(tokenPosition(ctx.start), ctx.ID() == null ? null : ctx.ID().getText(), ctx.expr() == null ? null : visitExpr(ctx.expr()));
   }
 
   @Override

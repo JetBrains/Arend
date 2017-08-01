@@ -98,7 +98,7 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, V
   }
 
   @Override
-  public Void visitError(Abstract.ErrorExpression expr, Void ignore) {
+  public Void visitGoal(Abstract.GoalExpression expr, Void ignore) {
     return null;
   }
 

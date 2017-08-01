@@ -165,10 +165,10 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
 
   @Override
   public ErrorExpression visitError(ErrorExpression expr, Void params) {
-    if (expr.getExpr() == null) {
+    if (expr.getExpression() == null) {
       return expr;
     }
-    Expression errorExpr = findBindings(expr.getExpr(), true);
+    Expression errorExpr = findBindings(expr.getExpression(), true);
     if (errorExpr == null) {
       myFoundVariable = null;
       return new ErrorExpression(null, expr.getError());

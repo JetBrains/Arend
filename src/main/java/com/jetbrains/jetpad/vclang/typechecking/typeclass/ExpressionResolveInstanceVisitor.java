@@ -70,8 +70,12 @@ public class ExpressionResolveInstanceVisitor implements AbstractExpressionVisit
           Collection<? extends Abstract.ClassViewInstance> instances = myParentScope.getInstances();
           List<Abstract.ClassViewInstance> filteredInstances = new ArrayList<>();
           for (Abstract.ClassViewInstance instance : instances) {
-            if (instance.isDefault() && ((Abstract.ClassView) instance.getClassView().getReferent()).getUnderlyingClassReference().getReferent() == classView.getUnderlyingClassReference().getReferent()) {
-              filteredInstances.add(instance);
+            if (instance.isDefault()) {
+              Abstract.ClassView classView1 = (Abstract.ClassView) instance.getClassView().getReferent();
+              assert classView1 != null;
+              if (classView1.getUnderlyingClassReference().getReferent() == classView.getUnderlyingClassReference().getReferent()) {
+                filteredInstances.add(instance);
+              }
             }
           }
 
@@ -125,8 +129,8 @@ public class ExpressionResolveInstanceVisitor implements AbstractExpressionVisit
   }
 
   @Override
-  public Void visitError(Abstract.ErrorExpression expr, Void params) {
-    Abstract.Expression expression = expr.getExpr();
+  public Void visitGoal(Abstract.GoalExpression expr, Void params) {
+    Abstract.Expression expression = expr.getExpression();
     if (expression != null) {
       expression.accept(this, null);
     }

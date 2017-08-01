@@ -31,8 +31,7 @@ public interface AbstractExpressionFactory {
   @Nonnull Abstract.LevelExpression makeSucLevel(@Nonnull Abstract.LevelExpression expr);
   @Nonnull Abstract.LevelExpression makeMaxLevel(@Nonnull Abstract.LevelExpression left, @Nonnull Abstract.LevelExpression right);
   @Nonnull Abstract.LevelExpression makeInf();
-  @Nonnull Abstract.Expression makeInferHole();
-  @Nonnull Abstract.Expression makeError(@Nullable Abstract.Expression expr);
+  @Nonnull Abstract.Expression makeGoal(@Nullable String name, @Nullable Abstract.Expression expression);
   @Nonnull Abstract.Expression makeTuple(@Nonnull List<? extends Abstract.Expression> fields);
   @Nonnull Abstract.Expression makeSigma(@Nonnull List<? extends Abstract.TypeParameter> arguments);
   @Nonnull Abstract.Expression makeProj(@Nonnull Abstract.Expression expr, int field);

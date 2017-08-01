@@ -16,7 +16,7 @@ public class SourceNodeDoc extends CachingDoc {
 
   @Override
   protected String getString() {
-    String text = PrettyPrintVisitor.prettyPrint(mySourceNode, 0);
+    String text = PrettyPrintVisitor.prettyPrint(mySourceNode);
     return text == null ? mySourceNode.toString() : text;
   }
 }

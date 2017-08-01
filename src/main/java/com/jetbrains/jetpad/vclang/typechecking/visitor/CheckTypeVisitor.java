@@ -25,6 +25,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -33,10 +34,7 @@ import com.jetbrains.jetpad.vclang.term.AbstractLevelExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.error.DummyLocalErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.InconsistentModel;
-import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporterCounter;
+import com.jetbrains.jetpad.vclang.typechecking.error.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.ImplicitArgsInference;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.StdImplicitArgsInference;
@@ -59,7 +57,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   private final DynamicNamespaceProvider myDynamicNsProvider;
   private Map<Abstract.ReferableSourceNode, Binding> myContext;
   private final Set<Binding> myFreeBindings;
-  private final LocalErrorReporter myErrorReporter;
+  private LocalErrorReporter myErrorReporter;
   private final TypeCheckingDefCall myTypeCheckingDefCall;
   private final ImplicitArgsInference myArgsInference;
   private final Equations myEquations;
@@ -768,8 +766,18 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   }
 
   @Override
-  public Result visitError(Abstract.ErrorExpression expr, ExpectedType expectedType) {
-    LocalTypeCheckingError error = new GoalError(myContext, expectedType, expr);
+  public Result visitGoal(Abstract.GoalExpression expr, ExpectedType expectedType) {
+    List<Error> errors = Collections.emptyList();
+    Result exprResult = null;
+    if (expr.getExpression() != null) {
+      LocalErrorReporter errorReporter = myErrorReporter;
+      errors = new ArrayList<>();
+      myErrorReporter = new ListLocalErrorReporter(errors);
+      exprResult = checkExpr(expr.getExpression(), expectedType);
+      myErrorReporter = errorReporter;
+    }
+
+    LocalTypeCheckingError error = new GoalError(expr.getName(), myContext, expectedType, exprResult == null ? null : exprResult.type, errors, expr);
     Expression result = new ErrorExpression(null, error);
     expr.setWellTyped(myContext, result);
     myErrorReporter.report(error);
@@ -1107,7 +1115,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     Expression normExpr = exprResult.expression.normalize(NormalizeVisitor.Mode.WHNF);
     ClassCallExpression classCallExpr = normExpr.checkedCast(ClassCallExpression.class);
     if (classCallExpr == null) {
-      classCallExpr = normExpr.isInstance(ErrorExpression.class) ? normExpr.cast(ErrorExpression.class).getExpr().normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class) : null;
+      classCallExpr = normExpr.isInstance(ErrorExpression.class) ? normExpr.cast(ErrorExpression.class).getExpression().normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class) : null;
       if (classCallExpr == null) {
         LocalTypeCheckingError error = new LocalTypeCheckingError("Expected a class", expr.getExpression());
         expr.setWellTyped(myContext, new ErrorExpression(normExpr, error));

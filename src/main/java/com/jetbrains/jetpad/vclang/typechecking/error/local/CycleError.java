@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 
 import java.util.List;
 
@@ -16,7 +17,7 @@ public class CycleError extends GeneralError {
   }
 
   @Override
-  public Doc getBodyDoc() {
+  public Doc getBodyDoc(SourceInfoProvider src) {
     StringBuilder builder = new StringBuilder();
     builder.append(cycle.get(cycle.size() - 1));
     for (Abstract.Definition definition : cycle) {

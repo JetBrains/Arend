@@ -142,14 +142,8 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
 
   @Nonnull
   @Override
-  public Abstract.Expression makeInferHole() {
-    return cInferHole();
-  }
-
-  @Nonnull
-  @Override
-  public Abstract.Expression makeError(Abstract.Expression expr) {
-    return cError();
+  public Abstract.Expression makeGoal(String name, Abstract.Expression expression) {
+    return cGoal(name, (Concrete.Expression) expression);
   }
 
   @Nonnull

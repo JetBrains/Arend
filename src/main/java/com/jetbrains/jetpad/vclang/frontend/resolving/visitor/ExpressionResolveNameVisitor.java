@@ -152,8 +152,8 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   }
 
   @Override
-  public Void visitError(Abstract.ErrorExpression expr, Void params) {
-    Abstract.Expression expression = expr.getExpr();
+  public Void visitGoal(Abstract.GoalExpression expr, Void params) {
+    Abstract.Expression expression = expr.getExpression();
     if (expression != null) {
       expression.accept(this, null);
     }

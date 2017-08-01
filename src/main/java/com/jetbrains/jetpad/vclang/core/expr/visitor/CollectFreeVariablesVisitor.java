@@ -97,8 +97,8 @@ public class CollectFreeVariablesVisitor extends BaseExpressionVisitor<Set<Varia
 
   @Override
   public Void visitError(ErrorExpression expr, Set<Variable> variables) {
-    if (expr.getExpr() != null) {
-      expr.getExpr().accept(this, variables);
+    if (expr.getExpression() != null) {
+      expr.getExpression().accept(this, variables);
     }
     return null;
   }

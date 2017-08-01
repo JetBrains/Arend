@@ -125,7 +125,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public ErrorExpression visitError(ErrorExpression expr, Void params) {
-    return new ErrorExpression(expr.getExpr() == null ? null : expr.getExpr().accept(this, null), expr.getError());
+    return new ErrorExpression(expr.getExpression() == null ? null : expr.getExpression().accept(this, null), expr.getError());
   }
 
   @Override

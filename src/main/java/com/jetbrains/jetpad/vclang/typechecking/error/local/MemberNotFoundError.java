@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.error.local;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
@@ -25,7 +26,7 @@ public class MemberNotFoundError extends LocalTypeCheckingError {
   }
 
   @Override
-  public LineDoc getBodyDoc() {
+  public LineDoc getBodyDoc(SourceInfoProvider src) {
     return hList(text(name + " of some compiled definition called "), refDoc(targetDefinition.getAbstractDefinition()));
   }
 }

@@ -341,7 +341,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitError(ErrorExpression expr, Mode mode) {
-    return mode == Mode.WHNF || expr.getExpr() == null ? expr : new ErrorExpression(expr.getExpr().accept(this, mode), expr.getError());
+    return mode == Mode.WHNF || expr.getExpression() == null ? expr : new ErrorExpression(expr.getExpression().accept(this, mode), expr.getError());
   }
 
   @Override

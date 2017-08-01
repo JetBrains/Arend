@@ -10,7 +10,7 @@ public abstract class LineDoc extends Doc {
   }
 
   @Override
-  public boolean isNull() {
+  public final boolean isNull() {
     return false;
   }
 
@@ -20,7 +20,7 @@ public abstract class LineDoc extends Doc {
   }
 
   @Override
-  public List<LineDoc> linearize() {
+  public final List<LineDoc> linearize() {
     return Collections.singletonList(this);
   }
 }

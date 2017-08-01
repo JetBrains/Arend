@@ -458,19 +458,29 @@ public final class Concrete {
     }
   }
 
-  public static class ErrorExpression extends Expression implements Abstract.ErrorExpression {
-    public ErrorExpression(Position position) {
+  public static class GoalExpression extends Expression implements Abstract.GoalExpression {
+    private final String myName;
+    private final Expression myExpression;
+
+    public GoalExpression(Position position, String name, Expression expression) {
       super(position);
+      myName = name;
+      myExpression = expression;
     }
 
     @Override
-    public Expression getExpr() {
-      return null;
+    public String getName() {
+      return myName;
+    }
+
+    @Override
+    public Abstract.Expression getExpression() {
+      return myExpression;
     }
 
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitError(this, params);
+      return visitor.visitGoal(this, params);
     }
   }
 

@@ -122,7 +122,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitError(ErrorExpression expr, Void params) {
-    return expr.getExpr() == null ? expr : new ErrorExpression(expr.getExpr().accept(this, null), expr.getError());
+    return expr.getExpression() == null ? expr : new ErrorExpression(expr.getExpression().accept(this, null), expr.getError());
   }
 
   @Override

@@ -195,9 +195,10 @@ public final class Abstract {
     byte PREC = 12;
   }
 
-  public interface ErrorExpression extends Expression {
+  public interface GoalExpression extends Expression {
     byte PREC = 12;
-    @Nullable Expression getExpr();
+    @Nullable String getName();
+    @Nullable Expression getExpression();
   }
 
   public interface CaseExpression extends Expression {

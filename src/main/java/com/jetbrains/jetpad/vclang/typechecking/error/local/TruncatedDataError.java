@@ -29,7 +29,7 @@ public class TruncatedDataError extends LocalTypeCheckingError {
   }
 
   @Override
-  public Doc getBodyDoc() {
+  public Doc getBodyDoc(SourceInfoProvider src) {
     return hang(indent(text("which does not fit in the universe of the eliminator type:")), termDoc(expectedType));
   }
 }

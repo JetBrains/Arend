@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.error.local;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
@@ -19,7 +20,7 @@ public class PathEndpointMismatchError extends LocalTypeCheckingError {
   }
 
   @Override
-  public Doc getBodyDoc() {
+  public Doc getBodyDoc(SourceInfoProvider src) {
     return vList(
       hang(text("Expected:"), termDoc(expected)),
       hang(text("  Actual:"), termDoc(actual)));

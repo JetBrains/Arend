@@ -25,7 +25,7 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
     if (ref1 == null) {
       ref1 = expr1.getReferent();
     }
-    return ref1.equals(defCallExpr2.getReferent());
+    return ref1 == null ? defCallExpr2.getReferent() == null : ref1.equals(defCallExpr2.getReferent());
   }
 
   @Override
@@ -128,8 +128,8 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
   }
 
   @Override
-  public Boolean visitError(Abstract.ErrorExpression expr1, Abstract.Expression expr2) {
-    return expr2 instanceof Abstract.ErrorExpression;
+  public Boolean visitGoal(Abstract.GoalExpression expr1, Abstract.Expression expr2) {
+    return expr2 instanceof Abstract.GoalExpression;
   }
 
   @Override
@@ -188,7 +188,7 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
   }
 
   private boolean compareClause(Abstract.FunctionClause clause1, Abstract.FunctionClause clause2) {
-    if (!(clause1.getExpression().accept(this, clause2.getExpression()) && clause1.getPatterns().size() == clause2.getPatterns().size())) return false;
+    if (!((clause1.getExpression() == null ? clause2.getExpression() == null : clause1.getExpression().accept(this, clause2.getExpression())) && clause1.getPatterns().size() == clause2.getPatterns().size())) return false;
     for (int i = 0; i < clause1.getPatterns().size(); i++) {
       if (!comparePattern(clause1.getPatterns().get(i), clause2.getPatterns().get(i))) {
         return false;

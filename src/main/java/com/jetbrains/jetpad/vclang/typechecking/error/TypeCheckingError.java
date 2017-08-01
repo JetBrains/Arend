@@ -30,7 +30,7 @@ public class TypeCheckingError extends GeneralError {
     }
 
     return DocFactory.hang(localError.getHeaderDoc(src), DocFactory.vList(
-      localError.getBodyDoc(),
+      localError.getBodyDoc(src),
       localError.getCauseDoc(),
       DocFactory.text("While typechecking: " + name)));
   }

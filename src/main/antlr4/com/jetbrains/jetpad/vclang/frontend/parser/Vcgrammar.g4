@@ -152,7 +152,7 @@ argument : atomFieldsAcc                # argumentExplicit
 literal : name                          # id
         | '\\Prop'                      # prop
         | '_'                           # unknown
-        | '{?}'                         # hole
+        | '{?' ID? ('{' expr '}')? '}'  # goal
         ;
 
 universeAtom : TRUNCATED_UNIVERSE       # uniTruncatedUniverse

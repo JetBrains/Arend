@@ -4,16 +4,16 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
 public class ErrorExpression extends Expression {
-  private final Expression myExpr;
+  private final Expression myExpression;
   private final LocalTypeCheckingError myError;
 
-  public ErrorExpression(Expression expr, LocalTypeCheckingError error) {
-    myExpr = expr;
+  public ErrorExpression(Expression expression, LocalTypeCheckingError error) {
+    myExpression = expression;
     myError = error;
   }
 
-  public Expression getExpr() {
-    return myExpr;
+  public Expression getExpression() {
+    return myExpression;
   }
 
   public LocalTypeCheckingError getError() {

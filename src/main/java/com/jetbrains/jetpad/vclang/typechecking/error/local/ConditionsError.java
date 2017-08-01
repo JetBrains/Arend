@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +33,7 @@ public class ConditionsError extends LocalTypeCheckingError {
   }
 
   @Override
-  public Doc getBodyDoc() {
+  public Doc getBodyDoc(SourceInfoProvider src) {
     return vList(
       dataToDoc(expr1, substitution1, evaluatedExpr1),
       dataToDoc(expr2, substitution2, evaluatedExpr2));
