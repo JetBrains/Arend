@@ -273,7 +273,7 @@ public class ElimTest extends TypeCheckingTestCase {
   @Test
   public void testElimOrderError() {
     typeCheckClass("\\data \\infix 4\n" +
-                   "(=<) Nat Nat \\with\n" +
+                   "=< Nat Nat \\with\n" +
                    "  | zero, m => le_z\n" +
                    "  | suc n, suc m => le_ss (n =< m)\n" +
                    "\n" +

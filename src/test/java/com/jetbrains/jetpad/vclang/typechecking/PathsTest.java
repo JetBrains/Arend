@@ -52,7 +52,7 @@ public class PathsTest extends TypeCheckingTestCase {
     typeCheckClass(
         "\\function transport {A : \\Type} (B : A -> \\Type) {a a' : A} (p : a = a') (b : B a) => coe (\\lam i => B (p @ i)) b right\n" +
         "\\function concat {A : I -> \\Type} {a : A left} {a' a'' : A right} (p : Path A a a') (q : a' = a'') => transport (Path A a) q p\n" +
-        "\\function (*>) {A : \\Type} {a a' a'' : A} (p : a = a') (q : a' = a'') => concat p q");
+        "\\function *> {A : \\Type} {a a' a'' : A} (p : a = a') (q : a' = a'') => concat p q");
   }
 
   @Test

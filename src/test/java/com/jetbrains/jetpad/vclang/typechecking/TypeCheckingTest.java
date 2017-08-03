@@ -31,8 +31,8 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   @Test
   public void typeCheckInfixDef() {
     typeCheckClass(
-        "\\function (+) : Nat -> Nat -> Nat => \\lam x y => x\n" +
-        "\\function (*) : Nat -> Nat => \\lam x => x + zero");
+        "\\function + : Nat -> Nat -> Nat => \\lam x y => x\n" +
+        "\\function * : Nat -> Nat => \\lam x => x + zero");
   }
 
   @Test
@@ -89,14 +89,14 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void testPMap1Error() {
-    typeCheckDef("\\function pmap {A B : \\Type0} {a a' : A} (f : A -> B) (p : a = a') : ((=) {B} (f a) (f a'))" +
+    typeCheckDef("\\function pmap {A B : \\Type0} {a a' : A} (f : A -> B) (p : a = a') : (`= {B} (f a) (f a'))" +
             " => path (\\lam i => f (p @ i))");
   }
 
   @Test
   public void testTransport1() {
     typeCheckDef("\\function transport {A : \\Type1} (B : A -> \\Type1) {a a' : A} (p : a = a') (b : B a) : B a' =>\n" +
-        "coe (\\lam i => B ((@) {\\lam _ => A} {a} {a'} p i)) b right");
+        "coe (\\lam i => B (`@ {\\lam _ => A} {a} {a'} p i)) b right");
   }
 
   @Test
@@ -135,7 +135,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void parameters() {
-    FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\function f (x : Nat Nat) (p : (=) {Nat} x x) => p", 1);
+    FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\function f (x : Nat Nat) (p : `= {Nat} x x) => p", 1);
     assertEquals(FunCall(Prelude.PATH_INFIX, Sort.SET0, Nat(), Ref(def.getParameters()), Ref(def.getParameters())), def.getResultType());
   }
 

@@ -291,19 +291,19 @@ public class ClassesTest extends TypeCheckingTestCase {
   @Test
   public void constructorIndicesThisTest() {
     typeCheckClass(
-        "\\field (+) : Nat -> Nat -> Nat\n" +
+        "\\field + : Nat -> Nat -> Nat\n" +
         "\\class A {\n" +
         "  \\field x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat -> Nat) => \\elim n\n" +
         "    | zero => con1 (f x x = f x x)\n" +
         "    | suc n => con2 (D n f) (f n x = f n x)\n" +
-        "  \\function f (n : Nat) : D n (+) => \\elim n\n" +
+        "  \\function f (n : Nat) : D n `+ => \\elim n\n" +
         "    | zero => con1 (path (\\lam _ => x + x))\n" +
         "    | suc n => con2 (f n) (path (\\lam _ => n + x))\n" +
         "}\n" +
-        "\\function f (a : A) (n : Nat) : a.D n (+) => a.f n\n" +
+        "\\function f (a : A) (n : Nat) : a.D n `+ => a.f n\n" +
         "\\function f' (a : A) (n : Nat) => a.f\n" +
-        "\\function g (a : A) (n : Nat) : a.D n (+) => \\elim n\n" +
+        "\\function g (a : A) (n : Nat) : a.D n `+ => \\elim n\n" +
         "  | zero => a.con1 (path (\\lam _ => a.x + a.x))\n" +
         "  | suc n => a.con2 (g a n) (path (\\lam _ => n + a.x))", "");
   }
@@ -327,7 +327,7 @@ public class ClassesTest extends TypeCheckingTestCase {
   @Test
   public void funCallsTest() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\function (+) (x y : Nat) => x\n" +
+        "\\function + (x y : Nat) => x\n" +
         "\\class A {\n" +
         "  \\function q => p\n" +
         "  \\class C {\n" +

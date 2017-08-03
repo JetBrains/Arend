@@ -166,7 +166,7 @@ public class ParserTest extends NameResolverTestCase {
 
   @Test
   public void parseIncorrectPi() {
-    parseExpr("\\Pi (: Nat) -> Nat", 2);
+    parseExpr("\\Pi (: Nat) -> Nat", 1);
   }
 
   @Test
@@ -220,6 +220,6 @@ public class ParserTest extends NameResolverTestCase {
   public void insideBody() {
     parseClass("test",
       "\\function test (n : Nat)\n" +
-      "  | zero => \\lam _ -> zero", 2);
+      "  | zero => \\lam _ -> zero", 1);
   }
 }

@@ -23,17 +23,17 @@ public class DataIndicesTest extends TypeCheckingTestCase {
     typeCheckClass(
       "\\data Vector (n : Nat) (A : \\Set0) => \\elim n\n" +
       "  | zero  => vnil\n" +
-      "  | suc n => \\infixr 5 (:^) A (Vector n A)\n" +
+      "  | suc n => \\infixr 5 :^ A (Vector n A)\n" +
       "\n" +
       "\\function \\infixl 6\n" +
-      "(+) (x y : Nat) : Nat => \\elim x\n" +
+      "+ (x y : Nat) : Nat => \\elim x\n" +
       "  | zero => y\n" +
       "  | suc x' => suc (x' + y)\n" +
       "\n" +
       "\\function\n" +
-      "(+^) {n m : Nat} {A : \\Set0} (xs : Vector n A) (ys : Vector m A) : Vector (n + m) A => \\elim n, xs\n" +
+      "+^ {n m : Nat} {A : \\Set0} (xs : Vector n A) (ys : Vector m A) : Vector (n + m) A => \\elim n, xs\n" +
       "  | zero, vnil => ys\n" +
-      "  | suc n', (:^) x xs' => x :^ xs' +^ ys\n" +
+      "  | suc n', `:^ x xs' => x :^ xs' +^ ys\n" +
       "\n" +
       "\\function\n" +
       "vnil-vconcat {n : Nat} {A : \\Set0} (xs : Vector n A) : vnil +^ xs = xs => path (\\lam _ => xs)");
@@ -44,7 +44,7 @@ public class DataIndicesTest extends TypeCheckingTestCase {
     typeCheckClass(
       "\\data Vector (n : Nat) (A : \\Set0) => \\elim n\n" +
       "  | zero  => vnil\n" +
-      "  | suc n => \\infixr 5 (:^) A (Vector n A)\n" +
+      "  | suc n => \\infixr 5 :^ A (Vector n A)\n" +
       "\\function id {n : Nat} (A : \\Set0) (v : Vector n A) => v\n" +
       "\\function test => id Nat vnil");
   }

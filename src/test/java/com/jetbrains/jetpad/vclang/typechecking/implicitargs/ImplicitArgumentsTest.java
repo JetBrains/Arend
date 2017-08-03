@@ -303,14 +303,14 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   @Test
   public void inferUnderPi() {
     typeCheckClass(
-        "\\function ($) {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
+        "\\function $ {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
         "\\function foo (A : \\Type0) (B : A -> \\Type0) (f : \\Pi (a : A) -> B a) (a' : A) => f $ a'", 1);
   }
 
   @Test
   public void inferUnderPiExpected() {
     typeCheckClass(
-        "\\function ($) {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
+        "\\function $ {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
         "\\function foo (A : \\Type0) (B : A -> \\Type0) (f : \\Pi (a : A) -> B a) (a' : A) : B a' => f $ a'", 1);
   }
 
@@ -384,7 +384,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void differentLevels() {
     typeCheckClass(
         "\\function F (X : \\Type \\lp) (B : X -> \\Type \\lp) => zero\n" +
-        "\\function g (X : \\Type \\lp) => F X (\\lam _ => (=) X X)");
+        "\\function g (X : \\Type \\lp) => F X (\\lam _ => `= X X)");
   }
 
   @Test
@@ -395,7 +395,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   @Test
   public void etaExpansionTest() {
     typeCheckClass(
-        "\\function ($) {A B : \\Set0} (f : A -> B) (a : A) => f a\n" +
+        "\\function $ {A B : \\Set0} (f : A -> B) (a : A) => f a\n" +
         "\\data Fin Nat \\with | n => fzero | suc n => fsuc (Fin n)\n" +
         "\\function unsuc {n : Nat} (x : Fin (suc n)) : Fin n => \\elim n, x\n" +
         "  | _, fzero => fzero\n" +
