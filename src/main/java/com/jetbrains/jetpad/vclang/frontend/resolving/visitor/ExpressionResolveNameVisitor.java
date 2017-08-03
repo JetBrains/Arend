@@ -179,7 +179,9 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   @Override
   public Void visitBinOp(Abstract.BinOpExpression expr, Void params) {
     expr.getLeft().accept(this, null);
-    expr.getRight().accept(this, null);
+    if (expr.getRight() != null) {
+      expr.getRight().accept(this, null);
+    }
     return null;
   }
 
@@ -195,7 +197,9 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
 
       expr.getLeft().accept(this, null);
       for (Abstract.BinOpSequenceElem elem : sequence) {
-        elem.argument.accept(this, null);
+        if (elem.argument != null) {
+          elem.argument.accept(this, null);
+        }
       }
 
       NotInScopeError error = null;
@@ -205,7 +209,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
         String name = elem.binOp.getName();
         Abstract.Definition ref = myParentScope.resolveName(name);
         if (ref != null) {
-          parser.pushOnStack(stack, expression, ref, ref.getPrecedence(), elem.binOp);
+          parser.pushOnStack(stack, expression, ref, ref.getPrecedence(), elem.binOp, elem.argument == null);
           expression = elem.argument;
         } else {
           error = new NotInScopeError(elem.binOp, name);

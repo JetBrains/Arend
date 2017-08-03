@@ -414,33 +414,45 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitBinOp(final Abstract.BinOpExpression expr, final Byte prec) {
-    new BinOpLayout() {
-      @Override
-      void printLeft(PrettyPrintVisitor pp) {
-        if (prec > expr.getReferent().getPrecedence().priority) pp.myBuilder.append('(');
-        expr.getLeft().accept(pp, (byte) (expr.getReferent().getPrecedence().priority + (expr.getReferent().getPrecedence().associativity == Abstract.Precedence.Associativity.LEFT_ASSOC ? 0 : 1)));
+    if (expr.getRight() == null) {
+      if (prec > expr.getReferent().getPrecedence().priority) {
+        myBuilder.append('(');
       }
-
-      @Override
-      void printRight(PrettyPrintVisitor pp) {
-        expr.getRight().accept(pp, (byte) (expr.getReferent().getPrecedence().priority + (expr.getReferent().getPrecedence().associativity == Abstract.Precedence.Associativity.RIGHT_ASSOC ? 0 : 1)));
-        if (prec > expr.getReferent().getPrecedence().priority) pp.myBuilder.append(')');
+      expr.getLeft().accept(this, (byte) (expr.getReferent().getPrecedence().priority + (expr.getReferent().getPrecedence().associativity == Abstract.Precedence.Associativity.LEFT_ASSOC ? 0 : 1)));
+      myBuilder.append(' ').append(new Name(expr.getReferent().getName()).getInfixName()).append('`');
+      if (prec > expr.getReferent().getPrecedence().priority) {
+        myBuilder.append(')');
       }
-
-      @Override
-      String getOpText() {
-        return new Name(expr.getReferent().getName()).getInfixName();
-      }
-
-      @Override
-      boolean increaseIndent(List<String> right_strings) {
-        Abstract.Expression r = expr.getRight();
-        if (r instanceof Abstract.BinOpExpression) {
-          if (prec <= ((Abstract.BinOpExpression) r).getReferent().getPrecedence().priority) return false; // no bracket drawn
+    } else {
+      new BinOpLayout() {
+        @Override
+        void printLeft(PrettyPrintVisitor pp) {
+          if (prec > expr.getReferent().getPrecedence().priority) pp.myBuilder.append('(');
+          expr.getLeft().accept(pp, (byte) (expr.getReferent().getPrecedence().priority + (expr.getReferent().getPrecedence().associativity == Abstract.Precedence.Associativity.LEFT_ASSOC ? 0 : 1)));
         }
-        return super.increaseIndent(right_strings);
-      }
-    }.doPrettyPrint(this, noIndent);
+
+        @Override
+        void printRight(PrettyPrintVisitor pp) {
+          expr.getRight().accept(pp, (byte) (expr.getReferent().getPrecedence().priority + (expr.getReferent().getPrecedence().associativity == Abstract.Precedence.Associativity.RIGHT_ASSOC ? 0 : 1)));
+          if (prec > expr.getReferent().getPrecedence().priority) pp.myBuilder.append(')');
+        }
+
+        @Override
+        String getOpText() {
+          return new Name(expr.getReferent().getName()).getInfixName();
+        }
+
+        @Override
+        boolean increaseIndent(List<String> right_strings) {
+          Abstract.Expression r = expr.getRight();
+          if (r instanceof Abstract.BinOpExpression) {
+            if (prec <= ((Abstract.BinOpExpression) r).getReferent().getPrecedence().priority)
+              return false; // no bracket drawn
+          }
+          return super.increaseIndent(right_strings);
+        }
+      }.doPrettyPrint(this, noIndent);
+    }
 
     return null;
   }
@@ -454,8 +466,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     if (prec > Abstract.BinOpSequenceExpression.PREC) myBuilder.append('(');
     expr.getLeft().accept(this, (byte) 10);
     for (Abstract.BinOpSequenceElem elem : expr.getSequence()) {
-      myBuilder.append(' ').append(new Name(elem.binOp.getName()).getInfixName()).append(' ');
-      elem.argument.accept(this, (byte) 10);
+      myBuilder.append(' ').append(new Name(elem.binOp.getName()).getInfixName()).append(elem.argument == null ? "` " : " ");
+      if (elem.argument != null) {
+        elem.argument.accept(this, (byte) 10);
+      }
     }
     if (prec > Abstract.BinOpSequenceExpression.PREC) myBuilder.append(')');
     return null;

@@ -133,6 +133,19 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
+  public String visitPostfix(PostfixContext ctx) {
+    String s;
+    if (ctx.POSTFIX_INFIX() != null) {
+      s = ctx.POSTFIX_INFIX().getText();
+    } else if (ctx.POSTFIX_PREFIX() != null) {
+      s = ctx.POSTFIX_PREFIX().getText();
+    } else {
+      throw new IllegalStateException();
+    }
+    return s.substring(0, s.length() - 1);
+  }
+
+  @Override
   public List<String> visitModulePath(ModulePathContext ctx) {
     List<String> path = new ArrayList<>(ctx.MODULE_NAME().size());
     for (TerminalNode module : ctx.MODULE_NAME()) {
@@ -913,13 +926,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.Expression visitBinOp(BinOpContext ctx) {
-    return parseBinOpSequence(ctx.binOpLeft(), parseImplementations(ctx.maybeNew(), ctx.implementStatements(), ctx.start, (Concrete.Expression) visit(ctx.binOpArg())), ctx.start);
+    return parseBinOpSequence(ctx.binOpLeft(), parseImplementations(ctx.maybeNew(), ctx.implementStatements(), ctx.start, (Concrete.Expression) visit(ctx.binOpArg())), ctx.postfix(), ctx.start);
   }
 
-  private Concrete.Expression parseBinOpSequence(List<BinOpLeftContext> leftCtxs, Concrete.Expression expression, Token token) {
+  private Concrete.Expression parseBinOpSequence(List<BinOpLeftContext> leftCtxs, Concrete.Expression expression, List<PostfixContext> postfixCtxs, Token token) {
     Concrete.Expression left = null;
     Concrete.ReferenceExpression binOp = null;
-    List<Abstract.BinOpSequenceElem> sequence = new ArrayList<>(leftCtxs.size());
+    List<Abstract.BinOpSequenceElem> sequence = new ArrayList<>(leftCtxs.size() + postfixCtxs.size());
 
     for (BinOpLeftContext leftContext : leftCtxs) {
       String name = visitInfix(leftContext.infix());
@@ -930,19 +943,29 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       } else {
         sequence.add(new Abstract.BinOpSequenceElem(binOp, expr));
       }
+
+      for (PostfixContext postfixContext : leftContext.postfix()) {
+        sequence.add(new Abstract.BinOpSequenceElem(new Concrete.ReferenceExpression(tokenPosition(postfixContext.start), null, visitPostfix(postfixContext)), null));
+      }
+
       binOp = new Concrete.ReferenceExpression(tokenPosition(leftContext.infix().getStart()), null, name);
     }
 
     if (left == null) {
-      return expression;
+      left = expression;
+    } else {
+      sequence.add(new Abstract.BinOpSequenceElem(binOp, expression));
     }
 
-    sequence.add(new Abstract.BinOpSequenceElem(binOp, expression));
-    return new Concrete.BinOpSequenceExpression(tokenPosition(token), left, sequence);
+    for (PostfixContext postfixContext : postfixCtxs) {
+      sequence.add(new Abstract.BinOpSequenceElem(new Concrete.ReferenceExpression(tokenPosition(postfixContext.start), null, visitPostfix(postfixContext)), null));
+    }
+
+    return sequence.isEmpty() ? left : new Concrete.BinOpSequenceExpression(tokenPosition(token), left, sequence);
   }
 
   private Concrete.Expression visitExpr(Expr0Context ctx) {
-    return parseBinOpSequence(ctx.binOpLeft(), (Concrete.Expression) visit(ctx.binOpArg()), ctx.start);
+    return parseBinOpSequence(ctx.binOpLeft(), (Concrete.Expression) visit(ctx.binOpArg()), ctx.postfix(), ctx.start);
   }
 
   @Override

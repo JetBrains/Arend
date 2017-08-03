@@ -32,26 +32,28 @@ public class BinOpParser {
     }
   }
 
-  public void pushOnStack(List<StackElem> stack, Abstract.Expression argument, Abstract.Definition binOp, Abstract.Precedence prec, Abstract.ReferenceExpression var) {
-    StackElem elem = new StackElem(argument, binOp, prec, var);
+  public void pushOnStack(List<StackElem> stack, Abstract.Expression argument, Abstract.Definition binOp, Abstract.Precedence prec, Abstract.ReferenceExpression var, boolean ignoreAssoc) {
     if (stack.isEmpty()) {
-      stack.add(elem);
+      stack.add(new StackElem(argument, binOp, prec, var));
       return;
     }
 
     StackElem topElem = stack.get(stack.size() - 1);
 
-    if (topElem.prec.priority < elem.prec.priority || (topElem.prec.priority == elem.prec.priority && topElem.prec.associativity == Abstract.Precedence.Associativity.RIGHT_ASSOC && elem.prec.associativity == Abstract.Precedence.Associativity.RIGHT_ASSOC)) {
-      stack.add(elem);
-      return;
+    if (argument != null) {
+      if (topElem.prec.priority < prec.priority || (topElem.prec.priority == prec.priority && topElem.prec.associativity == Abstract.Precedence.Associativity.RIGHT_ASSOC && (ignoreAssoc || prec.associativity == Abstract.Precedence.Associativity.RIGHT_ASSOC))) {
+        stack.add(new StackElem(argument, binOp, prec, var));
+        return;
+      }
+
+      if (!(topElem.prec.priority > prec.priority || (topElem.prec.priority == prec.priority && topElem.prec.associativity == Abstract.Precedence.Associativity.LEFT_ASSOC && (ignoreAssoc || prec.associativity == Abstract.Precedence.Associativity.LEFT_ASSOC)))) {
+        String msg = "Precedence parsing error: cannot mix (" + topElem.binOp.getName() + ") [" + topElem.prec + "] and (" + binOp.getName() + ") [" + prec + "] in the same infix expression";
+        myErrorReporter.report(new GeneralError(msg, var));
+      }
     }
 
-    if (!(topElem.prec.priority > elem.prec.priority || (topElem.prec.priority == elem.prec.priority && topElem.prec.associativity == Abstract.Precedence.Associativity.LEFT_ASSOC && elem.prec.associativity == Abstract.Precedence.Associativity.LEFT_ASSOC))) {
-      String msg = "Precedence parsing error: cannot mix (" + topElem.binOp.getName() + ") [" + topElem.prec + "] and (" + elem.binOp.getName() + ") [" + elem.prec + "] in the same infix expression";
-      myErrorReporter.report(new GeneralError(msg, elem.var));
-    }
     stack.remove(stack.size() - 1);
-    pushOnStack(stack, myResolveListener.makeBinOp(myBinOpExpression, topElem.argument, topElem.binOp, topElem.var, elem.argument), elem.binOp, elem.prec, elem.var);
+    pushOnStack(stack, myResolveListener.makeBinOp(myBinOpExpression, topElem.argument, topElem.binOp, topElem.var, argument), binOp, prec, var, ignoreAssoc);
   }
 
   public Abstract.Expression rollUpStack(List<StackElem> stack, Abstract.Expression expr) {

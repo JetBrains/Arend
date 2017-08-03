@@ -156,7 +156,7 @@ public final class Abstract {
 
   public interface BinOpExpression extends ReferenceExpression {
     @Nonnull Expression getLeft();
-    @Nonnull Expression getRight();
+    @Nullable Expression getRight();
 
     @Nonnull
     @Override
@@ -169,10 +169,10 @@ public final class Abstract {
   }
 
   public static class BinOpSequenceElem {
-    public final ReferenceExpression binOp;
-    public final Expression argument;
+    @Nonnull public final ReferenceExpression binOp;
+    @Nullable public final Expression argument;
 
-    public BinOpSequenceElem(ReferenceExpression binOp, Expression argument) {
+    public BinOpSequenceElem(@Nonnull ReferenceExpression binOp, @Nullable Expression argument) {
       this.binOp = binOp;
       this.argument = argument;
     }

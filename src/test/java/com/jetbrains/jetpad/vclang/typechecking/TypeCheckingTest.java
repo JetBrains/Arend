@@ -146,4 +146,28 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
         "\\data Bar Nat \\with | suc n => bar (n = n)\n" +
         "\\function foo : Foo => bar (path (\\lam _ => zero))", 1);
   }
+
+  @Test
+  public void postfixTest() {
+    typeCheckClass(
+      "\\function \\infix 6 # (n : Nat) : Nat\n" +
+      "  | zero => zero\n" +
+      "  | suc n => suc (suc (n #`))\n" +
+      "\\function \\infix 5 $ (n m : Nat) : Nat => \\elim m\n" +
+      "  | zero => n\n" +
+      "  | suc m => suc (n $ m)\n" +
+      "\\function f : (1 $ 1 #`) = 3 => path (\\lam _ => 3)");
+  }
+
+  @Test
+  public void postfixTest2() {
+    typeCheckClass(
+      "\\function \\infix 4 d (n : Nat) : Nat\n" +
+      "  | zero => zero\n" +
+      "  | suc n => suc (suc (n d`))\n" +
+      "\\function \\infix 5 $ (n m : Nat) : Nat => \\elim m\n" +
+      "  | zero => n\n" +
+      "  | suc m => suc (n $ m)\n" +
+      "\\function f : (1 $ 1 d`) = 4 => path (\\lam _ => 4)");
+  }
 }

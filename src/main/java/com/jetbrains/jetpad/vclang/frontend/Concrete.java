@@ -221,7 +221,7 @@ public final class Concrete {
     }
 
     public BinOpExpression makeBinOp(Abstract.Expression left, Abstract.Definition binOp, Abstract.ReferenceExpression var, Abstract.Expression right) {
-      assert left instanceof Expression && right instanceof Expression && var instanceof Expression;
+      assert left instanceof Expression && (right == null || right instanceof Expression) && var instanceof Expression;
       return new BinOpExpression(((Expression) var).getPosition(), (Expression) left, binOp, (Expression) right);
     }
 
@@ -270,7 +270,7 @@ public final class Concrete {
       return myLeft;
     }
 
-    @Nonnull
+    @Nullable
     @Override
     public Expression getRight() {
       return myRight;

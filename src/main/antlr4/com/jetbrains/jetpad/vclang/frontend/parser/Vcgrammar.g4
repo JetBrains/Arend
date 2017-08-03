@@ -74,9 +74,9 @@ associativity : '\\infix'               # nonAssoc
               | '\\infixr'              # rightAssoc
               ;
 
-expr0 : binOpLeft* binOpArg;
+expr0 : binOpLeft* binOpArg postfix*;
 
-expr  : binOpLeft* maybeNew binOpArg implementStatements?                     # binOp
+expr  : binOpLeft* maybeNew binOpArg implementStatements? postfix*            # binOp
       | <assoc=right> expr '->' expr                                          # arr
       | '\\Pi' tele+ '->' expr                                                # pi
       | '\\Sigma' tele+                                                       # sigma
@@ -112,7 +112,7 @@ binOpArg : atomFieldsAcc argument*                # binOpArgument
          | SET levelAtom?                         # setUniverse
          ;
 
-binOpLeft : maybeNew binOpArg implementStatements? infix;
+binOpLeft : maybeNew binOpArg implementStatements? postfix* infix;
 
 maybeNew :                              # noNew
          | '\\new'                      # withNew

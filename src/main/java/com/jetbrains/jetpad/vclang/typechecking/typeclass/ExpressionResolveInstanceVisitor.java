@@ -154,7 +154,9 @@ public class ExpressionResolveInstanceVisitor implements AbstractExpressionVisit
   @Override
   public Void visitBinOp(Abstract.BinOpExpression expr, Void params) {
     expr.getLeft().accept(this, null);
-    expr.getRight().accept(this, null);
+    if (expr.getRight() != null) {
+      expr.getRight().accept(this, null);
+    }
     return null;
   }
 
@@ -163,7 +165,9 @@ public class ExpressionResolveInstanceVisitor implements AbstractExpressionVisit
     expr.getLeft().accept(this, null);
     for (Abstract.BinOpSequenceElem elem : expr.getSequence()) {
       visitReference(elem.binOp, null);
-      elem.argument.accept(this, null);
+      if (elem.argument != null) {
+        elem.argument.accept(this, null);
+      }
     }
     return null;
   }
