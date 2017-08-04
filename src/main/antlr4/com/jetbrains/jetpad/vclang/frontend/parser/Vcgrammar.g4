@@ -157,7 +157,8 @@ tele : literal                          # teleLiteral
      ;
 
 typedExpr : expr                        # notTyped
-          | expr ':' expr               # typed
+          | INFIX id* ':' expr          # typedVars
+          | expr INFIX* ':' expr        # typed
           ;
 
 id : PREFIX | INFIX;

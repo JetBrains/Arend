@@ -27,7 +27,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     LiteralContext literal = ((AtomLiteralContext) ctx.atom()).literal();
     if (literal instanceof UnknownContext) {
       Concrete.Position position = tokenPosition(literal.start);
-      return new Concrete.LocalVariable(position, "_");
+      return new Concrete.LocalVariable(position, null);
     }
     if (literal instanceof NameContext && ((NameContext) literal).prefix().PREFIX() != null) {
       Concrete.Position position = tokenPosition(literal.start);
@@ -36,46 +36,65 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return null;
   }
 
-  private List<Concrete.LocalVariable> getVarsNull(ExprContext expr) {
-    if (!(expr instanceof BinOpContext && ((BinOpContext) expr).binOpLeft().isEmpty() && ((BinOpContext) expr).binOpArg() instanceof BinOpArgumentContext && ((BinOpContext) expr).maybeNew() instanceof NoNewContext && ((BinOpContext) expr).implementStatements() == null)) {
-      return null;
-    }
-    Concrete.LocalVariable firstArg = getVar(((BinOpArgumentContext)((BinOpContext) expr).binOpArg()).atomFieldsAcc());
+  private boolean getVars(BinOpArgumentContext expr, List<Concrete.LocalVariable> result) {
+    Concrete.LocalVariable firstArg = getVar(expr.atomFieldsAcc());
     if (firstArg == null) {
-      return null;
+      return false;
     }
 
-    List<Concrete.LocalVariable> result = new ArrayList<>();
     result.add(firstArg);
-    for (ArgumentContext argument : ((BinOpArgumentContext)((BinOpContext) expr).binOpArg()).argument()) {
-      if (argument instanceof ArgumentExplicitContext) {
-        Concrete.LocalVariable arg = getVar(((ArgumentExplicitContext) argument).atomFieldsAcc());
-        if (arg == null) {
-          return null;
-        }
-        result.add(arg);
-      } else
-      if (argument instanceof ArgumentImplicitContext) {
-        List<Concrete.LocalVariable> arguments = getVarsNull(((ArgumentImplicitContext) argument).expr());
-        if (arguments == null) {
-          return null;
-        }
-        result.addAll(arguments);
-      } else {
-        return null;
+    for (ArgumentContext argument : expr.argument()) {
+      if (!(argument instanceof ArgumentExplicitContext)) {
+        return false;
       }
+
+      Concrete.LocalVariable arg = getVar(((ArgumentExplicitContext) argument).atomFieldsAcc());
+      if (arg == null) {
+        return false;
+      }
+      result.add(arg);
     }
-    return result;
+    return true;
   }
 
-  private List<Concrete.LocalVariable> getVars(ExprContext expr) {
-    List<Concrete.LocalVariable> result = getVarsNull(expr);
-    if (result == null) {
+  private boolean getVars(ExprContext expr, List<Concrete.LocalVariable> result) {
+    if (!(expr instanceof BinOpContext && ((BinOpContext) expr).binOpArg() instanceof BinOpArgumentContext && ((BinOpContext) expr).maybeNew() instanceof NoNewContext && ((BinOpContext) expr).implementStatements() == null && ((BinOpContext) expr).postfix().isEmpty())) {
+      return false;
+    }
+
+    for (BinOpLeftContext leftCtx : ((BinOpContext) expr).binOpLeft()) {
+      if (!(leftCtx.maybeNew() instanceof NoNewContext && leftCtx.binOpArg() instanceof BinOpArgumentContext && leftCtx.implementStatements() == null && leftCtx.postfix().isEmpty() && leftCtx.infix().INFIX() != null)) {
+        return false;
+      }
+      if (!getVars((BinOpArgumentContext) leftCtx.binOpArg(), result)) {
+        return false;
+      }
+      result.add(new Concrete.LocalVariable(tokenPosition(leftCtx.infix().start), leftCtx.infix().INFIX().getText()));
+    }
+
+    return getVars((BinOpArgumentContext) ((BinOpContext) expr).binOpArg(), result);
+  }
+
+  private List<Concrete.LocalVariable> getVarList(ExprContext expr, List<TerminalNode> infixList) {
+    List<Concrete.LocalVariable> result = new ArrayList<>();
+    if (getVars(expr, result)) {
+      for (TerminalNode infix : infixList) {
+        result.add(new Concrete.LocalVariable(tokenPosition(infix.getSymbol()), infix.getText()));
+      }
+      return result;
+    } else {
       myErrorReporter.report(new ParserError(tokenPosition(expr.getStart()), "Expected a list of variables"));
       throw new ParseException();
-    } else {
-      return result;
     }
+  }
+
+  private List<Concrete.LocalVariable> getVars(TypedVarsContext ctx) {
+    List<Concrete.LocalVariable> result = new ArrayList<>(ctx.id().size() + 1);
+    result.add(new Concrete.LocalVariable(tokenPosition(ctx.start), ctx.INFIX().getText()));
+    for (IdContext idCtx : ctx.id()) {
+      result.add(new Concrete.LocalVariable(tokenPosition(idCtx.start), idCtx.getText()));
+    }
+    return result;
   }
 
   public Concrete.Expression visitExpr(ExprContext expr) {
@@ -623,17 +642,21 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (tele instanceof ExplicitContext || tele instanceof ImplicitContext) {
       boolean explicit = tele instanceof ExplicitContext;
       TypedExprContext typedExpr = explicit ? ((ExplicitContext) tele).typedExpr() : ((ImplicitContext) tele).typedExpr();
-      ExprContext varsExpr;
       Concrete.Expression typeExpr;
+      List<Concrete.LocalVariable> vars;
+      if (typedExpr instanceof TypedVarsContext) {
+        vars = getVars((TypedVarsContext) typedExpr);
+        typeExpr = visitExpr(((TypedVarsContext) typedExpr).expr());
+      } else
       if (typedExpr instanceof TypedContext) {
-        varsExpr = ((TypedContext) typedExpr).expr(0);
+        vars = getVarList(((TypedContext) typedExpr).expr(0), ((TypedContext) typedExpr).INFIX());
         typeExpr = visitExpr(((TypedContext) typedExpr).expr(1));
-      } else {
-        varsExpr = ((NotTypedContext) typedExpr).expr();
+      } else if (typedExpr instanceof NotTypedContext) {
+        vars = getVarList(((NotTypedContext) typedExpr).expr(), Collections.emptyList());
         typeExpr = null;
+      } else {
+        throw new IllegalStateException();
       }
-
-      List<Concrete.LocalVariable> vars = getVars(varsExpr);
       if (typeExpr == null) {
         for (Concrete.LocalVariable var : vars) {
           arguments.add(new Concrete.NameParameter(var.getPosition(), explicit, var.getName()));
@@ -864,9 +887,15 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         typedExpr = ((ImplicitContext) tele).typedExpr();
       }
       if (typedExpr instanceof TypedContext) {
-        arguments.add(new Concrete.TelescopeParameter(tokenPosition(tele.getStart()), explicit, getVars(((TypedContext) typedExpr).expr(0)), visitExpr(((TypedContext) typedExpr).expr(1))));
-      } else {
+        arguments.add(new Concrete.TelescopeParameter(tokenPosition(tele.getStart()), explicit, getVarList(((TypedContext) typedExpr).expr(0), ((TypedContext) typedExpr).INFIX()), visitExpr(((TypedContext) typedExpr).expr(1))));
+      } else
+      if (typedExpr instanceof TypedVarsContext) {
+        arguments.add(new Concrete.TelescopeParameter(tokenPosition(tele.getStart()), explicit, getVars((TypedVarsContext) typedExpr), visitExpr(((TypedVarsContext) typedExpr).expr())));
+      } else
+      if (typedExpr instanceof NotTypedContext) {
         arguments.add(new Concrete.TypeParameter(explicit, visitExpr(((NotTypedContext) typedExpr).expr())));
+      } else {
+        throw new IllegalStateException();
       }
     }
     return arguments;

@@ -223,7 +223,7 @@ public final class Concrete {
       return mySequence;
     }
 
-    public BinOpExpression makeBinOp(Abstract.Expression left, Abstract.Definition binOp, Abstract.ReferenceExpression var, Abstract.Expression right) {
+    public BinOpExpression makeBinOp(Abstract.Expression left, Abstract.ReferableSourceNode binOp, Abstract.ReferenceExpression var, Abstract.Expression right) {
       assert left instanceof Expression && (right == null || right instanceof Expression) && var instanceof Expression;
       return new BinOpExpression(((Expression) var).getPosition(), (Expression) left, binOp, (Expression) right);
     }
@@ -245,11 +245,11 @@ public final class Concrete {
   }
 
   public static class BinOpExpression extends Expression implements Abstract.BinOpExpression {
-    private final Abstract.Definition myBinOp;
+    private final Abstract.ReferableSourceNode myBinOp;
     private final Expression myLeft;
     private final Expression myRight;
 
-    public BinOpExpression(Position position, Expression left, Abstract.Definition binOp, Expression right) {
+    public BinOpExpression(Position position, Expression left, Abstract.ReferableSourceNode binOp, Expression right) {
       super(position);
       myLeft = left;
       myBinOp = binOp;
@@ -263,7 +263,7 @@ public final class Concrete {
 
     @Nonnull
     @Override
-    public Abstract.Definition getReferent() {
+    public Abstract.ReferableSourceNode getReferent() {
       return myBinOp;
     }
 

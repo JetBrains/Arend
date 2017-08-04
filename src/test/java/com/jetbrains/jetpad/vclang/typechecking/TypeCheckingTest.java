@@ -170,4 +170,9 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
       "  | suc m => suc (n $ m)\n" +
       "\\function f : (1 $ 1 d`) = 4 => path (\\lam _ => 4)");
   }
+
+  @Test
+  public void infixLocal() {
+    typeCheckExpr("\\lam (x # : \\Prop) ($ foo %% : \\Prop -> \\Prop -> \\Prop) => (foo (`# $ x) `#) %% x", null);
+  }
 }

@@ -421,27 +421,28 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitBinOp(final Abstract.BinOpExpression expr, final Byte prec) {
+    Abstract.Precedence precedence = expr.getReferent() instanceof Abstract.Definition ? ((Abstract.Definition) expr.getReferent()).getPrecedence() : Abstract.Precedence.DEFAULT;
     if (expr.getRight() == null) {
-      if (prec > expr.getReferent().getPrecedence().priority) {
+      if (prec > precedence.priority) {
         myBuilder.append('(');
       }
-      expr.getLeft().accept(this, (byte) (expr.getReferent().getPrecedence().priority + (expr.getReferent().getPrecedence().associativity == Abstract.Precedence.Associativity.LEFT_ASSOC ? 0 : 1)));
+      expr.getLeft().accept(this, (byte) (precedence.priority + (precedence.associativity == Abstract.Precedence.Associativity.LEFT_ASSOC ? 0 : 1)));
       myBuilder.append(isPrefix(expr.getReferent().getName()) ? " `" : " ").append(expr.getReferent().getName()).append('`');
-      if (prec > expr.getReferent().getPrecedence().priority) {
+      if (prec > precedence.priority) {
         myBuilder.append(')');
       }
     } else {
       new BinOpLayout() {
         @Override
         void printLeft(PrettyPrintVisitor pp) {
-          if (prec > expr.getReferent().getPrecedence().priority) pp.myBuilder.append('(');
-          expr.getLeft().accept(pp, (byte) (expr.getReferent().getPrecedence().priority + (expr.getReferent().getPrecedence().associativity == Abstract.Precedence.Associativity.LEFT_ASSOC ? 0 : 1)));
+          if (prec > precedence.priority) pp.myBuilder.append('(');
+          expr.getLeft().accept(pp, (byte) (precedence.priority + (precedence.associativity == Abstract.Precedence.Associativity.LEFT_ASSOC ? 0 : 1)));
         }
 
         @Override
         void printRight(PrettyPrintVisitor pp) {
-          expr.getRight().accept(pp, (byte) (expr.getReferent().getPrecedence().priority + (expr.getReferent().getPrecedence().associativity == Abstract.Precedence.Associativity.RIGHT_ASSOC ? 0 : 1)));
-          if (prec > expr.getReferent().getPrecedence().priority) pp.myBuilder.append(')');
+          expr.getRight().accept(pp, (byte) (precedence.priority + (precedence.associativity == Abstract.Precedence.Associativity.RIGHT_ASSOC ? 0 : 1)));
+          if (prec > precedence.priority) pp.myBuilder.append(')');
         }
 
         @Override
@@ -453,7 +454,9 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
         boolean increaseIndent(List<String> right_strings) {
           Abstract.Expression r = expr.getRight();
           if (r instanceof Abstract.BinOpExpression) {
-            if (prec <= ((Abstract.BinOpExpression) r).getReferent().getPrecedence().priority)
+            Abstract.ReferableSourceNode ref = ((Abstract.BinOpExpression) r).getReferent();
+            Abstract.Precedence refPrec = ref instanceof Abstract.Definition ? ((Abstract.Definition) ref).getPrecedence() : Abstract.Precedence.DEFAULT;
+            if (prec <= refPrec.priority)
               return false; // no bracket drawn
           }
           return super.increaseIndent(right_strings);

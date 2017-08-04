@@ -35,6 +35,15 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
     return null;
   }
 
+  private Abstract.ReferableSourceNode resolveLocal(String name) {
+    for (int i = myContext.size() - 1; i >= 0; i--) {
+      if (Objects.equals(myContext.get(i).getName(), name)) {
+        return myContext.get(i);
+      }
+    }
+    return null;
+  }
+
   @Override
   public Void visitReference(Abstract.ReferenceExpression expr, Void params) {
     Abstract.Expression expression = expr.getExpression();
@@ -45,12 +54,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
     if (expr.getReferent() == null) {
       Abstract.ReferableSourceNode ref = null;
       if (expression == null) {
-        for (int i = myContext.size() - 1; i >= 0; i--) {
-          if (Objects.equals(myContext.get(i).getName(), expr.getName())) {
-            ref = myContext.get(i);
-            break;
-          }
-        }
+        ref = resolveLocal(expr.getName());
       }
 
       if (ref == null) {
@@ -207,9 +211,12 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
       List<BinOpParser.StackElem> stack = new ArrayList<>(sequence.size());
       for (Abstract.BinOpSequenceElem elem : expr.getSequence()) {
         String name = elem.binOp.getName();
-        Abstract.Definition ref = myParentScope.resolveName(name);
+        Abstract.ReferableSourceNode ref = resolveLocal(name);
+        if (ref == null) {
+          ref = myParentScope.resolveName(name);
+        }
         if (ref != null) {
-          parser.pushOnStack(stack, expression, ref, ref.getPrecedence(), elem.binOp, elem.argument == null);
+          parser.pushOnStack(stack, expression, ref, ref instanceof Abstract.Definition ? ((Abstract.Definition) ref).getPrecedence() : Abstract.Precedence.DEFAULT, elem.binOp, elem.argument == null);
           expression = elem.argument;
         } else {
           error = new NotInScopeError(elem.binOp, name);

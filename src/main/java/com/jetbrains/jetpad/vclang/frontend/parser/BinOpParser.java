@@ -20,11 +20,11 @@ public class BinOpParser {
 
   public class StackElem {
     public final Abstract.Expression argument;
-    public final Abstract.Definition binOp;
+    public final Abstract.ReferableSourceNode binOp;
     public final Abstract.Precedence prec;
     public final Abstract.ReferenceExpression var;
 
-    public StackElem(Abstract.Expression argument, Abstract.Definition binOp, Abstract.Precedence prec, Abstract.ReferenceExpression var) {
+    public StackElem(Abstract.Expression argument, Abstract.ReferableSourceNode binOp, Abstract.Precedence prec, Abstract.ReferenceExpression var) {
       this.argument = argument;
       this.binOp = binOp;
       this.prec = prec;
@@ -32,7 +32,7 @@ public class BinOpParser {
     }
   }
 
-  public void pushOnStack(List<StackElem> stack, Abstract.Expression argument, Abstract.Definition binOp, Abstract.Precedence prec, Abstract.ReferenceExpression var, boolean ignoreAssoc) {
+  public void pushOnStack(List<StackElem> stack, Abstract.Expression argument, Abstract.ReferableSourceNode binOp, Abstract.Precedence prec, Abstract.ReferenceExpression var, boolean ignoreAssoc) {
     if (stack.isEmpty()) {
       stack.add(new StackElem(argument, binOp, prec, var));
       return;

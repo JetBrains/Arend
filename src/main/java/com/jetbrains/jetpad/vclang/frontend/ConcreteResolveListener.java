@@ -52,7 +52,7 @@ public class ConcreteResolveListener implements ResolveListener {
   }
 
   @Override
-  public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Abstract.Definition binOp, Abstract.ReferenceExpression var, Abstract.Expression right) {
+  public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Abstract.ReferableSourceNode binOp, Abstract.ReferenceExpression var, Abstract.Expression right) {
     return ((Concrete.BinOpSequenceExpression) binOpExpr).makeBinOp(left, binOp, var, right);
   }
 
@@ -69,6 +69,7 @@ public class ConcreteResolveListener implements ResolveListener {
   @Override
   public void replaceWithConstructor(Abstract.PatternContainer container, int index, Abstract.Constructor constructor) {
     Concrete.PatternContainer concreteContainer = (Concrete.PatternContainer) container;
+    //noinspection ConstantConditions
     Concrete.Pattern old = concreteContainer.getPatterns().get(index);
     Concrete.Pattern newPattern = new Concrete.ConstructorPattern(old.getPosition(), constructor, Collections.emptyList());
     newPattern.setExplicit(old.isExplicit());

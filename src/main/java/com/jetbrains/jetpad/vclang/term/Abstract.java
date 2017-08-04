@@ -160,7 +160,7 @@ public final class Abstract {
 
     @Nonnull
     @Override
-    Definition getReferent();
+    ReferableSourceNode getReferent();
 
     @Override
     default Expression getExpression() {
