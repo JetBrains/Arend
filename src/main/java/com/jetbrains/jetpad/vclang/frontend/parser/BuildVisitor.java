@@ -7,10 +7,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.frontend.parser.VcgrammarParser.*;
 
@@ -145,19 +142,15 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return s.substring(0, s.length() - 1);
   }
 
-  @Override
-  public List<String> visitModulePath(ModulePathContext ctx) {
-    List<String> path = new ArrayList<>(ctx.MODULE_NAME().size());
-    for (TerminalNode module : ctx.MODULE_NAME()) {
-      String s = module.getText();
-      path.add(s.substring(2, s.length()));
-    }
-    return path;
+  private List<String> getModulePath(String module) {
+    String[] modulePath = module.split("::");
+    assert modulePath[0].isEmpty();
+    return Arrays.asList(modulePath).subList(1, modulePath.length);
   }
 
   @Override
   public Concrete.ModuleCallExpression visitAtomModuleCall(AtomModuleCallContext ctx) {
-    return new Concrete.ModuleCallExpression(tokenPosition(ctx.getStart()), visitModulePath(ctx.modulePath()));
+    return new Concrete.ModuleCallExpression(tokenPosition(ctx.getStart()), getModulePath(ctx.MODULE_PATH().getText()));
   }
 
   private List<Concrete.Statement> visitStatementList(List<StatementContext> statementCtxs) {
@@ -193,7 +186,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.NamespaceCommandStatement visitStatCmd(StatCmdContext ctx) {
     Concrete.NamespaceCommandStatement.Kind kind = (Concrete.NamespaceCommandStatement.Kind) visit(ctx.nsCmd());
-    List<String> modulePath = ctx.nsCmdRoot().modulePath() == null ? null : visitModulePath(ctx.nsCmdRoot().modulePath());
+    List<String> modulePath = ctx.nsCmdRoot().MODULE_PATH() == null ? null : getModulePath(ctx.nsCmdRoot().MODULE_PATH().getText());
     List<String> path = new ArrayList<>();
     if (ctx.nsCmdRoot().id() != null) {
       path.add(visitId(ctx.nsCmdRoot().id()));
@@ -573,7 +566,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
     for (Concrete.Definition definition : instanceDefinitions) {
       definition.setParent(classDefinition);
-      definition.setIsStatic(false);
+      definition.setNotStatic();
     }
     for (Concrete.Statement statement : globalStatements) {
       if (statement instanceof Concrete.DefineStatement) {

@@ -10,7 +10,7 @@ hidingOpt : '\\hiding'  # withHiding
           |             # withoutHiding
           ;
 
-nsCmdRoot : modulePath | id;
+nsCmdRoot : MODULE_PATH | id;
 
 definition  : '\\function' precedence id tele* (':' expr)? functionBody where?                                    # defFunction
             | '\\field' precedence id ':' expr                                                                    # defAbstract
@@ -122,12 +122,10 @@ fieldAcc : id                       # classField
          | NUMBER                   # sigmaField
          ;
 
-modulePath : MODULE_NAME+;
-
 atom  : literal                         # atomLiteral
       | '(' expr (',' expr)* ')'        # tuple
       | NUMBER                          # atomNumber
-      | modulePath                      # atomModuleCall
+      | MODULE_PATH                     # atomModuleCall
       ;
 
 atomFieldsAcc : atom ('.' fieldAcc)*;
@@ -180,9 +178,9 @@ WS : [ \t\r\n]+ -> skip;
 LINE_COMMENT : '--' ~[\r\n]* -> skip;
 COMMENT : '{-' .*? '-}' -> skip;
 fragment INFIX_CHAR : [~!@#$%^&*\-+=<>?/|:;[\]];
-MODULE_NAME : '::' [a-zA-Z_] [a-zA-Z0-9_']*;
+MODULE_PATH : ('::' [a-zA-Z_] [a-zA-Z0-9_']*)+;
 INFIX : INFIX_CHAR+;
-PREFIX : [a-zA-Z_] (INFIX_CHAR | [a-zA-Z0-9_'])*;
+PREFIX : (INFIX_CHAR | [a-zA-Z_]) (INFIX_CHAR | [a-zA-Z0-9_'])*;
 PREFIX_INFIX : '`' INFIX;
 INFIX_PREFIX : '`' PREFIX;
 POSTFIX_INFIX : INFIX '`';

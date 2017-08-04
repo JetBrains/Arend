@@ -11,6 +11,9 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.AbstractLevelExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.legacy.LegacyAbstract;
+import com.jetbrains.jetpad.vclang.term.legacy.LegacyAbstractStatementVisitor;
+import com.jetbrains.jetpad.vclang.term.legacy.ToTextVisitor;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 
 import javax.annotation.Nonnull;
@@ -964,8 +967,8 @@ public final class Concrete {
       return myStatic;
     }
 
-    public void setIsStatic(boolean isStatic) {
-      myStatic = isStatic;
+    public void setNotStatic() {
+      myStatic = false;
     }
 
     @Override
@@ -1062,7 +1065,7 @@ public final class Concrete {
 
     public ClassField(Position position, String name, Abstract.Precedence precedence, Expression resultType) {
       super(position, name, precedence);
-      setIsStatic(false);
+      setNotStatic();
       myResultType = resultType;
     }
 
@@ -1091,7 +1094,7 @@ public final class Concrete {
     public Implementation(Position position, String name, Expression expression) {
       super(position, name, Abstract.Precedence.DEFAULT);
       myExpression = expression;
-      setIsStatic(false);
+      setNotStatic();
     }
 
     @Nonnull
@@ -1467,13 +1470,20 @@ public final class Concrete {
 
   // Statements
 
-  public static abstract class Statement extends SourceNode {
+  public static abstract class Statement extends SourceNode implements LegacyAbstract.Statement {
     public Statement(Position position) {
       super(position);
     }
+
+    @Override
+    public String toString() {
+      StringBuilder builder = new StringBuilder();
+      accept(new ToTextVisitor(builder, 0), null);
+      return builder.toString();
+    }
   }
 
-  public static class DefineStatement extends Statement {
+  public static class DefineStatement extends Statement implements LegacyAbstract.DefineStatement {
     private final Definition myDefinition;
 
     public DefineStatement(Position position, Definition definition) {
@@ -1481,17 +1491,25 @@ public final class Concrete {
       myDefinition = definition;
     }
 
+    @Nonnull
+    @Override
     public Definition getDefinition() {
       return myDefinition;
     }
+
+    @Override
+    public <P, R> R accept(LegacyAbstractStatementVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitDefine(this, params);
+    }
   }
 
-  public static class NamespaceCommandStatement extends Statement implements OpenCommand {
+  public static class NamespaceCommandStatement extends Statement implements OpenCommand, LegacyAbstract.NamespaceCommandStatement {
     private Abstract.Definition myDefinition;
     private final ModulePath myModulePath;
     private final List<String> myPath;
     private final boolean myHiding;
     private final List<String> myNames;
+    private final Kind myKind;
 
     public NamespaceCommandStatement(Position position, Kind kind, List<String> modulePath, List<String> path, boolean isHiding, List<String> names) {
       super(position);
@@ -1500,6 +1518,13 @@ public final class Concrete {
       myPath = path;
       myHiding = isHiding;
       myNames = names;
+      myKind = kind;
+    }
+
+    @Nonnull
+    @Override
+    public Kind getKind() {
+      return myKind;
     }
 
     @Override
@@ -1531,8 +1556,10 @@ public final class Concrete {
       return myNames;
     }
 
-    public enum Kind { OPEN, EXPORT }
-
+    @Override
+    public <P, R> R accept(LegacyAbstractStatementVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitNamespaceCommand(this, params);
+    }
   }
 
   interface StatementCollection extends Abstract.DefinitionCollection, HasOpens {

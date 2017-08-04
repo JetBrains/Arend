@@ -57,7 +57,7 @@ public abstract class Error {
   }
 
   public Doc getDoc(SourceInfoProvider src) {
-    return DocFactory.hang(getHeaderDoc(src), DocFactory.vList(getBodyDoc(src), getCauseDoc()));
+    return DocFactory.vHang(getHeaderDoc(src), DocFactory.vList(getBodyDoc(src), getCauseDoc()));
   }
 
   @Override
