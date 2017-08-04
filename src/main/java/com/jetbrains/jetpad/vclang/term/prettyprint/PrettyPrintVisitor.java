@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term.prettyprint;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
-import com.jetbrains.jetpad.vclang.core.definition.Name;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
@@ -112,13 +111,21 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
+  public static boolean isPrefix(String name) {
+    return name.isEmpty() || name.charAt(0) == '_' || Character.isLetter(name.charAt(0)) || name.charAt(0) == '?' || name.charAt(0) == '\\';
+  }
+
   @Override
   public Void visitReference(Abstract.ReferenceExpression expr, Byte prec) {
     if (expr.getExpression() != null) {
       expr.getExpression().accept(this, Abstract.ReferenceExpression.PREC);
-      myBuilder.append(".");
+      myBuilder.append('.').append(expr.getName());
+    } else {
+      if (!isPrefix(expr.getName())) {
+        myBuilder.append('`');
+      }
+      myBuilder.append(expr.getName());
     }
-    myBuilder.append(new Name(expr.getName()));
     return null;
   }
 
@@ -419,7 +426,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
         myBuilder.append('(');
       }
       expr.getLeft().accept(this, (byte) (expr.getReferent().getPrecedence().priority + (expr.getReferent().getPrecedence().associativity == Abstract.Precedence.Associativity.LEFT_ASSOC ? 0 : 1)));
-      myBuilder.append(' ').append(new Name(expr.getReferent().getName()).getInfixName()).append('`');
+      myBuilder.append(isPrefix(expr.getReferent().getName()) ? " `" : " ").append(expr.getReferent().getName()).append('`');
       if (prec > expr.getReferent().getPrecedence().priority) {
         myBuilder.append(')');
       }
@@ -439,7 +446,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
         @Override
         String getOpText() {
-          return new Name(expr.getReferent().getName()).getInfixName();
+          return (isPrefix(expr.getReferent().getName()) ? "`" : "") + expr.getReferent().getName();
         }
 
         @Override
@@ -466,7 +473,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     if (prec > Abstract.BinOpSequenceExpression.PREC) myBuilder.append('(');
     expr.getLeft().accept(this, (byte) 10);
     for (Abstract.BinOpSequenceElem elem : expr.getSequence()) {
-      myBuilder.append(' ').append(new Name(elem.binOp.getName()).getInfixName()).append(elem.argument == null ? "` " : " ");
+      myBuilder.append(isPrefix(elem.binOp.getName()) ? " `" : " ").append(elem.binOp.getName()).append(elem.argument == null ? "` " : " ");
       if (elem.argument != null) {
         elem.argument.accept(this, (byte) 10);
       }
@@ -567,7 +574,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myIndent += INDENT;
     for (Abstract.ClassFieldImpl statement : classFieldImpls) {
       printIndent();
-      myBuilder.append("| ").append(new Name(statement.getImplementedFieldName()).getPrefixName()).append(" => ");
+      myBuilder.append("| ").append(statement.getImplementedFieldName()).append(" => ");
       statement.getImplementation().accept(this, Abstract.Expression.PREC);
       myBuilder.append("\n");
     }
@@ -674,7 +681,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       myBuilder.append(' ');
     }
 
-    myBuilder.append(new Name(def.getName()).getPrefixName());
+    myBuilder.append(def.getName());
   }
 
   private void prettyPrintBody(Abstract.FunctionBody body) {
@@ -882,7 +889,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       Abstract.ConstructorPattern conPattern = (Abstract.ConstructorPattern) pattern;
       if (!conPattern.getPatterns().isEmpty() && prec > Abstract.Pattern.PREC && pattern.isExplicit()) myBuilder.append('(');
 
-      myBuilder.append(new Name(conPattern.getConstructorName()).getPrefixName());
+      if (!isPrefix(conPattern.getConstructorName())) {
+        myBuilder.append('`');
+      }
+      myBuilder.append(conPattern.getConstructorName());
       for (Abstract.Pattern patternArg : conPattern.getPatterns()) {
         myBuilder.append(' ');
         prettyPrintPattern(patternArg, (byte) (Abstract.Pattern.PREC + 1));

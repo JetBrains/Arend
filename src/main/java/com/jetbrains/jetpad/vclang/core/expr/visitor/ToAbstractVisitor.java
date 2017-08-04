@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevel
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
-import com.jetbrains.jetpad.vclang.core.definition.Name;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.factory.AbstractExpressionFactory;
@@ -17,6 +16,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.Util;
 
@@ -170,7 +170,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     Collections.reverse(args);
     DefCallExpression defCall = fun.checkedCast(DefCallExpression.class);
 
-    if (defCall == null || new Name(defCall.getDefinition().getName()).fixity != Name.Fixity.INFIX) {
+    if (defCall == null || !PrettyPrintVisitor.isPrefix(defCall.getDefinition().getName())) {
       return null;
     }
     boolean[] isExplicit = new boolean[defCall.getDefCallArguments().size() + args.size()];
