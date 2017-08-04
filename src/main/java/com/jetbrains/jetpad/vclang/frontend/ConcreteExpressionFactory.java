@@ -27,7 +27,7 @@ public class ConcreteExpressionFactory {
     return new Concrete.ReferenceExpression(POSITION, referable);
   }
 
-  public static Concrete.ReferenceExpression cDefCall(Concrete.Expression expr, Abstract.Definition definition, String name) {
+  public static Concrete.ReferenceExpression cDefCall(Concrete.Expression expr, Abstract.ReferableSourceNode definition, String name) {
     Concrete.ReferenceExpression result = new Concrete.ReferenceExpression(POSITION, expr, name);
     result.setResolvedReferent(definition);
     return result;
@@ -200,7 +200,7 @@ public class ConcreteExpressionFactory {
     return new Concrete.EmptyPattern(POSITION, isExplicit);
   }
 
-  public static Concrete.BinOpExpression cBinOp(Concrete.Expression left, Abstract.Definition binOp, Concrete.Expression right) {
+  public static Concrete.BinOpExpression cBinOp(Concrete.Expression left, Abstract.ReferableSourceNode binOp, Concrete.Expression right) {
     return new Concrete.BinOpExpression(POSITION, left, binOp, right);
   }
 

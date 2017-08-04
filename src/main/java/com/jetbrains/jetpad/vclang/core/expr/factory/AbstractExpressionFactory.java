@@ -11,12 +11,11 @@ import java.util.List;
 
 public interface AbstractExpressionFactory {
   @Nonnull Abstract.Expression makeApp(@Nonnull Abstract.Expression fun, boolean explicit, @Nonnull Abstract.Expression arg);
-  @Nonnull Abstract.Expression makeBinOp(@Nonnull Abstract.Expression left, @Nonnull Abstract.Definition defCall, @Nonnull Abstract.Expression right);
-  @Nonnull Abstract.Expression makeDefCall(@Nullable Abstract.Expression expr, @Nullable Abstract.Definition definition);
+  @Nonnull Abstract.Expression makeBinOp(@Nonnull Abstract.Expression left, @Nonnull Abstract.ReferableSourceNode defCall, @Nonnull Abstract.Expression right);
+  @Nonnull Abstract.Expression makeReference(@Nullable Abstract.Expression expr, @Nullable Abstract.ReferableSourceNode definition);
   @Nonnull Abstract.Expression makeClassExt(@Nonnull Abstract.Expression expr, @Nonnull List<? extends Abstract.ClassFieldImpl> statements);
   @Nonnull Abstract.ClassFieldImpl makeImplementStatement(@Nonnull ClassField field, @Nonnull Abstract.Expression term);
   @Nonnull Abstract.ReferableSourceNode makeReferable(@Nullable String name);
-  @Nonnull Abstract.Expression makeVar(@Nonnull Abstract.ReferableSourceNode referable);
   @Nonnull Abstract.Expression makeInferVar(@Nonnull InferenceVariable variable);
   @Nonnull Abstract.NameParameter makeNameParameter(boolean explicit, @Nullable String name);
   @Nonnull Abstract.TypeParameter makeTypeParameter(boolean explicit, @Nonnull Abstract.Expression type);

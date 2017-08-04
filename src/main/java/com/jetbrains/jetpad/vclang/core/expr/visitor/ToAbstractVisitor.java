@@ -169,39 +169,48 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     }
     Collections.reverse(args);
     DefCallExpression defCall = fun.checkedCast(DefCallExpression.class);
+    ReferenceExpression refExpr = fun.checkedCast(ReferenceExpression.class);
 
-    if (defCall == null || !PrettyPrintVisitor.isPrefix(defCall.getDefinition().getName())) {
-      return null;
-    }
-    boolean[] isExplicit = new boolean[defCall.getDefCallArguments().size() + args.size()];
-    int i = 0;
-    for (DependentLink link = defCall.getDefinition().getParameters(); link.hasNext(); link = link.getNext()) {
-      isExplicit[i++] = link.isExplicit();
-    }
-    getArgumentsExplicitness(defCall, isExplicit, i);
-    if (isExplicit.length < 2 || myFlags.contains(Flag.SHOW_BIN_OP_IMPLICIT_ARGS) && (!isExplicit[0] || !isExplicit[1])) {
+    if (refExpr == null && defCall == null || !PrettyPrintVisitor.isPrefix(defCall != null ? defCall.getDefinition().getName() : refExpr.getBinding().getName())) {
       return null;
     }
 
+    int defCallArgsSize = defCall != null ? defCall.getDefCallArguments().size() : 0;
+    boolean[] isExplicit = new boolean[defCallArgsSize + args.size()];
     Expression[] visibleArgs = new Expression[2];
-    i = 0;
-    for (int j = 0; j < defCall.getDefCallArguments().size(); j++) {
-      if (isExplicit[j]) {
-        if (i == 2) {
-          return null;
+    int i = 0;
+
+    if (defCall != null) {
+      for (DependentLink link = defCall.getDefinition().getParameters(); link.hasNext(); link = link.getNext()) {
+        isExplicit[i++] = link.isExplicit();
+      }
+      if (!getArgumentsExplicitness(defCall, isExplicit, i)) {
+        return null;
+      }
+      if (isExplicit.length < 2 || myFlags.contains(Flag.SHOW_BIN_OP_IMPLICIT_ARGS) && (!isExplicit[0] || !isExplicit[1])) {
+        return null;
+      }
+
+      i = 0;
+      for (int j = 0; j < defCall.getDefCallArguments().size(); j++) {
+        if (isExplicit[j]) {
+          if (i == 2) {
+            return null;
+          }
+          visibleArgs[i++] = defCall.getDefCallArguments().get(j);
         }
-        visibleArgs[i++] = defCall.getDefCallArguments().get(j);
       }
     }
+
     for (int j = 0; j < args.size(); j++) {
-      if (isExplicit[defCall.getDefCallArguments().size() + j]) {
+      if (isExplicit[defCallArgsSize + j]) {
         if (i == 2) {
           return null;
         }
         visibleArgs[i++] = args.get(j);
       }
     }
-    return i == 2 ? myFactory.makeBinOp(visibleArgs[0].accept(this, null), defCall.getDefinition().getAbstractDefinition(), visibleArgs[1].accept(this, null)) : null;
+    return i == 2 ? myFactory.makeBinOp(visibleArgs[0].accept(this, null), defCall != null ? defCall.getDefinition().getAbstractDefinition() : myNames.get(refExpr.getBinding()), visibleArgs[1].accept(this, null)) : null;
   }
 
   @Override
@@ -228,12 +237,18 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return result;
   }
 
-  private void getArgumentsExplicitness(Expression expr, boolean[] isExplicit, int i) {
+  private boolean getArgumentsExplicitness(Expression expr, boolean[] isExplicit, int i) {
     List<SingleDependentLink> params = new ArrayList<>(isExplicit.length - i);
-    expr.getType().getPiParameters(params, false);
+    Expression type = expr.getType();
+    if (type == null) {
+      return false;
+    }
+
+    type.getPiParameters(params, false);
     for (int j = 0; i < isExplicit.length; i++, j++) {
       isExplicit[i] = j >= params.size() || params.get(j).isExplicit();
     }
+    return true;
   }
 
   private Abstract.Expression visitApp(Abstract.Expression function, Expression argument, boolean isExplicit) {
@@ -255,12 +270,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     if (result != null) {
       return result;
     }
-    return visitParameters(myFactory.makeDefCall(null, expr.getDefinition().getAbstractDefinition()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
+    return visitParameters(myFactory.makeReference(null, expr.getDefinition().getAbstractDefinition()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
   }
 
   @Override
   public Abstract.Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    return myFactory.makeDefCall(expr.getExpression().accept(this, null), expr.getDefinition().getAbstractDefinition());
+    return myFactory.makeReference(expr.getExpression().accept(this, null), expr.getDefinition().getAbstractDefinition());
   }
 
   @Override
@@ -274,7 +289,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     if (expr.getDefinition().status().headerIsOK() && myFlags.contains(Flag.SHOW_CON_PARAMS) && (!expr.getDataTypeArguments().isEmpty() || myFlags.contains(Flag.SHOW_CON_DATA_TYPE))) {
       conParams = expr.getDataTypeExpression().accept(this, null);
     }
-    return visitParameters(myFactory.makeDefCall(conParams, expr.getDefinition().getAbstractDefinition()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
+    return visitParameters(myFactory.makeReference(conParams, expr.getDefinition().getAbstractDefinition()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
   }
 
   @Override
@@ -296,7 +311,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       }
     }
 
-    Abstract.Expression defCallExpr = myFactory.makeDefCall(enclExpr, expr.getDefinition().getAbstractDefinition());
+    Abstract.Expression defCallExpr = myFactory.makeReference(enclExpr, expr.getDefinition().getAbstractDefinition());
     if (statements.isEmpty()) {
       return defCallExpr;
     } else {
@@ -306,7 +321,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitReference(ReferenceExpression expr, Void params) {
-    return myFactory.makeVar(myNames.get(expr.getBinding()));
+    return myFactory.makeReference(null, myNames.get(expr.getBinding()));
   }
 
   @Override

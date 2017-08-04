@@ -22,14 +22,14 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
 
   @Nonnull
   @Override
-  public Abstract.Expression makeBinOp(@Nonnull Abstract.Expression left, @Nonnull Abstract.Definition defCall, @Nonnull Abstract.Expression right) {
-    return cBinOp((Concrete.Expression) left, defCall, (Concrete.Expression) right);
+  public Abstract.Expression makeBinOp(@Nonnull Abstract.Expression left, @Nonnull Abstract.ReferableSourceNode referable, @Nonnull Abstract.Expression right) {
+    return cBinOp((Concrete.Expression) left, referable, (Concrete.Expression) right);
   }
 
   @Nonnull
   @Override
-  public Abstract.Expression makeDefCall(@Nullable Abstract.Expression expr, @Nullable Abstract.Definition definition) {
-    return cDefCall((Concrete.Expression) expr, definition, definition == null ? "\\this" : definition.getName());
+  public Abstract.Expression makeReference(@Nullable Abstract.Expression expr, @Nullable Abstract.ReferableSourceNode referable) {
+    return cDefCall((Concrete.Expression) expr, referable, referable == null ? "\\this" : referable.getName());
   }
 
   @Nonnull
@@ -48,12 +48,6 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   @Override
   public Abstract.ReferableSourceNode makeReferable(@Nullable String name) {
     return new Concrete.LocalVariable(POSITION, name);
-  }
-
-  @Nonnull
-  @Override
-  public Abstract.Expression makeVar(@Nonnull Abstract.ReferableSourceNode referable) {
-    return cVar(referable);
   }
 
   @Nonnull
