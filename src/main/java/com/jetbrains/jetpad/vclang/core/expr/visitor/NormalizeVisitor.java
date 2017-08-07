@@ -20,15 +20,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitApp(AppExpression expr, Mode mode) {
-    if (mode == Mode.RNF) {
-      return new AppExpression(expr.getFunction().accept(this, mode), expr.getArgument().accept(this, mode));
-    }
-
     List<Expression> args = new ArrayList<>();
     Expression function = expr;
     while (function.isInstance(AppExpression.class)) {
       args.add(function.cast(AppExpression.class).getArgument());
-      function = function.cast(AppExpression.class).getFunction().accept(this, Mode.WHNF);
+      function = function.cast(AppExpression.class).getFunction().accept(this, mode == Mode.NF ? Mode.WHNF : mode);
     }
     Collections.reverse(args);
 
@@ -40,7 +36,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       function = function.accept(this, mode);
     }
     for (Expression arg : args) {
-      function = new AppExpression(function, mode == Mode.NF ? arg.accept(this, mode) : arg);
+      function = new AppExpression(function, mode == Mode.WHNF ? arg : arg.accept(this, mode));
     }
     return function;
   }
