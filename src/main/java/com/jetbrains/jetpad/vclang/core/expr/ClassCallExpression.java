@@ -42,6 +42,10 @@ public class ClassCallExpression extends DefCallExpression implements Type {
     return myFieldSet.getImplemented().stream().filter(entry -> !getDefinition().getFieldSet().isImplemented(entry.getKey())).collect(Collectors.toSet());
   }
 
+  public boolean isUnit() {
+    return myFieldSet.getImplemented().size() == myFieldSet.getFields().size();
+  }
+
   @Override
   public ClassDefinition getDefinition() {
     return (ClassDefinition) super.getDefinition();

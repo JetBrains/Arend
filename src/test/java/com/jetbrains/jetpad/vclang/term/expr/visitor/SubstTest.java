@@ -64,12 +64,12 @@ public class SubstTest extends TypeCheckingTestCase {
   @Test
   public void substComplex() {
     // \x y. x b (\z. a z y) [a := \w t. t b (w c)] = \x y. x b (\z. (\w t. t b (w c)) z y)
-    Binding a = new TypedBinding("a", Pi(Nat(), Pi(Nat(), Nat())));
+    Binding a = new TypedBinding("a", Pi(Pi(Nat(), Nat()), Pi(Pi(Nat(), Pi(Nat(), Nat())), Nat())));
     Binding b = new TypedBinding("b", Nat());
     Binding c = new TypedBinding("c", Nat());
-    SingleDependentLink x = singleParam("x", Pi(Nat(), Pi(Pi(Nat(), Nat()), Nat())));
-    SingleDependentLink y = singleParam("y", Nat());
-    SingleDependentLink z = singleParam("z", Nat());
+    SingleDependentLink x = singleParam("x", Pi(Nat(), Pi(Nat(), Nat())));
+    SingleDependentLink y = singleParam("y", Pi(Nat(), Pi(Nat(), Nat())));
+    SingleDependentLink z = singleParam("z", Pi(Nat(), Nat()));
     SingleDependentLink w = singleParam("w", Pi(Nat(), Nat()));
     SingleDependentLink t = singleParam("t", Pi(Nat(), Pi(Nat(), Nat())));
 

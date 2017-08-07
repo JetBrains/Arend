@@ -70,4 +70,39 @@ public class EtaEquivalence extends TypeCheckingTestCase {
     FunctionDefinition fun = (FunctionDefinition) typeCheckDef("\\function f (x : Nat -> Nat) => x");
     assertTrue(!((LeafElimTree) fun.getBody()).getExpression().isInstance(LamExpression.class));
   }
+
+  @Test
+  public void emptyClass() {
+    typeCheckClass(
+      "\\class Unit\n" +
+      "\\function f (x : Unit) : x = \\new Unit => path (\\lam _ => x)");
+  }
+
+  @Test
+  public void emptyClass2() {
+    typeCheckClass(
+      "\\class Unit\n" +
+      "\\function f (x y : Unit) : x = y => path (\\lam _ => x)");
+  }
+
+  @Test
+  public void emptyClass3() {
+    typeCheckClass(
+      "\\class C { \\field n : Nat }\n" +
+      "\\function f (x y : C { n => 0 }) : x = y => path (\\lam _ => x)");
+  }
+
+  @Test
+  public void emptyClass4a() {
+    typeCheckClass(
+      "\\class C { \\field n : Nat }\n" +
+      "\\function f (x : C { n => 0 }) (y : C) : x = y => path (\\lam _ => x)", 1);
+  }
+
+  @Test
+  public void emptyClass4b() {
+    typeCheckClass(
+      "\\class C { \\field n : Nat }\n" +
+      "\\function f (x : C) (y : C { n => 0 }) : x = y => path (\\lam _ => x)", 1);
+  }
 }

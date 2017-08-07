@@ -132,6 +132,13 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     if (expr2.isInstance(TupleExpression.class)) {
       ok = visitTuple(expr2.cast(TupleExpression.class), expr1, false);
     } else {
+      Expression type1 = expr1.getType();
+      if (type1 != null && type1.isInstance(ClassCallExpression.class) && type1.cast(ClassCallExpression.class).isUnit()) {
+        Expression type2 = expr2.getType();
+        if (type2 != null && type2.isInstance(ClassCallExpression.class) && type2.cast(ClassCallExpression.class).isUnit()) {
+          return true;
+        }
+      }
       ok = expr1.accept(this, expr2);
     }
     if (ok) {
