@@ -103,7 +103,7 @@ public class ParserTest extends NameResolverTestCase {
 
   @Test
   public void parserImplicit() {
-    Concrete.ClassField def = (Concrete.ClassField) resolveNamesDef("\\field f : \\Pi (x y : \\Type1) {z w : \\Type1} (t : \\Type1) {r : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) -> A x y z w t r");
+    Concrete.ClassField def = ((Concrete.ClassDefinition) resolveNamesDef("\\class X { | f : \\Pi (x y : \\Type1) {z w : \\Type1} (t : \\Type1) {r : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) -> A x y z w t r }")).getFields().get(0);
     Concrete.PiExpression pi = (Concrete.PiExpression) def.getResultType();
     assertEquals(5, pi.getParameters().size());
     assertTrue(pi.getParameters().get(0).getExplicit());
@@ -129,7 +129,7 @@ public class ParserTest extends NameResolverTestCase {
 
   @Test
   public void parserImplicit2() {
-    Concrete.ClassField def = (Concrete.ClassField) resolveNamesDef("\\field f : \\Pi {x : \\Type1} (_ : \\Type1) {y z : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) (_ : A x y z) -> \\Type1");
+    Concrete.ClassField def = ((Concrete.ClassDefinition) resolveNamesDef("\\class X { | f : \\Pi {x : \\Type1} (_ : \\Type1) {y z : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) (_ : A x y z) -> \\Type1 }")).getFields().get(0);
     Concrete.PiExpression pi = (Concrete.PiExpression) def.getResultType();
     assertEquals(5, pi.getParameters().size());
     assertFalse(pi.getParameters().get(0).getExplicit());
@@ -170,25 +170,25 @@ public class ParserTest extends NameResolverTestCase {
   }
 
   @Test
-  public void whereAbstractError() {
-    parseClass("test", "\\function f => 0 \\where \\field x : \\Type0", 1);
+  public void whereFieldError() {
+    parseClass("test", "\\function f => 0 \\where | x : \\Type0", 1);
   }
 
   @Test
   public void implementInFunctionError() {
     parseClass("test",
         "\\class X {\n" +
-        "  \\field x : Nat\n" +
+        "  | x : Nat\n" +
         "} \\where {\n" +
         "  \\function f => 0\n" +
         "    \\where\n" +
-        "      \\implement x => 1\n" +
+        "      | x => 1\n" +
         "}", 1);
   }
 
   @Test
   public void incorrectDefinitionName() {
-    parseDef("\\function (|) => \\Prop", -1);
+    parseDef("\\function | => \\Prop", -1);
   }
 
   @Test

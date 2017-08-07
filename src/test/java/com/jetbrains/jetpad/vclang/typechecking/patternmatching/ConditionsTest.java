@@ -142,16 +142,16 @@ public class ConditionsTest extends TypeCheckingTestCase {
   @Test
   public void nonStatic() {
     typeCheckClass(
-        "\\data S | base | loop I\n" +
-        "  { left => base\n" +
-        "  | right => base\n" +
-        "  }\n" +
-        "\\field S' : \\Type0\n" +
-        "\\field base' : S'\n" +
-        "\\field loop' : I -> S'\n" +
-        "\\function test (s : S) : S'\n" +
-        "  | base => base'\n" +
-        "  | loop i => loop' i", "", 2);
+      "| S' : \\Type0\n" +
+      "| base' : S'\n" +
+      "| loop' : I -> S'\n" +
+      "\\data S | base | loop I\n" +
+      "  { left => base\n" +
+      "  | right => base\n" +
+      "  }\n" +
+      "\\function test (s : S) : S'\n" +
+      "  | base => base'\n" +
+      "  | loop i => loop' i", "", 2);
   }
 
   @Test

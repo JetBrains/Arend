@@ -11,7 +11,7 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
   public void classViewFieldNotInScope() {
     resolveNamesClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
+        "  | A : \\Type0\n" +
         "}\n" +
         "\\view Foo \\on X \\by A { B }", 1);
   }
@@ -20,7 +20,7 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
   public void classifyingFieldNotInScope() {
     resolveNamesClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
+        "  | A : \\Type0\n" +
         "}\n" +
         "\\view Foo \\on X \\by Y { }", 1);
   }
@@ -29,8 +29,8 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
   public void classViewExt() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> \\Type0\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> \\Type0\n" +
         "}\n" +
         "\\view X' \\on X \\by A { B => C }\n" +
         "\\function f => \\new X  { A => Nat | B => \\lam _ => Nat }\n" +
@@ -42,8 +42,8 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
   public void notImplementedField() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> \\Type0\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> \\Type0\n" +
         "}\n" +
         "\\view X' \\on X \\by A { B }\n" +
         "\\instance x => \\new X' { A => Nat }", 1);
@@ -59,8 +59,8 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
       "\\function g {x : X' { A => Nat }} => \\Prop\n" +
       "\\function f => g\n" +
       "\\class X {\n" +
-      "  \\field A : \\Type0\n" +
-      "  \\field B : A -> \\Type0\n" +
+      "  | A : \\Type0\n" +
+      "  | B : A -> \\Type0\n" +
       "}");
   }
 
@@ -74,8 +74,8 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
       "\\function g {x : X' { A => Nat }} => \\Prop\n" +
       "\\function f : \\Set0 => g\n" +
       "\\class X {\n" +
-      "  \\field A : \\Type0\n" +
-      "  \\field B : A -> \\Type0\n" +
+      "  | A : \\Type0\n" +
+      "  | B : A -> \\Type0\n" +
       "}", 1);
     assertThatErrorsAre(instanceOf(CycleError.class));
   }
@@ -84,8 +84,8 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
   public void duplicateInstance() {
     typeCheckClass(
       "\\class X {\n" +
-      "  \\field A : \\Type0\n" +
-      "  \\field B : A -> \\Type0\n" +
+      "  | A : \\Type0\n" +
+      "  | B : A -> \\Type0\n" +
       "}\n" +
       "\\view Y \\on X \\by A { B }\n" +
       "\\data D\n" +
@@ -97,8 +97,8 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
   public void duplicateDefaultInstance() {
     typeCheckClass(
       "\\class X {\n" +
-      "  \\field A : \\Type0\n" +
-      "  \\field B : A -> \\Type0\n" +
+      "  | A : \\Type0\n" +
+      "  | B : A -> \\Type0\n" +
       "}\n" +
       "\\view Y \\on X \\by A { B }\n" +
       "\\view Z \\on X \\by A { B => C }\n" +

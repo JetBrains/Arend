@@ -8,8 +8,8 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
   public void inferInstance() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> \\Type0\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> \\Type0\n" +
         "}\n" +
         "\\view X' \\on X \\by A { B }\n" +
         "\\instance Nat-X => \\new X' { A => Nat | B => \\lam n => Nat }\n" +
@@ -20,8 +20,8 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
   public void inferInstanceRenamed() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> \\Type0\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> \\Type0\n" +
         "}\n" +
         "\\view Y \\on X \\by A { B }\n" +
         "\\instance Nat-X => \\new Y { A => Nat | B => \\lam n => Nat }\n" +
@@ -32,8 +32,8 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
   public void incorrectInstance() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> \\Type0\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> \\Type0\n" +
         "}\n" +
         "\\view Y \\on X \\by A { B }\n" +
         "\\function f (n : Nat) : \\oo-Type0 => \\elim n | zero => Nat | suc n => Nat\n" +
@@ -44,8 +44,8 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
   public void differentViews() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> \\Type0\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> \\Type0\n" +
         "}\n" +
         "\\view Y \\on X \\by A { B }\n" +
         "\\view Z \\on X \\by A { B => C }\n" +
@@ -57,8 +57,8 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
   public void differentInstances() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> \\Type0\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> \\Type0\n" +
         "}\n" +
         "\\view Y \\on X \\by A { B }\n" +
         "\\instance Nat-X => \\new Y { A => Nat | B => \\lam n => Nat }\n" +
@@ -71,8 +71,8 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
   public void localInstance() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> \\Set0\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> \\Set0\n" +
         "}\n" +
         "\\view Y \\on X \\by A { B }\n" +
         "\\instance Nat-X => \\new Y { A => Nat | B => \\lam n => Nat -> Nat }\n" +
@@ -84,8 +84,8 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
   public void transitiveInferInstance() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> \\Type0\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> \\Type0\n" +
         "}\n" +
         "\\view Y \\on X \\by A { B }\n" +
         "\\default \\instance Nat-X => \\new Y { A => Nat | B => \\lam n => Nat -> Nat }\n" +
@@ -97,8 +97,8 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
   public void transitiveInferInstance2() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> \\Type0\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> \\Type0\n" +
         "}\n" +
         "\\view Y \\on X \\by A { B }\n" +
         "\\default \\instance Nat-X => \\new Y { A => Nat | B => \\lam n => Nat -> Nat }\n" +
@@ -110,8 +110,8 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
   public void transitiveNoDefault() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> \\Type0\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> \\Type0\n" +
         "}\n" +
         "\\view Y \\on X \\by A { B }\n" +
         "\\view Z \\on X \\by A { B => C }\n" +
@@ -125,8 +125,8 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
   public void transitiveDefault() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> Nat\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> Nat\n" +
         "}\n" +
         "\\view Y \\on X \\by A { B }\n" +
         "\\view Z \\on X \\by A { B => C }\n" +
@@ -140,12 +140,12 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
   public void twoDefaults() {
     typeCheckClass(
         "\\class X1 {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B1 : A -> Nat\n" +
+        "  | A : \\Type0\n" +
+        "  | B1 : A -> Nat\n" +
         "}\n" +
         "\\class X2 {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B2 : A -> Nat\n" +
+        "  | A : \\Type0\n" +
+        "  | B2 : A -> Nat\n" +
         "}\n" +
         "\\view Y1 \\on X1 \\by A { B1 }\n" +
         "\\view Y2 \\on X2 \\by A { B2 }\n" +

@@ -84,7 +84,7 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void dynamicFromAbstractCall() {
     typeCheckClass(
         "\\function f => 0\n" +
-        "\\field h : f = 0\n", "", 1);
+        "| h : f = 0\n", "", 1);
   }
 
   @Test
@@ -216,8 +216,8 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void recordTest() {
     typeCheckClass(
         "\\class B {\n" +
-        "  \\field f : Nat -> \\Type0\n" +
-        "  \\field g : f 0\n" +
+        "  | f : Nat -> \\Type0\n" +
+        "  | g : f 0\n" +
         "}\n" +
         "\\function f (b : B) : b.f 0 => b.g");
   }
@@ -226,9 +226,9 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void innerRecordTest() {
     typeCheckClass(
         "\\class B {\n" +
-        "  \\field f : Nat -> \\Type0\n" +
+        "  | f : Nat -> \\Type0\n" +
         "  \\class A {\n" +
-        "    \\field g : f 0\n" +
+        "    | g : f 0\n" +
         "  }\n" +
         "}\n" +
         "\\function f (b : B) (a : b.A) : b.f 0 => a.g");
@@ -238,7 +238,7 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void constructorTest() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field x : Nat\n" +
+        "  | x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
         "}\n" +
         "\\function f (a : A) : a.D (a.x) (\\lam y => y) => a.con1 (path (\\lam _ => a.x))\n" +
@@ -249,7 +249,7 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void constructorWithParamsTest() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field x : Nat\n" +
+        "  | x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
         "}\n" +
         "\\function f (a : A) : a.D (a.x) (\\lam y => y) => (a.D (a.x) (\\lam y => y)).con1 (path (\\lam _ => a.x))\n" +
@@ -262,7 +262,7 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void constructorThisTest() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field x : Nat\n" +
+        "  | x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
         "  \\function f : D x (\\lam y => y) => con1 (path (\\lam _ => x))\n" +
         "  \\function g : D x (\\lam y => y) => con2 (path (\\lam _ => x))\n" +
@@ -277,7 +277,7 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void constructorWithParamsThisTest() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field x : Nat\n" +
+        "  | x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
         "  \\function f : D x (\\lam y => y) => (D x (\\lam y => y)).con1 (path (\\lam _ => x))\n" +
         "  \\function g => (D x (\\lam y => y)).con2 (path (\\lam _ => x))\n" +
@@ -291,9 +291,9 @@ public class ClassesTest extends TypeCheckingTestCase {
   @Test
   public void constructorIndicesThisTest() {
     typeCheckClass(
-        "\\field + : Nat -> Nat -> Nat\n" +
+        "| + : Nat -> Nat -> Nat\n" +
         "\\class A {\n" +
-        "  \\field x : Nat\n" +
+        "  | x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat -> Nat) => \\elim n\n" +
         "    | zero => con1 (f x x = f x x)\n" +
         "    | suc n => con2 (D n f) (f n x = f n x)\n" +
@@ -312,11 +312,11 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void fieldCallTest() {
     TypeCheckClassResult result = typeCheckClass(
         "\\class A {\n" +
-        "  \\field x : \\Type0\n" +
+        "  | x : \\Type0\n" +
         "}\n" +
         "\\class B {\n" +
-        "  \\field a : A\n" +
-        "  \\field y : a.x\n" +
+        "  | a : A\n" +
+        "  | y : a.x\n" +
         "}");
     ClassField xField = (ClassField) result.getDefinition("A.x");
     ClassField aField = (ClassField) result.getDefinition("B.a");
@@ -390,11 +390,11 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void fieldCallInClass() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field x : Nat\n" +
+        "  | x : Nat\n" +
         "}\n" +
         "\\class B {\n" +
-        "  \\field a : A\n" +
-        "  \\field y : a.x = a.x\n" +
+        "  | a : A\n" +
+        "  | y : a.x = a.x\n" +
         "}");
   }
 
@@ -402,12 +402,12 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void fieldCallInClass2() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field x : Nat\n" +
+        "  | x : Nat\n" +
         "}\n" +
         "\\class B {\n" +
-        "  \\field a : A\n" +
-        "  \\field y : a.x = a.x\n" +
-        "  \\field z : y = y\n" +
+        "  | a : A\n" +
+        "  | y : a.x = a.x\n" +
+        "  | z : y = y\n" +
         "}");
   }
 
@@ -415,11 +415,11 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void fieldCallInClass3() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field x : Nat\n" +
+        "  | x : Nat\n" +
         "}\n" +
         "\\class B {\n" +
-        "  \\field a : A\n" +
-        "  \\field y : path (\\lam _ => a.x) = path (\\lam _ => a.x)\n" +
+        "  | a : A\n" +
+        "  | y : path (\\lam _ => a.x) = path (\\lam _ => a.x)\n" +
         "}");
   }
 
@@ -427,10 +427,10 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void fieldCallWithArg0() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field x : Nat\n" +
+        "  | x : Nat\n" +
         "}\n" +
         "\\class B {\n" +
-        "  \\field a : A\n" +
+        "  | a : A\n" +
         "}\n" +
         "\\function y (b : B) => b.a.x");
   }
@@ -439,10 +439,10 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void fieldCallWithArg1() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field x : Nat\n" +
+        "  | x : Nat\n" +
         "}\n" +
         "\\class B {\n" +
-        "  \\field a : A\n" +
+        "  | a : A\n" +
         "}\n" +
         "\\function y (b : Nat -> B) => (b 0).a.x");
   }
@@ -451,10 +451,10 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void fieldCallWithArg2() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field x : Nat\n" +
+        "  | x : Nat\n" +
         "}\n" +
         "\\class B {\n" +
-        "  \\field a : Nat -> A\n" +
+        "  | a : Nat -> A\n" +
         "}\n" +
         "\\function y (b : B) => (b.a 1).x");
   }
@@ -463,10 +463,10 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void fieldCallWithArg3() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field x : Nat\n" +
+        "  | x : Nat\n" +
         "}\n" +
         "\\class B {\n" +
-        "  \\field a : Nat -> A\n" +
+        "  | a : Nat -> A\n" +
         "}\n" +
         "\\function y (b : Nat -> B) => ((b 0).a 1).x");
   }
@@ -491,7 +491,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "      \\function f => 0\n" +
         "    }\n" +
         "  }\n" +
-        "  \\field x : Nat\n" +
+        "  | x : Nat\n" +
         "}\n" +
         "\\function y (a : A) => a.B.C.f");
   }
@@ -505,7 +505,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "      \\function f => 0\n" +
         "    }\n" +
         "  }\n" +
-        "  \\field x : Nat\n" +
+        "  | x : Nat\n" +
         "}\n" +
         "\\function y (a : A) : \\Set0 => a.B.C");
   }
@@ -532,7 +532,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "      \\function f => 0\n" +
         "    }\n" +
         "  }\n" +
-        "  \\field x : Nat\n" +
+        "  | x : Nat\n" +
         "}\n" +
         "\\function y (a : A) : \\Set0 => a.B");
   }
@@ -593,11 +593,11 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void classPolyParams() {
     typeCheckClass(
         "\\class A {\n" +
-        "   \\field X : \\0-Type \\lp\n" +
+        "   | X : \\0-Type \\lp\n" +
         "   \\function f (x : \\0-Type \\lp) => x\n" +
         "   \\data D (x : \\0-Type \\lp)\n" +
         "   \\class B {\n" +
-        "       \\field Y : X -> \\0-Type \\lp\n" +
+        "       | Y : X -> \\0-Type \\lp\n" +
         "       \\function g : \\0-Type \\lp => X\n" +
         "   }\n" +
         "}");

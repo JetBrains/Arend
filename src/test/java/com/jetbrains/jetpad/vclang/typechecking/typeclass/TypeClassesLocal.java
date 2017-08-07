@@ -8,8 +8,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   public void inferVar() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> Nat\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> Nat\n" +
         "}\n" +
         "\\view X' \\on X \\by A { B }\n" +
         "\\function f (x : X') (a : x.A) => B a");
@@ -19,8 +19,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   public void inferVar2() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> Nat\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> Nat\n" +
         "}\n" +
         "\\view X' \\on X \\by A { B }\n" +
         "\\function f (A' : \\Type0) (x : X' { A => A' }) (a : A') => B a");
@@ -30,8 +30,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   public void inferVarGlobalType() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> Nat\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> Nat\n" +
         "}\n" +
         "\\view X' \\on X \\by A { B }\n" +
         "\\function f (x : X' { A => Nat }) => B 0");
@@ -41,8 +41,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   public void inferVarRenamedView() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> Nat\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> Nat\n" +
         "}\n" +
         "\\view Y \\on X \\by A { B }\n" +
         "\\function f (x : Y) (a : x.A) => B a");
@@ -52,8 +52,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   public void inferVarRenamedView2() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> Nat\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> Nat\n" +
         "}\n" +
         "\\view Y \\on X \\by A { B }\n" +
         "\\function f (A' : \\Type0) (x : Y { A => A' }) (a : A') => B a");
@@ -63,8 +63,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   public void inferVarRenamedViewError() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> Nat\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> Nat\n" +
         "}\n" +
         "\\view Y \\on X \\by A { B }\n" +
         "\\function f (x : X) (a : x.A) => B a", 1);
@@ -74,8 +74,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   public void inferVarRenamedViewError2() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> Nat\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> Nat\n" +
         "}\n" +
         "\\view Y \\on X \\by A { B }\n" +
         "\\function f (A' : \\Type0) (x : X { A => A' }) (a : A') => B a", 1);
@@ -85,8 +85,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   public void inferVarDuplicateTele() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> Nat\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> Nat\n" +
         "}\n" +
         "\\view X' \\on X \\by A { B }\n" +
         "\\function f (x y : X') (a : y.A) => B a");
@@ -96,8 +96,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   public void inferVarDuplicateTele2() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> Nat\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> Nat\n" +
         "}\n" +
         "\\view X' \\on X \\by A { B }\n" +
         "\\function f (A : \\Type0) (x y : X' { A => A }) (a : y.A) => 0", 1);
@@ -107,8 +107,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   public void inferVarDuplicate() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> Nat\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> Nat\n" +
         "}\n" +
         "\\view X' \\on X \\by A { B }\n" +
         "\\function f (x : X') (a : x.A) {y : X' { A => x.A } } => 0", 1);
@@ -118,8 +118,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   public void inferVarDuplicate2() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> Nat\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> Nat\n" +
         "}\n" +
         "\\view X' \\on X \\by A { B }\n" +
         "\\function f (A' : \\Type0) (x : X' { A => A' }) {y : X' { A => A' } } (a : A') => 0", 1);
@@ -129,8 +129,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   public void inferVarDifferent() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> Nat\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> Nat\n" +
         "}\n" +
         "\\view X' \\on X \\by A { B }\n" +
         "\\view Y \\on X \\by A { B => C }\n" +
@@ -141,8 +141,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   public void inferVar3() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> Nat\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> Nat\n" +
         "}\n" +
         "\\view X' \\on X \\by A { B }\n" +
         "\\function f (A' : \\Type0) {y : X' { A => A' -> A' } } (a : A') (x : X' { A => A' }) => B a");
@@ -152,8 +152,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   public void inferVarFromType() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field a : A\n" +
+        "  | A : \\Type0\n" +
+        "  | a : A\n" +
         "}\n" +
         "\\view X' \\on X \\by A { a }\n" +
         "\\function f (x : X') : x.A => a");
@@ -163,8 +163,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   public void inferVarDuplicateFromType() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field a : A\n" +
+        "  | A : \\Type0\n" +
+        "  | a : A\n" +
         "}\n" +
         "\\view X' \\on X \\by A { a }\n" +
         "\\function f (x : X') (y : X' { A => x.A }) : x.A => a", 1);
@@ -174,8 +174,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   public void inferVarFromType2() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field a : A\n" +
+        "  | A : \\Type0\n" +
+        "  | a : A\n" +
         "}\n" +
         "\\view X' \\on X \\by A { a }\n" +
         "\\function f (A' : \\Type0) (x : X' { A => A' }) : A' => a");
@@ -185,8 +185,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   public void inferVarDuplicateFromType2() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field a : A\n" +
+        "  | A : \\Type0\n" +
+        "  | a : A\n" +
         "}\n" +
         "\\view X' \\on X \\by A { a }\n" +
         "\\function f (A' : \\Type0) (y : X' { A => A' }) (x : X' { A => A' }) : A' => a", 1);
@@ -196,8 +196,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   public void inferVarFromType3() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field a : A\n" +
+        "  | A : \\Type0\n" +
+        "  | a : A\n" +
         "}\n" +
         "\\view X' \\on X \\by A { a }\n" +
         "\\function f (x : X') (y : X' { A => x.A -> x.A }) : x.A -> x.A => a");
@@ -207,8 +207,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   public void transitiveInferLocal() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> \\Type0\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> \\Type0\n" +
         "}\n" +
         "\\view Y \\on X \\by A { B }\n" +
         "\\view Z \\on X \\by A { B => C }\n" +
@@ -220,8 +220,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   public void transitiveInferLocal2() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> \\Type0\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> \\Type0\n" +
         "}\n" +
         "\\view Y \\on X \\by A { B }\n" +
         "\\view Z \\on X \\by A { B => C }\n" +
@@ -233,8 +233,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   public void transitiveLocalDuplicate() {
     typeCheckClass(
         "\\class X {\n" +
-        "  \\field A : \\Type0\n" +
-        "  \\field B : A -> \\Type0\n" +
+        "  | A : \\Type0\n" +
+        "  | B : A -> \\Type0\n" +
         "}\n" +
         "\\view Y \\on X \\by A { B }\n" +
         "\\view Z \\on X \\by A { B => C }\n" +

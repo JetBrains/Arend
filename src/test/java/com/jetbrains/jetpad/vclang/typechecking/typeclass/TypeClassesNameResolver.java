@@ -13,8 +13,8 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
   public void resolveNames() {
     resolveNamesClass(
         "\\class X {\n" +
-        "  \\field T : \\Type0\n" +
-        "  \\field f : \\Type0\n" +
+        "  | T : \\Type0\n" +
+        "  | f : \\Type0\n" +
         "}\n" +
         "\\view X' \\on X \\by T { f }\n" +
         "\\function g => f");
@@ -24,8 +24,8 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
   public void resolveNames2() {
     resolveNamesClass(
         "\\class X {\n" +
-        "  \\field T : \\Type0\n" +
-        "  \\field f : \\Type0\n" +
+        "  | T : \\Type0\n" +
+        "  | f : \\Type0\n" +
         "}\n" +
         "\\view X' \\on X \\by T { f }\n" +
         "\\function g => f");
@@ -35,9 +35,9 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
   public void resolveNamesNonImplicit() {
     resolveNamesClass(
         "\\class X {\n" +
-        "  \\field T : \\Type0\n" +
-        "  \\field f : \\Type0\n" +
-        "  \\field h : \\Type0\n" +
+        "  | T : \\Type0\n" +
+        "  | f : \\Type0\n" +
+        "  | h : \\Type0\n" +
         "}\n" +
         "\\view X' \\on X \\by T { f }\n" +
         "\\function g => h", 1);
@@ -47,13 +47,13 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
   public void resolveNamesDuplicate() {
     resolveNamesClass(
         "\\class X {\n" +
-        "  \\field T : \\Type0\n" +
-        "  \\field f : \\Type0\n" +
+        "  | T : \\Type0\n" +
+        "  | f : \\Type0\n" +
         "}\n" +
         "\\view X' \\on X \\by T { f }\n" +
         "\\class Y {\n" +
-        "  \\field T : \\Type0\n" +
-        "  \\field g : \\Type0 -> \\Type0\n" +
+        "  | T : \\Type0\n" +
+        "  | g : \\Type0 -> \\Type0\n" +
         "}\n" +
         "\\view Y' \\on Y \\by T { g => f }", 1);
   }
@@ -63,8 +63,8 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
     resolveNamesClass(
         "\\class X \\where {\n" +
         "  \\class Z {\n" +
-        "    \\field T : \\Type0\n" +
-        "    \\field f : \\Type0\n" +
+        "    | T : \\Type0\n" +
+        "    | f : \\Type0\n" +
         "  }\n" +
         "  \\view Z' \\on Z \\by T { f }\n" +
         "}\n" +
@@ -76,14 +76,14 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
     resolveNamesClass(
         "\\class X \\where {\n" +
         "  \\class Z {\n" +
-        "    \\field T : \\Type0\n" +
-        "    \\field f : \\Type0\n" +
+        "    | T : \\Type0\n" +
+        "    | f : \\Type0\n" +
         "  }\n" +
         "  \\view Z' \\on Z \\by T { f }\n" +
         "}\n" +
         "\\class Y {\n" +
-        "  \\field T : \\Type0\n" +
-        "  \\field z : X.Z\n" +
+        "  | T : \\Type0\n" +
+        "  | z : X.Z\n" +
         "}\n" +
         "\\view Y' \\on Y \\by T { z }\n" +
         "\\function g => f", 1);
@@ -93,8 +93,8 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
   public void resolveClassExt() {
     resolveNamesClass(
         "\\class X {\n" +
-        "  \\field T : \\Type1\n" +
-        "  \\field f : \\Type1\n" +
+        "  | T : \\Type1\n" +
+        "  | f : \\Type1\n" +
         "}\n" +
         "\\view Y \\on X \\by T { f => g }\n" +
         "\\function h => \\new Y { T => \\Type0 | g => \\Type0 }");
@@ -104,8 +104,8 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
   public void resolveClassExtSameName() {
     resolveNamesClass(
         "\\class X {\n" +
-        "  \\field T : \\Type1\n" +
-        "  \\field f : \\Type1\n" +
+        "  | T : \\Type1\n" +
+        "  | f : \\Type1\n" +
         "}\n" +
         "\\view X' \\on X \\by T { f => g }\n" +
         "\\function h => \\new X' { T => \\Type0 | g => \\Type0 }");
@@ -115,8 +115,8 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
   public void resolveClassExtSameName2() {
     resolveNamesClass(
         "\\class X {\n" +
-        "  \\field T : \\Type1\n" +
-        "  \\field f : \\Type1\n" +
+        "  | T : \\Type1\n" +
+        "  | f : \\Type1\n" +
         "}\n" +
         "\\view X' \\on X \\by T { f => g }\n" +
         "\\function h => \\new X' { T => \\Type0 | f => \\Type0 }", 1);
@@ -126,12 +126,12 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
   public void duplicateClassView() {
     resolveNamesClass(
         "\\class X {\n" +
-        "  \\field T : \\Type0\n" +
-        "  \\field f : \\Type0\n" +
+        "  | T : \\Type0\n" +
+        "  | f : \\Type0\n" +
         "}\n" +
         "\\class Y {\n" +
-        "  \\field T : \\Type0\n" +
-        "  \\field f : \\Type0\n" +
+        "  | T : \\Type0\n" +
+        "  | f : \\Type0\n" +
         "}\n" +
         "\\view X' \\on X \\by T { f }\n" +
         "\\view Y' \\on Y \\by T { f }", 1);
@@ -141,8 +141,8 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
   public void duplicateClassViewFieldName() {
     resolveNamesClass(
         "\\class X {\n" +
-        "  \\field T : \\Type0\n" +
-        "  \\field f : \\Type0\n" +
+        "  | T : \\Type0\n" +
+        "  | f : \\Type0\n" +
         "}\n" +
         "\\function f => 0\n" +
         "\\view X' \\on X \\by T { f }", 1);
@@ -157,8 +157,8 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
   public void instanceWithoutView() {
     resolveNamesClass(
       "\\class X {\n" +
-      "  \\field A : \\Type0\n" +
-      "  \\field B : A -> \\Type0\n" +
+      "  | A : \\Type0\n" +
+      "  | B : A -> \\Type0\n" +
       "}\n" +
       "\\data D\n" +
       "\\instance D-X => \\new X { A => D | B => \\lam n => D }", 1);
@@ -168,8 +168,8 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
   public void instanceNotView() {
     resolveNamesClass(
       "\\class X {\n" +
-      "  \\field A : \\Type0\n" +
-      "  \\field B : A -> \\Type0\n" +
+      "  | A : \\Type0\n" +
+      "  | B : A -> \\Type0\n" +
       "}\n" +
       "\\view X' \\on X \\by A { B }\n" +
       "\\data D\n" +

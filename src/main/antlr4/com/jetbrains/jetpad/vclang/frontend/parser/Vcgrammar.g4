@@ -12,13 +12,16 @@ hidingOpt : '\\hiding'  # withHiding
 
 nsCmdRoot : MODULE_PATH | id;
 
-definition  : '\\function' precedence id tele* (':' expr)? functionBody where?                                    # defFunction
-            | '\\field' precedence id ':' expr                                                                    # defAbstract
-            | '\\implement' id '=>' expr                                                                          # defImplement
-            | isTruncated '\\data' precedence id tele* (':' expr)? dataBody                                       # defData
-            | '\\class' id tele* ('\\extends' atomFieldsAcc (',' atomFieldsAcc)*)? ('{' statement* '}')? where?   # defClass
-            | '\\view' id '\\on' expr '\\by' id '{' classViewField* '}'                                           # defClassView
-            | defaultInst '\\instance' id tele* '=>' expr                                                         # defInstance
+classStat : '|' precedence id ':' expr  # classField
+          | '|' id '=>' expr            # classImplement
+          | statement                   # classStatement
+          ;
+
+definition  : '\\function' precedence id tele* (':' expr)? functionBody where?                                  # defFunction
+            | isTruncated '\\data' precedence id tele* (':' expr)? dataBody                                     # defData
+            | '\\class' id tele* ('\\extends' atomFieldsAcc (',' atomFieldsAcc)*)? ('{' classStat* '}')? where? # defClass
+            | '\\view' id '\\on' expr '\\by' id '{' classViewField* '}'                                         # defClassView
+            | defaultInst '\\instance' id tele* '=>' expr                                                       # defInstance
             ;
 
 functionBody  : '=>' expr     # withoutElim
@@ -118,8 +121,8 @@ maybeNew :                              # noNew
          | '\\new'                      # withNew
          ;
 
-fieldAcc : id                       # classField
-         | NUMBER                   # sigmaField
+fieldAcc : id                       # classFieldAcc
+         | NUMBER                   # sigmaFieldAcc
          ;
 
 atom  : literal                         # atomLiteral

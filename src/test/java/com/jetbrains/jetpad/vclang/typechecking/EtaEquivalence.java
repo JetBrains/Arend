@@ -16,7 +16,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
   @Test
   public void classesEq() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\class Foo { \\field foo : Nat \\field bar : Nat }\n" +
+        "\\class Foo { | foo : Nat | bar : Nat }\n" +
         "\\function f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
     assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));
     assertTrue(result.getDefinition("f") instanceof FunctionDefinition);
@@ -27,7 +27,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
   @Test
   public void classesGe() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\class Foo { \\field foo : Nat \\field bar : Nat }\n" +
+        "\\class Foo { | foo : Nat | bar : Nat }\n" +
         "\\function f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
     assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));
     assertTrue(result.getDefinition("f") instanceof FunctionDefinition);
@@ -38,7 +38,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
   @Test
   public void classesLe() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\class Foo { \\field foo : Nat \\field bar : Nat }\n" +
+        "\\class Foo { | foo : Nat | bar : Nat }\n" +
         "\\function f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
     assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));
     assertTrue(result.getDefinition("f") instanceof FunctionDefinition);
@@ -88,21 +88,21 @@ public class EtaEquivalence extends TypeCheckingTestCase {
   @Test
   public void emptyClass3() {
     typeCheckClass(
-      "\\class C { \\field n : Nat }\n" +
+      "\\class C { | n : Nat }\n" +
       "\\function f (x y : C { n => 0 }) : x = y => path (\\lam _ => x)");
   }
 
   @Test
   public void emptyClass4a() {
     typeCheckClass(
-      "\\class C { \\field n : Nat }\n" +
+      "\\class C { | n : Nat }\n" +
       "\\function f (x : C { n => 0 }) (y : C) : x = y => path (\\lam _ => x)", 1);
   }
 
   @Test
   public void emptyClass4b() {
     typeCheckClass(
-      "\\class C { \\field n : Nat }\n" +
+      "\\class C { | n : Nat }\n" +
       "\\function f (x : C) (y : C { n => 0 }) : x = y => path (\\lam _ => x)", 1);
   }
 }

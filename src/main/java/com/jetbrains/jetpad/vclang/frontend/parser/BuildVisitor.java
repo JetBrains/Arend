@@ -211,8 +211,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       path.add(visitId(ctx.nsCmdRoot().id()));
     }
     for (FieldAccContext fieldAccContext : ctx.fieldAcc()) {
-      if (fieldAccContext instanceof ClassFieldContext) {
-        path.add(visitId(((ClassFieldContext) fieldAccContext).id()));
+      if (fieldAccContext instanceof ClassFieldAccContext) {
+        path.add(visitId(((ClassFieldAccContext) fieldAccContext).id()));
       } else {
         myErrorReporter.report(new ParserError(tokenPosition(fieldAccContext.getStart()), "Expected a name"));
       }
@@ -343,7 +343,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.ClassField visitDefAbstract(DefAbstractContext ctx) {
+  public Concrete.ClassField visitClassField(ClassFieldContext ctx) {
     return new Concrete.ClassField(tokenPosition(ctx.getStart()), visitId(ctx.id()), visitPrecedence(ctx.precedence()), visitExpr(ctx.expr()));
   }
 
@@ -521,9 +521,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     myErrorReporter.report(new ParserError(position, "This definition is not allowed here"));
   }
 
-  private List<Concrete.Definition> visitInstanceStatements(List<StatementContext> ctx, List<Concrete.ClassField> fields, List<Concrete.Implementation> implementations) {
+  private List<Concrete.Definition> visitInstanceStatements(List<ClassStatContext> ctx, List<Concrete.ClassField> fields, List<Concrete.Implementation> implementations) {
     List<Concrete.Definition> definitions = new ArrayList<>(ctx.size());
-    for (StatementContext statementCtx : ctx) {
+    for (ClassStatContext statementCtx : ctx) {
       if (statementCtx == null) {
         continue;
       }
@@ -531,27 +531,33 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       try {
         Concrete.SourceNode sourceNode = (Concrete.SourceNode) visit(statementCtx);
         if (sourceNode != null) {
+          Concrete.Definition definition;
+          if (sourceNode instanceof Concrete.Definition) {
+            definition = (Concrete.Definition) sourceNode;
+          } else
           if (sourceNode instanceof Concrete.DefineStatement) {
-            Concrete.Definition definition = ((Concrete.DefineStatement) sourceNode).getDefinition();
-            if (definition instanceof Concrete.ClassField) {
-              if (fields != null) {
-                fields.add((Concrete.ClassField) definition);
-              } else {
-                misplacedDefinitionError(definition.getPosition());
-              }
-            } else if (definition instanceof Concrete.Implementation) {
-              if (implementations != null) {
-                implementations.add((Concrete.Implementation) definition);
-              } else {
-                misplacedDefinitionError(definition.getPosition());
-              }
-            } else if (definition instanceof Concrete.FunctionDefinition || definition instanceof Concrete.DataDefinition || definition instanceof Concrete.ClassDefinition) {
-              definitions.add(definition);
+            definition = ((Concrete.DefineStatement) sourceNode).getDefinition();
+          } else {
+            misplacedDefinitionError(sourceNode.getPosition());
+            continue;
+          }
+
+          if (definition instanceof Concrete.ClassField) {
+            if (fields != null) {
+              fields.add((Concrete.ClassField) definition);
             } else {
               misplacedDefinitionError(definition.getPosition());
             }
+          } else if (definition instanceof Concrete.Implementation) {
+            if (implementations != null) {
+              implementations.add((Concrete.Implementation) definition);
+            } else {
+              misplacedDefinitionError(definition.getPosition());
+            }
+          } else if (definition instanceof Concrete.FunctionDefinition || definition instanceof Concrete.DataDefinition || definition instanceof Concrete.ClassDefinition) {
+            definitions.add(definition);
           } else {
-            misplacedDefinitionError(sourceNode.getPosition());
+            misplacedDefinitionError(definition.getPosition());
           }
         }
       } catch (ParseException ignored) {
@@ -562,6 +568,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
+  public Concrete.Statement visitClassStatement(ClassStatementContext ctx) {
+    return (Concrete.Statement) visit(ctx.statement());
+  }
+
+  @Override
   public Concrete.ClassDefinition visitDefClass(DefClassContext ctx) {
     List<Concrete.TypeParameter> polyParameters = visitTeles(ctx.tele());
     List<Concrete.SuperClass> superClasses = new ArrayList<>(ctx.atomFieldsAcc().size());
@@ -569,9 +580,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<Concrete.Implementation> implementations = new ArrayList<>();
     List<Concrete.Statement> globalStatements = visitWhere(ctx.where());
     List<Concrete.Definition> instanceDefinitions =
-        ctx.statement().isEmpty() ?
+        ctx.classStat().isEmpty() ?
         Collections.emptyList() :
-        visitInstanceStatements(ctx.statement(), fields, implementations);
+        visitInstanceStatements(ctx.classStat(), fields, implementations);
     for (AtomFieldsAccContext exprCtx : ctx.atomFieldsAcc()) {
       superClasses.add(new Concrete.SuperClass(tokenPosition(exprCtx.getStart()), visitAtomFieldsAcc(exprCtx)));
     }
@@ -596,8 +607,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.Implementation visitDefImplement(DefImplementContext ctx) {
-    return new Concrete.Implementation(tokenPosition(ctx.getStart()), visitId(ctx.id()), visitExpr(ctx.expr()));
+  public Concrete.Implementation visitClassImplement(ClassImplementContext ctx) {
+    return new Concrete.Implementation(tokenPosition(ctx.start), visitId(ctx.id()), visitExpr(ctx.expr()));
   }
 
   @Override
@@ -994,11 +1005,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.Expression visitAtomFieldsAcc(AtomFieldsAccContext ctx) {
     Concrete.Expression expression = visitExpr(ctx.atom());
     for (FieldAccContext fieldAccContext : ctx.fieldAcc()) {
-      if (fieldAccContext instanceof ClassFieldContext) {
-        expression = new Concrete.ReferenceExpression(tokenPosition(fieldAccContext.getStart()), expression, visitId(((ClassFieldContext) fieldAccContext).id()));
+      if (fieldAccContext instanceof ClassFieldAccContext) {
+        expression = new Concrete.ReferenceExpression(tokenPosition(fieldAccContext.getStart()), expression, visitId(((ClassFieldAccContext) fieldAccContext).id()));
       } else
-      if (fieldAccContext instanceof SigmaFieldContext) {
-        expression = new Concrete.ProjExpression(tokenPosition(fieldAccContext.getStart()), expression, Integer.parseInt(((SigmaFieldContext) fieldAccContext).NUMBER().getText()) - 1);
+      if (fieldAccContext instanceof SigmaFieldAccContext) {
+        expression = new Concrete.ProjExpression(tokenPosition(fieldAccContext.getStart()), expression, Integer.parseInt(((SigmaFieldAccContext) fieldAccContext).NUMBER().getText()) - 1);
       } else {
         throw new IllegalStateException();
       }

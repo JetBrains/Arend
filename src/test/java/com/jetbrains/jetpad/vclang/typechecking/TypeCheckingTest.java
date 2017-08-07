@@ -120,8 +120,8 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   public void definitionsWithErrors() {
     resolveNamesClass(
         "\\class C {\n" +
-        "  \\field A : X\n" +
-        "  \\field a : (\\lam (x : Nat) => Nat) A\n" +
+        "  | A : X\n" +
+        "  | a : (\\lam (x : Nat) => Nat) A\n" +
         "}", 1);
   }
 
