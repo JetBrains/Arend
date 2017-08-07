@@ -12,7 +12,6 @@ import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -126,20 +125,20 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     if (expr2.isInstance(LamExpression.class)) {
       ok = visitLam(expr2.cast(LamExpression.class), expr1, false);
     } else
-    if (expr2.isInstance(NewExpression.class)) {
-      ok = visitNew(expr2.cast(NewExpression.class), expr1, false);
-    } else
     if (expr2.isInstance(TupleExpression.class)) {
       ok = visitTuple(expr2.cast(TupleExpression.class), expr1, false);
     } else {
       Expression type1 = expr1.getType();
       if (type1 != null && type1.isInstance(ClassCallExpression.class) && type1.cast(ClassCallExpression.class).isUnit()) {
-        Expression type2 = expr2.getType();
+        ok = compareUnit(type1.cast(ClassCallExpression.class), expr2, true);
+      } else {
+        Expression type2 = null; // expr2.getType(); // TODO[classes]
         if (type2 != null && type2.isInstance(ClassCallExpression.class) && type2.cast(ClassCallExpression.class).isUnit()) {
-          return true;
+          ok = compareUnit(type2.cast(ClassCallExpression.class), expr1, false);
+        } else {
+          ok = expr1.accept(this, expr2);
         }
       }
-      ok = expr1.accept(this, expr2);
     }
     if (ok) {
       return true;
@@ -156,6 +155,26 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     }
 
     return myEquations.add(expr1, expr2.subst(getSubstitution()), origCMP, variable.getSourceNode(), variable);
+  }
+
+  private Boolean compareUnit(ClassCallExpression type1, Expression expr2, boolean correctOrder) {
+    for (Map.Entry<ClassField, Expression> entry : type1.getImplementedHere().entrySet()) {
+      if (correctOrder ? !compare(entry.getValue(), FieldCall(entry.getKey(), expr2)) : !compare(FieldCall(entry.getKey(), expr2), entry.getValue())) {
+        return false;
+      }
+    }
+
+    if (expr2.isInstance(NewExpression.class) && expr2.cast(NewExpression.class).getType().getDefinition().isSubClassOf(type1.getDefinition())) {
+      return true;
+    }
+
+    for (Map.Entry<ClassField, FieldSet.Implementation> entry : type1.getDefinition().getFieldSet().getImplemented()) {
+      if (correctOrder ? !compare(entry.getValue().term, FieldCall(entry.getKey(), expr2)) : !compare(FieldCall(entry.getKey(), expr2), entry.getValue().term)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   private boolean checkIsInferVar(Expression fun, Expression expr1, Expression expr2) {
@@ -289,16 +308,16 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     return compare(fieldCall1.getExpression(), fieldCall2.getExpression());
   }
 
-  private boolean checkSubclassImpl(ReadonlyFieldSet fieldSet1, ClassCallExpression classCall2) {
+  private boolean checkSubclassImpl(ClassCallExpression classCall1, ClassCallExpression classCall2) {
     Equations.CMP origCMP = myCMP;
     myCMP = Equations.CMP.EQ;
-    for (Map.Entry<ClassField, FieldSet.Implementation> entry : classCall2.getImplementedHere()) {
-      FieldSet.Implementation impl1 = fieldSet1.getImplementation(entry.getKey());
+    for (Map.Entry<ClassField, Expression> entry : classCall2.getImplementedHere().entrySet()) {
+      Expression impl1 = classCall1.getImplementationHere(entry.getKey());
       if (impl1 == null) {
         myCMP = origCMP;
         return false;
       }
-      if (!compare(impl1.term, entry.getValue().term)) {
+      if (!compare(impl1, entry.getValue())) {
         myCMP = origCMP;
         return false;
       }
@@ -320,10 +339,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       return false;
     }
 
-    ReadonlyFieldSet fieldSet1 = expr1.getFieldSet();
-    ReadonlyFieldSet fieldSet2 = classCall2.getFieldSet();
-    boolean implAllOf1Test = myCMP.equals(Equations.CMP.LE) || checkSubclassImpl(fieldSet2, expr1);
-    boolean implAllOf2Test = myCMP.equals(Equations.CMP.GE) || checkSubclassImpl(fieldSet1, classCall2);
+    boolean implAllOf1Test = myCMP.equals(Equations.CMP.LE) || checkSubclassImpl(classCall2, expr1);
+    boolean implAllOf2Test = myCMP.equals(Equations.CMP.GE) || checkSubclassImpl(expr1, classCall2);
     return implAllOf1Test && implAllOf2Test;
   }
 
@@ -497,38 +514,9 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     return expr1.getField() == proj2.getField() && compare(expr1.getExpression(), proj2.getExpression());
   }
 
-  private Boolean visitNew(NewExpression expr1, Expression expr2, boolean correctOrder) {
-    if (expr2.isInstance(NewExpression.class)) {
-      return correctOrder ? compare(expr1.getExpression(), expr2.cast(NewExpression.class).getExpression()) : compare(expr2.cast(NewExpression.class).getExpression(), expr1.getExpression());
-    } else {
-      return compareNewEta(expr1.cast(NewExpression.class), expr2, correctOrder);
-    }
-  }
-
   @Override
   public Boolean visitNew(NewExpression expr1, Expression expr2) {
-    return visitNew(expr1, expr2, true);
-  }
-
-  private boolean compareNewEta(NewExpression expr1, Expression expr2, boolean correctOrder) {
-    ClassCallExpression classCall = expr1.getExpression().checkedCast(ClassCallExpression.class);
-    if (classCall == null) {
-      return false;
-    }
-
-    ClassCallExpression classCall2 = expr2.getType().normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class);
-    if (classCall2 == null) {
-      return false;
-    }
-
-    for (Map.Entry<ClassField, FieldSet.Implementation> entry : classCall.getFieldSet().getImplemented()) {
-      FieldSet.Implementation impl2 = classCall2.getFieldSet().getImplementation(entry.getKey());
-      if (correctOrder ? !compare(entry.getValue().term, impl2 != null ? impl2.term : FieldCall(entry.getKey(), expr2)) : !compare(impl2 != null ? impl2.term : FieldCall(entry.getKey(), expr2), entry.getValue().term)) {
-        return false;
-      }
-    }
-
-    return true;
+    return false;
   }
 
   @Override

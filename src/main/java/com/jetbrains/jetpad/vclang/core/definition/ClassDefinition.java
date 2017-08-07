@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
@@ -31,7 +30,7 @@ public class ClassDefinition extends Definition {
     return (Abstract.ClassDefinition) super.getAbstractDefinition();
   }
 
-  public ReadonlyFieldSet getFieldSet() {
+  public FieldSet getFieldSet() {
     return myFieldSet;
   }
 
@@ -40,7 +39,7 @@ public class ClassDefinition extends Definition {
   }
 
   public void updateSorts() {
-    myFieldSet.updateSorts(new ClassCallExpression(this, Sort.STD, myFieldSet));
+    myFieldSet.updateSorts(new ClassCallExpression(this, Sort.STD, Collections.emptyMap(), myFieldSet.getSort()));
   }
 
   public Sort getSort() {
@@ -73,16 +72,7 @@ public class ClassDefinition extends Definition {
 
   @Override
   public ClassCallExpression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> args) {
-    FieldSet fieldSet;
-    if (thisExpr != null) {
-      fieldSet = new FieldSet(myFieldSet);
-      boolean success = fieldSet.implementField(myEnclosingThisField, new FieldSet.Implementation(null, thisExpr));
-      assert success;
-    } else {
-      fieldSet = myFieldSet;
-    }
-
-    return new ClassCallExpression(this, sortArgument, fieldSet);
+    return new ClassCallExpression(this, sortArgument, thisExpr == null ? Collections.emptyMap() : Collections.singletonMap(myEnclosingThisField, thisExpr), myFieldSet.getSort());
   }
 
   @Override

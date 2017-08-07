@@ -10,7 +10,6 @@ import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.factory.AbstractExpressionFactory;
-import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.*;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
@@ -300,14 +299,14 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitClassCall(ClassCallExpression expr, Void params) {
-    Collection<Map.Entry<ClassField, FieldSet.Implementation>> implHere = expr.getImplementedHere();
+    Collection<Map.Entry<ClassField, Expression>> implHere = expr.getImplementedHere().entrySet();
     Abstract.Expression enclExpr = null;
     List<Abstract.ClassFieldImpl> statements = new ArrayList<>(implHere.size());
-    for (Map.Entry<ClassField, FieldSet.Implementation> entry : implHere) {
+    for (Map.Entry<ClassField, Expression> entry : implHere) {
       if (entry.getKey().equals(expr.getDefinition().getEnclosingThisField())) {
-        enclExpr = entry.getValue().term.accept(this, params);
+        enclExpr = entry.getValue().accept(this, params);
       } else {
-        statements.add(myFactory.makeImplementStatement(entry.getKey(), entry.getValue().term.accept(this, params)));
+        statements.add(myFactory.makeImplementStatement(entry.getKey(), entry.getValue().accept(this, params)));
       }
     }
 

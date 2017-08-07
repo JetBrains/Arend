@@ -14,7 +14,6 @@ import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
@@ -155,7 +154,7 @@ class DefinitionSerialization {
 
   // FieldSet
 
-  ExpressionProtos.FieldSet writeFieldSet(ReadonlyFieldSet fieldSet) {
+  ExpressionProtos.FieldSet writeFieldSet(FieldSet fieldSet) {
     ExpressionProtos.FieldSet.Builder builder = ExpressionProtos.FieldSet.newBuilder();
     for (ClassField classField : fieldSet.getFields()) {
       builder.addClassFieldRef(myCalltargetIndexProvider.getDefIndex(classField));
@@ -257,7 +256,10 @@ class DefinitionSerialization {
       builder.setClassRef(myCalltargetIndexProvider.getDefIndex(expr.getDefinition()));
       builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
       builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
-      builder.setFieldSet(writeFieldSet(expr.getFieldSet()));
+      for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
+        builder.putFieldSet(myCalltargetIndexProvider.getDefIndex(entry.getKey()), writeExpr(entry.getValue()));
+      }
+      builder.setSort(writeSort(expr.getSort()));
       return builder.build();
     }
 

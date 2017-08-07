@@ -1,12 +1,12 @@
 package com.jetbrains.jetpad.vclang.core.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
@@ -63,7 +63,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
     if (expr.getExpression().isInstance(NewExpression.class)) {
-      return expr.getExpression().cast(NewExpression.class).getExpression().getFieldSet().getImplementation(expr.getDefinition()).term.accept(this, null);
+      return expr.getExpression().cast(NewExpression.class).getExpression().getImplementation(expr.getDefinition(), expr.getExpression()).accept(this, null);
     } else {
       return ExpressionFactory.FieldCall(expr.getDefinition(), expr.getExpression().accept(this, null));
     }
@@ -71,8 +71,10 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
-    FieldSet fieldSet = FieldSet.applyVisitorToImplemented(expr.getFieldSet(), expr.getDefinition().getFieldSet(), this, null);
-    return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), fieldSet);
+    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
+      entry.setValue(entry.getValue().accept(this, null));
+    }
+    return expr;
   }
 
   @Override

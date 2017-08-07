@@ -9,7 +9,6 @@ import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -195,8 +194,8 @@ public class CollectFreeVariablesVisitor extends BaseExpressionVisitor<Set<Varia
   @Override
   public Void visitClassCall(ClassCallExpression expr, Set<Variable> variables) {
     visitDefCall(expr, variables);
-    for (Map.Entry<ClassField, FieldSet.Implementation> entry : expr.getImplementedHere()) {
-      entry.getValue().term.accept(this, variables);
+    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
+      entry.getValue().accept(this, variables);
     }
     return null;
   }

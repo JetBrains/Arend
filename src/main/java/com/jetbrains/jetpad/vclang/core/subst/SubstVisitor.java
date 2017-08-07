@@ -2,13 +2,13 @@ package com.jetbrains.jetpad.vclang.core.subst;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.BaseExpressionVisitor;
-import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -60,8 +60,11 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
-    FieldSet fieldSet = FieldSet.applyVisitorToImplemented(expr.getFieldSet(), expr.getDefinition().getFieldSet(), this, null);
-    return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), fieldSet);
+    Map<ClassField, Expression> fieldSet = new HashMap<>();
+    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
+      fieldSet.put(entry.getKey(), entry.getValue().accept(this, null));
+    }
+    return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), fieldSet, expr.getSort().subst(myLevelSubstitution));
   }
 
   @Override

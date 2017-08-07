@@ -57,7 +57,7 @@ public abstract class ProcessDefCallsVisitor<P> extends BaseExpressionVisitor<P,
 
   @Override
   public Boolean visitClassCall(ClassCallExpression expression, P param) {
-    return visitDefCall(expression, param) || expression.getFieldSet().getImplemented().stream().anyMatch(entry -> entry.getValue().term.accept(this, param));
+    return visitDefCall(expression, param) || expression.getImplementedHere().values().stream().anyMatch(expr -> expr.accept(this, param));
   }
 
   private boolean visitDependentLink(DependentLink link, P param) {

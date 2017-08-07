@@ -4,8 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVaria
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 public class InferenceReferenceExpression extends Expression {
@@ -19,12 +17,11 @@ public class InferenceReferenceExpression extends Expression {
     Expression type = myVar.getType().normalize(NormalizeVisitor.Mode.WHNF);
     if (type.isInstance(ClassCallExpression.class)) {
       ClassCallExpression classCall = type.cast(ClassCallExpression.class);
-      ReadonlyFieldSet fieldSet = classCall.getFieldSet();
-      if (!fieldSet.getFields().isEmpty()) {
-        for (ClassField field : fieldSet.getFields()) {
-          FieldSet.Implementation impl = fieldSet.getImplementation(field);
+      if (!classCall.getDefinition().getFieldSet().getFields().isEmpty()) {
+        for (ClassField field : classCall.getDefinition().getFieldSet().getFields()) {
+          Expression impl = classCall.getImplementation(field, this);
           if (impl != null) {
-            equations.add(new FieldCallExpression(field, this), impl.term, Equations.CMP.EQ, myVar.getSourceNode(), myVar);
+            equations.add(new FieldCallExpression(field, this), impl, Equations.CMP.EQ, myVar.getSourceNode(), myVar);
           }
         }
         type = new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument());
@@ -40,10 +37,6 @@ public class InferenceReferenceExpression extends Expression {
 
   public InferenceVariable getVariable() {
     return mySubstExpression == null ? myVar : null;
-  }
-
-  public InferenceVariable getOriginalVariable() {
-    return myVar;
   }
 
   public Expression getSubstExpression() {

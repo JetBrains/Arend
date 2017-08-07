@@ -20,7 +20,6 @@ import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
@@ -1024,23 +1023,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       return null;
     }
     ClassCallExpression classCallExpr = normalizedBaseClassExpr.cast(ClassCallExpression.class);
-
     ClassDefinition baseClass = classCallExpr.getDefinition();
-    if (!baseClass.status().bodyIsOK()) {
-      LocalTypeCheckingError error = new HasErrors(baseClass.getAbstractDefinition(), expr);
-      expr.setWellTyped(myContext, new ErrorExpression(classCallExpr, error));
-      myErrorReporter.report(error);
-      return null;
-    }
 
-    FieldSet fieldSet = new FieldSet(baseClass.getSort());
-    ClassCallExpression resultClassCall = new ClassCallExpression(baseClass, classCallExpr.getSortArgument(), fieldSet);
-
-    fieldSet.addFieldsFrom(classCallExpr.getFieldSet());
-    for (Map.Entry<ClassField, FieldSet.Implementation> entry : classCallExpr.getFieldSet().getImplemented()) {
-      boolean ok = fieldSet.implementField(entry.getKey(), entry.getValue());
-      assert ok;
-    }
+    Map<ClassField, Expression> fieldSet = new HashMap<>(classCallExpr.getImplementedHere());
+    ClassCallExpression resultClassCall = new ClassCallExpression(baseClass, classCallExpr.getSortArgument(), fieldSet, Sort.PROP);
 
     Collection<? extends Abstract.ClassFieldImpl> statements = expr.getStatements();
     Map<ClassField, Abstract.ClassFieldImpl> classFieldMap = new HashMap<>();
@@ -1049,7 +1035,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     Abstract.SourceNode alreadyImplementedSourceNode = null;
     for (Abstract.ClassFieldImpl statement : statements) {
       ClassField field = (ClassField) myState.getTypechecked(statement.getImplementedField());
-      if (fieldSet.isImplemented(field) || classFieldMap.containsKey(field)) {
+      if (resultClassCall.isImplemented(field) || classFieldMap.containsKey(field)) {
         alreadyImplementedFields.add(field.getAbstractDefinition());
         alreadyImplementedSourceNode = statement;
       } else {
@@ -1064,14 +1050,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     if (!classFieldMap.isEmpty()) {
       List<Abstract.ClassField> notImplementedFields = new ArrayList<>();
       for (ClassField field : baseClass.getFieldSet().getFields()) {
-        if (fieldSet.isImplemented(field)) {
+        if (resultClassCall.isImplemented(field)) {
           continue;
         }
 
         Abstract.ClassFieldImpl impl = classFieldMap.get(field);
         if (impl != null) {
           if (notImplementedFields.isEmpty()) {
-            implementField(fieldSet, field, impl.getImplementation(), resultClassCall);
+            fieldSet.put(field, implementField(field, impl.getImplementation(), resultClassCall));
             classFieldMap.remove(field);
             if (classFieldMap.isEmpty()) {
               break;
@@ -1090,22 +1076,20 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
     DependentLink thisParam = ExpressionFactory.parameter("\\this", resultClassCall);
     List<Sort> sorts = new ArrayList<>();
-    for (ClassField field : fieldSet.getFields()) {
-      if (fieldSet.isImplemented(field)) continue;
+    for (ClassField field : classCallExpr.getDefinition().getFieldSet().getFields()) {
+      if (resultClassCall.isImplemented(field)) continue;
       Expression baseType = field.getBaseType(classCallExpr.getSortArgument());
       if (baseType.isInstance(ErrorExpression.class)) continue;
       sorts.add(getSortOf(baseType.subst(field.getThisParameter(), new ReferenceExpression(thisParam)).normalize(NormalizeVisitor.Mode.WHNF).getType()));
     }
 
-    fieldSet.setSort(generateUpperBound(sorts, expr));
+    resultClassCall = new ClassCallExpression(baseClass, classCallExpr.getSortArgument(), fieldSet, generateUpperBound(sorts, expr));
     return checkResult(expectedType, new Result(resultClassCall, new UniverseExpression(resultClassCall.getSort())), expr);
   }
 
-  @SuppressWarnings("UnusedReturnValue")
-  public CheckTypeVisitor.Result implementField(FieldSet fieldSet, ClassField field, Abstract.Expression implBody, ClassCallExpression fieldSetClass) {
+  public Expression implementField(ClassField field, Abstract.Expression implBody, ClassCallExpression fieldSetClass) {
     CheckTypeVisitor.Result result = checkExpr(implBody, field.getBaseType(fieldSetClass.getSortArgument()).subst(field.getThisParameter(), new NewExpression(fieldSetClass)));
-    fieldSet.implementField(field, new FieldSet.Implementation(null, result != null ? result.expression : new ErrorExpression(null, null)));
-    return result;
+    return result != null ? result.expression : new ErrorExpression(null, null);
   }
 
   @Override
@@ -1138,13 +1122,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   }
 
   public boolean checkAllImplemented(ClassCallExpression classCall, Abstract.Expression expr) {
-    int notImplemented = classCall.getFieldSet().getFields().size() - classCall.getFieldSet().getImplemented().size();
+    int notImplemented = classCall.getDefinition().getFieldSet().getFields().size() - classCall.getDefinition().getFieldSet().getImplemented().size() - classCall.getImplementedHere().size();
     if (notImplemented == 0) {
       return true;
     } else {
       List<Abstract.ClassField> fields = new ArrayList<>(notImplemented);
-      for (ClassField field : classCall.getFieldSet().getFields()) {
-        if (!classCall.getFieldSet().isImplemented(field)) {
+      for (ClassField field : classCall.getDefinition().getFieldSet().getFields()) {
+        if (!classCall.isImplemented(field)) {
           fields.add(field.getAbstractDefinition());
         }
       }

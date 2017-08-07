@@ -29,9 +29,6 @@ public class TypeCheckingError extends GeneralError {
       name = "???." + definition.getName();
     }
 
-    return DocFactory.hang(localError.getHeaderDoc(src), DocFactory.vList(
-      localError.getBodyDoc(src),
-      localError.getCauseDoc(),
-      DocFactory.text("While typechecking: " + name)));
+    return DocFactory.vHang(localError.getDoc(src), DocFactory.text("While typechecking: " + name));
   }
 }

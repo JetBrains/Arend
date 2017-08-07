@@ -36,7 +36,8 @@ message Expression {
         int32 class_ref = 1;
         Level pLevel = 2;
         Level hLevel = 4;
-        FieldSet field_set = 3;
+        map<int32, Expression> field_set = 5;
+        Sort sort = 6;
     }
     message ConCall {
         int32 constructor_ref = 1;

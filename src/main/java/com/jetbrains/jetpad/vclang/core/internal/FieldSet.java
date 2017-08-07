@@ -4,14 +4,13 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class FieldSet implements ReadonlyFieldSet {
+public class FieldSet {
   public static class Implementation {
     public final TypedDependentLink thisParam;
     public final Expression term;
@@ -48,43 +47,35 @@ public class FieldSet implements ReadonlyFieldSet {
     myFields.add(field);
   }
 
-  public void addFieldsFrom(ReadonlyFieldSet other) {
+  public void addFieldsFrom(FieldSet other) {
     myFields.addAll(other.getFields());
   }
 
+  @SuppressWarnings("UnusedReturnValue")
   public boolean implementField(ClassField field, Implementation impl) {
     assert myFields.contains(field);
     Implementation old = myImplemented.put(field, impl);
     return old == null;
   }
 
-  @Override
   public boolean isImplemented(ClassField field) {
     return myImplemented.containsKey(field);
   }
 
-  @Override
   public Set<ClassField> getFields() {
     return myFields;
   }
 
-  @Override
   public Set<Map.Entry<ClassField, Implementation>> getImplemented() {
     return myImplemented.entrySet();
   }
 
-  @Override
   public Implementation getImplementation(ClassField field) {
     return myImplemented.get(field);
   }
 
-  @Override
   public Sort getSort() {
     return mySort;
-  }
-
-  public void setSort(Sort sort) {
-    mySort = sort;
   }
 
   public void updateSorts(ClassCallExpression thisClass) {
@@ -106,19 +97,6 @@ public class FieldSet implements ReadonlyFieldSet {
     if (sort != null) {
       mySort = mySort.max(sort);
     }
-  }
-
-  public static <P> FieldSet applyVisitorToImplemented(ReadonlyFieldSet fieldSet, ReadonlyFieldSet parentFieldSet, ExpressionVisitor<P, Expression> visitor, P arg) {
-    FieldSet newFieldSet = new FieldSet(fieldSet.getSort());
-    newFieldSet.addFieldsFrom(fieldSet);
-    for (Map.Entry<ClassField, FieldSet.Implementation> entry : fieldSet.getImplemented()) {
-      if (parentFieldSet != null && parentFieldSet.isImplemented(entry.getKey())) {
-        newFieldSet.implementField(entry.getKey(), entry.getValue());
-      } else {
-        newFieldSet.implementField(entry.getKey(), new FieldSet.Implementation(entry.getValue().thisParam, entry.getValue().term.accept(visitor, arg)));
-      }
-    }
-    return newFieldSet;
   }
 
   @Override

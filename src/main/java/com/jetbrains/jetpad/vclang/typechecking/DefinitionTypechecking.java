@@ -614,10 +614,10 @@ class DefinitionTypechecking {
           continue;
         }
 
-        fieldSet.addFieldsFrom(typeCheckedSuperClass.getFieldSet());
+        fieldSet.addFieldsFrom(typeCheckedSuperClass.getDefinition().getFieldSet());
         superClasses.add(typeCheckedSuperClass.getDefinition());
 
-        for (Map.Entry<ClassField, FieldSet.Implementation> entry : typeCheckedSuperClass.getFieldSet().getImplemented()) {
+        for (Map.Entry<ClassField, FieldSet.Implementation> entry : typeCheckedSuperClass.getDefinition().getFieldSet().getImplemented()) {
           FieldSet.Implementation oldImpl = fieldSet.getImplementation(entry.getKey());
           if (oldImpl == null || oldImpl.substThisParam(new ReferenceExpression(entry.getValue().thisParam)).equals(entry.getValue().term)) {
             fieldSet.implementField(entry.getKey(), entry.getValue());
@@ -723,17 +723,16 @@ class DefinitionTypechecking {
 
     Abstract.ClassView classView = (Abstract.ClassView) def.getClassView().getReferent();
     assert classView != null;
-    FieldSet fieldSet = new FieldSet(Sort.PROP);
+    Map<ClassField, Expression> fieldSet = new HashMap<>();
     ClassDefinition classDef = (ClassDefinition) visitor.getTypecheckingState().getTypechecked((Abstract.Definition) classView.getUnderlyingClassReference().getReferent());
-    fieldSet.addFieldsFrom(classDef.getFieldSet());
-    ClassCallExpression term = new ClassCallExpression(classDef, Sort.generateInferVars(visitor.getEquations(), def.getClassView()), fieldSet);
+    ClassCallExpression term = new ClassCallExpression(classDef, Sort.generateInferVars(visitor.getEquations(), def.getClassView()), fieldSet, Sort.PROP);
 
     List<Abstract.ClassField> notImplementedFields = new ArrayList<>();
     for (ClassField field : classDef.getFieldSet().getFields()) {
       Abstract.ClassFieldImpl impl = classFieldMap.get(field);
       if (impl != null) {
         if (notImplementedFields.isEmpty()) {
-          visitor.implementField(fieldSet, field, impl.getImplementation(), term);
+          fieldSet.put(field, visitor.implementField(field, impl.getImplementation(), term));
           classFieldMap.remove(field);
         }
       } else {
@@ -751,8 +750,9 @@ class DefinitionTypechecking {
     }
     term = new StripVisitor(visitor.getErrorReporter()).visitClassCall(term, null);
 
-    FieldSet.Implementation impl = fieldSet.getImplementation((ClassField) state.getTypechecked(classView.getClassifyingField()));
-    DefCallExpression defCall = impl.term.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DefCallExpression.class);
+    ClassField classifyingField = (ClassField) state.getTypechecked(classView.getClassifyingField());
+    Expression impl = fieldSet.get(classifyingField);
+    DefCallExpression defCall = impl.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DefCallExpression.class);
     if (defCall == null || !defCall.getDefCallArguments().isEmpty()) {
       errorReporter.report(new LocalTypeCheckingError("Expected a definition in the classifying field", def));
       return;

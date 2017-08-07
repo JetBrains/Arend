@@ -54,7 +54,7 @@ public class FieldCallExpression extends DefCallExpression {
     if (!type.isInstance(ClassCallExpression.class)) {
       return true;
     }
-    return !type.cast(ClassCallExpression.class).getFieldSet().isImplemented(getDefinition());
+    return !type.cast(ClassCallExpression.class).isImplemented(getDefinition());
   }
 
   @Override

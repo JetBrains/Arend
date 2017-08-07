@@ -27,4 +27,9 @@ public class NewExpression extends Expression {
   public Expression getStuckExpression() {
     return null;
   }
+
+  @Override
+  public ClassCallExpression getType() {
+    return myExpression;
+  }
 }

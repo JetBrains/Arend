@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.error.Error;
@@ -222,10 +221,7 @@ public class TypeCheckingDefCall {
       leftDefinition = classCall.getDefinition();
       ClassField parentField = classCall.getDefinition().getEnclosingThisField();
       if (parentField != null) {
-        FieldSet.Implementation impl = classCall.getFieldSet().getImplementation(parentField);
-        if (impl != null) {
-          thisExpr = impl.term;
-        }
+        thisExpr = classCall.getImplementation(parentField, null /* it should be OK */);
       }
       if (typeCheckedDefinition == null) {
         member = myVisitor.getStaticNamespaceProvider().forDefinition(leftDefinition.getAbstractDefinition()).resolveName(name);

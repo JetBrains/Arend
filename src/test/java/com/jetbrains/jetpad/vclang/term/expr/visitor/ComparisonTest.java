@@ -44,7 +44,7 @@ public class ComparisonTest extends TypeCheckingTestCase {
 
   @Test
   public void lambdasNotEqual() {
-    SingleDependentLink x = singleParam("x", Nat());
+    SingleDependentLink x = singleParam("x", Pi(Nat(), Nat()));
     SingleDependentLink xy = singleParam(true, vars("x", "y"), Nat());
     Expression expr1 = Lam(xy, Ref(xy.getNext()));
     Expression expr2 = Lam(x, Ref(x));

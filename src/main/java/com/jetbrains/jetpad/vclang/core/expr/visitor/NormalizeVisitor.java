@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
@@ -266,9 +265,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       if (!thisExpr.isInstance(InferenceReferenceExpression.class) || !(thisExpr.cast(InferenceReferenceExpression.class).getVariable() instanceof TypeClassInferenceVariable)) {
         ClassCallExpression classCall = thisExpr.getType().accept(this, Mode.WHNF).checkedCast(ClassCallExpression.class);
         if (classCall != null) {
-          FieldSet.Implementation impl = classCall.getFieldSet().getImplementation((ClassField) expr.getDefinition());
+          Expression impl = classCall.getImplementation((ClassField) expr.getDefinition(), thisExpr);
           if (impl != null) {
-            return impl.substThisParam(thisExpr).accept(this, mode);
+            return impl.accept(this, mode);
           }
         }
       }
@@ -286,8 +285,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Mode mode) {
     if (mode == Mode.WHNF) return expr;
 
-    FieldSet fieldSet = FieldSet.applyVisitorToImplemented(expr.getFieldSet(), expr.getDefinition().getFieldSet(), this, mode);
-    return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), fieldSet);
+    Map<ClassField, Expression> fieldSet = new HashMap<>();
+    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
+      fieldSet.put(entry.getKey(), entry.getValue().accept(this, mode));
+    }
+    return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), fieldSet, expr.getSort());
   }
 
   @Override

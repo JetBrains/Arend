@@ -77,23 +77,23 @@ public class DocFactory {
     return new SourceNodeDoc(sourceNode);
   }
 
-  public static VListDoc vList(Collection<? extends Doc> docs) {
-    return new VListDoc(docs);
+  public static Doc vList(Collection<? extends Doc> docs) {
+    return docs.size() == 1 ? docs.iterator().next() : new VListDoc(docs);
   }
 
-  public static VListDoc vList(Doc... docs) {
-    return new VListDoc(Arrays.asList(docs));
+  public static Doc vList(Doc... docs) {
+    return docs.length == 1 ? docs[0] : new VListDoc(Arrays.asList(docs));
   }
 
-  public static HListDoc hList(Collection<? extends LineDoc> docs) {
-    return new HListDoc(docs);
+  public static LineDoc hList(Collection<? extends LineDoc> docs) {
+    return docs.size() == 1 ? docs.iterator().next() : new HListDoc(docs);
   }
 
-  public static HListDoc hList(LineDoc... docs) {
-    return new HListDoc(Arrays.asList(docs));
+  public static LineDoc hList(LineDoc... docs) {
+    return docs.length == 1 ? docs[0] : new HListDoc(Arrays.asList(docs));
   }
 
-  public static HListDoc hSep(LineDoc sep, Collection<? extends LineDoc> docs) {
+  public static LineDoc hSep(LineDoc sep, Collection<? extends LineDoc> docs) {
     if (docs.isEmpty() || sep.isEmpty()) {
       return new HListDoc(docs);
     } else {
@@ -109,11 +109,11 @@ public class DocFactory {
           list.add(doc);
         }
       }
-      return new HListDoc(list);
+      return hList(list);
     }
   }
 
-  public static HListDoc hSep(LineDoc sep, LineDoc... docs) {
+  public static LineDoc hSep(LineDoc sep, LineDoc... docs) {
     return hSep(sep, Arrays.asList(docs));
   }
 

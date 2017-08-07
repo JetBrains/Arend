@@ -12,7 +12,6 @@ import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
-import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
@@ -99,20 +98,15 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
 
   @Override
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
-    FieldSet newFieldSet = new FieldSet(expr.getFieldSet().getSort());
-    newFieldSet.addFieldsFrom(expr.getFieldSet());
-    for (Map.Entry<ClassField, FieldSet.Implementation> entry : expr.getFieldSet().getImplemented()) {
-      if (expr.getDefinition().getFieldSet().isImplemented(entry.getKey())) {
-        newFieldSet.implementField(entry.getKey(), entry.getValue());
-      } else {
-        Expression newImpl = findBindings(entry.getValue().term, true);
-        if (newImpl == null) {
-          return null;
-        }
-        newFieldSet.implementField(entry.getKey(), new FieldSet.Implementation(entry.getValue().thisParam, newImpl));
+    Map<ClassField, Expression> newFieldSet = new HashMap<>();
+    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
+      Expression newImpl = findBindings(entry.getValue(), true);
+      if (newImpl == null) {
+        return null;
       }
+      newFieldSet.put(entry.getKey(), newImpl);
     }
-    return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), newFieldSet);
+    return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), newFieldSet, expr.getSort());
   }
 
   @Override
