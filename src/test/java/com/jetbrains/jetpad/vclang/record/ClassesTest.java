@@ -346,7 +346,7 @@ public class ClassesTest extends TypeCheckingTestCase {
     FunctionDefinition plus = (FunctionDefinition) result.getDefinition("+");
 
     ClassDefinition aClass = (ClassDefinition) result.getDefinition("A");
-    assertTrue(aClass.getFieldSet().getFields().isEmpty());
+    assertTrue(aClass.getFields().isEmpty());
     FunctionDefinition pFun = (FunctionDefinition) result.getDefinition("A.p");
     assertEquals(Nat(), pFun.getTypeWithParams(new ArrayList<>(), Sort.SET0));
     assertEquals(new LeafElimTree(EmptyDependentLink.getInstance(), Zero()), pFun.getBody());
@@ -357,7 +357,7 @@ public class ClassesTest extends TypeCheckingTestCase {
     assertEquals(new LeafElimTree(param("\\this", ClassCall(aClass)), FunCall(pFun, Sort.SET0)), qFun.getBody());
 
     ClassDefinition bClass = (ClassDefinition) result.getDefinition("A.B");
-    assertTrue(bClass.getFieldSet().getFields().isEmpty());
+    assertTrue(bClass.getFields().isEmpty());
     FunctionDefinition fFun = (FunctionDefinition) result.getDefinition("A.B.f");
     assertEquals(Nat(), fFun.getTypeWithParams(new ArrayList<>(), Sort.SET0));
     assertEquals(new LeafElimTree(EmptyDependentLink.getInstance(), FunCall(pFun, Sort.SET0)), fFun.getBody());
@@ -368,7 +368,7 @@ public class ClassesTest extends TypeCheckingTestCase {
     assertEquals(new LeafElimTree(param("\\this", ClassCall(bClass)), FunCall(plus, Sort.SET0, FunCall(fFun, Sort.SET0), FunCall(pFun, Sort.SET0))), gFun.getBody());
 
     ClassDefinition cClass = (ClassDefinition) result.getDefinition("A.C");
-    assertEquals(1, cClass.getFieldSet().getFields().size());
+    assertEquals(1, cClass.getFields().size());
     ClassField cParent = cClass.getEnclosingThisField();
     assertNotNull(cParent);
     FunctionDefinition hFun = (FunctionDefinition) result.getDefinition("A.C.h");

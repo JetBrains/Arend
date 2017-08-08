@@ -1049,7 +1049,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
     if (!classFieldMap.isEmpty()) {
       List<Abstract.ClassField> notImplementedFields = new ArrayList<>();
-      for (ClassField field : baseClass.getFieldSet().getFields()) {
+      for (ClassField field : baseClass.getFields()) {
         if (resultClassCall.isImplemented(field)) {
           continue;
         }
@@ -1076,7 +1076,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
     DependentLink thisParam = ExpressionFactory.parameter("\\this", resultClassCall);
     List<Sort> sorts = new ArrayList<>();
-    for (ClassField field : classCallExpr.getDefinition().getFieldSet().getFields()) {
+    for (ClassField field : classCallExpr.getDefinition().getFields()) {
       if (resultClassCall.isImplemented(field)) continue;
       Expression baseType = field.getBaseType(classCallExpr.getSortArgument());
       if (baseType.isInstance(ErrorExpression.class)) continue;
@@ -1122,12 +1122,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   }
 
   public boolean checkAllImplemented(ClassCallExpression classCall, Abstract.Expression expr) {
-    int notImplemented = classCall.getDefinition().getFieldSet().getFields().size() - classCall.getDefinition().getFieldSet().getImplemented().size() - classCall.getImplementedHere().size();
+    int notImplemented = classCall.getDefinition().getFields().size() - classCall.getDefinition().getImplemented().size() - classCall.getImplementedHere().size();
     if (notImplemented == 0) {
       return true;
     } else {
       List<Abstract.ClassField> fields = new ArrayList<>(notImplemented);
-      for (ClassField field : classCall.getDefinition().getFieldSet().getFields()) {
+      for (ClassField field : classCall.getDefinition().getFields()) {
         if (!classCall.isImplemented(field)) {
           fields.add(field.getAbstractDefinition());
         }

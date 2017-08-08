@@ -13,7 +13,6 @@ import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
-import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
@@ -148,26 +147,6 @@ class DefinitionSerialization {
       builder.setType(writeType(link.getType()));
     }
     registerBinding(link);
-    return builder.build();
-  }
-
-
-  // FieldSet
-
-  ExpressionProtos.FieldSet writeFieldSet(FieldSet fieldSet) {
-    ExpressionProtos.FieldSet.Builder builder = ExpressionProtos.FieldSet.newBuilder();
-    for (ClassField classField : fieldSet.getFields()) {
-      builder.addClassFieldRef(myCalltargetIndexProvider.getDefIndex(classField));
-    }
-    for (Map.Entry<ClassField, FieldSet.Implementation> impl : fieldSet.getImplemented()) {
-      ExpressionProtos.FieldSet.Implementation.Builder iBuilder = ExpressionProtos.FieldSet.Implementation.newBuilder();
-      if (impl.getValue().thisParam != null) {
-        iBuilder.setThisParam(writeParameter(impl.getValue().thisParam));
-      }
-      iBuilder.setTerm(writeExpr(impl.getValue().term));
-      builder.putImplementations(myCalltargetIndexProvider.getDefIndex(impl.getKey()), iBuilder.build());
-    }
-
     return builder.build();
   }
 

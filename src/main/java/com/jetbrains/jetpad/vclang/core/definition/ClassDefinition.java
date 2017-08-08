@@ -1,27 +1,42 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import javax.annotation.Nonnull;
+import java.util.*;
 
 public class ClassDefinition extends Definition {
-  private FieldSet myFieldSet;
-  private Set<ClassDefinition> mySuperClasses;
+  public static class Implementation {
+    @Nonnull public final TypedDependentLink thisParam;
+    @Nonnull public final Expression term;
+
+    public Implementation(@Nonnull TypedDependentLink thisParam, @Nonnull Expression term) {
+      this.thisParam = thisParam;
+      this.term = term;
+    }
+
+    public Expression substThisParam(Expression thisExpr) {
+      return term.subst(thisParam, thisExpr);
+    }
+  }
+
+  private final Set<ClassDefinition> mySuperClasses;
+  private final LinkedHashSet<ClassField> myFields;
+  private final Map<ClassField, Implementation> myImplemented;
   private Sort mySort;
 
   private ClassField myEnclosingThisField = null;
 
   public ClassDefinition(Abstract.ClassDefinition abstractDef) {
     super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
-    myFieldSet = null;
-    mySuperClasses = null;
+    mySuperClasses = new HashSet<>();
+    myFields = new LinkedHashSet<>();
+    myImplemented = new HashMap<>();
     mySort = Sort.PROP;
   }
 
@@ -30,20 +45,12 @@ public class ClassDefinition extends Definition {
     return (Abstract.ClassDefinition) super.getAbstractDefinition();
   }
 
-  public FieldSet getFieldSet() {
-    return myFieldSet;
-  }
-
-  public void setFieldSet(FieldSet fieldSet) {
-    myFieldSet = fieldSet;
-  }
-
   public void updateSorts() {
     ClassCallExpression thisClass = new ClassCallExpression(this, Sort.STD, Collections.emptyMap(), mySort);
     mySort = Sort.PROP;
 
-    for (ClassField field : myFieldSet.getFields()) {
-      if (myFieldSet.isImplemented(field)) {
+    for (ClassField field : myFields) {
+      if (myImplemented.containsKey(field)) {
         continue;
       }
 
@@ -77,12 +84,40 @@ public class ClassDefinition extends Definition {
     return false;
   }
 
-  public Set<ClassDefinition> getSuperClasses() {
-    return Collections.unmodifiableSet(mySuperClasses);
+  public Set<? extends ClassDefinition> getSuperClasses() {
+    return mySuperClasses;
   }
 
-  public void setSuperClasses(Set<ClassDefinition> superClasses) {
-    mySuperClasses = superClasses;
+  public void addSuperClass(ClassDefinition superClass) {
+    mySuperClasses.add(superClass);
+  }
+
+  public Set<? extends ClassField> getFields() {
+    return myFields;
+  }
+
+  public void addField(ClassField field) {
+    myFields.add(field);
+  }
+
+  public void addFields(Collection<? extends ClassField> fields) {
+    myFields.addAll(fields);
+  }
+
+  public boolean isImplemented(ClassField field) {
+    return myImplemented.containsKey(field);
+  }
+
+  public Set<Map.Entry<ClassField, Implementation>> getImplemented() {
+    return myImplemented.entrySet();
+  }
+
+  public Implementation getImplementation(ClassField field) {
+    return myImplemented.get(field);
+  }
+
+  public void implementField(ClassField field, Implementation impl) {
+    myImplemented.put(field, impl);
   }
 
   @Override
@@ -102,10 +137,10 @@ public class ClassDefinition extends Definition {
   public void setThisClass(ClassDefinition enclosingClass) {
     assert myEnclosingThisField == null;
     super.setThisClass(enclosingClass);
-    if (enclosingClass != null && myFieldSet != null) {
+    if (enclosingClass != null) {
       myEnclosingThisField = new ClassField(null, new ClassCallExpression(enclosingClass, Sort.STD), this, ExpressionFactory.parameter("\\this", new ClassCallExpression(this, Sort.STD)));
       myEnclosingThisField.setThisClass(this);
-      myFieldSet.addField(myEnclosingThisField);
+      myFields.add(myEnclosingThisField);
     }
   }
 

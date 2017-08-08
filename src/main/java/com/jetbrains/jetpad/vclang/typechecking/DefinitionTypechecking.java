@@ -17,7 +17,6 @@ import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.StripVisitor;
-import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.core.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
@@ -583,14 +582,10 @@ class DefinitionTypechecking {
     LocalErrorReporter errorReporter = visitor.getErrorReporter();
     boolean classOk = true;
 
-    FieldSet fieldSet = new FieldSet();
-    Set<ClassDefinition> superClasses = new HashSet<>();
     Abstract.ClassDefinition def = typedDef.getAbstractDefinition();
     visitor.getTypecheckingState().record(def, typedDef);
 
     try {
-      typedDef.setFieldSet(fieldSet);
-      typedDef.setSuperClasses(superClasses);
       typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
       typedDef.setThisClass(enclosingClass);
 
@@ -614,22 +609,23 @@ class DefinitionTypechecking {
           continue;
         }
 
-        fieldSet.addFieldsFrom(typeCheckedSuperClass.getDefinition().getFieldSet());
-        superClasses.add(typeCheckedSuperClass.getDefinition());
+        typedDef.addFields(typeCheckedSuperClass.getDefinition().getFields());
+        typedDef.addSuperClass(typeCheckedSuperClass.getDefinition());
 
-        for (Map.Entry<ClassField, FieldSet.Implementation> entry : typeCheckedSuperClass.getDefinition().getFieldSet().getImplemented()) {
-          FieldSet.Implementation oldImpl = fieldSet.getImplementation(entry.getKey());
-          if (oldImpl == null || oldImpl.substThisParam(new ReferenceExpression(entry.getValue().thisParam)).equals(entry.getValue().term)) {
-            fieldSet.implementField(entry.getKey(), entry.getValue());
-          } else {
+        for (Map.Entry<ClassField, ClassDefinition.Implementation> entry : typeCheckedSuperClass.getDefinition().getImplemented()) {
+          ClassDefinition.Implementation oldImpl = typedDef.getImplementation(entry.getKey());
+          if (oldImpl != null && !oldImpl.substThisParam(new ReferenceExpression(entry.getValue().thisParam)).equals(entry.getValue().term)) {
             classOk = false;
             errorReporter.report(new LocalTypeCheckingError("Implementations of '" + entry.getKey().getName() + "' differ", aSuperClass.getSuperClass()));
+          }
+          if (oldImpl == null) {
+            typedDef.implementField(entry.getKey(), entry.getValue());
           }
         }
       }
 
       for (Abstract.ClassField field : def.getFields()) {
-        typeCheckClassField(field, typedDef, fieldSet, visitor);
+        typeCheckClassField(field, typedDef, visitor);
       }
 
       if (!def.getImplementations().isEmpty()) {
@@ -638,7 +634,7 @@ class DefinitionTypechecking {
         Abstract.SourceNode alreadyImplementedSourceNode = null;
         for (Abstract.Implementation implementation : def.getImplementations()) {
           ClassField field = (ClassField) visitor.getTypecheckingState().getTypechecked(implementation.getImplementedField());
-          if (fieldSet.isImplemented(field)) {
+          if (typedDef.isImplemented(field)) {
             classOk = false;
             alreadyImplementFields.add(field.getAbstractDefinition());
             alreadyImplementedSourceNode = implementation;
@@ -649,7 +645,7 @@ class DefinitionTypechecking {
           visitor.getFreeBindings().add(thisParameter);
           visitor.setThis(typedDef, thisParameter);
           CheckTypeVisitor.Result result = visitor.finalCheckExpr(implementation.getImplementation(), field.getBaseType(Sort.STD).subst(field.getThisParameter(), new ReferenceExpression(thisParameter)));
-          fieldSet.implementField(field, new FieldSet.Implementation(thisParameter, result != null ? result.expression : new ErrorExpression(null, null)));
+          typedDef.implementField(field, new ClassDefinition.Implementation(thisParameter, result != null ? result.expression : new ErrorExpression(null, null)));
           if (result == null || result.expression.isInstance(ErrorExpression.class)) {
             classOk = false;
           }
@@ -670,8 +666,7 @@ class DefinitionTypechecking {
     }
   }
 
-  @SuppressWarnings("UnusedReturnValue")
-  private static ClassField typeCheckClassField(Abstract.ClassField def, ClassDefinition enclosingClass, FieldSet fieldSet, CheckTypeVisitor visitor) {
+  private static void typeCheckClassField(Abstract.ClassField def, ClassDefinition enclosingClass, CheckTypeVisitor visitor) {
     TypedDependentLink thisParameter = createThisParam(enclosingClass);
     visitor.getFreeBindings().add(thisParameter);
     visitor.setThis(enclosingClass, thisParameter);
@@ -682,8 +677,7 @@ class DefinitionTypechecking {
       typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
     }
     visitor.getTypecheckingState().record(def, typedDef);
-    fieldSet.addField(typedDef);
-    return typedDef;
+    enclosingClass.addField(typedDef);
   }
 
   private static void typeCheckClassViewInstance(FunctionDefinition typedDef, CheckTypeVisitor visitor) {
@@ -723,7 +717,7 @@ class DefinitionTypechecking {
     ClassCallExpression term = new ClassCallExpression(classDef, Sort.generateInferVars(visitor.getEquations(), def.getClassView()), fieldSet, Sort.PROP);
 
     List<Abstract.ClassField> notImplementedFields = new ArrayList<>();
-    for (ClassField field : classDef.getFieldSet().getFields()) {
+    for (ClassField field : classDef.getFields()) {
       Abstract.ClassFieldImpl impl = classFieldMap.get(field);
       if (impl != null) {
         if (notImplementedFields.isEmpty()) {

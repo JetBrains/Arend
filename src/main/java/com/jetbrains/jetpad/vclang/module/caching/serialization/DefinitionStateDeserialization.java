@@ -17,7 +17,10 @@ import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
   private final PersistenceProvider<SourceIdT> myPersistenceProvider;
@@ -126,15 +129,20 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
   }
 
   private void fillInClassDefinition(DefinitionDeserialization defDeserializer, CalltargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
-    classDef.setFieldSet(defDeserializer.readFieldSet(classProto.getFieldSet()));
+    for (int classFieldRef : classProto.getClassFieldRefList()) {
+      classDef.addField(calltargetProvider.getCalltarget(classFieldRef, ClassField.class));
+    }
+    for (Map.Entry<Integer, DefinitionProtos.Definition.ClassData.Implementation> entry : classProto.getImplementationsMap().entrySet()) {
+      TypedDependentLink thisParam = (TypedDependentLink) defDeserializer.readParameter(entry.getValue().getThisParam());
+      ClassDefinition.Implementation impl = new ClassDefinition.Implementation(thisParam, defDeserializer.readExpr(entry.getValue().getTerm()));
+      classDef.implementField(calltargetProvider.getCalltarget(entry.getKey(), ClassField.class), impl);
+    }
     classDef.setSort(defDeserializer.readSort(classProto.getSort()));
 
-    Set<ClassDefinition> superClasses = new HashSet<>();
     for (int superClassRef : classProto.getSuperClassRefList()) {
       ClassDefinition superClass = calltargetProvider.getCalltarget(superClassRef, ClassDefinition.class);
-      superClasses.add(superClass);
+      classDef.addSuperClass(superClass);
     }
-    classDef.setSuperClasses(superClasses);
     if (classProto.getEnclosingThisFieldRef() != 0) {
       classDef.setEnclosingThisField(calltargetProvider.getCalltarget(classProto.getEnclosingThisFieldRef(), ClassField.class));
     }

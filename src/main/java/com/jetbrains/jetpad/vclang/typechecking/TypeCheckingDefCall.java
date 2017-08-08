@@ -142,7 +142,7 @@ public class TypeCheckingDefCall {
           return null;
         }
       } else {
-        if (!(typeCheckedDefinition instanceof ClassField && classDefinition.getFieldSet().getFields().contains(typeCheckedDefinition))) {
+        if (!(typeCheckedDefinition instanceof ClassField && classDefinition.getFields().contains(typeCheckedDefinition))) {
           throw new IllegalStateException("Internal error: field " + typeCheckedDefinition + " does not belong to class " + classDefinition);
         }
       }

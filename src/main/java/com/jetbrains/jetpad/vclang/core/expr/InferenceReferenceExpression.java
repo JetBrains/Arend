@@ -17,8 +17,8 @@ public class InferenceReferenceExpression extends Expression {
     Expression type = myVar.getType().normalize(NormalizeVisitor.Mode.WHNF);
     if (type.isInstance(ClassCallExpression.class)) {
       ClassCallExpression classCall = type.cast(ClassCallExpression.class);
-      if (!classCall.getDefinition().getFieldSet().getFields().isEmpty()) {
-        for (ClassField field : classCall.getDefinition().getFieldSet().getFields()) {
+      if (!classCall.getDefinition().getFields().isEmpty()) {
+        for (ClassField field : classCall.getDefinition().getFields()) {
           Expression impl = classCall.getImplementation(field, this);
           if (impl != null) {
             equations.add(new FieldCallExpression(field, this), impl, Equations.CMP.EQ, myVar.getSourceNode(), myVar);
