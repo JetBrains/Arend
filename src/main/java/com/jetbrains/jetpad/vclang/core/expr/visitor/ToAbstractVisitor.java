@@ -170,7 +170,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     DefCallExpression defCall = fun.checkedCast(DefCallExpression.class);
     ReferenceExpression refExpr = fun.checkedCast(ReferenceExpression.class);
 
-    if (refExpr == null && defCall == null || !PrettyPrintVisitor.isPrefix(defCall != null ? defCall.getDefinition().getName() : refExpr.getBinding().getName())) {
+    if (refExpr == null && defCall == null || PrettyPrintVisitor.isPrefix(defCall != null ? defCall.getDefinition().getName() : refExpr.getBinding().getName())) {
       return null;
     }
 
