@@ -208,7 +208,7 @@ public class ElimTypechecking {
       for (Pair<List<Util.ClauseElem>, Boolean> missingClause : myMissingClauses) {
         List<Expression> expressions = Util.unflattenClauses(missingClause.proj1);
         if (!missingClause.proj2) {
-          if (elimTree != null && new NormalizeVisitor().doesEvaluate(elimTree, expressions)) {
+          if (elimTree != null && NormalizeVisitor.INSTANCE.doesEvaluate(elimTree, expressions)) {
             continue;
           }
 
@@ -394,7 +394,7 @@ public class ElimTypechecking {
       List<ConCallExpression> conCalls = null;
       List<Constructor> constructors;
       if (someConPattern.getConstructor().getDataType().hasIndexedConstructors()) {
-        conCalls = new GetTypeVisitor().visitConCall(new SubstVisitor(conClauseData.substitution, LevelSubstitution.EMPTY).visitConCall(someConPattern.getConCall(), null), null).getMatchedConstructors();
+        conCalls = GetTypeVisitor.INSTANCE.visitConCall(new SubstVisitor(conClauseData.substitution, LevelSubstitution.EMPTY).visitConCall(someConPattern.getConCall(), null), null).getMatchedConstructors();
         if (conCalls == null) {
           myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", conClauseData.clause));
           myOK = false;

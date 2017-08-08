@@ -93,7 +93,7 @@ public class ClassCallExpression extends DefCallExpression implements Type {
 
   @Override
   public ClassCallExpression normalize(NormalizeVisitor.Mode mode) {
-    return new NormalizeVisitor().visitClassCall(this, mode);
+    return NormalizeVisitor.INSTANCE.visitClassCall(this, mode);
   }
 
   public Sort getSort() {

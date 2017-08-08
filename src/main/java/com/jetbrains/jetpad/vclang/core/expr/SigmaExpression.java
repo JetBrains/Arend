@@ -56,7 +56,7 @@ public class SigmaExpression extends Expression implements Type {
 
   @Override
   public SigmaExpression normalize(NormalizeVisitor.Mode mode) {
-    return new NormalizeVisitor().visitSigma(this, mode);
+    return NormalizeVisitor.INSTANCE.visitSigma(this, mode);
   }
 
   @Override

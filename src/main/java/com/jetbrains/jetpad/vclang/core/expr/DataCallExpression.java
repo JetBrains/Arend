@@ -68,7 +68,7 @@ public class DataCallExpression extends DefCallExpression implements Type {
 
   @Override
   public DataCallExpression normalize(NormalizeVisitor.Mode mode) {
-    return new NormalizeVisitor().visitDataCall(this, mode);
+    return NormalizeVisitor.INSTANCE.visitDataCall(this, mode);
   }
 
   public List<ConCallExpression> getMatchedConstructors() {

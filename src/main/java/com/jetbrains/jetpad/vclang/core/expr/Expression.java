@@ -58,7 +58,7 @@ public abstract class Expression implements ExpectedType {
   }
 
   public Expression getType() {
-    return accept(new GetTypeVisitor(), null);
+    return accept(GetTypeVisitor.INSTANCE, null);
   }
 
   public boolean findBinding(Variable binding) {
@@ -95,7 +95,7 @@ public abstract class Expression implements ExpectedType {
 
   @Override
   public Expression normalize(NormalizeVisitor.Mode mode) {
-    return accept(new NormalizeVisitor(), mode);
+    return accept(NormalizeVisitor.INSTANCE, mode);
   }
 
   public static boolean compare(Expression expr1, Expression expr2, Equations.CMP cmp) {

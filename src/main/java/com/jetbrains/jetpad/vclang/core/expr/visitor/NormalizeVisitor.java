@@ -17,6 +17,11 @@ import java.util.*;
 public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mode, Expression>  {
   public enum Mode { WHNF, NF, RNF }
 
+  public static final NormalizeVisitor INSTANCE = new NormalizeVisitor();
+
+  private NormalizeVisitor() {
+  }
+
   @Override
   public Expression visitApp(AppExpression expr, Mode mode) {
     List<Expression> args = new ArrayList<>();
