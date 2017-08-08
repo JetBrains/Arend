@@ -1,11 +1,8 @@
 package com.jetbrains.jetpad.vclang.core.internal;
 
-import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
-import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -27,20 +24,10 @@ public class FieldSet {
 
   private final LinkedHashSet<ClassField> myFields;
   private final Map<ClassField, Implementation> myImplemented;
-  private Sort mySort;
 
-  public FieldSet(Sort sort) {
-    this(new LinkedHashSet<>(), new HashMap<>(), sort);
-  }
-
-  public FieldSet(FieldSet other) {
-    this(new LinkedHashSet<>(other.myFields), new HashMap<>(other.myImplemented), other.mySort);
-  }
-
-  private FieldSet(LinkedHashSet<ClassField> fields, Map<ClassField, Implementation> implemented, Sort sort) {
-    myFields = fields;
-    myImplemented = implemented;
-    mySort = sort;
+  public FieldSet() {
+    myFields = new LinkedHashSet<>();
+    myImplemented = new HashMap<>();
   }
 
   public void addField(ClassField field) {
@@ -72,31 +59,6 @@ public class FieldSet {
 
   public Implementation getImplementation(ClassField field) {
     return myImplemented.get(field);
-  }
-
-  public Sort getSort() {
-    return mySort;
-  }
-
-  public void updateSorts(ClassCallExpression thisClass) {
-    mySort = Sort.PROP;
-    for (ClassField field : myFields) {
-      updateUniverseSingleField(field, thisClass);
-    }
-  }
-
-  private void updateUniverseSingleField(ClassField field, ClassCallExpression thisClass) {
-    if (myImplemented.containsKey(field)) return;
-
-    Expression baseType = field.getBaseType(thisClass.getSortArgument());
-    if (baseType.isInstance(ErrorExpression.class)) return;
-
-    DependentLink thisParam = ExpressionFactory.parameter("\\this", thisClass);
-    Expression expr = baseType.subst(field.getThisParameter(), new ReferenceExpression(thisParam)).normalize(NormalizeVisitor.Mode.WHNF);
-    Sort sort = expr.getType().toSort();
-    if (sort != null) {
-      mySort = mySort.max(sort);
-    }
   }
 
   @Override

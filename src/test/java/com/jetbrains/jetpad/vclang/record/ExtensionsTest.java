@@ -228,18 +228,20 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "\\class X {\n" +
         "  \\class A\n" +
         "}\n" +
-        "\\function x => \\new X\n" +
-        "\\class B \\extends x.A, x.A");
+        "\\function x1 => \\new X\n" +
+        "\\function x2 => \\new X\n" +
+        "\\class B \\extends x1.A, x2.A");
   }
 
   @Test
   public void multipleDynamicInheritanceDifferentParentsError() {
     typeCheckClass(
         "\\class X {\n" +
+        "  | n : Nat" +
         "  \\class A\n" +
         "}\n" +
-        "\\function x1 => \\new X\n" +
-        "\\function x2 => \\new X\n" +
+        "\\function x1 => \\new X { n => 1 }\n" +
+        "\\function x2 => \\new X { n => 2 }\n" +
         "\\class B \\extends x1.A, x2.A", 1);
   }
 

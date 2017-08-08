@@ -521,8 +521,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     myErrorReporter.report(new ParserError(position, "This definition is not allowed here"));
   }
 
-  private List<Concrete.Definition> visitInstanceStatements(List<ClassStatContext> ctx, List<Concrete.ClassField> fields, List<Concrete.Implementation> implementations) {
-    List<Concrete.Definition> definitions = new ArrayList<>(ctx.size());
+  private void visitInstanceStatements(List<ClassStatContext> ctx, List<Concrete.ClassField> fields, List<Concrete.Implementation> implementations, List<Concrete.Definition> definitions) {
     for (ClassStatContext statementCtx : ctx) {
       if (statementCtx == null) {
         continue;
@@ -564,7 +563,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
       }
     }
-    return definitions;
+  }
+
+  @Override
+  public Concrete.Definition visitClassIntStat(ClassIntStatContext ctx) {
+    return (Concrete.Definition) visit(ctx.intStat());
   }
 
   @Override
@@ -579,10 +582,27 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<Concrete.ClassField> fields = new ArrayList<>();
     List<Concrete.Implementation> implementations = new ArrayList<>();
     List<Concrete.Statement> globalStatements = visitWhere(ctx.where());
-    List<Concrete.Definition> instanceDefinitions =
-        ctx.classStat().isEmpty() ?
-        Collections.emptyList() :
-        visitInstanceStatements(ctx.classStat(), fields, implementations);
+    List<Concrete.Definition> instanceDefinitions;
+
+    if (ctx.intStat() != null) {
+      Concrete.Definition definition = (Concrete.Definition) visit(ctx.intStat());
+      if (definition instanceof Concrete.ClassField) {
+        fields.add((Concrete.ClassField) definition);
+      } else
+      if (definition instanceof Concrete.Implementation) {
+        implementations.add((Concrete.Implementation) definition);
+      } else {
+        misplacedDefinitionError(definition.getPosition());
+      }
+    }
+
+    if (ctx.classStat().isEmpty()) {
+      instanceDefinitions = Collections.emptyList();
+    } else {
+      instanceDefinitions = new ArrayList<>(ctx.classStat().size());
+      visitInstanceStatements(ctx.classStat(), fields, implementations, instanceDefinitions);
+    }
+
     for (AtomFieldsAccContext exprCtx : ctx.atomFieldsAcc()) {
       superClasses.add(new Concrete.SuperClass(tokenPosition(exprCtx.getStart()), visitAtomFieldsAcc(exprCtx)));
     }

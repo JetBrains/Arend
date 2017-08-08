@@ -1,10 +1,8 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.expr.ClassCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory;
-import com.jetbrains.jetpad.vclang.core.expr.UniverseExpression;
+import com.jetbrains.jetpad.vclang.core.expr.*;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -16,6 +14,7 @@ import java.util.Set;
 public class ClassDefinition extends Definition {
   private FieldSet myFieldSet;
   private Set<ClassDefinition> mySuperClasses;
+  private Sort mySort;
 
   private ClassField myEnclosingThisField = null;
 
@@ -23,6 +22,7 @@ public class ClassDefinition extends Definition {
     super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
     myFieldSet = null;
     mySuperClasses = null;
+    mySort = Sort.PROP;
   }
 
   @Override
@@ -39,11 +39,34 @@ public class ClassDefinition extends Definition {
   }
 
   public void updateSorts() {
-    myFieldSet.updateSorts(new ClassCallExpression(this, Sort.STD, Collections.emptyMap(), myFieldSet.getSort()));
+    ClassCallExpression thisClass = new ClassCallExpression(this, Sort.STD, Collections.emptyMap(), mySort);
+    mySort = Sort.PROP;
+
+    for (ClassField field : myFieldSet.getFields()) {
+      if (myFieldSet.isImplemented(field)) {
+        continue;
+      }
+
+      Expression baseType = field.getBaseType(thisClass.getSortArgument());
+      if (baseType.isInstance(ErrorExpression.class)) {
+        continue;
+      }
+
+      DependentLink thisParam = ExpressionFactory.parameter("this", thisClass);
+      Expression expr = baseType.subst(field.getThisParameter(), new ReferenceExpression(thisParam)).normalize(NormalizeVisitor.Mode.WHNF);
+      Sort sort = expr.getType().toSort();
+      if (sort != null) {
+        mySort = mySort.max(sort);
+      }
+    }
   }
 
   public Sort getSort() {
-    return myFieldSet.getSort();
+    return mySort;
+  }
+
+  public void setSort(Sort sort) {
+    mySort = sort;
   }
 
   public boolean isSubClassOf(ClassDefinition classDefinition) {
@@ -72,7 +95,7 @@ public class ClassDefinition extends Definition {
 
   @Override
   public ClassCallExpression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> args) {
-    return new ClassCallExpression(this, sortArgument, thisExpr == null ? Collections.emptyMap() : Collections.singletonMap(myEnclosingThisField, thisExpr), myFieldSet.getSort());
+    return new ClassCallExpression(this, sortArgument, thisExpr == null ? Collections.emptyMap() : Collections.singletonMap(myEnclosingThisField, thisExpr), mySort);
   }
 
   @Override

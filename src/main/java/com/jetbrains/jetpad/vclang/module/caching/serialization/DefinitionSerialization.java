@@ -168,8 +168,6 @@ class DefinitionSerialization {
       builder.putImplementations(myCalltargetIndexProvider.getDefIndex(impl.getKey()), iBuilder.build());
     }
 
-    builder.setSort(writeSort(fieldSet.getSort()));
-
     return builder.build();
   }
 

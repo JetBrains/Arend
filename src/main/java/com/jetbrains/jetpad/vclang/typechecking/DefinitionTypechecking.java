@@ -583,7 +583,7 @@ class DefinitionTypechecking {
     LocalErrorReporter errorReporter = visitor.getErrorReporter();
     boolean classOk = true;
 
-    FieldSet fieldSet = new FieldSet(Sort.PROP);
+    FieldSet fieldSet = new FieldSet();
     Set<ClassDefinition> superClasses = new HashSet<>();
     Abstract.ClassDefinition def = typedDef.getAbstractDefinition();
     visitor.getTypecheckingState().record(def, typedDef);
@@ -648,7 +648,8 @@ class DefinitionTypechecking {
           TypedDependentLink thisParameter = createThisParam(typedDef);
           visitor.getFreeBindings().add(thisParameter);
           visitor.setThis(typedDef, thisParameter);
-          CheckTypeVisitor.Result result = implementField(fieldSet, field, implementation.getImplementation(), visitor, thisParameter);
+          CheckTypeVisitor.Result result = visitor.finalCheckExpr(implementation.getImplementation(), field.getBaseType(Sort.STD).subst(field.getThisParameter(), new ReferenceExpression(thisParameter)));
+          fieldSet.implementField(field, new FieldSet.Implementation(thisParameter, result != null ? result.expression : new ErrorExpression(null, null)));
           if (result == null || result.expression.isInstance(ErrorExpression.class)) {
             classOk = false;
           }
@@ -667,12 +668,6 @@ class DefinitionTypechecking {
     } finally {
       typedDef.updateSorts();
     }
-  }
-
-  private static CheckTypeVisitor.Result implementField(FieldSet fieldSet, ClassField field, Abstract.Expression implBody, CheckTypeVisitor visitor, TypedDependentLink thisParam) {
-    CheckTypeVisitor.Result result = visitor.finalCheckExpr(implBody, field.getBaseType(Sort.STD).subst(field.getThisParameter(), new ReferenceExpression(thisParam)));
-    fieldSet.implementField(field, new FieldSet.Implementation(thisParam, result != null ? result.expression : new ErrorExpression(null, null)));
-    return result;
   }
 
   @SuppressWarnings("UnusedReturnValue")

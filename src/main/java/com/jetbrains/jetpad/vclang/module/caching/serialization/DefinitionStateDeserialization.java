@@ -127,6 +127,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
 
   private void fillInClassDefinition(DefinitionDeserialization defDeserializer, CalltargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
     classDef.setFieldSet(defDeserializer.readFieldSet(classProto.getFieldSet()));
+    classDef.setSort(defDeserializer.readSort(classProto.getSort()));
 
     Set<ClassDefinition> superClasses = new HashSet<>();
     for (int superClassRef : classProto.getSuperClassRefList()) {

@@ -109,6 +109,7 @@ public class DefinitionStateSerialization {
     }
 
     builder.setFieldSet(defSerializer.writeFieldSet(definition.getFieldSet()));
+    builder.setSort(defSerializer.writeSort(definition.getSort()));
     if (definition.getEnclosingThisField() != null) {
       builder.setEnclosingThisFieldRef(myCalltargetIndexProvider.getDefIndex(definition.getEnclosingThisField()));
     }

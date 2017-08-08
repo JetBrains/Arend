@@ -51,6 +51,7 @@ message Definition {
         repeated int32 super_class_ref = 4;
         map<string, Field> fields = 5;
         int32 enclosing_this_field_ref = 6;
+        Sort sort = 7;
 
         message Field {
             SingleParameter this_param = 1;

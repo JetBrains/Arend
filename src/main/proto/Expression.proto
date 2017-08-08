@@ -158,7 +158,6 @@ message ElimTree {
 message FieldSet {
     repeated int32 class_field_ref = 1;
     map<int32, Implementation> implementations = 2;
-    Sort sort = 4;
 
     message Implementation {
         SingleParameter this_param = 1;
