@@ -273,7 +273,7 @@ public class TypeCheckingDefCall {
   }
 
   private CheckTypeVisitor.TResult makeResult(Definition definition, Expression thisExpr, Abstract.ReferenceExpression expr) {
-    Sort sortArgument = (definition instanceof DataDefinition || definition instanceof FunctionDefinition) && !definition.getParameters().hasNext() ? Sort.PROP : Sort.generateInferVars(myVisitor.getEquations(), expr);
+    Sort sortArgument = definition instanceof DataDefinition && !definition.getParameters().hasNext() ? Sort.PROP : Sort.generateInferVars(myVisitor.getEquations(), expr);
 
     if (thisExpr == null && definition instanceof ClassField) {
       LocalTypeCheckingError error = new LocalTypeCheckingError("Field call without a class instance", expr);

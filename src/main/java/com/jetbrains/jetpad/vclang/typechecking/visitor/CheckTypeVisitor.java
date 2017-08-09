@@ -538,11 +538,20 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     }
 
     Abstract.Parameter param = parameters.get(0);
-    if (param instanceof Abstract.NameParameter) {
-      if (expectedType != null) {
-        expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+    if (expectedType != null) {
+      expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+      if (param.getExplicit() && expectedType.isInstance(PiExpression.class) && !expectedType.cast(PiExpression.class).getParameters().isExplicit()) {
+        // myContext.put(referable, piParams);
+        PiExpression piExpectedType = expectedType.cast(PiExpression.class);
+        SingleDependentLink piParams = piExpectedType.getParameters();
+        Result bodyResult = visitLam(parameters, expr, piExpectedType.getCodomain(), argIndex + DependentLink.Helper.size(piParams));
+        if (bodyResult == null) return null;
+        Sort sort = PiExpression.generateUpperBound(piParams.getType().getSortOfType(), getSortOf(bodyResult.type.getType()), myEquations, expr);
+        return new Result(new LamExpression(sort, piParams, bodyResult.expression), new PiExpression(sort, piParams, bodyResult.type));
       }
+    }
 
+    if (param instanceof Abstract.NameParameter) {
       if (expectedType == null || !expectedType.isInstance(PiExpression.class)) {
         TypedSingleDependentLink link = visitNameParameter((Abstract.NameParameter) param, argIndex, expr);
         Result bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, null, argIndex + 1);
@@ -557,8 +566,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
         PiExpression piExpectedType = expectedType.cast(PiExpression.class);
         Abstract.ReferableSourceNode referable = (Abstract.NameParameter) param;
         SingleDependentLink piParams = piExpectedType.getParameters();
-        if (piParams.isExplicit() != param.getExplicit()) {
-          myErrorReporter.report(new LocalTypeCheckingError(ordinal(argIndex) + " argument of the lambda should be " + (piParams.isExplicit() ? "explicit" : "implicit"), expr));
+        if (piParams.isExplicit() && !param.getExplicit()) {
+          myErrorReporter.report(new LocalTypeCheckingError(ordinal(argIndex) + " argument of the lambda is implicit, but the first parameter of the expected type is not", expr));
         }
         SingleDependentLink link = new TypedSingleDependentLink(piParams.isExplicit(), referable.getName(), piParams.getType());
         myContext.put(referable, link);
@@ -586,7 +595,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
         Expression argExpr = null;
         int checked = 0;
         while (true) {
-          expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
           if (!expectedType.isInstance(PiExpression.class)) {
             actualLink = link;
             for (int i = 0; i < checked; i++) {
@@ -601,6 +609,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
           PiExpression piExpectedType = expectedType.cast(PiExpression.class);
           Expression argExpectedType = piExpectedType.getParameters().getTypeExpr().subst(substitution);
+          if (piExpectedType.getParameters().isExplicit() && !param.getExplicit()) {
+            myErrorReporter.report(new LocalTypeCheckingError(ordinal(argIndex) + " argument of the lambda is implicit, but the first parameter of the expected type is not", expr));
+          }
           if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, argExpr, argExpectedType, paramType)) {
             LocalTypeCheckingError error = new TypeMismatchError(termDoc(argExpectedType), termDoc(argType), paramType);
             myErrorReporter.report(error);
@@ -630,7 +641,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
             }
             break;
           }
-          expectedType = piExpectedType.getCodomain();
+          expectedType = piExpectedType.getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
         }
       }
 
