@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.FunCall;
@@ -125,12 +124,11 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
         "}", 1);
   }
 
-  @Ignore
   @Test
   public void interruptThreadTest() {
-    typeCheckClass(
+    new Thread(() -> typeCheckClass(
       "\\function ack (m n : Nat) : Nat => \\elim m, n | zero, n => suc n | suc m, zero => ack m 1 | suc m, suc n => ack m (ack (suc m) n)\n" +
-      "\\function t : ack 4 4 = ack 4 4 => path (\\lam _ => ack 4 4)");
+      "\\function t : ack 4 4 = ack 4 4 => path (\\lam _ => ack 4 4)")).interrupt();
   }
 
   @Test

@@ -566,11 +566,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.Definition visitClassIntStat(ClassIntStatContext ctx) {
-    return (Concrete.Definition) visit(ctx.intStat());
-  }
-
-  @Override
   public Concrete.Statement visitClassStatement(ClassStatementContext ctx) {
     return (Concrete.Statement) visit(ctx.statement());
   }
@@ -583,18 +578,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<Concrete.Implementation> implementations = new ArrayList<>();
     List<Concrete.Statement> globalStatements = visitWhere(ctx.where());
     List<Concrete.Definition> instanceDefinitions;
-
-    if (ctx.intStat() != null) {
-      Concrete.Definition definition = (Concrete.Definition) visit(ctx.intStat());
-      if (definition instanceof Concrete.ClassField) {
-        fields.add((Concrete.ClassField) definition);
-      } else
-      if (definition instanceof Concrete.Implementation) {
-        implementations.add((Concrete.Implementation) definition);
-      } else {
-        misplacedDefinitionError(definition.getPosition());
-      }
-    }
 
     if (ctx.classStat().isEmpty()) {
       instanceDefinitions = Collections.emptyList();

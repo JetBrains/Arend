@@ -16,6 +16,7 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.error;
 import static org.junit.Assert.*;
 
 public class ClassesTest extends TypeCheckingTestCase {
@@ -601,5 +602,25 @@ public class ClassesTest extends TypeCheckingTestCase {
         "       \\function g : \\0-Type \\lp => X\n" +
         "   }\n" +
         "}");
+  }
+
+  @Test
+  public void recursiveExtendsError() {
+    typeCheckClass("\\class A \\extends A", 1);
+    assertThatErrorsAre(error());
+  }
+
+  @Test
+  public void recursiveFieldError() {
+    typeCheckClass("\\class A { | a : A }", 1);
+    assertThatErrorsAre(error());
+  }
+
+  @Test
+  public void mutualRecursiveExtendsError() {
+    typeCheckClass(
+      "\\class A \\extends B\n" +
+      "\\class B \\extends A", 1);
+    assertThatErrorsAre(error());
   }
 }

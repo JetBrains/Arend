@@ -146,7 +146,9 @@ public class Ordering {
     for (Abstract.Definition referable : dependencies) {
       for (Abstract.Definition dependency : getTypecheckable(referable, enclosingClass)) {
         if (dependency.equals(definition)) {
-          recursion = DependencyListener.Recursion.IN_BODY;
+          if (!(referable instanceof Abstract.ClassField)) {
+            recursion = DependencyListener.Recursion.IN_BODY;
+          }
         } else {
           myListener.dependsOn(typecheckable, dependency);
           updateState(currentState, new Typecheckable(dependency, myRefToHeaders));

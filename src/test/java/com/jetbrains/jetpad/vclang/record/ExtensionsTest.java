@@ -205,7 +205,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "\\class A {\n" +
         "  | a : Nat\n" +
         "}\n" +
-        "\\class Z \\extends A {a => 0}\n" +
+        "\\class Z \\extends A { | a => 0 }\n" +
         "\\class B \\extends Z\n" +
         "\\class C \\extends Z\n" +
         "\\class D \\extends B, C\n");
@@ -217,8 +217,8 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "\\class A {\n" +
         "  | a : Nat\n" +
         "}\n" +
-        "\\class B \\extends A {a => 0}\n" +
-        "\\class C \\extends A {a => 0}\n" +
+        "\\class B \\extends A { | a => 0 }\n" +
+        "\\class C \\extends A { | a => 0 }\n" +
         "\\class D \\extends B, C\n");
   }
 
@@ -248,20 +248,6 @@ public class ExtensionsTest extends TypeCheckingTestCase {
   @Test
   public void internalInheritance() {
     typeCheckClass("\\class A { \\class B \\extends A }");
-  }
-
-  @Ignore
-  @Test
-  public void recursiveExtendsError() {
-    typeCheckClass("\\class A \\extends A", 1);
-  }
-
-  @Ignore
-  @Test
-  public void mutualRecursiveExtendsError() {
-    resolveNamesClass(
-        "\\class A \\extends B\n" +
-        "\\class B \\extends A", 1);
   }
 
   @Test

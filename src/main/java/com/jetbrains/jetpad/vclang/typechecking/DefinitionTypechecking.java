@@ -96,12 +96,28 @@ class DefinitionTypechecking {
 
     if (unit.getDefinition() instanceof Abstract.ClassDefinition) {
       ClassDefinition definition = typechecked != null ? (ClassDefinition) typechecked : new ClassDefinition((Abstract.ClassDefinition) unit.getDefinition());
-      typeCheckClass(definition, enclosingClass, visitor);
+      if (typechecked == null) {
+        state.record(unit.getDefinition(), definition);
+      }
+      if (recursive) {
+        visitor.getErrorReporter().report(new LocalTypeCheckingError("A class cannot be recursive", unit.getDefinition()));
+        definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+      } else {
+        typeCheckClass((Abstract.ClassDefinition) unit.getDefinition(), definition, enclosingClass, visitor);
+      }
       return null;
     } else
     if (unit.getDefinition() instanceof Abstract.ClassViewInstance) {
       FunctionDefinition definition = typechecked != null ? (FunctionDefinition) typechecked : new FunctionDefinition(unit.getDefinition());
-      typeCheckClassViewInstance(definition, visitor);
+      if (typechecked == null) {
+        state.record(unit.getDefinition(), definition);
+      }
+      if (recursive) {
+        visitor.getErrorReporter().report(new LocalTypeCheckingError("An instance cannot be recursive", unit.getDefinition()));
+        definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+      } else {
+        typeCheckClassViewInstance((Abstract.ClassViewInstance) unit.getDefinition(), definition, visitor);
+      }
       return null;
     }
 
@@ -578,12 +594,9 @@ class DefinitionTypechecking {
     return false;
   }
 
-  private static void typeCheckClass(ClassDefinition typedDef, ClassDefinition enclosingClass, CheckTypeVisitor visitor) {
+  private static void typeCheckClass(Abstract.ClassDefinition def, ClassDefinition typedDef, ClassDefinition enclosingClass, CheckTypeVisitor visitor) {
     LocalErrorReporter errorReporter = visitor.getErrorReporter();
     boolean classOk = true;
-
-    Abstract.ClassDefinition def = typedDef.getAbstractDefinition();
-    visitor.getTypecheckingState().record(def, typedDef);
 
     try {
       typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
@@ -698,16 +711,13 @@ class DefinitionTypechecking {
     }
   }
 
-  private static void typeCheckClassViewInstance(FunctionDefinition typedDef, CheckTypeVisitor visitor) {
+  private static void typeCheckClassViewInstance(Abstract.ClassViewInstance def, FunctionDefinition typedDef, CheckTypeVisitor visitor) {
     LocalErrorReporter errorReporter = visitor.getErrorReporter();
-    TypecheckerState state = visitor.getTypecheckingState();
 
     LinkList list = new LinkList();
-    Abstract.ClassViewInstance def = (Abstract.ClassViewInstance) typedDef.getAbstractDefinition();
     boolean paramsOk = typeCheckParameters(def.getParameters(), list, visitor, null, null) != null;
     typedDef.setParameters(list.getFirst());
     typedDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
-    state.record(def, typedDef);
     if (!paramsOk) {
       return;
     }
@@ -757,7 +767,7 @@ class DefinitionTypechecking {
     }
     term = new StripVisitor(visitor.getErrorReporter()).visitClassCall(term, null);
 
-    ClassField classifyingField = (ClassField) state.getTypechecked(classView.getClassifyingField());
+    ClassField classifyingField = (ClassField) visitor.getTypecheckingState().getTypechecked(classView.getClassifyingField());
     Expression impl = fieldSet.get(classifyingField);
     DefCallExpression defCall = impl.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DefCallExpression.class);
     if (defCall == null || !defCall.getDefCallArguments().isEmpty()) {

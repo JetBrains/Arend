@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
@@ -52,6 +53,26 @@ public class Matchers {
       @Override
       public void describeTo(Description description) {
         description.appendText("should be a type mismatch");
+      }
+    };
+  }
+
+  public static Matcher<? super GeneralError> error() {
+    return new TypeSafeDiagnosingMatcher<GeneralError>() {
+      @Override
+      protected boolean matchesSafely(GeneralError error, Description description) {
+        if (error.level == Error.Level.ERROR) {
+          description.appendText("error");
+          return true;
+        } else {
+          description.appendText("not an error");
+          return false;
+        }
+      }
+
+      @Override
+      public void describeTo(Description description) {
+        description.appendText("should be an error");
       }
     };
   }
