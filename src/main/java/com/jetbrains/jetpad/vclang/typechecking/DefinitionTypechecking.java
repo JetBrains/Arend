@@ -590,10 +590,14 @@ class DefinitionTypechecking {
       typedDef.setThisClass(enclosingClass);
 
       if (enclosingClass != null) {
+        // TODO[classes]: This looks suspicious
         DependentLink thisParam = createThisParam(enclosingClass);
         visitor.getFreeBindings().add(thisParam);
         visitor.setThis(enclosingClass, thisParam);
       }
+
+      List<Abstract.ClassField> alreadyImplementFields = new ArrayList<>();
+      Abstract.SourceNode alreadyImplementedSourceNode = null;
 
       for (Abstract.SuperClass aSuperClass : def.getSuperClasses()) {
         CheckTypeVisitor.Result result = visitor.finalCheckExpr(aSuperClass.getSuperClass(), null);
@@ -613,13 +617,16 @@ class DefinitionTypechecking {
         typedDef.addSuperClass(typeCheckedSuperClass.getDefinition());
 
         for (Map.Entry<ClassField, ClassDefinition.Implementation> entry : typeCheckedSuperClass.getDefinition().getImplemented()) {
-          ClassDefinition.Implementation oldImpl = typedDef.getImplementation(entry.getKey());
-          if (oldImpl != null && !oldImpl.substThisParam(new ReferenceExpression(entry.getValue().thisParam)).equals(entry.getValue().term)) {
+          if (!implementField(entry.getKey(), entry.getValue(), typedDef, alreadyImplementFields)) {
             classOk = false;
-            errorReporter.report(new LocalTypeCheckingError("Implementations of '" + entry.getKey().getName() + "' differ", aSuperClass.getSuperClass()));
+            alreadyImplementedSourceNode = aSuperClass.getSuperClass();
           }
-          if (oldImpl == null) {
-            typedDef.implementField(entry.getKey(), entry.getValue());
+        }
+
+        for (Map.Entry<ClassField, Expression> entry : typeCheckedSuperClass.getImplementedHere().entrySet()) {
+          if (!implementField(entry.getKey(), new ClassDefinition.Implementation(createThisParam(typedDef), entry.getValue()), typedDef, alreadyImplementFields)) {
+            classOk = false;
+            alreadyImplementedSourceNode = aSuperClass.getSuperClass();
           }
         }
       }
@@ -630,8 +637,6 @@ class DefinitionTypechecking {
 
       if (!def.getImplementations().isEmpty()) {
         typedDef.updateSorts();
-        List<Abstract.ClassField> alreadyImplementFields = new ArrayList<>();
-        Abstract.SourceNode alreadyImplementedSourceNode = null;
         for (Abstract.Implementation implementation : def.getImplementations()) {
           ClassField field = (ClassField) visitor.getTypecheckingState().getTypechecked(implementation.getImplementedField());
           if (typedDef.isImplemented(field)) {
@@ -650,10 +655,10 @@ class DefinitionTypechecking {
             classOk = false;
           }
         }
+      }
 
-        if (!alreadyImplementFields.isEmpty()) {
-          errorReporter.report(new FieldsImplementationError(true, alreadyImplementFields, alreadyImplementFields.size() > 1 ? def : alreadyImplementedSourceNode));
-        }
+      if (!alreadyImplementFields.isEmpty()) {
+        errorReporter.report(new FieldsImplementationError(true, alreadyImplementFields, alreadyImplementFields.size() > 1 ? def : alreadyImplementedSourceNode));
       }
 
       if (classOk) {
@@ -678,6 +683,19 @@ class DefinitionTypechecking {
     }
     visitor.getTypecheckingState().record(def, typedDef);
     enclosingClass.addField(typedDef);
+  }
+
+  private static boolean implementField(ClassField classField, ClassDefinition.Implementation implementation, ClassDefinition classDef, List<Abstract.ClassField> alreadyImplemented) {
+    ClassDefinition.Implementation oldImpl = classDef.getImplementation(classField);
+    if (oldImpl == null || oldImpl.term.isInstance(ErrorExpression.class)) {
+      classDef.implementField(classField, implementation);
+    }
+    if (oldImpl != null && !oldImpl.substThisParam(new ReferenceExpression(implementation.thisParam)).equals(implementation.term)) {
+      alreadyImplemented.add(classField.getAbstractDefinition());
+      return false;
+    } else {
+      return true;
+    }
   }
 
   private static void typeCheckClassViewInstance(FunctionDefinition typedDef, CheckTypeVisitor visitor) {
