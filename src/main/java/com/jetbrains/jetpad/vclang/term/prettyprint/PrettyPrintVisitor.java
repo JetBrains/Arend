@@ -48,6 +48,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       ((Abstract.Definition) node).accept(this, null);
       return true;
     }
+    if (node instanceof Abstract.ClassFieldImpl) {
+      visitClassFieldImpl((Abstract.ClassFieldImpl) node);
+      return true;
+    }
     if (node instanceof Abstract.FunctionClause) {
       prettyPrintFunctionClause((Abstract.FunctionClause) node);
       return true;
@@ -575,15 +579,20 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   private void visitClassFieldImpls(Collection<? extends Abstract.ClassFieldImpl> classFieldImpls) {
     myBuilder.append("{\n");
     myIndent += INDENT;
-    for (Abstract.ClassFieldImpl statement : classFieldImpls) {
+    for (Abstract.ClassFieldImpl classFieldImpl : classFieldImpls) {
       printIndent();
-      myBuilder.append("| ").append(statement.getImplementedFieldName()).append(" => ");
-      statement.getImplementation().accept(this, Abstract.Expression.PREC);
+      myBuilder.append("| ");
+      visitClassFieldImpl(classFieldImpl);
       myBuilder.append("\n");
     }
     myIndent -= INDENT;
     printIndent();
     myBuilder.append("}");
+  }
+
+  private void visitClassFieldImpl(Abstract.ClassFieldImpl classFieldImpl) {
+    myBuilder.append(classFieldImpl.getImplementedFieldName()).append(" => ");
+    classFieldImpl.getImplementation().accept(this, Abstract.Expression.PREC);
   }
 
   @Override

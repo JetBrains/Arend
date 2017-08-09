@@ -1010,6 +1010,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
   @Override
   public Result visitClassExt(Abstract.ClassExtExpression expr, ExpectedType expectedType) {
+    // Typecheck the base class
+
     Abstract.Expression baseClassExpr = expr.getBaseClassExpression();
     Result typeCheckedBaseClass = checkExpr(baseClassExpr, null);
     if (typeCheckedBaseClass == null) {
@@ -1025,17 +1027,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     ClassCallExpression classCallExpr = normalizedBaseClassExpr.cast(ClassCallExpression.class);
     ClassDefinition baseClass = classCallExpr.getDefinition();
 
-    Map<ClassField, Expression> fieldSet = new HashMap<>(classCallExpr.getImplementedHere());
-    ClassCallExpression resultClassCall = new ClassCallExpression(baseClass, classCallExpr.getSortArgument(), fieldSet, Sort.PROP);
+    // Check for already implemented fields
 
-    Collection<? extends Abstract.ClassFieldImpl> statements = expr.getStatements();
     Map<ClassField, Abstract.ClassFieldImpl> classFieldMap = new HashMap<>();
-
     List<Abstract.ClassField> alreadyImplementedFields = new ArrayList<>();
     Abstract.SourceNode alreadyImplementedSourceNode = null;
-    for (Abstract.ClassFieldImpl statement : statements) {
+    for (Abstract.ClassFieldImpl statement : expr.getStatements()) {
       ClassField field = (ClassField) myState.getTypechecked(statement.getImplementedField());
-      if (resultClassCall.isImplemented(field) || classFieldMap.containsKey(field)) {
+      if (baseClass.isImplemented(field) || classFieldMap.containsKey(field)) {
         alreadyImplementedFields.add(field.getAbstractDefinition());
         alreadyImplementedSourceNode = statement;
       } else {
@@ -1047,8 +1046,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       myErrorReporter.report(new FieldsImplementationError(true, alreadyImplementedFields, alreadyImplementedFields.size() > 1 ? expr : alreadyImplementedSourceNode));
     }
 
+    // Typecheck statements
+
+    Map<ClassField, Expression> fieldSet = new HashMap<>(classCallExpr.getImplementedHere());
+    ClassCallExpression resultClassCall = new ClassCallExpression(baseClass, classCallExpr.getSortArgument(), fieldSet, Sort.PROP);
+
     if (!classFieldMap.isEmpty()) {
-      List<Abstract.ClassField> notImplementedFields = new ArrayList<>();
+      Set<ClassField> notImplementedFields = new HashSet<>();
       for (ClassField field : baseClass.getFields()) {
         if (resultClassCall.isImplemented(field)) {
           continue;
@@ -1056,23 +1060,28 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
         Abstract.ClassFieldImpl impl = classFieldMap.get(field);
         if (impl != null) {
-          if (notImplementedFields.isEmpty()) {
-            fieldSet.put(field, implementField(field, impl.getImplementation(), resultClassCall));
+          boolean ok = true;
+          if (!notImplementedFields.isEmpty()) {
+            ClassField found = (ClassField) FindDefCallVisitor.findDefinition(field.getBaseType(resultClassCall.getSortArgument()), notImplementedFields);
+            if (found != null) {
+              ok = false;
+              myErrorReporter.report(new FieldsImplementationError(false, Collections.singletonList(found.getAbstractDefinition()), impl));
+            }
+          }
+          if (ok) {
+            fieldSet.put(field, typecheckImplementation(field, impl.getImplementation(), resultClassCall));
             classFieldMap.remove(field);
             if (classFieldMap.isEmpty()) {
               break;
             }
           }
         } else {
-          notImplementedFields.add(field.getAbstractDefinition());
+          notImplementedFields.add(field);
         }
       }
-
-      if (!notImplementedFields.isEmpty()) {
-        myErrorReporter.report(new FieldsImplementationError(false, notImplementedFields, expr));
-        return null;
-      }
     }
+
+    // Calculate the sort of the expression
 
     DependentLink thisParam = ExpressionFactory.parameter("\\this", resultClassCall);
     List<Sort> sorts = new ArrayList<>();
@@ -1087,7 +1096,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     return checkResult(expectedType, new Result(resultClassCall, new UniverseExpression(resultClassCall.getSort())), expr);
   }
 
-  public Expression implementField(ClassField field, Abstract.Expression implBody, ClassCallExpression fieldSetClass) {
+  public Expression typecheckImplementation(ClassField field, Abstract.Expression implBody, ClassCallExpression fieldSetClass) {
     CheckTypeVisitor.Result result = checkExpr(implBody, field.getBaseType(fieldSetClass.getSortArgument()).subst(field.getThisParameter(), new NewExpression(fieldSetClass)));
     return result != null ? result.expression : new ErrorExpression(null, null);
   }

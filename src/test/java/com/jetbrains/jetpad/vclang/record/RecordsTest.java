@@ -73,13 +73,23 @@ public class RecordsTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void notImplementedTestError() {
+  public void notImplementedTest() {
     typeCheckClass(
         "\\class Point {\n" +
         "  | x : Nat\n" +
         "  | y : Nat\n" +
         "}\n" +
-        "\\function diagonal => Point { y => 0 }", 1);
+        "\\function diagonal => Point { y => 0 }");
+  }
+
+  @Test
+  public void notImplementedTestError() {
+    typeCheckClass(
+        "\\class Point {\n" +
+        "  | x : Nat\n" +
+        "  | y : x = x -> Nat\n" +
+        "}\n" +
+        "\\function diagonal => Point { y => \\lam _ => 0 }", 1);
   }
 
   @Test

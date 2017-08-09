@@ -739,7 +739,7 @@ class DefinitionTypechecking {
       Abstract.ClassFieldImpl impl = classFieldMap.get(field);
       if (impl != null) {
         if (notImplementedFields.isEmpty()) {
-          fieldSet.put(field, visitor.implementField(field, impl.getImplementation(), term));
+          fieldSet.put(field, visitor.typecheckImplementation(field, impl.getImplementation(), term));
           classFieldMap.remove(field);
         }
       } else {
