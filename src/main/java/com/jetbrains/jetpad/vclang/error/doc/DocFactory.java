@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import java.util.*;
 
 public class DocFactory {
-  public static ReferenceDoc refDoc(Abstract.SourceNode sourceNode) {
+  public static ReferenceDoc refDoc(Abstract.ReferableSourceNode sourceNode) {
     return new ReferenceDoc(sourceNode);
   }
 

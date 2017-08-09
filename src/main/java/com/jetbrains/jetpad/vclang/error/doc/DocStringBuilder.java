@@ -1,18 +1,16 @@
 package com.jetbrains.jetpad.vclang.error.doc;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
-
 import java.util.Arrays;
 
 public class DocStringBuilder implements DocVisitor<Integer, Void> {
   private final StringBuilder myBuilder;
 
-  private DocStringBuilder() {
-    myBuilder = new StringBuilder();
+  public DocStringBuilder(StringBuilder builder) {
+    myBuilder = builder;
   }
 
   public static String build(Doc doc) {
-    DocStringBuilder visitor = new DocStringBuilder();
+    DocStringBuilder visitor = new DocStringBuilder(new StringBuilder());
     doc.accept(visitor, 0);
     return visitor.myBuilder.toString();
   }
@@ -103,7 +101,7 @@ public class DocStringBuilder implements DocVisitor<Integer, Void> {
 
   @Override
   public Void visitReference(ReferenceDoc doc, Integer indent) {
-    myBuilder.append(doc.getReference() instanceof Abstract.ReferableSourceNode ? ((Abstract.ReferableSourceNode) doc.getReference()).getName() : doc.getReference());
+    myBuilder.append(doc.getReference().getName());
     return null;
   }
 }
