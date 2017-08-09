@@ -125,10 +125,13 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void interruptThreadTest() {
-    new Thread(() -> typeCheckClass(
+  public void interruptThreadTest() throws InterruptedException {
+    Thread thread = new Thread(() -> typeCheckClass(
       "\\function ack (m n : Nat) : Nat => \\elim m, n | zero, n => suc n | suc m, zero => ack m 1 | suc m, suc n => ack m (ack (suc m) n)\n" +
-      "\\function t : ack 4 4 = ack 4 4 => path (\\lam _ => ack 4 4)")).interrupt();
+      "\\function t : ack 4 4 = ack 4 4 => path (\\lam _ => ack 4 4)"));
+    thread.start();
+    thread.interrupt();
+    thread.join();
   }
 
   @Test
