@@ -102,6 +102,13 @@ class DefinitionTypechecking {
       if (recursive) {
         visitor.getErrorReporter().report(new LocalTypeCheckingError("A class cannot be recursive", unit.getDefinition()));
         definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+
+        for (Abstract.ClassField field : ((Abstract.ClassDefinition) unit.getDefinition()).getFields()) {
+          ClassField typedDef = new ClassField(field, new ErrorExpression(null, null), definition, createThisParam(definition));
+          typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+          visitor.getTypecheckingState().record(field, typedDef);
+          definition.addField(typedDef);
+        }
       } else {
         typeCheckClass((Abstract.ClassDefinition) unit.getDefinition(), definition, enclosingClass, visitor);
       }
