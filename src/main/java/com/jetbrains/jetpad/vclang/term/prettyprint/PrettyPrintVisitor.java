@@ -116,7 +116,16 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   public static boolean isPrefix(String name) {
-    return name == null || name.isEmpty() || name.charAt(0) == '_' || Character.isLetter(name.charAt(0)) || name.charAt(0) == '?' || name.charAt(0) == '\\';
+    if (name == null) {
+      return true;
+    }
+    for (int i = 0; i < name.length(); i++) {
+      char ch = name.charAt(i);
+      if (ch == '_' || Character.isLetter(ch) || ch == '\'') {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override
