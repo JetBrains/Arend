@@ -27,7 +27,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   public PrettyPrintVisitor(StringBuilder builder, int indent) {
-    this(builder, indent, false);
+    this(builder, indent, true);
   }
 
   public static String prettyPrint(Abstract.SourceNode node) {
