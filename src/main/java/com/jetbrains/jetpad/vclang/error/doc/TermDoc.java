@@ -21,11 +21,6 @@ public class TermDoc extends CachingDoc {
   }
 
   @Override
-  public boolean isNull() {
-    return false;
-  }
-
-  @Override
   public boolean isEmpty() {
     return false;
   }

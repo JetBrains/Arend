@@ -82,7 +82,17 @@ public class DocFactory {
   }
 
   public static Doc vList(Doc... docs) {
-    return docs.length == 1 ? docs[0] : new VListDoc(Arrays.asList(docs));
+    if (docs.length == 1) {
+      return docs[0];
+    }
+
+    List<Doc> list = new ArrayList<>(docs.length);
+    for (Doc doc : docs) {
+      if (!doc.isNull()) {
+        list.add(doc);
+      }
+    }
+    return new VListDoc(list);
   }
 
   public static LineDoc hList(Collection<? extends LineDoc> docs) {

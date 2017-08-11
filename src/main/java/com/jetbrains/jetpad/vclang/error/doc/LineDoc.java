@@ -3,6 +3,9 @@ package com.jetbrains.jetpad.vclang.error.doc;
 import java.util.Collections;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.hList;
+import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.text;
+
 public abstract class LineDoc extends Doc {
   @Override
   public final int getHeight() {
@@ -20,7 +23,7 @@ public abstract class LineDoc extends Doc {
   }
 
   @Override
-  public final List<LineDoc> linearize() {
-    return Collections.singletonList(this);
+  public final List<LineDoc> linearize(int indent, boolean indentFirst) {
+    return Collections.singletonList(!indentFirst || indent == 0 ? this : hList(text(HangDoc.getIndent(indent)), this));
   }
 }

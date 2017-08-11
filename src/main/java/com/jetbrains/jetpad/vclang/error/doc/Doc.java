@@ -10,7 +10,12 @@ public abstract class Doc {
   public abstract boolean isNull(); // isNull() == (getHeight() == 0)
   public abstract boolean isSingleLine(); // isSingleLine() == (getHeight() <= 1)
   public abstract boolean isEmpty(); // isEmpty() == (getWidth() == 0)
-  public abstract List<LineDoc> linearize(); // linearize().size() == getHeight()
+
+  public abstract List<LineDoc> linearize(int indent, boolean indentFirst); // linearize(n, b).size() == getHeight()
+
+  public final List<LineDoc> linearize() {
+    return linearize(0, false);
+  }
 
   @Override
   public String toString() {

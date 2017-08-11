@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.error.doc;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public class VListDoc extends Doc {
@@ -71,10 +72,18 @@ public class VListDoc extends Doc {
   }
 
   @Override
-  public List<LineDoc> linearize() {
+  public List<LineDoc> linearize(int indent, boolean indentFirst) {
+    if (myDocs.isEmpty()) {
+      return Collections.emptyList();
+    }
+
     List<LineDoc> result = new ArrayList<>();
     for (Doc doc : myDocs) {
-      result.addAll(doc.linearize());
+      List<LineDoc> docs = doc.linearize(indent, indentFirst);
+      if (!docs.isEmpty()) {
+        indentFirst = true;
+      }
+      result.addAll(docs);
     }
     return result;
   }
