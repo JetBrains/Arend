@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.primitive.FilteredScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.ClassViewInstanceProviderProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.SimpleClassViewInstanceProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.scope.InstanceScopeProvider;
 
@@ -21,125 +22,65 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisitor<Scope, Void> {
+public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisitor<SimpleClassViewInstanceProvider, Void> {
+  private final ClassViewInstanceProviderProvider myInstanceProviderProvider;
   private final InstanceScopeProvider myScopeProvider;
-  private final SimpleClassViewInstanceProvider myInstanceProvider;
   private final Function<Abstract.Definition, Iterable<OpenCommand>> myOpens;
   private final ErrorReporter myErrorReporter;
 
-  public DefinitionResolveInstanceVisitor(InstanceScopeProvider scopeProvider, SimpleClassViewInstanceProvider instanceProvider, Function<Abstract.Definition, Iterable<OpenCommand>> opens, ErrorReporter errorReporter) {
+  public DefinitionResolveInstanceVisitor(ClassViewInstanceProviderProvider instanceProviderProvider, InstanceScopeProvider scopeProvider, Function<Abstract.Definition, Iterable<OpenCommand>> opens, ErrorReporter errorReporter) {
+    myInstanceProviderProvider = instanceProviderProvider;
     myScopeProvider = scopeProvider;
-    myInstanceProvider = instanceProvider;
     myOpens = opens;
     myErrorReporter = errorReporter;
   }
 
   @Override
-  public Void visitFunction(Abstract.FunctionDefinition def, Scope parentScope) {
-    Iterable<Scope> extraScopes = getExtraScopes(def, parentScope);
-    FunctionScope scope = new FunctionScope(parentScope, myScopeProvider.forDefinition(def), extraScopes);
+  public Void visitFunction(Abstract.FunctionDefinition def, SimpleClassViewInstanceProvider parentInstanceProvider) {
+    Iterable<Scope> extraScopes = getExtraScopes(def, parentInstanceProvider.getScope());
+    FunctionScope scope = new FunctionScope(parentInstanceProvider.getScope(), myScopeProvider.forDefinition(def), extraScopes);
     scope.findIntroducedDuplicateInstances(this::warnDuplicate);
+    SimpleClassViewInstanceProvider instanceProvider = new SimpleClassViewInstanceProvider(scope);
+    myInstanceProviderProvider.addProvider(def, instanceProvider);
 
     for (Abstract.Definition definition : def.getGlobalDefinitions()) {
-      definition.accept(this, scope);
-    }
-
-    ExpressionResolveInstanceVisitor exprVisitor = new ExpressionResolveInstanceVisitor(scope, myInstanceProvider);
-    exprVisitor.visitParameters(def.getParameters());
-
-    Abstract.Expression resultType = def.getResultType();
-    if (resultType != null) {
-      resultType.accept(exprVisitor, null);
-    }
-
-    Abstract.FunctionBody body = def.getBody();
-    if (body instanceof Abstract.TermFunctionBody) {
-      ((Abstract.TermFunctionBody) body).getTerm().accept(exprVisitor, null);
-    }
-    if (body instanceof Abstract.ElimFunctionBody) {
-      for (Abstract.ReferenceExpression ref : ((Abstract.ElimFunctionBody) body).getEliminatedReferences()) {
-        exprVisitor.visitReference(ref, null);
-      }
-      for (Abstract.FunctionClause clause : ((Abstract.ElimFunctionBody) body).getClauses()) {
-        if (clause.getExpression() != null) {
-          clause.getExpression().accept(exprVisitor, null);
-        }
-      }
-    }
-
-
-    return null;
-  }
-
-  @Override
-  public Void visitClassField(Abstract.ClassField def, Scope parentScope) {
-    def.getResultType().accept(new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider), null);
-    return null;
-  }
-
-  @Override
-  public Void visitData(Abstract.DataDefinition def, Scope parentScope) {
-    Scope scope = new DataScope(parentScope, myScopeProvider.forDefinition(def));
-    ExpressionResolveInstanceVisitor exprVisitor = new ExpressionResolveInstanceVisitor(scope, myInstanceProvider);
-    exprVisitor.visitParameters(def.getParameters());
-
-    if (def.getEliminatedReferences() != null) {
-      for (Abstract.ReferenceExpression ref : def.getEliminatedReferences()) {
-        exprVisitor.visitReference(ref, null);
-      }
-    }
-    for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
-      for (Abstract.Constructor constructor : clause.getConstructors()) {
-        visitConstructor(constructor, scope);
-      }
+      definition.accept(this, instanceProvider);
     }
 
     return null;
   }
 
   @Override
-  public Void visitConstructor(Abstract.Constructor def, Scope parentScope) {
-    ExpressionResolveInstanceVisitor exprVisitor = new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider);
-    exprVisitor.visitParameters(def.getParameters());
-    if (!def.getEliminatedReferences().isEmpty()) {
-      for (Abstract.ReferenceExpression ref : def.getEliminatedReferences()) {
-        exprVisitor.visitReference(ref, null);
-      }
-      for (Abstract.FunctionClause clause : def.getClauses()) {
-        if (clause.getExpression() != null) {
-          clause.getExpression().accept(exprVisitor, null);
-        }
-      }
-    }
+  public Void visitClassField(Abstract.ClassField def, SimpleClassViewInstanceProvider parentInstanceScope) {
     return null;
   }
 
   @Override
-  public Void visitClass(Abstract.ClassDefinition def, Scope parentScope) {
-    ExpressionResolveInstanceVisitor exprVisitor = new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider);
-    for (Abstract.SuperClass superClass : def.getSuperClasses()) {
-      superClass.getSuperClass().accept(exprVisitor, null);
-    }
+  public Void visitData(Abstract.DataDefinition def, SimpleClassViewInstanceProvider parentInstanceScope) {
+    myInstanceProviderProvider.addProvider(def, new SimpleClassViewInstanceProvider(new DataScope(parentInstanceScope.getScope(), myScopeProvider.forDefinition(def))));
+    return null;
+  }
 
+  @Override
+  public Void visitConstructor(Abstract.Constructor def, SimpleClassViewInstanceProvider parentInstanceScope) {
+    return null;
+  }
+
+  @Override
+  public Void visitClass(Abstract.ClassDefinition def, SimpleClassViewInstanceProvider parentInstanceScope) {
     try {
-      Iterable<Scope> extraScopes = getExtraScopes(def, parentScope);
-      StaticClassScope staticScope = new StaticClassScope(parentScope, myScopeProvider.forDefinition(def), extraScopes);
+      Iterable<Scope> extraScopes = getExtraScopes(def, parentInstanceScope.getScope());
+      StaticClassScope staticScope = new StaticClassScope(parentInstanceScope.getScope(), myScopeProvider.forDefinition(def), extraScopes);
       staticScope.findIntroducedDuplicateInstances(this::warnDuplicate);
+      SimpleClassViewInstanceProvider instanceProvider = new SimpleClassViewInstanceProvider(staticScope);
+      myInstanceProviderProvider.addProvider(def, instanceProvider);
 
       for (Abstract.Definition definition : def.getGlobalDefinitions()) {
-        definition.accept(this, staticScope);
+        definition.accept(this, instanceProvider);
       }
 
-      exprVisitor.visitParameters(def.getPolyParameters());
-
-      for (Abstract.ClassField field : def.getFields()) {
-        field.accept(this, staticScope);
-      }
-      for (Abstract.Implementation implementation : def.getImplementations()) {
-        implementation.accept(this, staticScope);
-      }
       for (Abstract.Definition definition : def.getInstanceDefinitions()) {
-        definition.accept(this, staticScope);
+        definition.accept(this, instanceProvider);
       }
     } catch (Namespace.InvalidNamespaceException e) {
       myErrorReporter.report(e.toError());
@@ -149,30 +90,23 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
   }
 
   @Override
-  public Void visitImplement(Abstract.Implementation def, Scope parentScope) {
-    def.getImplementation().accept(new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider), null);
+  public Void visitImplement(Abstract.Implementation def, SimpleClassViewInstanceProvider parentInstanceScope) {
     return null;
   }
 
   @Override
-  public Void visitClassView(Abstract.ClassView def, Scope parentScope) {
-    new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider).visitReference(def.getUnderlyingClassReference(), null);
+  public Void visitClassView(Abstract.ClassView def, SimpleClassViewInstanceProvider parentInstanceScope) {
     return null;
   }
 
   @Override
-  public Void visitClassViewField(Abstract.ClassViewField def, Scope parentScope) {
-    throw new IllegalStateException();
+  public Void visitClassViewField(Abstract.ClassViewField def, SimpleClassViewInstanceProvider parentInstanceScope) {
+    return null;
   }
 
   @Override
-  public Void visitClassViewInstance(Abstract.ClassViewInstance def, Scope parentScope) {
-    ExpressionResolveInstanceVisitor exprVisitor = new ExpressionResolveInstanceVisitor(parentScope, myInstanceProvider);
-    exprVisitor.visitParameters(def.getParameters());
-    exprVisitor.visitReference(def.getClassView(), null);
-    for (Abstract.ClassFieldImpl impl : def.getClassFieldImpls()) {
-      impl.getImplementation().accept(exprVisitor, null);
-    }
+  public Void visitClassViewInstance(Abstract.ClassViewInstance def, SimpleClassViewInstanceProvider parentInstanceScope) {
+    myInstanceProviderProvider.addProvider(def, parentInstanceScope);
     return null;
   }
 

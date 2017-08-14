@@ -1,23 +1,30 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass.provider;
 
+import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.util.Pair;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class SimpleClassViewInstanceProvider implements ClassViewInstanceProvider {
-  private final Map<Pair<Abstract.ReferenceExpression, Integer>, Collection<? extends Abstract.ClassViewInstance>> myInstances = new HashMap<>();
+  private final Scope myScope;
+  private Map<Abstract.ClassView, List<Abstract.ClassViewInstance>> myInstances = null;
 
-  @Override
-  public Collection<? extends Abstract.ClassViewInstance> getInstances(Abstract.ReferenceExpression defCall, int paramIndex) {
-    Collection<? extends Abstract.ClassViewInstance> instances = myInstances.get(new Pair<>(defCall, paramIndex));
-    return instances == null ? Collections.emptyList() : instances;
+  public SimpleClassViewInstanceProvider(Scope scope) {
+    myScope = scope;
   }
 
-  public void addInstances(Abstract.ReferenceExpression defCall, int paramIndex, Collection<? extends Abstract.ClassViewInstance> instances) {
-    myInstances.put(new Pair<>(defCall, paramIndex), instances);
+  public Scope getScope() {
+    return myScope;
+  }
+
+  @Override
+  public Collection<? extends Abstract.ClassViewInstance> getInstances(Abstract.ClassView classView) {
+    if (myInstances == null) {
+      myInstances = new HashMap<>();
+      for (Abstract.ClassViewInstance instance : myScope.getInstances()) {
+        myInstances.computeIfAbsent((Abstract.ClassView) instance.getClassView().getReferent(), k -> new ArrayList<>()).add(instance);
+      }
+    }
+    return myInstances.getOrDefault(classView, Collections.emptyList());
   }
 }

@@ -29,17 +29,14 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, V
     if (expr.getReferent() instanceof Abstract.Definition) {
       if (myInstanceProvider != null) {
         if (expr.getReferent() instanceof Abstract.ClassViewField) {
-          myDependencies.addAll(myInstanceProvider.getInstances(expr, 0));
+          myDependencies.addAll(myInstanceProvider.getInstances(((Abstract.ClassViewField) expr.getReferent()).getOwnView()));
         } else {
-          Collection<? extends Abstract.Parameter> arguments = Abstract.getParameters((Abstract.Definition) expr.getReferent());
-          if (arguments != null) {
-            int i = 0;
-            for (Abstract.Parameter arg : arguments) {
-              myDependencies.addAll(myInstanceProvider.getInstances(expr, i));
-              if (arg instanceof Abstract.TelescopeParameter) {
-                i += ((Abstract.TelescopeParameter) arg).getReferableList().size();
-              } else {
-                i++;
+          Collection<? extends Abstract.Parameter> parameters = Abstract.getParameters((Abstract.Definition) expr.getReferent());
+          if (parameters != null) {
+            for (Abstract.Parameter parameter : parameters) {
+              Abstract.ClassView classView = Abstract.getUnderlyingClassView(((Abstract.TypeParameter) parameter).getType());
+              if (classView != null) {
+                myDependencies.addAll(myInstanceProvider.getInstances(classView));
               }
             }
           }

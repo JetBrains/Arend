@@ -23,21 +23,52 @@ public class GlobalInstancePool implements ClassViewInstancePool {
     myInstanceProvider = instanceProvider;
   }
 
+  private static Abstract.ClassView getClassViewFromDefCall(Abstract.Definition definition, int paramIndex) {
+    Collection<? extends Abstract.Parameter> parameters = Abstract.getParameters(definition);
+    if (parameters == null) {
+      return null;
+    }
+
+    int i = 0;
+    for (Abstract.Parameter parameter : parameters) {
+      if (parameter instanceof Abstract.NameParameter) {
+        i++;
+      } else
+      if (parameter instanceof Abstract.TypeParameter) {
+        if (parameter instanceof Abstract.TelescopeParameter) {
+          i += ((Abstract.TelescopeParameter) parameter).getReferableList().size();
+        } else {
+          i++;
+        }
+        if (i > paramIndex) {
+          return Abstract.getUnderlyingClassView(((Abstract.TypeParameter) parameter).getType());
+        }
+      } else {
+        throw new IllegalStateException();
+      }
+    }
+    return null;
+  }
+
   private Expression findInstance(Abstract.ReferenceExpression defCall, int paramIndex, Expression classifyingExpression, Abstract.Definition classView) {
     DefCallExpression classifyingDefCall = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DefCallExpression.class);
     if (classifyingDefCall == null) {
       return null;
     }
 
-    Collection<? extends Abstract.ClassViewInstance> instances = myInstanceProvider.getInstances(defCall, paramIndex);
-    for (Abstract.ClassViewInstance instance : instances) {
-      if ((classView instanceof Abstract.ClassView && instance.getClassView().getReferent() == classView ||
-           classView instanceof Abstract.ClassDefinition &&
-             ((Abstract.ClassView) instance.getClassView().getReferent()).getUnderlyingClassReference().getReferent() == classView) &&
+    Abstract.Definition def = (Abstract.Definition) defCall.getReferent();
+    Abstract.ClassView classView1 = def instanceof Abstract.ClassViewField ? ((Abstract.ClassViewField) def).getOwnView() : getClassViewFromDefCall(def, paramIndex);
+    if (classView1 != null) {
+      Collection<? extends Abstract.ClassViewInstance> instances = myInstanceProvider.getInstances(classView1);
+      for (Abstract.ClassViewInstance instance : instances) {
+        if ((classView instanceof Abstract.ClassView && instance.getClassView().getReferent() == classView ||
+          classView instanceof Abstract.ClassDefinition &&
+            ((Abstract.ClassView) instance.getClassView().getReferent()).getUnderlyingClassReference().getReferent() == classView) &&
           instance.getClassifyingDefinition() == classifyingDefCall.getDefinition().getAbstractDefinition()) {
-        Definition definition = myTypecheckerState.getTypechecked(instance);
-        if (definition.status().headerIsOK()) {
-          return new FunCallExpression((FunctionDefinition) definition, Sort.PROP /* TODO[classes] */, Collections.emptyList());
+          Definition definition = myTypecheckerState.getTypechecked(instance);
+          if (definition.status().headerIsOK()) {
+            return new FunCallExpression((FunctionDefinition) definition, Sort.PROP /* TODO[classes] */, Collections.emptyList());
+          }
         }
       }
     }

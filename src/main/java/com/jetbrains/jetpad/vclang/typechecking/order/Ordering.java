@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.order;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.Typecheckable;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckingUnit;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.ClassViewInstanceProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.ClassViewInstanceProviderProvider;
 
 import java.util.*;
 
@@ -22,12 +22,12 @@ public class Ordering {
   private int myIndex = 0;
   private final Stack<TypecheckingUnit> myStack = new Stack<>();
   private final Map<Typecheckable, DefState> myVertices = new HashMap<>();
-  private final ClassViewInstanceProvider myInstanceProvider;
+  private final ClassViewInstanceProviderProvider myInstanceProviderProvider;
   private final DependencyListener myListener;
   private final boolean myRefToHeaders;
 
-  public Ordering(ClassViewInstanceProvider instanceProvider, DependencyListener listener, boolean refToHeaders) {
-    myInstanceProvider = instanceProvider;
+  public Ordering(ClassViewInstanceProviderProvider instanceProviderProvider, DependencyListener listener, boolean refToHeaders) {
+    myInstanceProviderProvider = instanceProviderProvider;
     myListener = listener;
     myRefToHeaders = refToHeaders;
   }
@@ -136,7 +136,7 @@ public class Ordering {
     }
 
     DependencyListener.Recursion recursion = DependencyListener.Recursion.NO;
-    definition.accept(new DefinitionGetDepsVisitor(myInstanceProvider, dependencies), typecheckable.isHeader());
+    definition.accept(new DefinitionGetDepsVisitor(myInstanceProviderProvider.getInstanceProvider(definition), dependencies), typecheckable.isHeader());
     if (typecheckable.isHeader() && dependencies.contains(definition)) {
       myStack.pop();
       currentState.onStack = false;

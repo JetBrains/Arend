@@ -15,7 +15,7 @@ public class EmptyClassViewInstanceProvider implements ClassViewInstanceProvider
   }
 
   @Override
-  public Collection<? extends Abstract.ClassViewInstance> getInstances(Abstract.ReferenceExpression defCall, int paramIndex) {
+  public Collection<? extends Abstract.ClassViewInstance> getInstances(Abstract.ClassView classView) {
     return Collections.emptyList();
   }
 }
