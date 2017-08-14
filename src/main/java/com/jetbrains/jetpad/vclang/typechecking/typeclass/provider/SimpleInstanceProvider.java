@@ -5,11 +5,11 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.*;
 
-public class SimpleClassViewInstanceProvider implements ClassViewInstanceProvider {
+public class SimpleInstanceProvider implements InstanceProvider {
   private final Scope myScope;
   private Map<Abstract.ClassView, List<Abstract.ClassViewInstance>> myInstances = null;
 
-  public SimpleClassViewInstanceProvider(Scope scope) {
+  public SimpleInstanceProvider(Scope scope) {
     myScope = scope;
   }
 

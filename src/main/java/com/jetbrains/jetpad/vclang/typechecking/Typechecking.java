@@ -10,26 +10,28 @@ import com.jetbrains.jetpad.vclang.term.BaseAbstractVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import com.jetbrains.jetpad.vclang.typechecking.order.Ordering;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.DefinitionResolveInstanceVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.SimpleClassViewInstanceProvider;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.scope.InstanceScopeProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.SimpleInstanceProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.scope.InstanceNamespaceProvider;
 import com.jetbrains.jetpad.vclang.util.ComputationInterruptedException;
 
 import java.util.Collection;
 import java.util.function.Function;
 
 public class Typechecking {
+  private final InstanceNamespaceProvider myInstanceNamespaceProvider;
   private final TypecheckingDependencyListener myDependencyListener;
   private final Function<Abstract.Definition, Iterable<OpenCommand>> myOpens;
 
   public Typechecking(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, Function<Abstract.Definition, Iterable<OpenCommand>> opens, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, DependencyListener dependencyListener) {
-    myDependencyListener = new TypecheckingDependencyListener(state, staticNsProvider, dynamicNsProvider, errorReporter, typecheckedReporter, dependencyListener);
+    myInstanceNamespaceProvider = new InstanceNamespaceProvider(errorReporter);
+    myDependencyListener = new TypecheckingDependencyListener(state, staticNsProvider, dynamicNsProvider, myInstanceNamespaceProvider, errorReporter, typecheckedReporter, dependencyListener);
     myOpens = opens;
   }
 
   public void typecheckModules(final Collection<? extends Abstract.ClassDefinition> classDefs) {
-    DefinitionResolveInstanceVisitor visitor = new DefinitionResolveInstanceVisitor(myDependencyListener.getInstanceProviderProvider(), new InstanceScopeProvider(myDependencyListener.getErrorReporter()), myOpens, myDependencyListener.getErrorReporter());
+    DefinitionResolveInstanceVisitor visitor = new DefinitionResolveInstanceVisitor(myDependencyListener.getInstanceProviderProvider(), myInstanceNamespaceProvider, myOpens, myDependencyListener.getErrorReporter());
     for (Abstract.ClassDefinition classDef : classDefs) {
-      visitor.visitClass(classDef, new SimpleClassViewInstanceProvider(new EmptyScope()));
+      visitor.visitClass(classDef, new SimpleInstanceProvider(new EmptyScope()));
     }
 
     Ordering ordering = new Ordering(myDependencyListener.getInstanceProviderProvider(), myDependencyListener, false);

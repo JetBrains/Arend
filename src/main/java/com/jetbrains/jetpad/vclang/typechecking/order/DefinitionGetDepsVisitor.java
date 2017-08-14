@@ -2,16 +2,16 @@ package com.jetbrains.jetpad.vclang.typechecking.order;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.ClassViewInstanceProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProvider;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CollectDefCallsVisitor;
 
 import java.util.Set;
 
 public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boolean, Void> {
-  private final ClassViewInstanceProvider myInstanceProvider;
+  private final InstanceProvider myInstanceProvider;
   private final Set<Abstract.Definition> myDependencies;
 
-  DefinitionGetDepsVisitor(ClassViewInstanceProvider instanceProvider, Set<Abstract.Definition> dependencies) {
+  DefinitionGetDepsVisitor(InstanceProvider instanceProvider, Set<Abstract.Definition> dependencies) {
     myInstanceProvider = instanceProvider;
     myDependencies = dependencies;
   }

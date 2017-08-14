@@ -12,9 +12,9 @@ import com.jetbrains.jetpad.vclang.naming.scope.primitive.FilteredScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.ClassViewInstanceProviderProvider;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.SimpleClassViewInstanceProvider;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.scope.InstanceScopeProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProviderSet;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.SimpleInstanceProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.scope.InstanceNamespaceProvider;
 
 import java.util.HashSet;
 import java.util.function.Function;
@@ -22,26 +22,26 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisitor<SimpleClassViewInstanceProvider, Void> {
-  private final ClassViewInstanceProviderProvider myInstanceProviderProvider;
-  private final InstanceScopeProvider myScopeProvider;
+public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisitor<SimpleInstanceProvider, Void> {
+  private final InstanceProviderSet myInstanceProviderSet;
+  private final InstanceNamespaceProvider myScopeProvider;
   private final Function<Abstract.Definition, Iterable<OpenCommand>> myOpens;
   private final ErrorReporter myErrorReporter;
 
-  public DefinitionResolveInstanceVisitor(ClassViewInstanceProviderProvider instanceProviderProvider, InstanceScopeProvider scopeProvider, Function<Abstract.Definition, Iterable<OpenCommand>> opens, ErrorReporter errorReporter) {
-    myInstanceProviderProvider = instanceProviderProvider;
+  public DefinitionResolveInstanceVisitor(InstanceProviderSet instanceProviderSet, InstanceNamespaceProvider scopeProvider, Function<Abstract.Definition, Iterable<OpenCommand>> opens, ErrorReporter errorReporter) {
+    myInstanceProviderSet = instanceProviderSet;
     myScopeProvider = scopeProvider;
     myOpens = opens;
     myErrorReporter = errorReporter;
   }
 
   @Override
-  public Void visitFunction(Abstract.FunctionDefinition def, SimpleClassViewInstanceProvider parentInstanceProvider) {
+  public Void visitFunction(Abstract.FunctionDefinition def, SimpleInstanceProvider parentInstanceProvider) {
     Iterable<Scope> extraScopes = getExtraScopes(def, parentInstanceProvider.getScope());
     FunctionScope scope = new FunctionScope(parentInstanceProvider.getScope(), myScopeProvider.forDefinition(def), extraScopes);
     scope.findIntroducedDuplicateInstances(this::warnDuplicate);
-    SimpleClassViewInstanceProvider instanceProvider = new SimpleClassViewInstanceProvider(scope);
-    myInstanceProviderProvider.addProvider(def, instanceProvider);
+    SimpleInstanceProvider instanceProvider = new SimpleInstanceProvider(scope);
+    myInstanceProviderSet.setProvider(def, instanceProvider);
 
     for (Abstract.Definition definition : def.getGlobalDefinitions()) {
       definition.accept(this, instanceProvider);
@@ -51,29 +51,29 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
   }
 
   @Override
-  public Void visitClassField(Abstract.ClassField def, SimpleClassViewInstanceProvider parentInstanceScope) {
+  public Void visitClassField(Abstract.ClassField def, SimpleInstanceProvider parentInstanceScope) {
     return null;
   }
 
   @Override
-  public Void visitData(Abstract.DataDefinition def, SimpleClassViewInstanceProvider parentInstanceScope) {
-    myInstanceProviderProvider.addProvider(def, new SimpleClassViewInstanceProvider(new DataScope(parentInstanceScope.getScope(), myScopeProvider.forDefinition(def))));
+  public Void visitData(Abstract.DataDefinition def, SimpleInstanceProvider parentInstanceScope) {
+    myInstanceProviderSet.setProvider(def, new SimpleInstanceProvider(new DataScope(parentInstanceScope.getScope(), myScopeProvider.forDefinition(def))));
     return null;
   }
 
   @Override
-  public Void visitConstructor(Abstract.Constructor def, SimpleClassViewInstanceProvider parentInstanceScope) {
+  public Void visitConstructor(Abstract.Constructor def, SimpleInstanceProvider parentInstanceScope) {
     return null;
   }
 
   @Override
-  public Void visitClass(Abstract.ClassDefinition def, SimpleClassViewInstanceProvider parentInstanceScope) {
+  public Void visitClass(Abstract.ClassDefinition def, SimpleInstanceProvider parentInstanceScope) {
     try {
       Iterable<Scope> extraScopes = getExtraScopes(def, parentInstanceScope.getScope());
       StaticClassScope staticScope = new StaticClassScope(parentInstanceScope.getScope(), myScopeProvider.forDefinition(def), extraScopes);
       staticScope.findIntroducedDuplicateInstances(this::warnDuplicate);
-      SimpleClassViewInstanceProvider instanceProvider = new SimpleClassViewInstanceProvider(staticScope);
-      myInstanceProviderProvider.addProvider(def, instanceProvider);
+      SimpleInstanceProvider instanceProvider = new SimpleInstanceProvider(staticScope);
+      myInstanceProviderSet.setProvider(def, instanceProvider);
 
       for (Abstract.Definition definition : def.getGlobalDefinitions()) {
         definition.accept(this, instanceProvider);
@@ -90,23 +90,23 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
   }
 
   @Override
-  public Void visitImplement(Abstract.Implementation def, SimpleClassViewInstanceProvider parentInstanceScope) {
+  public Void visitImplement(Abstract.Implementation def, SimpleInstanceProvider parentInstanceScope) {
     return null;
   }
 
   @Override
-  public Void visitClassView(Abstract.ClassView def, SimpleClassViewInstanceProvider parentInstanceScope) {
+  public Void visitClassView(Abstract.ClassView def, SimpleInstanceProvider parentInstanceScope) {
     return null;
   }
 
   @Override
-  public Void visitClassViewField(Abstract.ClassViewField def, SimpleClassViewInstanceProvider parentInstanceScope) {
+  public Void visitClassViewField(Abstract.ClassViewField def, SimpleInstanceProvider parentInstanceScope) {
     return null;
   }
 
   @Override
-  public Void visitClassViewInstance(Abstract.ClassViewInstance def, SimpleClassViewInstanceProvider parentInstanceScope) {
-    myInstanceProviderProvider.addProvider(def, parentInstanceScope);
+  public Void visitClassViewInstance(Abstract.ClassViewInstance def, SimpleInstanceProvider parentInstanceScope) {
+    myInstanceProviderSet.setProvider(def, parentInstanceScope);
     return null;
   }
 

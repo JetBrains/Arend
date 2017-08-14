@@ -9,16 +9,16 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.ClassViewInstanceProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProvider;
 
 import java.util.Collection;
 import java.util.Collections;
 
 public class GlobalInstancePool implements ClassViewInstancePool {
   private final TypecheckerState myTypecheckerState;
-  private final ClassViewInstanceProvider myInstanceProvider;
+  private final InstanceProvider myInstanceProvider;
 
-  public GlobalInstancePool(TypecheckerState typecheckerState, ClassViewInstanceProvider instanceProvider) {
+  public GlobalInstancePool(TypecheckerState typecheckerState, InstanceProvider instanceProvider) {
     myTypecheckerState = typecheckerState;
     myInstanceProvider = instanceProvider;
   }

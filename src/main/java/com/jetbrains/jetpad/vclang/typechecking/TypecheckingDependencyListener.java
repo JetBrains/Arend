@@ -20,8 +20,8 @@ import com.jetbrains.jetpad.vclang.typechecking.order.SCC;
 import com.jetbrains.jetpad.vclang.typechecking.termination.DefinitionCallGraph;
 import com.jetbrains.jetpad.vclang.typechecking.termination.RecursiveBehavior;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.GlobalInstancePool;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.ClassViewInstanceProviderProvider;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.scope.InstanceScopeProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProviderSet;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.scope.InstanceNamespaceProvider;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
@@ -35,7 +35,7 @@ class TypecheckingDependencyListener implements DependencyListener {
   private final TypecheckedReporter myTypecheckedReporter;
   private final DependencyListener myDependencyListener;
   private final Map<Abstract.Definition, Suspension> mySuspensions = new HashMap<>();
-  private final ClassViewInstanceProviderProvider myInstanceProviderProvider;
+  private final InstanceProviderSet myInstanceProviderSet;
   private boolean myTypecheckingHeaders = false;
 
   private static class Suspension {
@@ -48,18 +48,18 @@ class TypecheckingDependencyListener implements DependencyListener {
     }
   }
 
-  TypecheckingDependencyListener(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, DependencyListener dependencyListener) {
+  TypecheckingDependencyListener(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, InstanceNamespaceProvider instanceNamespaceProvider, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, DependencyListener dependencyListener) {
     myState = state;
     myStaticNsProvider = staticNsProvider;
     myDynamicNsProvider = dynamicNsProvider;
     myErrorReporter = errorReporter;
     myTypecheckedReporter = typecheckedReporter;
     myDependencyListener = dependencyListener;
-    myInstanceProviderProvider = new ClassViewInstanceProviderProvider(new InstanceScopeProvider(errorReporter));
+    myInstanceProviderSet = new InstanceProviderSet(instanceNamespaceProvider);
   }
 
-  ClassViewInstanceProviderProvider getInstanceProviderProvider() {
-    return myInstanceProviderProvider;
+  InstanceProviderSet getInstanceProviderProvider() {
+    return myInstanceProviderSet;
   }
 
   ErrorReporter getErrorReporter() {
@@ -154,7 +154,7 @@ class TypecheckingDependencyListener implements DependencyListener {
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
       LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter));
       CheckTypeVisitor visitor = new CheckTypeVisitor(myState, myStaticNsProvider, myDynamicNsProvider, new LinkedHashMap<>(), localErrorReporter, null);
-      Definition typechecked = DefinitionTypechecking.typecheckHeader(visitor, new GlobalInstancePool(myState, myInstanceProviderProvider.getInstanceProvider(unit.getDefinition())), unit.getDefinition(), unit.getEnclosingClass());
+      Definition typechecked = DefinitionTypechecking.typecheckHeader(visitor, new GlobalInstancePool(myState, myInstanceProviderSet.getInstanceProvider(unit.getDefinition())), unit.getDefinition(), unit.getEnclosingClass());
       if (typechecked.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
         mySuspensions.put(unit.getDefinition(), new Suspension(visitor, countingErrorReporter));
       }
@@ -175,7 +175,7 @@ class TypecheckingDependencyListener implements DependencyListener {
     }
 
     myTypecheckingHeaders = true;
-    Ordering ordering = new Ordering(myInstanceProviderProvider, this, true);
+    Ordering ordering = new Ordering(myInstanceProviderSet, this, true);
     boolean ok = true;
     for (TypecheckingUnit unit1 : scc.getUnits()) {
       if (unit1.isHeader()) {
@@ -251,7 +251,7 @@ class TypecheckingDependencyListener implements DependencyListener {
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
     CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(myErrorReporter, countingErrorReporter);
     LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), compositeErrorReporter);
-    List<Clause> clauses = DefinitionTypechecking.typecheck(myState, new GlobalInstancePool(myState, myInstanceProviderProvider.getInstanceProvider(unit.getDefinition())), myStaticNsProvider, myDynamicNsProvider, unit, recursive, localErrorReporter);
+    List<Clause> clauses = DefinitionTypechecking.typecheck(myState, new GlobalInstancePool(myState, myInstanceProviderSet.getInstanceProvider(unit.getDefinition())), myStaticNsProvider, myDynamicNsProvider, unit, recursive, localErrorReporter);
     Definition typechecked = myState.getTypechecked(unit.getDefinition());
 
     if (recursive && clauses != null) {

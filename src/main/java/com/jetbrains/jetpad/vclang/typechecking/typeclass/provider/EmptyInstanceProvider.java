@@ -5,12 +5,12 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import java.util.Collection;
 import java.util.Collections;
 
-public class EmptyClassViewInstanceProvider implements ClassViewInstanceProvider {
-  private static final EmptyClassViewInstanceProvider INSTANCE = new EmptyClassViewInstanceProvider();
+public class EmptyInstanceProvider implements InstanceProvider {
+  private static final EmptyInstanceProvider INSTANCE = new EmptyInstanceProvider();
 
-  private EmptyClassViewInstanceProvider() {}
+  private EmptyInstanceProvider() {}
 
-  public static EmptyClassViewInstanceProvider getInstance() {
+  public static EmptyInstanceProvider getInstance() {
     return INSTANCE;
   }
 

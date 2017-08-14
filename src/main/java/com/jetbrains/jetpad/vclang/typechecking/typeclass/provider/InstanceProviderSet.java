@@ -7,30 +7,30 @@ import com.jetbrains.jetpad.vclang.naming.scope.primitive.EmptyScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.BaseAbstractVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.scope.InstanceScopeProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.scope.InstanceNamespaceProvider;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class ClassViewInstanceProviderProvider {
-  private final Map<Abstract.Definition, ClassViewInstanceProvider> myProviders = new HashMap<>();
-  private final InstanceScopeProvider myInstanceScopeProvider;
+public class InstanceProviderSet {
+  private final Map<Abstract.Definition, InstanceProvider> myProviders = new HashMap<>();
+  private final InstanceNamespaceProvider myInstanceNamespaceProvider;
 
-  public ClassViewInstanceProviderProvider(InstanceScopeProvider instanceScopeProvider) {
-    myInstanceScopeProvider = instanceScopeProvider;
+  public InstanceProviderSet(InstanceNamespaceProvider instanceNamespaceProvider) {
+    myInstanceNamespaceProvider = instanceNamespaceProvider;
   }
 
-  public void addProvider(Abstract.Definition definition, ClassViewInstanceProvider provider) {
+  public void setProvider(Abstract.Definition definition, InstanceProvider provider) {
     myProviders.put(definition, provider);
   }
 
-  public ClassViewInstanceProvider getInstanceProvider(Abstract.Definition definition) {
-    ClassViewInstanceProvider provider = myProviders.get(definition);
+  public InstanceProvider getInstanceProvider(Abstract.Definition definition) {
+    InstanceProvider provider = myProviders.get(definition);
     if (provider != null) {
       return provider;
     }
 
-    provider = new SimpleClassViewInstanceProvider(getDefinitionScope(definition));
+    provider = new SimpleInstanceProvider(getDefinitionScope(definition));
     myProviders.put(definition, provider);
     return provider;
   }
@@ -43,17 +43,17 @@ public class ClassViewInstanceProviderProvider {
     return definition.accept(new BaseAbstractVisitor<Scope, Scope>() {
       @Override
       public Scope visitFunction(Abstract.FunctionDefinition def, Scope parentScope) {
-        return new FunctionScope(parentScope, myInstanceScopeProvider.forDefinition(def));
+        return new FunctionScope(parentScope, myInstanceNamespaceProvider.forDefinition(def));
       }
 
       @Override
       public Scope visitData(Abstract.DataDefinition def, Scope parentScope) {
-        return new DataScope(parentScope, myInstanceScopeProvider.forDefinition(def));
+        return new DataScope(parentScope, myInstanceNamespaceProvider.forDefinition(def));
       }
 
       @Override
       public Scope visitClass(Abstract.ClassDefinition def, Scope parentScope) {
-        return new StaticClassScope(parentScope, myInstanceScopeProvider.forDefinition(def));
+        return new StaticClassScope(parentScope, myInstanceNamespaceProvider.forDefinition(def));
       }
     }, getDefinitionScope(definition.getParentDefinition()));
   }

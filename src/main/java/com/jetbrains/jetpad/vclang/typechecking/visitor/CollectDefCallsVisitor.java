@@ -2,17 +2,17 @@ package com.jetbrains.jetpad.vclang.typechecking.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.ClassViewInstanceProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProvider;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
 public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, Void> {
-  private final ClassViewInstanceProvider myInstanceProvider;
+  private final InstanceProvider myInstanceProvider;
   private final Set<Abstract.Definition> myDependencies;
 
-  public CollectDefCallsVisitor(ClassViewInstanceProvider instanceProvider, Set<Abstract.Definition> dependencies) {
+  public CollectDefCallsVisitor(InstanceProvider instanceProvider, Set<Abstract.Definition> dependencies) {
     myInstanceProvider = instanceProvider;
     myDependencies = dependencies;
   }

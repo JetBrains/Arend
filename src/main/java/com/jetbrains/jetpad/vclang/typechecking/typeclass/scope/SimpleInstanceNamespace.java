@@ -9,11 +9,11 @@ import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
 
-public class SimpleInstanceScope implements Scope {
+public class SimpleInstanceNamespace implements Scope {
   private final ErrorReporter myErrorReporter;
   private Map<Pair<Abstract.Definition, Abstract.Definition>, Abstract.ClassViewInstance> myInstances = Collections.emptyMap();
 
-  public SimpleInstanceScope(ErrorReporter errorReporter) {
+  public SimpleInstanceNamespace(ErrorReporter errorReporter) {
     myErrorReporter = errorReporter;
   }
 
