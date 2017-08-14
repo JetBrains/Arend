@@ -1,7 +1,8 @@
 package com.jetbrains.jetpad.vclang.naming.namespace;
 
+import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.naming.error.DuplicateDefinitionError;
+import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.HashMap;
@@ -33,7 +34,7 @@ public class SimpleNamespace implements Namespace {
       throw new InvalidNamespaceException() {
         @Override
         public GeneralError toError() {
-          return new DuplicateDefinitionError(prev, def);
+          return new DuplicateNameError(Error.Level.ERROR, def, prev, def);
         }
       };
     }

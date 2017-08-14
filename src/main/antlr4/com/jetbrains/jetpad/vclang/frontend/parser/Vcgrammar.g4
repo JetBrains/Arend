@@ -178,6 +178,7 @@ TRUNCATED_UNIVERSE : '\\' (NUMBER | 'oo') '-Type' [0-9]*;
 SET : '\\Set' [0-9]*;
 COLON : ':';
 ARROW : '->';
+UNDERSCORE : '_';
 WS : [ \t\r\n]+ -> skip;
 LINE_COMMENT : '--' ~[\r\n]* -> skip;
 COMMENT : '{-' .*? '-}' -> skip;

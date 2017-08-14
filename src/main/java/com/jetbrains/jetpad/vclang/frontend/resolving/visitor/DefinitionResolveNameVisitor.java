@@ -8,10 +8,8 @@ import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OpenCommand;
 import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.error.DuplicateDefinitionError;
+import com.jetbrains.jetpad.vclang.naming.error.*;
 import com.jetbrains.jetpad.vclang.naming.error.NoSuchFieldError;
-import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
-import com.jetbrains.jetpad.vclang.naming.error.WrongDefinition;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.scope.DataScope;
@@ -178,7 +176,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     List<? extends Abstract.Pattern> patterns = clause.getPatterns();
     if (patterns != null) {
       for (int i = 0; i < patterns.size(); i++) {
-        Abstract.Constructor constructor = exprVisitor.visitPattern(patterns.get(i), new HashSet<>());
+        Abstract.Constructor constructor = exprVisitor.visitPattern(patterns.get(i), new HashMap<>());
         if (constructor != null) {
           myResolveListener.replaceWithConstructor(clause, i, constructor);
         }
@@ -241,7 +239,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     if (referable != null) {
       myResolveListener.implementResolved(def, referable);
     } else {
-      myErrorReporter.report(new NoSuchFieldError(def, def.getName()));
+      myErrorReporter.report(new NoSuchFieldError(def.getName(), def));
     }
 
     def.getImplementation().accept(new ExpressionResolveNameVisitor(parentScope, myContext, myNameResolver, myResolveListener, myErrorReporter), null);
@@ -254,7 +252,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     Abstract.ReferableSourceNode resolvedUnderlyingClass = def.getUnderlyingClassReference().getReferent();
     if (!(resolvedUnderlyingClass instanceof Abstract.ClassDefinition)) {
       if (resolvedUnderlyingClass != null) {
-        myErrorReporter.report(new WrongDefinition("Expected a class", resolvedUnderlyingClass, def));
+        myErrorReporter.report(new WrongReferable("Expected a class", resolvedUnderlyingClass, def));
       }
       return null;
     }
@@ -262,7 +260,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     Namespace dynamicNamespace = myNameResolver.nsProviders.dynamics.forClass((Abstract.ClassDefinition) resolvedUnderlyingClass);
     Abstract.Definition resolvedClassifyingField = dynamicNamespace.resolveName(def.getClassifyingFieldName());
     if (!(resolvedClassifyingField instanceof Abstract.ClassField)) {
-      myErrorReporter.report(resolvedClassifyingField != null ? new WrongDefinition("Expected a class field", resolvedClassifyingField, def) : new NotInScopeError(def, def.getClassifyingFieldName()));
+      myErrorReporter.report(resolvedClassifyingField != null ? new WrongReferable("Expected a class field", resolvedClassifyingField, def) : new NotInScopeError(def.getClassifyingFieldName(), def));
       return null;
     }
 
@@ -273,7 +271,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
       if (classField != null) {
         myResolveListener.classViewFieldResolved(viewField, classField);
       } else {
-        myErrorReporter.report(new NoSuchFieldError(def, def.getName()));
+        myErrorReporter.report(new NoSuchFieldError(def.getName(), def));
       }
     }
     return null;
@@ -311,7 +309,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
           myErrorReporter.report(new GeneralError("Classifying field is not implemented", def));
         }
       } else {
-        myErrorReporter.report(new WrongDefinition("Expected a class view", def.getClassView().getReferent(), def));
+        myErrorReporter.report(new WrongReferable("Expected a class view", def.getClassView().getReferent(), def));
       }
     }
 
@@ -367,6 +365,6 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
   }
 
   private void warnDuplicate(Abstract.Definition ref1, Abstract.Definition ref2) {
-    myErrorReporter.report(new DuplicateDefinitionError(Error.Level.WARNING, ref1, ref2));
+    myErrorReporter.report(new DuplicateNameError(Error.Level.WARNING, ref1, ref2, ref1));
   }
 }

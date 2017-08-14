@@ -2,8 +2,9 @@ package com.jetbrains.jetpad.vclang.naming.scope.primitive;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.naming.error.DuplicateDefinitionError;
+import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
@@ -29,7 +30,7 @@ public class MergeScope implements MergingScope {
     return new InvalidScopeException() {
       @Override
       public GeneralError toError() {
-        return new DuplicateDefinitionError(ref1, ref2);
+        return new DuplicateNameError(Error.Level.ERROR, ref1, ref2, ref1);
       }
     };
 
@@ -44,7 +45,7 @@ public class MergeScope implements MergingScope {
         if (resolved == null) {
           resolved = ref;
         } else {
-          throw createException(resolved, ref);
+          throw createException(ref, resolved);
         }
       }
     }
@@ -58,10 +59,9 @@ public class MergeScope implements MergingScope {
       for (String name : scope.getNames()) {
         try {
           Abstract.Definition ref = scope.resolveName(name);
-          Collection<Abstract.Definition> prevs = known.get(name);
-          for (Abstract.Definition prev : prevs) {
+          for (Abstract.Definition prev : known.get(name)) {
             if (prev != ref) {
-              reporter.accept(prev, ref);
+              reporter.accept(ref, prev);
             }
           }
           known.put(name, ref);
@@ -77,8 +77,7 @@ public class MergeScope implements MergingScope {
     for (Scope scope : myScopes) {
       for (Abstract.ClassViewInstance instance : scope.getInstances()) {
         Pair<Abstract.ReferableSourceNode, Abstract.ReferableSourceNode> pair = new Pair<>(instance.getClassView().getReferent(), instance.getClassifyingDefinition());
-        Collection<Abstract.ClassViewInstance> prevs = known.get(pair);
-        for (Abstract.ClassViewInstance prev : prevs) {
+        for (Abstract.ClassViewInstance prev : known.get(pair)) {
           if (prev != instance) {
             reporter.accept(prev, instance);
           }
