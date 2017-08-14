@@ -8,7 +8,7 @@ import java.util.Collection;
 
 public class ToTextVisitor extends PrettyPrintVisitor implements LegacyAbstractStatementVisitor<Void, Void>, AbstractDefinitionVisitor<Void, Void> {
   public ToTextVisitor(StringBuilder builder, int indent) {
-    super(builder, indent);
+    super(builder, indent, true);
   }
 
   public static String toText(Abstract.Definition definition, int indent) {
@@ -60,6 +60,7 @@ public class ToTextVisitor extends PrettyPrintVisitor implements LegacyAbstractS
   @Override
   public Void visitDefine(LegacyAbstract.DefineStatement stat, Void params) {
     stat.getDefinition().accept(this, params);
+    this.myBuilder.append("\n\n");
     return null;
   }
 

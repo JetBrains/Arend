@@ -440,7 +440,8 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
         myBuilder.append('(');
       }
       expr.getLeft().accept(this, (byte) (precedence.priority + (precedence.associativity == Abstract.Precedence.Associativity.LEFT_ASSOC ? 0 : 1)));
-      myBuilder.append(isPrefix(expr.getReferent().getName()) ? " `" : " ").append(expr.getReferent().getName()).append('`');
+      String name = expr.getReferent().getName();
+      myBuilder.append(expr.getRight() == null ? " " + name + "`" : (isPrefix(name) ? " `" : " ") + name);
       if (prec > precedence.priority) {
         myBuilder.append(')');
       }
@@ -460,7 +461,8 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
         @Override
         String getOpText() {
-          return (isPrefix(expr.getReferent().getName()) ? "`" : "") + expr.getReferent().getName();
+          String result = expr.getReferent().getName();
+          return expr.getRight() == null ? result + "`" : (isPrefix(result) ? "`" : "") + result;
         }
 
         @Override
@@ -642,7 +644,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
         }
       }.doPrettyPrint(this, noIndent);
     } else {
-      myBuilder.append("=>");
+      myBuilder.append(" => ");
       letClause.getTerm().accept(this, Abstract.LetExpression.PREC);
     }
   }
