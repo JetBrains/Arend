@@ -3,6 +3,9 @@ package com.jetbrains.jetpad.vclang.term.prettyprint;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Abstract.Constructor;
+import com.jetbrains.jetpad.vclang.term.Abstract.Expression;
+import com.jetbrains.jetpad.vclang.term.Abstract.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.AbstractLevelExpressionVisitor;
@@ -535,7 +538,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myBuilder.append('\n');
   }
 
-  private void prettyPrintClauses(List<? extends Abstract.Expression> expressions, List<? extends Abstract.FunctionClause> clauses) {
+  private void prettyPrintClauses(List<? extends Abstract.Expression> expressions, List<? extends Abstract.FunctionClause> clauses, boolean needBraces) {
     if (!expressions.isEmpty()) {
       myBuilder.append(" ");
       for (int i = 0; i < expressions.size(); i++) {
@@ -547,22 +550,38 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
 
     if (!clauses.isEmpty()) {
-      myBuilder.append(" {\n");
+      if (needBraces) myBuilder.append(" {\n");
       myIndent += INDENT;
       for (Abstract.FunctionClause clause : clauses) {
         prettyPrintFunctionClause(clause);
       }
 
-      printIndent();
-      myBuilder.append('}');
+      if (needBraces) {
+        printIndent();
+        myBuilder.append('}');
+      }
+    } else if (needBraces) {
+      myBuilder.append(" {}");
     }
   }
 
   @Override
   public Void visitCase(Abstract.CaseExpression expr, Byte prec) {
     if (prec > Abstract.CaseExpression.PREC) myBuilder.append('(');
-    myBuilder.append("\\case");
-    prettyPrintClauses(expr.getExpressions(), expr.getClauses());
+    myBuilder.append("\\case ");
+    new ListLayout<Abstract.Expression>(){
+      @Override
+      void printListElement(PrettyPrintVisitor ppv, Expression expression) {
+        expression.accept(ppv, Abstract.Expression.PREC);
+      }
+
+      @Override
+      String getSeparator() {
+        return ", ";
+      }
+    }.doPrettyPrint(this, expr.getExpressions(), noIndent);
+    myBuilder.append(" \\with");
+    prettyPrintClauses(Collections.emptyList(), expr.getClauses(), true);
     myIndent -= INDENT;
     if (prec > Abstract.CaseExpression.PREC) myBuilder.append(')');
     return null;
@@ -709,12 +728,12 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   private void prettyPrintBody(Abstract.FunctionBody body) {
     if (body instanceof Abstract.TermFunctionBody) {
-      myBuilder.append(" => ");
+      myBuilder.append("=> ");
       ((Abstract.TermFunctionBody) body).getTerm().accept(this, Abstract.Expression.PREC);
     } else {
       Abstract.ElimFunctionBody elimFunctionBody = (Abstract.ElimFunctionBody) body;
-      prettyPrintEliminatedReferences(elimFunctionBody.getEliminatedReferences());
-      prettyPrintClauses(Collections.emptyList(), elimFunctionBody.getClauses());
+      prettyPrintEliminatedReferences(elimFunctionBody.getEliminatedReferences(), false);
+      prettyPrintClauses(Collections.emptyList(), elimFunctionBody.getClauses(), false);
     }
   }
 
@@ -770,7 +789,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
       @Override
       boolean printSpaceBefore() {
-        return def.getParameters().size() > 0 || def.getResultType() != null;
+        return def.getResultType() != null;
       }
 
       @Override
@@ -791,7 +810,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitClassField(Abstract.ClassField def, Void params) {
-    myBuilder.append("\\field ");
+    myBuilder.append("| ");
     prettyPrintNameWithPrecedence(def);
     myBuilder.append(" : ");
     def.getResultType().accept(new PrettyPrintVisitor(myBuilder, myIndent), Abstract.Expression.PREC);
@@ -817,7 +836,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
     myIndent += INDENT;
 
-    prettyPrintEliminatedReferences(def.getEliminatedReferences());
+    prettyPrintEliminatedReferences(def.getEliminatedReferences(), true);
 
     for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
       if (clause.getPatterns() == null) {
@@ -828,33 +847,64 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
           constructor.accept(this, null);
         }
       } else {
+        printIndent();
+        myBuilder.append("| ");
+        new BinOpLayout(){
+          @Override
+          void printLeft(PrettyPrintVisitor pp) {
+            pp.prettyPrintClause(clause);
+          }
+
+          @Override
+          void printRight(PrettyPrintVisitor pp) {
+            new ListLayout<Abstract.Constructor>(){
+              @Override
+              void printListElement(PrettyPrintVisitor ppv, Constructor constructor) {
+                constructor.accept(ppv, null);
+              }
+
+              @Override
+              String getSeparator() {
+                return "\n";
+              }
+            }.doPrettyPrint(pp, clause.getConstructors(), noIndent);
+          }
+
+          @Override
+          String getOpText() {
+            return "=>";
+          }
+        }.doPrettyPrint(this, noIndent);
         myBuilder.append('\n');
-        prettyPrintClause(clause);
       }
     }
     myIndent -= INDENT;
     return null;
   }
 
-  private void prettyPrintEliminatedReferences(List<? extends Abstract.ReferenceExpression> references) {
+  private void prettyPrintEliminatedReferences(List<? extends Abstract.ReferenceExpression> references, boolean isData) {
     if (references == null) {
-      myBuilder.append(" \\with");
       return;
     }
     if (references.isEmpty()) {
+      if (isData) myBuilder.append(" \\with\n");
       return;
     }
 
     myBuilder.append(" => \\elim ");
     boolean first = true;
-    for (Abstract.ReferenceExpression ref : references) {
-      if (first) {
-        first = false;
-      } else {
-        myBuilder.append(", ");
+    new ListLayout<Abstract.ReferenceExpression>(){
+      @Override
+      void printListElement(PrettyPrintVisitor ppv, ReferenceExpression referenceExpression) {
+        ppv.myBuilder.append(referenceExpression.getName());
       }
-      myBuilder.append(ref.getName());
-    }
+
+      @Override
+      String getSeparator() {
+        return ", ";
+      }
+    }.doPrettyPrint(this, references, noIndent);
+    myBuilder.append('\n');
   }
 
   private void prettyPrintConstructorClause(Abstract.ConstructorClause clause) {
@@ -937,9 +987,9 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       prettyPrintParameter(parameter, Abstract.ReferenceExpression.PREC);
     }
 
-    if (!def.getEliminatedReferences().isEmpty()) {
-      prettyPrintEliminatedReferences(def.getEliminatedReferences());
-      prettyPrintClauses(Collections.emptyList(), def.getClauses());
+    if (!def.getEliminatedReferences().isEmpty() || !def.getClauses().isEmpty()) {
+      prettyPrintEliminatedReferences(def.getEliminatedReferences(), false);
+      prettyPrintClauses(Collections.emptyList(), def.getClauses(), true);
     }
     return null;
   }

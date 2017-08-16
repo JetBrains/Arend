@@ -101,6 +101,8 @@ public class ToTextVisitor extends PrettyPrintVisitor implements LegacyAbstractS
       }
       myBuilder.append(')');
     }
+
+    myBuilder.append("\n\n");
     return null;
   }
 }

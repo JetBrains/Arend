@@ -130,4 +130,46 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
     Concrete.Expression expected = cPi(cA, cUniverseInf(0), cPi(ca, cVar(cA), cPi(cD, cPi(cPi(cVar(cA), cVar(cA)), cPi(cVar(cA), cVar(cA))), cPi(cx, cPi(cy, cVar(cA), cVar(cA)), cApps(cVar(cD), cVar(cx), cLam(cName("y"), cVar(ca)))))));
     testExpr(expected, actual, EnumSet.of(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS));
   }
+
+
+  private void testDefinition(String s) {
+    loadPrelude();
+    Concrete.Definition def = resolveNamesDef(s);
+    StringBuilder sb = new StringBuilder();
+    PrettyPrintVisitor visitor = new PrettyPrintVisitor(sb, 0);
+    def.accept(visitor, null);
+    String s2 = sb.toString();
+    Concrete.Definition def2 = resolveNamesDef(s2);
+    //TODO: Current implementation only ensures that output of PrettyPrinter parses back but does not ensure that the parse result has not changed along the way
+    //TODO: Implement some comparator for definitions to fix this
+  }
+
+  @Test
+  public void prettyPrintData1() {
+    String s1 =
+        "\\data S1 \n" +
+        "| base\n" +
+        "| loop Nat \\with {\n" +
+        "  | left => base\n" +
+        "  | right => base\n" +
+        "}";
+    testDefinition(s1);
+  }
+
+  @Test
+  public void prettyPrintClass1(){
+    String s1 = "\\class C0 {\n" +
+                "  | f0 : \\Pi {X Y : \\Type0} -> X -> Y -> \\Type0\n" +
+                "  | f1 : \\Pi {X Y : \\Type0} (x : X) (y : Y) -> TrP (x = y)\n" +
+                "}";
+    testDefinition(s1);
+  }
+
+  @Test
+  public void prettyPrintData2(){
+    String s1 = "\\data D2 {A : \\Type0} (y : Nat) (x : Nat) => \\elim x\n" +
+                "    | suc x' => c0 (y = x')\n" +
+                "    | suc x' => c1 (p : D2 y x')";
+    testDefinition(s1);
+  }
 }
