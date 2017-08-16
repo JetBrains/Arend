@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.context.binding.inference;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
@@ -11,22 +10,13 @@ import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.ClassViewInstance
 import java.util.Set;
 
 public class TypeClassInferenceVariable extends InferenceVariable {
-  private final Abstract.ReferenceExpression myDefCall;
-  private final int myParamIndex;
   private final Abstract.ClassView myClassView;
-  private final ClassField myClassifyingField;
+  private final boolean isView;
 
-  public TypeClassInferenceVariable(String name, Expression type, Abstract.ReferenceExpression defCall, int paramIndex, Abstract.ClassView classView, ClassField classifyingField, Set<Binding> bounds) {
-    super(name, type, defCall, bounds);
-    assert classifyingField != null;
-    myDefCall = defCall;
-    myParamIndex = paramIndex;
+  public TypeClassInferenceVariable(String name, Expression type, Abstract.ClassView classView, boolean isView, Abstract.SourceNode sourceNode, Set<Binding> bounds) {
+    super(name, type, sourceNode, bounds);
     myClassView = classView;
-    myClassifyingField = classifyingField;
-  }
-
-  public ClassField getClassifyingField() {
-    return myClassifyingField;
+    this.isView = isView;
   }
 
   public Abstract.ClassView getClassView() {
@@ -44,10 +34,6 @@ public class TypeClassInferenceVariable extends InferenceVariable {
   }
 
   public Expression getInstance(ClassViewInstancePool pool, Expression classifyingExpression) {
-    if (myClassView != null) {
-      return pool.getInstance(myDefCall, classifyingExpression, myClassView);
-    } else {
-      return pool.getInstance(myDefCall, myParamIndex, classifyingExpression, myClassifyingField.getThisClass().getAbstractDefinition());
-    }
+    return pool.getInstance(classifyingExpression, myClassView, isView);
   }
 }

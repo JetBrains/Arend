@@ -162,7 +162,7 @@ class DefinitionTypechecking {
     return parameter("\\this", new ClassCallExpression(enclosingClass, Sort.STD));
   }
 
-  private static Sort typeCheckParameters(List<? extends Abstract.Parameter> arguments, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool, Map<Integer, ClassField> classifyingFields) {
+  private static Sort typeCheckParameters(List<? extends Abstract.Parameter> arguments, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
     Sort sort = Sort.PROP;
     int index = 0;
 
@@ -196,11 +196,10 @@ class DefinitionTypechecking {
           index++;
         }
 
-        if (classifyingFields != null && localInstancePool != null) {
+        if (localInstancePool != null) {
           Abstract.ClassView classView = Abstract.getUnderlyingClassView(typeParameter.getType());
           if (classView != null && classView.getClassifyingField() != null) {
             ClassField classifyingField = (ClassField) visitor.getTypecheckingState().getTypechecked(classView.getClassifyingField());
-            classifyingFields.put(index - 1, classifyingField);
             for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
               ReferenceExpression reference = new ReferenceExpression(link);
               Expression oldInstance = localInstancePool.addInstance(FieldCall(classifyingField, reference), classView, reference);
@@ -216,7 +215,7 @@ class DefinitionTypechecking {
           visitor.getFreeBindings().add(param);
         }
       } else {
-        visitor.getErrorReporter().report(new ArgInferenceError(typeOfFunctionArg(index + 1), parameter, new Expression[0]));
+        visitor.getErrorReporter().report(new ArgInferenceError(typeOfFunctionArg(++index), parameter, new Expression[0]));
         sort = null;
       }
     }
@@ -238,9 +237,8 @@ class DefinitionTypechecking {
   private static void typeCheckFunctionHeader(FunctionDefinition typedDef, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
     LinkList list = initializeThisParam(visitor, enclosingClass);
 
-    Map<Integer, ClassField> classifyingFields = new HashMap<>();
     Abstract.FunctionDefinition def = (Abstract.FunctionDefinition) typedDef.getAbstractDefinition();
-    boolean paramsOk = typeCheckParameters(def.getParameters(), list, visitor, localInstancePool, classifyingFields) != null;
+    boolean paramsOk = typeCheckParameters(def.getParameters(), list, visitor, localInstancePool) != null;
     Expression expectedType = null;
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
@@ -251,7 +249,6 @@ class DefinitionTypechecking {
     }
 
     visitor.getTypecheckingState().record(def, typedDef);
-    typedDef.setClassifyingFieldsOfParameters(classifyingFields);
     typedDef.setThisClass(enclosingClass);
     typedDef.setParameters(list.getFirst());
     typedDef.setResultType(expectedType);
@@ -304,10 +301,9 @@ class DefinitionTypechecking {
   private static void typeCheckDataHeader(DataDefinition dataDefinition, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
     LinkList list = initializeThisParam(visitor, enclosingClass);
 
-    Map<Integer, ClassField> classifyingFields = new HashMap<>();
     Sort userSort = null;
     Abstract.DataDefinition def = dataDefinition.getAbstractDefinition();
-    boolean paramsOk = typeCheckParameters(def.getParameters(), list, visitor, localInstancePool, classifyingFields) != null;
+    boolean paramsOk = typeCheckParameters(def.getParameters(), list, visitor, localInstancePool) != null;
 
     if (def.getUniverse() != null) {
       Type userTypeResult = visitor.finalCheckType(def.getUniverse());
@@ -319,7 +315,6 @@ class DefinitionTypechecking {
       }
     }
 
-    dataDefinition.setClassifyingFieldsOfParameters(classifyingFields);
     dataDefinition.setThisClass(enclosingClass);
     dataDefinition.setParameters(list.getFirst());
     dataDefinition.setSort(userSort);
@@ -484,7 +479,7 @@ class DefinitionTypechecking {
         dataDefinition.addConstructor(constructor);
 
         LinkList list = new LinkList();
-        sort = typeCheckParameters(def.getParameters(), list, visitor, null, null);
+        sort = typeCheckParameters(def.getParameters(), list, visitor, null);
 
         int index = 0;
         for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext(), index++) {
@@ -722,7 +717,7 @@ class DefinitionTypechecking {
     LocalErrorReporter errorReporter = visitor.getErrorReporter();
 
     LinkList list = new LinkList();
-    boolean paramsOk = typeCheckParameters(def.getParameters(), list, visitor, null, null) != null;
+    boolean paramsOk = typeCheckParameters(def.getParameters(), list, visitor, null) != null;
     typedDef.setParameters(list.getFirst());
     typedDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
     if (!paramsOk) {

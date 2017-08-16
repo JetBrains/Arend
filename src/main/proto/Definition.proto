@@ -11,7 +11,6 @@ import "Level.proto";
 message Definition {
     Status status = 1;
     int32 this_class_ref = 3;
-    repeated ClassifyingFields classifying_field = 8;
     oneof definition_data {
         ClassData class = 5;
         DataData data = 6;

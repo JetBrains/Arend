@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInfer
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedSingleDependentLink;
-import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.ExpectedType;
@@ -22,6 +21,7 @@ import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
@@ -32,6 +32,33 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     super(visitor);
   }
 
+  private static Abstract.ClassView getClassViewFromDefCall(Abstract.Definition definition, int paramIndex) {
+    Collection<? extends Abstract.Parameter> parameters = Abstract.getParameters(definition);
+    if (parameters == null) {
+      return null;
+    }
+
+    int i = 0;
+    for (Abstract.Parameter parameter : parameters) {
+      if (parameter instanceof Abstract.NameParameter) {
+        i++;
+      } else
+      if (parameter instanceof Abstract.TypeParameter) {
+        if (parameter instanceof Abstract.TelescopeParameter) {
+          i += ((Abstract.TelescopeParameter) parameter).getReferableList().size();
+        } else {
+          i++;
+        }
+        if (i > paramIndex) {
+          return Abstract.getUnderlyingClassView(((Abstract.TypeParameter) parameter).getType());
+        }
+      } else {
+        throw new IllegalStateException();
+      }
+    }
+    return null;
+  }
+
   protected CheckTypeVisitor.TResult fixImplicitArgs(CheckTypeVisitor.TResult result, List<? extends DependentLink> implicitParameters, Abstract.Expression expr) {
     ExprSubstitution substitution = new ExprSubstitution();
     int i = 0;
@@ -40,9 +67,9 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       InferenceVariable infVar = null;
       if (result instanceof CheckTypeVisitor.DefCallResult) {
         CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
-        ClassField classifyingField = defCallResult.getDefinition().getClassifyingFieldOfParameter(defCallResult.getArguments().size());
-        if (classifyingField != null) {
-          infVar = new TypeClassInferenceVariable(parameter.getName(), type, defCallResult.getDefCall(), i, null, classifyingField, myVisitor.getAllBindings());
+        Abstract.ClassView classView = getClassViewFromDefCall(defCallResult.getDefinition().getAbstractDefinition(), i);
+        if (classView != null) {
+          infVar = new TypeClassInferenceVariable(parameter.getName(), type, classView, false, defCallResult.getDefCall(), myVisitor.getAllBindings());
         }
       }
       if (infVar == null) {

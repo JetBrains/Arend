@@ -31,18 +31,17 @@ public class LocalInstancePool implements ClassViewInstancePool {
   }
 
   @Override
-  public Expression getInstance(Abstract.ReferenceExpression defCall, Expression classifyingExpression, Abstract.ClassView classView) {
-    return getInstance(classifyingExpression, classView);
-  }
-
-  @Override
-  public Expression getInstance(Abstract.ReferenceExpression defCall, int paramIndex, Expression classifyingExpression, Abstract.ClassDefinition classDefinition) {
-    for (Pair pair : myPool) {
-      if (pair.key.equals(classifyingExpression) && pair.classView.getUnderlyingClassReference().getReferent() == classDefinition) {
-        return pair.value;
+  public Expression getInstance(Expression classifyingExpression, Abstract.ClassView classView, boolean isView) {
+    if (isView) {
+      return getInstance(classifyingExpression, classView);
+    } else {
+      for (Pair pair : myPool) {
+        if (pair.key.equals(classifyingExpression) && pair.classView.getUnderlyingClassReference().getReferent() == classView.getUnderlyingClassReference().getReferent()) {
+          return pair.value;
+        }
       }
+      return null;
     }
-    return null;
   }
 
   public Expression addInstance(Expression classifyingExpression, Abstract.ClassView classView, Expression instance) {

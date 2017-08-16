@@ -8,15 +8,11 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public abstract class Definition implements Variable {
   private ClassDefinition myThisClass;
   private Abstract.Definition myAbstractDefinition;
-  private Map<Integer, ClassField> myClassifyingFields = Collections.emptyMap();
   private TypeCheckingStatus myStatus;
 
   public Definition(Abstract.Definition abstractDef, TypeCheckingStatus status) {
@@ -35,21 +31,6 @@ public abstract class Definition implements Variable {
 
   public DependentLink getParameters() {
     return EmptyDependentLink.getInstance();
-  }
-
-  public ClassField getClassifyingFieldOfParameter(Integer param) {
-    return myClassifyingFields.get(param);
-  }
-
-  public void setClassifyingFieldOfParameter(Integer param, ClassField field) {
-    if (myClassifyingFields.isEmpty()) {
-      myClassifyingFields = new HashMap<>();
-    }
-    myClassifyingFields.put(param, field);
-  }
-
-  public void setClassifyingFieldsOfParameters(Map<Integer, ClassField> fields) {
-    myClassifyingFields = fields.isEmpty() ? Collections.emptyMap() : fields;
   }
 
   public abstract Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument);

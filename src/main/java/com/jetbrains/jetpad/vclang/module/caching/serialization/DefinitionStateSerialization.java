@@ -18,8 +18,6 @@ import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 public class DefinitionStateSerialization {
@@ -80,8 +78,6 @@ public class DefinitionStateSerialization {
     }
 
     final DefinitionSerialization defSerializer = new DefinitionSerialization(myCalltargetIndexProvider);
-
-    out.addAllClassifyingField(writeClassifyingFields(definition));
 
     if (definition instanceof ClassDefinition) {
       // type cannot possibly have errors
@@ -230,19 +226,5 @@ public class DefinitionStateSerialization {
       throw new IllegalStateException();
     }
     return bodyBuilder.build();
-  }
-
-  private List<DefinitionProtos.Definition.ClassifyingFields> writeClassifyingFields(Definition definition) {
-    List<DefinitionProtos.Definition.ClassifyingFields> refs = new ArrayList<>();
-    int index = 0;
-    for (DependentLink link = definition.getParameters(); link.hasNext(); link = link.getNext()) {
-      DefinitionProtos.Definition.ClassifyingFields.Builder refBuilder = DefinitionProtos.Definition.ClassifyingFields.newBuilder();
-      ClassField field = definition.getClassifyingFieldOfParameter(index++);
-      if (field != null) {
-        refBuilder.addFieldRef(myCalltargetIndexProvider.getDefIndex(field));
-      }
-      refs.add(refBuilder.build());
-    }
-    return refs;
   }
 }

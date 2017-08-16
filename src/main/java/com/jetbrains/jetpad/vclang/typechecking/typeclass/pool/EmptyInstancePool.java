@@ -9,12 +9,7 @@ public class EmptyInstancePool implements ClassViewInstancePool {
   private EmptyInstancePool() {}
 
   @Override
-  public Expression getInstance(Abstract.ReferenceExpression defCall, Expression classifyingExpression, Abstract.ClassView classView) {
-    return null;
-  }
-
-  @Override
-  public Expression getInstance(Abstract.ReferenceExpression defCall, int paramIndex, Expression classifyingExpression, Abstract.ClassDefinition classDefinition) {
+  public Expression getInstance(Expression classifyingExpression, Abstract.ClassView classView, boolean isView) {
     return null;
   }
 }

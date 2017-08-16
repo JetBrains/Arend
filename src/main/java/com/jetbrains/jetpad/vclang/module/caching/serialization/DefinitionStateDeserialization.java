@@ -103,8 +103,6 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
 
       final DefinitionDeserialization defDeserializer = new DefinitionDeserialization(typedCalltargetProvider);
 
-      readClassifyingFields(def, typedCalltargetProvider, defProto.getClassifyingFieldList());
-
       if (defProto.getThisClassRef() != 0) {
         def.setThisClass(typedCalltargetProvider.getCalltarget(defProto.getThisClassRef(), ClassDefinition.class));
       }
@@ -250,16 +248,6 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
     functionDef.setResultType(defDeserializer.readExpr(functionProto.getType()));
     if (functionProto.hasBody()) {
       functionDef.setBody(readBody(defDeserializer, functionProto.getBody()));
-    }
-  }
-
-  private void readClassifyingFields(Definition definition, CalltargetProvider.Typed calltargetProvider, List<DefinitionProtos.Definition.ClassifyingFields> classifyingFields) throws DeserializationError {
-    int index = 0;
-    for (DefinitionProtos.Definition.ClassifyingFields ref : classifyingFields) {
-      if (ref.getFieldRefCount() > 0) {
-        definition.setClassifyingFieldOfParameter(index, calltargetProvider.getCalltarget(ref.getFieldRef(0), ClassField.class));
-      }
-      index++;
     }
   }
 
