@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
-import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
@@ -22,6 +21,6 @@ public class FieldsImplementationError extends LocalTypeCheckingError {
 
   @Override
   public LineDoc getHeaderDoc(SourceInfoProvider src) {
-    return hList(super.getHeaderDoc(src), hSep(text(", "), fields.stream().map(DocFactory::refDoc).collect(Collectors.toList())));
+    return hList(super.getHeaderDoc(src), hSep(text(", "), fields.stream().map(f -> f == null ? text("parent") : refDoc(f) /* TODO[classes] */).collect(Collectors.toList())));
   }
 }

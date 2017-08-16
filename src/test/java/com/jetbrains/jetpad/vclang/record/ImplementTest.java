@@ -22,10 +22,10 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void implement() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field a : Nat\n" +
+        "  | a : Nat\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\implement a => 0\n" +
+        "  | a => 0\n" +
         "}\n" +
         "\\function f (b : B) : b.a = 0 => path (\\lam _ => 0)");
   }
@@ -34,10 +34,10 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void implementUnknownError() {
     resolveNamesClass(
         "\\class A {\n" +
-        "  \\field a : Nat\n" +
+        "  | a : Nat\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\implement b => 0\n" +
+        "  | b => 0\n" +
         "}", 1);
   }
 
@@ -45,10 +45,10 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void implementTypeMismatchError() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field a : Nat -> Nat\n" +
+        "  | a : Nat -> Nat\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\implement a => 0\n" +
+        "  | a => 0\n" +
         "}", 1);
   }
 
@@ -56,12 +56,12 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void implement2() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field A : \\Set0\n" +
-        "  \\field a : A\n" +
+        "  | A : \\Set0\n" +
+        "  | a : A\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\implement A => Nat\n" +
-        "  \\implement a => 0\n" +
+        "  | A => Nat\n" +
+        "  | a => 0\n" +
         "}\n" +
         "\\function f (b : B) : b.a = 0 => path (\\lam _ => 0)");
   }
@@ -70,10 +70,10 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void implement3() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field a : Nat\n" +
+        "  | a : Nat\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\implement a => 0\n" +
+        "  | a => 0\n" +
         "}\n" +
         "\\function f (x : A) => x.a\n" +
         "\\function g (b : B) : f b = 0 => path (\\lam _ => 0)");
@@ -83,13 +83,13 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void implementImplementedError() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field a : Nat\n" +
+        "  | a : Nat\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\implement a => 0\n" +
+        "  | a => 0\n" +
         "}\n" +
         "\\class C \\extends B {\n" +
-        "  \\implement a => 0\n" +
+        "  | a => 0\n" +
         "}", 1);
   }
 
@@ -100,7 +100,7 @@ public class ImplementTest extends TypeCheckingTestCase {
         "  \\function a => \\Type0\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\implement a => \\Type0\n" +
+        "  | a => \\Type0\n" +
         "}", 1);
   }
 
@@ -108,11 +108,11 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void implementNew() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field A : \\Set0\n" +
-        "  \\field a : A\n" +
+        "  | A : \\Set0\n" +
+        "  | a : A\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\implement A => Nat\n" +
+        "  | A => Nat\n" +
         "}\n" +
         "\\function f (x : A) => x.a\n" +
         "\\function g : f (\\new B { a => 0 }) = 0 => path (\\lam _ => 0)");
@@ -122,10 +122,10 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void implementNewError() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field a : Nat\n" +
+        "  | a : Nat\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\implement a => 0\n" +
+        "  | a => 0\n" +
         "}\n" +
         "\\function f => \\new B { a => 1 }", 1);
   }
@@ -134,19 +134,19 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void implementMultiple() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field a : Nat\n" +
-        "  \\field b : Nat\n" +
-        "  \\field c : Nat\n" +
+        "  | a : Nat\n" +
+        "  | b : Nat\n" +
+        "  | c : Nat\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\implement b => 0\n" +
+        "  | b => 0\n" +
         "}\n" +
         "\\class C \\extends A {\n" +
-        "  \\implement c => 0\n" +
+        "  | c => 0\n" +
         "}\n" +
         "\\class D \\extends B, C {\n" +
-        "  \\field p : b = c\n" +
-        "  \\field f : \\Pi (q : 0 = 0 -> \\Set0) -> q p -> Nat\n" +
+        "  | p : b = c\n" +
+        "  | f : \\Pi (q : 0 = 0 -> \\Set0) -> q p -> Nat\n" +
         "}\n" +
         "\\function f => \\new D { a => 1 | p => path (\\lam _ => 0) | f => \\lam _ _ => 0 }");
   }
@@ -155,18 +155,18 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void implementMultipleSame() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field a : Nat\n" +
-        "  \\field b : Nat\n" +
-        "  \\field c : Nat\n" +
+        "  | a : Nat\n" +
+        "  | b : Nat\n" +
+        "  | c : Nat\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\implement b => a\n" +
+        "  | b => a\n" +
         "}\n" +
         "\\class C \\extends A {\n" +
-        "  \\implement b => a\n" +
+        "  | b => a\n" +
         "}\n" +
         "\\class D \\extends B, C {\n" +
-        "  \\implement a => 1\n" +
+        "  | a => 1\n" +
         "}\n" +
         "\\function f => \\new D { c => 2 }");
   }
@@ -175,13 +175,13 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void implementMultipleSameError() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field a : Nat\n" +
+        "  | a : Nat\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\implement a => 0\n" +
+        "  | a => 0\n" +
         "}\n" +
         "\\class C \\extends A {\n" +
-        "  \\implement a => 1\n" +
+        "  | a => 1\n" +
         "}\n" +
         "\\class D \\extends B, C", 1);
   }
@@ -190,11 +190,11 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void universe() {
     TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
         "\\class A {\n" +
-        "  \\field A : \\Set1\n" +
-        "  \\field a : A\n" +
+        "  | A : \\Set1\n" +
+        "  | a : A\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\implement A => Nat\n" +
+        "  | A => Nat\n" +
         "}");
     assertEquals(new Sort(2, 1), ((ClassDefinition) result.getDefinition("A")).getSort());
     assertEquals(new Sort(0, 0), ((ClassDefinition) result.getDefinition("B")).getSort());
@@ -204,8 +204,8 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void universeClassExt() {
     TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
         "\\class C {\n" +
-        "  \\field A : \\Type\n" +
-        "  \\field a : A\n" +
+        "  | A : \\Type\n" +
+        "  | a : A\n" +
         "}\n" +
         "\\function f => C { A => Nat }");
     assertEquals(new Sort(new Level(LevelVariable.PVAR, 1), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) result.getDefinition("C")).getSort());
@@ -216,19 +216,19 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void universeMultiple() {
     TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
         "\\class A {\n" +
-        "  \\field X : \\Set1\n" +
-        "  \\field Y : \\Set0\n" +
-        "  \\field x : X\n" +
+        "  | X : \\Set1\n" +
+        "  | Y : \\Set0\n" +
+        "  | x : X\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\implement X => Nat\n" +
+        "  | X => Nat\n" +
         "}\n" +
         "\\class C \\extends A {\n" +
-        " \\implement Y => Nat\n" +
-        " \\field x' : X\n" +
+        " | Y => Nat\n" +
+        " | x' : X\n" +
         "}\n" +
         "\\class D \\extends B, C {\n" +
-        " \\implement x' => 0\n" +
+        " | x' => 0\n" +
         "}\n" +
         "\\function f => D { x => 1 }");
     List<DependentLink> fParams = new ArrayList<>();
@@ -244,8 +244,8 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void classExtDep() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field x : Nat\n" +
-        "  \\field y : x = 0\n" +
+        "  | x : Nat\n" +
+        "  | y : x = 0\n" +
         "}\n" +
         "\\function f => A { x => 0 | y => path (\\lam _ => 0) }");
   }
@@ -254,12 +254,12 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void classImplDep() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field x : Nat\n" +
-        "  \\field y : x = 0\n" +
+        "  | x : Nat\n" +
+        "  | y : x = 0\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\implement x => 0\n" +
-        "  \\implement y => path (\\lam _ => 0)\n" +
+        "  | x => 0\n" +
+        "  | y => path (\\lam _ => 0)\n" +
         "}");
   }
 
@@ -267,8 +267,8 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void classExtDepMissingError() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field x : Nat\n" +
-        "  \\field y : x = 0\n" +
+        "  | x : Nat\n" +
+        "  | y : x = 0\n" +
         "}\n" +
         "\\function f => A { y => path (\\lam _ => 0) }", 1);
   }
@@ -277,8 +277,8 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void classExtDepOrder() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field x : Nat\n" +
-        "  \\field y : x = 0\n" +
+        "  | x : Nat\n" +
+        "  | y : x = 0\n" +
         "}\n" +
         "\\function f => A { y => path (\\lam _ => 0) | x => 0 }");
   }
@@ -287,11 +287,11 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void classImplDepMissingError() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field x : Nat\n" +
-        "  \\field y : x = 0\n" +
+        "  | x : Nat\n" +
+        "  | y : x = 0\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\implement y => path (\\lam _ => 0)\n" +
+        "  | y => path (\\lam _ => 0)\n" +
         "}", 1);
   }
 
@@ -299,11 +299,11 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void classImplDepOrderError() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field x : Nat\n" +
-        "  \\field y : x = 0\n" +
+        "  | x : Nat\n" +
+        "  | y : x = 0\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\implement y => path (\\lam _ => 0)\n" +
+        "  | y => path (\\lam _ => 0)\n" +
         "}", 1);
   }
 }

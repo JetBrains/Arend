@@ -26,7 +26,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     // \x. x x
     SingleDependentLink x = singleParam("x", Pi(Nat(), Nat()));
     Expression expr = Lam(x, Apps(Ref(x), Ref(x)));
-    expr.prettyPrint(new StringBuilder(), new ArrayList<>(), Abstract.Expression.PREC, 0);
+    expr.prettyPrint(new StringBuilder(), true);
   }
 
   @Test
@@ -36,7 +36,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     SingleDependentLink y = singleParam("y", Pi(Nat(), Nat()));
     SingleDependentLink zw = singleParam(true, vars("z", "w"), Nat());
     Expression expr = Lam(x, Apps(Ref(x), Lam(y, Apps(Ref(y), Ref(x))), Lam(zw, Apps(Ref(x), Ref(zw.getNext()), Ref(zw)))));
-    expr.prettyPrint(new StringBuilder(), new ArrayList<>(), Abstract.Expression.PREC, 0);
+    expr.prettyPrint(new StringBuilder(), true);
   }
 
   @Test
@@ -44,7 +44,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     // (X : Type0) -> X -> X
     SingleDependentLink X = singleParam("x", Universe(0));
     Expression expr = Pi(X, Pi(singleParam(null, Ref(X)), Ref(X)));
-    expr.prettyPrint(new StringBuilder(), new ArrayList<>(), Abstract.Expression.PREC, 0);
+    expr.prettyPrint(new StringBuilder(), true);
   }
 
   @Test
@@ -55,7 +55,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     SingleDependentLink zw = singleParam(true, vars("z", "w"), Pi(singleParam(null, Nat()), Nat()));
     SingleDependentLink s = singleParam("s", Nat());
     Expression expr = Pi(t, Pi(xy, Pi(zw, Pi(singleParam(null, Pi(s, Apps(Ref(t), Apps(Ref(zw), Ref(s)), Apps(Ref(zw.getNext()), Ref(xy))))), Nat()))));
-    expr.prettyPrint(new StringBuilder(), new ArrayList<>(), Abstract.Expression.PREC, 0);
+    expr.prettyPrint(new StringBuilder(), true);
   }
 
   @Test
@@ -77,7 +77,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     SingleDependentLink y = singleParam("y", Ref(A));
     LetClause clause = let("x", Lam(A, Lam(y, Ref(y))));
     LetExpression expr = new LetExpression(lets(clause), Apps(Ref(clause), Zero()));
-    expr.prettyPrint(new StringBuilder(), new ArrayList<>(), Abstract.Expression.PREC, 0);
+    expr.prettyPrint(new StringBuilder(), true);
   }
 
   @Test

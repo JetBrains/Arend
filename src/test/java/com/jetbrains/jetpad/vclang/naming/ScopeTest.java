@@ -34,12 +34,12 @@ public class ScopeTest extends TypeCheckingTestCase {
 
   @Test
   public void openAbstractTestError() {
-    resolveNamesClass("\\class Test { \\function y => x } \\where { \\class A { \\field x : Nat } \\open A }", 1);
+    resolveNamesClass("\\class Test { \\function y => x } \\where { \\class A { | x : Nat } \\open A }", 1);
   }
 
   @Test
   public void openAbstractTestError2() {
-    resolveNamesClass("\\class Test { \\function z => y } \\where { \\class A { \\field x : Nat \\function y => x } \\open A }", 1);
+    resolveNamesClass("\\class Test { \\function z => y } \\where { \\class A { | x : Nat \\function y => x } \\open A }", 1);
   }
 
   @Test

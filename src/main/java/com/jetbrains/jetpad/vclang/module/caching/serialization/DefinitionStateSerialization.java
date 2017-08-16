@@ -20,6 +20,7 @@ import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class DefinitionStateSerialization {
   private final PersistenceProvider<? extends SourceId> myPersistenceProvider;
@@ -108,7 +109,16 @@ public class DefinitionStateSerialization {
       builder.putFields(myPersistenceProvider.getIdFor(abstractField), fBuilder.build());
     }
 
-    builder.setFieldSet(defSerializer.writeFieldSet(definition.getFieldSet()));
+    for (ClassField classField : definition.getFields()) {
+      builder.addClassFieldRef(myCalltargetIndexProvider.getDefIndex(classField));
+    }
+    for (Map.Entry<ClassField, ClassDefinition.Implementation> impl : definition.getImplemented()) {
+      DefinitionProtos.Definition.ClassData.Implementation.Builder iBuilder = DefinitionProtos.Definition.ClassData.Implementation.newBuilder();
+      iBuilder.setThisParam(defSerializer.writeParameter(impl.getValue().thisParam));
+      iBuilder.setTerm(defSerializer.writeExpr(impl.getValue().term));
+      builder.putImplementations(myCalltargetIndexProvider.getDefIndex(impl.getKey()), iBuilder.build());
+    }
+    builder.setSort(defSerializer.writeSort(definition.getSort()));
     if (definition.getEnclosingThisField() != null) {
       builder.setEnclosingThisFieldRef(myCalltargetIndexProvider.getDefIndex(definition.getEnclosingThisField()));
     }

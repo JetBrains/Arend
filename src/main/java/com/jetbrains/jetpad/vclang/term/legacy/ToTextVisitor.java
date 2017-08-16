@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.legacy;
 
-import com.jetbrains.jetpad.vclang.core.definition.Name;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
@@ -9,7 +8,7 @@ import java.util.Collection;
 
 public class ToTextVisitor extends PrettyPrintVisitor implements LegacyAbstractStatementVisitor<Void, Void>, AbstractDefinitionVisitor<Void, Void> {
   public ToTextVisitor(StringBuilder builder, int indent) {
-    super(builder, indent);
+    super(builder, indent, true);
   }
 
   public static String toText(Abstract.Definition definition, int indent) {
@@ -61,6 +60,7 @@ public class ToTextVisitor extends PrettyPrintVisitor implements LegacyAbstractS
   @Override
   public Void visitDefine(LegacyAbstract.DefineStatement stat, Void params) {
     stat.getDefinition().accept(this, params);
+    this.myBuilder.append("\n\n");
     return null;
   }
 
@@ -94,9 +94,9 @@ public class ToTextVisitor extends PrettyPrintVisitor implements LegacyAbstractS
       }
       myBuilder.append(" (");
       if (!stat.getNames().isEmpty()) {
-        myBuilder.append(new Name(stat.getNames().get(0)).getPrefixName());
+        myBuilder.append(stat.getNames().get(0));
         for (int i = 1; i < stat.getNames().size(); i++) {
-          myBuilder.append(", ").append(new Name(stat.getNames().get(i)).getPrefixName());
+          myBuilder.append(", ").append(stat.getNames().get(i));
         }
       }
       myBuilder.append(')');

@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.core.expr;
 import com.jetbrains.jetpad.vclang.core.context.param.*;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
-import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 
@@ -24,12 +23,12 @@ public class ExpressionFactory {
 
   public static Expression FieldCall(ClassField definition, Expression thisExpr) {
     if (thisExpr.isInstance(NewExpression.class)) {
-      FieldSet.Implementation impl = thisExpr.cast(NewExpression.class).getExpression().getFieldSet().getImplementation(definition);
+      Expression impl = thisExpr.cast(NewExpression.class).getExpression().getImplementation(definition, thisExpr);
       assert impl != null;
-      return impl.term;
+      return impl;
     } else {
       ErrorExpression errorExpr = thisExpr.checkedCast(ErrorExpression.class);
-      if (errorExpr != null && errorExpr.getExpr() != null) {
+      if (errorExpr != null && errorExpr.getExpression() != null) {
         return new FieldCallExpression(definition, new ErrorExpression(null, errorExpr.getError()));
       } else {
         return new FieldCallExpression(definition, thisExpr);

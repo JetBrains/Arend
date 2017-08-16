@@ -27,7 +27,7 @@ public class DataTypeNotEmptyError extends LocalTypeCheckingError {
   }
 
   @Override
-  public LineDoc getBodyDoc() {
+  public LineDoc getBodyDoc(SourceInfoProvider src) {
     return hList(text("Available constructors: "), hSep(text(", "), constructors.stream().map(con -> refDoc(con.getAbstractDefinition())).collect(Collectors.toList())));
   }
 }

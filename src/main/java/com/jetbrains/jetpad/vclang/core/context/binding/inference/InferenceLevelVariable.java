@@ -23,6 +23,6 @@ public class InferenceLevelVariable implements LevelVariable {
 
   @Override
   public String toString() {
-    return myType == LvlType.PLVL ? "?lp" : "?lh";
+    return myType == LvlType.PLVL ? "?p" : "?h";
   }
 }

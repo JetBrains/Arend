@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
@@ -52,6 +53,39 @@ public class Lambda extends TypeCheckingTestCase {
   public void idImplicit() {
     CheckTypeVisitor.Result result = typeCheckExpr("\\lam {x} => x", Pi(singleParams(false, Collections.singletonList(null), Nat()), Nat()));
     assertNotNull(result);
+  }
+
+  @Test
+  public void skipImplicit() {
+    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x => x", Pi(singleParams(false, Collections.singletonList(null), Nat()), Pi(singleParams(true, Collections.singletonList(null), Nat()), Nat())));
+    assertNotNull(result);
+  }
+
+  @Test
+  public void skipImplicitTyped() {
+    CheckTypeVisitor.Result result = typeCheckExpr("\\lam (x : Nat) => x", Pi(singleParams(false, Collections.singletonList(null), Nat()), Pi(singleParams(true, Collections.singletonList(null), Nat()), Nat())));
+    assertNotNull(result);
+  }
+
+  @Test
+  public void implicitTyped() {
+    CheckTypeVisitor.Result result = typeCheckExpr("\\lam {y : Nat} (x : Nat) => y", Pi(singleParams(false, Collections.singletonList(null), Nat()), Pi(singleParams(true, Collections.singletonList(null), Nat()), Nat())));
+    assertNotNull(result);
+  }
+
+  @Test
+  public void implicitTypedError() {
+    typeCheckExpr("\\lam {y : Nat} (x : Nat) => y", Pi(singleParams(true, Arrays.asList(null, null), Nat()), Nat()), 1);
+  }
+
+  @Test
+  public void implicitTypedError2() {
+    typeCheckExpr("\\lam {y : Nat} (x : Nat) => y", Pi(singleParams(true, Collections.singletonList(null), Nat()), Pi(singleParams(true, Collections.singletonList(null), Nat()), Nat())), 1);
+  }
+
+  @Test
+  public void explicitTyped() {
+    typeCheckExpr("\\lam (y : Nat) (x : Nat) => y", Pi(singleParams(false, Collections.singletonList(null), Nat()), Pi(singleParams(true, Collections.singletonList(null), Nat()), Nat())), 1);
   }
 
   @Test

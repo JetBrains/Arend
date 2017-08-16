@@ -8,13 +8,13 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class TypeOmega extends TypeCheckingTestCase {
+public class UniverseLevels extends TypeCheckingTestCase {
   @Test
   public void dataExpansion() {
     typeCheckClass(
       "\\data D (A : \\Type) (a : A) | d (B : A -> \\Type2)\n" +
-      "\\function f : \\Pi {A : \\Type \\lp} {a : A} -> (A -> \\Type1) -> D A a => d\n" +
-      "\\function test => f {_} {\\Set0} {\\Prop} (\\lam _ => \\Type0)");
+      "\\function f : \\Pi {A : \\Type} {a : A} -> (A -> \\Type1) -> D A a => \\lam B => d B\n" +
+      "\\function test => f {\\Set0} {\\Prop} (\\lam _ => \\Type0)");
   }
 
   @Test
@@ -40,13 +40,13 @@ public class TypeOmega extends TypeCheckingTestCase {
   @Test
   public void callPolyFromOmega() {
      typeCheckClass(
-         "\\function f (A : \\Type \\lp) => A\n" +
+         "\\function f (A : \\Type) => A\n" +
          "\\function g (A : \\Type) => f A");
   }
 
   @Test
   public void typeOmegaResult() {
-    typeCheckClass("\\function f (A : \\Type \\lp) : \\Type => A");
+    typeCheckClass("\\function f (A : \\Type) : \\Type => A");
   }
 
   @Test

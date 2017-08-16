@@ -3,6 +3,9 @@ package com.jetbrains.jetpad.vclang.typechecking.termination;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.DefCallExpression;
+import com.jetbrains.jetpad.vclang.error.doc.Doc;
+
+import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
 class CallMatrix extends LabeledCallMatrix {
   private final DefCallExpression myCallExpression;
@@ -30,7 +33,7 @@ class CallMatrix extends LabeledCallMatrix {
   }
 
   @Override
-  public String getMatrixLabel() {
-    return "In " + myEnclosingDefinition.getName() + ": " + myCallExpression.toString();
+  public Doc getMatrixLabel() {
+    return hang(hList(refDoc(myEnclosingDefinition.getAbstractDefinition()), text(" ->")), termDoc(myCallExpression));
   }
 }

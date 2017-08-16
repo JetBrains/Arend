@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.error.doc;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -17,6 +18,12 @@ public class HangDoc extends Doc {
   HangDoc(Doc top, Doc bottom) {
     myTop = top;
     myBottom = bottom;
+  }
+
+  public static String getIndent(int indent) {
+    char[] array = new char[indent];
+    Arrays.fill(array, ' ');
+    return String.valueOf(array);
   }
 
   public Doc getTop() {
@@ -70,39 +77,36 @@ public class HangDoc extends Doc {
   }
 
   @Override
-  public List<LineDoc> linearize() {
-    List<LineDoc> result = myTop.linearize();
-    if (needNewLine()) {
-      for (LineDoc doc : myBottom.linearize()) {
-        char[] array = new char[HangDoc.INDENT];
-        Arrays.fill(array, ' ');
-        result.add(hList(text(Arrays.toString(array)), doc));
+  public List<LineDoc> linearize(int indent, boolean indentFirst) {
+    List<LineDoc> result = myTop.linearize(indent, indentFirst);
+    if (result.isEmpty()) {
+      return myBottom.linearize(indent + INDENT, indentFirst);
+    }
+    if (myBottom.isNull()) {
+      return result;
+    }
+
+    LineDoc lineDoc = result.get(0);
+    if (result.size() == 1 && myBottom.isSingleLine() || lineDoc.getWidth() + (myBottom.isEmpty() ? 0 : 1) <= MAX_INDENT) {
+      result = myBottom.linearize(lineDoc.getWidth() + 1, false);
+      lineDoc = hList(lineDoc, text(" "), result.get(0));
+      if (result.size() == 1) {
+        result = Collections.singletonList(lineDoc);
+      } else {
+        result.set(0, lineDoc);
       }
     } else {
-      assert result.size() <= 1;
-      if (result.isEmpty()) {
-        result = myBottom.linearize();
-      } else {
-        List<LineDoc> bottomLines = myBottom.linearize();
-        if (bottomLines.size() == 1) {
-          result = Collections.singletonList(hList(result.get(0), text(" "), bottomLines.get(0)));
-        } else if (bottomLines.size() > 1) {
-          int width = result.get(0).getWidth() + 1;
-          char[] array = new char[width];
-          Arrays.fill(array, ' ');
-          LineDoc spaces = text(Arrays.toString(array));
-          bottomLines.set(0, hList(result.get(0), text(" "), bottomLines.get(0)));
-          for (int i = 1; i < bottomLines.size(); i++) {
-            bottomLines.set(i, hList(spaces, bottomLines.get(i)));
-          }
-          result = bottomLines;
-        }
+      List<LineDoc> bottomLines = myBottom.linearize(indent + INDENT, true);
+      if (result.size() == 1) {
+        result = new ArrayList<>(bottomLines.size() + 1);
+        result.add(lineDoc);
       }
+      result.addAll(bottomLines);
     }
     return result;
   }
 
   public boolean needNewLine() {
-    return !myTop.isSingleLine() && !myBottom.isNull() || !myBottom.isSingleLine() && myTop.getWidth() + (myBottom.isEmpty() ? 0 : 1) > HangDoc.MAX_INDENT;
+    return !myTop.isSingleLine() && !myBottom.isNull() || !myBottom.isSingleLine() && myTop.getWidth() + (myBottom.isEmpty() ? 0 : 1) > MAX_INDENT;
   }
 }

@@ -10,7 +10,6 @@ import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -252,7 +251,6 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     typeCheckExpr(context, "\\lam x1 x2 => f x1 x2", null);
   }
 
-  @Ignore
   @Test
   public void untypedLambda2() {
     // f : (A : Type) (B : A -> Type) (a : A) -> B a |- \x1 x2 x3. f x1 x2 x3
@@ -264,6 +262,8 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     context.add(new TypedBinding("f", type));
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "\\lam x1 x2 x3 => f x1 x2 x3", null);
+    A.setType(Universe(0, 0));
+    B.setType(Pi(Ref(A), Universe(0, 0)));
     assertEquals(type, result.type);
   }
 
@@ -303,14 +303,14 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   @Test
   public void inferUnderPi() {
     typeCheckClass(
-        "\\function ($) {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
+        "\\function $ {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
         "\\function foo (A : \\Type0) (B : A -> \\Type0) (f : \\Pi (a : A) -> B a) (a' : A) => f $ a'", 1);
   }
 
   @Test
   public void inferUnderPiExpected() {
     typeCheckClass(
-        "\\function ($) {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
+        "\\function $ {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
         "\\function foo (A : \\Type0) (B : A -> \\Type0) (f : \\Pi (a : A) -> B a) (a' : A) : B a' => f $ a'", 1);
   }
 
@@ -384,7 +384,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void differentLevels() {
     typeCheckClass(
         "\\function F (X : \\Type \\lp) (B : X -> \\Type \\lp) => zero\n" +
-        "\\function g (X : \\Type \\lp) => F X (\\lam _ => (=) X X)");
+        "\\function g (X : \\Type \\lp) => F X (\\lam _ => `= X X)");
   }
 
   @Test
@@ -395,7 +395,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   @Test
   public void etaExpansionTest() {
     typeCheckClass(
-        "\\function ($) {A B : \\Set0} (f : A -> B) (a : A) => f a\n" +
+        "\\function $ {A B : \\Set0} (f : A -> B) (a : A) => f a\n" +
         "\\data Fin Nat \\with | n => fzero | suc n => fsuc (Fin n)\n" +
         "\\function unsuc {n : Nat} (x : Fin (suc n)) : Fin n => \\elim n, x\n" +
         "  | _, fzero => fzero\n" +
@@ -410,6 +410,6 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void freeVars() {
     typeCheckClass(
       "\\function f {n : Nat} {g : Nat -> Nat} (p : g = (\\lam x => n)) => 0\n" +
-      "\\function h => f (path (\\lam _ x => x))", 2);
+      "\\function h => f (path (\\lam _ x => x))", 1);
   }
 }

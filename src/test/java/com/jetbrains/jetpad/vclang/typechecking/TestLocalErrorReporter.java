@@ -8,12 +8,15 @@ import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
+import javax.annotation.Nonnull;
+
 public class TestLocalErrorReporter implements LocalErrorReporter {
   private final ErrorReporter errorReporter;
   private final Abstract.Definition fakeDef = new Abstract.Definition() {
+    @Nonnull
     @Override
     public Abstract.Precedence getPrecedence() {
-      return null;
+      return Abstract.Precedence.DEFAULT;
     }
 
     @Override

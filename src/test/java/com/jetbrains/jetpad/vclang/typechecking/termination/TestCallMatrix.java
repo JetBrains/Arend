@@ -1,5 +1,8 @@
 package com.jetbrains.jetpad.vclang.typechecking.termination;
 
+import com.jetbrains.jetpad.vclang.error.doc.Doc;
+import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
+
 class TestCallMatrix extends BaseCallMatrix<TestVertex> {
   private final TestVertex myDomain;
   private final TestVertex myCodomain;
@@ -65,7 +68,7 @@ class TestCallMatrix extends BaseCallMatrix<TestVertex> {
   }
 
   @Override
-  public String getMatrixLabel() {
-    return myLabel;
+  public Doc getMatrixLabel() {
+    return DocFactory.text(myLabel);
   }
 }

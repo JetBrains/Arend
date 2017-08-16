@@ -132,7 +132,7 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void staticFieldAccCallTest() {
-    resolveNamesClass("\\class A { \\field x : \\Type0 \\class B \\where { \\function y => x } } \\function f (a : A) => a.B.y");
+    resolveNamesClass("\\class A { | x : \\Type0 \\class B \\where { \\function y => x } } \\function f (a : A) => a.B.y");
   }
 
   @Ignore
@@ -157,11 +157,11 @@ public class NameResolverTest extends NameResolverTestCase {
     /*
     resolveNamesDef(
         "\\class Test {\n" +
-        "  \\field (+) (x y : \\Type0) : \\Type0\n" +
+        "  | (+) (x y : \\Type0) : \\Type0\n" +
         "  \\class A {\n" +
-        "    \\field x : \\Type0\n" +
+        "    | x : \\Type0\n" +
         "    \\class B {\n" +
-        "      \\field y : \\Type0\n" +
+        "      | y : \\Type0\n" +
         "      \\class C \\where {\n" +
         "        \\function z => x + y\n" +
         "        \\function w => x\n" +

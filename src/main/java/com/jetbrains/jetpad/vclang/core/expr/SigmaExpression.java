@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
@@ -11,8 +10,6 @@ import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
-
-import java.util.Set;
 
 public class SigmaExpression extends Expression implements Type {
   private final DependentLink myLink;
@@ -53,13 +50,13 @@ public class SigmaExpression extends Expression implements Type {
   }
 
   @Override
-  public SigmaExpression strip(Set<Binding> bounds, LocalErrorReporter errorReporter) {
-    return new StripVisitor(bounds, errorReporter).visitSigma(this, null);
+  public SigmaExpression strip(LocalErrorReporter errorReporter) {
+    return new StripVisitor(errorReporter).visitSigma(this, null);
   }
 
   @Override
   public SigmaExpression normalize(NormalizeVisitor.Mode mode) {
-    return new NormalizeVisitor().visitSigma(this, mode);
+    return NormalizeVisitor.INSTANCE.visitSigma(this, mode);
   }
 
   @Override

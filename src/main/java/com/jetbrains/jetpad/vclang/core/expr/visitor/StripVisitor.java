@@ -1,24 +1,24 @@
 package com.jetbrains.jetpad.vclang.core.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class StripVisitor implements ExpressionVisitor<Void, Expression> {
-  private final Set<Binding> myBounds;
   private final LocalErrorReporter myErrorReporter;
 
-  public StripVisitor(Set<Binding> bounds, LocalErrorReporter errorReporter) {
-    myBounds = bounds;
+  public StripVisitor(LocalErrorReporter errorReporter) {
     myErrorReporter = errorReporter;
   }
 
@@ -63,7 +63,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
     if (expr.getExpression().isInstance(NewExpression.class)) {
-      return expr.getExpression().cast(NewExpression.class).getExpression().getFieldSet().getImplementation(expr.getDefinition()).term.accept(this, null);
+      return expr.getExpression().cast(NewExpression.class).getExpression().getImplementation(expr.getDefinition(), expr.getExpression()).accept(this, null);
     } else {
       return ExpressionFactory.FieldCall(expr.getDefinition(), expr.getExpression().accept(this, null));
     }
@@ -71,8 +71,10 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
-    FieldSet fieldSet = FieldSet.applyVisitorToImplemented(expr.getFieldSet(), expr.getDefinition().getFieldSet(), this, null);
-    return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), fieldSet);
+    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
+      entry.setValue(entry.getValue().accept(this, null));
+    }
+    return expr;
   }
 
   @Override
@@ -82,61 +84,39 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
-    LocalTypeCheckingError error;
-    if (expr.getVariable() != null) {
-      error = expr.getVariable().getErrorInfer();
+    if (expr.getSubstExpression() == null) {
+      LocalTypeCheckingError error = expr.getVariable().getErrorInfer();
+      myErrorReporter.report(error);
+      Expression result = new ErrorExpression(null, error);
+      expr.setSubstExpression(result);
+      return result;
     } else {
-      Expression result = ElimBindingVisitor.findBindings(expr.getSubstExpression().accept(this, null), myBounds);
-      if (result != null) {
-        return result;
-      }
-      error = expr.getOriginalVariable().getErrorInfer(expr.getSubstExpression());
+      return expr.getSubstExpression().accept(this, null);
     }
-
-    myErrorReporter.report(error);
-    Expression result = new ErrorExpression(null, error);
-    expr.setSubstExpression(result);
-    return result;
   }
 
   private void visitParameters(DependentLink link) {
     for (; link.hasNext(); link = link.getNext()) {
       DependentLink link1 = link.getNextTyped(null);
-      link1.setType(link1.getType().strip(myBounds, myErrorReporter));
-
-      for (; link != link1; link = link.getNext()) {
-        myBounds.add(link);
-      }
-      myBounds.add(link);
-    }
-  }
-
-  private void freeParameters(DependentLink link) {
-    for (; link.hasNext(); link = link.getNext()) {
-      myBounds.remove(link);
+      link1.setType(link1.getType().strip(myErrorReporter));
     }
   }
 
   @Override
   public LamExpression visitLam(LamExpression expr, Void params) {
     visitParameters(expr.getParameters());
-    LamExpression result = new LamExpression(expr.getResultSort(), expr.getParameters(), expr.getBody().accept(this, null));
-    freeParameters(expr.getParameters());
-    return result;
+    return new LamExpression(expr.getResultSort(), expr.getParameters(), expr.getBody().accept(this, null));
   }
 
   @Override
   public PiExpression visitPi(PiExpression expr, Void params) {
     visitParameters(expr.getParameters());
-    PiExpression result = new PiExpression(expr.getResultSort(), expr.getParameters(), expr.getCodomain().accept(this, null));
-    freeParameters(expr.getParameters());
-    return result;
+    return new PiExpression(expr.getResultSort(), expr.getParameters(), expr.getCodomain().accept(this, null));
   }
 
   @Override
   public SigmaExpression visitSigma(SigmaExpression expr, Void params) {
     visitParameters(expr.getParameters());
-    freeParameters(expr.getParameters());
     return expr;
   }
 
@@ -147,7 +127,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public ErrorExpression visitError(ErrorExpression expr, Void params) {
-    return new ErrorExpression(expr.getExpr() == null ? null : expr.getExpr().accept(this, null), expr.getError());
+    return new ErrorExpression(expr.getExpression() == null ? null : expr.getExpression().accept(this, null), expr.getError());
   }
 
   @Override
@@ -173,12 +153,9 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   public LetExpression visitLet(LetExpression expr, Void params) {
     for (LetClause clause : expr.getClauses()) {
       clause.setExpression(clause.getExpression().accept(this, null));
-      myBounds.add(clause);
     }
 
-    LetExpression result = new LetExpression(expr.getClauses(), expr.getExpression().accept(this, null));
-    expr.getClauses().forEach(myBounds::remove);
-    return result;
+    return new LetExpression(expr.getClauses(), expr.getExpression().accept(this, null));
   }
 
   @Override
@@ -188,24 +165,20 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
       expr.getArguments().set(i, expr.getArguments().get(i).accept(this, null));
     }
     visitParameters(expr.getParameters());
-    Expression type = expr.getResultType().accept(this, null);
-    freeParameters(expr.getParameters());
-    return new CaseExpression(expr.getParameters(), type, elimTree, expr.getArguments());
+    return new CaseExpression(expr.getParameters(), expr.getResultType().accept(this, null), elimTree, expr.getArguments());
   }
 
   private ElimTree stripElimTree(ElimTree elimTree) {
     visitParameters(elimTree.getParameters());
     if (elimTree instanceof LeafElimTree) {
-      elimTree = new LeafElimTree(elimTree.getParameters(), ((LeafElimTree) elimTree).getExpression().accept(this, null));
+      return new LeafElimTree(elimTree.getParameters(), ((LeafElimTree) elimTree).getExpression().accept(this, null));
     } else {
       Map<Constructor, ElimTree> children = new HashMap<>();
       for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
         children.put(entry.getKey(), stripElimTree(entry.getValue()));
       }
-      elimTree = new BranchElimTree(elimTree.getParameters(), children);
+      return new BranchElimTree(elimTree.getParameters(), children);
     }
-    freeParameters(elimTree.getParameters());
-    return elimTree;
   }
 
   @Override

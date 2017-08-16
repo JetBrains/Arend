@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -75,7 +76,7 @@ public class ArgInferenceError extends LocalTypeCheckingError {
   }
 
   @Override
-  public Doc getBodyDoc() {
+  public Doc getBodyDoc(SourceInfoProvider src) {
     return vList(
       candidates.length == 0
         ? nullDoc()

@@ -9,7 +9,6 @@ import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 
 import java.util.Map;
 import java.util.Set;
@@ -58,8 +57,8 @@ public class FindMissingBindingVisitor extends BaseExpressionVisitor<Void, Varia
 
   @Override
   public Variable visitClassCall(ClassCallExpression expr, Void params) {
-    for (Map.Entry<ClassField, FieldSet.Implementation> entry : expr.getImplementedHere()) {
-      Variable result = entry.getValue().term.accept(this, null);
+    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
+      Variable result = entry.getValue().accept(this, null);
       if (result != null) {
         return result;
       }

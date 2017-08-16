@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
@@ -8,8 +7,6 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
-
-import java.util.Set;
 
 public class UniverseExpression extends Expression implements Type {
   private final Sort mySort;
@@ -44,7 +41,7 @@ public class UniverseExpression extends Expression implements Type {
   }
 
   @Override
-  public UniverseExpression strip(Set<Binding> bounds, LocalErrorReporter errorReporter) {
+  public UniverseExpression strip(LocalErrorReporter errorReporter) {
     return this;
   }
 

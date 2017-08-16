@@ -36,7 +36,8 @@ message Expression {
         int32 class_ref = 1;
         Level pLevel = 2;
         Level hLevel = 4;
-        FieldSet field_set = 3;
+        map<int32, Expression> field_set = 5;
+        Sort sort = 6;
     }
     message ConCall {
         int32 constructor_ref = 1;
@@ -151,16 +152,5 @@ message ElimTree {
     }
     message Branch {
         map<int32, ElimTree> clauses = 1;
-    }
-}
-
-message FieldSet {
-    repeated int32 class_field_ref = 1;
-    map<int32, Implementation> implementations = 2;
-    Sort sort = 4;
-
-    message Implementation {
-        SingleParameter this_param = 1;
-        Expression term = 2;
     }
 }

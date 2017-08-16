@@ -412,7 +412,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void testConCallEta() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\function ($) {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
+        "\\function $ {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
         "\\data Fin Nat \\with\n" +
         "  | suc n => fzero\n" +
         "  | suc n => fsuc (Fin n)\n" +

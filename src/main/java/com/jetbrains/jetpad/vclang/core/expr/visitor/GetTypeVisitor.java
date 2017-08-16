@@ -9,6 +9,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
+  public final static GetTypeVisitor INSTANCE = new GetTypeVisitor();
+
+  private GetTypeVisitor() {
+  }
+
   @Override
   public Expression visitApp(AppExpression expr, Void params) {
     return expr.getFunction().accept(this, null).applyExpression(expr.getArgument());
@@ -70,8 +75,8 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitError(ErrorExpression expr, Void params) {
     Expression expr1 = null;
-    if (expr.getExpr() != null) {
-      expr1 = expr.getExpr().accept(this, null);
+    if (expr.getExpression() != null) {
+      expr1 = expr.getExpression().accept(this, null);
     }
     return new ErrorExpression(expr1, expr.getError());
   }

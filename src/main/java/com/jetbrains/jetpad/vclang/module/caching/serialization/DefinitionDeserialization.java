@@ -12,7 +12,6 @@ import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
-import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
@@ -147,27 +146,6 @@ class DefinitionDeserialization {
   }
 
 
-  // FieldSet
-
-  FieldSet readFieldSet(ExpressionProtos.FieldSet proto) throws DeserializationError {
-    FieldSet result = new FieldSet(readSort(proto.getSort()));
-    for (int classFieldRef : proto.getClassFieldRefList()) {
-      result.addField(myCalltargetProvider.getCalltarget(classFieldRef, ClassField.class));
-    }
-    for (Map.Entry<Integer, ExpressionProtos.FieldSet.Implementation> entry : proto.getImplementationsMap().entrySet()) {
-      final TypedDependentLink thisParam;
-      if (entry.getValue().hasThisParam()) {
-        thisParam = (TypedDependentLink) readParameter(entry.getValue().getThisParam());
-      } else {
-        thisParam = null;
-      }
-      FieldSet.Implementation impl = new FieldSet.Implementation(thisParam, readExpr(entry.getValue().getTerm()));
-      result.implementField(myCalltargetProvider.getCalltarget(entry.getKey(), ClassField.class), impl);
-    }
-    return result;
-  }
-
-
   // Expressions and ElimTrees
 
   ElimTree readElimTree(ExpressionProtos.ElimTree proto) throws DeserializationError {
@@ -255,7 +233,11 @@ class DefinitionDeserialization {
   }
 
   private ClassCallExpression readClassCall(ExpressionProtos.Expression.ClassCall proto) throws DeserializationError {
-    return new ClassCallExpression(myCalltargetProvider.getCalltarget(proto.getClassRef(), ClassDefinition.class), new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readFieldSet(proto.getFieldSet()));
+    Map<ClassField, Expression> fieldSet = new HashMap<>();
+    for (Map.Entry<Integer, ExpressionProtos.Expression> entry : proto.getFieldSetMap().entrySet()) {
+      fieldSet.put(myCalltargetProvider.getCalltarget(entry.getKey(), ClassField.class), readExpr(entry.getValue()));
+    }
+    return new ClassCallExpression(myCalltargetProvider.getCalltarget(proto.getClassRef(), ClassDefinition.class), new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), fieldSet, readSort(proto.getSort()));
   }
 
   private ReferenceExpression readReference(ExpressionProtos.Expression.Reference proto) throws DeserializationError {

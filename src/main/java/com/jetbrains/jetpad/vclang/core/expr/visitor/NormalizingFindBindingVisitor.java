@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
 
 import java.util.Collections;
 import java.util.Map;
@@ -58,8 +57,8 @@ public class NormalizingFindBindingVisitor extends BaseExpressionVisitor<Void, B
 
   @Override
   public Boolean visitClassCall(ClassCallExpression expr, Void params) {
-    for (Map.Entry<ClassField, FieldSet.Implementation> entry : expr.getImplementedHere()) {
-      if (findBinding(entry.getValue().term, true)) {
+    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
+      if (findBinding(entry.getValue(), true)) {
         return true;
       }
     }

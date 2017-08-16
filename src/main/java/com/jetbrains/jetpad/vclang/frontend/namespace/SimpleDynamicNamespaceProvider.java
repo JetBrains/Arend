@@ -17,10 +17,10 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
     if (ns != null) return ns;
 
     ns = forDefinitions(classDefinition.getInstanceDefinitions());
-
     for (Abstract.ClassField field : classDefinition.getFields()) {
       ns.addDefinition(field);
     }
+    classCache.put(classDefinition, ns);
 
     for (final Abstract.SuperClass superClass : classDefinition.getSuperClasses()) {
       Abstract.ClassDefinition superDef = Abstract.getUnderlyingClassDef(superClass.getSuperClass());
@@ -29,7 +29,6 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
       }
     }
 
-    classCache.put(classDefinition, ns);
     return ns;
   }
 

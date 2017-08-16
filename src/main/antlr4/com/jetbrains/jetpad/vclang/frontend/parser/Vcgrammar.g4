@@ -3,22 +3,25 @@ grammar Vcgrammar;
 statements : statement* EOF;
 
 statement : definition                                                            # statDef
-          | nsCmd nsCmdRoot ('.' fieldAcc)* (hidingOpt '(' name (',' name)* ')')? # statCmd
+          | nsCmd nsCmdRoot ('.' fieldAcc)* (hidingOpt '(' id (',' id)* ')')?     # statCmd
           ;
 
 hidingOpt : '\\hiding'  # withHiding
           |             # withoutHiding
           ;
 
-nsCmdRoot : modulePath | name;
+nsCmdRoot : MODULE_PATH | id;
 
-definition  : '\\function' precedence name tele* (':' expr)? functionBody where?                          # defFunction
-            | '\\field' precedence name ':' expr                                                          # defAbstract
-            | '\\implement' name '=>' expr                                                                # defImplement
-            | isTruncated '\\data' precedence name tele* (':' expr)? dataBody                             # defData
-            | '\\class' ID tele* ('\\extends' atomFieldsAcc (',' atomFieldsAcc)*)? ('{' statement* '}')? where?           # defClass
-            | '\\view' ID '\\on' expr '\\by' name '{' classViewField* '}'                                 # defClassView
-            | defaultInst '\\instance' ID tele* '=>' expr                                                 # defInstance
+classStat : '|' precedence id ':' expr  # classField
+          | '|' id '=>' expr            # classImplement
+          | statement                   # classStatement
+          ;
+
+definition  : '\\function' precedence id tele* (':' expr)? functionBody where?                                  # defFunction
+            | isTruncated '\\data' precedence id tele* (':' expr)? dataBody                                     # defData
+            | '\\class' id tele* ('\\extends' atomFieldsAcc (',' atomFieldsAcc)*)? ('{' classStat* '}')? where? # defClass
+            | '\\view' id '\\on' expr '\\by' id '{' classViewField* '}'                                         # defClassView
+            | defaultInst '\\instance' id tele* '=>' expr                                                       # defInstance
             ;
 
 functionBody  : '=>' expr     # withoutElim
@@ -41,7 +44,7 @@ defaultInst :             # noDefault
             | '\\default' # withDefault
             ;
 
-classViewField : name ('=>' precedence name)? ;
+classViewField : id ('=>' precedence id)? ;
 
 where : '\\where' ('{' statement* '}' | statement);
 
@@ -50,7 +53,7 @@ nsCmd : '\\open'                        # openCmd
       ;
 
 pattern : atomPattern             # patternAtom
-        | name atomPatternOrID*   # patternConstructor
+        | prefix atomPatternOrID* # patternConstructor
         ;
 
 atomPattern : '(' pattern ')'     # patternExplicit
@@ -60,10 +63,10 @@ atomPattern : '(' pattern ')'     # patternExplicit
             ;
 
 atomPatternOrID : atomPattern     # patternOrIDAtom
-                | ID              # patternID
+                | prefix          # patternID
                 ;
 
-constructor : precedence name tele* (elim? '{' clause? ('|' clause)* '}')?;
+constructor : precedence id tele* (elim? '{' clause? ('|' clause)* '}')?;
 
 precedence :                            # noPrecedence
            | associativity NUMBER       # withPrecedence
@@ -74,26 +77,22 @@ associativity : '\\infix'               # nonAssoc
               | '\\infixr'              # rightAssoc
               ;
 
-name  : ID                              # nameId
-      | '(' BIN_OP ')'                  # nameBinOp
-      ;
+expr0 : binOpLeft* binOpArg postfix*;
 
-expr0 : binOpLeft* binOpArg;
-
-expr  : binOpLeft* maybeNew binOpArg implementStatements?   # binOp
-      | <assoc=right> expr '->' expr                        # arr
-      | '\\Pi' tele+ '->' expr                              # pi
-      | '\\Sigma' tele+                                     # sigma
-      | '\\lam' tele+ '=>' expr                             # lam
-      | '\\let' '|'? letClause ('|' letClause)* '\\in' expr # let
-      | '\\case' expr0 (',' expr0)* '\\with' '{' clause? ('|' clause)* '}' # case
+expr  : binOpLeft* maybeNew binOpArg implementStatements? postfix*            # binOp
+      | <assoc=right> expr '->' expr                                          # arr
+      | '\\Pi' tele+ '->' expr                                                # pi
+      | '\\Sigma' tele+                                                       # sigma
+      | '\\lam' tele+ '=>' expr                                               # lam
+      | '\\let' '|'? letClause ('|' letClause)* '\\in' expr                   # let
+      | '\\case' expr0 (',' expr0)* '\\with' '{' clause? ('|' clause)* '}'    # case
       ;
 
 clauses : ('|' clause)*                 # clausesWithoutBraces
         | '{' clause? ('|' clause)* '}' # clausesWithBraces
         ;
 
-letClause : ID tele* typeAnnotation? '=>' expr;
+letClause : id tele* typeAnnotation? '=>' expr;
 
 typeAnnotation : ':' expr;
 
@@ -116,43 +115,37 @@ binOpArg : atomFieldsAcc argument*                # binOpArgument
          | SET levelAtom?                         # setUniverse
          ;
 
-binOpLeft : maybeNew binOpArg implementStatements? infix;
+binOpLeft : maybeNew binOpArg implementStatements? postfix* infix;
 
 maybeNew :                              # noNew
          | '\\new'                      # withNew
          ;
 
-fieldAcc : name                     # classField
-         | NUMBER                   # sigmaField
+fieldAcc : id                       # classFieldAcc
+         | NUMBER                   # sigmaFieldAcc
          ;
-
-infix : BIN_OP                      # infixBinOp
-      | '`' ID '`'                  # infixId
-      ;
-
-modulePath : ('::' ID)+;
 
 atom  : literal                         # atomLiteral
       | '(' expr (',' expr)* ')'        # tuple
       | NUMBER                          # atomNumber
-      | modulePath                      # atomModuleCall
+      | MODULE_PATH                     # atomModuleCall
       ;
 
 atomFieldsAcc : atom ('.' fieldAcc)*;
 
 implementStatements : '{' implementStatement? ('|' implementStatement)* '}';
 
-implementStatement : name '=>' expr;
+implementStatement : id '=>' expr;
 
 argument : atomFieldsAcc                # argumentExplicit
          | universeAtom                 # argumentUniverse
          | '{' expr '}'                 # argumentImplicit
          ;
 
-literal : name                          # id
+literal : prefix                        # name
         | '\\Prop'                      # prop
         | '_'                           # unknown
-        | '{?}'                         # hole
+        | '{?' id? ('{' expr '}')? '}'  # goal
         ;
 
 universeAtom : TRUNCATED_UNIVERSE       # uniTruncatedUniverse
@@ -167,8 +160,17 @@ tele : literal                          # teleLiteral
      ;
 
 typedExpr : expr                        # notTyped
-          | expr ':' expr               # typed
+          | INFIX id* ':' expr          # typedVars
+          | expr INFIX* ':' expr        # typed
           ;
+
+id : PREFIX | INFIX;
+
+prefix : PREFIX | PREFIX_INFIX;
+
+infix : INFIX | INFIX_PREFIX;
+
+postfix : POSTFIX_INFIX | POSTFIX_PREFIX;
 
 NUMBER : [0-9]+;
 UNIVERSE : '\\Type' [0-9]*;
@@ -179,8 +181,12 @@ ARROW : '->';
 WS : [ \t\r\n]+ -> skip;
 LINE_COMMENT : '--' ~[\r\n]* -> skip;
 COMMENT : '{-' .*? '-}' -> skip;
-fragment BIN_OP_CHAR : [~!@#$%^&*\-+=<>?/|.:];
-BIN_OP : BIN_OP_CHAR+;
-fragment ID_FRAGMENT : [a-zA-Z_] [a-zA-Z0-9_']* | BIN_OP_CHAR+;
-ID : ID_FRAGMENT ('-' ID_FRAGMENT)*;
+fragment INFIX_CHAR : [~!@#$%^&*\-+=<>?/|:;[\]];
+MODULE_PATH : ('::' [a-zA-Z_] [a-zA-Z0-9_']*)+;
+INFIX : INFIX_CHAR+;
+PREFIX : (INFIX_CHAR | [a-zA-Z_]) (INFIX_CHAR | [a-zA-Z0-9_'])*;
+PREFIX_INFIX : '`' INFIX;
+INFIX_PREFIX : '`' PREFIX;
+POSTFIX_INFIX : INFIX '`';
+POSTFIX_PREFIX : PREFIX '`';
 ERROR_CHAR : .;

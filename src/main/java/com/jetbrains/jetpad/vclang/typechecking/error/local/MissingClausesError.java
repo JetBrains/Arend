@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +26,7 @@ public class MissingClausesError extends LocalTypeCheckingError {
   }
 
   @Override
-  public Doc getBodyDoc() {
+  public Doc getBodyDoc(SourceInfoProvider src) {
     List<LineDoc> docs = new ArrayList<>(myMissingClauses.size());
     for (List<Expression> missingClause : myMissingClauses) {
       docs.add(hSep(text(", "), missingClause.stream().map(DocFactory::termLine).collect(Collectors.toList())));

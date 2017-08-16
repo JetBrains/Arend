@@ -3,13 +3,13 @@ package com.jetbrains.jetpad.vclang.error.doc;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 public class ReferenceDoc extends LineDoc {
-  private final Abstract.SourceNode myReference;
+  private final Abstract.ReferableSourceNode myReference;
 
-  ReferenceDoc(Abstract.SourceNode reference) {
+  ReferenceDoc(Abstract.ReferableSourceNode reference) {
     myReference = reference;
   }
 
-  public Abstract.SourceNode getReference() {
+  public Abstract.ReferableSourceNode getReference() {
     return myReference;
   }
 

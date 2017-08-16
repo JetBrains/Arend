@@ -25,7 +25,7 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
     if (ref1 == null) {
       ref1 = expr1.getReferent();
     }
-    return ref1.equals(defCallExpr2.getReferent());
+    return ref1 == null ? defCallExpr2.getReferent() == null : ref1.equals(defCallExpr2.getReferent());
   }
 
   @Override
@@ -128,8 +128,8 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
   }
 
   @Override
-  public Boolean visitError(Abstract.ErrorExpression expr1, Abstract.Expression expr2) {
-    return expr2 instanceof Abstract.ErrorExpression;
+  public Boolean visitGoal(Abstract.GoalExpression expr1, Abstract.Expression expr2) {
+    return expr2 instanceof Abstract.GoalExpression;
   }
 
   @Override
@@ -157,7 +157,7 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
     }
     if (!(expr2 instanceof Abstract.BinOpExpression)) return false;
     Abstract.BinOpExpression binOpExpr2 = (Abstract.BinOpExpression) expr2;
-    return expr1.getLeft().accept(this, binOpExpr2.getLeft()) && expr1.getRight().accept(this, binOpExpr2.getRight()) && expr1.getReferent().equals(((Abstract.BinOpExpression) expr2).getReferent());
+    return expr1.getLeft().accept(this, binOpExpr2.getLeft()) && (expr1.getRight() == null && binOpExpr2.getRight() == null || expr1.getRight() != null && binOpExpr2.getRight() != null && expr1.getRight().accept(this, binOpExpr2.getRight())) && expr1.getReferent().equals(((Abstract.BinOpExpression) expr2).getReferent());
   }
 
   @Override
@@ -170,7 +170,9 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
     if (!expr1.getLeft().accept(this, binOpExpr2.getLeft())) return false;
     if (expr1.getSequence().size() != binOpExpr2.getSequence().size()) return false;
     for (int i = 0; i < expr1.getSequence().size(); i++) {
-      if (!(expr1.getSequence().get(i).binOp == binOpExpr2.getSequence().get(i).binOp && expr1.getSequence().get(i).argument.accept(this, ((Abstract.BinOpSequenceExpression) expr2).getSequence().get(i).argument))) {
+      Abstract.Expression arg1 = expr1.getSequence().get(i).argument;
+      Abstract.Expression arg2 = ((Abstract.BinOpSequenceExpression) expr2).getSequence().get(i).argument;
+      if (!(expr1.getSequence().get(i).binOp == binOpExpr2.getSequence().get(i).binOp && (arg1 == null && arg2 == null || arg1 != null && arg2 != null && arg1.accept(this, arg2)))) {
         return false;
       }
     }
@@ -188,7 +190,7 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
   }
 
   private boolean compareClause(Abstract.FunctionClause clause1, Abstract.FunctionClause clause2) {
-    if (!(clause1.getExpression().accept(this, clause2.getExpression()) && clause1.getPatterns().size() == clause2.getPatterns().size())) return false;
+    if (!((clause1.getExpression() == null ? clause2.getExpression() == null : clause1.getExpression().accept(this, clause2.getExpression())) && clause1.getPatterns().size() == clause2.getPatterns().size())) return false;
     for (int i = 0; i < clause1.getPatterns().size(); i++) {
       if (!comparePattern(clause1.getPatterns().get(i), clause2.getPatterns().get(i))) {
         return false;

@@ -1,5 +1,8 @@
 package com.jetbrains.jetpad.vclang.typechecking.termination;
 
+import com.jetbrains.jetpad.vclang.error.doc.Doc;
+import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
+
 public class CompositeCallMatrix<T> extends BaseCallMatrix<T> {
   private final BaseCallMatrix<T> myM1;
   private final BaseCallMatrix<T> myM2;
@@ -11,8 +14,8 @@ public class CompositeCallMatrix<T> extends BaseCallMatrix<T> {
   }
 
   @Override
-  public String getMatrixLabel() {
-    return myM1.getMatrixLabel() + ",\n " + myM2.getMatrixLabel();
+  public Doc getMatrixLabel() {
+    return DocFactory.vList(myM1.getMatrixLabel(), myM2.getMatrixLabel());
   }
 
   @Override

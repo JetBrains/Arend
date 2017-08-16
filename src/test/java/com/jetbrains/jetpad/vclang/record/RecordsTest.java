@@ -23,14 +23,14 @@ public class RecordsTest extends TypeCheckingTestCase {
   @Test
   public void unknownExtTestError() {
     resolveNamesClass(
-        "\\class Point { \\field x : Nat \\field y : Nat }\n" +
+        "\\class Point { | x : Nat | y : Nat }\n" +
         "\\function C => Point { x => 0 | z => 0 | y => 0 }", 1);
   }
 
   @Test
   public void resultTypeMismatchTestError() {
     typeCheckClass(
-        "\\class Point { \\field x : Nat \\field y : Nat }\n" +
+        "\\class Point { | x : Nat | y : Nat }\n" +
         "\\function C => Point { x => \\lam (t : Nat) => t }", 1);
   }
 
@@ -38,8 +38,8 @@ public class RecordsTest extends TypeCheckingTestCase {
   public void parentCallTest() {
     resolveNamesClass(
         "\\class A {\n" +
-        "  \\field c : Nat -> Nat -> Nat\n" +
-        "  \\field f : Nat -> Nat\n" +
+        "  | c : Nat -> Nat -> Nat\n" +
+        "  | f : Nat -> Nat\n" +
         "}\n" +
         "\\function B => A {\n" +
         "  f => \\lam n => c n n\n" +
@@ -50,7 +50,7 @@ public class RecordsTest extends TypeCheckingTestCase {
   public void duplicateNameTestError() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field f : Nat\n" +
+        "  | f : Nat\n" +
         "}\n" +
         "\\function B => A {\n" +
         "  | f => 0\n" +
@@ -62,8 +62,8 @@ public class RecordsTest extends TypeCheckingTestCase {
   public void overriddenFieldAccTest() {
     typeCheckClass(
         "\\class Point {\n" +
-        "  \\field x : Nat\n" +
-        "  \\field y : Nat\n" +
+        "  | x : Nat\n" +
+        "  | y : Nat\n" +
         "}\n" +
         "\\function diagonal => \\lam (d : Nat) => Point {\n" +
         "  | x => d\n" +
@@ -73,21 +73,31 @@ public class RecordsTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void notImplementedTest() {
+    typeCheckClass(
+        "\\class Point {\n" +
+        "  | x : Nat\n" +
+        "  | y : Nat\n" +
+        "}\n" +
+        "\\function diagonal => Point { y => 0 }");
+  }
+
+  @Test
   public void notImplementedTestError() {
     typeCheckClass(
         "\\class Point {\n" +
-        "  \\field x : Nat\n" +
-        "  \\field y : Nat\n" +
+        "  | x : Nat\n" +
+        "  | y : x = x -> Nat\n" +
         "}\n" +
-        "\\function diagonal => Point { y => 0 }", 1);
+        "\\function diagonal => Point { y => \\lam _ => 0 }", 1);
   }
 
   @Test
   public void newAbstractTestError() {
     typeCheckClass(
         "\\class Point {\n" +
-        "  \\field x : Nat\n" +
-        "  \\field y : Nat\n" +
+        "  | x : Nat\n" +
+        "  | y : Nat\n" +
         "}\n" +
         "\\function diagonal => Point { x => 0 }\n" +
         "\\function test => \\new diagonal", 1);
@@ -97,8 +107,8 @@ public class RecordsTest extends TypeCheckingTestCase {
   public void newTest() {
     typeCheckClass(
         "\\class Point {\n" +
-        "  \\field x : Nat\n" +
-        "  \\field y : Nat\n" +
+        "  | x : Nat\n" +
+        "  | y : Nat\n" +
         "}\n" +
         "\\function diagonal => \\lam (d : Nat) => Point {\n" +
         "  | x => d\n" +
@@ -115,8 +125,8 @@ public class RecordsTest extends TypeCheckingTestCase {
   public void mutualRecursionTestError() {
     resolveNamesClass(
         "\\class Point {\n" +
-        "  \\field x : Nat\n" +
-        "  \\field y : Nat\n" +
+        "  | x : Nat\n" +
+        "  | y : Nat\n" +
         "}\n" +
         "\\function test => Point {\n" +
         "  | x => y\n" +
@@ -138,7 +148,7 @@ public class RecordsTest extends TypeCheckingTestCase {
   @Test
   public void recordUniverseTest() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\class Point { \\field x : Nat \\field y : Nat }\n" +
+        "\\class Point { | x : Nat | y : Nat }\n" +
         "\\function C => Point { x => 0 }");
     assertEquals(Sort.SET0, ((ClassDefinition) result.getDefinition("Point")).getSort());
     assertEquals(Universe(Sort.SET0), result.getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
@@ -147,7 +157,7 @@ public class RecordsTest extends TypeCheckingTestCase {
   @Test
   public void recordUniverseTest2() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\class Point { \\field x : Nat \\field y : Nat }\n" +
+        "\\class Point { | x : Nat | y : Nat }\n" +
         "\\function C => Point { x => 0 | y => 1 }");
     assertEquals(Sort.SET0, ((ClassDefinition) result.getDefinition("Point")).getSort());
     assertEquals(Universe(Sort.PROP), result.getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
@@ -156,7 +166,7 @@ public class RecordsTest extends TypeCheckingTestCase {
   @Test
   public void recordUniverseTest3() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\class Point { \\field x : \\Type3 \\field y : \\Type1 }\n" +
+        "\\class Point { | x : \\Type3 | y : \\Type1 }\n" +
         "\\function C => Point { x => Nat }");
     assertEquals(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) result.getDefinition("Point")).getSort());
     assertEquals(Universe(new Sort(2, 1)), result.getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
@@ -165,7 +175,7 @@ public class RecordsTest extends TypeCheckingTestCase {
   @Test
   public void recordUniverseTest4() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\class Point { \\field x : \\Type3 \\field y : \\oo-Type1 }\n" +
+        "\\class Point { | x : \\Type3 | y : \\oo-Type1 }\n" +
         "\\function C => Point { x => Nat }");
     assertEquals(new Sort(new Level(4), Level.INFINITY), ((ClassDefinition) result.getDefinition("Point")).getSort());
     assertEquals(Universe(new Sort(new Level(2), Level.INFINITY)), result.getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
@@ -174,7 +184,7 @@ public class RecordsTest extends TypeCheckingTestCase {
   @Test
   public void recordUniverseTest5() {
     TypeCheckClassResult result = typeCheckClass(
-        "\\class Point { \\field x : \\Type3 \\field y : \\Type1 }\n" +
+        "\\class Point { | x : \\Type3 | y : \\Type1 }\n" +
         "\\function C => Point { x => \\Type2 }");
     assertEquals(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) result.getDefinition("Point")).getSort());
     assertEquals(Universe(new Sort(new Level(2), new Level(LevelVariable.HVAR, 2))), result.getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
@@ -184,7 +194,7 @@ public class RecordsTest extends TypeCheckingTestCase {
   public void recordConstructorsTest() {
     TypeCheckClassResult result = typeCheckClass(
         "\\class A {\n" +
-        "  \\field x : Nat\n" +
+        "  | x : Nat\n" +
         "  \\data Foo | foo (x = 0)\n" +
         "  \\function y : foo = foo => path (\\lam _ => foo)\n" +
         "}\n" +
@@ -220,7 +230,7 @@ public class RecordsTest extends TypeCheckingTestCase {
   public void recordConstructorsParametersTest() {
     TypeCheckClassResult result = typeCheckClass(
         "\\class A {\n" +
-        "  \\field x : Nat\n" +
+        "  | x : Nat\n" +
         "  \\data Foo (p : x = x) | foo (p = p)\n" +
         "  \\function y (_ : foo (path (\\lam _ => path (\\lam _ => x))) = foo (path (\\lam _ => path (\\lam _ => x)))) => 0\n" +
         "}\n" +

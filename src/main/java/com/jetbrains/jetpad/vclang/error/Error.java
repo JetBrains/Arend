@@ -45,20 +45,19 @@ public abstract class Error {
   }
 
   public LineDoc getHeaderDoc(SourceInfoProvider src) {
-    LineDoc doc = text("[" + level + "]");
-    return hSep(text(" "), doc, getPositionDoc(src), text(message));
+    return hSep(text(" "), text("[" + level + "]"), getPositionDoc(src), text(message));
   }
 
   public Doc getCauseDoc() {
     return cause == null ? DocFactory.nullDoc() : hang(text("In:"), sourceNodeDoc(cause));
   }
 
-  public Doc getBodyDoc() {
+  public Doc getBodyDoc(SourceInfoProvider src) {
     return DocFactory.nullDoc();
   }
 
   public Doc getDoc(SourceInfoProvider src) {
-    return DocFactory.hang(getHeaderDoc(src), DocFactory.vList(getBodyDoc(), getCauseDoc()));
+    return DocFactory.vHang(getHeaderDoc(src), DocFactory.vList(getBodyDoc(src), getCauseDoc()));
   }
 
   @Override

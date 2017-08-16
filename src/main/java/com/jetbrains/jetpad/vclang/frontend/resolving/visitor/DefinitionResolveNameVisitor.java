@@ -80,8 +80,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
 
     if (body instanceof Abstract.ElimFunctionBody) {
       try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-        List<? extends Abstract.ReferenceExpression> references = ((Abstract.ElimFunctionBody) body).getEliminatedReferences();
-        addNotEliminatedParameters(def.getParameters(), references);
+        addNotEliminatedParameters(def.getParameters(), ((Abstract.ElimFunctionBody) body).getEliminatedReferences());
         exprVisitor.visitClauses(((Abstract.ElimFunctionBody) body).getClauses());
       }
     }
@@ -114,10 +113,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
   @Override
   public Void visitClassField(Abstract.ClassField def, Scope parentScope) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      Abstract.Expression resultType = def.getResultType();
-      if (resultType != null) {
-        resultType.accept(new ExpressionResolveNameVisitor(parentScope, myContext, myNameResolver, myResolveListener, myErrorReporter), null);
-      }
+      def.getResultType().accept(new ExpressionResolveNameVisitor(parentScope, myContext, myNameResolver, myResolveListener, myErrorReporter), null);
     }
     return null;
   }
@@ -149,9 +145,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
         addNotEliminatedParameters(def.getParameters(), def.getEliminatedReferences());
         for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
           try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
-            if (clause.getPatterns() != null) {
-              visitConstructorClause(clause, exprVisitor);
-            }
+            visitConstructorClause(clause, exprVisitor);
             for (Abstract.Constructor constructor : clause.getConstructors()) {
               visitConstructor(constructor, scope);
             }
@@ -168,30 +162,28 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(parentScope, myContext, myNameResolver, myResolveListener, myErrorReporter);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       exprVisitor.visitParameters(def.getParameters());
-      if (def.getEliminatedReferences() != null) {
-        for (Abstract.ReferenceExpression ref : def.getEliminatedReferences()) {
-          exprVisitor.visitReference(ref, null);
-        }
+      for (Abstract.ReferenceExpression ref : def.getEliminatedReferences()) {
+        exprVisitor.visitReference(ref, null);
       }
     }
 
-    if (def.getEliminatedReferences() != null) {
-      try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-        addNotEliminatedParameters(def.getParameters(), def.getEliminatedReferences());
-        exprVisitor.visitClauses(def.getClauses());
-      }
+    try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
+      addNotEliminatedParameters(def.getParameters(), def.getEliminatedReferences());
+      exprVisitor.visitClauses(def.getClauses());
     }
     return null;
   }
 
   private void visitConstructorClause(Abstract.ConstructorClause clause, ExpressionResolveNameVisitor exprVisitor) {
     List<? extends Abstract.Pattern> patterns = clause.getPatterns();
-    for (int i = 0; i < patterns.size(); i++) {
-      Abstract.Constructor constructor = exprVisitor.visitPattern(patterns.get(i), new HashSet<>());
-      if (constructor != null) {
-        myResolveListener.replaceWithConstructor(clause, i, constructor);
+    if (patterns != null) {
+      for (int i = 0; i < patterns.size(); i++) {
+        Abstract.Constructor constructor = exprVisitor.visitPattern(patterns.get(i), new HashSet<>());
+        if (constructor != null) {
+          myResolveListener.replaceWithConstructor(clause, i, constructor);
+        }
+        exprVisitor.resolvePattern(patterns.get(i));
       }
-      exprVisitor.resolvePattern(patterns.get(i));
     }
   }
 

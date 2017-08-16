@@ -13,8 +13,6 @@ import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
-import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
@@ -153,28 +151,6 @@ class DefinitionSerialization {
   }
 
 
-  // FieldSet
-
-  ExpressionProtos.FieldSet writeFieldSet(ReadonlyFieldSet fieldSet) {
-    ExpressionProtos.FieldSet.Builder builder = ExpressionProtos.FieldSet.newBuilder();
-    for (ClassField classField : fieldSet.getFields()) {
-      builder.addClassFieldRef(myCalltargetIndexProvider.getDefIndex(classField));
-    }
-    for (Map.Entry<ClassField, FieldSet.Implementation> impl : fieldSet.getImplemented()) {
-      ExpressionProtos.FieldSet.Implementation.Builder iBuilder = ExpressionProtos.FieldSet.Implementation.newBuilder();
-      if (impl.getValue().thisParam != null) {
-        iBuilder.setThisParam(writeParameter(impl.getValue().thisParam));
-      }
-      iBuilder.setTerm(writeExpr(impl.getValue().term));
-      builder.putImplementations(myCalltargetIndexProvider.getDefIndex(impl.getKey()), iBuilder.build());
-    }
-
-    builder.setSort(writeSort(fieldSet.getSort()));
-
-    return builder.build();
-  }
-
-
   // Types, Expressions and ElimTrees
 
   ExpressionProtos.Expression writeExpr(Expression expr) {
@@ -257,7 +233,10 @@ class DefinitionSerialization {
       builder.setClassRef(myCalltargetIndexProvider.getDefIndex(expr.getDefinition()));
       builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
       builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
-      builder.setFieldSet(writeFieldSet(expr.getFieldSet()));
+      for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
+        builder.putFieldSet(myCalltargetIndexProvider.getDefIndex(entry.getKey()), writeExpr(entry.getValue()));
+      }
+      builder.setSort(writeSort(expr.getSort()));
       return builder.build();
     }
 
@@ -306,8 +285,8 @@ class DefinitionSerialization {
     @Override
     public ExpressionProtos.Expression visitError(ErrorExpression expr, Void params) {
       ExpressionProtos.Expression.Error.Builder builder = ExpressionProtos.Expression.Error.newBuilder();
-      if (expr.getExpr() != null) {
-        builder.setExpression(expr.getExpr().accept(this, null));
+      if (expr.getExpression() != null) {
+        builder.setExpression(expr.getExpression().accept(this, null));
       }
       return ExpressionProtos.Expression.newBuilder().setError(builder).build();
     }

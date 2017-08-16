@@ -13,12 +13,12 @@ public class ExtensionsTest extends TypeCheckingTestCase {
   public void fields() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field A : \\Set0\n" +
-        "  \\field a : A\n" +
+        "  | A : \\Set0\n" +
+        "  | a : A\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\field a' : A\n" +
-        "  \\field p : a = a'\n" +
+        "  | a' : A\n" +
+        "  | p : a = a'\n" +
         "}\n" +
         "\\function f (b : B) : \\Sigma (x : b.A) (x = b.a') => (b.a, b.p)");
   }
@@ -27,12 +27,12 @@ public class ExtensionsTest extends TypeCheckingTestCase {
   public void newTest() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field A : \\Set0\n" +
-        "  \\field a : A\n" +
+        "  | A : \\Set0\n" +
+        "  | a : A\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\field a' : A\n" +
-        "  \\field p : a = a'\n" +
+        "  | a' : A\n" +
+        "  | p : a = a'\n" +
         "}\n" +
         "\\function f => \\new B { A => Nat | a => 0 | a' => 0 | p => path (\\lam _ => 0) }");
   }
@@ -41,12 +41,12 @@ public class ExtensionsTest extends TypeCheckingTestCase {
   public void badFieldTypeError() {
     resolveNamesClass(
         "\\class A {\n" +
-        "  \\field A : \\Set0\n" +
-        "  \\field a : A\n" +
+        "  | A : \\Set0\n" +
+        "  | a : A\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\field a' : A\n" +
-        "  \\field p : undefined_variable = a'\n" +
+        "  | a' : A\n" +
+        "  | p : undefined_variable = a'\n" +
         "}\n" +
         "\\function f => \\new B { A => Nat | a => 0 | a' => 0 | p => path (\\lam _ => 0) }", 1);
   }
@@ -55,11 +55,11 @@ public class ExtensionsTest extends TypeCheckingTestCase {
   public void newError() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field A : \\Set0\n" +
-        "  \\field a : A\n" +
+        "  | A : \\Set0\n" +
+        "  | a : A\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\field a' : A\n" +
+        "  | a' : A\n" +
         "}\n" +
         "\\function f => \\new B { A => Nat | a' => 0 }", 1);
   }
@@ -68,11 +68,11 @@ public class ExtensionsTest extends TypeCheckingTestCase {
   public void fieldEval() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field A : \\Set0\n" +
-        "  \\field a : A\n" +
+        "  | A : \\Set0\n" +
+        "  | a : A\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\field a' : A\n" +
+        "  | a' : A\n" +
         "}\n" +
         "\\function f : \\Sigma (1 = 1) (0 = 0) =>\n" +
         "  \\let b => \\new B { A => Nat | a => 1 | a' => 0 }" +
@@ -83,11 +83,11 @@ public class ExtensionsTest extends TypeCheckingTestCase {
   public void coercion() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field A : \\Set0\n" +
-        "  \\field a : A\n" +
+        "  | A : \\Set0\n" +
+        "  | a : A\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\field a' : A\n" +
+        "  | a' : A\n" +
         "}\n" +
         "\\function f (a : A) => a.a\n" +
         "\\function g : 3 = 3 => path (\\lam _ => f (\\new B { A => Nat | a' => 2 | a => 3 }))\n" +
@@ -98,10 +98,10 @@ public class ExtensionsTest extends TypeCheckingTestCase {
   public void nameClashError() {
     resolveNamesClass(
         "\\class A {\n" +
-        "  \\field x : Nat\n" +
+        "  | x : Nat\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\field x : Nat\n" +
+        "  | x : Nat\n" +
         "}", 1);
   }
 
@@ -109,13 +109,13 @@ public class ExtensionsTest extends TypeCheckingTestCase {
   public void nameClashError2() {
     resolveNamesClass(
         "\\class A {\n" +
-        "  \\field x : Nat\n" +
+        "  | x : Nat\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\field y : Nat\n" +
+        "  | y : Nat\n" +
         "}\n" +
         "\\class C \\extends B {\n" +
-        "  \\field x : Nat -> Nat\n" +
+        "  | x : Nat -> Nat\n" +
         "}", 1);
   }
 
@@ -123,13 +123,13 @@ public class ExtensionsTest extends TypeCheckingTestCase {
   public void nameClashError3() {
     resolveNamesClass(
         "\\class A {\n" +
-        "  \\field A : \\Set0\n" +
+        "  | A : \\Set0\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\field a : A\n" +
+        "  | a : A\n" +
         "}\n" +
         "\\class C \\extends A {\n" +
-        "  \\field a : A\n" +
+        "  | a : A\n" +
         "}\n" +
         "\\class D \\extends B, C", 1);
   }
@@ -138,16 +138,16 @@ public class ExtensionsTest extends TypeCheckingTestCase {
   public void multiple() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field A : \\Set0\n" +
+        "  | A : \\Set0\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  \\field b : A\n" +
+        "  | b : A\n" +
         "}\n" +
         "\\class C \\extends A {\n" +
-        "  \\field c : A\n" +
+        "  | c : A\n" +
         "}\n" +
         "\\class D \\extends B, C {\n" +
-        "  \\field p : b = c\n" +
+        "  | p : b = c\n" +
         "}\n" +
         "\\function f (d : D { A => Nat | c => 4 | b => 6 }) : 6 = 4 => d.p\n" +
         "\\function g => \\new D { A => Nat | b => 3 | c => 3 | p => path (\\lam _ => 3)}");
@@ -203,9 +203,9 @@ public class ExtensionsTest extends TypeCheckingTestCase {
   public void multipleInheritanceSingleImplementation() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field a : Nat\n" +
+        "  | a : Nat\n" +
         "}\n" +
-        "\\class Z \\extends A {a => 0}\n" +
+        "\\class Z \\extends A { | a => 0 }\n" +
         "\\class B \\extends Z\n" +
         "\\class C \\extends Z\n" +
         "\\class D \\extends B, C\n");
@@ -215,10 +215,10 @@ public class ExtensionsTest extends TypeCheckingTestCase {
   public void multipleInheritanceEqualImplementations() {
     typeCheckClass(
         "\\class A {\n" +
-        "  \\field a : Nat\n" +
+        "  | a : Nat\n" +
         "}\n" +
-        "\\class B \\extends A {a => 0}\n" +
-        "\\class C \\extends A {a => 0}\n" +
+        "\\class B \\extends A { | a => 0 }\n" +
+        "\\class C \\extends A { | a => 0 }\n" +
         "\\class D \\extends B, C\n");
   }
 
@@ -228,18 +228,20 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "\\class X {\n" +
         "  \\class A\n" +
         "}\n" +
-        "\\function x => \\new X\n" +
-        "\\class B \\extends x.A, x.A");
+        "\\function x1 => \\new X\n" +
+        "\\function x2 => \\new X\n" +
+        "\\class B \\extends x1.A, x2.A");
   }
 
   @Test
   public void multipleDynamicInheritanceDifferentParentsError() {
     typeCheckClass(
         "\\class X {\n" +
+        "  | n : Nat" +
         "  \\class A\n" +
         "}\n" +
-        "\\function x1 => \\new X\n" +
-        "\\function x2 => \\new X\n" +
+        "\\function x1 => \\new X { n => 1 }\n" +
+        "\\function x2 => \\new X { n => 2 }\n" +
         "\\class B \\extends x1.A, x2.A", 1);
   }
 
@@ -248,26 +250,12 @@ public class ExtensionsTest extends TypeCheckingTestCase {
     typeCheckClass("\\class A { \\class B \\extends A }");
   }
 
-  @Ignore
-  @Test
-  public void recursiveExtendsError() {
-    typeCheckClass("\\class A \\extends A", 1);
-  }
-
-  @Ignore
-  @Test
-  public void mutualRecursiveExtendsError() {
-    resolveNamesClass(
-        "\\class A \\extends B\n" +
-        "\\class B \\extends A", 1);
-  }
-
   @Test
   public void universe() {
     TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
         "\\class A {\n" +
-        "  \\field A : \\Set0\n" +
-        "  \\field a : A\n" +
+        "  | A : \\Set0\n" +
+        "  | a : A\n" +
         "}\n" +
         "\\class B \\extends A");
     assertEquals(new Sort(1, 1), ((ClassDefinition) result.getDefinition("A")).getSort());

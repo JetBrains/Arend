@@ -43,7 +43,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
 
   @Test
   public void classExtTest() {
-    TypeCheckClassResult result = typeCheckClass("\\class Test { \\field A : \\Type0 \\field a : A } \\function test => Test { A => Nat }");
+    TypeCheckClassResult result = typeCheckClass("\\class Test { | A : \\Type0 | a : A } \\function test => Test { A => Nat }");
     assertEquals(Universe(new Level(1), new Level(LevelVariable.HVAR, 1)), result.getDefinition("Test").getTypeWithParams(new ArrayList<>(), Sort.STD));
     assertEquals(Universe(Sort.SET0), result.getDefinition("test").getTypeWithParams(new ArrayList<>(), Sort.SET0));
     testType(Universe(Sort.SET0), result);
@@ -65,7 +65,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
 
   @Test
   public void fieldAccTest() {
-    TypeCheckClassResult result = typeCheckClass("\\class C { \\field x : Nat \\function f (p : 0 = x) => p } \\function test (p : Nat -> C) => (p 0).f");
+    TypeCheckClassResult result = typeCheckClass("\\class C { | x : Nat \\function f (p : 0 = x) => p } \\function test (p : Nat -> C) => (p 0).f");
     SingleDependentLink p = singleParam("p", Pi(Nat(), new ClassCallExpression((ClassDefinition) result.getDefinition("C"), Sort.SET0)));
     Expression type = FunCall(Prelude.PATH_INFIX, Sort.SET0,
         Nat(),

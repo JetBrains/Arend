@@ -103,7 +103,7 @@ public class ParserTest extends NameResolverTestCase {
 
   @Test
   public void parserImplicit() {
-    Concrete.ClassField def = (Concrete.ClassField) resolveNamesDef("\\field f : \\Pi (x y : \\Type1) {z w : \\Type1} (t : \\Type1) {r : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) -> A x y z w t r");
+    Concrete.ClassField def = ((Concrete.ClassDefinition) resolveNamesDef("\\class X { | f : \\Pi (x y : \\Type1) {z w : \\Type1} (t : \\Type1) {r : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) -> A x y z w t r }")).getFields().get(0);
     Concrete.PiExpression pi = (Concrete.PiExpression) def.getResultType();
     assertEquals(5, pi.getParameters().size());
     assertTrue(pi.getParameters().get(0).getExplicit());
@@ -129,7 +129,7 @@ public class ParserTest extends NameResolverTestCase {
 
   @Test
   public void parserImplicit2() {
-    Concrete.ClassField def = (Concrete.ClassField) resolveNamesDef("\\field f : \\Pi {x : \\Type1} (_ : \\Type1) {y z : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) (_ : A x y z) -> \\Type1");
+    Concrete.ClassField def = ((Concrete.ClassDefinition) resolveNamesDef("\\class X { | f : \\Pi {x : \\Type1} (_ : \\Type1) {y z : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) (_ : A x y z) -> \\Type1 }")).getFields().get(0);
     Concrete.PiExpression pi = (Concrete.PiExpression) def.getResultType();
     assertEquals(5, pi.getParameters().size());
     assertFalse(pi.getParameters().get(0).getExplicit());
@@ -166,29 +166,29 @@ public class ParserTest extends NameResolverTestCase {
 
   @Test
   public void parseIncorrectPi() {
-    parseExpr("\\Pi (: Nat) -> Nat", 2);
+    parseExpr("\\Pi (: Nat) -> Nat", 1);
   }
 
   @Test
-  public void whereAbstractError() {
-    parseClass("test", "\\function f => 0 \\where \\field x : \\Type0", 1);
+  public void whereFieldError() {
+    parseClass("test", "\\function f => 0 \\where | x : \\Type0", 1);
   }
 
   @Test
   public void implementInFunctionError() {
     parseClass("test",
         "\\class X {\n" +
-        "  \\field x : Nat\n" +
+        "  | x : Nat\n" +
         "} \\where {\n" +
         "  \\function f => 0\n" +
         "    \\where\n" +
-        "      \\implement x => 1\n" +
+        "      | x => 1\n" +
         "}", 1);
   }
 
   @Test
   public void incorrectDefinitionName() {
-    parseDef("\\function (|) => \\Prop", -1);
+    parseDef("\\function | => \\Prop", -1);
   }
 
   @Test
@@ -220,6 +220,137 @@ public class ParserTest extends NameResolverTestCase {
   public void insideBody() {
     parseClass("test",
       "\\function test (n : Nat)\n" +
-      "  | zero => \\lam _ -> zero", 2);
+      "  | zero => \\lam _ -> zero", 1);
+  }
+
+  private void postfixTest(String name) {
+    Concrete.ClassDefinition classDef = resolveNamesClass(
+      "\\function \\infix 5 " + name + " (A : \\Prop) => A\n" +
+      "\\function \\infixl 5 $ (A B : \\Prop) => A\n" +
+      "\\function f (A B C : \\Prop) => A $ B " + name + "` $ C");
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) classDef.getGlobalStatements().get(2)).getDefinition()).getBody()).getTerm();
+    assertEquals(0, expr.getSequence().size());
+    assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
+    assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getName());
+    assertTrue(((Concrete.BinOpExpression) expr.getLeft()).getLeft() instanceof Concrete.BinOpExpression);
+    assertEquals(name, ((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getName());
+    assertNull(((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getRight());
+    assertTrue(((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getLeft() instanceof Concrete.BinOpExpression);
+    assertEquals("$", ((Concrete.BinOpExpression) ((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getLeft()).getName());
+  }
+
+  @Test
+  public void postfixTest() {
+    postfixTest("#");
+    postfixTest("foo");
+  }
+
+  private void postfixError(String name) {
+    resolveNamesClass(
+      "\\function \\infix 5 " + name + " (A : \\Prop) => A\n" +
+      "\\function \\infix 5 $ (A B : \\Prop) => A\n" +
+      "\\function f (A B : \\Prop) => A $ B " + name + "`", 1);
+  }
+
+  @Test
+  public void postfixError() {
+    postfixError("#");
+    errorList.clear();
+    postfixError("foo");
+  }
+
+  private void postfixTest2(String name) {
+    Concrete.ClassDefinition classDef = resolveNamesClass(
+      "\\function \\infix 5 " + name + " (A : \\Prop) => A\n" +
+      "\\function \\infixr 5 $ (A B : \\Prop) => A\n" +
+      "\\function f (A B C : \\Prop) => A $ B " + name + "` $ C");
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) classDef.getGlobalStatements().get(2)).getDefinition()).getBody()).getTerm();
+    assertEquals(0, expr.getSequence().size());
+    assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
+    assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getName());
+    assertTrue(((Concrete.BinOpExpression) expr.getLeft()).getRight() instanceof Concrete.BinOpExpression);
+    Concrete.Expression expr1 = ((Concrete.BinOpExpression) expr.getLeft()).getRight();
+    assertNotNull(expr1);
+    assertEquals("$", ((Concrete.BinOpExpression) expr1).getName());
+    Concrete.BinOpExpression expr2 = (Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getRight();
+    assertNotNull(expr2);
+    assertTrue(expr2.getLeft() instanceof Concrete.BinOpExpression);
+    assertEquals(name, ((Concrete.BinOpExpression) expr2.getLeft()).getName());
+    assertNull(((Concrete.BinOpExpression) expr2.getLeft()).getRight());
+  }
+
+  @Test
+  public void postfixTest2() {
+    postfixTest2("#");
+    postfixTest2("foo");
+  }
+
+  private void postfixTest3(String name) {
+    Concrete.ClassDefinition classDef = resolveNamesClass(
+      "\\function \\infix 6 " + name + " (A : \\Prop) => A\n" +
+      "\\function \\infix 5 $ (A B : \\Prop) => A\n" +
+      "\\function f (A B : \\Prop) => A $ B " + name + "`");
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) classDef.getGlobalStatements().get(2)).getDefinition()).getBody()).getTerm();
+    assertEquals(0, expr.getSequence().size());
+    assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
+    assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getName());
+    assertTrue(((Concrete.BinOpExpression) expr.getLeft()).getRight() instanceof Concrete.BinOpExpression);
+    Concrete.BinOpExpression expr1 = (Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getRight();
+    assertNotNull(expr1);
+    assertEquals(name, expr1.getName());
+    assertNull(expr1.getRight());
+  }
+
+  @Test
+  public void postfixTest3() {
+    postfixTest3("#");
+    postfixTest3("foo");
+  }
+
+  private void postfixTest4(String name) {
+    Concrete.ClassDefinition classDef = resolveNamesClass(
+      "\\function \\infix 4 " + name + " (A : \\Prop) => A\n" +
+      "\\function \\infix 5 $ (A B : \\Prop) => A\n" +
+      "\\function f (A B : \\Prop) => A $ B " + name + "`");
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) classDef.getGlobalStatements().get(2)).getDefinition()).getBody()).getTerm();
+    assertEquals(0, expr.getSequence().size());
+    assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
+    assertEquals(name, ((Concrete.BinOpExpression) expr.getLeft()).getName());
+    assertTrue(((Concrete.BinOpExpression) expr.getLeft()).getLeft() instanceof Concrete.BinOpExpression);
+    assertNull(((Concrete.BinOpExpression) expr.getLeft()).getRight());
+    assertEquals("$", ((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getName());
+  }
+
+  @Test
+  public void postfixTest4() {
+    postfixTest4("#");
+    postfixTest4("foo");
+  }
+
+  private void postfixTest5(String name1, String name2, String pr1, String pr2) {
+    Concrete.ClassDefinition classDef = resolveNamesClass(
+      "\\function " + pr1 + " " + name1 + " (A : \\Prop) => A\n" +
+      "\\function " + pr2 + " " + name2 + " (A : \\Prop) => A\n" +
+      "\\function f (A : \\Prop) => A " + name1 + "` " + name2 + "`");
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) classDef.getGlobalStatements().get(2)).getDefinition()).getBody()).getTerm();
+    assertEquals(0, expr.getSequence().size());
+    assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
+    assertEquals(name2, ((Concrete.BinOpExpression) expr.getLeft()).getName());
+    assertNull(((Concrete.BinOpExpression) expr.getLeft()).getRight());
+    assertTrue(((Concrete.BinOpExpression) expr.getLeft()).getLeft() instanceof Concrete.BinOpExpression);
+    assertEquals(name1, ((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getName());
+    assertNull(((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getRight());
+  }
+
+  @Test
+  public void postfixTest5() {
+    postfixTest5("#", "$", "\\infix 5", "\\infix 5");
+    postfixTest5("foo", "$", "\\infix 6", "\\infix 5");
+    postfixTest5("#", "bar", "\\infix 5", "\\infix 6");
+    postfixTest5("foo", "bar", "\\infixl 5", "\\infix 5");
+    postfixTest5("foo", "$", "\\infix 5", "\\infixl 5");
+    postfixTest5("#", "bar", "\\infixr 5", "\\infixl 5");
+    postfixTest5("foo", "$", "\\infixl 6", "\\infixr 5");
+    postfixTest5("#", "$", "\\infixl 5", "\\infixr 6");
   }
 }

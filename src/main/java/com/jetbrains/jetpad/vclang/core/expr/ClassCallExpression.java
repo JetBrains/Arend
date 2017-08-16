@@ -1,47 +1,62 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.StripVisitor;
-import com.jetbrains.jetpad.vclang.core.internal.FieldSet;
-import com.jetbrains.jetpad.vclang.core.internal.ReadonlyFieldSet;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 
-import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class ClassCallExpression extends DefCallExpression implements Type {
   private final Sort mySortArgument;
-  private final ReadonlyFieldSet myFieldSet;
+  private final Map<ClassField, Expression> myImplementations;
+  private final Sort mySort;
 
   public ClassCallExpression(ClassDefinition definition, Sort sortArgument) {
     super(definition);
     mySortArgument = sortArgument;
-    myFieldSet = definition.getFieldSet();
+    myImplementations = new HashMap<>();
+    mySort = definition.getSort();
   }
 
-  public ClassCallExpression(ClassDefinition definition, Sort sortArgument, ReadonlyFieldSet fieldSet) {
+  public ClassCallExpression(ClassDefinition definition, Sort sortArgument, Map<ClassField, Expression> implementations, Sort sort) {
     super(definition);
     mySortArgument = sortArgument;
-    myFieldSet = fieldSet;
+    myImplementations = implementations;
+    mySort = sort;
   }
 
-  public ReadonlyFieldSet getFieldSet() {
-    return myFieldSet;
+  public Map<ClassField, Expression> getImplementedHere() {
+    return myImplementations;
   }
 
-  public Collection<Map.Entry<ClassField, FieldSet.Implementation>> getImplementedHere() {
-    return myFieldSet.getImplemented().stream().filter(entry -> !getDefinition().getFieldSet().isImplemented(entry.getKey())).collect(Collectors.toSet());
+  public Expression getImplementationHere(ClassField field) {
+    return myImplementations.get(field);
+  }
+
+  public Expression getImplementation(ClassField field, Expression thisExpr) {
+    Expression expr = myImplementations.get(field);
+    if (expr != null) {
+      return expr;
+    }
+    ClassDefinition.Implementation impl = getDefinition().getImplementation(field);
+    return impl == null ? null : impl.substThisParam(thisExpr);
+  }
+
+  public boolean isImplemented(ClassField field) {
+    return myImplementations.containsKey(field) || getDefinition().isImplemented(field);
+  }
+
+  public boolean isUnit() {
+    return myImplementations.size() + getDefinition().getImplemented().size() == getDefinition().getFields().size();
   }
 
   @Override
@@ -70,17 +85,17 @@ public class ClassCallExpression extends DefCallExpression implements Type {
   }
 
   @Override
-  public ClassCallExpression strip(Set<Binding> bounds, LocalErrorReporter errorReporter) {
-    return new StripVisitor(bounds, errorReporter).visitClassCall(this, null);
+  public ClassCallExpression strip(LocalErrorReporter errorReporter) {
+    return new StripVisitor(errorReporter).visitClassCall(this, null);
   }
 
   @Override
   public ClassCallExpression normalize(NormalizeVisitor.Mode mode) {
-    return new NormalizeVisitor().visitClassCall(this, mode);
+    return NormalizeVisitor.INSTANCE.visitClassCall(this, mode);
   }
 
   public Sort getSort() {
-    return myFieldSet.getSort();
+    return mySort;
   }
 
   @Override

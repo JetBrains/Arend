@@ -158,7 +158,7 @@ public abstract class BaseCallGraph<T> {
     private RecursiveBehaviors<T> createShorterBehavior(int i) {
       RecursiveBehaviors<T> result = new RecursiveBehaviors<>();
       for (RecursiveBehavior<T> rb : myBehaviors) {
-        switch (rb.myBehavior.get(i)) {
+        switch (rb.behavior.get(i)) {
           case LessThan:
             continue;
           case Equal:
@@ -210,7 +210,7 @@ public abstract class BaseCallGraph<T> {
       if (!myBehaviors.isEmpty()) {
         RecursiveBehavior<T> rb = myBehaviors.iterator().next();
         List<String> result = new ArrayList<>();
-        for (Integer i : to) result.add(rb.myLabels.get(i));
+        for (Integer i : to) result.add(rb.labels.get(i));
         return result;
       }
       return new ArrayList<>(); // recursive behaviors set is empty -- there were no recursive call at all

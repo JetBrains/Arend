@@ -218,6 +218,12 @@ public class PatternTypechecking {
         if (!(pattern == null || pattern instanceof Abstract.NamePattern)) {
           myErrorReporter.report(new LocalTypeCheckingError(Error.Level.WARNING, "This pattern is ignored", pattern));
         }
+        if (pattern instanceof Abstract.NamePattern) {
+          String name = ((Abstract.NamePattern) pattern).getName();
+          if (name != null) {
+            parameters.setName(name);
+          }
+        }
         result.add(new BindingPattern(parameters));
         if (exprs != null) {
           exprs.add(new ReferenceExpression(parameters));

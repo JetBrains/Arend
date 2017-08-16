@@ -12,7 +12,7 @@ public interface ResolveListener {
   void classViewFieldResolved(Abstract.ClassViewField field, Abstract.ClassField definition);
   void classViewInstanceResolved(Abstract.ClassViewInstance instance, Abstract.Definition classifyingDefinition);
 
-  Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Abstract.Definition binOp, Abstract.ReferenceExpression var, Abstract.Expression right);
+  Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Abstract.ReferableSourceNode binOp, Abstract.ReferenceExpression var, Abstract.Expression right);
   Abstract.Expression makeError(Abstract.BinOpSequenceExpression binOpExpr, Abstract.SourceNode node);
   void replaceBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression expression);
   void replaceWithConstructor(Abstract.PatternContainer container, int index, Abstract.Constructor constructor);

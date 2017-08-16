@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.error.doc;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public abstract class CachingDoc extends Doc {
   private List<String> myText;
@@ -36,8 +36,8 @@ public abstract class CachingDoc extends Doc {
   }
 
   @Override
-  public boolean isNull() {
-    return getText().isEmpty();
+  public final boolean isNull() {
+    return false;
   }
 
   @Override
@@ -56,7 +56,12 @@ public abstract class CachingDoc extends Doc {
   }
 
   @Override
-  public List<LineDoc> linearize() {
-    return getText().stream().map(DocFactory::text).collect(Collectors.toList());
+  public List<LineDoc> linearize(int indent, boolean indentFirst) {
+    List<? extends String> text = getText();
+    List<LineDoc> result = new ArrayList<>(text.size());
+    for (int i = 0; i < text.size(); i++) {
+      result.add(DocFactory.text(indent == 0 || !indentFirst && i == 0 ? text.get(i) : HangDoc.getIndent(indent) + text.get(i)));
+    }
+    return result;
   }
 }

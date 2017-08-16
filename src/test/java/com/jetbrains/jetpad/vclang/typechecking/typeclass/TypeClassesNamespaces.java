@@ -9,8 +9,8 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
     typeCheckClass(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
-        "    \\field A : \\Type0\n" +
-        "    \\field B : A -> Nat\n" +
+        "    | A : \\Type0\n" +
+        "    | B : A -> Nat\n" +
         "  }\n" +
         "  \\view X' \\on X \\by A { B }\n" +
         "}\n" +
@@ -22,8 +22,8 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
     typeCheckClass(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
-        "    \\field A : \\Type0\n" +
-        "    \\field B : A -> Nat\n" +
+        "    | A : \\Type0\n" +
+        "    | B : A -> Nat\n" +
         "  }\n" +
         "  \\view Y \\on X \\by A { B }\n" +
         "}\n" +
@@ -35,8 +35,8 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
     typeCheckClass(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
-        "    \\field A : \\Type0\n" +
-        "    \\field B : A -> Nat\n" +
+        "    | A : \\Type0\n" +
+        "    | B : A -> Nat\n" +
         "  }\n" +
         "}\n" +
         "\\view X' \\on M.X \\by A { B }\n" +
@@ -48,8 +48,8 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
     typeCheckClass(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
-        "    \\field A : \\Type0\n" +
-        "    \\field B : A -> Nat\n" +
+        "    | A : \\Type0\n" +
+        "    | B : A -> Nat\n" +
         "  }\n" +
         "}\n" +
         "\\view Y \\on M.X \\by A { B }\n" +
@@ -61,8 +61,8 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
     typeCheckClass(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
-        "    \\field A : \\Type0\n" +
-        "    \\field B : A -> Nat\n" +
+        "    | A : \\Type0\n" +
+        "    | B : A -> Nat\n" +
         "  }\n" +
         "  \\view X' \\on X \\by A { B }\n" +
         "  \\instance Nat-X => \\new X' { A => Nat | B => \\lam x => x }\n" +
@@ -76,8 +76,8 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
     typeCheckClass(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
-        "    \\field A : \\Type0\n" +
-        "    \\field B : A -> Nat\n" +
+        "    | A : \\Type0\n" +
+        "    | B : A -> Nat\n" +
         "  }\n" +
         "  \\view X' \\on X \\by A { B }\n" +
         "  \\instance Nat-X => \\new X' { A => Nat | B => \\lam x => x }\n" +
@@ -91,8 +91,8 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
     typeCheckClass(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
-        "    \\field A : \\Type0\n" +
-        "    \\field B : A -> Nat\n" +
+        "    | A : \\Type0\n" +
+        "    | B : A -> Nat\n" +
         "  }\n" +
         "  \\view X' \\on X \\by A { B }\n" +
         "}\n" +
@@ -105,8 +105,8 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
     typeCheckClass(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
-        "    \\field A : \\Type0\n" +
-        "    \\field B : A -> Nat\n" +
+        "    | A : \\Type0\n" +
+        "    | B : A -> Nat\n" +
         "  }\n" +
         "}\n" +
         "\\view X' \\on M.X \\by A { B }\n" +
@@ -119,8 +119,8 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
     typeCheckClass(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
-        "    \\field A : \\Type0\n" +
-        "    \\field B : A -> Nat\n" +
+        "    | A : \\Type0\n" +
+        "    | B : A -> Nat\n" +
         "  }\n" +
         "}\n" +
         "\\open M\n" +
@@ -133,8 +133,8 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
     typeCheckClass(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
-        "    \\field A : \\Type0\n" +
-        "    \\field B : A -> Nat\n" +
+        "    | A : \\Type0\n" +
+        "    | B : A -> Nat\n" +
         "  }\n" +
         "  \\view X' \\on X \\by A { B }\n" +
         "  \\instance Nat-X => \\new X' { A => Nat | B => \\lam x => x }\n" +

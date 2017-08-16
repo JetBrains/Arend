@@ -201,7 +201,7 @@ public class ConditionsChecking {
     for (Pair<List<Expression>, ExprSubstitution> pair : collectPatterns(clause.patterns)) {
       Expression evaluatedExpr1;
       if (definition == null) {
-        evaluatedExpr1 = new NormalizeVisitor().eval(elimTree, pair.proj1, new ExprSubstitution(), LevelSubstitution.EMPTY, NormalizeVisitor.Mode.WHNF);
+        evaluatedExpr1 = NormalizeVisitor.INSTANCE.eval(elimTree, pair.proj1, new ExprSubstitution(), LevelSubstitution.EMPTY);
       } else {
         evaluatedExpr1 = definition.getDefCall(Sort.STD, null, pair.proj1);
       }
