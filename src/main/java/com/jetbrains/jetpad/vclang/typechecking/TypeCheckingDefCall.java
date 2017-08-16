@@ -43,9 +43,9 @@ public class TypeCheckingDefCall {
     myThisBinding = thisBinding;
   }
 
-  private Definition getTypeCheckedDefinition(Abstract.Definition definition, Abstract.Expression expr) {
+  private Definition getTypeCheckedDefinition(Abstract.GlobalReferableSourceNode definition, Abstract.Expression expr) {
     while (definition instanceof Abstract.ClassView) {
-      definition = (Abstract.Definition) ((Abstract.ClassView) definition).getUnderlyingClassReference().getReferent();
+      definition = (Abstract.GlobalReferableSourceNode) ((Abstract.ClassView) definition).getUnderlyingClassReference().getReferent();
     }
     if (definition instanceof Abstract.ClassViewField) {
       definition = ((Abstract.ClassViewField) definition).getUnderlyingField();
@@ -69,7 +69,7 @@ public class TypeCheckingDefCall {
 
   public CheckTypeVisitor.TResult typeCheckDefCall(Abstract.ReferenceExpression expr) {
     Abstract.Expression left = expr.getExpression();
-    Abstract.Definition resolvedDefinition = expr.getReferent() instanceof Abstract.Definition ? (Abstract.Definition) expr.getReferent() : null;
+    Abstract.GlobalReferableSourceNode resolvedDefinition = expr.getReferent() instanceof Abstract.GlobalReferableSourceNode ? (Abstract.GlobalReferableSourceNode) expr.getReferent() : null;
     Definition typeCheckedDefinition = null;
     if (resolvedDefinition != null) {
       typeCheckedDefinition = getTypeCheckedDefinition(resolvedDefinition, expr);
@@ -224,7 +224,7 @@ public class TypeCheckingDefCall {
         thisExpr = classCall.getImplementation(parentField, null /* it should be OK */);
       }
       if (typeCheckedDefinition == null) {
-        member = myVisitor.getStaticNamespaceProvider().forDefinition(leftDefinition.getAbstractDefinition()).resolveName(name);
+        member = myVisitor.getStaticNamespaceProvider().forReferable(leftDefinition.getAbstractDefinition()).resolveName(name);
         if (member == null) {
           MemberNotFoundError error = new MemberNotFoundError(leftDefinition, name, true, expr);
           expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
@@ -247,7 +247,7 @@ public class TypeCheckingDefCall {
 
       if (typeCheckedDefinition == null) {
         if (!(leftDefinition instanceof ClassField)) { // Some class fields do not have abstract definitions
-          Scope scope = new NamespaceScope(myVisitor.getStaticNamespaceProvider().forDefinition(leftDefinition.getAbstractDefinition()));
+          Scope scope = new NamespaceScope(myVisitor.getStaticNamespaceProvider().forReferable(leftDefinition.getAbstractDefinition()));
           if (leftDefinition instanceof ClassDefinition) {
             scope = new OverridingScope(scope, new NamespaceScope(myVisitor.getDynamicNamespaceProvider().forClass(((ClassDefinition) leftDefinition).getAbstractDefinition())));
           }

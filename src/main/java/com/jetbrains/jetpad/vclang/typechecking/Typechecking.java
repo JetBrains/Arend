@@ -22,19 +22,19 @@ public class Typechecking {
   private final TypecheckingDependencyListener myDependencyListener;
   private final Function<Abstract.Definition, Iterable<OpenCommand>> myOpens;
 
-  public Typechecking(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, Function<Abstract.Definition, Iterable<OpenCommand>> opens, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, DependencyListener dependencyListener) {
+  public Typechecking(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, Function<Abstract.Definition, Iterable<OpenCommand>> opens, TypecheckableProvider typecheckableProvider, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, DependencyListener dependencyListener) {
     myInstanceNamespaceProvider = new InstanceNamespaceProvider(errorReporter);
-    myDependencyListener = new TypecheckingDependencyListener(state, staticNsProvider, dynamicNsProvider, myInstanceNamespaceProvider, errorReporter, typecheckedReporter, dependencyListener);
+    myDependencyListener = new TypecheckingDependencyListener(state, staticNsProvider, dynamicNsProvider, myInstanceNamespaceProvider, typecheckableProvider, errorReporter, typecheckedReporter, dependencyListener);
     myOpens = opens;
   }
 
   public void typecheckModules(final Collection<? extends Abstract.ClassDefinition> classDefs) {
-    DefinitionResolveInstanceVisitor visitor = new DefinitionResolveInstanceVisitor(myDependencyListener.getInstanceProviderProvider(), myInstanceNamespaceProvider, myOpens, myDependencyListener.getErrorReporter());
+    DefinitionResolveInstanceVisitor visitor = new DefinitionResolveInstanceVisitor(myDependencyListener.instanceProviderSet, myInstanceNamespaceProvider, myOpens, myDependencyListener.errorReporter);
     for (Abstract.ClassDefinition classDef : classDefs) {
       visitor.visitClass(classDef, new SimpleInstanceProvider(new EmptyScope()));
     }
 
-    Ordering ordering = new Ordering(myDependencyListener.getInstanceProviderProvider(), myDependencyListener, false);
+    Ordering ordering = new Ordering(myDependencyListener.instanceProviderSet, myDependencyListener.typecheckableProvider, myDependencyListener, false);
 
     try {
       for (Abstract.ClassDefinition classDef : classDefs) {
@@ -44,7 +44,7 @@ public class Typechecking {
   }
 
   public void typecheckDefinitions(final Collection<? extends Abstract.Definition> definitions) {
-    Ordering ordering = new Ordering(myDependencyListener.getInstanceProviderProvider(), myDependencyListener, false);
+    Ordering ordering = new Ordering(myDependencyListener.instanceProviderSet, myDependencyListener.typecheckableProvider, myDependencyListener, false);
 
     try {
       for (Abstract.Definition definition : definitions) {

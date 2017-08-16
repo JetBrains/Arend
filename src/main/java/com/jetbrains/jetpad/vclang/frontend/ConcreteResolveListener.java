@@ -47,7 +47,7 @@ public class ConcreteResolveListener implements ResolveListener {
   }
 
   @Override
-  public void classViewInstanceResolved(Abstract.ClassViewInstance instance, Abstract.Definition classifyingDefinition) {
+  public void classViewInstanceResolved(Abstract.ClassViewInstance instance, Abstract.GlobalReferableSourceNode classifyingDefinition) {
     ((Concrete.ClassViewInstance) instance).setClassifyingDefinition(classifyingDefinition);
   }
 

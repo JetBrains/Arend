@@ -11,7 +11,7 @@ import java.util.*;
 
 public class SimpleInstanceNamespace implements Scope {
   private final ErrorReporter myErrorReporter;
-  private Map<Pair<Abstract.Definition, Abstract.Definition>, Abstract.ClassViewInstance> myInstances = Collections.emptyMap();
+  private Map<Pair<Abstract.GlobalReferableSourceNode, Abstract.GlobalReferableSourceNode>, Abstract.ClassViewInstance> myInstances = Collections.emptyMap();
 
   public SimpleInstanceNamespace(ErrorReporter errorReporter) {
     myErrorReporter = errorReporter;
@@ -22,12 +22,10 @@ public class SimpleInstanceNamespace implements Scope {
       myInstances = new HashMap<>();
     }
     Abstract.ClassView classView = (Abstract.ClassView) instance.getClassView().getReferent();
-    Pair<Abstract.Definition, Abstract.Definition> pair = new Pair<>(instance.isDefault() ? (Abstract.Definition) classView.getUnderlyingClassReference().getReferent() : classView, instance.getClassifyingDefinition());
-    Abstract.ClassViewInstance oldInstance = myInstances.get(pair);
+    Pair<Abstract.GlobalReferableSourceNode, Abstract.GlobalReferableSourceNode> pair = new Pair<>(instance.isDefault() ? (Abstract.GlobalReferableSourceNode) classView.getUnderlyingClassReference().getReferent() : classView, instance.getClassifyingDefinition());
+    Abstract.ClassViewInstance oldInstance = myInstances.putIfAbsent(pair, instance);
     if (oldInstance != null) {
       myErrorReporter.report(new DuplicateInstanceError(Error.Level.ERROR, oldInstance, instance));
-    } else {
-      myInstances.put(pair, instance);
     }
   }
 

@@ -5,7 +5,8 @@ import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
+import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 
 import javax.annotation.Nonnull;
 
@@ -48,8 +49,8 @@ public abstract class Error {
     return hSep(text(" "), text("[" + level + "]"), getPositionDoc(src), text(message));
   }
 
-  public Doc getCauseDoc() {
-    return cause == null ? DocFactory.nullDoc() : hang(text("In:"), sourceNodeDoc(cause));
+  public Doc getCauseDoc(PrettyPrinterInfoProvider infoProvider) {
+    return cause == null ? DocFactory.nullDoc() : hang(text("In:"), sourceNodeDoc(cause, infoProvider));
   }
 
   public Doc getBodyDoc(SourceInfoProvider src) {
@@ -57,7 +58,7 @@ public abstract class Error {
   }
 
   public Doc getDoc(SourceInfoProvider src) {
-    return DocFactory.vHang(getHeaderDoc(src), DocFactory.vList(getBodyDoc(src), getCauseDoc()));
+    return DocFactory.vHang(getHeaderDoc(src), DocFactory.vList(getBodyDoc(src), getCauseDoc(src)));
   }
 
   @Override

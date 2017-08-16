@@ -464,7 +464,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
   @Override
   public Result visitReference(Abstract.ReferenceExpression expr, ExpectedType expectedType) {
-    TResult result = expr.getExpression() == null && !(expr.getReferent() instanceof Abstract.Definition) ? getLocalVar(expr) : myTypeCheckingDefCall.typeCheckDefCall(expr);
+    TResult result = expr.getExpression() == null && !(expr.getReferent() instanceof Abstract.GlobalReferableSourceNode) ? getLocalVar(expr) : myTypeCheckingDefCall.typeCheckDefCall(expr);
     if (result == null || !checkPath(result, expr)) {
       return null;
     }

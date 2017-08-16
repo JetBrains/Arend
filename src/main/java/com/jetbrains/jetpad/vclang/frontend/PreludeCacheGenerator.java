@@ -60,7 +60,7 @@ public class PreludeCacheGenerator {
     }
 
     @Override
-    public PreludeStorage.SourceId sourceOf(Abstract.Definition definition) {
+    public PreludeStorage.SourceId sourceOf(Abstract.GlobalReferableSourceNode definition) {
       return preludeSourceId;
     }
   }
@@ -77,8 +77,8 @@ public class PreludeCacheGenerator {
     }
 
     @Override
-    public String getIdFor(Abstract.Definition definition) {
-      if (!(definition instanceof Concrete.Definition)) throw new IllegalStateException();
+    public String getIdFor(Abstract.GlobalReferableSourceNode definition) {
+      if (!(definition instanceof Concrete.Definition)) throw new IllegalStateException(); // TODO[references]
       Concrete.Position pos = ((Concrete.Definition) definition).getPosition();
       if (pos == null) throw new IllegalStateException();
       return pos.line + ";" + pos.column;
@@ -114,7 +114,7 @@ public class PreludeCacheGenerator {
 
     Abstract.ClassDefinition prelude = storage.loadSource(storage.preludeSourceId, errorReporter).definition;
     if (!errorReporter.getErrorList().isEmpty()) throw new IllegalStateException();
-    new Typechecking(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, HasOpens.GET, errorReporter, new Prelude.UpdatePreludeReporter(cacheManager.getTypecheckerState()), new DependencyListener() {}).typecheckModules(Collections.singleton(prelude));
+    new Typechecking(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, errorReporter, new Prelude.UpdatePreludeReporter(cacheManager.getTypecheckerState()), new DependencyListener() {}).typecheckModules(Collections.singleton(prelude));
 
     cacheManager.persistCache(storage.preludeSourceId);
   }

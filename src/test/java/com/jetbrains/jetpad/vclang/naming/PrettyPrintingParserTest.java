@@ -25,7 +25,7 @@ import static org.junit.Assert.assertTrue;
 public class PrettyPrintingParserTest extends NameResolverTestCase {
   private void testExpr(Abstract.Expression expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
-    ToAbstractVisitor.convert(expr, new ConcreteExpressionFactory(), flags).accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
+    ToAbstractVisitor.convert(expr, new ConcreteExpressionFactory(), flags).accept(new PrettyPrintVisitor(builder, sourceInfoProvider, 0), Abstract.Expression.PREC);
     Concrete.Expression result = resolveNamesExpr(builder.toString());
     assertEquals(expected, result);
   }
@@ -36,7 +36,7 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
 
   private void testDef(Concrete.FunctionDefinition expected, Concrete.FunctionDefinition def) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
-    def.accept(new PrettyPrintVisitor(builder, 0), null);
+    def.accept(new PrettyPrintVisitor(builder, sourceInfoProvider, 0), null);
 
     Concrete.FunctionDefinition result = (Concrete.FunctionDefinition) resolveNamesDef(builder.toString());
     List<Concrete.TypeParameter> expectedArguments = new ArrayList<>();

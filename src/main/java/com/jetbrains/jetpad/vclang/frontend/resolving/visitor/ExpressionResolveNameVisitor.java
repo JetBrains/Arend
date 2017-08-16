@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.naming.error.NoSuchFieldError;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.provider.ParserInfoProvider;
 
 import java.util.*;
 
@@ -18,13 +19,15 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   private final Scope myParentScope;
   private final List<Abstract.ReferableSourceNode> myContext;
   private final NameResolver myNameResolver;
+  private final ParserInfoProvider myInfoProvider;
   private final ResolveListener myResolveListener;
   private final ErrorReporter myErrorReporter;
 
-  public ExpressionResolveNameVisitor(Scope parentScope, List<Abstract.ReferableSourceNode> context, NameResolver nameResolver, ResolveListener resolveListener, ErrorReporter errorReporter) {
+  public ExpressionResolveNameVisitor(Scope parentScope, List<Abstract.ReferableSourceNode> context, NameResolver nameResolver, ParserInfoProvider infoProvider, ResolveListener resolveListener, ErrorReporter errorReporter) {
     myParentScope = parentScope;
     myContext = context;
     myNameResolver = nameResolver;
+    myInfoProvider = infoProvider;
     myResolveListener = resolveListener;
     myErrorReporter = errorReporter;
   }
@@ -217,7 +220,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
           ref = myParentScope.resolveName(name);
         }
         if (ref != null) {
-          parser.pushOnStack(stack, expression, ref, ref instanceof Abstract.Definition ? ((Abstract.Definition) ref).getPrecedence() : Abstract.Precedence.DEFAULT, elem.binOp, elem.argument == null);
+          parser.pushOnStack(stack, expression, ref, ref instanceof Abstract.GlobalReferableSourceNode ? myInfoProvider.precedenceOf((Abstract.GlobalReferableSourceNode) ref) : Abstract.Precedence.DEFAULT, elem.binOp, elem.argument == null);
           expression = elem.argument;
         } else {
           error = new NotInScopeError(name, elem.binOp);

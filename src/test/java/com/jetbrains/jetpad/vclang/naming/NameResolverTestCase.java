@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
+import com.jetbrains.jetpad.vclang.frontend.ConcretePrettyPrinterInfoProvider;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteResolveListener;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
@@ -53,7 +54,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
     prelude = LOADED_PRELUDE;
 
-    globalScope = new NamespaceScope(staticNsProvider.forDefinition(prelude));
+    globalScope = new NamespaceScope(staticNsProvider.forReferable(prelude));
   }
 
 
@@ -61,7 +62,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     Concrete.Expression expression = parseExpr(text);
     assertThat(expression, is(notNullValue()));
 
-    expression.accept(new ExpressionResolveNameVisitor(parentScope, context, nameResolver, new ConcreteResolveListener(), errorReporter), null);
+    expression.accept(new ExpressionResolveNameVisitor(parentScope, context, nameResolver, ConcretePrettyPrinterInfoProvider.INSTANCE, new ConcreteResolveListener(), errorReporter), null);
     assertThat(errorList, containsErrors(errors));
     return expression;
   }
@@ -89,7 +90,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
 
   private void resolveNamesDef(Concrete.Definition definition, int errors) {
-    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(nameResolver, new ConcreteResolveListener(), errorReporter);
+    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(nameResolver, ConcretePrettyPrinterInfoProvider.INSTANCE, new ConcreteResolveListener(), errorReporter);
     definition.accept(visitor, new OverridingScope(globalScope, new NamespaceScope(new SimpleNamespace(definition))));
     assertThat(errorList, containsErrors(errors));
   }
@@ -125,7 +126,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     for (String n : path.split("\\.")) {
       Abstract.Definition oldref = ref;
 
-      ref = staticNsProvider.forDefinition(oldref).resolveName(n);
+      ref = staticNsProvider.forReferable(oldref).resolveName(n);
       if (ref != null) continue;
 
       if (oldref instanceof Abstract.ClassDefinition) {

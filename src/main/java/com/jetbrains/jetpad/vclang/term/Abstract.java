@@ -272,6 +272,9 @@ public final class Abstract {
     }
   }
 
+  public interface GlobalReferableSourceNode extends ReferableSourceNode {
+  }
+
   public static Collection<? extends Parameter> getParameters(Abstract.Definition definition) {
     if (definition instanceof Abstract.FunctionDefinition) {
       return ((FunctionDefinition) definition).getParameters();
@@ -285,7 +288,7 @@ public final class Abstract {
     return null;
   }
 
-  public interface Definition extends ReferableSourceNode {
+  public interface Definition extends GlobalReferableSourceNode {
     @Nonnull Precedence getPrecedence();
     @Nullable Definition getParentDefinition();
     boolean isStatic();
@@ -379,7 +382,7 @@ public final class Abstract {
     boolean isDefault();
     @Nonnull List<? extends Parameter> getParameters();
     @Nonnull ReferenceExpression getClassView();
-    @Nonnull Definition getClassifyingDefinition();
+    @Nonnull GlobalReferableSourceNode getClassifyingDefinition();
     @Nonnull Collection<? extends ClassFieldImpl> getClassFieldImpls();
   }
 

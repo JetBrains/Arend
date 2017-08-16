@@ -2,6 +2,8 @@ package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.BaseModuleLoader;
+import com.jetbrains.jetpad.vclang.frontend.Concrete;
+import com.jetbrains.jetpad.vclang.frontend.ConcreteTypecheckableProvider;
 import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotSourceInfoCollector;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
@@ -56,7 +58,7 @@ public class CachingTestCase extends NameResolverTestCase {
     // It is a little odd to use the storage itself as a version tracker as it knows nothing about loaded modules
     cacheManager = new CacheManager<>(peristenceProvider, storage, storage, srcInfoCollector.sourceInfoProvider);
     tcState = cacheManager.getTypecheckerState();
-    typechecking = new Typechecking(tcState, staticNsProvider, dynamicNsProvider, HasOpens.GET, errorReporter, new TypecheckedReporter() {
+    typechecking = new Typechecking(tcState, staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, errorReporter, new TypecheckedReporter() {
       @Override
       public void typecheckingSucceeded(Abstract.Definition definition) {
         typecheckingSucceeded.add(definition);
@@ -93,8 +95,8 @@ public class CachingTestCase extends NameResolverTestCase {
     MemoryStorage.SourceId sourceId = storage.locateModule(ModulePath.moduleName("Prelude"));
 
     prelude = moduleLoader.load(sourceId);
-    new Typechecking(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, HasOpens.GET, new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(cacheManager.getTypecheckerState()), new DependencyListener() {}).typecheckModules(Collections.singleton(this.prelude));
-    storage.setPreludeNamespace(staticNsProvider.forDefinition(prelude));
+    new Typechecking(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(cacheManager.getTypecheckerState()), new DependencyListener() {}).typecheckModules(Collections.singleton(this.prelude));
+    storage.setPreludeNamespace(staticNsProvider.forReferable(prelude));
   }
 
   protected void typecheck(Abstract.ClassDefinition module) {
@@ -148,13 +150,13 @@ public class CachingTestCase extends NameResolverTestCase {
     }
 
     @Override
-    public String getIdFor(Abstract.Definition definition) {
+    public String getIdFor(Abstract.GlobalReferableSourceNode definition) {
       return remember(definition);
     }
 
     @Override
-    public Abstract.Definition getFromId(SourceIdT sourceId, String id) {
-      return (Abstract.Definition) recall(id);
+    public Concrete.Definition getFromId(SourceIdT sourceId, String id) {
+      return (Concrete.Definition) recall(id);
     }
 
     private String remember(Object o) {

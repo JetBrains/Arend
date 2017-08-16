@@ -15,6 +15,7 @@ import com.jetbrains.jetpad.vclang.term.legacy.LegacyAbstract;
 import com.jetbrains.jetpad.vclang.term.legacy.LegacyAbstractStatementVisitor;
 import com.jetbrains.jetpad.vclang.term.legacy.ToTextVisitor;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -140,7 +141,7 @@ public final class Concrete {
     @Override
     public String toString() {
       StringBuilder builder = new StringBuilder();
-      accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
+      accept(new PrettyPrintVisitor(builder, SourceInfoProvider.TRIVIAL, 0), Abstract.Expression.PREC);
       return builder.toString();
     }
 
@@ -1419,7 +1420,7 @@ public final class Concrete {
     private final List<Parameter> myArguments;
     private final ReferenceExpression myClassView;
     private final List<ClassFieldImpl> myClassFieldImpls;
-    private Abstract.Definition myClassifyingDefinition;
+    private Abstract.GlobalReferableSourceNode myClassifyingDefinition;
 
     public ClassViewInstance(Position position, boolean isDefault, String name, Abstract.Precedence precedence, List<Parameter> arguments, ReferenceExpression classView, List<ClassFieldImpl> classFieldImpls) {
       super(position, name, precedence);
@@ -1448,11 +1449,11 @@ public final class Concrete {
 
     @Nonnull
     @Override
-    public Abstract.Definition getClassifyingDefinition() {
+    public Abstract.GlobalReferableSourceNode getClassifyingDefinition() {
       return myClassifyingDefinition;
     }
 
-    public void setClassifyingDefinition(Abstract.Definition classifyingDefinition) {
+    public void setClassifyingDefinition(Abstract.GlobalReferableSourceNode classifyingDefinition) {
       myClassifyingDefinition = classifyingDefinition;
     }
 
@@ -1478,7 +1479,7 @@ public final class Concrete {
     @Override
     public String toString() {
       StringBuilder builder = new StringBuilder();
-      accept(new ToTextVisitor(builder, 0), null);
+      accept(new ToTextVisitor(builder, SourceInfoProvider.TRIVIAL, 0), null);
       return builder.toString();
     }
   }

@@ -20,12 +20,12 @@ public class LocalizedTypecheckerState<SourceIdT extends SourceId> implements Ty
   }
 
   @Override
-  public void record(Abstract.Definition def, Definition res) {
+  public void record(Abstract.GlobalReferableSourceNode def, Definition res) {
     getLocal(def).record(def, res);
   }
 
   @Override
-  public Definition getTypechecked(Abstract.Definition def) {
+  public Definition getTypechecked(Abstract.GlobalReferableSourceNode def) {
     return getLocal(def).getTypechecked(def);
   }
 
@@ -37,7 +37,7 @@ public class LocalizedTypecheckerState<SourceIdT extends SourceId> implements Ty
     return myStates.computeIfAbsent(sourceId, k -> new LocalTypecheckerState());
   }
 
-  private LocalTypecheckerState getLocal(Abstract.Definition def) {
+  private LocalTypecheckerState getLocal(Abstract.GlobalReferableSourceNode def) {
     SourceIdT sourceId = myDefLocator.sourceOf(def);
     if (sourceId == null) {
       throw new IllegalArgumentException();
@@ -62,26 +62,26 @@ public class LocalizedTypecheckerState<SourceIdT extends SourceId> implements Ty
 
   public class LocalTypecheckerState {
     private boolean myIsOutOfSync = false;
-    private final Map<Abstract.Definition, Definition> myDefinitions = new HashMap<>();
+    private final Map<Abstract.GlobalReferableSourceNode, Definition> myDefinitions = new HashMap<>();
 
-    public void record(Abstract.Definition def, Definition res) {
+    public void record(Abstract.GlobalReferableSourceNode def, Definition res) {
       if (myDefinitions.put(def, res) != res) {
         myIsOutOfSync = true;
       }
     }
 
-    public void reset(Abstract.Definition def) {
+    public void reset(Abstract.GlobalReferableSourceNode def) {
       if (myDefinitions.remove(def) != null) {
         myIsOutOfSync = true;
       }
     }
 
-    public Definition getTypechecked(Abstract.Definition def) {
+    public Definition getTypechecked(Abstract.GlobalReferableSourceNode def) {
       assert def != null;
       return myDefinitions.get(def);
     }
 
-    public Set<Abstract.Definition> getTypecheckedDefinitions() {
+    public Set<Abstract.GlobalReferableSourceNode> getTypecheckedDefinitions() {
       return myDefinitions.keySet();
     }
 

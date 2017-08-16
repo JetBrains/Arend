@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.naming.error;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
+import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 
 public class DuplicateNameError extends NamingError {
   public final Abstract.ReferableSourceNode referable;

@@ -56,7 +56,9 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
   }
 
   @Override
-  public Namespace forDefinition(Abstract.Definition definition) {
+  public Namespace forReferable(Abstract.GlobalReferableSourceNode referable) {
+    Abstract.Definition definition = (Abstract.Definition) referable; // TODO[references]
+
     Namespace ns = cache.get(definition);
     if (ns != null) return ns;
 

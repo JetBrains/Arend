@@ -7,8 +7,8 @@ import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.LevelEquation;
 
 import java.util.ArrayList;
@@ -26,7 +26,7 @@ public class SolveLevelEquationsError extends LocalTypeCheckingError {
   public Doc getBodyDoc(SourceInfoProvider src) {
     List<LineDoc> docs = new ArrayList<>(equations.size());
     StringBuilder builder = new StringBuilder();
-    PrettyPrintVisitor ppv = new PrettyPrintVisitor(builder, 0);
+    PrettyPrintVisitor ppv = new PrettyPrintVisitor(builder, src, 0);
 
     for (LevelEquation<? extends Variable> equation : equations) {
       builder.setLength(0);

@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking.order;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.TypecheckableProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProvider;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CollectDefCallsVisitor;
 
@@ -9,16 +10,18 @@ import java.util.Set;
 
 public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boolean, Void> {
   private final InstanceProvider myInstanceProvider;
-  private final Set<Abstract.Definition> myDependencies;
+  private final TypecheckableProvider myTypecheckableProvider;
+  private final Set<Abstract.GlobalReferableSourceNode> myDependencies;
 
-  DefinitionGetDepsVisitor(InstanceProvider instanceProvider, Set<Abstract.Definition> dependencies) {
+  DefinitionGetDepsVisitor(InstanceProvider instanceProvider, TypecheckableProvider typecheckableProvider, Set<Abstract.GlobalReferableSourceNode> dependencies) {
     myInstanceProvider = instanceProvider;
+    myTypecheckableProvider = typecheckableProvider;
     myDependencies = dependencies;
   }
 
   @Override
   public Void visitFunction(Abstract.FunctionDefinition def, Boolean isHeader) {
-    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myDependencies);
+    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myTypecheckableProvider, myDependencies);
 
     for (Abstract.Parameter arg : def.getParameters()) {
       if (arg instanceof Abstract.TypeParameter) {
@@ -53,13 +56,13 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
 
   @Override
   public Void visitClassField(Abstract.ClassField def, Boolean params) {
-    def.getResultType().accept(new CollectDefCallsVisitor(myInstanceProvider, myDependencies), null);
+    def.getResultType().accept(new CollectDefCallsVisitor(myInstanceProvider, myTypecheckableProvider, myDependencies), null);
     return null;
   }
 
   @Override
   public Void visitData(Abstract.DataDefinition def, Boolean isHeader) {
-    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myDependencies);
+    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myTypecheckableProvider, myDependencies);
 
     if (isHeader) {
       for (Abstract.TypeParameter param : def.getParameters()) {
@@ -100,7 +103,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
 
   @Override
   public Void visitConstructor(Abstract.Constructor def, Boolean params) {
-    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myDependencies);
+    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myTypecheckableProvider, myDependencies);
 
     for (Abstract.TypeParameter arg : def.getParameters()) {
       arg.getType().accept(visitor, null);
@@ -121,7 +124,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
 
   @Override
   public Void visitClass(Abstract.ClassDefinition def, Boolean params) {
-    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myDependencies);
+    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myTypecheckableProvider, myDependencies);
 
     for (Abstract.SuperClass superClass : def.getSuperClasses()) {
       superClass.getSuperClass().accept(visitor, null);
@@ -140,7 +143,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
 
   @Override
   public Void visitImplement(Abstract.Implementation def, Boolean params) {
-    def.getImplementation().accept(new CollectDefCallsVisitor(myInstanceProvider, myDependencies), null);
+    def.getImplementation().accept(new CollectDefCallsVisitor(myInstanceProvider, myTypecheckableProvider, myDependencies), null);
     return null;
   }
 
@@ -156,7 +159,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
 
   @Override
   public Void visitClassViewInstance(Abstract.ClassViewInstance def, Boolean params) {
-    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myDependencies);
+    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myTypecheckableProvider, myDependencies);
 
     for (Abstract.Parameter arg : def.getParameters()) {
       if (arg instanceof Abstract.TypeParameter) {

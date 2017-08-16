@@ -3,17 +3,18 @@ package com.jetbrains.jetpad.vclang.term.legacy;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import java.util.Collection;
 
 public class ToTextVisitor extends PrettyPrintVisitor implements LegacyAbstractStatementVisitor<Void, Void>, AbstractDefinitionVisitor<Void, Void> {
-  public ToTextVisitor(StringBuilder builder, int indent) {
-    super(builder, indent, true);
+  public ToTextVisitor(StringBuilder builder, PrettyPrinterInfoProvider infoProvider, int indent) {
+    super(builder, infoProvider, indent, true);
   }
 
-  public static String toText(Abstract.Definition definition, int indent) {
+  public static String toText(Abstract.Definition definition, PrettyPrinterInfoProvider infoProvider, int indent) {
     StringBuilder builder = new StringBuilder();
-    new ToTextVisitor(builder, indent).prettyPrint(definition, Abstract.Expression.PREC);
+    new ToTextVisitor(builder, infoProvider, indent).prettyPrint(definition, Abstract.Expression.PREC);
     return builder.toString();
   }
 

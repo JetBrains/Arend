@@ -33,7 +33,7 @@ public class DefinitionStateSerialization {
 
   public ModuleProtos.Module.DefinitionState writeDefinitionState(LocalizedTypecheckerState<? extends SourceId>.LocalTypecheckerState state) {
     ModuleProtos.Module.DefinitionState.Builder builder = ModuleProtos.Module.DefinitionState.newBuilder();
-    for (Abstract.Definition definition : state.getTypecheckedDefinitions()) {
+    for (Abstract.GlobalReferableSourceNode definition : state.getTypecheckedDefinitions()) {
       Definition typechecked = state.getTypechecked(definition);
       if (typechecked instanceof Constructor || typechecked instanceof ClassField) continue;
 

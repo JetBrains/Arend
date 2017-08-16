@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking.order;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.Typecheckable;
+import com.jetbrains.jetpad.vclang.typechecking.TypecheckableProvider;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckingUnit;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProviderSet;
 
@@ -23,11 +24,13 @@ public class Ordering {
   private final Stack<TypecheckingUnit> myStack = new Stack<>();
   private final Map<Typecheckable, DefState> myVertices = new HashMap<>();
   private final InstanceProviderSet myInstanceProviderSet;
+  private final TypecheckableProvider myTypecheckableProvider;
   private final DependencyListener myListener;
   private final boolean myRefToHeaders;
 
-  public Ordering(InstanceProviderSet instanceProviderSet, DependencyListener listener, boolean refToHeaders) {
+  public Ordering(InstanceProviderSet instanceProviderSet, TypecheckableProvider typecheckableProvider, DependencyListener listener, boolean refToHeaders) {
     myInstanceProviderSet = instanceProviderSet;
+    myTypecheckableProvider = typecheckableProvider;
     myListener = listener;
     myRefToHeaders = refToHeaders;
   }
@@ -41,34 +44,6 @@ public class Ordering {
       return (Abstract.ClassDefinition) parent;
     }
     return getEnclosingClass(parent);
-  }
-
-  private Collection<? extends Abstract.Definition> getTypecheckable(Abstract.Definition referable, Abstract.ClassDefinition enclosingClass) {
-    if (referable instanceof Abstract.ClassViewField) {
-      referable = ((Abstract.ClassViewField) referable).getUnderlyingField();
-    }
-
-    if (referable instanceof Abstract.ClassField) {
-      return Collections.singletonList(referable.getParentDefinition());
-    }
-
-    if (referable instanceof Abstract.Constructor) {
-      return Collections.singletonList(((Abstract.Constructor) referable).getDataType());
-    }
-
-    if (referable instanceof Abstract.ClassView) {
-      return Collections.singletonList((Abstract.Definition) ((Abstract.ClassView) referable).getUnderlyingClassReference().getReferent());
-    }
-
-    if (referable instanceof Abstract.ClassDefinition && !referable.equals(enclosingClass)) {
-      Collection<? extends Abstract.Definition> instanceDefinitions = ((Abstract.ClassDefinition) referable).getInstanceDefinitions();
-      List<Abstract.Definition> result = new ArrayList<>(instanceDefinitions.size() + 1);
-      result.add(referable);
-      result.addAll(instanceDefinitions);
-      return result;
-    }
-
-    return Collections.singletonList(referable);
   }
 
   public void doOrder(Abstract.Definition definition) {
@@ -130,29 +105,35 @@ public class Ordering {
       }
     }
 
-    Set<Abstract.Definition> dependencies = new LinkedHashSet<>();
+    Set<Abstract.GlobalReferableSourceNode> dependencies = new LinkedHashSet<>();
     if (enclosingClass != null) {
       dependencies.add(enclosingClass);
     }
 
     DependencyListener.Recursion recursion = DependencyListener.Recursion.NO;
-    definition.accept(new DefinitionGetDepsVisitor(myInstanceProviderSet.getInstanceProvider(definition), dependencies), typecheckable.isHeader());
+    definition.accept(new DefinitionGetDepsVisitor(myInstanceProviderSet.getInstanceProvider(definition), myTypecheckableProvider, dependencies), typecheckable.isHeader());
     if (typecheckable.isHeader() && dependencies.contains(definition)) {
       myStack.pop();
       currentState.onStack = false;
       return OrderResult.RECURSION_ERROR;
     }
 
-    for (Abstract.Definition referable : dependencies) {
-      for (Abstract.Definition dependency : getTypecheckable(referable, enclosingClass)) {
-        if (dependency.equals(definition)) {
-          if (!(referable instanceof Abstract.ClassField)) {
-            recursion = DependencyListener.Recursion.IN_BODY;
-          }
-        } else {
-          myListener.dependsOn(typecheckable, dependency);
-          updateState(currentState, new Typecheckable(dependency, myRefToHeaders));
+    for (Abstract.GlobalReferableSourceNode referable : dependencies) {
+      Abstract.Definition dependency = myTypecheckableProvider.forReferable(referable);
+      if (dependency instanceof Abstract.ClassField) {
+        dependency = ((Abstract.ClassField) dependency).getParentDefinition();
+        assert dependency != null;
+      } else if (dependency instanceof Abstract.Constructor) {
+        dependency = ((Abstract.Constructor) dependency).getDataType();
+      }
+
+      if (dependency.equals(definition)) {
+        if (!(referable instanceof Abstract.ClassField)) {
+          recursion = DependencyListener.Recursion.IN_BODY;
         }
+      } else {
+        myListener.dependsOn(typecheckable, dependency);
+        updateState(currentState, new Typecheckable(dependency, myRefToHeaders));
       }
     }
 

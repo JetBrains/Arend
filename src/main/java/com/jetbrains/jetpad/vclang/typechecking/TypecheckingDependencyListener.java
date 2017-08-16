@@ -31,12 +31,14 @@ class TypecheckingDependencyListener implements DependencyListener {
   private final TypecheckerState myState;
   private final StaticNamespaceProvider myStaticNsProvider;
   private final DynamicNamespaceProvider myDynamicNsProvider;
-  private final ErrorReporter myErrorReporter;
   private final TypecheckedReporter myTypecheckedReporter;
   private final DependencyListener myDependencyListener;
   private final Map<Abstract.Definition, Suspension> mySuspensions = new HashMap<>();
-  private final InstanceProviderSet myInstanceProviderSet;
   private boolean myTypecheckingHeaders = false;
+
+  final ErrorReporter errorReporter;
+  final InstanceProviderSet instanceProviderSet;
+  final TypecheckableProvider typecheckableProvider;
 
   private static class Suspension {
     public final CheckTypeVisitor visitor;
@@ -48,22 +50,15 @@ class TypecheckingDependencyListener implements DependencyListener {
     }
   }
 
-  TypecheckingDependencyListener(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, InstanceNamespaceProvider instanceNamespaceProvider, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, DependencyListener dependencyListener) {
+  TypecheckingDependencyListener(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, InstanceNamespaceProvider instanceNamespaceProvider, TypecheckableProvider typecheckableProvider, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, DependencyListener dependencyListener) {
     myState = state;
     myStaticNsProvider = staticNsProvider;
     myDynamicNsProvider = dynamicNsProvider;
-    myErrorReporter = errorReporter;
+    this.errorReporter = errorReporter;
     myTypecheckedReporter = typecheckedReporter;
     myDependencyListener = dependencyListener;
-    myInstanceProviderSet = new InstanceProviderSet(instanceNamespaceProvider);
-  }
-
-  InstanceProviderSet getInstanceProviderProvider() {
-    return myInstanceProviderSet;
-  }
-
-  ErrorReporter getErrorReporter() {
-    return myErrorReporter;
+    instanceProviderSet = new InstanceProviderSet(instanceNamespaceProvider);
+    this.typecheckableProvider = typecheckableProvider;
   }
 
   @Override
@@ -84,7 +79,7 @@ class TypecheckingDependencyListener implements DependencyListener {
             myState.record(definition, Definition.newDefinition(definition));
           }
         }
-        myErrorReporter.report(new CycleError(cycle));
+        errorReporter.report(new CycleError(cycle));
         return;
       }
     }
@@ -105,7 +100,7 @@ class TypecheckingDependencyListener implements DependencyListener {
   public void unitFound(TypecheckingUnit unit, Recursion recursion) {
     if (recursion == Recursion.IN_HEADER) {
       myState.record(unit.getDefinition(), Definition.newDefinition(unit.getDefinition()));
-      myErrorReporter.report(new CycleError(Collections.singletonList(unit.getDefinition())));
+      errorReporter.report(new CycleError(Collections.singletonList(unit.getDefinition())));
       myTypecheckedReporter.typecheckingFailed(unit.getDefinition());
     } else {
       typecheck(unit, recursion == Recursion.IN_BODY);
@@ -152,9 +147,9 @@ class TypecheckingDependencyListener implements DependencyListener {
 
     if (numberOfHeaders == 1) {
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
-      LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter));
+      LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(errorReporter, countingErrorReporter));
       CheckTypeVisitor visitor = new CheckTypeVisitor(myState, myStaticNsProvider, myDynamicNsProvider, new LinkedHashMap<>(), localErrorReporter, null);
-      Definition typechecked = DefinitionTypechecking.typecheckHeader(visitor, new GlobalInstancePool(myState, myInstanceProviderSet.getInstanceProvider(unit.getDefinition())), unit.getDefinition(), unit.getEnclosingClass());
+      Definition typechecked = DefinitionTypechecking.typecheckHeader(visitor, new GlobalInstancePool(myState, instanceProviderSet.getInstanceProvider(unit.getDefinition())), unit.getDefinition(), unit.getEnclosingClass());
       if (typechecked.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
         mySuspensions.put(unit.getDefinition(), new Suspension(visitor, countingErrorReporter));
       }
@@ -167,7 +162,7 @@ class TypecheckingDependencyListener implements DependencyListener {
         cycle.add(unit1.getDefinition());
       }
 
-      myErrorReporter.report(new CycleError(cycle));
+      errorReporter.report(new CycleError(cycle));
       for (Abstract.Definition definition : cycle) {
         myState.record(definition, Definition.newDefinition(definition));
       }
@@ -175,7 +170,7 @@ class TypecheckingDependencyListener implements DependencyListener {
     }
 
     myTypecheckingHeaders = true;
-    Ordering ordering = new Ordering(myInstanceProviderSet, this, true);
+    Ordering ordering = new Ordering(instanceProviderSet, typecheckableProvider, this, true);
     boolean ok = true;
     for (TypecheckingUnit unit1 : scc.getUnits()) {
       if (unit1.isHeader()) {
@@ -229,7 +224,7 @@ class TypecheckingDependencyListener implements DependencyListener {
           fDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
         }
         for (Map.Entry<Definition, Set<RecursiveBehavior<Definition>>> entry : callCategory.myErrorInfo.entrySet()) {
-          myErrorReporter.report(new TerminationCheckError(entry.getKey(), entry.getValue()));
+          errorReporter.report(new TerminationCheckError(entry.getKey(), entry.getValue()));
         }
       }
     }
@@ -249,9 +244,9 @@ class TypecheckingDependencyListener implements DependencyListener {
 
   private void typecheck(TypecheckingUnit unit, boolean recursive) {
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
-    CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(myErrorReporter, countingErrorReporter);
+    CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
     LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), compositeErrorReporter);
-    List<Clause> clauses = DefinitionTypechecking.typecheck(myState, new GlobalInstancePool(myState, myInstanceProviderSet.getInstanceProvider(unit.getDefinition())), myStaticNsProvider, myDynamicNsProvider, unit, recursive, localErrorReporter);
+    List<Clause> clauses = DefinitionTypechecking.typecheck(myState, new GlobalInstancePool(myState, instanceProviderSet.getInstanceProvider(unit.getDefinition())), myStaticNsProvider, myDynamicNsProvider, unit, recursive, localErrorReporter);
     Definition typechecked = myState.getTypechecked(unit.getDefinition());
 
     if (recursive && clauses != null) {

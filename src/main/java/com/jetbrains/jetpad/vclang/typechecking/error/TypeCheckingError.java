@@ -2,12 +2,13 @@ package com.jetbrains.jetpad.vclang.typechecking.error;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
-import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
+import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
 import javax.annotation.Nonnull;
+
+import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
 /**
  * If you would like to add a new type checking error, please, extend {@link LocalTypeCheckingError} instead.
@@ -24,11 +25,6 @@ public class TypeCheckingError extends GeneralError {
 
   @Override
   public Doc getDoc(SourceInfoProvider src) {
-    String name = src.nameFor(definition);
-    if (name == null && definition.getName() != null) {
-      name = "???." + definition.getName();
-    }
-
-    return DocFactory.vHang(localError.getDoc(src), DocFactory.text("While typechecking: " + name));
+    return vHang(localError.getDoc(src), hList(text("While typechecking: "), refDoc(definition)));
   }
 }

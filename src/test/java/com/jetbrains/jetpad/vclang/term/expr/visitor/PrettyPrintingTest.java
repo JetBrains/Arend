@@ -67,7 +67,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     arguments.add(cTele(cvars(X), cUniverseStd(0)));
     arguments.add(cTele(cvars(x), cVar(X)));
     Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(ConcreteExpressionFactory.POSITION, "f", Abstract.Precedence.DEFAULT, arguments, cVar(X), body(cVar(x)), Collections.emptyList());
-    def.accept(new PrettyPrintVisitor(new StringBuilder(), 0), null);
+    def.accept(new PrettyPrintVisitor(new StringBuilder(), sourceInfoProvider, 0), null);
   }
 
   @Test
@@ -84,13 +84,13 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   public void prettyPrintingPatternDataDef() {
     Concrete.Definition def = parseDef("\\data LE Nat Nat \\with | zero, m => LE-zero | suc n, suc m => LE-suc (LE n m)");
     assertNotNull(def);
-    def.accept(new PrettyPrintVisitor(new StringBuilder(), Abstract.Expression.PREC), null);
+    def.accept(new PrettyPrintVisitor(new StringBuilder(), sourceInfoProvider, Abstract.Expression.PREC), null);
   }
 
   @Test
   public void prettyPrintingDataWithConditions() {
     Concrete.Definition def = parseDef("\\data Z | neg Nat | pos Nat { zero => neg zero }");
     assertNotNull(def);
-    def.accept(new PrettyPrintVisitor(new StringBuilder(), Abstract.Expression.PREC), null);
+    def.accept(new PrettyPrintVisitor(new StringBuilder(), sourceInfoProvider, Abstract.Expression.PREC), null);
   }
 }

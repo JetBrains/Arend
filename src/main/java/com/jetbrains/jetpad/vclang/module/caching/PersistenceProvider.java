@@ -8,6 +8,6 @@ import java.net.URI;
 public interface PersistenceProvider<SourceIdT extends SourceId> {
   URI getUri(SourceIdT sourceId);
   SourceIdT getModuleId(URI sourceUrl);
-  String getIdFor(Abstract.Definition definition);
+  String getIdFor(Abstract.GlobalReferableSourceNode definition);
   Abstract.Definition getFromId(SourceIdT sourceId, String id);
 }

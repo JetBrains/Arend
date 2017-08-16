@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.AbstractLevelExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import java.util.*;
 
@@ -15,24 +16,26 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public static final float SMALL_RATIO = (float) 0.1;
 
   protected final StringBuilder myBuilder;
+  private final PrettyPrinterInfoProvider myInfoProvider;
   private Map<InferenceLevelVariable, Integer> myPVariables = Collections.emptyMap();
   private Map<InferenceLevelVariable, Integer> myHVariables = Collections.emptyMap();
   protected int myIndent;
   private boolean noIndent;
 
-  public PrettyPrintVisitor(StringBuilder builder, int indent, boolean doIndent) {
+  public PrettyPrintVisitor(StringBuilder builder, PrettyPrinterInfoProvider infoProvider, int indent, boolean doIndent) {
     myBuilder = builder;
+    myInfoProvider = infoProvider;
     myIndent = indent;
     noIndent = !doIndent;
   }
 
-  public PrettyPrintVisitor(StringBuilder builder, int indent) {
-    this(builder, indent, true);
+  public PrettyPrintVisitor(StringBuilder builder, PrettyPrinterInfoProvider infoProvider, int indent) {
+    this(builder, infoProvider, indent, true);
   }
 
-  public static String prettyPrint(Abstract.SourceNode node) {
+  public static String prettyPrint(Abstract.SourceNode node, PrettyPrinterInfoProvider infoProvider) {
     StringBuilder builder = new StringBuilder();
-    return new PrettyPrintVisitor(builder, 0).prettyPrint(node, Abstract.Expression.PREC) ? builder.toString() : null;
+    return new PrettyPrintVisitor(builder, infoProvider, 0).prettyPrint(node, Abstract.Expression.PREC) ? builder.toString() : null;
   }
 
   public boolean prettyPrint(Abstract.SourceNode node, byte prec) {
@@ -434,7 +437,8 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitBinOp(final Abstract.BinOpExpression expr, final Byte prec) {
-    Abstract.Precedence precedence = expr.getReferent() instanceof Abstract.Definition ? ((Abstract.Definition) expr.getReferent()).getPrecedence() : Abstract.Precedence.DEFAULT;
+    Abstract.ReferableSourceNode referable = expr.getReferent();
+    Abstract.Precedence precedence = referable instanceof Abstract.GlobalReferableSourceNode ? myInfoProvider.precedenceOf((Abstract.GlobalReferableSourceNode) expr.getReferent()) : Abstract.Precedence.DEFAULT;
     if (expr.getRight() == null) {
       if (prec > precedence.priority) {
         myBuilder.append('(');
@@ -470,7 +474,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
           Abstract.Expression r = expr.getRight();
           if (r instanceof Abstract.BinOpExpression) {
             Abstract.ReferableSourceNode ref = ((Abstract.BinOpExpression) r).getReferent();
-            Abstract.Precedence refPrec = ref instanceof Abstract.Definition ? ((Abstract.Definition) ref).getPrecedence() : Abstract.Precedence.DEFAULT;
+            Abstract.Precedence refPrec = ref instanceof Abstract.GlobalReferableSourceNode ? myInfoProvider.precedenceOf(((Abstract.GlobalReferableSourceNode) ref)) : Abstract.Precedence.DEFAULT;
             if (prec <= refPrec.priority)
               return false; // no bracket drawn
           }
@@ -791,11 +795,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitClassField(Abstract.ClassField def, Void params) {
-    myBuilder.append("\\field ");
+    myBuilder.append("| ");
     prettyPrintNameWithPrecedence(def);
     myBuilder.append(" : ");
-    def.getResultType().accept(new PrettyPrintVisitor(myBuilder, myIndent), Abstract.Expression.PREC);
-
+    def.getResultType().accept(this, Abstract.Expression.PREC);
     return null;
   }
 
@@ -1003,7 +1006,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitImplement(Abstract.Implementation def, Void params) {
-    myBuilder.append("\\implement ").append(def.getName()).append(" => ");
+    myBuilder.append("| ").append(def.getName()).append(" => ");
     def.getImplementation().accept(this, Abstract.Expression.PREC);
     return null;
   }
@@ -1087,7 +1090,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       boolean splitMultiLineArgs;
       for (T t : l) {
         StringBuilder sb = new StringBuilder();
-        PrettyPrintVisitor ppv = new PrettyPrintVisitor(sb, 0);
+        PrettyPrintVisitor ppv = new PrettyPrintVisitor(sb, pp.myInfoProvider, 0, !pp.noIndent);
         printListElement(ppv, t);
 
         String[] strs = sb.toString().split("[\\r\\n]+");
@@ -1174,8 +1177,8 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
       StringBuilder lhs = new StringBuilder();
       StringBuilder rhs = new StringBuilder();
-      PrettyPrintVisitor ppv_left = new PrettyPrintVisitor(lhs, 0);
-      PrettyPrintVisitor ppv_right = new PrettyPrintVisitor(rhs, 0);
+      PrettyPrintVisitor ppv_left = new PrettyPrintVisitor(lhs, ppv_default.myInfoProvider, 0, !ppv_default.noIndent);
+      PrettyPrintVisitor ppv_right = new PrettyPrintVisitor(rhs, ppv_default.myInfoProvider, 0, !ppv_default.noIndent);
 
       //TODO: I don't like this implementation for it works quadratically wrt to the total number of binary operations
       printLeft(ppv_left);

@@ -80,7 +80,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
   @Override
   protected Abstract.ClassDefinition loadPrelude() {
     Abstract.ClassDefinition prelude = super.loadPrelude();
-    Namespace preludeNamespace = getStaticNsProvider().forDefinition(prelude);
+    Namespace preludeNamespace = getStaticNsProvider().forReferable(prelude);
     if (storageManager.libStorage != null) storageManager.libStorage.setPreludeNamespace(preludeNamespace);
     storageManager.projectStorage.setPreludeNamespace(preludeNamespace);
     storageManager.moduleNsProvider.registerModule(PreludeStorage.PRELUDE_MODULE_PATH, prelude);
@@ -197,8 +197,8 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
     }
 
     @Override
-    public String getIdFor(Abstract.Definition definition) {
-      if (definition instanceof Concrete.Definition) {
+    public String getIdFor(Abstract.GlobalReferableSourceNode definition) {
+      if (definition instanceof Concrete.Definition) { // TODO[references]
         Concrete.Position pos = ((Concrete.Definition) definition).getPosition();
         if (pos != null) {
           return pos.line + ";" + pos.column;

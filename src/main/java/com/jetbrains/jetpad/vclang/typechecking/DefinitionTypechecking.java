@@ -748,7 +748,7 @@ class DefinitionTypechecking {
     Abstract.ClassView classView = (Abstract.ClassView) def.getClassView().getReferent();
     assert classView != null;
     Map<ClassField, Expression> fieldSet = new HashMap<>();
-    ClassDefinition classDef = (ClassDefinition) visitor.getTypecheckingState().getTypechecked((Abstract.Definition) classView.getUnderlyingClassReference().getReferent());
+    ClassDefinition classDef = (ClassDefinition) visitor.getTypecheckingState().getTypechecked((Abstract.GlobalReferableSourceNode) classView.getUnderlyingClassReference().getReferent());
     ClassCallExpression term = new ClassCallExpression(classDef, Sort.generateInferVars(visitor.getEquations(), def.getClassView()), fieldSet, Sort.PROP);
 
     List<Abstract.ClassField> notImplementedFields = new ArrayList<>();

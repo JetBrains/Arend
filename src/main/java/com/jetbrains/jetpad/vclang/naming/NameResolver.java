@@ -60,7 +60,7 @@ public class NameResolver {
         if (ref == null) {
           return null;
         }
-        scope = new NamespaceScope(nsProviders.statics.forDefinition(ref));
+        scope = new NamespaceScope(nsProviders.statics.forReferable(ref));
       }
       return ref;
     }
@@ -79,8 +79,8 @@ public class NameResolver {
     } else if (reference.getExpression() instanceof Abstract.ReferenceExpression) {
       Abstract.ReferableSourceNode exprTarget = resolveReference(currentScope, (Abstract.ReferenceExpression) reference.getExpression());
       final Namespace ns;
-      if (exprTarget instanceof Abstract.Definition) {
-        ns = nsProviders.statics.forDefinition((Abstract.Definition) exprTarget);
+      if (exprTarget instanceof Abstract.GlobalReferableSourceNode) {
+        ns = nsProviders.statics.forReferable((Abstract.GlobalReferableSourceNode) exprTarget);
       } else {
         // TODO: implement this coherently
         // ns = resolveModuleNamespace((Abstract.DefCallExpression) reference.getExpression());
@@ -91,7 +91,7 @@ public class NameResolver {
     } else if (reference.getExpression() instanceof Abstract.ModuleCallExpression) {
       Abstract.Definition module = resolveModuleCall(currentScope, (Abstract.ModuleCallExpression) reference.getExpression());
       if (module != null) {
-        Namespace moduleNamespace = nsProviders.statics.forDefinition(module);
+        Namespace moduleNamespace = nsProviders.statics.forReferable(module);
         return moduleNamespace.resolveName(reference.getName());
       }
       return null;
@@ -106,9 +106,6 @@ public class NameResolver {
       return (Abstract.ClassDefinition) moduleCall.getModule();
     }
 
-    if (moduleCall.getPath() == null) {
-      throw new IllegalArgumentException();
-    }
     ModuleNamespace ns = resolveModuleNamespace(moduleCall.getPath());
     return ns == null ? null : ns.getRegisteredClass();
   }

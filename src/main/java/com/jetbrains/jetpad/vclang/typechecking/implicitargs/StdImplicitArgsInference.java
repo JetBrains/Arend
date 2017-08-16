@@ -117,7 +117,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     } else {
       if (fun instanceof Abstract.ReferenceExpression) {
         Abstract.ReferenceExpression defCall = (Abstract.ReferenceExpression) fun;
-        result = defCall.getExpression() == null && !(defCall.getReferent() instanceof Abstract.Definition) ? myVisitor.getLocalVar(defCall) : myVisitor.getTypeCheckingDefCall().typeCheckDefCall(defCall);
+        result = defCall.getExpression() == null && !(defCall.getReferent() instanceof Abstract.GlobalReferableSourceNode) ? myVisitor.getLocalVar(defCall) : myVisitor.getTypeCheckingDefCall().typeCheckDefCall(defCall);
       } else {
         result = myVisitor.checkExpr(fun, null);
       }

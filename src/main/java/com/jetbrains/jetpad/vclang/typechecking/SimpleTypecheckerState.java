@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class SimpleTypecheckerState implements TypecheckerState {
-  private final Map<Abstract.Definition, Definition> myTypechecked;
+  private final Map<Abstract.GlobalReferableSourceNode, Definition> myTypechecked;
 
   public SimpleTypecheckerState() {
     myTypechecked = new HashMap<>();
@@ -18,12 +18,12 @@ public class SimpleTypecheckerState implements TypecheckerState {
   }
 
   @Override
-  public void record(Abstract.Definition def, Definition res) {
+  public void record(Abstract.GlobalReferableSourceNode def, Definition res) {
     myTypechecked.put(def, res);
   }
 
   @Override
-  public Definition getTypechecked(Abstract.Definition def) {
+  public Definition getTypechecked(Abstract.GlobalReferableSourceNode def) {
     assert def != null;
     return myTypechecked.get(def);
   }
