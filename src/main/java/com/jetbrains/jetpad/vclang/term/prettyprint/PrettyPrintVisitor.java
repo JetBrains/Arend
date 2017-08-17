@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.prettyprint;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Abstract.BinOpSequenceElem;
 import com.jetbrains.jetpad.vclang.term.Abstract.Constructor;
 import com.jetbrains.jetpad.vclang.term.Abstract.Expression;
 import com.jetbrains.jetpad.vclang.term.Abstract.ReferenceExpression;
@@ -444,7 +445,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       }
       expr.getLeft().accept(this, (byte) (precedence.priority + (precedence.associativity == Abstract.Precedence.Associativity.LEFT_ASSOC ? 0 : 1)));
       String name = expr.getReferent().getName();
-      myBuilder.append(expr.getRight() == null ? " " + name + "`" : (isPrefix(name) ? " `" : " ") + name);
+      myBuilder.append(" ").append(name).append("`");
       if (prec > precedence.priority) {
         myBuilder.append(')');
       }
@@ -465,7 +466,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
         @Override
         String getOpText() {
           String result = expr.getReferent().getName();
-          return expr.getRight() == null ? result + "`" : (isPrefix(result) ? "`" : "") + result;
+          return (isPrefix(result) ? "`" : "") + result;
         }
 
         @Override
@@ -485,6 +486,33 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
+  private AbstractLayout createBinOpLayout(final Expression lhs, List<BinOpSequenceElem> elems) {
+    if (elems.isEmpty()) {
+      if (lhs != null) return (ppv_default, disabled) -> lhs.accept(ppv_default, (byte) 10);
+      else return new EmptyLayout();
+    }
+
+    final BinOpSequenceElem elem = elems.get(0);
+    final AbstractLayout layout = createBinOpLayout(elem.argument, elems.subList(1, elems.size()));
+    return new BinOpLayout(){
+      @Override
+      void printLeft(PrettyPrintVisitor pp) {
+        if (lhs != null) lhs.accept(pp, (byte) 10);
+      }
+
+      @Override
+      void printRight(PrettyPrintVisitor pp) {
+        layout.doPrettyPrint(pp, noIndent);
+      }
+
+      @Override
+      String getOpText() {
+        String result = elem.binOp.getName();
+        return elem.argument == null ? result + "`" : (isPrefix(result) ? "`" : "") + result;
+      }
+    };
+  }
+
   @Override
   public Void visitBinOpSequence(Abstract.BinOpSequenceExpression expr, Byte prec) {
     if (expr.getSequence().isEmpty()) {
@@ -492,13 +520,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       return null;
     }
     if (prec > Abstract.BinOpSequenceExpression.PREC) myBuilder.append('(');
-    expr.getLeft().accept(this, (byte) 10);
-    for (Abstract.BinOpSequenceElem elem : expr.getSequence()) {
-      myBuilder.append(isPrefix(elem.binOp.getName()) ? " `" : " ").append(elem.binOp.getName()).append(elem.argument == null ? "` " : " ");
-      if (elem.argument != null) {
-        elem.argument.accept(this, (byte) 10);
-      }
-    }
+    createBinOpLayout(expr.getLeft(), expr.getSequence()).doPrettyPrint(this, noIndent);
     if (prec > Abstract.BinOpSequenceExpression.PREC) myBuilder.append(')');
     return null;
   }
@@ -1114,7 +1136,15 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
-  public static abstract class ListLayout<T>{
+  public interface AbstractLayout {
+    void doPrettyPrint(PrettyPrintVisitor ppv_default, boolean disabled);
+  }
+
+  public static class EmptyLayout implements AbstractLayout {
+    public void doPrettyPrint(PrettyPrintVisitor ppv_default, boolean disabled) {}
+  }
+
+  public static abstract class ListLayout<T> {
     abstract void printListElement(PrettyPrintVisitor ppv, T t);
 
     abstract String getSeparator();
@@ -1184,7 +1214,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
   }
 
-  public static abstract class BinOpLayout {
+  public static abstract class BinOpLayout implements AbstractLayout {
     abstract void printLeft(PrettyPrintVisitor pp);
     abstract void printRight(PrettyPrintVisitor pp);
     abstract String getOpText();
@@ -1194,7 +1224,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     boolean doHyphenation(int leftLen, int rightLen) {
       if (leftLen == 0) leftLen = 1; if (leftLen > MAX_LEN) leftLen = MAX_LEN;
       if (rightLen == 0) rightLen = 1; if (rightLen > MAX_LEN) rightLen = MAX_LEN;
-      double ratio = rightLen / leftLen;
+      double ratio = ((double) rightLen) / leftLen;
       if (ratio > 1.0) ratio = 1/ratio;
 
       int myMaxLen = (ratio > SMALL_RATIO) ? MAX_LEN : Math.round(MAX_LEN * (1 + SMALL_RATIO));
