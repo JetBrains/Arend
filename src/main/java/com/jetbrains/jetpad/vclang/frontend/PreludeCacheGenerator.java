@@ -7,11 +7,13 @@ import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvi
 import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
 import com.jetbrains.jetpad.vclang.frontend.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
+import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.module.caching.*;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
@@ -79,7 +81,7 @@ public class PreludeCacheGenerator {
     @Override
     public String getIdFor(Abstract.GlobalReferableSourceNode definition) {
       if (!(definition instanceof Concrete.Definition)) throw new IllegalStateException(); // TODO[references]
-      Concrete.Position pos = ((Concrete.Definition) definition).getPosition();
+      Position pos = ((Concrete.Definition<Position>) definition).getData(); // TODO[abstract]
       if (pos == null) throw new IllegalStateException();
       return pos.line + ";" + pos.column;
     }

@@ -1,9 +1,10 @@
 package com.jetbrains.jetpad.vclang.frontend.resolving;
 
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
+import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.FullName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 
 import java.util.HashMap;
@@ -27,7 +28,7 @@ public class SimpleSourceInfoProvider<SourceIdT extends SourceId> implements Sou
   @Override
   public String positionOf(Abstract.SourceNode sourceNode) {
     if (sourceNode instanceof Concrete.SourceNode) {
-      Concrete.Position position = ((Concrete.SourceNode) sourceNode).getPosition();
+      Position position = ((Concrete.SourceNode<Position>) sourceNode).getData(); // TODO[abstract]
       return position.line + ":" + position.column;
     } else {
       return null;
@@ -37,7 +38,7 @@ public class SimpleSourceInfoProvider<SourceIdT extends SourceId> implements Sou
   @Override
   public String moduleOf(Abstract.SourceNode sourceNode) {
     if (sourceNode instanceof Concrete.SourceNode) {
-      Concrete.Position position = ((Concrete.SourceNode) sourceNode).getPosition();
+      Position position = ((Concrete.SourceNode<Position>) sourceNode).getData(); // TODO[abstract]
       return position.module != null ? position.module.toString() : null;
     } else {
       return null;

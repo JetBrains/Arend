@@ -2,15 +2,15 @@ package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.VclangTestCase;
 import com.jetbrains.jetpad.vclang.frontend.AbstractCompareVisitor;
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
-import com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory;
-import com.jetbrains.jetpad.vclang.frontend.parser.BuildVisitor;
-import com.jetbrains.jetpad.vclang.frontend.parser.ParserError;
-import com.jetbrains.jetpad.vclang.frontend.parser.VcgrammarLexer;
-import com.jetbrains.jetpad.vclang.frontend.parser.VcgrammarParser;
+import com.jetbrains.jetpad.vclang.frontend.text.Position;
+import com.jetbrains.jetpad.vclang.frontend.text.parser.BuildVisitor;
+import com.jetbrains.jetpad.vclang.frontend.text.parser.ParserError;
+import com.jetbrains.jetpad.vclang.frontend.text.parser.VcgrammarLexer;
+import com.jetbrains.jetpad.vclang.frontend.text.parser.VcgrammarParser;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import org.antlr.v4.runtime.*;
 
 import static org.junit.Assert.assertThat;
@@ -34,7 +34,7 @@ public abstract class ParserTestCase extends VclangTestCase {
     lexer.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(new Concrete.Position(SOURCE_ID, line, pos), msg));
+        errorReporter.report(new ParserError(new Position(SOURCE_ID, line, pos), msg));
       }
     });
 
@@ -44,7 +44,7 @@ public abstract class ParserTestCase extends VclangTestCase {
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(new Concrete.Position(SOURCE_ID, line, pos), msg));
+        errorReporter.report(new ParserError(new Position(SOURCE_ID, line, pos), msg));
       }
     });
     // parser.addErrorListener(new DiagnosticErrorListener());
@@ -53,31 +53,31 @@ public abstract class ParserTestCase extends VclangTestCase {
   }
 
 
-  Concrete.Expression parseExpr(String text, int errors) {
+  Concrete.Expression<Position> parseExpr(String text, int errors) {
     VcgrammarParser.ExprContext ctx = _parse(text).expr();
-    Concrete.Expression expr = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitExpr(ctx) : null;
+    Concrete.Expression<Position> expr = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitExpr(ctx) : null;
     assertThat(errorList, containsErrors(errors));
     return expr;
   }
 
-  protected Concrete.Expression parseExpr(String text) {
+  protected Concrete.Expression<Position> parseExpr(String text) {
     return parseExpr(text, 0);
   }
 
-  Concrete.Definition parseDef(String text, int errors) {
+  Concrete.Definition<Position> parseDef(String text, int errors) {
     VcgrammarParser.DefinitionContext ctx = _parse(text).definition();
-    Concrete.Definition definition = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitDefinition(ctx) : null;
+    Concrete.Definition<Position> definition = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitDefinition(ctx) : null;
     assertThat(errorList, containsErrors(errors));
     return definition;
   }
 
-  protected Concrete.Definition parseDef(String text) {
+  protected Concrete.Definition<Position> parseDef(String text) {
     return parseDef(text, 0);
   }
 
-  Concrete.ClassDefinition parseClass(String name, String text, int errors) {
+  Concrete.ClassDefinition<Position> parseClass(String name, String text, int errors) {
     VcgrammarParser.StatementsContext tree = _parse(text).statements();
-    Concrete.ClassDefinition classDefinition = errorList.isEmpty() ? new Concrete.ClassDefinition(ConcreteExpressionFactory.POSITION, name, new BuildVisitor(SOURCE_ID, errorReporter).visitStatements(tree)) : null;
+    Concrete.ClassDefinition<Position> classDefinition = errorList.isEmpty() ? new Concrete.ClassDefinition<>(new Position(SOURCE_ID, 0, 0), name, new BuildVisitor(SOURCE_ID, errorReporter).visitStatements(tree)) : null;
     assertThat(errorList, containsErrors(errors));
     // classDefinition.accept(new DefinitionResolveStaticModVisitor(new ConcreteStaticModListener()), null);
     return classDefinition;

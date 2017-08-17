@@ -1,16 +1,17 @@
-package com.jetbrains.jetpad.vclang.frontend.parser;
+package com.jetbrains.jetpad.vclang.frontend.text.parser;
 
 import com.jetbrains.jetpad.vclang.error.CompositeErrorReporter;
 import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.frontend.ConcretePrettyPrinterInfoProvider;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteResolveListener;
 import com.jetbrains.jetpad.vclang.frontend.namespace.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotNameResolver;
+import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import org.antlr.v4.runtime.*;
 
 import javax.annotation.Nullable;
@@ -36,7 +37,7 @@ public abstract class ParseSource {
     lexer.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        compositeErrorReporter.report(new ParserError(new Concrete.Position(mySourceId, line, pos), msg));
+        compositeErrorReporter.report(new ParserError(new Position(mySourceId, line, pos), msg));
       }
     });
 
@@ -45,7 +46,7 @@ public abstract class ParseSource {
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        compositeErrorReporter.report(new ParserError(new Concrete.Position(mySourceId, line, pos), msg));
+        compositeErrorReporter.report(new ParserError(new Position(mySourceId, line, pos), msg));
       }
     });
 
@@ -54,9 +55,9 @@ public abstract class ParseSource {
       return null;
     }
 
-    List<Concrete.Statement> statements = new BuildVisitor(mySourceId, compositeErrorReporter).visitStatements(tree);
+    List<Concrete.Statement<Position>> statements = new BuildVisitor(mySourceId, compositeErrorReporter).visitStatements(tree);
 
-    Concrete.ClassDefinition result = new Concrete.ClassDefinition(new Concrete.Position(mySourceId, 0, 0), mySourceId.getModulePath().getName(), statements);
+    Concrete.ClassDefinition<Position> result = new Concrete.ClassDefinition<>(new Position(mySourceId, 0, 0), mySourceId.getModulePath().getName(), statements);
 
     if (moduleRegistry != null) {
       moduleRegistry.registerModule(mySourceId.getModulePath(), result);

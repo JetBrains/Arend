@@ -1,9 +1,8 @@
 package com.jetbrains.jetpad.vclang.frontend.storage;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.frontend.namespace.ModuleRegistry;
-import com.jetbrains.jetpad.vclang.frontend.parser.ParseSource;
+import com.jetbrains.jetpad.vclang.frontend.text.parser.ParseSource;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.caching.CacheStorageSupplier;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
@@ -13,6 +12,7 @@ import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.EmptyScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;

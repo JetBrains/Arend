@@ -4,12 +4,11 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
-import com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteTypecheckableProvider;
 import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
@@ -77,7 +76,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   protected CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, String text, Expression expectedType, int errors) {
     Map<Abstract.ReferableSourceNode, Binding> mapContext = new HashMap<>();
     for (Binding binding : context) {
-      mapContext.put(new Concrete.LocalVariable(ConcreteExpressionFactory.POSITION, binding.getName()), binding);
+      mapContext.put(new Concrete.LocalVariable<>(null, binding.getName()), binding);
     }
     return typeCheckExpr(mapContext, resolveNamesExpr(mapContext, text), expectedType, errors);
   }

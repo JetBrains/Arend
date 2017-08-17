@@ -1,16 +1,16 @@
-package com.jetbrains.jetpad.vclang.frontend.parser;
+package com.jetbrains.jetpad.vclang.frontend.text.parser;
 
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
+import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.module.error.ModuleLoadingError;
 import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.text;
 
 public class ParserError extends ModuleLoadingError {
-  public final Concrete.Position position;
+  public final Position position;
 
-  public ParserError(Concrete.Position position, String message) {
+  public ParserError(Position position, String message) {
     super(position.module, message);
     this.position = position;
   }

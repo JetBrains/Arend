@@ -3,8 +3,9 @@ package com.jetbrains.jetpad.vclang.core.expr.factory;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
+import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -35,7 +36,7 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   @Nonnull
   @Override
   public Abstract.Expression makeClassExt(@Nonnull Abstract.Expression expr, @Nonnull List<? extends Abstract.ClassFieldImpl> statements) {
-    return cClassExt((Concrete.Expression) expr, (List<Concrete.ClassFieldImpl>) statements);
+    return cClassExt((Concrete.Expression<Position>) expr, (List<Concrete.ClassFieldImpl<Position>>) statements);
   }
 
   @Nonnull
@@ -47,13 +48,13 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   @Nonnull
   @Override
   public Abstract.ReferableSourceNode makeReferable(@Nullable String name) {
-    return new Concrete.LocalVariable(POSITION, name);
+    return new Concrete.LocalVariable(null, name);
   }
 
   @Nonnull
   @Override
   public Abstract.Expression makeInferVar(@Nonnull InferenceVariable variable) {
-    return new Concrete.InferenceReferenceExpression(POSITION, variable);
+    return new Concrete.InferenceReferenceExpression(null, variable);
   }
 
   @Nonnull
@@ -77,13 +78,13 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   @Nonnull
   @Override
   public Abstract.Expression makeLam(@Nonnull List<? extends Abstract.Parameter> arguments, @Nonnull Abstract.Expression body) {
-    return cLam((List<Concrete.Parameter>) arguments, (Concrete.Expression) body);
+    return cLam((List<Concrete.Parameter<Position>>) arguments, (Concrete.Expression) body);
   }
 
   @Nonnull
   @Override
   public Abstract.Expression makePi(@Nonnull List<? extends Abstract.TypeParameter> arguments, @Nonnull Abstract.Expression codomain) {
-    return cPi((List<Concrete.TypeParameter>) arguments, (Concrete.Expression) codomain);
+    return cPi((List<Concrete.TypeParameter<Position>>) arguments, (Concrete.Expression) codomain);
   }
 
   @Nonnull
@@ -95,43 +96,43 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   @Nonnull
   @Override
   public Abstract.LevelExpression makeInferVarLevel(@Nonnull InferenceLevelVariable variable) {
-    return new Concrete.InferVarLevelExpression(variable);
+    return new Concrete.InferVarLevelExpression(null, variable);
   }
 
   @Nonnull
   @Override
   public Abstract.LevelExpression makePLevel() {
-    return new Concrete.PLevelExpression(POSITION);
+    return new Concrete.PLevelExpression(null);
   }
 
   @Nonnull
   @Override
   public Abstract.LevelExpression makeHLevel() {
-    return new Concrete.HLevelExpression(POSITION);
+    return new Concrete.HLevelExpression(null);
   }
 
   @Nonnull
   @Override
   public Abstract.LevelExpression makeNumberLevel(int number) {
-    return new Concrete.NumberLevelExpression(POSITION, number);
+    return new Concrete.NumberLevelExpression(null, number);
   }
 
   @Nonnull
   @Override
   public Abstract.LevelExpression makeSucLevel(@Nonnull Abstract.LevelExpression expr) {
-    return new Concrete.SucLevelExpression(POSITION, (Concrete.LevelExpression) expr);
+    return new Concrete.SucLevelExpression(null, (Concrete.LevelExpression) expr);
   }
 
   @Nonnull
   @Override
   public Abstract.LevelExpression makeMaxLevel(@Nonnull Abstract.LevelExpression left, @Nonnull Abstract.LevelExpression right) {
-    return new Concrete.MaxLevelExpression(POSITION, (Concrete.LevelExpression) left, (Concrete.LevelExpression) right);
+    return new Concrete.MaxLevelExpression(null, (Concrete.LevelExpression) left, (Concrete.LevelExpression) right);
   }
 
   @Nonnull
   @Override
   public Abstract.LevelExpression makeInf() {
-    return new Concrete.InfLevelExpression(POSITION);
+    return new Concrete.InfLevelExpression(null);
   }
 
   @Nonnull
@@ -143,13 +144,13 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   @Nonnull
   @Override
   public Abstract.Expression makeTuple(@Nonnull List<? extends Abstract.Expression> fields) {
-    return cTuple((List<Concrete.Expression>) fields);
+    return cTuple((List<Concrete.Expression<Position>>) fields);
   }
 
   @Nonnull
   @Override
   public Abstract.Expression makeSigma(@Nonnull List<? extends Abstract.TypeParameter> arguments) {
-    return cSigma((List<Concrete.TypeParameter>) arguments);
+    return cSigma((List<Concrete.TypeParameter<Position>>) arguments);
   }
 
   @Nonnull
@@ -173,31 +174,31 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   @Nonnull
   @Override
   public Abstract.Expression makeLet(@Nonnull List<? extends Abstract.LetClause> clauses, @Nonnull Abstract.Expression expr) {
-    return cLet((List<Concrete.LetClause>) clauses, (Concrete.Expression) expr);
+    return cLet((List<Concrete.LetClause<Position>>) clauses, (Concrete.Expression) expr);
   }
 
   @Nonnull
   @Override
   public Abstract.LetClause makeLetClause(@Nonnull String name, @Nonnull List<? extends Abstract.Parameter> arguments, @Nonnull Abstract.Expression term) {
-    return clet(name, (List<Concrete.Parameter>) arguments, null, (Concrete.Expression) term);
+    return clet(name, (List<Concrete.Parameter<Position>>) arguments, null, (Concrete.Expression) term);
   }
 
   @Nonnull
   @Override
   public Abstract.Expression makeCase(@Nonnull List<? extends Abstract.Expression> expressions, @Nonnull List<? extends Abstract.FunctionClause> clauses) {
-    return cCase((List<Concrete.Expression>) expressions, (List<Concrete.FunctionClause>) clauses);
+    return cCase((List<Concrete.Expression<Position>>) expressions, (List<Concrete.FunctionClause<Position>>) clauses);
   }
 
   @Nonnull
   @Override
   public Abstract.FunctionClause makeClause(@Nonnull List<? extends Abstract.Pattern> patterns, @Nonnull Abstract.Expression expr) {
-    return cClause((List<Concrete.Pattern>) patterns, (Concrete.Expression) expr);
+    return cClause((List<Concrete.Pattern<Position>>) patterns, (Concrete.Expression) expr);
   }
 
   @Nonnull
   @Override
   public Abstract.Pattern makeConPattern(boolean isExplicit, @Nonnull Abstract.Constructor constructor, @Nonnull List<? extends Abstract.Pattern> args) {
-    return cConPattern(isExplicit, constructor.getName(), (List<Concrete.Pattern>) args);
+    return cConPattern(isExplicit, constructor.getName(), (List<Concrete.Pattern<Position>>) args);
   }
 
   @Nonnull

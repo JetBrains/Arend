@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.naming;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.frontend.ConcretePrettyPrinterInfoProvider;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteResolveListener;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
@@ -13,12 +12,14 @@ import com.jetbrains.jetpad.vclang.frontend.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.frontend.resolving.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.frontend.resolving.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
+import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.EmptyScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -58,8 +59,8 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
 
-  private Concrete.Expression resolveNamesExpr(Scope parentScope, List<Abstract.ReferableSourceNode> context, String text, int errors) {
-    Concrete.Expression expression = parseExpr(text);
+  private Concrete.Expression<Position> resolveNamesExpr(Scope parentScope, List<Abstract.ReferableSourceNode> context, String text, int errors) {
+    Concrete.Expression<Position> expression = parseExpr(text);
     assertThat(expression, is(notNullValue()));
 
     expression.accept(new ExpressionResolveNameVisitor(parentScope, context, nameResolver, ConcretePrettyPrinterInfoProvider.INSTANCE, new ConcreteResolveListener(), errorReporter), null);
@@ -79,12 +80,12 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     return resolveNamesExpr(parentScope, text, 0);
   }
 
-  protected Concrete.Expression resolveNamesExpr(Map<Abstract.ReferableSourceNode, Binding> context, String text) {
+  protected Concrete.Expression<Position> resolveNamesExpr(Map<Abstract.ReferableSourceNode, Binding> context, String text) {
     List<Abstract.ReferableSourceNode> names = new ArrayList<>(context.keySet());
     return resolveNamesExpr(globalScope, names, text, 0);
   }
 
-  protected Concrete.Expression resolveNamesExpr(String text) {
+  protected Concrete.Expression<Position> resolveNamesExpr(String text) {
     return resolveNamesExpr(new HashMap<>(), text);
   }
 
@@ -95,13 +96,13 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     assertThat(errorList, containsErrors(errors));
   }
 
-  Concrete.Definition resolveNamesDef(String text, int errors) {
-    Concrete.Definition result = parseDef(text);
+  Concrete.Definition<Position> resolveNamesDef(String text, int errors) {
+    Concrete.Definition<Position> result = parseDef(text);
     resolveNamesDef(result, errors);
     return result;
   }
 
-  protected Concrete.Definition resolveNamesDef(String text) {
+  protected Concrete.Definition<Position> resolveNamesDef(String text) {
     return resolveNamesDef(text, 0);
   }
 

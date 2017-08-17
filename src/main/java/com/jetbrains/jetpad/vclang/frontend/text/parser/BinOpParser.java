@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.frontend.parser;
+package com.jetbrains.jetpad.vclang.frontend.text.parser;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;

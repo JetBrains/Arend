@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 public class ConcretePrettyPrinterInfoProvider implements PrettyPrinterInfoProvider {

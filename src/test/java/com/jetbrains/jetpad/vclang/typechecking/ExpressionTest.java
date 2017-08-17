@@ -5,8 +5,9 @@ import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
+import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
@@ -69,8 +70,8 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void typeCheckingAppIndex() {
     // \x y. y (y x) : N -> (N -> N) -> N
-    Concrete.NameParameter x = cName("x");
-    Concrete.NameParameter y = cName("y");
+    Concrete.NameParameter<Position> x = cName("x");
+    Concrete.NameParameter<Position> y = cName("y");
     Concrete.Expression expr = cLam(x, cLam(y, cApps(cVar(y), cApps(cVar(y), cVar(x)))));
     typeCheckExpr(expr, Pi(Nat(), Pi(Pi(Nat(), Nat()), Nat())));
   }
@@ -78,8 +79,8 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void typeCheckingAppPiIndex() {
     // T : Nat -> Type, Q : (x : Nat) -> T x -> Type |- \f g. g zero (f zero) : (f : (x : Nat) -> T x) -> ((x : Nat) -> T x -> Q x (f x)) -> Q zero (f zero)
-    Concrete.NameParameter cf = cName("f");
-    Concrete.NameParameter cg = cName("g");
+    Concrete.NameParameter<Position> cf = cName("f");
+    Concrete.NameParameter<Position> cg = cName("g");
     Concrete.Expression expr = cLam(cf, cLam(cg, cApps(cVar(cg), cZero(), cApps(cVar(cf), cZero()))));
     Map<Abstract.ReferableSourceNode, Binding> context = new HashMap<>();
     Binding T = new TypedBinding("T", Pi(Nat(), Universe(0)));
@@ -149,8 +150,8 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void tooManyLambdasError() {
     // \x y. x : Nat -> Nat
-    Concrete.NameParameter x = cName("x");
-    Concrete.NameParameter y = cName("y");
+    Concrete.NameParameter<Position> x = cName("x");
+    Concrete.NameParameter<Position> y = cName("y");
     Concrete.Expression expr = cLam(cargs(x, y), cVar(x));
     assertThat(typeCheckExpr(expr, Pi(Nat(), Nat()), 1), is(nullValue()));
   }
@@ -165,7 +166,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void lambdaExpectedError() {
     // \x. x : (Nat -> Nat) -> Nat
-    Concrete.NameParameter x = cName("x");
+    Concrete.NameParameter<Position> x = cName("x");
     Concrete.Expression expr = cLam(x, cVar(x));
     typeCheckExpr(expr, Pi(Pi(Nat(), Nat()), Nat()), 1);
     assertThatErrorsAre(typeMismatchError());
@@ -174,7 +175,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void lambdaOmegaError() {
     // \x. x x : (Nat -> Nat) -> Nat
-    Concrete.NameParameter x = cName("x");
+    Concrete.NameParameter<Position> x = cName("x");
     Concrete.Expression expr = cLam(x, cApps(cVar(x), cVar(x)));
     typeCheckExpr(expr, Pi(Pi(Nat(), Nat()), Nat()), 1);
     assertThatErrorsAre(typeMismatchError());
@@ -183,7 +184,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void lambdaExpectedError2() {
     // \x. x 0 : (Nat -> Nat) -> Nat -> Nat
-    Concrete.NameParameter x = cName("x");
+    Concrete.NameParameter<Position> x = cName("x");
     Concrete.Expression expr = cLam(x, cApps(cVar(x), cZero()));
     typeCheckExpr(expr, Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat())), 1);
     assertThatErrorsAre(typeMismatchError());
@@ -192,9 +193,9 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void letDependentType() {
     // \lam (F : \Pi N -> \Type0) (f : \Pi (x : N) -> F x) => \\let | x => 0 \\in f x");
-    Concrete.LocalVariable F = ref("F");
-    Concrete.LocalVariable f = ref("f");
-    Concrete.LetClause x = clet("x", cZero());
+    Concrete.LocalVariable<Position> F = ref("F");
+    Concrete.LocalVariable<Position> f = ref("f");
+    Concrete.LetClause<Position> x = clet("x", cZero());
     Concrete.Expression expr = cLam(cargs(cTele(cvars(F), cPi(cNat(), cUniverseStd(0))), cTele(cvars(f), cPi(ctypeArgs(cTele(cvars(x), cNat())), cApps(cVar(F), cVar(x))))),
             cLet(clets(x), cApps(cVar(f), cVar(x))));
     typeCheckExpr(expr, null);
@@ -203,8 +204,8 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void letArrowType() {
     // \let | x (y : Nat) => Zero \in x : Nat -> Nat
-    Concrete.LocalVariable y = ref("y");
-    Concrete.LetClause x = clet("x", cargs(cTele(cvars(y), cNat())), cZero());
+    Concrete.LocalVariable<Position> y = ref("y");
+    Concrete.LetClause<Position> x = clet("x", cargs(cTele(cvars(y), cNat())), cZero());
     Concrete.Expression expr = cLet(clets(x), cVar(x));
     CheckTypeVisitor.Result result = typeCheckExpr(expr, null);
     assertEquals(result.type.normalize(NormalizeVisitor.Mode.WHNF), Pi(Nat(), Nat()));

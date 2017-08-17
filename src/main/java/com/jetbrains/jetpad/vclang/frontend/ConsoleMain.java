@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.frontend.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.LibStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
+import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.CompositeSourceSupplier;
@@ -17,6 +18,7 @@ import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
@@ -199,7 +201,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
     @Override
     public String getIdFor(Abstract.GlobalReferableSourceNode definition) {
       if (definition instanceof Concrete.Definition) { // TODO[references]
-        Concrete.Position pos = ((Concrete.Definition) definition).getPosition();
+        Position pos = ((Concrete.Definition<Position>) definition).getData(); // TODO[abstract]
         if (pos != null) {
           return pos.line + ";" + pos.column;
         }

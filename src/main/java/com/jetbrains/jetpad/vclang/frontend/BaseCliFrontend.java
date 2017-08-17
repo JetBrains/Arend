@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotSourceInfoCollector;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
+import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.caching.*;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
@@ -19,6 +20,7 @@ import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
@@ -201,7 +203,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     static String getIdFor(Abstract.Definition definition) {
       if (definition instanceof Concrete.Definition) {
-        Concrete.Position pos = ((Concrete.Definition) definition).getPosition();
+        Position pos = ((Concrete.Definition<Position>) definition).getData(); // TODO[abstract]
         if (pos != null) {
           return pos.line + ";" + pos.column;
         }

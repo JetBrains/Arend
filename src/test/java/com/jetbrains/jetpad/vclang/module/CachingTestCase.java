@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.BaseModuleLoader;
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteTypecheckableProvider;
 import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotSourceInfoCollector;
@@ -15,6 +14,7 @@ import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;

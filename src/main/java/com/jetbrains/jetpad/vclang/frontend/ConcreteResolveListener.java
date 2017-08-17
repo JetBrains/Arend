@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.frontend;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OpenCommand;
 import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.Collections;
 
@@ -68,12 +69,12 @@ public class ConcreteResolveListener implements ResolveListener {
 
   @Override
   public void replaceWithConstructor(Abstract.PatternContainer container, int index, Abstract.Constructor constructor) {
-    Concrete.PatternContainer concreteContainer = (Concrete.PatternContainer) container;
+    Concrete.PatternContainer<?> concreteContainer = (Concrete.PatternContainer<?>) container;
     //noinspection ConstantConditions
     Concrete.Pattern old = concreteContainer.getPatterns().get(index);
-    Concrete.Pattern newPattern = new Concrete.ConstructorPattern(old.getPosition(), constructor, Collections.emptyList());
+    Concrete.Pattern newPattern = new Concrete.ConstructorPattern<>(old.getData(), constructor, Collections.emptyList());
     newPattern.setExplicit(old.isExplicit());
-    concreteContainer.getPatterns().set(index, newPattern);
+    concreteContainer.getPatterns().set(index, newPattern); // TODO[abstract]
   }
 
   @Override

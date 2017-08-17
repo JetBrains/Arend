@@ -4,8 +4,9 @@ import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
+import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import org.junit.Test;
 
@@ -34,24 +35,26 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
     testExpr(expected, expr, EnumSet.of(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM, ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS));
   }
 
-  private void testDef(Concrete.FunctionDefinition expected, Concrete.FunctionDefinition def) throws UnsupportedEncodingException {
+  private void testDef(Concrete.FunctionDefinition<Position> expected, Concrete.FunctionDefinition<Position> def) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
     def.accept(new PrettyPrintVisitor(builder, sourceInfoProvider, 0), null);
 
-    Concrete.FunctionDefinition result = (Concrete.FunctionDefinition) resolveNamesDef(builder.toString());
-    List<Concrete.TypeParameter> expectedArguments = new ArrayList<>();
-    for (Concrete.Parameter argument : expected.getParameters()) {
-      expectedArguments.add((Concrete.TypeParameter) argument);
+    Concrete.FunctionDefinition<Position> result = (Concrete.FunctionDefinition<Position>) resolveNamesDef(builder.toString());
+    List<Concrete.TypeParameter<Position>> expectedArguments = new ArrayList<>();
+    for (Concrete.Parameter<Position> argument : expected.getParameters()) {
+      expectedArguments.add((Concrete.TypeParameter<Position>) argument);
     }
-    List<Concrete.TypeParameter> actualArguments = new ArrayList<>();
-    for (Concrete.Parameter argument : result.getParameters()) {
-      actualArguments.add((Concrete.TypeParameter) argument);
+    List<Concrete.TypeParameter<Position>> actualArguments = new ArrayList<>();
+    for (Concrete.Parameter<Position> argument : result.getParameters()) {
+      actualArguments.add((Concrete.TypeParameter<Position>) argument);
     }
-    Concrete.Expression expectedType = cPi(expectedArguments, expected.getResultType());
-    Concrete.Expression actualType = cPi(actualArguments, result.getResultType());
+    Concrete.Expression<Position> expectedType = cPi(expectedArguments, expected.getResultType());
+    Concrete.Expression<Position> actualType = cPi(actualArguments, result.getResultType());
     assertTrue(compareAbstract(expectedType, actualType));
     assertTrue(result.getBody() instanceof Abstract.TermFunctionBody);
-    assertEquals(cLam(new ArrayList<>(expected.getParameters()), ((Concrete.TermFunctionBody) expected.getBody()).getTerm()), cLam(new ArrayList<>(result.getParameters()), ((Concrete.TermFunctionBody) result.getBody()).getTerm()));
+    assertEquals(
+      cLam(new ArrayList<>(expected.getParameters()), ((Concrete.TermFunctionBody<Position>) expected.getBody()).getTerm()),
+      cLam(new ArrayList<>(result.getParameters()), ((Concrete.TermFunctionBody<Position>) result.getBody()).getTerm()));
   }
 
   @Test
@@ -101,12 +104,12 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
   @Test
   public void prettyPrintingParserFunDef() throws UnsupportedEncodingException {
     // f {x : \Type1} (A : \Type1 -> \Type0) : A x -> (\Type1 -> \Type1) -> \Type1 -> \Type1 => \t y z. y z;
-    Concrete.LocalVariable x = ref("x");
-    Concrete.LocalVariable A = ref("A");
-    Concrete.NameParameter t = cName("t");
-    Concrete.NameParameter y = cName("y");
-    Concrete.NameParameter z = cName("z");
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(POSITION, "f", Abstract.Precedence.DEFAULT, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), body(cLam(cargs(t, y, z), cApps(cVar(y), cVar(z)))), Collections.emptyList());
+    Concrete.LocalVariable<Position> x = ref("x");
+    Concrete.LocalVariable<Position> A = ref("A");
+    Concrete.NameParameter<Position> t = cName("t");
+    Concrete.NameParameter<Position> y = cName("y");
+    Concrete.NameParameter<Position> z = cName("z");
+    Concrete.FunctionDefinition<Position> def = new Concrete.FunctionDefinition<>(null, "f", Abstract.Precedence.DEFAULT, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), body(cLam(cargs(t, y, z), cApps(cVar(y), cVar(z)))), Collections.emptyList());
     testDef(def, def);
   }
 

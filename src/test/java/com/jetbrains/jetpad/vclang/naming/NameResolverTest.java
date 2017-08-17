@@ -1,23 +1,24 @@
 package com.jetbrains.jetpad.vclang.naming;
 
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collections;
 
-import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.cBinOp;
+import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.cNum;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void parserInfix() {
-    Abstract.Definition plus = new Concrete.FunctionDefinition(POSITION, "+", new Abstract.Precedence(Abstract.Precedence.Associativity.LEFT_ASSOC, (byte) 6), Collections.emptyList(), null, null, Collections.emptyList());
-    Abstract.Definition mul = new Concrete.FunctionDefinition(POSITION, "*", new Abstract.Precedence(Abstract.Precedence.Associativity.LEFT_ASSOC, (byte) 7), Collections.emptyList(), null, null, Collections.emptyList());
+    Abstract.Definition plus = new Concrete.FunctionDefinition<>(null, "+", new Abstract.Precedence(Abstract.Precedence.Associativity.LEFT_ASSOC, (byte) 6), Collections.emptyList(), null, null, Collections.emptyList());
+    Abstract.Definition mul = new Concrete.FunctionDefinition<>(null, "*", new Abstract.Precedence(Abstract.Precedence.Associativity.LEFT_ASSOC, (byte) 7), Collections.emptyList(), null, null, Collections.emptyList());
 
     SimpleNamespace namespace = new SimpleNamespace();
     namespace.addDefinition(plus);
@@ -30,8 +31,8 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void parserInfixError() {
-    Abstract.Definition plus = new Concrete.FunctionDefinition(POSITION, "+", new Abstract.Precedence(Abstract.Precedence.Associativity.LEFT_ASSOC, (byte) 6), Collections.emptyList(), null, null, Collections.emptyList());
-    Abstract.Definition mul = new Concrete.FunctionDefinition(POSITION, "*", new Abstract.Precedence(Abstract.Precedence.Associativity.RIGHT_ASSOC, (byte) 6), Collections.emptyList(), null, null, Collections.emptyList());
+    Abstract.Definition plus = new Concrete.FunctionDefinition<>(null, "+", new Abstract.Precedence(Abstract.Precedence.Associativity.LEFT_ASSOC, (byte) 6), Collections.emptyList(), null, null, Collections.emptyList());
+    Abstract.Definition mul = new Concrete.FunctionDefinition<>(null, "*", new Abstract.Precedence(Abstract.Precedence.Associativity.RIGHT_ASSOC, (byte) 6), Collections.emptyList(), null, null, Collections.emptyList());
 
     SimpleNamespace namespace = new SimpleNamespace();
     namespace.addDefinition(plus);

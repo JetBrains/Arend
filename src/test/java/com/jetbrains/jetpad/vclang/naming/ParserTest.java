@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming;
 
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
+import com.jetbrains.jetpad.vclang.frontend.text.Position;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -12,59 +13,59 @@ import static org.junit.Assert.*;
 public class ParserTest extends NameResolverTestCase {
   @Test
   public void parserLetToTheRight() {
-    Concrete.Expression expr = resolveNamesExpr("\\lam x => \\let | x => \\Type0 \\in x x");
-    Concrete.Expression expr1 = resolveNamesExpr("\\let | x => \\Type0 \\in \\lam x => x x");
-    Concrete.NameParameter x = cName("x");
-    Concrete.LetClause x1 = clet("x", cargs(), cUniverseStd(0));
+    Concrete.Expression<Position> expr = resolveNamesExpr("\\lam x => \\let | x => \\Type0 \\in x x");
+    Concrete.Expression<Position> expr1 = resolveNamesExpr("\\let | x => \\Type0 \\in \\lam x => x x");
+    Concrete.NameParameter<Position> x = cName("x");
+    Concrete.LetClause<Position> x1 = clet("x", cargs(), cUniverseStd(0));
     assertTrue(compareAbstract(cLam(x, cLet(clets(x1), cApps(cVar(x1), cVar(x1)))), expr));
     assertTrue(compareAbstract(cLet(clets(x1), cLam(x, cApps(cVar(x), cVar(x)))), expr1));
   }
 
   @Test
   public void parseLetMultiple() {
-    Concrete.Expression expr = resolveNamesExpr("\\let | x => \\Type0 | y => x \\in y");
-    Concrete.LetClause x = clet("x", cUniverseStd(0));
-    Concrete.LetClause y = clet("y", cVar(x));
+    Concrete.Expression<Position> expr = resolveNamesExpr("\\let | x => \\Type0 | y => x \\in y");
+    Concrete.LetClause<Position> x = clet("x", cUniverseStd(0));
+    Concrete.LetClause<Position> y = clet("y", cVar(x));
     assertTrue(compareAbstract(cLet(clets(x, y), cVar(y)), expr));
   }
 
   @Test
   public void parseLetTyped() {
-    Concrete.Expression expr = resolveNamesExpr("\\let | x : \\Type1 => \\Type0 \\in x");
-    Concrete.LetClause x = clet("x", cargs(), cUniverseStd(1), cUniverseStd(0));
+    Concrete.Expression<Position> expr = resolveNamesExpr("\\let | x : \\Type1 => \\Type0 \\in x");
+    Concrete.LetClause<Position> x = clet("x", cargs(), cUniverseStd(1), cUniverseStd(0));
     assertTrue(compareAbstract(cLet(clets(x), cVar(x)), expr));
   }
 
   @Test
   public void parserLam() {
-    Concrete.Expression expr = resolveNamesExpr("\\lam x y z => y");
-    Concrete.NameParameter x = cName("x");
-    Concrete.NameParameter y = cName("y");
-    Concrete.NameParameter z = cName("z");
+    Concrete.Expression<Position> expr = resolveNamesExpr("\\lam x y z => y");
+    Concrete.NameParameter<Position> x = cName("x");
+    Concrete.NameParameter<Position> y = cName("y");
+    Concrete.NameParameter<Position> z = cName("z");
     boolean res = compareAbstract(cLam(cargs(x, y, z), cVar(y)), expr);
     assertTrue(res);
   }
 
   @Test
   public void parserLam2() {
-    Concrete.Expression expr = resolveNamesExpr("\\lam x y => (\\lam z w => y z) y");
-    Concrete.NameParameter x = cName("x");
-    Concrete.NameParameter y = cName("y");
-    Concrete.NameParameter z = cName("z");
-    Concrete.NameParameter w = cName("w");
+    Concrete.Expression<Position> expr = resolveNamesExpr("\\lam x y => (\\lam z w => y z) y");
+    Concrete.NameParameter<Position> x = cName("x");
+    Concrete.NameParameter<Position> y = cName("y");
+    Concrete.NameParameter<Position> z = cName("z");
+    Concrete.NameParameter<Position> w = cName("w");
     assertTrue(compareAbstract(cLam(cargs(x, y), cApps(cLam(cargs(z, w), cApps(cVar(y), cVar(z))), cVar(y))), expr));
   }
 
   @Test
   public void parserLamTele() {
     Concrete.Expression expr = resolveNamesExpr("\\lam p {x t : \\Type0} {y} (a : \\Type0 -> \\Type0) => (\\lam (z w : \\Type0) => y z) y");
-    Concrete.NameParameter p = cName("p");
-    Concrete.LocalVariable x = ref("x");
-    Concrete.LocalVariable t = ref("t");
-    Concrete.NameParameter y = cName(false, "y");
-    Concrete.LocalVariable a = ref("a");
-    Concrete.LocalVariable z = ref("z");
-    Concrete.LocalVariable w = ref("w");
+    Concrete.NameParameter<Position> p = cName("p");
+    Concrete.LocalVariable<Position> x = ref("x");
+    Concrete.LocalVariable<Position> t = ref("t");
+    Concrete.NameParameter<Position> y = cName(false, "y");
+    Concrete.LocalVariable<Position> a = ref("a");
+    Concrete.LocalVariable<Position> z = ref("z");
+    Concrete.LocalVariable<Position> w = ref("w");
     assertTrue(compareAbstract(cLam(cargs(p, cTele(false, cvars(x, t), cUniverseStd(0)), y, cTele(cvars(a), cPi(cUniverseStd(0), cUniverseStd(0)))), cApps(cLam(cargs(cTele(cvars(z, w), cUniverseStd(0))), cApps(cVar(y), cVar(z))), cVar(y))), expr));
   }
 
@@ -103,8 +104,8 @@ public class ParserTest extends NameResolverTestCase {
 
   @Test
   public void parserImplicit() {
-    Concrete.ClassField def = ((Concrete.ClassDefinition) resolveNamesDef("\\class X { | f : \\Pi (x y : \\Type1) {z w : \\Type1} (t : \\Type1) {r : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) -> A x y z w t r }")).getFields().get(0);
-    Concrete.PiExpression pi = (Concrete.PiExpression) def.getResultType();
+    Concrete.ClassField<Position> def = ((Concrete.ClassDefinition<Position>) resolveNamesDef("\\class X { | f : \\Pi (x y : \\Type1) {z w : \\Type1} (t : \\Type1) {r : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) -> A x y z w t r }")).getFields().get(0);
+    Concrete.PiExpression<Position> pi = (Concrete.PiExpression<Position>) def.getResultType();
     assertEquals(5, pi.getParameters().size());
     assertTrue(pi.getParameters().get(0).getExplicit());
     assertFalse(pi.getParameters().get(1).getExplicit());
@@ -118,7 +119,7 @@ public class ParserTest extends NameResolverTestCase {
     Concrete.LocalVariable w = ref("w");
     Concrete.LocalVariable t = ref("t");
     Concrete.LocalVariable r = ref("r");
-    List<Concrete.TypeParameter> params = new ArrayList<>();
+    List<Concrete.TypeParameter<Position>> params = new ArrayList<>();
     params.add(cTele(cvars(x, y), cUniverseStd(1)));
     params.add(cTele(false, cvars(z, w), cUniverseStd(1)));
     params.add(cTele(cvars(t), cUniverseStd(1)));
@@ -129,8 +130,8 @@ public class ParserTest extends NameResolverTestCase {
 
   @Test
   public void parserImplicit2() {
-    Concrete.ClassField def = ((Concrete.ClassDefinition) resolveNamesDef("\\class X { | f : \\Pi {x : \\Type1} (_ : \\Type1) {y z : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) (_ : A x y z) -> \\Type1 }")).getFields().get(0);
-    Concrete.PiExpression pi = (Concrete.PiExpression) def.getResultType();
+    Concrete.ClassField<Position> def = ((Concrete.ClassDefinition<Position>) resolveNamesDef("\\class X { | f : \\Pi {x : \\Type1} (_ : \\Type1) {y z : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) (_ : A x y z) -> \\Type1 }")).getFields().get(0);
+    Concrete.PiExpression<Position> pi = (Concrete.PiExpression<Position>) def.getResultType();
     assertEquals(5, pi.getParameters().size());
     assertFalse(pi.getParameters().get(0).getExplicit());
     assertTrue(pi.getParameters().get(1).getExplicit());
@@ -141,7 +142,7 @@ public class ParserTest extends NameResolverTestCase {
     Concrete.LocalVariable x = ref("x");
     Concrete.LocalVariable y = ref("y");
     Concrete.LocalVariable z = ref("z");
-    List<Concrete.TypeParameter> params = new ArrayList<>();
+    List<Concrete.TypeParameter<Position>> params = new ArrayList<>();
     params.add(cTele(false, cvars(x), cUniverseStd(1)));
     params.add(cTele(cvars(ref(null)), cUniverseStd(1)));
     params.add(cTele(false, cvars(y, z), cUniverseStd(1)));
