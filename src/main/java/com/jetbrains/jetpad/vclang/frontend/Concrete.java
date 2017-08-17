@@ -1505,7 +1505,7 @@ public final class Concrete {
   }
 
   public static class NamespaceCommandStatement extends Statement implements OpenCommand, LegacyAbstract.NamespaceCommandStatement {
-    private Abstract.Definition myDefinition;
+    private Abstract.GlobalReferableSourceNode myDefinition;
     private final ModulePath myModulePath;
     private final List<String> myPath;
     private final boolean myHiding;
@@ -1538,12 +1538,12 @@ public final class Concrete {
       return myPath;
     }
 
-    void setResolvedClass(Abstract.Definition resolvedClass) {
+    void setResolvedClass(Abstract.GlobalReferableSourceNode resolvedClass) {
       myDefinition = resolvedClass;
     }
 
     @Override
-    public Abstract.Definition getResolvedClass() {
+    public Abstract.GlobalReferableSourceNode getResolvedClass() {
       return myDefinition;
     }
 

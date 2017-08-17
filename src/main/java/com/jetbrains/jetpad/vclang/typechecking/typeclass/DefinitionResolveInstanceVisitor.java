@@ -117,7 +117,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
   }
 
   private Stream<Scope> processOpenCommand(OpenCommand cmd) {
-    Scope scope = myScopeProvider.forDefinition(cmd.getResolvedClass());
+    Scope scope = myScopeProvider.forDefinition((Abstract.Definition) cmd.getResolvedClass());
     if (cmd.getNames() != null) {
       scope = new FilteredScope(scope, new HashSet<>(cmd.getNames()), !cmd.isHiding());
     }

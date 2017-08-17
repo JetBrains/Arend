@@ -26,7 +26,7 @@ public class MergeScope implements MergingScope {
     return StreamSupport.stream(myScopes.spliterator(), false).flatMap(s -> s.getNames().stream()).collect(Collectors.toSet());
   }
 
-  private InvalidScopeException createException(final Abstract.Definition ref1, final Abstract.Definition ref2) {
+  private InvalidScopeException createException(final Abstract.ReferableSourceNode ref1, final Abstract.ReferableSourceNode ref2) {
     return new InvalidScopeException() {
       @Override
       public GeneralError toError() {
@@ -37,10 +37,10 @@ public class MergeScope implements MergingScope {
   }
 
   @Override
-  public Abstract.Definition resolveName(String name) {
-    Abstract.Definition resolved = null;
+  public Abstract.ReferableSourceNode resolveName(String name) {
+    Abstract.ReferableSourceNode resolved = null;
     for (Scope scope : myScopes) {
-      Abstract.Definition ref = scope.resolveName(name);
+      Abstract.ReferableSourceNode ref = scope.resolveName(name);
       if (ref != null) {
         if (resolved == null) {
           resolved = ref;
@@ -53,13 +53,13 @@ public class MergeScope implements MergingScope {
   }
 
   @Override
-  public void findIntroducedDuplicateNames(BiConsumer<Abstract.Definition, Abstract.Definition> reporter) {
-    Multimap<String, Abstract.Definition> known = HashMultimap.create();
+  public void findIntroducedDuplicateNames(BiConsumer<Abstract.ReferableSourceNode, Abstract.ReferableSourceNode> reporter) {
+    Multimap<String, Abstract.ReferableSourceNode> known = HashMultimap.create();
     for (Scope scope : myScopes) {
       for (String name : scope.getNames()) {
         try {
-          Abstract.Definition ref = scope.resolveName(name);
-          for (Abstract.Definition prev : known.get(name)) {
+          Abstract.ReferableSourceNode ref = scope.resolveName(name);
+          for (Abstract.ReferableSourceNode prev : known.get(name)) {
             if (prev != ref) {
               reporter.accept(ref, prev);
             }

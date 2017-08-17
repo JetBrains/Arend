@@ -21,8 +21,8 @@ public class OverridingScope implements Scope {
   }
 
   @Override
-  public Abstract.Definition resolveName(String name) {
-    Abstract.Definition ref = myChild.resolveName(name);
+  public Abstract.ReferableSourceNode resolveName(String name) {
+    Abstract.ReferableSourceNode ref = myChild.resolveName(name);
     return ref != null ? ref : myParent.resolveName(name);
   }
 

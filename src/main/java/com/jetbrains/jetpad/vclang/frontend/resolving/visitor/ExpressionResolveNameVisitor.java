@@ -271,7 +271,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
       Abstract.NamePattern namePattern = (Abstract.NamePattern) pattern;
       String name = namePattern.getName();
       if (name == null) return null;
-      Abstract.Definition ref = myParentScope.resolveName(name);
+      Abstract.ReferableSourceNode ref = myParentScope.resolveName(name);
       if (ref != null) {
         if (ref instanceof Abstract.Constructor) {
           return (Abstract.Constructor) ref;
@@ -297,7 +297,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
       }
       if (((Abstract.ConstructorPattern) pattern).getConstructor() != null) {
         String name = ((Abstract.ConstructorPattern) pattern).getConstructorName();
-        Abstract.Definition def = myParentScope.resolveName(name);
+        Abstract.ReferableSourceNode def = myParentScope.resolveName(name);
         if (def instanceof Abstract.Constructor) {
           return (Abstract.Constructor) def;
         }
@@ -315,7 +315,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
     if (pattern instanceof Abstract.ConstructorPattern) {
       if (((Abstract.ConstructorPattern) pattern).getConstructor() == null) {
         String name = ((Abstract.ConstructorPattern) pattern).getConstructorName();
-        Abstract.Definition definition = myParentScope.resolveName(name);
+        Abstract.ReferableSourceNode definition = myParentScope.resolveName(name);
         if (definition instanceof Abstract.Constructor) {
           myResolveListener.patternResolved((Abstract.ConstructorPattern) pattern, (Abstract.Constructor) definition);
         } else {

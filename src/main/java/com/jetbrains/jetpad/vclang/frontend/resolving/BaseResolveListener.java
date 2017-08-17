@@ -14,7 +14,7 @@ public class BaseResolveListener implements ResolveListener {
   }
 
   @Override
-  public void openCmdResolved(OpenCommand openCmd, Abstract.Definition definition) {
+  public void openCmdResolved(OpenCommand openCmd, Abstract.GlobalReferableSourceNode definition) {
 
   }
 

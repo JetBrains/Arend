@@ -49,7 +49,7 @@ public class LegacyAbstract {
     @Nullable ModulePath getModulePath();
     @Nonnull List<String> getPath();
 
-    @Nullable Abstract.Definition getResolvedClass();
+    @Nullable Abstract.GlobalReferableSourceNode getResolvedClass();
 
     boolean isHiding();
     @Nullable List<String> getNames();
@@ -76,7 +76,7 @@ public class LegacyAbstract {
 
         @Nullable
         @Override
-        public Abstract.Definition getResolvedClass() {
+        public Abstract.GlobalReferableSourceNode getResolvedClass() {
           return openCommand.getResolvedClass();
         }
 

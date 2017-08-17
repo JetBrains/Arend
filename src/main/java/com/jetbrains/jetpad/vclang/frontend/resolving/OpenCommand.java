@@ -10,7 +10,7 @@ import java.util.List;
 public interface OpenCommand extends Abstract.SourceNode {
   @Nullable ModulePath getModulePath();
   @Nonnull List<String> getPath();
-  @Nullable Abstract.Definition getResolvedClass();
+  @Nullable Abstract.GlobalReferableSourceNode getResolvedClass();
 
   boolean isHiding();
   @Nullable List<String> getNames();

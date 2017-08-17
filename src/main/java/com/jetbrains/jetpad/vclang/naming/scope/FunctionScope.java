@@ -28,7 +28,7 @@ public class FunctionScope extends OverridingScope implements MergingScope {
   }
 
   @Override
-  public void findIntroducedDuplicateNames(BiConsumer<Abstract.Definition, Abstract.Definition> reporter) {
+  public void findIntroducedDuplicateNames(BiConsumer<Abstract.ReferableSourceNode, Abstract.ReferableSourceNode> reporter) {
     myMerging.findIntroducedDuplicateNames(reporter);
   }
 

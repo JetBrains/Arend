@@ -332,7 +332,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
 
   private Stream<Scope> processOpenCommand(OpenCommand cmd, Scope currentScope) {
     if (cmd.getResolvedClass() == null) {
-      final Abstract.Definition referredClass;
+      final Abstract.GlobalReferableSourceNode referredClass;
       if (cmd.getModulePath() == null) {
         if (cmd.getPath().isEmpty()) {
           myErrorReporter.report(new GeneralError("Structure error: empty namespace command", cmd));
@@ -368,7 +368,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     return Stream.of(scope);
   }
 
-  private void warnDuplicate(Abstract.Definition ref1, Abstract.Definition ref2) {
+  private void warnDuplicate(Abstract.ReferableSourceNode ref1, Abstract.ReferableSourceNode ref2) {
     myErrorReporter.report(new DuplicateNameError(Error.Level.WARNING, ref1, ref2, ref1));
   }
 }

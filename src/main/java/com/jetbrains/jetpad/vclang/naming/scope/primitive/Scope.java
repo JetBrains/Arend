@@ -8,7 +8,7 @@ import java.util.Set;
 
 public interface Scope {
   Set<String> getNames();
-  Abstract.Definition resolveName(String name);
+  Abstract.ReferableSourceNode resolveName(String name);
 
   Collection<? extends Abstract.ClassViewInstance> getInstances();
 

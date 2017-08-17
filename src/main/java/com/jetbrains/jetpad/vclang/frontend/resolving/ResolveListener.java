@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 public interface ResolveListener {
   void nameResolved(Abstract.ReferenceExpression referenceExpression, Abstract.ReferableSourceNode referable);
   void moduleResolved(Abstract.ModuleCallExpression moduleCallExpression, Abstract.Definition definition);
-  void openCmdResolved(OpenCommand openCmd, Abstract.Definition definition);
+  void openCmdResolved(OpenCommand openCmd, Abstract.GlobalReferableSourceNode definition);
   void implementResolved(Abstract.Implementation identifier, Abstract.ClassField definition);
   void implementResolved(Abstract.ClassFieldImpl identifier, Abstract.ClassField definition);
   void classViewResolved(Abstract.ClassView classView, Abstract.ClassField classifyingField);

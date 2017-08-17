@@ -49,20 +49,20 @@ public class NameResolver {
     return ns;
   }
 
-  public Abstract.Definition resolveDefinition(final Scope currentScope, final List<String> path) {
+  public Abstract.GlobalReferableSourceNode resolveDefinition(final Scope currentScope, final List<String> path) {
     if (path.isEmpty()) {
       throw new IllegalArgumentException();
     } else {
       Scope scope = currentScope;
-      Abstract.Definition ref = null;
+      Abstract.ReferableSourceNode ref = null;
       for (String name : path) {
         ref = scope.resolveName(name);
-        if (ref == null) {
+        if (!(ref instanceof Abstract.GlobalReferableSourceNode)) {
           return null;
         }
-        scope = new NamespaceScope(nsProviders.statics.forReferable(ref));
+        scope = new NamespaceScope(nsProviders.statics.forReferable((Abstract.GlobalReferableSourceNode) ref));
       }
-      return ref;
+      return (Abstract.GlobalReferableSourceNode) ref;
     }
   }
 

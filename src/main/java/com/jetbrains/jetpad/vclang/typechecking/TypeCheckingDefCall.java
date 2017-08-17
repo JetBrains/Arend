@@ -214,7 +214,7 @@ public class TypeCheckingDefCall {
 
     Expression thisExpr = null;
     final Definition leftDefinition;
-    Abstract.Definition member = null;
+    Abstract.ReferableSourceNode member = null;
     ClassCallExpression classCall = result.expression.checkedCast(ClassCallExpression.class);
     if (classCall != null) {
       // Static call
@@ -253,7 +253,7 @@ public class TypeCheckingDefCall {
           }
           member = scope.resolveName(name);
         }
-        if (member == null) {
+        if (!(member instanceof Abstract.GlobalReferableSourceNode)) {
           MemberNotFoundError error = new MemberNotFoundError(leftDefinition, name, expr);
           expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
           myVisitor.getErrorReporter().report(error);
@@ -263,7 +263,7 @@ public class TypeCheckingDefCall {
     }
 
     if (member != null) {
-      typeCheckedDefinition = getTypeCheckedDefinition(member, expr);
+      typeCheckedDefinition = getTypeCheckedDefinition((Abstract.GlobalReferableSourceNode) member, expr);
       if (typeCheckedDefinition == null) {
         return null;
       }

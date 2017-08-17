@@ -27,7 +27,7 @@ public class FilteredScope implements Scope {
   }
 
   @Override
-  public Abstract.Definition resolveName(String name) {
+  public Abstract.ReferableSourceNode resolveName(String name) {
     if (myInclude) {
       return myNames.contains(name) ? myScope.resolveName(name) : null;
     } else {
