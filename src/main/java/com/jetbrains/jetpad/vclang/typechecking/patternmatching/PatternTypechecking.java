@@ -17,6 +17,7 @@ import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.DataTypeNotEmptyError;
@@ -60,12 +61,12 @@ public class PatternTypechecking {
     // If we have the absurd pattern, then RHS is ignored
     if (result.proj2 == null) {
       if (clause.getExpression() != null) {
-        myErrorReporter.report(new LocalTypeCheckingError(Error.Level.WARNING, "The RHS is ignored", clause.getExpression()));
+        myErrorReporter.report(new LocalTypeCheckingError(Error.Level.WARNING, "The RHS is ignored", (Concrete.SourceNode) clause.getExpression()));
       }
       return new Pair<>(result.proj1, null);
     } else {
       if (clause.getExpression() == null) {
-        myErrorReporter.report(new LocalTypeCheckingError("Required a RHS", clause));
+        myErrorReporter.report(new LocalTypeCheckingError("Required a RHS", (Concrete.SourceNode) clause));
         return null;
       }
     }
@@ -189,7 +190,7 @@ public class PatternTypechecking {
 
     for (Abstract.Pattern pattern : patterns) {
       if (!parameters.hasNext()) {
-        myErrorReporter.report(new LocalTypeCheckingError("Too many patterns", pattern));
+        myErrorReporter.report(new LocalTypeCheckingError("Too many patterns", (Concrete.SourceNode) pattern));
         return null;
       }
 
@@ -202,13 +203,13 @@ public class PatternTypechecking {
             }
             parameters = parameters.getNext();
             if (!parameters.hasNext()) {
-              myErrorReporter.report(new LocalTypeCheckingError("Too many patterns", pattern));
+              myErrorReporter.report(new LocalTypeCheckingError("Too many patterns", (Concrete.SourceNode) pattern));
               return null;
             }
           }
         } else {
           if (parameters.isExplicit()) {
-            myErrorReporter.report(new LocalTypeCheckingError("Expected an explicit pattern", pattern));
+            myErrorReporter.report(new LocalTypeCheckingError("Expected an explicit pattern", (Concrete.SourceNode) pattern));
             return null;
           }
         }
@@ -216,7 +217,7 @@ public class PatternTypechecking {
 
       if (exprs == null || pattern == null || pattern instanceof Abstract.NamePattern) {
         if (!(pattern == null || pattern instanceof Abstract.NamePattern)) {
-          myErrorReporter.report(new LocalTypeCheckingError(Error.Level.WARNING, "This pattern is ignored", pattern));
+          myErrorReporter.report(new LocalTypeCheckingError(Error.Level.WARNING, "This pattern is ignored", (Concrete.SourceNode) pattern));
         }
         if (pattern instanceof Abstract.NamePattern) {
           String name = ((Abstract.NamePattern) pattern).getName();
@@ -237,19 +238,19 @@ public class PatternTypechecking {
 
       Expression expr = parameters.getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF);
       if (!expr.isInstance(DataCallExpression.class)) {
-        myErrorReporter.report(new TypeMismatchError(DocFactory.text("a data type"), DocFactory.termDoc(expr), pattern));
+        myErrorReporter.report(new TypeMismatchError(DocFactory.text("a data type"), DocFactory.termDoc(expr), (Concrete.SourceNode) pattern));
         return null;
       }
       DataCallExpression dataCall = expr.cast(DataCallExpression.class);
       if (!myFlags.contains(Flag.ALLOW_INTERVAL) && dataCall.getDefinition() == Prelude.INTERVAL) {
-        myErrorReporter.report(new LocalTypeCheckingError("Pattern matching on the interval is not allowed here", pattern));
+        myErrorReporter.report(new LocalTypeCheckingError("Pattern matching on the interval is not allowed here", (Concrete.SourceNode) pattern));
         return null;
       }
 
       if (pattern instanceof Abstract.EmptyPattern) {
         List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
         if (conCalls == null) {
-          myErrorReporter.report(new LocalTypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", pattern));
+          myErrorReporter.report(new LocalTypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", (Concrete.SourceNode) pattern));
           return null;
         }
         if (!conCalls.isEmpty()) {
@@ -257,7 +258,7 @@ public class PatternTypechecking {
           for (ConCallExpression conCall : conCalls) {
             constructors.add(conCall.getDefinition());
           }
-          myErrorReporter.report(new DataTypeNotEmptyError(dataCall, constructors, pattern));
+          myErrorReporter.report(new DataTypeNotEmptyError(dataCall, constructors, (Concrete.SourceNode) pattern));
           return null;
         }
         result.add(EmptyPattern.INSTANCE);
@@ -274,12 +275,12 @@ public class PatternTypechecking {
       Constructor constructor = dataCall.getDefinition().getConstructor(conPattern.getConstructor());
       List<ConCallExpression> conCalls = new ArrayList<>(1);
       if (constructor == null || !dataCall.getMatchedConCall(constructor, conCalls) || conCalls.isEmpty() ) {
-        myErrorReporter.report(new WrongConstructorError(conPattern.getConstructor(), dataCall, pattern));
+        myErrorReporter.report(new WrongConstructorError(conPattern.getConstructor(), dataCall, (Concrete.SourceNode) pattern));
         return null;
       }
       ConCallExpression conCall = conCalls.get(0);
       if (!myFlags.contains(Flag.ALLOW_CONDITIONS) && conCall.getDefinition().getBody() != null) {
-        myErrorReporter.report(new LocalTypeCheckingError("Pattern matching on a constructor with conditions is not allowed here", pattern));
+        myErrorReporter.report(new LocalTypeCheckingError("Pattern matching on a constructor with conditions is not allowed here", (Concrete.SourceNode) pattern));
         return null;
       }
 
@@ -315,7 +316,7 @@ public class PatternTypechecking {
     }
 
     if (parameters.hasNext()) {
-      myErrorReporter.report(new LocalTypeCheckingError("Not enough patterns, expected " + DependentLink.Helper.size(parameters) + " more", sourceNode));
+      myErrorReporter.report(new LocalTypeCheckingError("Not enough patterns, expected " + DependentLink.Helper.size(parameters) + " more", (Concrete.SourceNode) sourceNode));
       return null;
     }
 

@@ -1,9 +1,10 @@
 package com.jetbrains.jetpad.vclang.frontend.text.parser;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
+import com.jetbrains.jetpad.vclang.naming.error.NamingError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.List;
 
@@ -48,7 +49,7 @@ public class BinOpParser {
 
       if (!(topElem.prec.priority > prec.priority || (topElem.prec.priority == prec.priority && topElem.prec.associativity == Abstract.Precedence.Associativity.LEFT_ASSOC && (ignoreAssoc || prec.associativity == Abstract.Precedence.Associativity.LEFT_ASSOC)))) {
         String msg = "Precedence parsing error: cannot mix (" + topElem.binOp.getName() + ") [" + topElem.prec + "] and (" + binOp.getName() + ") [" + prec + "] in the same infix expression";
-        myErrorReporter.report(new GeneralError(msg, var));
+        myErrorReporter.report(new NamingError(msg, (Concrete.SourceNode) var /* TODO[abstract] */));
       }
     }
 

@@ -3,15 +3,12 @@ package com.jetbrains.jetpad.vclang.frontend.resolving.visitor;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OpenCommand;
 import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
+import com.jetbrains.jetpad.vclang.naming.error.*;
 import com.jetbrains.jetpad.vclang.naming.error.NoSuchFieldError;
-import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
-import com.jetbrains.jetpad.vclang.naming.error.WrongReferable;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.scope.DataScope;
@@ -24,6 +21,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.primitive.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.provider.ParserInfoProvider;
 
 import java.util.*;
@@ -243,7 +241,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     if (referable != null) {
       myResolveListener.implementResolved(def, referable);
     } else {
-      myErrorReporter.report(new NoSuchFieldError(def.getName(), def));
+      myErrorReporter.report(new NoSuchFieldError(def.getName(), (Concrete.SourceNode) def));
     }
 
     def.getImplementation().accept(new ExpressionResolveNameVisitor(parentScope, myContext, myNameResolver, myInfoProvider, myResolveListener, myErrorReporter), null);
@@ -256,7 +254,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     Abstract.ReferableSourceNode resolvedUnderlyingClass = def.getUnderlyingClassReference().getReferent();
     if (!(resolvedUnderlyingClass instanceof Abstract.ClassDefinition)) {
       if (resolvedUnderlyingClass != null) {
-        myErrorReporter.report(new WrongReferable("Expected a class", resolvedUnderlyingClass, def));
+        myErrorReporter.report(new WrongReferable("Expected a class", resolvedUnderlyingClass, (Concrete.SourceNode) def));
       }
       return null;
     }
@@ -264,7 +262,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     Namespace dynamicNamespace = myNameResolver.nsProviders.dynamics.forClass((Abstract.ClassDefinition) resolvedUnderlyingClass);
     Abstract.Definition resolvedClassifyingField = dynamicNamespace.resolveName(def.getClassifyingFieldName());
     if (!(resolvedClassifyingField instanceof Abstract.ClassField)) {
-      myErrorReporter.report(resolvedClassifyingField != null ? new WrongReferable("Expected a class field", resolvedClassifyingField, def) : new NotInScopeError(def.getClassifyingFieldName(), def));
+      myErrorReporter.report(resolvedClassifyingField != null ? new WrongReferable("Expected a class field", resolvedClassifyingField, (Concrete.SourceNode) def) : new NotInScopeError(def.getClassifyingFieldName(), (Concrete.SourceNode) def));
       return null;
     }
 
@@ -275,7 +273,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
       if (classField != null) {
         myResolveListener.classViewFieldResolved(viewField, classField);
       } else {
-        myErrorReporter.report(new NoSuchFieldError(def.getName(), def));
+        myErrorReporter.report(new NoSuchFieldError(def.getName(), (Concrete.SourceNode) def));
       }
     }
     return null;
@@ -305,15 +303,15 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
             if (expr instanceof Abstract.ReferenceExpression && ((Abstract.ReferenceExpression) expr).getReferent() instanceof Abstract.GlobalReferableSourceNode) {
               myResolveListener.classViewInstanceResolved(def, (Abstract.GlobalReferableSourceNode) ((Abstract.ReferenceExpression) expr).getReferent());
             } else {
-              myErrorReporter.report(new GeneralError("Expected a definition applied to arguments", impl.getImplementation()));
+              myErrorReporter.report(new NamingError("Expected a definition applied to arguments", (Concrete.SourceNode) impl.getImplementation()));
             }
           }
         }
         if (!ok) {
-          myErrorReporter.report(new GeneralError("Classifying field is not implemented", def));
+          myErrorReporter.report(new NamingError("Classifying field is not implemented", (Concrete.SourceNode) def));
         }
       } else {
-        myErrorReporter.report(new WrongReferable("Expected a class view", def.getClassView().getReferent(), def));
+        myErrorReporter.report(new WrongReferable("Expected a class view", def.getClassView().getReferent(), (Concrete.SourceNode) def));
       }
     }
 
@@ -335,7 +333,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
       final Abstract.GlobalReferableSourceNode referredClass;
       if (cmd.getModulePath() == null) {
         if (cmd.getPath().isEmpty()) {
-          myErrorReporter.report(new GeneralError("Structure error: empty namespace command", cmd));
+          myErrorReporter.report(new NamingError("Structure error: empty namespace command", (Concrete.SourceNode) cmd));
           return Stream.empty();
         }
         referredClass = myNameResolver.resolveDefinition(currentScope, cmd.getPath());
@@ -343,7 +341,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
         ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(cmd.getModulePath());
         Abstract.ClassDefinition moduleClass = moduleNamespace != null ? moduleNamespace.getRegisteredClass() : null;
         if (moduleClass == null) {
-          myErrorReporter.report(new GeneralError("Module not found: " + cmd.getModulePath(), cmd));
+          myErrorReporter.report(new NamingError("Module not found: " + cmd.getModulePath(), (Concrete.SourceNode) cmd));
           return Stream.empty();
         }
         if (cmd.getPath().isEmpty()) {
@@ -354,7 +352,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
       }
 
       if (referredClass == null) {
-        myErrorReporter.report(new GeneralError("Class not found", cmd));
+        myErrorReporter.report(new NamingError("Class not found", (Concrete.SourceNode) cmd));
         return Stream.empty();
       }
       myResolveListener.openCmdResolved(cmd, referredClass);
@@ -369,6 +367,6 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
   }
 
   private void warnDuplicate(Abstract.ReferableSourceNode ref1, Abstract.ReferableSourceNode ref2) {
-    myErrorReporter.report(new DuplicateNameError(Error.Level.WARNING, ref1, ref2, ref1));
+    myErrorReporter.report(new DuplicateNameError(Error.Level.WARNING, ref1, ref2, (Concrete.SourceNode) ref1));
   }
 }

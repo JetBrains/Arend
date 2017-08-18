@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.core.context.binding.inference;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
@@ -20,11 +21,11 @@ public class LambdaInferenceVariable extends InferenceVariable {
 
   @Override
   public LocalTypeCheckingError getErrorInfer(Expression... candidates) {
-    return new ArgInferenceError(myLevel ? ArgInferenceError.levelOfLambdaArg(myIndex) : ArgInferenceError.lambdaArg(myIndex), getSourceNode(), candidates);
+    return new ArgInferenceError(myLevel ? ArgInferenceError.levelOfLambdaArg(myIndex) : ArgInferenceError.lambdaArg(myIndex), (Concrete.SourceNode) getSourceNode(), candidates);
   }
 
   @Override
   public LocalTypeCheckingError getErrorMismatch(Expression expectedType, Expression actualType, Expression candidate) {
-    return new ArgInferenceError(myLevel ? ArgInferenceError.levelOfLambdaArg(myIndex) : ArgInferenceError.lambdaArg(myIndex), expectedType, actualType, getSourceNode(), candidate);
+    return new ArgInferenceError(myLevel ? ArgInferenceError.levelOfLambdaArg(myIndex) : ArgInferenceError.lambdaArg(myIndex), expectedType, actualType, (Concrete.SourceNode) getSourceNode(), candidate);
   }
 }

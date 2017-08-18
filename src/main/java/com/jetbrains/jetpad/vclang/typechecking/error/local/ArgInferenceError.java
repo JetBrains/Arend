@@ -3,28 +3,28 @@ package com.jetbrains.jetpad.vclang.typechecking.error.local;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
+import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class ArgInferenceError extends LocalTypeCheckingError {
+public class ArgInferenceError<T> extends LocalTypeCheckingError<T> {
   public final Expression[] candidates;
   public final Expression expected;
   public final Expression actual;
 
-  public ArgInferenceError(String message, Abstract.SourceNode expression, Expression[] candidates) {
-    super(message, expression);
+  public ArgInferenceError(String message, Concrete.SourceNode<T> cause, Expression[] candidates) {
+    super(message, cause);
     this.candidates = candidates;
     this.expected = null;
     this.actual = null;
   }
 
-  public ArgInferenceError(String message, Expression expected, Expression actual, Abstract.SourceNode expression, Expression candidate) {
-    super(message, expression);
+  public ArgInferenceError(String message, Expression expected, Expression actual, Concrete.SourceNode<T> cause, Expression candidate) {
+    super(message, cause);
     this.candidates = new Expression[1];
     this.candidates[0] = candidate;
     this.expected = expected;
@@ -76,7 +76,7 @@ public class ArgInferenceError extends LocalTypeCheckingError {
   }
 
   @Override
-  public Doc getBodyDoc(SourceInfoProvider src) {
+  public Doc getBodyDoc(PrettyPrinterInfoProvider src) {
     return vList(
       candidates.length == 0
         ? nullDoc()

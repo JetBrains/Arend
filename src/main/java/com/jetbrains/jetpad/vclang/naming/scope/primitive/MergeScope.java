@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.Collection;
@@ -30,7 +31,7 @@ public class MergeScope implements MergingScope {
     return new InvalidScopeException() {
       @Override
       public GeneralError toError() {
-        return new DuplicateNameError(Error.Level.ERROR, ref1, ref2, ref1);
+        return new DuplicateNameError(Error.Level.ERROR, ref1, ref2, (Concrete.SourceNode) ref1);
       }
     };
 

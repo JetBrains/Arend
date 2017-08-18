@@ -11,6 +11,8 @@ import com.jetbrains.jetpad.vclang.term.legacy.LegacyAbstract;
 import com.jetbrains.jetpad.vclang.term.legacy.LegacyAbstractStatementVisitor;
 import com.jetbrains.jetpad.vclang.term.legacy.ToTextVisitor;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
+import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 
 import javax.annotation.Nonnull;
@@ -25,7 +27,7 @@ import java.util.stream.Stream;
 public final class Concrete {
   private Concrete() {}
 
-  public static class SourceNode<T> implements Abstract.SourceNode {
+  public static class SourceNode<T> implements Abstract.SourceNode, PrettyPrintable {
     private final T myData;
 
     public SourceNode(T data) {
@@ -34,6 +36,11 @@ public final class Concrete {
 
     public T getData() {
       return myData;
+    }
+
+    @Override
+    public String prettyPrint(PrettyPrinterInfoProvider infoProvider) {
+      return PrettyPrintVisitor.prettyPrint(this, infoProvider);
     }
   }
 
@@ -117,6 +124,8 @@ public final class Concrete {
     public void setWellTyped(Map<Abstract.ReferableSourceNode, Binding> context, com.jetbrains.jetpad.vclang.core.expr.Expression wellTyped) {
     }
 
+    public abstract <P, R> R accept(ConcreteExpressionVisitor<T, ? super P, ? extends R> visitor, P params);
+
     @Override
     public String toString() {
       StringBuilder builder = new StringBuilder();
@@ -179,6 +188,11 @@ public final class Concrete {
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitApp(this, params);
     }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
+      return visitor.visitApp(this, params);
+    }
   }
 
   public static class BinOpSequenceExpression<T> extends Expression<T> implements Abstract.BinOpSequenceExpression {
@@ -208,8 +222,8 @@ public final class Concrete {
       return new BinOpExpression<T>(((Expression<T>) var).getData(), (Expression) left, binOp, (Expression) right); // TODO[abstract]
     }
 
-    public Expression makeError(Abstract.SourceNode node) {
-      return new InferHoleExpression<>(((SourceNode<T>) node).getData());
+    public Expression makeError(Object node /* TODO[abstract] */) {
+      return new InferHoleExpression<>((T) node);
     }
 
     public void replace(Abstract.Expression expression) {
@@ -219,6 +233,11 @@ public final class Concrete {
 
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitBinOpSequence(this, params);
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
       return visitor.visitBinOpSequence(this, params);
     }
   }
@@ -260,6 +279,11 @@ public final class Concrete {
 
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitBinOp(this, params);
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
       return visitor.visitBinOp(this, params);
     }
   }
@@ -307,6 +331,11 @@ public final class Concrete {
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitReference(this, params);
     }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
+      return visitor.visitReference(this, params);
+    }
   }
 
   public static class InferenceReferenceExpression<T> extends Expression<T> implements Abstract.InferenceReferenceExpression {
@@ -324,6 +353,11 @@ public final class Concrete {
 
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitInferenceReference(this, params);
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
       return visitor.visitInferenceReference(this, params);
     }
   }
@@ -356,6 +390,11 @@ public final class Concrete {
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitModuleCall(this, params);
     }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
+      return visitor.visitModuleCall(this, params);
+    }
   }
 
   public static class ClassExtExpression<T> extends Expression<T> implements Abstract.ClassExtExpression {
@@ -382,6 +421,11 @@ public final class Concrete {
 
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitClassExt(this, params);
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
       return visitor.visitClassExt(this, params);
     }
   }
@@ -438,6 +482,11 @@ public final class Concrete {
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitNew(this, params);
     }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
+      return visitor.visitNew(this, params);
+    }
   }
 
   public static class GoalExpression<T> extends Expression<T> implements Abstract.GoalExpression {
@@ -464,11 +513,21 @@ public final class Concrete {
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitGoal(this, params);
     }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
+      return visitor.visitGoal(this, params);
+    }
   }
 
   public static class InferHoleExpression<T> extends Expression<T> implements Abstract.InferHoleExpression {
     public InferHoleExpression(T data) {
       super(data);
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
+      return visitor.visitInferHole(this, params);
     }
 
     @Override
@@ -501,6 +560,11 @@ public final class Concrete {
 
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitLam(this, params);
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
       return visitor.visitLam(this, params);
     }
   }
@@ -568,6 +632,11 @@ public final class Concrete {
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitLet(this, params);
     }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
+      return visitor.visitLet(this, params);
+    }
   }
 
   public static class PiExpression<T> extends Expression<T> implements Abstract.PiExpression {
@@ -596,6 +665,11 @@ public final class Concrete {
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitPi(this, params);
     }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
+      return visitor.visitPi(this, params);
+    }
   }
 
   public static class SigmaExpression<T> extends Expression<T> implements Abstract.SigmaExpression {
@@ -616,6 +690,11 @@ public final class Concrete {
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitSigma(this, params);
     }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
+      return visitor.visitSigma(this, params);
+    }
   }
 
   public static class TupleExpression<T> extends Expression<T> implements Abstract.TupleExpression {
@@ -634,6 +713,11 @@ public final class Concrete {
 
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitTuple(this, params);
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
       return visitor.visitTuple(this, params);
     }
   }
@@ -664,6 +748,11 @@ public final class Concrete {
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitUniverse(this, params);
     }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
+      return visitor.visitUniverse(this, params);
+    }
   }
 
   public static class ProjExpression<T> extends Expression<T> implements Abstract.ProjExpression {
@@ -689,6 +778,11 @@ public final class Concrete {
 
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitProj(this, params);
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
       return visitor.visitProj(this, params);
     }
   }
@@ -717,6 +811,11 @@ public final class Concrete {
 
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitCase(this, params);
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
       return visitor.visitCase(this, params);
     }
   }
@@ -766,6 +865,11 @@ public final class Concrete {
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitNumericLiteral(this, params);
     }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
+      return visitor.visitNumericLiteral(this, params);
+    }
   }
 
   // Level expressions
@@ -774,6 +878,8 @@ public final class Concrete {
     protected LevelExpression(T data) {
       super(data);
     }
+
+    public abstract <P, R> R accept(ConcreteLevelExpressionVisitor<T, ? super P, ? extends R> visitor, P params);
   }
 
   public static class InferVarLevelExpression<T> extends LevelExpression<T> implements Abstract.InferVarLevelExpression {
@@ -794,11 +900,21 @@ public final class Concrete {
     public <P, R> R accept(AbstractLevelExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitVar(this, params);
     }
+
+    @Override
+    public <P, R> R accept(ConcreteLevelExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
+      return visitor.visitVar(this, params);
+    }
   }
 
   public static class PLevelExpression<T> extends LevelExpression<T> implements Abstract.PLevelExpression {
     public PLevelExpression(T data) {
       super(data);
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteLevelExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
+      return visitor.visitLP(this, params);
     }
 
     @Override
@@ -813,6 +929,11 @@ public final class Concrete {
     }
 
     @Override
+    public <P, R> R accept(ConcreteLevelExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
+      return visitor.visitLH(this, params);
+    }
+
+    @Override
     public <P, R> R accept(AbstractLevelExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitLH(this, params);
     }
@@ -821,6 +942,11 @@ public final class Concrete {
   public static class InfLevelExpression<T> extends LevelExpression<T> implements Abstract.InfLevelExpression {
     public InfLevelExpression(T data) {
       super(data);
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteLevelExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
+      return visitor.visitInf(this, params);
     }
 
     @Override
@@ -846,6 +972,11 @@ public final class Concrete {
     public <P, R> R accept(AbstractLevelExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitNumber(this, params);
     }
+
+    @Override
+    public <P, R> R accept(ConcreteLevelExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
+      return visitor.visitNumber(this, params);
+    }
   }
 
   public static class SucLevelExpression<T> extends LevelExpression<T> implements Abstract.SucLevelExpression {
@@ -864,6 +995,11 @@ public final class Concrete {
 
     @Override
     public <P, R> R accept(AbstractLevelExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitSuc(this, params);
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteLevelExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
       return visitor.visitSuc(this, params);
     }
   }
@@ -892,6 +1028,11 @@ public final class Concrete {
 
     @Override
     public <P, R> R accept(AbstractLevelExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitMax(this, params);
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteLevelExpressionVisitor<T, ? super P, ? extends R> visitor, P params) {
       return visitor.visitMax(this, params);
     }
   }

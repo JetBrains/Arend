@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.naming.error.NoSuchFieldError;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.provider.ParserInfoProvider;
 
 import java.util.*;
@@ -78,7 +79,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
                 (((Abstract.ReferenceExpression) expression).getReferent() instanceof Abstract.ClassDefinition
                 || ((Abstract.ReferenceExpression) expression).getReferent() instanceof Abstract.DataDefinition
                 || ((Abstract.ReferenceExpression) expression).getReferent() instanceof Abstract.ClassView)) {
-        myErrorReporter.report(new NotInScopeError(expr.getName(), expr));
+        myErrorReporter.report(new NotInScopeError(expr.getName(), (Concrete.SourceNode) expr));
       }
     }
     return null;
@@ -96,7 +97,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
       if (ref != null) {
         myResolveListener.moduleResolved(expr, ref);
       } else {
-        myErrorReporter.report(new NotInScopeError(expr.getPath().toString(), expr));
+        myErrorReporter.report(new NotInScopeError(expr.getPath().toString(), (Concrete.SourceNode) expr));
       }
     }
     return null;
@@ -115,7 +116,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
             for (int j = 0; j < i; j++) {
               Abstract.ReferableSourceNode referable1 = referableList.get(j);
               if (referable1 != null && referable.getName().equals(referable1.getName())) {
-                myErrorReporter.report(new DuplicateNameError(Error.Level.WARNING, referable1, referable, parameter));
+                myErrorReporter.report(new DuplicateNameError(Error.Level.WARNING, referable1, referable, (Concrete.SourceNode) parameter));
               }
             }
             myContext.add(referable);
@@ -223,7 +224,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
           parser.pushOnStack(stack, expression, ref, ref instanceof Abstract.GlobalReferableSourceNode ? myInfoProvider.precedenceOf((Abstract.GlobalReferableSourceNode) ref) : Abstract.Precedence.DEFAULT, elem.binOp, elem.argument == null);
           expression = elem.argument;
         } else {
-          error = new NotInScopeError(name, elem.binOp);
+          error = new NotInScopeError(name, (Concrete.SourceNode) elem.binOp);
           myErrorReporter.report(error);
         }
       }
@@ -276,13 +277,13 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
         if (ref instanceof Abstract.Constructor) {
           return (Abstract.Constructor) ref;
         } else {
-          myErrorReporter.report(new WrongReferable("Expected a constructor", ref, pattern));
+          myErrorReporter.report(new WrongReferable("Expected a constructor", ref, (Concrete.SourceNode) pattern));
         }
       }
       if (!name.equals("_")) {
         Abstract.NamePattern prev = usedNames.put(name, namePattern);
         if (prev != null) {
-          myErrorReporter.report(new DuplicateNameError(Error.Level.WARNING, namePattern, prev, pattern));
+          myErrorReporter.report(new DuplicateNameError(Error.Level.WARNING, namePattern, prev, (Concrete.SourceNode) pattern));
         }
         myContext.add(namePattern);
       }
@@ -301,7 +302,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
         if (def instanceof Abstract.Constructor) {
           return (Abstract.Constructor) def;
         }
-        myErrorReporter.report(def == null ? new NotInScopeError(name, pattern) : new WrongReferable("Expected a constructor", def, pattern));
+        myErrorReporter.report(def == null ? new NotInScopeError(name, (Concrete.SourceNode) pattern) : new WrongReferable("Expected a constructor", def, (Concrete.SourceNode) pattern));
       }
       return null;
     } else if (pattern instanceof Abstract.EmptyPattern) {
@@ -320,9 +321,9 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
           myResolveListener.patternResolved((Abstract.ConstructorPattern) pattern, (Abstract.Constructor) definition);
         } else {
           if (definition != null) {
-            myErrorReporter.report(new WrongReferable("Expected a constructor", definition, pattern));
+            myErrorReporter.report(new WrongReferable("Expected a constructor", definition, (Concrete.SourceNode) pattern));
           } else {
-            myErrorReporter.report(new UnknownConstructor(name, pattern));
+            myErrorReporter.report(new UnknownConstructor(name, (Concrete.SourceNode) pattern));
           }
         }
       }
@@ -354,7 +355,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
       if (resolvedRef != null) {
         myResolveListener.implementResolved(statement, resolvedRef);
       } else {
-        myErrorReporter.report(new NoSuchFieldError(name, statement));
+        myErrorReporter.report(new NoSuchFieldError(name, (Concrete.SourceNode) statement));
       }
 
       statement.getImplementation().accept(this, null);

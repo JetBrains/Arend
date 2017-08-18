@@ -17,6 +17,7 @@ import com.jetbrains.jetpad.vclang.core.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ConditionsError;
@@ -87,7 +88,7 @@ public class ConditionsChecking {
       for (DependentLink link3 = parameters; link3.hasNext(); link3 = link3.getNext()) {
         defCallArgs2.add(link3 == link2 ? (isLeft2 ? ExpressionFactory.Left() : ExpressionFactory.Right()) : new ReferenceExpression(link3));
       }
-      errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, null, defCallArgs1), definition.getDefCall(Sort.STD, null, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, definition.getAbstractDefinition()));
+      errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, null, defCallArgs1), definition.getDefCall(Sort.STD, null, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, (Concrete.SourceNode) definition.getAbstractDefinition()));
       return false;
     } else {
       return true;
@@ -161,7 +162,7 @@ public class ConditionsChecking {
         }
       }
 
-      errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, null, defCallArgs1), definition.getDefCall(Sort.STD, null, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, clause.clause));
+      errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, null, defCallArgs1), definition.getDefCall(Sort.STD, null, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, (Concrete.SourceNode) clause.clause));
       return false;
     } else {
       return true;
@@ -212,7 +213,7 @@ public class ConditionsChecking {
           args.add(pattern.toExpression());
         }
         Expression expr1 = definition == null ? new CaseExpression(null, null, null, args) : definition.getDefCall(Sort.STD, null, args);
-        errorReporter.report(new ConditionsError(expr1, clause.expression, pair.proj2, pair.proj2, evaluatedExpr1, evaluatedExpr2, clause.clause));
+        errorReporter.report(new ConditionsError(expr1, clause.expression, pair.proj2, pair.proj2, evaluatedExpr1, evaluatedExpr2, (Concrete.SourceNode) clause.clause));
         ok = false;
       }
     }

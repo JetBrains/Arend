@@ -6,7 +6,8 @@ import com.jetbrains.jetpad.vclang.core.expr.type.ExpectedType;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
+import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,14 +16,14 @@ import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class GoalError extends LocalTypeCheckingError {
+public class GoalError<T> extends LocalTypeCheckingError<T> {
   public final String name;
   public final Map<Abstract.ReferableSourceNode, Binding> context;
   public final ExpectedType expectedType;
   public final Expression actualType;
   public final List<Error> errors;
 
-  public GoalError(String name, Map<Abstract.ReferableSourceNode, Binding> context, ExpectedType expectedType, Expression actualType, List<Error> errors, Abstract.Expression expression) {
+  public GoalError(String name, Map<Abstract.ReferableSourceNode, Binding> context, ExpectedType expectedType, Expression actualType, List<Error> errors, Concrete.Expression<T> expression) {
     super(Level.GOAL, "", expression);
     this.name = name;
     this.context = new HashMap<>(context);
@@ -32,7 +33,7 @@ public class GoalError extends LocalTypeCheckingError {
   }
 
   @Override
-  public Doc getBodyDoc(SourceInfoProvider src) {
+  public Doc getBodyDoc(PrettyPrinterInfoProvider src) {
     Doc expectedDoc = expectedType == null ? nullDoc() : hang(text("Expected type:"), typeDoc(expectedType));
     Doc actualDoc = actualType == null ? nullDoc() : hang(text(expectedType != null ? "  Actual type:" : "Type:"), termDoc(actualType));
 

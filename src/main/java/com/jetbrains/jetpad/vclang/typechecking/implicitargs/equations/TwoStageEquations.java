@@ -16,6 +16,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SimpleLevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.SolveEquationError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.SolveEquationsError;
@@ -206,7 +207,7 @@ public class TwoStageEquations implements Equations {
   private void addLevelEquation(LevelVariable var1, LevelVariable var2, int constant, int maxConstant, Abstract.SourceNode sourceNode) {
     // _ <= max(-c, -d), _ <= max(l - c, -d) // 6
     if (constant < 0 && maxConstant < 0 && !(var2 instanceof InferenceLevelVariable)) {
-      myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant, maxConstant)), sourceNode));
+      myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant, maxConstant)), (Concrete.SourceNode) sourceNode));
       return;
     }
 
@@ -256,7 +257,7 @@ public class TwoStageEquations implements Equations {
       }
 
       // l <= max(l - c, +d), l <= max(+-c, +-d) // 4
-      myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant, maxConstant)), sourceNode));
+      myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant, maxConstant)), (Concrete.SourceNode) sourceNode));
     }
   }
 
@@ -264,7 +265,7 @@ public class TwoStageEquations implements Equations {
     if (var instanceof InferenceLevelVariable) {
       addEquation(new LevelEquation<>((InferenceLevelVariable) var), false);
     } else {
-      myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var)), sourceNode));
+      myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var)), (Concrete.SourceNode) sourceNode));
     }
   }
 
@@ -277,7 +278,7 @@ public class TwoStageEquations implements Equations {
   @Override
   public boolean solve(Expression type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode) {
     if (!CompareVisitor.compare(this, cmp, type, expr, sourceNode)) {
-      myVisitor.getErrorReporter().report(new SolveEquationError(type, expr, sourceNode));
+      myVisitor.getErrorReporter().report(new SolveEquationError(type, expr, (Concrete.SourceNode) sourceNode));
       return false;
     } else {
       return true;
@@ -337,7 +338,7 @@ public class TwoStageEquations implements Equations {
     }
     LevelEquation<InferenceLevelVariable> lastEquation = cycle.get(cycle.size() - 1);
     InferenceLevelVariable var = lastEquation.getVariable1() != null ? lastEquation.getVariable1() : lastEquation.getVariable2();
-    myVisitor.getErrorReporter().report(new SolveLevelEquationsError(new ArrayList<LevelEquation<? extends LevelVariable>>(basedCycle), var.getSourceNode()));
+    myVisitor.getErrorReporter().report(new SolveLevelEquationsError(new ArrayList<LevelEquation<? extends LevelVariable>>(basedCycle), (Concrete.SourceNode) var.getSourceNode()));
   }
 
   @Override
@@ -420,7 +421,7 @@ public class TwoStageEquations implements Equations {
       }
     }
     if (!myEquations.isEmpty()) {
-      myVisitor.getErrorReporter().report(new SolveEquationsError(new ArrayList<>(myEquations), sourceNode));
+      myVisitor.getErrorReporter().report(new SolveEquationsError(new ArrayList<>(myEquations), (Concrete.SourceNode) sourceNode));
     }
 
     myEquations.clear();
@@ -471,7 +472,7 @@ public class TwoStageEquations implements Equations {
             List<Equation> eqs = new ArrayList<>(2);
             eqs.add(new Equation(equation.expr, oldResult, CMP.LE, var.getSourceNode()));
             eqs.add(new Equation(equation.expr, newResult, CMP.LE, var.getSourceNode()));
-            myVisitor.getErrorReporter().report(new SolveEquationsError(eqs, var.getSourceNode()));
+            myVisitor.getErrorReporter().report(new SolveEquationsError(eqs, (Concrete.SourceNode) var.getSourceNode()));
           }
           iterator.remove();
         }
@@ -507,7 +508,7 @@ public class TwoStageEquations implements Equations {
                 List<Equation> eqs = new ArrayList<>(2);
                 eqs.add(new Equation(oldSolution, equation.expr, CMP.LE, var.getSourceNode()));
                 eqs.add(new Equation(newSolution, equation.expr, CMP.LE, var.getSourceNode()));
-                myVisitor.getErrorReporter().report(new SolveEquationsError(eqs, var.getSourceNode()));
+                myVisitor.getErrorReporter().report(new SolveEquationsError(eqs, (Concrete.SourceNode) var.getSourceNode()));
               }
             }
           }

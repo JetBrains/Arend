@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.frontend.text.parser;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.module.error.ModuleLoadingError;
-import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
+import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.text;
 
@@ -16,7 +16,7 @@ public class ParserError extends ModuleLoadingError {
   }
 
   @Override
-  public LineDoc getPositionDoc(SourceInfoProvider src) {
+  public LineDoc getPositionDoc(PrettyPrinterInfoProvider src) {
     return text(position.toString());
   }
 }

@@ -14,6 +14,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
@@ -115,7 +116,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     DependentLink param = result.getParameter();
     if (!param.hasNext()) {
       CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations());
-      LocalTypeCheckingError error = new TypeMismatchError(text("A pi type"), termDoc(result1.type), fun);
+      LocalTypeCheckingError error = new TypeMismatchError(text("A pi type"), termDoc(result1.type), (Concrete.SourceNode) fun);
       fun.setWellTyped(myVisitor.getContext(), new ErrorExpression(result1.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;
@@ -127,7 +128,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     if (param.isExplicit() != isExplicit) {
-      LocalTypeCheckingError error = new LocalTypeCheckingError("Expected an " + (param.isExplicit() ? "explicit" : "implicit") + " argument", arg);
+      LocalTypeCheckingError error = new LocalTypeCheckingError("Expected an " + (param.isExplicit() ? "explicit" : "implicit") + " argument", (Concrete.SourceNode) arg);
       arg.setWellTyped(myVisitor.getContext(), new ErrorExpression(argResult.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;
@@ -155,7 +156,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           DataCallExpression dataCall = expectedType instanceof Expression ? ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DataCallExpression.class) : null;
           if (dataCall != null) {
             if (((Constructor) defCallResult.getDefinition()).getDataType() != dataCall.getDefinition()) {
-              LocalTypeCheckingError error = new TypeMismatchError(termDoc(dataCall), refDoc(((Constructor) defCallResult.getDefinition()).getDataType().getAbstractDefinition()), fun);
+              LocalTypeCheckingError error = new TypeMismatchError(termDoc(dataCall), refDoc(((Constructor) defCallResult.getDefinition()).getDataType().getAbstractDefinition()), (Concrete.SourceNode) fun);
               arg.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
               myVisitor.getErrorReporter().report(error);
               return null;
@@ -210,7 +211,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     expectedType.getPiParameters(expectedParams, true);
     if (expectedParams.size() > actualParams.size()) {
       CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations());
-      LocalTypeCheckingError error = new TypeMismatchError(typeDoc(expectedType), termDoc(result1.type), expr);
+      LocalTypeCheckingError error = new TypeMismatchError(typeDoc(expectedType), termDoc(result1.type), (Concrete.SourceNode) expr);
       expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result1.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;

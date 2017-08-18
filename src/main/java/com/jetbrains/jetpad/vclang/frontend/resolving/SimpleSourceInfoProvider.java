@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.frontend.resolving;
 
-import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.FullName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -23,26 +22,6 @@ public class SimpleSourceInfoProvider<SourceIdT extends SourceId> implements Sou
   public String fullNameFor(Abstract.GlobalReferableSourceNode definition) {
     FullName name = names.get(definition);
     return name != null ? name.toString() : definition.getName();
-  }
-
-  @Override
-  public String positionOf(Abstract.SourceNode sourceNode) {
-    if (sourceNode instanceof Concrete.SourceNode) {
-      Position position = ((Concrete.SourceNode<Position>) sourceNode).getData(); // TODO[abstract]
-      return position.line + ":" + position.column;
-    } else {
-      return null;
-    }
-  }
-
-  @Override
-  public String moduleOf(Abstract.SourceNode sourceNode) {
-    if (sourceNode instanceof Concrete.SourceNode) {
-      Position position = ((Concrete.SourceNode<Position>) sourceNode).getData(); // TODO[abstract]
-      return position.module != null ? position.module.toString() : null;
-    } else {
-      return null;
-    }
   }
 
   @Override

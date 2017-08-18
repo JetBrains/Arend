@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.primitive.FilteredScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProviderSet;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.SimpleInstanceProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.scope.InstanceNamespaceProvider;
@@ -125,6 +126,6 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
   }
 
   private void warnDuplicate(Abstract.ClassViewInstance instance1, Abstract.ClassViewInstance instance2) {
-    myErrorReporter.report(new DuplicateInstanceError(Error.Level.WARNING, instance1, instance2));
+    myErrorReporter.report(new DuplicateInstanceError(Error.Level.WARNING, instance1, (Concrete.ClassViewInstance) instance2 /* TODO[abstract] */));
   }
 }

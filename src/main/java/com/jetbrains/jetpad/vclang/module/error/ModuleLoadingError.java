@@ -7,7 +7,7 @@ public class ModuleLoadingError extends GeneralError {
   public final SourceId module;
 
   public ModuleLoadingError(SourceId module, String message) {
-    super(message, null);
+    super(Level.ERROR, message);
     this.module = module;
   }
 }

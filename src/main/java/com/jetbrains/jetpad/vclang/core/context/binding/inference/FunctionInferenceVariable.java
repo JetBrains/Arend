@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
@@ -21,11 +22,11 @@ public class FunctionInferenceVariable extends InferenceVariable {
 
   @Override
   public LocalTypeCheckingError getErrorInfer(Expression... candidates) {
-    return new ArgInferenceError(ArgInferenceError.functionArg(myIndex, myDefinition != null ? myDefinition.getName() : null), getSourceNode(), candidates);
+    return new ArgInferenceError(ArgInferenceError.functionArg(myIndex, myDefinition != null ? myDefinition.getName() : null), (Concrete.SourceNode) getSourceNode(), candidates);
   }
 
   @Override
   public LocalTypeCheckingError getErrorMismatch(Expression expectedType, Expression actualType, Expression candidate) {
-    return new ArgInferenceError(ArgInferenceError.functionArg(myIndex, myDefinition != null ? myDefinition.getName() : null), expectedType, actualType, getSourceNode(), candidate);
+    return new ArgInferenceError(ArgInferenceError.functionArg(myIndex, myDefinition != null ? myDefinition.getName() : null), expectedType, actualType, (Concrete.SourceNode) getSourceNode(), candidate);
   }
 }

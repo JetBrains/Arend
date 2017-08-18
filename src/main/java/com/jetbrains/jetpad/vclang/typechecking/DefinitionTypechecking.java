@@ -29,6 +29,7 @@ import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ConditionsChecking;
@@ -57,7 +58,7 @@ class DefinitionTypechecking {
       FunctionDefinition functionDef = typechecked != null ? (FunctionDefinition) typechecked : new FunctionDefinition(definition);
       typeCheckFunctionHeader(functionDef, typedEnclosingClass, visitor, localInstancePool);
       if (functionDef.getResultType() == null) {
-        visitor.getErrorReporter().report(new LocalTypeCheckingError("Cannot infer the result type of a recursive function", definition));
+        visitor.getErrorReporter().report(new LocalTypeCheckingError("Cannot infer the result type of a recursive function", (Concrete.SourceNode) definition));
         functionDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
       }
       return functionDef;
@@ -66,7 +67,7 @@ class DefinitionTypechecking {
       DataDefinition dataDef = typechecked != null ? (DataDefinition) typechecked : new DataDefinition((Abstract.DataDefinition) definition);
       typeCheckDataHeader(dataDef, typedEnclosingClass, visitor, localInstancePool);
       if (dataDef.getSort() == null || dataDef.getSort().getPLevel().isInfinity()) {
-        visitor.getErrorReporter().report(new LocalTypeCheckingError("Cannot infer the sort of a recursive data type", definition));
+        visitor.getErrorReporter().report(new LocalTypeCheckingError("Cannot infer the sort of a recursive data type", (Concrete.SourceNode) definition));
         dataDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
       }
       return dataDef;
@@ -100,7 +101,7 @@ class DefinitionTypechecking {
         state.record(unit.getDefinition(), definition);
       }
       if (recursive) {
-        visitor.getErrorReporter().report(new LocalTypeCheckingError("A class cannot be recursive", unit.getDefinition()));
+        visitor.getErrorReporter().report(new LocalTypeCheckingError("A class cannot be recursive", (Concrete.SourceNode) unit.getDefinition()));
         definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
 
         for (Abstract.ClassField field : ((Abstract.ClassDefinition) unit.getDefinition()).getFields()) {
@@ -120,7 +121,7 @@ class DefinitionTypechecking {
         state.record(unit.getDefinition(), definition);
       }
       if (recursive) {
-        visitor.getErrorReporter().report(new LocalTypeCheckingError("An instance cannot be recursive", unit.getDefinition()));
+        visitor.getErrorReporter().report(new LocalTypeCheckingError("An instance cannot be recursive", (Concrete.SourceNode) unit.getDefinition()));
         definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
       } else {
         typeCheckClassViewInstance((Abstract.ClassViewInstance) unit.getDefinition(), definition, visitor);
@@ -138,7 +139,7 @@ class DefinitionTypechecking {
         definition.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
         if (recursive) {
           if (((Abstract.FunctionDefinition) unit.getDefinition()).getResultType() == null) {
-            errorReporter.report(new LocalTypeCheckingError("Cannot infer the result type of a recursive function", unit.getDefinition()));
+            errorReporter.report(new LocalTypeCheckingError("Cannot infer the result type of a recursive function", (Concrete.SourceNode) unit.getDefinition()));
           }
           return null;
         }
@@ -204,7 +205,7 @@ class DefinitionTypechecking {
               ReferenceExpression reference = new ReferenceExpression(link);
               Expression oldInstance = localInstancePool.addInstance(FieldCall(classifyingField, reference), classView, reference);
               if (oldInstance != null) {
-                visitor.getErrorReporter().report(new DuplicateInstanceError(oldInstance, reference, parameter));
+                visitor.getErrorReporter().report(new DuplicateInstanceError(oldInstance, reference, (Concrete.SourceNode) parameter));
               }
             }
           }
@@ -215,7 +216,7 @@ class DefinitionTypechecking {
           visitor.getFreeBindings().add(param);
         }
       } else {
-        visitor.getErrorReporter().report(new ArgInferenceError(typeOfFunctionArg(++index), parameter, new Expression[0]));
+        visitor.getErrorReporter().report(new ArgInferenceError(typeOfFunctionArg(++index), (Concrete.SourceNode) parameter, new Expression[0]));
         sort = null;
       }
     }
@@ -280,7 +281,7 @@ class DefinitionTypechecking {
         }
       } else {
         if (def.getResultType() == null) {
-          visitor.getErrorReporter().report(new LocalTypeCheckingError("Cannot infer type of the expression", body));
+          visitor.getErrorReporter().report(new LocalTypeCheckingError("Cannot infer type of the expression", (Concrete.SourceNode) body));
         }
       }
     } else {
@@ -310,7 +311,7 @@ class DefinitionTypechecking {
       if (userTypeResult != null) {
         userSort = userTypeResult.getExpr().toSort();
         if (userSort == null) {
-          visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected a universe", def.getUniverse()));
+          visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected a universe", (Concrete.SourceNode) def.getUniverse()));
         }
       }
     }
@@ -371,13 +372,13 @@ class DefinitionTypechecking {
       Pair<List<Pattern>, List<Expression>> result = null;
       if (clause.getPatterns() != null) {
         if (def.getEliminatedReferences() == null) {
-          visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected a constructor without patterns", clause));
+          visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected a constructor without patterns", (Concrete.SourceNode) clause));
           dataOk = false;
         }
         if (elimParams != null) {
           result = dataPatternTypechecking.typecheckPatterns(clause.getPatterns(), def.getParameters(), dataDefinition.getParameters(), elimParams, def, visitor);
           if (result != null && result.proj2 == null) {
-            visitor.getErrorReporter().report(new LocalTypeCheckingError("This clause is redundant", clause));
+            visitor.getErrorReporter().report(new LocalTypeCheckingError("This clause is redundant", (Concrete.SourceNode) clause));
             result = null;
           }
         }
@@ -386,7 +387,7 @@ class DefinitionTypechecking {
         }
       } else {
         if (def.getEliminatedReferences() != null) {
-          visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected constructors with patterns", clause));
+          visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected constructors with patterns", (Concrete.SourceNode) clause));
           dataOk = false;
         }
       }
@@ -403,7 +404,7 @@ class DefinitionTypechecking {
         inferredSort = inferredSort.max(conSort);
         if (userSort != null) {
           if (!def.isTruncated() && !conSort.isLessOrEquals(userSort)) {
-            visitor.getErrorReporter().report(new ConstructorUniverseError(conSort, constructor, userSort));
+            visitor.getErrorReporter().report(new ConstructorUniverseError(conSort, (Concrete.Constructor) constructor, userSort));
             universeOk = false;
           }
         }
@@ -449,18 +450,18 @@ class DefinitionTypechecking {
     if (def.isTruncated()) {
       if (userSort == null) {
         String msg = "The data type cannot be truncated since its universe is not specified";
-        visitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, msg, def));
+        visitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, msg, (Concrete.SourceNode) def));
       } else {
         if (inferredSort.isLessOrEquals(userSort)) {
           String msg = "The data type will not be truncated since it already fits in the specified universe";
-          visitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, msg, def.getUniverse()));
+          visitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, msg, (Concrete.SourceNode) def.getUniverse()));
         } else {
           dataDefinition.setIsTruncated(true);
         }
       }
     } else if (universeOk && userSort != null && !inferredSort.isLessOrEquals(userSort)) {
       String msg = "Actual universe " + inferredSort + " is not compatible with expected universe " + userSort;
-      visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, def.getUniverse()));
+      visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, (Concrete.SourceNode) def.getUniverse()));
       universeOk = false;
     }
 
@@ -592,7 +593,7 @@ class DefinitionTypechecking {
       }
     }
 
-    errorReporter.report(new NonPositiveDataError((DataDefinition) def, constructor, parameter == null ? constructor : parameter));
+    errorReporter.report(new NonPositiveDataError((DataDefinition) def, constructor, parameter == null ? (Concrete.SourceNode) constructor : (Concrete.SourceNode) parameter));
     return false;
   }
 
@@ -623,7 +624,7 @@ class DefinitionTypechecking {
 
         ClassCallExpression typeCheckedSuperClass = result.expression.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class);
         if (typeCheckedSuperClass == null) {
-          errorReporter.report(new LocalTypeCheckingError("Parent must be a class", aSuperClass.getSuperClass()));
+          errorReporter.report(new LocalTypeCheckingError("Parent must be a class", (Concrete.SourceNode) aSuperClass.getSuperClass()));
           classOk = false;
           continue;
         }
@@ -673,7 +674,7 @@ class DefinitionTypechecking {
       }
 
       if (!alreadyImplementFields.isEmpty()) {
-        errorReporter.report(new FieldsImplementationError(true, alreadyImplementFields, alreadyImplementFields.size() > 1 ? def : alreadyImplementedSourceNode));
+        errorReporter.report(new FieldsImplementationError(true, alreadyImplementFields, alreadyImplementFields.size() > 1 ? (Concrete.SourceNode) def : (Concrete.SourceNode) alreadyImplementedSourceNode));
       }
 
       if (classOk) {
@@ -737,7 +738,7 @@ class DefinitionTypechecking {
       }
     }
     if (!alreadyImplementedFields.isEmpty()) {
-      visitor.getErrorReporter().report(new FieldsImplementationError(true, alreadyImplementedFields, alreadyImplementedFields.size() > 1 ? def : alreadyImplementedSourceNode));
+      visitor.getErrorReporter().report(new FieldsImplementationError(true, alreadyImplementedFields, alreadyImplementedFields.size() > 1 ? (Concrete.SourceNode) def : (Concrete.SourceNode) alreadyImplementedSourceNode));
     }
 
     Abstract.ClassView classView = (Abstract.ClassView) def.getClassView().getReferent();
@@ -759,7 +760,7 @@ class DefinitionTypechecking {
       }
     }
     if (!notImplementedFields.isEmpty()) {
-      visitor.getErrorReporter().report(new FieldsImplementationError(false, notImplementedFields, def));
+      visitor.getErrorReporter().report(new FieldsImplementationError(false, notImplementedFields, (Concrete.SourceNode) def));
       return;
     }
 
@@ -773,7 +774,7 @@ class DefinitionTypechecking {
     Expression impl = fieldSet.get(classifyingField);
     DefCallExpression defCall = impl.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DefCallExpression.class);
     if (defCall == null || !defCall.getDefCallArguments().isEmpty()) {
-      errorReporter.report(new LocalTypeCheckingError("Expected a definition in the classifying field", def));
+      errorReporter.report(new LocalTypeCheckingError("Expected a definition in the classifying field", (Concrete.SourceNode) def));
       return;
     }
 

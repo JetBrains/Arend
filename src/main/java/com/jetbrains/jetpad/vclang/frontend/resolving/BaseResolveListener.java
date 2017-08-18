@@ -49,7 +49,7 @@ public class BaseResolveListener implements ResolveListener {
   }
 
   @Override
-  public Abstract.Expression makeError(Abstract.BinOpSequenceExpression binOpExpr, Abstract.SourceNode node) {
+  public Abstract.Expression makeError(Abstract.BinOpSequenceExpression binOpExpr, Object node) {
     return null;
   }
 

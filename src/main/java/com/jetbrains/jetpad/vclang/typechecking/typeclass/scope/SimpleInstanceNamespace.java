@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateInstanceError;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
@@ -25,7 +26,7 @@ public class SimpleInstanceNamespace implements Scope {
     Pair<Abstract.GlobalReferableSourceNode, Abstract.GlobalReferableSourceNode> pair = new Pair<>(instance.isDefault() ? (Abstract.GlobalReferableSourceNode) classView.getUnderlyingClassReference().getReferent() : classView, instance.getClassifyingDefinition());
     Abstract.ClassViewInstance oldInstance = myInstances.putIfAbsent(pair, instance);
     if (oldInstance != null) {
-      myErrorReporter.report(new DuplicateInstanceError(Error.Level.ERROR, oldInstance, instance));
+      myErrorReporter.report(new DuplicateInstanceError(Error.Level.ERROR, oldInstance, (Concrete.ClassViewInstance) instance /* TODO[abstract] */));
     }
   }
 

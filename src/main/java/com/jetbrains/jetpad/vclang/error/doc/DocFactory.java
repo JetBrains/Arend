@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.error.doc;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.type.ExpectedType;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import java.util.*;
@@ -74,8 +75,8 @@ public class DocFactory {
     throw new IllegalStateException();
   }
 
-  public static SourceNodeDoc sourceNodeDoc(Abstract.SourceNode sourceNode, PrettyPrinterInfoProvider infoProvider) {
-    return new SourceNodeDoc(sourceNode, infoProvider);
+  public static PPDoc ppDoc(PrettyPrintable prettyPrintable, PrettyPrinterInfoProvider infoProvider) {
+    return new PPDoc(prettyPrintable, infoProvider);
   }
 
   public static Doc vList(Collection<? extends Doc> docs) {
@@ -87,9 +88,11 @@ public class DocFactory {
       return docs[0];
     }
 
-    List<Doc> list = new ArrayList<>(docs.length);
+    List<Doc> list = new ArrayList<>();
     for (Doc doc : docs) {
-      if (!doc.isNull()) {
+      if (doc instanceof VListDoc) {
+        list.addAll(((VListDoc) doc).getDocs());
+      } else if (!doc.isNull()) {
         list.add(doc);
       }
     }
@@ -101,7 +104,19 @@ public class DocFactory {
   }
 
   public static LineDoc hList(LineDoc... docs) {
-    return docs.length == 1 ? docs[0] : new HListDoc(Arrays.asList(docs));
+    if (docs.length == 1) {
+      return docs[0];
+    }
+
+    List<LineDoc> list = new ArrayList<>();
+    for (LineDoc doc : docs) {
+      if (doc instanceof HListDoc) {
+        list.addAll(((HListDoc) doc).getDocs());
+      } else if (!doc.isEmpty()) {
+        list.add(doc);
+      }
+    }
+    return new HListDoc(list);
   }
 
   public static LineDoc hSep(LineDoc sep, Collection<? extends LineDoc> docs) {
@@ -117,7 +132,12 @@ public class DocFactory {
           } else {
             list.add(sep);
           }
-          list.add(doc);
+
+          if (doc instanceof HListDoc) {
+            list.addAll(((HListDoc) doc).getDocs());
+          } else {
+            list.add(doc);
+          }
         }
       }
       return hList(list);
@@ -132,7 +152,11 @@ public class DocFactory {
     List<LineDoc> list = new ArrayList<>(docs.size() * 2);
     for (LineDoc doc : docs) {
       if (!doc.isEmpty()) {
-        list.add(doc);
+        if (doc instanceof HListDoc) {
+          list.addAll(((HListDoc) doc).getDocs());
+        } else {
+          list.add(doc);
+        }
         list.add(sep);
       }
     }

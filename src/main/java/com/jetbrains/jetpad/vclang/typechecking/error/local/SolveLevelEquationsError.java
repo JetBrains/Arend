@@ -6,24 +6,24 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevel
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
-import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
+import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.LevelEquation;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class SolveLevelEquationsError extends LocalTypeCheckingError {
+public class SolveLevelEquationsError<T> extends LocalTypeCheckingError<T> {
   public final List<? extends LevelEquation<? extends LevelVariable>> equations;
 
-  public SolveLevelEquationsError(List<? extends LevelEquation<? extends LevelVariable>> equations, Abstract.SourceNode cause) {
+  public SolveLevelEquationsError(List<? extends LevelEquation<? extends LevelVariable>> equations, Concrete.SourceNode<T> cause) {
     super("Cannot solve equations", cause);
     this.equations = equations;
   }
 
   @Override
-  public Doc getBodyDoc(SourceInfoProvider src) {
+  public Doc getBodyDoc(PrettyPrinterInfoProvider src) {
     List<LineDoc> docs = new ArrayList<>(equations.size());
     StringBuilder builder = new StringBuilder();
     PrettyPrintVisitor ppv = new PrettyPrintVisitor(builder, src, 0);

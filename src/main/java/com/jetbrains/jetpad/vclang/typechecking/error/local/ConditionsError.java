@@ -5,8 +5,8 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
+import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +14,7 @@ import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class ConditionsError extends LocalTypeCheckingError {
+public class ConditionsError<T> extends LocalTypeCheckingError<T> {
   public final Expression expr1;
   public final Expression expr2;
   public final ExprSubstitution substitution1;
@@ -22,7 +22,7 @@ public class ConditionsError extends LocalTypeCheckingError {
   public final Expression evaluatedExpr1;
   public final Expression evaluatedExpr2;
 
-  public ConditionsError(Expression expr1, Expression expr2, ExprSubstitution substitution1, ExprSubstitution substitution2, Expression evaluatedExpr1, Expression evaluatedExpr2, Abstract.SourceNode sourceNode) {
+  public ConditionsError(Expression expr1, Expression expr2, ExprSubstitution substitution1, ExprSubstitution substitution2, Expression evaluatedExpr1, Expression evaluatedExpr2, Concrete.SourceNode<T> sourceNode) {
     super("Conditions check failed:", sourceNode);
     this.expr1 = expr1;
     this.expr2 = expr2;
@@ -33,7 +33,7 @@ public class ConditionsError extends LocalTypeCheckingError {
   }
 
   @Override
-  public Doc getBodyDoc(SourceInfoProvider src) {
+  public Doc getBodyDoc(PrettyPrinterInfoProvider src) {
     return vList(
       dataToDoc(expr1, substitution1, evaluatedExpr1),
       dataToDoc(expr2, substitution2, evaluatedExpr2));

@@ -16,6 +16,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
@@ -55,13 +56,13 @@ public class TypeCheckingDefCall {
       throw new IllegalStateException("Internal error: definition " + definition + " was not type checked");
     }
     if (!typeCheckedDefinition.status().headerIsOK()) {
-      LocalTypeCheckingError error = new HasErrors(definition, expr);
+      LocalTypeCheckingError error = new HasErrors(Error.Level.ERROR, definition, (Concrete.SourceNode) expr);
       expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
       myVisitor.getErrorReporter().report(error);
       return null;
     } else {
       if (typeCheckedDefinition.status() == Definition.TypeCheckingStatus.BODY_HAS_ERRORS) {
-        myVisitor.getErrorReporter().report(new HasErrors(Error.Level.WARNING, definition, expr));
+        myVisitor.getErrorReporter().report(new HasErrors(Error.Level.WARNING, definition, (Concrete.SourceNode) expr));
       }
       return typeCheckedDefinition;
     }
@@ -103,9 +104,9 @@ public class TypeCheckingDefCall {
           } else {
             LocalTypeCheckingError error;
             if (myThisClass != null) {
-              error = new NotAvailableDefinitionError(typeCheckedDefinition, expr);
+              error = new NotAvailableDefinitionError(typeCheckedDefinition, (Concrete.SourceNode) expr);
             } else {
-              error = new LocalTypeCheckingError("Non-static definitions are not allowed in a static context", expr);
+              error = new LocalTypeCheckingError("Non-static definitions are not allowed in a static context", (Concrete.SourceNode) expr);
             }
             expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
             myVisitor.getErrorReporter().report(error);
@@ -132,7 +133,7 @@ public class TypeCheckingDefCall {
       if (typeCheckedDefinition == null) {
         Abstract.Definition member = myVisitor.getDynamicNamespaceProvider().forClass(classDefinition.getAbstractDefinition()).resolveName(name);
         if (member == null) {
-          MemberNotFoundError error = new MemberNotFoundError(classDefinition, name, false, expr);
+          MemberNotFoundError error = new MemberNotFoundError(classDefinition, name, false, (Concrete.SourceNode) expr);
           expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
           myVisitor.getErrorReporter().report(error);
           return null;
@@ -148,14 +149,14 @@ public class TypeCheckingDefCall {
       }
 
       if (typeCheckedDefinition.getThisClass() == null) {
-        LocalTypeCheckingError error = new LocalTypeCheckingError("Static definitions are not allowed in a non-static context", expr);
+        LocalTypeCheckingError error = new LocalTypeCheckingError("Static definitions are not allowed in a non-static context", (Concrete.SourceNode) expr);
         expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
         myVisitor.getErrorReporter().report(error);
         return null;
       }
       if (!classDefinition.isSubClassOf(typeCheckedDefinition.getThisClass())) {
         ClassCallExpression classCall = new ClassCallExpression(typeCheckedDefinition.getThisClass(), Sort.generateInferVars(myVisitor.getEquations(), expr));
-        LocalTypeCheckingError error = new TypeMismatchError(DocFactory.termDoc(classCall), DocFactory.termDoc(type), left);
+        LocalTypeCheckingError error = new TypeMismatchError(DocFactory.termDoc(classCall), DocFactory.termDoc(type), (Concrete.SourceNode) left);
         expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
         myVisitor.getErrorReporter().report(error);
         return null;
@@ -184,19 +185,19 @@ public class TypeCheckingDefCall {
       if (typeCheckedDefinition == null) {
         constructor = dataDefinition.getConstructor(name);
         if (constructor == null && !args.isEmpty()) {
-          LocalTypeCheckingError error = new MissingConstructorError(name, dataDefinition, expr);
+          LocalTypeCheckingError error = new MissingConstructorError(name, dataDefinition, (Concrete.SourceNode) expr);
           expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
           myVisitor.getErrorReporter().report(error);
           return null;
         }
         if (constructor != null && !constructor.status().headerIsOK()) {
-          LocalTypeCheckingError error = new HasErrors(constructor.getAbstractDefinition(), expr);
+          LocalTypeCheckingError error = new HasErrors(Error.Level.ERROR, constructor.getAbstractDefinition(), (Concrete.SourceNode) expr);
           expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
           myVisitor.getErrorReporter().report(error);
           return null;
         }
         if (constructor != null && constructor.status() == Definition.TypeCheckingStatus.BODY_HAS_ERRORS) {
-          myVisitor.getErrorReporter().report(new HasErrors(Error.Level.WARNING, constructor.getAbstractDefinition(), expr));
+          myVisitor.getErrorReporter().report(new HasErrors(Error.Level.WARNING, constructor.getAbstractDefinition(), (Concrete.SourceNode) expr));
         }
       } else {
         if (typeCheckedDefinition instanceof Constructor && dataDefinition.getConstructors().contains(typeCheckedDefinition)) {
@@ -226,7 +227,7 @@ public class TypeCheckingDefCall {
       if (typeCheckedDefinition == null) {
         member = myVisitor.getStaticNamespaceProvider().forReferable(leftDefinition.getAbstractDefinition()).resolveName(name);
         if (member == null) {
-          MemberNotFoundError error = new MemberNotFoundError(leftDefinition, name, true, expr);
+          MemberNotFoundError error = new MemberNotFoundError(leftDefinition, name, true, (Concrete.SourceNode) expr);
           expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
           myVisitor.getErrorReporter().report(error);
           return null;
@@ -239,7 +240,7 @@ public class TypeCheckingDefCall {
         thisExpr = defCall.getDefCallArguments().size() == 1 ? defCall.getDefCallArguments().get(0) : null;
         leftDefinition = defCall.getDefinition();
       } else {
-        LocalTypeCheckingError error = new LocalTypeCheckingError("Expected a definition", expr);
+        LocalTypeCheckingError error = new LocalTypeCheckingError("Expected a definition", (Concrete.SourceNode) expr);
         expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
         myVisitor.getErrorReporter().report(error);
         return null;
@@ -254,7 +255,7 @@ public class TypeCheckingDefCall {
           member = scope.resolveName(name);
         }
         if (!(member instanceof Abstract.GlobalReferableSourceNode)) {
-          MemberNotFoundError error = new MemberNotFoundError(leftDefinition, name, expr);
+          MemberNotFoundError error = new MemberNotFoundError(leftDefinition, name, (Concrete.SourceNode) expr);
           expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
           myVisitor.getErrorReporter().report(error);
           return null;
@@ -276,7 +277,7 @@ public class TypeCheckingDefCall {
     Sort sortArgument = definition instanceof DataDefinition && !definition.getParameters().hasNext() ? Sort.PROP : Sort.generateInferVars(myVisitor.getEquations(), expr);
 
     if (thisExpr == null && definition instanceof ClassField) {
-      LocalTypeCheckingError error = new LocalTypeCheckingError("Field call without a class instance", expr);
+      LocalTypeCheckingError error = new LocalTypeCheckingError("Field call without a class instance", (Concrete.SourceNode) expr);
       expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
       myVisitor.getErrorReporter().report(error);
       return null;
