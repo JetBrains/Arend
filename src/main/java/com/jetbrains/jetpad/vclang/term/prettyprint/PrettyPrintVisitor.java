@@ -556,8 +556,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
         }
       }
     }
-
-    myBuilder.append('\n');
   }
 
   private void prettyPrintClauses(List<? extends Abstract.Expression> expressions, List<? extends Abstract.FunctionClause> clauses, boolean needBraces) {
@@ -572,13 +570,16 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
 
     if (!clauses.isEmpty()) {
-      if (needBraces) myBuilder.append(" {\n");
+      if (needBraces) myBuilder.append(" {\n"); else myBuilder.append("\n");
       myIndent += INDENT;
-      for (Abstract.FunctionClause clause : clauses) {
-        prettyPrintFunctionClause(clause);
+      for (int i=0; i<clauses.size(); i++) {
+        prettyPrintFunctionClause(clauses.get(i));
+        if (i < clauses.size()-1) myBuilder.append('\n');
       }
+      myIndent -= INDENT;
 
       if (needBraces) {
+        myBuilder.append('\n');
         printIndent();
         myBuilder.append('}');
       }
@@ -810,19 +811,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       }
 
       @Override
-      boolean printSpaceBefore() {
-        return def.getResultType() != null;
-      }
+      boolean printSpaceBefore() { return true;}
 
       @Override
-      boolean increaseIndent(List<String> rhs_strings) {
-        return !(rhs_strings.size() > 0 && (spacesCount(rhs_strings.get(0)) > 0 || rhs_strings.get(0).isEmpty()));
-      }
-
-      @Override
-      boolean doHyphenation(int leftLen, int rightLen) {
-        return def.getResultType() != null || super.doHyphenation(leftLen, rightLen);
-      }
+      boolean printSpaceAfter() { return false;}
     };
 
     r.doPrettyPrint(this, noIndent);
@@ -858,9 +850,11 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
     myIndent += INDENT;
 
+    myBuilder.append(' ');
     prettyPrintEliminatedReferences(def.getEliminatedReferences(), true);
 
-    for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
+    for (int i=0; i<def.getConstructorClauses().size(); i++) {
+      Abstract.ConstructorClause clause = def.getConstructorClauses().get(i);
       if (clause.getPatterns() == null) {
         for (Abstract.Constructor constructor : clause.getConstructors()) {
           myBuilder.append('\n');
@@ -869,6 +863,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
           constructor.accept(this, null);
         }
       } else {
+        myBuilder.append('\n');
         printIndent();
         myBuilder.append("| ");
         new BinOpLayout(){
@@ -897,7 +892,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
             return "=>";
           }
         }.doPrettyPrint(this, noIndent);
-        myBuilder.append('\n');
       }
     }
     myIndent -= INDENT;
@@ -909,12 +903,11 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       return;
     }
     if (references.isEmpty()) {
-      if (isData) myBuilder.append(" \\with\n");
+      if (isData) myBuilder.append("\\with\n");
       return;
     }
 
-    myBuilder.append(" => \\elim ");
-    boolean first = true;
+    myBuilder.append("=> \\elim ");
     new ListLayout<Abstract.ReferenceExpression>(){
       @Override
       void printListElement(PrettyPrintVisitor ppv, ReferenceExpression referenceExpression) {
@@ -926,7 +919,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
         return ", ";
       }
     }.doPrettyPrint(this, references, noIndent);
-    myBuilder.append('\n');
   }
 
   private void prettyPrintConstructorClause(Abstract.ConstructorClause clause) {
@@ -1010,6 +1002,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
 
     if (!def.getEliminatedReferences().isEmpty() || !def.getClauses().isEmpty()) {
+      myBuilder.append(' ');
       prettyPrintEliminatedReferences(def.getEliminatedReferences(), false);
       prettyPrintClauses(Collections.emptyList(), def.getClauses(), true);
     }
@@ -1044,25 +1037,31 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       myBuilder.append(" {");
       myIndent += INDENT;
 
-      for (Abstract.ClassField field : fields) {
+      if (!fields.isEmpty()) {
         myBuilder.append('\n');
-        printIndent();
-        field.accept(this, null);
-        myBuilder.append('\n');
+        for (Abstract.ClassField field : fields) {
+          printIndent();
+          field.accept(this, null);
+          myBuilder.append('\n');
+        }
       }
 
-      for (Abstract.Implementation implementation : implementations) {
+      if (!implementations.isEmpty()) {
         myBuilder.append('\n');
-        printIndent();
-        implementation.accept(this, null);
-        myBuilder.append('\n');
+        for (Abstract.Implementation implementation : implementations) {
+          printIndent();
+          implementation.accept(this, null);
+          myBuilder.append('\n');
+        }
       }
 
-      for (Abstract.Definition definition : instanceDefinitions) {
+      if (!instanceDefinitions.isEmpty()) {
         myBuilder.append('\n');
-        printIndent();
-        definition.accept(this, null);
-        myBuilder.append('\n');
+        for (Abstract.Definition definition : instanceDefinitions) {
+          printIndent();
+          definition.accept(this, null);
+          myBuilder.append('\n');
+        }
       }
 
       myIndent -= INDENT;
@@ -1210,7 +1209,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
           }
         }
       }
-      pp.myIndent -= indent;
     }
   }
 

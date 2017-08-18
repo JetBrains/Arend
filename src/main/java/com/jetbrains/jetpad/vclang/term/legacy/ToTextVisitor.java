@@ -18,13 +18,18 @@ public class ToTextVisitor extends PrettyPrintVisitor implements LegacyAbstractS
   }
 
   private void visitWhere(Collection<? extends LegacyAbstract.Statement> statements) {
-    myBuilder.append("\\where {");
+    myBuilder.append(" \\where {\n");
     myIndent += INDENT;
+    boolean previousWasNC = false;
+    boolean isFirst = true;
     for (LegacyAbstract.Statement statement : statements) {
-      myBuilder.append("\n");
+      boolean isNamespaceCommand = statement instanceof LegacyAbstract.NamespaceCommandStatement;
+      if (!isNamespaceCommand && previousWasNC) this.myBuilder.append('\n');
       printIndent();
       statement.accept(this, null);
-      myBuilder.append("\n");
+      if (isNamespaceCommand) this.myBuilder.append('\n');
+      previousWasNC = isNamespaceCommand;
+      isFirst = false;
     }
     myIndent -= INDENT;
     myBuilder.append("}");
@@ -36,12 +41,24 @@ public class ToTextVisitor extends PrettyPrintVisitor implements LegacyAbstractS
 
     Collection<? extends LegacyAbstract.Statement> globalStatements = LegacyAbstract.getGlobalStatements(def);
     if (!globalStatements.isEmpty()) {
-      myBuilder.append("\n");
       printIndent();
       visitWhere(globalStatements);
     }
 
     return null;
+  }
+
+  public void visitModule(Abstract.ClassDefinition module) {
+    boolean previousWasNC = false;
+    boolean isFirst = true;
+    for (LegacyAbstract.Statement statement : LegacyAbstract.getGlobalStatements(module)) {
+      boolean isNamespaceCommand = statement instanceof LegacyAbstract.NamespaceCommandStatement;
+      if (!isNamespaceCommand && previousWasNC) this.myBuilder.append('\n');
+      statement.accept(this, null);
+      if (isNamespaceCommand) this.myBuilder.append('\n');
+      previousWasNC = isNamespaceCommand;
+      isFirst = false;
+    }
   }
 
   @Override
@@ -102,7 +119,6 @@ public class ToTextVisitor extends PrettyPrintVisitor implements LegacyAbstractS
       myBuilder.append(')');
     }
 
-    myBuilder.append("\n\n");
     return null;
   }
 }
