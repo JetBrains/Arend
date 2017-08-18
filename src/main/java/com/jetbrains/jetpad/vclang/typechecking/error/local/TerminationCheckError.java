@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class TerminationCheckError extends GeneralError {
+public class TerminationCheckError<T> extends GeneralError<T> {
   public final Abstract.Definition definition;
   public final Set<RecursiveBehavior<Definition>> behaviors;
 

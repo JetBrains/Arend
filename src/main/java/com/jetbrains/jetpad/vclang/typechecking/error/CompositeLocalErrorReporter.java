@@ -4,23 +4,23 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
-public class CompositeLocalErrorReporter implements LocalErrorReporter {
-  private final LocalErrorReporter myLocalErrorReporter;
-  private final ErrorReporter myErrorReporter;
+public class CompositeLocalErrorReporter<T> implements LocalErrorReporter<T> {
+  private final LocalErrorReporter<T> myLocalErrorReporter;
+  private final ErrorReporter<T> myErrorReporter;
 
-  public CompositeLocalErrorReporter(LocalErrorReporter localErrorReporter, ErrorReporter errorReporter) {
+  public CompositeLocalErrorReporter(LocalErrorReporter<T> localErrorReporter, ErrorReporter<T> errorReporter) {
     myLocalErrorReporter = localErrorReporter;
     myErrorReporter = errorReporter;
   }
 
   @Override
-  public void report(GeneralError error) {
+  public void report(GeneralError<T> error) {
     myLocalErrorReporter.report(error);
     myErrorReporter.report(error);
   }
 
   @Override
-  public void report(LocalTypeCheckingError localError) {
+  public void report(LocalTypeCheckingError<T> localError) {
     myLocalErrorReporter.report(localError);
   }
 }

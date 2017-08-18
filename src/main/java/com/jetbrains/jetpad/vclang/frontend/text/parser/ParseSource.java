@@ -28,9 +28,9 @@ public abstract class ParseSource {
     myStream = stream;
   }
 
-  public @Nullable Concrete.ClassDefinition load(ErrorReporter errorReporter, ModuleRegistry moduleRegistry, Scope globalScope, NameResolver nameResolver) throws IOException {
-    CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
-    final CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
+  public @Nullable Concrete.ClassDefinition load(ErrorReporter<Position> errorReporter, ModuleRegistry moduleRegistry, Scope globalScope, NameResolver nameResolver) throws IOException {
+    CountingErrorReporter<Position> countingErrorReporter = new CountingErrorReporter<>();
+    final CompositeErrorReporter<Position> compositeErrorReporter = new CompositeErrorReporter<>(errorReporter, countingErrorReporter);
 
     VcgrammarLexer lexer = new VcgrammarLexer(new ANTLRInputStream(myStream));
     lexer.removeErrorListeners();

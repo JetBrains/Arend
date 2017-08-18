@@ -1,14 +1,14 @@
 package com.jetbrains.jetpad.vclang.error;
 
-public abstract class ErrorClassifier implements ErrorReporter {
-  private final ErrorReporter myErrorReporter;
+public abstract class ErrorClassifier<T> implements ErrorReporter<T> {
+  private final ErrorReporter<T> myErrorReporter;
 
-  public ErrorClassifier(ErrorReporter errorReporter) {
+  public ErrorClassifier(ErrorReporter<T> errorReporter) {
     myErrorReporter = errorReporter;
   }
 
   @Override
-  public void report(GeneralError error) {
+  public void report(GeneralError<T> error) {
     switch (error.level) {
       case ERROR:
         reportedError(error);
@@ -26,8 +26,8 @@ public abstract class ErrorClassifier implements ErrorReporter {
     myErrorReporter.report(error);
   }
 
-  protected void reportedError(GeneralError error) {}
-  protected void reportedGoal(GeneralError error) {}
-  protected void reportedWarning(GeneralError error) {}
-  protected void reportedInfo(GeneralError error) {}
+  protected void reportedError(GeneralError<T> error) {}
+  protected void reportedGoal(GeneralError<T> error) {}
+  protected void reportedWarning(GeneralError<T> error) {}
+  protected void reportedInfo(GeneralError<T> error) {}
 }

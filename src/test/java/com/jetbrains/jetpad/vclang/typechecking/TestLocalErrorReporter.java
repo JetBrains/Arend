@@ -10,8 +10,8 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingErr
 
 import javax.annotation.Nonnull;
 
-public class TestLocalErrorReporter implements LocalErrorReporter {
-  private final ErrorReporter errorReporter;
+public class TestLocalErrorReporter<T> implements LocalErrorReporter<T> {
+  private final ErrorReporter<T> errorReporter;
   private final Abstract.Definition fakeDef = new Abstract.Definition() {
     @Nonnull
     @Override
@@ -40,17 +40,17 @@ public class TestLocalErrorReporter implements LocalErrorReporter {
     }
   };
 
-  public TestLocalErrorReporter(ErrorReporter errorReporter) {
+  public TestLocalErrorReporter(ErrorReporter<T> errorReporter) {
     this.errorReporter = errorReporter;
   }
 
   @Override
-  public void report(LocalTypeCheckingError localError) {
-    errorReporter.report(new TypeCheckingError(fakeDef, localError));
+  public void report(LocalTypeCheckingError<T> localError) {
+    errorReporter.report(new TypeCheckingError<>(fakeDef, localError));
   }
 
   @Override
-  public void report(GeneralError error) {
+  public void report(GeneralError<T> error) {
     errorReporter.report(error);
   }
 }

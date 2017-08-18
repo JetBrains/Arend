@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteTypecheckableProvider;
 import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
+import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -29,7 +30,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
   private TypecheckerState state = new SimpleTypecheckerState();
 
-  protected final LocalErrorReporter localErrorReporter = new TestLocalErrorReporter(errorReporter);
+  protected final LocalErrorReporter<Position> localErrorReporter = new TestLocalErrorReporter<>(errorReporter);
 
   public TypeCheckingTestCase() {
     typeCheckPrelude();
@@ -39,9 +40,9 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     loadPrelude();
 
     if (PRELUDE_TYPECHECKER_STATE == null) {
-      ListErrorReporter internalErrorReporter = new ListErrorReporter();
+      ListErrorReporter<Position> internalErrorReporter = new ListErrorReporter<>();
       PRELUDE_TYPECHECKER_STATE = new SimpleTypecheckerState();
-      new Typechecking(PRELUDE_TYPECHECKER_STATE, staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, internalErrorReporter, new Prelude.UpdatePreludeReporter(PRELUDE_TYPECHECKER_STATE), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
+      new Typechecking<>(PRELUDE_TYPECHECKER_STATE, staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, internalErrorReporter, new Prelude.UpdatePreludeReporter(PRELUDE_TYPECHECKER_STATE), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
       //assertThat(internalErrorReporter.getErrorList(), is(empty()));  // does not type-check by design
     }
 
@@ -95,7 +96,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   private Definition typeCheckDef(Concrete.Definition definition, int errors) {
-    new Typechecking(state, staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, errorReporter, new TypecheckedReporter.Dummy(), new DependencyListener() {}).typecheckDefinitions(Collections.singletonList(definition));
+    new Typechecking<>(state, staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, errorReporter, new TypecheckedReporter.Dummy(), new DependencyListener() {}).typecheckDefinitions(Collections.singletonList(definition));
     assertThat(errorList, containsErrors(errors));
     return state.getTypechecked(definition);
   }
@@ -110,7 +111,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   private TypecheckerState typeCheckClass(Concrete.ClassDefinition classDefinition, int errors) {
-    new Typechecking(state, staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, localErrorReporter, new TypecheckedReporter.Dummy(), new DependencyListener() {}).typecheckModules(Collections.singletonList(classDefinition));
+    new Typechecking<>(state, staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, localErrorReporter, new TypecheckedReporter.Dummy(), new DependencyListener() {}).typecheckModules(Collections.singletonList(classDefinition));
     assertThat(errorList, containsErrors(errors));
     return state;
   }

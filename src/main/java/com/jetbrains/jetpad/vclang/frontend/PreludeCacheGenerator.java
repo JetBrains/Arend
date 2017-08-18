@@ -105,7 +105,7 @@ public class PreludeCacheGenerator {
   }
 
   public static void main(String[] args) throws CachePersistenceException {
-    final ListErrorReporter errorReporter = new ListErrorReporter();
+    final ListErrorReporter<Position> errorReporter = new ListErrorReporter<>();
     final StaticNamespaceProvider staticNsProvider = new SimpleStaticNamespaceProvider();
     final DynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
     final NameResolver nameResolver = new NameResolver(new NamespaceProviders(new SimpleModuleNamespaceProvider(), staticNsProvider, dynamicNsProvider));
@@ -116,7 +116,7 @@ public class PreludeCacheGenerator {
 
     Abstract.ClassDefinition prelude = storage.loadSource(storage.preludeSourceId, errorReporter).definition;
     if (!errorReporter.getErrorList().isEmpty()) throw new IllegalStateException();
-    new Typechecking(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, errorReporter, new Prelude.UpdatePreludeReporter(cacheManager.getTypecheckerState()), new DependencyListener() {}).typecheckModules(Collections.singleton(prelude));
+    new Typechecking<>(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, errorReporter, new Prelude.UpdatePreludeReporter(cacheManager.getTypecheckerState()), new DependencyListener() {}).typecheckModules(Collections.singleton(prelude));
 
     cacheManager.persistCache(storage.preludeSourceId);
   }

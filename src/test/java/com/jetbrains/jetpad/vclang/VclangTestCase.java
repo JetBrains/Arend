@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
 import com.jetbrains.jetpad.vclang.frontend.resolving.SimpleSourceInfoProvider;
+import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -20,8 +21,8 @@ import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.vList;
 import static org.junit.Assert.assertThat;
 
 public abstract class VclangTestCase {
-  protected final List<GeneralError> errorList = new ArrayList<>();
-  protected final ListErrorReporter errorReporter = new ListErrorReporter(errorList);
+  protected final List<GeneralError<Position>> errorList = new ArrayList<>();
+  protected final ListErrorReporter<Position> errorReporter = new ListErrorReporter<>(errorList);
 
   @SafeVarargs
   protected final void assertThatErrorsAre(Matcher<? super GeneralError>... matchers) {

@@ -39,7 +39,7 @@ import java.util.*;
 public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   protected final Map<SourceIdT, Map<String, Abstract.Definition>> definitionIds = new HashMap<>();
 
-  protected final ListErrorReporter errorReporter = new ListErrorReporter();
+  protected final ListErrorReporter<Position> errorReporter = new ListErrorReporter<>();
 
   // Modules
   protected final ModuleTracker moduleTracker;
@@ -225,7 +225,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     if (!cacheLoaded) {
       throw new IllegalStateException("Prelude cache is not available");
     }
-    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(state), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
+    new Typechecking<>(state, getStaticNsProvider(), getDynamicNsProvider(), HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, new DummyErrorReporter<>(), new Prelude.UpdatePreludeReporter(state), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
     return prelude;
   }
 
@@ -284,7 +284,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     System.out.println("--- Checking ---");
 
-    class ResultTracker extends ErrorClassifier implements DependencyListener, TypecheckedReporter {
+    class ResultTracker extends ErrorClassifier<Position> implements DependencyListener, TypecheckedReporter {
       ResultTracker() {
         super(errorReporter);
       }
@@ -331,7 +331,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
     ResultTracker resultTracker = new ResultTracker();
 
-    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, resultTracker, resultTracker, resultTracker).typecheckModules(modulesToTypeCheck);
+    new Typechecking<>(state, getStaticNsProvider(), getDynamicNsProvider(), HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, resultTracker, resultTracker, resultTracker).typecheckModules(modulesToTypeCheck);
   }
 
 

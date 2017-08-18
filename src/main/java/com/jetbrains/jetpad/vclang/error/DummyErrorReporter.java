@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.error;
 
-public class DummyErrorReporter implements ErrorReporter {
+public class DummyErrorReporter<T> implements ErrorReporter<T> {
   @Override
-  public void report(GeneralError error) {
+  public void report(GeneralError<T> error) {
 
   }
 }

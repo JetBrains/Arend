@@ -8,7 +8,7 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import java.util.List;
 
-public class CycleError extends GeneralError {
+public class CycleError<T> extends GeneralError<T> {
   public final List<Abstract.Definition> cycle;
 
   // TODO[abstract]: override getCause and getCausePP

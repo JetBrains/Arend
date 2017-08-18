@@ -27,7 +27,7 @@ import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
 
-class TypecheckingDependencyListener implements DependencyListener {
+class TypecheckingDependencyListener<T> implements DependencyListener {
   private final TypecheckerState myState;
   private final StaticNamespaceProvider myStaticNsProvider;
   private final DynamicNamespaceProvider myDynamicNsProvider;
@@ -36,7 +36,7 @@ class TypecheckingDependencyListener implements DependencyListener {
   private final Map<Abstract.Definition, Suspension> mySuspensions = new HashMap<>();
   private boolean myTypecheckingHeaders = false;
 
-  final ErrorReporter errorReporter;
+  final ErrorReporter<T> errorReporter;
   final InstanceProviderSet instanceProviderSet;
   final TypecheckableProvider typecheckableProvider;
 
@@ -50,7 +50,7 @@ class TypecheckingDependencyListener implements DependencyListener {
     }
   }
 
-  TypecheckingDependencyListener(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, InstanceNamespaceProvider instanceNamespaceProvider, TypecheckableProvider typecheckableProvider, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, DependencyListener dependencyListener) {
+  TypecheckingDependencyListener(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, InstanceNamespaceProvider instanceNamespaceProvider, TypecheckableProvider typecheckableProvider, ErrorReporter<T> errorReporter, TypecheckedReporter typecheckedReporter, DependencyListener dependencyListener) {
     myState = state;
     myStaticNsProvider = staticNsProvider;
     myDynamicNsProvider = dynamicNsProvider;
@@ -79,7 +79,7 @@ class TypecheckingDependencyListener implements DependencyListener {
             myState.record(definition, Definition.newDefinition(definition));
           }
         }
-        errorReporter.report(new CycleError(cycle));
+        errorReporter.report(new CycleError<>(cycle));
         return;
       }
     }
@@ -100,7 +100,7 @@ class TypecheckingDependencyListener implements DependencyListener {
   public void unitFound(TypecheckingUnit unit, Recursion recursion) {
     if (recursion == Recursion.IN_HEADER) {
       myState.record(unit.getDefinition(), Definition.newDefinition(unit.getDefinition()));
-      errorReporter.report(new CycleError(Collections.singletonList(unit.getDefinition())));
+      errorReporter.report(new CycleError<>(Collections.singletonList(unit.getDefinition())));
       myTypecheckedReporter.typecheckingFailed(unit.getDefinition());
     } else {
       typecheck(unit, recursion == Recursion.IN_BODY);
@@ -146,8 +146,8 @@ class TypecheckingDependencyListener implements DependencyListener {
     }
 
     if (numberOfHeaders == 1) {
-      CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
-      LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(errorReporter, countingErrorReporter));
+      CountingErrorReporter<T> countingErrorReporter = new CountingErrorReporter<>();
+      LocalErrorReporter<T> localErrorReporter = new ProxyErrorReporter<>(unit.getDefinition(), new CompositeErrorReporter<>(errorReporter, countingErrorReporter));
       CheckTypeVisitor visitor = new CheckTypeVisitor(myState, myStaticNsProvider, myDynamicNsProvider, new LinkedHashMap<>(), localErrorReporter, null);
       Definition typechecked = DefinitionTypechecking.typecheckHeader(visitor, new GlobalInstancePool(myState, instanceProviderSet.getInstanceProvider(unit.getDefinition())), unit.getDefinition(), unit.getEnclosingClass());
       if (typechecked.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
@@ -162,7 +162,7 @@ class TypecheckingDependencyListener implements DependencyListener {
         cycle.add(unit1.getDefinition());
       }
 
-      errorReporter.report(new CycleError(cycle));
+      errorReporter.report(new CycleError<>(cycle));
       for (Abstract.Definition definition : cycle) {
         myState.record(definition, Definition.newDefinition(definition));
       }
@@ -224,7 +224,7 @@ class TypecheckingDependencyListener implements DependencyListener {
           fDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
         }
         for (Map.Entry<Definition, Set<RecursiveBehavior<Definition>>> entry : callCategory.myErrorInfo.entrySet()) {
-          errorReporter.report(new TerminationCheckError(entry.getKey(), entry.getValue()));
+          errorReporter.report(new TerminationCheckError<>(entry.getKey(), entry.getValue()));
         }
       }
     }
@@ -243,9 +243,9 @@ class TypecheckingDependencyListener implements DependencyListener {
   }
 
   private void typecheck(TypecheckingUnit unit, boolean recursive) {
-    CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
-    CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
-    LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), compositeErrorReporter);
+    CountingErrorReporter<T> countingErrorReporter = new CountingErrorReporter<>();
+    CompositeErrorReporter<T> compositeErrorReporter = new CompositeErrorReporter<>(errorReporter, countingErrorReporter);
+    LocalErrorReporter<T> localErrorReporter = new ProxyErrorReporter<>(unit.getDefinition(), compositeErrorReporter);
     List<Clause> clauses = DefinitionTypechecking.typecheck(myState, new GlobalInstancePool(myState, instanceProviderSet.getInstanceProvider(unit.getDefinition())), myStaticNsProvider, myDynamicNsProvider, unit, recursive, localErrorReporter);
     Definition typechecked = myState.getTypechecked(unit.getDefinition());
 
@@ -256,7 +256,7 @@ class TypecheckingDependencyListener implements DependencyListener {
       if (!callCategory.checkTermination()) {
         typechecked.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
         for (Map.Entry<Definition, Set<RecursiveBehavior<Definition>>> entry : callCategory.myErrorInfo.entrySet()) {
-          compositeErrorReporter.report(new TerminationCheckError(entry.getKey(), entry.getValue()));
+          compositeErrorReporter.report(new TerminationCheckError<>(entry.getKey(), entry.getValue()));
         }
       }
     }

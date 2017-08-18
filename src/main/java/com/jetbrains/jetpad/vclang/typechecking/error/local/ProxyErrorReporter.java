@@ -8,11 +8,11 @@ import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import javax.annotation.Nonnull;
 
-public class ProxyErrorReporter implements LocalErrorReporter {
+public class ProxyErrorReporter<T> implements LocalErrorReporter<T> {
   private final Abstract.Definition myDefinition;
-  private final ErrorReporter myErrorReporter;
+  private final ErrorReporter<T> myErrorReporter;
 
-  public ProxyErrorReporter(@Nonnull Abstract.Definition definition, ErrorReporter errorReporter) {
+  public ProxyErrorReporter(@Nonnull Abstract.Definition definition, ErrorReporter<T> errorReporter) {
     myDefinition = definition;
     myErrorReporter = errorReporter;
   }
@@ -21,17 +21,17 @@ public class ProxyErrorReporter implements LocalErrorReporter {
     return myDefinition;
   }
 
-  public ErrorReporter getUnderlyingErrorReporter() {
+  public ErrorReporter<T> getUnderlyingErrorReporter() {
     return myErrorReporter;
   }
 
   @Override
-  public void report(GeneralError error) {
+  public void report(GeneralError<T> error) {
     myErrorReporter.report(error);
   }
 
   @Override
-  public void report(LocalTypeCheckingError localError) {
-    myErrorReporter.report(new TypeCheckingError(myDefinition, localError));
+  public void report(LocalTypeCheckingError<T> localError) {
+    myErrorReporter.report(new TypeCheckingError<>(myDefinition, localError));
   }
 }

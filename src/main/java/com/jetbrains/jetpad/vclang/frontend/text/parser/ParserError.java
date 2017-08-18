@@ -1,13 +1,9 @@
 package com.jetbrains.jetpad.vclang.frontend.text.parser;
 
-import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.module.error.ModuleLoadingError;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
-import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.text;
-
-public class ParserError extends ModuleLoadingError {
+public class ParserError extends ModuleLoadingError<Position> {
   public final Position position;
 
   public ParserError(Position position, String message) {
@@ -16,7 +12,7 @@ public class ParserError extends ModuleLoadingError {
   }
 
   @Override
-  public LineDoc getPositionDoc(PrettyPrinterInfoProvider src) {
-    return text(position.toString());
+  public Position getCause() {
+    return position;
   }
 }

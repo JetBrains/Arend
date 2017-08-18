@@ -4,24 +4,25 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class CompositeErrorReporter implements ErrorReporter {
-  private final List<ErrorReporter> myErrorReporters;
+public class CompositeErrorReporter<T> implements ErrorReporter<T> {
+  private final List<ErrorReporter<T>> myErrorReporters;
 
-  public CompositeErrorReporter(ErrorReporter... errorReporters) {
+  @SafeVarargs
+  public CompositeErrorReporter(ErrorReporter<T>... errorReporters) {
     myErrorReporters = new ArrayList<>(Arrays.asList(errorReporters));
   }
 
-  public void addErrorReporter(ErrorReporter errorReporter) {
+  public void addErrorReporter(ErrorReporter<T> errorReporter) {
     myErrorReporters.add(errorReporter);
   }
 
-  public void removeErrorReporter(ErrorReporter errorReporter) {
+  public void removeErrorReporter(ErrorReporter<T> errorReporter) {
     myErrorReporters.remove(errorReporter);
   }
 
   @Override
-  public void report(GeneralError error) {
-    for (ErrorReporter errorReporter : myErrorReporters) {
+  public void report(GeneralError<T> error) {
+    for (ErrorReporter<T> errorReporter : myErrorReporters) {
       errorReporter.report(error);
     }
   }

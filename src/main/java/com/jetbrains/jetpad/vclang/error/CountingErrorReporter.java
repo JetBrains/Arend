@@ -1,10 +1,10 @@
 package com.jetbrains.jetpad.vclang.error;
 
-public class CountingErrorReporter implements ErrorReporter {
+public class CountingErrorReporter<T> implements ErrorReporter<T> {
   private int myCounter = 0;
-  private final GeneralError.Level myLevel;
+  private final Error.Level myLevel;
 
-  public CountingErrorReporter(GeneralError.Level level) {
+  public CountingErrorReporter(Error.Level level) {
     myLevel = level;
   }
 
@@ -17,7 +17,7 @@ public class CountingErrorReporter implements ErrorReporter {
   }
 
   @Override
-  public void report(GeneralError error) {
+  public void report(GeneralError<T> error) {
     if (myLevel == null || myLevel == error.getLevel()) {
       ++myCounter;
     }
