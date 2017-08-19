@@ -66,7 +66,7 @@ public class TypeCheckingDefCall<T> {
     }
   }
 
-  public CheckTypeVisitor.TResult typeCheckDefCall(Concrete.ReferenceExpression<T> expr) {
+  public CheckTypeVisitor.TResult<T> typeCheckDefCall(Concrete.ReferenceExpression<T> expr) {
     Concrete.Expression<T> left = expr.getExpression();
     Abstract.GlobalReferableSourceNode resolvedDefinition = expr.getReferent() instanceof Abstract.GlobalReferableSourceNode ? (Abstract.GlobalReferableSourceNode) expr.getReferent() : null;
     Definition typeCheckedDefinition = null;
@@ -98,7 +98,7 @@ public class TypeCheckingDefCall<T> {
             assert typeCheckedDefinition instanceof ClassField;
             Abstract.ClassView ownClassView = ((Abstract.ClassViewField) resolvedDefinition).getOwnView();
             ClassCallExpression classCall = new ClassCallExpression(typeCheckedDefinition.getThisClass(), Sort.generateInferVars(myVisitor.getEquations(), expr));
-            thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable(typeCheckedDefinition.getThisClass().getName() + "-inst", classCall, ownClassView, true, expr, myVisitor.getAllBindings()), myVisitor.getEquations());
+            thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable<>(typeCheckedDefinition.getThisClass().getName() + "-inst", classCall, ownClassView, true, expr, myVisitor.getAllBindings()), myVisitor.getEquations());
           } else {
             LocalTypeCheckingError<T> error;
             if (myThisClass != null) {
@@ -195,7 +195,7 @@ public class TypeCheckingDefCall<T> {
       }
 
       if (constructor != null) {
-        CheckTypeVisitor.TResult result1 = CheckTypeVisitor.DefCallResult.makeTResult(expr, constructor, dataCall.getSortArgument(), null);
+        CheckTypeVisitor.TResult<T> result1 = CheckTypeVisitor.DefCallResult.makeTResult(expr, constructor, dataCall.getSortArgument(), null);
         return args.isEmpty() ? result1 : ((CheckTypeVisitor.DefCallResult) result1).applyExpressions(args);
       }
     }
@@ -254,7 +254,7 @@ public class TypeCheckingDefCall<T> {
     return makeResult(typeCheckedDefinition, thisExpr, expr);
   }
 
-  private CheckTypeVisitor.TResult makeResult(Definition definition, Expression thisExpr, Concrete.ReferenceExpression<T> expr) {
+  private CheckTypeVisitor.TResult<T> makeResult(Definition definition, Expression thisExpr, Concrete.ReferenceExpression<T> expr) {
     Sort sortArgument = definition instanceof DataDefinition && !definition.getParameters().hasNext() ? Sort.PROP : Sort.generateInferVars(myVisitor.getEquations(), expr);
 
     if (thisExpr == null && definition instanceof ClassField) {
@@ -272,7 +272,8 @@ public class TypeCheckingDefCall<T> {
       }
     }
     if (hLevel != null && hLevel.getConstant() == -1 && hLevel.getVar() == LevelVariable.HVAR && hLevel.getMaxConstant() == 0) {
-      myVisitor.getEquations().bindVariables((InferenceLevelVariable) sortArgument.getPLevel().getVar(), (InferenceLevelVariable) sortArgument.getHLevel().getVar());
+      //noinspection unchecked
+      myVisitor.getEquations().bindVariables((InferenceLevelVariable<T>) sortArgument.getPLevel().getVar(), (InferenceLevelVariable<T>) sortArgument.getHLevel().getVar());
     }
 
     return CheckTypeVisitor.DefCallResult.makeTResult(expr, definition, sortArgument, thisExpr);

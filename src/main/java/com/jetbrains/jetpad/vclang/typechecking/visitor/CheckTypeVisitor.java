@@ -59,14 +59,14 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
   private final Equations<T> myEquations;
   private ClassViewInstancePool myClassViewInstancePool;
 
-  public interface TResult {
-    Result toResult(Equations equations);
+  public interface TResult<T> {
+    Result toResult(Equations<T> equations);
     DependentLink getParameter();
-    TResult applyExpression(Expression expression);
+    TResult<T> applyExpression(Expression expression);
     List<? extends DependentLink> getImplicitParameters();
   }
 
-  public static class DefCallResult<T> implements TResult {
+  public static class DefCallResult<T> implements TResult<T> {
     private final Concrete.ReferenceExpression<T> myDefCall;
     private final Definition myDefinition;
     private final Sort mySortArgument;
@@ -85,7 +85,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
       myThisExpr = thisExpr;
     }
 
-    public static <T> TResult makeTResult(Concrete.ReferenceExpression<T> defCall, Definition definition, Sort sortArgument, Expression thisExpr) {
+    public static <T> TResult<T> makeTResult(Concrete.ReferenceExpression<T> defCall, Definition definition, Sort sortArgument, Expression thisExpr) {
       List<DependentLink> parameters = new ArrayList<>();
       Expression resultType = definition.getTypeWithParams(parameters, sortArgument);
       if (thisExpr != null) {
@@ -95,6 +95,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
       }
 
       if (parameters.isEmpty()) {
+        //noinspection unchecked
         return new Result(definition.getDefCall(sortArgument, thisExpr, Collections.emptyList()), resultType);
       } else {
         return new DefCallResult<>(defCall, definition, sortArgument, new ArrayList<>(), parameters, resultType, thisExpr);
@@ -102,7 +103,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
     }
 
     @Override
-    public Result toResult(Equations equations) {
+    public Result toResult(Equations<T> equations) {
       if (myParameters.isEmpty()) {
         return new Result(myDefinition.getDefCall(mySortArgument, myThisExpr, myArguments), myResultType);
       }
@@ -148,7 +149,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
     }
 
     @Override
-    public TResult applyExpression(Expression expression) {
+    public TResult<T> applyExpression(Expression expression) {
       int size = myParameters.size();
       myArguments.add(expression);
       ExprSubstitution subst = new ExprSubstitution();
@@ -158,7 +159,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
       return size > 1 ? this : new Result(myDefinition.getDefCall(mySortArgument, myThisExpr, myArguments), myResultType);
     }
 
-    public TResult applyExpressions(List<? extends Expression> expressions) {
+    public TResult<T> applyExpressions(List<? extends Expression> expressions) {
       int size = myParameters.size();
       List<? extends Expression> args = expressions.size() <= size ? expressions : expressions.subList(0, size);
       myArguments.addAll(args);
@@ -329,7 +330,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
     return false;
   }
 
-  private Result tResultToResult(ExpectedType expectedType, TResult result, Concrete.Expression<T> expr) {
+  private Result tResultToResult(ExpectedType expectedType, TResult<T> result, Concrete.Expression<T> expr) {
     if (result != null && expectedType != null) {
       result = myArgsInference.inferTail(result, expectedType, expr);
     }
@@ -408,7 +409,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
     return true;
   }
 
-  private boolean checkPath(TResult result, Concrete.Expression<T> expr) {
+  private boolean checkPath(TResult<T> result, Concrete.Expression<T> expr) {
     if (result instanceof DefCallResult && ((DefCallResult) result).getDefinition() == Prelude.PATH_CON) {
       myErrorReporter.report(new LocalTypeCheckingError<>("Expected an argument for 'path'", expr));
       return false;
@@ -427,7 +428,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
 
   @Override
   public Result visitApp(Concrete.AppExpression<T> expr, ExpectedType expectedType) {
-    TResult result = myArgsInference.infer(expr, expectedType);
+    TResult<T> result = myArgsInference.infer(expr, expectedType);
     if (result == null || !checkPath(result, expr)) {
       return null;
     }
@@ -435,17 +436,18 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
     return tResultToResult(expectedType, result, expr);
   }
 
-  public CheckTypeVisitor.TResult getLocalVar(Concrete.ReferenceExpression<T> expr) {
+  public CheckTypeVisitor.TResult<T> getLocalVar(Concrete.ReferenceExpression<T> expr) {
     Binding def = myContext.get(expr.getReferent());
     if (def == null) {
       throw new InconsistentModel();
     }
+    //noinspection unchecked
     return new Result(new ReferenceExpression(def), def.getTypeExpr());
   }
 
   @Override
   public Result visitReference(Concrete.ReferenceExpression<T> expr, ExpectedType expectedType) {
-    TResult result = expr.getExpression() == null && !(expr.getReferent() instanceof Abstract.GlobalReferableSourceNode) ? getLocalVar(expr) : myTypeCheckingDefCall.typeCheckDefCall(expr);
+    TResult<T> result = expr.getExpression() == null && !(expr.getReferent() instanceof Abstract.GlobalReferableSourceNode) ? getLocalVar(expr) : myTypeCheckingDefCall.typeCheckDefCall(expr);
     if (result == null || !checkPath(result, expr)) {
       return null;
     }

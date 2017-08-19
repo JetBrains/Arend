@@ -60,21 +60,21 @@ public class StdImplicitArgsInference<T> extends BaseImplicitArgsInference<T> {
     return null;
   }
 
-  protected CheckTypeVisitor.TResult fixImplicitArgs(CheckTypeVisitor.TResult result, List<? extends DependentLink> implicitParameters, Concrete.Expression<T> expr) {
+  protected CheckTypeVisitor.TResult<T> fixImplicitArgs(CheckTypeVisitor.TResult<T> result, List<? extends DependentLink> implicitParameters, Concrete.Expression<T> expr) {
     ExprSubstitution substitution = new ExprSubstitution();
     int i = 0;
     for (DependentLink parameter : implicitParameters) {
       Expression type = parameter.getTypeExpr().subst(substitution, LevelSubstitution.EMPTY);
-      InferenceVariable infVar = null;
+      InferenceVariable<T> infVar = null;
       if (result instanceof CheckTypeVisitor.DefCallResult) {
-        CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
+        CheckTypeVisitor.DefCallResult<T> defCallResult = (CheckTypeVisitor.DefCallResult<T>) result;
         Abstract.ClassView classView = getClassViewFromDefCall(defCallResult.getDefinition().getConcreteDefinition(), i);
         if (classView != null) {
-          infVar = new TypeClassInferenceVariable(parameter.getName(), type, classView, false, defCallResult.getDefCall(), myVisitor.getAllBindings());
+          infVar = new TypeClassInferenceVariable<>(parameter.getName(), type, classView, false, defCallResult.getDefCall(), myVisitor.getAllBindings());
         }
       }
       if (infVar == null) {
-        infVar = new FunctionInferenceVariable(parameter.getName(), type, i + 1, result instanceof CheckTypeVisitor.DefCallResult ? ((CheckTypeVisitor.DefCallResult) result).getDefinition() : null, expr, myVisitor.getAllBindings());
+        infVar = new FunctionInferenceVariable<>(parameter.getName(), type, i + 1, result instanceof CheckTypeVisitor.DefCallResult ? ((CheckTypeVisitor.DefCallResult) result).getDefinition() : null, expr, myVisitor.getAllBindings());
       }
       Expression binding = new InferenceReferenceExpression(infVar, myVisitor.getEquations());
       result = result.applyExpression(binding);
@@ -84,7 +84,7 @@ public class StdImplicitArgsInference<T> extends BaseImplicitArgsInference<T> {
     return result;
   }
 
-  protected CheckTypeVisitor.TResult inferArg(CheckTypeVisitor.TResult result, Concrete.Expression<T> arg, boolean isExplicit, Concrete.Expression<T> fun) {
+  protected CheckTypeVisitor.TResult<T> inferArg(CheckTypeVisitor.TResult<T> result, Concrete.Expression<T> arg, boolean isExplicit, Concrete.Expression<T> fun) {
     if (result == null || arg == null || result instanceof CheckTypeVisitor.Result && ((CheckTypeVisitor.Result) result).expression.isInstance(ErrorExpression.class)) {
       return result;
     }
@@ -95,7 +95,7 @@ public class StdImplicitArgsInference<T> extends BaseImplicitArgsInference<T> {
         if (defCallResult.getDefinition() == Prelude.PATH_CON && defCallResult.getArguments().isEmpty()) {
           SingleDependentLink lamParam = new TypedSingleDependentLink(true, "i", Interval());
           UniverseExpression type = new UniverseExpression(new Sort(defCallResult.getSortArgument().getPLevel(), defCallResult.getSortArgument().getHLevel().add(1)));
-          Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", type, 1, Prelude.PATH_CON, fun, myVisitor.getAllBindings()), myVisitor.getEquations());
+          Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable<>("A", type, 1, Prelude.PATH_CON, fun, myVisitor.getAllBindings()), myVisitor.getEquations());
           Sort sort = type.getSort().succ();
           result = result.applyExpression(new LamExpression(sort, lamParam, binding));
 
@@ -106,7 +106,7 @@ public class StdImplicitArgsInference<T> extends BaseImplicitArgsInference<T> {
 
           Expression expr1 = new AppExpression(argResult.expression, Left());
           Expression expr2 = new AppExpression(argResult.expression, Right());
-          return ((CheckTypeVisitor.DefCallResult) result).applyExpressions(Arrays.asList(expr1, expr2, argResult.expression));
+          return ((CheckTypeVisitor.DefCallResult<T>) result).applyExpressions(Arrays.asList(expr1, expr2, argResult.expression));
         }
       }
 
@@ -133,8 +133,8 @@ public class StdImplicitArgsInference<T> extends BaseImplicitArgsInference<T> {
     return result.applyExpression(argResult.expression);
   }
 
-  protected CheckTypeVisitor.TResult inferArg(Concrete.Expression<T> fun, Concrete.Expression<T> arg, boolean isExplicit, ExpectedType expectedType) {
-    CheckTypeVisitor.TResult result;
+  protected CheckTypeVisitor.TResult<T> inferArg(Concrete.Expression<T> fun, Concrete.Expression<T> arg, boolean isExplicit, ExpectedType expectedType) {
+    CheckTypeVisitor.TResult<T> result;
     if (fun instanceof Concrete.AppExpression) {
       Concrete.Argument<T> argument = ((Concrete.AppExpression<T>) fun).getArgument();
       result = checkBinOpInferArg(((Concrete.AppExpression<T>) fun).getFunction(), argument.getExpression(), argument.isExplicit(), expectedType);
@@ -143,11 +143,12 @@ public class StdImplicitArgsInference<T> extends BaseImplicitArgsInference<T> {
         Concrete.ReferenceExpression<T> defCall = (Concrete.ReferenceExpression<T>) fun;
         result = defCall.getExpression() == null && !(defCall.getReferent() instanceof Abstract.GlobalReferableSourceNode) ? myVisitor.getLocalVar(defCall) : myVisitor.getTypeCheckingDefCall().typeCheckDefCall(defCall);
       } else {
+        //noinspection unchecked
         result = myVisitor.checkExpr(fun, null);
       }
 
       if (result instanceof CheckTypeVisitor.DefCallResult && isExplicit && expectedType != null) {
-        CheckTypeVisitor.DefCallResult<?> defCallResult = (CheckTypeVisitor.DefCallResult<?>) result;
+        CheckTypeVisitor.DefCallResult<T> defCallResult = (CheckTypeVisitor.DefCallResult<T>) result;
         if (defCallResult.getDefinition() instanceof Constructor && defCallResult.getArguments().size() < DependentLink.Helper.size(((Constructor) defCallResult.getDefinition()).getDataTypeParameters())) {
           DataCallExpression dataCall = expectedType instanceof Expression ? ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DataCallExpression.class) : null;
           if (dataCall != null) {
@@ -164,7 +165,7 @@ public class StdImplicitArgsInference<T> extends BaseImplicitArgsInference<T> {
             if (args1 != null) {
               result = CheckTypeVisitor.DefCallResult.makeTResult(defCallResult.getDefCall(), defCallResult.getDefinition(), defCallResult.getSortArgument(), null);
               if (!args1.isEmpty()) {
-                result = ((CheckTypeVisitor.DefCallResult) result).applyExpressions(args1);
+                result = ((CheckTypeVisitor.DefCallResult<T>) result).applyExpressions(args1);
               }
             }
           }
@@ -179,7 +180,7 @@ public class StdImplicitArgsInference<T> extends BaseImplicitArgsInference<T> {
     return inferArg(result, arg, isExplicit, fun);
   }
 
-  private CheckTypeVisitor.TResult checkBinOpInferArg(Concrete.Expression<T> fun, Concrete.Expression<T> arg, boolean isExplicit, ExpectedType expectedType) {
+  private CheckTypeVisitor.TResult<T> checkBinOpInferArg(Concrete.Expression<T> fun, Concrete.Expression<T> arg, boolean isExplicit, ExpectedType expectedType) {
     if (fun instanceof Concrete.BinOpExpression) {
       return inferArg(inferArg(inferArg(fun, ((Concrete.BinOpExpression<T>) fun).getLeft(), true, null), ((Concrete.BinOpExpression<T>) fun).getRight(), true, fun), arg, isExplicit, fun);
     } else {
@@ -188,18 +189,18 @@ public class StdImplicitArgsInference<T> extends BaseImplicitArgsInference<T> {
   }
 
   @Override
-  public CheckTypeVisitor.TResult infer(Concrete.AppExpression<T> expr, ExpectedType expectedType) {
+  public CheckTypeVisitor.TResult<T> infer(Concrete.AppExpression<T> expr, ExpectedType expectedType) {
     Concrete.Argument<T> arg = expr.getArgument();
     return checkBinOpInferArg(expr.getFunction(), arg.getExpression(), arg.isExplicit(), expectedType);
   }
 
   @Override
-  public CheckTypeVisitor.TResult infer(Concrete.BinOpExpression<T> expr, ExpectedType expectedType) {
+  public CheckTypeVisitor.TResult<T> infer(Concrete.BinOpExpression<T> expr, ExpectedType expectedType) {
     return inferArg(inferArg(expr, expr.getLeft(), true, null), expr.getRight(), true, expr);
   }
 
   @Override
-  public CheckTypeVisitor.TResult inferTail(CheckTypeVisitor.TResult result, ExpectedType expectedType, Concrete.Expression<T> expr) {
+  public CheckTypeVisitor.TResult<T> inferTail(CheckTypeVisitor.TResult<T> result, ExpectedType expectedType, Concrete.Expression<T> expr) {
     List<? extends DependentLink> actualParams = result.getImplicitParameters();
     List<SingleDependentLink> expectedParams = new ArrayList<>(actualParams.size());
     expectedType.getPiParameters(expectedParams, true);
