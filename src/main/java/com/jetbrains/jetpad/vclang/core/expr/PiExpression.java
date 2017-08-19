@@ -12,7 +12,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
@@ -28,12 +28,12 @@ public class PiExpression extends Expression implements Type {
     myCodomain = codomain;
   }
 
-  public static Sort generateUpperBound(Sort domSort, Sort codSort, Equations equations, Abstract.SourceNode sourceNode) {
+  public static <T> Sort generateUpperBound(Sort domSort, Sort codSort, Equations equations, Concrete.SourceNode<T> sourceNode) {
     if ((domSort.getPLevel().getVar() == null || codSort.getPLevel().getVar() == null || domSort.getPLevel().getVar() == codSort.getPLevel().getVar())) {
       return new Sort(domSort.getPLevel().max(codSort.getPLevel()), codSort.getHLevel());
     }
 
-    InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, sourceNode);
+    InferenceLevelVariable<T> pl = new InferenceLevelVariable<>(LevelVariable.LvlType.PLVL, sourceNode);
     equations.addVariable(pl);
     Level pLevel = new Level(pl);
     equations.add(domSort.getPLevel(), pLevel, Equations.CMP.LE, sourceNode);

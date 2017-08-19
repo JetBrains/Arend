@@ -6,21 +6,21 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingErr
 
 import java.util.Set;
 
-public class DerivedInferenceVariable extends InferenceVariable {
-  private final InferenceVariable myVar;
+public class DerivedInferenceVariable<T> extends InferenceVariable<T> {
+  private final InferenceVariable<T> myVar;
 
-  public DerivedInferenceVariable(String name, InferenceVariable binding, Expression type, Set<Binding> bounds) {
+  public DerivedInferenceVariable(String name, InferenceVariable<T> binding, Expression type, Set<Binding> bounds) {
     super(name, type, binding.getSourceNode(), bounds);
     myVar = binding;
   }
 
   @Override
-  public LocalTypeCheckingError getErrorInfer(Expression... candidates) {
+  public LocalTypeCheckingError<T> getErrorInfer(Expression... candidates) {
     return myVar.getErrorInfer(candidates);
   }
 
   @Override
-  public LocalTypeCheckingError getErrorMismatch(Expression expectedType, Expression actualType, Expression candidate) {
+  public LocalTypeCheckingError<T> getErrorMismatch(Expression expectedType, Expression actualType, Expression candidate) {
     return myVar.getErrorMismatch(expectedType, actualType, candidate);
   }
 }

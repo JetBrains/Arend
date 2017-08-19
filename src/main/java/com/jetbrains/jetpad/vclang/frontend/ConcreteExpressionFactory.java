@@ -61,15 +61,15 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.ReferenceExpression<Position> cNat() {
-    return new Concrete.ReferenceExpression<>(POSITION, Prelude.NAT.getAbstractDefinition());
+    return new Concrete.ReferenceExpression<>(POSITION, Prelude.NAT.getConcreteDefinition());
   }
 
   public static Concrete.ReferenceExpression<Position> cZero() {
-    return new Concrete.ReferenceExpression<>(POSITION, Prelude.ZERO.getAbstractDefinition());
+    return new Concrete.ReferenceExpression<>(POSITION, Prelude.ZERO.getConcreteDefinition());
   }
 
   public static Concrete.ReferenceExpression<Position> cSuc() {
-    return new Concrete.ReferenceExpression<>(POSITION, Prelude.SUC.getAbstractDefinition());
+    return new Concrete.ReferenceExpression<>(POSITION, Prelude.SUC.getConcreteDefinition());
   }
 
   public static Concrete.LetExpression<Position> cLet(List<Concrete.LetClause<Position>> clauses, Concrete.Expression<Position> expr) {

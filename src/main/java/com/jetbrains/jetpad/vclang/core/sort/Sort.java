@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevel
 import com.jetbrains.jetpad.vclang.core.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
@@ -89,7 +89,7 @@ public class Sort {
     return new StdLevelSubstitution(myPLevel, myHLevel);
   }
 
-  public static boolean compare(Sort sort1, Sort sort2, Equations.CMP cmp, Equations equations, Abstract.SourceNode sourceNode) {
+  public static <T> boolean compare(Sort sort1, Sort sort2, Equations.CMP cmp, Equations<T> equations, Concrete.SourceNode<T> sourceNode) {
     if (sort1.isProp()) {
       if (cmp == Equations.CMP.LE || sort2.isProp()) {
         return true;
@@ -113,9 +113,9 @@ public class Sort {
     return subst.isEmpty() || myPLevel.isClosed() && myHLevel.isClosed() ? this : new Sort(myPLevel.subst(subst), myHLevel.subst(subst));
   }
 
-  public static Sort generateInferVars(Equations equations, Abstract.SourceNode sourceNode) {
-    InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, sourceNode);
-    InferenceLevelVariable hl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, sourceNode);
+  public static <T> Sort generateInferVars(Equations<T> equations, Concrete.SourceNode<T> sourceNode) {
+    InferenceLevelVariable<T> pl = new InferenceLevelVariable<>(LevelVariable.LvlType.PLVL, sourceNode);
+    InferenceLevelVariable<T> hl = new InferenceLevelVariable<>(LevelVariable.LvlType.HLVL, sourceNode);
     equations.addVariable(pl);
     equations.addVariable(hl);
     return new Sort(new Level(pl), new Level(hl));

@@ -6,27 +6,27 @@ import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.List;
 
 public abstract class Definition implements Variable {
   private ClassDefinition myThisClass;
-  private Abstract.Definition myAbstractDefinition;
+  private Concrete.Definition<?> myConcreteDefinition;
   private TypeCheckingStatus myStatus;
 
-  public Definition(Abstract.Definition abstractDef, TypeCheckingStatus status) {
-    myAbstractDefinition = abstractDef;
+  public Definition(Concrete.Definition<?> abstractDef, TypeCheckingStatus status) {
+    myConcreteDefinition = abstractDef;
     myStatus = status;
   }
 
   @Override
   public String getName() {
-    return myAbstractDefinition.getName();
+    return myConcreteDefinition.getName();
   }
 
-  public Abstract.Definition getAbstractDefinition() {
-    return myAbstractDefinition;
+  public Concrete.Definition<?> getConcreteDefinition() {
+    return myConcreteDefinition;
   }
 
   public DependentLink getParameters() {
@@ -71,18 +71,18 @@ public abstract class Definition implements Variable {
 
   @Override
   public String toString() {
-    return myAbstractDefinition.toString();
+    return myConcreteDefinition.toString();
   }
 
-  public static Definition newDefinition(Abstract.Definition definition) {
-    if (definition instanceof Abstract.DataDefinition) {
-      return new DataDefinition((Abstract.DataDefinition) definition);
+  public static Definition newDefinition(Concrete.Definition<?> definition) {
+    if (definition instanceof Concrete.DataDefinition) {
+      return new DataDefinition((Concrete.DataDefinition) definition);
     }
-    if (definition instanceof Abstract.FunctionDefinition || definition instanceof Abstract.ClassViewInstance) {
+    if (definition instanceof Concrete.FunctionDefinition || definition instanceof Concrete.ClassViewInstance) {
       return new FunctionDefinition(definition);
     }
-    if (definition instanceof Abstract.ClassDefinition) {
-      return new ClassDefinition((Abstract.ClassDefinition) definition);
+    if (definition instanceof Concrete.ClassDefinition) {
+      return new ClassDefinition((Concrete.ClassDefinition) definition);
     }
     return null;
   }

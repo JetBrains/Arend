@@ -129,7 +129,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       return myFactory.makeEmptyPattern(isExplicit);
     }
     if (pattern instanceof ConstructorPattern) {
-      return myFactory.makeConPattern(isExplicit, ((ConstructorPattern) pattern).getConstructor().getAbstractDefinition(), visitPatterns(((ConstructorPattern) pattern).getArguments(), ((ConstructorPattern) pattern).getConstructor().getParameters()));
+      return myFactory.makeConPattern(isExplicit, ((ConstructorPattern) pattern).getConstructor().getConcreteDefinition(), visitPatterns(((ConstructorPattern) pattern).getArguments(), ((ConstructorPattern) pattern).getConstructor().getParameters()));
     }
     throw new IllegalStateException();
   }
@@ -153,7 +153,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     LamExpression expr1 = expr.getDefCallArguments().get(0).checkedCast(LamExpression.class);
     if (expr1 != null) {
       if (!expr1.getBody().findBinding(expr1.getParameters())) {
-        return myFactory.makeBinOp(expr.getDefCallArguments().get(1).accept(this, null), Prelude.PATH_INFIX.getAbstractDefinition(), expr.getDefCallArguments().get(2).accept(this, null));
+        return myFactory.makeBinOp(expr.getDefCallArguments().get(1).accept(this, null), Prelude.PATH_INFIX.getConcreteDefinition(), expr.getDefCallArguments().get(2).accept(this, null));
       }
     }
     return null;
@@ -209,7 +209,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
         visibleArgs[i++] = args.get(j);
       }
     }
-    return i == 2 ? myFactory.makeBinOp(visibleArgs[0].accept(this, null), defCall != null ? defCall.getDefinition().getAbstractDefinition() : myNames.get(refExpr.getBinding()), visibleArgs[1].accept(this, null)) : null;
+    return i == 2 ? myFactory.makeBinOp(visibleArgs[0].accept(this, null), defCall != null ? defCall.getDefinition().getConcreteDefinition() : myNames.get(refExpr.getBinding()), visibleArgs[1].accept(this, null)) : null;
   }
 
   @Override
@@ -269,12 +269,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     if (result != null) {
       return result;
     }
-    return visitParameters(myFactory.makeReference(null, expr.getDefinition().getAbstractDefinition()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
+    return visitParameters(myFactory.makeReference(null, expr.getDefinition().getConcreteDefinition()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
   }
 
   @Override
   public Abstract.Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    return myFactory.makeReference(expr.getExpression().accept(this, null), expr.getDefinition().getAbstractDefinition());
+    return myFactory.makeReference(expr.getExpression().accept(this, null), expr.getDefinition().getConcreteDefinition());
   }
 
   @Override
@@ -288,7 +288,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     if (expr.getDefinition().status().headerIsOK() && myFlags.contains(Flag.SHOW_CON_PARAMS) && (!expr.getDataTypeArguments().isEmpty() || myFlags.contains(Flag.SHOW_CON_DATA_TYPE))) {
       conParams = expr.getDataTypeExpression().accept(this, null);
     }
-    return visitParameters(myFactory.makeReference(conParams, expr.getDefinition().getAbstractDefinition()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
+    return visitParameters(myFactory.makeReference(conParams, expr.getDefinition().getConcreteDefinition()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
   }
 
   @Override
@@ -310,7 +310,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       }
     }
 
-    Abstract.Expression defCallExpr = myFactory.makeReference(enclExpr, expr.getDefinition().getAbstractDefinition());
+    Abstract.Expression defCallExpr = myFactory.makeReference(enclExpr, expr.getDefinition().getConcreteDefinition());
     if (statements.isEmpty()) {
       return defCallExpr;
     } else {

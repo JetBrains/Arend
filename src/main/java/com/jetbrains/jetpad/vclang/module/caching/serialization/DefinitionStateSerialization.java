@@ -97,7 +97,7 @@ public class DefinitionStateSerialization {
   private DefinitionProtos.Definition.ClassData writeClassDefinition(DefinitionSerialization defSerializer, ClassDefinition definition, LocalizedTypecheckerState<? extends SourceId>.LocalTypecheckerState state) {
     DefinitionProtos.Definition.ClassData.Builder builder = DefinitionProtos.Definition.ClassData.newBuilder();
 
-    for (Abstract.ClassField abstractField : definition.getAbstractDefinition().getFields()) {
+    for (Abstract.ClassField abstractField : definition.getConcreteDefinition().getFields()) {
       ClassField field = (ClassField) state.getTypechecked(abstractField);
       DefinitionProtos.Definition.ClassData.Field.Builder fBuilder = DefinitionProtos.Definition.ClassData.Field.newBuilder();
       fBuilder.setThisParam(defSerializer.writeParameter(field.getThisParameter()));
@@ -147,7 +147,7 @@ public class DefinitionStateSerialization {
         cBuilder.setConditions(writeBody(defSerializer, constructor.getBody()));
       }
 
-      builder.putConstructors(myPersistenceProvider.getIdFor(constructor.getAbstractDefinition()), cBuilder.build());
+      builder.putConstructors(myPersistenceProvider.getIdFor(constructor.getConcreteDefinition()), cBuilder.build());
     }
 
     builder.setMatchesOnInterval(definition.matchesOnInterval());

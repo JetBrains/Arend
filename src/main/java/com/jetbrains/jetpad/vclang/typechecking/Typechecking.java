@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.EmptyScope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.BaseAbstractVisitor;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import com.jetbrains.jetpad.vclang.typechecking.order.Ordering;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.DefinitionResolveInstanceVisitor;
@@ -22,48 +23,48 @@ public class Typechecking<T> {
   private final TypecheckingDependencyListener<T> myDependencyListener;
   private final Function<Abstract.Definition, Iterable<OpenCommand>> myOpens;
 
-  public Typechecking(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, Function<Abstract.Definition, Iterable<OpenCommand>> opens, TypecheckableProvider typecheckableProvider, ErrorReporter<T> errorReporter, TypecheckedReporter typecheckedReporter, DependencyListener dependencyListener) {
+  public Typechecking(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, Function<Abstract.Definition, Iterable<OpenCommand>> opens, TypecheckableProvider<T> typecheckableProvider, ErrorReporter<T> errorReporter, TypecheckedReporter typecheckedReporter, DependencyListener<T> dependencyListener) {
     myInstanceNamespaceProvider = new InstanceNamespaceProvider(errorReporter);
     myDependencyListener = new TypecheckingDependencyListener<>(state, staticNsProvider, dynamicNsProvider, myInstanceNamespaceProvider, typecheckableProvider, errorReporter, typecheckedReporter, dependencyListener);
     myOpens = opens;
   }
 
-  public void typecheckModules(final Collection<? extends Abstract.ClassDefinition> classDefs) {
+  public void typecheckModules(final Collection<? extends Concrete.ClassDefinition<T>> classDefs) {
     DefinitionResolveInstanceVisitor visitor = new DefinitionResolveInstanceVisitor(myDependencyListener.instanceProviderSet, myInstanceNamespaceProvider, myOpens, myDependencyListener.errorReporter);
     for (Abstract.ClassDefinition classDef : classDefs) {
       visitor.visitClass(classDef, new SimpleInstanceProvider(new EmptyScope()));
     }
 
-    Ordering ordering = new Ordering(myDependencyListener.instanceProviderSet, myDependencyListener.typecheckableProvider, myDependencyListener, false);
+    Ordering<T> ordering = new Ordering<>(myDependencyListener.instanceProviderSet, myDependencyListener.typecheckableProvider, myDependencyListener, false);
 
     try {
-      for (Abstract.ClassDefinition classDef : classDefs) {
-        new OrderDefinitionVisitor(ordering).orderDefinition(classDef);
+      for (Concrete.ClassDefinition<T> classDef : classDefs) {
+        new OrderDefinitionVisitor<>(ordering).orderDefinition(classDef);
       }
     } catch (ComputationInterruptedException ignored) { }
   }
 
-  public void typecheckDefinitions(final Collection<? extends Abstract.Definition> definitions) {
-    Ordering ordering = new Ordering(myDependencyListener.instanceProviderSet, myDependencyListener.typecheckableProvider, myDependencyListener, false);
+  public void typecheckDefinitions(final Collection<? extends Concrete.Definition<T>> definitions) {
+    Ordering<T> ordering = new Ordering<>(myDependencyListener.instanceProviderSet, myDependencyListener.typecheckableProvider, myDependencyListener, false);
 
     try {
-      for (Abstract.Definition definition : definitions) {
+      for (Concrete.Definition<T> definition : definitions) {
         ordering.doOrder(definition);
       }
     } catch (ComputationInterruptedException ignored) { }
   }
 
-  private static class OrderDefinitionVisitor extends BaseAbstractVisitor<Void, Void> {
-    public final Ordering ordering;
+  private static class OrderDefinitionVisitor<T> extends BaseAbstractVisitor<Void, Void> { // TODO[abstract]
+    public final Ordering<T> ordering;
 
-    private OrderDefinitionVisitor(Ordering ordering) {
+    private OrderDefinitionVisitor(Ordering<T> ordering) {
       this.ordering = ordering;
     }
 
     @Override
     public Void visitFunction(Abstract.FunctionDefinition def, Void params) {
       for (Abstract.Definition definition : def.getGlobalDefinitions()) {
-        orderDefinition(definition);
+        orderDefinition((Concrete.Definition<T>) definition);
       }
       return null;
     }
@@ -71,15 +72,15 @@ public class Typechecking<T> {
     @Override
     public Void visitClass(Abstract.ClassDefinition def, Void params) {
       for (Abstract.Definition definition : def.getGlobalDefinitions()) {
-        orderDefinition(definition);
+        orderDefinition((Concrete.Definition<T>) definition);
       }
       for (Abstract.Definition definition : def.getInstanceDefinitions()) {
-        orderDefinition(definition);
+        orderDefinition((Concrete.Definition<T>) definition);
       }
       return null;
     }
 
-    public void orderDefinition(Abstract.Definition definition) {
+    public void orderDefinition(Concrete.Definition<T> definition) {
       ordering.doOrder(definition);
       definition.accept(this, null);
     }

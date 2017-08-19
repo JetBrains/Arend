@@ -112,13 +112,13 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
   // FIXME[tests] should be package-private
-  protected Concrete.ClassDefinition resolveNamesClass(String text, int errors) {
-    Concrete.ClassDefinition classDefinition = parseClass("$testClass$", text);
+  protected Concrete.ClassDefinition<Position> resolveNamesClass(String text, int errors) {
+    Concrete.ClassDefinition<Position> classDefinition = parseClass("$testClass$", text);
     resolveNamesClass(classDefinition, errors);
     return classDefinition;
   }
 
-  protected Concrete.ClassDefinition resolveNamesClass(String text) {
+  protected Concrete.ClassDefinition<Position> resolveNamesClass(String text) {
     return resolveNamesClass(text, 0);
   }
 
@@ -133,7 +133,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
       if (oldref instanceof Abstract.ClassDefinition) {
         ref = dynamicNsProvider.forClass((Abstract.ClassDefinition) oldref).resolveName(n);
       } else if (oldref instanceof ClassDefinition) {
-        ref = dynamicNsProvider.forClass(((ClassDefinition) oldref).getAbstractDefinition()).resolveName(n);
+        ref = dynamicNsProvider.forClass(((ClassDefinition) oldref).getConcreteDefinition()).resolveName(n);
       }
       if (ref == null) return null;
     }

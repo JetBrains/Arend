@@ -17,6 +17,6 @@ public class NotAvailableDefinitionError<T> extends LocalTypeCheckingError<T> {
 
   @Override
   public LineDoc getHeaderDoc(PrettyPrinterInfoProvider src) {
-    return hList(super.getHeaderDoc(src), text(" Definition '"), refDoc(definition.getAbstractDefinition()), text("' is not available in this context"));
+    return hList(super.getHeaderDoc(src), text(" Definition '"), refDoc(definition.getConcreteDefinition()), text("' is not available in this context"));
   }
 }

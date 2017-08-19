@@ -21,9 +21,9 @@ public class GoalError<T> extends LocalTypeCheckingError<T> {
   public final Map<Abstract.ReferableSourceNode, Binding> context;
   public final ExpectedType expectedType;
   public final Expression actualType;
-  public final List<Error> errors;
+  public final List<Error<T>> errors;
 
-  public GoalError(String name, Map<Abstract.ReferableSourceNode, Binding> context, ExpectedType expectedType, Expression actualType, List<Error> errors, Concrete.Expression<T> expression) {
+  public GoalError(String name, Map<Abstract.ReferableSourceNode, Binding> context, ExpectedType expectedType, Expression actualType, List<Error<T>> errors, Concrete.Expression<T> expression) {
     super(Level.GOAL, "", expression);
     this.name = name;
     this.context = new HashMap<>(context);
@@ -52,7 +52,7 @@ public class GoalError<T> extends LocalTypeCheckingError<T> {
     Doc errorsDoc;
     if (!errors.isEmpty()) {
       List<Doc> errorsDocs = new ArrayList<>(errors.size());
-      for (Error error : errors) {
+      for (Error<T> error : errors) {
         errorsDocs.add(hang(error.getHeaderDoc(src), error.getBodyDoc(src)));
       }
       errorsDoc = hang(text("Errors:"), vList(errorsDocs));

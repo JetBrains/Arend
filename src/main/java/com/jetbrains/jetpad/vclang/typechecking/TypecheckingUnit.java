@@ -1,21 +1,21 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
-public class TypecheckingUnit {
-  private final Typecheckable myTypecheckable;
-  private final Abstract.ClassDefinition myEnclosingClass;
+public class TypecheckingUnit<T> {
+  private final Typecheckable<T> myTypecheckable;
+  private final Concrete.ClassDefinition<T> myEnclosingClass;
 
-  public TypecheckingUnit(Typecheckable typecheckable, Abstract.ClassDefinition enclosingClass) {
+  public TypecheckingUnit(Typecheckable<T> typecheckable, Concrete.ClassDefinition<T> enclosingClass) {
     this.myTypecheckable = typecheckable;
     this.myEnclosingClass = enclosingClass;
   }
 
-  public Typecheckable getTypecheckable() {
+  public Typecheckable<T> getTypecheckable() {
     return myTypecheckable;
   }
 
-  public Abstract.Definition getDefinition() {
+  public Concrete.Definition<T> getDefinition() {
     return myTypecheckable.getDefinition();
   }
 
@@ -23,7 +23,7 @@ public class TypecheckingUnit {
     return myTypecheckable.isHeader();
   }
 
-  public Abstract.ClassDefinition getEnclosingClass() {
+  public Concrete.ClassDefinition<T> getEnclosingClass() {
     return myEnclosingClass;
   }
 }

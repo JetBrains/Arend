@@ -225,7 +225,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     if (!cacheLoaded) {
       throw new IllegalStateException("Prelude cache is not available");
     }
-    new Typechecking<>(state, getStaticNsProvider(), getDynamicNsProvider(), HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, new DummyErrorReporter<>(), new Prelude.UpdatePreludeReporter(state), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
+    new Typechecking<>(state, getStaticNsProvider(), getDynamicNsProvider(), HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, new DummyErrorReporter<>(), new Prelude.UpdatePreludeReporter(state), new DependencyListener<Position>() {}).typecheckModules(Collections.singletonList((Concrete.ClassDefinition<Position>) prelude));
     return prelude;
   }
 
@@ -257,7 +257,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   private enum ModuleResult { UNKNOWN, OK, GOALS, NOT_LOADED, ERRORS }
 
   private void typeCheckSources(Set<SourceIdT> sources) {
-    final Set<Abstract.ClassDefinition> modulesToTypeCheck = new LinkedHashSet<>();
+    final Set<Concrete.ClassDefinition<Position>> modulesToTypeCheck = new LinkedHashSet<>();
     for (SourceIdT source : sources) {
       final Abstract.ClassDefinition definition;
       SourceSupplier.LoadResult result = loadedSources.get(source);
@@ -279,28 +279,28 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
       } else {
         definition = result.definition;
       }
-      modulesToTypeCheck.add(definition);
+      modulesToTypeCheck.add((Concrete.ClassDefinition<Position>) definition);
     }
 
     System.out.println("--- Checking ---");
 
-    class ResultTracker extends ErrorClassifier<Position> implements DependencyListener, TypecheckedReporter {
+    class ResultTracker extends ErrorClassifier<Position> implements DependencyListener<Position>, TypecheckedReporter {
       ResultTracker() {
         super(errorReporter);
       }
 
       @Override
-      protected void reportedError(GeneralError error) {
+      protected void reportedError(GeneralError<Position> error) {
         updateSourceResult(srcInfoProvider.sourceOf(sourceDefinitionOf(error)), ModuleResult.ERRORS);
       }
 
       @Override
-      protected void reportedGoal(GeneralError error) {
+      protected void reportedGoal(GeneralError<Position> error) {
         updateSourceResult(srcInfoProvider.sourceOf(sourceDefinitionOf(error)), ModuleResult.GOALS);
       }
 
       @Override
-      public void alreadyTypechecked(Abstract.Definition definition) {
+      public void alreadyTypechecked(Concrete.Definition<Position> definition) {
         Definition.TypeCheckingStatus status = state.getTypechecked(definition).status();
         if (status != Definition.TypeCheckingStatus.NO_ERRORS) {
           updateSourceResult(srcInfoProvider.sourceOf(definition), status != Definition.TypeCheckingStatus.HAS_ERRORS ? ModuleResult.ERRORS : ModuleResult.UNKNOWN);

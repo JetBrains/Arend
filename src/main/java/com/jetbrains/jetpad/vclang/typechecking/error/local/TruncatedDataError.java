@@ -24,7 +24,7 @@ public class TruncatedDataError<T> extends LocalTypeCheckingError<T> {
     return hList(
       super.getHeaderDoc(src),
       text(" Data type '"),
-      refDoc(dataDef.getAbstractDefinition()),
+      refDoc(dataDef.getConcreteDefinition()),
       text("' is truncated to the universe " + dataDef.getSort()));
   }
 

@@ -20,6 +20,6 @@ public class NonPositiveDataError<T> extends LocalTypeCheckingError<T> {
 
   @Override
   public LineDoc getHeaderDoc(PrettyPrinterInfoProvider src) {
-    return hList(super.getHeaderDoc(src), text(" Non-positive recursive occurrence of data type '"), refDoc(dataDefinition.getAbstractDefinition()), text("' in constructor '"), refDoc(constructor), text("'"));
+    return hList(super.getHeaderDoc(src), text(" Non-positive recursive occurrence of data type '"), refDoc(dataDefinition.getConcreteDefinition()), text("' in constructor '"), refDoc(constructor), text("'"));
   }
 }

@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
@@ -9,7 +8,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 public final class Abstract {
   private Abstract() {}
@@ -38,7 +36,6 @@ public final class Abstract {
   public interface Expression extends SourceNode {
     byte PREC = -12;
     <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
-    void setWellTyped(Map<ReferableSourceNode, Binding> context, com.jetbrains.jetpad.vclang.core.expr.Expression wellTyped);
   }
 
   public interface Argument extends SourceNode {

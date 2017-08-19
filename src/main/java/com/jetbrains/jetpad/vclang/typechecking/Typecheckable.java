@@ -1,19 +1,18 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
-public class Typecheckable {
-  private final Abstract.Definition myDefinition;
+public class Typecheckable<T> {
+  private final Concrete.Definition<T> myDefinition;
   private final boolean myHeader;
 
-  public Typecheckable(Abstract.Definition definition, boolean isHeader) {
-    assert !(definition instanceof Abstract.ClassView) && !(definition instanceof Abstract.ClassViewField);
+  public Typecheckable(Concrete.Definition<T> definition, boolean isHeader) {
     assert !isHeader || hasHeader(definition);
     this.myDefinition = definition;
     this.myHeader = isHeader;
   }
 
-  public Abstract.Definition getDefinition() {
+  public Concrete.Definition<T> getDefinition() {
     return myDefinition;
   }
 
@@ -21,8 +20,8 @@ public class Typecheckable {
     return myHeader;
   }
 
-  public static boolean hasHeader(Abstract.Definition definition) {
-    return definition instanceof Abstract.FunctionDefinition || definition instanceof Abstract.DataDefinition;
+  public static boolean hasHeader(Concrete.Definition definition) {
+    return definition instanceof Concrete.FunctionDefinition || definition instanceof Concrete.DataDefinition;
   }
 
   @Override
@@ -31,9 +30,7 @@ public class Typecheckable {
     if (o == null || getClass() != o.getClass()) return false;
 
     Typecheckable that = (Typecheckable) o;
-
-    if (myHeader != that.myHeader) return false;
-    return myDefinition.equals(that.myDefinition);
+    return myHeader == that.myHeader && myDefinition.equals(that.myDefinition);
   }
 
   @Override

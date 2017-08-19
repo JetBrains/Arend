@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.frontend.AbstractCompareVisitor;
@@ -20,7 +19,6 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -118,10 +116,6 @@ public final class Concrete {
   public static abstract class Expression<T> extends SourceNode<T> implements Abstract.Expression {
     public Expression(T data) {
       super(data);
-    }
-
-    @Override
-    public void setWellTyped(Map<Abstract.ReferableSourceNode, Binding> context, com.jetbrains.jetpad.vclang.core.expr.Expression wellTyped) {
     }
 
     public abstract <P, R> R accept(ConcreteExpressionVisitor<T, ? super P, ? extends R> visitor, P params);
@@ -242,27 +236,14 @@ public final class Concrete {
     }
   }
 
-  public static class BinOpExpression<T> extends Expression<T> implements Abstract.BinOpExpression {
-    private final Abstract.ReferableSourceNode myBinOp;
+  public static class BinOpExpression<T> extends ReferenceExpression<T> implements Abstract.BinOpExpression {
     private final Expression<T> myLeft;
     private final Expression<T> myRight;
 
     public BinOpExpression(T data, Expression<T> left, Abstract.ReferableSourceNode binOp, Expression<T> right) {
-      super(data);
+      super(data, binOp);
       myLeft = left;
-      myBinOp = binOp;
       myRight = right;
-    }
-
-    @Override
-    public String getName() {
-      return myBinOp.getName();
-    }
-
-    @Nonnull
-    @Override
-    public Abstract.ReferableSourceNode getReferent() {
-      return myBinOp;
     }
 
     @Nonnull
@@ -825,7 +806,7 @@ public final class Concrete {
     List<Pattern<T>> getPatterns();
   }
 
-  public static class FunctionClause<T> extends SourceNode<T> implements Abstract.FunctionClause, PatternContainer {
+  public static class FunctionClause<T> extends Clause<T> implements Abstract.FunctionClause {
     private final List<Pattern<T>> myPatterns;
     private final Expression<T> myExpression;
 
@@ -1382,7 +1363,13 @@ public final class Concrete {
     }
   }
 
-  public static class ConstructorClause<T> extends SourceNode<T> implements Abstract.ConstructorClause, PatternContainer {
+  public static abstract class Clause<T> extends SourceNode<T> implements Abstract.Clause, PatternContainer<T> {
+    public Clause(T data) {
+      super(data);
+    }
+  }
+
+  public static class ConstructorClause<T> extends Clause<T> implements Abstract.ConstructorClause {
     private final List<Pattern<T>> myPatterns;
     private final List<Constructor<T>> myConstructors;
 

@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
@@ -49,7 +50,7 @@ public abstract class Expression implements ExpectedType {
     expr.accept(new PrettyPrintVisitor(builder, SourceInfoProvider.TRIVIAL, 0, doIndent), Abstract.Expression.PREC);
   }
 
-  public boolean isLessOrEquals(Expression type, Equations equations, Abstract.SourceNode sourceNode) {
+  public <T> boolean isLessOrEquals(Expression type, Equations<T> equations, Concrete.SourceNode<T> sourceNode) {
     return CompareVisitor.compare(equations, Equations.CMP.LE, this, type, sourceNode);
   }
 
@@ -167,7 +168,7 @@ public abstract class Expression implements ExpectedType {
     return clazz.cast(this);
   }
 
-  public <T extends Expression> boolean isInstance(Class<T> clazz) {
+  public boolean isInstance(Class clazz) {
     return clazz.isInstance(this);
   }
 

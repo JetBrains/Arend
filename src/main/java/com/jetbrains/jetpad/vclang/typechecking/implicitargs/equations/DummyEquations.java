@@ -5,29 +5,30 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVaria
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
-public class DummyEquations implements Equations {
+public class DummyEquations<T> implements Equations<T> {
   private static final DummyEquations INSTANCE = new DummyEquations();
 
   private DummyEquations() {}
 
-  public static DummyEquations getInstance() {
+  public static <T> DummyEquations<T> getInstance() {
+    //noinspection unchecked
     return INSTANCE;
   }
 
   @Override
-  public boolean add(Expression expr1, Expression expr2, CMP cmp, Abstract.SourceNode sourceNode, InferenceVariable stuckVar) {
+  public boolean add(Expression expr1, Expression expr2, CMP cmp, Concrete.SourceNode<T> sourceNode, InferenceVariable<T> stuckVar) {
     return false;
   }
 
   @Override
-  public boolean solve(Expression type, Expression expr, CMP cmp, Abstract.SourceNode sourceNode) {
+  public boolean solve(Expression type, Expression expr, CMP cmp, Concrete.SourceNode<T> sourceNode) {
     return false;
   }
 
   @Override
-  public boolean add(Level expr1, Level expr2, CMP cmp, Abstract.SourceNode sourceNode) {
+  public boolean add(Level expr1, Level expr2, CMP cmp, Concrete.SourceNode<T> sourceNode) {
     return false;
   }
 
@@ -47,7 +48,7 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public LevelSubstitution solve(Abstract.SourceNode sourceNode) {
+  public LevelSubstitution solve(Concrete.SourceNode<T> sourceNode) {
     return LevelSubstitution.EMPTY;
   }
 }

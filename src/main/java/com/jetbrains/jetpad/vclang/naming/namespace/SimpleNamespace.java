@@ -35,7 +35,7 @@ public class SimpleNamespace implements Namespace {
       throw new InvalidNamespaceException() {
         @Override
         public GeneralError toError() {
-          return new DuplicateNameError(Error.Level.ERROR, def, prev, (Concrete.SourceNode) def);
+          return new DuplicateNameError<>(Error.Level.ERROR, def, prev, (Concrete.SourceNode<?>) def); // TODO[abstract]
         }
       };
     }

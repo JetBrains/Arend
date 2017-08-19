@@ -34,7 +34,7 @@ public class GlobalInstancePool implements ClassViewInstancePool {
     for (Abstract.ClassViewInstance instance : instances) {
       if ((isView && instance.getClassView().getReferent() == classView ||
           !isView && ((Abstract.ClassView) instance.getClassView().getReferent()).getUnderlyingClassReference().getReferent() == classView.getUnderlyingClassReference().getReferent()) &&
-        instance.getClassifyingDefinition() == classifyingDefCall.getDefinition().getAbstractDefinition()) {
+        instance.getClassifyingDefinition() == classifyingDefCall.getDefinition().getConcreteDefinition()) {
         Definition definition = myTypecheckerState.getTypechecked(instance);
         if (definition.status().headerIsOK()) {
           return new FunCallExpression((FunctionDefinition) definition, Sort.PROP /* TODO[classes] */, Collections.emptyList());

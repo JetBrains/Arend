@@ -959,7 +959,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\function isequiv {A B : \\Type0} (f : A -> B) => 0\n" +
         "\\function inP-isequiv (P : \\Prop) => isequiv (TrP P).inP");
     Concrete.FunctionDefinition lastDef = (Concrete.FunctionDefinition) ((Concrete.DefineStatement) cd.getGlobalStatements().get(1)).getDefinition();
-    ((Concrete.ReferenceExpression) ((Concrete.AppExpression) ((Abstract.TermFunctionBody) lastDef.getBody()).getTerm()).getArgument().getExpression()).setResolvedReferent(Prelude.PROP_TRUNC.getConstructor("inP").getAbstractDefinition());
+    ((Concrete.ReferenceExpression) ((Concrete.AppExpression) ((Abstract.TermFunctionBody) lastDef.getBody()).getTerm()).getArgument().getExpression()).setResolvedReferent(Prelude.PROP_TRUNC.getConstructor("inP").getConcreteDefinition());
     typeCheckClass(cd);
   }
 }

@@ -14,7 +14,7 @@ import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -23,25 +23,25 @@ import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FieldCall;
 
-public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
+public class CompareVisitor<T> extends BaseExpressionVisitor<Expression, Boolean> {
   private final Map<Binding, Binding> mySubstitution;
-  private Equations myEquations;
-  private final Abstract.SourceNode mySourceNode;
+  private Equations<T> myEquations;
+  private final Concrete.SourceNode<T> mySourceNode;
   private Equations.CMP myCMP;
 
-  private CompareVisitor(Equations equations, Equations.CMP cmp, Abstract.SourceNode sourceNode) {
+  private CompareVisitor(Equations<T> equations, Equations.CMP cmp, Concrete.SourceNode<T> sourceNode) {
     mySubstitution = new HashMap<>();
     myEquations = equations;
     mySourceNode = sourceNode;
     myCMP = cmp;
   }
 
-  public static boolean compare(Equations equations, Equations.CMP cmp, Expression expr1, Expression expr2, Abstract.SourceNode sourceNode) {
-    return new CompareVisitor(equations, cmp, sourceNode).compare(expr1, expr2);
+  public static <T> boolean compare(Equations<T> equations, Equations.CMP cmp, Expression expr1, Expression expr2, Concrete.SourceNode<T> sourceNode) {
+    return new CompareVisitor<>(equations, cmp, sourceNode).compare(expr1, expr2);
   }
 
-  public static boolean compare(Equations equations, ElimTree tree1, ElimTree tree2, Abstract.SourceNode sourceNode) {
-    return new CompareVisitor(equations, Equations.CMP.EQ, sourceNode).compare(tree1, tree2);
+  public static <T> boolean compare(Equations<T> equations, ElimTree tree1, ElimTree tree2, Concrete.SourceNode<T> sourceNode) {
+    return new CompareVisitor<>(equations, Equations.CMP.EQ, sourceNode).compare(tree1, tree2);
   }
 
   private Boolean compare(ElimTree elimTree1, ElimTree elimTree2) {
@@ -84,7 +84,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   private Boolean compare(Expression expr1, Expression expr2) {
     if (// expr1.isInstance(AppExpression.class) && expr2.isInstance(AppExpression.class) ||
            expr1.isInstance(FunCallExpression.class) && expr2.isInstance(FunCallExpression.class) && expr1.cast(FunCallExpression.class).getDefinition() == expr2.cast(FunCallExpression.class).getDefinition()) {
-      Equations equations = myEquations;
+      Equations<T> equations = myEquations;
       myEquations = DummyEquations.getInstance();
       boolean ok = // expr1.isInstance(AppExpression.class) ? visitApp(expr1.cast(AppExpression.class), expr2.cast(AppExpression.class)) :
         visitDefCall(expr1.cast(FunCallExpression.class), expr2.cast(FunCallExpression.class));
@@ -105,11 +105,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     }
 
     if (expr1.isInstance(InferenceReferenceExpression.class)) {
-      InferenceVariable variable = expr1.cast(InferenceReferenceExpression.class).getVariable();
+      InferenceVariable<T> variable = expr1.cast(InferenceReferenceExpression.class).getVariable();
       return myEquations.add(expr1, expr2, myCMP, variable.getSourceNode(), variable);
     }
     if (expr2.isInstance(InferenceReferenceExpression.class)) {
-      InferenceVariable variable = expr2.cast(InferenceReferenceExpression.class).getVariable();
+      InferenceVariable<T> variable = expr2.cast(InferenceReferenceExpression.class).getVariable();
       return myEquations.add(expr1, expr2.subst(getSubstitution()), myCMP, variable.getSourceNode(), variable);
     }
 
@@ -144,7 +144,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       return true;
     }
 
-    InferenceVariable variable;
+    InferenceVariable<T> variable;
     if (stuck1 != null && stuck1.isInstance(InferenceReferenceExpression.class)) {
       variable = stuck1.cast(InferenceReferenceExpression.class).getVariable();
     } else
@@ -179,7 +179,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
   private boolean checkIsInferVar(Expression fun, Expression expr1, Expression expr2) {
     InferenceReferenceExpression ref = fun.checkedCast(InferenceReferenceExpression.class);
-    InferenceVariable binding = ref != null && ref.getSubstExpression() == null ? ref.getVariable() : null;
+    InferenceVariable<T> binding = ref != null && ref.getSubstExpression() == null ? ref.getVariable() : null;
     return binding != null && myEquations.add(expr1, expr2.subst(getSubstitution()), myCMP, binding.getSourceNode(), binding);
   }
 
@@ -291,7 +291,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       return false;
     }
 
-    InferenceVariable variable = null;
+    InferenceVariable<T> variable = null;
     InferenceReferenceExpression ref1 = fieldCall1.getExpression().checkedCast(InferenceReferenceExpression.class);
     if (ref1 != null && ref1.getSubstExpression() == null) {
       variable = ref1.getVariable();

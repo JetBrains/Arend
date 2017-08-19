@@ -15,6 +15,7 @@ import com.jetbrains.jetpad.vclang.module.caching.LocalizedTypecheckerState;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.ArrayList;
@@ -39,9 +40,9 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
       final Abstract.Definition abstractDef = getAbstract(id);
       switch (defProto.getDefinitionDataCase()) {
         case CLASS:
-          ClassDefinition classDef = new ClassDefinition((Abstract.ClassDefinition) abstractDef);
+          ClassDefinition classDef = new ClassDefinition((Concrete.ClassDefinition<?>) abstractDef);
           for (String constructorId : defProto.getClass_().getFieldsMap().keySet()) {
-            Abstract.ClassField absField = (Abstract.ClassField) getAbstract(constructorId);
+            Concrete.ClassField<?> absField = (Concrete.ClassField<?>) getAbstract(constructorId);
             ClassField res = new ClassField(absField, classDef);
             res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
             state.record(absField, res);
@@ -49,9 +50,9 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
           def = classDef;
           break;
         case DATA:
-          DataDefinition dataDef = new DataDefinition((Abstract.DataDefinition) abstractDef);
+          DataDefinition dataDef = new DataDefinition((Concrete.DataDefinition<?>) abstractDef);
           for (String constructorId : defProto.getData().getConstructorsMap().keySet()) {
-            Abstract.Constructor absConstructor = (Abstract.Constructor) getAbstract(constructorId);
+            Concrete.Constructor<?> absConstructor = (Concrete.Constructor<?>) getAbstract(constructorId);
             Constructor res = new Constructor(absConstructor, dataDef);
             res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
             state.record(absConstructor, res);
@@ -59,7 +60,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
           def = dataDef;
           break;
         case FUNCTION:
-          def = new FunctionDefinition(getAbstract(id));
+          def = new FunctionDefinition((Concrete.Definition<?>) getAbstract(id));
           break;
         default:
           throw new DeserializationError("Unknown Definition kind: " + defProto.getDefinitionDataCase());

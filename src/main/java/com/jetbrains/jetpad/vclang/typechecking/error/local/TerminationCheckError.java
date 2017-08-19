@@ -21,7 +21,7 @@ public class TerminationCheckError<T> extends GeneralError<T> {
   // TODO[abstract]: override getCause and getCausePP
   public TerminationCheckError(Definition def, Set<RecursiveBehavior<Definition>> behaviors) {
     super(Level.ERROR, "");
-    definition = def.getAbstractDefinition();
+    definition = def.getConcreteDefinition();
     this.behaviors = behaviors;
   }
 

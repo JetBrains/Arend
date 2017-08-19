@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.order;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.Typecheckable;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckableProvider;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckingUnit;
@@ -8,7 +9,7 @@ import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProvi
 
 import java.util.*;
 
-public class Ordering {
+public class Ordering<T> {
   private static class DefState {
     int index, lowLink;
     boolean onStack;
@@ -21,32 +22,32 @@ public class Ordering {
   }
 
   private int myIndex = 0;
-  private final Stack<TypecheckingUnit> myStack = new Stack<>();
-  private final Map<Typecheckable, DefState> myVertices = new HashMap<>();
+  private final Stack<TypecheckingUnit<T>> myStack = new Stack<>();
+  private final Map<Typecheckable<T>, DefState> myVertices = new HashMap<>();
   private final InstanceProviderSet myInstanceProviderSet;
-  private final TypecheckableProvider myTypecheckableProvider;
-  private final DependencyListener myListener;
+  private final TypecheckableProvider<T> myTypecheckableProvider;
+  private final DependencyListener<T> myListener;
   private final boolean myRefToHeaders;
 
-  public Ordering(InstanceProviderSet instanceProviderSet, TypecheckableProvider typecheckableProvider, DependencyListener listener, boolean refToHeaders) {
+  public Ordering(InstanceProviderSet instanceProviderSet, TypecheckableProvider<T> typecheckableProvider, DependencyListener<T> listener, boolean refToHeaders) {
     myInstanceProviderSet = instanceProviderSet;
     myTypecheckableProvider = typecheckableProvider;
     myListener = listener;
     myRefToHeaders = refToHeaders;
   }
 
-  private Abstract.ClassDefinition getEnclosingClass(Abstract.Definition definition) {
-    Abstract.Definition parent = definition.getParentDefinition();
+  private Concrete.ClassDefinition<T> getEnclosingClass(Concrete.Definition<T> definition) {
+    Concrete.Definition<T> parent = definition.getParentDefinition();
     if (parent == null) {
       return null;
     }
-    if (parent instanceof Abstract.ClassDefinition && !definition.isStatic()) {
-      return (Abstract.ClassDefinition) parent;
+    if (parent instanceof Concrete.ClassDefinition && !definition.isStatic()) {
+      return (Concrete.ClassDefinition<T>) parent;
     }
     return getEnclosingClass(parent);
   }
 
-  public void doOrder(Abstract.Definition definition) {
+  public void doOrder(Concrete.Definition<T> definition) {
     if (definition instanceof Abstract.ClassView || definition instanceof Abstract.ClassViewField) {
       return;
     }
@@ -55,7 +56,7 @@ public class Ordering {
       return;
     }
 
-    Typecheckable typecheckable = new Typecheckable(definition, myRefToHeaders);
+    Typecheckable<T> typecheckable = new Typecheckable<>(definition, myRefToHeaders);
     if (!myVertices.containsKey(typecheckable)) {
       doOrderRecursively(typecheckable);
     }
@@ -63,7 +64,7 @@ public class Ordering {
 
   private enum OrderResult { REPORTED, NOT_REPORTED, RECURSION_ERROR }
 
-  private OrderResult updateState(DefState currentState, Typecheckable dependency) {
+  private OrderResult updateState(DefState currentState, Typecheckable<T> dependency) {
     if (!myListener.needsOrdering(dependency.getDefinition())) {
       return OrderResult.REPORTED;
     }
@@ -79,18 +80,18 @@ public class Ordering {
     return ok;
   }
 
-  private OrderResult doOrderRecursively(Typecheckable typecheckable) {
-    Abstract.Definition definition = typecheckable.getDefinition();
-    Abstract.ClassDefinition enclosingClass = getEnclosingClass(definition);
-    TypecheckingUnit unit = new TypecheckingUnit(typecheckable, enclosingClass);
+  private OrderResult doOrderRecursively(Typecheckable<T> typecheckable) {
+    Concrete.Definition<T> definition = typecheckable.getDefinition();
+    Concrete.ClassDefinition<T> enclosingClass = getEnclosingClass(definition);
+    TypecheckingUnit<T> unit = new TypecheckingUnit<>(typecheckable, enclosingClass);
     DefState currentState = new DefState(myIndex);
     myVertices.put(typecheckable, currentState);
     myIndex++;
     myStack.push(unit);
 
-    Typecheckable header = null;
+    Typecheckable<T> header = null;
     if (!typecheckable.isHeader() && Typecheckable.hasHeader(definition)) {
-      header = new Typecheckable(definition, true);
+      header = new Typecheckable<>(definition, true);
       OrderResult result = updateState(currentState, header);
 
       if (result == OrderResult.RECURSION_ERROR) {
@@ -119,12 +120,11 @@ public class Ordering {
     }
 
     for (Abstract.GlobalReferableSourceNode referable : dependencies) {
-      Abstract.Definition dependency = myTypecheckableProvider.forReferable(referable);
-      if (dependency instanceof Abstract.ClassField) {
-        dependency = ((Abstract.ClassField) dependency).getParentDefinition();
-        assert dependency != null;
-      } else if (dependency instanceof Abstract.Constructor) {
-        dependency = ((Abstract.Constructor) dependency).getDataType();
+      Concrete.Definition<T> dependency = myTypecheckableProvider.forReferable(referable);
+      if (dependency instanceof Concrete.ClassField) {
+        dependency = ((Concrete.ClassField<T>) dependency).getParentDefinition();
+      } else if (dependency instanceof Concrete.Constructor) {
+        dependency = ((Concrete.Constructor<T>) dependency).getDataType();
       }
 
       if (dependency.equals(definition)) {
@@ -133,20 +133,20 @@ public class Ordering {
         }
       } else {
         myListener.dependsOn(typecheckable, dependency);
-        updateState(currentState, new Typecheckable(dependency, myRefToHeaders));
+        updateState(currentState, new Typecheckable<>(dependency, myRefToHeaders));
       }
     }
 
-    SCC scc = null;
+    SCC<T> scc = null;
     if (currentState.lowLink == currentState.index) {
-      List<TypecheckingUnit> units = new ArrayList<>();
+      List<TypecheckingUnit<T>> units = new ArrayList<>();
       do {
         unit = myStack.pop();
         myVertices.get(unit.getTypecheckable()).onStack = false;
         units.add(unit);
       } while (!unit.getTypecheckable().equals(typecheckable));
       Collections.reverse(units);
-      scc = new SCC(units);
+      scc = new SCC<>(units);
 
       if (myRefToHeaders) {
         myListener.sccFound(scc);
@@ -164,7 +164,7 @@ public class Ordering {
     }
 
     if (header != null) {
-      myListener.sccFound(new SCC(Collections.singletonList(new TypecheckingUnit(header, enclosingClass))));
+      myListener.sccFound(new SCC<>(Collections.singletonList(new TypecheckingUnit<>(header, enclosingClass))));
     }
     if (scc != null) {
       myListener.sccFound(scc);

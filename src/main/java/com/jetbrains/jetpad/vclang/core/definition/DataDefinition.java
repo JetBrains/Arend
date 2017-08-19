@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -22,14 +23,14 @@ public class DataDefinition extends Definition {
   private boolean myIsTruncated;
   private Set<Integer> myCovariantParameters;
 
-  public DataDefinition(Abstract.DataDefinition abstractDef) {
+  public DataDefinition(Concrete.DataDefinition<?> abstractDef) {
     super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
     myConstructors = new ArrayList<>();
   }
 
   @Override
-  public Abstract.DataDefinition getAbstractDefinition() {
-    return (Abstract.DataDefinition) super.getAbstractDefinition();
+  public Concrete.DataDefinition<?> getConcreteDefinition() {
+    return (Concrete.DataDefinition<?>) super.getConcreteDefinition();
   }
 
   public Sort getSort() {
@@ -75,7 +76,7 @@ public class DataDefinition extends Definition {
 
   public Constructor getConstructor(Abstract.Constructor abstractCon) {
     for (Constructor constructor : myConstructors) {
-      if (constructor.getAbstractDefinition().equals(abstractCon)) {
+      if (constructor.getConcreteDefinition().equals(abstractCon)) {
         return constructor;
       }
     }

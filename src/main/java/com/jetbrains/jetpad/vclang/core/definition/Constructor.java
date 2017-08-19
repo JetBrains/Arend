@@ -12,7 +12,7 @@ import com.jetbrains.jetpad.vclang.core.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,7 +25,7 @@ public class Constructor extends Definition implements Function {
   private Body myConditions;
   private List<ClauseBase> myClauses;
 
-  public Constructor(Abstract.Constructor abstractDef, DataDefinition dataType) {
+  public Constructor(Concrete.Constructor<?> abstractDef, DataDefinition dataType) {
     super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
     myDataType = dataType;
     myParameters = null;
@@ -54,8 +54,8 @@ public class Constructor extends Definition implements Function {
   }
 
   @Override
-  public Abstract.Constructor getAbstractDefinition() {
-    return (Abstract.Constructor) super.getAbstractDefinition();
+  public Concrete.Constructor<?> getConcreteDefinition() {
+    return (Concrete.Constructor<?>) super.getConcreteDefinition();
   }
 
   @Override

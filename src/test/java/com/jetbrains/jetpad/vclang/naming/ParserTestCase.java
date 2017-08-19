@@ -83,7 +83,7 @@ public abstract class ParserTestCase extends VclangTestCase {
     return classDefinition;
   }
 
-  protected Concrete.ClassDefinition parseClass(String name, String text) {
+  protected Concrete.ClassDefinition<Position> parseClass(String name, String text) {
     return parseClass(name, text, 0);
   }
 

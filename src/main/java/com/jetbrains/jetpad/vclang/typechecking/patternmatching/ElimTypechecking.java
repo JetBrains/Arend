@@ -27,9 +27,9 @@ import com.jetbrains.jetpad.vclang.util.Pair;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class ElimTypechecking {
-  private final CheckTypeVisitor myVisitor;
-  private Set<Abstract.FunctionClause> myUnusedClauses;
+public class ElimTypechecking<T> {
+  private final CheckTypeVisitor<T> myVisitor;
+  private Set<Concrete.FunctionClause<T>> myUnusedClauses;
   private final EnumSet<PatternTypechecking.Flag> myFlags;
   private final Expression myExpectedType;
   private boolean myOK;
@@ -38,26 +38,26 @@ public class ElimTypechecking {
   private static final int MISSING_CLAUSES_LIST_SIZE = 10;
   private List<Pair<List<Util.ClauseElem>, Boolean>> myMissingClauses;
 
-  public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, EnumSet<PatternTypechecking.Flag> flags) {
+  public ElimTypechecking(CheckTypeVisitor<T> visitor, Expression expectedType, EnumSet<PatternTypechecking.Flag> flags) {
     myVisitor = visitor;
     myExpectedType = expectedType;
     myFlags = flags;
   }
 
-  public static List<DependentLink> getEliminatedParameters(List<? extends Abstract.ReferenceExpression> expressions, List<? extends Abstract.Clause> clauses, DependentLink parameters, CheckTypeVisitor visitor) {
+  public static <T> List<DependentLink> getEliminatedParameters(List<? extends Concrete.ReferenceExpression<T>> expressions, List<? extends Concrete.Clause<T>> clauses, DependentLink parameters, CheckTypeVisitor<T> visitor) {
     List<DependentLink> elimParams = Collections.emptyList();
     if (!expressions.isEmpty()) {
       int expectedNumberOfPatterns = expressions.size();
-      for (Abstract.Clause clause : clauses) {
+      for (Concrete.Clause<T> clause : clauses) {
         if (clause.getPatterns() != null && clause.getPatterns().size() != expectedNumberOfPatterns) {
-          visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected " + expectedNumberOfPatterns + " patterns, but got " + clause.getPatterns().size(), (Concrete.SourceNode) clause));
+          visitor.getErrorReporter().report(new LocalTypeCheckingError<>("Expected " + expectedNumberOfPatterns + " patterns, but got " + clause.getPatterns().size(), clause));
           return null;
         }
       }
 
       DependentLink link = parameters;
       elimParams = new ArrayList<>(expressions.size());
-      for (Abstract.ReferenceExpression expr : expressions) {
+      for (Concrete.ReferenceExpression<T> expr : expressions) {
         DependentLink elimParam = (DependentLink) visitor.getContext().get(expr.getReferent());
         while (elimParam != link) {
           if (!link.hasNext()) {
@@ -65,7 +65,7 @@ public class ElimTypechecking {
             while (link.hasNext() && link != elimParam) {
               link = link.getNext();
             }
-            visitor.getErrorReporter().report(new LocalTypeCheckingError(link == elimParam ? "Variable elimination must be in the order of variable introduction" : "Only parameters can be eliminated", (Concrete.SourceNode) expr));
+            visitor.getErrorReporter().report(new LocalTypeCheckingError<>(link == elimParam ? "Variable elimination must be in the order of variable introduction" : "Only parameters can be eliminated", expr));
             return null;
           }
           link = link.getNext();
@@ -76,21 +76,21 @@ public class ElimTypechecking {
     return elimParams;
   }
 
-  public ElimTree typecheckElim(List<? extends Abstract.FunctionClause> funClauses, Abstract.SourceNode sourceNode, DependentLink parameters, List<Clause> resultClauses) {
+  public ElimTree typecheckElim(List<? extends Concrete.FunctionClause<T>> funClauses, Concrete.SourceNode<T> sourceNode, DependentLink parameters, List<Clause<T>> resultClauses) {
     assert !myFlags.contains(PatternTypechecking.Flag.ALLOW_INTERVAL);
     return (ElimTree) typecheckElim(funClauses, sourceNode, null, parameters, Collections.emptyList(), resultClauses);
   }
 
-  public Body typecheckElim(List<? extends Abstract.FunctionClause> funClauses, Abstract.SourceNode sourceNode, List<? extends Abstract.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, List<Clause> resultClauses) {
-    List<ExtClause> clauses = new ArrayList<>(funClauses.size());
+  public Body typecheckElim(List<? extends Concrete.FunctionClause<T>> funClauses, Concrete.SourceNode<T> sourceNode, List<? extends Abstract.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, List<Clause<T>> resultClauses) {
+    List<ExtClause<T>> clauses = new ArrayList<>(funClauses.size());
     PatternTypechecking patternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), myFlags);
     myOK = true;
-    for (Abstract.FunctionClause clause : funClauses) {
+    for (Concrete.FunctionClause<T> clause : funClauses) {
       Pair<List<Pattern>, CheckTypeVisitor.Result> result = patternTypechecking.typecheckClause(clause, abstractParameters, parameters, elimParams, myExpectedType, myVisitor);
       if (result == null) {
         myOK = false;
       } else {
-        clauses.add(new ExtClause(result.proj1, result.proj2 == null ? null : result.proj2.expression, new ExprSubstitution(), clause));
+        clauses.add(new ExtClause<>(result.proj1, result.proj2 == null ? null : result.proj2.expression, new ExprSubstitution(), clause));
       }
     }
     if (!myOK) {
@@ -99,12 +99,12 @@ public class ElimTypechecking {
 
     myUnusedClauses = new HashSet<>(funClauses);
 
-    List<ExtClause> intervalClauses = Collections.emptyList();
-    List<ExtClause> nonIntervalClauses = clauses;
+    List<ExtClause<T>> intervalClauses = Collections.emptyList();
+    List<ExtClause<T>> nonIntervalClauses = clauses;
     if (myFlags.contains(PatternTypechecking.Flag.ALLOW_INTERVAL)) {
       intervalClauses = new ArrayList<>();
       nonIntervalClauses = new ArrayList<>();
-      for (ExtClause clause : clauses) {
+      for (ExtClause<T> clause : clauses) {
         boolean hasNonIntervals = false;
         int intervals = 0;
         for (Pattern pattern : clause.patterns) {
@@ -124,11 +124,11 @@ public class ElimTypechecking {
         if (hasNonIntervals || intervals == 0) {
           nonIntervalClauses.add(clause);
           if (resultClauses != null) {
-            resultClauses.add(new Clause(clause.patterns, clause.expression, clause.clause));
+            resultClauses.add(new Clause<>(clause.patterns, clause.expression, clause.clause));
           }
         } else {
           if (intervals > 1) {
-            myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Only a single interval pattern per row is allowed", (Concrete.SourceNode) clause.clause));
+            myVisitor.getErrorReporter().report(new LocalTypeCheckingError<>("Only a single interval pattern per row is allowed", clause.clause));
             myUnusedClauses.remove(clause.clause);
           } else {
             intervalClauses.add(clause);
@@ -147,10 +147,10 @@ public class ElimTypechecking {
       }
       cases = cases.subList(i, cases.size());
 
-      for (ExtClause clause : nonIntervalClauses) {
+      for (ExtClause<T> clause : nonIntervalClauses) {
         for (int j = i; j < clause.patterns.size(); j++) {
           if (!(clause.patterns.get(j) instanceof BindingPattern)) {
-            myVisitor.getErrorReporter().report(new LocalTypeCheckingError("A pattern matching on a data type is allowed only before the pattern matching on the interval", (Concrete.SourceNode) clause.clause));
+            myVisitor.getErrorReporter().report(new LocalTypeCheckingError<>("A pattern matching on a data type is allowed only before the pattern matching on the interval", clause.clause));
             myOK = false;
           }
         }
@@ -185,7 +185,7 @@ public class ElimTypechecking {
       }
 
       if (emptyLink == null && myFlags.contains(PatternTypechecking.Flag.CHECK_COVERAGE)) {
-        myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Coverage check failed", (Concrete.SourceNode) sourceNode));
+        myVisitor.getErrorReporter().report(new LocalTypeCheckingError<>("Coverage check failed", sourceNode));
       }
 
       ElimTree elimTree = null;
@@ -246,28 +246,28 @@ public class ElimTypechecking {
       }
 
       if (!missingClauses.isEmpty()) {
-        myVisitor.getErrorReporter().report(new MissingClausesError(missingClauses, (Concrete.SourceNode) sourceNode));
+        myVisitor.getErrorReporter().report(new MissingClausesError<>(missingClauses, sourceNode));
       }
     }
 
     if (myOK) {
-      for (Abstract.FunctionClause clause : myUnusedClauses) {
-        myVisitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, "This clause is redundant", (Concrete.SourceNode) clause));
+      for (Concrete.FunctionClause<T> clause : myUnusedClauses) {
+        myVisitor.getErrorReporter().report(new LocalTypeCheckingError<>(Error.Level.WARNING, "This clause is redundant", clause));
       }
     }
     return cases == null ? elimTree : new IntervalElim(parameters, cases, elimTree);
   }
 
-  private class ExtClause extends Clause {
+  private static class ExtClause<T> extends Clause<T> {
     final ExprSubstitution substitution;
 
-    ExtClause(List<Pattern> patterns, Expression expression, ExprSubstitution substitution, Abstract.FunctionClause clause) {
+    ExtClause(List<Pattern> patterns, Expression expression, ExprSubstitution substitution, Concrete.FunctionClause<T> clause) {
       super(patterns, expression, clause);
       this.substitution = substitution;
     }
   }
 
-  private List<Pair<Expression, Expression>> clausesToIntervalElim(List<ExtClause> clauseDataList, DependentLink parameters) {
+  private List<Pair<Expression, Expression>> clausesToIntervalElim(List<ExtClause<T>> clauseDataList, DependentLink parameters) {
     List<Pair<Expression, Expression>> result = new ArrayList<>(clauseDataList.get(0).patterns.size());
     for (int i = 0; i < clauseDataList.get(0).patterns.size(); i++) {
       Expression left = null;
@@ -332,7 +332,7 @@ public class ElimTypechecking {
     return result;
   }
 
-  private ElimTree clausesToElimTree(List<ExtClause> clauseDataList) {
+  private ElimTree clausesToElimTree(List<ExtClause<T>> clauseDataList) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       int index = 0;
       loop:
@@ -378,8 +378,8 @@ public class ElimTypechecking {
         }
       }
 
-      ExtClause conClauseData = null;
-      for (ExtClause clauseData : clauseDataList) {
+      ExtClause<T> conClauseData = null;
+      for (ExtClause<T> clauseData : clauseDataList) {
         Pattern pattern = clauseData.patterns.get(index);
         if (pattern instanceof EmptyPattern) {
           myUnusedClauses.remove(clauseData.clause);
@@ -397,7 +397,7 @@ public class ElimTypechecking {
       if (someConPattern.getConstructor().getDataType().hasIndexedConstructors()) {
         conCalls = GetTypeVisitor.INSTANCE.visitConCall(new SubstVisitor(conClauseData.substitution, LevelSubstitution.EMPTY).visitConCall(someConPattern.getConCall(), null), null).getMatchedConstructors();
         if (conCalls == null) {
-          myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", (Concrete.SourceNode) conClauseData.clause));
+          myVisitor.getErrorReporter().report(new LocalTypeCheckingError<>("Elimination is not possible here, cannot determine the set of eligible constructors", conClauseData.clause));
           myOK = false;
           return null;
         }
@@ -411,22 +411,22 @@ public class ElimTypechecking {
 
       DataDefinition dataType = someConPattern.getConstructor().getDataType();
       if (dataType == Prelude.INTERVAL) {
-        myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Pattern matching on the interval is not allowed here", (Concrete.SourceNode) conClauseData.clause));
+        myVisitor.getErrorReporter().report(new LocalTypeCheckingError<>("Pattern matching on the interval is not allowed here", conClauseData.clause));
         myOK = false;
         return null;
       }
 
       if (someConPattern.getConstructor().getDataType().isTruncated()) {
         if (!myExpectedType.getType().isLessOrEquals(new UniverseExpression(dataType.getSort()), myVisitor.getEquations(), conClauseData.clause)) {
-          LocalTypeCheckingError error = new TruncatedDataError(dataType, myExpectedType, (Concrete.SourceNode) conClauseData.clause);
+          LocalTypeCheckingError<T> error = new TruncatedDataError<>(dataType, myExpectedType, conClauseData.clause);
           myVisitor.getErrorReporter().report(error);
           myOK = false;
         }
       }
 
       boolean hasVars = false;
-      Map<Constructor, List<ExtClause>> constructorMap = new LinkedHashMap<>();
-      for (ExtClause clauseData : clauseDataList) {
+      Map<Constructor, List<ExtClause<T>>> constructorMap = new LinkedHashMap<>();
+      for (ExtClause<T> clauseData : clauseDataList) {
         if (clauseData.patterns.get(index) instanceof BindingPattern) {
           hasVars = true;
           for (Constructor constructor : constructors) {
@@ -465,7 +465,7 @@ public class ElimTypechecking {
 
       Map<Constructor, ElimTree> children = new HashMap<>();
       for (Constructor constructor : constructors) {
-        List<ExtClause> conClauseDataList = constructorMap.get(constructor);
+        List<ExtClause<T>> conClauseDataList = constructorMap.get(constructor);
         if (conClauseDataList == null) {
           continue;
         }
@@ -508,7 +508,7 @@ public class ElimTypechecking {
             conClauseDataList.get(i).substitution.add(((BindingPattern) oldPatterns.get(index)).getBinding(), substExpr);
           }
           patterns.addAll(oldPatterns.subList(index + 1, oldPatterns.size()));
-          conClauseDataList.set(i, new ExtClause(patterns, conClauseDataList.get(i).expression, conClauseDataList.get(i).substitution, conClauseDataList.get(i).clause));
+          conClauseDataList.set(i, new ExtClause<>(patterns, conClauseDataList.get(i).expression, conClauseDataList.get(i).substitution, conClauseDataList.get(i).clause));
         }
 
         ElimTree elimTree = clausesToElimTree(conClauseDataList);

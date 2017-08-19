@@ -28,12 +28,12 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class StdImplicitArgsInference extends BaseImplicitArgsInference {
-  public StdImplicitArgsInference(CheckTypeVisitor visitor) {
+public class StdImplicitArgsInference<T> extends BaseImplicitArgsInference<T> {
+  public StdImplicitArgsInference(CheckTypeVisitor<T> visitor) {
     super(visitor);
   }
 
-  private static Abstract.ClassView getClassViewFromDefCall(Abstract.Definition definition, int paramIndex) {
+  private static Abstract.ClassView getClassViewFromDefCall(Concrete.Definition<?> definition, int paramIndex) {
     Collection<? extends Abstract.Parameter> parameters = Abstract.getParameters(definition);
     if (parameters == null) {
       return null;
@@ -60,7 +60,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     return null;
   }
 
-  protected CheckTypeVisitor.TResult fixImplicitArgs(CheckTypeVisitor.TResult result, List<? extends DependentLink> implicitParameters, Abstract.Expression expr) {
+  protected CheckTypeVisitor.TResult fixImplicitArgs(CheckTypeVisitor.TResult result, List<? extends DependentLink> implicitParameters, Concrete.Expression<T> expr) {
     ExprSubstitution substitution = new ExprSubstitution();
     int i = 0;
     for (DependentLink parameter : implicitParameters) {
@@ -68,7 +68,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       InferenceVariable infVar = null;
       if (result instanceof CheckTypeVisitor.DefCallResult) {
         CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
-        Abstract.ClassView classView = getClassViewFromDefCall(defCallResult.getDefinition().getAbstractDefinition(), i);
+        Abstract.ClassView classView = getClassViewFromDefCall(defCallResult.getDefinition().getConcreteDefinition(), i);
         if (classView != null) {
           infVar = new TypeClassInferenceVariable(parameter.getName(), type, classView, false, defCallResult.getDefCall(), myVisitor.getAllBindings());
         }
@@ -84,7 +84,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     return result;
   }
 
-  protected CheckTypeVisitor.TResult inferArg(CheckTypeVisitor.TResult result, Abstract.Expression arg, boolean isExplicit, Abstract.Expression fun) {
+  protected CheckTypeVisitor.TResult inferArg(CheckTypeVisitor.TResult result, Concrete.Expression<T> arg, boolean isExplicit, Concrete.Expression<T> fun) {
     if (result == null || arg == null || result instanceof CheckTypeVisitor.Result && ((CheckTypeVisitor.Result) result).expression.isInstance(ErrorExpression.class)) {
       return result;
     }
@@ -116,9 +116,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     DependentLink param = result.getParameter();
     if (!param.hasNext()) {
       CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations());
-      LocalTypeCheckingError error = new TypeMismatchError(text("A pi type"), termDoc(result1.type), (Concrete.SourceNode) fun);
-      fun.setWellTyped(myVisitor.getContext(), new ErrorExpression(result1.expression, error));
-      myVisitor.getErrorReporter().report(error);
+      myVisitor.getErrorReporter().report(new TypeMismatchError<>(text("A pi type"), termDoc(result1.type), fun));
       return null;
     }
 
@@ -128,37 +126,33 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     if (param.isExplicit() != isExplicit) {
-      LocalTypeCheckingError error = new LocalTypeCheckingError("Expected an " + (param.isExplicit() ? "explicit" : "implicit") + " argument", (Concrete.SourceNode) arg);
-      arg.setWellTyped(myVisitor.getContext(), new ErrorExpression(argResult.expression, error));
-      myVisitor.getErrorReporter().report(error);
+      myVisitor.getErrorReporter().report(new LocalTypeCheckingError<>("Expected an " + (param.isExplicit() ? "explicit" : "implicit") + " argument", arg));
       return null;
     }
 
     return result.applyExpression(argResult.expression);
   }
 
-  protected CheckTypeVisitor.TResult inferArg(Abstract.Expression fun, Abstract.Expression arg, boolean isExplicit, ExpectedType expectedType) {
+  protected CheckTypeVisitor.TResult inferArg(Concrete.Expression<T> fun, Concrete.Expression<T> arg, boolean isExplicit, ExpectedType expectedType) {
     CheckTypeVisitor.TResult result;
-    if (fun instanceof Abstract.AppExpression) {
-      Abstract.Argument argument = ((Abstract.AppExpression) fun).getArgument();
-      result = checkBinOpInferArg(((Abstract.AppExpression) fun).getFunction(), argument.getExpression(), argument.isExplicit(), expectedType);
+    if (fun instanceof Concrete.AppExpression) {
+      Concrete.Argument<T> argument = ((Concrete.AppExpression<T>) fun).getArgument();
+      result = checkBinOpInferArg(((Concrete.AppExpression<T>) fun).getFunction(), argument.getExpression(), argument.isExplicit(), expectedType);
     } else {
-      if (fun instanceof Abstract.ReferenceExpression) {
-        Abstract.ReferenceExpression defCall = (Abstract.ReferenceExpression) fun;
+      if (fun instanceof Concrete.ReferenceExpression) {
+        Concrete.ReferenceExpression<T> defCall = (Concrete.ReferenceExpression<T>) fun;
         result = defCall.getExpression() == null && !(defCall.getReferent() instanceof Abstract.GlobalReferableSourceNode) ? myVisitor.getLocalVar(defCall) : myVisitor.getTypeCheckingDefCall().typeCheckDefCall(defCall);
       } else {
         result = myVisitor.checkExpr(fun, null);
       }
 
       if (result instanceof CheckTypeVisitor.DefCallResult && isExplicit && expectedType != null) {
-        CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
+        CheckTypeVisitor.DefCallResult<?> defCallResult = (CheckTypeVisitor.DefCallResult<?>) result;
         if (defCallResult.getDefinition() instanceof Constructor && defCallResult.getArguments().size() < DependentLink.Helper.size(((Constructor) defCallResult.getDefinition()).getDataTypeParameters())) {
           DataCallExpression dataCall = expectedType instanceof Expression ? ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DataCallExpression.class) : null;
           if (dataCall != null) {
             if (((Constructor) defCallResult.getDefinition()).getDataType() != dataCall.getDefinition()) {
-              LocalTypeCheckingError error = new TypeMismatchError(termDoc(dataCall), refDoc(((Constructor) defCallResult.getDefinition()).getDataType().getAbstractDefinition()), (Concrete.SourceNode) fun);
-              arg.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
-              myVisitor.getErrorReporter().report(error);
+              myVisitor.getErrorReporter().report(new TypeMismatchError<>(termDoc(dataCall), refDoc(((Constructor) defCallResult.getDefinition()).getDataType().getConcreteDefinition()), fun));
               return null;
             }
 
@@ -185,35 +179,32 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     return inferArg(result, arg, isExplicit, fun);
   }
 
-  private CheckTypeVisitor.TResult checkBinOpInferArg(Abstract.Expression fun, Abstract.Expression arg, boolean isExplicit, ExpectedType expectedType) {
-    if (fun instanceof Abstract.BinOpExpression) {
-      return inferArg(inferArg(inferArg(fun, ((Abstract.BinOpExpression) fun).getLeft(), true, null), ((Abstract.BinOpExpression) fun).getRight(), true, fun), arg, isExplicit, fun);
+  private CheckTypeVisitor.TResult checkBinOpInferArg(Concrete.Expression<T> fun, Concrete.Expression<T> arg, boolean isExplicit, ExpectedType expectedType) {
+    if (fun instanceof Concrete.BinOpExpression) {
+      return inferArg(inferArg(inferArg(fun, ((Concrete.BinOpExpression<T>) fun).getLeft(), true, null), ((Concrete.BinOpExpression<T>) fun).getRight(), true, fun), arg, isExplicit, fun);
     } else {
       return inferArg(fun, arg, isExplicit, expectedType);
     }
   }
 
   @Override
-  public CheckTypeVisitor.TResult infer(Abstract.AppExpression expr, ExpectedType expectedType) {
-    Abstract.Argument arg = expr.getArgument();
+  public CheckTypeVisitor.TResult infer(Concrete.AppExpression<T> expr, ExpectedType expectedType) {
+    Concrete.Argument<T> arg = expr.getArgument();
     return checkBinOpInferArg(expr.getFunction(), arg.getExpression(), arg.isExplicit(), expectedType);
   }
 
   @Override
-  public CheckTypeVisitor.TResult infer(Abstract.BinOpExpression expr, ExpectedType expectedType) {
+  public CheckTypeVisitor.TResult infer(Concrete.BinOpExpression<T> expr, ExpectedType expectedType) {
     return inferArg(inferArg(expr, expr.getLeft(), true, null), expr.getRight(), true, expr);
   }
 
   @Override
-  public CheckTypeVisitor.TResult inferTail(CheckTypeVisitor.TResult result, ExpectedType expectedType, Abstract.Expression expr) {
+  public CheckTypeVisitor.TResult inferTail(CheckTypeVisitor.TResult result, ExpectedType expectedType, Concrete.Expression<T> expr) {
     List<? extends DependentLink> actualParams = result.getImplicitParameters();
     List<SingleDependentLink> expectedParams = new ArrayList<>(actualParams.size());
     expectedType.getPiParameters(expectedParams, true);
     if (expectedParams.size() > actualParams.size()) {
-      CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations());
-      LocalTypeCheckingError error = new TypeMismatchError(typeDoc(expectedType), termDoc(result1.type), (Concrete.SourceNode) expr);
-      expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result1.expression, error));
-      myVisitor.getErrorReporter().report(error);
+      myVisitor.getErrorReporter().report(new TypeMismatchError<>(typeDoc(expectedType), termDoc(result.toResult(myVisitor.getEquations()).type), expr));
       return null;
     }
 

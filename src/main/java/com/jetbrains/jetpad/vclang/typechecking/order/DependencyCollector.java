@@ -1,12 +1,13 @@
 package com.jetbrains.jetpad.vclang.typechecking.order;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.Typecheckable;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
 import java.util.*;
 
-public class DependencyCollector implements DependencyListener {
+public class DependencyCollector<T> implements DependencyListener<T> {
   private final Map<Abstract.Definition, Set<Abstract.Definition>> myDependencies = new HashMap<>();
   private final Map<Abstract.Definition, Set<Abstract.Definition>> myReverseDependencies = new HashMap<>();
   private final TypecheckerState myState;
@@ -16,12 +17,12 @@ public class DependencyCollector implements DependencyListener {
   }
 
   @Override
-  public void dependsOn(Typecheckable unit, Abstract.Definition def) {
+  public void dependsOn(Typecheckable<T> unit, Concrete.Definition<T> def) {
     myDependencies.computeIfAbsent(unit.getDefinition(), k -> new HashSet<>()).add(def);
     myReverseDependencies.computeIfAbsent(def, k -> new HashSet<>()).add(unit.getDefinition());
   }
 
-  public void update(Abstract.Definition definition) {
+  public void update(Concrete.Definition<T> definition) {
     Set<Abstract.Definition> updated = new HashSet<>();
     Stack<Abstract.Definition> stack = new Stack<>();
     stack.push(definition);

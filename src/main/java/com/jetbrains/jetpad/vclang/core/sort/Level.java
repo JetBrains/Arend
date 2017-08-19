@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -129,7 +130,7 @@ public class Level {
     return builder.toString();
   }
 
-  public static boolean compare(Level level1, Level level2, Equations.CMP cmp, Equations equations, Abstract.SourceNode sourceNode) {
+  public static <T> boolean compare(Level level1, Level level2, Equations.CMP cmp, Equations<T> equations, Concrete.SourceNode<T> sourceNode) {
     if (cmp == Equations.CMP.GE) {
       return compare(level2, level1, Equations.CMP.LE, equations, sourceNode);
     }

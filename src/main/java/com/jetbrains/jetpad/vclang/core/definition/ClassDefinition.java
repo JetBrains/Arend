@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -32,7 +32,7 @@ public class ClassDefinition extends Definition {
 
   private ClassField myEnclosingThisField = null;
 
-  public ClassDefinition(Abstract.ClassDefinition abstractDef) {
+  public ClassDefinition(Concrete.ClassDefinition<?> abstractDef) {
     super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
     mySuperClasses = new HashSet<>();
     myFields = new LinkedHashSet<>();
@@ -41,8 +41,8 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
-  public Abstract.ClassDefinition getAbstractDefinition() {
-    return (Abstract.ClassDefinition) super.getAbstractDefinition();
+  public Concrete.ClassDefinition<?> getConcreteDefinition() {
+    return (Concrete.ClassDefinition<?>) super.getConcreteDefinition();
   }
 
   public void updateSorts() {
