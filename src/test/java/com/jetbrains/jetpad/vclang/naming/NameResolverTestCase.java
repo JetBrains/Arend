@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.frontend.resolving.visitor.ExpressionResolveN
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.EmptyScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.OverridingScope;
@@ -58,7 +59,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
 
-  private Concrete.Expression<Position> resolveNamesExpr(Scope parentScope, List<Abstract.ReferableSourceNode> context, String text, int errors) {
+  private Concrete.Expression<Position> resolveNamesExpr(Scope parentScope, List<Referable> context, String text, int errors) {
     Concrete.Expression<Position> expression = parseExpr(text);
     assertThat(expression, is(notNullValue()));
 
@@ -79,8 +80,8 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     return resolveNamesExpr(parentScope, text, 0);
   }
 
-  protected Concrete.Expression<Position> resolveNamesExpr(Map<Abstract.ReferableSourceNode, Binding> context, String text) {
-    List<Abstract.ReferableSourceNode> names = new ArrayList<>(context.keySet());
+  protected Concrete.Expression<Position> resolveNamesExpr(Map<Referable, Binding> context, String text) {
+    List<Referable> names = new ArrayList<>(context.keySet());
     return resolveNamesExpr(globalScope, names, text, 0);
   }
 

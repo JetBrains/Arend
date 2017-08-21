@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming.namespace;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 
 public interface StaticNamespaceProvider {
-  Namespace forReferable(Abstract.GlobalReferableSourceNode referable);
+  Namespace forReferable(GlobalReferable referable);
 }

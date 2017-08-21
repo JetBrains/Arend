@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.module.caching;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
@@ -20,12 +21,12 @@ public class LocalizedTypecheckerState<SourceIdT extends SourceId> implements Ty
   }
 
   @Override
-  public void record(Abstract.GlobalReferableSourceNode def, Definition res) {
+  public void record(GlobalReferable def, Definition res) {
     getLocal(def).record(def, res);
   }
 
   @Override
-  public Definition getTypechecked(Abstract.GlobalReferableSourceNode def) {
+  public Definition getTypechecked(GlobalReferable def) {
     return getLocal(def).getTypechecked(def);
   }
 
@@ -37,7 +38,7 @@ public class LocalizedTypecheckerState<SourceIdT extends SourceId> implements Ty
     return myStates.computeIfAbsent(sourceId, k -> new LocalTypecheckerState());
   }
 
-  private LocalTypecheckerState getLocal(Abstract.GlobalReferableSourceNode def) {
+  private LocalTypecheckerState getLocal(GlobalReferable def) {
     SourceIdT sourceId = myDefLocator.sourceOf(def);
     if (sourceId == null) {
       throw new IllegalArgumentException();
@@ -62,26 +63,26 @@ public class LocalizedTypecheckerState<SourceIdT extends SourceId> implements Ty
 
   public class LocalTypecheckerState {
     private boolean myIsOutOfSync = false;
-    private final Map<Abstract.GlobalReferableSourceNode, Definition> myDefinitions = new HashMap<>();
+    private final Map<GlobalReferable, Definition> myDefinitions = new HashMap<>();
 
-    public void record(Abstract.GlobalReferableSourceNode def, Definition res) {
+    public void record(GlobalReferable def, Definition res) {
       if (myDefinitions.put(def, res) != res) {
         myIsOutOfSync = true;
       }
     }
 
-    public void reset(Abstract.GlobalReferableSourceNode def) {
+    public void reset(GlobalReferable def) {
       if (myDefinitions.remove(def) != null) {
         myIsOutOfSync = true;
       }
     }
 
-    public Definition getTypechecked(Abstract.GlobalReferableSourceNode def) {
+    public Definition getTypechecked(GlobalReferable def) {
       assert def != null;
       return myDefinitions.get(def);
     }
 
-    public Set<Abstract.GlobalReferableSourceNode> getTypecheckedDefinitions() {
+    public Set<GlobalReferable> getTypecheckedDefinitions() {
       return myDefinitions.keySet();
     }
 

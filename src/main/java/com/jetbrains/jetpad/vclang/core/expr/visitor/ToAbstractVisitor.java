@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.core.pattern.*;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.frontend.text.Position;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -30,11 +31,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   private final EnumSet<Flag> myFlags;
   private final CollectFreeVariablesVisitor myFreeVariablesCollector;
-  private final Map<Binding, Abstract.ReferableSourceNode> myNames;
+  private final Map<Binding, Referable> myNames;
 
   private static final String unnamed = "unnamed";
 
-  private ToAbstractVisitor(EnumSet<Flag> flags, CollectFreeVariablesVisitor collector, Map<Binding, Abstract.ReferableSourceNode> names) {
+  private ToAbstractVisitor(EnumSet<Flag> flags, CollectFreeVariablesVisitor collector, Map<Binding, Referable> names) {
     myFlags = flags;
     myFreeVariablesCollector = collector;
     myNames = names;
@@ -44,7 +45,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     CollectFreeVariablesVisitor collector = new CollectFreeVariablesVisitor();
     Set<Variable> variables = new HashSet<>();
     expression.accept(collector, variables);
-    Map<Binding, Abstract.ReferableSourceNode> names = new HashMap<>();
+    Map<Binding, Referable> names = new HashMap<>();
     ToAbstractVisitor visitor = new ToAbstractVisitor(flags, collector, names);
     for (Variable variable : variables) {
       if (variable instanceof Binding) {
@@ -70,7 +71,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       if (variable != binding) {
         String otherName = null;
         if (variable instanceof Binding) {
-          Abstract.ReferableSourceNode referable = myNames.get(variable);
+          Referable referable = myNames.get(variable);
           if (referable != null) {
             otherName = referable.getName();
           }
@@ -264,7 +265,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return expr;
   }
 
-  private static Concrete.Expression<Position> makeReference(Concrete.Expression<Position> expr, Abstract.ReferableSourceNode referable) {
+  private static Concrete.Expression<Position> makeReference(Concrete.Expression<Position> expr, Referable referable) {
     return cDefCall(expr, referable, referable == null ? "\\this" : referable.getName());
   }
 
@@ -333,7 +334,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : new Concrete.InferenceReferenceExpression<>(null, expr.getVariable());
   }
 
-  private <T extends Abstract.ReferableSourceNode> T makeReferable(Binding var, Function<String, T> fun, Set<Variable> freeVars, boolean nullable) {
+  private <T extends Referable> T makeReferable(Binding var, Function<String, T> fun, Set<Variable> freeVars, boolean nullable) {
     if (nullable && !freeVars.contains(var)) {
       return null;
     }
@@ -342,7 +343,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return referable;
   }
 
-  private Abstract.ReferableSourceNode makeReferable(Binding var, Set<Variable> freeVars) {
+  private Referable makeReferable(Binding var, Set<Variable> freeVars) {
     return makeReferable(var, name -> new Concrete.LocalVariable<>(null, name), freeVars, true);
   }
 
@@ -368,7 +369,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   private void visitDependentLink(DependentLink parameters, List<? super Concrete.TypeParameter<Position>> args, boolean isNamed) {
-    List<Abstract.ReferableSourceNode> referableList = new ArrayList<>(3);
+    List<Referable> referableList = new ArrayList<>(3);
     for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
       DependentLink link1 = link.getNextTyped(null);
       Set<Variable> freeVars = myFreeVariablesCollector.getFreeVariables(link1);
@@ -376,7 +377,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
         referableList.add(makeReferable(link, freeVars));
       }
 
-      Abstract.ReferableSourceNode referable = makeReferable(link, freeVars);
+      Referable referable = makeReferable(link, freeVars);
       if (referable == null && !isNamed && referableList.isEmpty()) {
         args.add(cTypeArg(link.isExplicit(), link.getTypeExpr().accept(this, null)));
       } else {

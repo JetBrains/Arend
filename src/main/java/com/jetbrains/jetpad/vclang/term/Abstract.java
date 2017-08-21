@@ -1,5 +1,8 @@
 package com.jetbrains.jetpad.vclang.term;
 
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
@@ -16,7 +19,7 @@ public final class Abstract {
     boolean getExplicit();
   }
 
-  public interface NameParameter extends Parameter, ReferableSourceNode {
+  public interface NameParameter extends Parameter, Referable {
   }
 
   public interface TypeParameter extends Parameter {
@@ -24,19 +27,10 @@ public final class Abstract {
   }
 
   public interface TelescopeParameter extends TypeParameter {
-    @Nonnull List<? extends ReferableSourceNode> getReferableList();
+    @Nonnull List<? extends Referable> getReferableList();
   }
 
   // Definitions
-
-  public interface ReferableSourceNode extends SourceNode {
-    @Nullable default String getName() {
-      return toString();
-    }
-  }
-
-  public interface GlobalReferableSourceNode extends ReferableSourceNode {
-  }
 
   public static Collection<? extends Parameter> getParameters(Abstract.Definition definition) {
     if (definition instanceof Abstract.FunctionDefinition) {
@@ -51,7 +45,7 @@ public final class Abstract {
     return null;
   }
 
-  public interface Definition extends GlobalReferableSourceNode {
+  public interface Definition extends GlobalReferable {
     @Nonnull Precedence getPrecedence();
     @Nullable Definition getParentDefinition();
     boolean isStatic();
@@ -141,7 +135,8 @@ public final class Abstract {
     boolean isDefault();
     @Nonnull List<? extends Parameter> getParameters();
     @Nonnull Concrete.ReferenceExpression getClassView();
-    @Nonnull GlobalReferableSourceNode getClassifyingDefinition();
+    @Nonnull
+    GlobalReferable getClassifyingDefinition();
     @Nonnull Collection<? extends Concrete.ClassFieldImpl> getClassFieldImpls();
   }
 
@@ -152,7 +147,7 @@ public final class Abstract {
     boolean isExplicit();
   }
 
-  public interface NamePattern extends Pattern, ReferableSourceNode {
+  public interface NamePattern extends Pattern, Referable {
   }
 
   public interface ConstructorPattern extends Pattern, Concrete.PatternContainer {

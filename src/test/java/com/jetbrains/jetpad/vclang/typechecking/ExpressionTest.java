@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.frontend.text.Position;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
@@ -82,7 +82,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     Concrete.NameParameter<Position> cf = cName("f");
     Concrete.NameParameter<Position> cg = cName("g");
     Concrete.Expression expr = cLam(cf, cLam(cg, cApps(cVar(cg), cZero(), cApps(cVar(cf), cZero()))));
-    Map<Abstract.ReferableSourceNode, Binding> context = new HashMap<>();
+    Map<Referable, Binding> context = new HashMap<>();
     Binding T = new TypedBinding("T", Pi(Nat(), Universe(0)));
     context.put(ref("T"), T);
     SingleDependentLink x_ = singleParam("x", Nat());
@@ -134,7 +134,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     // f : Nat -> Nat -> Nat |- f S (f 0 S) : Nat
     Concrete.LocalVariable f = ref("f");
     Concrete.Expression expr = cApps(cVar(f), cSuc(), cApps(cVar(f), cZero(), cSuc()));
-    Map<Abstract.ReferableSourceNode, Binding> defs = new HashMap<>();
+    Map<Referable, Binding> defs = new HashMap<>();
     defs.put(f, new TypedBinding(f.getName(), Pi(Nat(), Pi(Nat(), Nat()))));
     assertThat(typeCheckExpr(defs, expr, null, 2), is(nullValue()));
   }

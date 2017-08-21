@@ -27,7 +27,12 @@ import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
-import com.jetbrains.jetpad.vclang.term.*;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.ConcreteExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.ConcreteLevelExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
@@ -51,7 +56,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
   private final TypecheckerState myState;
   private final StaticNamespaceProvider myStaticNsProvider;
   private final DynamicNamespaceProvider myDynamicNsProvider;
-  private Map<Abstract.ReferableSourceNode, Binding> myContext;
+  private Map<Referable, Binding> myContext;
   private final Set<Binding> myFreeBindings;
   private LocalErrorReporter<T> myErrorReporter;
   private final TypeCheckingDefCall<T> myTypeCheckingDefCall;
@@ -238,7 +243,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
     }
   }
 
-  public CheckTypeVisitor(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, Map<Abstract.ReferableSourceNode, Binding> localContext, LocalErrorReporter<T> errorReporter, ClassViewInstancePool pool) {
+  public CheckTypeVisitor(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, Map<Referable, Binding> localContext, LocalErrorReporter<T> errorReporter, ClassViewInstancePool pool) {
     myState = state;
     myStaticNsProvider = staticNsProvider;
     myDynamicNsProvider = dynamicNsProvider;
@@ -279,7 +284,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
     myClassViewInstancePool = pool;
   }
 
-  public Map<Abstract.ReferableSourceNode, Binding> getContext() {
+  public Map<Referable, Binding> getContext() {
     return myContext;
   }
 
@@ -447,7 +452,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
 
   @Override
   public Result visitReference(Concrete.ReferenceExpression<T> expr, ExpectedType expectedType) {
-    TResult<T> result = expr.getExpression() == null && !(expr.getReferent() instanceof Abstract.GlobalReferableSourceNode) ? getLocalVar(expr) : myTypeCheckingDefCall.typeCheckDefCall(expr);
+    TResult<T> result = expr.getExpression() == null && !(expr.getReferent() instanceof GlobalReferable) ? getLocalVar(expr) : myTypeCheckingDefCall.typeCheckDefCall(expr);
     if (result == null || !checkPath(result, expr)) {
       return null;
     }
@@ -497,9 +502,9 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
     if (argResult == null) return null;
 
     if (param instanceof Concrete.TelescopeParameter) {
-      List<? extends Abstract.ReferableSourceNode> referableList = ((Concrete.TelescopeParameter<T>) param).getReferableList();
+      List<? extends Referable> referableList = ((Concrete.TelescopeParameter<T>) param).getReferableList();
       List<String> names = new ArrayList<>(referableList.size());
-      for (Abstract.ReferableSourceNode referable : referableList) {
+      for (Referable referable : referableList) {
         names.add(referable == null ? null : referable.getName());
       }
       SingleDependentLink link = ExpressionFactory.singleParams(param.getExplicit(), names, argResult);
@@ -545,7 +550,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
         return result;
       } else {
         PiExpression piExpectedType = expectedType.cast(PiExpression.class);
-        Abstract.ReferableSourceNode referable = (Concrete.NameParameter<T>) param;
+        Referable referable = (Concrete.NameParameter<T>) param;
         SingleDependentLink piParams = piExpectedType.getParameters();
         if (piParams.isExplicit() && !param.getExplicit()) {
           myErrorReporter.report(new LocalTypeCheckingError<>(ordinal(argIndex) + " argument of the lambda is implicit, but the first parameter of the expected type is not", expr));
@@ -663,9 +668,9 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
         if (result == null) return null;
 
         if (arg instanceof Concrete.TelescopeParameter) {
-          List<? extends Abstract.ReferableSourceNode> referableList = ((Concrete.TelescopeParameter<T>) arg).getReferableList();
+          List<? extends Referable> referableList = ((Concrete.TelescopeParameter<T>) arg).getReferableList();
           List<String> names = new ArrayList<>(referableList.size());
-          for (Abstract.ReferableSourceNode referable : referableList) {
+          for (Referable referable : referableList) {
             names.add(referable == null ? null : referable.getName());
           }
           SingleDependentLink link = ExpressionFactory.singleParams(arg.getExplicit(), names, result);
@@ -833,9 +838,9 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
         if (result == null) return null;
 
         if (arg instanceof Concrete.TelescopeParameter) {
-          List<? extends Abstract.ReferableSourceNode> referableList = ((Concrete.TelescopeParameter<T>) arg).getReferableList();
+          List<? extends Referable> referableList = ((Concrete.TelescopeParameter<T>) arg).getReferableList();
           List<String> names = new ArrayList<>(referableList.size());
-          for (Abstract.ReferableSourceNode referable : referableList) {
+          for (Referable referable : referableList) {
             names.add(referable == null ? null : referable.getName());
           }
           DependentLink link = ExpressionFactory.parameter(arg.getExplicit(), names, result);

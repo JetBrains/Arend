@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.frontend.ConcreteTypecheckableProvider;
 import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
 import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -50,7 +51,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
 
-  CheckTypeVisitor.Result typeCheckExpr(Map<Abstract.ReferableSourceNode, Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
+  CheckTypeVisitor.Result typeCheckExpr(Map<Referable, Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
     CheckTypeVisitor visitor = new CheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, context, localErrorReporter, null);
     visitor.getFreeBindings().addAll(context.values());
     CheckTypeVisitor.Result result = visitor.finalCheckExpr(expression, expectedType);
@@ -65,7 +66,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     return typeCheckExpr(new HashMap<>(), expression, expectedType, errors);
   }
 
-  protected CheckTypeVisitor.Result typeCheckExpr(Map<Abstract.ReferableSourceNode, Binding> context, Concrete.Expression expression, Expression expectedType) {
+  protected CheckTypeVisitor.Result typeCheckExpr(Map<Referable, Binding> context, Concrete.Expression expression, Expression expectedType) {
     return typeCheckExpr(context, expression, expectedType, 0);
   }
 
@@ -75,7 +76,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   protected CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, String text, Expression expectedType, int errors) {
-    Map<Abstract.ReferableSourceNode, Binding> mapContext = new HashMap<>();
+    Map<Referable, Binding> mapContext = new HashMap<>();
     for (Binding binding : context) {
       mapContext.put(new Concrete.LocalVariable<>(null, binding.getName()), binding);
     }

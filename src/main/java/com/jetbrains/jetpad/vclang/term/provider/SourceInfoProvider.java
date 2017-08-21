@@ -1,30 +1,32 @@
 package com.jetbrains.jetpad.vclang.term.provider;
 
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
 
 public interface SourceInfoProvider<SourceIdT extends SourceId> extends DefinitionLocator<SourceIdT>, PrettyPrinterInfoProvider {
-  String fullNameFor(Abstract.GlobalReferableSourceNode definition);
+  String fullNameFor(GlobalReferable definition);
 
   class Trivial implements SourceInfoProvider {
     @Override
-    public String fullNameFor(Abstract.GlobalReferableSourceNode definition) {
+    public String fullNameFor(GlobalReferable definition) {
       return definition.getName();
     }
 
     @Override
-    public SourceId sourceOf(Abstract.GlobalReferableSourceNode definition) {
+    public SourceId sourceOf(GlobalReferable definition) {
       return null;
     }
 
     @Override
-    public Abstract.Precedence precedenceOf(Abstract.GlobalReferableSourceNode referable) {
+    public Abstract.Precedence precedenceOf(GlobalReferable referable) {
       return Abstract.Precedence.DEFAULT;
     }
 
     @Override
-    public String nameFor(Abstract.ReferableSourceNode referable) {
+    public String nameFor(Referable referable) {
       return referable.getName();
     }
   }

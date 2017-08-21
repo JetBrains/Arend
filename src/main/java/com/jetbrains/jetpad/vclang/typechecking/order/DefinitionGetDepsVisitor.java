@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.order;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckableProvider;
@@ -12,9 +12,9 @@ import java.util.Set;
 public class DefinitionGetDepsVisitor<T> implements ConcreteDefinitionVisitor<T, Boolean, Void> {
   private final InstanceProvider myInstanceProvider;
   private final TypecheckableProvider myTypecheckableProvider;
-  private final Set<Abstract.GlobalReferableSourceNode> myDependencies;
+  private final Set<GlobalReferable> myDependencies;
 
-  DefinitionGetDepsVisitor(InstanceProvider instanceProvider, TypecheckableProvider typecheckableProvider, Set<Abstract.GlobalReferableSourceNode> dependencies) {
+  DefinitionGetDepsVisitor(InstanceProvider instanceProvider, TypecheckableProvider typecheckableProvider, Set<GlobalReferable> dependencies) {
     myInstanceProvider = instanceProvider;
     myTypecheckableProvider = typecheckableProvider;
     myDependencies = dependencies;

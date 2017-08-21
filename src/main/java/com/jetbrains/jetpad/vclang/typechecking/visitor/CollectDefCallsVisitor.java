@@ -1,5 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.visitor;
 
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteExpressionVisitor;
@@ -14,9 +16,9 @@ import java.util.Set;
 public class CollectDefCallsVisitor<T> implements ConcreteExpressionVisitor<T, Void, Void> {
   private final InstanceProvider myInstanceProvider;
   private final TypecheckableProvider myTypecheckableProvider;
-  private final Set<Abstract.GlobalReferableSourceNode> myDependencies;
+  private final Set<GlobalReferable> myDependencies;
 
-  public CollectDefCallsVisitor(InstanceProvider instanceProvider, TypecheckableProvider typecheckableProvider, Set<Abstract.GlobalReferableSourceNode> dependencies) {
+  public CollectDefCallsVisitor(InstanceProvider instanceProvider, TypecheckableProvider typecheckableProvider, Set<GlobalReferable> dependencies) {
     myInstanceProvider = instanceProvider;
     myTypecheckableProvider = typecheckableProvider;
     myDependencies = dependencies;
@@ -29,12 +31,12 @@ public class CollectDefCallsVisitor<T> implements ConcreteExpressionVisitor<T, V
     return null;
   }
 
-  private void addDependencies(Abstract.ReferableSourceNode referable) {
-    if (!(referable instanceof Abstract.GlobalReferableSourceNode)) {
+  private void addDependencies(Referable referable) {
+    if (!(referable instanceof GlobalReferable)) {
       return;
     }
 
-    Concrete.Definition<?> definition = myTypecheckableProvider.forReferable((Abstract.GlobalReferableSourceNode) referable);
+    Concrete.Definition<?> definition = myTypecheckableProvider.forReferable((GlobalReferable) referable);
     if (myInstanceProvider != null) {
       if (definition instanceof Concrete.ClassViewField) {
         myDependencies.addAll(myInstanceProvider.getInstances(((Concrete.ClassViewField) definition).getOwnView()));

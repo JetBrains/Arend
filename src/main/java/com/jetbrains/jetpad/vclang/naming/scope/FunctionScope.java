@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
 import com.google.common.collect.Iterables;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.MergeScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.MergingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.OverridingScope;
@@ -28,7 +29,7 @@ public class FunctionScope extends OverridingScope implements MergingScope {
   }
 
   @Override
-  public void findIntroducedDuplicateNames(BiConsumer<Abstract.ReferableSourceNode, Abstract.ReferableSourceNode> reporter) {
+  public void findIntroducedDuplicateNames(BiConsumer<Referable, Referable> reporter) {
     myMerging.findIntroducedDuplicateNames(reporter);
   }
 

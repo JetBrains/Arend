@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.order;
 
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.Typecheckable;
@@ -106,7 +107,7 @@ public class Ordering<T> {
       }
     }
 
-    Set<Abstract.GlobalReferableSourceNode> dependencies = new LinkedHashSet<>();
+    Set<GlobalReferable> dependencies = new LinkedHashSet<>();
     if (enclosingClass != null) {
       dependencies.add(enclosingClass);
     }
@@ -119,7 +120,7 @@ public class Ordering<T> {
       return OrderResult.RECURSION_ERROR;
     }
 
-    for (Abstract.GlobalReferableSourceNode referable : dependencies) {
+    for (GlobalReferable referable : dependencies) {
       Concrete.Definition<T> dependency = myTypecheckableProvider.forReferable(referable);
       if (dependency instanceof Concrete.ClassField) {
         dependency = ((Concrete.ClassField<T>) dependency).getParentDefinition();

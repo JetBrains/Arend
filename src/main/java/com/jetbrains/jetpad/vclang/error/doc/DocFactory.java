@@ -2,14 +2,14 @@ package com.jetbrains.jetpad.vclang.error.doc;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.type.ExpectedType;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import java.util.*;
 
 public class DocFactory {
-  public static ReferenceDoc refDoc(Abstract.ReferableSourceNode sourceNode) {
+  public static ReferenceDoc refDoc(Referable sourceNode) {
     return new ReferenceDoc(sourceNode);
   }
 

@@ -1,13 +1,14 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class SimpleTypecheckerState implements TypecheckerState {
-  private final Map<Abstract.GlobalReferableSourceNode, Definition> myTypechecked;
+  private final Map<GlobalReferable, Definition> myTypechecked;
 
   public SimpleTypecheckerState() {
     myTypechecked = new HashMap<>();
@@ -18,12 +19,12 @@ public class SimpleTypecheckerState implements TypecheckerState {
   }
 
   @Override
-  public void record(Abstract.GlobalReferableSourceNode def, Definition res) {
+  public void record(GlobalReferable def, Definition res) {
     myTypechecked.put(def, res);
   }
 
   @Override
-  public Definition getTypechecked(Abstract.GlobalReferableSourceNode def) {
+  public Definition getTypechecked(GlobalReferable def) {
     assert def != null;
     return myTypechecked.get(def);
   }

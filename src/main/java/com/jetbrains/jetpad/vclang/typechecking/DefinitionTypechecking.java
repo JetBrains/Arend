@@ -28,6 +28,8 @@ import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
@@ -180,9 +182,9 @@ class DefinitionTypechecking {
 
         DependentLink param;
         if (parameter instanceof Concrete.TelescopeParameter) {
-          List<? extends Abstract.ReferableSourceNode> referableList = ((Concrete.TelescopeParameter<T>) parameter).getReferableList();
+          List<? extends Referable> referableList = ((Concrete.TelescopeParameter<T>) parameter).getReferableList();
           List<String> names = new ArrayList<>(referableList.size());
-          for (Abstract.ReferableSourceNode referable : referableList) {
+          for (Referable referable : referableList) {
             names.add(referable == null ? null : referable.getName());
           }
           param = parameter(parameter.getExplicit(), names, paramResult);
@@ -740,7 +742,7 @@ class DefinitionTypechecking {
     Abstract.ClassView classView = (Abstract.ClassView) def.getClassView().getReferent();
     assert classView != null;
     Map<ClassField, Expression> fieldSet = new HashMap<>();
-    ClassDefinition classDef = (ClassDefinition) visitor.getTypecheckingState().getTypechecked((Abstract.GlobalReferableSourceNode) classView.getUnderlyingClassReference().getReferent());
+    ClassDefinition classDef = (ClassDefinition) visitor.getTypecheckingState().getTypechecked((GlobalReferable) classView.getUnderlyingClassReference().getReferent());
     ClassCallExpression term = new ClassCallExpression(classDef, Sort.generateInferVars(visitor.getEquations(), def.getClassView()), fieldSet, Sort.PROP);
 
     List<Abstract.ClassField> notImplementedFields = new ArrayList<>();

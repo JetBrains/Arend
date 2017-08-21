@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.frontend.resolving;
 
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import javax.annotation.Nonnull;
@@ -10,7 +11,8 @@ import java.util.List;
 public interface OpenCommand extends Abstract.SourceNode {
   @Nullable ModulePath getModulePath();
   @Nonnull List<String> getPath();
-  @Nullable Abstract.GlobalReferableSourceNode getResolvedClass();
+  @Nullable
+  GlobalReferable getResolvedClass();
 
   boolean isHiding();
   @Nullable List<String> getNames();

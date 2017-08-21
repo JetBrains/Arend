@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming.scope.primitive;
 
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.*;
@@ -27,7 +28,7 @@ public class FilteredScope implements Scope {
   }
 
   @Override
-  public Abstract.ReferableSourceNode resolveName(String name) {
+  public Referable resolveName(String name) {
     if (myInclude) {
       return myNames.contains(name) ? myScope.resolveName(name) : null;
     } else {

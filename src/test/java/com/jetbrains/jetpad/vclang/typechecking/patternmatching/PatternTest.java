@@ -12,7 +12,7 @@ import com.jetbrains.jetpad.vclang.core.pattern.EmptyPattern;
 import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.frontend.text.Position;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
@@ -27,7 +27,7 @@ import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Nat;
 import static org.junit.Assert.*;
 
 public class PatternTest extends TypeCheckingTestCase {
-  private boolean checkPatterns(List<? extends Concrete.Pattern<Position>> patternArgs, List<Pattern> patterns, Map<Abstract.ReferableSourceNode, Binding> expected, Map<Abstract.ReferableSourceNode, Binding> actual, boolean hasImplicit) {
+  private boolean checkPatterns(List<? extends Concrete.Pattern<Position>> patternArgs, List<Pattern> patterns, Map<Referable, Binding> expected, Map<Referable, Binding> actual, boolean hasImplicit) {
     int i = 0, j = 0;
     for (; i < patternArgs.size() && j < patterns.size(); i++, j++) {
       Concrete.Pattern<Position> pattern1 = patternArgs.get(i);
@@ -42,7 +42,7 @@ public class PatternTest extends TypeCheckingTestCase {
         return false;
       } else
       if (pattern1 instanceof Concrete.NamePattern) {
-        Abstract.ReferableSourceNode referable = (Concrete.NamePattern) pattern1;
+        Referable referable = (Concrete.NamePattern) pattern1;
         while (hasImplicit && patterns.get(j) instanceof BindingPattern && expected.get(referable) != ((BindingPattern) patterns.get(j)).getBinding()) {
           j++;
         }
@@ -69,8 +69,8 @@ public class PatternTest extends TypeCheckingTestCase {
     return true;
   }
 
-  private void checkPatterns(List<? extends Concrete.Pattern<Position>> patternArgs, List<Pattern> patterns, Map<Abstract.ReferableSourceNode, Binding> expected, boolean hasImplicit) {
-    Map<Abstract.ReferableSourceNode, Binding> actual = new HashMap<>();
+  private void checkPatterns(List<? extends Concrete.Pattern<Position>> patternArgs, List<Pattern> patterns, Map<Referable, Binding> expected, boolean hasImplicit) {
+    Map<Referable, Binding> actual = new HashMap<>();
     boolean withoutEmpty = checkPatterns(patternArgs, patterns, expected, actual, hasImplicit);
     assertEquals(expected, withoutEmpty ? actual : null);
 
@@ -106,7 +106,7 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\function f (n m k : Nat) => \\elim n, m, k\n" +
       "  | suc n, zero, suc k => k");
     List<Concrete.Pattern<Position>> patternsArgs = ((Concrete.ElimFunctionBody<Position>) fun.getBody()).getClauses().get(0).getPatterns();
-    Pair<List<Pattern>, Map<Abstract.ReferableSourceNode, Binding>> res = new PatternTypechecking<>(new ProxyErrorReporter<>(fun, errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Nat()), param(null, Nat())), fun.getBody(), false);
+    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking<>(new ProxyErrorReporter<>(fun, errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Nat()), param(null, Nat())), fun.getBody(), false);
     assertNotNull(res);
     assertEquals(0, errorReporter.getErrorList().size());
     checkPatterns(patternsArgs, res.proj1, res.proj2, false);
@@ -118,7 +118,7 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\function f (n m k : Nat) => \\elim n, m, k\n" +
       "  | suc (suc (suc n)), zero, suc (suc (suc (suc zero))) => n");
     List<Concrete.Pattern<Position>> patternsArgs = ((Concrete.ElimFunctionBody<Position>) fun.getBody()).getClauses().get(0).getPatterns();
-    Pair<List<Pattern>, Map<Abstract.ReferableSourceNode, Binding>> res = new PatternTypechecking<>(new ProxyErrorReporter<>(fun, errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Nat()), param(null, Nat())), fun.getBody(), false);
+    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking<>(new ProxyErrorReporter<>(fun, errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Nat()), param(null, Nat())), fun.getBody(), false);
     assertNotNull(res);
     assertEquals(0, errorReporter.getErrorList().size());
     checkPatterns(patternsArgs, res.proj1, res.proj2, false);
@@ -130,7 +130,7 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\function f (n : Nat) (m : Nat -> Nat) (k : Nat) => \\elim n, m, k\n" +
       "  | suc n, zero, suc k => k");
     List<Concrete.Pattern<Position>> patternsArgs = ((Concrete.ElimFunctionBody<Position>) fun.getBody()).getClauses().get(0).getPatterns();
-    Pair<List<Pattern>, Map<Abstract.ReferableSourceNode, Binding>> res = new PatternTypechecking<>(new ProxyErrorReporter<>(fun, errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Pi(Nat(), Nat())), param(null, Nat())), fun.getBody(), false);
+    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking<>(new ProxyErrorReporter<>(fun, errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Pi(Nat(), Nat())), param(null, Nat())), fun.getBody(), false);
     assertNull(res);
     assertEquals(1, errorReporter.getErrorList().size());
   }
@@ -149,7 +149,7 @@ public class PatternTest extends TypeCheckingTestCase {
     data.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
     List<Concrete.Pattern<Position>> patternsArgs = ((Concrete.ElimFunctionBody<Position>) funDef.getBody()).getClauses().get(0).getPatterns();
-    Pair<List<Pattern>, Map<Abstract.ReferableSourceNode, Binding>> res = new PatternTypechecking<>(new ProxyErrorReporter<>(funDef, errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, new DataCallExpression(data, Sort.STD, Collections.emptyList())), param(null, Nat())), funDef.getBody(), false);
+    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking<>(new ProxyErrorReporter<>(funDef, errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, new DataCallExpression(data, Sort.STD, Collections.emptyList())), param(null, Nat())), funDef.getBody(), false);
     assertNull(res);
     assertEquals(1, errorReporter.getErrorList().size());
   }
@@ -160,7 +160,7 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\function f (n m k : Nat) => \\elim n, m, k\n" +
       "  | suc n m, zero, suc k => k");
     List<Concrete.Pattern<Position>> patternsArgs = ((Concrete.ElimFunctionBody<Position>) fun.getBody()).getClauses().get(0).getPatterns();
-    Pair<List<Pattern>, Map<Abstract.ReferableSourceNode, Binding>> res = new PatternTypechecking<>(new ProxyErrorReporter<>(fun, errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Nat()), param(null, Nat())), fun.getBody(), false);
+    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking<>(new ProxyErrorReporter<>(fun, errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Nat()), param(null, Nat())), fun.getBody(), false);
     assertNull(res);
     assertEquals(1, errorReporter.getErrorList().size());
   }
@@ -171,7 +171,7 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\function f (n : Nat) (i : I) => \\elim n, i\n" +
       "  | zero, i => zero");
     List<Concrete.Pattern<Position>> patternsArgs = ((Concrete.ElimFunctionBody<Position>) fun.getBody()).getClauses().get(0).getPatterns();
-    Pair<List<Pattern>, Map<Abstract.ReferableSourceNode, Binding>> res = new PatternTypechecking<>(new ProxyErrorReporter<>(fun, errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Interval())), fun.getBody(), false);
+    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking<>(new ProxyErrorReporter<>(fun, errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Interval())), fun.getBody(), false);
     assertNotNull(res);
     assertEquals(0, errorReporter.getErrorList().size());
     checkPatterns(patternsArgs, res.proj1, res.proj2, false);
@@ -183,7 +183,7 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\function f (n : Nat) (i : I) => \\elim n, i\n" +
       "  | zero, left => zero");
     List<Concrete.Pattern<Position>> patternsArgs = ((Concrete.ElimFunctionBody<Position>) fun.getBody()).getClauses().get(0).getPatterns();
-    Pair<List<Pattern>, Map<Abstract.ReferableSourceNode, Binding>> res = new PatternTypechecking<>(new ProxyErrorReporter<>(fun, errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Interval())), fun.getBody(), false);
+    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking<>(new ProxyErrorReporter<>(fun, errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Interval())), fun.getBody(), false);
     assertNull(res);
     assertEquals(1, errorReporter.getErrorList().size());
   }
@@ -202,7 +202,7 @@ public class PatternTest extends TypeCheckingTestCase {
     data.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
     List<Concrete.Pattern<Position>> patternsArgs = ((Concrete.ElimFunctionBody<Position>) funDef.getBody()).getClauses().get(0).getPatterns();
-    Pair<List<Pattern>, Map<Abstract.ReferableSourceNode, Binding>> res = new PatternTypechecking<>(new ProxyErrorReporter<>(funDef, errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, new DataCallExpression(data, Sort.STD, Collections.emptyList())), param(null, Nat())), funDef.getBody(), false);
+    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking<>(new ProxyErrorReporter<>(funDef, errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, new DataCallExpression(data, Sort.STD, Collections.emptyList())), param(null, Nat())), funDef.getBody(), false);
     assertNotNull(res);
     assertEquals(0, errorReporter.getErrorList().size());
     checkPatterns(patternsArgs, res.proj1, res.proj2, false);
@@ -222,7 +222,7 @@ public class PatternTest extends TypeCheckingTestCase {
     data.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
     List<Concrete.Pattern<Position>> patternsArgs = ((Concrete.ElimFunctionBody<Position>) funDef.getBody()).getClauses().get(0).getPatterns();
-    Pair<List<Pattern>, Map<Abstract.ReferableSourceNode, Binding>> res = new PatternTypechecking<>(new ProxyErrorReporter<>(funDef, errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, new DataCallExpression(data, Sort.STD, Collections.emptyList())), param(null, Nat())), funDef.getBody(), false);
+    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking<>(new ProxyErrorReporter<>(funDef, errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, new DataCallExpression(data, Sort.STD, Collections.emptyList())), param(null, Nat())), funDef.getBody(), false);
     assertNotNull(res);
     assertEquals(1, errorReporter.getErrorList().size());
     checkPatterns(patternsArgs, res.proj1, res.proj2, false);

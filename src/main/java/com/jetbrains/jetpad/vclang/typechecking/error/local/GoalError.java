@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.type.ExpectedType;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
@@ -18,12 +18,12 @@ import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
 public class GoalError<T> extends LocalTypeCheckingError<T> {
   public final String name;
-  public final Map<Abstract.ReferableSourceNode, Binding> context;
+  public final Map<Referable, Binding> context;
   public final ExpectedType expectedType;
   public final Expression actualType;
   public final List<Error<T>> errors;
 
-  public GoalError(String name, Map<Abstract.ReferableSourceNode, Binding> context, ExpectedType expectedType, Expression actualType, List<Error<T>> errors, Concrete.Expression<T> expression) {
+  public GoalError(String name, Map<Referable, Binding> context, ExpectedType expectedType, Expression actualType, List<Error<T>> errors, Concrete.Expression<T> expression) {
     super(Level.GOAL, "", expression);
     this.name = name;
     this.context = new HashMap<>(context);
@@ -40,7 +40,7 @@ public class GoalError<T> extends LocalTypeCheckingError<T> {
     Doc contextDoc;
     if (!context.isEmpty()) {
       List<Doc> contextDocs = new ArrayList<>(context.size());
-      for (Map.Entry<Abstract.ReferableSourceNode, Binding> entry : context.entrySet()) {
+      for (Map.Entry<Referable, Binding> entry : context.entrySet()) {
         Expression type = entry.getValue().getTypeExpr();
         contextDocs.add(hang(hList(refDoc(entry.getKey()), text(" :")), type == null ? text("{?}") : termDoc(type)));
       }

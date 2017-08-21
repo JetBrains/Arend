@@ -5,6 +5,8 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVaria
 import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OpenCommand;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
@@ -94,16 +96,16 @@ public final class Concrete {
   }
 
   public static class TelescopeParameter<T> extends TypeParameter<T> implements Abstract.TelescopeParameter {
-    private final List<? extends Abstract.ReferableSourceNode> myReferableList;
+    private final List<? extends Referable> myReferableList;
 
-    public TelescopeParameter(T data, boolean explicit, List<? extends Abstract.ReferableSourceNode> referableList, Expression<T> type) {
+    public TelescopeParameter(T data, boolean explicit, List<? extends Referable> referableList, Expression<T> type) {
       super(data, explicit, type);
       myReferableList = referableList;
     }
 
     @Nonnull
     @Override
-    public List<? extends Abstract.ReferableSourceNode> getReferableList() {
+    public List<? extends Referable> getReferableList() {
       return myReferableList;
     }
   }
@@ -112,7 +114,7 @@ public final class Concrete {
 
   public static ClassDefinition getUnderlyingClassDef(Expression expr) {
     if (expr instanceof ReferenceExpression) {
-      Abstract.ReferableSourceNode definition = ((ReferenceExpression) expr).getReferent();
+      Referable definition = ((ReferenceExpression) expr).getReferent();
       if (definition instanceof ClassDefinition) {
         return (ClassDefinition) definition;
       }
@@ -130,7 +132,7 @@ public final class Concrete {
 
   public static ClassView getUnderlyingClassView(Expression expr) {
     if (expr instanceof ReferenceExpression) {
-      Abstract.ReferableSourceNode definition = ((ReferenceExpression) expr).getReferent();
+      Referable definition = ((ReferenceExpression) expr).getReferent();
       if (definition instanceof ClassView) {
         return (ClassView) definition;
       }
@@ -237,7 +239,7 @@ public final class Concrete {
       return mySequence;
     }
 
-    public BinOpExpression<T> makeBinOp(Concrete.Expression<T> left, Abstract.ReferableSourceNode binOp, Concrete.ReferenceExpression<T> var, Concrete.Expression<T> right) {
+    public BinOpExpression<T> makeBinOp(Concrete.Expression<T> left, Referable binOp, Concrete.ReferenceExpression<T> var, Concrete.Expression<T> right) {
       return new BinOpExpression<>(var.getData(), left, binOp, right);
     }
 
@@ -256,7 +258,7 @@ public final class Concrete {
     private final Expression<T> myLeft;
     private final Expression<T> myRight;
 
-    public BinOpExpression(T data, Expression<T> left, Abstract.ReferableSourceNode binOp, Expression<T> right) {
+    public BinOpExpression(T data, Expression<T> left, Referable binOp, Expression<T> right) {
       super(data, binOp);
       myLeft = left;
       myRight = right;
@@ -282,7 +284,7 @@ public final class Concrete {
     public static final byte PREC = 12;
     private final @Nullable Expression<T> myExpression;
     private final String myName;
-    private Abstract.ReferableSourceNode myReferent;
+    private Referable myReferent;
 
     public ReferenceExpression(T data, @Nullable Expression<T> expression, String name) {
       super(data);
@@ -291,7 +293,7 @@ public final class Concrete {
       myReferent = null;
     }
 
-    public ReferenceExpression(T data, Abstract.ReferableSourceNode referable) {
+    public ReferenceExpression(T data, Referable referable) {
       super(data);
       myExpression = null;
       myName = referable.getName();
@@ -303,11 +305,11 @@ public final class Concrete {
       return myExpression;
     }
 
-    public Abstract.ReferableSourceNode getReferent() {
+    public Referable getReferent() {
       return myReferent;
     }
 
-    public void setResolvedReferent(Abstract.ReferableSourceNode referent) {
+    public void setResolvedReferent(Referable referent) {
       myReferent = referent;
     }
 
@@ -511,7 +513,7 @@ public final class Concrete {
     }
   }
 
-  public static class LetClause<T> extends SourceNode<T> implements Abstract.ReferableSourceNode {
+  public static class LetClause<T> extends SourceNode<T> implements Referable {
     private final List<Parameter<T>> myArguments;
     private final Expression<T> myResultType;
     private final Expression<T> myTerm;
@@ -903,7 +905,7 @@ public final class Concrete {
     return null;
   }
 
-  public static class LocalVariable<T> extends SourceNode<T> implements Abstract.ReferableSourceNode {
+  public static class LocalVariable<T> extends SourceNode<T> implements Referable {
     private final @Nullable String myName;
 
     public LocalVariable(T data, @Nullable String name) {
@@ -918,7 +920,7 @@ public final class Concrete {
     }
   }
 
-  public static abstract class Definition<T> extends SourceNode<T> implements Abstract.Definition, Abstract.ReferableSourceNode {
+  public static abstract class Definition<T> extends SourceNode<T> implements Abstract.Definition, Referable {
     private final Abstract.Precedence myPrecedence;
     private Definition<T> myParent;
     private boolean myStatic;
@@ -1450,7 +1452,7 @@ public final class Concrete {
     private final List<Parameter<T>> myArguments;
     private final ReferenceExpression<T> myClassView;
     private final List<ClassFieldImpl<T>> myClassFieldImpls;
-    private Abstract.GlobalReferableSourceNode myClassifyingDefinition;
+    private GlobalReferable myClassifyingDefinition;
 
     public ClassViewInstance(T data, boolean isDefault, String name, Abstract.Precedence precedence, List<Parameter<T>> arguments, ReferenceExpression<T> classView, List<ClassFieldImpl<T>> classFieldImpls) {
       super(data, name, precedence);
@@ -1479,11 +1481,11 @@ public final class Concrete {
 
     @Nonnull
     @Override
-    public Abstract.GlobalReferableSourceNode getClassifyingDefinition() {
+    public GlobalReferable getClassifyingDefinition() {
       return myClassifyingDefinition;
     }
 
-    public void setClassifyingDefinition(Abstract.GlobalReferableSourceNode classifyingDefinition) {
+    public void setClassifyingDefinition(GlobalReferable classifyingDefinition) {
       myClassifyingDefinition = classifyingDefinition;
     }
 
@@ -1527,7 +1529,7 @@ public final class Concrete {
   }
 
   public static class NamespaceCommandStatement<T> extends Statement<T> implements OpenCommand {
-    private Abstract.GlobalReferableSourceNode myDefinition;
+    private GlobalReferable myDefinition;
     private final ModulePath myModulePath;
     private final List<String> myPath;
     private final boolean myHiding;
@@ -1561,12 +1563,12 @@ public final class Concrete {
       return myPath;
     }
 
-    public void setResolvedClass(Abstract.GlobalReferableSourceNode resolvedClass) {
+    public void setResolvedClass(GlobalReferable resolvedClass) {
       myDefinition = resolvedClass;
     }
 
     @Override
-    public Abstract.GlobalReferableSourceNode getResolvedClass() {
+    public GlobalReferable getResolvedClass() {
       return myDefinition;
     }
 

@@ -2,6 +2,8 @@ package com.jetbrains.jetpad.vclang.term.prettyprint;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.*;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
@@ -182,7 +184,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     } else
     if (parameter instanceof Concrete.TelescopeParameter) {
       myBuilder.append(parameter.getExplicit() ? '(' : '{');
-      for (Abstract.ReferableSourceNode referable : ((Concrete.TelescopeParameter<T>) parameter).getReferableList()) {
+      for (Referable referable : ((Concrete.TelescopeParameter<T>) parameter).getReferableList()) {
         myBuilder.append(referable == null ? "_" : referable.getName()).append(' ');
       }
 
@@ -434,8 +436,8 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
 
   @Override
   public Void visitBinOp(final Concrete.BinOpExpression<T> expr, final Byte prec) {
-    Abstract.ReferableSourceNode referable = expr.getReferent();
-    Abstract.Precedence precedence = referable instanceof Abstract.GlobalReferableSourceNode ? myInfoProvider.precedenceOf((Abstract.GlobalReferableSourceNode) expr.getReferent()) : Abstract.Precedence.DEFAULT;
+    Referable referable = expr.getReferent();
+    Abstract.Precedence precedence = referable instanceof GlobalReferable ? myInfoProvider.precedenceOf((GlobalReferable) expr.getReferent()) : Abstract.Precedence.DEFAULT;
     if (expr.getRight() == null) {
       if (prec > precedence.priority) {
         myBuilder.append('(');
@@ -470,8 +472,8 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
         boolean increaseIndent(List<String> right_strings) {
           Concrete.Expression r = expr.getRight();
           if (r instanceof Concrete.BinOpExpression) {
-            Abstract.ReferableSourceNode ref = ((Concrete.BinOpExpression) r).getReferent();
-            Abstract.Precedence refPrec = ref instanceof Abstract.GlobalReferableSourceNode ? myInfoProvider.precedenceOf(((Abstract.GlobalReferableSourceNode) ref)) : Abstract.Precedence.DEFAULT;
+            Referable ref = ((Concrete.BinOpExpression) r).getReferent();
+            Abstract.Precedence refPrec = ref instanceof GlobalReferable ? myInfoProvider.precedenceOf(((GlobalReferable) ref)) : Abstract.Precedence.DEFAULT;
             if (prec <= refPrec.priority)
               return false; // no bracket drawn
           }

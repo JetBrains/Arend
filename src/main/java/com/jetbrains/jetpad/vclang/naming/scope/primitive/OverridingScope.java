@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming.scope.primitive;
 
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.*;
@@ -21,8 +22,8 @@ public class OverridingScope implements Scope {
   }
 
   @Override
-  public Abstract.ReferableSourceNode resolveName(String name) {
-    Abstract.ReferableSourceNode ref = myChild.resolveName(name);
+  public Referable resolveName(String name) {
+    Referable ref = myChild.resolveName(name);
     return ref != null ? ref : myParent.resolveName(name);
   }
 

@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.frontend.text.parser;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.error.NamingError;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 
@@ -18,11 +19,11 @@ public class BinOpParser<T> {
 
   public static class StackElem<T> {
     public final Concrete.Expression<T> argument;
-    public final Abstract.ReferableSourceNode binOp;
+    public final Referable binOp;
     public final Abstract.Precedence prec;
     public final Concrete.ReferenceExpression<T> var;
 
-    public StackElem(Concrete.Expression<T> argument, Abstract.ReferableSourceNode binOp, Abstract.Precedence prec, Concrete.ReferenceExpression<T> var) {
+    public StackElem(Concrete.Expression<T> argument, Referable binOp, Abstract.Precedence prec, Concrete.ReferenceExpression<T> var) {
       this.argument = argument;
       this.binOp = binOp;
       this.prec = prec;
@@ -30,7 +31,7 @@ public class BinOpParser<T> {
     }
   }
 
-  public void pushOnStack(List<StackElem<T>> stack, Concrete.Expression<T> argument, Abstract.ReferableSourceNode binOp, Abstract.Precedence prec, Concrete.ReferenceExpression<T> var, boolean ignoreAssoc) {
+  public void pushOnStack(List<StackElem<T>> stack, Concrete.Expression<T> argument, Referable binOp, Abstract.Precedence prec, Concrete.ReferenceExpression<T> var, boolean ignoreAssoc) {
     if (stack.isEmpty()) {
       stack.add(new StackElem<>(argument, binOp, prec, var));
       return;

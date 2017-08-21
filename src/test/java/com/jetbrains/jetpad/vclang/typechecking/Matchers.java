@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
@@ -115,7 +116,7 @@ public class Matchers {
       protected boolean matchesTypeCheckingError(LocalTypeCheckingError error, Description description) {
         if (error instanceof HasErrors) {
           description.appendText("has errors with ");
-          Abstract.ReferableSourceNode actualCause = ((Concrete.ReferenceExpression) ((HasErrors) error).cause).getReferent();
+          Referable actualCause = ((Concrete.ReferenceExpression) ((HasErrors) error).cause).getReferent();
           description.appendText(actualCause == cause ? "the write " : "a wrong ");
           description.appendText("cause");
           return actualCause == cause;

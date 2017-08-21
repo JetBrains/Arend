@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -150,7 +151,7 @@ public class CachingTestCase extends NameResolverTestCase {
     }
 
     @Override
-    public String getIdFor(Abstract.GlobalReferableSourceNode definition) {
+    public String getIdFor(GlobalReferable definition) {
       return remember(definition);
     }
 

@@ -12,6 +12,8 @@ import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
@@ -44,9 +46,9 @@ public class TypeCheckingDefCall<T> {
     myThisBinding = thisBinding;
   }
 
-  private Definition getTypeCheckedDefinition(Abstract.GlobalReferableSourceNode definition, Concrete.Expression<T> expr) {
+  private Definition getTypeCheckedDefinition(GlobalReferable definition, Concrete.Expression<T> expr) {
     while (definition instanceof Abstract.ClassView) { // TODO[abstract]: eliminate class views and their fields during name resolving
-      definition = (Abstract.GlobalReferableSourceNode) ((Abstract.ClassView) definition).getUnderlyingClassReference().getReferent();
+      definition = (GlobalReferable) ((Abstract.ClassView) definition).getUnderlyingClassReference().getReferent();
     }
     if (definition instanceof Abstract.ClassViewField) {
       definition = ((Abstract.ClassViewField) definition).getUnderlyingField();
@@ -68,7 +70,7 @@ public class TypeCheckingDefCall<T> {
 
   public CheckTypeVisitor.TResult<T> typeCheckDefCall(Concrete.ReferenceExpression<T> expr) {
     Concrete.Expression<T> left = expr.getExpression();
-    Abstract.GlobalReferableSourceNode resolvedDefinition = expr.getReferent() instanceof Abstract.GlobalReferableSourceNode ? (Abstract.GlobalReferableSourceNode) expr.getReferent() : null;
+    GlobalReferable resolvedDefinition = expr.getReferent() instanceof GlobalReferable ? (GlobalReferable) expr.getReferent() : null;
     Definition typeCheckedDefinition = null;
     if (resolvedDefinition != null) {
       typeCheckedDefinition = getTypeCheckedDefinition(resolvedDefinition, expr);
@@ -202,7 +204,7 @@ public class TypeCheckingDefCall<T> {
 
     Expression thisExpr = null;
     final Definition leftDefinition;
-    Abstract.ReferableSourceNode member = null;
+    Referable member = null;
     ClassCallExpression classCall = result.expression.checkedCast(ClassCallExpression.class);
     if (classCall != null) {
       // Static call
@@ -237,7 +239,7 @@ public class TypeCheckingDefCall<T> {
           }
           member = scope.resolveName(name);
         }
-        if (!(member instanceof Abstract.GlobalReferableSourceNode)) {
+        if (!(member instanceof GlobalReferable)) {
           myVisitor.getErrorReporter().report(new MemberNotFoundError<>(leftDefinition, name, expr));
           return null;
         }
@@ -245,7 +247,7 @@ public class TypeCheckingDefCall<T> {
     }
 
     if (member != null) {
-      typeCheckedDefinition = getTypeCheckedDefinition((Abstract.GlobalReferableSourceNode) member, expr);
+      typeCheckedDefinition = getTypeCheckedDefinition((GlobalReferable) member, expr);
       if (typeCheckedDefinition == null) {
         return null;
       }

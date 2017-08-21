@@ -5,6 +5,7 @@ import com.google.common.collect.Multimap;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.util.Pair;
@@ -27,7 +28,7 @@ public class MergeScope implements MergingScope {
     return StreamSupport.stream(myScopes.spliterator(), false).flatMap(s -> s.getNames().stream()).collect(Collectors.toSet());
   }
 
-  private InvalidScopeException createException(final Abstract.ReferableSourceNode ref1, final Abstract.ReferableSourceNode ref2) {
+  private InvalidScopeException createException(final Referable ref1, final Referable ref2) {
     return new InvalidScopeException() {
       @Override
       public GeneralError toError() {
@@ -38,10 +39,10 @@ public class MergeScope implements MergingScope {
   }
 
   @Override
-  public Abstract.ReferableSourceNode resolveName(String name) {
-    Abstract.ReferableSourceNode resolved = null;
+  public Referable resolveName(String name) {
+    Referable resolved = null;
     for (Scope scope : myScopes) {
-      Abstract.ReferableSourceNode ref = scope.resolveName(name);
+      Referable ref = scope.resolveName(name);
       if (ref != null) {
         if (resolved == null) {
           resolved = ref;
@@ -54,13 +55,13 @@ public class MergeScope implements MergingScope {
   }
 
   @Override
-  public void findIntroducedDuplicateNames(BiConsumer<Abstract.ReferableSourceNode, Abstract.ReferableSourceNode> reporter) {
-    Multimap<String, Abstract.ReferableSourceNode> known = HashMultimap.create();
+  public void findIntroducedDuplicateNames(BiConsumer<Referable, Referable> reporter) {
+    Multimap<String, Referable> known = HashMultimap.create();
     for (Scope scope : myScopes) {
       for (String name : scope.getNames()) {
         try {
-          Abstract.ReferableSourceNode ref = scope.resolveName(name);
-          for (Abstract.ReferableSourceNode prev : known.get(name)) {
+          Referable ref = scope.resolveName(name);
+          for (Referable prev : known.get(name)) {
             if (prev != ref) {
               reporter.accept(ref, prev);
             }
@@ -74,10 +75,10 @@ public class MergeScope implements MergingScope {
 
   @Override
   public void findIntroducedDuplicateInstances(BiConsumer<Abstract.ClassViewInstance, Abstract.ClassViewInstance> reporter) {
-    Multimap<Pair<Abstract.ReferableSourceNode, Abstract.ReferableSourceNode>, Abstract.ClassViewInstance> known = HashMultimap.create();
+    Multimap<Pair<Referable, Referable>, Abstract.ClassViewInstance> known = HashMultimap.create();
     for (Scope scope : myScopes) {
       for (Abstract.ClassViewInstance instance : scope.getInstances()) {
-        Pair<Abstract.ReferableSourceNode, Abstract.ReferableSourceNode> pair = new Pair<>(instance.getClassView().getReferent(), instance.getClassifyingDefinition());
+        Pair<Referable, Referable> pair = new Pair<>(instance.getClassView().getReferent(), instance.getClassifyingDefinition());
         for (Abstract.ClassViewInstance prev : known.get(pair)) {
           if (prev != instance) {
             reporter.accept(prev, instance);

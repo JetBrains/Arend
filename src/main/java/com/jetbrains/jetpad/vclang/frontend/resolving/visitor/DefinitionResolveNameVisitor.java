@@ -10,6 +10,8 @@ import com.jetbrains.jetpad.vclang.naming.error.*;
 import com.jetbrains.jetpad.vclang.naming.error.NoSuchFieldError;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.scope.DataScope;
 import com.jetbrains.jetpad.vclang.naming.scope.DynamicClassScope;
 import com.jetbrains.jetpad.vclang.naming.scope.FunctionScope;
@@ -29,7 +31,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisitor<T, Scope, Void> {
-  private final List<Abstract.ReferableSourceNode> myContext;
+  private final List<Referable> myContext;
   private final NameResolver myNameResolver;
   private final ParserInfoProvider myInfoProvider;
   private final ErrorReporter<T> myErrorReporter;
@@ -38,7 +40,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
     this(new ArrayList<>(), nameResolver, definitionProvider, errorReporter);
   }
 
-  private DefinitionResolveNameVisitor(List<Abstract.ReferableSourceNode> context, NameResolver nameResolver, ParserInfoProvider infoProvider, ErrorReporter<T> errorReporter) {
+  private DefinitionResolveNameVisitor(List<Referable> context, NameResolver nameResolver, ParserInfoProvider infoProvider, ErrorReporter<T> errorReporter) {
     myContext = context;
     myNameResolver = nameResolver;
     myInfoProvider = infoProvider;
@@ -90,16 +92,16 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
       return;
     }
 
-    Set<Abstract.ReferableSourceNode> referables = eliminated.stream().map(Concrete.ReferenceExpression::getReferent).collect(Collectors.toSet());
+    Set<Referable> referables = eliminated.stream().map(Concrete.ReferenceExpression::getReferent).collect(Collectors.toSet());
     for (Concrete.Parameter<T> parameter : parameters) {
       if (parameter instanceof Concrete.TelescopeParameter) {
-        for (Abstract.ReferableSourceNode referable : ((Concrete.TelescopeParameter<T>) parameter).getReferableList()) {
+        for (Referable referable : ((Concrete.TelescopeParameter<T>) parameter).getReferableList()) {
           if (referable != null && referable.getName() != null && !referable.getName().equals("_") && !referables.contains(referable)) {
             myContext.add(referable);
           }
         }
       } else if (parameter instanceof Concrete.NameParameter) {
-        Abstract.ReferableSourceNode referable = (Concrete.NameParameter) parameter;
+        Referable referable = (Concrete.NameParameter) parameter;
         if (referable.getName() != null && !referable.getName().equals("_") && !referables.contains(referable)) {
           myContext.add(referable);
         }
@@ -119,7 +121,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
   public Void visitData(Concrete.DataDefinition<T> def, Scope parentScope) {
     Scope scope = new DataScope(parentScope, new NamespaceScope(myNameResolver.nsProviders.statics.forReferable(def)));
     ExpressionResolveNameVisitor<T> exprVisitor = new ExpressionResolveNameVisitor<>(scope, myContext, myNameResolver, myInfoProvider, myErrorReporter);
-    try (Utils.CompleteContextSaver<Abstract.ReferableSourceNode> ignored = new Utils.CompleteContextSaver<>(myContext)) {
+    try (Utils.CompleteContextSaver<Referable> ignored = new Utils.CompleteContextSaver<>(myContext)) {
       exprVisitor.visitParameters(def.getParameters());
       if (def.getUniverse() != null) {
         def.getUniverse().accept(exprVisitor, null);
@@ -204,7 +206,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
         for (Concrete.TypeParameter<T> polyParam : def.getPolyParameters()) {
           polyParam.getType().accept(exprVisitor, null);
           if (polyParam instanceof Concrete.TelescopeParameter) {
-            for (Abstract.ReferableSourceNode referable : ((Concrete.TelescopeParameter<T>) polyParam).getReferableList()) {
+            for (Referable referable : ((Concrete.TelescopeParameter<T>) polyParam).getReferableList()) {
               if (referable != null && referable.getName() != null && referable.getName().equals("_")) {
                 myContext.add(referable);
               }
@@ -248,7 +250,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
   @Override
   public Void visitClassView(Concrete.ClassView<T> def, Scope parentScope) {
     def.getUnderlyingClassReference().accept(new ExpressionResolveNameVisitor<>(parentScope, myContext, myNameResolver, myInfoProvider, myErrorReporter), null);
-    Abstract.ReferableSourceNode resolvedUnderlyingClass = def.getUnderlyingClassReference().getReferent();
+    Referable resolvedUnderlyingClass = def.getUnderlyingClassReference().getReferent();
     if (!(resolvedUnderlyingClass instanceof Concrete.ClassDefinition)) {
       if (resolvedUnderlyingClass != null) {
         myErrorReporter.report(new WrongReferable<>("Expected a class", resolvedUnderlyingClass, def));
@@ -297,8 +299,8 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
             while (expr instanceof Concrete.AppExpression) {
               expr = ((Concrete.AppExpression) expr).getFunction();
             }
-            if (expr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) expr).getReferent() instanceof Abstract.GlobalReferableSourceNode) {
-              def.setClassifyingDefinition((Abstract.GlobalReferableSourceNode) ((Concrete.ReferenceExpression) expr).getReferent());
+            if (expr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) expr).getReferent() instanceof GlobalReferable) {
+              def.setClassifyingDefinition((GlobalReferable) ((Concrete.ReferenceExpression) expr).getReferent());
             } else {
               myErrorReporter.report(new NamingError<>("Expected a definition applied to arguments", impl.getImplementation()));
             }
@@ -327,7 +329,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
 
   private Stream<Scope> processOpenCommand(OpenCommand cmd, Scope currentScope) { // TODO[abstract]
     if (cmd.getResolvedClass() == null) {
-      final Abstract.GlobalReferableSourceNode referredClass;
+      final GlobalReferable referredClass;
       if (cmd.getModulePath() == null) {
         if (cmd.getPath().isEmpty()) {
           myErrorReporter.report(new NamingError<>("Structure error: empty namespace command", (Concrete.SourceNode<T>) cmd));
@@ -363,7 +365,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
     return Stream.of(scope);
   }
 
-  private void warnDuplicate(Abstract.ReferableSourceNode ref1, Abstract.ReferableSourceNode ref2) {
+  private void warnDuplicate(Referable ref1, Referable ref2) {
     myErrorReporter.report(new DuplicateNameError<>(Error.Level.WARNING, ref1, ref2, (Concrete.SourceNode<T>) ref1)); // TODO[abstract]
   }
 }

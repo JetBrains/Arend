@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -141,7 +142,7 @@ public class StdImplicitArgsInference<T> extends BaseImplicitArgsInference<T> {
     } else {
       if (fun instanceof Concrete.ReferenceExpression) {
         Concrete.ReferenceExpression<T> defCall = (Concrete.ReferenceExpression<T>) fun;
-        result = defCall.getExpression() == null && !(defCall.getReferent() instanceof Abstract.GlobalReferableSourceNode) ? myVisitor.getLocalVar(defCall) : myVisitor.getTypeCheckingDefCall().typeCheckDefCall(defCall);
+        result = defCall.getExpression() == null && !(defCall.getReferent() instanceof GlobalReferable) ? myVisitor.getLocalVar(defCall) : myVisitor.getTypeCheckingDefCall().typeCheckDefCall(defCall);
       } else {
         //noinspection unchecked
         result = myVisitor.checkExpr(fun, null);

@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.frontend.text.Position;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckableProvider;
@@ -11,7 +12,7 @@ public class ConcreteTypecheckableProvider implements TypecheckableProvider<Posi
   private ConcreteTypecheckableProvider() { }
 
   @Override
-  public Concrete.Definition<Position> forReferable(Abstract.GlobalReferableSourceNode referable) {
+  public Concrete.Definition<Position> forReferable(GlobalReferable referable) {
     if (referable instanceof Abstract.ClassViewField) {
       referable = ((Abstract.ClassViewField) referable).getUnderlyingField();
     }

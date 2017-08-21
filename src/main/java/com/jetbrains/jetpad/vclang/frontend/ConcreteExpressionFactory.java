@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.frontend;
 import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -26,11 +27,11 @@ public class ConcreteExpressionFactory {
     return cLam(Collections.singletonList(var), body);
   }
 
-  public static Concrete.ReferenceExpression<Position> cVar(Abstract.ReferableSourceNode referable) {
+  public static Concrete.ReferenceExpression<Position> cVar(Referable referable) {
     return new Concrete.ReferenceExpression<>(POSITION, referable);
   }
 
-  public static Concrete.ReferenceExpression<Position> cDefCall(Concrete.Expression<Position> expr, Abstract.ReferableSourceNode definition, String name) {
+  public static Concrete.ReferenceExpression<Position> cDefCall(Concrete.Expression<Position> expr, Referable definition, String name) {
     Concrete.ReferenceExpression<Position> result = new Concrete.ReferenceExpression<>(POSITION, expr, name);
     result.setResolvedReferent(definition);
     return result;
@@ -97,7 +98,7 @@ public class ConcreteExpressionFactory {
     return new Concrete.LocalVariable<>(POSITION, name);
   }
 
-  public static List<Abstract.ReferableSourceNode> cvars(Abstract.ReferableSourceNode... vars) {
+  public static List<Referable> cvars(Referable... vars) {
     return Arrays.asList(vars);
   }
 
@@ -127,11 +128,11 @@ public class ConcreteExpressionFactory {
     return new Concrete.TypeParameter<>(true, type);
   }
 
-  public static Concrete.TelescopeParameter<Position> cTele(List<Abstract.ReferableSourceNode> referableList, Concrete.Expression<Position> type) {
+  public static Concrete.TelescopeParameter<Position> cTele(List<Referable> referableList, Concrete.Expression<Position> type) {
     return new Concrete.TelescopeParameter<>(POSITION, true, referableList, type);
   }
 
-  public static Concrete.TelescopeParameter<Position> cTele(boolean explicit, List<? extends Abstract.ReferableSourceNode> referableList, Concrete.Expression<Position> type) {
+  public static Concrete.TelescopeParameter<Position> cTele(boolean explicit, List<? extends Referable> referableList, Concrete.Expression<Position> type) {
     return new Concrete.TelescopeParameter<>(POSITION, explicit, referableList, type);
   }
 
@@ -143,11 +144,11 @@ public class ConcreteExpressionFactory {
     return arguments.isEmpty() ? codomain : new Concrete.PiExpression<>(POSITION, arguments, codomain);
   }
 
-  public static Concrete.PiExpression<Position> cPi(boolean explicit, Abstract.ReferableSourceNode var, Concrete.Expression<Position> domain, Concrete.Expression<Position> codomain) {
+  public static Concrete.PiExpression<Position> cPi(boolean explicit, Referable var, Concrete.Expression<Position> domain, Concrete.Expression<Position> codomain) {
     return new Concrete.PiExpression<>(POSITION, ctypeArgs(cTele(explicit, cvars(var), domain)), codomain);
   }
 
-  public static Concrete.PiExpression<Position> cPi(Abstract.ReferableSourceNode var, Concrete.Expression<Position> domain, Concrete.Expression<Position> codomain) {
+  public static Concrete.PiExpression<Position> cPi(Referable var, Concrete.Expression<Position> domain, Concrete.Expression<Position> codomain) {
     return cPi(true, var, domain, codomain);
   }
 
@@ -207,7 +208,7 @@ public class ConcreteExpressionFactory {
     return new Concrete.EmptyPattern<>(POSITION, isExplicit);
   }
 
-  public static Concrete.BinOpExpression<Position> cBinOp(Concrete.Expression<Position> left, Abstract.ReferableSourceNode binOp, Concrete.Expression<Position> right) {
+  public static Concrete.BinOpExpression<Position> cBinOp(Concrete.Expression<Position> left, Referable binOp, Concrete.Expression<Position> right) {
     return new Concrete.BinOpExpression<>(POSITION, left, binOp, right);
   }
 

@@ -1,15 +1,15 @@
 package com.jetbrains.jetpad.vclang.error.doc;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 
 public class ReferenceDoc extends LineDoc {
-  private final Abstract.ReferableSourceNode myReference;
+  private final Referable myReference;
 
-  ReferenceDoc(Abstract.ReferableSourceNode reference) {
+  ReferenceDoc(Referable reference) {
     myReference = reference;
   }
 
-  public Abstract.ReferableSourceNode getReference() {
+  public Referable getReference() {
     return myReference;
   }
 

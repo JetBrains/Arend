@@ -16,6 +16,7 @@ import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -32,7 +33,7 @@ import java.util.*;
 public class PatternTypechecking<T> {
   private final LocalErrorReporter<T> myErrorReporter;
   private final EnumSet<Flag> myFlags;
-  private Map<Abstract.ReferableSourceNode, Binding> myContext;
+  private Map<Referable, Binding> myContext;
 
   public enum Flag { ALLOW_INTERVAL, ALLOW_CONDITIONS, HAS_THIS, CHECK_COVERAGE, CONTEXT_FREE }
 
@@ -76,7 +77,7 @@ public class PatternTypechecking<T> {
       substitution.add(parameters, expr);
       parameters = parameters.getNext();
     }
-    for (Map.Entry<Abstract.ReferableSourceNode, Binding> entry : myContext.entrySet()) {
+    for (Map.Entry<Referable, Binding> entry : myContext.entrySet()) {
       Expression expr = substitution.get(entry.getValue());
       if (expr != null) {
         entry.setValue(expr.cast(ReferenceExpression.class).getBinding());
@@ -135,7 +136,7 @@ public class PatternTypechecking<T> {
       if (!elimParams.isEmpty()) {
         for (Concrete.Parameter<T> parameter : abstractParameters) {
           if (parameter instanceof Abstract.TelescopeParameter) {
-            for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeParameter) parameter).getReferableList()) {
+            for (Referable referable : ((Abstract.TelescopeParameter) parameter).getReferableList()) {
               if (!elimParams.contains(link)) {
                 myContext.put(referable, ((BindingPattern) result.proj1.get(i)).getBinding());
               }
@@ -161,7 +162,7 @@ public class PatternTypechecking<T> {
     return result;
   }
 
-  Pair<List<Pattern>, Map<Abstract.ReferableSourceNode, Binding>> typecheckPatterns(List<? extends Concrete.Pattern<T>> patterns, DependentLink parameters, Concrete.SourceNode<T> sourceNode, @SuppressWarnings("SameParameterValue") boolean fullList) {
+  Pair<List<Pattern>, Map<Referable, Binding>> typecheckPatterns(List<? extends Concrete.Pattern<T>> patterns, DependentLink parameters, Concrete.SourceNode<T> sourceNode, @SuppressWarnings("SameParameterValue") boolean fullList) {
     myContext = new HashMap<>();
     Pair<List<Pattern>, List<Expression>> result = doTypechecking(patterns, parameters, sourceNode, fullList);
     return result == null ? null : new Pair<>(result.proj1, result.proj2 == null ? null : myContext);
@@ -329,7 +330,7 @@ public class PatternTypechecking<T> {
         }
       }
 
-      for (Map.Entry<Abstract.ReferableSourceNode, Binding> entry : myContext.entrySet()) {
+      for (Map.Entry<Referable, Binding> entry : myContext.entrySet()) {
         Expression expr = substitution.get(entry.getValue());
         if (expr != null) {
           entry.setValue(((ReferenceExpression) expr).getBinding());

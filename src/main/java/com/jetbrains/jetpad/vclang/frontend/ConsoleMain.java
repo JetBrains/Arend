@@ -17,6 +17,7 @@ import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import org.apache.commons.cli.*;
@@ -199,7 +200,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
     }
 
     @Override
-    public String getIdFor(Abstract.GlobalReferableSourceNode definition) {
+    public String getIdFor(GlobalReferable definition) {
       if (definition instanceof Concrete.Definition) { // TODO[references]
         Position pos = ((Concrete.Definition<Position>) definition).getData(); // TODO[abstract]
         if (pos != null) {

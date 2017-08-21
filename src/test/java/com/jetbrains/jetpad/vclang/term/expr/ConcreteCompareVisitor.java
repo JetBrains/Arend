@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.google.common.base.Objects;
 import com.jetbrains.jetpad.vclang.frontend.text.Position;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteExpressionVisitor;
 
@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Position, Concrete.Expression<Position>, Boolean> {
-  private final Map<Abstract.ReferableSourceNode, Abstract.ReferableSourceNode> mySubstitution = new HashMap<>();
+  private final Map<Referable, Referable> mySubstitution = new HashMap<>();
 
   @Override
   public Boolean visitApp(Concrete.AppExpression<Position> expr1, Concrete.Expression<Position> expr2) {
@@ -23,7 +23,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Positio
   public Boolean visitReference(Concrete.ReferenceExpression<Position> expr1, Concrete.Expression<Position> expr2) {
     if (!(expr2 instanceof Concrete.ReferenceExpression)) return false;
     Concrete.ReferenceExpression defCallExpr2 = (Concrete.ReferenceExpression) expr2;
-    Abstract.ReferableSourceNode ref1 = mySubstitution.get(expr1.getReferent());
+    Referable ref1 = mySubstitution.get(expr1.getReferent());
     if (ref1 == null) {
       ref1 = expr1.getReferent();
     }
@@ -45,8 +45,8 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Positio
       return false;
     }
     if (arg1 instanceof Concrete.TelescopeParameter && arg2 instanceof Concrete.TelescopeParameter) {
-      List<? extends Abstract.ReferableSourceNode> list1 = ((Concrete.TelescopeParameter<Position>) arg1).getReferableList();
-      List<? extends Abstract.ReferableSourceNode> list2 = ((Concrete.TelescopeParameter<Position>) arg2).getReferableList();
+      List<? extends Referable> list1 = ((Concrete.TelescopeParameter<Position>) arg1).getReferableList();
+      List<? extends Referable> list2 = ((Concrete.TelescopeParameter<Position>) arg2).getReferableList();
       if (list1.size() != list2.size()) {
         return false;
       }

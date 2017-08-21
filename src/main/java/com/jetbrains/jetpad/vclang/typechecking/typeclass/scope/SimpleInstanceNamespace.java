@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.typeclass.scope;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateInstanceError;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -12,7 +13,7 @@ import java.util.*;
 
 public class SimpleInstanceNamespace implements Scope {
   private final ErrorReporter myErrorReporter;
-  private Map<Pair<Abstract.GlobalReferableSourceNode, Abstract.GlobalReferableSourceNode>, Abstract.ClassViewInstance> myInstances = Collections.emptyMap();
+  private Map<Pair<GlobalReferable, GlobalReferable>, Abstract.ClassViewInstance> myInstances = Collections.emptyMap();
 
   public SimpleInstanceNamespace(ErrorReporter errorReporter) {
     myErrorReporter = errorReporter;
@@ -23,7 +24,7 @@ public class SimpleInstanceNamespace implements Scope {
       myInstances = new HashMap<>();
     }
     Abstract.ClassView classView = (Abstract.ClassView) instance.getClassView().getReferent();
-    Pair<Abstract.GlobalReferableSourceNode, Abstract.GlobalReferableSourceNode> pair = new Pair<>(instance.isDefault() ? (Abstract.GlobalReferableSourceNode) classView.getUnderlyingClassReference().getReferent() : classView, instance.getClassifyingDefinition());
+    Pair<GlobalReferable, GlobalReferable> pair = new Pair<>(instance.isDefault() ? (GlobalReferable) classView.getUnderlyingClassReference().getReferent() : classView, instance.getClassifyingDefinition());
     Abstract.ClassViewInstance oldInstance = myInstances.putIfAbsent(pair, instance);
     if (oldInstance != null) {
       myErrorReporter.report(new DuplicateInstanceError(Error.Level.ERROR, oldInstance, (Concrete.ClassViewInstance) instance /* TODO[abstract] */));

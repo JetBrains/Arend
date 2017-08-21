@@ -4,6 +4,8 @@ import com.jetbrains.jetpad.vclang.frontend.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -50,24 +52,24 @@ public class NameResolver {
     return ns;
   }
 
-  public Abstract.GlobalReferableSourceNode resolveDefinition(final Scope currentScope, final List<String> path) {
+  public GlobalReferable resolveDefinition(final Scope currentScope, final List<String> path) {
     if (path.isEmpty()) {
       throw new IllegalArgumentException();
     } else {
       Scope scope = currentScope;
-      Abstract.ReferableSourceNode ref = null;
+      Referable ref = null;
       for (String name : path) {
         ref = scope.resolveName(name);
-        if (!(ref instanceof Abstract.GlobalReferableSourceNode)) {
+        if (!(ref instanceof GlobalReferable)) {
           return null;
         }
-        scope = new NamespaceScope(nsProviders.statics.forReferable((Abstract.GlobalReferableSourceNode) ref));
+        scope = new NamespaceScope(nsProviders.statics.forReferable((GlobalReferable) ref));
       }
-      return (Abstract.GlobalReferableSourceNode) ref;
+      return (GlobalReferable) ref;
     }
   }
 
-  public Abstract.ReferableSourceNode resolveReference(final Scope currentScope, final Concrete.ReferenceExpression reference) {
+  public Referable resolveReference(final Scope currentScope, final Concrete.ReferenceExpression reference) {
     if (reference.getReferent() != null) {
       return reference.getReferent();
     }
@@ -78,10 +80,10 @@ public class NameResolver {
     if (reference.getExpression() == null) {
       return currentScope.resolveName(reference.getName());
     } else if (reference.getExpression() instanceof Concrete.ReferenceExpression) {
-      Abstract.ReferableSourceNode exprTarget = resolveReference(currentScope, (Concrete.ReferenceExpression) reference.getExpression());
+      Referable exprTarget = resolveReference(currentScope, (Concrete.ReferenceExpression) reference.getExpression());
       final Namespace ns;
-      if (exprTarget instanceof Abstract.GlobalReferableSourceNode) {
-        ns = nsProviders.statics.forReferable((Abstract.GlobalReferableSourceNode) exprTarget);
+      if (exprTarget instanceof GlobalReferable) {
+        ns = nsProviders.statics.forReferable((GlobalReferable) exprTarget);
       } else {
         // TODO: implement this coherently
         // ns = resolveModuleNamespace((Abstract.DefCallExpression) reference.getExpression());

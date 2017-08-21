@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.frontend.namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.BaseAbstractVisitor;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -57,7 +58,7 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
   }
 
   @Override
-  public Namespace forReferable(Abstract.GlobalReferableSourceNode referable) {
+  public Namespace forReferable(GlobalReferable referable) {
     Abstract.Definition definition = (Abstract.Definition) referable; // TODO[references]
 
     Namespace ns = cache.get(definition);
