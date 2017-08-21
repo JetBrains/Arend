@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.core.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.ArrayList;
@@ -74,9 +74,9 @@ public class DataDefinition extends Definition {
     return myConstructors;
   }
 
-  public Constructor getConstructor(Abstract.Constructor abstractCon) {
+  public Constructor getConstructor(GlobalReferable referable) {
     for (Constructor constructor : myConstructors) {
-      if (constructor.getConcreteDefinition().equals(abstractCon)) {
+      if (constructor.getConcreteDefinition().equals(referable)) { // TODO[abstract]
         return constructor;
       }
     }

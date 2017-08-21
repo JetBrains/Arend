@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.frontend.text.parser;
+package com.jetbrains.jetpad.vclang.frontend.parser;
 
 public class ParseException extends RuntimeException {
 }

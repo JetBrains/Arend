@@ -134,12 +134,12 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   public Void visitReference(Concrete.ReferenceExpression<T> expr, Byte prec) {
     if (expr.getExpression() != null) {
       expr.getExpression().accept(this, Concrete.ReferenceExpression.PREC);
-      myBuilder.append('.').append(expr.getName());
+      myBuilder.append('.').append(expr.getReferent().getName());
     } else {
-      if (!isPrefix(expr.getName())) {
+      if (!isPrefix(expr.getReferent().getName())) {
         myBuilder.append('`');
       }
-      myBuilder.append(expr.getName());
+      myBuilder.append(expr.getReferent().getName());
     }
     return null;
   }
@@ -494,7 +494,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     if (prec > Concrete.BinOpSequenceExpression.PREC) myBuilder.append('(');
     expr.getLeft().accept(this, (byte) 10);
     for (Concrete.BinOpSequenceElem<T> elem : expr.getSequence()) {
-      myBuilder.append(isPrefix(elem.binOp.getName()) ? " `" : " ").append(elem.binOp.getName()).append(elem.argument == null ? "` " : " ");
+      myBuilder.append(isPrefix(elem.binOp.getReferent().getName()) ? " `" : " ").append(elem.binOp.getReferent().getName()).append(elem.argument == null ? "` " : " ");
       if (elem.argument != null) {
         elem.argument.accept(this, (byte) 10);
       }
@@ -605,7 +605,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   private void visitClassFieldImpl(Concrete.ClassFieldImpl<T> classFieldImpl) {
-    myBuilder.append(classFieldImpl.getImplementedFieldName()).append(" => ");
+    myBuilder.append(classFieldImpl.getImplementedField().getName()).append(" => ");
     classFieldImpl.getImplementation().accept(this, Concrete.Expression.PREC);
   }
 
@@ -622,7 +622,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     if (printPipe) {
       myBuilder.append("| ");
     }
-    myBuilder.append(letClause.getName());
+    myBuilder.append(letClause.getReferable().getName());
     for (Concrete.Parameter<T> arg : letClause.getParameters()) {
       myBuilder.append(" ");
       prettyPrintParameter(arg, Concrete.LetExpression.PREC);
@@ -855,7 +855,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
       } else {
         myBuilder.append(", ");
       }
-      myBuilder.append(ref.getName());
+      myBuilder.append(ref.getReferent().getName());
     }
   }
 
@@ -914,10 +914,10 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
       Concrete.ConstructorPattern<T> conPattern = (Concrete.ConstructorPattern<T>) pattern;
       if (!conPattern.getPatterns().isEmpty() && prec > Concrete.Pattern.PREC && pattern.isExplicit()) myBuilder.append('(');
 
-      if (!isPrefix(conPattern.getConstructorName())) {
+      if (!isPrefix(conPattern.getConstructor().getName())) {
         myBuilder.append('`');
       }
-      myBuilder.append(conPattern.getConstructorName());
+      myBuilder.append(conPattern.getConstructor().getName());
       for (Concrete.Pattern<T> patternArg : conPattern.getPatterns()) {
         myBuilder.append(' ');
         prettyPrintPattern(patternArg, (byte) (Concrete.Pattern.PREC + 1));
@@ -1013,13 +1013,13 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   @Override
   public Void visitClassView(Concrete.ClassView<T> def, Void params) {
     myBuilder.append("\\view ").append(def.getName()).append(" \\on ");
-    def.getUnderlyingClassReference().accept(this, Concrete.Expression.PREC);
-    myBuilder.append(" \\by ").append(def.getClassifyingFieldName()).append(" {");
+    def.getUnderlyingClass().accept(this, Concrete.Expression.PREC);
+    myBuilder.append(" \\by ").append(def.getClassifyingField().getName()).append(" {");
 
     if (!def.getFields().isEmpty()) {
       boolean hasImplemented = false;
       for (Concrete.ClassViewField<T> field : def.getFields()) {
-        if (!Objects.equals(field.getName(), field.getUnderlyingFieldName())) {
+        if (!Objects.equals(field.getName(), field.getUnderlyingField().getName())) {
           hasImplemented = true;
           break;
         }
@@ -1037,7 +1037,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
         printIndent();
       } else {
         for (Concrete.ClassViewField field : def.getFields()) {
-          myBuilder.append(" ").append(field.getUnderlyingFieldName());
+          myBuilder.append(" ").append(field.getUnderlyingField().getName());
         }
         myBuilder.append(" ");
       }
@@ -1048,7 +1048,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
 
   @Override
   public Void visitClassViewField(Concrete.ClassViewField def, Void params) {
-    myBuilder.append(def.getUnderlyingFieldName()).append(" => ").append(def.getName());
+    myBuilder.append(def.getUnderlyingField().getName()).append(" => ").append(def.getName());
     return null;
   }
 

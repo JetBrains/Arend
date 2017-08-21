@@ -22,7 +22,7 @@ public class DefinitionGetDepsVisitor<T> implements ConcreteDefinitionVisitor<T,
 
   @Override
   public Void visitFunction(Concrete.FunctionDefinition<T> def, Boolean isHeader) {
-    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myTypecheckableProvider, myDependencies);
+    CollectDefCallsVisitor<T> visitor = new CollectDefCallsVisitor<>(myInstanceProvider, myTypecheckableProvider, myDependencies);
 
     for (Concrete.Parameter<T> param : def.getParameters()) {
       if (param instanceof Concrete.TypeParameter) {
@@ -31,7 +31,7 @@ public class DefinitionGetDepsVisitor<T> implements ConcreteDefinitionVisitor<T,
     }
 
     if (isHeader) {
-      Concrete.Expression resultType = def.getResultType();
+      Concrete.Expression<T> resultType = def.getResultType();
       if (resultType != null) {
         resultType.accept(visitor, null);
       }
@@ -56,21 +56,21 @@ public class DefinitionGetDepsVisitor<T> implements ConcreteDefinitionVisitor<T,
   }
 
   @Override
-  public Void visitClassField(Concrete.ClassField def, Boolean params) {
-    def.getResultType().accept(new CollectDefCallsVisitor(myInstanceProvider, myTypecheckableProvider, myDependencies), null);
+  public Void visitClassField(Concrete.ClassField<T> def, Boolean params) {
+    def.getResultType().accept(new CollectDefCallsVisitor<>(myInstanceProvider, myTypecheckableProvider, myDependencies), null);
     return null;
   }
 
   @Override
   public Void visitData(Concrete.DataDefinition<T> def, Boolean isHeader) {
-    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myTypecheckableProvider, myDependencies);
+    CollectDefCallsVisitor<T> visitor = new CollectDefCallsVisitor<>(myInstanceProvider, myTypecheckableProvider, myDependencies);
 
     if (isHeader) {
       for (Concrete.TypeParameter<T> param : def.getParameters()) {
         param.getType().accept(visitor, null);
       }
 
-      Concrete.Expression universe = def.getUniverse();
+      Concrete.Expression<T> universe = def.getUniverse();
       if (universe != null) {
         universe.accept(visitor, null);
       }
@@ -93,8 +93,8 @@ public class DefinitionGetDepsVisitor<T> implements ConcreteDefinitionVisitor<T,
   private void visitPattern(Concrete.Pattern<T> pattern) {
     if (pattern instanceof Concrete.ConstructorPattern) {
       Concrete.ConstructorPattern<T> conPattern = (Concrete.ConstructorPattern<T>) pattern;
-      if (conPattern.getConstructor() != null) {
-        myDependencies.add(conPattern.getConstructor());
+      if (conPattern.getConstructor() instanceof GlobalReferable) {
+        myDependencies.add((GlobalReferable) conPattern.getConstructor());
       }
       for (Concrete.Pattern<T> patternArg : conPattern.getPatterns()) {
         visitPattern(patternArg);
@@ -104,7 +104,7 @@ public class DefinitionGetDepsVisitor<T> implements ConcreteDefinitionVisitor<T,
 
   @Override
   public Void visitConstructor(Concrete.Constructor<T> def, Boolean params) {
-    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myTypecheckableProvider, myDependencies);
+    CollectDefCallsVisitor<T> visitor = new CollectDefCallsVisitor<>(myInstanceProvider, myTypecheckableProvider, myDependencies);
 
     for (Concrete.TypeParameter<T> param : def.getParameters()) {
       param.getType().accept(visitor, null);
@@ -125,17 +125,17 @@ public class DefinitionGetDepsVisitor<T> implements ConcreteDefinitionVisitor<T,
 
   @Override
   public Void visitClass(Concrete.ClassDefinition<T> def, Boolean params) {
-    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myTypecheckableProvider, myDependencies);
+    CollectDefCallsVisitor<T> visitor = new CollectDefCallsVisitor<>(myInstanceProvider, myTypecheckableProvider, myDependencies);
 
     for (Concrete.SuperClass<T> superClass : def.getSuperClasses()) {
       superClass.getSuperClass().accept(visitor, null);
     }
 
-    for (Concrete.ClassField field : def.getFields()) {
+    for (Concrete.ClassField<T> field : def.getFields()) {
       visitClassField(field, null);
     }
 
-    for (Concrete.Implementation implementation : def.getImplementations()) {
+    for (Concrete.Implementation<T> implementation : def.getImplementations()) {
       visitImplement(implementation, null);
     }
 
@@ -143,8 +143,8 @@ public class DefinitionGetDepsVisitor<T> implements ConcreteDefinitionVisitor<T,
   }
 
   @Override
-  public Void visitImplement(Concrete.Implementation def, Boolean params) {
-    def.getImplementation().accept(new CollectDefCallsVisitor(myInstanceProvider, myTypecheckableProvider, myDependencies), null);
+  public Void visitImplement(Concrete.Implementation<T> def, Boolean params) {
+    def.getImplementation().accept(new CollectDefCallsVisitor<>(myInstanceProvider, myTypecheckableProvider, myDependencies), null);
     return null;
   }
 
@@ -160,16 +160,16 @@ public class DefinitionGetDepsVisitor<T> implements ConcreteDefinitionVisitor<T,
 
   @Override
   public Void visitClassViewInstance(Concrete.ClassViewInstance<T> def, Boolean params) {
-    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myTypecheckableProvider, myDependencies);
+    CollectDefCallsVisitor<T> visitor = new CollectDefCallsVisitor<>(myInstanceProvider, myTypecheckableProvider, myDependencies);
 
     for (Concrete.Parameter<T> param : def.getParameters()) {
       if (param instanceof Concrete.TypeParameter) {
-        ((Concrete.TypeParameter) param).getType().accept(visitor, null);
+        ((Concrete.TypeParameter<T>) param).getType().accept(visitor, null);
       }
     }
 
     def.getClassView().accept(visitor, null);
-    for (Concrete.ClassFieldImpl classFieldImpl : def.getClassFieldImpls()) {
+    for (Concrete.ClassFieldImpl<T> classFieldImpl : def.getClassFieldImpls()) {
       classFieldImpl.getImplementation().accept(visitor, null);
     }
 

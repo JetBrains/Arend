@@ -60,7 +60,7 @@ public final class Abstract {
   }
 
   public interface Implementation extends Definition {
-    @Nonnull ClassField getImplementedField();
+    @Nonnull Referable getImplementedField();
     @Nonnull Concrete.Expression getImplementation();
 
     @Override
@@ -119,15 +119,13 @@ public final class Abstract {
   // ClassViews
 
   public interface ClassView extends Definition {
-    @Nonnull Concrete.ReferenceExpression getUnderlyingClassReference();
-    @Nonnull String getClassifyingFieldName();
-    @Nullable ClassField getClassifyingField();
+    @Nonnull Concrete.ReferenceExpression<?> getUnderlyingClass();
+    @Nonnull Referable getClassifyingField();
     @Nonnull List<? extends ClassViewField> getFields();
   }
 
   public interface ClassViewField extends Definition {
-    @Nonnull String getUnderlyingFieldName();
-    @Nullable ClassField getUnderlyingField();
+    @Nonnull Referable getUnderlyingField();
     @Nonnull ClassView getOwnView();
   }
 
@@ -135,8 +133,7 @@ public final class Abstract {
     boolean isDefault();
     @Nonnull List<? extends Parameter> getParameters();
     @Nonnull Concrete.ReferenceExpression getClassView();
-    @Nonnull
-    GlobalReferable getClassifyingDefinition();
+    @Nonnull GlobalReferable getClassifyingDefinition();
     @Nonnull Collection<? extends Concrete.ClassFieldImpl> getClassFieldImpls();
   }
 

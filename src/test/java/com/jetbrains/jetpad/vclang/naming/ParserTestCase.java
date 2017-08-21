@@ -1,11 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.VclangTestCase;
-import com.jetbrains.jetpad.vclang.frontend.text.Position;
-import com.jetbrains.jetpad.vclang.frontend.text.parser.BuildVisitor;
-import com.jetbrains.jetpad.vclang.frontend.text.parser.ParserError;
-import com.jetbrains.jetpad.vclang.frontend.text.parser.VcgrammarLexer;
-import com.jetbrains.jetpad.vclang.frontend.text.parser.VcgrammarParser;
+import com.jetbrains.jetpad.vclang.frontend.parser.*;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Concrete;

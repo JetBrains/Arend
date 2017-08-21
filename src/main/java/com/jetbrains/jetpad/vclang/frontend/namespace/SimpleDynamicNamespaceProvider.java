@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.frontend.namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.Collection;
@@ -17,18 +18,30 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
     SimpleNamespace ns = classCache.get(referable);
     if (ns != null) return ns;
 
-    Concrete.ClassDefinition<?> classDefinition = (Concrete.ClassDefinition) referable;
-    ns = forDefinitions(classDefinition.getInstanceDefinitions());
-    for (Concrete.ClassField field : classDefinition.getFields()) {
-      ns.addDefinition(field);
-    }
-    classCache.put(classDefinition, ns);
-
-    for (final Concrete.SuperClass superClass : classDefinition.getSuperClasses()) {
-      Concrete.ClassDefinition superDef = Concrete.getUnderlyingClassDef(superClass.getSuperClass());
-      if (superDef != null) {
-        ns.addAll(forReferable(superDef));
+    if (referable instanceof Concrete.ClassDefinition) {
+      Concrete.ClassDefinition<?> classDefinition = (Concrete.ClassDefinition) referable;
+      ns = forDefinitions(classDefinition.getInstanceDefinitions());
+      for (Concrete.ClassField field : classDefinition.getFields()) {
+        ns.addDefinition(field);
       }
+      classCache.put(referable, ns);
+
+      for (final Concrete.SuperClass superClass : classDefinition.getSuperClasses()) {
+        GlobalReferable superDef = Concrete.getUnderlyingClassDef(superClass.getSuperClass());
+        if (superDef != null) {
+          ns.addAll(forReferable(superDef));
+        }
+      }
+    } else if (referable instanceof Concrete.ClassView) {
+      ns = new SimpleNamespace();
+      Referable classifyingField = ((Concrete.ClassView) referable).getClassifyingField();
+      if (classifyingField instanceof GlobalReferable) {
+        ns.addDefinition((GlobalReferable) classifyingField);
+      }
+      for (GlobalReferable viewField : ((Concrete.ClassView<?>) referable).getFields()) {
+        ns.addDefinition(viewField);
+      }
+      classCache.put(referable, ns);
     }
 
     return ns;

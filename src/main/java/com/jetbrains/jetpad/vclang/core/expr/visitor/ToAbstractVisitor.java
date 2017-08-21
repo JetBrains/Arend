@@ -12,8 +12,10 @@ import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.pattern.*;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.frontend.text.Position;
+import com.jetbrains.jetpad.vclang.frontend.parser.Position;
+import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -49,7 +51,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     ToAbstractVisitor visitor = new ToAbstractVisitor(flags, collector, names);
     for (Variable variable : variables) {
       if (variable instanceof Binding) {
-        names.put((Binding) variable, new Concrete.LocalVariable<>(null, visitor.getFreshName((Binding) variable, variables)));
+        names.put((Binding) variable, new LocalReference(visitor.getFreshName((Binding) variable, variables)));
       }
     }
     return expression.accept(visitor, null);
@@ -131,7 +133,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       return cEmptyPattern(isExplicit);
     }
     if (pattern instanceof ConstructorPattern) {
-      return cConPattern(isExplicit, ((ConstructorPattern) pattern).getConstructor().getName(), visitPatterns(((ConstructorPattern) pattern).getArguments(), ((ConstructorPattern) pattern).getConstructor().getParameters()));
+      return cConPattern(isExplicit, ((ConstructorPattern) pattern).getConstructor().getConcreteDefinition(), visitPatterns(((ConstructorPattern) pattern).getArguments(), ((ConstructorPattern) pattern).getConstructor().getParameters()));
     }
     throw new IllegalStateException();
   }
@@ -266,7 +268,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   private static Concrete.Expression<Position> makeReference(Concrete.Expression<Position> expr, Referable referable) {
-    return cDefCall(expr, referable, referable == null ? "\\this" : referable.getName());
+    return cDefCall(expr, referable == null ? new UnresolvedReference("\\this") : referable);
   }
 
   @Override
@@ -312,7 +314,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       if (entry.getKey().equals(expr.getDefinition().getEnclosingThisField())) {
         enclExpr = entry.getValue().accept(this, params);
       } else {
-        statements.add(cImplStatement(entry.getKey().getName(), entry.getValue().accept(this, params)));
+        statements.add(cImplStatement(entry.getKey().getConcreteDefinition(), entry.getValue().accept(this, params)));
       }
     }
 
@@ -344,7 +346,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   private Referable makeReferable(Binding var, Set<Variable> freeVars) {
-    return makeReferable(var, name -> new Concrete.LocalVariable<>(null, name), freeVars, true);
+    return makeReferable(var, LocalReference::new, freeVars, true);
   }
 
   @Override
@@ -505,7 +507,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     List<Concrete.LetClause<Position>> clauses = new ArrayList<>(letExpression.getClauses().size());
     for (LetClause clause : letExpression.getClauses()) {
       Concrete.Expression<Position> term = clause.getExpression().accept(this, null);
-      clauses.add(makeReferable(clause, name -> clet(name, Collections.emptyList(), null, term), myFreeVariablesCollector.getFreeVariables(clause), false));
+      Referable referable = makeReferable(clause, LocalReference::new, myFreeVariablesCollector.getFreeVariables(clause), false);
+      clauses.add(clet(referable, Collections.emptyList(), null, term));
     }
 
     return cLet(clauses, letExpression.getExpression().accept(this, null));

@@ -15,6 +15,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SimpleLevelSubstitution;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.SolveEquationError;
@@ -66,7 +67,7 @@ public class TwoStageEquations<T> implements Equations<T> {
       if (fieldCall1 != null && fieldCall1.getExpression().isInstance(InferenceReferenceExpression.class)) {
         variable = fieldCall1.getExpression().cast(InferenceReferenceExpression.class).getVariable();
         // expr1 == view field call
-        if (variable instanceof TypeClassInferenceVariable && myVisitor.getTypecheckingState().getTypechecked(((TypeClassInferenceVariable) variable).getClassView().getClassifyingField()) == fieldCall1.getDefinition()) {
+        if (variable instanceof TypeClassInferenceVariable && myVisitor.getTypecheckingState().getTypechecked((GlobalReferable) ((TypeClassInferenceVariable) variable).getClassView().getClassifyingField()) == fieldCall1.getDefinition()) {
           Expression stuck2 = expr2.getStuckExpression();
           if (stuck2 == null || !stuck2.isInstance(InferenceReferenceExpression.class) || stuck2.cast(InferenceReferenceExpression.class).getVariable() == null) {
             result = ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getClassViewInstancePool(), expr2);
@@ -79,7 +80,7 @@ public class TwoStageEquations<T> implements Equations<T> {
       if (variable == null && fieldCall2 != null && fieldCall2.getExpression().isInstance(InferenceReferenceExpression.class)) {
         variable = fieldCall2.getExpression().cast(InferenceReferenceExpression.class).getVariable();
         // expr2 == view field call
-        if (variable instanceof TypeClassInferenceVariable && myVisitor.getTypecheckingState().getTypechecked(((TypeClassInferenceVariable) variable).getClassView().getClassifyingField()) == fieldCall2.getDefinition()) {
+        if (variable instanceof TypeClassInferenceVariable && myVisitor.getTypecheckingState().getTypechecked((GlobalReferable) ((TypeClassInferenceVariable) variable).getClassView().getClassifyingField()) == fieldCall2.getDefinition()) {
           Expression stuck1 = expr1.getStuckExpression();
           if (stuck1 == null || !stuck1.isInstance(InferenceReferenceExpression.class) || stuck1.cast(InferenceReferenceExpression.class).getVariable() == null) {
             result = ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getClassViewInstancePool(), expr1);

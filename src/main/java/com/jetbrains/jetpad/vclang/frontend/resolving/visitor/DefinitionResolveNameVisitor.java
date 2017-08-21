@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.scope.DataScope;
 import com.jetbrains.jetpad.vclang.naming.scope.DynamicClassScope;
 import com.jetbrains.jetpad.vclang.naming.scope.FunctionScope;
@@ -176,7 +177,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
     List<? extends Concrete.Pattern<T>> patterns = clause.getPatterns();
     if (patterns != null) {
       for (int i = 0; i < patterns.size(); i++) {
-        Concrete.Constructor<T> constructor = exprVisitor.visitPattern(patterns.get(i), new HashMap<>());
+        Referable constructor = exprVisitor.visitPattern(patterns.get(i), new HashMap<>());
         if (constructor != null) {
           ExpressionResolveNameVisitor.replaceWithConstructor(clause, i, constructor);
         }
@@ -235,9 +236,9 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
 
   @Override
   public Void visitImplement(Concrete.Implementation<T> def, Scope parentScope) {
-    Concrete.ClassField referable = myNameResolver.resolveClassField(def.getParentDefinition(), def.getName());
+    GlobalReferable referable = myNameResolver.nsProviders.dynamics.forReferable(def.getParentDefinition()).resolveName(def.getName());
     if (referable != null) {
-      def.setImplemented(referable);
+      def.setImplementedField(referable);
     } else {
       myErrorReporter.report(new NoSuchFieldError<>(def.getName(), def));
     }
@@ -248,30 +249,35 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
 
   @Override
   public Void visitClassView(Concrete.ClassView<T> def, Scope parentScope) {
-    def.getUnderlyingClassReference().accept(new ExpressionResolveNameVisitor<>(parentScope, myContext, myNameResolver, myInfoProvider, myErrorReporter), null);
-    Referable resolvedUnderlyingClass = def.getUnderlyingClassReference().getReferent();
-    if (!(resolvedUnderlyingClass instanceof Concrete.ClassDefinition)) {
-      if (resolvedUnderlyingClass != null) {
-        myErrorReporter.report(new WrongReferable<>("Expected a class", resolvedUnderlyingClass, def));
+    new ExpressionResolveNameVisitor<>(parentScope, myContext, myNameResolver, myInfoProvider, myErrorReporter).visitReference(def.getUnderlyingClass(), null);
+    if (def.getUnderlyingClass().getExpression() != null || !(def.getUnderlyingClass().getReferent() instanceof GlobalReferable)) {
+      if (!(def.getUnderlyingClass().getReferent() instanceof UnresolvedReference)) {
+        myErrorReporter.report(new WrongReferable<>("Expected a class", def.getUnderlyingClass().getReferent(), def));
       }
       return null;
     }
 
-    Namespace dynamicNamespace = myNameResolver.nsProviders.dynamics.forReferable((Concrete.ClassDefinition) resolvedUnderlyingClass);
-    GlobalReferable resolvedClassifyingField = dynamicNamespace.resolveName(def.getClassifyingFieldName());
-    if (!(resolvedClassifyingField instanceof Concrete.ClassField)) {
-      myErrorReporter.report(resolvedClassifyingField != null ? new WrongReferable<>("Expected a class field", resolvedClassifyingField, def) : new NotInScopeError<>(def.getClassifyingFieldName(), def));
-      return null;
+    GlobalReferable underlyingClass = (GlobalReferable) def.getUnderlyingClass().getReferent();
+    Referable classifyingField = def.getClassifyingField();
+    if (classifyingField instanceof UnresolvedReference) {
+      Namespace dynamicNamespace = myNameResolver.nsProviders.dynamics.forReferable(underlyingClass);
+      GlobalReferable resolvedClassifyingField = dynamicNamespace.resolveName(classifyingField.getName());
+      if (resolvedClassifyingField == null) {
+        myErrorReporter.report(new NotInScopeError<>(classifyingField.getName(), def));
+        return null;
+      }
+      def.setClassifyingField(resolvedClassifyingField);
     }
 
-    def.setClassifyingField((Concrete.ClassField) resolvedClassifyingField);
-
     for (Concrete.ClassViewField<T> viewField : def.getFields()) {
-      Concrete.ClassField classField = myNameResolver.resolveClassField((Concrete.ClassDefinition) resolvedUnderlyingClass, viewField.getUnderlyingFieldName());
-      if (classField != null) {
-        viewField.setUnderlyingField(classField);
-      } else {
-        myErrorReporter.report(new NoSuchFieldError<>(def.getName(), def));
+      Referable underlyingField = viewField.getUnderlyingField();
+      if (underlyingField instanceof UnresolvedReference) {
+        GlobalReferable classField = myNameResolver.nsProviders.dynamics.forReferable(underlyingClass).resolveName(underlyingField.getName());
+        if (classField != null) {
+          viewField.setUnderlyingField(classField);
+        } else {
+          myErrorReporter.report(new NoSuchFieldError<>(def.getName(), def));
+        }
       }
     }
     return null;
@@ -289,7 +295,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
       exprVisitor.visitParameters(def.getParameters());
       exprVisitor.visitReference(def.getClassView(), null);
       if (def.getClassView().getReferent() instanceof Concrete.ClassView) {
-        exprVisitor.visitClassFieldImpls(def.getClassFieldImpls(), (Concrete.ClassView) def.getClassView().getReferent(), null);
+        exprVisitor.visitClassFieldImpls(def.getClassFieldImpls(), (Concrete.ClassView) def.getClassView().getReferent());
         boolean ok = false;
         for (Concrete.ClassFieldImpl<T> impl : def.getClassFieldImpls()) {
           if (impl.getImplementedField() == ((Concrete.ClassView) def.getClassView().getReferent()).getClassifyingField()) {

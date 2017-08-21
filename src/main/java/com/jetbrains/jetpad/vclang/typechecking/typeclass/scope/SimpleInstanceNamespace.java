@@ -23,7 +23,7 @@ public class SimpleInstanceNamespace<T> implements Scope {
       myInstances = new HashMap<>();
     }
     Concrete.ClassView classView = (Concrete.ClassView) instance.getClassView().getReferent();
-    Pair<GlobalReferable, GlobalReferable> pair = new Pair<>(instance.isDefault() ? (GlobalReferable) classView.getUnderlyingClassReference().getReferent() : classView, instance.getClassifyingDefinition());
+    Pair<GlobalReferable, GlobalReferable> pair = new Pair<>(instance.isDefault() ? (GlobalReferable) classView.getUnderlyingClass().getReferent() : classView, instance.getClassifyingDefinition());
     Concrete.ClassViewInstance oldInstance = myInstances.putIfAbsent(pair, instance);
     if (oldInstance != null) {
       myErrorReporter.report(new DuplicateInstanceError<>(Error.Level.ERROR, oldInstance, instance));

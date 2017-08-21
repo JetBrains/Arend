@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
-import com.jetbrains.jetpad.vclang.frontend.text.Position;
+import com.jetbrains.jetpad.vclang.frontend.parser.Position;
+import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
@@ -30,22 +31,20 @@ public class ConcreteExpressionFactory {
     return new Concrete.ReferenceExpression<>(POSITION, referable);
   }
 
-  public static Concrete.ReferenceExpression<Position> cDefCall(Concrete.Expression<Position> expr, Referable definition, String name) {
-    Concrete.ReferenceExpression<Position> result = new Concrete.ReferenceExpression<>(POSITION, expr, name);
-    result.setResolvedReferent(definition);
-    return result;
+  public static Concrete.ReferenceExpression<Position> cDefCall(Concrete.Expression<Position> expr, Referable referable) {
+    return new Concrete.ReferenceExpression<>(POSITION, expr, referable);
   }
 
   public static Concrete.ReferenceExpression<Position> cDefCall(Concrete.Definition definition) {
-    return cDefCall(null, definition, definition.getName());
+    return new Concrete.ReferenceExpression<>(POSITION, definition);
   }
 
   public static Concrete.ClassExtExpression<Position> cClassExt(Concrete.Expression<Position> expr, List<Concrete.ClassFieldImpl<Position>> definitions) {
     return new Concrete.ClassExtExpression<>(POSITION, expr, definitions);
   }
 
-  public static Concrete.ClassFieldImpl<Position> cImplStatement(String name, Concrete.Expression<Position> expr) {
-    return new Concrete.ClassFieldImpl<>(POSITION, name, expr);
+  public static Concrete.ClassFieldImpl<Position> cImplStatement(Referable referable, Concrete.Expression<Position> expr) {
+    return new Concrete.ClassFieldImpl<>(POSITION, referable, expr);
   }
 
   @SafeVarargs
@@ -81,20 +80,20 @@ public class ConcreteExpressionFactory {
     return Arrays.asList(letClauses);
   }
 
-  public static Concrete.LetClause<Position> clet(String name, Concrete.Expression<Position> term) {
-    return new Concrete.LetClause<>(POSITION, name, Collections.emptyList(), null, term);
+  public static Concrete.LetClause<Position> clet(Referable referable, Concrete.Expression<Position> term) {
+    return new Concrete.LetClause<>(POSITION, referable, Collections.emptyList(), null, term);
   }
 
-  public static Concrete.LetClause<Position> clet(String name, List<Concrete.Parameter<Position>> args, Concrete.Expression<Position> term) {
-    return new Concrete.LetClause<>(POSITION, name, args, null, term);
+  public static Concrete.LetClause<Position> clet(Referable referable, List<Concrete.Parameter<Position>> args, Concrete.Expression<Position> term) {
+    return new Concrete.LetClause<>(POSITION, referable, args, null, term);
   }
 
-  public static Concrete.LetClause<Position> clet(String name, List<Concrete.Parameter<Position>> args, Concrete.Expression<Position> resultType, Concrete.Expression<Position> term) {
-    return new Concrete.LetClause<>(POSITION, name, args, resultType, term);
+  public static Concrete.LetClause<Position> clet(Referable referable, List<Concrete.Parameter<Position>> args, Concrete.Expression<Position> resultType, Concrete.Expression<Position> term) {
+    return new Concrete.LetClause<>(POSITION, referable, args, resultType, term);
   }
 
-  public static Concrete.LocalVariable<Position> ref(String name) {
-    return new Concrete.LocalVariable<>(POSITION, name);
+  public static LocalReference ref(String name) {
+    return new LocalReference(name);
   }
 
   public static List<Referable> cvars(Referable... vars) {
@@ -195,8 +194,8 @@ public class ConcreteExpressionFactory {
     return new Concrete.UniverseExpression<>(POSITION, pLevel, hLevel);
   }
 
-  public static Concrete.ConstructorPattern<Position> cConPattern(boolean isExplicit, String name, List<Concrete.Pattern<Position>> patternArgs) {
-    return new Concrete.ConstructorPattern<>(POSITION, isExplicit, name, patternArgs);
+  public static Concrete.ConstructorPattern<Position> cConPattern(boolean isExplicit, Referable referable, List<Concrete.Pattern<Position>> patternArgs) {
+    return new Concrete.ConstructorPattern<>(POSITION, isExplicit, referable, patternArgs);
   }
 
   public static Concrete.NamePattern<Position> cNamePattern(boolean isExplicit, String name) {

@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.frontend.text;
+package com.jetbrains.jetpad.vclang.frontend.parser;
 
 import com.jetbrains.jetpad.vclang.error.SourceInfo;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;

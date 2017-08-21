@@ -1,6 +1,5 @@
-package com.jetbrains.jetpad.vclang.frontend.text.parser;
+package com.jetbrains.jetpad.vclang.frontend.parser;
 
-import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.module.error.ModuleLoadingError;
 
 public class ParserError extends ModuleLoadingError<Position> {

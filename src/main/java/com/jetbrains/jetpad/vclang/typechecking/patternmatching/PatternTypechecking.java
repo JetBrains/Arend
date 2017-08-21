@@ -16,15 +16,17 @@ import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.DataTypeNotEmptyError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.ExpectedConstructor;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.WrongConstructorError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
@@ -273,10 +275,12 @@ public class PatternTypechecking<T> {
       }
       Concrete.ConstructorPattern<T> conPattern = (Concrete.ConstructorPattern<T>) pattern;
 
-      Constructor constructor = dataCall.getDefinition().getConstructor(conPattern.getConstructor());
+      Constructor constructor = conPattern.getConstructor() instanceof GlobalReferable ? dataCall.getDefinition().getConstructor((GlobalReferable) conPattern.getConstructor()) : null;
       List<ConCallExpression> conCalls = new ArrayList<>(1);
       if (constructor == null || !dataCall.getMatchedConCall(constructor, conCalls) || conCalls.isEmpty() ) {
-        myErrorReporter.report(new WrongConstructorError<>(conPattern.getConstructor(), dataCall, pattern));
+        if (!(conPattern.getConstructor() instanceof UnresolvedReference)) {
+          myErrorReporter.report(new ExpectedConstructor<>(conPattern.getConstructor(), dataCall, pattern));
+        }
         return null;
       }
       ConCallExpression conCall = conCalls.get(0);

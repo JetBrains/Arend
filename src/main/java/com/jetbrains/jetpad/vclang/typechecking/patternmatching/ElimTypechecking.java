@@ -15,7 +15,6 @@ import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import com.jetbrains.jetpad.vclang.error.Error;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
@@ -81,9 +80,9 @@ public class ElimTypechecking<T> {
     return (ElimTree) typecheckElim(funClauses, sourceNode, null, parameters, Collections.emptyList(), resultClauses);
   }
 
-  public Body typecheckElim(List<? extends Concrete.FunctionClause<T>> funClauses, Concrete.SourceNode<T> sourceNode, List<? extends Abstract.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, List<Clause<T>> resultClauses) {
+  public Body typecheckElim(List<? extends Concrete.FunctionClause<T>> funClauses, Concrete.SourceNode<T> sourceNode, List<? extends Concrete.Parameter<T>> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, List<Clause<T>> resultClauses) {
     List<ExtClause<T>> clauses = new ArrayList<>(funClauses.size());
-    PatternTypechecking patternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), myFlags);
+    PatternTypechecking<T> patternTypechecking = new PatternTypechecking<>(myVisitor.getErrorReporter(), myFlags);
     myOK = true;
     for (Concrete.FunctionClause<T> clause : funClauses) {
       Pair<List<Pattern>, CheckTypeVisitor.Result> result = patternTypechecking.typecheckClause(clause, abstractParameters, parameters, elimParams, myExpectedType, myVisitor);

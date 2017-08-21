@@ -2,23 +2,24 @@ package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class WrongConstructorError<T> extends LocalTypeCheckingError<T> {
-  public final Concrete.Constructor<T> constructor;
+public class ExpectedConstructor<T> extends LocalTypeCheckingError<T> {
+  public final Referable referable;
   public final DataCallExpression dataCall;
 
-  public WrongConstructorError(Concrete.Constructor<T> constructor, DataCallExpression dataCall, Concrete.SourceNode<T> cause) {
+  public ExpectedConstructor(Referable referable, DataCallExpression dataCall, Concrete.SourceNode<T> cause) {
     super("", cause);
-    this.constructor = constructor;
+    this.referable = referable;
     this.dataCall = dataCall;
   }
 
   @Override
   public LineDoc getHeaderDoc(PrettyPrinterInfoProvider src) {
-    return hList(super.getHeaderDoc(src), text(" '"), refDoc(constructor), text("' is not a constructor of data type "), termLine(dataCall));
+    return hList(super.getHeaderDoc(src), text("'"), refDoc(referable), text("' is not a constructor of data type "), termLine(dataCall));
   }
 }

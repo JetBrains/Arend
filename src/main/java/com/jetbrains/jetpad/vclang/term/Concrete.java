@@ -112,14 +112,11 @@ public final class Concrete {
 
   // Expressions
 
-  public static ClassDefinition getUnderlyingClassDef(Expression expr) {
+  public static GlobalReferable getUnderlyingClassDef(Expression expr) { // TODO[abstract]
     if (expr instanceof ReferenceExpression) {
       Referable definition = ((ReferenceExpression) expr).getReferent();
-      if (definition instanceof ClassDefinition) {
-        return (ClassDefinition) definition;
-      }
-      if (definition instanceof ClassView) {
-        return (ClassDefinition) ((ClassView) definition).getUnderlyingClassReference().getReferent();
+      if (definition instanceof GlobalReferable) {
+        return (GlobalReferable) definition;
       }
     }
 
@@ -254,7 +251,7 @@ public final class Concrete {
     }
   }
 
-  public static class BinOpExpression<T> extends ReferenceExpression<T> {
+  public static class BinOpExpression<T> extends ReferenceExpression<T> { // TODO[abstract]: replace binops with applications
     private final Expression<T> myLeft;
     private final Expression<T> myRight;
 
@@ -282,21 +279,18 @@ public final class Concrete {
 
   public static class ReferenceExpression<T> extends Expression<T> {
     public static final byte PREC = 12;
-    private final @Nullable Expression<T> myExpression;
-    private final String myName;
+    private @Nullable Expression<T> myExpression;
     private Referable myReferent;
 
-    public ReferenceExpression(T data, @Nullable Expression<T> expression, String name) {
+    public ReferenceExpression(T data, @Nullable Expression<T> expression, Referable referable) {
       super(data);
       myExpression = expression;
-      myName = name;
-      myReferent = null;
+      myReferent = referable;
     }
 
     public ReferenceExpression(T data, Referable referable) {
       super(data);
       myExpression = null;
-      myName = referable.getName();
       myReferent = referable;
     }
 
@@ -305,16 +299,17 @@ public final class Concrete {
       return myExpression;
     }
 
+    public void setExpression(Expression<T> expression) {
+      myExpression = expression;
+    }
+
+    @Nonnull
     public Referable getReferent() {
       return myReferent;
     }
 
-    public void setResolvedReferent(Referable referent) {
+    public void setReferent(Referable referent) {
       myReferent = referent;
-    }
-
-    public String getName() {
-      return myName;
     }
 
     @Override
@@ -399,27 +394,21 @@ public final class Concrete {
   }
 
   public static class ClassFieldImpl<T> extends SourceNode<T> {
-    private final String myName;
-    private ClassField myImplementedField;
+    private Referable myImplementedField;
     private final Expression<T> myExpression;
 
-    public ClassFieldImpl(T data, String identifier, Expression<T> expression) {
+    public ClassFieldImpl(T data, Referable implementedField, Expression<T> expression) {
       super(data);
-      myName = identifier;
+      myImplementedField = implementedField;
       myExpression = expression;
     }
 
     @Nonnull
-    public String getImplementedFieldName() {
-      return myName;
-    }
-
-    @Nonnull
-    public ClassField getImplementedField() {
+    public Referable getImplementedField() {
       return myImplementedField;
     }
 
-    public void setImplementedField(ClassField newImplementedField) {
+    public void setImplementedField(Referable newImplementedField) {
       myImplementedField = newImplementedField;
     }
 
@@ -513,23 +502,22 @@ public final class Concrete {
     }
   }
 
-  public static class LetClause<T> extends SourceNode<T> implements Referable {
+  public static class LetClause<T> extends SourceNode<T> {
     private final List<Parameter<T>> myArguments;
     private final Expression<T> myResultType;
     private final Expression<T> myTerm;
-    private final String myName;
+    private final Referable myReferable;
 
-    public LetClause(T data, String name, List<Parameter<T>> arguments, Expression<T> resultType, Expression<T> term) {
+    public LetClause(T data, Referable referable, List<Parameter<T>> arguments, Expression<T> resultType, Expression<T> term) {
       super(data);
       myArguments = arguments;
       myResultType = resultType;
       myTerm = term;
-      myName = name;
+      myReferable = referable;
     }
 
-    @Override
-    public String getName() {
-      return myName;
+    public Referable getReferable() {
+      return myReferable;
     }
 
     @Nonnull
@@ -905,32 +893,23 @@ public final class Concrete {
     return null;
   }
 
-  public static class LocalVariable<T> extends SourceNode<T> implements Referable {
-    private final @Nullable String myName;
+  public static abstract class Definition<T> extends SourceNode<T> implements Abstract.Definition, GlobalReferable {
+    private final String myName;
+    private final Abstract.Precedence myPrecedence; // TODO[abstract]: Get rid of precedence
+    private Definition<T> myParent;
+    private boolean myStatic;
 
-    public LocalVariable(T data, @Nullable String name) {
+    public Definition(T data, String name, Abstract.Precedence precedence) {
       super(data);
+      myStatic = true;
       myName = name;
+      myPrecedence = precedence;
     }
 
     @Nullable
     @Override
     public String getName() {
       return myName;
-    }
-  }
-
-  public static abstract class Definition<T> extends SourceNode<T> implements Abstract.Definition, GlobalReferable {
-    private final Abstract.Precedence myPrecedence;
-    private Definition<T> myParent;
-    private boolean myStatic;
-    private final String myName;
-
-    public Definition(T data, String name, Abstract.Precedence precedence) {
-      super(data);
-      myName = name;
-      myStatic = true;
-      myPrecedence = precedence;
     }
 
     @Nonnull
@@ -958,13 +937,8 @@ public final class Concrete {
     }
 
     @Override
-    public String getName() {
-      return myName;
-    }
-
-    @Override
     public String toString() {
-      return myName;
+      return getName();
     }
 
     public abstract <P, R> R accept(ConcreteDefinitionVisitor<T, ? super P, ? extends R> visitor, P params);
@@ -1090,23 +1064,24 @@ public final class Concrete {
   }
 
   public static class Implementation<T> extends Definition<T> implements Abstract.Implementation {
-    private ClassField myImplemented;
+    private Referable myImplementedField;
     private final Expression<T> myExpression;
 
-    public Implementation(T data, String name, Expression<T> expression) {
-      super(data, name, Abstract.Precedence.DEFAULT);
+    public Implementation(T data, Referable implementedField, Expression<T> expression) {
+      super(data, implementedField.getName(), Abstract.Precedence.DEFAULT);
+      myImplementedField = implementedField;
       myExpression = expression;
       setNotStatic();
     }
 
     @Nonnull
     @Override
-    public ClassField getImplementedField() {
-      return myImplemented;
+    public Referable getImplementedField() {
+      return myImplementedField;
     }
 
-    public void setImplemented(ClassField implemented) {
-      myImplemented = implemented;
+    public void setImplementedField(Referable field) {
+      myImplementedField = field;
     }
 
     @Nonnull
@@ -1359,35 +1334,29 @@ public final class Concrete {
 
   public static class ClassView<T> extends Definition<T> implements Abstract.ClassView {
     private final ReferenceExpression<T> myUnderlyingClass;
-    private final String myClassifyingFieldName;
-    private ClassField myClassifyingField;
+    private Referable myClassifyingField;
     private final List<ClassViewField<T>> myFields;
 
-    public ClassView(T data, String name, ReferenceExpression<T> underlyingClass, String classifyingFieldName, List<ClassViewField<T>> fields) {
+    public ClassView(T data, String name, ReferenceExpression<T> underlyingClass, Referable classifyingField, List<ClassViewField<T>> fields) {
       super(data, name, Abstract.Precedence.DEFAULT);
       myUnderlyingClass = underlyingClass;
       myFields = fields;
-      myClassifyingFieldName = classifyingFieldName;
+      myClassifyingField = classifyingField;
     }
 
     @Nonnull
     @Override
-    public ReferenceExpression<T> getUnderlyingClassReference() {
+    public ReferenceExpression<T> getUnderlyingClass() {
       return myUnderlyingClass;
     }
 
     @Nonnull
     @Override
-    public String getClassifyingFieldName() {
-      return myClassifyingFieldName;
-    }
-
-    @Override
-    public ClassField getClassifyingField() {
+    public Referable getClassifyingField() {
       return myClassifyingField;
     }
 
-    public void setClassifyingField(ClassField classifyingField) {
+    public void setClassifyingField(Referable classifyingField) {
       myClassifyingField = classifyingField;
     }
 
@@ -1409,24 +1378,18 @@ public final class Concrete {
   }
 
   public static class ClassViewField<T> extends Definition<T> implements Abstract.ClassViewField {
-    private final String myUnderlyingFieldName;
-    private ClassField myUnderlyingField;
+    private Referable myUnderlyingField;
     private final ClassView<T> myOwnView;
 
-    public ClassViewField(T data, String name, Abstract.Precedence precedence, String underlyingFieldName, ClassView<T> ownView) {
+    public ClassViewField(T data, String name, Abstract.Precedence precedence, Referable underlyingField, ClassView<T> ownView) {
       super(data, name, precedence);
-      myUnderlyingFieldName = underlyingFieldName;
+      myUnderlyingField = underlyingField;
       myOwnView = ownView;
     }
 
     @Nonnull
     @Override
-    public String getUnderlyingFieldName() {
-      return myUnderlyingFieldName;
-    }
-
-    @Override
-    public ClassField getUnderlyingField() {
+    public Referable getUnderlyingField() {
       return myUnderlyingField;
     }
 
@@ -1436,7 +1399,7 @@ public final class Concrete {
       return myOwnView;
     }
 
-    public void setUnderlyingField(ClassField underlyingField) {
+    public void setUnderlyingField(Referable underlyingField) {
       myUnderlyingField = underlyingField;
     }
 
@@ -1657,40 +1620,28 @@ public final class Concrete {
   }
 
   public static class ConstructorPattern<T> extends Pattern<T> implements PatternContainer<T> {
-    private final String myConstructorName;
-    private Constructor<T> myConstructor;
+    private Referable myConstructor;
     private final List<Pattern<T>> myArguments;
 
-    public ConstructorPattern(T data, String constructorName, List<Pattern<T>> arguments) {
-      super(data);
-      myConstructorName = constructorName;
-      myArguments = arguments;
-    }
-
-    public ConstructorPattern(T data, boolean isExplicit, String constructorName, List<Pattern<T>> arguments) {
+    public ConstructorPattern(T data, boolean isExplicit, Referable constructor, List<Pattern<T>> arguments) {
       super(data);
       setExplicit(isExplicit);
-      myConstructorName = constructorName;
+      myConstructor = constructor;
       myArguments = arguments;
     }
 
-    public ConstructorPattern(T data, Constructor<T> constructor, List<Pattern<T>> arguments) {
+    public ConstructorPattern(T data, Referable constructor, List<Pattern<T>> arguments) {
       super(data);
       myConstructor = constructor;
-      myConstructorName = constructor.getName();
       myArguments = arguments;
     }
 
     @Nonnull
-    public String getConstructorName() {
-      return myConstructorName;
-    }
-
-    public Constructor<T> getConstructor() {
+    public Referable getConstructor() {
       return myConstructor;
     }
 
-    public void setConstructor(Constructor<T> constructor) {
+    public void setConstructor(Referable constructor) {
       myConstructor = constructor;
     }
 

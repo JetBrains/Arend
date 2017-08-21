@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.google.common.base.Objects;
-import com.jetbrains.jetpad.vclang.frontend.text.Position;
+import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteExpressionVisitor;
@@ -27,7 +27,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Positio
     if (ref1 == null) {
       ref1 = expr1.getReferent();
     }
-    return ref1 == null ? defCallExpr2.getReferent() == null : ref1.equals(defCallExpr2.getReferent());
+    return ref1.equals(defCallExpr2.getReferent());
   }
 
   @Override
@@ -159,7 +159,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Positio
     }
     if (!(expr2 instanceof Concrete.BinOpExpression)) return false;
     Concrete.BinOpExpression<Position> binOpExpr2 = (Concrete.BinOpExpression<Position>) expr2;
-    return expr1.getLeft().accept(this, binOpExpr2.getLeft()) && (expr1.getRight() == null && binOpExpr2.getRight() == null || expr1.getRight() != null && binOpExpr2.getRight() != null && expr1.getRight().accept(this, binOpExpr2.getRight())) && expr1.getReferent() != null && expr1.getReferent().equals(((Concrete.BinOpExpression<Position>) expr2).getReferent());
+    return expr1.getLeft().accept(this, binOpExpr2.getLeft()) && (expr1.getRight() == null && binOpExpr2.getRight() == null || expr1.getRight() != null && binOpExpr2.getRight() != null && expr1.getRight().accept(this, binOpExpr2.getRight())) && expr1.getReferent().equals(((Concrete.BinOpExpression<Position>) expr2).getReferent());
   }
 
   @Override
@@ -172,8 +172,8 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Positio
     if (!expr1.getLeft().accept(this, binOpExpr2.getLeft())) return false;
     if (expr1.getSequence().size() != binOpExpr2.getSequence().size()) return false;
     for (int i = 0; i < expr1.getSequence().size(); i++) {
-      Concrete.Expression<Position> arg1 = (Concrete.Expression<Position>) expr1.getSequence().get(i).argument;
-      Concrete.Expression<Position> arg2 = (Concrete.Expression<Position>) ((Concrete.BinOpSequenceExpression<Position>) expr2).getSequence().get(i).argument;
+      Concrete.Expression<Position> arg1 = expr1.getSequence().get(i).argument;
+      Concrete.Expression<Position> arg2 = ((Concrete.BinOpSequenceExpression<Position>) expr2).getSequence().get(i).argument;
       if (!(expr1.getSequence().get(i).binOp == binOpExpr2.getSequence().get(i).binOp && (arg1 == null && arg2 == null || arg1 != null && arg2 != null && arg1.accept(this, arg2)))) {
         return false;
       }
@@ -186,7 +186,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Positio
       return pattern2 instanceof Concrete.NamePattern && Objects.equal(pattern1, pattern2);
     }
     if (pattern1 instanceof Concrete.ConstructorPattern) {
-      return pattern2 instanceof Concrete.ConstructorPattern && ((Concrete.ConstructorPattern) pattern1).getConstructorName().equals(((Concrete.ConstructorPattern) pattern2).getConstructorName());
+      return pattern2 instanceof Concrete.ConstructorPattern && ((Concrete.ConstructorPattern) pattern1).getConstructor().equals(((Concrete.ConstructorPattern) pattern2).getConstructor());
     }
     return pattern1 instanceof Concrete.EmptyPattern && pattern2 instanceof Concrete.EmptyPattern;
   }
@@ -227,7 +227,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Positio
   }
 
   private boolean compareImplementStatement(Concrete.ClassFieldImpl<Position> implStat1, Concrete.ClassFieldImpl<Position> implStat2) {
-    return implStat1.getImplementation().accept(this, implStat2.getImplementation()) && implStat1.getImplementedFieldName().equals(implStat2.getImplementedFieldName());
+    return implStat1.getImplementation().accept(this, implStat2.getImplementation()) && implStat1.getImplementedField().equals(implStat2.getImplementedField());
   }
 
   @Override
@@ -263,7 +263,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Positio
       if (!compareLetClause(expr1.getClauses().get(i), letExpr2.getClauses().get(i))) {
         return false;
       }
-      mySubstitution.put(expr1.getClauses().get(i), letExpr2.getClauses().get(i));
+      mySubstitution.put(expr1.getClauses().get(i).getReferable(), letExpr2.getClauses().get(i).getReferable());
     }
     return expr1.getExpression().accept(this, letExpr2.getExpression());
   }

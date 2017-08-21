@@ -1009,7 +1009,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
     List<Concrete.ClassField<?>> alreadyImplementedFields = new ArrayList<>();
     Concrete.SourceNode<T> alreadyImplementedSourceNode = null;
     for (Concrete.ClassFieldImpl<T> statement : expr.getStatements()) {
-      ClassField field = (ClassField) myState.getTypechecked(statement.getImplementedField());
+      ClassField field = (ClassField) myState.getTypechecked((GlobalReferable) statement.getImplementedField()); // TODO[abstract]: check that it is a field and that it belongs to the class, also check that referable is global
       if (baseClass.isImplemented(field) || classFieldMap.containsKey(field)) {
         alreadyImplementedFields.add(field.getConcreteDefinition());
         alreadyImplementedSourceNode = statement;
@@ -1162,9 +1162,9 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
       if (result == null) {
         return null;
       }
-      letResult = new LetClause(clause.getName(), result.expression);
+      letResult = new LetClause(clause.getReferable().getName(), result.expression);
     }
-    myContext.put(clause, letResult);
+    myContext.put(clause.getReferable(), letResult);
     return letResult;
   }
 
@@ -1178,7 +1178,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
         if (letClause == null) {
           return null;
         }
-        myContext.put(clause, letClause);
+        myContext.put(clause.getReferable(), letClause);
         clauses.add(letClause);
       }
 

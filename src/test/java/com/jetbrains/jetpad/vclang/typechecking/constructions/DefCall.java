@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -955,11 +956,11 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void resolvedConstructorTest() {
-    Concrete.ClassDefinition cd = resolveNamesClass(
+    Concrete.ClassDefinition<Position> cd = resolveNamesClass(
         "\\function isequiv {A B : \\Type0} (f : A -> B) => 0\n" +
         "\\function inP-isequiv (P : \\Prop) => isequiv (TrP P).inP");
     Concrete.FunctionDefinition lastDef = (Concrete.FunctionDefinition) ((Concrete.DefineStatement) cd.getGlobalStatements().get(1)).getDefinition();
-    ((Concrete.ReferenceExpression) ((Concrete.AppExpression) ((Abstract.TermFunctionBody) lastDef.getBody()).getTerm()).getArgument().getExpression()).setResolvedReferent(Prelude.PROP_TRUNC.getConstructor("inP").getConcreteDefinition());
+    ((Concrete.ReferenceExpression) ((Concrete.AppExpression) ((Abstract.TermFunctionBody) lastDef.getBody()).getTerm()).getArgument().getExpression()).setReferent(Prelude.PROP_TRUNC.getConstructor("inP").getConcreteDefinition());
     typeCheckClass(cd);
   }
 }

@@ -3,7 +3,8 @@ package com.jetbrains.jetpad.vclang.naming;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
-import com.jetbrains.jetpad.vclang.frontend.text.Position;
+import com.jetbrains.jetpad.vclang.frontend.parser.Position;
+import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
@@ -58,8 +59,8 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
   @Test
   public void prettyPrintingParserLamApp() throws UnsupportedEncodingException {
     // (\x y. x (x y)) (\x y. x) ((\x. x) (\x. x))
-    Concrete.LocalVariable cx = ref("x");
-    Concrete.LocalVariable cy = ref("y");
+    LocalReference cx = ref("x");
+    LocalReference cy = ref("y");
     Concrete.Expression<Position> expected = cApps(cLam(cargs(cTele(cvars(cx, cy), cPi(cUniverseInf(1), cUniverseInf(1)))), cApps(cVar(cx), cApps(cVar(cx), cVar(cy)))), cLam(cargs(cTele(cvars(cx, cy), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar(cx)), cApps(cLam(cargs(cTele(cvars(cx), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar(cx)), cLam(cargs(cTele(cvars(cx), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar(cx))));
     SingleDependentLink x = singleParam("x", Pi(Universe(1), Universe(1)));
     SingleDependentLink xy = singleParam(true, vars("x", "y"), Pi(Universe(1), Universe(1)));
@@ -70,9 +71,9 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
   @Test
   public void prettyPrintingParserPi() throws UnsupportedEncodingException {
     // (x y z : \Type1 -> \Type1 -> \Type1) -> \Type1 -> \Type1 -> (x y -> y x) -> z x y
-    Concrete.LocalVariable x = ref("x");
-    Concrete.LocalVariable y = ref("y");
-    Concrete.LocalVariable z = ref("z");
+    LocalReference x = ref("x");
+    LocalReference y = ref("y");
+    LocalReference z = ref("z");
     Concrete.Expression<Position> expected = cPi(ctypeArgs(cTele(cvars(x, y, z), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cUniverseInf(1))))), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cPi(cApps(cVar(x), cVar(y)), cApps(cVar(y), cVar(x))), cApps(cVar(z), cVar(x), cVar(y))))));
     SingleDependentLink xyz = singleParams(true, vars("x", "y", "z"), Pi(Universe(1), Pi(Universe(1), Universe(1))));
     Expression expr = Pi(xyz, Pi(Universe(1), Pi(Universe(1), Pi(Pi(Apps(Ref(xyz), Ref(xyz.getNext())), Apps(Ref(xyz.getNext()), Ref(xyz))), Apps(Ref(xyz.getNext().getNext()), Ref(xyz), Ref(xyz.getNext()))))));
@@ -82,13 +83,13 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
   @Test
   public void prettyPrintingParserPiImplicit() throws UnsupportedEncodingException {
     // (w : \Type1 -> \Type1 -> \Type1 -> \Type1 -> \Type1) (x : \Type1) {y z : \Type1} -> \Type1 -> (t z' : \Type1) {x' : \Type1 -> \Type1} -> w x' y z' t
-    Concrete.LocalVariable cx = ref("x");
-    Concrete.LocalVariable cy = ref("y");
-    Concrete.LocalVariable cz = ref("z");
-    Concrete.LocalVariable ct = ref("t");
-    Concrete.LocalVariable cx_ = ref("x'");
-    Concrete.LocalVariable cz_ = ref("z'");
-    Concrete.LocalVariable cw = ref("w");
+    LocalReference cx = ref("x");
+    LocalReference cy = ref("y");
+    LocalReference cz = ref("z");
+    LocalReference ct = ref("t");
+    LocalReference cx_ = ref("x'");
+    LocalReference cz_ = ref("z'");
+    LocalReference cw = ref("w");
     Concrete.Expression<Position> expected = cPi(cw, cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cUniverseInf(1))))), cPi(cx, cUniverseInf(1), cPi(ctypeArgs(cTele(false, cvars(cy, cz), cUniverseInf(1))), cPi(cUniverseInf(1), cPi(ctypeArgs(cTele(cvars(ct, cz_), cUniverseInf(1))), cPi(false, cx_, cPi(cUniverseInf(1), cUniverseInf(1)), cApps(cVar(cw), cVar(cx_), cVar(cy), cVar(cz_), cVar(ct))))))));
     SingleDependentLink w = singleParam("w", Pi(Universe(1), Pi(Universe(1), Pi(Universe(1), Pi(Universe(1), Universe(1))))));
     SingleDependentLink x = singleParam("x", Universe(1));
@@ -102,8 +103,8 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
   @Test
   public void prettyPrintingParserFunDef() throws UnsupportedEncodingException {
     // f {x : \Type1} (A : \Type1 -> \Type0) : A x -> (\Type1 -> \Type1) -> \Type1 -> \Type1 => \t y z. y z;
-    Concrete.LocalVariable<Position> x = ref("x");
-    Concrete.LocalVariable<Position> A = ref("A");
+    LocalReference x = ref("x");
+    LocalReference A = ref("A");
     Concrete.NameParameter<Position> t = cName("t");
     Concrete.NameParameter<Position> y = cName("y");
     Concrete.NameParameter<Position> z = cName("z");
@@ -123,11 +124,11 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
     SingleDependentLink a = singleParam("a", Ref(A));
     Expression actual = Pi(A, Pi(a, Pi(D, Pi(x, Apps(Ref(D), Ref(x), Lam(singleParam("y", Ref(A)), Ref(a)))))));
 
-    Concrete.LocalVariable cx = ref("x");
-    Concrete.LocalVariable cy = ref("y");
-    Concrete.LocalVariable ca = ref("a");
-    Concrete.LocalVariable cA = ref("A");
-    Concrete.LocalVariable cD = ref("D");
+    LocalReference cx = ref("x");
+    LocalReference cy = ref("y");
+    LocalReference ca = ref("a");
+    LocalReference cA = ref("A");
+    LocalReference cD = ref("D");
     Concrete.Expression<Position> expected = cPi(cA, cUniverseInf(0), cPi(ca, cVar(cA), cPi(cD, cPi(cPi(cVar(cA), cVar(cA)), cPi(cVar(cA), cVar(cA))), cPi(cx, cPi(cy, cVar(cA), cVar(cA)), cApps(cVar(cD), cVar(cx), cLam(cName("y"), cVar(ca)))))));
     testExpr(expected, actual, EnumSet.of(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS));
   }

@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.frontend.text.parser;
+package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.error.NamingError;

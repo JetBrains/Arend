@@ -37,7 +37,7 @@ public class LocalInstancePool implements ClassViewInstancePool {
       return getInstance(classifyingExpression, classView);
     } else {
       for (Pair pair : myPool) {
-        if (pair.key.equals(classifyingExpression) && pair.classView.getUnderlyingClassReference().getReferent() == classView.getUnderlyingClassReference().getReferent()) {
+        if (pair.key.equals(classifyingExpression) && pair.classView.getUnderlyingClass().getReferent() == classView.getUnderlyingClass().getReferent()) {
           return pair.value;
         }
       }

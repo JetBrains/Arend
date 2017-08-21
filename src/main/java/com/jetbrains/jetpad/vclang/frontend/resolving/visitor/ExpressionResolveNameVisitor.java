@@ -3,12 +3,14 @@ package com.jetbrains.jetpad.vclang.frontend.resolving.visitor;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.text.parser.BinOpParser;
+import com.jetbrains.jetpad.vclang.naming.BinOpParser;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.error.*;
+import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
 import com.jetbrains.jetpad.vclang.naming.error.NoSuchFieldError;
+import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -50,38 +52,62 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
 
   @Override
   public Void visitReference(Concrete.ReferenceExpression<T> expr, Void params) {
-    Concrete.Expression<T> expression = expr.getExpression();
-    if (expression != null) {
-      expression.accept(this, null);
-    }
+    Concrete.Expression<T> left = expr.getExpression();
+    if (left != null) {
+      left.accept(this, null);
+      Referable referable = expr.getReferent();
+      if (referable instanceof UnresolvedReference) {
+        GlobalReferable globalRef = null;
 
-    if (expr.getReferent() == null) {
-      Referable ref = null;
-      if (expression == null) {
-        ref = resolveLocal(expr.getName());
-      }
+        if (left instanceof Concrete.ModuleCallExpression) {
+          globalRef = ((Concrete.ModuleCallExpression) left).getModule();
+        } else if (left instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) left).getExpression() == null && ((Concrete.ReferenceExpression) left).getReferent() instanceof GlobalReferable) {
+          globalRef = (GlobalReferable) ((Concrete.ReferenceExpression) left).getReferent();
+        } else {
+          // myErrorReporter.report(new NotInScopeError<>(name, expr));
+        }
 
-      if (ref == null) {
-        try {
-          ref = myNameResolver.resolveReference(myParentScope, expr);
-        } catch (Scope.InvalidScopeException e) {
-          myErrorReporter.report(e.toError());
-          return null;
+        if (globalRef != null) {
+          Referable newRef = myNameResolver.nsProviders.statics.forReferable(globalRef).resolveName(referable.getName());
+          if (newRef != null) {
+            expr.setExpression(null);
+            expr.setReferent(newRef);
+          } else {
+            myErrorReporter.report(new NotInScopeError<>(referable.getName(), expr)); // TODO[abstract]: report another error
+          }
         }
       }
-
-      if (ref != null) {
-        expr.setResolvedReferent(ref);
-      } else if (expression == null
-              || expression instanceof Concrete.ModuleCallExpression
-              || expression instanceof Concrete.ReferenceExpression &&
-                (((Concrete.ReferenceExpression) expression).getReferent() instanceof Concrete.ClassDefinition
-                || ((Concrete.ReferenceExpression) expression).getReferent() instanceof Concrete.DataDefinition
-                || ((Concrete.ReferenceExpression) expression).getReferent() instanceof Concrete.ClassView)) {
-        myErrorReporter.report(new NotInScopeError<>(expr.getName(), expr));
+    } else {
+      Referable referable = resolveReferable(expr.getReferent(), expr);
+      if (referable != null) {
+        expr.setReferent(referable);
       }
     }
     return null;
+  }
+
+  private Referable resolveReferable(Referable referable, Concrete.SourceNode<T> sourceNode) {
+    if (!(referable instanceof UnresolvedReference)) {
+      return null;
+    }
+
+    String name = referable.getName();
+    referable = resolveLocal(name);
+    if (referable == null) {
+      try {
+        referable = myParentScope.resolveName(name);
+      } catch (Scope.InvalidScopeException e) {
+        myErrorReporter.report(e.toError());
+        return null;
+      }
+    }
+
+    if (referable != null) {
+      return referable;
+    } else {
+      myErrorReporter.report(new NotInScopeError<>(name, sourceNode));
+      return null;
+    }
   }
 
   @Override
@@ -210,33 +236,30 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
         }
       }
 
-      NotInScopeError<T> error = null;
+      T errorCause = null;
       Concrete.Expression<T> expression = expr.getLeft();
       List<BinOpParser.StackElem<T>> stack = new ArrayList<>(sequence.size());
       for (Concrete.BinOpSequenceElem<T> elem : expr.getSequence()) {
-        String name = elem.binOp.getName();
-        Referable ref = resolveLocal(name);
-        if (ref == null) {
-          ref = myParentScope.resolveName(name);
-        }
-        if (ref != null) {
+        visitReference(elem.binOp, null);
+        Referable ref = elem.binOp.getReferent();
+        if ((ref instanceof UnresolvedReference)) {
+          errorCause = elem.binOp.getData();
+        } else {
           parser.pushOnStack(stack, expression, ref, ref instanceof GlobalReferable ? myInfoProvider.precedenceOf((GlobalReferable) ref) : Abstract.Precedence.DEFAULT, elem.binOp, elem.argument == null);
           expression = elem.argument;
-        } else {
-          error = new NotInScopeError<>(name, elem.binOp);
-          myErrorReporter.report(error);
         }
       }
-      if (error == null) {
+
+      if (errorCause == null) {
         expr.replace(parser.rollUpStack(stack, expression));
       } else {
-        expr.replace(new Concrete.InferHoleExpression<>(error.getCause()));
+        expr.replace(new Concrete.InferHoleExpression<>(errorCause));
       }
     }
     return null;
   }
 
-  static <T> void replaceWithConstructor(Concrete.PatternContainer<T> container, int index, Concrete.Constructor<T> constructor) {
+  static <T> void replaceWithConstructor(Concrete.PatternContainer<T> container, int index, Referable constructor) {
     Concrete.Pattern<T> old = container.getPatterns().get(index);
     Concrete.Pattern<T> newPattern = new Concrete.ConstructorPattern<>(old.getData(), constructor, Collections.emptyList());
     newPattern.setExplicit(old.isExplicit());
@@ -251,7 +274,7 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
       for (Concrete.FunctionClause<T> clause : clauses) {
         Map<String, Concrete.NamePattern> usedNames = new HashMap<>();
         for (int i = 0; i < clause.getPatterns().size(); i++) {
-          Concrete.Constructor<T> constructor = visitPattern(clause.getPatterns().get(i), usedNames);
+          Referable constructor = visitPattern(clause.getPatterns().get(i), usedNames);
           if (constructor != null) {
             replaceWithConstructor(clause, i, constructor);
           }
@@ -273,18 +296,14 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
     return null;
   }
 
-  Concrete.Constructor<T> visitPattern(Concrete.Pattern<T> pattern, Map<String, Concrete.NamePattern> usedNames) { // TODO[abstract]: return referable, not a constructor
+  GlobalReferable visitPattern(Concrete.Pattern<T> pattern, Map<String, Concrete.NamePattern> usedNames) {
     if (pattern instanceof Concrete.NamePattern) {
       Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
       String name = namePattern.getName();
       if (name == null) return null;
       Referable ref = myParentScope.resolveName(name);
-      if (ref != null) {
-        if (ref instanceof Concrete.Constructor) {
-          return (Concrete.Constructor<T>) ref;
-        } else {
-          myErrorReporter.report(new WrongReferable<>("Expected a constructor", ref, pattern));
-        }
+      if (ref instanceof GlobalReferable) {
+        return (GlobalReferable) ref;
       }
       if (!name.equals("_")) {
         Concrete.NamePattern prev = usedNames.put(name, namePattern);
@@ -297,18 +316,10 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
     } else if (pattern instanceof Concrete.ConstructorPattern) {
       List<? extends Concrete.Pattern<T>> patterns = ((Concrete.ConstructorPattern<T>) pattern).getPatterns();
       for (int i = 0; i < patterns.size(); i++) {
-        Concrete.Constructor<T> constructor = visitPattern(patterns.get(i), usedNames);
+        Referable constructor = visitPattern(patterns.get(i), usedNames);
         if (constructor != null) {
           replaceWithConstructor((Concrete.ConstructorPattern<T>) pattern, i, constructor);
         }
-      }
-      if (((Concrete.ConstructorPattern) pattern).getConstructor() != null) {
-        String name = ((Concrete.ConstructorPattern) pattern).getConstructorName();
-        Referable def = myParentScope.resolveName(name);
-        if (def instanceof Concrete.Constructor) {
-          return (Concrete.Constructor<T>) def;
-        }
-        myErrorReporter.report(def == null ? new NotInScopeError<>(name, pattern) : new WrongReferable<>("Expected a constructor", def, pattern));
       }
       return null;
     } else if (pattern instanceof Concrete.EmptyPattern) {
@@ -319,23 +330,22 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
   }
 
   void resolvePattern(Concrete.Pattern<T> pattern) {
-    if (pattern instanceof Concrete.ConstructorPattern) {
-      if (((Concrete.ConstructorPattern<T>) pattern).getConstructor() == null) {
-        String name = ((Concrete.ConstructorPattern<T>) pattern).getConstructorName();
-        Referable definition = myParentScope.resolveName(name);
-        if (definition instanceof Concrete.Constructor) {
-          ((Concrete.ConstructorPattern<T>) pattern).setConstructor((Concrete.Constructor) definition);
-        } else {
-          if (definition != null) {
-            myErrorReporter.report(new WrongReferable<>("Expected a constructor", definition, pattern));
-          } else {
-            myErrorReporter.report(new UnknownConstructor<>(name, pattern));
-          }
-        }
+    if (!(pattern instanceof Concrete.ConstructorPattern)) {
+      return;
+    }
+
+    Referable referable = ((Concrete.ConstructorPattern<T>) pattern).getConstructor();
+    if (referable instanceof UnresolvedReference) {
+      Referable newRef = myParentScope.resolveName(referable.getName());
+      if (newRef != null) {
+        ((Concrete.ConstructorPattern<T>) pattern).setConstructor(newRef);
+      } else {
+        myErrorReporter.report(new NotInScopeError<>(referable.getName(), pattern));
       }
-      for (Concrete.Pattern<T> patternArg : ((Concrete.ConstructorPattern<T>) pattern).getPatterns()) {
-        resolvePattern(patternArg);
-      }
+    }
+
+    for (Concrete.Pattern<T> patternArg : ((Concrete.ConstructorPattern<T>) pattern).getPatterns()) {
+      resolvePattern(patternArg);
     }
   }
 
@@ -348,22 +358,25 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
   @Override
   public Void visitClassExt(Concrete.ClassExtExpression<T> expr, Void params) {
     expr.getBaseClassExpression().accept(this, null);
-    Concrete.ClassView classView = Concrete.getUnderlyingClassView(expr);
-    Concrete.ClassDefinition classDef = classView == null ? Concrete.getUnderlyingClassDef(expr) : null;
-    visitClassFieldImpls(expr.getStatements(), classView, classDef);
+    GlobalReferable classDef = Concrete.getUnderlyingClassDef(expr);
+    if (classDef != null) {
+      visitClassFieldImpls(expr.getStatements(), classDef);
+    }
     return null;
   }
 
-  void visitClassFieldImpls(Collection<? extends Concrete.ClassFieldImpl<T>> classFieldImpls, Concrete.ClassView classView, GlobalReferable classDef) {
+  void visitClassFieldImpls(Collection<? extends Concrete.ClassFieldImpl<T>> classFieldImpls, GlobalReferable classDef) {
     for (Concrete.ClassFieldImpl<T> statement : classFieldImpls) {
-      String name = statement.getImplementedFieldName();
-      Concrete.ClassField resolvedRef = classView != null ? myNameResolver.resolveClassFieldByView(classView, name) : classDef != null ? myNameResolver.resolveClassField(classDef, name) : null;
-      if (resolvedRef != null) {
-        statement.setImplementedField(resolvedRef);
-      } else {
-        myErrorReporter.report(new NoSuchFieldError<>(name, statement));
-      }
+      Referable field = statement.getImplementedField();
+      if (field instanceof UnresolvedReference) {
+        GlobalReferable resolvedRef = myNameResolver.nsProviders.dynamics.forReferable(classDef).resolveName(field.getName());
 
+        if (resolvedRef != null) {
+          statement.setImplementedField(resolvedRef);
+        } else {
+          myErrorReporter.report(new NoSuchFieldError<>(field.getName(), statement));
+        }
+      }
       statement.getImplementation().accept(this, null);
     }
   }
@@ -386,9 +399,7 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
           }
           clause.getTerm().accept(this, null);
         }
-        if (clause.getName() != null && !clause.getName().equals("_")) {
-          myContext.add(clause);
-        }
+        myContext.add(clause.getReferable());
       }
 
       expr.getExpression().accept(this, null);

@@ -200,8 +200,8 @@ class DefinitionTypechecking {
 
         if (localInstancePool != null) {
           Concrete.ClassView classView = Concrete.getUnderlyingClassView(typeParameter.getType());
-          if (classView != null && classView.getClassifyingField() != null) {
-            ClassField classifyingField = (ClassField) visitor.getTypecheckingState().getTypechecked(classView.getClassifyingField());
+          if (classView != null && classView.getClassifyingField() instanceof GlobalReferable) {
+            ClassField classifyingField = (ClassField) visitor.getTypecheckingState().getTypechecked((GlobalReferable) classView.getClassifyingField()); // TODO[abstract]: check that it is a field and that it belongs to the class, also check that referable is global
             for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
               ReferenceExpression reference = new ReferenceExpression(link);
               Expression oldInstance = localInstancePool.addInstance(FieldCall(classifyingField, reference), classView, reference);
@@ -651,7 +651,7 @@ class DefinitionTypechecking {
       if (!def.getImplementations().isEmpty()) {
         typedDef.updateSorts();
         for (Concrete.Implementation<T> implementation : def.getImplementations()) {
-          ClassField field = (ClassField) visitor.getTypecheckingState().getTypechecked(implementation.getImplementedField());
+          ClassField field = (ClassField) visitor.getTypecheckingState().getTypechecked((GlobalReferable) implementation.getImplementedField()); // TODO[abstract]: check that it is a field and that it belongs to the class, also check that referable is global
           if (typedDef.isImplemented(field)) {
             classOk = false;
             alreadyImplementFields.add(field.getConcreteDefinition());
@@ -726,7 +726,7 @@ class DefinitionTypechecking {
     List<Concrete.ClassField<?>> alreadyImplementedFields = new ArrayList<>();
     Concrete.SourceNode<T> alreadyImplementedSourceNode = null;
     for (Concrete.ClassFieldImpl<T> classFieldImpl : def.getClassFieldImpls()) {
-      ClassField field = (ClassField) visitor.getTypecheckingState().getTypechecked(classFieldImpl.getImplementedField());
+      ClassField field = (ClassField) visitor.getTypecheckingState().getTypechecked((GlobalReferable) classFieldImpl.getImplementedField()); // TODO[abstract]: check that it is a field and that it belongs to the class, also check that referable is global
       if (classFieldMap.containsKey(field)) {
         alreadyImplementedFields.add(field.getConcreteDefinition());
         alreadyImplementedSourceNode = classFieldImpl;
@@ -739,9 +739,8 @@ class DefinitionTypechecking {
     }
 
     Concrete.ClassView classView = (Concrete.ClassView) def.getClassView().getReferent();
-    assert classView != null;
     Map<ClassField, Expression> fieldSet = new HashMap<>();
-    ClassDefinition classDef = (ClassDefinition) visitor.getTypecheckingState().getTypechecked((GlobalReferable) classView.getUnderlyingClassReference().getReferent());
+    ClassDefinition classDef = (ClassDefinition) visitor.getTypecheckingState().getTypechecked((GlobalReferable) classView.getUnderlyingClass().getReferent()); // TODO[abstract]: check that it is a class, also check that referable is global and there is no left part in underlying class or whatever
     ClassCallExpression term = new ClassCallExpression(classDef, Sort.generateInferVars(visitor.getEquations(), def.getClassView()), fieldSet, Sort.PROP);
 
     List<Concrete.ClassField<?>> notImplementedFields = new ArrayList<>();
@@ -767,7 +766,7 @@ class DefinitionTypechecking {
     }
     term = new StripVisitor(visitor.getErrorReporter()).visitClassCall(term, null);
 
-    ClassField classifyingField = (ClassField) visitor.getTypecheckingState().getTypechecked(classView.getClassifyingField());
+    ClassField classifyingField = (ClassField) visitor.getTypecheckingState().getTypechecked((GlobalReferable) classView.getClassifyingField()); // TODO[abstract]: check that it is a field and that it belongs to the class, also check that referable is global
     Expression impl = fieldSet.get(classifyingField);
     DefCallExpression defCall = impl.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DefCallExpression.class);
     if (defCall == null || !defCall.getDefCallArguments().isEmpty()) {

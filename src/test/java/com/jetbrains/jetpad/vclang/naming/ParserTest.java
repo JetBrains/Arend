@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming;
 
-import com.jetbrains.jetpad.vclang.frontend.text.Position;
+import com.jetbrains.jetpad.vclang.frontend.parser.Position;
+import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import org.junit.Test;
 
@@ -16,24 +17,28 @@ public class ParserTest extends NameResolverTestCase {
     Concrete.Expression<Position> expr = resolveNamesExpr("\\lam x => \\let | x => \\Type0 \\in x x");
     Concrete.Expression<Position> expr1 = resolveNamesExpr("\\let | x => \\Type0 \\in \\lam x => x x");
     Concrete.NameParameter<Position> x = cName("x");
-    Concrete.LetClause<Position> x1 = clet("x", cargs(), cUniverseStd(0));
-    assertTrue(compareAbstract(cLam(x, cLet(clets(x1), cApps(cVar(x1), cVar(x1)))), expr));
-    assertTrue(compareAbstract(cLet(clets(x1), cLam(x, cApps(cVar(x), cVar(x)))), expr1));
+    LocalReference x1 = ref("x");
+    Concrete.LetClause<Position> xClause = clet(x1, cargs(), cUniverseStd(0));
+    assertTrue(compareAbstract(cLam(x, cLet(clets(xClause), cApps(cVar(x1), cVar(x1)))), expr));
+    assertTrue(compareAbstract(cLet(clets(xClause), cLam(x, cApps(cVar(x), cVar(x)))), expr1));
   }
 
   @Test
   public void parseLetMultiple() {
     Concrete.Expression<Position> expr = resolveNamesExpr("\\let | x => \\Type0 | y => x \\in y");
-    Concrete.LetClause<Position> x = clet("x", cUniverseStd(0));
-    Concrete.LetClause<Position> y = clet("y", cVar(x));
-    assertTrue(compareAbstract(cLet(clets(x, y), cVar(y)), expr));
+    LocalReference x = ref("x");
+    LocalReference y = ref("y");
+    Concrete.LetClause<Position> xClause = clet(x, cUniverseStd(0));
+    Concrete.LetClause<Position> yClause = clet(y, cVar(x));
+    assertTrue(compareAbstract(cLet(clets(xClause, yClause), cVar(y)), expr));
   }
 
   @Test
   public void parseLetTyped() {
     Concrete.Expression<Position> expr = resolveNamesExpr("\\let | x : \\Type1 => \\Type0 \\in x");
-    Concrete.LetClause<Position> x = clet("x", cargs(), cUniverseStd(1), cUniverseStd(0));
-    assertTrue(compareAbstract(cLet(clets(x), cVar(x)), expr));
+    LocalReference x = ref("x");
+    Concrete.LetClause<Position> xClause = clet(x, cargs(), cUniverseStd(1), cUniverseStd(0));
+    assertTrue(compareAbstract(cLet(clets(xClause), cVar(x)), expr));
   }
 
   @Test
@@ -58,37 +63,37 @@ public class ParserTest extends NameResolverTestCase {
 
   @Test
   public void parserLamTele() {
-    Concrete.Expression expr = resolveNamesExpr("\\lam p {x t : \\Type0} {y} (a : \\Type0 -> \\Type0) => (\\lam (z w : \\Type0) => y z) y");
+    Concrete.Expression<Position> expr = resolveNamesExpr("\\lam p {x t : \\Type0} {y} (a : \\Type0 -> \\Type0) => (\\lam (z w : \\Type0) => y z) y");
     Concrete.NameParameter<Position> p = cName("p");
-    Concrete.LocalVariable<Position> x = ref("x");
-    Concrete.LocalVariable<Position> t = ref("t");
+    LocalReference x = ref("x");
+    LocalReference t = ref("t");
     Concrete.NameParameter<Position> y = cName(false, "y");
-    Concrete.LocalVariable<Position> a = ref("a");
-    Concrete.LocalVariable<Position> z = ref("z");
-    Concrete.LocalVariable<Position> w = ref("w");
+    LocalReference a = ref("a");
+    LocalReference z = ref("z");
+    LocalReference w = ref("w");
     assertTrue(compareAbstract(cLam(cargs(p, cTele(false, cvars(x, t), cUniverseStd(0)), y, cTele(cvars(a), cPi(cUniverseStd(0), cUniverseStd(0)))), cApps(cLam(cargs(cTele(cvars(z, w), cUniverseStd(0))), cApps(cVar(y), cVar(z))), cVar(y))), expr));
   }
 
   @Test
   public void parserPi() {
-    Concrete.Expression expr = resolveNamesExpr("\\Pi (x y z : \\Type0) (w t : \\Type0 -> \\Type0) -> \\Pi (a b : \\Pi (c : \\Type0) -> x c) -> x b y w");
-    Concrete.LocalVariable x = ref("x");
-    Concrete.LocalVariable y = ref("y");
-    Concrete.LocalVariable z = ref("z");
-    Concrete.LocalVariable w = ref("w");
-    Concrete.LocalVariable t = ref("t");
-    Concrete.LocalVariable a = ref("a");
-    Concrete.LocalVariable b = ref("b");
-    Concrete.LocalVariable c = ref("c");
+    Concrete.Expression<Position> expr = resolveNamesExpr("\\Pi (x y z : \\Type0) (w t : \\Type0 -> \\Type0) -> \\Pi (a b : \\Pi (c : \\Type0) -> x c) -> x b y w");
+    LocalReference x = ref("x");
+    LocalReference y = ref("y");
+    LocalReference z = ref("z");
+    LocalReference w = ref("w");
+    LocalReference t = ref("t");
+    LocalReference a = ref("a");
+    LocalReference b = ref("b");
+    LocalReference c = ref("c");
     assertTrue(compareAbstract(cPi(ctypeArgs(cTele(cvars(x, y, z), cUniverseStd(0)), cTele(cvars(w, t), cPi(cUniverseStd(0), cUniverseStd(0)))), cPi(ctypeArgs(cTele(cvars(a, b), cPi(c, cUniverseStd(0), cApps(cVar(x), cVar(c))))), cApps(cVar(x), cVar(b), cVar(y), cVar(w)))), expr));
   }
 
   @Test
   public void parserPi2() {
-    Concrete.Expression expr = resolveNamesExpr("\\Pi (x y : \\Type0) (z : x x -> y y) -> z z y x");
-    Concrete.LocalVariable x = ref("x");
-    Concrete.LocalVariable y = ref("y");
-    Concrete.LocalVariable z = ref("z");
+    Concrete.Expression<Position> expr = resolveNamesExpr("\\Pi (x y : \\Type0) (z : x x -> y y) -> z z y x");
+    LocalReference x = ref("x");
+    LocalReference y = ref("y");
+    LocalReference z = ref("z");
     assertTrue(compareAbstract(cPi(ctypeArgs(cTele(cvars(x, y), cUniverseStd(0)), cTele(cvars(z), cPi(cApps(cVar(x), cVar(x)), cApps(cVar(y), cVar(y))))), cApps(cVar(z), cVar(z), cVar(y), cVar(x))), expr));
   }
 
@@ -112,13 +117,13 @@ public class ParserTest extends NameResolverTestCase {
     assertTrue(pi.getParameters().get(2).getExplicit());
     assertFalse(pi.getParameters().get(3).getExplicit());
     assertTrue(pi.getParameters().get(4).getExplicit());
-    Concrete.LocalVariable A = ref("A");
-    Concrete.LocalVariable x = ref("x");
-    Concrete.LocalVariable y = ref("y");
-    Concrete.LocalVariable z = ref("z");
-    Concrete.LocalVariable w = ref("w");
-    Concrete.LocalVariable t = ref("t");
-    Concrete.LocalVariable r = ref("r");
+    LocalReference A = ref("A");
+    LocalReference x = ref("x");
+    LocalReference y = ref("y");
+    LocalReference z = ref("z");
+    LocalReference w = ref("w");
+    LocalReference t = ref("t");
+    LocalReference r = ref("r");
     List<Concrete.TypeParameter<Position>> params = new ArrayList<>();
     params.add(cTele(cvars(x, y), cUniverseStd(1)));
     params.add(cTele(false, cvars(z, w), cUniverseStd(1)));
@@ -138,10 +143,10 @@ public class ParserTest extends NameResolverTestCase {
     assertFalse(pi.getParameters().get(2).getExplicit());
     assertTrue(pi.getParameters().get(3).getExplicit());
     assertTrue(pi.getParameters().get(4).getExplicit());
-    Concrete.LocalVariable A = ref("A");
-    Concrete.LocalVariable x = ref("x");
-    Concrete.LocalVariable y = ref("y");
-    Concrete.LocalVariable z = ref("z");
+    LocalReference A = ref("A");
+    LocalReference x = ref("x");
+    LocalReference y = ref("y");
+    LocalReference z = ref("z");
     List<Concrete.TypeParameter<Position>> params = new ArrayList<>();
     params.add(cTele(false, cvars(x), cUniverseStd(1)));
     params.add(cTele(cvars(ref(null)), cUniverseStd(1)));
@@ -232,12 +237,12 @@ public class ParserTest extends NameResolverTestCase {
     Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) classDef.getGlobalStatements().get(2)).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
-    assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getName());
+    assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getReferent().getName());
     assertTrue(((Concrete.BinOpExpression) expr.getLeft()).getLeft() instanceof Concrete.BinOpExpression);
-    assertEquals(name, ((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getName());
+    assertEquals(name, ((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getReferent().getName());
     assertNull(((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getRight());
     assertTrue(((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getLeft() instanceof Concrete.BinOpExpression);
-    assertEquals("$", ((Concrete.BinOpExpression) ((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getLeft()).getName());
+    assertEquals("$", ((Concrete.BinOpExpression) ((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getLeft()).getReferent().getName());
   }
 
   @Test
@@ -268,15 +273,15 @@ public class ParserTest extends NameResolverTestCase {
     Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) classDef.getGlobalStatements().get(2)).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
-    assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getName());
+    assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getReferent().getName());
     assertTrue(((Concrete.BinOpExpression) expr.getLeft()).getRight() instanceof Concrete.BinOpExpression);
     Concrete.Expression expr1 = ((Concrete.BinOpExpression) expr.getLeft()).getRight();
     assertNotNull(expr1);
-    assertEquals("$", ((Concrete.BinOpExpression) expr1).getName());
+    assertEquals("$", ((Concrete.BinOpExpression) expr1).getReferent().getName());
     Concrete.BinOpExpression expr2 = (Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getRight();
     assertNotNull(expr2);
     assertTrue(expr2.getLeft() instanceof Concrete.BinOpExpression);
-    assertEquals(name, ((Concrete.BinOpExpression) expr2.getLeft()).getName());
+    assertEquals(name, ((Concrete.BinOpExpression) expr2.getLeft()).getReferent().getName());
     assertNull(((Concrete.BinOpExpression) expr2.getLeft()).getRight());
   }
 
@@ -294,11 +299,11 @@ public class ParserTest extends NameResolverTestCase {
     Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) classDef.getGlobalStatements().get(2)).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
-    assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getName());
+    assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getReferent().getName());
     assertTrue(((Concrete.BinOpExpression) expr.getLeft()).getRight() instanceof Concrete.BinOpExpression);
     Concrete.BinOpExpression expr1 = (Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getRight();
     assertNotNull(expr1);
-    assertEquals(name, expr1.getName());
+    assertEquals(name, expr1.getReferent().getName());
     assertNull(expr1.getRight());
   }
 
@@ -316,10 +321,10 @@ public class ParserTest extends NameResolverTestCase {
     Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) classDef.getGlobalStatements().get(2)).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
-    assertEquals(name, ((Concrete.BinOpExpression) expr.getLeft()).getName());
+    assertEquals(name, ((Concrete.BinOpExpression) expr.getLeft()).getReferent().getName());
     assertTrue(((Concrete.BinOpExpression) expr.getLeft()).getLeft() instanceof Concrete.BinOpExpression);
     assertNull(((Concrete.BinOpExpression) expr.getLeft()).getRight());
-    assertEquals("$", ((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getName());
+    assertEquals("$", ((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getReferent().getName());
   }
 
   @Test
@@ -336,10 +341,10 @@ public class ParserTest extends NameResolverTestCase {
     Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) classDef.getGlobalStatements().get(2)).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
-    assertEquals(name2, ((Concrete.BinOpExpression) expr.getLeft()).getName());
+    assertEquals(name2, ((Concrete.BinOpExpression) expr.getLeft()).getReferent().getName());
     assertNull(((Concrete.BinOpExpression) expr.getLeft()).getRight());
     assertTrue(((Concrete.BinOpExpression) expr.getLeft()).getLeft() instanceof Concrete.BinOpExpression);
-    assertEquals(name1, ((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getName());
+    assertEquals(name1, ((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getReferent().getName());
     assertNull(((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getRight());
   }
 

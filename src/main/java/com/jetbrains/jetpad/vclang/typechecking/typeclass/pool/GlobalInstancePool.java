@@ -34,7 +34,7 @@ public class GlobalInstancePool implements ClassViewInstancePool {
     Collection<? extends Concrete.ClassViewInstance> instances = myInstanceProvider.getInstances(classView);
     for (Concrete.ClassViewInstance instance : instances) {
       if ((isView && instance.getClassView().getReferent() == classView ||
-          !isView && ((Abstract.ClassView) instance.getClassView().getReferent()).getUnderlyingClassReference().getReferent() == classView.getUnderlyingClassReference().getReferent()) &&
+          !isView && ((Abstract.ClassView) instance.getClassView().getReferent()).getUnderlyingClass().getReferent() == classView.getUnderlyingClass().getReferent()) &&
         instance.getClassifyingDefinition() == classifyingDefCall.getDefinition().getConcreteDefinition()) {
         Definition definition = myTypecheckerState.getTypechecked(instance);
         if (definition.status().headerIsOK()) {

@@ -47,10 +47,10 @@ public class TypeCheckingDefCall<T> {
 
   private Definition getTypeCheckedDefinition(GlobalReferable definition, Concrete.Expression<T> expr) {
     while (definition instanceof Concrete.ClassView) { // TODO[abstract]: eliminate class views and their fields during name resolving
-      definition = (GlobalReferable) ((Concrete.ClassView) definition).getUnderlyingClassReference().getReferent();
+      definition = (GlobalReferable) ((Concrete.ClassView) definition).getUnderlyingClass().getReferent();
     }
     if (definition instanceof Concrete.ClassViewField) {
-      definition = ((Concrete.ClassViewField) definition).getUnderlyingField();
+      definition = (GlobalReferable) ((Concrete.ClassViewField) definition).getUnderlyingField();
     }
     Definition typeCheckedDefinition = myVisitor.getTypecheckingState().getTypechecked(definition);
     if (typeCheckedDefinition == null) {
@@ -121,7 +121,7 @@ public class TypeCheckingDefCall<T> {
       throw new IllegalStateException();
     }
 
-    String name = expr.getName();
+    String name = expr.getReferent().getName();
 
     // Field call
     Expression type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
