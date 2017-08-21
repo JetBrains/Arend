@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
-import com.jetbrains.jetpad.vclang.frontend.AbstractCompareVisitor;
 import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OpenCommand;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
@@ -125,13 +124,6 @@ public final class Concrete {
       StringBuilder builder = new StringBuilder();
       accept(new PrettyPrintVisitor(builder, SourceInfoProvider.TRIVIAL, 0), Abstract.Expression.PREC);
       return builder.toString();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (this == obj) return true;
-      if (!(obj instanceof Expression)) return false;
-      return accept(new AbstractCompareVisitor(), (Expression) obj);
     }
   }
 

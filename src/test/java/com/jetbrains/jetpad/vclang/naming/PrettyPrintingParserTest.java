@@ -20,18 +20,17 @@ import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Apps;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.singleParams;
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class PrettyPrintingParserTest extends NameResolverTestCase {
-  private void testExpr(Abstract.Expression expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) throws UnsupportedEncodingException {
+  private void testExpr(Concrete.Expression expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
     ToAbstractVisitor.convert(expr, new ConcreteExpressionFactory(), flags).accept(new PrettyPrintVisitor(builder, sourceInfoProvider, 0), Abstract.Expression.PREC);
     Concrete.Expression result = resolveNamesExpr(builder.toString());
-    assertEquals(expected, result);
+    assertTrue(compareAbstract(expected, result));
   }
 
-  private void testExpr(Abstract.Expression expected, Expression expr) throws UnsupportedEncodingException {
+  private void testExpr(Concrete.Expression expected, Expression expr) throws UnsupportedEncodingException {
     testExpr(expected, expr, EnumSet.of(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM, ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS));
   }
 
@@ -52,9 +51,9 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
     Concrete.Expression<Position> actualType = cPi(actualArguments, result.getResultType());
     assertTrue(compareAbstract(expectedType, actualType));
     assertTrue(result.getBody() instanceof Abstract.TermFunctionBody);
-    assertEquals(
+    assertTrue(compareAbstract(
       cLam(new ArrayList<>(expected.getParameters()), ((Concrete.TermFunctionBody<Position>) expected.getBody()).getTerm()),
-      cLam(new ArrayList<>(result.getParameters()), ((Concrete.TermFunctionBody<Position>) result.getBody()).getTerm()));
+      cLam(new ArrayList<>(result.getParameters()), ((Concrete.TermFunctionBody<Position>) result.getBody()).getTerm())));
   }
 
   @Test

@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.VclangTestCase;
-import com.jetbrains.jetpad.vclang.frontend.AbstractCompareVisitor;
 import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.frontend.text.parser.BuildVisitor;
 import com.jetbrains.jetpad.vclang.frontend.text.parser.ParserError;
@@ -9,8 +8,8 @@ import com.jetbrains.jetpad.vclang.frontend.text.parser.VcgrammarLexer;
 import com.jetbrains.jetpad.vclang.frontend.text.parser.VcgrammarParser;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.expr.ConcreteCompareVisitor;
 import org.antlr.v4.runtime.*;
 
 import static org.junit.Assert.assertThat;
@@ -88,7 +87,7 @@ public abstract class ParserTestCase extends VclangTestCase {
   }
 
 
-  protected static boolean compareAbstract(Abstract.Expression expr1, Abstract.Expression expr2) {
-    return expr1.accept(new AbstractCompareVisitor(), expr2);
+  protected static boolean compareAbstract(Concrete.Expression<Position> expr1, Concrete.Expression<Position> expr2) {
+    return expr1.accept(new ConcreteCompareVisitor(), expr2);
   }
 }
