@@ -1,14 +1,15 @@
 package com.jetbrains.jetpad.vclang.typechecking.order;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckableProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProvider;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CollectDefCallsVisitor;
 
 import java.util.Set;
 
-public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boolean, Void> {
+public class DefinitionGetDepsVisitor<T> implements ConcreteDefinitionVisitor<T, Boolean, Void> {
   private final InstanceProvider myInstanceProvider;
   private final TypecheckableProvider myTypecheckableProvider;
   private final Set<Abstract.GlobalReferableSourceNode> myDependencies;
@@ -20,28 +21,28 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   }
 
   @Override
-  public Void visitFunction(Abstract.FunctionDefinition def, Boolean isHeader) {
+  public Void visitFunction(Concrete.FunctionDefinition<T> def, Boolean isHeader) {
     CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myTypecheckableProvider, myDependencies);
 
-    for (Abstract.Parameter arg : def.getParameters()) {
-      if (arg instanceof Abstract.TypeParameter) {
-        ((Abstract.TypeParameter) arg).getType().accept(visitor, null);
+    for (Concrete.Parameter<T> param : def.getParameters()) {
+      if (param instanceof Concrete.TypeParameter) {
+        ((Concrete.TypeParameter<T>) param).getType().accept(visitor, null);
       }
     }
 
     if (isHeader) {
-      Abstract.Expression resultType = def.getResultType();
+      Concrete.Expression resultType = def.getResultType();
       if (resultType != null) {
         resultType.accept(visitor, null);
       }
     } else {
-      Abstract.FunctionBody body = def.getBody();
-      if (body instanceof Abstract.TermFunctionBody) {
-        ((Abstract.TermFunctionBody) body).getTerm().accept(visitor, null);
+      Concrete.FunctionBody<T> body = def.getBody();
+      if (body instanceof Concrete.TermFunctionBody) {
+        ((Concrete.TermFunctionBody<T>) body).getTerm().accept(visitor, null);
       }
-      if (body instanceof Abstract.ElimFunctionBody) {
-        for (Abstract.FunctionClause clause : ((Abstract.ElimFunctionBody) body).getClauses()) {
-          for (Abstract.Pattern pattern : clause.getPatterns()) {
+      if (body instanceof Concrete.ElimFunctionBody) {
+        for (Concrete.FunctionClause<T> clause : ((Concrete.ElimFunctionBody<T>) body).getClauses()) {
+          for (Concrete.Pattern<T> pattern : clause.getPatterns()) {
             visitPattern(pattern);
           }
           if (clause.getExpression() != null) {
@@ -55,32 +56,32 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   }
 
   @Override
-  public Void visitClassField(Abstract.ClassField def, Boolean params) {
+  public Void visitClassField(Concrete.ClassField def, Boolean params) {
     def.getResultType().accept(new CollectDefCallsVisitor(myInstanceProvider, myTypecheckableProvider, myDependencies), null);
     return null;
   }
 
   @Override
-  public Void visitData(Abstract.DataDefinition def, Boolean isHeader) {
+  public Void visitData(Concrete.DataDefinition<T> def, Boolean isHeader) {
     CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myTypecheckableProvider, myDependencies);
 
     if (isHeader) {
-      for (Abstract.TypeParameter param : def.getParameters()) {
+      for (Concrete.TypeParameter<T> param : def.getParameters()) {
         param.getType().accept(visitor, null);
       }
 
-      Abstract.Expression universe = def.getUniverse();
+      Concrete.Expression universe = def.getUniverse();
       if (universe != null) {
         universe.accept(visitor, null);
       }
     } else {
-      for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
+      for (Concrete.ConstructorClause<T> clause : def.getConstructorClauses()) {
         if (clause.getPatterns() != null) {
-          for (Abstract.Pattern pattern : clause.getPatterns()) {
+          for (Concrete.Pattern<T> pattern : clause.getPatterns()) {
             visitPattern(pattern);
           }
         }
-        for (Abstract.Constructor constructor : clause.getConstructors()) {
+        for (Concrete.Constructor<T> constructor : clause.getConstructors()) {
           visitConstructor(constructor, null);
         }
       }
@@ -89,28 +90,28 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
     return null;
   }
 
-  private void visitPattern(Abstract.Pattern pattern) {
-    if (pattern instanceof Abstract.ConstructorPattern) {
-      Abstract.ConstructorPattern conPattern = (Abstract.ConstructorPattern) pattern;
+  private void visitPattern(Concrete.Pattern<T> pattern) {
+    if (pattern instanceof Concrete.ConstructorPattern) {
+      Concrete.ConstructorPattern<T> conPattern = (Concrete.ConstructorPattern<T>) pattern;
       if (conPattern.getConstructor() != null) {
         myDependencies.add(conPattern.getConstructor());
       }
-      for (Abstract.Pattern patternArg : conPattern.getPatterns()) {
+      for (Concrete.Pattern<T> patternArg : conPattern.getPatterns()) {
         visitPattern(patternArg);
       }
     }
   }
 
   @Override
-  public Void visitConstructor(Abstract.Constructor def, Boolean params) {
+  public Void visitConstructor(Concrete.Constructor<T> def, Boolean params) {
     CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myTypecheckableProvider, myDependencies);
 
-    for (Abstract.TypeParameter arg : def.getParameters()) {
-      arg.getType().accept(visitor, null);
+    for (Concrete.TypeParameter<T> param : def.getParameters()) {
+      param.getType().accept(visitor, null);
     }
     if (!def.getEliminatedReferences().isEmpty()) {
-      for (Abstract.FunctionClause clause : def.getClauses()) {
-        for (Abstract.Pattern pattern : clause.getPatterns()) {
+      for (Concrete.FunctionClause<T> clause : def.getClauses()) {
+        for (Concrete.Pattern<T> pattern : clause.getPatterns()) {
           visitPattern(pattern);
         }
         if (clause.getExpression() != null) {
@@ -123,18 +124,18 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   }
 
   @Override
-  public Void visitClass(Abstract.ClassDefinition def, Boolean params) {
+  public Void visitClass(Concrete.ClassDefinition<T> def, Boolean params) {
     CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myTypecheckableProvider, myDependencies);
 
-    for (Abstract.SuperClass superClass : def.getSuperClasses()) {
+    for (Concrete.SuperClass<T> superClass : def.getSuperClasses()) {
       superClass.getSuperClass().accept(visitor, null);
     }
 
-    for (Abstract.ClassField field : def.getFields()) {
+    for (Concrete.ClassField field : def.getFields()) {
       visitClassField(field, null);
     }
 
-    for (Abstract.Implementation implementation : def.getImplementations()) {
+    for (Concrete.Implementation implementation : def.getImplementations()) {
       visitImplement(implementation, null);
     }
 
@@ -142,33 +143,33 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   }
 
   @Override
-  public Void visitImplement(Abstract.Implementation def, Boolean params) {
+  public Void visitImplement(Concrete.Implementation def, Boolean params) {
     def.getImplementation().accept(new CollectDefCallsVisitor(myInstanceProvider, myTypecheckableProvider, myDependencies), null);
     return null;
   }
 
   @Override
-  public Void visitClassView(Abstract.ClassView def, Boolean params) {
+  public Void visitClassView(Concrete.ClassView def, Boolean params) {
     return null;
   }
 
   @Override
-  public Void visitClassViewField(Abstract.ClassViewField def, Boolean params) {
+  public Void visitClassViewField(Concrete.ClassViewField def, Boolean params) {
     return null;
   }
 
   @Override
-  public Void visitClassViewInstance(Abstract.ClassViewInstance def, Boolean params) {
+  public Void visitClassViewInstance(Concrete.ClassViewInstance<T> def, Boolean params) {
     CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myInstanceProvider, myTypecheckableProvider, myDependencies);
 
-    for (Abstract.Parameter arg : def.getParameters()) {
-      if (arg instanceof Abstract.TypeParameter) {
-        ((Abstract.TypeParameter) arg).getType().accept(visitor, null);
+    for (Concrete.Parameter<T> param : def.getParameters()) {
+      if (param instanceof Concrete.TypeParameter) {
+        ((Concrete.TypeParameter) param).getType().accept(visitor, null);
       }
     }
 
     def.getClassView().accept(visitor, null);
-    for (Abstract.ClassFieldImpl classFieldImpl : def.getClassFieldImpls()) {
+    for (Concrete.ClassFieldImpl classFieldImpl : def.getClassFieldImpls()) {
       classFieldImpl.getImplementation().accept(visitor, null);
     }
 

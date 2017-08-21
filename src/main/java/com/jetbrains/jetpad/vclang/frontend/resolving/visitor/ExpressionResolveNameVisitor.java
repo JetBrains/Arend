@@ -3,38 +3,35 @@ package com.jetbrains.jetpad.vclang.frontend.resolving.visitor;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.frontend.text.parser.BinOpParser;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.error.*;
 import com.jetbrains.jetpad.vclang.naming.error.NoSuchFieldError;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.ConcreteExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.provider.ParserInfoProvider;
 
 import java.util.*;
 
-public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<Void, Void> {
+public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisitor<T, Void, Void> {
   private final Scope myParentScope;
   private final List<Abstract.ReferableSourceNode> myContext;
   private final NameResolver myNameResolver;
   private final ParserInfoProvider myInfoProvider;
-  private final ResolveListener myResolveListener;
-  private final ErrorReporter myErrorReporter;
+  private final ErrorReporter<T> myErrorReporter;
 
-  public ExpressionResolveNameVisitor(Scope parentScope, List<Abstract.ReferableSourceNode> context, NameResolver nameResolver, ParserInfoProvider infoProvider, ResolveListener resolveListener, ErrorReporter errorReporter) {
+  public ExpressionResolveNameVisitor(Scope parentScope, List<Abstract.ReferableSourceNode> context, NameResolver nameResolver, ParserInfoProvider infoProvider, ErrorReporter<T> errorReporter) {
     myParentScope = parentScope;
     myContext = context;
     myNameResolver = nameResolver;
     myInfoProvider = infoProvider;
-    myResolveListener = resolveListener;
     myErrorReporter = errorReporter;
   }
 
   @Override
-  public Void visitApp(Abstract.AppExpression expr, Void params) {
+  public Void visitApp(Concrete.AppExpression<T> expr, Void params) {
     expr.getFunction().accept(this, null);
     expr.getArgument().getExpression().accept(this, null);
     return null;
@@ -50,8 +47,8 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   }
 
   @Override
-  public Void visitReference(Abstract.ReferenceExpression expr, Void params) {
-    Abstract.Expression expression = expr.getExpression();
+  public Void visitReference(Concrete.ReferenceExpression<T> expr, Void params) {
+    Concrete.Expression<T> expression = expr.getExpression();
     if (expression != null) {
       expression.accept(this, null);
     }
@@ -72,59 +69,59 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
       }
 
       if (ref != null) {
-        myResolveListener.nameResolved(expr, ref);
+        expr.setResolvedReferent(ref);
       } else if (expression == null
-              || expression instanceof Abstract.ModuleCallExpression
-              || expression instanceof Abstract.ReferenceExpression &&
-                (((Abstract.ReferenceExpression) expression).getReferent() instanceof Abstract.ClassDefinition
-                || ((Abstract.ReferenceExpression) expression).getReferent() instanceof Abstract.DataDefinition
-                || ((Abstract.ReferenceExpression) expression).getReferent() instanceof Abstract.ClassView)) {
-        myErrorReporter.report(new NotInScopeError(expr.getName(), (Concrete.SourceNode) expr));
+              || expression instanceof Concrete.ModuleCallExpression
+              || expression instanceof Concrete.ReferenceExpression &&
+                (((Concrete.ReferenceExpression) expression).getReferent() instanceof Concrete.ClassDefinition
+                || ((Concrete.ReferenceExpression) expression).getReferent() instanceof Concrete.DataDefinition
+                || ((Concrete.ReferenceExpression) expression).getReferent() instanceof Concrete.ClassView)) {
+        myErrorReporter.report(new NotInScopeError<>(expr.getName(), expr));
       }
     }
     return null;
   }
 
   @Override
-  public Void visitInferenceReference(Abstract.InferenceReferenceExpression expr, Void params) {
+  public Void visitInferenceReference(Concrete.InferenceReferenceExpression expr, Void params) {
     return null;
   }
 
   @Override
-  public Void visitModuleCall(Abstract.ModuleCallExpression expr, Void params) {
+  public Void visitModuleCall(Concrete.ModuleCallExpression<T> expr, Void params) {
     if (expr.getModule() == null) {
       Abstract.Definition ref = myNameResolver.resolveModuleCall(myParentScope, expr);
       if (ref != null) {
-        myResolveListener.moduleResolved(expr, ref);
+        expr.setModule(ref);
       } else {
-        myErrorReporter.report(new NotInScopeError(expr.getPath().toString(), (Concrete.SourceNode) expr));
+        myErrorReporter.report(new NotInScopeError<>(expr.getPath().toString(), expr));
       }
     }
     return null;
   }
 
-  void visitParameters(List<? extends Abstract.Parameter> parameters) {
-    for (Abstract.Parameter parameter : parameters) {
-      if (parameter instanceof Abstract.TypeParameter) {
-        ((Abstract.TypeParameter) parameter).getType().accept(this, null);
+  void visitParameters(List<? extends Concrete.Parameter<T>> parameters) {
+    for (Concrete.Parameter<T> parameter : parameters) {
+      if (parameter instanceof Concrete.TypeParameter) {
+        ((Concrete.TypeParameter<T>) parameter).getType().accept(this, null);
       }
-      if (parameter instanceof Abstract.TelescopeParameter) {
-        List<? extends Abstract.ReferableSourceNode> referableList = ((Abstract.TelescopeParameter) parameter).getReferableList();
+      if (parameter instanceof Concrete.TelescopeParameter) {
+        List<? extends Abstract.ReferableSourceNode> referableList = ((Concrete.TelescopeParameter<T>) parameter).getReferableList();
         for (int i = 0; i < referableList.size(); i++) {
           Abstract.ReferableSourceNode referable = referableList.get(i);
           if (referable != null && referable.getName() != null && !referable.getName().equals("_")) {
             for (int j = 0; j < i; j++) {
               Abstract.ReferableSourceNode referable1 = referableList.get(j);
               if (referable1 != null && referable.getName().equals(referable1.getName())) {
-                myErrorReporter.report(new DuplicateNameError(Error.Level.WARNING, referable1, referable, (Concrete.SourceNode) parameter));
+                myErrorReporter.report(new DuplicateNameError<>(Error.Level.WARNING, referable1, referable, parameter));
               }
             }
             myContext.add(referable);
           }
         }
       } else
-      if (parameter instanceof Abstract.NameParameter) {
-        Abstract.ReferableSourceNode referable = (Abstract.NameParameter) parameter;
+      if (parameter instanceof Concrete.NameParameter) {
+        Abstract.ReferableSourceNode referable = (Concrete.NameParameter) parameter;
         if (referable.getName() != null && !referable.getName().equals("_")) {
           myContext.add(referable);
         }
@@ -133,7 +130,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   }
 
   @Override
-  public Void visitLam(Abstract.LamExpression expr, Void params) {
+  public Void visitLam(Concrete.LamExpression<T> expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       visitParameters(expr.getParameters());
       expr.getBody().accept(this, null);
@@ -142,7 +139,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   }
 
   @Override
-  public Void visitPi(Abstract.PiExpression expr, Void params) {
+  public Void visitPi(Concrete.PiExpression<T> expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       visitParameters(expr.getParameters());
       expr.getCodomain().accept(this, null);
@@ -151,18 +148,18 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   }
 
   @Override
-  public Void visitUniverse(Abstract.UniverseExpression expr, Void params) {
+  public Void visitUniverse(Concrete.UniverseExpression expr, Void params) {
     return null;
   }
 
   @Override
-  public Void visitInferHole(Abstract.InferHoleExpression expr, Void params) {
+  public Void visitInferHole(Concrete.InferHoleExpression expr, Void params) {
     return null;
   }
 
   @Override
-  public Void visitGoal(Abstract.GoalExpression expr, Void params) {
-    Abstract.Expression expression = expr.getExpression();
+  public Void visitGoal(Concrete.GoalExpression<T> expr, Void params) {
+    Concrete.Expression<T> expression = expr.getExpression();
     if (expression != null) {
       expression.accept(this, null);
     }
@@ -170,15 +167,15 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   }
 
   @Override
-  public Void visitTuple(Abstract.TupleExpression expr, Void params) {
-    for (Abstract.Expression expression : expr.getFields()) {
+  public Void visitTuple(Concrete.TupleExpression<T> expr, Void params) {
+    for (Concrete.Expression<T> expression : expr.getFields()) {
       expression.accept(this, null);
     }
     return null;
   }
 
   @Override
-  public Void visitSigma(Abstract.SigmaExpression expr, Void params) {
+  public Void visitSigma(Concrete.SigmaExpression<T> expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       visitParameters(expr.getParameters());
     }
@@ -186,7 +183,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   }
 
   @Override
-  public Void visitBinOp(Abstract.BinOpExpression expr, Void params) {
+  public Void visitBinOp(Concrete.BinOpExpression<T> expr, Void params) {
     expr.getLeft().accept(this, null);
     if (expr.getRight() != null) {
       expr.getRight().accept(this, null);
@@ -195,26 +192,26 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   }
 
   @Override
-  public Void visitBinOpSequence(Abstract.BinOpSequenceExpression expr, Void params) {
+  public Void visitBinOpSequence(Concrete.BinOpSequenceExpression<T> expr, Void params) {
     if (expr.getSequence().isEmpty()) {
-      Abstract.Expression left = expr.getLeft();
+      Concrete.Expression<T> left = expr.getLeft();
       left.accept(this, null);
-      myResolveListener.replaceBinOp(expr, left);
+      expr.replace(left);
     } else {
-      BinOpParser parser = new BinOpParser(expr, myResolveListener, myErrorReporter);
-      List<Abstract.BinOpSequenceElem> sequence = expr.getSequence();
+      BinOpParser<T> parser = new BinOpParser<>(expr, myErrorReporter);
+      List<Concrete.BinOpSequenceElem<T>> sequence = expr.getSequence();
 
       expr.getLeft().accept(this, null);
-      for (Abstract.BinOpSequenceElem elem : sequence) {
+      for (Concrete.BinOpSequenceElem<T> elem : sequence) {
         if (elem.argument != null) {
           elem.argument.accept(this, null);
         }
       }
 
-      NotInScopeError error = null;
-      Abstract.Expression expression = expr.getLeft();
-      List<BinOpParser.StackElem> stack = new ArrayList<>(sequence.size());
-      for (Abstract.BinOpSequenceElem elem : expr.getSequence()) {
+      NotInScopeError<T> error = null;
+      Concrete.Expression<T> expression = expr.getLeft();
+      List<BinOpParser.StackElem<T>> stack = new ArrayList<>(sequence.size());
+      for (Concrete.BinOpSequenceElem<T> elem : expr.getSequence()) {
         String name = elem.binOp.getName();
         Abstract.ReferableSourceNode ref = resolveLocal(name);
         if (ref == null) {
@@ -224,30 +221,37 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
           parser.pushOnStack(stack, expression, ref, ref instanceof Abstract.GlobalReferableSourceNode ? myInfoProvider.precedenceOf((Abstract.GlobalReferableSourceNode) ref) : Abstract.Precedence.DEFAULT, elem.binOp, elem.argument == null);
           expression = elem.argument;
         } else {
-          error = new NotInScopeError(name, (Concrete.SourceNode) elem.binOp);
+          error = new NotInScopeError<>(name, elem.binOp);
           myErrorReporter.report(error);
         }
       }
       if (error == null) {
-        myResolveListener.replaceBinOp(expr, parser.rollUpStack(stack, expression));
+        expr.replace(parser.rollUpStack(stack, expression));
       } else {
-        myResolveListener.replaceBinOp(expr, myResolveListener.makeError(expr, error.getCause()));
+        expr.replace(new Concrete.InferHoleExpression<>(error.getCause()));
       }
     }
     return null;
   }
 
-  void visitClauses(List<? extends Abstract.FunctionClause> clauses) {
+  static <T> void replaceWithConstructor(Concrete.PatternContainer<T> container, int index, Abstract.Constructor constructor) {
+    Concrete.Pattern<T> old = container.getPatterns().get(index);
+    Concrete.Pattern<T> newPattern = new Concrete.ConstructorPattern<>(old.getData(), constructor, Collections.emptyList());
+    newPattern.setExplicit(old.isExplicit());
+    container.getPatterns().set(index, newPattern);
+  }
+
+  void visitClauses(List<? extends Concrete.FunctionClause<T>> clauses) {
     if (clauses.isEmpty()) {
       return;
     }
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      for (Abstract.FunctionClause clause : clauses) {
-        Map<String, Abstract.NamePattern> usedNames = new HashMap<>();
+      for (Concrete.FunctionClause<T> clause : clauses) {
+        Map<String, Concrete.NamePattern> usedNames = new HashMap<>();
         for (int i = 0; i < clause.getPatterns().size(); i++) {
-          Abstract.Constructor constructor = visitPattern(clause.getPatterns().get(i), usedNames);
+          Concrete.Constructor constructor = visitPattern(clause.getPatterns().get(i), usedNames);
           if (constructor != null) {
-            myResolveListener.replaceWithConstructor(clause, i, constructor);
+            replaceWithConstructor(clause, i, constructor);
           }
           resolvePattern(clause.getPatterns().get(i));
         }
@@ -259,103 +263,103 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   }
 
   @Override
-  public Void visitCase(Abstract.CaseExpression expr, Void params) {
-    for (Abstract.Expression expression : expr.getExpressions()) {
+  public Void visitCase(Concrete.CaseExpression<T> expr, Void params) {
+    for (Concrete.Expression<T> expression : expr.getExpressions()) {
       expression.accept(this, null);
     }
     visitClauses(expr.getClauses());
     return null;
   }
 
-  Abstract.Constructor visitPattern(Abstract.Pattern pattern, Map<String, Abstract.NamePattern> usedNames) {
-    if (pattern instanceof Abstract.NamePattern) {
-      Abstract.NamePattern namePattern = (Abstract.NamePattern) pattern;
+  Concrete.Constructor visitPattern(Concrete.Pattern<T> pattern, Map<String, Concrete.NamePattern> usedNames) { // TODO[abstract]: return referable, not a constructor
+    if (pattern instanceof Concrete.NamePattern) {
+      Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
       String name = namePattern.getName();
       if (name == null) return null;
       Abstract.ReferableSourceNode ref = myParentScope.resolveName(name);
       if (ref != null) {
-        if (ref instanceof Abstract.Constructor) {
-          return (Abstract.Constructor) ref;
+        if (ref instanceof Concrete.Constructor) {
+          return (Concrete.Constructor) ref;
         } else {
-          myErrorReporter.report(new WrongReferable("Expected a constructor", ref, (Concrete.SourceNode) pattern));
+          myErrorReporter.report(new WrongReferable<>("Expected a constructor", ref, pattern));
         }
       }
       if (!name.equals("_")) {
-        Abstract.NamePattern prev = usedNames.put(name, namePattern);
+        Concrete.NamePattern prev = usedNames.put(name, namePattern);
         if (prev != null) {
-          myErrorReporter.report(new DuplicateNameError(Error.Level.WARNING, namePattern, prev, (Concrete.SourceNode) pattern));
+          myErrorReporter.report(new DuplicateNameError<>(Error.Level.WARNING, namePattern, prev, pattern));
         }
         myContext.add(namePattern);
       }
       return null;
-    } else if (pattern instanceof Abstract.ConstructorPattern) {
-      List<? extends Abstract.Pattern> patterns = ((Abstract.ConstructorPattern) pattern).getPatterns();
+    } else if (pattern instanceof Concrete.ConstructorPattern) {
+      List<? extends Concrete.Pattern<T>> patterns = ((Concrete.ConstructorPattern<T>) pattern).getPatterns();
       for (int i = 0; i < patterns.size(); i++) {
-        Abstract.Constructor constructor = visitPattern(patterns.get(i), usedNames);
+        Concrete.Constructor constructor = visitPattern(patterns.get(i), usedNames);
         if (constructor != null) {
-          myResolveListener.replaceWithConstructor((Abstract.ConstructorPattern) pattern, i, constructor);
+          replaceWithConstructor((Concrete.ConstructorPattern<T>) pattern, i, constructor);
         }
       }
-      if (((Abstract.ConstructorPattern) pattern).getConstructor() != null) {
-        String name = ((Abstract.ConstructorPattern) pattern).getConstructorName();
+      if (((Concrete.ConstructorPattern) pattern).getConstructor() != null) {
+        String name = ((Concrete.ConstructorPattern) pattern).getConstructorName();
         Abstract.ReferableSourceNode def = myParentScope.resolveName(name);
-        if (def instanceof Abstract.Constructor) {
-          return (Abstract.Constructor) def;
+        if (def instanceof Concrete.Constructor) {
+          return (Concrete.Constructor) def;
         }
-        myErrorReporter.report(def == null ? new NotInScopeError(name, (Concrete.SourceNode) pattern) : new WrongReferable("Expected a constructor", def, (Concrete.SourceNode) pattern));
+        myErrorReporter.report(def == null ? new NotInScopeError<>(name, pattern) : new WrongReferable<>("Expected a constructor", def, pattern));
       }
       return null;
-    } else if (pattern instanceof Abstract.EmptyPattern) {
+    } else if (pattern instanceof Concrete.EmptyPattern) {
       return null;
     } else {
       throw new IllegalStateException();
     }
   }
 
-  void resolvePattern(Abstract.Pattern pattern) {
-    if (pattern instanceof Abstract.ConstructorPattern) {
-      if (((Abstract.ConstructorPattern) pattern).getConstructor() == null) {
-        String name = ((Abstract.ConstructorPattern) pattern).getConstructorName();
+  void resolvePattern(Concrete.Pattern<T> pattern) {
+    if (pattern instanceof Concrete.ConstructorPattern) {
+      if (((Concrete.ConstructorPattern<T>) pattern).getConstructor() == null) {
+        String name = ((Concrete.ConstructorPattern<T>) pattern).getConstructorName();
         Abstract.ReferableSourceNode definition = myParentScope.resolveName(name);
-        if (definition instanceof Abstract.Constructor) {
-          myResolveListener.patternResolved((Abstract.ConstructorPattern) pattern, (Abstract.Constructor) definition);
+        if (definition instanceof Concrete.Constructor) {
+          ((Concrete.ConstructorPattern<T>) pattern).setConstructor((Concrete.Constructor) definition);
         } else {
           if (definition != null) {
-            myErrorReporter.report(new WrongReferable("Expected a constructor", definition, (Concrete.SourceNode) pattern));
+            myErrorReporter.report(new WrongReferable<>("Expected a constructor", definition, pattern));
           } else {
-            myErrorReporter.report(new UnknownConstructor(name, (Concrete.SourceNode) pattern));
+            myErrorReporter.report(new UnknownConstructor<>(name, pattern));
           }
         }
       }
-      for (Abstract.Pattern patternArg : ((Abstract.ConstructorPattern) pattern).getPatterns()) {
+      for (Concrete.Pattern<T> patternArg : ((Concrete.ConstructorPattern<T>) pattern).getPatterns()) {
         resolvePattern(patternArg);
       }
     }
   }
 
   @Override
-  public Void visitProj(Abstract.ProjExpression expr, Void params) {
+  public Void visitProj(Concrete.ProjExpression<T> expr, Void params) {
     expr.getExpression().accept(this, null);
     return null;
   }
 
   @Override
-  public Void visitClassExt(Abstract.ClassExtExpression expr, Void params) {
+  public Void visitClassExt(Concrete.ClassExtExpression<T> expr, Void params) {
     expr.getBaseClassExpression().accept(this, null);
-    Abstract.ClassView classView = Abstract.getUnderlyingClassView(expr);
-    Abstract.ClassDefinition classDef = classView == null ? Abstract.getUnderlyingClassDef(expr) : null;
+    Abstract.ClassView classView = Concrete.getUnderlyingClassView(expr);
+    Abstract.ClassDefinition classDef = classView == null ? Concrete.getUnderlyingClassDef(expr) : null;
     visitClassFieldImpls(expr.getStatements(), classView, classDef);
     return null;
   }
 
-  void visitClassFieldImpls(Collection<? extends Abstract.ClassFieldImpl> classFieldImpls, Abstract.ClassView classView, Abstract.ClassDefinition classDef) {
-    for (Abstract.ClassFieldImpl statement : classFieldImpls) {
+  void visitClassFieldImpls(Collection<? extends Concrete.ClassFieldImpl<T>> classFieldImpls, Abstract.ClassView classView, Abstract.ClassDefinition classDef) {
+    for (Concrete.ClassFieldImpl<T> statement : classFieldImpls) {
       String name = statement.getImplementedFieldName();
       Abstract.ClassField resolvedRef = classView != null ? myNameResolver.resolveClassFieldByView(classView, name) : classDef != null ? myNameResolver.resolveClassField(classDef, name) : null;
       if (resolvedRef != null) {
-        myResolveListener.implementResolved(statement, resolvedRef);
+        statement.setImplementedField(resolvedRef);
       } else {
-        myErrorReporter.report(new NoSuchFieldError(name, (Concrete.SourceNode) statement));
+        myErrorReporter.report(new NoSuchFieldError<>(name, statement));
       }
 
       statement.getImplementation().accept(this, null);
@@ -363,15 +367,15 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   }
 
   @Override
-  public Void visitNew(Abstract.NewExpression expr, Void params) {
+  public Void visitNew(Concrete.NewExpression<T> expr, Void params) {
     expr.getExpression().accept(this, null);
     return null;
   }
 
   @Override
-  public Void visitLet(Abstract.LetExpression expr, Void params) {
+  public Void visitLet(Concrete.LetExpression<T> expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      for (Abstract.LetClause clause : expr.getClauses()) {
+      for (Concrete.LetClause<T> clause : expr.getClauses()) {
         try (Utils.ContextSaver ignored1 = new Utils.ContextSaver(myContext)) {
           visitParameters(clause.getParameters());
 
@@ -391,7 +395,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   }
 
   @Override
-  public Void visitNumericLiteral(Abstract.NumericLiteral expr, Void params) {
+  public Void visitNumericLiteral(Concrete.NumericLiteral expr, Void params) {
     return null;
   }
 }

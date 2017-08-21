@@ -27,11 +27,11 @@ import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Nat;
 import static org.junit.Assert.*;
 
 public class PatternTest extends TypeCheckingTestCase {
-  private boolean checkPatterns(List<? extends Abstract.Pattern> patternArgs, List<Pattern> patterns, Map<Abstract.ReferableSourceNode, Binding> expected, Map<Abstract.ReferableSourceNode, Binding> actual, boolean hasImplicit) {
+  private boolean checkPatterns(List<? extends Concrete.Pattern<Position>> patternArgs, List<Pattern> patterns, Map<Abstract.ReferableSourceNode, Binding> expected, Map<Abstract.ReferableSourceNode, Binding> actual, boolean hasImplicit) {
     int i = 0, j = 0;
     for (; i < patternArgs.size() && j < patterns.size(); i++, j++) {
-      Abstract.Pattern pattern1 = patternArgs.get(i);
-      if (pattern1 instanceof Abstract.EmptyPattern) {
+      Concrete.Pattern<Position> pattern1 = patternArgs.get(i);
+      if (pattern1 instanceof Concrete.EmptyPattern) {
         while (hasImplicit && patterns.get(j) instanceof BindingPattern) {
           j++;
         }
@@ -41,21 +41,21 @@ public class PatternTest extends TypeCheckingTestCase {
         }
         return false;
       } else
-      if (pattern1 instanceof Abstract.NamePattern) {
-        Abstract.ReferableSourceNode referable = (Abstract.NamePattern) pattern1;
+      if (pattern1 instanceof Concrete.NamePattern) {
+        Abstract.ReferableSourceNode referable = (Concrete.NamePattern) pattern1;
         while (hasImplicit && patterns.get(j) instanceof BindingPattern && expected.get(referable) != ((BindingPattern) patterns.get(j)).getBinding()) {
           j++;
         }
         assertTrue(patterns.get(j) instanceof BindingPattern);
         actual.put(referable, ((BindingPattern) patterns.get(j)).getBinding());
       } else
-      if (pattern1 instanceof Abstract.ConstructorPattern) {
+      if (pattern1 instanceof Concrete.ConstructorPattern) {
         while (hasImplicit && patterns.get(j) instanceof BindingPattern) {
           j++;
         }
         assertTrue(patterns.get(j) instanceof ConstructorPattern);
 
-        Abstract.ConstructorPattern conPattern1 = (Abstract.ConstructorPattern) pattern1;
+        Concrete.ConstructorPattern<Position> conPattern1 = (Concrete.ConstructorPattern<Position>) pattern1;
         ConstructorPattern conPattern2 = (ConstructorPattern) patterns.get(j);
         assertEquals(conPattern1.getConstructor(), conPattern2.getConstructor().getConcreteDefinition());
         checkPatterns(conPattern1.getPatterns(), conPattern2.getArguments(), expected, actual, hasImplicit);
@@ -69,7 +69,7 @@ public class PatternTest extends TypeCheckingTestCase {
     return true;
   }
 
-  private void checkPatterns(List<? extends Abstract.Pattern> patternArgs, List<Pattern> patterns, Map<Abstract.ReferableSourceNode, Binding> expected, boolean hasImplicit) {
+  private void checkPatterns(List<? extends Concrete.Pattern<Position>> patternArgs, List<Pattern> patterns, Map<Abstract.ReferableSourceNode, Binding> expected, boolean hasImplicit) {
     Map<Abstract.ReferableSourceNode, Binding> actual = new HashMap<>();
     boolean withoutEmpty = checkPatterns(patternArgs, patterns, expected, actual, hasImplicit);
     assertEquals(expected, withoutEmpty ? actual : null);

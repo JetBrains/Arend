@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.FullName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 public class DefinitionSourceInfoVisitor<SourceIdT extends SourceId> implements AbstractDefinitionVisitor<FullName, Void> {
   private final SimpleSourceInfoProvider<SourceIdT> myProvider;
@@ -35,8 +36,8 @@ public class DefinitionSourceInfoVisitor<SourceIdT extends SourceId> implements 
   public Void visitData(Abstract.DataDefinition def, FullName fullName) {
     reg(def, fullName);
 
-    for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
-      for (Abstract.Constructor constructor : clause.getConstructors()) {
+    for (Concrete.ConstructorClause<?> clause : def.getConstructorClauses()) {
+      for (Concrete.Constructor constructor : clause.getConstructors()) {
         visitConstructor(constructor, fullName);
       }
     }

@@ -198,7 +198,7 @@ class DefinitionTypechecking {
         }
 
         if (localInstancePool != null) {
-          Abstract.ClassView classView = Abstract.getUnderlyingClassView(typeParameter.getType());
+          Abstract.ClassView classView = Concrete.getUnderlyingClassView(typeParameter.getType());
           if (classView != null && classView.getClassifyingField() != null) {
             ClassField classifyingField = (ClassField) visitor.getTypecheckingState().getTypechecked(classView.getClassifyingField());
             for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
@@ -362,7 +362,7 @@ class DefinitionTypechecking {
     }
 
     boolean universeOk = true;
-    PatternTypechecking dataPatternTypechecking = new PatternTypechecking(visitor.getErrorReporter(), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE));
+    PatternTypechecking<T> dataPatternTypechecking = new PatternTypechecking<>(visitor.getErrorReporter(), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE));
     for (Concrete.ConstructorClause<T> clause : def.getConstructorClauses()) {
       // Typecheck patterns and compute free bindings
       Pair<List<Pattern>, List<Expression>> result = null;

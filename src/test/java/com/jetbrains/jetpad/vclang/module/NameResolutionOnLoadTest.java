@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.frontend.BaseModuleLoader;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -38,7 +39,7 @@ public class NameResolutionOnLoadTest extends NameResolverTestCase {
     setupSources();
     Abstract.ClassDefinition moduleB = moduleLoader.load(storage.locateModule(moduleName("B")));
 
-    Abstract.ReferenceExpression defCall = (Abstract.ReferenceExpression) ((Abstract.TermFunctionBody) ((Abstract.FunctionDefinition) get(moduleB, "b")).getBody()).getTerm();
+    Concrete.ReferenceExpression defCall = (Concrete.ReferenceExpression) ((Abstract.TermFunctionBody) ((Abstract.FunctionDefinition) get(moduleB, "b")).getBody()).getTerm();
 
     assertThat(defCall.getReferent(), is(notNullValue()));
     assertThat(defCall.getReferent(), is(get(moduleB, "x")));
@@ -55,7 +56,7 @@ public class NameResolutionOnLoadTest extends NameResolverTestCase {
     Abstract.ClassDefinition moduleB = moduleBNs.getRegisteredClass();
     assertThat(moduleB, is(notNullValue()));
 
-    Abstract.ReferenceExpression defCall = (Abstract.ReferenceExpression) ((Abstract.TermFunctionBody) ((Abstract.FunctionDefinition) get(moduleA, "a")).getBody()).getTerm();
+    Concrete.ReferenceExpression defCall = (Concrete.ReferenceExpression) ((Abstract.TermFunctionBody) ((Abstract.FunctionDefinition) get(moduleA, "a")).getBody()).getTerm();
 
     assertThat(defCall.getReferent(), is(notNullValue()));
     assertThat(defCall.getReferent(), is(get(moduleB, "b")));
@@ -68,11 +69,11 @@ public class NameResolutionOnLoadTest extends NameResolverTestCase {
     Abstract.ClassDefinition moduleBCE = nameResolver.resolveModuleNamespace(moduleName("B", "C", "E")).getRegisteredClass();
     Abstract.ClassDefinition moduleBCF = nameResolver.resolveModuleNamespace(moduleName("B", "C", "F")).getRegisteredClass();
 
-    Abstract.ReferenceExpression defCall1 = (Abstract.ReferenceExpression) ((Abstract.TermFunctionBody) ((Abstract.FunctionDefinition) get(moduleBC, "c")).getBody()).getTerm();
+    Concrete.ReferenceExpression defCall1 = (Concrete.ReferenceExpression) ((Abstract.TermFunctionBody) ((Abstract.FunctionDefinition) get(moduleBC, "c")).getBody()).getTerm();
     assertThat(defCall1.getReferent(), is(notNullValue()));
     assertThat(defCall1.getReferent(), is(get(moduleBCE, "e")));
 
-    Abstract.ReferenceExpression defCall2 = (Abstract.ReferenceExpression) ((Abstract.TermFunctionBody) ((Abstract.FunctionDefinition) get(moduleBCE, "e")).getBody()).getTerm();
+    Concrete.ReferenceExpression defCall2 = (Concrete.ReferenceExpression) ((Abstract.TermFunctionBody) ((Abstract.FunctionDefinition) get(moduleBCE, "e")).getBody()).getTerm();
     assertThat(defCall2.getReferent(), is(notNullValue()));
     assertThat(defCall2.getReferent(), is(get(moduleBCF, "f")));
   }
@@ -83,11 +84,11 @@ public class NameResolutionOnLoadTest extends NameResolverTestCase {
     Abstract.ClassDefinition moduleX = moduleLoader.load(storage.locateModule(moduleName("X")));
     Abstract.ClassDefinition moduleY = nameResolver.resolveModuleNamespace(moduleName("Y")).getRegisteredClass();
 
-    Abstract.ReferenceExpression defCall1 = (Abstract.ReferenceExpression) ((Abstract.TermFunctionBody) ((Abstract.FunctionDefinition) get(moduleX, "f")).getBody()).getTerm();
+    Concrete.ReferenceExpression defCall1 = (Concrete.ReferenceExpression) ((Abstract.TermFunctionBody) ((Abstract.FunctionDefinition) get(moduleX, "f")).getBody()).getTerm();
     assertThat(defCall1.getReferent(), is(notNullValue()));
     assertThat(defCall1.getReferent(), is(get(moduleY, "f")));
 
-    Abstract.ReferenceExpression defCall2 = (Abstract.ReferenceExpression) ((Abstract.TermFunctionBody) ((Abstract.FunctionDefinition) get(moduleY, "f")).getBody()).getTerm();
+    Concrete.ReferenceExpression defCall2 = (Concrete.ReferenceExpression) ((Abstract.TermFunctionBody) ((Abstract.FunctionDefinition) get(moduleY, "f")).getBody()).getTerm();
     assertThat(defCall2.getReferent(), is(notNullValue()));
     assertThat(defCall2.getReferent(), is(get(moduleX, "f")));
   }

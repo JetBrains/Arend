@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.frontend.namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -23,7 +24,7 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
     classCache.put(classDefinition, ns);
 
     for (final Abstract.SuperClass superClass : classDefinition.getSuperClasses()) {
-      Abstract.ClassDefinition superDef = Abstract.getUnderlyingClassDef(superClass.getSuperClass());
+      Abstract.ClassDefinition superDef = Concrete.getUnderlyingClassDef(superClass.getSuperClass());
       if (superDef != null) {
         ns.addAll(forClass(superDef));
       }
@@ -34,8 +35,8 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
 
   private static SimpleNamespace forData(Abstract.DataDefinition def) {
     SimpleNamespace ns = new SimpleNamespace();
-    for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
-      for (Abstract.Constructor constructor : clause.getConstructors()) {
+    for (Concrete.ConstructorClause<?> clause : def.getConstructorClauses()) {
+      for (Concrete.Constructor constructor : clause.getConstructors()) {
         ns.addDefinition(constructor);
       }
     }

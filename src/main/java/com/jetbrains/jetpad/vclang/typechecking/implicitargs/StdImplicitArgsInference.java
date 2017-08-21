@@ -34,7 +34,7 @@ public class StdImplicitArgsInference<T> extends BaseImplicitArgsInference<T> {
   }
 
   private static Abstract.ClassView getClassViewFromDefCall(Concrete.Definition<?> definition, int paramIndex) {
-    Collection<? extends Abstract.Parameter> parameters = Abstract.getParameters(definition);
+    Collection<? extends Abstract.Parameter> parameters = Concrete.getParameters(definition);
     if (parameters == null) {
       return null;
     }
@@ -51,7 +51,7 @@ public class StdImplicitArgsInference<T> extends BaseImplicitArgsInference<T> {
           i++;
         }
         if (i > paramIndex) {
-          return Abstract.getUnderlyingClassView(((Abstract.TypeParameter) parameter).getType());
+          return Concrete.getUnderlyingClassView(((Abstract.TypeParameter) parameter).getType());
         }
       } else {
         throw new IllegalStateException();

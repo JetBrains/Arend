@@ -9,11 +9,12 @@ import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.expr.factory.AbstractExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.pattern.*;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
@@ -22,39 +23,39 @@ import com.jetbrains.jetpad.vclang.typechecking.patternmatching.Util;
 import java.util.*;
 import java.util.function.Function;
 
-public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expression> {
+import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
+
+public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expression<Position>> {
   public enum Flag {SHOW_CON_DATA_TYPE, SHOW_CON_PARAMS, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS}
 
-  private final AbstractExpressionFactory myFactory;
   private final EnumSet<Flag> myFlags;
   private final CollectFreeVariablesVisitor myFreeVariablesCollector;
   private final Map<Binding, Abstract.ReferableSourceNode> myNames;
 
   private static final String unnamed = "unnamed";
 
-  private ToAbstractVisitor(AbstractExpressionFactory factory, EnumSet<Flag> flags, CollectFreeVariablesVisitor collector, Map<Binding, Abstract.ReferableSourceNode> names) {
-    myFactory = factory;
+  private ToAbstractVisitor(EnumSet<Flag> flags, CollectFreeVariablesVisitor collector, Map<Binding, Abstract.ReferableSourceNode> names) {
     myFlags = flags;
     myFreeVariablesCollector = collector;
     myNames = names;
   }
 
-  public static Abstract.Expression convert(Expression expression, AbstractExpressionFactory factory, EnumSet<Flag> flags) {
+  public static Concrete.Expression<Position> convert(Expression expression, EnumSet<Flag> flags) {
     CollectFreeVariablesVisitor collector = new CollectFreeVariablesVisitor();
     Set<Variable> variables = new HashSet<>();
     expression.accept(collector, variables);
     Map<Binding, Abstract.ReferableSourceNode> names = new HashMap<>();
-    ToAbstractVisitor visitor = new ToAbstractVisitor(factory, flags, collector, names);
+    ToAbstractVisitor visitor = new ToAbstractVisitor(flags, collector, names);
     for (Variable variable : variables) {
       if (variable instanceof Binding) {
-        names.put((Binding) variable, factory.makeReferable(visitor.getFreshName((Binding) variable, variables)));
+        names.put((Binding) variable, new Concrete.LocalVariable<>(null, visitor.getFreshName((Binding) variable, variables)));
       }
     }
     return expression.accept(visitor, null);
   }
 
-  public static Abstract.LevelExpression convert(Level level, AbstractExpressionFactory factory) {
-    return new ToAbstractVisitor(factory, EnumSet.noneOf(Flag.class), null, Collections.emptyMap()).visitLevel(level);
+  public static Concrete.LevelExpression<Position> convert(Level level) {
+    return new ToAbstractVisitor(EnumSet.noneOf(Flag.class), null, Collections.emptyMap()).visitLevel(level);
   }
 
   private String getFreshName(Binding binding, Set<Variable> variables) {
@@ -121,21 +122,21 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return i + 1 == name.length() ? 0 : Integer.valueOf(name.substring(i + 1, name.length()));
   }
 
-  private Abstract.Pattern visitPattern(Pattern pattern, boolean isExplicit) {
+  private Concrete.Pattern<Position> visitPattern(Pattern pattern, boolean isExplicit) {
     if (pattern instanceof BindingPattern) {
-      return myFactory.makeNamePattern(isExplicit, ((BindingPattern) pattern).getBinding().getName());
+      return cNamePattern(isExplicit, ((BindingPattern) pattern).getBinding().getName());
     }
     if (pattern instanceof EmptyPattern) {
-      return myFactory.makeEmptyPattern(isExplicit);
+      return cEmptyPattern(isExplicit);
     }
     if (pattern instanceof ConstructorPattern) {
-      return myFactory.makeConPattern(isExplicit, ((ConstructorPattern) pattern).getConstructor().getConcreteDefinition(), visitPatterns(((ConstructorPattern) pattern).getArguments(), ((ConstructorPattern) pattern).getConstructor().getParameters()));
+      return cConPattern(isExplicit, ((ConstructorPattern) pattern).getConstructor().getName(), visitPatterns(((ConstructorPattern) pattern).getArguments(), ((ConstructorPattern) pattern).getConstructor().getParameters()));
     }
     throw new IllegalStateException();
   }
 
-  private List<Abstract.Pattern> visitPatterns(List<Pattern> patterns, DependentLink parameters) {
-    List<Abstract.Pattern> result = new ArrayList<>(patterns.size());
+  private List<Concrete.Pattern<Position>> visitPatterns(List<Pattern> patterns, DependentLink parameters) {
+    List<Concrete.Pattern<Position>> result = new ArrayList<>(patterns.size());
     for (Pattern pattern : patterns) {
       result.add(visitPattern(pattern, !parameters.hasNext() || parameters.isExplicit()));
       if (parameters.hasNext()) {
@@ -145,7 +146,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return result;
   }
 
-  private Abstract.Expression checkPath(DataCallExpression expr) {
+  private Concrete.Expression<Position> checkPath(DataCallExpression expr) {
     if (expr.getDefinition() != Prelude.PATH || myFlags.contains(Flag.SHOW_PREFIX_PATH)) {
       return null;
     }
@@ -153,13 +154,13 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     LamExpression expr1 = expr.getDefCallArguments().get(0).checkedCast(LamExpression.class);
     if (expr1 != null) {
       if (!expr1.getBody().findBinding(expr1.getParameters())) {
-        return myFactory.makeBinOp(expr.getDefCallArguments().get(1).accept(this, null), Prelude.PATH_INFIX.getConcreteDefinition(), expr.getDefCallArguments().get(2).accept(this, null));
+        return cBinOp(expr.getDefCallArguments().get(1).accept(this, null), Prelude.PATH_INFIX.getConcreteDefinition(), expr.getDefCallArguments().get(2).accept(this, null));
       }
     }
     return null;
   }
 
-  private Abstract.Expression checkBinOp(Expression expr) {
+  private Concrete.Expression<Position> checkBinOp(Expression expr) {
     List<Expression> args = new ArrayList<>(2);
     Expression fun = expr;
     while (fun.isInstance(AppExpression.class)) {
@@ -209,12 +210,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
         visibleArgs[i++] = args.get(j);
       }
     }
-    return i == 2 ? myFactory.makeBinOp(visibleArgs[0].accept(this, null), defCall != null ? defCall.getDefinition().getConcreteDefinition() : myNames.get(refExpr.getBinding()), visibleArgs[1].accept(this, null)) : null;
+    return i == 2 ? cBinOp(visibleArgs[0].accept(this, null), defCall != null ? defCall.getDefinition().getConcreteDefinition() : myNames.get(refExpr.getBinding()), visibleArgs[1].accept(this, null)) : null;
   }
 
   @Override
-  public Abstract.Expression visitApp(AppExpression expr, Void params) {
-    Abstract.Expression result = checkBinOp(expr);
+  public Concrete.Expression<Position> visitApp(AppExpression expr, Void params) {
+    Concrete.Expression<Position> result = checkBinOp(expr);
     if (result != null) {
       return result;
     }
@@ -250,82 +251,86 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return true;
   }
 
-  private Abstract.Expression visitApp(Abstract.Expression function, Expression argument, boolean isExplicit) {
-    Abstract.Expression arg = isExplicit || myFlags.contains(Flag.SHOW_IMPLICIT_ARGS) ? argument.accept(this, null) : null;
-    return arg != null ? myFactory.makeApp(function, isExplicit, arg) : function;
+  private Concrete.Expression<Position> visitApp(Concrete.Expression<Position> function, Expression argument, boolean isExplicit) {
+    Concrete.Expression<Position> arg = isExplicit || myFlags.contains(Flag.SHOW_IMPLICIT_ARGS) ? argument.accept(this, null) : null;
+    return arg != null ? cApps(function, arg, isExplicit) : function;
   }
 
-  private Abstract.Expression visitParameters(Abstract.Expression expr, DependentLink parameters, List<? extends Expression> arguments) {
+  private Concrete.Expression<Position> visitParameters(Concrete.Expression<Position> expr, DependentLink parameters, List<? extends Expression> arguments) {
     for (Expression arg : arguments) {
-      expr = myFactory.makeApp(expr, parameters.isExplicit(), arg.accept(this, null));
+      expr = cApps(expr, arg.accept(this, null), parameters.isExplicit());
       parameters = parameters.getNext();
     }
     return expr;
   }
 
+  private static Concrete.Expression<Position> makeReference(Concrete.Expression<Position> expr, Abstract.ReferableSourceNode referable) {
+    return cDefCall(expr, referable, referable == null ? "\\this" : referable.getName());
+  }
+
   @Override
-  public Abstract.Expression visitDefCall(DefCallExpression expr, Void params) {
-    Abstract.Expression result = checkBinOp(expr);
+  public Concrete.Expression<Position> visitDefCall(DefCallExpression expr, Void params) {
+    Concrete.Expression<Position> result = checkBinOp(expr);
     if (result != null) {
       return result;
     }
-    return visitParameters(myFactory.makeReference(null, expr.getDefinition().getConcreteDefinition()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
+    return visitParameters(makeReference(null, expr.getDefinition().getConcreteDefinition()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
   }
 
   @Override
-  public Abstract.Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    return myFactory.makeReference(expr.getExpression().accept(this, null), expr.getDefinition().getConcreteDefinition());
+  public Concrete.Expression<Position> visitFieldCall(FieldCallExpression expr, Void params) {
+    return makeReference(expr.getExpression().accept(this, null), expr.getDefinition().getConcreteDefinition());
   }
 
   @Override
-  public Abstract.Expression visitConCall(ConCallExpression expr, Void params) {
+  public Concrete.Expression<Position> visitConCall(ConCallExpression expr, Void params) {
     Integer num = getNum(expr);
     if (num != null) {
-      return myFactory.makeNumericalLiteral(num);
+      return cNum(num);
     }
 
-    Abstract.Expression conParams = null;
+    Concrete.Expression<Position> conParams = null;
     if (expr.getDefinition().status().headerIsOK() && myFlags.contains(Flag.SHOW_CON_PARAMS) && (!expr.getDataTypeArguments().isEmpty() || myFlags.contains(Flag.SHOW_CON_DATA_TYPE))) {
       conParams = expr.getDataTypeExpression().accept(this, null);
     }
-    return visitParameters(myFactory.makeReference(conParams, expr.getDefinition().getConcreteDefinition()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
+    return visitParameters(makeReference(conParams, expr.getDefinition().getConcreteDefinition()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
   }
 
   @Override
-  public Abstract.Expression visitDataCall(DataCallExpression expr, Void params) {
-    Abstract.Expression result = checkPath(expr);
+  public Concrete.Expression<Position> visitDataCall(DataCallExpression expr, Void params) {
+    Concrete.Expression<Position> result = checkPath(expr);
     return result != null ? result : visitDefCall(expr, params);
   }
 
   @Override
-  public Abstract.Expression visitClassCall(ClassCallExpression expr, Void params) {
+  public Concrete.Expression<Position> visitClassCall(ClassCallExpression expr, Void params) {
     Collection<Map.Entry<ClassField, Expression>> implHere = expr.getImplementedHere().entrySet();
-    Abstract.Expression enclExpr = null;
-    List<Abstract.ClassFieldImpl> statements = new ArrayList<>(implHere.size());
+    Concrete.Expression<Position> enclExpr = null;
+    List<Concrete.ClassFieldImpl<Position>> statements = new ArrayList<>(implHere.size());
     for (Map.Entry<ClassField, Expression> entry : implHere) {
       if (entry.getKey().equals(expr.getDefinition().getEnclosingThisField())) {
         enclExpr = entry.getValue().accept(this, params);
       } else {
-        statements.add(myFactory.makeImplementStatement(entry.getKey(), entry.getValue().accept(this, params)));
+        statements.add(cImplStatement(entry.getKey().getName(), entry.getValue().accept(this, params)));
       }
     }
 
-    Abstract.Expression defCallExpr = myFactory.makeReference(enclExpr, expr.getDefinition().getConcreteDefinition());
+    Concrete.Expression<Position> defCallExpr = makeReference(enclExpr, expr.getDefinition().getConcreteDefinition());
     if (statements.isEmpty()) {
       return defCallExpr;
     } else {
-      return myFactory.makeClassExt(defCallExpr, statements);
+      return cClassExt(defCallExpr, statements);
     }
   }
 
   @Override
-  public Abstract.Expression visitReference(ReferenceExpression expr, Void params) {
-    return myFactory.makeReference(null, myNames.get(expr.getBinding()));
+  public Concrete.Expression<Position> visitReference(ReferenceExpression expr, Void params) {
+    return makeReference(null, myNames.get(expr.getBinding()));
   }
 
   @Override
-  public Abstract.Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
-    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : myFactory.makeInferVar(expr.getVariable());
+  public Concrete.Expression<Position> visitInferenceReference(InferenceReferenceExpression expr, Void params) {
+    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : new Concrete.InferenceReferenceExpression<>(null, expr.getVariable());
   }
 
   private <T extends Abstract.ReferableSourceNode> T makeReferable(Binding var, Function<String, T> fun, Set<Variable> freeVars, boolean nullable) {
@@ -338,12 +343,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   }
 
   private Abstract.ReferableSourceNode makeReferable(Binding var, Set<Variable> freeVars) {
-    return makeReferable(var, myFactory::makeReferable, freeVars, true);
+    return makeReferable(var, name -> new Concrete.LocalVariable<>(null, name), freeVars, true);
   }
 
   @Override
-  public Abstract.Expression visitLam(LamExpression lamExpr, Void ignore) {
-    List<Abstract.Parameter> parameters = new ArrayList<>();
+  public Concrete.Expression<Position> visitLam(LamExpression lamExpr, Void ignore) {
+    List<Concrete.Parameter<Position>> parameters = new ArrayList<>();
     Expression expr = lamExpr;
     for (; expr.isInstance(LamExpression.class); expr = expr.cast(LamExpression.class).getBody()) {
       if (myFlags.contains(Flag.SHOW_TYPES_IN_LAM)) {
@@ -353,16 +358,16 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
         Set<Variable> freeVars = myFreeVariablesCollector.getFreeVariables(params.getNextTyped(null));
         for (SingleDependentLink link = params; link.hasNext(); link = link.getNext()) {
           final DependentLink finalLink = link;
-          Abstract.NameParameter parameter = makeReferable(link, name -> myFactory.makeNameParameter(finalLink.isExplicit(), name), freeVars, true);
-          parameters.add(parameter != null ? parameter : myFactory.makeNameParameter(link.isExplicit(), null));
+          Concrete.NameParameter<Position> parameter = makeReferable(link, name -> cName(finalLink.isExplicit(), name), freeVars, true);
+          parameters.add(parameter != null ? parameter : cName(link.isExplicit(), null));
         }
       }
     }
 
-    return myFactory.makeLam(parameters, expr.accept(this, null));
+    return cLam(parameters, expr.accept(this, null));
   }
 
-  private void visitDependentLink(DependentLink parameters, List<? super Abstract.TypeParameter> args, boolean isNamed) {
+  private void visitDependentLink(DependentLink parameters, List<? super Concrete.TypeParameter<Position>> args, boolean isNamed) {
     List<Abstract.ReferableSourceNode> referableList = new ArrayList<>(3);
     for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
       DependentLink link1 = link.getNextTyped(null);
@@ -373,32 +378,32 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
       Abstract.ReferableSourceNode referable = makeReferable(link, freeVars);
       if (referable == null && !isNamed && referableList.isEmpty()) {
-        args.add(myFactory.makeTypeParameter(link.isExplicit(), link.getTypeExpr().accept(this, null)));
+        args.add(cTypeArg(link.isExplicit(), link.getTypeExpr().accept(this, null)));
       } else {
         referableList.add(referable);
-        args.add(myFactory.makeTelescopeParameter(link.isExplicit(), new ArrayList<>(referableList), link.getTypeExpr().accept(this, null)));
+        args.add(cTele(link.isExplicit(), new ArrayList<>(referableList), link.getTypeExpr().accept(this, null)));
         referableList.clear();
       }
     }
   }
 
   @Override
-  public Abstract.Expression visitPi(PiExpression piExpr, Void params) {
-    List<List<Abstract.TypeParameter>> arguments = new ArrayList<>();
+  public Concrete.Expression<Position> visitPi(PiExpression piExpr, Void ignore) {
+    List<List<Concrete.TypeParameter<Position>>> parameters = new ArrayList<>();
     Expression expr = piExpr;
     for (; expr.isInstance(PiExpression.class); expr = expr.cast(PiExpression.class).getCodomain()) {
-      List<Abstract.TypeParameter> args = new ArrayList<>();
-      visitDependentLink(expr.cast(PiExpression.class).getParameters(), args, false);
-      if (!arguments.isEmpty() && arguments.get(arguments.size() - 1) instanceof Abstract.TelescopeParameter && !args.isEmpty() && args.get(0) instanceof Abstract.TelescopeParameter) {
-        arguments.get(arguments.size() - 1).addAll(args);
+      List<Concrete.TypeParameter<Position>> params = new ArrayList<>();
+      visitDependentLink(expr.cast(PiExpression.class).getParameters(), params, false);
+      if (!parameters.isEmpty() && parameters.get(parameters.size() - 1) instanceof Abstract.TelescopeParameter && !params.isEmpty() && params.get(0) instanceof Abstract.TelescopeParameter) {
+        parameters.get(parameters.size() - 1).addAll(params);
       } else {
-        arguments.add(args);
+        parameters.add(params);
       }
     }
 
-    Abstract.Expression result = expr.accept(this, null);
-    for (int i = arguments.size() - 1; i >= 0; i--) {
-      result = myFactory.makePi(arguments.get(i), result);
+    Concrete.Expression<Position> result = expr.accept(this, null);
+    for (int i = parameters.size() - 1; i >= 0; i--) {
+      result = cPi(parameters.get(i), result);
     }
     return result;
   }
@@ -421,107 +426,107 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   }
 
   @Override
-  public Abstract.Expression visitUniverse(UniverseExpression expr, Void params) {
+  public Concrete.Expression<Position> visitUniverse(UniverseExpression expr, Void params) {
     return visitSort(expr.getSort());
   }
 
-  private Abstract.LevelExpression visitLevelNull(Level level) {
+  private Concrete.LevelExpression<Position> visitLevelNull(Level level) {
     return (level.getConstant() == 0 || level.getConstant() == -1) && level.getMaxConstant() == 0 && (level.getVar() == LevelVariable.PVAR || level.getVar() == LevelVariable.HVAR) ? null : visitLevel(level);
   }
 
-  private Abstract.Expression visitSort(Sort sorts) {
-    return myFactory.makeUniverse(visitLevelNull(sorts.getPLevel()), visitLevelNull(sorts.getHLevel()));
+  private Concrete.Expression<Position> visitSort(Sort sorts) {
+    return cUniverse(visitLevelNull(sorts.getPLevel()), visitLevelNull(sorts.getHLevel()));
   }
 
-  private Abstract.LevelExpression visitLevel(Level level) {
+  private Concrete.LevelExpression<Position> visitLevel(Level level) {
     if (level.isInfinity()) {
-      return myFactory.makeInf();
+      return new Concrete.InfLevelExpression<>(null);
     }
     if (level.isClosed()) {
-      return myFactory.makeNumberLevel(level.getConstant());
+      return new Concrete.NumberLevelExpression<>(null, level.getConstant());
     }
 
-    Abstract.LevelExpression result;
+    Concrete.LevelExpression<Position> result;
     if (level.getVar() == LevelVariable.PVAR) {
-      result = myFactory.makePLevel();
+      result = new Concrete.PLevelExpression<>(null);
     } else if (level.getVar() == LevelVariable.HVAR) {
-      result = myFactory.makeHLevel();
+      result = new Concrete.HLevelExpression<>(null);
     } else if (level.getVar() instanceof InferenceLevelVariable) {
-      result = myFactory.makeInferVarLevel((InferenceLevelVariable) level.getVar());
+      result = new Concrete.InferVarLevelExpression<>(null, (InferenceLevelVariable) level.getVar());
     } else {
       throw new IllegalStateException();
     }
 
     if (level.getMaxConstant() != 0) {
-      result = myFactory.makeMaxLevel(result, visitLevel(new Level(null, level.getMaxConstant())));
+      result = new Concrete.MaxLevelExpression<>(null, result, visitLevel(new Level(null, level.getMaxConstant())));
     }
 
     for (int i = 0; i < level.getConstant(); i++) {
-      result = myFactory.makeSucLevel(result);
+      result = new Concrete.SucLevelExpression<>(null, result);
     }
 
     return result;
   }
 
   @Override
-  public Abstract.Expression visitError(ErrorExpression expr, Void params) {
-    return myFactory.makeGoal(expr.getError() instanceof GoalError ? ((GoalError) expr.getError()).name : "error", expr.getExpression() == null ? null : expr.getExpression().accept(this, null));
+  public Concrete.Expression<Position> visitError(ErrorExpression expr, Void params) {
+    return cGoal(expr.getError() instanceof GoalError ? ((GoalError) expr.getError()).name : "error", expr.getExpression() == null ? null : expr.getExpression().accept(this, null));
   }
 
   @Override
-  public Abstract.Expression visitTuple(TupleExpression expr, Void params) {
-    List<Abstract.Expression> fields = new ArrayList<>(expr.getFields().size());
+  public Concrete.Expression<Position> visitTuple(TupleExpression expr, Void params) {
+    List<Concrete.Expression<Position>> fields = new ArrayList<>(expr.getFields().size());
     for (Expression field : expr.getFields()) {
       fields.add(field.accept(this, null));
     }
-    return myFactory.makeTuple(fields);
+    return cTuple(fields);
   }
 
   @Override
-  public Abstract.Expression visitSigma(SigmaExpression expr, Void params) {
-    List<Abstract.TypeParameter> args = new ArrayList<>();
-    visitDependentLink(expr.getParameters(), args, false);
-    return myFactory.makeSigma(args);
+  public Concrete.Expression<Position> visitSigma(SigmaExpression expr, Void params) {
+    List<Concrete.TypeParameter<Position>> parameters = new ArrayList<>();
+    visitDependentLink(expr.getParameters(), parameters, false);
+    return cSigma(parameters);
   }
 
   @Override
-  public Abstract.Expression visitProj(ProjExpression expr, Void params) {
-    return myFactory.makeProj(expr.getExpression().accept(this, null), expr.getField());
+  public Concrete.Expression<Position> visitProj(ProjExpression expr, Void params) {
+    return cProj(expr.getExpression().accept(this, null), expr.getField());
   }
 
   @Override
-  public Abstract.Expression visitNew(NewExpression expr, Void params) {
-    return myFactory.makeNew(expr.getExpression().accept(this, null));
+  public Concrete.Expression<Position> visitNew(NewExpression expr, Void params) {
+    return cNew(expr.getExpression().accept(this, null));
   }
 
   @Override
-  public Abstract.Expression visitLet(LetExpression letExpression, Void params) {
-    List<Abstract.LetClause> clauses = new ArrayList<>(letExpression.getClauses().size());
+  public Concrete.Expression<Position> visitLet(LetExpression letExpression, Void params) {
+    List<Concrete.LetClause<Position>> clauses = new ArrayList<>(letExpression.getClauses().size());
     for (LetClause clause : letExpression.getClauses()) {
-      Abstract.Expression term = clause.getExpression().accept(this, null);
-      clauses.add(makeReferable(clause, name -> myFactory.makeLetClause(name, Collections.emptyList(), term), myFreeVariablesCollector.getFreeVariables(clause), false));
+      Concrete.Expression<Position> term = clause.getExpression().accept(this, null);
+      clauses.add(makeReferable(clause, name -> clet(name, Collections.emptyList(), null, term), myFreeVariablesCollector.getFreeVariables(clause), false));
     }
 
-    return myFactory.makeLet(clauses, letExpression.getExpression().accept(this, null));
+    return cLet(clauses, letExpression.getExpression().accept(this, null));
   }
 
   @Override
-  public Abstract.Expression visitCase(CaseExpression expr, Void params) {
-    List<Abstract.Expression> arguments = new ArrayList<>(expr.getArguments().size());
+  public Concrete.Expression<Position> visitCase(CaseExpression expr, Void params) {
+    List<Concrete.Expression<Position>> arguments = new ArrayList<>(expr.getArguments().size());
     for (Expression argument : expr.getArguments()) {
       arguments.add(argument.accept(this, null));
     }
-    return myFactory.makeCase(arguments, expr.getElimTree() != null ? visitElimTree(expr.getElimTree()) : Collections.emptyList());
+    return cCase(arguments, expr.getElimTree() != null ? visitElimTree(expr.getElimTree()) : Collections.emptyList());
   }
 
-  private List<Abstract.FunctionClause> visitElimTree(ElimTree elimTree) {
-    List<Abstract.FunctionClause> clauses = new ArrayList<>();
-    new Util.ElimTreeWalker((patterns, expr) -> clauses.add(myFactory.makeClause(visitPatterns(patterns, new Patterns(patterns).getFirstBinding()), expr.accept(this, null)))).walk(elimTree);
+  private List<Concrete.FunctionClause<Position>> visitElimTree(ElimTree elimTree) {
+    List<Concrete.FunctionClause<Position>> clauses = new ArrayList<>();
+    new Util.ElimTreeWalker((patterns, expr) -> clauses.add(cClause(visitPatterns(patterns, new Patterns(patterns).getFirstBinding()), expr.accept(this, null)))).walk(elimTree);
     return clauses;
   }
 
   @Override
-  public Abstract.Expression visitOfType(OfTypeExpression expr, Void params) {
+  public Concrete.Expression<Position> visitOfType(OfTypeExpression expr, Void params) {
     return expr.getExpression().accept(this, null);
   }
 }

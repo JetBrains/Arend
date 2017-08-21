@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.ConcretePrettyPrinterInfoProvider;
-import com.jetbrains.jetpad.vclang.frontend.ConcreteResolveListener;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
@@ -63,7 +62,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     Concrete.Expression<Position> expression = parseExpr(text);
     assertThat(expression, is(notNullValue()));
 
-    expression.accept(new ExpressionResolveNameVisitor(parentScope, context, nameResolver, ConcretePrettyPrinterInfoProvider.INSTANCE, new ConcreteResolveListener(), errorReporter), null);
+    expression.accept(new ExpressionResolveNameVisitor<>(parentScope, context, nameResolver, ConcretePrettyPrinterInfoProvider.INSTANCE, errorReporter), null);
     assertThat(errorList, containsErrors(errors));
     return expression;
   }
@@ -90,8 +89,8 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
 
-  private void resolveNamesDef(Concrete.Definition definition, int errors) {
-    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(nameResolver, ConcretePrettyPrinterInfoProvider.INSTANCE, new ConcreteResolveListener(), errorReporter);
+  private void resolveNamesDef(Concrete.Definition<Position> definition, int errors) {
+    DefinitionResolveNameVisitor<Position> visitor = new DefinitionResolveNameVisitor<>(nameResolver, ConcretePrettyPrinterInfoProvider.INSTANCE, errorReporter);
     definition.accept(visitor, new OverridingScope(globalScope, new NamespaceScope(new SimpleNamespace(definition))));
     assertThat(errorList, containsErrors(errors));
   }
@@ -107,7 +106,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
 
-  private void resolveNamesClass(Concrete.ClassDefinition classDefinition, int errors) {
+  private void resolveNamesClass(Concrete.ClassDefinition<Position> classDefinition, int errors) {
     resolveNamesDef(classDefinition, errors);
   }
 

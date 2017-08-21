@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OpenCommand;
-import com.jetbrains.jetpad.vclang.frontend.resolving.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.error.*;
 import com.jetbrains.jetpad.vclang.naming.error.NoSuchFieldError;
@@ -20,8 +19,8 @@ import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.provider.ParserInfoProvider;
 
 import java.util.*;
@@ -29,80 +28,78 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<Scope, Void> {
+public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisitor<T, Scope, Void> {
   private final List<Abstract.ReferableSourceNode> myContext;
   private final NameResolver myNameResolver;
   private final ParserInfoProvider myInfoProvider;
-  private final ResolveListener myResolveListener;
-  private final ErrorReporter myErrorReporter;
+  private final ErrorReporter<T> myErrorReporter;
 
-  public DefinitionResolveNameVisitor(NameResolver nameResolver, ParserInfoProvider definitionProvider, ResolveListener resolveListener, ErrorReporter errorReporter) {
-    this(new ArrayList<>(), nameResolver, definitionProvider, resolveListener, errorReporter);
+  public DefinitionResolveNameVisitor(NameResolver nameResolver, ParserInfoProvider definitionProvider, ErrorReporter<T> errorReporter) {
+    this(new ArrayList<>(), nameResolver, definitionProvider, errorReporter);
   }
 
-  private DefinitionResolveNameVisitor(List<Abstract.ReferableSourceNode> context, NameResolver nameResolver, ParserInfoProvider infoProvider, ResolveListener resolveListener, ErrorReporter errorReporter) {
+  private DefinitionResolveNameVisitor(List<Abstract.ReferableSourceNode> context, NameResolver nameResolver, ParserInfoProvider infoProvider, ErrorReporter<T> errorReporter) {
     myContext = context;
     myNameResolver = nameResolver;
     myInfoProvider = infoProvider;
-    myResolveListener = resolveListener;
     myErrorReporter = errorReporter;
   }
 
   @Override
-  public Void visitFunction(Abstract.FunctionDefinition def, Scope parentScope) {
+  public Void visitFunction(Concrete.FunctionDefinition<T> def, Scope parentScope) {
     Iterable<Scope> extraScopes = getExtraScopes(def, new OverridingScope(parentScope, new NamespaceScope(myNameResolver.nsProviders.statics.forReferable(def))));
     FunctionScope scope = new FunctionScope(parentScope, new NamespaceScope(myNameResolver.nsProviders.statics.forReferable(def)), extraScopes);
     scope.findIntroducedDuplicateNames(this::warnDuplicate);
 
-    for (Abstract.Definition definition : def.getGlobalDefinitions()) {
+    for (Concrete.Definition<T> definition : def.getGlobalDefinitions()) {
       definition.accept(this, scope);
     }
 
-    Abstract.FunctionBody body = def.getBody();
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(scope, myContext, myNameResolver, myInfoProvider, myResolveListener, myErrorReporter);
+    Concrete.FunctionBody<T> body = def.getBody();
+    ExpressionResolveNameVisitor<T> exprVisitor = new ExpressionResolveNameVisitor<>(scope, myContext, myNameResolver, myInfoProvider, myErrorReporter);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       exprVisitor.visitParameters(def.getParameters());
 
-      Abstract.Expression resultType = def.getResultType();
+      Concrete.Expression<T> resultType = def.getResultType();
       if (resultType != null) {
         resultType.accept(exprVisitor, null);
       }
 
-      if (body instanceof Abstract.TermFunctionBody) {
-        ((Abstract.TermFunctionBody) body).getTerm().accept(exprVisitor, null);
+      if (body instanceof Concrete.TermFunctionBody) {
+        ((Concrete.TermFunctionBody<T>) body).getTerm().accept(exprVisitor, null);
       }
-      if (body instanceof Abstract.ElimFunctionBody) {
-        for (Abstract.ReferenceExpression expression : ((Abstract.ElimFunctionBody) body).getEliminatedReferences()) {
+      if (body instanceof Concrete.ElimFunctionBody) {
+        for (Concrete.ReferenceExpression<T> expression : ((Concrete.ElimFunctionBody<T>) body).getEliminatedReferences()) {
           exprVisitor.visitReference(expression, null);
         }
       }
     }
 
-    if (body instanceof Abstract.ElimFunctionBody) {
+    if (body instanceof Concrete.ElimFunctionBody) {
       try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-        addNotEliminatedParameters(def.getParameters(), ((Abstract.ElimFunctionBody) body).getEliminatedReferences());
-        exprVisitor.visitClauses(((Abstract.ElimFunctionBody) body).getClauses());
+        addNotEliminatedParameters(def.getParameters(), ((Concrete.ElimFunctionBody<T>) body).getEliminatedReferences());
+        exprVisitor.visitClauses(((Concrete.ElimFunctionBody<T>) body).getClauses());
       }
     }
 
     return null;
   }
 
-  private void addNotEliminatedParameters(List<? extends Abstract.Parameter> parameters, List<? extends Abstract.ReferenceExpression> eliminated) {
+  private void addNotEliminatedParameters(List<? extends Concrete.Parameter<T>> parameters, List<? extends Concrete.ReferenceExpression> eliminated) {
     if (eliminated.isEmpty()) {
       return;
     }
 
-    Set<Abstract.ReferableSourceNode> referables = eliminated.stream().map(Abstract.ReferenceExpression::getReferent).collect(Collectors.toSet());
-    for (Abstract.Parameter parameter : parameters) {
-      if (parameter instanceof Abstract.TelescopeParameter) {
-        for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeParameter) parameter).getReferableList()) {
+    Set<Abstract.ReferableSourceNode> referables = eliminated.stream().map(Concrete.ReferenceExpression::getReferent).collect(Collectors.toSet());
+    for (Concrete.Parameter<T> parameter : parameters) {
+      if (parameter instanceof Concrete.TelescopeParameter) {
+        for (Abstract.ReferableSourceNode referable : ((Concrete.TelescopeParameter<T>) parameter).getReferableList()) {
           if (referable != null && referable.getName() != null && !referable.getName().equals("_") && !referables.contains(referable)) {
             myContext.add(referable);
           }
         }
-      } else if (parameter instanceof Abstract.NameParameter) {
-        Abstract.ReferableSourceNode referable = (Abstract.NameParameter) parameter;
+      } else if (parameter instanceof Concrete.NameParameter) {
+        Abstract.ReferableSourceNode referable = (Concrete.NameParameter) parameter;
         if (referable.getName() != null && !referable.getName().equals("_") && !referables.contains(referable)) {
           myContext.add(referable);
         }
@@ -111,29 +108,29 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
   }
 
   @Override
-  public Void visitClassField(Abstract.ClassField def, Scope parentScope) {
+  public Void visitClassField(Concrete.ClassField<T> def, Scope parentScope) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      def.getResultType().accept(new ExpressionResolveNameVisitor(parentScope, myContext, myNameResolver, myInfoProvider, myResolveListener, myErrorReporter), null);
+      def.getResultType().accept(new ExpressionResolveNameVisitor<>(parentScope, myContext, myNameResolver, myInfoProvider, myErrorReporter), null);
     }
     return null;
   }
 
   @Override
-  public Void visitData(Abstract.DataDefinition def, Scope parentScope) {
+  public Void visitData(Concrete.DataDefinition<T> def, Scope parentScope) {
     Scope scope = new DataScope(parentScope, new NamespaceScope(myNameResolver.nsProviders.statics.forReferable(def)));
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(scope, myContext, myNameResolver, myInfoProvider, myResolveListener, myErrorReporter);
+    ExpressionResolveNameVisitor<T> exprVisitor = new ExpressionResolveNameVisitor<>(scope, myContext, myNameResolver, myInfoProvider, myErrorReporter);
     try (Utils.CompleteContextSaver<Abstract.ReferableSourceNode> ignored = new Utils.CompleteContextSaver<>(myContext)) {
       exprVisitor.visitParameters(def.getParameters());
       if (def.getUniverse() != null) {
         def.getUniverse().accept(exprVisitor, null);
       }
       if (def.getEliminatedReferences() != null) {
-        for (Abstract.ReferenceExpression ref : def.getEliminatedReferences()) {
+        for (Concrete.ReferenceExpression<T> ref : def.getEliminatedReferences()) {
           exprVisitor.visitReference(ref, null);
         }
       } else {
-        for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
-          for (Abstract.Constructor constructor : clause.getConstructors()) {
+        for (Concrete.ConstructorClause<T> clause : def.getConstructorClauses()) {
+          for (Concrete.Constructor<T> constructor : clause.getConstructors()) {
             visitConstructor(constructor, scope);
           }
         }
@@ -143,10 +140,10 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     if (def.getEliminatedReferences() != null) {
       try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
         addNotEliminatedParameters(def.getParameters(), def.getEliminatedReferences());
-        for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
+        for (Concrete.ConstructorClause<T> clause : def.getConstructorClauses()) {
           try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
             visitConstructorClause(clause, exprVisitor);
-            for (Abstract.Constructor constructor : clause.getConstructors()) {
+            for (Concrete.Constructor<T> constructor : clause.getConstructors()) {
               visitConstructor(constructor, scope);
             }
           }
@@ -158,11 +155,11 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
   }
 
   @Override
-  public Void visitConstructor(Abstract.Constructor def, Scope parentScope) {
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(parentScope, myContext, myNameResolver, myInfoProvider, myResolveListener, myErrorReporter);
+  public Void visitConstructor(Concrete.Constructor<T> def, Scope parentScope) {
+    ExpressionResolveNameVisitor<T> exprVisitor = new ExpressionResolveNameVisitor<>(parentScope, myContext, myNameResolver, myInfoProvider, myErrorReporter);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       exprVisitor.visitParameters(def.getParameters());
-      for (Abstract.ReferenceExpression ref : def.getEliminatedReferences()) {
+      for (Concrete.ReferenceExpression<T> ref : def.getEliminatedReferences()) {
         exprVisitor.visitReference(ref, null);
       }
     }
@@ -174,13 +171,13 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     return null;
   }
 
-  private void visitConstructorClause(Abstract.ConstructorClause clause, ExpressionResolveNameVisitor exprVisitor) {
-    List<? extends Abstract.Pattern> patterns = clause.getPatterns();
+  private void visitConstructorClause(Concrete.ConstructorClause<T> clause, ExpressionResolveNameVisitor<T> exprVisitor) {
+    List<? extends Concrete.Pattern<T>> patterns = clause.getPatterns();
     if (patterns != null) {
       for (int i = 0; i < patterns.size(); i++) {
         Abstract.Constructor constructor = exprVisitor.visitPattern(patterns.get(i), new HashMap<>());
         if (constructor != null) {
-          myResolveListener.replaceWithConstructor(clause, i, constructor);
+          ExpressionResolveNameVisitor.replaceWithConstructor(clause, i, constructor);
         }
         exprVisitor.resolvePattern(patterns.get(i));
       }
@@ -188,9 +185,9 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
   }
 
   @Override
-  public Void visitClass(Abstract.ClassDefinition def, Scope parentScope) {
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(parentScope, myContext, myNameResolver, myInfoProvider, myResolveListener, myErrorReporter);
-    for (Abstract.SuperClass superClass : def.getSuperClasses()) {
+  public Void visitClass(Concrete.ClassDefinition<T> def, Scope parentScope) {
+    ExpressionResolveNameVisitor<T> exprVisitor = new ExpressionResolveNameVisitor<>(parentScope, myContext, myNameResolver, myInfoProvider, myErrorReporter);
+    for (Concrete.SuperClass<T> superClass : def.getSuperClasses()) {
       superClass.getSuperClass().accept(exprVisitor, null);
     }
 
@@ -199,15 +196,15 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
       StaticClassScope staticScope = new StaticClassScope(parentScope, new NamespaceScope(myNameResolver.nsProviders.statics.forReferable(def)), extraScopes);
       staticScope.findIntroducedDuplicateNames(this::warnDuplicate);
 
-      for (Abstract.Definition definition : def.getGlobalDefinitions()) {
+      for (Concrete.Definition<T> definition : def.getGlobalDefinitions()) {
         definition.accept(this, staticScope);
       }
 
       try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-        for (Abstract.TypeParameter polyParam : def.getPolyParameters()) {
+        for (Concrete.TypeParameter<T> polyParam : def.getPolyParameters()) {
           polyParam.getType().accept(exprVisitor, null);
-          if (polyParam instanceof Abstract.TelescopeParameter) {
-            for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeParameter) polyParam).getReferableList()) {
+          if (polyParam instanceof Concrete.TelescopeParameter) {
+            for (Abstract.ReferableSourceNode referable : ((Concrete.TelescopeParameter<T>) polyParam).getReferableList()) {
               if (referable != null && referable.getName() != null && referable.getName().equals("_")) {
                 myContext.add(referable);
               }
@@ -218,13 +215,13 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
         DynamicClassScope dynamicScope = new DynamicClassScope(parentScope, new NamespaceScope(myNameResolver.nsProviders.statics.forReferable(def)), new NamespaceScope(myNameResolver.nsProviders.dynamics.forClass(def)), extraScopes);
         dynamicScope.findIntroducedDuplicateNames(this::warnDuplicate);
 
-        for (Abstract.ClassField field : def.getFields()) {
+        for (Concrete.ClassField<T> field : def.getFields()) {
           field.accept(this, dynamicScope);
         }
-        for (Abstract.Implementation implementation : def.getImplementations()) {
+        for (Concrete.Implementation<T> implementation : def.getImplementations()) {
           implementation.accept(this, dynamicScope);
         }
-        for (Abstract.Definition definition : def.getInstanceDefinitions()) {
+        for (Concrete.Definition<T> definition : def.getInstanceDefinitions()) {
           definition.accept(this, dynamicScope);
         }
       }
@@ -236,89 +233,89 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
   }
 
   @Override
-  public Void visitImplement(Abstract.Implementation def, Scope parentScope) {
+  public Void visitImplement(Concrete.Implementation<T> def, Scope parentScope) {
     Abstract.ClassField referable = myNameResolver.resolveClassField(def.getParentDefinition(), def.getName());
     if (referable != null) {
-      myResolveListener.implementResolved(def, referable);
+      def.setImplemented(referable);
     } else {
-      myErrorReporter.report(new NoSuchFieldError(def.getName(), (Concrete.SourceNode) def));
+      myErrorReporter.report(new NoSuchFieldError<>(def.getName(), def));
     }
 
-    def.getImplementation().accept(new ExpressionResolveNameVisitor(parentScope, myContext, myNameResolver, myInfoProvider, myResolveListener, myErrorReporter), null);
+    def.getImplementation().accept(new ExpressionResolveNameVisitor<>(parentScope, myContext, myNameResolver, myInfoProvider, myErrorReporter), null);
     return null;
   }
 
   @Override
-  public Void visitClassView(Abstract.ClassView def, Scope parentScope) {
-    def.getUnderlyingClassReference().accept(new ExpressionResolveNameVisitor(parentScope, myContext, myNameResolver, myInfoProvider, myResolveListener, myErrorReporter), null);
+  public Void visitClassView(Concrete.ClassView<T> def, Scope parentScope) {
+    def.getUnderlyingClassReference().accept(new ExpressionResolveNameVisitor<>(parentScope, myContext, myNameResolver, myInfoProvider, myErrorReporter), null);
     Abstract.ReferableSourceNode resolvedUnderlyingClass = def.getUnderlyingClassReference().getReferent();
-    if (!(resolvedUnderlyingClass instanceof Abstract.ClassDefinition)) {
+    if (!(resolvedUnderlyingClass instanceof Concrete.ClassDefinition)) {
       if (resolvedUnderlyingClass != null) {
-        myErrorReporter.report(new WrongReferable("Expected a class", resolvedUnderlyingClass, (Concrete.SourceNode) def));
+        myErrorReporter.report(new WrongReferable<>("Expected a class", resolvedUnderlyingClass, def));
       }
       return null;
     }
 
-    Namespace dynamicNamespace = myNameResolver.nsProviders.dynamics.forClass((Abstract.ClassDefinition) resolvedUnderlyingClass);
+    Namespace dynamicNamespace = myNameResolver.nsProviders.dynamics.forClass((Concrete.ClassDefinition) resolvedUnderlyingClass);
     Abstract.Definition resolvedClassifyingField = dynamicNamespace.resolveName(def.getClassifyingFieldName());
-    if (!(resolvedClassifyingField instanceof Abstract.ClassField)) {
-      myErrorReporter.report(resolvedClassifyingField != null ? new WrongReferable("Expected a class field", resolvedClassifyingField, (Concrete.SourceNode) def) : new NotInScopeError(def.getClassifyingFieldName(), (Concrete.SourceNode) def));
+    if (!(resolvedClassifyingField instanceof Concrete.ClassField)) {
+      myErrorReporter.report(resolvedClassifyingField != null ? new WrongReferable<>("Expected a class field", resolvedClassifyingField, def) : new NotInScopeError<>(def.getClassifyingFieldName(), def));
       return null;
     }
 
-    myResolveListener.classViewResolved(def, (Abstract.ClassField) resolvedClassifyingField);
+    def.setClassifyingField((Concrete.ClassField) resolvedClassifyingField);
 
-    for (Abstract.ClassViewField viewField : def.getFields()) {
-      Abstract.ClassField classField = myNameResolver.resolveClassField((Abstract.ClassDefinition) resolvedUnderlyingClass, viewField.getUnderlyingFieldName());
+    for (Concrete.ClassViewField<T> viewField : def.getFields()) {
+      Abstract.ClassField classField = myNameResolver.resolveClassField((Concrete.ClassDefinition) resolvedUnderlyingClass, viewField.getUnderlyingFieldName());
       if (classField != null) {
-        myResolveListener.classViewFieldResolved(viewField, classField);
+        viewField.setUnderlyingField(classField);
       } else {
-        myErrorReporter.report(new NoSuchFieldError(def.getName(), (Concrete.SourceNode) def));
+        myErrorReporter.report(new NoSuchFieldError<>(def.getName(), def));
       }
     }
     return null;
   }
 
   @Override
-  public Void visitClassViewField(Abstract.ClassViewField def, Scope parentScope) {
+  public Void visitClassViewField(Concrete.ClassViewField def, Scope parentScope) {
     throw new IllegalStateException();
   }
 
   @Override
-  public Void visitClassViewInstance(Abstract.ClassViewInstance def, Scope parentScope) {
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(parentScope, myContext, myNameResolver, myInfoProvider, myResolveListener, myErrorReporter);
+  public Void visitClassViewInstance(Concrete.ClassViewInstance<T> def, Scope parentScope) {
+    ExpressionResolveNameVisitor<T> exprVisitor = new ExpressionResolveNameVisitor<>(parentScope, myContext, myNameResolver, myInfoProvider, myErrorReporter);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       exprVisitor.visitParameters(def.getParameters());
       exprVisitor.visitReference(def.getClassView(), null);
-      if (def.getClassView().getReferent() instanceof Abstract.ClassView) {
-        exprVisitor.visitClassFieldImpls(def.getClassFieldImpls(), (Abstract.ClassView) def.getClassView().getReferent(), null);
+      if (def.getClassView().getReferent() instanceof Concrete.ClassView) {
+        exprVisitor.visitClassFieldImpls(def.getClassFieldImpls(), (Concrete.ClassView) def.getClassView().getReferent(), null);
         boolean ok = false;
-        for (Abstract.ClassFieldImpl impl : def.getClassFieldImpls()) {
-          if (impl.getImplementedField() == ((Abstract.ClassView) def.getClassView().getReferent()).getClassifyingField()) {
+        for (Concrete.ClassFieldImpl<T> impl : def.getClassFieldImpls()) {
+          if (impl.getImplementedField() == ((Concrete.ClassView) def.getClassView().getReferent()).getClassifyingField()) {
             ok = true;
-            Abstract.Expression expr = impl.getImplementation();
-            while (expr instanceof Abstract.AppExpression) {
-              expr = ((Abstract.AppExpression) expr).getFunction();
+            Concrete.Expression expr = impl.getImplementation();
+            while (expr instanceof Concrete.AppExpression) {
+              expr = ((Concrete.AppExpression) expr).getFunction();
             }
-            if (expr instanceof Abstract.ReferenceExpression && ((Abstract.ReferenceExpression) expr).getReferent() instanceof Abstract.GlobalReferableSourceNode) {
-              myResolveListener.classViewInstanceResolved(def, (Abstract.GlobalReferableSourceNode) ((Abstract.ReferenceExpression) expr).getReferent());
+            if (expr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) expr).getReferent() instanceof Abstract.GlobalReferableSourceNode) {
+              def.setClassifyingDefinition((Abstract.GlobalReferableSourceNode) ((Concrete.ReferenceExpression) expr).getReferent());
             } else {
-              myErrorReporter.report(new NamingError("Expected a definition applied to arguments", (Concrete.SourceNode) impl.getImplementation()));
+              myErrorReporter.report(new NamingError<>("Expected a definition applied to arguments", impl.getImplementation()));
             }
           }
         }
         if (!ok) {
-          myErrorReporter.report(new NamingError("Classifying field is not implemented", (Concrete.SourceNode) def));
+          myErrorReporter.report(new NamingError<>("Classifying field is not implemented", def));
         }
       } else {
-        myErrorReporter.report(new WrongReferable("Expected a class view", def.getClassView().getReferent(), (Concrete.SourceNode) def));
+        myErrorReporter.report(new WrongReferable<>("Expected a class view", def.getClassView().getReferent(), def));
       }
     }
 
     return null;
   }
 
-  private Iterable<Scope> getExtraScopes(Abstract.Definition def, Scope currentScope) {
+  private Iterable<Scope> getExtraScopes(Concrete.Definition def, Scope currentScope) {
     if (def instanceof HasOpens) {
       return StreamSupport.stream(((HasOpens) def).getOpens().spliterator(), false)
           .flatMap(cmd -> processOpenCommand(cmd, currentScope))
@@ -328,12 +325,12 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
     }
   }
 
-  private Stream<Scope> processOpenCommand(OpenCommand cmd, Scope currentScope) {
+  private Stream<Scope> processOpenCommand(OpenCommand cmd, Scope currentScope) { // TODO[abstract]
     if (cmd.getResolvedClass() == null) {
       final Abstract.GlobalReferableSourceNode referredClass;
       if (cmd.getModulePath() == null) {
         if (cmd.getPath().isEmpty()) {
-          myErrorReporter.report(new NamingError("Structure error: empty namespace command", (Concrete.SourceNode) cmd));
+          myErrorReporter.report(new NamingError<>("Structure error: empty namespace command", (Concrete.SourceNode<T>) cmd));
           return Stream.empty();
         }
         referredClass = myNameResolver.resolveDefinition(currentScope, cmd.getPath());
@@ -341,7 +338,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
         ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(cmd.getModulePath());
         Abstract.ClassDefinition moduleClass = moduleNamespace != null ? moduleNamespace.getRegisteredClass() : null;
         if (moduleClass == null) {
-          myErrorReporter.report(new NamingError("Module not found: " + cmd.getModulePath(), (Concrete.SourceNode) cmd));
+          myErrorReporter.report(new NamingError<>("Module not found: " + cmd.getModulePath(), (Concrete.SourceNode<T>) cmd));
           return Stream.empty();
         }
         if (cmd.getPath().isEmpty()) {
@@ -352,10 +349,10 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
       }
 
       if (referredClass == null) {
-        myErrorReporter.report(new NamingError("Class not found", (Concrete.SourceNode) cmd));
+        myErrorReporter.report(new NamingError<>("Class not found", (Concrete.SourceNode<T>) cmd));
         return Stream.empty();
       }
-      myResolveListener.openCmdResolved(cmd, referredClass);
+      ((Concrete.NamespaceCommandStatement) cmd).setResolvedClass(referredClass);
     }
 
     Scope scope = new NamespaceScope(myNameResolver.nsProviders.statics.forReferable(cmd.getResolvedClass()));
@@ -367,6 +364,6 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<S
   }
 
   private void warnDuplicate(Abstract.ReferableSourceNode ref1, Abstract.ReferableSourceNode ref2) {
-    myErrorReporter.report(new DuplicateNameError(Error.Level.WARNING, ref1, ref2, (Concrete.SourceNode) ref1));
+    myErrorReporter.report(new DuplicateNameError<>(Error.Level.WARNING, ref1, ref2, (Concrete.SourceNode<T>) ref1)); // TODO[abstract]
   }
 }

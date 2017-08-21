@@ -14,9 +14,9 @@ import static com.jetbrains.jetpad.vclang.frontend.text.parser.VcgrammarParser.*
 
 public class BuildVisitor extends VcgrammarBaseVisitor {
   private final SourceId myModule;
-  private final ErrorReporter myErrorReporter;
+  private final ErrorReporter<Position> myErrorReporter;
 
-  public BuildVisitor(SourceId module, ErrorReporter errorReporter) {
+  public BuildVisitor(SourceId module, ErrorReporter<Position> errorReporter) {
     myModule = module;
     myErrorReporter = errorReporter;
   }
@@ -979,8 +979,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   private Concrete.Expression parseBinOpSequence(List<BinOpLeftContext> leftCtxs, Concrete.Expression<Position> expression, List<PostfixContext> postfixCtxs, Token token) {
     Concrete.Expression<Position> left = null;
-    Concrete.ReferenceExpression binOp = null;
-    List<Abstract.BinOpSequenceElem> sequence = new ArrayList<>(leftCtxs.size() + postfixCtxs.size());
+    Concrete.ReferenceExpression<Position> binOp = null;
+    List<Concrete.BinOpSequenceElem<Position>> sequence = new ArrayList<>(leftCtxs.size() + postfixCtxs.size());
 
     for (BinOpLeftContext leftContext : leftCtxs) {
       String name = visitInfix(leftContext.infix());
@@ -990,11 +990,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       if (left == null) {
         left = expr;
       } else {
-        sequence.add(new Abstract.BinOpSequenceElem(binOp, expr));
+        sequence.add(new Concrete.BinOpSequenceElem<>(binOp, expr));
       }
 
       for (PostfixContext postfixContext : leftContext.postfix()) {
-        sequence.add(new Abstract.BinOpSequenceElem(new Concrete.ReferenceExpression<>(tokenPosition(postfixContext.start), null, visitPostfix(postfixContext)), null));
+        sequence.add(new Concrete.BinOpSequenceElem<>(new Concrete.ReferenceExpression<>(tokenPosition(postfixContext.start), null, visitPostfix(postfixContext)), null));
       }
 
       binOp = new Concrete.ReferenceExpression<>(tokenPosition(leftContext.infix().getStart()), null, name);
@@ -1003,11 +1003,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (left == null) {
       left = expression;
     } else {
-      sequence.add(new Abstract.BinOpSequenceElem(binOp, expression));
+      sequence.add(new Concrete.BinOpSequenceElem<>(binOp, expression));
     }
 
     for (PostfixContext postfixContext : postfixCtxs) {
-      sequence.add(new Abstract.BinOpSequenceElem(new Concrete.ReferenceExpression<>(tokenPosition(postfixContext.start), null, visitPostfix(postfixContext)), null));
+      sequence.add(new Concrete.BinOpSequenceElem<>(new Concrete.ReferenceExpression<>(tokenPosition(postfixContext.start), null, visitPostfix(postfixContext)), null));
     }
 
     return sequence.isEmpty() ? left : new Concrete.BinOpSequenceExpression<>(tokenPosition(token), left, sequence);

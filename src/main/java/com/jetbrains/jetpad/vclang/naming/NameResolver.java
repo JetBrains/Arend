@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.List;
 
@@ -66,7 +67,7 @@ public class NameResolver {
     }
   }
 
-  public Abstract.ReferableSourceNode resolveReference(final Scope currentScope, final Abstract.ReferenceExpression reference) {
+  public Abstract.ReferableSourceNode resolveReference(final Scope currentScope, final Concrete.ReferenceExpression reference) {
     if (reference.getReferent() != null) {
       return reference.getReferent();
     }
@@ -76,8 +77,8 @@ public class NameResolver {
 
     if (reference.getExpression() == null) {
       return currentScope.resolveName(reference.getName());
-    } else if (reference.getExpression() instanceof Abstract.ReferenceExpression) {
-      Abstract.ReferableSourceNode exprTarget = resolveReference(currentScope, (Abstract.ReferenceExpression) reference.getExpression());
+    } else if (reference.getExpression() instanceof Concrete.ReferenceExpression) {
+      Abstract.ReferableSourceNode exprTarget = resolveReference(currentScope, (Concrete.ReferenceExpression) reference.getExpression());
       final Namespace ns;
       if (exprTarget instanceof Abstract.GlobalReferableSourceNode) {
         ns = nsProviders.statics.forReferable((Abstract.GlobalReferableSourceNode) exprTarget);
@@ -88,8 +89,8 @@ public class NameResolver {
       }
       // TODO: throw MemberNotFoundError
       return ns != null ? ns.resolveName(reference.getName()) : null;
-    } else if (reference.getExpression() instanceof Abstract.ModuleCallExpression) {
-      Abstract.Definition module = resolveModuleCall(currentScope, (Abstract.ModuleCallExpression) reference.getExpression());
+    } else if (reference.getExpression() instanceof Concrete.ModuleCallExpression) {
+      Abstract.Definition module = resolveModuleCall(currentScope, (Concrete.ModuleCallExpression) reference.getExpression());
       if (module != null) {
         Namespace moduleNamespace = nsProviders.statics.forReferable(module);
         return moduleNamespace.resolveName(reference.getName());
@@ -100,7 +101,7 @@ public class NameResolver {
     }
   }
 
-  public Abstract.ClassDefinition resolveModuleCall(final Scope currentScope, final Abstract.ModuleCallExpression moduleCall) {
+  public Abstract.ClassDefinition resolveModuleCall(final Scope currentScope, final Concrete.ModuleCallExpression moduleCall) {
     if (moduleCall.getModule() != null) {
       if (!(moduleCall.getModule() instanceof Abstract.ClassDefinition)) throw new IllegalStateException();
       return (Abstract.ClassDefinition) moduleCall.getModule();

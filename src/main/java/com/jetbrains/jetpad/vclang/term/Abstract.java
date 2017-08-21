@@ -1,9 +1,5 @@
 package com.jetbrains.jetpad.vclang.term;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
-import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
-import com.jetbrains.jetpad.vclang.module.ModulePath;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
@@ -24,241 +20,11 @@ public final class Abstract {
   }
 
   public interface TypeParameter extends Parameter {
-    @Nonnull Expression getType();
+    @Nonnull Concrete.Expression getType();
   }
 
   public interface TelescopeParameter extends TypeParameter {
     @Nonnull List<? extends ReferableSourceNode> getReferableList();
-  }
-
-  // Expressions
-
-  public interface Expression extends SourceNode {
-    byte PREC = -12;
-    <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
-  }
-
-  public interface Argument extends SourceNode {
-    @Nonnull Expression getExpression();
-    boolean isExplicit();
-  }
-
-  public interface AppExpression extends Expression {
-    byte PREC = 11;
-    @Nonnull Expression getFunction();
-    @Nonnull Argument getArgument();
-  }
-
-  public interface ModuleCallExpression extends Expression {
-    byte PREC = 12;
-    @Nonnull ModulePath getPath();
-    @Nullable Definition getModule();
-  }
-
-  public interface ReferenceExpression extends Expression {
-    byte PREC = 12;
-    @Nullable String getName();
-    @Nullable Expression getExpression();
-    @Nullable ReferableSourceNode getReferent();
-  }
-
-  public interface InferenceReferenceExpression extends Expression {
-    @Nonnull InferenceVariable getVariable();
-  }
-
-  public interface ClassExtExpression extends Expression {
-    byte PREC = 12;
-    @Nonnull Expression getBaseClassExpression();
-    @Nonnull Collection<? extends ClassFieldImpl> getStatements();
-  }
-
-  public interface ClassFieldImpl extends SourceNode {
-    @Nonnull String getImplementedFieldName();
-    @Nonnull ClassField getImplementedField();
-    @Nonnull Expression getImplementation();
-  }
-
-  public static ClassDefinition getUnderlyingClassDef(Expression expr) {
-    if (expr instanceof ReferenceExpression) {
-      ReferableSourceNode definition = ((ReferenceExpression) expr).getReferent();
-      if (definition instanceof ClassDefinition) {
-        return (ClassDefinition) definition;
-      }
-      if (definition instanceof ClassView) {
-        return (ClassDefinition) ((ClassView) definition).getUnderlyingClassReference().getReferent();
-      }
-    }
-
-    if (expr instanceof ClassExtExpression) {
-      return getUnderlyingClassDef(((ClassExtExpression) expr).getBaseClassExpression());
-    } else {
-      return null;
-    }
-  }
-
-  public static ClassView getUnderlyingClassView(Expression expr) {
-    if (expr instanceof ReferenceExpression) {
-      ReferableSourceNode definition = ((ReferenceExpression) expr).getReferent();
-      if (definition instanceof ClassView) {
-        return (ClassView) definition;
-      }
-    }
-
-    if (expr instanceof ClassExtExpression) {
-      return getUnderlyingClassView(((ClassExtExpression) expr).getBaseClassExpression());
-    } else {
-      return null;
-    }
-  }
-
-  public interface NewExpression extends Expression {
-    byte PREC = 11;
-    @Nonnull Expression getExpression();
-  }
-
-  public interface LamExpression extends Expression {
-    byte PREC = -5;
-    @Nonnull List<? extends Parameter> getParameters();
-    @Nonnull Expression getBody();
-  }
-
-  public interface LetClause extends ReferableSourceNode {
-    @Nonnull Expression getTerm();
-    @Nonnull List<? extends Parameter> getParameters();
-    @Nullable Expression getResultType();
-  }
-
-  public interface LetExpression extends Expression {
-    byte PREC = -9;
-
-    @Nonnull List<? extends LetClause> getClauses();
-    @Nonnull Expression getExpression();
-  }
-
-  public interface TupleExpression extends Expression {
-    byte PREC = 12;
-    @Nonnull List<? extends Expression> getFields();
-  }
-
-  public interface SigmaExpression extends Expression {
-    byte PREC = -3;
-    @Nonnull List<? extends TypeParameter> getParameters();
-  }
-
-  public interface PiExpression extends Expression {
-    byte PREC = -4;
-    @Nonnull List<? extends TypeParameter> getParameters();
-    @Nonnull Expression getCodomain();
-  }
-
-  public interface BinOpExpression extends ReferenceExpression {
-    @Nonnull Expression getLeft();
-    @Nullable Expression getRight();
-
-    @Nonnull
-    @Override
-    ReferableSourceNode getReferent();
-
-    @Override
-    default Expression getExpression() {
-      return null;
-    }
-  }
-
-  public static class BinOpSequenceElem {
-    @Nonnull public final ReferenceExpression binOp;
-    @Nullable public final Expression argument;
-
-    public BinOpSequenceElem(@Nonnull ReferenceExpression binOp, @Nullable Expression argument) {
-      this.binOp = binOp;
-      this.argument = argument;
-    }
-  }
-
-  public interface BinOpSequenceExpression extends Expression {
-    byte PREC = 0;
-    @Nonnull Expression getLeft();
-    @Nonnull List<BinOpSequenceElem> getSequence();
-  }
-
-  public interface UniverseExpression extends Expression {
-    byte PREC = 12;
-
-    @Nullable LevelExpression getPLevel();
-    @Nullable LevelExpression getHLevel();
-  }
-
-  public interface InferHoleExpression extends Expression {
-    byte PREC = 12;
-  }
-
-  public interface GoalExpression extends Expression {
-    byte PREC = 12;
-    @Nullable String getName();
-    @Nullable Expression getExpression();
-  }
-
-  public interface CaseExpression extends Expression {
-    byte PREC = -8;
-    @Nonnull List<? extends Expression> getExpressions();
-    @Nonnull List<? extends FunctionClause> getClauses();
-  }
-
-  public interface ProjExpression extends Expression {
-    byte PREC = 12;
-    @Nonnull Expression getExpression();
-    int getField();
-  }
-
-  public interface PatternContainer {
-    @Nullable List<? extends Pattern> getPatterns();
-  }
-
-  public interface Clause extends SourceNode, PatternContainer {
-  }
-
-  public interface FunctionClause extends Clause {
-    @Nullable Expression getExpression();
-
-    @Nonnull
-    @Override
-    List<? extends Pattern> getPatterns();
-  }
-
-  public interface NumericLiteral extends Expression {
-    int getNumber();
-  }
-
-  // Level expressions
-
-  public interface LevelExpression extends SourceNode {
-    <P, R> R accept(AbstractLevelExpressionVisitor<? super P, ? extends R> visitor, P params);
-  }
-
-  public interface InferVarLevelExpression extends LevelExpression {
-    @Nonnull InferenceLevelVariable getVariable();
-  }
-
-  public interface PLevelExpression extends LevelExpression {
-  }
-
-  public interface HLevelExpression extends LevelExpression {
-  }
-
-  public interface InfLevelExpression extends LevelExpression {
-  }
-
-  public interface NumberLevelExpression extends LevelExpression {
-    int getNumber();
-  }
-
-  public interface SucLevelExpression extends LevelExpression {
-    @Nonnull LevelExpression getExpression();
-  }
-
-  public interface MaxLevelExpression extends LevelExpression {
-    @Nonnull LevelExpression getLeft();
-    @Nonnull LevelExpression getRight();
   }
 
   // Definitions
@@ -293,7 +59,7 @@ public final class Abstract {
   }
 
   public interface ClassField extends Definition {
-    @Nonnull Expression getResultType();
+    @Nonnull Concrete.Expression getResultType();
 
     @Override
     ClassDefinition getParentDefinition();
@@ -301,7 +67,7 @@ public final class Abstract {
 
   public interface Implementation extends Definition {
     @Nonnull ClassField getImplementedField();
-    @Nonnull Expression getImplementation();
+    @Nonnull Concrete.Expression getImplementation();
 
     @Override
     ClassDefinition getParentDefinition();
@@ -314,12 +80,12 @@ public final class Abstract {
   public interface FunctionBody extends SourceNode {}
 
   public interface TermFunctionBody extends FunctionBody {
-    @Nonnull Expression getTerm();
+    @Nonnull Concrete.Expression getTerm();
   }
 
   public interface ElimBody extends SourceNode {
-    @Nonnull List<? extends ReferenceExpression> getEliminatedReferences();
-    @Nonnull List<? extends FunctionClause> getClauses();
+    @Nonnull List<? extends Concrete.ReferenceExpression> getEliminatedReferences();
+    @Nonnull List<? extends Concrete.FunctionClause> getClauses();
   }
 
   public interface ElimFunctionBody extends FunctionBody, ElimBody {
@@ -328,19 +94,15 @@ public final class Abstract {
   public interface FunctionDefinition extends Definition, DefinitionCollection {
     @Nonnull FunctionBody getBody();
     @Nonnull List<? extends Parameter> getParameters();
-    @Nullable Expression getResultType();
+    @Nullable Concrete.Expression getResultType();
   }
 
   public interface DataDefinition extends Definition {
     @Nonnull List<? extends TypeParameter> getParameters();
-    @Nullable List<? extends ReferenceExpression> getEliminatedReferences();
-    @Nonnull List<? extends ConstructorClause> getConstructorClauses();
+    @Nullable List<? extends Concrete.ReferenceExpression> getEliminatedReferences();
+    @Nonnull List<? extends Concrete.ConstructorClause> getConstructorClauses();
     boolean isTruncated();
-    @Nullable UniverseExpression getUniverse();
-  }
-
-  public interface ConstructorClause extends Clause {
-    @Nonnull List<? extends Constructor> getConstructors();
+    @Nullable Concrete.UniverseExpression getUniverse();
   }
 
   public interface Constructor extends Definition, ElimBody {
@@ -349,7 +111,7 @@ public final class Abstract {
   }
 
   public interface SuperClass extends SourceNode {
-    @Nonnull Expression getSuperClass();
+    @Nonnull Concrete.Expression getSuperClass();
   }
 
   public interface ClassDefinition extends Definition, DefinitionCollection {
@@ -363,7 +125,7 @@ public final class Abstract {
   // ClassViews
 
   public interface ClassView extends Definition {
-    @Nonnull ReferenceExpression getUnderlyingClassReference();
+    @Nonnull Concrete.ReferenceExpression getUnderlyingClassReference();
     @Nonnull String getClassifyingFieldName();
     @Nullable ClassField getClassifyingField();
     @Nonnull List<? extends ClassViewField> getFields();
@@ -378,9 +140,9 @@ public final class Abstract {
   public interface ClassViewInstance extends Definition {
     boolean isDefault();
     @Nonnull List<? extends Parameter> getParameters();
-    @Nonnull ReferenceExpression getClassView();
+    @Nonnull Concrete.ReferenceExpression getClassView();
     @Nonnull GlobalReferableSourceNode getClassifyingDefinition();
-    @Nonnull Collection<? extends ClassFieldImpl> getClassFieldImpls();
+    @Nonnull Collection<? extends Concrete.ClassFieldImpl> getClassFieldImpls();
   }
 
   // Patterns
@@ -393,7 +155,7 @@ public final class Abstract {
   public interface NamePattern extends Pattern, ReferableSourceNode {
   }
 
-  public interface ConstructorPattern extends Pattern, PatternContainer {
+  public interface ConstructorPattern extends Pattern, Concrete.PatternContainer {
     @Nonnull String getConstructorName();
     @Nullable Abstract.Constructor getConstructor();
 
